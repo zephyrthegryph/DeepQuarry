@@ -14,7 +14,6 @@
 	desc = "Murder device."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
-	slot_flags = SLOT_BELT
 
 /obj/item/melee/classic_baton
 	name = "police baton"
@@ -22,9 +21,9 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
 	item_state = "classic_baton"
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/melee/classic_baton)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
@@ -47,13 +46,13 @@ CAPABILITIES(/obj/item/melee/classic_baton)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "telebaton0"
 	item_state = "telebaton0"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	var/on = 0
 
 TRACKED(/obj/item/melee/telebaton, on)
 
 CAPABILITIES(/obj/item/melee/telebaton)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))

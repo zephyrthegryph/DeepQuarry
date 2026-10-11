@@ -1411,8 +1411,14 @@ CAPABILITIES(/obj/item/gun/projectile/deagle)
 	sound_chamber = SFX_WEAPONS_BALLISTICS_RIFLE_CHAMBER
 	only_open_load = TRUE
 
+CAPABILITIES(/obj/item/gun/projectile/garand)
+	configure(item_worn(slots = SLOT_BACK))
+
 /obj/item/gun/projectile/revolvingrifle
 	manual_chamber = FALSE
+
+CAPABILITIES(/obj/item/gun/projectile/revolvingrifle)
+	configure(item_worn(slots = SLOT_BACK))
 
 //shotgun.dm
 /obj/item/gun/projectile/shotgun
@@ -1428,6 +1434,7 @@ CAPABILITIES(/obj/item/gun/projectile/deagle)
 	var/is_picked_up = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
 /obj/item/gun/projectile/shotgun/pump/Initialize(mapload)
@@ -1492,6 +1499,7 @@ MSG_DEF_SELF(doublebarrel/saw_begins, span_notice("You begin to shorten the barr
 MSG_DEF(doublebarrel/saw_misfire, span_danger("The shotgun goes off in your face!"), span_danger("The shotgun goes off!"))
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 	// A saw, an energy blade or a plasma cutter shortens the barrel: a loaded gun goes off instead, an empty one takes three seconds (stealthy).
 	op("saw_off", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Shorten barrel"), when(req(PROC_REF(saw_offered))), needs(req(PROC_REF(saw_possible), because = MSG(doublebarrel/already_short))), begins(MSG(doublebarrel/saw_begins)), wait(3 SECONDS), then(PROC_REF(saw_off_done)))
@@ -1533,8 +1541,8 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 	sawn_off = TRUE
 	w_class = ITEMSIZE_NORMAL
 	set_force(5)
-	slot_flags &= ~SLOT_BACK	//you can't sling it on your back
-	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) //but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))//you can't sling it on your back
+	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))//but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off shotgun"
 	desc += " The barrel seems to be crudely sawn in half."
 	icon_state = "sawnshotgun[shotgun_variant]"
@@ -1544,6 +1552,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel)
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn //Default sawn shotgun needs it's old icon path back
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/sawn)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_combat(force = 5))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/Initialize(mapload)
@@ -1608,6 +1617,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/sawn)
 	manual_chamber = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile/revolvershotgun)
+	configure(item_worn(slots = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER))
 	configure(item_combat(force = 10))
 
 //sniper.dm

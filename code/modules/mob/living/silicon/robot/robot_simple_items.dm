@@ -149,9 +149,9 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_screwdriver"
 	random_color = FALSE
-	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
+	configure(item_tooling(speed = 0.5))
 	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/tool/crowbar/cyborg
@@ -159,9 +159,9 @@ CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
 	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
-	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/crowbar/cyborg)
+	configure(item_tooling(speed = 0.5))
 	configure(item_combat(force = 10))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
@@ -180,11 +180,11 @@ CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
 	desc = "An advanced welder designed to be used in robotic systems."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "indwelder_cyborg"
-	toolspeed = 0.5
 	welding = FALSE
 	no_passive_burn = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
+	configure(item_tooling(speed = 0.5))
 	configure(item_sounds(use = SFX_ITEMS_WELDER2))
 
 /obj/item/tool/wirecutters/cyborg
@@ -193,9 +193,9 @@ CAPABILITIES(/obj/item/weldingtool/electric/mounted/cyborg)
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_cutters"
 	random_color = FALSE
-	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
+	configure(item_tooling(speed = 0.5))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_CUT))
 
 /obj/item/tool/wrench/cyborg
@@ -203,9 +203,9 @@ CAPABILITIES(/obj/item/tool/wirecutters/cyborg)
 	desc = "An advanced robotic wrench. Can be found in industrial synthetic shells."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_wrench"
-	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/wrench/cyborg)
+	configure(item_tooling(speed = 0.5))
 	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/multitool/cyborg
@@ -213,7 +213,9 @@ CAPABILITIES(/obj/item/tool/wrench/cyborg)
 	desc = "Optimised and stripped-down version of a regular multitool."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_multitool"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/multitool/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/multitool/cyborg/draw(datum/look/look)
 	..()
@@ -229,8 +231,10 @@ CAPABILITIES(/obj/item/tool/wrench/cyborg)
 
 /obj/item/multitool/ai_detector/cyborg
 	name = "AI detector multitool"
-	toolspeed = 0.5
 	desc = "Allows you to see if you are being watched by the AI or within network range. Also works as a normal multitool."
+
+CAPABILITIES(/obj/item/multitool/ai_detector/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/stack/cable_coil/cyborg
 	name = "cable coil synthesizer"
@@ -302,47 +306,67 @@ CAPABILITIES(/obj/item/stack/cable_coil/cyborg)
 /obj/item/surgical/retractor/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_retractor"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/retractor/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/hemostat/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_hemostat"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/hemostat/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/cautery/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_cautery"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/cautery/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/surgicaldrill/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_drill"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/surgicaldrill/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/scalpel/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_scalpel"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/scalpel/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/circular_saw/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_saw"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/circular_saw/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/bonegel/cyborg
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/bonegel/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/FixOVein/cyborg
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/FixOVein/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/bonesetter/cyborg
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_medborg_bonesetter"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/bonesetter/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/surgical/bioregen/cyborg
 	icon_state = "cyborg_bioregen"
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
+	configure(item_tooling(speed = 0.5))
 
 //Service multibelt!
 /obj/item/robotic_multibelt/service

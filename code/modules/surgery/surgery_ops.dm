@@ -141,7 +141,7 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 	var/datum/surgical_step/S = surgery_step_for_key(A.key)
 	var/list/record = surgery_record(A.actor)
 	var/cleanliness = record ? record[2] : 0
-	. = S.duration * (2 - cleanliness / 100) * A.held.toolspeed
+	. = S.duration * (2 - cleanliness / 100) * tooling_of(A.held).speed
 	if(A.actor == src)
 		. += 3 SECONDS
 

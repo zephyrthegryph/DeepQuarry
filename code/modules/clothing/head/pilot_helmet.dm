@@ -10,7 +10,6 @@
 		)
 	flags = THICKMATERIAL
 	armor_spec = "melee=20;bullet=10;laser=10;energy=5;bomb=10"
-	flags_inv = HIDEEARS
 	w_class = ITEMSIZE_NORMAL
 
 	var/tmp/obj/machinery/computer/shuttle_control/web/shuttle_comp
@@ -21,6 +20,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/pilot)
+	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 	owns_one(nameof(pilot_hud), starts = /atom/movable/screen)
 	op("pilot_hud_colors_verb", menu(), label("Alter HUD color"), needs(carried()), then(PROC_REF(pilot_hud_colors_verb)))
@@ -212,13 +212,13 @@ CAPABILITIES(/obj/item/clothing/head/pilot/alt)
 	desc = "Standard pilot gear. Protects the head from impacts. This one has a retractable visor"
 	icon_state = "pilot1"
 	armor_spec = "melee=20;bullet=10;laser=10;energy=5;bomb=10"
-	flags_inv = HIDEEARS
 	w_class = ITEMSIZE_NORMAL
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/pilot_vr)
+	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 	op("pilot_vr_visor_self", in_hand(), label("Toggle visor"), then(PROC_REF(pilot_vr_visor_self)))
 

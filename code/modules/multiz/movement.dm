@@ -829,7 +829,7 @@
 		if(H.can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment
@@ -978,7 +978,7 @@
 		if(H.can_climb || H.species.can_climb)
 			permit_human = TRUE
 		for(var/obj/item/I in gear)
-			if(I.rock_climbing)
+			if(tooling_of(I).climbing)
 				permit_human = TRUE
 				if(I.climbing_delay > climbing_delay_min)
 					climbing_delay_min = I.climbing_delay //We get the maximum possible speedup out of worn equipment

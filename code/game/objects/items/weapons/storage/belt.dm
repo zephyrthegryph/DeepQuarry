@@ -5,7 +5,6 @@
 	icon_state = "utility"
 	storage_slots = 7
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7 //This should ensure belts always have enough room to store whatever.
-	slot_flags = SLOT_BELT
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/belt/mob_werebeast.dmi'
@@ -19,6 +18,7 @@ TRACKED(/obj/item/storage/belt, show_above_suit)
 MSG_DEF_SELF(belt/under_suit, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/storage/belt)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined")))
 	configure(item_sounds(equip = SFX_ITEMS_TOOLBELT_EQUIP, drop = SFX_ITEMS_DROP_TOOLBELT, pickup = SFX_ITEMS_PICKUP_TOOLBELT))
 	configure(storage(max_size = ITEMSIZE_NORMAL))

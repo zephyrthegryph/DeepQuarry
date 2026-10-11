@@ -272,7 +272,7 @@
 /// Prometheans clean every surface they touch and feed on the grime.
 /datum/trait_state/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
 	var/gained = 0
-	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
+	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET))))
 		for(var/obj/O in turf_contents_of_type(T, /obj))
 			if(O.wash(CLEAN_SCRUB))
 				gained += rand(5, 15)
@@ -308,7 +308,7 @@
 	var/slot = event.slot
 	if(slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)
 		return
-	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (source.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & HANDS)))
+	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (worn_of(source.get_equipped_item(SLOT_ID_SUIT)).covers & HANDS)))
 		return
 	if(equipped_item.wash(CLEAN_SCRUB))
 		source.adjust_nutrition(rand(5, 15))

@@ -5,7 +5,6 @@
 	icon = 'icons/obj/sandbags.dmi'
 	icon_state = "sandbag"
 	w_class = ITEMSIZE_LARGE
-	throwforce = 20.0
 	throw_speed = 5
 	throw_range = 3
 	MATERIAL_BULK(MAT_CLOTH, SHEET_MATERIAL_AMOUNT * 2)
@@ -29,6 +28,7 @@
 	bag_material = MAT_SYNCLOTH
 
 CAPABILITIES(/obj/item/stack/sandbags)
+	configure(item_thrown(force = 20.0))
 	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	param(nameof(bag_material), pos = 2)

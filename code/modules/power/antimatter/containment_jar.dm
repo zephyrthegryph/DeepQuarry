@@ -5,7 +5,6 @@
 	icon_state = "jar"
 	density = FALSE
 	anchored = FALSE
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 2
 
@@ -15,6 +14,7 @@
 
 
 CAPABILITIES(/obj/item/am_containment)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 8))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(jar_blast))))
 

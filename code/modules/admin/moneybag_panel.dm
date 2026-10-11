@@ -4,6 +4,7 @@
 // Topic handler since the coin-removal logic is fine where it is.
 
 CAPABILITIES(/obj/item/moneybag)
+	configure(item_thrown(force = 2.0))
 	configure(item_combat(force = 10.0))
 	interface("Moneybag", title = "Moneybag", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")

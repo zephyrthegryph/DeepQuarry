@@ -14,11 +14,11 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 	name = "headphones"
 	desc = "Unce unce unce unce. Boop!"
 	icon_state = "headphones"
-	slot_flags = SLOT_EARS | SLOT_HEAD
 	w_class = ITEMSIZE_SMALL
 	instrument_range = 1
 
 CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD))
 	configure(item_combat(force = 0))
 
 /obj/item/instrument/piano_synth/headphones/Initialize(mapload)
@@ -59,6 +59,8 @@ CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 	name = "\improper Nanotrasen space pods"
 	desc = "Flex your money, AND ignore what everyone else says, all at once!"
 	icon_state = "spacepods"
-	slot_flags = SLOT_EARS
 	//strip_delay = 100 //air pods don't fall out
 	instrument_range = 0 //you're paying for quality here
+
+CAPABILITIES(/obj/item/instrument/piano_synth/headphones/spacepods)
+	configure(item_worn(slots = SLOT_EARS))

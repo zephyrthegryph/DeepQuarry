@@ -19,7 +19,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
 	flags = NOBLUDGEON
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -51,6 +50,7 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 CAPABILITIES(/obj/item/pipe_dispenser)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	owns_one(nameof(tool), /obj/item/tool/wrench/cyborg, starts = /obj/item/tool/wrench/cyborg)
 	op("controls", in_hand(), label("Open pipe controls"), then(PROC_REF(rpd_controls_opened)))

@@ -183,7 +183,7 @@
 	actor.set_combat_mode(FALSE)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar)
-	crowbar.toolspeed = 0
+	crowbar.set_toolspeed(0)
 	actor.put_in_active_hand(crowbar)
 	var/turf/home = get_turf(girder)
 	actor.forceMove(get_step(get_step(home, EAST), EAST))

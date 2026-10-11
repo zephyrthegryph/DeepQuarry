@@ -425,7 +425,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	throwforce = 0
 	show_examine = FALSE
 	core = null
 	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
@@ -437,6 +436,7 @@
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 CAPABILITIES(/obj/item/spell/construct)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 
 // ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation

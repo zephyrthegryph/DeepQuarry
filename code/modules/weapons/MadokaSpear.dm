@@ -120,12 +120,12 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
 	w_class = 4.0
-	slot_flags = SLOT_BACK
 	force_wielded = 22 // Was 13, Buffed - RR
-	throwforce = 20
 	throw_speed = 3
 	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 20))
 	configure(item_combat(force = 14, edge = 0, sharp = 1, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

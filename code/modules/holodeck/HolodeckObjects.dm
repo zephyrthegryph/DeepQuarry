@@ -283,7 +283,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 			)
 	throw_speed = 1
 	throw_range = 5
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLOODY
 	unacidable = TRUE
@@ -308,6 +307,7 @@ TRACKED(/obj/item/holo/esword, lcolor)
 	return FALSE
 
 CAPABILITIES(/obj/item/holo/esword)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 3.0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

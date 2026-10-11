@@ -4,7 +4,6 @@
 	singular_name = "metal rod"
 	icon_state = "rods"
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, REAGENTS_PER_ROD)
@@ -34,6 +33,7 @@
 	return "rods"
 
 CAPABILITIES(/obj/item/stack/rods)
+	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 9.0, attack_verbs = list("hit", "bludgeoned", "whacked")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("splint", item(/obj/item/tape_roll), passes(), then(PROC_REF(taped_into_splint)))

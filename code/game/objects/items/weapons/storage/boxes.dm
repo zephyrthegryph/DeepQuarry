@@ -462,11 +462,11 @@ CAPABILITIES(/obj/item/storage/box/snappops)
 	icon = 'icons/obj/cigarettes.dmi'
 	icon_state = "matchbox"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/flame/match = 10)
 
 
 CAPABILITIES(/obj/item/storage/box/matches)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	configure(storage(accepts = list(/obj/item/flame/match)))
 	op("strike", item(/obj/item/flame/match), label("Strike"), then(PROC_REF(strike_match)))

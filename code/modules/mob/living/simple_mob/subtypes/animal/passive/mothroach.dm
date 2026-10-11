@@ -106,13 +106,15 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
 	icon_state = "mothroach"
 
 	item_state = "mothroach"
-	slot_flags = SLOT_HEAD
 	w_class = ITEMSIZE_TINY
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
 		slot_r_hand_str = 'icons/mob/righthand_holder.dmi',
 		slot_head_str = 'icons/mob/head.dmi',
 	)
+
+CAPABILITIES(/obj/item/holder/mothroach)
+	configure(item_worn(slots = SLOT_HEAD))
 
 /mob/living/simple_mob/animal/passive/mothroach/bar
 	name = "mothroach bartender"

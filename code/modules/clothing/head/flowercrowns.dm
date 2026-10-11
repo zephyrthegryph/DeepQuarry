@@ -3,9 +3,9 @@
 	desc = "A small wood circlet for making a flower crown."
 	icon_state = "woodcirclet"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/woodcirclet)
+	configure(item_worn(covers = 0))
 	op("circlet_add_flower", item(/obj/item/reagent_containers/food/snacks/grown), label("Add flower"), then(PROC_REF(circlet_add_flower)))
 
 /// Old attackby: weave a flower into a crown.
@@ -45,34 +45,34 @@ CAPABILITIES(/obj/item/clothing/head/woodcirclet)
 	name = "sunflower crown"
 	desc = "A flower crown weaved with sunflowers."
 	icon_state = "sunflower_crown"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/sunflower_crown)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/lavender_crown
 	name = "lavender crown"
 	desc = "A flower crown weaved with lavender."
 	icon_state = "lavender_crown"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/lavender_crown)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/poppy_crown
 	name = "poppy crown"
 	desc = "A flower crown weaved with poppies."
 	icon_state = "poppy_crown"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/poppy_crown)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/rose_crown
 	name = "rose crown"
 	desc = "A flower crown weaved with roses."
 	icon_state = "poppy_crown"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/rose_crown)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))

@@ -4,8 +4,10 @@
 	icon_state = "altevian-pants-civ"
 	worn_state = "altevian-pants-civ"
 	gender = PLURAL
-	body_parts_covered = LOWER_TORSO|LEGS
 	starting_accessories = list(/obj/item/clothing/accessory/jacket/altevian)
+
+CAPABILITIES(/obj/item/clothing/under/pants/altevian)
+	configure(item_worn(covers = LOWER_TORSO|LEGS))
 
 /obj/item/clothing/under/pants/altevian/command
 	name = "Altevian Hegemony Command Pants"

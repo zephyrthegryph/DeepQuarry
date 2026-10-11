@@ -10,8 +10,6 @@ MATERIAL_MIX(/obj/item/geiger, list(/datum/material/steel = SHEET_MATERIAL_AMOUN
 		slot_r_hand_str = 'icons/mob/inhands/equipment/tools_righthand.dmi',
 		)
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	item_flags = NOBLUDGEON
 
 	var/last_perceived_radiation_danger = null
 	///How strong the last radiation pulse was, at the source.
@@ -27,6 +25,7 @@ TRACKED(/obj/item/geiger, scanning)
 TRACKED(/obj/item/geiger, last_perceived_radiation_danger)
 
 CAPABILITIES(/obj/item/geiger)
+	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))
 	owns_one(nameof(geiger_sound), /datum/geiger_sound)
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 	op("reset", hand(), gesture(GESTURE_ALT), label("Reset"), needs(req(PROC_REF(is_scanning))), then(PROC_REF(reset_counts)))

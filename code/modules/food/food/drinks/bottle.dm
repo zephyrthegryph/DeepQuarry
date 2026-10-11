@@ -215,7 +215,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	desc = "A bottle with a sharp broken bottom."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "broken_bottle"
-	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
 	item_state = "beer"
@@ -224,6 +223,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 CAPABILITIES(/obj/item/broken_bottle)
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 10, attack_verbs = list("stabbed", "slashed", "attacked"), sharp = TRUE, edge = FALSE))
 
 /obj/item/broken_bottle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

@@ -2,7 +2,6 @@
 	name = "chewable item master"
 	desc = "If you are seeing this, ahelp it."
 	icon = 'icons/inventory/face/item.dmi'
-	body_parts_covered = 0
 
 	var/type_butt = null
 	var/chem_volume = 0
@@ -17,6 +16,7 @@ TRACKED(/obj/item/clothing/mask/chewable, wrapped)
 /obj/item/clothing/mask/chewable/var/chewing = FALSE
 TRACKED(/obj/item/clothing/mask/chewable, chewing)
 CAPABILITIES(/obj/item/clothing/mask/chewable)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
 	reagents(nameof(chem_volume))
 	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 		set_wrapped(FALSE)
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
-		slot_flags = SLOT_EARS | SLOT_MASK
+		set_slot_flags(SLOT_EARS | SLOT_MASK)
 	return OP_DECLINE
 
 /obj/item/clothing/mask/chewable/draw(datum/look/look)
@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	. = ..()
 	flags |= NOREACT // so it doesn't react until you light it
 	if(wrapped)
-		slot_flags = null
+		set_slot_flags(null)
 
 /obj/item/clothing/mask/chewable/equipped(mob/living/user, slot)
 	..()
@@ -78,10 +78,12 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitwad
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
 	chem_volume = 50
 	chewtime = 300
 	brand = "tobacco"
+
+CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 
 /obj/item/clothing/mask/chewable/proc/spitout(transfer_color = 1, no_message = 0)
 	if(type_butt)
@@ -136,11 +138,11 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/tobacco/nico)
 	item_state = "cigpacket"
 	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	w_class = ITEMSIZE_SMALL
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	starts_with = list(/obj/item/clothing/mask/chewable/tobacco = 6)
 
 CAPABILITIES(/obj/item/storage/chewables)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOVEL))
 
 /obj/item/storage/chewables/Initialize(mapload)
@@ -215,11 +217,11 @@ TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
 	icon_state = "chew"
 	type_butt = /obj/item/trash/spitgum
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
 	chem_volume = 50
 	chewtime = 300
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
 
 /obj/item/clothing/mask/chewable/candy/gum
@@ -241,7 +243,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "gum_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/chewable/candy/gum = 5)
 	use_sound = SFX_ITEMS_DROP_PAPER
@@ -251,6 +252,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 
 
 CAPABILITIES(/obj/item/storage/box/gum)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/chewable/candy/gum,

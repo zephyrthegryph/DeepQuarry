@@ -170,7 +170,7 @@
 	var/mob/living/carbon/human/patient = rc_actor()
 	var/obj/item/clothing/mask/gas/mask = allocate(/obj/item/clothing/mask/gas)
 	TEST_ASSERT(patient.equip_to_slot_if_possible(mask, SLOT_ID_MASK), "the patient wears a mask")
-	TEST_ASSERT(mask.body_parts_covered & EYES, "which covers the eyes")
+	TEST_ASSERT(worn_of(mask).covers & EYES, "which covers the eyes")
 	var/obj/item/reagent_containers/dropper/D = rc_filled(/obj/item/reagent_containers/dropper, 5)
 	var/blood_before = rc_blood_units(patient)
 	var/stomach_before = rc_stomach_units(patient)

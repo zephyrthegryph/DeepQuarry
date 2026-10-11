@@ -14,7 +14,7 @@
 		set_edge(TRUE)
 		set_sharp(TRUE)
 		..() //Updates force.
-		throwforce = max(3,combat_of(src).force-3)
+		set_throwforce(max(3,combat_of(src).force-3))
 		set_hitsound(SFX_WEAPONS_BLADESLICE)
 		icon_state += "_open"
 		w_class = ITEMSIZE_NORMAL
@@ -155,10 +155,10 @@ CAPABILITIES(/obj/item/material/knife/butch)
 	desc = "A sharp machete often found in survival kits."
 	icon_state = "machete"
 	force_divisor = 0.3 // 18 when hardness 60 (steel)
-	slot_flags = SLOT_BELT
 	default_material = MAT_PLASTEEL
 
 CAPABILITIES(/obj/item/material/knife/machete)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("slashed", "chopped", "gouged", "ripped", "cut"), can_cleave = TRUE))
 
 /obj/item/material/knife/machete/cyborg
@@ -174,7 +174,9 @@ CAPABILITIES(/obj/item/material/knife/machete)
 	item_state = "knife"
 	applies_material_colour = FALSE
 	default_material = MAT_PLASTEEL
-	toolspeed = 2 // Use a real axe if you want to chop logs.
+
+CAPABILITIES(/obj/item/material/knife/tacknife/survival)
+	configure(item_tooling(speed = 2))
 
 /obj/item/material/knife/stone
 	name = "stone blade"

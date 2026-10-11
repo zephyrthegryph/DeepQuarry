@@ -301,12 +301,12 @@ CAPABILITIES(/obj/structure/bed/roller)
 	icon_state = "folded_rollerbed"
 	center_of_mass_x = 17
 	center_of_mass_y = 7
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_LARGE
 	var/rollertype = /obj/item/roller
 	var/bedtype = /obj/structure/bed/roller
 
 CAPABILITIES(/obj/item/roller)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
 	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req_bool(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())

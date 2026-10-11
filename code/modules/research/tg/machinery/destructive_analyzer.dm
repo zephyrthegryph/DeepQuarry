@@ -93,7 +93,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		if(is_type_in_list(O, GLOB.item_deconstruction_blacklist))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
 			return
-		if((O.item_flags & DROPDEL) || (O.item_flags & NOSTRIP))
+		if((worn_of(O).flags & DROPDEL) || (worn_of(O).flags & NOSTRIP))
 			to_chat(user, span_notice("The machine rejects \the [O]!"))
 			return
 		if(O?.tether_host())
@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		if(LAZYLEN(O.contents))
 			var/bad_item = FALSE
 			for(var/obj/item/thing in contents_of(O))
-				if(thing.item_flags & ABSTRACT)
+				if(worn_of(thing).flags & ABSTRACT)
 					continue
 				bad_item = TRUE
 				break

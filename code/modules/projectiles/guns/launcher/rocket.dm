@@ -6,7 +6,6 @@
 	w_class = ITEMSIZE_HUGE //.
 	throw_speed = 2
 	throw_range = 10
-	slot_flags = 0
 	fire_sound = SFX_WEAPONS_RPG
 
 	release_force = 15
@@ -15,6 +14,7 @@
 	var/list/rockets
 
 CAPABILITIES(/obj/item/gun/launcher/rocket)
+	configure(item_worn(slots = 0))
 	configure(item_combat(force = 5.0))
 
 /obj/item/gun/launcher/rocket/examine(mob/user)

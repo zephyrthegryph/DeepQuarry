@@ -31,9 +31,9 @@ CAPABILITIES(/obj/item/melee/augment/blade)
 	icon_state = "augment_armblade"
 	w_class = ITEMSIZE_HUGE
 	injury_kind = INJURY_CUT
-	pry = 1
 	defend_chance = 40
 	projectile_parry_chance = 20
 
 CAPABILITIES(/obj/item/melee/augment/blade/arm)
+	configure(item_tooling(pry = 1))
 	configure(item_combat(force = 30, armor_penetration = 15, edge = TRUE))

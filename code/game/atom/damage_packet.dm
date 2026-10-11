@@ -171,7 +171,7 @@
 	return w_class
 
 /obj/item/impact_mass()
-	return throwforce
+	return thrown_of(src).force
 
 /mob/impact_mass()
 	return mob_size

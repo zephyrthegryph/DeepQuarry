@@ -19,7 +19,6 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "flashlight"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	actions_types = list(/datum/action/item_action/toggle_flashlight)
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
@@ -38,6 +37,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
@@ -142,7 +142,7 @@ TRACKED(/obj/item/flashlight, power_use)
 		var/mob/living/carbon/human/H = M	//mob has protective eyewear
 		if(istype(H))
 			for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD),H.get_equipped_item(SLOT_ID_MASK),H.get_equipped_item(SLOT_ID_EYES)))
-				if(istype(C) && (C.body_parts_covered & EYES))
+				if(istype(C) && (worn_of(C).covers & EYES))
 					to_chat(user, span_warning("You're going to need to remove [C.name] first."))
 					return ITEM_INTERACT_FAILURE
 
@@ -311,13 +311,13 @@ TRACKED(/obj/item/flashlight, power_use)
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
 	item_state = "pen"
-	slot_flags = SLOT_EARS
 	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
 	cell_type = null
 
 CAPABILITIES(/obj/item/flashlight/pen)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/flashlight/color	//Default color is blue
@@ -356,10 +356,10 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	desc = "A very, very heavy duty flashlight."
 	icon_state = "maglight"
 	light_color = LIGHT_COLOR_FLUORESCENT_FLASHLIGHT
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/flashlight/maglight)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
 

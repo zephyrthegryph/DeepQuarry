@@ -1204,13 +1204,15 @@ CAPABILITIES(/obj/item/gun/energy/gun/tongue)
 /obj/item/gun/energy/bfgtaser/tongue
 	name = "9000-series Ball Tongue Taser"
 	desc = "A banned riot control device."
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser/tongue
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
 	one_handed_penalty = 90 // The thing's heavy and huge.
 	accuracy = 45
 	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
+
+CAPABILITIES(/obj/item/gun/energy/bfgtaser/tongue)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"

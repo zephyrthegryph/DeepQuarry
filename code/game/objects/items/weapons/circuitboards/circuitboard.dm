@@ -5,7 +5,6 @@
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 15
 	MATERIAL_BULK(MAT_GLASS, 40)
@@ -18,6 +17,7 @@
 	var/hidden = FALSE
 
 CAPABILITIES(/obj/item/circuitboard)
+	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 

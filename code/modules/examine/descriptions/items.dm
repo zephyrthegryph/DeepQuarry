@@ -22,7 +22,7 @@
 			return "a truly ruinous amount of"
 
 /proc/describe_throwpower(obj/item/source)
-	switch(source.throwforce)
+	switch(thrown_of(source).force)
 		if(0)
 			return "a negligable amount of"
 		if(1 to 2)
@@ -111,7 +111,7 @@
 
 	if(combat_of(src).force)
 		weapon_stats += "If used in melee, it deals [describe_power(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
-	if(throwforce)
+	if(thrown_of(src).force)
 		weapon_stats += "If thrown, it would deal [describe_throwpower(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage."
 	if(combat_of(src).can_cleave)
 		weapon_stats += "It is capable of hitting multiple targets with a single swing."

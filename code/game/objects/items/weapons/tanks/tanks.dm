@@ -19,10 +19,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	var/last_gauge_pressure
 	var/gauge_cap = 6
 
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_NORMAL
 
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
 
@@ -48,6 +46,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
@@ -322,11 +322,11 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 		data["connected"] = FALSE
 
 	data["maskConnected"] = FALSE
-	if(C.get_equipped_item(SLOT_ID_MASK) && (C.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+	if(C.get_equipped_item(SLOT_ID_MASK) && (worn_of(C.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 		data["maskConnected"] = TRUE
 	else if(ishuman(C))
 		var/mob/living/carbon/human/H = C
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 			data["maskConnected"] = TRUE
 
 	return data
@@ -366,11 +366,11 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 				location.internals.icon_state = "internal0"
 		else
 			var/can_open_valve
-			if(location.get_equipped_item(SLOT_ID_MASK) && (location.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+			if(location.get_equipped_item(SLOT_ID_MASK) && (worn_of(location.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 				can_open_valve = 1
 			else if(ishuman(location))
 				var/mob/living/carbon/human/H = location
-				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+				if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 					can_open_valve = 1
 
 			if(can_open_valve)
@@ -680,7 +680,9 @@ TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
 	desc = "Used as a stand in to trigger single tank assemblies... but you shouldn't see this."
 	var/obj/item/tank/tank = null
 	var/obj/item/assembly_holder/assembly = null
-	item_flags = ABSTRACT
+
+CAPABILITIES(/obj/item/tankassemblyproxy)
+	configure(item_worn(flags = ABSTRACT))
 
 /obj/item/tankassemblyproxy/receive_signal()	//This is mainly called by the sensor through sense() to the holder, and from the holder to here.
 	tank.ignite()	//boom (or not boom if you made shijwtty mix)

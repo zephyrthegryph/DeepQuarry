@@ -247,6 +247,15 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_COMBAT "item_combat"
 #define ITEM_COMBAT_KEY "item_combat"
+/// The entry kind of item_thrown() (code/game/objects/items/item_thrown.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_THROWN "item_thrown"
+#define ITEM_THROWN_KEY "item_thrown"
+/// The entry kind of item_worn() (code/game/objects/items/item_worn.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_WORN "item_worn"
+#define ITEM_WORN_KEY "item_worn"
+/// The entry kind of item_tooling() (code/game/objects/items/item_tooling.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_TOOLING "item_tooling"
+#define ITEM_TOOLING_KEY "item_tooling"
 
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"

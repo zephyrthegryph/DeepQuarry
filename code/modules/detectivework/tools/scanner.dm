@@ -7,7 +7,6 @@
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
 
 	var/reveal_fingerprints = TRUE
 	var/reveal_incompletes = FALSE
@@ -16,6 +15,7 @@
 
 
 CAPABILITIES(/obj/item/detective_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_many(nameof(stored))
 	// The stored records are shown one per second (a lap each), so moving stops the spam.

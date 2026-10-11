@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 			)
 	item_state = "electropack"
 	frequency = AMAG_ELE_FREQ
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
 
 	var/code = 2
@@ -93,6 +92,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 	return TRUE
 
 CAPABILITIES(/obj/item/radio/electropack)
+	configure(item_worn(slots = SLOT_BACK))
 	interface("Electropack")
 	without("ui_open")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))

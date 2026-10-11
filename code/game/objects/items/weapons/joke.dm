@@ -3,9 +3,9 @@
 	desc = "Wield the power of this weapon with responsibility (God knows you won't)."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "toyhammer"
-	throwforce = 0
 
 CAPABILITIES(/obj/item/squishhammer)
+	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("stacked"), force = 0))
 
 // Attack mob
@@ -25,9 +25,9 @@ CAPABILITIES(/obj/item/squishhammer)
 	desc = "Wield the power of this weapon with responsibility (God knows you won't)."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "dark_hammer"
-	throwforce = 0
 
 CAPABILITIES(/obj/item/squishhammer/dark)
+	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("stacked"), force = 0))
 
 /obj/item/squishhammer/dark/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

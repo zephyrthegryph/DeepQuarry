@@ -600,7 +600,7 @@ SETTER(/atom/movable, anchored)
 	var/real_force = 0
 	if(isitem(src))
 		var/obj/item/thrown_item = src
-		real_force = thrown_item.throwforce
+		real_force = thrown_of(thrown_item).force
 
 	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, then, then_owner, then_with)
 	rel_set(src, nameof(throwing), TT)

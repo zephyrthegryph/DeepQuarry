@@ -65,7 +65,6 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	icon_state = "vox_rig"
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	offline_slowdown = 2.5
 
 	air_type = /obj/item/tank/vox
@@ -76,12 +75,15 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
 
 CAPABILITIES(/obj/item/rig/vox)
+	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2))
 
 TYPE_TABLE(/obj/item/rig/vox, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
 
 /obj/item/clothing/head/helmet/space/rig/vox
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/vox)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
@@ -182,7 +184,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 	desc = "A lightweight, alien rig dedicated for construction and engineering tasks. Not reccomended for hostile engagement."
 	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	offline_slowdown = 2.5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -209,6 +210,7 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/engineering)
+	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
@@ -220,7 +222,6 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 	desc = "A medium weight, alien control module. Built sturdy for security engagements."
 	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	offline_slowdown = 5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -240,6 +241,7 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
 
 CAPABILITIES(/obj/item/rig/vox/security)
+	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.5, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/vox/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))

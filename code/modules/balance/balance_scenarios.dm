@@ -160,7 +160,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario/ttk, balance_ttk_results, list("hits_
 			amount = combat_of(weapon).force
 			seconds_per_hit = combat_of(weapon).attack_speed / (1 SECONDS)
 		if("throwforce")
-			amount = weapon.throwforce
+			amount = thrown_of(weapon).force
 		if("damage")
 			var/obj/item/projectile/P = weapon
 			amount = P.damage

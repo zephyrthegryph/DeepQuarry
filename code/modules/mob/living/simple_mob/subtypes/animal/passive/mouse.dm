@@ -311,6 +311,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese, p
 TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/white/apple, preserve_mouse_identity, TRUE)
 
 CAPABILITIES(/obj/item/holder/mouse)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD | SLOT_ID))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

@@ -42,10 +42,8 @@
 		)
 	icon_state = "detective"
 	item_state = "gun"
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 5
 	preserve_item = 1
@@ -116,6 +114,8 @@ TRACKED(/obj/item/gun, dna_lock)
 TRACKED(/obj/item/gun, silenced)
 TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))

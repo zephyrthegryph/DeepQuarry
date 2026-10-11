@@ -6,12 +6,12 @@
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
 	icon_state = "slimebaton"
 	item_state = "slimebaton"
-	slot_flags = SLOT_BELT
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
 
 CAPABILITIES(/obj/item/melee/baton/slime)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 9))
 
 /obj/item/melee/baton/slime/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

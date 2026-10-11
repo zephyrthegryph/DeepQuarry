@@ -100,7 +100,7 @@ CAPABILITIES(/mob/living/simple_mob/dq_damage_probe)
 	I.injury_kind = kind
 	I.injury_kinds = null
 	I.set_force(force)
-	I.throwforce = throwforce
+	I.set_throwforce(throwforce)
 	I.set_armor_penetration(5)
 	return I
 

@@ -8,7 +8,6 @@
 	icon_state = "pda"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi')
 
 	//Main variables
@@ -64,6 +63,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
 	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 			)
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-			slot_flags = SLOT_ID | SLOT_BELT | SLOT_GLOVES
+			set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
 			sprite_sheets = list(
 				SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',

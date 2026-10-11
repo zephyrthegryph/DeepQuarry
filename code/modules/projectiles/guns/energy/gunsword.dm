@@ -34,7 +34,6 @@
 	maxcharge = 2400
 	charge_amount = 20
 	standard_overlays = FALSE
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -60,7 +59,7 @@
 	embed_chance = active_embed_chance
 	set_force(active_force)
 	set_armor_penetration(active_armourpen)
-	throwforce = active_throwforce
+	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
 	set_edge(TRUE)
 	w_class = active_w_class
@@ -80,7 +79,7 @@
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)
 	set_armor_penetration(combat_of_type(type).armor_penetration)
-	throwforce = initial(throwforce)
+	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
 	w_class = initial(w_class)
@@ -89,6 +88,7 @@
 
 
 CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3, sharp = FALSE, edge = FALSE, armor_penetration = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 

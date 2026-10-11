@@ -437,11 +437,11 @@ TRACKED(/datum/changeling, camo_draining)
 		slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
 		)
-	slot_flags = SLOT_BELT | SLOT_BACK
-	throwforce = 5
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/changeling_debug)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("attacked", "slashed", "stabbed", "sliced")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 

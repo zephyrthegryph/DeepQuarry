@@ -11,7 +11,6 @@
 	opacity = 0
 	density = FALSE
 	anchored = FALSE
-	throwforce = 1.0
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
@@ -98,6 +97,7 @@ TRACKED(/obj/item/spacecash, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecash)
+	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	after_init(0, then(PROC_REF(register_sellable)))

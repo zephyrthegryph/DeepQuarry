@@ -7,7 +7,6 @@
 	MATERIAL_BULK(MAT_STEEL, 75)
 	subspace_transmission = TRUE
 	canhear_range = 0 // can't hear headsets from very far away
-	slot_flags = SLOT_EARS
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/ears/mob_teshari.dmi',
 						SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi',
 						SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
@@ -21,6 +20,7 @@
 
 
 CAPABILITIES(/obj/item/radio/headset)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	owns_one(nameof(keyslot2), /obj/item/encryptionkey, starts = nameof(ks2type))
 	owns_one(nameof(keyslot1), /obj/item/encryptionkey, starts = nameof(ks1type))

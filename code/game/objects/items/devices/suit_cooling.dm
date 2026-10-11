@@ -6,10 +6,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	icon = 'icons/obj/suit_cooler.dmi'
 	icon_state = "suitcooler0"
 	item_state = "coolingpack"
-	slot_flags = SLOT_BACK
 
 	//copied from tank.dm
-	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
@@ -24,6 +22,8 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	//TODO: make it heat up the surroundings when not in space
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))

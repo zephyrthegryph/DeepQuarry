@@ -6,7 +6,6 @@
 	icon_state = "nanopaste"
 	amount = 10
 	max_amount = 10
-	toolspeed = 0.75 //Used in surgery, shouldn't be the same speed as a normal screwdriver on mechanical organ repair.
 	w_class = ITEMSIZE_SMALL
 	no_variants = FALSE
 
@@ -50,6 +49,7 @@
 
 /// Cyborgs are mended at the target (it must stay beside the user); a limb is mended by the stack's own op, started from attack() once the zone has been checked.
 CAPABILITIES(/obj/item/stack/nanopaste)
+	configure(item_tooling(speed = 0.75))
 	op("robot_repair", at_target(/mob/living/silicon/robot), answers(INTENT_USE, INTENT_ATTACK), when(req(PROC_REF(robot_needs_repair))), needs(req_adjacent()), wait(PROC_REF(robot_repair_time)), then(PROC_REF(robot_repaired)))
 	op("repair_limb", ai(), takes("patient", "limb", "restoration"), wait(PROC_REF(limb_repair_time), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_limb_done)))
 
@@ -62,7 +62,7 @@ CAPABILITIES(/obj/item/stack/nanopaste)
 	return (!!(demand?[TREAT_PLATING_REPAIR] || demand?[TREAT_WIRING_REPAIR])) ? null : MSG(req_failed)
 
 /obj/item/stack/nanopaste/proc/robot_repair_time(datum/act/op/A)
-	return 7 * toolspeed
+	return 7 * tooling_of(src).speed
 
 /obj/item/stack/nanopaste/proc/robot_repaired(datum/act/op/A)
 	var/mob/living/silicon/robot/R = A.target
@@ -75,7 +75,7 @@ CAPABILITIES(/obj/item/stack/nanopaste)
 	return OP_OK
 
 /obj/item/stack/nanopaste/proc/limb_repair_time(datum/act/op/A)
-	return 5 * toolspeed
+	return 5 * tooling_of(src).speed
 
 /obj/item/stack/nanopaste/proc/repair_limb_done(datum/act/op/A)
 	var/mob/living/user = A.actor

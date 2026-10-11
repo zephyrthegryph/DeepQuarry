@@ -79,7 +79,7 @@
 	if(internal)
 		if (!contents.Find(internal))
 			rel_clear(src, nameof(internal))
-		if (!(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)))
+		if (!(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT)))
 			rel_clear(src, nameof(internal))
 		if(internal)
 			if (internals)
@@ -112,7 +112,7 @@
 
 //Handle possble chem smoke effect
 /mob/living/carbon/proc/life_breathing_inhale_smoke(datum/gas_mixture/environment)
-	if(src.get_equipped_item(SLOT_ID_MASK) && (src.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
 
 	for(var/obj/effect/effect/smoke/chem/smoke in view(1, src))

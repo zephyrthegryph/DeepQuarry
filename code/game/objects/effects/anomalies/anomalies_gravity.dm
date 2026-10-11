@@ -21,13 +21,13 @@
 	for(var/mob/living/M in range(0, src))
 		if(ishuman(M))
 			var/mob/living/carbon/human/human = M
-			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (human.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(human.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				continue
 		gravShock(M)
 	for(var/mob/living/M in range(4, src))
 		if(ishuman(M))
 			var/mob/living/carbon/human/human = M
-			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (human.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))
+			if(istype(human.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots) && (worn_of(human.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))
 				continue
 		step_towards(M, src)
 	for(var/obj/O in range(0, src))

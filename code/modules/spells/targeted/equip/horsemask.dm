@@ -34,7 +34,7 @@
 	new_item.unacidable = TRUE
 	if(istype(new_item, /obj/item/clothing/mask/horsehead))
 		var/obj/item/clothing/mask/horsehead/magichead = new_item
-		magichead.flags_inv = null	//so you can still see their face
+		magichead.set_flags_inv(null)//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		magichead.say_verbs = list("neighs", "whinnys", "snorts")
 		magichead.say_messages = list("NEEEEIGH", "KEECHOOOW", "WHIIIINNNY", "NEEEEEEIGHHHH", "KEECHOOOWWW")

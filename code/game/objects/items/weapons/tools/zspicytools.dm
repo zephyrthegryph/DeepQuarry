@@ -7,9 +7,9 @@
 	icon_state = "heavysniper"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "heavysniper"
-	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
+	configure(item_tooling(speed = 0.1))
 	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_GUNSHOT_CANNON))
 
@@ -20,11 +20,11 @@ CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
 	icon_state = "lasercannon"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "mhdhowitzer-wielded"
-	toolspeed = 0.1
 	acti_sound = SFX_WEAPONS_KENETIC_RELOAD
 	always_process = TRUE
 
 CAPABILITIES(/obj/item/weldingtool/lasercannon)
+	configure(item_tooling(speed = 0.1))
 	configure(item_sounds(use = SFX_WEAPONS_LASERCANNONFIRE))
 
 /obj/item/weldingtool/lasercannon/weldingtool_step(datum/act/timer/A)
@@ -43,9 +43,9 @@ CAPABILITIES(/obj/item/weldingtool/lasercannon)
 	icon_state = "fuelrodgun"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "coilgun"
-	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/wrench/fuelrod)
+	configure(item_tooling(speed = 0.1))
 	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_RAILGUN))
 
@@ -56,9 +56,9 @@ CAPABILITIES(/obj/item/tool/wrench/fuelrod)
 	icon_state = "chainsaw0"
 	item_state = "chainsaw0"
 	random_color = FALSE
-	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
+	configure(item_tooling(speed = 0.1))
 	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_CHAINSAW_ATTACK))
 
@@ -69,9 +69,9 @@ CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
 	icon_state = "diamonddrill"
 	item_state = "jackhammer"
 	random_color = FALSE
-	toolspeed = 0.1
 
 CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
+	configure(item_tooling(speed = 0.1))
 	configure(item_combat(force = 30))
 	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
@@ -83,7 +83,9 @@ CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
 	item_state = "coil"
 	color = "#8A0303"
 	catalogue_data = null
-	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/stack/cable_coil/alien/blood)
+	configure(item_tooling(speed = 0.1))
 
 /obj/item/storage/belt/utility/spicyfull
 	starts_with = list(

@@ -9,6 +9,7 @@
 			)
 
 CAPABILITIES(/obj/item/melee)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON))
 

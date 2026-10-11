@@ -100,14 +100,14 @@ CAPABILITIES(/obj/item/surgical/surgicaldrill)
 	icon_state = "scalpel"
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
 	material_total = 10000 + 5000
 	var/clamp_chance = 0 // chance that the scalpel will perform cautery on its own
 
 CAPABILITIES(/obj/item/surgical/scalpel)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 10.0, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_KNIFE))
 
@@ -160,9 +160,9 @@ CAPABILITIES(/obj/item/surgical/scalpel/manager)
 	desc = "A horrifying bladed tool with a large metal spike in its center. The tool is used for rapidly removing organs or medical malpractice."
 	icon_state = "organ_ripper"
 	item_state = "bone_setter"
-	toolspeed = 0.75
 
 CAPABILITIES(/obj/item/surgical/scalpel/ripper)
+	configure(item_tooling(speed = 0.75))
 	configure(item_combat(force = 15.0))
 
 /*
@@ -173,13 +173,13 @@ CAPABILITIES(/obj/item/surgical/scalpel/ripper)
 	desc = "For heavy duty cutting."
 	icon_state = "saw"
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
 	material_total = 20000 + 10000
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/surgical/circular_saw)
+	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 15.0, attack_verbs = list("attacked", "slashed", "sawed", "cut"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_CIRCSAWHIT, drop = SFX_ITEMS_DROP_ACCESSORY))
 
@@ -192,9 +192,9 @@ CAPABILITIES(/obj/item/surgical/circular_saw)
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 	w_class = ITEMSIZE_NORMAL
 	material_total = 25000 + 20000
-	toolspeed = 0.75
 
 CAPABILITIES(/obj/item/surgical/circular_saw/manager)
+	configure(item_tooling(speed = 0.75))
 	configure(item_combat(attack_verbs = list("attacked", "slashed", "seared", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_EMITTER2))
 
@@ -205,9 +205,9 @@ CAPABILITIES(/obj/item/surgical/circular_saw/manager)
 	name = "bone gel"
 	desc = "For fixing bones."
 	icon_state = "bone-gel"
-	throwforce = 1.0
 
 CAPABILITIES(/obj/item/surgical/bonegel)
+	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE))
 
@@ -215,9 +215,9 @@ CAPABILITIES(/obj/item/surgical/bonegel)
 	name = "FixOVein"
 	desc = "Like bone gel. For veins."
 	icon_state = "fixovein"
-	throwforce = 1.0
 
 CAPABILITIES(/obj/item/surgical/FixOVein)
+	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOTTLE))
 
@@ -225,11 +225,11 @@ CAPABILITIES(/obj/item/surgical/FixOVein)
 	name = "bone setter"
 	desc = "Put them in their place."
 	icon_state = "bone_setter"
-	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bonesetter)
+	configure(item_thrown(force = 9.0))
 	configure(item_combat(force = 8.0, attack_verbs = list("attacked", "hit", "bludgeoned")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SCRAP))
 
@@ -237,11 +237,11 @@ CAPABILITIES(/obj/item/surgical/bonesetter)
 	name = "bone clamp"
 	desc = "The best way to get a bone fixed fast."
 	icon_state = "bone_clamp"
-	throwforce = 9
 	throw_speed = 3
 	throw_range = 5
 
 CAPABILITIES(/obj/item/surgical/bone_clamp)
+	configure(item_thrown(force = 9))
 	configure(item_combat(force = 8, attack_verbs = list("attacked", "hit", "bludgeoned")))
 
 
@@ -251,32 +251,48 @@ CAPABILITIES(/obj/item/surgical/bone_clamp)
  */
 /obj/item/surgical/retractor/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/retractor/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/hemostat/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/hemostat/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/cautery/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/cautery/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/surgicaldrill/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/surgicaldrill/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/scalpel/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/scalpel/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/circular_saw/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/circular_saw/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/FixOVein/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/surgical/FixOVein/alien)
+	configure(item_tooling(speed = 0.25))
 
 /obj/item/surgical/bone_clamp/alien
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.75
+
+CAPABILITIES(/obj/item/surgical/bone_clamp/alien)
+	configure(item_tooling(speed = 0.75))

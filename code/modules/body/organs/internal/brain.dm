@@ -8,7 +8,6 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	vital = TRUE
 	icon_state = "brain2"
 	w_class = ITEMSIZE_SMALL
-	throwforce = 1.0
 	throw_speed = 3
 	throw_range = 5
 	var/clone_source = FALSE
@@ -24,6 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	var/tmp/defib_decaying = FALSE
 
 CAPABILITIES(/obj/item/organ/internal/brain)
+	configure(item_thrown(force = 1.0))
 	configure(item_combat(force = 1.0, attack_verbs = list("attacked", "slapped", "whacked")))
 
 /// Fraction of max_damage below which a brain still recovers on its own

@@ -9,17 +9,17 @@
 	item_state = "cutters"
 	center_of_mass_x = 18
 	center_of_mass_y = 10
-	slot_flags = SLOT_BELT
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
 	material_total = 80
 	injury_kind = INJURY_CUT
-	toolspeed = 1
 	tool_qualities = list(TOOL_WIRECUTTER)
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/wirecutters)
+	configure(item_tooling(speed = 1))
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 6, attack_verbs = list("pinched", "nipped"), sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
 
@@ -73,8 +73,10 @@ CAPABILITIES(/obj/item/tool/wirecutters)
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wirecutters)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "cutters"
-	toolspeed = 0.1
 	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/wirecutters/alien)
+	configure(item_tooling(speed = 0.1))
 
 /obj/item/tool/wirecutters/hybrid
 	name = "strange wirecutters"
@@ -82,17 +84,17 @@ CAPABILITIES(/obj/item/tool/wirecutters)
 	icon_state = "hybcutters"
 	random_color = FALSE
 	w_class = ITEMSIZE_NORMAL
-	toolspeed = 0.4
 
 CAPABILITIES(/obj/item/tool/wirecutters/hybrid)
+	configure(item_tooling(speed = 0.4))
 	configure(item_combat(attack_verbs = list("pinched", "nipped", "warped", "blasted"), reach = 2))
 	configure(item_sounds(use = SFX_EFFECTS_STEALTHOFF))
 
 /obj/item/tool/wirecutters/power
 	name = "power cutters"
 	desc = "You shouldn't see this."
-	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/wirecutters/power)
+	configure(item_tooling(speed = 0.25))
 	configure(item_combat(force = 15))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_CUT))

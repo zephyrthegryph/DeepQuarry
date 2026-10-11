@@ -98,8 +98,8 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	recoil = 2 // Owch
 	accuracy = -15 // You know damn well why.
 	item_state = "gun"
-	slot_flags &= ~SLOT_BACK // You can't sling it on your back
-	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) // But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	set_slot_flags(worn_of(src).slots & (~SLOT_BACK))// You can't sling it on your back
+	set_slot_flags(worn_of(src).slots | ((SLOT_BELT|SLOT_HOLSTER)))// But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off rifle"
 	desc = "The firepower of a rifle, now the size of a pistol, with an effective combat range of about three feet. Uses 7.62mm rounds."
 	pump_animation = "sawn_rifle-cycling"
@@ -117,12 +117,14 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	item_state = "rifle"
 	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
 	max_shells = 4
-	slot_flags = null
 	caliber = "7.62mm" // Old(er) as shit rifle doesn't have very good tech.
 	ammo_type = /obj/item/ammo_casing/a762
 	load_method = SINGLE_CASING|SPEEDLOADER
 	action_sound = SFX_WEAPONS_RIFLEBOLT
 	pump_animation = "surplus-cycling"
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/surplus)
+	configure(item_worn(slots = TRAIT_NONE))
 
 /*
  * Scoped Rifle
@@ -171,7 +173,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
 	icon_state = "vox_hunting" //Broken
 	item_state = "vox_hunting"
 	ammo_type = /obj/item/ammo_casing/a762
-	throwforce = 10
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 20))

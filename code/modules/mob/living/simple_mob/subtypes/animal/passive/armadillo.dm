@@ -113,8 +113,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
 	old_hat.forceMove(get_turf(src))
 
 /obj/item/holder/armadillo
-	default_worn_icon = 'icons/mob/head.dmi'
 	//item_state = "armadillo_rest" //Commented here as a reminder that holders will always set the item_state to icon_rest. You cannot override it like this.
+
+CAPABILITIES(/obj/item/holder/armadillo)
+	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
 /mob/living/simple_mob/animal/passive/armadillo/torta
 	name = "Torta"

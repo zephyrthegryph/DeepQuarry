@@ -3,7 +3,6 @@
 	desc = "A heavy-duty concussion hammer typically used for mining, as it can pulverize and break rocks without damaging denser ores if used correctly. If used incorrectly, there are very few things it cannot smash; this fact made it an iconic weapon for the many uprisings of Mars. It uses a manually engaged concussive-force amplifier unit in the head to multiply impact power, but its weight and the charge up time makes it difficult to use effectively. Devastating if used correctly, but requires skill. It also appears to have a sling attached, so that you can carry it on your back if you need to."
 	icon_state = "forcemaul"
 	item_state = "forcemaul"
-	slot_flags = SLOT_BACK
 
 	//stopping power/lethality
 	var/unwielded_force_divisor = 0.25
@@ -24,7 +23,6 @@
 	var/excavation_amount = 200
 	var/destroy_artefacts = TRUE	//sorry, breaks stuff
 
-	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
 	var/lightcolor = "#D3FDFD"
@@ -179,6 +177,8 @@ TRACKED(/obj/item/melee/shock_maul, status)
 TRACKED(/obj/item/melee/shock_maul, wielded)
 
 CAPABILITIES(/obj/item/melee/shock_maul)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 25))
 	configure(item_combat(force = 35, armor_penetration = 20, can_cleave = TRUE, attack_speed = 12, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))

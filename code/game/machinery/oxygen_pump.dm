@@ -140,7 +140,7 @@ MSG_DEF_SELF(oxygen_pump/no_tank, "There is no tank in it.")
 		return "\The [target] doesn't have a mouth."
 	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
 		return "\The [target] is already wearing a mask."
-	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
+	if(target.get_equipped_item(SLOT_ID_HEAD) && (worn_of(target.get_equipped_item(SLOT_ID_HEAD)).covers & FACE))
 		return "Remove their [target.get_equipped_item(SLOT_ID_HEAD)] first."
 	if(!tank)
 		return "There is no tank in \the [src]."

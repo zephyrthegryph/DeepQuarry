@@ -8,7 +8,6 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/uses = 1
 	var/nofail
 
@@ -22,6 +21,7 @@
 MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
 
 CAPABILITIES(/obj/item/dnainjector)
+	configure(item_worn(slots = SLOT_EARS))
 	owns_one(nameof(buf), /datum/dna2/record)
 	op("inject", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Inject"),
 		needs(req_adjacent(), req_bool(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))

@@ -153,7 +153,7 @@ emp_act
 	var/list/results = list()
 	var/list/clothing_items = list(get_equipped_item(SLOT_ID_HEAD), get_equipped_item(SLOT_ID_MASK), get_equipped_item(SLOT_ID_SUIT), get_equipped_item(SLOT_ID_UNIFORM), get_equipped_item(SLOT_ID_GLOVES), get_equipped_item(SLOT_ID_SHOES))
 	for(var/obj/item/clothing/C in clothing_items)
-		if(istype(C) && (C.body_parts_covered & def_zone.body_part))
+		if(istype(C) && (worn_of(C).covers & def_zone.body_part))
 			results.Add(C)
 	return results
 
@@ -178,7 +178,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL))
 			return gear
 	return null
 
@@ -186,7 +186,7 @@ emp_act
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 	var/list/protective_gear = H.get_covering_clothing(FACE)
 	for(var/obj/item/gear in protective_gear)
-		if(istype(gear) && (gear.body_parts_covered & FACE) && !(gear.item_flags & FLEXIBLEMATERIAL) && !(gear.item_flags & ALLOW_SURVIVALFOOD))
+		if(istype(gear) && (worn_of(gear).covers & FACE) && !(worn_of(gear).flags & FLEXIBLEMATERIAL) && !(worn_of(gear).flags & ALLOW_SURVIVALFOOD))
 			return gear
 	return null
 
@@ -348,7 +348,7 @@ emp_act
 						throw_mode_off()
 						return
 
-		var/throw_damage = thrown_object.throwforce*(speed/THROWFORCE_SPEED_DIVISOR)
+		var/throw_damage = thrown_of(thrown_object).force*(speed/THROWFORCE_SPEED_DIVISOR)
 
 		if(species && species.throwforce_absorb_threshold >= throw_damage)
 			act_message(src, null, others = span_infoplain(span_bold("%I%") + " simply bounces off of %U%'s body!"), item = thrown_object)
@@ -441,7 +441,7 @@ emp_act
 		if(temp && !temp.is_usable())
 			return FALSE	// The hand isn't working in the first place
 
-	if(!O.catchable)
+	if(!thrown_of(O).catchable)
 		return FALSE
 
 	// Alright, our hand works? Time to try the catching.
@@ -532,7 +532,7 @@ emp_act
 	for(var/part in weights)
 		var/through = weights[part]
 		for(var/obj/item/clothing/C in worn)
-			if(C.body_parts_covered & part)
+			if(worn_of(C).covers & part)
 				through *= protection_of(C).permeability
 		. += through
 
@@ -592,7 +592,7 @@ emp_act
 	if(!check_has_mouth())
 		return TRUE
 
-	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FACE))
+	if((isobj(get_equipped_item(SLOT_ID_HEAD)) && worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE) || isobj(get_equipped_item(SLOT_ID_MASK)) && worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE|| (isobj(get_equipped_item(SLOT_ID_SUIT)) && worn_of(get_equipped_item(SLOT_ID_SUIT)).covers & FACE))
 		return TRUE
 
 	return FALSE

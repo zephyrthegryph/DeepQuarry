@@ -345,7 +345,9 @@ TYPE_TABLE_DECLARE(/obj/structure/glamour_ring, other_choices, list("Yes", "No")
 	name = "glamour bubble"
 	icon = 'icons/obj/glamour.dmi'
 	icon_state = "bubble"
-	item_flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD | INFINITE_AIR
+
+CAPABILITIES(/obj/item/clothing/mask/gas/glamour)
+	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT | ALLOW_SURVIVALFOOD | INFINITE_AIR))
 
 //Glamour Pockets
 

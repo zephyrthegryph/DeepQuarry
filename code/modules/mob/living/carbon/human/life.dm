@@ -552,11 +552,11 @@
 	/** breathing **/
 
 /mob/living/carbon/human/life_breathing_inhale_smoke(datum/gas_mixture/environment)
-	if(src.get_equipped_item(SLOT_ID_MASK) && (src.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
-	if(src.get_equipped_item(SLOT_ID_EYES) && (src.get_equipped_item(SLOT_ID_EYES).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(src.get_equipped_item(SLOT_ID_EYES) && (worn_of(src.get_equipped_item(SLOT_ID_EYES)).flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
-	if(src.get_equipped_item(SLOT_ID_HEAD) && (src.get_equipped_item(SLOT_ID_HEAD).item_flags & BLOCK_GAS_SMOKE_EFFECT))
+	if(src.get_equipped_item(SLOT_ID_HEAD) && (worn_of(src.get_equipped_item(SLOT_ID_HEAD)).flags & BLOCK_GAS_SMOKE_EFFECT))
 		return
 	..()
 
@@ -573,7 +573,7 @@
 		else if(Void)
 			suit_supply = Void.tank
 
-		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))))
+		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))))
 			rel_clear(src, nameof(internal))
 
 		if(internal)
@@ -596,7 +596,7 @@
 		src.suiciding--
 		return 0
 
-	if(src.get_equipped_item(SLOT_ID_MASK) && (src.get_equipped_item(SLOT_ID_MASK).item_flags & INFINITE_AIR))
+	if(src.get_equipped_item(SLOT_ID_MASK) && (worn_of(src.get_equipped_item(SLOT_ID_MASK)).flags & INFINITE_AIR))
 		src.failed_last_breath = 0
 		src.body?.set_breath_quality(1)
 		return
@@ -1407,7 +1407,7 @@
 /// A worn rig helmet whose visor restriction blinds.
 /mob/living/carbon/human/proc/life_status_rig_visor_blinds()
 	var/obj/item/rig/O = src.get_equipped_item(SLOT_ID_BACK)
-	if(!istype(O) || !O.helmet || O.helmet != src.get_equipped_item(SLOT_ID_HEAD) || !(O.helmet.body_parts_covered & EYES))
+	if(!istype(O) || !O.helmet || O.helmet != src.get_equipped_item(SLOT_ID_HEAD) || !(worn_of(O.helmet).covers & EYES))
 		return FALSE
 	return (O.offline && O.offline_vision_restriction == 2) || (!O.offline && O.vision_restriction == 2)
 
@@ -1597,7 +1597,7 @@
 	if(istype(mask) && !mask.up)
 		return TRUE
 	var/obj/item/rig/O = src.get_equipped_item(SLOT_ID_BACK)
-	if(istype(O) && O.helmet && O.helmet == src.get_equipped_item(SLOT_ID_HEAD) && (O.helmet.body_parts_covered & EYES))
+	if(istype(O) && O.helmet && O.helmet == src.get_equipped_item(SLOT_ID_HEAD) && (worn_of(O.helmet).covers & EYES))
 		if((O.offline && O.offline_vision_restriction == 1) || (!O.offline && O.vision_restriction == 1))
 			return TRUE
 	return FALSE

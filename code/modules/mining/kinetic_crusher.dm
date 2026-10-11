@@ -17,8 +17,6 @@
 	desc = "An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. \
 	While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna."
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
-	throwforce = 5
 	throw_speed = 4
 	embed_chance = FALSE
 	actions_types = list(/datum/action/item_action/toggle_light)
@@ -59,6 +57,8 @@ CAPABILITIES(/obj/item/kinetic_crusher/cyborg)
 
 
 CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 25, armor_penetration = 10, attack_verbs = list("smashed", "crushed", "cleaved", "chopped", "pulped"), sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
@@ -170,11 +170,11 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 	icon_state = "crusher-glaive"
 	detonation_damage = 20 // 40
 	backstab_bonus = 30 // 60
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	requires_wield = FALSE
 
 CAPABILITIES(/obj/item/kinetic_crusher/glaive)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 20, reach = 2))
 
 /obj/item/kinetic_crusher/machete
@@ -195,9 +195,9 @@ CAPABILITIES(/obj/item/kinetic_crusher/glaive)
 	backstab_bonus = 80 // 140
 	thrown_bonus = 20 // 160
 	update_item_state = FALSE
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("cleaved", "chopped", "pulped", "stabbed", "skewered"), can_cleave = TRUE, sharp = TRUE, edge = TRUE, force = 24))
 
 /obj/item/kinetic_crusher/machete/gauntlets
@@ -213,9 +213,9 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete)
 	detonation_damage = 65 // 100
 	backstab_bonus = 25 // 125
 	var/obj/item/offhand/crushergauntlets/offhand
-	slot_flags = null
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
+	configure(item_worn(slots = TRAIT_NONE))
 	configure(item_combat(attack_verbs = list("bashed", "kicked", "punched", "struck", "axe kicked", "uppercut", "cross-punched", "jabbed", "hammerfisted", "roundhouse kicked"), can_cleave = FALSE, armor_penetration = 0, force = 35))
 	configure(item_sounds(hit = SFX_WEAPONS_RESONATOR_BLAST))
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)

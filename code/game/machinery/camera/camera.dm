@@ -200,7 +200,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if (!isobj(source))
 		return
 	var/obj/item/O = source
-	if(O.throwforce >= src.toughness)
+	if(thrown_of(O).force >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
@@ -291,7 +291,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/weld_duration(datum/act/op/A)
 	var/obj/item/W = A.held_provider()
-	return 10 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+	return 10 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
 
 /obj/machinery/camera/proc/welder_used(datum/act/op/A)
 	welded_off(A.actor, A.held)

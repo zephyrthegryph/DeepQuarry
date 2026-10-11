@@ -115,15 +115,15 @@ CAPABILITIES(/obj/structure/AIcore)
 
 /obj/structure/AIcore/proc/frame_wrench_duration(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
-	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
+	return 2 SECONDS * tooling_of(tool).speed * tool_skill_factor(A.actor, TOOL_WRENCH)
 
 /obj/structure/AIcore/proc/frame_weld_duration(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
-	return 2 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+	return 2 SECONDS * tooling_of(tool).speed * tool_skill_factor(A.actor, TOOL_WELDER)
 
 /obj/structure/AIcore/deactivated/proc/core_wrench_duration(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
-	return 4 SECONDS * tool.toolspeed * tool_skill_factor(A.actor, TOOL_WRENCH)
+	return 4 SECONDS * tooling_of(tool).speed * tool_skill_factor(A.actor, TOOL_WRENCH)
 /obj/structure/AIcore/proc/construction_welder_started(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
 	var/obj/item/weldingtool/welder = tool.get_welder()

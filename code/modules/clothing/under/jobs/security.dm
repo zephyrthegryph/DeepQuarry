@@ -76,9 +76,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/security/aces)
 	icon_state = "dispatch"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
 	armor_spec = "melee=10"
-	body_parts_covered = CHEST|LEGS
 
 CAPABILITIES(/obj/item/clothing/under/rank/dispatch)
+	configure(item_worn(covers = CHEST|LEGS))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/security2

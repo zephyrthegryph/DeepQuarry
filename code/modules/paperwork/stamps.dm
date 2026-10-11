@@ -4,9 +4,7 @@
 	icon = 'icons/obj/bureaucracy_yw.dmi'
 	icon_state = "stamp-qm"
 	item_state = "stamp"
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_HOLSTER
 	throw_speed = 7
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 60)
@@ -14,6 +12,8 @@
 	var/stamptext = null
 
 CAPABILITIES(/obj/item/stamp)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_thrown(force = 0))
 	configure(item_combat(attack_verbs = list("stamped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 

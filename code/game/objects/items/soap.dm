@@ -6,8 +6,6 @@
 	icon_state = "soap"
 	flags = NOCONDUCT | NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_HOLSTER
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 
@@ -40,6 +38,8 @@ MSG_DEF(soap/clean_begin, span_notice("You begin to clean %T% with %I%..."), "%U
 
 /// Soap used on something close by: a bite of itself, a decal scrubbed out, a dry floor scrubbed, anything else cleaned.
 CAPABILITIES(/obj/item/soap)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_thrown(force = 0))
 	reagents(5)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	op("bite", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART + 3), answers(INTENT_USE, INTENT_ATTACK), label("Take a bite"), when(req(PROC_REF(bites_own_mouth))),

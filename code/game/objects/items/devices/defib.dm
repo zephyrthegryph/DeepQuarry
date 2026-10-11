@@ -7,8 +7,6 @@
 	icon = 'icons/obj/defibrillator.dmi'
 	icon_state = "defibunit"
 	item_state = "defibunit"
-	slot_flags = SLOT_BACK
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
@@ -17,6 +15,8 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
@@ -142,7 +142,9 @@ CAPABILITIES(/obj/item/defib_kit)
 	icon_state = "defibcompact"
 	item_state = "defibcompact"
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/defib_kit/compact)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/defib_kit/compact/loaded
 	bcell = /obj/item/cell/high
@@ -169,9 +171,7 @@ CAPABILITIES(/obj/item/defib_kit)
 	icon_state = "defibpaddles"
 	item_state = "defibpaddles"
 	gender = PLURAL
-	throwforce = 6
 	w_class = ITEMSIZE_LARGE
-	item_flags = NOSTRIP
 
 	var/safety = 1 //if you can zap people with the paddles on harm mode
 	var/combat = 0 //If it can be used to revive people wearing thick clothing (e.g. spacesuits)
@@ -295,7 +295,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 /obj/item/shockpaddles/proc/check_contact(mob/living/carbon/human/H)
 	if(!combat)
 		for(var/obj/item/clothing/cloth in list(H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM)))
-			if((cloth.body_parts_covered & UPPER_TORSO) && (cloth.item_flags & THICKMATERIAL))
+			if((worn_of(cloth).covers & UPPER_TORSO) && (worn_of(cloth).flags & THICKMATERIAL))
 				return FALSE
 	return TRUE
 
@@ -562,6 +562,8 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 		return OP_OK
 
 CAPABILITIES(/obj/item/shockpaddles)
+	configure(item_worn(flags = NOSTRIP))
+	configure(item_thrown(force = 6))
 	configure(item_combat(force = 2))
 	// The revive chain and the shock, started by do_revive() / do_electrocute() with the patient: each claims the paddles while it runs.
 	op("revive_place", ai(), takes("patient", "spot"), claims(CLAIM_TARGET), wait(3 SECONDS), then(PROC_REF(do_revive_timed_done)))

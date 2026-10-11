@@ -16,8 +16,6 @@
 	desc = "A mysterious blade that emanates terrifying power"
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	throwforce = 10
-	toolspeed = 5 //Syncs perfectly with the animation time.
 	injury_kind = INJURY_CUT
 	embed_chance = 0
 	var/stored_blood = 0 //How much energy we have!
@@ -32,6 +30,8 @@
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
+	configure(item_tooling(speed = 5))
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 	op("convert_turf", ai(), takes("turf"), wait(PROC_REF(convert_time)), then(PROC_REF(convert_turf_done)))
@@ -358,12 +358,12 @@ CAPABILITIES(/datum/prompt/choice/artifact_blade_action)
 	if(stored_blood < consecration_cost)
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
-	conjure_animation(A, toolspeed)
+	conjure_animation(A, tooling_of(src).speed)
 	perform_op(user, src, "convert_turf", null, ORIGIN_SYSTEM, AUTH_PHYSICAL, with = list("turf" = A))
 	return TRUE
 
 /obj/item/melee/artifact_blade/proc/convert_time(datum/act/op/A)
-	return toolspeed
+	return tooling_of(src).speed
 
 /obj/item/melee/artifact_blade/proc/convert_turf_done(datum/act/op/op_act)
 	var/atom/A = op_act.arg("turf")

@@ -38,9 +38,11 @@
 	desc = "A huge, bulky mass of pressure and temperature-resistant organic tissue, evolved to facilitate space travel."
 	flags = NONE	//Not THICKMATERIAL because it's organic tissue, so if somebody tries to inject something into it,
 				//it still ends up in your blood. (also balance but muh fluff)
-	item_flags = THICKMATERIAL | DROPDEL | NOSTRIP
 	armor_spec = "cold=60" //No armor at all.
 	canremove = FALSE
+
+CAPABILITIES(/obj/item/clothing/suit/space/changeling)
+	configure(item_worn(flags = THICKMATERIAL | DROPDEL | NOSTRIP))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
 
@@ -57,9 +59,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	desc = "A covering of pressure and temperature-resistant organic tissue with a glass-like chitin front."
 	flags = BLOCKHAIR //Again, no THICKMATERIAL.
 	armor_spec = "cold=60"
-	body_parts_covered = HEAD|FACE|EYES
 	canremove = FALSE
-	item_flags = THICKMATERIAL | AIRTIGHT | FLEXIBLEMATERIAL | DROPDEL | NOSTRIP
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/changeling)
+	configure(item_worn(covers = HEAD|FACE|EYES, flags = THICKMATERIAL | AIRTIGHT | FLEXIBLEMATERIAL | DROPDEL | NOSTRIP))
 
 /obj/item/clothing/shoes/magboots/changeling
 	desc = "A suction cupped mass of flesh, shaped like a foot."
@@ -67,7 +70,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	icon_state = "lingspacesuit"
 	actions_types = list(/datum/action/item_action/toggle_grippers)
 	canremove = FALSE
-	item_flags = DROPDEL | NOSTRIP
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/changeling)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/clothing/shoes/magboots/changeling/set_slowdown()
 	slowdown = shoes? max(SHOES_SLOWDOWN, shoes.slowdown): SHOES_SLOWDOWN	//So you can't put on magboots to make you walk faster.
@@ -80,13 +85,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	var/mob/user = A.actor
 	..()
 	if(magpulse)
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = 0
 		set_slowdown()
 		set_force(3)
 		to_chat(user, "We release our grip on the floor.")
 	else
-		item_flags |= NOSLIP
+		set_item_flags(worn_of(src).flags | (NOSLIP))
 		magpulse = 1
 		set_slowdown()
 		set_force(5)
@@ -98,11 +103,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 	name = "chitinous mass"
 	desc = "A tough, hard covering of black chitin."
 	icon_state = "lingarmor"
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = "melee=75;bullet=60;laser=60;energy=60;bomb=60;cold=60" //It costs 3 points, so it should be very protective.
 	slowdown = 1.5
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling/armored)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 	configure(item_protection(siemens = 0.3, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/space/changeling/armored/Initialize(mapload)

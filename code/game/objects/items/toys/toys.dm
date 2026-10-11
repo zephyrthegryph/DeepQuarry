@@ -18,11 +18,11 @@
  */
 
 /obj/item/toy
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/toy)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES))
 
@@ -95,7 +95,6 @@ CAPABILITIES(/obj/item/toy/balloon)
 /obj/item/toy/syndicateballoon
 	name = "criminal balloon"
 	desc = "There is a tag on the back that reads \"FUK NT!11!\"."
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
@@ -103,13 +102,13 @@ CAPABILITIES(/obj/item/toy/balloon)
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/syndicateballoon)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/nanotrasenballoon
 	name = "criminal balloon"
 	desc = "Across the balloon the following is printed: \"Man, I love NanoTrasen soooo much. I use only NT products. You have NO idea.\""
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
@@ -117,13 +116,13 @@ CAPABILITIES(/obj/item/toy/syndicateballoon)
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/nanotrasenballoon)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/colorballoon /// To color it, VV the 'color' var with a hex color code with the # included.
 	name = "balloon"
 	desc = "It's a plain little balloon. Comes in many colors!"
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 	icon = 'icons/obj/weapons.dmi'
@@ -131,6 +130,7 @@ CAPABILITIES(/obj/item/toy/nanotrasenballoon)
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/colorballoon)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
@@ -245,11 +245,11 @@ TRACKED(/obj/item/toy/sword, lcolor)
 		slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
 		)
-	slot_flags = SLOT_BELT | SLOT_BACK
-	throwforce = 5
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/toy/katana)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("attacked", "slashed", "stabbed", "sliced")))
 
 /*
@@ -295,9 +295,9 @@ CAPABILITIES(/obj/item/toy/snappop)
 	icon_state = "bosunwhistle"
 	var/cooldown = 0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_HOLSTER
 
 CAPABILITIES(/obj/item/toy/bosunwhistle)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARD))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -1194,12 +1194,14 @@ CAPABILITIES(/obj/item/toy/plushie)
 /obj/item/toy/plushie/squid
 	name = DEVELOPER_WARNING_NAME
 
+CAPABILITIES(/obj/item/toy/plushie/squid)
+	configure(item_worn(slots = SLOT_HEAD))
+
 /obj/item/toy/plushie/squid
 	name = "green squid plushie"
 	desc = "A small, cute and loveable squid friend. This one is green."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "greensquid"
-	slot_flags = SLOT_HEAD
 	pokephrase = "Squrr!"
 	bubble_icon = "tentacles"
 
@@ -1464,9 +1466,9 @@ CAPABILITIES(/obj/item/toy/griffin)
 	desc = "No bother to sink or swim when you can just float!"
 	icon_state = "inflatable"
 	icon = 'icons/inventory/belt/item.dmi'
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/inflatable_duck)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/xmastree
@@ -1475,9 +1477,9 @@ CAPABILITIES(/obj/item/inflatable_duck)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "tinyxmastree"
 	w_class = ITEMSIZE_TINY
-	throwforce = 1
 
 CAPABILITIES(/obj/item/toy/xmastree)
+	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
@@ -1490,9 +1492,9 @@ CAPABILITIES(/obj/item/toy/xmastree)
 	desc = "This should never display."
 	icon = 'icons/obj/chess.dmi'
 	w_class = ITEMSIZE_SMALL
-	throwforce = 1
 
 CAPABILITIES(/obj/item/toy/chess)
+	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))
 
@@ -2409,8 +2411,6 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi',
 		)
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 5
 	var/bullets_left = 0
@@ -2420,6 +2420,8 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	spin_cylinder()
 
 CAPABILITIES(/obj/item/toy/russian_revolver)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
 	after_init(0, then(PROC_REF(revolver_after_init)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -2510,12 +2512,12 @@ CAPABILITIES(/obj/item/toy/russian_revolver/trick_revolver)
 	desc = "A toy chainsaw with a rubber edge. Ages 8 and up"
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
-	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
 	var/cooldown = 0
 
 CAPABILITIES(/obj/item/toy/chainsaw)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0, attack_verbs = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -2646,8 +2648,6 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "universal_id"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_ID | SLOT_EARS
-	body_parts_covered = 0
 
 	sprite_sheets = null
 
@@ -2655,6 +2655,7 @@ CAPABILITIES(/obj/item/toy/snake_popper)
 	worn_state = "golem"  //It's basically just a coincidentally black iconstate in the file.
 
 CAPABILITIES(/obj/item/clothing/under/universalid)
+	configure(item_worn(slots = SLOT_ID | SLOT_EARS, covers = 0))
 	configure(item_sounds(equip = TRAIT_NONE))
 
 /*
@@ -2666,10 +2667,10 @@ CAPABILITIES(/obj/item/clothing/under/universalid)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "sonic_driver"
 	item_state = "screwdriver_black"
-	toolspeed = 1
 	random_color = FALSE
 
 CAPABILITIES(/obj/item/tool/screwdriver/sdriver)
+	configure(item_tooling(speed = 1))
 	configure(item_sounds(use = SFX_ITEMS_SONIC_DRIVER))
 
 /*
@@ -3021,7 +3022,6 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	desc = "This is Strix Hades the plushie Avali. Very soft, with a pompom on the tail. The toy is made well, as if alive. Looks like he is sleeping. Shhh!"
 	icon_state = "strixplush"
 	item_state = "strixplush"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	pokephrase = "Weh!"
 	icon = 'icons/obj/toy_yw.dmi'
 	item_icons = list(
@@ -3029,6 +3029,9 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+CAPABILITIES(/obj/item/toy/plushie/teshari/strix)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
 
 /obj/item/toy/plushie/teshari/strix/rename_refusal(datum/act/op/A)
 	return "You cannot rename Strix Hades, you hug him anyway."
@@ -3038,7 +3041,6 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	desc = "This is a plushie that resembles an Avali named Eili. The ammount of detail makes it almost look lifelike! Looks like she is sleeping. Shhh!"
 	icon_state = "jeans_eiliplush"
 	item_state = "jeans_eiliplush"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	pokephrase = "Weh!"
 	icon = 'icons/vore/custom_items_yw.dmi'
 	item_icons = list(
@@ -3046,6 +3048,9 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_r_hand_str = 'icons/vore/custom_items_right_hand_yw.dmi',
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
+
+CAPABILITIES(/obj/item/toy/plushie/teshari/eili)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
 
 /obj/item/toy/plushie/teshari/eili/rename_refusal(datum/act/op/A)
 	return "You cannot rename Eili, you hug her anyway."
@@ -3056,13 +3061,15 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	icon_state = "teshariplushie_brown"
 	item_state = "teshariplushie_brown"
 	pokephrase = "Rya!"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	icon = 'icons/obj/toy_yw.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+CAPABILITIES(/obj/item/toy/plushie/teshari/_yw)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
 
 /obj/item/toy/plushie/teshari/w_yw
 	name = "lifelike teshari plush"
@@ -3070,7 +3077,6 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	icon_state = "teshariplushie_white"
 	item_state = "teshariplushie_white"
 	pokephrase = "Rya!"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	icon = 'icons/obj/toy_yw.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
@@ -3078,13 +3084,15 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
+CAPABILITIES(/obj/item/toy/plushie/teshari/w_yw)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
+
 /obj/item/toy/plushie/teshari/b_yw
 	name = "lifelike teshari plush"
 	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
 	icon_state = "teshariplushie_black"
 	item_state = "teshariplushie_black"
 	pokephrase = "Rya!"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	icon = 'icons/obj/toy_yw.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
@@ -3093,19 +3101,24 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_head_str = 'icons/mob/toy_worn.dmi',
 		slot_ear_str = 'icons/mob/toy_worn.dmi')
 
+CAPABILITIES(/obj/item/toy/plushie/teshari/b_yw)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
+
 /obj/item/toy/plushie/teshari/y_yw
 	name = "lifelike teshari plush"
 	desc = "This is a plush teshari. Very soft. The ammount of detail makes it almost look lifelike! Looks like it is sleeping. Shhh!"
 	icon_state = "teshariplushie_yellow"
 	item_state = "teshariplushie_yellow"
 	pokephrase = "Rya!"
-	slot_flags = SLOT_BACK | SLOT_HEAD
 	icon = 'icons/obj/toy_yw.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_toys.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_toys.dmi',
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
+
+CAPABILITIES(/obj/item/toy/plushie/teshari/y_yw)
+	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
 
 /obj/item/toy/nuke/proc/alarm_sequence()
 	icon_state = "nuketoy"

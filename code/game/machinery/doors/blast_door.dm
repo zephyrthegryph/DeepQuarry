@@ -149,7 +149,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 /// A thing in hand that pries (a crowbar, a fireaxe, a blade).
 /obj/machinery/door/blast/proc/prying_item(datum/act/op/A)
 	var/obj/item/held = A.held
-	return istype(held) && held.pry == 1 // ALLOW(reads): an item's pry is fixed for its life
+	return istype(held) && tooling_of(held).pry == 1 // ALLOW(reads): an item's pry is fixed for its life
 
 /// Broken (a hostile hand with a prying tool still pries a broken door).
 /obj/machinery/door/blast/proc/wrecked(datum/act/A)
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/machinery/door/blast)
 		else
 			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 			playsound(src, hitsound, 100, 1)
-			receive_weapon_hit(W, user, combat_of(W).force * (W.pry == 1 ? 0.35 : 0.15), silent = FALSE)
+			receive_weapon_hit(W, user, combat_of(W).force * (tooling_of(W).pry == 1 ? 0.35 : 0.15), silent = FALSE)
 	return OP_OK
 
 /// Sheets of plasteel it would take to mend it fully (one per 150 points).

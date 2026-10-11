@@ -25,7 +25,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/adhoc_fallback = FALSE //Falls back to 'radio' mode if subspace not available
 	var/syndie = FALSE//Holder to see if it's a syndicate encrypted radio
 	var/centComm = FALSE//Holder to see if it's a CentCom encrypted radio
-	slot_flags = SLOT_BELT
 	throw_speed = 2
 	throw_range = 9
 	w_class = ITEMSIZE_SMALL
@@ -149,6 +148,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/machinery/telecomms/var/list/obj/item/radio/bs_rx_listeners
 
 CAPABILITIES(/obj/item/radio)
+	configure(item_worn(slots = SLOT_BELT))
 	links(/obj/item/radio::bs_tx_receiver, /obj/machinery/telecomms::bs_tx_senders, b_many = TRUE)
 	links(/obj/item/radio::bs_rx_broadcaster, /obj/machinery/telecomms::bs_rx_listeners, b_many = TRUE)
 	after_init(0, then(PROC_REF(radio_after_init)))
@@ -917,9 +917,11 @@ CAPABILITIES(/obj/item/radio/borg)
 	icon_state = "radio"
 	name = "subspace radio"
 	subspace_transmission = 1
-	throwforce = 5
 	throw_range = 7
 	throw_speed = 1
+
+CAPABILITIES(/obj/item/radio/subspace)
+	configure(item_thrown(force = 5))
 
 //* Bluespace Radio *//
 /obj/item/bluespaceradio/southerncross_prelinked

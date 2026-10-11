@@ -4,7 +4,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "fire_extinguisher0"
 	item_state = "fire_extinguisher"
-	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 2
 	throw_range = 10
@@ -23,7 +22,6 @@
 	desc = "A light and compact fibreglass-framed model fire extinguisher."
 	icon_state = "miniFE0"
 	item_state = "miniFE"
-	throwforce = 2
 	w_class = ITEMSIZE_SMALL
 	max_water = 150
 	spray_particles = 3
@@ -35,7 +33,6 @@
 	desc = "A heavy duty fire extinguisher meant to fight large fires."
 	icon_state = "atmos_extinguisher0"
 	item_state = "atmos_extinguisher"
-	throwforce = 12
 	w_class = ITEMSIZE_LARGE
 	max_water = 600
 	spray_particles = 3
@@ -43,10 +40,12 @@
 	rand_overlays = 0
 
 CAPABILITIES(/obj/item/extinguisher/mini)
+	configure(item_thrown(force = 2))
 	configure(item_combat(force = 3.0))
 	configure(item_sounds(hit = TRAIT_NONE))
 	configure(reagents(starts = list(REAGENT_ID_FIREFOAM = 150)))
 CAPABILITIES(/obj/item/extinguisher/atmo)
+	configure(item_thrown(force = 12))
 	configure(item_combat(force = 12))
 	configure(reagents(add = list(REAGENT_ID_FIREFOAM = 300))) // 600 total
 
@@ -62,6 +61,7 @@ CAPABILITIES(/obj/item/extinguisher/atmo)
 		. += "[src] has [src.reagents.total_volume] units of foam left!"
 
 CAPABILITIES(/obj/item/extinguisher)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("slammed", "whacked", "bashed", "thunked", "battered", "bludgeoned", "thrashed")))
 	configure(item_sounds(hit = SFX_WEAPONS_SMASH, drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	reagents(nameof(max_water), starts = list(REAGENT_ID_FIREFOAM = 300))

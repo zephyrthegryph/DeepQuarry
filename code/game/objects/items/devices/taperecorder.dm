@@ -13,12 +13,12 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	var/playsleepseconds = 0.0
 	var/obj/item/rectape/mytape = /obj/item/rectape/random
 	COOLDOWN_DECLARE(canprint)
-	slot_flags = SLOT_BELT
-	throwforce = 2
 	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/taperecorder)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// A recorder hears what is said around it (the listening registry).
 	membership(joins = REGISTRY_LISTENING_OBJECTS)
@@ -441,7 +441,6 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 	icon_state = "tape_white"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_TINY
-	throwforce = 0
 	var/max_capacity = 1800
 	var/used_capacity = 0
 	var/list/storedinfo
@@ -456,6 +455,7 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 
 
 CAPABILITIES(/obj/item/rectape)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 1))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))

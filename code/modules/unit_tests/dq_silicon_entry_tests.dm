@@ -250,7 +250,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/silicon/robot/R = make_borg(list(ACCESS_ENGINE))
 	var/obj/item/tool = give_module(R, /obj/item/tool/screwdriver/cyborg)
-	tool.toolspeed = 0
+	tool.set_toolspeed(0)
 	TEST_ASSERT_EQUAL(R.get_active_hand(), tool, "the module is the cyborg's held item")
 	gesture(R, D, "left=1")
 	TEST_ASSERT(p2_door_panel_open(D), "the cyborg's screwdriver module opens the door's panel")

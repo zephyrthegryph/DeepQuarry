@@ -4,11 +4,11 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "nose"
 	desc = "The BOOP module, a simple reagent and atmosphere scanner."
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	flags = NOBLUDGEON //No more attack messages
 
 CAPABILITIES(/obj/item/boop_module)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0, attack_verbs = list("nuzzled", "nosed", "booped")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -362,11 +362,11 @@ CAPABILITIES(/obj/item/lightreplacer/dogborg)
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "pounce"
 	desc = "Leap at your target to momentarily stun them."
-	throwforce = 0
 	var/bluespace = FALSE
 	flags = NOBLUDGEON
 
 CAPABILITIES(/obj/item/dogborg/pounce)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 

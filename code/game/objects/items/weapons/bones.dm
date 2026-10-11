@@ -4,18 +4,20 @@
 	desc = "A non-descript bone. It's so old and worn you can barely tell which part of the body it's from."
 	icon = 'icons/obj/bones.dmi'
 	icon_state = "bone"
-	throwforce = 6
 	item_state = "bone"
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/bone)
+	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5, attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned")))
 
 /obj/item/bone/skull
 	name = "skull"
 	desc = "A skull. Judging by the shape and size, you'd guess that it might be human."
 	icon_state = "skull"
-	throwforce = 7
+
+CAPABILITIES(/obj/item/bone/skull)
+	configure(item_thrown(force = 7))
 
 /obj/item/bone/skull/tajaran
 	desc = "A skull. Judging by the shape and size, you'd guess that it might be tajaran."

@@ -40,6 +40,21 @@ SPECS = {
         skip={"code/game/objects/items.dm"},
         skip_refs=r"(^|\.)species$",  # a species' own siemens_coefficient
     ),
+    "item_thrown": dict(
+        base="/obj/item", ctor="item_thrown", reader="thrown_of", type_reader="thrown_of_type",
+        fields={"throwforce": "force", "catchable": "catchable"},
+        skip={"code/game/objects/items/item_thrown.dm"},
+    ),
+    "item_worn": dict(
+        base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
+        fields={"slot_flags": "slots", "flags_inv": "hides", "body_parts_covered": "covers", "item_flags": "flags", "default_worn_icon": "worn_icon"},
+        skip={"code/game/objects/items/item_worn.dm"},
+    ),
+    "item_tooling": dict(
+        base="/obj/item", ctor="item_tooling", reader="tooling_of", type_reader="tooling_of_type",
+        fields={"toolspeed": "speed", "pry": "pry", "rock_climbing": "climbing"},
+        skip={"code/game/objects/items/item_tooling.dm"},
+    ),
     "item_combat": dict(
         base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",

@@ -6,7 +6,6 @@
 	icon_state = "blank"
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
-	slot_flags = SLOT_HOLSTER
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
@@ -14,6 +13,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)
+				if(H.get_equipped_item(SLOT_ID_SHOES) && worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP)
 					return
 
 			M.stop_pulling()

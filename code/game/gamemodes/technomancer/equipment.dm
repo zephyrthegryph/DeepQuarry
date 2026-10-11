@@ -184,9 +184,9 @@
 	desc = "It's a purple gem, attached to a rod and a handle, along with small wires.  It looks like it would make a good club."
 	icon = 'icons/obj/technomancer.dmi'
 	icon_state = "scepter"
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/scepter)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 15, attack_verbs = list("beaten", "smashed", "struck", "whacked")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -217,7 +217,9 @@ CAPABILITIES(/obj/item/scepter)
 	name = "spyglass"
 	desc = "It's a hand-held telescope, useful for star-gazing, peeping, and recon."
 	icon_state = "spyglass"
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/binoculars/spyglass)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 /obj/item/clothing/glasses/monocoole

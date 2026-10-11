@@ -8,10 +8,10 @@
 	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/ion
 
 CAPABILITIES(/obj/item/gun/energy/ionrifle)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/ionrifle/empty
@@ -24,12 +24,12 @@ CAPABILITIES(/obj/item/gun/energy/ionrifle)
 	icon_state = "ionpistol"
 	item_state = null
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/ion/pistol
 	move_delay = 0 // Pistols have move_delay of 0
 
 CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/decloner
@@ -149,7 +149,6 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	desc = "For the love of god, make sure you're aiming this the right way!"
 	icon_state = "riotgun"
 	item_state = "c20r"
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/meteor
 	cell_type = /obj/item/cell/potato
@@ -158,6 +157,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	recharge_time = 5 //Time it takes for shots to recharge (in ticks)
 	charge_meter = 0
 
+CAPABILITIES(/obj/item/gun/energy/meteorgun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /obj/item/gun/energy/meteorgun/pen
 	name = "meteor pen"
 	desc = "The pen is mightier than the sword."
@@ -165,7 +167,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/gun/energy/meteorgun/pen)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 /obj/item/gun/energy/mindflayer
@@ -191,13 +195,15 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	icon = 'icons/obj/gun.dmi'
 	item_icons = null
 	icon_state = "staffofchange"
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_LARGE
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/change
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 	charge_meter = 0
+
+CAPABILITIES(/obj/item/gun/energy/staff)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/staff/special_check(mob/user)
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
@@ -224,7 +230,6 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	desc = "An artifact that channels the will of the user into destructive bolts of force. If you aren't careful with it, you might poke someone's brain out."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "focus"
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/forcebolt
 	/*
 	attack_self(mob/living/user as mob)
@@ -237,6 +242,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 			to_chat(user, span_warning("The [src.name] will now strike only a single person."))
 			projectile_type = "/obj/item/projectile/forcebolt"
 	*/
+
+CAPABILITIES(/obj/item/gun/energy/staff/focus)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/dakkalaser
 	name = "suppression gun"
@@ -387,7 +395,6 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi',
 		)
-	slot_flags = SLOT_BELT
 	accuracy = 100
 	fire_delay = 12
 	fire_sound = SFX_WEAPONS_ELUGER
@@ -399,6 +406,7 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	charge_cost = 2500
 
 CAPABILITIES(/obj/item/gun/energy/medigun)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/bfgtaser
@@ -408,7 +416,6 @@ CAPABILITIES(/obj/item/gun/energy/medigun)
 	fire_sound = SFX_EFFECTS_PHASEIN
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
@@ -448,6 +455,7 @@ CAPABILITIES(/obj/item/gun/energy/medigun)
 	spun = FALSE
 
 CAPABILITIES(/obj/item/gun/energy/bfgtaser)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	op("spin_up", ai(), takes("aim", "clickparams", "pointblank", "reflex", "stance"), wait(0.8 SECONDS), on_interrupt(PROC_REF(spin_ended)), then(PROC_REF(spun_up)))
 
 /obj/item/projectile/beam/stun/weak/BFG
@@ -590,7 +598,6 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/supercannon)
 	wielded_item_state = "supercannon-wielded"
 	w_class = ITEMSIZE_HUGE
 	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 2400 //You got 1 shot...
 	self_recharge = TRUE
 	recharge_time = 6 HOURS //This is how to get around rechargers being able to recharge it, I dont wanna rewrite base level code
@@ -604,6 +611,7 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/supercannon)
 		)
 
 CAPABILITIES(/obj/item/gun/energy/supercannon)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 15))
 
 /obj/item/gun/energy/floragun/ownership()

@@ -13,8 +13,6 @@
 	name = "pickaxe"
 	desc = "A miner's best friend."
 	icon = 'icons/obj/items.dmi'
-	slot_flags = SLOT_BELT
-	throwforce = 4.0
 	icon_state = "pickaxe"
 	item_state = "pickaxe"
 	w_class = ITEMSIZE_LARGE
@@ -30,6 +28,8 @@
 	var/borg_flags = COUNTS_AS_ROBOTIC_MELEE //The ONLY reason this gets this here is because pickaxes are SO hardcoded that it's easier to add it here than everywhere else. Please do not attach this to everything that you desire. Only VERY SPECIFIC THINGS under CERTAIN CIRCUMSTANCES, PLEASE. 99% of things can be added to code\modules\projectiles\guns\energy\cyborg.dm
 
 CAPABILITIES(/obj/item/pickaxe)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4.0))
 	configure(item_combat(force = 15.0, attack_verbs = list("hit", "pierced", "sliced", "attacked"), sharp = TRUE))
 
 /obj/item/pickaxe/silver
@@ -133,8 +133,6 @@ CAPABILITIES(/obj/item/pickaxe/plasmacutter)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shovel"
 	item_state = "shovel"
-	slot_flags = SLOT_BELT
-	throwforce = 4.0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 50)
 	var/digspeed = 40
@@ -143,6 +141,8 @@ CAPABILITIES(/obj/item/pickaxe/plasmacutter)
 TRACKED(/obj/item/shovel, grave_mode)
 
 CAPABILITIES(/obj/item/shovel)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4.0))
 	configure(item_combat(force = 8.0, attack_verbs = list("bashed", "bludgeoned", "thrashed", "whacked"), sharp = FALSE, edge = TRUE))
 	op("toggle_grave_mode", hand(), gesture(GESTURE_ALT), label("Toggle digging mode"),
 		needs(req_adjacent()), then(PROC_REF(grave_mode_toggled)))
@@ -159,6 +159,7 @@ CAPABILITIES(/obj/item/shovel)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/shovel/wood)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(sharp = 0, edge = 1))
 	param(nameof(shovel_material), pos = 1, apply = PROC_REF(carve))
 
@@ -185,10 +186,10 @@ CAPABILITIES(/obj/item/shovel/wood)
 	desc = "A small tool for digging and moving dirt."
 	icon_state = "spade"
 	item_state = "spade"
-	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/shovel/spade)
+	configure(item_thrown(force = 7.0))
 	configure(item_combat(force = 5.0))
 
 /obj/item/shovel/wood
@@ -196,7 +197,6 @@ CAPABILITIES(/obj/item/shovel/spade)
 	desc = "An improvised tool for digging and moving dirt."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "woodshovel"
-	slot_flags = SLOT_BELT
 	item_state = "woodshovel"
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_WOOD, 50)
@@ -210,9 +210,9 @@ CAPABILITIES(/obj/item/shovel/spade)
 	icon_state = "icepick"
 	item_state = "icepick"
 	MATERIAL_BULK(MAT_STEEL, 12000) //Same as a knife
-	throwforce = 0
 
 CAPABILITIES(/obj/item/ice_pick)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 15))
 
 /*****************************Flags********************************/

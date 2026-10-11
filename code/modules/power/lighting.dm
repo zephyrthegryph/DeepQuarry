@@ -897,7 +897,6 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 /obj/item/light
 	icon = 'icons/obj/lighting.dmi'
-	throwforce = 5
 	w_class = ITEMSIZE_TINY
 	MATERIAL_BULK(MAT_STEEL, 60)
 
@@ -1006,6 +1005,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))

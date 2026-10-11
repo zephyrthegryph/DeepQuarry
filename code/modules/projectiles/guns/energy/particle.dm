@@ -13,7 +13,6 @@
 	classify them as dangerous weapons (at least, not dangerous to whoever they're pointed at) - instead, in most \
 	jurisdictions including NT space, APP guns are officially classed as mining equipment rather than firearms."
 	fire_sound = SFX_WEAPONS_BLASTER
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	projectile_type = /obj/item/projectile/bullet/particle
 	fire_delay = 10
@@ -23,6 +22,7 @@
 	recoil_mode = 0
 
 CAPABILITIES(/obj/item/gun/energy/particle)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(attached_safety), /obj/item/pressurelock)
 	op("remove_safety", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART), label("Remove safety"), when(req(PROC_REF(safety_attached))), begins(MSG(particle_gun/removing_safety)), wait(2.5 SECONDS), then(PROC_REF(safety_removed)))
 
@@ -34,7 +34,6 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	icon_state = "particle"
 	item_state = "particle"
 	desc = "An antiparticle projector gun with an enhanced power-generation unit."
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_LARGE	//bigger than a pistol, too.
 	fire_delay = 6	//This one's not a handgun, it should have the same fire delay as everything else
 	self_recharge = 1
@@ -44,6 +43,7 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	charge_delay = 10 //Starts recharging faster after firing than an AEG though.
 
 CAPABILITIES(/obj/item/gun/energy/particle/advanced)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/particle/cannon //particle version of laser cannon
@@ -52,7 +52,6 @@ CAPABILITIES(/obj/item/gun/energy/particle/advanced)
 	icon_state = "heavyparticle"
 	item_state = "heavyparticle"
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/particle/heavy
 	battery_lock = 1
 	fire_delay = 15 // fires faster than a laser cannon. c'mon, it's an awesome-but-impractical endgame gun.
@@ -65,6 +64,7 @@ CAPABILITIES(/obj/item/gun/energy/particle/advanced)
 	recharge_time = 8 //40 ticks after that to refill the whole thing.
 
 CAPABILITIES(/obj/item/gun/energy/particle/cannon)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10))
 
 //special behaviours for particle guns below

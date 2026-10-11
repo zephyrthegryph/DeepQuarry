@@ -266,11 +266,11 @@ CAPABILITIES(/obj/item/inducer)
 
 	charge = 100
 	maxcharge = 100
-	item_flags = ABSTRACT
 
 	var/mob/living/carbon/human/hume
 
 CAPABILITIES(/obj/item/cell/standin)
+	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
 
 // ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds

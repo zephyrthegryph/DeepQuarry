@@ -8,7 +8,6 @@
 	icon = 'icons/obj/gun.dmi' // Gun Sprites
 	icon_state = "pulse"
 	item_state = null	//so the human update icon uses the icon_state instead.
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/beam
 	charge_cost = 120
 	fire_delay = 8
@@ -22,6 +21,7 @@
 		)
 
 CAPABILITIES(/obj/item/gun/energy/pulse_rifle)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/pulse_rifle/mounted
@@ -76,10 +76,12 @@ CAPABILITIES(/obj/item/gun/energy/pulse_rifle)
 	tended to be form over function - despite their flashy looks, most were completely unremarkable one way or another as weapons and used very standard \
 	firing mechanisms.The Grasshopper remains one of the smallest production laser pistols ever produced that is still capable of causing significant \
 	damage to organic tissue."
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	icon_state = "pulsepistol"
 	charge_cost = 480
 	w_class = ITEMSIZE_NORMAL //.
+
+CAPABILITIES(/obj/item/gun/energy/pulse_rifle/compact)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/energy/pulse_rifle/compact/admin
 	name = "\improper LP4 Mantis Deluxe"

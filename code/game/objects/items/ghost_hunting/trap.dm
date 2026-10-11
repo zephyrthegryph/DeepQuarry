@@ -11,7 +11,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
@@ -19,6 +18,7 @@
 TRACKED(/obj/item/ghost_trap, deployed)
 
 CAPABILITIES(/obj/item/ghost_trap)
+	configure(item_thrown(force = 0))
 	// The captured entity working its way out (container_resist() starts it): two minutes.
 	op("break_out", ai(), wait(2 MINUTES), then(PROC_REF(container_resist_timed_done)))
 	ref_one(nameof(captured_entity))

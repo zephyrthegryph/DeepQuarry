@@ -120,7 +120,6 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 	desc = "Note to self: buy more sticky notes."
 	icon = 'icons/obj/stickynotes.dmi'
 	color = COLOR_YELLOW
-	slot_flags = 0
 
 /obj/item/paper/sticky/Initialize(mapload)
 	. = ..()
@@ -140,6 +139,7 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 
 // Copied from duct tape.
 CAPABILITIES(/obj/item/paper/sticky)
+	configure(item_worn(slots = 0))
 	extend("pick_up_item", then(PROC_REF(sticky_picked_up)))
 
 /// Picking a note up off a wall ends its persistence.

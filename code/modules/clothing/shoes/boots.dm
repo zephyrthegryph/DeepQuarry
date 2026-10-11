@@ -204,8 +204,10 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/winter)
 	name = "climbing winter boots"
 	desc = "A pair of winter boots, with metal bracing attached to assist in climbing rocky terrain."
 	icon_state = "climbing_boots"
-	rock_climbing = TRUE
 	//Climbing delay with boots is 1
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/winter/climbing)
+	configure(item_tooling(climbing = TRUE))
 
 /obj/item/clothing/shoes/boots/tactical
 	name = "tactical boots"
@@ -239,9 +241,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/jungle)
 	desc = "When you want to turn up the heat."
 	icon_state = "swat"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
-	item_flags = NOSLIP
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/swat)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/shoes/boots/combat //Basically SWAT shoes combined with galoshes.
@@ -249,9 +251,9 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/swat)
 	desc = "When you REALLY want to turn up the heat"
 	icon_state = "swat"
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=10"
-	item_flags = NOSLIP
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/combat)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.6, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 

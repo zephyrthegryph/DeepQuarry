@@ -87,7 +87,7 @@ CAPABILITIES(/obj/item/stack/material/log)
 /// A sharper, stronger blade cuts faster.
 /obj/item/stack/material/log/proc/cut_time(datum/act/op/A)
 	var/obj/item/W = A.held
-	return (3 SECONDS / max(combat_of(W).force / 10, 1)) * W.toolspeed
+	return (3 SECONDS / max(combat_of(W).force / 10, 1)) * tooling_of(W).speed
 
 /obj/item/stack/material/log/proc/cut_planks_done(datum/act/op/A)
 	var/mob/user = A.actor

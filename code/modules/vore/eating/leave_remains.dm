@@ -122,7 +122,6 @@
 	desc = "A bleached bone. It's very non-descript and its hard to tell what species or part of the body it came from."
 	icon = 'icons/obj/bones_vr.dmi'
 	icon_state = "generic-1"
-	throwforce = 0
 	item_state = "bone"
 	w_class = ITEMSIZE_SMALL
 	var/pred_ckey
@@ -153,6 +152,7 @@ CAPABILITIES(/obj/item/digestion_remains/synth)
 		update_transform()
 
 CAPABILITIES(/obj/item/digestion_remains)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODWEAPON))
 	op("remains_crumble_self", in_hand(), stance(I_HURT), label("Crumble"), then(PROC_REF(remains_crumble_self)))

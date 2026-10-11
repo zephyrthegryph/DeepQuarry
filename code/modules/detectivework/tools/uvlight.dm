@@ -3,7 +3,6 @@
 	desc = "A small handheld black light."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "uv_off"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	actions_types = list(/datum/action/item_action/toggle_uv_light)
@@ -20,6 +19,7 @@
 TRACKED(/obj/item/uv_light, on)
 
 CAPABILITIES(/obj/item/uv_light)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	every(2 SECONDS, then(PROC_REF(uv_light_step)), when = nameof(on))

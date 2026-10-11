@@ -274,7 +274,7 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	if(ishuman(target))
 		var/mob/living/carbon/human/human_target = target
 		for(var/obj/item/clothing/cloth in list(human_target.get_equipped_item(SLOT_ID_SUIT), human_target.get_equipped_item(SLOT_ID_UNIFORM), human_target.get_equipped_item(SLOT_ID_SHOES))) //Check if we have a thick material covering our feet.
-			if((cloth.body_parts_covered & FEET) && (cloth.item_flags & THICKMATERIAL))
+			if((worn_of(cloth).covers & FEET) && (worn_of(cloth).flags & THICKMATERIAL))
 				..()
 				return
 		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)

@@ -6,7 +6,6 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	icon_state = "pointer"
 	item_state = "pen"
 	var/pointer_icon_state
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
 	var/turf/pointer_loc
 	var/energy = 8
@@ -51,6 +50,7 @@ TYPE_TABLE(/obj/item/laser_pointer/ultimate, pointer_forced_diode, /obj/item/sto
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/laser_pointer)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("item", item(/obj/item/stock_parts/micro_laser), label("Install"), then(PROC_REF(interaction_item)))
 	// The battery trickles back while recharging.

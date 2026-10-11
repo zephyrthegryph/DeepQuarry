@@ -209,33 +209,39 @@
 	desc = "A thin plate of padded material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_light"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.5 //Subtracted from total slowdown
 	material_slowdown_multiplier = 0.4 //Multiplied by total slowdown
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/light)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/makeshift/heavy //Craftable with 8 material sheets, more slowdown, more armour
 	name = "heavy armor plate"
 	desc = "A thick plate of padded material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_medium"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 1.2
 	material_slowdown_modifier = 0
 	material_slowdown_multiplier = 0.5
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/heavy)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/custom //Not yet craftable, advanced version made with science!
 	name = "custom armor plate"
 	desc = "A composite plate of custom machined material, designed to fit into a plate carrier. Attaches to a plate carrier."
 	icon = 'icons/obj/clothing/modular_armor.dmi'
 	icon_state = "armor_tactical"
-	body_parts_covered = CHEST
 	slot = ACCESSORY_SLOT_ARMOR_C
 	material_armor_modifier = 1.2
 	material_slowdown_modifier = 0.5
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/custom)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/accessory/material/makeshift/armguards
 	name = "arm guards"
@@ -245,11 +251,13 @@
 	icon_override = 'icons/mob/modular_armor.dmi'
 	icon_state = "armguards_material"
 	gender = PLURAL
-	body_parts_covered = ARMS
 	slot = ACCESSORY_SLOT_ARMOR_A
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.8
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/armguards)
+	configure(item_worn(covers = ARMS))
 
 /obj/item/clothing/accessory/material/makeshift/legguards
 	name = "leg guards"
@@ -259,11 +267,13 @@
 	icon_override = 'icons/mob/modular_armor.dmi'
 	icon_state = "legguards_material"
 	gender = PLURAL
-	body_parts_covered = LEGS
 	slot = ACCESSORY_SLOT_ARMOR_L
 	material_armor_modifier = 0.8
 	material_slowdown_modifier = 0.8
 	material_slowdown_multiplier = 0.4
+
+CAPABILITIES(/obj/item/clothing/accessory/material/makeshift/legguards)
+	configure(item_worn(covers = LEGS))
 
 /obj/item/clothing/suit/armor/material/makeshift/durasteel
 	default_material = MAT_DURASTEEL
@@ -385,7 +395,6 @@ CAPABILITIES(/obj/item/material/armor_plating/insert)
 /obj/item/clothing/head/helmet/bucket
 	name = "bucket"
 	desc = "It's a bucket with a large hole cut into it.  You could wear it on your head and look really stupid."
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
 	icon_state = "bucket"
 	armor_spec = "melee=5"
 
@@ -394,6 +403,7 @@ CAPABILITIES(/obj/item/material/armor_plating/insert)
 	icon_state = "woodbucket"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/bucket)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
 	op("bucket_helmet_material", item(/obj/item/stack/material), label("Reinforce"), then(PROC_REF(bucket_helmet_material)))
 
 /// Old attackby: two sheets of material make a makeshift helmet.
@@ -411,8 +421,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/bucket)
 
 /obj/item/clothing/head/helmet/material
 	name = "helmet"
-	flags_inv = HIDEEARS|HIDEEYES|BLOCKHAIR
 	default_material = MAT_STEEL
+
+CAPABILITIES(/obj/item/clothing/head/helmet/material)
+	configure(item_worn(hides = HIDEEARS|HIDEEYES|BLOCKHAIR))
 
 /obj/item/clothing/head/helmet/material/makeshift
 	name = "bucket"

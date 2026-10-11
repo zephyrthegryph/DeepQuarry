@@ -3,7 +3,6 @@
 	desc = "An officially postmarked, tamper-evident parcel regulated by CentCom and made of high-quality materials."
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "mail_small"
-	item_flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	/// Destination tagging for the mail sorter.
@@ -196,6 +195,7 @@ TRACKED(/obj/item/mail, postmark_roll)
 		look.overlay(look_overlay_image(icon, "postmark", pixel_x = stamp_offset_x + postmark_dx, pixel_y = stamp_offset_y + low + round(postmark_roll * (1 - low)), appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/mail)
+	configure(item_worn(flags = NOBLUDGEON))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	// the old attack_self: open the letter
 	op("unwrap", in_hand(), label("Unwrap"), needs(req_bool(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
@@ -415,7 +415,6 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 	desc = "A bag for letters, envelopes and other postage."
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "mailbag"
-	slot_flags = SLOT_BELT | SLOT_POCKET
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 31
 	max_storage_space = 50
@@ -424,6 +423,7 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 
 
 CAPABILITIES(/obj/item/storage/bag/mail)
+	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET))
 	configure(storage(accepts = list(
 		/obj/item/mail,
 		/obj/item/smallDelivery,
@@ -446,16 +446,16 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 /obj/item/mail_scanner
 	name = "mail scanner"
 	desc = "Sponsored by the Intergalactic Mail Service, this device logs mail deliveries in exchance for financial compensation."
-	throwforce = 0
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "mail_scanner"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	var/cargo_points = 5
 	/// Relation view: the last scanned envelope (it stays wherever it is).
 	var/obj/item/mail/saved
 
 CAPABILITIES(/obj/item/mail_scanner)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 
 /obj/item/mail_scanner/examine(mob/user)

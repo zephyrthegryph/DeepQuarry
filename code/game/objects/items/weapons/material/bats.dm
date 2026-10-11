@@ -3,14 +3,14 @@
 	desc = "HOME RUN!"
 	icon_state = "metalbat0"
 	base_icon = "metalbat"
-	throwforce = 7
 	default_material = MAT_WOOD
 	force_divisor = 1.1           // 22 when wielded with weight 20 (steel)
 	unwielded_force_divisor = 0.7 // 15 when unwielded based on above.
 	dulled_divisor = 0.75		  // A "dull" bat is still gonna hurt
-	slot_flags = SLOT_BACK
 
 CAPABILITIES(/obj/item/material/twohanded/baseballbat)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 7))
 	configure(item_combat(attack_verbs = list("smashed", "beaten", "slammed", "smacked", "struck", "battered", "bonked")))
 	configure(item_sounds(hit = SFX_WEAPONS_GENHIT3))
 

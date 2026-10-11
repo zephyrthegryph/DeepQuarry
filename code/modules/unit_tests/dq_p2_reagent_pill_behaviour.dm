@@ -277,7 +277,7 @@
 	TEST_ASSERT_EQUAL(torso.robotic, 0, "the fresh torso is organic")
 	TEST_ASSERT(covered_patient.can_inject(H, FALSE, BP_TORSO, FALSE, INJECT_METHOD_NEEDLE, FALSE), "the bare healthy torso accepts the needle")
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	TEST_ASSERT(vest.item_flags & THICKMATERIAL, "the actual armour blocks needles through thick material")
+	TEST_ASSERT(worn_of(vest).flags & THICKMATERIAL, "the actual armour blocks needles through thick material")
 	TEST_ASSERT(covered_patient.equip_to_slot_if_possible(vest, SLOT_ID_SUIT), "the fresh patient wears covering armour")
 	TEST_ASSERT(!covered_patient.can_inject(H, FALSE, BP_TORSO, FALSE, INJECT_METHOD_NEEDLE, FALSE), "the equipped armour now blocks the same needle")
 	rc_click(H, covered_patient, patch, I_HELP, FALSE)

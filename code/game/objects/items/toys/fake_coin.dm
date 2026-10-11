@@ -9,9 +9,7 @@
 	description_fluff = "This isn't a real coin; you can't use it on vending machines."
 	icon_state = "coin"
 	randpixel = 8
-	throwforce = 0.0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/sides = 2
 
 /obj/item/fake_coin/gold
@@ -100,6 +98,8 @@
 	icon_state = "coin_verdantium"
 
 CAPABILITIES(/obj/item/fake_coin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.0))
 	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

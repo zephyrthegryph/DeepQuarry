@@ -51,7 +51,6 @@
 		)
 	item_state = "kineticgun"
 	cell_type = /obj/item/cell/device/weapon/empproof
-	item_flags = NONE
 	charge_meter = FALSE
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
@@ -102,6 +101,7 @@
 		M.uninstall(src, FALSE)
 
 CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	configure(item_worn(flags = NONE))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/crowbar_used(datum/act/op/A)

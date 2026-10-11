@@ -53,7 +53,7 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
 	set_force(force_unwielded)
-	throwforce = round(combat_of(src).force*thrown_force_divisor)
+	set_throwforce(round(combat_of(src).force*thrown_force_divisor))
 
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -93,11 +93,11 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	dulled_divisor = 0.75	//Still metal on a stick
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	force_wielded = 30
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
@@ -105,12 +105,12 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe)
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		pry = 1
+		set_pry(1)
 		set_force(force_wielded)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		pry = 0
+		set_pry(0)
 		set_force(force_unwielded)
 		name = "[base_name]"
 	..()
@@ -148,7 +148,6 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BACK
 	force_divisor = 0.5 			// 15 when wielded with hardness 30 (glass)
 	unwielded_force_divisor = 0.375
 	thrown_force_divisor = 1.5 		// 22.5 when thrown with weight 15 (glass)
@@ -159,6 +158,7 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
 
 CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 10, edge = FALSE, sharp = TRUE, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored"), reach = 2, attack_speed = 14))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
@@ -230,12 +230,12 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		pry = 1
+		set_pry(1)
 		set_force(force_wielded)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		pry = 0
+		set_pry(0)
 		set_force(force_unwielded)
 		name = "[base_name]"
 	..()
@@ -264,11 +264,11 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	name = "Mjollnir"
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
-	throwforce = 15
 	force_wielded = 75
 	slowdown = 0
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
+	configure(item_thrown(force = 15))
 	configure(item_combat(force = 50))
 	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGBOLT))
 

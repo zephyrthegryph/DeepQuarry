@@ -60,7 +60,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	set_force(round(combat_of(src).force*force_divisor))
 	if(dulled)
 		set_force(round(combat_of(src).force*dulled_divisor))
-	throwforce = round(material.blunt_damage()*thrown_force_divisor)
+	set_throwforce(round(material.blunt_damage()*thrown_force_divisor))
 
 /obj/item/material/proc/set_material(new_material)
 	material = get_material_by_name(new_material)

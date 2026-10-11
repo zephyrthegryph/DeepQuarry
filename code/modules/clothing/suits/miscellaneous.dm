@@ -17,11 +17,10 @@
 	desc = "A stylish, shiny, very blue puffer coat."
 	icon_state = "puffycoatblue"
 	item_state = "puffycoatblue"
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "blue_labcoat", slot_l_hand_str = "blue_labcoat")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/puffyblue)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/puffypurple
@@ -29,11 +28,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/puffyblue)
 	desc = "A stylish, shiny, very purple puffer coat."
 	icon_state = "puffycoatpurple"
 	item_state = "puffycoatpurple"
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "purple_labcoat", slot_l_hand_str = "purple_labcoat")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/puffypurple)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/puffyred
@@ -41,11 +39,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/puffypurple)
 	desc = "A stylish, shiny, very crimson puffer coat."
 	icon_state = "puffycoatred"
 	item_state = "puffycoatred"
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "red_labcoat", slot_l_hand_str = "red_labcoat")
 
 CAPABILITIES(/obj/item/clothing/suit/storage/puffyred)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /*
@@ -57,7 +54,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/puffyred)
 	desc = "Yarr."
 	icon_state = "pirate"
 	item_state_slots = list(slot_r_hand_str = "greatcoat", slot_l_hand_str = "greatcoat")
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/pirate)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/poncho
 	name = "poncho"
@@ -69,23 +68,26 @@ CAPABILITIES(/obj/item/clothing/suit/storage/puffyred)
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 		)
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/poncho)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/hgpirate
 	name = "pirate captain coat"
 	desc = "Yarr."
 	icon_state = "hgpirate"
 	item_state_slots = list(slot_r_hand_str = "greatcoat", slot_l_hand_str = "greatcoat")
-	flags_inv = HIDEJUMPSUIT
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/suit/hgpirate)
+	configure(item_worn(hides = HIDEJUMPSUIT, covers = CHEST|ARMS|LEGS))
 
 /obj/item/clothing/suit/cyborg_suit
 	name = "cyborg suit"
 	desc = "Suit for a cyborg costume."
 	icon_state = "death"
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/cyborg_suit)
+	configure(item_worn(hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(max_heat = T0C+5200))
 
 /obj/item/clothing/suit/greatcoat
@@ -93,29 +95,35 @@ CAPABILITIES(/obj/item/clothing/suit/cyborg_suit)
 	desc = "A heavy great coat"
 	icon_state = "gentlecoat"
 	item_state_slots = list(slot_r_hand_str = "greatcoat", slot_l_hand_str = "greatcoat")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/greatcoat)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/johnny_coat
 	name = "johnny~~ coat"
 	desc = "Johnny~~"
 	icon_state = "gentlecoat"
 	item_state_slots = list(slot_r_hand_str = "johnny_coat", slot_l_hand_str = "johnny_coat")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/johnny_coat)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/justice
 	name = "justice suit"
 	desc = "This pretty much looks ridiculous."
 	icon_state = "gentlecoat"
 	item_state_slots = list(slot_r_hand_str = "greatcoat", slot_l_hand_str = "greatcoat")
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	body_parts_covered = CHEST|ARMS|HANDS|LEGS|FEET
+
+CAPABILITIES(/obj/item/clothing/suit/justice)
+	configure(item_worn(hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER, covers = CHEST|ARMS|HANDS|LEGS|FEET))
 
 /obj/item/clothing/suit/judgerobe
 	name = "judge's robe"
 	desc = "This robe commands authority."
 	icon_state = "judge"
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/judgerobe)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/judgerobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -123,15 +131,18 @@ TYPE_TABLE(/obj/item/clothing/suit/judgerobe, suit_storage_spec, list(HOLD_ONLY(
 	name = "coveralls"
 	desc = "A set of denim overalls."
 	icon_state = "overalls"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/apron/overalls)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/suit/syndicatefake
 	name = "red space suit replica"
 	icon_state = "syndicate"
 	desc = "A plastic replica of a mercenary combat space suit, you'll look just like a real bloodthirsty mercenary in this! This is a toy, it is not made for use in space!"
 	w_class = ITEMSIZE_NORMAL
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
-	body_parts_covered = CHEST|ARMS|HANDS|LEGS|FEET
+
+CAPABILITIES(/obj/item/clothing/suit/syndicatefake)
+	configure(item_worn(hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, covers = CHEST|ARMS|HANDS|LEGS|FEET))
 
 TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -140,24 +151,25 @@ TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_O
 	desc = "Robes not meant to be worn by man"
 	icon_state = "hastur"
 	item_state_slots = list(slot_r_hand_str = "rad", slot_l_hand_str = "rad")
-	body_parts_covered = CHEST|LEGS|FEET|ARMS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/hastur)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/imperium_monk
 	name = "Imperium monk"
 	desc = "Have YOU killed a xenos today?"
 	icon_state = "imperium_monk"
-	body_parts_covered = HEAD|CHEST|LEGS|FEET|ARMS
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/imperium_monk)
+	configure(item_worn(covers = HEAD|CHEST|LEGS|FEET|ARMS, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/chickensuit
 	name = "Chicken Suit"
 	desc = "A suit made long ago by the ancient empire KFC."
 	icon_state = "chickensuit"
-	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/chickensuit)
+	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/monkeysuit
@@ -165,10 +177,9 @@ CAPABILITIES(/obj/item/clothing/suit/chickensuit)
 	desc = "A suit that looks like a primate"
 	icon_state = "monkeysuit"
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/monkeysuit)
+	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/holidaypriest
@@ -176,88 +187,98 @@ CAPABILITIES(/obj/item/clothing/suit/monkeysuit)
 	desc = "This is a nice holiday my son."
 	icon_state = "holidaypriest"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/holidaypriest)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/cardborg
 	name = "cardborg suit"
 	desc = "An ordinary cardboard box with holes cut in the sides."
 	icon_state = "cardborg"
-	body_parts_covered = CHEST
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/cardborg)
+	configure(item_worn(covers = CHEST, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/skeleton
 	name = "skeleton costume"
 	desc = "A body-tight costume with the human skeleton lined out on it."
 	icon_state = "skelecost"
-	body_parts_covered = CHEST|LEGS|ARMS|FEET|HANDS|EYES|HEAD|FACE
-	flags_inv = HIDEJUMPSUIT|HIDESHOES|HIDEGLOVES|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "judge", slot_l_hand_str = "judge")
+
+CAPABILITIES(/obj/item/clothing/suit/skeleton)
+	configure(item_worn(covers = CHEST|LEGS|ARMS|FEET|HANDS|EYES|HEAD|FACE, hides = HIDEJUMPSUIT|HIDESHOES|HIDEGLOVES|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/engicost
 	name = "sexy engineering voidsuit costume"
 	desc = "It's supposed to look like an engineering voidsuit... It doesn't look like it could protect from much radiation."
 	icon_state = "engicost"
-	body_parts_covered = CHEST|FEET
-	flags_inv = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
+
+CAPABILITIES(/obj/item/clothing/suit/engicost)
+	configure(item_worn(covers = CHEST|FEET, hides = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/maxman
 	name = "doctor maxman costume"
 	desc = "A costume made to look like Dr. Maxman, the famous male-enhancement salesman. Complete with red do-rag and sleeveless labcoat."
 	icon_state = "maxman"
-	body_parts_covered = LOWER_TORSO|FEET|LEGS|HEAD
-	flags_inv = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/maxman)
+	configure(item_worn(covers = LOWER_TORSO|FEET|LEGS|HEAD, hides = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/iasexy
 	name = "sexy internal affairs suit"
 	desc = "Now where's your pen?~"
 	icon_state = "iacost"
-	body_parts_covered = UPPER_TORSO|FEET|LOWER_TORSO|EYES
-	flags_inv = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
+
+CAPABILITIES(/obj/item/clothing/suit/iasexy)
+	configure(item_worn(covers = UPPER_TORSO|FEET|LOWER_TORSO|EYES, hides = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/sexyminer
 	name = "sexy miner costume"
 	desc = "For when you need to get your rocks off."
 	icon_state = "sexyminer"
-	body_parts_covered = FEET|LOWER_TORSO|HEAD
-	flags_inv = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "miner", slot_l_hand_str = "miner")
+
+CAPABILITIES(/obj/item/clothing/suit/sexyminer)
+	configure(item_worn(covers = FEET|LOWER_TORSO|HEAD, hides = HIDEJUMPSUIT|HIDESHOES|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/sumo
 	name = "inflatable sumo wrestler costume"
 	desc = "An inflated sumo wrestler costume. It's quite hot."
 	icon_state = "sumo"
-	body_parts_covered = FEET|LOWER_TORSO|UPPER_TORSO|LEGS|ARMS
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "classicponcho", slot_l_hand_str = "classicponcho")
 
 CAPABILITIES(/obj/item/clothing/suit/sumo)
+	configure(item_worn(covers = FEET|LOWER_TORSO|UPPER_TORSO|LEGS|ARMS, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/hackercost
 	name = "classic hacker costume"
 	desc = "You would feel insanely cool wearing this."
 	icon_state = "hackercost"
-	body_parts_covered = FEET|LOWER_TORSO|UPPER_TORSO|LEGS|ARMS|EYES
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "leather_coat", slot_l_hand_str = "leather_coat")
+
+CAPABILITIES(/obj/item/clothing/suit/hackercost)
+	configure(item_worn(covers = FEET|LOWER_TORSO|UPPER_TORSO|LEGS|ARMS|EYES, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/lumber
 	name = "sexy lumberjack costume"
 	desc = "Smells of dusky pine. Includes chest hair and beard."
 	icon_state = "sexylumber"
-	body_parts_covered = FEET|LOWER_TORSO|FEET
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "red_labcoat", slot_l_hand_str = "red_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/lumber)
+	configure(item_worn(covers = FEET|LOWER_TORSO|FEET, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/shrine_maiden
 	name = "shrine maiden costume"
 	desc = "Makes you want to exterminate some troublesome youkai."
 	icon_state = "shrine_maiden"
-	body_parts_covered = LOWER_TORSO|UPPER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/shrine_maiden)
+	configure(item_worn(covers = LOWER_TORSO|UPPER_TORSO|LEGS|ARMS))
 
 /*
  * Misc
@@ -267,12 +288,11 @@ CAPABILITIES(/obj/item/clothing/suit/sumo)
 	name = "straight jacket"
 	desc = "A suit that completely restrains the wearer."
 	icon_state = "straight_jacket"
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 
 	var/resist_time = 4800	// Eight minutes.
 
 CAPABILITIES(/obj/item/clothing/suit/straight_jacket)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 	op("straight_jacket_worn_hand", hand(), then(PROC_REF(straight_jacket_worn_hand)))
 
 /// Old attack_hand: the wearer can't take it off themselves.
@@ -299,8 +319,9 @@ CAPABILITIES(/obj/item/clothing/suit/straight_jacket)
 	desc = "A worn out, curiously comfortable t-shirt with a picture of Ian. You wouldn't go so far as to say it feels like being hugged when you wear it but it's pretty close. Good for sleeping in."
 	icon_state = "ianshirt"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat") //placeholder -S2-
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/ianshirt)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDETIE|HIDEHOLSTER))
 
 //nerdy shirt
 /obj/item/clothing/suit/nerdshirt
@@ -374,7 +395,9 @@ CAPABILITIES(/obj/item/clothing/suit/straight_jacket)
 	desc = "A long, thick black leather coat."
 	icon_state = "leathercoat_alt"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/leathercoat)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/leathercoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -383,14 +406,18 @@ TYPE_TABLE(/obj/item/clothing/suit/leathercoat, suit_storage_spec, list(HOLD_ONL
 	desc = "A long, thick black leather coat."
 	icon_state = "leathercoat_sec"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/leathercoat/sec)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/neocoat
 	name = "black coat"
 	desc = "A flowing, black coat."
 	icon_state = "neo_leather" //This didn't have an icon_state anywhere I can find. It used to be 'neocoat'. The closest replacement I could find was neo_leather
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/neocoat)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/neocoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -399,21 +426,27 @@ TYPE_TABLE(/obj/item/clothing/suit/neocoat, suit_storage_spec, list(HOLD_ONLY(li
 	desc = "A standard SolGov Customs formal jacket."
 	icon_state = "customs_jacket"
 	item_state_slots = list(slot_r_hand_str = "suit_blue", slot_l_hand_str = "suit_blue")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/customs)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/greyjacket
 	name = "grey jacket"
 	desc = "A fancy twead grey jacket."
 	icon_state = "gentlecoat"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/greyjacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/trench
 	name = "brown trenchcoat"
 	desc = "A rugged canvas trenchcoat, designed and created by TX Fabrication Corp. The coat appears to have its kevlar lining removed."
 	icon_state = "detective"
 	blood_overlay_type = "coat"
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/trench)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_DETECTIVE))))
 
@@ -421,7 +454,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/trench, suit_storage_spec, list(HOLD_
 	name = "grey trenchcoat"
 	icon_state = "detective2"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/trench/grey)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/peacoat
 	name = "peacoat"
@@ -429,14 +464,18 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/trench, suit_storage_spec, list(HOLD_
 	icon_state = "peacoat"
 	addblends = "peacoat_a"
 	item_state_slots = list(slot_r_hand_str = "peacoat", slot_l_hand_str = "peacoat")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/peacoat)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/duster
 	name = "duster"
 	desc = "A duster is a light, loose-fitting long coat. Dusters are meant to protect your clothing from dust and rain."
 	icon_state = "duster"
 	blood_overlay_type = "coat"
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/duster)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO))))
 
@@ -445,14 +484,18 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	desc = "A duster is a light, loose-fitting long coat. Dusters are meant to protect your clothing from dust and rain. And you know what's cooler than a normal duster? A sleeveless duster! Show off those guns, cowboy. Or cowgirl. Or whatever you identify as."
 	icon_state = "duster_sleeveless"
 	blood_overlay_type = "coat"
-	body_parts_covered = CHEST|LEGS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/duster/sleeveless)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/suit/storage/toggle/cardigan
 	name = "cardigan"
 	desc = "A cozy cardigan in a classic style."
 	icon_state = "cardigan"
 	addblends = "cardigan_a"
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/cardigan)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /*
  * stripper
@@ -485,10 +528,9 @@ CAPABILITIES(/obj/item/clothing/suit/stripper/stripper_green)
 	desc = "A suit made out of chitinous alien hide."
 	icon_state = "xenos"
 	item_state_slots = list(slot_r_hand_str = "black_suit", slot_l_hand_str = "black_suit")
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/xenos)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/jacket
@@ -499,10 +541,9 @@ CAPABILITIES(/obj/item/clothing/suit/xenos)
 	desc = "A thick jacket with a rubbery, water-resistant shell."
 	icon_state = "pufferjacket"
 	item_state_slots = list(slot_r_hand_str = "chainmail", slot_l_hand_str = "chainmail")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/jacket/puffer)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = CHEST|ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/jacket/puffer/vest
@@ -510,9 +551,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer)
 	desc = "A thick vest with a rubbery, water-resistant shell."
 	icon_state = "puffervest"
 	item_state_slots = list(slot_r_hand_str = "chainmail", slot_l_hand_str = "chainmail")
-	body_parts_covered = CHEST
 
 CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
+	configure(item_worn(covers = CHEST))
 	configure(item_protection(cold_parts = CHEST))
 
 /obj/item/clothing/suit/storage/miljacket
@@ -520,35 +561,45 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable."
 	icon_state = "militaryjacket_nobadge"
 	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/alt
 	name = "military jacket, alternate"
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. This one has some extra badges on it."
 	icon_state = "militaryjacket_badge"
 	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/alt)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/patchless
 	name = "military jacket, patchless"
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. This one has had all patches and badges removed."
 	icon_state = "militaryjacket_nopatch"
 	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/patchless)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/green
 	name = "green military jacket"
 	desc = "A dark but rather high-saturation green canvas jacket. Feels sturdy, yet comfortable."
 	icon_state = "militaryjacket_green"
 	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/green)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/tan
 	name = "tan military jacket"
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. Now in sandy tans for desert fans."
 	icon_state = "militaryjacket_tan"
 	item_state_slots = list(slot_r_hand_str = "suit_orange", slot_l_hand_str = "suit_orange")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/tan)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/tan/patchless
 	name = "tan military jacket, patchless"
@@ -560,7 +611,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. This one's in urban grey."
 	icon_state = "militaryjacket_grey"
 	item_state_slots = list(slot_r_hand_str = "suit_grey", slot_l_hand_str = "suit_grey")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/grey)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/grey/patchless
 	name = "grey military jacket, patchless"
@@ -572,7 +625,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. Dark navy, this one is."
 	icon_state = "militaryjacket_navy"
 	item_state_slots = list(slot_r_hand_str = "suit_navy", slot_l_hand_str = "suit_navy")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/navy)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/navy/patchless
 	name = "navy military jacket, patchless"
@@ -584,7 +639,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A canvas jacket styled after classical American military garb. Feels sturdy, yet comfortable. Now in tactical black."
 	icon_state = "militaryjacket_black"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/black)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/black/patchless
 	name = "black military jacket, patchless"
@@ -596,7 +653,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A white canvas jacket. Don't wear this for walks in the snow, it won't keep you warm - it'll just make it harder to find your frozen corpse."
 	icon_state = "militaryjacket_white"
 	item_state_slots = list(slot_r_hand_str = "med_dep_jacket", slot_l_hand_str = "med_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/miljacket/white)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/miljacket/white/patchless
 	name = "white military jacket, patchless"
@@ -608,10 +667,9 @@ CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
 	desc = "A thick, well-worn WW2 leather bomber jacket."
 	icon_state = "bomber"
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/bomber)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
@@ -626,18 +684,18 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, lis
 	desc = "A thick, well-worn WW2 leather bomber jacket."
 	icon_state = "bomberjacket_new"
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/storage/bomber)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/toggle/leather_jacket
 	name = "leather jacket"
 	desc = "A black leather coat."
 	icon_state = "leather_jacket"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -645,15 +703,19 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_s
 	name = "leather vest"
 	desc = "A black leather vest."
 	icon_state = "leather_jacket_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/leather_jacket_alt
 	name = "leather vest"
 	desc = "A black leather vest."
 	icon_state = "leather_jacket_alt"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/leather_jacket_alt)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/storage/toggle/leather_jacket/nanotrasen
 	desc = "A black leather coat. A corporate logo is proudly displayed on the back."
@@ -664,8 +726,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_s
 	name = "leather vest"
 	desc = "A black leather vest. A corporate logo is proudly displayed on the back."
 	icon_state = "leather_jacket_nt_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/leather_jacket/nanotrasen/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 //This one has buttons for some reason
 /obj/item/clothing/suit/storage/toggle/brown_jacket
@@ -673,8 +737,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/leather_jacket, suit_storage_s
 	desc = "A brown leather coat."
 	icon_state = "brown_jacket"
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/brown_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -682,8 +747,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/brown_jacket, suit_storage_spe
 	name = "brown vest"
 	desc = "A brown leather vest."
 	icon_state = "brown_jacket_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen
 	desc = "A brown leather coat. A corporate logo is proudly displayed on the back."
@@ -694,16 +761,19 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/brown_jacket, suit_storage_spe
 	name = "brown vest"
 	desc = "A brown leather vest. A corporate logo is proudly displayed on the back."
 	icon_state = "brown_jacket_nt_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/brown_jacket/nanotrasen/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/toggle/denim_jacket
 	name = "denim jacket"
 	desc = "A denim coat."
 	icon_state = "denim_jacket"
 	item_state_slots = list(slot_r_hand_str = "denim_jacket", slot_l_hand_str = "denim_jacket")
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/denim_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -711,8 +781,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spe
 	name = "denim vest"
 	desc = "A denim vest."
 	icon_state = "denim_jacket_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "denim_jacket", slot_l_hand_str = "denim_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/denim_jacket/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/toggle/denim_jacket/nanotrasen
 	desc = "A denim coat. A corporate logo is proudly displayed on the back."
@@ -723,17 +795,19 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spe
 	name = "denim vest"
 	desc = "A denim vest. A corporate logo is proudly displayed on the back."
 	icon_state = "denim_jacket_nt_sleeveless"
-	body_parts_covered = UPPER_TORSO
 	item_state_slots = list(slot_r_hand_str = "denim_jacket", slot_l_hand_str = "denim_jacket")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/denim_jacket/nanotrasen/sleeveless)
+	configure(item_worn(covers = UPPER_TORSO))
 
 /obj/item/clothing/suit/storage/toggle/hoodie
 	name = "grey hoodie"
 	desc = "A warm, grey sweatshirt."
 	icon_state = "grey_hoodie"
 	item_state_slots = list(slot_r_hand_str = "suit_grey", slot_l_hand_str = "suit_grey")
-	flags_inv = HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/hoodie)
+	configure(item_worn(hides = HIDEHOLSTER))
 	configure(item_protection(min_cold = T0C - 20, cold_parts = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/toggle/hoodie/black
@@ -807,15 +881,18 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/hoodie)
 	desc = "A fancy dress."
 	icon_state = "white_dress"
 	item_state_slots = list(slot_r_hand_str = "white_dress", slot_l_hand_str = "white_dress")
-	body_parts_covered = CHEST|LEGS
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/whitedress)
+	configure(item_worn(covers = CHEST|LEGS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/varsity
 	name = "black varsity jacket"
 	desc = "A favorite of jocks everywhere from Sol to Nyx."
 	icon_state = "varsity"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/varsity)
+	configure(item_worn(hides = HIDETIE|HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/varsity, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -844,7 +921,9 @@ TYPE_TABLE(/obj/item/clothing/suit/varsity, suit_storage_spec, list(HOLD_ONLY(li
 	desc = "A yellow sports jacket with white trim and an unfolded collar."
 	icon_state = "runner"
 	item_state_slots = list(slot_r_hand_str = "suit_red", slot_l_hand_str = "suit_red")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/runner)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /*
  * Department Jackets
@@ -856,42 +935,54 @@ TYPE_TABLE(/obj/item/clothing/suit/runner, suit_storage_spec, list(HOLD_ONLY(lis
 	desc = "A cozy jacket in security's colors. Show your department pride!"
 	icon_state = "sec_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "sec_dep_jacket", slot_l_hand_str = "sec_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/sec_dep_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/engi_dep_jacket
 	name = "department jacket, engineering"
 	desc = "A cozy jacket in engineering's colors. Show your department pride!"
 	icon_state = "engi_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "engi_dep_jacket", slot_l_hand_str = "engi_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/engi_dep_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/supply_dep_jacket
 	name = "department jacket, supply"
 	desc = "A cozy jacket in supply's colors. Show your department pride!"
 	icon_state = "supply_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "supply_dep_jacket", slot_l_hand_str = "supply_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/supply_dep_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/sci_dep_jacket
 	name = "department jacket, science"
 	desc = "A cozy jacket in science's colors. Show your department pride!"
 	icon_state = "sci_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "sci_dep_jacket", slot_l_hand_str = "sci_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/sci_dep_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/med_dep_jacket
 	name = "department jacket, medical"
 	desc = "A cozy jacket in medical's colors. Show your department pride!"
 	icon_state = "med_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "med_dep_jacket", slot_l_hand_str = "med_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/med_dep_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/light_jacket
 	name = "grey light jacket"
 	desc = "A light, cozy jacket. Now in grey."
 	icon_state = "grey_dep_jacket"
 	item_state_slots = list(slot_r_hand_str = "grey_dep_jacket", slot_l_hand_str = "grey_dep_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/light_jacket)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/toggle/light_jacket/blue
 	name = "dark blue light jacket"
@@ -938,7 +1029,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list
 	desc = "A comfy, grey flannel shirt.  Unleash your inner hipster."
 	icon_state = "flannel"
 	item_state_slots = list(slot_r_hand_str = "black_labcoat", slot_l_hand_str = "black_labcoat")
-	flags_inv = HIDEHOLSTER
 	var/rolled = 0
 	var/tucked = 0
 	var/buttoned = 0
@@ -946,6 +1036,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/track, suit_storage_spec, list
 TYPE_TABLE(/obj/item/clothing/suit/storage/flannel, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 CAPABILITIES(/obj/item/clothing/suit/storage/flannel)
+	configure(item_worn(hides = HIDEHOLSTER))
 	op("flannel_roll_sleeves_verb", menu(), label("Roll Sleeves"), needs(carried()), then(PROC_REF(flannel_roll_sleeves_verb)))
 	op("flannel_tuck_verb", menu(), label("Toggle Shirt Tucking"), needs(carried()), then(PROC_REF(flannel_tuck_verb)))
 	op("flannel_button_verb", menu(), label("Toggle Shirt Buttons"), needs(carried()), then(PROC_REF(flannel_button_verb)))
@@ -964,11 +1055,11 @@ TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 
 	if(rolled == 0)
 		set_rolled(1)
-		body_parts_covered &= ~(ARMS)
+		set_body_parts_covered(worn_of(src).covers & (~(ARMS)))
 		to_chat(user, span_notice("You roll up the sleeves of your [src]."))
 	else
 		set_rolled(0)
-		body_parts_covered = initial(body_parts_covered)
+		set_body_parts_covered(worn_of_type(type).covers)
 		to_chat(user, span_notice("You roll down the sleeves of your [src]."))
 	worn_protection_changed()
 
@@ -993,11 +1084,11 @@ TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 
 	if(buttoned == 0)
 		set_buttoned(1)
-		flags_inv = HIDETIE|HIDEHOLSTER
+		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, span_notice("You button your [src]."))
 	else
 		set_buttoned(0)
-		flags_inv = HIDEHOLSTER
+		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, span_notice("You unbutton your [src]."))
 
 /obj/item/clothing/suit/storage/flannel/look_parts(datum/look/look)
@@ -1039,16 +1130,15 @@ TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 	icon_state = "suitjacket_green"
 	item_state_slots = list(slot_r_hand_str = "suit_olive", slot_l_hand_str = "suit_olive")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/greengov)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/storage/snowsuit
 	name = "snowsuit"
 	desc = "A suit made to keep you nice and toasty on cold winter days. Or at least alive."
 	icon_state = "snowsuit"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
 	armor_spec = "bio=10"
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
@@ -1058,15 +1148,15 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	throwforce = 3
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = CHEST
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
+	configure(item_worn(covers = CHEST))
+	configure(item_thrown(force = 3))
 	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 	op("caution_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(caution_toggle_self)))
@@ -1102,16 +1192,19 @@ CAPABILITIES(/obj/item/clothing/suit/caution)
 	name = "marine armor"
 	desc = "A set of marine prop armor from the popular game 'Ruin'."
 	icon_state = "marine"
-	body_parts_covered = FEET|CHEST|LEGS
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "green_labcoat", slot_l_hand_str = "green_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/marine)
+	configure(item_worn(covers = FEET|CHEST|LEGS, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 //Cropped hoodies
 /obj/item/clothing/suit/storage/croppedhoodie
 	name = "cropped hoodie"
 	desc = "This style of hoodie is sometimes worn by those who cannot fit, or choose not to hide their delectable bellies under the full, soft confines of a hoodie. The hood is cosmetic, and non-functional."
 	icon_state = "croppedhoodie"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/croppedhoodie)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/storage/croppedhoodie/croppier
 	name = "high cropped hoodie"
@@ -1133,13 +1226,17 @@ CAPABILITIES(/obj/item/clothing/suit/caution)
 	name = "relatable jacket"
 	desc = "An all white jacket with a shine. It seems easy to identify with the wearer."
 	icon_state = "drivejacket"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/drive)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/toggle/moto_jacket
 	name = "motorcycle jacket"
 	desc = "A recreation of one of the famous Sol-based biwheeled driver assemblies. Patches on the back denote an AI-generated 'biker logo'. It looks unintelligible."
 	icon_state = "motojacket"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/moto_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/moto_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -1147,20 +1244,20 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/moto_jacket, suit_storage_spec
 	name = "punk vest"
 	desc = "For the spiritual rebels that nevertheless wish to conform to standard goth trends. You're totally showing them your anti-authority spunk."
 	icon_state = "punkvest"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/punkvest)
+	configure(item_worn(covers = CHEST|ARMS))
 
 // Talon jacket
 /obj/item/clothing/suit/storage/talonbomberjacket
 	name = "Talon pilot bomber jacket"
 	desc = "A blue bomber jacket worn by the ITV Talon's piloting personnel, it has a nametag on the breast, it's incredibly warm, and comfortable. The collar and wrists consists of synthetic fur."
 	icon = 'icons/inventory/suit/item.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	icon_state = "talon_pilotjacket"
 	item_state = "talon_pilotjacket"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
@@ -1169,12 +1266,12 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec,
 	name = "Talon captain's coat"
 	desc = "A heavy coat worn by the ITV Talon's commanding officer, it has a nametag and ITV Talon logo on the breasts, it's incredibly snug to wear. The collar consists of genuine fur."
 	icon = 'icons/inventory/suit/item.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	icon_state = "talon_capcoat"
 	item_state = "talon_capcoat"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 	hoodtype = null
+
+CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket/captain)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = UPPER_TORSO|LOWER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 
 /obj/item/clothing/suit/customs
@@ -1206,8 +1303,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec,
 	icon = 'icons/mob/taursuits_drake.dmi'
 	icon_state = "cloak"
 	item_state_slots = list(slot_r_hand_str = "capjacket", slot_l_hand_str = "capjacket")
-	body_parts_covered = UPPER_TORSO|ARMS
 	pixel_x = -16
+
+CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/drake_cloak/proc/taur_fit, "you need a drake-taur half to wear this"))))
 
@@ -1221,9 +1320,11 @@ TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), l
 	name = DEVELOPER_WARNING_NAME
 	icon = 'icons/mob/taursuits_horse.dmi'
 	item_state_slots = list(slot_r_hand_str = "capjacket", slot_l_hand_str = "capjacket")
-	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS
 	pixel_x = -16
 	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
+
+CAPABILITIES(/obj/item/clothing/suit/barding)
+	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS))
 
 TYPE_TABLE(/obj/item/clothing/suit/barding, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this"))))
 
@@ -1249,20 +1350,26 @@ TYPE_TABLE(/obj/item/clothing/suit/barding, equip_spec, dq_spec_join(..(), list(
 /obj/item/clothing/suit/taur
 	name = DEVELOPER_WARNING_NAME
 	icon = 'icons/mob/taursuits_horse.dmi'
-	body_parts_covered = CHEST
 	pixel_x = -16
+
+CAPABILITIES(/obj/item/clothing/suit/taur)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/suit/taur/dress
 	name = "white wedding dress"
 	desc = "A fancy white dress with a blue underdress."
 	icon_state = "whitedress1"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/suit/taur/dress)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/suit/taur/skirt
 	name = "taur skirt"
 	desc = "A skirt with a corset, fit for those with four legs."
 	icon_state = "skirt_colorable"
-	flags_inv = HIDESHOES
+
+CAPABILITIES(/obj/item/clothing/suit/taur/skirt)
+	configure(item_worn(hides = HIDESHOES))
 
 /obj/item/clothing/suit/storage/det_trench/alt
 	name = "sleek modern coat"

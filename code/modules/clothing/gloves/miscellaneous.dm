@@ -165,12 +165,12 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon_state = "wedring_g"
 	item_state = "wedring_g"
 	var/partnername = ""
-	body_parts_covered = null
 	special_handling = TRUE
 
 TRACKED(/obj/item/clothing/gloves/weddingring, partnername)
 
 CAPABILITIES(/obj/item/clothing/gloves/weddingring)
+	configure(item_worn(covers = TRAIT_NONE))
 	op("engrave", in_hand(), label("Engrave"),
 		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
 

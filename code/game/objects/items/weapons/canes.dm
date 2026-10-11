@@ -7,11 +7,11 @@
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	throwforce = 7.0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 50)
 
 CAPABILITIES(/obj/item/cane)
+	configure(item_thrown(force = 7.0))
 	configure(item_combat(force = 5.0, attack_verbs = list("bludgeoned", "whacked", "disciplined", "thrashed")))
 
 /obj/item/cane/crutch
@@ -86,13 +86,13 @@ CAPABILITIES(/obj/item/cane/concealed)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 		)
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	var/on = 0
 
 TRACKED(/obj/item/cane/white/collapsible, on)
 
 CAPABILITIES(/obj/item/cane/white/collapsible)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 3))
 	op("toggle", in_hand(), label("Extend or collapse cane"), then(PROC_REF(collapsed_toggled)))
 

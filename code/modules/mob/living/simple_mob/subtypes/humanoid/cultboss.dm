@@ -206,12 +206,12 @@ CAPABILITIES(/obj/item/clothing/gloves/tactical/void)
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	throwforce = 20
 	defend_chance = 25
 	projectile_parry_chance = 25
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/voidblade)
+	configure(item_thrown(force = 20))
 	configure(item_combat(force = 40, armor_penetration = 25, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 

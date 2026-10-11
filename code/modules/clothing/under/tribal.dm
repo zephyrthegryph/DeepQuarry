@@ -75,6 +75,8 @@ CAPABILITIES(/obj/item/clothing/shoes/primitive)
 	name = "tribal sandals"
 	desc = "Traditionally made sandals made with local materials."
 	icon_state = "tribal_sandals"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/shoes/tribalwear)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/shoes/tribalwear, fit_spec, null)

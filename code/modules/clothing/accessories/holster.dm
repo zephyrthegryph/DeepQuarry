@@ -188,9 +188,11 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/waist/lanyard, hold_spec, list(H
 	name = "rapier sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 	icon_state = "sheath"
-	slot_flags = SLOT_BELT|ACCESSORY_SLOT_WEAPON
 	var/has_full_icon = 1
 	overlay_state = "sheath"
+
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
+	configure(item_worn(slots = SLOT_BELT|ACCESSORY_SLOT_WEAPON))
 
 TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/rapier))))
 

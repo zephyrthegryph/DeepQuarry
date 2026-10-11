@@ -154,13 +154,13 @@ CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
 
 /obj/item/melee/robotic/jaws
 	icon = 'icons/mob/dogborg_vr.dmi'
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
-	pry = 1
 	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws)
+	configure(item_tooling(pry = 1))
+	configure(item_thrown(force = 0))
 	configure(item_combat(edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
@@ -237,12 +237,12 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "combatshocker"
 	desc = "Shocking!"
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	var/charge_cost = 15
 	var/dogborg = FALSE
 
 CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 15, attack_verbs = list("hit")))
 	configure(item_sounds(hit = SFX_WEAPONS_GENHIT1))
 
@@ -304,13 +304,13 @@ CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "swordtail"
 	injury_kind = INJURY_CUT
-	throwforce = 0 //This shouldn't be thrown in the first place.
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
 CAPABILITIES(/obj/item/melee/robotic/blade)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0, armor_penetration = 70, sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "jabbed", "mauled", "sliced")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
@@ -435,7 +435,6 @@ CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "stunbaton"
 	item_state = "baton"
-	slot_flags = SLOT_BELT
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
 	var/stunforce = 0
@@ -465,6 +464,7 @@ CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
 TRACKED(/obj/item/melee/robotic/baton, status)
 
 CAPABILITIES(/obj/item/melee/robotic/baton)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))

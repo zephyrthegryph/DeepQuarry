@@ -8,7 +8,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 10
 	w_class = ITEMSIZE_HUGE
 	var/base_icon = "stool_base"
 	var/datum/material/material
@@ -120,6 +119,7 @@ TRACKED(/obj/item/stool, base_icon)
 	return TRUE
 
 CAPABILITIES(/obj/item/stool)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
 		needs(req_bool(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
@@ -165,12 +165,12 @@ CAPABILITIES(/obj/item/stool)
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 10
 	w_class = ITEMSIZE_HUGE
 	base_icon = "bar_stool_base"
 	anchored = TRUE
 
 CAPABILITIES(/obj/item/stool/baystool)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10))
 
 /obj/item/stool/baystool/padded

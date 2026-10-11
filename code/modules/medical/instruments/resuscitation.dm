@@ -32,10 +32,10 @@ CAPABILITIES(/obj/item/bag_valve_mask)
 	if(!read_once(H.check_has_mouth()))
 		return FALSE
 	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
-	if(mask && (read_once(mask.body_parts_covered) & FACE))
+	if(mask && (read_once(worn_of(mask).covers) & FACE))
 		return FALSE
 	var/obj/item/hat = H.get_equipped_item(SLOT_ID_HEAD)
-	return !(hat && (read_once(hat.body_parts_covered) & FACE))
+	return !(hat && (read_once(worn_of(hat).covers) & FACE))
 
 /obj/item/bag_valve_mask/proc/squeeze_done(datum/act/op/A)
 	if(!apply_ventilation(A.target))
@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/airway_kit)
 	if(!read_once(H.check_has_mouth()))
 		return FALSE
 	var/obj/item/mask = H.get_equipped_item(SLOT_ID_MASK)
-	return !(mask && (read_once(mask.body_parts_covered) & FACE))
+	return !(mask && (read_once(worn_of(mask).covers) & FACE))
 
 /obj/item/airway_kit/proc/airway_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target

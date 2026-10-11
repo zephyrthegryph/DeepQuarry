@@ -5,9 +5,7 @@
 	item_state = "chainsaw0"
 	var/max_fuel = 100
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	var/active_force = 55
 	var/inactive_force = 10
 
@@ -35,6 +33,7 @@ MSG_DEF(chainsaw/pulling, "You start pulling the string on %T%.", "%U% starts pu
 MSG_DEF_SELF(chainsaw/refilling, span_notice("You begin filling the tank on the chainsaw."))
 
 CAPABILITIES(/obj/item/chainsaw)
+	configure(item_worn(slots = SLOT_BACK))
 	op("self", in_hand(), when(PROC_REF(stopped)), begins(MSG(chainsaw/pulling)), wait(1.5 SECONDS), then(PROC_REF(started)), on_interrupt(PROC_REF(string_fumbled)))
 	op("off", in_hand(), when(PROC_REF(running)), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(switched_off)))
 	op("refuel", at_target(/obj/structure/reagent_dispensers/fueltank), begins(MSG(chainsaw/refilling)), wait(1.5 SECONDS), then(PROC_REF(refueled)), on_interrupt(PROC_REF(refuel_abandoned)))

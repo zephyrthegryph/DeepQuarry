@@ -9,7 +9,6 @@
 	item_state_slots = list(slot_r_hand_str = "toolbox_red", slot_l_hand_str = "toolbox_red")
 	center_of_mass_x = 16
 	center_of_mass_y= 11
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 7
 	w_class = ITEMSIZE_LARGE
@@ -17,6 +16,7 @@
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
 
 CAPABILITIES(/obj/item/storage/toolbox)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 10, attack_verbs = list("robusted")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	configure(storage(max_size = ITEMSIZE_NORMAL))

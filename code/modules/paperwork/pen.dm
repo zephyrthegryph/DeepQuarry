@@ -21,8 +21,6 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 	throw_speed = 7
 	throw_range = 15
@@ -35,6 +33,8 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pen)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("pen_click", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click)))
 	op("pen_click_alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 2), label("Click"), then(PROC_REF(interaction_click_alt)))
@@ -179,8 +179,6 @@ CAPABILITIES(/obj/item/pen/reagent)
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "pen"
 	item_state = "pen"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 3
 	w_class = ITEMSIZE_TINY
 	throw_speed = 7
 	throw_range = 15
@@ -195,6 +193,8 @@ CAPABILITIES(/obj/item/pen/reagent)
 
 // Its alt-click comes before the pen's own (the old EXTEND listed the child's specs first).
 CAPABILITIES(/obj/item/pen/blade)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 3))
 	configure(item_combat(armor_penetration = 20))
 	after_init(0, then(PROC_REF(remember_icon_states)))
 	op("pen_toggle_blade", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle blade"), then(PROC_REF(interaction_toggle_blade)))
@@ -222,14 +222,14 @@ CAPABILITIES(/obj/item/pen/blade)
 	icon_state = active_icon_state
 	embed_chance = active_embed_chance
 	set_force(active_force)
-	throwforce = active_throwforce
+	set_throwforce(active_throwforce)
 	set_sharp(TRUE)
 	set_edge(TRUE)
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
-	catchable = FALSE
+	set_catchable(FALSE)
 
 	set_attack_verb(combat_of(src).attack_verbs | list("slashed", "cut", "shredded", "stabbed"))
 
@@ -241,13 +241,13 @@ CAPABILITIES(/obj/item/pen/blade)
 	icon_state = default_icon_state
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)
-	throwforce = initial(throwforce)
+	set_throwforce(thrown_of_type(type).force)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
 	w_class = initial(w_class)
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
-	catchable = TRUE
+	set_catchable(TRUE)
 
 /obj/item/pen/blade/blue
 	desc = "It's a normal blue ink pen."

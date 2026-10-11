@@ -6,8 +6,6 @@
 	icon_override = 'icons/obj/borkmedigun.dmi'
 	icon_state = "mg-backpack"
 	item_state = "mg-backpack-onmob"
-	slot_flags = SLOT_BACK
-	throwforce = 6
 	preserve_item = TRUE
 	w_class = ITEMSIZE_HUGE
 	unacidable = TRUE
@@ -44,6 +42,8 @@ TRACKED(/obj/item/medigun_backpack, toxcharge)
 TRACKED(/obj/item/medigun_backpack, burncharge)
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
 	configure(item_combat(force = 5))
 	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
 	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))

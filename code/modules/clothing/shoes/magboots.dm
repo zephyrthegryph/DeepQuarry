@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	var/mob/user = A.actor
 	shoes_shake_out_self(A)
 	if(magpulse)
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
 		set_slowdown()
 		set_force(3)
@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 				return
 			canremove = FALSE
 
-		item_flags |= NOSLIP
+		set_item_flags(worn_of(src).flags | (NOSLIP))
 		magpulse = TRUE
 		set_slowdown()
 		set_force(5)
@@ -108,7 +108,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()
-	. += "Its mag-pulse traction system appears to be [item_flags & NOSLIP ? "enabled" : "disabled"]."
+	. += "Its mag-pulse traction system appears to be [worn_of(src).flags & NOSLIP ? "enabled" : "disabled"]."
 
 /obj/item/clothing/shoes/magboots/vox
 
@@ -136,7 +136,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/vox, fit_spec, list(REQ_FITS_BODYTY
 	if(magpulse)
 		act_message(user, src, MSG_SELF("%T% go limp as they are removed from your feet."), \
 			MSG_OTHERS("%T% go limp as they are removed from %U%'s feet."))
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
 		canremove = TRUE
 

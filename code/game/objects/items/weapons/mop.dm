@@ -8,7 +8,6 @@ REGISTRY_MEMBERSHIP(/obj/item/mop, REGISTRY_MOPS)
 	desc = "The world of janitalia wouldn't be complete without a mop."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
-	throwforce = 10.0
 	throw_speed = 5
 	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
@@ -20,6 +19,7 @@ MSG_DEF(mop/cleaning, null, span_warning("%U% begins to clean the floor."))
 MSG_DEF_SELF(mop/dry, "Your mop is dry!")
 
 CAPABILITIES(/obj/item/mop)
+	configure(item_thrown(force = 10.0))
 	configure(item_combat(force = 3.0, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))
 	reagents(30)
 	op("mop", at_target(/turf), at_target(/obj/effect/decal/cleanable), at_target(/obj/effect/overlay), at_target(/obj/effect/rune), begins(MSG(mop/cleaning)), starts(PROC_REF(mop_started)), wait(PROC_REF(mop_duration)), then(PROC_REF(mopped)))
@@ -62,7 +62,6 @@ CAPABILITIES(/obj/item/mop)
 	desc = "No stain will go unclean."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "adv_mop"
-	throwforce = 10.5
 	throw_speed = 4
 	throw_range = 10
 	w_class = ITEMSIZE_NORMAL
@@ -70,4 +69,5 @@ CAPABILITIES(/obj/item/mop)
 	mop_time = 2 SECONDS
 
 CAPABILITIES(/obj/item/mop/advanced)
+	configure(item_thrown(force = 10.5))
 	configure(item_combat(force = 3.5, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))

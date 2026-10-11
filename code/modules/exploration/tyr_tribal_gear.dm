@@ -101,10 +101,10 @@ CAPABILITIES(/obj/item/prop/alien/prototype)
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "arrow"
 	item_state = "bolt"
-	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/arrow/standard)
+	configure(item_thrown(force = 8))
 	configure(item_combat(sharp = TRUE, edge = FALSE))
 */
 
@@ -163,8 +163,10 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 	icon_override = 'icons/mob/tribal_gear.dmi'
 	icon_state = "lilly_cloak"
 	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bio=60;rad=60" //Seemingly medicore, but tack on the 20% chance to completly negate something and you get something that is average.
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS //Head be vunerable but cloak covers the other bits.
 	var/block_chance = 20
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tyrtribalcloak)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS))
 
 /obj/item/clothing/suit/armor/tyrtribalcloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(prob(block_chance))
@@ -179,16 +181,24 @@ CAPABILITIES(/obj/item/melee/agate_hammer)
 
 //Blizzard
 /obj/item/tool/wirecutters/hybrid/alien
-	toolspeed = 0.2
+
+CAPABILITIES(/obj/item/tool/wirecutters/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
 
 /obj/item/tool/wrench/hybrid/alien
-	toolspeed = 0.2
+
+CAPABILITIES(/obj/item/tool/wrench/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
 
 /obj/item/tool/crowbar/hybrid/alien
-	toolspeed = 0.2
+
+CAPABILITIES(/obj/item/tool/crowbar/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
 
 /obj/item/tool/screwdriver/hybrid/alien
-	toolspeed = 0.2
+
+CAPABILITIES(/obj/item/tool/screwdriver/hybrid/alien)
+	configure(item_tooling(speed = 0.2))
 
 /obj/item/weldingtool/experimental/hybrid/alien
 	eye_safety_modifier = 0
@@ -232,12 +242,14 @@ CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
 	shield_regen_delay = 180 SECONDS
 	shield_regen_amount = 125
 	w_class = ITEMSIZE_NO_CONTAINER
-	slot_flags = SLOT_BELT
 	size_x = 4
 	size_y = 4
 	color = "#FF3300"
 	high_color = "#FF3300"
 	low_color = "#F08F4F"
+
+CAPABILITIES(/obj/item/shield_projector/rectangle/automatic/tyrbarrier)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 //other Tyr Loot
@@ -271,7 +283,6 @@ CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
 
 /obj/item/melee/energy/tyr_katar
 	name = "tyrian scout katar"
-	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "A forgien blade made via techniques formly lost. Gains a diffrent effect base off your stance."
 	lcolor = null
 	colorable = FALSE
@@ -293,6 +304,7 @@ CAPABILITIES(/obj/item/melee/energy/sword/dualsaber)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/tyr_katar)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(attack_speed = 4))
 
 /obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
@@ -322,7 +334,6 @@ CAPABILITIES(/obj/item/melee/energy/tyr_katar)
 
 /obj/item/melee/energy/tyr_hammer
 	name = "tyrian guardian hammer"
-	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "A strange hammer made via techniques formly lost. Gains a diffrent effect base off your stance."
 	lcolor = null
 	colorable = FALSE
@@ -345,6 +356,7 @@ CAPABILITIES(/obj/item/melee/energy/tyr_katar)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/tyr_hammer)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(attack_speed = 20, can_cleave = TRUE))
 
 /obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
@@ -366,7 +378,6 @@ CAPABILITIES(/obj/item/melee/energy/tyr_hammer)
 
 /obj/item/melee/energy/tyr_chainsaw
 	name = "tyrian butcher blade"
-	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "What appears to be a weaponized chainsaw."
 	lcolor = null
 	colorable = FALSE
@@ -392,6 +403,7 @@ CAPABILITIES(/obj/item/melee/energy/tyr_hammer)
 		)
 
 CAPABILITIES(/obj/item/melee/energy/tyr_chainsaw)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(attack_speed = 15, can_cleave = TRUE))
 
 /obj/item/melee/energy/tyr_chainsaw/ownership()
@@ -405,12 +417,12 @@ CAPABILITIES(/obj/item/melee/energy/tyr_chainsaw)
 	icon_state = "barrier"
 	item_state = "barrier"
 
-	slot_flags = SLOT_BACK
 
 	w_class = ITEMSIZE_LARGE
 	base_block_chance = 15
 
 CAPABILITIES(/obj/item/shield/tyr_shield)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(attack_verbs = list("shoved", "bashed")))
 
 /obj/item/shield/tyr_shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")

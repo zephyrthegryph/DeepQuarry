@@ -3,7 +3,6 @@
 	desc = "An annoying bell. Ring for service."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "deskbell"
-	throwforce = 2
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 50)
 	var/broken
@@ -113,6 +112,7 @@
 
 /// Eight stance-declared specs once, one per stance for the hand and for an item: a harm click hammers, the other stances ring.
 CAPABILITIES(/obj/item/deskbell)
+	configure(item_thrown(force = 2))
 	configure(item_combat(force = 2, attack_verbs = list("annoyed")))
 	op("ring", hand(), when(req_empty_hand()), stance(I_HELP, I_DISARM, I_GRAB), label("Ring"), then(PROC_REF(ring_by_hand)))
 	op("hammer", hand(), when(req_empty_hand()), hostile(), stance(I_HURT), label("Hammer rudely"), then(PROC_REF(hammer_by_hand)))

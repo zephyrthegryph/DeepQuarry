@@ -11,7 +11,6 @@
 	icon = 'icons/obj/rig_modules.dmi'
 	desc = "A back-mounted hardsuit deployment and control mechanism."
 	flags = PHORONGUARD
-	slot_flags = SLOT_BACK
 	req_one_access = list()
 	req_access = list()
 	w_class = ITEMSIZE_HUGE
@@ -86,7 +85,6 @@
 	var/rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 	var/emp_protection = 0
-	item_flags = PHORONGUARD // add
 
 	var/datum/mini_hud/rig/minihud
 
@@ -103,6 +101,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	configure(item_worn(slots = SLOT_BACK, flags = PHORONGUARD))
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.2, permeability = 0))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(boots), /obj/item/clothing/shoes)
@@ -318,11 +317,11 @@ TRACKED(/obj/item/rig, carried_by_mob)
 	if(seal == 1)
 		piece.set_min_pressure_protection(rigsuit_min_pressure)
 		piece.set_max_pressure_protection(rigsuit_max_pressure)
-		piece.item_flags |= AIRTIGHT
+		piece.set_item_flags(worn_of(piece).flags | (AIRTIGHT))
 	else
 		piece.set_min_pressure_protection(null)
 		piece.set_max_pressure_protection(null)
-		piece.item_flags &= ~AIRTIGHT
+		piece.set_item_flags(worn_of(piece).flags & (~AIRTIGHT))
 	return
 
 /obj/item/rig/proc/reset()

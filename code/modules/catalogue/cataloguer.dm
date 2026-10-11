@@ -21,7 +21,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "cataloguer"
 	w_class = ITEMSIZE_NORMAL
-	slot_flags = SLOT_BELT
 	var/points_stored = 0 // Amount of 'exploration points' this device holds.
 	var/scan_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
 	var/credit_sharing_range = 280 // If another person is within this radius, they will also be credited with a successful scan. Original was 14
@@ -37,7 +36,9 @@
 	desc = "A hand-held device, used for compiling information about an object by scanning it. This one is an upgraded model, \
 	with a scanner that both can scan from farther away, and with less time."
 	scan_range = 4
-	toolspeed = 0.8
+
+CAPABILITIES(/obj/item/cataloguer/advanced)
+	configure(item_tooling(speed = 0.8))
 
 // Able to see all defined catalogue data regardless of if it was unlocked, intended for testing.
 /obj/item/cataloguer/debug
@@ -47,9 +48,11 @@
 	from nearby, perhaps due to being colored gold. Truly a epistemological mystery."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "debug_cataloguer"
-	toolspeed = 0.1
 	scan_range = 7
 	debug = TRUE
+
+CAPABILITIES(/obj/item/cataloguer/debug)
+	configure(item_tooling(speed = 0.1))
 
 REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
@@ -83,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		return
 
 	// Get how long the delay will be.
-	var/scan_delay = target.get_catalogue_delay() * toolspeed
+	var/scan_delay = target.get_catalogue_delay() * tooling_of(src).speed
 	if(partial_scanned)
 		if(partial_scanned == target)
 			scan_delay -= partial_scan_time
@@ -298,7 +301,6 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	actions_types = list(/datum/action/item_action/toggle_cataloguer)
 	var/deployed = TRUE
 	scan_range = 1
-	toolspeed = 1.2
 
 /obj/item/cataloguer/compact/pathfinder
 	name = "pathfinder's cataloguer"
@@ -307,7 +309,9 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pathcat"
 	scan_range = 3
-	toolspeed = 1
+
+CAPABILITIES(/obj/item/cataloguer/compact/pathfinder)
+	configure(item_tooling(speed = 1))
 
 /// The look (the draw sweep: from its template).
 /obj/item/cataloguer/compact/draw(datum/look/look)
@@ -356,6 +360,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/cataloguer/compact)
+	configure(item_tooling(speed = 1.2))
 	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req_bool(PROC_REF(can_toggle_compact_holds), because = PROC_REF(can_toggle_compact_refusal))), then(PROC_REF(compact_toggle_effect_op)))
 
 /// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.

@@ -19,7 +19,6 @@
 	item_state = "shotgun"
 	max_shells = 4
 	w_class = ITEMSIZE_HUGE //.
-	slot_flags = SLOT_BACK
 	caliber = "12g"
 	load_method = SINGLE_CASING|SPEEDLOADER
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
@@ -119,7 +118,6 @@
 	handle_casings = CYCLE_CASINGS
 	max_shells = 2
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
@@ -149,7 +147,6 @@
 	desc = "Omar's coming!" // I'm not gonna add "Uses 12g rounds." to this one. I'll just let this reference go undisturbed.
 	icon_state = "dshotgun_sawn"
 	item_state = "sawnshotgun"
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
 	w_class = ITEMSIZE_NORMAL
 	sawn_off = TRUE
@@ -163,10 +160,12 @@
 	item_state = "shotgun"
 	w_class = ITEMSIZE_LARGE
 	caliber = "12g"
-	slot_flags = SLOT_BACK
 	load_method = SINGLE_CASING
 	max_shells = 5
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/semi)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/quad
 	name = "quad-barreled shotgun"
@@ -180,7 +179,6 @@
 	max_shells = 4
 	w_class = ITEMSIZE_LARGE
 	accuracy = 40
-	slot_flags = SLOT_BACK
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
@@ -193,6 +191,7 @@
 		)
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(force = 5))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt
@@ -232,7 +231,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 	item_state = "cshotgun"
 	max_shells = 4 //short magazine tube means small capacity
 	w_class = ITEMSIZE_NORMAL //Starts folded, becomes large when stock is extended
-	slot_flags = SLOT_BELT|SLOT_BACK
 	caliber = "12g"
 	load_method = SINGLE_CASING|SPEEDLOADER
 	handle_casings = EJECT_CASINGS //However, it's semi-automatic to make up for that
@@ -274,6 +272,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 	user.update_mob_action_buttons()
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	configure(item_combat(force = 10))
 	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried(), req_actor_kind(/mob/living/silicon, not = TRUE, because = /datum/msg/req_silent)), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
 
@@ -306,7 +305,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
 	item_state = null
 	w_class = ITEMSIZE_HUGE //.
 	caliber = "12g"
-	slot_flags = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER
 	handle_casings = EJECT_CASINGS
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m12gdrumjack/beanbag

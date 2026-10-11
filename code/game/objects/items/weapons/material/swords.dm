@@ -2,12 +2,12 @@
 	name = "claymore"
 	desc = "What are you standing around staring at this for? Get to killing!"
 	icon_state = "claymore"
-	slot_flags = SLOT_BELT
 	force_divisor = 0.7 // 42 when wielded with hardnes 60 (steel)
 	thrown_force_divisor = 0.5 // 10 when thrown with weight 20 (steel)
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/material/sword)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
@@ -22,7 +22,9 @@ CAPABILITIES(/obj/item/material/sword)
 	name = "katana"
 	desc = "Woefully underpowered in D20. This one looks pretty sharp."
 	icon_state = "katana"
-	slot_flags = SLOT_BELT | SLOT_BACK
+
+CAPABILITIES(/obj/item/material/sword/katana)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 
 /obj/item/material/sword/katana/caneblade
 	name = "cane blade"
@@ -35,11 +37,11 @@ CAPABILITIES(/obj/item/material/sword)
 	desc = "A slender, fancy and sharply pointed sword."
 	icon_state = "rapier"
 	item_state = "rapier"
-	slot_flags = SLOT_BELT
 	applies_material_colour = 0
 	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/material/sword/rapier)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("attacked", "stabbed", "prodded", "poked", "lunged"), edge = 0))
 
 /obj/item/material/sword/longsword
@@ -48,9 +50,9 @@ CAPABILITIES(/obj/item/material/sword/rapier)
 	icon_state = "longsword"
 	item_state = "longsword"
 	applies_material_colour = 0
-	slot_flags = SLOT_BELT | SLOT_BACK
 
 CAPABILITIES(/obj/item/material/sword/longsword)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	configure(item_combat(can_cleave = TRUE))
 
 /obj/item/material/sword/sabre
@@ -59,17 +61,19 @@ CAPABILITIES(/obj/item/material/sword/longsword)
 	icon_state = "sabre"
 	item_state = "sabre"
 	applies_material_colour = 0 //messes up the hilt color otherwise
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/material/sword/sabre)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/material/sword/battleaxe
 	name = "battleaxe"
 	desc = "A one handed battle axe, still a deadly weapon."
 	icon_state = "axe"
 	item_state = "axe"
-	slot_flags = SLOT_BACK
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/sword/battleaxe)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_combat(attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
@@ -86,4 +90,6 @@ CAPABILITIES(/obj/item/material/sword/battleaxe)
 	icon_state = "gladius"
 	item_state = "gladius"
 	applies_material_colour = 0
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/material/sword/gladius)
+	configure(item_worn(slots = SLOT_BELT))

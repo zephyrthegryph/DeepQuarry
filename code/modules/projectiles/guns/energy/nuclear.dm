@@ -52,7 +52,6 @@
 	icon_state = "energystun"
 	item_state = null //so the human update icon uses the icon_state instead.
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
-	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	fire_delay = 6
 
 	projectile_type = /obj/item/projectile/beam/stun/weak
@@ -145,7 +144,6 @@
 	desc = "An energy gun with an experimental miniaturized reactor, based on a Lawson Arms platform."
 	icon_state = "nucgunstun"
 	projectile_type = /obj/item/projectile/beam/stun
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_HUGE	//Looks bigger than a pistol, too. //Looks like a cannon, lol.
 	fire_delay = 6	//This one's not a handgun, it should have the same fire delay as everything else
 	cell_type = /obj/item/cell/device/weapon/recharge
@@ -158,6 +156,7 @@
 		)
 
 CAPABILITIES(/obj/item/gun/energy/gun/nuclear)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/sf2000

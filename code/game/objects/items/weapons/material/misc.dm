@@ -103,7 +103,6 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 	icon_state = "whip"
 	item_state = "chain"
 	default_material = MAT_LEATHER
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	force_divisor = 0.15
 	thrown_force_divisor = 0.25
@@ -194,6 +193,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 						return
 
 CAPABILITIES(/obj/item/material/whip)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(attack_verbs = list("flogged", "whipped", "lashed", "disciplined"), reach = 2))
 	op("crack", in_hand(), then(PROC_REF(interaction_self)))
 

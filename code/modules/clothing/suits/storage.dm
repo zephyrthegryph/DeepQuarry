@@ -34,10 +34,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage)
 //Jackets with buttons, used for labcoats, IA jackets, First Responder jackets, and brown jackets.
 /obj/item/clothing/suit/storage/toggle
 	name = DEVELOPER_WARNING_NAME
-	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
+	configure(item_worn(hides = HIDEHOLSTER))
 	op("toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(toggle_toggle_verb)))
 
 /// Old verb "Toggle Coat Buttons".
@@ -49,12 +49,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		open = 0
 		icon_state = initial(icon_state)
-		flags_inv = HIDETIE|HIDEHOLSTER
+		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		open = 1
 		icon_state = "[icon_state]_open"
-		flags_inv = HIDEHOLSTER
+		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
 		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
@@ -63,12 +63,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 
 /obj/item/clothing/suit/storage/hooded/toggle
 	name = DEVELOPER_WARNING_NAME
-	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
 TRACKED(/obj/item/clothing/suit/storage/hooded/toggle, open)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
+	configure(item_worn(hides = HIDEHOLSTER))
 	op("hooded_toggle_toggle_verb", menu(), label("Toggle Coat Buttons"), needs(carried()), then(PROC_REF(hooded_toggle_toggle_verb)))
 
 /// Old verb "Toggle Coat Buttons".
@@ -79,11 +79,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		set_open(0)
-		flags_inv = HIDETIE|HIDEHOLSTER
+		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		set_open(1)
-		flags_inv = HIDEHOLSTER
+		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
 		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
@@ -108,6 +108,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 	var/icon_nobadge
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest)
+	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 	op("vest_toggle_verb", menu(), label("Adjust Badge"), needs(carried()), then(PROC_REF(vest_toggle_verb)))
 

@@ -57,7 +57,7 @@
 		item_state = "[icon_state]_blade"
 	embed_chance = active_embed_chance
 	set_force(active_force)
-	throwforce = active_throwforce
+	set_throwforce(active_throwforce)
 	set_armor_penetration(active_armourpen)
 	set_sharp(TRUE)
 	set_edge(TRUE)
@@ -75,7 +75,7 @@
 	set_active(0)
 	embed_chance = initial(embed_chance)
 	set_force(combat_of_type(type).force)
-	throwforce = initial(throwforce)
+	set_throwforce(thrown_of_type(type).force)
 	set_armor_penetration(combat_of_type(type).armor_penetration)
 	set_sharp(combat_of_type(type).sharp)
 	set_edge(combat_of_type(type).edge)
@@ -231,7 +231,6 @@ CAPABILITIES(/obj/item/melee/energy)
 	active_armourpen = 65
 	active_throwforce = 35
 	active_w_class = ITEMSIZE_HUGE
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -239,6 +238,7 @@ CAPABILITIES(/obj/item/melee/energy)
 	active_injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
 
 CAPABILITIES(/obj/item/melee/energy/axe)
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 20, armor_penetration = 20, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), sharp = TRUE, edge = TRUE, can_cleave = TRUE))
 
 /obj/item/melee/energy/axe/activate(mob/living/user)
@@ -278,7 +278,6 @@ CAPABILITIES(/obj/item/melee/energy/axe/charge)
 	active_armourpen = 50
 	active_throwforce = 20
 	active_w_class = ITEMSIZE_HUGE
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -288,6 +287,7 @@ CAPABILITIES(/obj/item/melee/energy/axe/charge)
 	projectile_parry_chance = 65
 
 CAPABILITIES(/obj/item/melee/energy/sword)
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
@@ -424,10 +424,8 @@ CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier/lance)
 	desc = "A concentrated beam of energy in the shape of a blade. Very stylish... and lethal."
 	icon_state = "blade"
 	item_state = "blade"
-	item_flags = DROPDEL | NOSTRIP
 	injury_kind = INJURY_CUT
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
-	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
 	throw_range = 1
 	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such.
@@ -443,6 +441,8 @@ CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier/lance)
 	set_light(lrange, lpower, lcolor)
 
 CAPABILITIES(/obj/item/melee/energy/blade)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	configure(item_thrown(force = 1))
 	configure(item_combat(force = 40, armor_penetration = 100, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	without("power") // special_handling: a summoned blade is never toggled, only dismissed
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
@@ -504,7 +504,6 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	desc = "Concentrated energy forming a sharp tip at the end of a long rod."
 	icon_state = "espear"
 	injury_kind = INJURY_CUT
-	throwforce = 10
 	throw_speed = 7
 	throw_range = 11
 	w_class = ITEMSIZE_LARGE
@@ -517,6 +516,7 @@ CAPABILITIES(/obj/item/melee/energy/blade)
 	lcolor = "#800080"
 
 CAPABILITIES(/obj/item/melee/energy/spear)
+	configure(item_thrown(force = 10))
 	configure(item_combat(armor_penetration = 0, sharp = TRUE, edge = TRUE, force = 5, reach = 2))
 
 /obj/item/melee/energy/spear/activate(mob/living/user)

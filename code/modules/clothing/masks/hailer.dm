@@ -4,7 +4,6 @@
 	icon_state = "halfgas"
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)
-	body_parts_covered = FACE
 	var/obj/item/hailer/hailer
 	COOLDOWN_DECLARE(hail_cooldown)
 	var/phrase = 1
@@ -46,16 +45,18 @@
 	name = "\improper SWAT mask"
 	desc = "A close-fitting tactical mask with an especially aggressive Compli-o-nator 3000."
 	icon_state = "officermask"
-	body_parts_covered = HEAD|FACE|EYES
-	flags_inv = HIDEFACE|BLOCKHAIR
 	aggressiveness = 3
 	phrase = 12
+
+CAPABILITIES(/obj/item/clothing/mask/gas/sechailer/swat)
+	configure(item_worn(covers = HEAD|FACE|EYES, hides = HIDEFACE|BLOCKHAIR))
 
 
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	sechailer_halt_verb(user)
 
 CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
+	configure(item_worn(covers = FACE))
 	op("sechailer_phrase_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Select phrase"), then(PROC_REF(sechailer_phrase_alt)))
 	op("sechailer_selectphrase_verb", menu(), label("Select gas mask phrase"), needs(carried()), then(PROC_REF(sechailer_selectphrase_verb_op)))
 	op("sechailer_halt_verb", menu(), label("HALT!"), needs(carried()), then(PROC_REF(sechailer_halt_verb_op)))

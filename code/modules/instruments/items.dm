@@ -182,10 +182,10 @@ CAPABILITIES(/obj/item/instrument/recorder)
 	desc = "For when you get a bad case of the space blues."
 	icon_state = "harmonica"
 	allowed_instrument_ids = list("crharmony", "harmonica")
-	slot_flags = SLOT_MASK
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/instrument/harmonica)
+	configure(item_worn(slots = SLOT_MASK))
 	configure(item_combat(force = 5))
 /obj/item/instrument/bikehorn
 	name = "gilded bike horn"

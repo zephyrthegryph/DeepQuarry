@@ -4,7 +4,6 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "ano01"
 	var/find_type = 0
-	item_flags = ABSTRACT
 
 /// Find spawning debug tool. Can be called on any /mob to spawn it at their location.
 /proc/artifact_spawn_debug_tool(mob/target)
@@ -21,6 +20,7 @@
 	new /obj/item/archaeological_find(target.loc, A.answer.value)
 
 CAPABILITIES(/obj/item/archaeological_find)
+	configure(item_worn(flags = ABSTRACT))
 	param(nameof(find_type), pos = 1)
 	rolls(nameof(find_type), range_of(1, MAX_ARCHAEO))
 

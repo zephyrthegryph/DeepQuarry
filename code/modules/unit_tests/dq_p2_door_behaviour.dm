@@ -250,7 +250,7 @@
 /// A fast tool of `type` in `H`'s active hand.
 /datum/unit_test/dq_p2_door/proc/give_tool(mob/living/carbon/human/H, type)
 	var/obj/item/tool = allocate(type, H.loc)
-	tool.toolspeed = 0
+	tool.set_toolspeed(0)
 	return hold(H, tool)
 
 /// A lit, fuelled welder in `H`'s active hand.
@@ -1721,9 +1721,9 @@
 	settle()
 	p2_door_set_power(D, FALSE)
 	var/obj/item/crowbar = give_tool(H, /obj/item/tool/crowbar)
-	crowbar.toolspeed = 1
+	crowbar.set_toolspeed(1)
 	var/obj/item/second = give_tool(other, /obj/item/tool/crowbar)
-	second.toolspeed = 1
+	second.set_toolspeed(1)
 	p2_door_click(H, D, crowbar)
 	TEST_ASSERT(op_claimed(D), "a crowbar at work claims the door")
 	p2_door_click(other, D, second)

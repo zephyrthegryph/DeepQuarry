@@ -193,9 +193,9 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	if(!isitem(A))
 		return 0
 	var/obj/item/O = A
-	if(!O.throwforce)
+	if(!thrown_of(O).force)
 		return 0
-	var/pass_damage = O.throwforce
+	var/pass_damage = thrown_of(O).force
 	var/factor = penetration_factor(host, pass_damage, combat_of(O).armor_penetration, O)
 	if(!factor)
 		return 0

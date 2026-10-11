@@ -4,8 +4,6 @@
 	desc = "A stun baton for incapacitating people with."
 	icon_state = "stunbaton"
 	item_state = "baton"
-	slot_flags = SLOT_BELT
-	throwforce = 7
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
 	var/lightcolor = "#FF6A00"
@@ -23,6 +21,8 @@
 TRACKED(/obj/item/melee/baton, status)
 
 CAPABILITIES(/obj/item/melee/baton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
 	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	owns_one(nameof(bcell), /obj/item/cell)
@@ -232,14 +232,14 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	desc = "An improvised stun baton."
 	icon_state = "stunprod_nocell"
 	item_state = "prod"
-	throwforce = 5
 	stunforce = 0
 	agonyforce = 60	//same force as a stunbaton, but uses way more charge.
 	hitcost = 2500	//runs off the same kind of big batteries as APCs, not small cells!
-	slot_flags = null
 	grip_safety = FALSE
 
 CAPABILITIES(/obj/item/melee/baton/cattleprod)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 3, attack_verbs = list("poked")))
 	op("cattleprod_interaction_item", item(/obj/item), then(PROC_REF(cattleprod_interaction_item)))
 	without("baton_item")   // its own item use replaces the baton's
@@ -277,10 +277,10 @@ CAPABILITIES(/obj/item/melee/baton/cattleprod)
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
 	icon_state = "shocker"
-	throwforce = 5
 	agonyforce = 25 // Less efficent than a regular baton.
 
 CAPABILITIES(/obj/item/melee/baton/shocker)
+	configure(item_thrown(force = 5))
 	configure(item_combat(force = 10, attack_verbs = list("poked")))
 
 /obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)

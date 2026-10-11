@@ -138,7 +138,7 @@
 	rc_click(H, patient, dry, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_blood_units(patient), blood, "a dry rag smothers nobody")
 	var/obj/item/clothing/head/helmet/helmet = allocate(/obj/item/clothing/head/helmet)
-	if(patient.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD) && (helmet.body_parts_covered & FACE))
+	if(patient.equip_to_slot_if_possible(helmet, SLOT_ID_HEAD) && (worn_of(helmet).covers & FACE))
 		rc_click(H, patient, R, I_HELP, FALSE)
 		TEST_ASSERT_EQUAL(rc_units(R), 5, "a covered face is refused")
 	H.zone_sel.set_selecting(BP_TORSO)

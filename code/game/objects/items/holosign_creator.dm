@@ -5,7 +5,6 @@
 	icon_state = "signmaker"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
 	var/list/signs
@@ -45,6 +44,7 @@
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
 CAPABILITIES(/obj/item/holosign_creator)
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 	// Projecting a sign takes creation_time and claims the creator; afterattack() starts it with the turf.
 	op("project", ai(), takes("spot"), claims(CLAIM_TARGET), wait(PROC_REF(project_wait)), then(PROC_REF(project_done)))

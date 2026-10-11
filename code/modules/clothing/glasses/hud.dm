@@ -8,8 +8,10 @@
 	desc = "A heads-up display that scans the humans in view and provides accurate data about their health status."
 	icon_state = "healthhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_STATUS,VIS_CH_HEALTH)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/health)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/health/prescription
 	desc = "A medical HUD integrated with a set of prescription glasses. \
@@ -23,8 +25,10 @@
 	desc = "A heads-up display that scans the humans in view and provides accurate data about their ID status and security records."
 	icon_state = "securityhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/security)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/security/prescription
 	desc = "A security HUD integrated with a set of prescription glasses. \
@@ -46,8 +50,10 @@
 	desc = "A heads-up display that scans the environment for contaminations."
 	icon_state = "janhud"
 	item_state_slots = list(slot_r_hand_str = "headset", slot_l_hand_str = "headset")
-	body_parts_covered = 0
 	enables_planes = list(VIS_JANHUD)
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/janitor)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/glasses/hud/janitor/prescription
 	desc = "A heads-up display that scans the environment for contaminations. \
@@ -168,12 +174,12 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 		if(icon_state == "glasses")
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded, pr)"
-			flags_inv |= HIDEEYES
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
 			icon_state = "sun"
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)] (pr)"
-			flags_inv &= ~HIDEEYES
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
 			icon_state = "glasses"
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
@@ -181,12 +187,12 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 		if(icon_state == "glasses")
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded)"
-			flags_inv |= HIDEEYES
+			set_flags_inv(worn_of(src).hides | (HIDEEYES))
 			icon_state = "sun"
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)]"
-			flags_inv &= ~HIDEEYES
+			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
 			icon_state = "glasses"
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
@@ -282,7 +288,6 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "projector"
 	off_state = "projector-off"
-	body_parts_covered = 0
 	toggleable = 1
 	vision_flags = SEE_TURFS //but they can spot breaches. Due to the way HUDs work, they don't provide darkvision up-close the way mesons do.
 	flash_protection = 0 //it's an open, single-eye retinal projector. there's no way it protects your eyes from flashes or welders.
@@ -291,6 +296,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	hud_goggles = TRUE
 
 CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
+	configure(item_worn(covers = 0))
 	op("omnihud_meson_projector_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle projector"), then(PROC_REF(omnihud_meson_projector_self)))
 	op("meson_toggleprojector_verb", menu(), label("Toggle projector"), needs(carried()), then(PROC_REF(meson_toggleprojector_verb)))
 
@@ -340,13 +346,13 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their ID status and security records."
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
 TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
+	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
 	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
@@ -374,13 +380,13 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their ID status and security records. This updated model offers better ergonomics and updated sensors."
 	icon_state = "sec_eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
 TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
+	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
 	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
@@ -408,13 +414,13 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	desc = "An eyepatch with built in scanners, that analyzes those in view and provides accurate data about their health status."
 	icon_state = "eyepatch"
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
-	body_parts_covered = 0
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
 TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
 
 CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
+	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
 	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
@@ -485,8 +491,6 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 	desc = "A full-face, partially-obscuring visor favoured by certain subcultures and those with sensitive eyes. Covers the face and eyes, but it's not enough to actually hide your identity. The interior has a simple augmented-reality display that aids with daily tasks. It can be toggled in and out of corrective vision mode via integrated subroutine."
 	icon_state = "mantle_HUD"
 	item_state = "mantle_HUD"
-	body_parts_covered = EYES
-	flags_inv = HIDEFACE
 	can_shade = FALSE
 
 /obj/item/clothing/glasses/omnihud/mantle/ar_interact(mob/living/carbon/human/user)
@@ -495,6 +499,7 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 	return 1
 
 CAPABILITIES(/obj/item/clothing/glasses/omnihud/mantle)
+	configure(item_worn(covers = EYES, hides = HIDEFACE))
 	op("mantle_switcheye_verb", menu(), label("Toggle Autocorrective Vision"), needs(carried()), then(PROC_REF(mantle_switcheye_verb)))
 
 /// Old verb "Toggle Autocorrective Vision".

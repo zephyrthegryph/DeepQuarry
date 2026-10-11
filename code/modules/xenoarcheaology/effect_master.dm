@@ -280,7 +280,7 @@ CAPABILITIES(/datum/artifact_master)
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(bumped))
 			var/obj/item/bumped_item = bumped
-			if(bumped_item.throwforce >= 10)
+			if(thrown_of(bumped_item).force >= 10)
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 
@@ -309,7 +309,7 @@ CAPABILITIES(/datum/artifact_master)
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(isitem(M))
 			var/obj/item/bumped_item = M
-			if(bumped_item.throwforce >= 10)
+			if(thrown_of(bumped_item).force >= 10)
 				if(my_effect.trigger == TRIGGER_FORCE)
 					my_effect.ToggleActivate()
 

@@ -21,10 +21,10 @@ CAPABILITY_TYPE(pollen_disability, CAP_DISABILITY_POLLEN, /datum/capability/disa
 	if(istype(owner.get_equipped_item(SLOT_ID_HEAD),/obj/item/clothing/head/helmet/space) && owner.internal) // Hardsuits
 		return
 	if(owner.get_equipped_item(SLOT_ID_MASK)) // masks block it entirely
-		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)
+		if(worn_of(owner.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT)
 			if(owner.internal) // gas on
 				return
-		if(owner.get_equipped_item(SLOT_ID_MASK).item_flags & BLOCK_GAS_SMOKE_EFFECT)
+		if(worn_of(owner.get_equipped_item(SLOT_ID_MASK)).flags & BLOCK_GAS_SMOKE_EFFECT)
 			return
 
 	// Time to ENGAGE THE ALLERGY

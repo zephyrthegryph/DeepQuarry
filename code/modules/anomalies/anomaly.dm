@@ -4,13 +4,12 @@
 	icon = 'icons/obj/devices/tool.dmi'
 	icon_state = "neutralyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	item_flags = NOBLUDGEON
 
 /// Owned: lets us delete anomalies we hit (was the effect_remover component).
 /obj/item/anomaly_neutralizer/var/datum/effect_remover/effect_remover
 
 CAPABILITIES(/obj/item/anomaly_neutralizer)
+	configure(item_worn(slots = SLOT_BELT, flags = NOBLUDGEON))
 	owns_one(nameof(effect_remover), /datum/effect_remover, starts = PROC_REF(make_effect_remover))
 
 /// The starting effect remover (owns_one(starts =)): it clears anomalies.
@@ -33,7 +32,6 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	icon_state = "anomaly_releaser"
 	name = "advanced anomaly releaser"
 	desc = "Single-use injector that releases and stabilizes anomalies by injecting an unknown substance."
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 5
@@ -50,6 +48,9 @@ CAPABILITIES(/obj/item/anomaly_neutralizer)
 	var/will_anchor = TRUE
 	// If it will apply stats to it
 	var/gives_stats = TRUE
+
+CAPABILITIES(/obj/item/anomaly_releaser)
+	configure(item_thrown(force = 0))
 TRACKED(/obj/item/anomaly_releaser, used)
 
 /obj/item/anomaly_releaser/science
@@ -74,7 +75,6 @@ TRACKED(/obj/item/anomaly_releaser, used)
 	desc = "A hand-held anomaly scanner, able to distinguish the particles that might affect a stable anomaly."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "anom_scanner"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -85,6 +85,7 @@ TRACKED(/obj/item/anomaly_releaser, used)
 	var/obj/effect/anomaly/buffered_anomaly
 
 CAPABILITIES(/obj/item/anomaly_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("AnomalyScanner")

@@ -3,13 +3,13 @@
 	desc = "A rod of pure obsidian, its very presence disrupts and dampens the powers of paranormal phenomenae."
 	icon_state = "nullrod"
 	item_state = "nullrod"
-	slot_flags = SLOT_BELT
 	throw_speed = 1
 	throw_range = 4
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/nullrod)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
 	configure(item_combat(force = 15))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
@@ -75,11 +75,11 @@ CAPABILITIES(/obj/item/nullrod)
 	desc = "It's a net made of green energy."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "energynet"
-	throwforce = 0
 	var/net_type = /obj/effect/energy_net
-	item_flags = DROPDEL
 
 CAPABILITIES(/obj/item/energy_net)
+	configure(item_worn(flags = DROPDEL))
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 
 /obj/item/energy_net/throw_impact(atom/hit_atom)

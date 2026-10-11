@@ -4,7 +4,6 @@
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "arrow"
 	item_state = "bolt"
-	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
 
 /obj/item/arrow/energy
@@ -13,13 +12,12 @@
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "hardlight"
 	item_state = "bolt"
-	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_CUT
 	embed_chance = 0 // it fizzles!
-	catchable = FALSE // oh god
 
 CAPABILITIES(/obj/item/arrow/energy)
+	configure(item_thrown(force = 10, catchable = FALSE))
 	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/arrow/energy/throw_impact(atom/hit_atom)
@@ -42,7 +40,6 @@ CAPABILITIES(/obj/item/arrow/energy)
 	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
-	slot_flags = SLOT_BACK
 	release_force = 20
 	release_speed = 15
 	var/drawn = FALSE
@@ -74,6 +71,7 @@ TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 	..()
 
 CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
+	configure(item_worn(slots = SLOT_BACK))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	op("draw_bow", ai(), wait(2.5 SECONDS), then(PROC_REF(drawn_fully)))
 

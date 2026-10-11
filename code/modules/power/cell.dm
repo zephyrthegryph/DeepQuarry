@@ -10,7 +10,6 @@
 	icon = 'icons/obj/power_cells.dmi' // swap to 'icons/obj/power_cells_.dmi' for new sprites. // Enable new sprites
 	icon_state = "b_st"
 	item_state = "cell"
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -67,6 +66,7 @@ MSG_DEF_SELF(cell/needs_item, "needs an item")
 MSG_DEF_SELF(cell/not_in_hand, "not in your hand")
 
 CAPABILITIES(/obj/item/cell)
+	configure(item_thrown(force = 5.0))
 	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 	op("inject_cell", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(/obj/item, because = MSG(cell/needs_item)), req_adjacent(), req_capable()), then(PROC_REF(interaction_item)))

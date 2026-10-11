@@ -3,9 +3,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick_brush"
 	item_state = "syringe_0"
-	slot_flags = SLOT_EARS
 	digspeed = 20
-	throwforce = 0
 	desc = "Thick metallic wires for clearing away dust and loose scree (1 centimetre excavation depth)."
 	excavation_amount = 1
 	drill_sound = SFX_WEAPONS_THUDSWOOSH
@@ -13,6 +11,8 @@
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/pickaxe/brush)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0))
 	configure(item_combat(force = 0))
 
 /obj/item/pickaxe/one_pick
