@@ -1,6 +1,10 @@
 //! Explicit performance-cache pruning, independent of publication identity.
 use super::*;
 
+#[cfg(test)]
+#[path = "pressure_lifecycle_tests.rs"]
+mod lifecycle_tests;
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct PressurePrune {
     /// Conservative logical charge, not physical process private bytes.
