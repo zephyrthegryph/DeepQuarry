@@ -2847,7 +2847,7 @@
 /obj/effect/temp_visual/transmute_tile_flash	b07cdb956dee21df	
 /obj/effect/temporary_effect	9f0c596d67c051f3	
 /obj/effect/temporary_effect/blob_attack	b55fa951bce32e68	
-/obj/effect/temporary_effect/chroma	a029392cf8e6fd79	chroma_color
+/obj/effect/temporary_effect/chroma	25286d6cccd89d90	chroma_color
 /obj/effect/temporary_effect/cleave_attack	226dee5b3b6da091	
 /obj/effect/temporary_effect/darkness	e952001c2587d392	
 /obj/effect/temporary_effect/destablize	df85832a222528c1	
@@ -14346,14 +14346,14 @@
 /obj/item/spell/abjuration	ef088953087a4e54	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/apportation	af2b5d0d812b77ba	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/audible_deception	35d0f79705b2db91	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
-/obj/item/spell/aura	ed971e02d68dbf3e	carried_afflictions,core,coreless,economic_adoption,glow_color,identity,mind_host,possessed_voice,toggled
-/obj/item/spell/aura/biomed	a12e917368611218	carried_afflictions,core,coreless,economic_adoption,glow_color,heal_allies_only,identity,mind_host,owner,possessed_voice,regen_tick,toggled
-/obj/item/spell/aura/fire	c4d5d99d6698db3d	*
-/obj/item/spell/aura/frost	cb3dfa6e9862ae09	*
-/obj/item/spell/aura/shock	9fcd9cf45e148c12	*
-/obj/item/spell/aura/unstable	e601bbbe368305bf	*
+/obj/item/spell/aura	f2bac65f620a89a8	carried_afflictions,core,coreless,economic_adoption,glow_color,identity,mind_host,possessed_voice,toggled
+/obj/item/spell/aura/biomed	38d3b7b789d7ef5d	carried_afflictions,core,coreless,economic_adoption,glow_color,heal_allies_only,identity,mind_host,owner,possessed_voice,regen_tick,toggled
+/obj/item/spell/aura/fire	e4a677393e5aaeb5	*
+/obj/item/spell/aura/frost	66cfe21c52e80765	*
+/obj/item/spell/aura/shock	9df4f2a83ccfb4e3	*
+/obj/item/spell/aura/unstable	1d3d32824c544262	*
 /obj/item/spell/blink	d6545c598f8e185b	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
-/obj/item/spell/chroma	cce0debf78edd41a	carried_afflictions,color_to_use,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
+/obj/item/spell/chroma	63f54467703f734b	carried_afflictions,color_to_use,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/condensation	91cf04b71f01bcdc	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/construct	0ab5210bb2a51455	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/construct/mend_occult	6aa79df71b2f2f4a	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
@@ -14376,14 +14376,14 @@
 /obj/item/spell/instability_tap	90fb29fbe5705fba	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/mark	6fdb63c030d5a2bf	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/mend_organs	c92490c78c91cb23	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
-/obj/item/spell/modifier	b7529c7a3ebf50a3	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/corona	8857080e07e41a3f	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/haste	29cd2cc9758bc496	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/mend_all	4ce8818c40924073	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/mend_life	69983553fa88bc76	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/mend_synthetic	516fb85520cabb17	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/purify	154aee9d2cfea677	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
-/obj/item/spell/modifier/repel_missiles	0f10ff0bf978c856	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier	8ce3b7ab5782a935	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/corona	3181a210945ecabe	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/haste	dbb931c0df8b60fb	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/mend_all	1e67a83bdb9c7b36	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/mend_life	96e3930ecbbf6dd6	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/mend_synthetic	f3bfc3faf25aad17	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/purify	b5c826d30e47697a	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
+/obj/item/spell/modifier/repel_missiles	98a0eed5265d690a	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,spell_light_color,spell_light_intensity,spell_light_range,toggled
 /obj/item/spell/oxygenate	05891e9c09706dff	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/passwall	cf5d4832847d221c	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
 /obj/item/spell/phase_shift	17f4bf1b3ce45a04	carried_afflictions,coreless,economic_adoption,identity,mind_host,possessed_voice,toggled
