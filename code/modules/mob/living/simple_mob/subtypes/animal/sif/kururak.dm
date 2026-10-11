@@ -362,10 +362,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 	else
 		remove_body_effect(/datum/body_effect/ace)
 
-/mob/living/simple_mob/animal/sif/kururak/hibernate/Initialize(mapload)
-	. = ..()
-	lay_down()
-	instinct = 0
+/// Found asleep, with no instinct of its own.
+/mob/living/simple_mob/animal/sif/kururak/hibernate
+	resting = TRUE
+
+/mob/living/simple_mob/animal/sif/kururak/hibernate/roll_instinct(datum/roller/R)
+	return 0
 
 /*
  * Kururak AI

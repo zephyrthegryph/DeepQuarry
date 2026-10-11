@@ -56,22 +56,24 @@
 	desc = "You probably shouldn't be able to see this."
 	stage = 2
 	path = 1
+	icon_state = null // never seen: it goes off as it appears
 
-/obj/item/grenade/chem_grenade/miasma/Initialize(mapload)
-	. = ..()
-	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
+// Its two beakers come filled; it goes off as soon as it exists.
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a
 
-	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30) // ALLOW(decl): fills the grenade's own beakers
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5) // ALLOW(decl): fills the grenade's own beakers
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5) // ALLOW(decl): fills the grenade's own beakers
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5) // ALLOW(decl): fills the grenade's own beakers
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a)
+	configure(reagents(add = list(REAGENT_ID_MIASMA = 30, REAGENT_ID_POTASSIUM = 5)))
 
-	rel_add(src, nameof(beakers), B1)
-	rel_add(src, nameof(beakers), B2)
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b
 
-	icon_state = null // ALLOW(decl): hidden just before it detonates
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b)
+	configure(reagents(add = list(REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5)))
 
+CAPABILITIES(/obj/item/grenade/chem_grenade/miasma)
+	owns_many(nameof(beakers), starts = list(/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a, /obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b))
+	after_init(0, then(PROC_REF(go_off)))
+
+/obj/item/grenade/chem_grenade/miasma/proc/go_off(datum/act/timer/A)
 	detonate()
 
 //Has a chance to play one of the listed sounds when it moves.

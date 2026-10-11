@@ -5,15 +5,12 @@
 /obj/structure/disposalpipe/junction
 	icon_state = "pipe-j1"
 
+CAPABILITIES(/obj/structure/disposalpipe/junction)
+	derives(nameof(dpdir), PROC_REF(junction_ends)) // at init: the pipe's ends follow how it was placed
+
 // ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/junction/Initialize(mapload)
 	. = ..()
-	if(icon_state == "pipe-j1")
-		dpdir = dir | turn(dir, -90) | turn(dir,180)
-	else if(icon_state == "pipe-j2")
-		dpdir = dir | turn(dir, 90) | turn(dir,180)
-	else // pipe-y
-		dpdir = dir | turn(dir,90) | turn(dir, -90)
 	update()
 	return
 
@@ -303,3 +300,11 @@ CAPABILITIES(/obj/structure/disposalpipe/sortjunction)
 /// A frozen sorter sends things aside.
 /obj/structure/disposalpipe/sortjunction/proc/side_wire_pulsed(datum/act/A)
 	last_sort = TRUE
+
+/// A junction joins three ends: the two sides of a j1 or j2 and the way it faces, or the two arms of a y.
+/obj/structure/disposalpipe/junction/proc/junction_ends()
+	if(icon_state == "pipe-j1")
+		return dir | turn(dir, -90) | turn(dir, 180)
+	if(icon_state == "pipe-j2")
+		return dir | turn(dir, 90) | turn(dir, 180)
+	return dir | turn(dir, 90) | turn(dir, -90) // pipe-y

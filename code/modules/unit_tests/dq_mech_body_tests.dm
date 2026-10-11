@@ -61,7 +61,7 @@
 	// tick(): a short circuit burns cell capacity; life support failure halts temperature control.
 	var/obj/item/cell/cell = mech.get_cell()
 	TEST_ASSERT_NOTNULL(cell, "a ripley has a cell")
-	cell.charge = cell.maxcharge
+	cell.set_charge(cell.maxcharge)
 	var/cap_before = cell.maxcharge
 	plan.afflict(mech, MECHA_INT_SHORT_CIRCUIT)
 	plan.afflict(mech, MECHA_INT_TEMP_CONTROL)

@@ -7,13 +7,6 @@
 	var/item_tf = FALSE
 
 
-/mob/living/voice/Initialize(mapload)
-	add_language(LANGUAGE_GALCOM)
-	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-
-	if(istype(loc, /obj/item/communicator))
-		rel_set(src, nameof(comm), loc) // the communicator carrying us
-	. = ..()
 
 // Proc: transfer_identity()
 // Parameters: 1 (speaker - the mob (usually an observer) to copy information from)
@@ -155,3 +148,5 @@
 CAPABILITIES(/mob/living/voice)
 	configure(mob_kind(emote_type = 2))
 	ref_one(nameof(comm))
+	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us
+	knows(LANGUAGE_GALCOM, default = TRUE)

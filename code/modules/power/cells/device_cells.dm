@@ -53,13 +53,10 @@ CAPABILITIES(/obj/item/cell/device)
  * EMP Proof Device
  */
 /obj/item/cell/device/empproof
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded device power cell"
 	desc = "A small power cell designed to power handheld devices. Shielded from EMPs."
 	icon_state = "s_st"
-
-/obj/item/cell/device/empproof/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
 
 /obj/item/cell/device/empproof/empty
 	charge = 0
@@ -82,13 +79,10 @@ CAPABILITIES(/obj/item/cell/device)
  * EMP Proof Weapon
  */
 /obj/item/cell/device/weapon/empproof
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "shielded weapon power cell"
 	desc = "A small power cell designed to power handheld weaponry. Shielded from EMPs."
 	icon_state = "s_hi"
-
-/obj/item/cell/device/weapon/empproof/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
 
 /obj/item/cell/device/weapon/empproof/empty
 	charge = 0

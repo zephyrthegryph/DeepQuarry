@@ -18,23 +18,15 @@
 	var/can_namepick_as_adult = 0
 	var/adult_name
 	var/instance_num
-
-// ALLOW(init/INSTANCE_STATE): stamps its birth, rolls its number and names itself after it
-/mob/living/carbon/alien/Initialize(mapload)
-	. = ..()
-
-	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
-
-
-	instance_num = rand(1, 1000)
-	name = "[initial(name)] ([instance_num])"
-	real_name = name
-	regenerate_icons()
-
-	if(language)
-		add_language(language)
-
 	gender = NEUTER
+
+// Each is numbered and named for it, knows its kind's language and is stamped with its birth (its CAPABILITIES, alien_damage.dm).
+/mob/living/carbon/alien/proc/numbered_name(datum/roller/R)
+	return "[initial(name)] ([instance_num])"
+
+/// Its age counts from now (setup()).
+/mob/living/carbon/alien/proc/stamp_birth()
+	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
 
 /mob/living/carbon/alien/restrained()
 	return 0

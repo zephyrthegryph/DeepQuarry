@@ -29,7 +29,6 @@
 
 //stolen from chickens
 GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
-GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 
 /datum/category_item/catalogue/fauna/teppi
 	name = "Alien Wildlife - Teppi"
@@ -433,6 +432,15 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
 	op("teppi_shear_cutter", tool(TOOL_WIRECUTTER), stance(I_HELP), priority(OP_PRIORITY_TAKE_OUT), label("Shear"), when(nameof(teppi_wool)), wait(PROC_REF(teppi_shear_time)), then(PROC_REF(teppi_shear_done)))
 	op("teppi_slaughter", item(/obj/item/material/knife), stance(I_HELP), priority(OP_PRIORITY_PART), label("Slaughter"), when(req(PROC_REF(can_slaughter))), begins(MSG(teppi/slaughter_begins)), wait(5 SECONDS), then(PROC_REF(teppi_slaughter_done)))
 	param(nameof(parent_one), pos = 1, keep = FALSE)
+	// each is numbered; a baby crawls and hides, an adult breeds
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	verb_entry(/mob/living/proc/ventcrawl, when = cond_not(nameof(teppi_adult)))
+	verb_entry(/mob/living/proc/hide, when = cond_not(nameof(teppi_adult)))
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring, when = nameof(teppi_adult))
+	verb_entry(/mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring, when = nameof(teppi_adult))
+	// its allergies, colours and markings, once it has inherited what it inherits (its parents', or a baby's when it grows up)
+	setup(PROC_REF(teppi_setup))
 	param(nameof(parent_two), pos = 2, apply = PROC_REF(inherit_made), keep = FALSE)
 
 MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%."), span_attack("%U% approaches %T%'s neck with %I%."))
@@ -693,7 +701,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	if(baby_countdown > 0)
 		baby_countdown --
 		return
-	else if(GLOB.teppi_count >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners, but we can be ready in case a slot opens
+	else if(REGISTRY_COUNT(REGISTRY_TEPPIS) >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners, but we can be ready in case a slot opens
 		return
 	if(prob(1))
 		for(var/mob/living/simple_mob/vore/alienanimals/teppi/alltep in oview(1,src))
@@ -761,27 +769,8 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	else if(parent_one && parent_two)
 		inherit_from_parents(parent_one, parent_two)
 
-//Handles both growing up from a baby and also passing parent details to new babies.
-// ALLOW(init/INSTANCE_STATE): a teppi is counted, numbered and granted its age's verbs at init
-/mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload)
-	GLOB.teppi_count ++
-	. = ..()
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-		real_name = name
-	if(!teppi_adult)
-		set_nutrition(0)
-		grant(src, granted_verb(/mob/living/proc/ventcrawl), src)
-		grant(src, granted_verb(/mob/living/proc/hide), src)
-	else
-		grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring), src)
-		grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring), src)
-	teppi_setup()
-
-// the population cap counts it out.
-/mob/living/simple_mob/vore/alienanimals/teppi/lifecycle_dematerialize()
-	GLOB.teppi_count --
-	..()
+// The population cap counts the teppi in the world.
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEPPIS)
 
 /mob/living/simple_mob/vore/alienanimals/teppi/lay_down()
 	..()
@@ -908,6 +897,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	pixel_x = 0
 	default_pixel_x = 0
 	teppi_adult = FALSE
+	nutrition = 0 // a baby is born hungry
 	endurance = 50
 	movement_cooldown = 1
 	harm_intent_damage = 5
@@ -1015,7 +1005,7 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	if(!breedable || nutrition < 500)
 		to_chat(src, span_notice("The conditions are not right to produce offspring."))
 		return
-	if(GLOB.teppi_count >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners
+	if(REGISTRY_COUNT(REGISTRY_TEPPIS) >= GLOB.max_teppi) //if we can't make more then we shouldn't look for partners
 		to_chat(src, span_notice("I cannot produce more offspring at the moment, there are too many of us!"))
 		return
 	. = FALSE

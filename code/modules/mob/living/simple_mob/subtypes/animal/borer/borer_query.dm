@@ -16,6 +16,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/borer)
 	owns_one(nameof(host_brain), /mob/living/captive_brain)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	knows("Cortical Link")
+	rolls(nameof(true_name), PROC_REF(roll_true_name))
+	setup(TYPE_PROC_REF(/mob, motiontracker_subscribe)) // senses motion from birth
 
 /// The human this borer has infested, or null.
 /mob/living/simple_mob/animal/borer/proc/borer_host() as /mob/living/carbon/human

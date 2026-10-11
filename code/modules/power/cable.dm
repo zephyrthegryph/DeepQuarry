@@ -783,12 +783,9 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 /obj/item/stack/cable_coil/cut
 	item_state = "coil2"
 
-/obj/item/stack/cable_coil/cut/Initialize(mapload)
-	. = ..()
-	set_amount(rand(1,2), TRUE)
-	pixel_x = rand(-2,2)
-	pixel_y = rand(-2,2)
-	update_wclass()
+CAPABILITIES(/obj/item/stack/cable_coil/cut)
+	rolls(nameof(amount_at_make), range_of(1, 2)) // a cut piece is one or two lengths
+	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /obj/item/stack/cable_coil/yellow
 	stacktype = /obj/item/stack/cable_coil
@@ -862,15 +859,17 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	stacktype = /obj/item/stack/cable_coil
 	color = COLOR_BROWN
 
-/obj/item/stack/cable_coil/random/Initialize(mapload)
+/obj/item/stack/cable_coil/random
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)
-	. = ..()
 
-/obj/item/stack/cable_coil/random_belt/Initialize(mapload)
+CAPABILITIES(/obj/item/stack/cable_coil/random)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)))
+
+/obj/item/stack/cable_coil/random_belt
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
-	. = ..()
+
+CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)))
 
 //Endless alien cable coil
 

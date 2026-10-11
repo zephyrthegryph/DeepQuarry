@@ -592,9 +592,8 @@ TYPE_TABLE(/turf/simulated/wall/rplastihull, wall_forced_materials, list(MAT_PLA
 	icon = 'icons/turf/wall_masks_vr.dmi'
 	COOLDOWN_DECLARE(event_cooldown)
 
-/turf/simulated/wall/uranium/Initialize(mapload)
-	. = ..(mapload, MAT_URANIUM)
-	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
+CAPABILITIES(/turf/simulated/wall/uranium)
+	on_notice(/datum/notice/atom_propagate_rad_pulse, then(PROC_REF(radiate)))
 
 /turf/simulated/wall/uranium/radiate(datum/act/notice/N)
 	// SHOULD_NOT_SLEEP is declared on /turf/simulated/wall/radiate(); this override

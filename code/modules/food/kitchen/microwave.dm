@@ -48,6 +48,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
+	default_parts()
 	configure(uses_power(idle = 5, active = 2000))
 	reagents(100)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
@@ -98,12 +99,6 @@ CAPABILITIES(/obj/machinery/microwave)
 	reagents.maximum_volume = (advanced_microwave ? 200 : 40) * mbrating
 	efficiency = mlrating
 	set_active_power_usage(max(100, 2000 / caprating))
-
-/obj/machinery/microwave/Initialize(mapload)
-	. = ..()
-
-
-	default_apply_parts()
 
 
 // its contents are disposed and a pAI inside is ejected.

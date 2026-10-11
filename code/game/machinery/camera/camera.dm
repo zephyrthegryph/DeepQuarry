@@ -46,6 +46,8 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
+	on_notice(/datum/notice/machinery_power_restored, then(PROC_REF(on_power_signal)))
 	configure(uses_power(idle = 5, active = 10))
 	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
@@ -73,8 +75,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
-	observe(src, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_power_signal)))
-	observe(src, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_power_signal)))
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
 	if(!src.network || src.network.len < 1)

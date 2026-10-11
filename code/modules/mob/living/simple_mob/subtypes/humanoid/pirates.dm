@@ -47,10 +47,14 @@
 
 	say_list_type = /datum/say_list/pirate
 
-/mob/living/simple_mob/humanoid/pirate/Initialize(mapload)
+/// Every pirate's loot table also holds pirate salvage (its per_type() table, built once per type).
+/mob/living/simple_mob/humanoid/pirate/per_type_own(var_name)
 	. = ..()
-	loot_list = loot_list ? loot_list.Copy() : list()
-	loot_list += list(/obj/item/salvage/loot/pirate = 35)
+	if(var_name == nameof(loot_list))
+		var/list/inherited = .
+		var/list/table = inherited ? inherited.Copy() : list()
+		table[/obj/item/salvage/loot/pirate] = 35
+		return table
 
 //Armored Variant
 

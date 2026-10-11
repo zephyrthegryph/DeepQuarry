@@ -190,23 +190,6 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	icon = 'icons/turf/outdoors_vr.dmi'
 	icon_base = "dirt0"
 
-// ALLOW(init/INSTANCE_STATE): rolls its dirt pattern for each tile
-/turf/simulated/floor/outdoors/newdirt/Initialize(mapload)
-	var/possibledirts = list(
-		"dirt0" = 150,
-		"dirt1" = 25,
-		"dirt2" = 25,
-		"dirt3" = 25,
-		"dirt4" = 25,
-		"dirt5" = 10,
-		"dirt6" = 10,
-		"dirt7" = 3,
-		"dirt8" = 3,
-		"dirt9" = 1
-	)
-	set_flooring_override(pickweight(possibledirts))
-	return ..()
-
 /turf/simulated/floor/outdoors/newdirt_nograss
 	name = "dirt"
 	desc = "Looks dirty."
@@ -215,17 +198,8 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	edge_blending_priority = 2
 	initial_flooring = /datum/decl/flooring/outdoors/newdirt
 
-// ALLOW(init/INSTANCE_STATE): rolls its dirt pattern for each tile
-/turf/simulated/floor/outdoors/newdirt_nograss/Initialize(mapload)
-	var/possibledirts = list(
-		"dirt0" = 200,
-		"dirt6" = 20,
-		"dirt7" = 3,
-		"dirt8" = 3,
-		"dirt9" = 1
-	)
-	set_flooring_override(pickweight(possibledirts))
-	return ..()
+CAPABILITIES(/turf/simulated/floor/outdoors/newdirt_nograss)
+	rolls(nameof(flooring_override), pick_one(list("dirt0" = 200, "dirt6" = 20, "dirt7" = 3, "dirt8" = 3, "dirt9" = 1)))
 
 /turf/simulated/floor/outdoors/sidewalk
 	name = "sidewalk"
@@ -236,6 +210,9 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	movement_cost = -0.5
 	initial_flooring = /datum/decl/flooring/outdoors/sidewalk
 	can_dirty = TRUE
+
+CAPABILITIES(/turf/simulated/floor/outdoors/sidewalk)
+	rolls(nameof(flooring_override), PROC_REF(roll_sidewalk))
 
 /datum/decl/flooring/outdoors/sidewalk
 	name = "sidewalk"
@@ -259,28 +236,12 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	throw_range = 20
 	no_variants = FALSE
 
-CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
 	configure(item_thrown(force = 15.0))
 	configure(item_combat(force = 6.0))
 
-// ALLOW(init/INSTANCE_STATE): rolls its sidewalk wear pattern for each tile
-/turf/simulated/floor/outdoors/sidewalk/Initialize(mapload)
-	var/possibledirts = list(
-		"[initial(icon_state)]" = 150,
-		"[initial(icon_state)]1" = 3,
-		"[initial(icon_state)]2" = 3,
-		"[initial(icon_state)]3" = 3,
-		"[initial(icon_state)]4" = 3,
-		"[initial(icon_state)]5" = 3,
-		"[initial(icon_state)]6" = 2,
-		"[initial(icon_state)]7" = 2,
-		"[initial(icon_state)]8" = 2,
-		"[initial(icon_state)]9" = 2,
-		"[initial(icon_state)]10" = 2
-	)
-	set_flooring_override(pickweight(possibledirts))
-	return ..()
-
+CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 6.0))
 /turf/simulated/floor/outdoors/sidewalk/side
 	icon_state = "side-walk"
 	initial_flooring = /datum/decl/flooring/outdoors/sidewalk/side
@@ -375,3 +336,8 @@ CAPABILITIES(/obj/item/stack/tile/floor/concrete)
 
 /obj/effect/step_trigger/teleporter/planetary_fall/sif/find_planet()
 	planet_static = GLOB.planet_sif
+
+/// Mostly the plain slab; now and then a cracked or stained one.
+/turf/simulated/floor/outdoors/sidewalk/proc/roll_sidewalk(datum/roller/R)
+	var/base = initial(icon_state)
+	return R.weighted(list("[base]" = 150, "[base]1" = 3, "[base]2" = 3, "[base]3" = 3, "[base]4" = 3, "[base]5" = 3, "[base]6" = 2, "[base]7" = 2, "[base]8" = 2, "[base]9" = 2, "[base]10" = 2))

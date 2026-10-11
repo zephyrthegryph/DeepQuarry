@@ -51,7 +51,6 @@ Buildable meters
 
 	update()
 	warm_init_dirs()
-	make_rotatable()
 	. = ..()
 
 /obj/item/pipe/proc/make_from_existing(obj/machinery/atmospherics/make_from)
@@ -150,6 +149,7 @@ MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 CAPABILITIES(/obj/item/pipe)
 	configure(item_thrown(force = 7))
 	configure(item_combat(force = 7))
+	rotatable()
 	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
 	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))
 	op("line", stack(/obj/item/stack/material, 1), label("Form material"), wait(0), needs(req(PROC_REF(unlined))), then(PROC_REF(lined)))

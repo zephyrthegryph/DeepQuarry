@@ -597,11 +597,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	name = "Protean power cell"
 	desc = "Something terrible must have happened if you're managing to see this."
 	maxcharge = 10000
+	charge = 10000 // starts full
 	charge_amount = 100
-
-/obj/item/cell/protean/Initialize(mapload)
-	. = ..()
-	set_charge(maxcharge)
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()

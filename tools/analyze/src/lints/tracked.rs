@@ -59,6 +59,32 @@ static META: Meta = Meta {
     lists: &[],
 };
 
+/// The same writes in the test and benchmark trees, which `[lint.tracked]` exempts: a fixture that writes a tracked or stat var raw
+/// leaves shared map state changed with no mark (a later test's refresh sweep reports REFRESH DRIFT on it). Shrink-only over
+/// `tools/ci/tracked_tests_baseline.txt`; write through the setter (`A.set_equipment(...)`) or `set_var()` in a test.
+static META_TESTS: Meta = Meta {
+    name: "tracked_tests",
+    group: "",
+    label: "tracked_tests",
+    legacy: "",
+    select: CODE_MAPS_DM,
+    scan: ScanKind::Tree,
+    policy: Policy::Sites {
+        baseline: "tools/ci/tracked_tests_baseline.txt",
+        header: &[
+            "tracked_tests: raw writes of TRACKED/SETTER/STAT/derive() vars in tests and benchmarks. rule<TAB>file<TAB>normalized line.",
+            "Shrink-only: `analyze baseline --update --lint tracked_tests` drops fixed sites and never adds one.",
+        ],
+        banned: &[],
+    },
+    rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }],
+    allow: &["tracked"],
+    lists: &[],
+};
+
+/// The test and benchmark trees `tracked_tests` reads (and `tracked` leaves to it).
+const TEST_PREFIXES: &[&str] = &["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"];
+
 const OPS: &str = r"(?:=(?!=)|\+=|-=|\*=|/=|\|=|&=|\^=|<<=|>>=|\+\+|--)";
 
 /// `{var: {types}}` (the Python `tracked` dict of sets).
@@ -124,6 +150,12 @@ fn parse_procs(code: &View) -> Vec<Proc<'_>> {
 /// `tracked_from_text`: adds the vars this file declares tracked (TRACKED / SETTER lines, derive()
 /// values) to `tracked`.
 fn tracked_from_text(f: &SourceFile, tracked: &mut Tracked) {
+    tracked_from_text_with(f, tracked, false)
+}
+
+/// `stats`: also the vars non-virtual STAT() declarations compose (`tracked_tests` only: in code the stat engine and the look builder
+/// write them, and a few legacy sites still do).
+fn tracked_from_text_with(f: &SourceFile, tracked: &mut Tracked, stats: bool) {
     let raw = f.text();
     if raw.contains("TRACKED") || raw.contains("SETTER(") {
         for line in f.raw().lines() {
@@ -148,6 +180,18 @@ fn tracked_from_text(f: &SourceFile, tracked: &mut Tracked) {
             let text = p.body.iter().map(|(_, t)| *t).collect::<Vec<_>>().join("\n");
             for m in pat!(r"\bderive\(\s*nameof\(\s*(?:/[\w/]+::)?(\w+)\s*\)").captures_iter(&text) {
                 tracked.entry(m.s(1).to_string()).or_default().insert(normalize_type(p.owner));
+            }
+        }
+    }
+    // STAT(T, name, rule, ...) declares a var the stat engine composes and writes; a virtual stat has no var.
+    if stats && raw.contains("STAT(") {
+        for line in f.raw().lines() {
+            if py_lstrip(line).starts_with("#define") || line.contains("virtual = TRUE") {
+                continue;
+            }
+            let re = pat_match!(r"^\s*STAT\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,");
+            if let Some(m) = re.captures(line) {
+                tracked.entry(m.s(2).to_string()).or_default().insert(normalize_type(m.s(1)));
             }
         }
     }
@@ -258,19 +302,26 @@ fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink, nam
     (hits, setters)
 }
 
-struct Tracker;
+struct Tracker {
+    tests: bool,
+}
 
 impl Lint for Tracker {
     fn meta(&self) -> &Meta {
-        &META
+        if self.tests {
+            &META_TESTS
+        } else {
+            &META
+        }
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         // Facts: the vars each file declares tracked (cached by content); merged into one index.
         let all = cx.all_files();
-        let facts: Vec<Vec<(String, String)>> = incr::facts("tracked-facts", &all, |f| {
+        let stats = self.tests;
+        let facts: Vec<Vec<(String, String)>> = incr::facts(if stats { "tracked-tests-facts" } else { "tracked-facts" }, &all, |f| {
             let mut t: Tracked = BTreeMap::new();
-            tracked_from_text(f, &mut t);
+            tracked_from_text_with(f, &mut t, stats);
             t.into_iter().flat_map(|(v, set)| set.into_iter().map(move |ty| (v.clone(), ty))).collect()
         });
         let mut tracked: Tracked = BTreeMap::new();
@@ -281,10 +332,14 @@ impl Lint for Tracker {
         }
         let mut total = 0usize;
         if let Some(pats) = build_pats(&tracked) {
-            let files = cx.files();
+            let files: Vec<&SourceFile> = if self.tests {
+                cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect()
+            } else {
+                cx.files()
+            };
             // Judge: each file's hits, cached while the merged index is unchanged.
             let semantic = cx.sem();
-            let results: Vec<Vec<(u32, String)>> = incr::keyed("tracked-judge", incr::ctx_key(&tracked), &files, |f| {
+            let results: Vec<Vec<(u32, String)>> = incr::keyed(if self.tests { "tracked-tests-judge" } else { "tracked-judge" }, incr::ctx_key(&tracked), &files, |f| {
                 let mut sink = Sink::new();
                 sink.cur = f.rel.clone();
                 let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink, &semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default());
@@ -335,6 +390,9 @@ impl Lint for Tracker {
     }
 
     fn parity(&self) -> Option<Parity> {
+        if self.tests {
+            return None;
+        }
         Some(Parity {
             old: &["tools/ci/tracked_lint.py"],
             old_raw: &[],
@@ -445,7 +503,8 @@ const SELFTEST_EXPECT: &[(&str, usize, &str)] = &[
 ];
 
 pub fn register(reg: &mut Registry) {
-    reg.add(Tracker);
+    reg.add(Tracker { tests: false });
+    reg.add(Tracker { tests: true });
 }
 
 #[cfg(test)]

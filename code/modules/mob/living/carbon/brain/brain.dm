@@ -23,10 +23,6 @@
 	can_pain_emote = FALSE // Sanity/safety
 	low_priority = TRUE
 
-/mob/living/carbon/brain/Initialize(mapload)
-	. = ..()
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
-
 // a brain with a player dies and ghosts; its host forgets the view.
 /mob/living/carbon/brain/on_destroy(force)
 	if(key)				//If there is a mob connected to this thing. Have to check key twice to avoid false death reporting.
@@ -135,5 +131,5 @@
 
 CAPABILITIES(/mob/living/carbon/brain)
 	configure(mob_kind(use_me = 0))
-	reagents(1000)
+	knows(LANGUAGE_GALCOM, default = TRUE)
 	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

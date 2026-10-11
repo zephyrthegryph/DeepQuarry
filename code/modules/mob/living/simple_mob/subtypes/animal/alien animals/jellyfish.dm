@@ -175,8 +175,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
 	param(nameof(inherited_nutriment), pos = 1)
 
-// ALLOW(init/INSTANCE_STATE): a core fills with the nutriment of the jellyfish it came from
-/obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload)
-	. = ..()
-	nutriment_amt += inherited_nutriment
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg
+/// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
+/obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
+	return ..() + nutriment_amt + inherited_nutriment

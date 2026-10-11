@@ -4117,7 +4117,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/recharge_station/R = new(test_turf)
 	TEST_ASSERT_NOTNULL(R.cell, "recharge station did not construct its internal cell")
 	var/obj/item/cell/station_cell = R.cell
-	station_cell.charge = station_cell.maxcharge
+	station_cell.set_charge(station_cell.maxcharge)
 	TEST_ASSERT_NULL(R?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION), "setup: a freshly-constructed recharge station should have no occupant")
 	TEST_ASSERT(test_machine_idle(R), "idle full recharge station did not stop timed processing")
 	qdel(R)
@@ -4307,9 +4307,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// The drain is settled when the light must change, not every few seconds: a full cell keeps its emergency
 	// level until it dims, a cell about to run out wakes again soon.
 	var/obj/item/cell/C = L.emergency_cell()
-	C.charge = C.maxcharge
+	C.set_charge(C.maxcharge)
 	TEST_ASSERT(L.emergency_discharge_wait() >= 1 MINUTES, "a full emergency cell settles its drain every [L.emergency_discharge_wait()] ds")
-	C.charge = 0.5
+	C.set_charge(0.5)
 	TEST_ASSERT(L.emergency_discharge_wait() <= 10 SECONDS, "a nearly empty emergency cell waits [L.emergency_discharge_wait()] ds to run out")
 	qdel(L)
 
@@ -4322,15 +4322,15 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.auto_flicker = FALSE
 	var/obj/item/cell/C = L.emergency_cell()
 	TEST_ASSERT(C, "the fixture has an emergency cell")
-	C.charge = C.maxcharge
+	C.set_charge(C.maxcharge)
 	var/full = L.emergency_light_power(C)
 	TEST_ASSERT_EQUAL(full, L.bulb_emergency_pow_mul, "a charged cell drives the emergency level")
 	var/dim_at = L.emergency_dim_charge(C)
-	C.charge = dim_at + 1
+	C.set_charge(dim_at + 1)
 	TEST_ASSERT_EQUAL(L.emergency_light_power(C), full, "the level holds until the cell is down to the dimmed level's charge")
-	C.charge = dim_at - 1
+	C.set_charge(dim_at - 1)
 	TEST_ASSERT_EQUAL(L.emergency_light_power(C), L.bulb_emergency_pow_min, "below it the light runs dimmed")
-	C.charge = C.maxcharge
+	C.set_charge(C.maxcharge)
 	// LIGHT_EMERGENCY_POWER_USE (0.2) every 2 s: the wait reaches the dimming point in one go.
 	var/expected = (C.charge - dim_at) / 0.2 * (2 SECONDS)
 	TEST_ASSERT(abs(L.emergency_discharge_wait() - expected) <= 2, "a full cell waits [L.emergency_discharge_wait()] ds to dim, expected about [expected]")
@@ -4350,7 +4350,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_cell_sustained_draw_is_a_rate/Run()
 	var/obj/item/cell/C = new(run_loc_floor_bottom_left)
 	C.material_discharge_limit = 10
-	C.charge = C.maxcharge
+	C.set_charge(C.maxcharge)
 	var/used = C.use(100, seconds = 60)
 	TEST_ASSERT(abs(used - 100) < 0.5, "a minute's draw of 100 within a 10/s limit delivered [used]")
 	var/datum/material_service/service = material_service_of(C)
@@ -4544,7 +4544,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	var/turf/T = get_turf(A)
 	A.set_density(FALSE)
-	A.operating = FALSE
+	A.set_operating(FALSE)
 	set_bolted(A, FALSE, TRUE)
 	A.frozen = FALSE
 	A.autoclose_cancel()
@@ -4568,7 +4568,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_airlock_secure_open_completes/Run()
 	var/obj/machinery/door/airlock/external/A = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
 	A.set_density(TRUE)
-	A.operating = FALSE
+	A.set_operating(FALSE)
 	set_bolted(A, FALSE, TRUE)
 	A.frozen = FALSE
 	A.id_tag = "dq_secure_open_test"
@@ -4599,7 +4599,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, run_loc_floor_bottom_left)
 	A.set_density(TRUE)
-	A.operating = FALSE
+	A.set_operating(FALSE)
 	A.set_autoclose(TRUE)
 	A.autoclose_in(1)
 	for(var/i in 1 to 200)
@@ -4608,7 +4608,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		dq_test_ticks(1)
 	TEST_ASSERT(!A.autoclose_pending(), "closed airlock kept its stale autoclose deadline")
 	A.set_density(FALSE)
-	A.operating = FALSE
+	A.set_operating(FALSE)
 	set_bolted(A, TRUE, TRUE)
 	A.autoclose_in(1)
 	for(var/i in 1 to 200)
@@ -4631,7 +4631,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	R.settle_power()
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "an empty recharger settles to idle draw")
 	var/obj/item/cell/C = new(R)
-	C.charge = C.maxcharge
+	C.set_charge(C.maxcharge)
 	varslot_set(R, "charging", C)
 	R.settle_power()
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "a recharger holding a full cell settles to idle draw")

@@ -84,9 +84,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Suggested to spawn last so it can rally up all the shantaks easily before hunting for tasty explorers.
-/mob/living/simple_mob/animal/sif/shantak/leader/autofollow/Initialize(mapload)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/leader/autofollow)
+	after_init(0, then(PROC_REF(rally_on_arrival))) // once the map around it has loaded: its pack is there
+
+/mob/living/simple_mob/animal/sif/shantak/leader/autofollow/proc/rally_on_arrival(datum/act/timer/A)
 	rally_pack()
-	return ..()
 
 // These ones only retaliate. Used for PoIs.
 /mob/living/simple_mob/animal/sif/shantak/retaliate

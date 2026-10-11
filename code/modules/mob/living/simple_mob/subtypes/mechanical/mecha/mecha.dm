@@ -31,15 +31,6 @@
 	var/deflect_chance = 10 // Chance to outright stop an attack, just like a normal exosuit.
 	var/has_repair_droid = FALSE // If true, heals 2 damage every tick and gets a repair droid overlay.
 
-/mob/living/simple_mob/mechanical/mecha/Initialize(mapload)
-	if(!pilot_type)
-		name = "autonomous [initial(name)]"
-		desc = "[initial(desc)] It appears to be piloted by a drone intelligence."
-	else
-		say_list_type = /datum/say_list/merc
-
-	return ..()
-
 
 /mob/living/simple_mob/mechanical/mecha
 	delete_on_death = TRUE
@@ -108,6 +99,19 @@
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
 	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
+	rolls(nameof(name), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
+	rolls(nameof(desc), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
+	rolls(nameof(say_list_type), PROC_REF(crewed_as), when = nameof(pilot_type))
+
+/// A mecha with no pilot is a drone's, and says so; a piloted one talks like a mercenary (rolls()).
+/mob/living/simple_mob/mechanical/mecha/proc/crewed_as(datum/roller/R, target)
+	switch(target)
+		if("name")
+			return "autonomous [initial(name)]"
+		if("desc")
+			return "[initial(desc)] It appears to be piloted by a drone intelligence."
+		if("say_list_type")
+			return /datum/say_list/merc
 
 /// Old attackby: armour deflection.
 /mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(datum/act/op/A)

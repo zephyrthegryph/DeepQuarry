@@ -109,10 +109,6 @@ why aren't these accessories?
 	if(!m.client) //no scene partner? whoopsie!
 		return FALSE
 
-/obj/item/remote_scene_tool/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/atom_entering, src, then(PROC_REF(check_loc)))
-
 /obj/item/remote_scene_tool/proc/check_loc(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	after(src, 0.1 SECONDS, PROC_REF(delayed_loc_check))
@@ -200,6 +196,7 @@ TRACKED(/obj/item/remote_scene_tool, partner_name)
 
 CAPABILITIES(/obj/item/remote_scene_tool)
 	configure(item_worn(slots = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)))
+	on_notice(/datum/notice/atom_entering, then(PROC_REF(check_loc)))
 	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
 	ref_one(nameof(worn_mob), /mob)
 	ref_one(nameof(partner_wearer), /mob)

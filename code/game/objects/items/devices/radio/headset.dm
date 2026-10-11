@@ -691,6 +691,10 @@ CAPABILITIES(/obj/item/radio/headset)
 	var/myAi = null    // Atlantis: Reference back to the AI which has this radio.
 	var/disabledAi = 0 // Atlantis: Used to manually disable AI's integrated radio via intellicard menu.
 
+/// It names the AI it is built into (the AI's owns_one(starts =)).
+/obj/item/radio/headset/heads/ai_integrated/default_child_backref()
+	return nameof(myAi)
+
 /obj/item/radio/headset/heads/ai_integrated/receive_range(freq, level)
 	if (disabledAi)
 		return -1 //Transciever Disabled.

@@ -189,9 +189,8 @@ CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/pr
 	coretype = /obj/item/slime_extract/ruby
 	melee_attack_delay = 1 SECOND
 
-/mob/living/simple_mob/slime/feral/ruby/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
+	body_effect(/datum/body_effect/slime_strength) // always swole
 
 /mob/living/simple_mob/slime/feral/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()

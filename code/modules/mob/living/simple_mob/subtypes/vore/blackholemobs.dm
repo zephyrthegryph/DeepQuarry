@@ -621,7 +621,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
 	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
-	var/list/obelisk_lure_messages = null
 
 	old_x = -16
 	old_y = 0
@@ -642,7 +641,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
-	owns_one(nameof(loopy), /datum/looping_sound/obelisk, starts = /datum/looping_sound/obelisk)
+	owns_one(nameof(loopy), /datum/looping_sound/obelisk, starts = /datum/looping_sound/obelisk, starts_args = list(TRUE)) // started as it is made
 
 /mob/living/simple_mob/vore/blackhole_obelisk/monolith
 	name = "Black Hole Monolith"
@@ -679,11 +678,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 
-/mob/living/simple_mob/vore/blackhole_obelisk/Initialize(mapload)
-	. = ..()
-	obelisk_lure_messages = GLOB.obelisk_lure_messages
-	loopy.start()
-
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/handle_hungry()
 	if(nutrition <= OBELISK_LURE)
 		for(var/mob/living/carbon/human/H in oview(6, src))
@@ -696,7 +690,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 				H.status_at_least(STAT_CONFUSED, scent_strength)
 				continue
 			else
-				to_chat(H,span_danger("[pick(obelisk_lure_messages)]"))
+				to_chat(H,span_danger("[pick(GLOB.obelisk_lure_messages)]"))
 				return
 
 /datum/looping_sound/obelisk ///thanks to BM for helpin' me make this work <3
@@ -740,11 +734,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 ///size randomization!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
-// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
-/mob/living/simple_mob/vore/blackhole/Initialize(mapload)
-	. = ..()
-	var/oursize = rand(90, 150) / 100
-	resize(oursize)
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole)
+	rolls(nameof(size_multiplier), range_of(0.9, 1.5, 0.01))
 
 CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 	configure(mob_kind(attack_cooldown = 4))
@@ -753,17 +744,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole/bikers)
 /mob/living/simple_mob/vore/blackhole/bikers/proc/biker_rescale(datum/act/timer/A)
 	resize(1) // Scale them back down
 
-// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
-/mob/living/simple_mob/vore/otie/syndicate/blackhole/Initialize(mapload)
-	. = ..()
-	var/oursize = rand(100, 180) / 100
-	resize(oursize)
+CAPABILITIES(/mob/living/simple_mob/vore/otie/syndicate/blackhole)
+	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
 
-// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
-/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole/Initialize(mapload)
-	. = ..()
-	var/oursize = rand(100, 180) / 100
-	resize(oursize)
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/sniper/blackhole)
+	rolls(nameof(size_multiplier), range_of(1, 1.8, 0.01))
+
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 ///explode on death!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///

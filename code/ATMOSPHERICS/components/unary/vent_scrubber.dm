@@ -3,6 +3,7 @@
 // MAX_SIPHON_FLOWRATE).
 
 /obj/machinery/atmospherics/unary/vent_scrubber
+	air_volume = ATMOS_DEFAULT_VOLUME_FILTER
 	icon = 'icons/atmos/vent_scrubber.dmi'
 	icon_state = "map_scrubber_off"
 	pipe_state = "scrubber"
@@ -62,7 +63,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber)
 	var/static/list/default_scrubbing_gas = list(GAS_CO2, GAS_PHORON, GAS_CH4)
 	if(isnull(scrubbing_gas))
 		set_scrubbing_gas(default_scrubbing_gas)
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
 	icon = null
 
 /obj/machinery/atmospherics/unary/vent_scrubber/receive_signal(datum/signal/signal, receive_method, receive_param)

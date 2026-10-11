@@ -61,10 +61,9 @@
 	if(mind)
 		mind.name = real_name
 
-/mob/living/silicon/robot/platform/Initialize(mapload)
-	. = ..()
+/// A platform waits inactive until someone takes it over (setup()).
+/mob/living/silicon/robot/platform/proc/go_inactive()
 	SetName("inactive [initial(name)]")
-	grant(src, platform_cargo(), src)
 
 /// Platforms carry heavier armour plating (the ROBOT_SLOT_ARMOUR entry).
 TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \

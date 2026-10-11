@@ -52,12 +52,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	var/named = FALSE //have I been named yet?
 	var/friend_name = null // Lock befriending to this character
 
-/mob/living/simple_mob/animal/passive/cat/Initialize(mapload)
-	set_icon_living("[initial(icon_state)]")
-	set_icon_dead("[initial(icon_state)]_dead")
-	set_icon_rest("[initial(icon_state)]_rest")
-	return ..()
-
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
@@ -269,6 +263,7 @@ MSG_DEF_SELF(cat/named, "%T% already has a name!")
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
 	op("name_with_pen", item(/obj/item/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
 	op("name_with_penlight", item(/obj/item/flashlight/pen), label("Use"), needs(req_is(nameof(named), FALSE, because = MSG(cat/named))), asks(/datum/prompt/text, fields = list("title" = "Name", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "name_text" = TRUE, "timeout" = 0), step = "name"), then(PROC_REF(cat_name_entered)))
+	look_from(nameof(icon_state), living = "*", dead = "*_dead", rest = "*_rest")
 
 /mob/living/simple_mob/animal/passive/cat/proc/name_question(datum/act/A)
 	return "Give 	he [name] a name"

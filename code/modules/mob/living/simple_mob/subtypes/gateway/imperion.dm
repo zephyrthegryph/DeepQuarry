@@ -468,9 +468,8 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 
 	factors = alist(BF_DISABLE_DURATION = 0)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion)
+	body_effect(/datum/body_effect/bossbuff)
 
 /datum/body_effect/aura/despair
 	tick_interval = 2 SECONDS

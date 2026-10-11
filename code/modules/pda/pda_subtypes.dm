@@ -228,18 +228,3 @@ CAPABILITIES(/obj/item/pda/librarian)
 	icon = 'icons/obj/pda.dmi'
 	icon_state = "pdabox"
 
-// ALLOW(init/INSTANCE_STATE): rolls the department cartridge this box carries
-/obj/item/storage/box/PDAs/Initialize(mapload)
-	. = ..()
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/cartridge/head(src)
-
-	var/newcart = pick(	/obj/item/cartridge/engineering,
-						/obj/item/cartridge/security,
-						/obj/item/cartridge/medical,
-						/obj/item/cartridge/signal/science,
-						/obj/item/cartridge/quartermaster)
-	new newcart(src)

@@ -20,11 +20,8 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD))
 	configure(item_combat(force = 0))
-
-/obj/item/instrument/piano_synth/headphones/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/instrument_start, src, then(PROC_REF(start_playing)))
-	observe(src, /datum/notice/instrument_end, src, then(PROC_REF(stop_playing)))
+	on_notice(/datum/notice/instrument_start, then(PROC_REF(start_playing)))
+	on_notice(/datum/notice/instrument_end, then(PROC_REF(stop_playing)))
 
 /**
  * Called by a component signal when our song starts playing.
