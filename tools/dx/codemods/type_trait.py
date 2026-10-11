@@ -40,6 +40,13 @@ SPECS = {
         skip={"code/game/objects/items.dm"},
         skip_refs=r"(^|\.)species$",  # a species' own siemens_coefficient
     ),
+    "item_combat": dict(
+        base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
+        fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
+                "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
+                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "verbs"},
+        skip={"code/game/objects/items/item_combat.dm"},  # items.dm is rewritten too: its base declarations are deleted by hand
+    ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 _spec_name = next((a for a in _args if a in SPECS), None)
@@ -146,6 +153,7 @@ REF = r"(?:[A-Za-z_]\w*(?:\(\))?(?:\??\.[A-Za-z_]\w*(?:\(\))?)*)"
 
 OWNER = [None]  # the type whose proc is being read (None outside a proc)
 LOCALS = {}  # name -> declared type path, for the current proc
+SHADOW = set()  # field names the current proc declares itself (an argument `force`, a local `var/reach`): its bare uses are not the var
 
 
 def under_base(path):
@@ -169,6 +177,8 @@ def ref_ok(ref):
 
 
 def note_locals(code):
+    for m in re.finditer(r"\bvar/(?:[A-Za-z_]\w*/)*(" + NAME_RE + r")\b", code):
+        SHADOW.add(m.group(1))
     for m in re.finditer(r"\bvar/((?:[A-Za-z_]\w*/)*)([A-Za-z_]\w*)", code):
         path = "/" + m.group(1).rstrip("/") if m.group(1) else None
         if path and path != "/list":
@@ -182,7 +192,7 @@ def rewrite_code(code):
         return code
     # statement writes: [ref.]name op= value (the whole rest of the statement)
     m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)\s*(.+?)\s*$", code)
-    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked) and ref_ok(m.group(2)):
+    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked) and ref_ok(m.group(2)) and (m.group(2) or m.group(3) not in SHADOW):
         indent, ref, name, op, value = m.groups()
         value = rewrite_reads(value, mask_strings(value))
         target = (ref + ".") if ref else ""
@@ -206,6 +216,8 @@ def rewrite_reads(code, masked):
         if ref and ref.startswith("set_"):
             continue
         if not ref_ok(ref):
+            continue
+        if not ref and name in SHADOW:
             continue
         if init and close:
             holder = (ref + ".type") if ref else "type"
@@ -265,7 +277,10 @@ def main():
                 pm = re.match(r"^(/[A-Za-z0-9_/]+?)/(?:proc/|verb/)?([A-Za-z_]\w*)\((.*)$", line)
                 OWNER[0] = pm.group(1) if pm and not pm.group(1).startswith("/proc") else None
                 LOCALS.clear()
+                SHADOW.clear()
                 if pm:
+                    for am in re.finditer(r"(?:^|,)\s*(?:var/)?(?:[A-Za-z_]\w*/)*(" + NAME_RE + r")\s*(?=[,=)]|$)", pm.group(3)):
+                        SHADOW.add(am.group(1))
                     for am in re.finditer(r"((?:[A-Za-z_]\w*/)+)([A-Za-z_]\w*)", pm.group(3)):
                         LOCALS[am.group(2)] = "/" + am.group(1).rstrip("/")
             om =OVERRIDE.match(line) if cur else None

@@ -4,6 +4,7 @@
 //
 // A stat's name writes a hold_override sourced `source` at PRIORITY_ADMIN (released by releasing that source), so an admin's VV edit of a stat is
 // one more contribution that wins and can be taken back. A tracked var goes through its schema (clamped or refused, logged) and its setter. Any
+// trait field (`@kind.field`, or a var name that moved into a trait block) is written with set_trait(). Any
 // other var is refused: a name the build cannot resolve is not written blind.
 
 /// Writes var `name` of E by name. Returns TRUE when it was written (or the override placed), FALSE when refused (reported).
@@ -28,6 +29,11 @@
 		TEST_REC_DELTA(E, "vars_write:[name]", null, value_to_hold)
 		return !!hold_override(E, def.id, value_to_hold, source)
 	if(!(name in E.vars))
+		// A trait field (`@uses_power.active`, or the old var name `active_power_usage`): the holder's own copy, through set_trait().
+		var/list/trait_field = type_trait_field_named(E, name)
+		if(trait_field)
+			set_trait(E, trait_field[1], trait_field[2], value)
+			return TRUE
 		declare_report("vars_write([E.type], [name]): no such var")
 		return FALSE
 	var/written = schema_write(E, name, value)
