@@ -118,3 +118,82 @@ fn one_changed_map_unit_keeps_other_program_with_current_origins_and_fresh_order
         previous = Some(actual[1].code.code_owner().clone());
     }
 }
+
+#[test]
+fn aborted_prepared_output_roster_preserves_successful_bundle_and_releases_new_units() {
+    fn output_entries(owner: &RetainedMaps) -> usize {
+        let mut count = 0;
+        owner.outputs.visit_storage(|view| {
+            if let dm_session::ArtifactStorageView::Store { entries, .. } = view {
+                count = entries;
+            }
+        });
+        count
+    }
+    let owner = Arc::new(RetainedMaps::current_revision());
+    let mut baseline = 0;
+    let mut original = None;
+    for (step, text) in [
+        "\"a\"=(/obj{x=1},/obj{x=2},/turf,/area)\n(1,1,1)={\"a\"}",
+        "\"a\"=(/obj{x=3},/obj{x=2},/turf,/area)\n(1,1,1)={\"a\"}",
+        "\"a\"=(/obj{x=1},/obj{x=2},/turf,/area)\n(1,1,1)={\"a\"}",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let source = MapSource(text);
+        let frontend = dm_tree::frontend::build(
+            Path::new("game/project.dme"),
+            &source,
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let captured = crate::non_text::capture(&frontend, &source).unwrap();
+        let projection = crate::map_projection::project(
+            &captured.maps,
+            WorldDefaults {
+                turf: SymbolId::of("/turf"),
+                area: SymbolId::of("/area"),
+                minimum_dimensions: [1; 3],
+            },
+            &Kinds,
+        )
+        .unwrap();
+        let request = MapMemo::with_resident(1, owner.clone(), None);
+        let (_, actual) = prepare(
+            &request,
+            &frontend,
+            &captured.maps,
+            &projection,
+            &Facts { shared: false },
+        )
+        .unwrap();
+        match step {
+            0 => {
+                original = Some(actual[0].code.code_owner().clone());
+                assert!(request.publish_successful());
+                baseline = output_entries(&owner);
+                assert_eq!(baseline, 3); // two units plus the bundle
+            }
+            1 => {
+                assert_eq!(request.counts.unit_hits.load(Ordering::Relaxed), 1);
+                assert!(output_entries(&owner) > baseline);
+                // The map stage succeeded, but a later required request stage
+                // failed: dropping the attempt must not publish its roster.
+                drop(request);
+                assert_eq!(output_entries(&owner), baseline);
+                continue;
+            }
+            _ => {
+                assert_eq!(request.counts.output_hits.load(Ordering::Relaxed), 1);
+                assert!(Arc::ptr_eq(
+                    original.as_ref().unwrap(),
+                    actual[0].code.code_owner()
+                ));
+                assert!(request.publish_successful());
+                assert_eq!(output_entries(&owner), baseline);
+            }
+        }
+    }
+}
