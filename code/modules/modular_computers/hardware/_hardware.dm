@@ -25,6 +25,7 @@
 	var/external_slot
 
 CAPABILITIES(/obj/item/computer_hardware)
+	derives(nameof(w_class), PROC_REF(initial_hardware_size))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
@@ -81,7 +82,6 @@ CAPABILITIES(/obj/item/computer_hardware)
 
 /obj/item/computer_hardware/Initialize(mapload)
 	. = ..()
-	set_w_class(hardware_size)
 	if(istype(loc, /obj/item/modular_computer))
 		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 
@@ -122,3 +122,6 @@ CAPABILITIES(/obj/item/computer_hardware)
 /// The holder2 this refers to (a relation view: null once that is deleted).
 /obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
 	return holder2
+
+/obj/item/computer_hardware/proc/initial_hardware_size()
+	return hardware_size

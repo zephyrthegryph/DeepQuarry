@@ -22,7 +22,6 @@
 
 		// Leaving the following two set makes the sprite not visible
 		icon_override = null
-		set_sprite_sheets(null)
 		icon_state = "teshariplushie_white"
 		item_state = "teshariplushie_white"
 
@@ -67,6 +66,7 @@ CAPABILITIES(/obj/item/holder)
 		O.show_inventory_panel(user, state = GLOB.tgui_deep_inventory_state)
 
 CAPABILITIES(/obj/item/holder/micro)
+	setup(PROC_REF(configure_micro_sheets))
 	op("micro_holder_pet_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Pet"), then(PROC_REF(micro_holder_pet_self)))
 
 /// Old attack_self: reworked so it works w/ nonhumans.
@@ -94,3 +94,8 @@ CAPABILITIES(/obj/item/holder/micro)
 			return
 		E.hatch(held)
 		return
+
+/obj/item/holder/micro/proc/configure_micro_sheets()
+	var/mob/living/carbon/human/H = held_mob
+	if(istype(H) && H.species.is_micro_carry(H))
+		set_sprite_sheets(null)

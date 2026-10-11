@@ -247,6 +247,13 @@ fn dynamic_parts(cx: &Cx) -> Vec<Compiled> {
     parts
 }
 
+/// Keep a line when even one raw guard occurrence is not a proved mutation.
+fn slot_flags_guard_lines(text: &str, pattern: &regex::Regex, mutations: &std::collections::BTreeSet<(usize, usize)>) -> Vec<usize> {
+    text.split('\n').enumerate().filter_map(|(i, line)| {
+        pattern.find_iter(line).any(|m| !mutations.contains(&(i + 1, m.start() + 1))).then_some(i + 1)
+    }).collect()
+}
+
 fn strict_allowed(composite: &str) -> bool {
     static R: std::sync::LazyLock<Rx> =
         std::sync::LazyLock::new(|| Rx::new(r"ALLOW\([^)]*check_grep[^)]*\)[[:space:]]*:[[:space:]]*[^[:space:]]"));
@@ -283,6 +290,19 @@ impl Lint for CheckGrep {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let root = &cx.tree.root;
+        // Preserve the existing rule/filter/ceiling contract, excluding only exact
+        // semantic same-receiver tracked setter read-modify-write occurrences.
+        let slot_rule = self.compiled().iter().find(|c| c.rule == "legacy_equip_restriction_vars__slot_flags").unwrap();
+        let raw_slot_flags = regex::Regex::new(r"slot_flags\s*&[^=]").unwrap();
+        let semantic = cx.sem();
+        let declarations = crate::sem::decls::Decls::get(cx.tree);
+        for f in cx.files() {
+            if !Files::Code.matches(f) || !f.text().contains("slot_flags") { continue; }
+            let mutations = semantic.as_ref().map(|sem| crate::sem::checks::slot_flags_mutation_positions(sem, &declarations, &f.rel)).unwrap_or_default();
+            let hits = slot_flags_guard_lines(f.text(), &raw_slot_flags, &mutations);
+            out.cur = f.rel.clone();
+            slot_rule.scan_lines(cx, f, out, hits);
+        }
         // the checks whose pattern is read from the generated bindings
         let dynamic = dynamic_parts(cx);
         if !dynamic.is_empty() {
@@ -523,6 +543,66 @@ pub fn register(reg: &mut Registry) {
 mod tests {
     use super::*;
     use crate::parity::slug;
+
+    #[test]
+    fn slot_flags_same_receiver_setter_mutation_preserves_guards() {
+        let source = r#"#define TRACKED(T,V)
+/obj/item/flagged
+    var/slot_flags = 3
+TRACKED(/obj/item/flagged, slot_flags)
+/obj/item/flagged/proc/set_slot_flags(value)
+    slot_flags = value
+/obj/item/flagged/proc/probe(obj/item/flagged/other)
+    set_slot_flags(slot_flags & ~2)
+    src.set_slot_flags(src.slot_flags & ~2)
+    if(slot_flags & 1)
+        return
+    set_slot_flags(other.slot_flags & ~2)
+    set_slot_flags((slot_flags & 1) ? 2 : 3)
+    set_slot_flags(slot_flags & (other.slot_flags & 1))
+    if((slot_flags & 1) && set_slot_flags(slot_flags & ~2))
+        return
+/obj/item/flagged/inherited/proc/probe()
+    set_slot_flags(slot_flags & ~2)
+/obj/item/lookalike
+    var/slot_flags = 3
+/obj/item/lookalike/proc/set_slot_flags(value)
+    slot_flags = value
+/obj/item/lookalike/proc/probe()
+    set_slot_flags(slot_flags & ~2)
+/obj/item/flagged/proc/shadowed(slot_flags)
+    set_slot_flags(slot_flags & ~2)
+"#;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("code")).unwrap();
+        std::fs::write(dir.path().join("code/flags.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/flags.dm", source)]);
+        tree.root = dir.path().to_path_buf();
+        let sem = crate::sem::Sem::build(&tree.root, &tree).unwrap();
+        assert!(sem.errors.is_empty(), "{:?}", sem.errors);
+        let declarations = crate::sem::decls::Decls::get(&tree);
+        let positions = crate::sem::checks::slot_flags_mutation_positions(&sem, &declarations, "code/flags.dm");
+        let pattern = regex::Regex::new(r"slot_flags\s*&[^=]").unwrap();
+        let findings = slot_flags_guard_lines(source, &pattern, &positions);
+        let lines: Vec<&str> = findings.iter().map(|line| source.lines().nth(line - 1).unwrap().trim()).collect();
+        assert_eq!(lines, vec![
+            "if(slot_flags & 1)",
+            "set_slot_flags(other.slot_flags & ~2)",
+            "set_slot_flags((slot_flags & 1) ? 2 : 3)",
+            "set_slot_flags(slot_flags & (other.slot_flags & 1))",
+            "if((slot_flags & 1) && set_slot_flags(slot_flags & ~2))",
+            "set_slot_flags(slot_flags & ~2)", // undeclared lookalike setter
+            "set_slot_flags(slot_flags & ~2)", // shadowed local is not the tracked member
+        ]);
+        assert_eq!(positions.len(), 4, "Three self mutations plus nested safe mutation; no whole-line exemption");
+        let lint = CheckGrep::new();
+        let scope = LintScope::default();
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
+        let mut out = Sink::new();
+        lint.scan_tree(&cx, &mut out);
+        let actual: Vec<usize> = out.sites.iter().filter(|site| site.rule == "legacy_equip_restriction_vars__slot_flags").map(|site| site.line as usize).collect();
+        assert_eq!(actual, findings, "Tree pass keeps the existing rule identity and finding locations");
+    }
 
     #[test]
     fn rule_names_follow_the_part_titles() {

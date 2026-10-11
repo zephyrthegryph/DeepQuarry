@@ -426,7 +426,7 @@ pub fn parts() -> Vec<Part> {
             "legacy equip restriction vars",
             "new raw slot_flags check. Use dq_item_fits_slot_flags() / the wearable constraints.",
             Files::Code,
-            line(r"slot_flags\s*&[^=]"),
+            Find::Tree,
         )
         .allow(Allow::Strict)
         .flt(vec![Flt::DropPaths("slot_flags_allow"), drop(r":\s*//")]),
