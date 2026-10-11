@@ -310,5 +310,24 @@
     "matching_closure_cohort": "20261010-051017-f65f20d7 preserved",
     "scripts_root": "E:/dq-cache/dmb-native-v2/integration-gates",
     "initial_script_refusal": "Original cleanup field did not match typed receipt schema; no files deleted in refused attempt. Exact typed schema corrected and all preflight verified before removal."
+  },
+  "focused_validation_e400": {
+    "source_commit": "e4008f2aa752027ee8863e846aaaf702155b9be5",
+    "archive_sha256": "93fdbc5b6162e4c80d285edf96fc1d9a2e8ca187d12098722c2417af338a84ca",
+    "build_receipt": "20261011-095809-c61fc0ef-job-cargo.json",
+    "passed": 8,
+    "failed": 3,
+    "receipts": [
+      "20261011-100122-e07a112c-focused.json",
+      "20261011-100122-1f5cf961-focused.json",
+      "20261011-100206-a7d025d9-focused.json",
+      "20261011-100206-4cf87a23-focused.json"
+    ],
+    "failures": [
+      "callback materializer MissingMember while binding semantic root parent",
+      "pinned safe-colon CPU expression rejected by grammar",
+      "scalar control mock declares opaque typed alias instead of intended scalar metadata"
+    ],
+    "scope": "focused semantic source features and transport plus native opaque-read authority; not runtime or benchmark"
   }
 }
