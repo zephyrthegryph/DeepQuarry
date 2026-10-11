@@ -243,7 +243,11 @@ impl BatchSpool {
 }
 impl Drop for BatchSpool {
     fn drop(&mut self) {
+        if let Some(file) = &self.file {
+            // If staging cleanup is denied, retain the master name so a later
+            // nonblocking reaper can retry after this lifetime lock is released.
+            let _ = orphans::remove_owned(&self.path, file);
+        }
         drop(self.file.take());
-        let _ = std::fs::remove_file(&self.path);
     }
 }

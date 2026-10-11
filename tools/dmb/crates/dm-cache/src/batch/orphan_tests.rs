@@ -161,3 +161,42 @@ fn cleanup_has_independent_scan_delete_and_time_bounds() {
     assert_eq!((two.inspected, two.reaped), (2, 2));
     assert_eq!(std::fs::read_dir(&directory.0).unwrap().count(), 2);
 }
+
+#[cfg(windows)]
+#[test]
+fn denied_staging_cleanup_retains_master_until_later_reap() {
+    use std::os::windows::fs::OpenOptionsExt;
+    let directory = Directory::new();
+    let writer = directory.cache().batch_spool().unwrap();
+    let master = writer.path.clone();
+    let staged = master.with_extension("segment.tmp");
+    std::fs::write(&staged, b"temporarily shared private staging").unwrap();
+    // Deliberately omit FILE_SHARE_DELETE, as a transient Windows reader may.
+    let reader = OpenOptions::new()
+        .read(true)
+        .share_mode(0x1 | 0x2)
+        .open(&staged)
+        .unwrap();
+    let published = directory.0.join("00000000000000000000000000000001.seg");
+    std::fs::write(&published, b"published evidence").unwrap();
+    drop(writer);
+    assert!(master.exists());
+    assert!(staged.exists());
+    assert_eq!(
+        orphans::reap(master.parent().unwrap(), bounds(64, 8))
+            .unwrap()
+            .reaped,
+        0
+    );
+    assert!(master.exists());
+    drop(reader);
+    assert_eq!(
+        orphans::reap(master.parent().unwrap(), bounds(64, 8))
+            .unwrap()
+            .reaped,
+        1
+    );
+    assert!(!master.exists());
+    assert!(!staged.exists());
+    assert_eq!(std::fs::read(&published).unwrap(), b"published evidence");
+}

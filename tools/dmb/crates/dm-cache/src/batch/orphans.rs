@@ -120,6 +120,44 @@ fn same_leaf(path: &Path, held: &Metadata) -> bool {
         }
     })
 }
+/// Caller holds the v2 spool's exclusive lifetime lock. The master remains
+/// available for another pass if its paired staging file cannot be removed.
+pub(super) fn remove_owned(path: &Path, file: &fs::File) -> io::Result<()> {
+    let name = path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default();
+    let parent = path
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing spool parent"))?;
+    validate_root(parent)?;
+    let held = file.metadata()?;
+    if !name_supported(name) || !same_leaf(path, &held) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "spool path no longer matches held owner",
+        ));
+    }
+    let staged = path.with_extension("segment.tmp");
+    match fs::symlink_metadata(&staged) {
+        Ok(m) if m.is_file() && !reparse(&m) => fs::remove_file(&staged)?,
+        Ok(_) => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid private staging leaf",
+            ))
+        }
+        Err(e) if e.kind() == io::ErrorKind::NotFound => (),
+        Err(e) => return Err(e),
+    }
+    if !same_leaf(path, &held) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "spool changed during cleanup",
+        ));
+    }
+    fs::remove_file(path)
+}
 pub(super) fn reap(root: &Path, bounds: Bounds) -> io::Result<Report> {
     let started = Instant::now();
     let mut report = Report::default();
@@ -180,20 +218,9 @@ pub(super) fn reap(root: &Path, bounds: Bounds) -> io::Result<Report> {
         }
         // A v2 producer never recreates this unique name. Its segment staging
         // file is owned by this same locked spool through the whole finish.
-        let staged = path.with_extension("segment.tmp");
-        match fs::symlink_metadata(&staged) {
-            Ok(m) if m.is_file() && !reparse(&m) => {
-                if fs::remove_file(&staged).is_err() {
-                    continue;
-                }
-            }
-            Ok(_) => continue,
-            Err(e) if e.kind() == io::ErrorKind::NotFound => (),
-            Err(_) => continue,
-        }
         // Keep the lock held through unlink; releasing it first allows another
         // cleanup attempt to race this one. No PID liveness decision is used.
-        if same_leaf(&path, &held) && fs::remove_file(&path).is_ok() {
+        if remove_owned(&path, &file).is_ok() {
             report.reaped += 1;
         }
     }
