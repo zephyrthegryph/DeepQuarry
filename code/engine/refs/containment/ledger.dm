@@ -103,6 +103,7 @@ GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 /// walking a holder's children) that must not be what makes an empty holder
 /// start owning a ledger of its own.
 /proc/dq_ledger_peek(atom/holder)
+	RETURN_TYPE(/datum/ledger)
 	var/datum/ledger/L = holder?.containment_ledger()
 	L?.sync()
 	return L
@@ -237,6 +238,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		holder.unregister_latency_sweep() // the sweep list holds a hard ref
 
 /datum/ledger/proc/def_by_id(id)
+	RETURN_TYPE(/datum/relation_definition/slot)
 	for(var/datum/relation_definition/slot/def as anything in defs)
 		if(def.slot_id == id)
 			return def

@@ -3,7 +3,7 @@
 +1 menu: Enter VR Capsule
 @obj.machinery robot|none
 +1 menu: Eject VR Capsule
-+2 menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-1 with a sharp beep.)
++2 menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-<serial> with a sharp beep.)
 @obj ai|none
 @obj ghost|none
 +0 menu: Eject VR Capsule (refused: You can't reach that.)

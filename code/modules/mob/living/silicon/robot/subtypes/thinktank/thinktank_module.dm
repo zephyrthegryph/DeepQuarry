@@ -71,9 +71,9 @@ TRACKED(/obj/item/robot_module/robot/platform, decals)
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(7500)
 	var/obj/item/stack/medical/bruise_pack/bandaid = new(src)
-	bandaid.uses_charge = 1
-	bandaid.charge_costs = list(1000)
-	rel_add(bandaid, nameof(bandaid.synths), medicine)
+	bandaid.set_uses_charge(1)
+	bandaid.set_charge_costs(list(1000))
+	bandaid.add_synth(medicine)
 	rel_add(src, nameof(modules), bandaid)
 	rel_add(src, nameof(synths), medicine)
 

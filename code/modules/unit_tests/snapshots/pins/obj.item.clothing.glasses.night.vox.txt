@@ -1,0 +1,32 @@
+@obj.item.clothing.glasses human|none
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses robot|none
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item ai|none
+@obj.item.clothing.glasses ghost|none
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/tool/screwdriver
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/tool/crowbar
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/tool/wrench
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/tool/wirecutters
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/multitool
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/weldingtool
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/stack/cable_coil
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/stack/material/steel
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/card/id
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/kit
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item/storage
+-menu: Switch Eyepatch (refused: You can't do that.)
+@obj.item.clothing.glasses human|/obj/item
+-menu: Switch Eyepatch (refused: You can't do that.)
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, glasses_toggle_self, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

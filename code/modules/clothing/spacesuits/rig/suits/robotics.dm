@@ -22,10 +22,11 @@
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/robotics)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_protection(siemens = 0.75))
 
-TYPE_TABLE(/obj/item/rig/robotics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/storage/box, /obj/item/storage/belt, /obj/item/defib_kit/compact))))
+
 
 /obj/item/clothing/head/helmet/space/rig/advsuit
 	name = "suit helmet"

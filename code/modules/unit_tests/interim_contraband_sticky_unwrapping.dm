@@ -5,7 +5,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	user.enable_godmode()
 	var/obj/item/contraband/package = allocate(/obj/item/contraband, T)
-	package.w_class = ITEMSIZE_SMALL
+	package.set_w_class(ITEMSIZE_SMALL)
 	TEST_ASSERT(user.put_in_active_hand(package), "the actor holds the exact original sealed package")
 	var/floor_items_before = length(contents_of(T, /obj/item))
 	var/held_items_before = length(contents_of(user, /obj/item))

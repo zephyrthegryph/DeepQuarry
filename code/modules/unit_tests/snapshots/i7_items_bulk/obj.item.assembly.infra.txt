@@ -65,7 +65,7 @@
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise
 +5 menu: Turn Around
-@obj.item human|/obj/item
+@obj.item.assembly human|/obj/item
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around

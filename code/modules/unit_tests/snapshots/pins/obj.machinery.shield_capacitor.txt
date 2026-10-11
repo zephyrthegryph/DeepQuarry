@@ -97,7 +97,7 @@ human|none click: Click: Use
 +5 menu: Turn Around
 +6 menu: Use
 +7 click: Click: Use
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Use item
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise

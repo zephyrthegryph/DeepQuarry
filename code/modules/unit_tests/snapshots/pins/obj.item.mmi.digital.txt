@@ -70,6 +70,7 @@
 +5 menu: Use
 +6 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +0 menu: Interaction pass
 +2 menu: Toggle Brain Radio (refused: You can't do that.)
 keys: collect_item, digital_mmi_self, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, mmi_self, mmi_verb_toggle_radio, move_to_top, pass, pick_up_item, toggle_digestable

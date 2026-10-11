@@ -216,7 +216,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 	READS_FROM()
 	for(var/key in GLOB.op_menu_cache)
 		var/list/entry = GLOB.op_menu_cache[key]
-		var/datum/lookup_read_scope/scope = length(entry) >= 3 ? entry[3] : null
+		var/datum/lookup_read_scope/scope = length(entry) >= 4 ? entry[4] : null
 		if(scope && !QDELETED(scope))
 			END_SCOPE(scope)
 	GLOB.op_menu_cache.Cut()

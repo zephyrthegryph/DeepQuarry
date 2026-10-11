@@ -2,56 +2,48 @@
 @obj robot|none
 @obj.item ai|none
 @obj.item ghost|none
-human|/obj/item/tool/screwdriver menu: Item
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver click: Click: Use screwdriver
-human|/obj/item/tool/crowbar menu: Item
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Item
-human|/obj/item/tool/wrench menu: Item
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Item
-human|/obj/item/tool/wirecutters menu: Item
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Item
-human|/obj/item/multitool menu: Item
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Use multitool
-human|/obj/item/multitool click: Click: Use multitool
-human|/obj/item/weldingtool menu: Item
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Item
-@obj.item.melee human|/obj/item/stack/cable_coil
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Item
++3 menu: Use screwdriver
++4 click: Click: Use screwdriver
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Item
++3 click: Click: Item
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Item
++3 click: Click: Item
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Item
++3 click: Click: Item
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Item
++3 menu: Use multitool
++4 click: Click: Use multitool
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Item
++3 click: Click: Item
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
 +0 menu: Item
 +4 click: Click: Item
-human|/obj/item/stack/material/steel menu: Item
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Item
-@obj.item.melee human|/obj/item/card/id
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Item
++3 click: Click: Item
+@obj human|/obj/item/card/id
+-click: nothing
 +0 menu: Item
 +4 click: Click: Item
-@obj.item.melee human|/obj/item/kit
--menu: Baton item
--menu: Take cell
+@obj human|/obj/item/kit
 +1 menu: Item
-@obj.item.melee human|/obj/item/storage
--menu: Baton item
--menu: Take cell
--click: Click: Baton item
+@obj human|/obj/item/storage
+-click: Click: Collect
 +1 menu: Item
 +4 click: Click: Item
 human|/obj/item menu: Item

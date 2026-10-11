@@ -77,11 +77,10 @@
 @obj human|/obj/item/assembly_holder
 +4 menu: Toggle Jetpack (refused: You can't do that.)
 +5 menu: Toggle Jetpack Stabilization (refused: You can't do that.)
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+1 menu: Tank item
-+3 menu: Toggle Jetpack (refused: You can't do that.)
-+4 menu: Toggle Jetpack Stabilization (refused: You can't do that.)
-+5 click: Click: Tank item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Tank item
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Jetpack (refused: You can't do that.)
+human|/obj/item menu: Toggle Jetpack Stabilization (refused: You can't do that.)
+human|/obj/item click: Click: Tank item
 keys: attach_assembly, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, jetpack_toggle_effect, kit_customize, kit_customize_last, move_to_top, pick_up_item, pressure, self, tank_item, toggle, toggle_digestable, toggle_rockets_effect, use_welder, use_wirecutter

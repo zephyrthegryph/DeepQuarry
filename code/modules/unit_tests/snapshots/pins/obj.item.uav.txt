@@ -63,6 +63,7 @@
 +4 menu: Use
 +5 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +0 menu: Handle
 @obj human|/obj/item/cell
 -click: nothing

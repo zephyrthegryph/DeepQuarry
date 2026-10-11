@@ -16,8 +16,7 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+2 click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, light_from, move_to_top, pick_up_item, snuff, toggle_digestable, use_welder

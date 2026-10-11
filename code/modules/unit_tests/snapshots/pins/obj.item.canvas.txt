@@ -70,10 +70,9 @@ human|/obj/item/paint_palette menu: Paint
 human|/obj/item/paint_palette menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paint_palette menu: Ui open
 human|/obj/item/paint_palette click: Click: Fill
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+1 menu: Paint
-+3 menu: Ui open
-+4 click: Click: Paint
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Paint
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Paint
 keys: base_color, collect_item, drag_buckle, finalize, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, paint, paint_open, pick_up_item, toggle_digestable, ui_open, view

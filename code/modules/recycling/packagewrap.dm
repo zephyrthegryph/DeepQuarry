@@ -34,7 +34,7 @@ CAPABILITIES(/obj/item/packageWrap)
 		if(!move_into(P, nameof(P.wrapped), O, user)) // out of a hand or bag: its HUD clears
 			consumed(P, src)
 			return
-		P.w_class = O.w_class
+		P.set_w_class(O.w_class)
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))
 			P.icon_state = "deliverycrate[i]"

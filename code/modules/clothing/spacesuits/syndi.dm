@@ -17,11 +17,12 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/syndicate)
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/syndicate)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
 //Green syndicate space suit
 
-TYPE_TABLE(/obj/item/clothing/suit/space/syndicate, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 /obj/item/clothing/head/helmet/space/syndicate/green
 	name = "green space helmet"
 	desc = "A green helmet sporting clean lines and durable plating. Engineered to look menacing."

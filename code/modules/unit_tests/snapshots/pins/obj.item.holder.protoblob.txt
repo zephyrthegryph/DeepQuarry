@@ -1,0 +1,1 @@
+runtime while making it: param(held_at_make, apply = take_held) on /obj/item/holder/protoblob: Holder was not passed a mob.

@@ -42,9 +42,8 @@
 +1 menu: Interaction pass
 @obj human|/obj/item/storage
 +1 menu: Interaction pass
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Interaction pass
-+3 click: Click: Interaction pass
+human|/obj/item menu: Interaction pass
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Interaction pass
 keys: choose, clear_temp, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, learn_spell, move_to_top, pass, pick_up_item, read_spellbook, toggle_digestable

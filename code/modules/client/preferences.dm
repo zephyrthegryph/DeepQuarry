@@ -482,7 +482,8 @@ CAPABILITIES(/datum/preferences)
 				if(!instance)
 					continue
 				for(var/key, value in instance.var_changes)
-					own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
+					if(!own_species.set_acceptance_shape_field(key, value))
+						own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
 	character.update_transform()
 
 	// Snowflake shapeshifter bodytype derivation — this is what makes vanity_copy_to
@@ -498,12 +499,12 @@ CAPABILITIES(/datum/preferences)
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
 	var/datum/species/private_species = rel_private(character, nameof(character.species)) // PROTO: private copy
-	private_species.base_species = bodytype_selected
+	private_species.set_base_species(bodytype_selected)
 	private_species.icobase = private_species.get_icobase()
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)
 	private_species.vanity_base_fit = bodytype_selected
 	if(istype(character.species, /datum/species/shapeshifter))
-		GLOB.wrapped_species_by_ref["\ref[character]"] = bodytype_selected
+		character.set_wrapped_bodytype(bodytype_selected)
 
 	// Finalize: same post-apply work the /datum/preference_apply_hook/finalize hook does.
 	for(var/obj/item/clothing/O in contents_of(character))

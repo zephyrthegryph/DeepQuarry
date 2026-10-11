@@ -615,11 +615,6 @@
 /datum/entry/part/effect/take_out/yielded_tier()
 	return OP_PRIORITY_TAKE_OUT
 
-/datum/entry/part/req/generic/boolean/build_problem()
-	if(istext(src.args["what"]) && isnull(src.args["because"]))
-		return "req_bool(PROC_REF([src.args["what"]])) has no reason"
-	return null
-
 /datum/entry/part/req/is/build_problem()
 	var/key = src.args["key"]
 	if(src.args["because"])

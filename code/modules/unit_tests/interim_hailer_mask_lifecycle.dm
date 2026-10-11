@@ -30,7 +30,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	for(var/source_refuses in list(TRUE, FALSE))
 		var/obj/item/clothing/mask/gas/half/mask = allocate(/obj/item/clothing/mask/gas/half, T)
 		var/obj/item/hailer/hailer = allocate(/obj/item/hailer, T)

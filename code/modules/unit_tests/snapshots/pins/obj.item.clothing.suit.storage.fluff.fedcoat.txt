@@ -1,0 +1,32 @@
+@obj.item.clothing.suit.storage human|none
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage robot|none
++5 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item ai|none
+@obj.item ghost|none
++1 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/screwdriver
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/crowbar
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/wrench
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/tool/wirecutters
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/multitool
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit human|/obj/item/weldingtool
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/stack/cable_coil
++5 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
++4 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/card/id
++5 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/kit
++5 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item/storage
++5 menu: Toggle coat buttons (refused: You can't do that.)
+@obj.item.clothing.suit.storage human|/obj/item
++4 menu: Toggle coat buttons (refused: You can't do that.)
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, fedcoat_toggle_verb, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, suit_pockets_hand, suit_pockets_item, toggle_digestable

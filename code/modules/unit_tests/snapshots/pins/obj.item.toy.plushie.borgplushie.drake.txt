@@ -22,9 +22,9 @@
 +0 menu: Alternate use
 @obj.item.toy human|/obj/item/card/id
 +0 menu: Alternate use
-@obj.item.toy.plushie human|/obj/item/kit
+@obj.item.toy human|/obj/item/kit
 +0 menu: Alternate use
-@obj.item.toy.plushie human|/obj/item/storage
+@obj.item.toy human|/obj/item/storage
 +0 menu: Alternate use
 @obj.item.toy human|/obj/item
 +0 menu: Alternate use

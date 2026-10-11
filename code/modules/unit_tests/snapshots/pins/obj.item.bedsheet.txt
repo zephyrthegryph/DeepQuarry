@@ -33,9 +33,8 @@
 +3 menu: Turn Around
 @obj human|/obj/item/storage
 +3 menu: Turn Around
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+2 menu: Turn Around
-+3 click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Turn Around
+human|/obj/item click: nothing
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lay_out, move_to_top, pick_up_item, rotatable.turn_around, toggle_digestable, use_item

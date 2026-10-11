@@ -190,7 +190,7 @@ CAPABILITIES(/obj/item/clothing/glasses/goggles)
 	name = "Alien Optics"
 	flags = PHORONGUARD
 
-TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
+
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
@@ -645,9 +645,10 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal/plain/eyepatch)
 	var/up = 0
 	specialty_goggles = TRUE
 
-TYPE_TABLE(/obj/item/clothing/glasses/aerogelgoggles, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = AIRTIGHT, covers = EYES))
 	op("aerogel_goggles_flip_self", in_hand(), label("Flip"), then(PROC_REF(aerogel_goggles_flip_self)))
 	op("aerogelgoggles_toggle_verb", menu(), label("Adjust Orange Goggles"), needs(carried()), then(PROC_REF(aerogelgoggles_toggle_verb_op)))
@@ -878,3 +879,6 @@ CAPABILITIES(/obj/item/clothing/glasses/material/prescription/tajblind)
 	if(overlay)
 		return overlay
 	return hud_overlay ? GLOB.global_hud.vars[hud_overlay] : null
+
+CAPABILITIES(/obj/item/clothing/glasses/night/vox)
+	acceptance("fit", fits(list("Vox")), mode = ACCEPTANCE_REPLACE)

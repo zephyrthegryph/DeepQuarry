@@ -80,7 +80,7 @@
 	rel_add(src, nameof(synths), wood)
 
 	var/obj/item/stack/material/cyborg/wood/W = new (src)
-	rel_add(W, nameof(W.synths), wood)
+	W.add_synth(wood)
 	rel_add(src, nameof(modules), W)
 
 	// For uwu
@@ -125,44 +125,44 @@
 	rel_add(src, nameof(modules), MD)
 
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
-	rel_add(M, nameof(M.synths), metal)
+	M.add_synth(metal)
 	rel_add(src, nameof(modules), M)
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
-	rel_add(G, nameof(G.synths), glass)
+	G.add_synth(glass)
 	rel_add(src, nameof(modules), G)
 
 	var/obj/item/stack/rods/cyborg/rods = new /obj/item/stack/rods/cyborg(src)
-	rel_add(rods, nameof(rods.synths), metal)
+	rods.add_synth(metal)
 	rel_add(src, nameof(modules), rods)
 
 	var/obj/item/stack/cable_coil/cyborg/C = new /obj/item/stack/cable_coil/cyborg(src)
-	rel_add(C, nameof(C.synths), wire)
+	C.add_synth(wire)
 	rel_add(src, nameof(modules), C)
 
 	var/obj/item/stack/material/cyborg/plasteel/PS = new (src)
-	rel_add(PS, nameof(PS.synths), plasteel)
+	PS.add_synth(plasteel)
 	rel_add(src, nameof(modules), PS)
 
 	var/obj/item/stack/tile/wood/cyborg/WT = new /obj/item/stack/tile/wood/cyborg(src)
-	rel_add(WT, nameof(WT.synths), wood)
+	WT.add_synth(wood)
 	rel_add(src, nameof(modules), WT)
 
 	var/obj/item/stack/tile/floor/cyborg/S = new /obj/item/stack/tile/floor/cyborg(src)
-	rel_add(S, nameof(S.synths), metal)
+	S.add_synth(metal)
 	rel_add(src, nameof(modules), S)
 
 	var/obj/item/stack/tile/roofing/cyborg/CT = new /obj/item/stack/tile/roofing/cyborg(src)
-	rel_add(CT, nameof(CT.synths), metal)
+	CT.add_synth(metal)
 	rel_add(src, nameof(modules), CT)
 
 	var/obj/item/stack/material/cyborg/glass/reinforced/RG = new (src)
-	rel_add(RG, nameof(RG.synths), metal)
-	rel_add(RG, nameof(RG.synths), glass)
+	RG.add_synth(metal)
+	RG.add_synth(glass)
 	rel_add(src, nameof(modules), RG)
 
 	var/obj/item/stack/material/cyborg/plastic/PL = new (src)
-	rel_add(PL, nameof(PL.synths), plastic)
+	PL.add_synth(plastic)
 	rel_add(src, nameof(modules), PL) //CHOMEdit End
 
 /obj/item/robot_module/robot/malf/gravekeeper/handle_special_unlocks(mob/living/silicon/robot/owner_robot)

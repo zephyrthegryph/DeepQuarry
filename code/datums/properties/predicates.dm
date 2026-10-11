@@ -22,21 +22,6 @@
 		return "it isn't made for a [bodytype]"
 	return "it only fits [english_list(names, and_text = " or ")]"
 
-/// Whether clothing restricted to `bodytypes` fits `bodytype`. Custom-fitted
-/// Vox, Werebeast and Teshari clothing fits only them, and Teshari and
-/// Werebeasts need their own sprites for anything restricted.
-/proc/dq_fits_bodytype(list/bodytypes, exclusive, bodytype, list/sprite_sheets)
-	if(exclusive)
-		return !(bodytype in bodytypes)
-	if(bodytype in bodytypes)
-		return TRUE
-	if(((SPECIES_VOX in bodytypes) && bodytype != SPECIES_VOX) || ((SPECIES_WEREBEAST in bodytypes) && bodytype != SPECIES_WEREBEAST) || ((SPECIES_TESHARI in bodytypes) && bodytype != SPECIES_TESHARI))
-		return FALSE
-	if((bodytype == SPECIES_TESHARI || bodytype == SPECIES_WEREBEAST) && !LAZYACCESS(sprite_sheets, bodytype))
-		return FALSE
-	return TRUE
-
-
 /datum/pred_node/tool/test(mob/actor, atom/target, obj/item/held)
 	if(!istype(held) || !held.has_tool_quality(quality))
 		return FALSE

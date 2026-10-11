@@ -1,3 +1,5 @@
+TRACKED(/obj/item/organ, parent_organ)
+
 /obj/item/organ
 	name = "organ"
 	icon = 'icons/obj/surgery.dmi'
@@ -76,7 +78,6 @@ TRACKED(/obj/item/organ, robotic)
 	. = ..()
 	if(isliving(loc))
 		var/mob/living/born_in = loc
-		src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
 		// Born inside a mob: take our place in its body (sets `owner`).
 		place_in_body(born_in)
 
@@ -577,6 +578,7 @@ MSG_DEF(organ/butcher_begin, span_danger("You are preparing to butcher %T%!"), s
 // An organ in hand: bitten (outside combat, aiming at the mouth); an organ on the table: butchered with a blade (a screwdriver for a robotic
 // one) or revived with peridaxon.
 CAPABILITIES(/obj/item/organ)
+	derives(nameof(w_class), PROC_REF(birth_size))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 	reagents(5)
 	loose_organ_clock()
@@ -748,3 +750,9 @@ CAPABILITIES(/obj/item/organ)
 					return TRUE
 
 	return FALSE
+
+/obj/item/organ/proc/birth_size()
+	if(!isliving(loc))
+		return w_class
+	var/mob/living/born_in = loc
+	return max(w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1)

@@ -78,14 +78,23 @@ GLOBAL_VAR(act_next_authority)
 		log_world("ACT: [act_type] on [holder?.type] refused: nested deeper than [ACT_MAX_DEPTH] ([chain])")
 		act_report(RULE_ACT_DEPTH, "[act_type] on [holder?.type] ended ACT_REFUSED (too deeply nested; the depth cap is [ACT_MAX_DEPTH]): [chain]")
 		return null
-	var/datum/act/action/A = take(act_type)
+	var/datum/act/action/A = act_context(act_type, holder, holder, GLOB.act_next_actor)
 	GLOB.act_taken++
-	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	A.target = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	A.actor = GLOB.act_next_actor // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.authority = GLOB.act_next_authority
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
+	return A
+
+/// Takes one pooled context and binds borrowed entities. Queries share this binding
+/// without beginning a world action, consuming authority, or incrementing metrics.
+/proc/act_context(act_type, datum/holder, datum/target, mob/actor, datum/act/action/context = null)
+	// Rebinding a borrowed query uses its existing lease; it never checks out another pooled act.
+	if(context && context.type != act_type)
+		CRASH("A borrowed act can only be rebound with its declared type")
+	var/datum/act/action/A = context || take(act_type)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.target = target // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.actor = actor // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	return A
 
 /// Runs the hooks of the action: needs, instead, adjusts. Returns the act (the caller goes on), or null (refused or taken over: the act is

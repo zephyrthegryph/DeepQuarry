@@ -44,7 +44,7 @@
 -menu: Use
 -click: Click: Use
 +3 click: Click: Collect
-@obj.item human|/obj/item/card/emag
+@obj.item.robot_parts human|/obj/item/card/emag
 human|/obj/item/assembly/infra menu: Add sensor
 human|/obj/item/assembly/infra menu: Move To Top
 human|/obj/item/assembly/infra menu: Rotate Clockwise

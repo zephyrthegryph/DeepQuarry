@@ -16,5 +16,5 @@
 @obj.machinery.computer.shuttle_control human|/obj/item/card/id
 @obj.machinery.computer.shuttle_control human|/obj/item
 @obj human|/obj/item/gripper
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 keys: cancel, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, force, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, move, pick, plot_expedition, robot_remote_blocked, set_codes, silicon_hand, use_gripper, use_item

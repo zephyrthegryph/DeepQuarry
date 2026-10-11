@@ -23,16 +23,10 @@
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
 @obj.item.storage human|/obj/item/card/id
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-@obj human|/obj/item/kit
+@obj.item.storage human|/obj/item/kit
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+3 menu: Open
-+4 menu: Put in
-@obj human|/obj/item/storage
--click: Click: Collect
+@obj.item.storage human|/obj/item/storage
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
-+3 menu: Open
-+4 menu: Put in
-+6 click: Click: Put in
 @obj.item.storage human|/obj/item
 +0 menu: Adjust Duffelbag Angle (refused: You can't do that.)
 @obj human|/obj/item/lightreplacer

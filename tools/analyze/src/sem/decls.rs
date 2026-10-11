@@ -45,6 +45,8 @@ pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GR
 /// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
 /// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
 pub const ENTRY_PROC: &str = "ENTRY_PROC";
+/// Runtime observe calls carry the same typed requirement parts as declarations.
+pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
 /// Calls that make a returned list a list of declaration entries.
 const ENTRY_CALLS: &[&str] = &["op(", "extend(", "interface(", "ui_shape(", "on_notice(", "on_change(", "without(", "configure("];
@@ -597,8 +599,41 @@ fn scan_file(f: &SourceFile) -> FileDecls {
             }
         }
     }
+    scan_runtime_observers(f, &stripped, &starts, &mut fd);
     scan_calls(f, &stripped, &starts, &mut fd);
     fd
+}
+
+/// Records runtime observation parts without guessing the listener's type. Typed proc
+/// references in those parts are genuine callback roots for generated read metadata.
+fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd: &mut FileDecls) {
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'"' {
+            i += 1;
+            while i < bytes.len() {
+                if bytes[i] == b'\\' { i += 2; continue; }
+                if bytes[i] == b'"' { i += 1; break; }
+                i += 1;
+            }
+            continue;
+        }
+        let start = i;
+        if !bytes[i].is_ascii_alphabetic() && bytes[i] != b'_' { i += 1; continue; }
+        while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
+        if &text[start..i] != "observe" || (start > 0 && (bytes[start - 1].is_ascii_alphanumeric() || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':'))) { continue; }
+        let mut open = i;
+        while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
+        if bytes.get(open) != Some(&b'(') { continue; }
+        let Some(close) = matching_paren(text, open) else { continue };
+        let body = text[open + 1..close].to_string();
+        let args = split_args(&body);
+        if args.len() < 4 { continue; }
+        let line = match starts.binary_search(&(start as u32)) { Ok(n) => n as u32 + 1, Err(n) => n as u32 };
+        fd.markers.push(Marker { name: RUNTIME_OBSERVE.to_string(), rel: f.rel.clone(), line,
+            args, body, body_offset: open + 1, line_starts: starts.clone() });
+    }
 }
 
 /// Finds `name(...)` calls of the key/source families in comment-stripped text.

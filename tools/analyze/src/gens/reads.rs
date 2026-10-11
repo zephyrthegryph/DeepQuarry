@@ -167,7 +167,7 @@ impl Generator for Reads {
         out.doc("Every interned name a read uses (a var, a relation hop, an accessor key). Id = index in this list.");
         out.line("GLOBAL_LIST_INIT(generated_read_names, list(");
         for (i, n) in names.names.iter().enumerate() {
-            out.line(format!("\t\"{}\"{}", n, if i + 1 < names.names.len() { "," } else { "" }));
+            out.line(format!("\t\"{}\"{}", literal_read_name(n), if i + 1 < names.names.len() { "," } else { "" }));
         }
         out.line("))");
         out.blank();
@@ -292,11 +292,29 @@ fn read_table_initializer(entries: &[String]) -> String {
     lines.join("\n")
 }
 
+// A list-hop suffix is literal metadata, unlike intentionally interpolated capability keys.
+fn literal_read_name(name: &str) -> String {
+    match name.strip_suffix("[]") {
+        Some(base) => format!("{}\\[\\]", base),
+        None => name.to_owned(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{canonical_read_key, read_table_initializer};
+    use super::{canonical_read_key, read_table_initializer, literal_read_name};
     use crate::sem::reads::ReadKind;
     use std::collections::BTreeSet;
+
+    #[test]
+    fn list_hop_metadata_is_literal_without_breaking_interpolated_accessors() {
+        assert_eq!(literal_read_name("members[]"), "members\\[\\]");
+        assert_eq!(literal_read_name("members"), "members");
+        // These canonical accessor keys intentionally interpolate a declared key constant.
+        assert_eq!(literal_read_name("capkey:[EMAG_EMAGGED]"), "capkey:[EMAG_EMAGGED]");
+        assert_eq!(literal_read_name("[OP_KEY_CAP_STATE]"), "[OP_KEY_CAP_STATE]");
+    }
+
     #[test]
     fn declared_capability_accessor_uses_its_actual_published_key() {
         let keys = BTreeSet::from(["EMAG_EMAGGED".to_string()]);

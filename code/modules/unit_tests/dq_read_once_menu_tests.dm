@@ -7,7 +7,7 @@ MSG_DEF_SELF(read_once_probe/unavailable, "probe is unavailable")
 	var/effects = 0
 
 CAPABILITIES(/obj/read_once_menu_probe)
-	op("sample", menu(), label("Sample"), needs(req_bool(PROC_REF(allow_sample), because = MSG(read_once_probe/unavailable))), then(PROC_REF(record_sample)))
+	op("sample", menu(), label("Sample"), needs(req(PROC_REF(sample_refusal))), then(PROC_REF(record_sample)))
 	op("conditional", menu(), label("Conditional"), when(PROC_REF(allow_sample)), then(PROC_REF(record_sample)))
 
 /obj/read_once_menu_probe/proc/allow_sample(datum/act/op/A)
@@ -15,6 +15,12 @@ CAPABILITIES(/obj/read_once_menu_probe)
 	if(read_once(fail))
 		throw EXCEPTION("Expected read_once menu probe")
 	return answer
+
+/obj/read_once_menu_probe/proc/sample_refusal(datum/act/op/A)
+	var/answer = admission_helper()
+	if(read_once(fail))
+		throw EXCEPTION("Expected read_once menu probe")
+	return answer ? null : MSG(read_once_probe/unavailable)
 
 /obj/read_once_menu_probe/proc/record_sample(datum/act/op/A)
 	effects++

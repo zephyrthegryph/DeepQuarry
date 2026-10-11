@@ -399,10 +399,10 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/obj/item/organ/external/chest/torso = unfortunate_soul.get_organ(BP_TORSO)
 	// Ledger moves from the head's organ slot into the torso's, within the body.
 	if(brain && torso && unfortunate_soul.should_have_organ(O_BRAIN))
-		brain.parent_organ = BP_TORSO //Move the brain to the torso.
+		brain.set_parent_organ(BP_TORSO) //Move the brain to the torso.
 		brain.place_into(torso, SLOT_ID_PART_ORGANS)
 	if(eyes && torso && unfortunate_soul.should_have_organ(O_EYES))
-		eyes.parent_organ = BP_TORSO //Move the eyes to the torso.
+		eyes.set_parent_organ(BP_TORSO) //Move the eyes to the torso.
 		eyes.place_into(torso, SLOT_ID_PART_ORGANS)
 	for(var/obj/item/organ/external/head/ex_organ in unfortunate_soul.organs)
 		ex_organ.cannot_break = TRUE
