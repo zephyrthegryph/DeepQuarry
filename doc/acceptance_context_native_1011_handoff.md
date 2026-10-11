@@ -42,3 +42,5 @@ its fault-propagation and cleanup assertions are retained.
 The next verification list contains the 18 failed selectors; lane-ready adds its
 mandatory smoke and incremental-pin checks. Results remain pending. No pin rows
 were blessed for these failures.
+
+The latest repair run on 781a12c6f8 passed 33 tests and failed only the two pin suites. Production compilation, DreamChecker, ratchets and boot were clean. Real acceptance, lifecycle and metadata regressions passed. Residual differences are master-added robot keys and volatile fixture serials/source line numbers; the pin producer now normalizes only those volatile values while retaining substantive refusal and fault text. Verification remains pending.
