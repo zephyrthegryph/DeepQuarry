@@ -24,12 +24,13 @@ CAPABILITIES(/obj/item/storage/bag/fossils)
 	name = "sample bag box"
 	desc = "A box claiming to contain sample bags."
 
-/obj/item/storage/box/samplebags/Initialize(mapload)
-	. = ..()
-	for(var/i = 1 to 7)
-		var/obj/item/evidencebag/S = new(src)
-		S.name = "sample bag"
-		S.desc = "a bag for holding research samples."
+CAPABILITIES(/obj/item/storage/box/samplebags)
+	initial_contents(/obj/item/evidencebag/sample, count = 7)
+
+/// The bags a sample bag box holds: evidence bags labelled for research samples.
+/obj/item/evidencebag/sample
+	name = "sample bag"
+	desc = "a bag for holding research samples."
 
 MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/ano_scanner

@@ -134,6 +134,7 @@ TRACKED(/obj/machinery/alarm, rcon_setting)
 TRACKED(/obj/machinery/alarm, thermostat_mode)
 
 CAPABILITIES(/obj/machinery/alarm)
+	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 80, active = 1000, channel = ENVIRON))
 	links(/area::air_alarms, /obj/machinery/alarm::alarm_area, a_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm, starts = /datum/looping_sound/alarm/decompression_alarm)
@@ -255,8 +256,6 @@ CAPABILITIES(/obj/machinery/alarm)
 	if(name == "alarm")
 		name = "[alarm_area?.name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
 	set_frequency(frequency)
-	if(!pixel_x && !pixel_y)
-		offset_airalarm()
 	TLV = default_TLV()
 	if(!alarm_area?.main_air_alarm_is_operating()) // select main alarm
 		alarm_area?.elect_main_air_alarm()
@@ -914,3 +913,9 @@ CAPABILITIES(/datum/air_alarm_remote)
 #undef AALARM_REPORT_TIMEOUT
 #undef MAX_TEMPERATURE
 #undef MIN_TEMPERATURE
+
+/// A wall-mounted air alarm the map did not offset sits on the wall it faces.
+/obj/machinery/alarm/proc/roll_wall_offset(datum/roller/R)
+	if(!pixel_x && !pixel_y)
+		offset_airalarm()
+	return list(pixel_x, pixel_y)

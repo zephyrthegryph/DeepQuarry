@@ -43,8 +43,6 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
 	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
 	icon = null
 
@@ -205,6 +203,7 @@ TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	examine_line(PROC_REF(gauge_text))
 

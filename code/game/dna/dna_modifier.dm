@@ -360,6 +360,7 @@ MSG_DEF_SELF(dna_console/not_standing, "You need to stand at the console.")
 // of a block injector) are asks() steps of the bufferOption op, shown as the window's modal. Every button wants the scanner connected, the
 // console not irradiating and the user standing on a tile; opening it wants a connected scanner and a user outside it.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	finds(nameof(connected), /obj/machinery/dna_scannernew) // the scanner next to it (it keeps its own facing)
 	configure(uses_power(idle = 10, active = 400))
 	silicon_ui()
 	after_init(25 SECONDS, then(PROC_REF(injector_cooldown_finish)))
@@ -412,11 +413,6 @@ CAPABILITIES(/obj/machinery/computer/scan_consolenew)
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
 		rel_add(src, nameof(buffers), R, i+1)
-	// Traitgenes don't alter direction of computer as this scans for neighbour
-	for(var/dirfind in GLOB.cardinal)
-		rel_set(src, nameof(connected), locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
-		if(connected())
-			break
 
 /obj/machinery/computer/scan_consolenew/proc/all_dna_blocks(list/buffer)
 	var/list/arr = list()

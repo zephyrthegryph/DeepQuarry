@@ -54,6 +54,9 @@
 
 	var/mob_announce_cooldown = 0 //Define this to make it so when visited, the ATC will announce their arrival. Only used if you have a Crossed/Uncrossed that calls announce_atc w/ announce_atc being redefined.
 
+CAPABILITIES(/obj/effect/overmap/visitable)
+	rolls(nameof(docking_codes), PROC_REF(roll_docking_codes))
+
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 /obj/effect/overmap/visitable/Initialize(mapload)
@@ -68,8 +71,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	// only an identity/z-ownership anchor and does not occupy a navigation grid.
 	moveToNullspace()
 
-	if(!docking_codes)
-		docking_codes = "[ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))][ascii2text(rand(65,90))]"
 
 	#ifdef TESTING
 	testing("Located sector \"[name]\" at [start_x],[start_y], containing Z [english_list(map_z)]")
@@ -308,3 +309,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 
 	testing("Overmap build complete.")
 	return 1
+
+/// A sector the map gave no docking codes gets four random capital letters.
+/obj/effect/overmap/visitable/proc/roll_docking_codes(datum/roller/R)
+	return "[ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))][ascii2text(R.number(65, 90))]"
