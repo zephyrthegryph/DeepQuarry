@@ -6,7 +6,7 @@
 	marker.grave_name = "Remembered"
 	marker.epitaph = "A marker to dismantle"
 	TEST_ASSERT_EQUAL(marker.material, get_material_by_name(MAT_WOOD), "the actual default marker has wood material")
-	marker.wrench_act_tool_done(user)
+	test_op_handler(marker, "wrench_act_tool_done", user)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(marker), "actual wrench completion immediately consumes the original marker")
 	TEST_ASSERT_NULL(locate_within(T, /obj/structure/gravemarker), "actual dismantling leaves no duplicate marker")
