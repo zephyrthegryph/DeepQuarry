@@ -180,7 +180,7 @@ pub(crate) enum Answer {
     Input(Arc<Inputs>),
     Semantic(ResolvedMeaning),
 }
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum Domain {
     Input,
     Semantic(ReadDomain),

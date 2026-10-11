@@ -47,6 +47,57 @@ impl<Q, A, D> Default for Incidence<Q, A, D> {
     }
 }
 impl<Q, A, D> Incidence<Q, A, D> {
+    pub(super) fn pressure_charge(&self, variant: u64) -> usize
+    where
+        D: Ord,
+    {
+        use super::pressure::scalar_slot;
+        let Some(row) = self.variants.get(&variant) else {
+            return 0;
+        };
+        let mut bytes = scalar_slot::<u64, Variant<D>>()
+            .saturating_add(row.leaves.len().saturating_mul(scalar_slot::<LeafId, ()>()))
+            .saturating_add(
+                row.certificates
+                    .len()
+                    .saturating_mul(scalar_slot::<(D, u128), ()>()),
+            )
+            .saturating_add(row.uncovered.len().saturating_mul(scalar_slot::<D, ()>()));
+        for id in &row.leaves {
+            if let Some(leaf) = self.leaves.get(id) {
+                let shared = scalar_slot::<LeafId, Leaf<Q, A, D>>()
+                    .saturating_add(leaf.domains.len().saturating_mul(scalar_slot::<D, ()>()));
+                bytes = bytes
+                    .saturating_add(shared)
+                    .saturating_add(scalar_slot::<u64, ()>());
+                for domain in &leaf.domains {
+                    if let Some(leaves) = self.domains.get(domain) {
+                        let shared = scalar_slot::<D, BTreeSet<LeafId>>()
+                            .saturating_add(scalar_slot::<LeafId, ()>());
+                        bytes = bytes.saturating_add(shared);
+                    }
+                }
+            }
+        }
+        for certificate in &row.certificates {
+            if let Some(rows) = self.certificates.get(certificate) {
+                bytes = bytes
+                    .saturating_add(scalar_slot::<(D, u128), BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<u64, ()>());
+            }
+        }
+        for domain in &row.uncovered {
+            if let Some(rows) = self.uncovered.get(domain) {
+                bytes = bytes
+                    .saturating_add(scalar_slot::<D, BTreeSet<u64>>())
+                    .saturating_add(scalar_slot::<u64, ()>());
+            }
+        }
+        if self.conflicting.contains(&variant) {
+            bytes = bytes.saturating_add(scalar_slot::<u64, ()>());
+        }
+        bytes
+    }
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(&Arc<[Observation<Q, A, D>]>)) {
         for leaf in self.leaves.values() {
             visit(&leaf.owner);

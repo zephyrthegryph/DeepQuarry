@@ -10,20 +10,26 @@ pub(super) fn declarations(
 ) {
     census.slice("startup.static_declarations", rows, true);
     for declaration in rows.iter() {
-        if census.arc_object("startup.static_declaration", declaration) {
-            census.slice("startup.lexical_locals", &declaration.lexical_locals, true);
-            if let Some(array) = &declaration.declared_array {
-                census.array("startup.static_array", array);
+        declaration_payload(census, declaration);
+    }
+}
+pub(super) fn declaration_payload(
+    census: &mut HeapCensus,
+    declaration: &Arc<dm_ir::ProcedureStaticDeclaration>,
+) {
+    if census.arc_object("startup.static_declaration", declaration) {
+        census.slice("startup.lexical_locals", &declaration.lexical_locals, true);
+        if let Some(array) = &declaration.declared_array {
+            census.array("startup.static_array", array);
+        }
+        match &declaration.initializer {
+            dm_ir::InitializerValue::Expression(value) => {
+                census.expression("startup.static_expression", value)
             }
-            match &declaration.initializer {
-                dm_ir::InitializerValue::Expression(value) => {
-                    census.expression("startup.static_expression", value)
-                }
-                dm_ir::InitializerValue::ArrayAllocation(array) => {
-                    census.array("startup.static_array", array)
-                }
-                dm_ir::InitializerValue::NoAuthoredValue => (),
+            dm_ir::InitializerValue::ArrayAllocation(array) => {
+                census.array("startup.static_array", array)
             }
+            dm_ir::InitializerValue::NoAuthoredValue => (),
         }
     }
 }

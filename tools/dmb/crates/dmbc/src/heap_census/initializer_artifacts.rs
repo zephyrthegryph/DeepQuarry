@@ -118,7 +118,7 @@ pub(crate) fn compact_modifier_weight(
 }
 
 /// Conservative logical charge; repeated shared owners may be charged again.
-/// Private store/lease/index envelopes are charged per entry, not called exact.
+/// Store/lease/index charges are supplied once by the shared pressure core.
 pub(crate) fn compact_charge(census: HeapCensus, private: usize) -> Option<usize> {
     let encounters = census.buffer_encounters;
     let report = census.finish();
@@ -130,8 +130,7 @@ pub(crate) fn compact_charge(census: HeapCensus, private: usize) -> Option<usize
     usize::try_from(report.unique_known_capacity_bytes)
         .ok()?
         .checked_add(encounters.checked_mul(64)?)?
-        .checked_add(private)?
-        .checked_add(4096)
+        .checked_add(private)
 }
 impl HeapCensus {
     pub(crate) fn initializer_artifacts(&mut self, store: &InitializerArtifacts) {

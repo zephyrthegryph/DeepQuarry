@@ -34,11 +34,7 @@ fn allocation(
 }
 pub(crate) fn weight<Q>(
     key: &Arc<[u8]>,
-    reads: &dm_session::Receipt<
-        Q,
-        StartupAnswer,
-        Option<dm_ir::ReadDomain>,
-    >,
+    reads: &dm_session::Receipt<Q, StartupAnswer, Option<dm_ir::ReadDomain>>,
     versions: &Arc<[(Option<dm_ir::ReadDomain>, u128)]>,
     value: &Arc<StartupArtifact>,
 ) -> Option<usize> {
@@ -60,10 +56,12 @@ pub(crate) fn weight<Q>(
         StartupArtifact::Syntax(receipt) => {
             if c.arc_object("compact.static_syntax", receipt) {
                 c.arc_text("compact.static_source", receipt.source());
-                c.static_plan(receipt.plan());
+                let symbols = c.static_plan(receipt.plan());
                 super::declarations(&mut c, receipt.canonical_declarations());
+                symbols
+            } else {
+                0
             }
-            0
         }
         StartupArtifact::Layout(layout) => {
             if c.arc_object("compact.static_layout", layout) {
@@ -71,9 +69,45 @@ pub(crate) fn weight<Q>(
             }
             0
         }
-        // Inventory's private hash backing is not yet a complete charge adapter.
-        // Its independently admitted layout leaves can survive without it.
-        StartupArtifact::Inventory(_) => return None,
+        StartupArtifact::Inventory(receipt) => {
+            let (rows, owner) = receipt.storage();
+            c.vec_payload("compact.inventory_roster", rows);
+            for (_, layout) in rows {
+                if c.arc_object("compact.static_layout", layout) {
+                    super::declarations(&mut c, layout.declarations());
+                }
+            }
+            if c.arc_object("compact.static_inventory", owner) {
+                let (_, capacity) = owner.procedure_storage();
+                let declarations = owner.declarations().count();
+                for declaration in owner.declarations() {
+                    super::declaration_payload(&mut c, declaration);
+                }
+                for layout in owner.certificates() {
+                    if c.arc_object("compact.static_layout", layout) {
+                        super::declarations(&mut c, layout.declarations());
+                    }
+                }
+                // HashSet capacity is actual exposed backing capacity; scalar
+                // slots/control and BTree nodes are conservative logical models.
+                capacity
+                    .checked_mul(
+                        size_of::<dm_ir::ProcedureIdentity>()
+                            .checked_add(16)?
+                            .checked_mul(2)?,
+                    )?
+                    .checked_add(map_charge::<
+                        dm_ir::ProcedureStaticIdentity,
+                        Arc<dm_ir::ProcedureStaticDeclaration>,
+                    >(declarations)?)?
+                    .checked_add(map_charge::<
+                        dm_ir::ProcedureIdentity,
+                        Arc<dm_tree::procedure_statics::StaticLayout>,
+                    >(owner.certificate_count())?)?
+            } else {
+                0
+            }
+        }
         StartupArtifact::Allocation(owner) => allocation(&mut c, owner)?,
         StartupArtifact::AllocationFinal(owner) => {
             if c.arc_object("compact.allocation_final", owner) {

@@ -13,9 +13,9 @@ fn issued_static_roster_is_shared_after_exact_current_source_bind() {
     let first = capture(&original, &pool, &arena, Some(&store));
     let compact = store.compact_for_pressure(1024 * 1024);
     assert!(compact.retained_entries > 0);
-    assert!(
-        compact.evicted_entries > 0,
-        "unbounded inventory declines compact retention"
+    assert_eq!(
+        compact.evicted_entries, 0,
+        "known scalar inventory backing is charged"
     );
     let shifted = revision("// shifted\n/proc/p()\n    var/static/cache = 3\n    return cache\n");
     let arena = dm_tree::frontend::BodyArena::new(&shifted);
@@ -26,7 +26,7 @@ fn issued_static_roster_is_shared_after_exact_current_source_bind() {
     };
     assert!(Arc::ptr_eq(&roster(&first), &roster(&second)));
     assert_ne!(first.plan.origins, second.plan.origins);
-    assert!(!Arc::ptr_eq(
+    assert!(Arc::ptr_eq(
         &first.static_inventory,
         &second.static_inventory
     ));

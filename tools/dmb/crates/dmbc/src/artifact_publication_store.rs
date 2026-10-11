@@ -79,7 +79,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         &self,
         limit: usize,
         charge: impl FnMut(&Arc<[u8]>, &Receipt<Q, A, D>, &Arc<[(D, u128)]>, &Arc<T>) -> Option<usize>,
-    ) -> dm_session::PressurePrune {
+    ) -> dm_session::PressurePrune
+    where
+        D: Copy,
+    {
         self.core.prune_for_pressure(limit, charge)
     }
     pub(crate) fn lookup<H: ObservationHost<Q, A, D>>(

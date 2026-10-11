@@ -6,7 +6,7 @@ pub(crate) enum Query {
     BatchInputs,
     Semantic(ResolveQuery),
 }
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) enum Domain {
     Inputs,
     BatchInputs,

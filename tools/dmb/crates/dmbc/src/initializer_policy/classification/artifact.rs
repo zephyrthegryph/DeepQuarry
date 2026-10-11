@@ -114,6 +114,8 @@ impl InitializerArtifacts {
             .modifiers
             .compact_for_pressure(bytes.saturating_sub(report.charged_bytes));
         report.charged_bytes += modifiers.charged_bytes;
+        report.payload_bytes += modifiers.payload_bytes;
+        report.index_logical_bytes += modifiers.index_logical_bytes;
         report.retained_entries += modifiers.retained_entries;
         report.evicted_entries += modifiers.evicted_entries;
         report
