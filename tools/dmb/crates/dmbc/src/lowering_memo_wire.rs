@@ -10,7 +10,9 @@ use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 const EXECUTABLE_SCHEMA: u32 = 0x0206_001e;
 // Common nameof member diagnostics now retain the authored receiver/operator.
 // Prior failure frames can contain selector-only wording under the same key.
-const FAILURE_SCHEMA: u32 = 0x0206_0021;
+// Relative dot-formals additionally admit exact global-only formal proofs.
+// Old method-only negative frames must not bypass that current lookup.
+const FAILURE_SCHEMA: u32 = 0x0206_0022;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
 #[path = "lowering_memo_read_wire.rs"]

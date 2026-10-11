@@ -85,10 +85,28 @@ impl Compiler<'_> {
                     }
                     return self.source_feature_reference(expression, true, statement);
                 };
-                let query =
+                let mut query =
                     reflective_procedure_query(path, self.bindings.current_type_path.as_deref())
                         .unwrap_or(dm_ir::ResolveQuery::Type(SymbolId::of(path)));
-                let answer = self.semantic(lookup.answer(query))?;
+                let mut answer = self.semantic(lookup.answer(query))?;
+                // Pinned 516.1687 relative-global probes: `.proc/name` accepts
+                // a current global-only formal, but still rejects total absence.
+                // A positive method (including an override) wins; an opaque
+                // method answer never licenses a different namespace fallback.
+                if matches!(answer, dm_ir::ResolvedMeaning::Missing) && path.starts_with(".proc/") {
+                    if let dm_ir::ResolveQuery::MethodProcedureValue {
+                        name, verb: false, ..
+                    } = query
+                    {
+                        query = dm_ir::ResolveQuery::ProcedureValue {
+                            owner: SymbolId::of("/"),
+                            name,
+                            verb: false,
+                            formal: true,
+                        };
+                        answer = self.semantic(lookup.answer(query))?;
+                    }
+                }
                 match (query, answer) {
                     (
                         dm_ir::ResolveQuery::Type(expected),
@@ -220,6 +238,56 @@ fn reflective_type_role(path: &str) -> ReflectiveTypeRole {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn relative_nameof_uses_global_formal_only_after_exact_method_absence() {
+        struct RelativeHost(u8, std::sync::Mutex<Vec<dm_ir::ResolveQuery>>);
+        impl dm_ir::Resolver for RelativeHost {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                use dm_ir::{ResolveQuery as Q, ResolvedMeaning as M};
+                self.1.lock().unwrap().push(query);
+                let identity = |owner| {
+                    M::Value(dm_ir::SemanticValue::Procedure(dm_ir::ProcedureIdentity {
+                        owner,
+                        name: SymbolId::of("callback"),
+                        verb: false,
+                        occurrence: 0,
+                    }))
+                };
+                match query {
+                    Q::MethodProcedureValue { owner, .. } => match self.0 {
+                        1 => identity(owner),
+                        2 => M::Unsupported(query),
+                        _ => M::Missing,
+                    },
+                    Q::ProcedureValue { owner, .. }
+                        if owner == SymbolId::of("/") && self.0 != 3 =>
+                    {
+                        identity(owner)
+                    }
+                    Q::Ancestry(owner) => M::Symbols(vec![owner].into()),
+                    _ => M::Missing,
+                }
+            }
+        }
+        let expression = dm_syntax::parse_expression(".proc/callback").expr.unwrap();
+        let symbols = dm_ir::SymbolTable::default();
+        let bindings = LowerBindings {
+            current_type_path: Some("/datum/probe".into()),
+            ..Default::default()
+        };
+        for mode in 0..4 {
+            let host = RelativeHost(mode, Default::default());
+            let result = observe_reference_source_features(&expression, &bindings, &symbols, &host);
+            match mode {
+                0 | 1 => assert!(result.is_ok()),
+                2 => assert_eq!(result.unwrap_err().kind, LowerErrorKind::UnsupportedModel),
+                _ => assert_eq!(result.unwrap_err().kind, LowerErrorKind::SourceError),
+            }
+            let global_reads = host.1.lock().unwrap().iter().filter(|query|
+                matches!(query, dm_ir::ResolveQuery::ProcedureValue { owner, .. } if *owner == SymbolId::of("/"))).count();
+            assert_eq!(global_reads, usize::from(mode == 0 || mode == 3));
+        }
+    }
     #[test]
     fn nameof_recovery_category_uses_reference_role_not_error_text() {
         for (source, expected) in [

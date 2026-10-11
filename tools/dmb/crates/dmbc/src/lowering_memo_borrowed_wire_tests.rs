@@ -32,6 +32,11 @@ fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
         dm_wire::decode_borrowed(FAILURE_SCHEMA, &bytes, bytes.len()).unwrap();
     let legacy = dm_wire::encode(0x0206_0014, &current).unwrap();
     assert!(validate(&bytes).is_ok());
+    let method_only = dm_wire::encode(0x0206_0021, &current).unwrap();
+    assert!(
+        validate(&method_only).is_err(),
+        "method-only relative nameof failures must not replay"
+    );
     let previous_nameof = dm_wire::encode(0x0206_0017, &current).unwrap();
     assert!(
         validate(&previous_nameof).is_err(),
