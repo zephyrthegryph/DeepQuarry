@@ -1,0 +1,19 @@
+{
+  "tool_sha256": "a9b6c1ec648cbe78ad58ebfd666a0d2103c03c0c6145161612992016dd82f71f",
+  "report_sha256": "9540be71fa1eefea8c2f5d1916fb06574abf144b0ccc14824da78c4095206c32",
+  "seconds": 1.5189413000480272,
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 999997440,
+      "peak_job_commit_bytes": 48123904,
+      "peak_process_commit_bytes": 46817280,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "shared_input_closure_authenticated": false,
+  "scope": "qualified preserved resource output comparison; not full baseline",
+  "complete": true,
+  "semantic_equivalent": true
+}
