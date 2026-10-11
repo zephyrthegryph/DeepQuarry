@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 from pathlib import Path
 import tempfile
@@ -14,6 +15,29 @@ class ContractTests(unittest.TestCase):
             file = Path(directory) / "probe.log"
             file.write_text("\n".join(lines), encoding=encoding)
             return contract.observations(file)
+
+    def test_explicit_asset_transport_and_change_rejection(self):
+        sha = lambda file: hashlib.sha256(file.read_bytes()).hexdigest()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / "source", root / "target"
+            source.mkdir()
+            target.mkdir()
+            for name in ("probe.dm", "probe.dme", "contract-resource.txt"):
+                (source / name).write_bytes(name.encode())
+            names = contract.launcher.fixture_files(("contract-resource.txt",))
+            hashes = {name: sha(source / name) for name in names}
+            contract.launcher.copy_fixture_files(source, target, names, hashes, sha)
+            self.assertEqual({name: sha(target / name) for name in names}, hashes)
+            (source / "contract-resource.txt").write_bytes(b"changed")
+            other = root / "other"
+            other.mkdir()
+            with self.assertRaisesRegex(ValueError, "changed before copy"):
+                contract.launcher.copy_fixture_files(source, other, names, hashes, sha)
+        for name in ("../resource", "/resource", "E:/resource", "a\\resource", "a/../resource", "probe.dm"):
+            with self.assertRaises(ValueError):
+                contract.launcher.fixture_files((name,))
+        self.assertEqual(contract.launcher.fixture_files(()), ("probe.dm", "probe.dme"))
 
     def test_exact_contract_and_utf16_logs(self):
         for encoding in ["utf-8", "utf-16"]:

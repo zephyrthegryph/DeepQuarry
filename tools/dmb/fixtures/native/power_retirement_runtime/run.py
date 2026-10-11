@@ -73,11 +73,50 @@ def observations(file):
         for (source, number, message), count in sorted(errors.items())]}
 
 
+def fixture_files(asset_files):
+    """Explicit relative assets only; no traversal, aliases or implicit discovery."""
+    names = ["probe.dm", "probe.dme"]
+    for name in asset_files:
+        if (not isinstance(name, str) or not name or "\\" in name or ":" in name
+                or name.startswith("/") or any(part in ("", ".", "..") for part in name.split("/"))):
+            raise ValueError("unsafe fixture asset path")
+        if name in names:
+            raise ValueError("duplicate fixture asset path")
+        names.append(name)
+    return tuple(names)
+
+
+def fixture_file(root, name):
+    file = root / name
+    for part in (file, *file.parents):
+        if part == root.parent:
+            break
+        if part.is_symlink() or (part.exists() and getattr(part.stat(), "st_file_attributes", 0) & 0x400):
+            raise ValueError("fixture asset has a reparse path")
+    if not file.is_file():
+        raise ValueError("fixture asset is not a regular file")
+    return file
+
+
+def copy_fixture_files(source, destination, names, hashes, sha):
+    for name in names:
+        file = fixture_file(source, name)
+        if sha(file) != hashes[name]:
+            raise ValueError("fixture input changed before copy")
+        target = destination / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with file.open("rb") as reader, target.open("xb") as writer:
+            shutil.copyfileobj(reader, writer)
+        if sha(file) != hashes[name] or sha(target) != hashes[name]:
+            raise ValueError("fixture input changed during copy")
+
+
 def main(*, fixture_directory=None, observation_reader=None,
-         prepare_runtime=None,
+         prepare_runtime=None, asset_files=(),
          scope="four deterministic retirement decoder cases only"):
     fixture_directory = HERE if fixture_directory is None else Path(fixture_directory)
     observation_reader = observations if observation_reader is None else observation_reader
+    names = fixture_files(asset_files)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -94,7 +133,7 @@ def main(*, fixture_directory=None, observation_reader=None,
     root.mkdir()
     receipt = {"schema": 2, "scope": scope,
                "complete": False, "root": str(root), "executions": {}}
-    receipt["fixture_sources"] = {name: h.sha(fixture_directory / name) for name in ("probe.dm", "probe.dme")}
+    receipt["fixture_sources"] = {name: h.sha(fixture_file(fixture_directory, name)) for name in names}
     memory = None
     previous_memory = h._owned_memory
     status = 1
@@ -125,8 +164,7 @@ def main(*, fixture_directory=None, observation_reader=None,
         for backend in ("byond", "native"):
             directory = root / (backend + "-source")
             directory.mkdir()
-            for name in ("probe.dm", "probe.dme"):
-                shutil.copyfile(fixture_directory / name, directory / name)
+            copy_fixture_files(fixture_directory, directory, names, receipt["fixture_sources"], h.sha)
             project = directory / "probe.dme"
             if backend == "byond":
                 run("byond-compile", args.dm, [str(project)], 30)
@@ -154,8 +192,8 @@ def main(*, fixture_directory=None, observation_reader=None,
             runtime_arguments = [] if prepare_runtime is None else prepare_runtime(dmb, backend, receipt)
             run(backend + "-runtime", args.dd, [str(dmb), "-close", "-trusted", "-invisible", "-logself", *runtime_arguments], 30)
             receipt[backend] = observation_reader(dmb.with_suffix(".log"))
-            for name in ("probe.dm", "probe.dme"):
-                if h.sha(directory / name) != receipt["fixture_sources"][name] or h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:
+            for name in names:
+                if h.sha(fixture_file(directory, name)) != receipt["fixture_sources"][name] or h.sha(fixture_file(fixture_directory, name)) != receipt["fixture_sources"][name]:
                     raise ValueError("fixture source changed during run")
         for name in ("native", "template", "dm", "dd"):
             if h.sha(getattr(args, name)) != getattr(args, name + "_sha256"):

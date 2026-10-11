@@ -37,4 +37,5 @@ def observations(file):
 if __name__ == "__main__":
     raise SystemExit(launcher.main(
         fixture_directory=HERE, observation_reader=observations,
+        asset_files=("contract-resource.txt",),
         scope="standalone callable value, safe-null, verb and catch semantics only"))
