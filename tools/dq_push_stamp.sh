@@ -55,8 +55,24 @@ in_master() { [ -n "$master" ] && git merge-base --is-ancestor "$1" "$master" 2>
 
 # (a): the merge of $1 and $2 is clean and $3's tree is that result, regenerated files aside.
 clean_merge() {
-	local tree f
-	tree="$(git merge-tree --write-tree "$1" "$2" 2>/dev/null | head -n 1)" || { why="${why}merging ${2:0:10} into ${1:0:10} conflicts; "; return 1; }
+	local tree f out rc=0
+	# --name-only: the tree, then one line per conflicted file, then a blank line and the messages. A conflict confined to regenerated
+	# files is not a conflict: dq_merge_master.sh regenerates them after the merge (look_keys.txt) and the pin factoring rewrites
+	# op_bases/, so whatever the trial merge left in them is compared away below.
+	out="$(git merge-tree --write-tree --name-only "$1" "$2" 2>/dev/null)" || rc=$?
+	if [ "$rc" -gt 1 ] || [ -z "$out" ]; then
+		why="${why}git merge-tree failed on ${1:0:10} and ${2:0:10}; "
+		return 1
+	fi
+	tree="$(head -n 1 <<<"$out")"
+	if [ "$rc" -eq 1 ]; then
+		while IFS= read -r f; do
+			[ -n "$f" ] || break
+			regenerated "$f" && continue
+			why="${why}merging ${2:0:10} into ${1:0:10} conflicts in $f; "
+			return 1
+		done < <(tail -n +2 <<<"$out")
+	fi
 	while IFS= read -r f; do
 		[ -n "$f" ] || continue
 		regenerated "$f" && continue

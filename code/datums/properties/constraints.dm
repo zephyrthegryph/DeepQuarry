@@ -60,6 +60,7 @@ TRACKED(/obj/item, constraint_overrides)
 	set_constraint_overrides(next)
 
 /proc/dq_constraint_has_legacy_override(obj/item/I, kind)
+	READS_FROM(I)
 	var/override = LAZYACCESS(I.constraint_overrides, kind)
 	return !isnull(override) && !istype(override, /datum/entry/part/acceptance_plan)
 

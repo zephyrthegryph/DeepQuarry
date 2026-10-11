@@ -83,6 +83,7 @@
 	return part_make(/datum/entry/part/acceptance_plan, list("declared" = declared, "empty" = explicit_empty, "metadata" = metadata), requirements)
 
 /proc/acceptance_plan_for(datum/declarer, channel)
+	READS_FROM(declarer)
 	var/list/overrides = declarer.acceptance_overrides()
 	var/datum/entry/part/acceptance_plan/override = LAZYACCESS(overrides, channel)
 	return override ? override : table_of(declarer).acceptance_channels?[channel]
