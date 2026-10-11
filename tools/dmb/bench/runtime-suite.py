@@ -257,9 +257,9 @@ def main(argv=None):
     receipt_file = args.output / 'receipt.json'
     receipt = {'schema': 1, 'kind': 'bounded_runtime_suite', 'status': 'preparing', 'backend': args.backend,
         'tier': args.tier, 'focus': args.focus, 'command': command(args, suite), 'checkout': str(checkout),
-        'compilation_performed': not bool(args.focused_compiled_output or args.suite_compiled_output),
-        'historical_same_generation': bool(args.focused_compiled_output or args.suite_compiled_output),
-        'compile_watchdog_seconds': None if args.focused_compiled_output or args.suite_compiled_output else min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
+        'compilation_performed': not bool(args.resume or args.focused_compiled_output or args.suite_compiled_output),
+        'historical_same_generation': bool(args.resume or args.focused_compiled_output or args.suite_compiled_output),
+        'compile_watchdog_seconds': None if args.resume or args.focused_compiled_output or args.suite_compiled_output else min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
         'inputClosureAuthenticated': False, 'acceptedRuntimeBaseline': False,
         'job_memory_bytes': args.job_memory_bytes, 'runner_sha256': hash_file(Path(__file__)), 'log': str(log), 'pins': {}, 'owned_child_cleanup': None}
     write_receipt(receipt_file, receipt)
