@@ -439,7 +439,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     .ok_or_else(|| {
                         io::Error::new(io::ErrorKind::NotFound, "query session has not been built")
                     })?;
-                let mut host = slot.host.try_lock().map_err(|_| {
+                let host = slot.host.try_lock().map_err(|_| {
                     io::Error::new(
                         io::ErrorKind::WouldBlock,
                         "query session is building; retry after completion",
