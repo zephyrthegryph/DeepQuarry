@@ -13,24 +13,24 @@
 	name = "pickaxe"
 	desc = "A miner's best friend."
 	icon = 'icons/obj/items.dmi'
-	slot_flags = SLOT_BELT
-	force = 15.0
-	throwforce = 4.0
 	icon_state = "pickaxe"
 	item_state = "pickaxe"
 	w_class = ITEMSIZE_LARGE
 	MATERIAL_BULK(MAT_STEEL, 2500)
 	var/digspeed = 36 //moving the delay to an item var so R&D can make improved picks. --NEO
 	var/sand_dig = FALSE // does this thing dig sand?
-	attack_verb = list("hit", "pierced", "sliced", "attacked")
 	var/drill_sound = SFX_PICKAXE
 	var/drill_verb = "picking"
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 
 	var/excavation_amount = 200
 	var/destroy_artefacts = FALSE // some mining tools will destroy artefacts completely while avoiding side-effects.
 	var/borg_flags = COUNTS_AS_ROBOTIC_MELEE //The ONLY reason this gets this here is because pickaxes are SO hardcoded that it's easier to add it here than everywhere else. Please do not attach this to everything that you desire. Only VERY SPECIFIC THINGS under CERTAIN CIRCUMSTANCES, PLEASE. 99% of things can be added to code\modules\projectiles\guns\energy\cyborg.dm
+
+CAPABILITIES(/obj/item/pickaxe)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4.0))
+	configure(item_combat(force = 15.0, attack_verbs = list("hit", "pierced", "sliced", "attacked"), sharp = TRUE))
 
 /obj/item/pickaxe/silver
 	name = "silver pickaxe"
@@ -116,9 +116,10 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	digspeed = 18 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/light thermite on fire
 	drill_verb = "cutting"
 	drill_sound = SFX_ITEMS_WELDER
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_BURN
+
+CAPABILITIES(/obj/item/pickaxe/plasmacutter)
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/pickaxe/plasmacutter/borg
 	name = "mounted plasma cutter"
@@ -132,20 +133,17 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	icon = 'icons/obj/items.dmi'
 	icon_state = "shovel"
 	item_state = "shovel"
-	slot_flags = SLOT_BELT
-	force = 8.0
-	throwforce = 4.0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 50)
-	attack_verb = list("bashed", "bludgeoned", "thrashed", "whacked")
-	sharp = FALSE
-	edge = TRUE
 	var/digspeed = 40
 	var/grave_mode = FALSE
 
 TRACKED(/obj/item/shovel, grave_mode)
 
 CAPABILITIES(/obj/item/shovel)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4.0))
+	configure(item_combat(force = 8.0, attack_verbs = list("bashed", "bludgeoned", "thrashed", "whacked"), sharp = FALSE, edge = TRUE))
 	op("toggle_grave_mode", hand(), gesture(GESTURE_ALT), label("Toggle digging mode"),
 		needs(req_adjacent()), then(PROC_REF(grave_mode_toggled)))
 
@@ -161,6 +159,8 @@ CAPABILITIES(/obj/item/shovel)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/shovel/wood)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(sharp = 0, edge = 1))
 	param(nameof(shovel_material), pos = 1, apply = PROC_REF(carve))
 
 /// The material a shovel is carved from (its constructor param); a bare one (the survival recipe, a map, a test) is plain wood.
@@ -186,21 +186,20 @@ CAPABILITIES(/obj/item/shovel/wood)
 	desc = "A small tool for digging and moving dirt."
 	icon_state = "spade"
 	item_state = "spade"
-	force = 5.0
-	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/shovel/spade)
+	configure(item_thrown(force = 7.0))
+	configure(item_combat(force = 5.0))
 
 /obj/item/shovel/wood
 	name = "wooden shovel"
 	desc = "An improvised tool for digging and moving dirt."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "woodshovel"
-	slot_flags = SLOT_BELT
 	item_state = "woodshovel"
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_WOOD, 50)
-	sharp = 0
-	edge = 1
 
 /*****************************Icepick********************************/
 
@@ -211,8 +210,10 @@ CAPABILITIES(/obj/item/shovel/wood)
 	icon_state = "icepick"
 	item_state = "icepick"
 	MATERIAL_BULK(MAT_STEEL, 12000) //Same as a knife
-	force = 15 //increasing force for icepick/axe, cause it's a freaking iceaxe.
-	throwforce = 0
+
+CAPABILITIES(/obj/item/ice_pick)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 15))
 
 /*****************************Flags********************************/
 

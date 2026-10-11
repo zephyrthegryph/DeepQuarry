@@ -70,7 +70,7 @@
 
 /datum/vore_look/proc/get_general_data(mob/owner)
 	return list(
-		"active_belly" = owner.vore_selected?.name,
+		"active_belly" = vore_selected_of(owner)?.name,
 		"belly_rub_target" = owner.belly_rub_target,
 		// start, vore sprites
 		"aestethic_messages" = compile_aesthetic_messages(owner),

@@ -3,8 +3,6 @@
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing."
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
-	throwforce = 0
-	force = 0
 	actions_types = list(/datum/action/item_action/command)
 	w_class = ITEMSIZE_SMALL
 
@@ -22,6 +20,8 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(bound_mob), /mob/living)
@@ -278,8 +278,8 @@ TRACKED(/obj/item/capture_crystal, recharging)
 			return ITEM_INTERACT_FAILURE
 		if(hud_of(user)?.zone_sel?.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
-				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
-				M.perform_the_nom(M, bound_mob, M, M.vore_selected)
+				act_message(user, src, others = "%U% moves %T% to [M]'s [vore_selected_of(M)]...")
+				M.perform_the_nom(M, bound_mob, M, vore_selected_of(M))
 				return ITEM_INTERACT_SUCCESS
 	else if(M == user)		//You don't have a mob, you ponder the orb instead of trying to capture yourself
 		act_message(user, src, MSG_SELF("You ponder %T%..."), MSG_OTHERS("%U% ponders %T%..."))
@@ -382,7 +382,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 	if(M.has_status(STAT_STUNNED))			//What's the matter???
 		capture_chance += 0.1
 		effect_count += 1
-	if(M.on_fire)			//AAAAAAAA
+	if(stat_value(M, STAT_ON_FIRE))			//AAAAAAAA
 		capture_chance += 0.1
 		effect_count += 1
 	if(M.has_status(STAT_PARALYZED))			//Oh noooo

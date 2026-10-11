@@ -4,6 +4,9 @@
 // is the source of truth for per-line diff context.
 
 /obj/machinery/atmospherics/trinary/atmos_filter
+	air3_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air2_volume = ATMOS_DEFAULT_VOLUME_FILTER
+	air1_volume = ATMOS_DEFAULT_VOLUME_FILTER
 	icon = 'icons/atmos/filter.dmi'
 	icon_state = "map"
 	construction_type = /obj/item/pipe/trinary/flippable
@@ -41,15 +44,6 @@
 	frequency = new_frequency
 	if(frequency)
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
-
-/obj/machinery/atmospherics/trinary/atmos_filter/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	air3.set_volume(ATMOS_DEFAULT_VOLUME_FILTER)
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/atmospherics/trinary/atmos_filter/draw(datum/look/look)
 	..()
@@ -147,6 +141,7 @@ TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))

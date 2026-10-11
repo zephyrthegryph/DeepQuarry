@@ -48,6 +48,12 @@
 	singleton = TRUE
 	/// The /datum/type_trait subtype this kind builds.
 	var/trait_type = /datum/type_trait
+	/// The key the kind's reader READS_AS: set_trait() publishes it.
+	var/publish_key
+	/// The base type the kind is declared on (a holder outside it has no such trait).
+	var/base_type = /datum
+	/// Old var name -> field: the base-type vars the trait replaced, which a map edit or VV may still name ("active_power_usage" = "active").
+	var/list/var_names
 
 /// A subtype's configure(kind(...)) over the inherited declaration: what it does not name stays.
 /datum/entry_engine/type_trait/merge(datum/entry/old, datum/entry/changes)
@@ -140,3 +146,90 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	own.kind = kind
 	LAZYSET(holder.type_trait_overrides, kind, own)
 	return own
+
+/// Sets one field of `holder`'s trait of `kind` at run time: the holder's own copy (copy on write), then the kind's key is published so readers
+/// follow. Returns TRUE when the value changed. The domain setters (set_active_power_usage(), set_hitsound()) are this with a fixed field.
+/proc/set_trait(datum/holder, kind, field, value)
+	var/datum/type_trait/now = type_trait_of(holder, kind)
+	if(!(field in now.vars))
+		stack_trace("set_trait: [kind] has no field [field]")
+		return FALSE
+	if(now.vars[field] == value)
+		return FALSE
+	var/datum/type_trait/own = type_trait_own(holder, kind)
+	own.vars[field] = value // ALLOW(api): the one generic trait writer; the field is checked against the trait's vars above
+	var/key = type_trait_engine(kind)?.publish_key
+	if(key)
+		tracked_changed(holder, key)
+	return TRUE
+
+/// The engine of a trait kind (its trait type, published key, base type and old var names).
+/proc/type_trait_engine(kind)
+	RETURN_TYPE(/datum/entry_engine/type_trait)
+	return entry_engine_for(kind)
+
+/// Every trait kind's engine.
+/proc/type_trait_engines()
+	var/list/engines = GLOB.type_trait_engine_list
+	if(!engines.len)
+		for(var/datum/entry_engine/type_trait/engine_type as anything in subtypesof(/datum/entry_engine/type_trait))
+			var/datum/entry_engine/type_trait/E = entry_engine_for(engine_type::kind)
+			if(E)
+				engines += E
+	return engines
+
+/// Every trait kind's engine (type_trait_engines(), filled on first use).
+GLOBAL_LIST_EMPTY(type_trait_engine_list)
+
+/// The trait field an old base-type var name now lives in, for `holder`: list(kind, field), or null. What the map loader and VV use to route a
+/// write of a var that left the base type (a map's `active_power_usage = 7500` on a mixer) through set_trait().
+/proc/type_trait_field_for_var(datum/holder, var_name)
+	for(var/datum/entry_engine/type_trait/E as anything in type_trait_engines())
+		if(!istype(holder, E.base_type))
+			continue
+		var/field = E.var_names?[var_name]
+		if(field)
+			return list(E.kind, field)
+	return null
+
+/// Resolves a by-name write to a trait field: `@kind.field` (what VV lists) or an old base-type var name. list(kind, field), or null.
+/proc/type_trait_field_named(datum/holder, name)
+	if(!istext(name))
+		return null
+	if(copytext(name, 1, 2) == "@")
+		var/dot = findtext(name, ".")
+		if(!dot)
+			return null
+		var/kind = copytext(name, 2, dot)
+		var/field = copytext(name, dot + 1)
+		var/datum/entry_engine/type_trait/E = type_trait_engine(kind)
+		if(!istype(E) || !istype(holder, E.base_type) || type_trait_plain_vars()[field] || !(field in type_trait_of(holder, kind).vars))
+			return null
+		return list(kind, field)
+	return type_trait_field_for_var(holder, name)
+
+/// Every trait field `holder` has, for VV: list("@kind.field" = value, ...).
+/proc/type_trait_fields_of(datum/holder)
+	var/list/out = list()
+	for(var/datum/entry_engine/type_trait/E as anything in type_trait_engines())
+		if(!istype(holder, E.base_type))
+			continue
+		var/kind = E.kind
+		var/datum/type_trait/T = type_trait_of(holder, kind)
+		for(var/field in T.vars)
+			if(type_trait_plain_vars()[field])
+				continue
+			out["@[kind].[field]"] = T.vars[field]
+	return out
+
+/// The vars every trait datum has (type, kind, ...): not trait fields.
+/proc/type_trait_plain_vars()
+	var/list/out = GLOB.type_trait_plain_var_names
+	if(!out.len)
+		var/datum/type_trait/plain = new
+		for(var/name in plain.vars)
+			out[name] = TRUE
+	return out
+
+/// The vars of a bare /datum/type_trait (type_trait_plain_vars(), filled on first use).
+GLOBAL_LIST_EMPTY(type_trait_plain_var_names)

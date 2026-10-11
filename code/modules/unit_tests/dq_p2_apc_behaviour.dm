@@ -462,10 +462,10 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
-	bat.force = 10
+	bat.set_force(10)
 	bat.w_class = ITEMSIZE_NORMAL
 	var/obj/item/twig = allocate(/obj/item, run_loc_floor_bottom_left)
-	twig.force = 1
+	twig.set_force(1)
 	twig.w_class = ITEMSIZE_TINY
 	for(var/i in 1 to 40)
 		A.attackby(bat, H)
@@ -490,7 +490,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
-	bat.force = 10
+	bat.set_force(10)
 	bat.w_class = ITEMSIZE_NORMAL
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
@@ -520,7 +520,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/bat = allocate(/obj/item, run_loc_floor_bottom_left)
-	bat.force = 10
+	bat.set_force(10)
 	bat.w_class = ITEMSIZE_NORMAL
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	A.take_damage(A.max_integrity * 0.75)
@@ -668,7 +668,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/multitool/multi = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
-	A.operating = TRUE
+	A.set_operating(TRUE)
 	open_cover(H, A)
 	touch(H, A, null)
 	TEST_ASSERT_NULL(A.cell, "cell out")
@@ -1031,8 +1031,8 @@
 	p2_cable(run_loc_floor_bottom_left)
 	p2_area.set_requires_power(TRUE)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.operating = TRUE
-	A.chargemode = TRUE
+	A.set_operating(TRUE)
+	A.set_chargemode(TRUE)
 	A.set_equipment(POWERCHAN_ON_AUTO)
 	A.set_lighting(POWERCHAN_ON_AUTO)
 	A.set_environ(POWERCHAN_ON_AUTO)

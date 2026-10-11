@@ -95,7 +95,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 
 /obj/item/camera_assembly/proc/weld_duration(datum/act/op/A)
 	var/obj/item/W = A.held_provider()
-	return 2 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+	return 2 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
 
 /// The cut wires drop as two lengths of cable.
 /obj/item/camera_assembly/proc/wires_cut(datum/act/op/A)

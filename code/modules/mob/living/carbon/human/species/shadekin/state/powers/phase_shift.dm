@@ -180,8 +180,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)
 		set_density(initial(density))
-		can_pull_size = initial(can_pull_size)
-		can_pull_mobs = initial(can_pull_mobs)
+		set_can_pull_size(movement_of_type(type).pull_size)
+		set_can_pull_mobs(movement_of_type(type).pull_mobs)
 		dq_clear_hovering(src) // reset to type-default
 
 		//Cosmetics mostly
@@ -209,15 +209,15 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
 			if(can_phase_vore(src, target))
-				vore_selected.nom_atom(target)
-				to_chat(target, span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
-				to_chat(src, span_vwarning("You phase around [target], [vore_selected.vore_verb]ing them into your [vore_selected.get_belly_name()]!"))
+				vore_selected_of(src).nom_atom(target)
+				to_chat(target, span_vwarning("\The [src] phases in around you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
+				to_chat(src, span_vwarning("You phase around [target], [vore_selected_of(src).vore_verb]ing them into your [vore_selected_of(src).get_belly_name()]!"))
 				our_prey = target
 			else if(can_phase_vore(target, src))
 				our_prey = src
-				target.vore_selected.nom_atom(src)
-				to_chat(target, span_vwarning("\The [src] phases into you, [target.vore_selected.vore_verb]ing them into your [target.vore_selected.get_belly_name()]!"))
-				to_chat(src, span_vwarning("You phase into [target], having them [target.vore_selected.vore_verb] you into their [target.vore_selected.get_belly_name()]!"))
+				vore_selected_of(target).nom_atom(src)
+				to_chat(target, span_vwarning("\The [src] phases into you, [vore_selected_of(target).vore_verb]ing them into your [vore_selected_of(target).get_belly_name()]!"))
+				to_chat(src, span_vwarning("You phase into [target], having them [vore_selected_of(target).vore_verb] you into their [vore_selected_of(target).get_belly_name()]!"))
 			if(our_prey)
 				for(var/obj/item/flashlight/held_lights in contents_of(our_prey))
 					if(istype(held_lights,/obj/item/flashlight/glowstick) ||istype(held_lights,/obj/item/flashlight/flare) ) //No affecting glowsticks or flares...As funny as that is
@@ -273,8 +273,8 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 			if(get_equipped_item(SLOT_ID_BACK))
 				unEquip(get_equipped_item(SLOT_ID_BACK))
 
-		can_pull_size = 0
-		can_pull_mobs = MOB_PULL_NONE
+		set_can_pull_size(0)
+		set_can_pull_mobs(MOB_PULL_NONE)
 		dq_set_hovering(src, TRUE)
 		canmove = FALSE
 

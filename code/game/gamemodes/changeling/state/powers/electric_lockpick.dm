@@ -32,7 +32,9 @@
 	icon_state = "electric_hand"
 	show_examine = FALSE
 	w_class = ITEMSIZE_NO_CONTAINER
-	item_flags = DROPDEL | NOSTRIP
+
+CAPABILITIES(/obj/item/finger_lockpick)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/finger_lockpick/Initialize(mapload)
 	. = ..()

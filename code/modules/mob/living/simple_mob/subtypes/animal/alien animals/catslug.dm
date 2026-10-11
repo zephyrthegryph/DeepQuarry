@@ -46,7 +46,6 @@
 	mob_size = MOB_SMALL
 	friendly = list("hugs")
 	see_in_dark = 8
-	can_climb = TRUE
 	climbing_delay = 2.0
 
 	ID_provided = TRUE
@@ -79,7 +78,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/catslug/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot slick gut of a catslug!! Copious slime smears over you as you’re packed away into the gloom and oppressive humidity of this churning gastric sac. The pressure around you is intense, the squashy flesh bends and forms to your figure, clinging to you insistently! There’s basically no free space at all as your ears are filled with the slick slide of flesh against flesh and the burbling of gastric juices glooping all around you. The thumping of a heart booms from somewhere nearby, making everything pulse in against you in time with it! This is it! You’ve been devoured by a catslug!!!"
 	B.mode_flags = 40
@@ -107,6 +106,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
+	configure(mob_movement(can_climb = TRUE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
@@ -137,7 +137,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return
@@ -283,13 +283,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom
 	desc = "A noodley bodied creature with thin arms and legs, and gloomy dark eyes. You shouldn't ever see this."
-	makes_dirt = 0
 	digestable = 0
 	humanoid_hands = 1	//These should all be ones requiring admin-intervention to play as, so they can get decent tool-usage, as a treat.
 	var/siemens_coefficient = 1 		//Referenced later by others.
 	can_wear_hat = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
+	configure(mob_movement(makes_dirt = 0))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, hidden = TRUE) //Most of these have custom sprites with colour already, so we'll not let them have this.
@@ -685,13 +685,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 /obj/item/holder/catslug/custom/capslug
 	item_state = "capslug"
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/Initialize(mapload) 		//This is such an awful proc, but if someone wants it better they're welcome to have a go at it.
-	. = ..()
-	mob_radio.set_frequency(PUB_FREQ)
-	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-
 //=============================================================================
 //Admin-spawn only catslugs below - Expect overpowered things & silliness below
 //=============================================================================
@@ -719,11 +712,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	player_msg = "You work in the service of corporate Asset Protection, answering directly to the Board of Directors and Asset Protection Commandos."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(DTH_FREQ) 			//Can't tell if bugged, deathsquad freq in general seems broken
-	myid.access |= SSaccess.get_all_station_access()
-
 //Syndicate catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug
 	name = "Mercenyary"
@@ -750,15 +738,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	player_msg = "You are in the employ of a criminal syndicate hostile to corporate interests. Follow the Mercenary or Commando's orders and assist them in their goals by any means available."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(SYND_FREQ)
-	mob_radio.syndie = TRUE
-	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
-
 //ERT catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug
 	name = "Emeowgency Responder"
@@ -784,15 +763,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	If you are status_units(STAT_CONFUSED) or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! \
 	Think through your actions and make the roleplay immersive! <b>Please remember all rules aside from those without explicit exceptions apply to the ERT.</b>"
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(ERT_FREQ)
-	mob_radio.centComm = 1
-	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
-
 //Pilot Catslug
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug
@@ -805,18 +775,25 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	can_wear_hat = TRUE
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/Initialize(mapload)
-	. = ..()
-	if(prob(25))
-		var/list/possible_targets = list()
-		for(var/obj/machinery/computer/ship/helm/h in world)
-			if(h.z in using_map.player_levels)
-				possible_targets |= h
-		if(!length(possible_targets))
-			return
-		var/final = pick(possible_targets)
-		forceMove(get_turf(final))
-		set_ghostjoin(TRUE)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
+	rolls(nameof(takes_a_helm), chance(25))
+	after_init(0, then(PROC_REF(take_a_helm))) // once the map has loaded: the helms are placed
+
+/// One in four Purrvericks start at a ship's helm (rolls()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/var/takes_a_helm = FALSE
+
+/// Sits at a random helm on a player level, open to ghosts (after_init()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/proc/take_a_helm(datum/act/timer/A)
+	if(!takes_a_helm)
+		return
+	var/list/possible_targets = list()
+	for(var/obj/machinery/computer/ship/helm/h in world)
+		if(h.z in using_map.player_levels)
+			possible_targets |= h
+	if(!length(possible_targets))
+		return
+	forceMove(get_turf(pick(possible_targets)))
+	set_ghostjoin(TRUE)
 
 /datum/category_item/catalogue/fauna/catslug/custom/pilotslug
 	name = "Alien Wildlife - Catslug - Navigator Purrverick"
@@ -1121,14 +1098,42 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 */
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/responseslug)
+
+// The special catslugs' headsets: their channel and key.
+/obj/item/radio/headset/mob_headset/capslug
+	frequency = PUB_FREQ
+	ks2type = /obj/item/encryptionkey/heads/captain // might not be able to speak, but the catslug can listen
+
+/obj/item/radio/headset/mob_headset/deathslug
+	frequency = DTH_FREQ
+
+/obj/item/radio/headset/mob_headset/syndislug
+	frequency = SYND_FREQ
+	syndie = TRUE
+	ks2type = /obj/item/encryptionkey/syndicate
+
+/obj/item/radio/headset/mob_headset/responseslug
+	frequency = ERT_FREQ
+	centComm = 1
+	ks2type = /obj/item/encryptionkey/ert
+
+/// The space slugs' cards open every station door as well.
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
 

@@ -510,15 +510,15 @@
 	var/mob/living/carbon/human/victim = h_mortal()
 	victim.adjust_fire_stacks(3)
 	victim.ignite_mob()
-	TEST_ASSERT(victim.on_fire, "setup: the victim burns")
-	var/before = victim.fire_stacks
+	TEST_ASSERT(stat_value(victim, STAT_ON_FIRE), "setup: the victim burns")
+	var/before = fire_stacks_of(victim)
 	test_chat_clear()
 	test_click(user, victim, null)
 	h_started(user, 1.5 SECONDS)
 	test_time(1 SECOND)
-	TEST_ASSERT_EQUAL(victim.fire_stacks, before, "nothing is patted out before the end")
+	TEST_ASSERT_EQUAL(fire_stacks_of(victim), before, "nothing is patted out before the end")
 	test_time(1 SECOND)
-	TEST_ASSERT(victim.fire_stacks < before, "the flames are reduced at the end")
+	TEST_ASSERT(fire_stacks_of(victim) < before, "the flames are reduced at the end")
 
 /datum/unit_test/dq_timed_pin_w7/h_pat_out_flames_cancel_on_move
 
@@ -528,13 +528,13 @@
 	var/mob/living/carbon/human/victim = h_mortal()
 	victim.adjust_fire_stacks(3)
 	victim.ignite_mob()
-	var/before = victim.fire_stacks
+	var/before = fire_stacks_of(victim)
 	test_click(user, victim, null)
 	var/datum/T = h_started(user)
 	test_time(0.5 SECONDS)
 	h_step_away(user)
 	test_time(2 SECONDS)
-	TEST_ASSERT_EQUAL(victim.fire_stacks, before, "moving cancels: the flames are as they were")
+	TEST_ASSERT_EQUAL(fire_stacks_of(victim), before, "moving cancels: the flames are as they were")
 	TEST_ASSERT(was_cancelled(T, user), "the action ends cancelled")
 
 // ---- Resisting: cuffs, straight jacket, buckle (the Resist verb; IGNORE_INCAPACITATED, the user has to stand still) ----
@@ -680,7 +680,7 @@
 	dq_give_zone_sel(attacker)
 	var/mob/living/carbon/human/victim = h_mortal()
 	var/obj/item/weapon = allocate(/obj/item, run_loc_floor_bottom_left)
-	weapon.force = 8
+	weapon.set_force(8)
 	weapon.w_class = ITEMSIZE_HUGE
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
@@ -1966,7 +1966,7 @@
 	var/mob/living/carbon/human/pred = person()
 	var/mob/living/carbon/human/prey = person()
 	pred.init_vore(TRUE)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	TEST_ASSERT(!isnull(B), "the pred has a belly")
 	TEST_ASSERT(pred.begin_instant_nom(pred, prey, pred, B), "an instant nom succeeds")
 	TEST_ASSERT_EQUAL(prey.loc, B, "the prey is inside")
@@ -2081,9 +2081,9 @@
 	test_answer(M, 3)
 	TEST_ASSERT(!isnull(running(M)), "answering the question starts a timed action")
 	test_time(0.5 SECONDS)
-	TEST_ASSERT_EQUAL(M.nutrition, 200, "nothing is spent before the end")
+	TEST_ASSERT_EQUAL(nutrition_of(M), 200, "nothing is spent before the end")
 	test_time(5 SECONDS)
-	TEST_ASSERT(M.nutrition <= 190, "nutrition is spent at the end")
+	TEST_ASSERT(nutrition_of(M) <= 190, "nutrition_of(src) is spent at the end")
 	TEST_ASSERT_NULL(running(M), "nothing is left running")
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move
@@ -2097,7 +2097,7 @@
 	TEST_ASSERT(!isnull(T), "answering the question starts a timed action")
 	M.forceMove(get_step(M, EAST))
 	test_time(6 SECONDS)
-	TEST_ASSERT_EQUAL(M.nutrition, 200, "moving cancels: nothing is spent")
+	TEST_ASSERT_EQUAL(nutrition_of(M), 200, "moving cancels: nothing is spent")
 	TEST_ASSERT(was_cancelled(T, M), "the action ends cancelled")
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_too_hungry

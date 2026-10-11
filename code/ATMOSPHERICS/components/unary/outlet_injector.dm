@@ -3,6 +3,7 @@
 //When it receives the "inject" signal, it will try to pump it's entire contents into the environment regardless of pressure, using power.
 
 /obj/machinery/atmospherics/unary/outlet_injector
+	air_volume = ATMOS_DEFAULT_VOLUME_PUMP + 500 // a small reservoir for injecting; also allows a higher flow rate limit than vent pumps
 	icon = 'icons/atmos/injector.dmi'
 	icon_state = "map_injector"
 	pipe_state = "injector"
@@ -22,13 +23,6 @@
 	var/datum/radio_frequency/radio_connection
 
 	level = 1
-
-/obj/machinery/atmospherics/unary/outlet_injector/Initialize(mapload)
-	. = ..()
-
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500)	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/atmospherics/unary/outlet_injector/draw(datum/look/look)
 	..()
@@ -149,6 +143,7 @@ MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	// The unary base's ctrl-click power_toggle is never offered on an injector (ctrl_power_offered()); its ctrl-click is
 	// reset_rate. The static clash check cannot see the when(), and reported the two at boot.

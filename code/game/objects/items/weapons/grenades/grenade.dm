@@ -7,7 +7,6 @@
 	item_state = "grenade"
 	throw_speed = 4
 	throw_range = 20
-	slot_flags = SLOT_MASK|SLOT_BELT
 
 	var/active = 0
 	var/det_time = 50
@@ -46,6 +45,7 @@ MSG_DEF_SELF(grenade/timer_5s, "You set %T% for 5 second detonation time.")
 MSG_DEF_SELF(grenade/timer_instant, "You set %T% for instant detonation.")
 
 CAPABILITIES(/obj/item/grenade)
+	configure(item_worn(slots = SLOT_MASK|SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("prime", in_hand(), when(cond_not(nameof(special_handling))), label("Prime"), then(PROC_REF(grenade_primed)))
 	op("grenade_interaction_hand", hand(), ungated(), then(PROC_REF(grenade_interaction_hand)))

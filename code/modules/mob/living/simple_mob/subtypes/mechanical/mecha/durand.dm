@@ -28,7 +28,6 @@
 	armor_spec = "melee=50;bullet=35;laser=15;energy=10;bomb=20;bio=100;rad=100"
 	melee_damage_lower = 40
 	melee_damage_upper = 40
-	base_attack_cooldown = 2 SECONDS
 	projectiletype = /obj/item/projectile/beam/heavylaser
 	projectile_dispersion = 10
 	projectile_accuracy = -30
@@ -56,10 +55,11 @@
 
 	set_defense_mode(!defense_mode)
 
-// Variant that starts in defense mode, perhaps for PoIs.
-/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/Initialize(mapload)
-	set_defense_mode(TRUE)
-	return ..()
+// Variant that starts in defense mode, perhaps for PoIs: what set_defense_mode(TRUE) sets.
+/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive
+	defense_mode = TRUE
+	deflect_chance = 35 // its defense_deflect
+	projectile_accuracy = -10
 
 /mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary
 	desc = "An aging combat exosuit utilized by many corporations. It was originally developed to fight in the First Contact  War.\

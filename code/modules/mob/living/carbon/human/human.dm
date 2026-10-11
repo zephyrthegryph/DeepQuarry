@@ -31,50 +31,33 @@
 	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-/// The species a human is made as (its constructor param), or null for the default.
+/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
+	if(target == "name")
+		return real_name
+	return species ? species.get_random_name(gender) : real_name
+
+/// Every underwear category starts shown (derives(), once at init).
+/mob/living/carbon/human/proc/underwear_all_shown(target)
+	. = list()
+	for(var/category in GLOB.global_underwear.categories_by_name)
+		.[category] = FALSE
+
+/// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
 
 // ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
 /mob/living/carbon/human/Initialize(mapload)
-	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
-	if(forced_species)
-		species_at_make = forced_species
-	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
-	if(forced_hair)
-		h_style = forced_hair
-	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
-	if(forced_faction)
-		faction = forced_faction
-	if(!dna)
-		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
-		// Species name is handled by set_species()
-
+	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
 		if(species_at_make)
 			set_species(species_at_make)
 		else
 			set_species()
 
-	if(species)
-		real_name = species.get_random_name(gender)
-		name = real_name
-		if(mind)
-			mind.name = real_name
-
-	set_nutrition(rand(200,400))
-	if(forced_species)
-		. = ..(mapload, forced_species)
-	else
-		. = ..()
-
-	hide_underwear.Cut()
-	for(var/category in GLOB.global_underwear.categories_by_name)
-		hide_underwear[category] = FALSE
+	. = ..()
 
 	if(dna)
 		dna.ready_dna(src)
@@ -83,8 +66,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		sync_organ_dna()
 	initialize_vessel()
 	regenerate_icons()
-
-	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
@@ -343,9 +324,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return ACT_REPLY
 	act_cancel(shown)
 
-	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
+	if(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).hides&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
 		return get_id_name("Unknown")
-	if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv&HIDEFACE))
+	if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides&HIDEFACE))
 		return get_id_name("Unknown")		//Likewise for hats
 	var/face_name = get_face_name()
 	var/id_name = get_id_name("")
@@ -397,7 +378,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	var/obj/item/organ/external/affected_organ = get_organ(check_zone(def_zone))
 	siemens_coeff = siemens_coeff * get_siemens_coefficient_organ(affected_organ)
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 
 	. = ..(shock_damage, source, siemens_coeff, def_zone)
@@ -1203,7 +1184,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
 			return gender
 		else
-			if(((get_equipped_item(SLOT_ID_MASK)?.flags_inv & HIDEFACE) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEMASK) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEFACE)) && (get_equipped_item(SLOT_ID_SUIT)?.flags_inv & HIDEJUMPSUIT))
+			if(((worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT))
 				return PLURAL
 			if(species?.ambiguous_genders && user)
 				if(ishuman(user))
@@ -1444,7 +1425,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		// Clear out their species abilities.
 		species.remove_inherent_verbs(src)
 		holder_type = null
-		hunger_rate = initial(hunger_rate)
+		set_hunger_rate(src, DEFAULT_HUNGER_FACTOR)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
@@ -1487,8 +1468,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
+		var/kept_nutrition = body.food_energy // the metabolism carries over to the new plan
 		rel_clear(src, nameof(body))
 		rel_set(src, nameof(body), new body_type(src))
+		body.food_energy = kept_nutrition
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).
@@ -1502,7 +1485,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	species.apply_components(src)
 
 	endurance = species.total_health
-	hunger_rate = species.hunger_factor
+	set_hunger_rate(src, species.hunger_factor)
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
 	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
@@ -1658,10 +1641,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	else
 		switch(target_zone)
 			if(BP_HEAD)
-				if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 			else
-				if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 	if(!. && error_msg && user)
 		if(!fail_msg)
@@ -1680,21 +1663,21 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/feet_exposed = 1
 
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			head_exposed = 0
-		if(C.body_parts_covered & FACE)
+		if(worn_of(C).covers & FACE)
 			face_exposed = 0
-		if(C.body_parts_covered & EYES)
+		if(worn_of(C).covers & EYES)
 			eyes_exposed = 0
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			torso_exposed = 0
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			arms_exposed = 0
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			hands_exposed = 0
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			legs_exposed = 0
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			feet_exposed = 0
 
 	flavor_text = ""
@@ -1741,14 +1724,14 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/list/equipment = list(get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_SHOES))
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			footcoverage_check = TRUE
 			break
 	if(lying)
 		play_sfx(src, SFX_MISC_SLIP)
 		drop_both_hands()
 		return FALSE
-	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.
+	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))) //Footwear negates a species' natural traction.
 		return FALSE
 	if(..(slipped_on,stun_duration))
 		drop_both_hands()
@@ -1864,9 +1847,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	return ..()
 
 /mob/living/carbon/human/Check_Shoegrip()
-	if(get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
+	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
-	if(flying) // Checks to see if they have wings and are flying.
+	if(stat_value(src, STAT_FLYING)) // Checks to see if they have wings and are stat_value(src, STAT_FLYING).
 		return 1
 	return 0
 

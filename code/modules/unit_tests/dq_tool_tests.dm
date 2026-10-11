@@ -8,7 +8,9 @@
 /obj/item/dq_tool_probe
 	name = "tool probe"
 	tool_qualities = list(TOOL_WRENCH = 2)
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/dq_tool_probe)
+	configure(item_tooling(speed = 0.5))
 
 /// A digging tool: TOOL_SHOVEL has no focused *_act hook.
 /obj/item/dq_shovel_probe
@@ -34,7 +36,7 @@ CAPABILITIES(/obj/dq_tool_target)
 	return OP_OK
 
 /datum/unit_test/proc/dq_zero_speed(obj/item/tool)
-	tool.toolspeed = 0
+	tool.set_toolspeed(0)
 	return tool
 
 // ---- tool checks ----

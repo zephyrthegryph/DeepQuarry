@@ -189,7 +189,7 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 		if(omen_vorish)
 			for(var/mob/living/living_mob in the_turf)
-				if(living_mob == our_guy || (living_mob.vore_selected == living_guy.vore_selected))
+				if(living_mob == our_guy || (vore_selected_of(living_mob) == vore_selected_of(living_guy)))
 					continue //Don't do anything to ourselves.
 				if(living_mob.stat)
 					continue
@@ -415,14 +415,14 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 			injury_verb = "cuts"
 			injury_kind = knife.injury_kind
-			damage_to_inflict = knife.force
+			damage_to_inflict = combat_of(knife).force
 
 		else if(istype(item, /obj/item/material/shard))
 			var/obj/item/material/shard/shard = item
 
 			injury_verb = "cuts"
 			injury_kind = shard.injury_kind
-			damage_to_inflict = shard.force
+			damage_to_inflict = combat_of(shard).force
 
 		else if(istype(item, /obj/item/flame/lighter))
 			var/obj/item/flame/lighter/lighter = item
@@ -438,21 +438,21 @@ CAPABILITY_TYPE(omen, CAP_OMEN, /datum/capability/omen, key = NONE)
 
 			injury_verb = "clamps"
 			injury_kind = jaws.injury_kind
-			damage_to_inflict = jaws.force
+			damage_to_inflict = combat_of(jaws).force
 
 		else if(istype(item, /obj/item/tool/screwdriver))
 			var/obj/item/tool/screwdriver/screwdriver = item
 
 			injury_verb = "stabs"
 			injury_kind = screwdriver.injury_kind
-			damage_to_inflict = screwdriver.force
+			damage_to_inflict = combat_of(screwdriver).force
 
 		else if(istype(item, /obj/item/tool/wirecutters))
 			var/obj/item/tool/wirecutters/wirecutters = item
 
 			injury_verb = "nips"
 			injury_kind = wirecutters.injury_kind
-			damage_to_inflict = wirecutters.force
+			damage_to_inflict = combat_of(wirecutters).force
 
 		if(!damage_to_inflict)
 			return

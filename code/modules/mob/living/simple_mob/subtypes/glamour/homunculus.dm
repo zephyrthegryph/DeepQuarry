@@ -79,7 +79,7 @@
 					projectile_dispersion = 8
 					projectile_accuracy = -40
 				if(istype(A,/obj/item/gun/projectile/automatic) || istype(I,/obj/item/gun/projectile/automatic))
-					base_attack_cooldown = 5
+					set_base_attack_cooldown(5)
 					projectile_dispersion = 7
 					projectile_accuracy = -20
 				if(istype(A,/obj/item/gun/projectile/heavysniper) || istype(I,/obj/item/gun/projectile/heavysniper))

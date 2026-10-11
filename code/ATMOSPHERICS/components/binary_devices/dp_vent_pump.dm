@@ -7,6 +7,8 @@
 #define PRESSURE_CHECK_OUTPUT 4
 
 /obj/machinery/atmospherics/binary/dp_vent_pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	icon = 'icons/atmos/vent_pump.dmi'
 	icon_state = "map_dp_vent"
 
@@ -41,11 +43,7 @@
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/Initialize(mapload)
 	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
 	icon = null
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/disconnect(obj/machinery/atmospherics/reference)
@@ -58,12 +56,9 @@
 	rust_device_dirty()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/high_volume
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
 	name = "Large Dual Port Air Vent"
-
-/obj/machinery/atmospherics/binary/dp_vent_pump/high_volume/Initialize(mapload)
-	. = ..()
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 800)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/draw(datum/look/look)
 	..()
@@ -208,6 +203,7 @@ TRACKED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks)
 	return 1
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/dp_vent_pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	examine_line(PROC_REF(gauge_text))
 

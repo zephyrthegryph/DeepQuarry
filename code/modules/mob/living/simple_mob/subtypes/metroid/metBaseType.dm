@@ -16,8 +16,6 @@
 	endurance = 25
 	movement_cooldown = 1.7
 	pass_flags = PASSTABLE
-	makes_dirt = FALSE	// Floats, mostly.
-	mob_class = MOB_CLASS_SLIME //This needs to be updated in simple_mob.dm and _defines/mobs.dm
 
 	response_help = "pets"
 
@@ -38,7 +36,6 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 10 // One attack a second.
 	attack_sound = SFX_METROID_METROIDATTACK
 	attacktext = list("suckulated")
 	speak_emote = list("chirps")
@@ -52,7 +49,6 @@
 	vore_pounce_chance = 25
 	vore_icons = SA_ICON_LIVING
 
-	nutrition = 1000 //This actually gets overridden further down on initialize.
 	max_nutrition = 2200
 	var/evo_point = 0
 	var/evo_limit = 0
@@ -66,17 +62,19 @@
 	pain_emote_1p = list("skree")
 	pain_emote_3p = list("skrees")
 
+/// The screech it gives as it appears (after_init()), or null for a quiet kind.
+/mob/living/simple_mob/metroid/var/arrival_sound = null
+
+/mob/living/simple_mob/metroid/proc/screech_on_arrival(datum/act/timer/A)
+	if(arrival_sound)
+		play_sfx(src, arrival_sound)
+
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
+	configure(mob_movement(makes_dirt = FALSE))
+	after_init(0, then(PROC_REF(screech_on_arrival)))
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
-TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
-
-/mob/living/simple_mob/metroid/Initialize(mapload)
-	set_nutrition(100) //Have them start off pretty hungry still.
-	. = ..()
-	var/initial_sound = TYPE_TABLE_GET(src, metroid_initial_sound)
-	if(initial_sound)
-		play_sfx(src, initial_sound)
 
 /datum/say_list/metroid
 	speak = list("Skree.", "Eree.", "Errer?")
@@ -95,7 +93,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
 
 /mob/living/simple_mob/metroid/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_brute = 1
 	B.digest_burn = 1
 	B.vore_verb = "swallow"
@@ -125,3 +123,10 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
 	..()
+
+
+/mob/living/simple_mob/metroid/starting_nutrition() //This actually gets overridden further down on initialize.
+	return 1000
+
+/mob/living/simple_mob/metroid/starting_nutrition() //Have them start off pretty hungry still.
+	return 100

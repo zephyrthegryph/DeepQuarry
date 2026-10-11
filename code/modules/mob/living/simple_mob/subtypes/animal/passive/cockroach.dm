@@ -12,13 +12,11 @@
 	icon_rest = "cockroach_rest"
 
 	endurance = 1
-	nutrition = 20
 
 	movement_cooldown = -1
 
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = FALSE
 
@@ -76,6 +74,7 @@
 				act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
+	configure(mob_movement(pull_mobs = MOB_PULL_NONE))
 	after_init(0, then(PROC_REF(cockroach_pest_ready)))
 	extend(/datum/act/hit/explosion, instead()) // Explosions are a terrible way to handle a cockroach.
 
@@ -85,3 +84,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cockroach)
 	desc = "Green squishy mess."
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "greenshatter"
+
+
+/mob/living/simple_mob/animal/passive/cockroach/starting_nutrition()
+	return 20

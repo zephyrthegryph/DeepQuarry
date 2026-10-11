@@ -120,12 +120,6 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 	desc = "Note to self: buy more sticky notes."
 	icon = 'icons/obj/stickynotes.dmi'
 	color = COLOR_YELLOW
-	slot_flags = 0
-
-/obj/item/paper/sticky/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(reset_persistence_tracking)))
 
 /obj/item/paper/sticky/proc/reset_persistence_tracking(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -140,6 +134,9 @@ CAPABILITIES(/obj/item/sticky_pad/random)
 
 // Copied from duct tape.
 CAPABILITIES(/obj/item/paper/sticky)
+	configure(item_worn(slots = 0))
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(reset_persistence_tracking)))
 	extend("pick_up_item", then(PROC_REF(sticky_picked_up)))
 
 /// Picking a note up off a wall ends its persistence.

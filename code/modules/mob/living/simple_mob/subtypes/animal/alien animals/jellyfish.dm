@@ -27,7 +27,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 	faction = FACTION_JELLYFISH
 	endurance = 100
-	nutrition = 150
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
@@ -87,7 +86,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
 	B.mode_flags = 40
@@ -101,7 +100,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
@@ -125,7 +124,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
-	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
+	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition_of(src))
 
 // the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/lifecycle_dematerialize()
@@ -151,7 +150,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 		return
 	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
 		return
-	if(nutrition < 500)
+	if(nutrition_of(src) < 500)
 		return
 	if(prob(10))
 		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
@@ -175,8 +174,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
 	param(nameof(inherited_nutriment), pos = 1)
 
-// ALLOW(init/INSTANCE_STATE): a core fills with the nutriment of the jellyfish it came from
-/obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload)
-	. = ..()
-	nutriment_amt += inherited_nutriment
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg
+/// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
+/obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
+	return ..() + nutriment_amt + inherited_nutriment
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/starting_nutrition()
+	return 150

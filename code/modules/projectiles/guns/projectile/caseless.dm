@@ -7,10 +7,12 @@
 	item_state = "caseless"
 	w_class = ITEMSIZE_HUGE //.
 	caliber = "5mm caseless"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m5mmcaseless)
+
+CAPABILITIES(/obj/item/gun/projectile/caseless/prototype)
+	configure(item_worn(slots = SLOT_BACK))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/caseless/prototype/draw(datum/look/look)

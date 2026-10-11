@@ -41,7 +41,7 @@
 
 /mob/living/simple_mob/animal/passive/fox/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. Cute on the outside, slimy on the inside!"
 
@@ -187,11 +187,13 @@
 	//befriend_job = "Site Manager" Sebbe edit: couldn't make this work, commenting out for now.
 
 	var/mob/living/friend = null // Our best pal, who we'll follow. awoo.
-	makes_dirt = FALSE	// No more dirt
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/renault)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/fox/renault/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "Slick foxguts. They seem somehow more regal than perhaps other foxes!"
 

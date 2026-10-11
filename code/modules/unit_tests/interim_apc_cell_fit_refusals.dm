@@ -7,7 +7,7 @@
 	var/obj/item/cell/replacement = allocate(/obj/item/cell, T)
 	TEST_ASSERT_NOTNULL(original, "the actual APC starts with an installed original cell")
 	key_set(apc, COVER_OPEN, TRUE)
-	replacement.charge = replacement.maxcharge / 2
+	replacement.set_charge(replacement.maxcharge / 2)
 	var/original_charge = original.charge
 	var/replacement_charge = replacement.charge
 	TEST_ASSERT(user.put_in_active_hand(replacement), "the actual actor holds the distinct replacement cell")

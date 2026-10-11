@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/volume_pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	icon = 'icons/atmos/volume_pump.dmi'
 	icon_state = "map_off"
 	construction_type = /obj/item/pipe/directional
@@ -35,14 +37,6 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/overclocked = FALSE
 	var/mutable_appearance/overclock_overlay
-
-/obj/machinery/atmospherics/binary/volume_pump/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	if(frequency)
-		set_frequency(frequency)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::VolumePump). rust_bind_pipe_port fires once per
@@ -210,6 +204,7 @@ MSG_DEF_SELF(volume_pump/overclocked, "The pump makes a grinding noise and air s
 MSG_DEF_SELF(volume_pump/limited, "The pump quiets down as you turn its limiters back on.")
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("GasPump")
 	pipe_device_switch()

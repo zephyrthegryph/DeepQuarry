@@ -46,6 +46,9 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
+	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
+	on_notice(/datum/notice/machinery_power_restored, then(PROC_REF(on_power_signal)))
 	configure(uses_power(idle = 5, active = 10))
 	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
@@ -73,8 +76,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
-	observe(src, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_power_signal)))
-	observe(src, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_power_signal)))
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
 	if(!src.network || src.network.len < 1)
@@ -85,10 +86,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		ASSERT(src.network)
 		ASSERT(src.network.len > 0)
 	network = camera_network_intern(network)
-	// Make mapping with cameras easier
-	if(!c_tag)
-		var/area/A = get_area(src)
-		c_tag = "[A ? A.name : "Unknown"] #[rand(111,999)]"
 
 	. = ..()
 
@@ -101,6 +98,11 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		upgradeXRay()
 	if(TYPE_TABLE_GET(src, camera_initial_motion))
 		upgradeMotion()
+
+/// A camera the map left untagged is tagged after its area and a random number (mapping with cameras is easier).
+/obj/machinery/camera/proc/roll_c_tag(datum/roller/R)
+	var/area/A = get_area(src)
+	return "[A ? A.name : "Unknown"] #[R.number(111, 999)]"
 
 /// Cameras with the same network set share one list. Shared lists are
 /// read-only: camera procs replace `network` rather than mutate it.
@@ -200,7 +202,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if (!isobj(source))
 		return
 	var/obj/item/O = source
-	if(O.throwforce >= src.toughness)
+	if(thrown_of(O).force >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
@@ -291,7 +293,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/weld_duration(datum/act/op/A)
 	var/obj/item/W = A.held_provider()
-	return 10 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+	return 10 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
 
 /obj/machinery/camera/proc/welder_used(datum/act/op/A)
 	welded_off(A.actor, A.held)
@@ -370,9 +372,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	var/obj/item/W = A.held
 	update_coverage()
 	user.setClickCooldown(user.get_attack_speed(W))
-	if (W.force >= src.toughness)
+	if (combat_of(W).force >= src.toughness)
 		user.do_attack_animation(src)
-		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by %T%!"))
+		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with [W] by %T%!"))
 		if (sounds_of(W).hit)
 			playsound(src, sounds_of(W).hit, 50, 1, -1)
 	receive_weapon_hit(W, user, silent = FALSE)

@@ -9,11 +9,7 @@
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "robot"
 	endurance = 200
-	nutrition = 0
 
-	mob_bump_flag = ROBOT
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY //trundle trundle
 
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -32,7 +28,6 @@
 	var/list/robotdecal_on	// Lazy.
 	var/glowy_enabled = FALSE
 
-	can_be_antagged = TRUE
 
 //Icon stuff
 
@@ -147,17 +142,6 @@
 // --- Lifecycle ------------------------------------------------------------------------------
 
 /mob/living/silicon/robot/Initialize(mapload)
-	if(islist(req_access))
-		req_access = shared_type_list(type, "req_access", req_access)
-	global.observe(src, /datum/notice/living_shield_injury, src, then(PROC_REF(absorb_injury_with_shield)))
-
-	add_language(LANGUAGE_ROBOT_TALK, 1)
-	add_language(LANGUAGE_GALCOM, 1)
-	add_language(LANGUAGE_EAL, 1)
-
-
-	rel_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
-	robot_modules_background.icon_state = "block"
 	ident = rand(1, 999)
 	updatename(modtype)
 
@@ -169,12 +153,6 @@
 	initialize_components()
 	setup_cell()
 
-	// This mob (not a component) is the source: every robot has these
-	// (code/modules/mob/living/silicon/robot/robot_abilities.dm), revoked in
-	// Destroy(). Unlike robot_verbs_default below, these were never gated by
-	// death (they were plain `verb/` declarations, not in that list), so
-	// they're granted once here rather than in add_robot_verbs()/remove_robot_verbs().
-	grant(src, robot_utility(), src)
 	if(may_pick_name())
 		grant(src, robot_naming(), src)
 
@@ -185,9 +163,6 @@
 	resolve_sprite_datum()
 	recompute_power_demand()
 	update_senses()
-
-	add_hose_connector(/datum/hose_connector/input/borg)
-	add_hose_connector(/datum/hose_connector/output/borg)
 
 /mob/living/silicon/robot/proc/setup_radio()
 	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
@@ -828,7 +803,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(istype(W, /obj/item/borg/upgrade))
 		apply_upgrade(W, user)
 		return TRUE
-	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
+	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && combat_of(W).force > 0)
 		fx_sparks(src, 5, FALSE)
 	return FALSE
 
@@ -1793,3 +1768,7 @@ TRACKED(/mob/living/silicon/robot, lockdown)
 				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
+
+
+/mob/living/silicon/robot/starting_nutrition()
+	return 0

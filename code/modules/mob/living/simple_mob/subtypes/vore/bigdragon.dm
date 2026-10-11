@@ -244,13 +244,6 @@ I think I covered everything.
 		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	faction = FACTION_NEUTRAL
 
-/mob/living/simple_mob/vore/bigdragon/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	randomize_style()
-	add_language(LANGUAGE_DRUDAKAR)
-	add_language(LANGUAGE_UNATHI)
-
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
 
@@ -334,21 +327,32 @@ I think I covered everything.
 		look.overlay(look_overlay_image(icon, "dragon_flame[rest_suffix]", plane = PLANE_LIGHTING_ABOVE, appearance_flags = PIXEL_SCALE))
 
 /// Rolls a random modular style and colour set (spawn time).
-/mob/living/simple_mob/vore/bigdragon/proc/randomize_style()
-	var/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
-	var/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
-	set_under(pick(underbelly_styles))
-	set_body_style(pick(body_styles))
-	set_ears(pick(ear_styles))
-	set_mane(pick(mane_styles))
-	set_horns(pick(horn_styles))
-	set_eyes(pick(eye_styles))
-	paint("Underbelly", pick(bodycolors))
-	paint("Body", pick(bodycolors))
-	paint("Ears", get_random_colour(0, 100, 150))
-	paint("Mane", pick(bodycolors))
-	paint("Horns", pick(horncolors))
-	paint("Eyes", get_random_colour(1))
+/// Each spawned dragon looks its own (rolls()): one style of each part, and the colours of its layers.
+/mob/living/simple_mob/vore/bigdragon/proc/roll_style(datum/roller/R, target)
+	var/static/list/bodycolors = list("#1E1E1E","#3F3F3F","#545454","#969696","#DBDBDB","#ABBBD8","#3D0B00","#3A221D","#77554F","#281D1B","#631F00","#964421","#936B24","#381313","#380000","#682121","#700E00","#44525B","#283035","#29353D","#353E44","#281000","#38261A","#302F3D","#322E3A","#262738")
+	var/static/list/horncolors = list("#000000","#151515","#303030","#606060","#808080","#AAAAAA","#CCCCCC","#EEEEEE","#FFFFFF")
+	switch(target)
+		if("under")
+			return R.choose(underbelly_styles)
+		if("body_style")
+			return R.choose(body_styles)
+		if("ears")
+			return R.choose(ear_styles)
+		if("mane")
+			return R.choose(mane_styles)
+		if("horns")
+			return R.choose(horn_styles)
+		if("eyes")
+			return R.choose(eye_styles)
+		if("overlay_colors")
+			var/list/colors = overlay_colors.Copy()
+			colors["Underbelly"] = R.choose(bodycolors)
+			colors["Body"] = R.choose(bodycolors)
+			colors["Ears"] = R.hex_colour(100, 150)
+			colors["Mane"] = R.choose(bodycolors)
+			colors["Horns"] = R.choose(horncolors)
+			colors["Eyes"] = "#[R.choose(list("FF0000", "FF7F00", "FFFF00", "00FF00", "0000FF", "4B0082", "8F00FF"))]"
+			return colors
 
 /// Recolours one layer; the colour table is replaced whole so the tracked write is seen.
 /mob/living/simple_mob/vore/bigdragon/proc/paint(part, value)
@@ -478,7 +482,7 @@ I think I covered everything.
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you.")
 	gut1 = B
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
@@ -717,14 +721,14 @@ I think I covered everything.
 		ai_busy_end()
 		return
 	set_status_flags(status_flags | LEAPING)
-	flying  = 1		//So we can thunk into things
+	set_flying(src, 1) //So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
 		set_status_flags(status_flags & ~LEAPING)
-	flying = 0
+	set_flying(src, 0)
 	dq_set_hovering(src, 0)
 
 	var/mob/living/target = null
@@ -836,7 +840,7 @@ I think I covered everything.
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
-	rel_set(src, nameof(vore_selected), gut2) //Just incase it eats someone right after being tamed
+	set_vore_selected(src, gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_hostile(FALSE)
 	ai_brain?.lose_target()
 
@@ -852,7 +856,7 @@ I think I covered everything.
 	say("HAVE IT YOUR WAY THEN")
 	// Legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
-	rel_set(src, nameof(vore_selected), gut1)
+	set_vore_selected(src, gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)
 
@@ -940,6 +944,15 @@ TRACKED(/mob/living/simple_mob/vore/bigdragon, enraged)
 TRACKED(/mob/living/simple_mob/vore/bigdragon, flames)
 
 CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
+	knows(LANGUAGE_DRUDAKAR)
+	knows(LANGUAGE_UNATHI)
+	rolls(nameof(under), PROC_REF(roll_style))
+	rolls(nameof(body_style), PROC_REF(roll_style))
+	rolls(nameof(ears), PROC_REF(roll_style))
+	rolls(nameof(mane), PROC_REF(roll_style))
+	rolls(nameof(horns), PROC_REF(roll_style))
+	rolls(nameof(eyes), PROC_REF(roll_style))
+	rolls(nameof(overlay_colors), PROC_REF(roll_style))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
@@ -951,3 +964,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE)
 
+
+/mob/living/simple_mob/vore/bigdragon/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

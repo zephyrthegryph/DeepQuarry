@@ -45,7 +45,6 @@
 	movement_cooldown = 1.5
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
-	base_attack_cooldown = 5
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = SFX_WEAPONS_LASER3
 
@@ -61,25 +60,18 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
-	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/mechanical/combat_drone/melee
 	icon_state = "droneM"
 	icon_dead = "droneM_dead"
 
-/mob/living/simple_mob/mechanical/combat_drone/Initialize(mapload)
-	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
-	ion_trail.set_up(src)
-	ion_trail.start()
-	return ..()
-
-
 /mob/living/simple_mob/mechanical/combat_drone
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/combat_drone
-	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/combat_drone/on_death(gibbed)
 	..()

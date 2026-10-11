@@ -83,7 +83,7 @@ MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 /obj/machinery/floor_light/proc/interaction_harm(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/held = A.held
-	if(held?.force)
+	if(combat_of(held).force)
 		attack_hand(user)
 	return OP_DECLINE
 

@@ -8,6 +8,7 @@
 
 	icon = 'icons/mob/xenos_32.dmi'
 	vis_height = 32
+	sight = SEE_MOBS
 
 	faction = "xeno"
 	endurance = 200
@@ -56,10 +57,6 @@
 
 	can_be_drop_prey = FALSE
 
-/mob/living/simple_mob/xeno_ch/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	sight |= SEE_MOBS
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
@@ -175,3 +172,6 @@ CAPABILITIES(/mob/living/simple_mob/xeno_ch/queen)
 	icon_living = "alienqmaid"
 	icon_rest = "alienqmaid_sleep"
 	icon_state = "alienqmaid"
+
+/mob/living/simple_mob/xeno_ch/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

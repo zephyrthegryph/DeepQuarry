@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 /mob/living/simple_mob/metroid/mine/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_burn = 0.5
 	B.digest_brute = 0
 
@@ -80,7 +80,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -105,7 +104,8 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 
 	is_juvenile = TRUE
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/baby
+	arrival_sound = SFX_METROID_METROIDSEE
 
 
 
@@ -131,7 +131,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, 
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Metroids aren't affected by most atmospheres except cold.
 	minbodytemp = T0C-40
@@ -167,7 +166,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/baby, metroid_initial_sound, 
 
 	is_juvenile = TRUE
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/super
+	arrival_sound = SFX_METROID_METROIDSEE
 
 /mob/living/simple_mob/metroid/juvenile/super/on_death(gibbed)
 	..()
@@ -190,7 +190,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
 	//Alphas lose their vulnerability to cold.
 	minbodytemp = 0
@@ -208,7 +207,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/super, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/gamma"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound, SFX_METROID_METROIDSEE)
+/mob/living/simple_mob/metroid/juvenile/alpha
+	arrival_sound = SFX_METROID_METROIDSEE
 
 /mob/living/simple_mob/metroid/juvenile/alpha/on_death(gibbed)
 	..()
@@ -251,7 +251,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 	ranged_cooldown_time = 5 SECOND
 	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
@@ -273,7 +272,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/alpha, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/zeta"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound, SFX_METROID_METROIDGAMMA)
+/mob/living/simple_mob/metroid/juvenile/gamma
+	arrival_sound = SFX_METROID_METROIDGAMMA
 
 /mob/living/simple_mob/metroid/juvenile/gamma/on_death(gibbed)
 	..()
@@ -331,9 +331,10 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
 
-	makes_dirt = TRUE
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(mob_movement(makes_dirt = TRUE))
+
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -359,7 +360,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, SFX_METROID_METROIDZETA)
+/mob/living/simple_mob/metroid/juvenile/zeta
+	arrival_sound = SFX_METROID_METROIDZETA
 
 /mob/living/simple_mob/metroid/juvenile/zeta/on_death(gibbed)
 	..()
@@ -416,8 +418,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
-	makes_dirt = TRUE
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
 
@@ -433,6 +433,9 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 	max_n2 = 0
 	unsuitable_atoms_damage = 0
 
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(mob_movement(makes_dirt = TRUE))
+
 
 
 	old_x = -16
@@ -446,7 +449,8 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 
 	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
 
-TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound, SFX_METROID_METROIDOMEGA)
+/mob/living/simple_mob/metroid/juvenile/omega
+	arrival_sound = SFX_METROID_METROIDOMEGA
 
 /mob/living/simple_mob/metroid/juvenile/omega/on_death(gibbed)
 	..()
@@ -502,8 +506,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 	gender = NEUTER
 	faction = "metroids"
 	max_nutrition = 2200
-	nutrition = 0
-	makes_dirt = TRUE
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -532,6 +534,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 
 /mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)
@@ -567,3 +570,25 @@ CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
 
 	threaten_sound = 'sound/metroid/metroidqueen.ogg'
 	stand_down_sound = 'sound/metroid/metroiddetach.ogg'
+
+
+/mob/living/simple_mob/metroid/juvenile/baby/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/super/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/alpha/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/gamma/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/zeta/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/omega/starting_nutrition()
+	return 0
+
+/mob/living/simple_mob/metroid/juvenile/queen/starting_nutrition()
+	return 0

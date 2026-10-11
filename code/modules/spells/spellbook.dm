@@ -216,7 +216,7 @@ CAPABILITIES(/obj/item/spellbook/oneuse)
 /obj/item/spellbook/oneuse/smoke/recoil(mob/living/user as mob)
 	..()
 	to_chat(user, span_warning("Your stomach rumbles..."))
-	if(user.nutrition)
+	if(nutrition_of(user))
 		user.adjust_nutrition(-200)
 
 /obj/item/spellbook/oneuse/blind
@@ -321,7 +321,7 @@ CAPABILITIES(/obj/item/spellbook/oneuse)
 		magichead.say_verbs = list("neighs", "whinnys", "snorts")
 		magichead.say_messages = list("NEEEEIGH", "KEECHOOOW", "WHIIIINNNY", "NEEEEEEIGHHHH", "KEECHOOOWWW")
 		magichead.canremove = FALSE		//curses!
-		magichead.flags_inv = null	//so you can still see their face
+		magichead.set_flags_inv(null)//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		user.drop_from_inventory(user.get_equipped_item(SLOT_ID_MASK))
 		user.equip_to_slot_if_possible(magichead, SLOT_ID_MASK, 1, 1)

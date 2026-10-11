@@ -22,7 +22,6 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 10
-	base_attack_cooldown = 5 // About 20 DPS.
 	attack_armor_pen = 50
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_MECHA_MECHDRILL

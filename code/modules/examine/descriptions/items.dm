@@ -1,5 +1,5 @@
 /proc/describe_power(obj/item/source)
-	switch(source.force)
+	switch(combat_of(source).force)
 		if(0)
 			return "a negligable amount of"
 		if(1 to 2)
@@ -22,7 +22,7 @@
 			return "a truly ruinous amount of"
 
 /proc/describe_throwpower(obj/item/source)
-	switch(source.throwforce)
+	switch(thrown_of(source).force)
 		if(0)
 			return "a negligable amount of"
 		if(1 to 2)
@@ -45,7 +45,7 @@
 			return "a truly ruinous amount of"
 
 /proc/describe_penetration(obj/item/source)
-	switch(source.armor_penetration)
+	switch(combat_of(source).armor_penetration)
 		if(0)
 			return "cannot pierce armor"
 		if(1 to 20)
@@ -68,9 +68,9 @@
 			return "completely and utterly pierces all armor"
 
 /proc/describe_speed(obj/item/source)
-	if(source.attackspeed > DEFAULT_ATTACK_COOLDOWN)
+	if(combat_of(source).attack_speed > DEFAULT_ATTACK_COOLDOWN)
 		return "a slow attack speed"
-	else if(source.attackspeed < DEFAULT_ATTACK_COOLDOWN)
+	else if(combat_of(source).attack_speed < DEFAULT_ATTACK_COOLDOWN)
 		return "a high attack speed"
 	else
 		return "an average attack speed"
@@ -109,14 +109,14 @@
 	if(LAZYLEN(additional_information))
 		weapon_stats += additional_information
 
-	if(force)
-		weapon_stats += "If used in melee, it deals [describe_power(src)] [sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
-	if(throwforce)
-		weapon_stats += "If thrown, it would deal [describe_throwpower(src)] [sharp ? "sharp" : "blunt"] damage."
-	if(can_cleave)
+	if(combat_of(src).force)
+		weapon_stats += "If used in melee, it deals [describe_power(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
+	if(thrown_of(src).force)
+		weapon_stats += "If thrown, it would deal [describe_throwpower(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage."
+	if(combat_of(src).can_cleave)
 		weapon_stats += "It is capable of hitting multiple targets with a single swing."
-	if(reach > 1)
-		weapon_stats += "It can attack targets up to [reach] tiles away, and can attack over certain objects."
+	if(combat_of(src).reach > 1)
+		weapon_stats += "It can attack targets up to [combat_of(src).reach] tiles away, and can attack over certain objects."
 
 	weapon_stats += examine_tags(src)
 

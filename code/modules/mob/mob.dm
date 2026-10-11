@@ -49,13 +49,10 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/Initialize(mapload)
 	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	lastarea = get_area(src)
-	if(speak_emote)
-		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
-	if(shouldnt_see)
-		shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
 	set_focus(src) // Key Handling
-	update_transform() // Some mobs may start bigger or smaller than normal.
 	. = ..()
+	// after ..(): a rolled size_multiplier or icon scale (rolls()) is in place by then
+	update_transform() // Some mobs may start bigger or smaller than normal.
 	publish_mob_chunk(src, TRUE)
 	log_mob_tag(src, "TAG: [tag] CREATED: [key_name(src)] \[[type]\]")
 	//return QDEL_HINT_HARDDEL_NOW Just keep track of mob references. They delete SO much faster now.
@@ -633,15 +630,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	var/mob/M = AM
 	if(ismob(AM))
 
-		if(!can_pull_mobs || !can_pull_size)
+		if(!movement_of(src).pull_mobs || !movement_of(src).pull_size)
 			to_chat(src, span_warning("They won't budge!"))
 			return
 
-		if((mob_size < M.mob_size) && (can_pull_mobs != MOB_PULL_LARGER))
+		if((mob_size < M.mob_size) && (movement_of(src).pull_mobs != MOB_PULL_LARGER))
 			to_chat(src, span_warning("[M] is too large for you to move!"))
 			return
 
-		if((mob_size == M.mob_size) && (can_pull_mobs == MOB_PULL_SMALLER))
+		if((mob_size == M.mob_size) && (movement_of(src).pull_mobs == MOB_PULL_SMALLER))
 			to_chat(src, span_warning("[M] is too heavy for you to move!"))
 			return
 
@@ -666,13 +663,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		else
 			rel_set(M, nameof(M.LAssailant), src)
 
-		if(M.no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
+		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
 			return
 
 	else if(isobj(AM))
 		var/obj/I = AM
-		if(!can_pull_size || can_pull_size < I.w_class)
+		if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 			to_chat(src, span_warning("It won't budge!"))
 			return
 
@@ -993,15 +990,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	return 0
 
-// Please always use this proc, never just set the var directly.
-/// A mob's stat: set_stat() is its setter and publishes the stat key on a real change.
-SETTER(/mob, stat)
-
-/mob/proc/set_stat(new_stat)
-	. = (stat != new_stat)
-	stat = new_stat
-	if(.)
-		tracked_changed(src, nameof(stat))
 
 /mob/verb/face_direction()
 
@@ -1163,7 +1151,6 @@ SETTER(/mob, stat)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		rel_add(src, nameof(exploit_addons), I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
 

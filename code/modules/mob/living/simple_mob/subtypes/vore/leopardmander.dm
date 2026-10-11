@@ -78,9 +78,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
 	hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R, 1)
 	hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP, 1)
 
-/mob/living/simple_mob/vore/leopardmander/Initialize(mapload)
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
 
 /mob/living/simple_mob/vore/leopardmander/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
@@ -117,7 +114,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
 
 	B = new /obj/belly(src)
 
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"
 	//Not going to change the default sounds. Personally I think the non-fancy sounds work good as enterance nom sounds and the fancy ones are better for transfer sounds. -Reo
@@ -217,7 +214,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander/exotic)
 	B.transferlocation = "maw"
 
 	B = new /obj/belly(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 	B.name = "maw"
 	B.desc = "Slrrrrrp... You get snatched up by the Exotic Leopardmander's large tongue, resulting in you getting dragged into the humid, dank interior of the large drake's cavernous mouth!"
@@ -248,3 +245,6 @@ CAPABILITIES(/obj/random/mob/leopardmander)
 			/mob/living/simple_mob/vore/leopardmander = 89,
 			/mob/living/simple_mob/vore/leopardmander/blue = 10,
 			/mob/living/simple_mob/vore/leopardmander/exotic = 1)))
+
+/mob/living/simple_mob/vore/leopardmander/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

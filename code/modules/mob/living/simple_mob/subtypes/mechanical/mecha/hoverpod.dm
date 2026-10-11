@@ -26,24 +26,17 @@
 	projectile_dispersion = 10
 	projectile_accuracy = -30
 	projectiletype = /obj/item/projectile/beam
-	base_attack_cooldown = 2 SECONDS
 
 	organ_names = /datum/decl/mob_organ_names/hoverpod
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/hoverpod)
-	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/manned
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
-
-/mob/living/simple_mob/mechanical/mecha/hoverpod/Initialize(mapload)
-	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow()) // ALLOW(decl): configured and started before parent init
-	ion_trail.set_up(src)
-	ion_trail.start()
-	return ..()
-
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/Process_Spacemove(check_drift = 0)
 	return TRUE

@@ -98,13 +98,13 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box)
 	icon_state = "candlebox5"
 	icon_type = "candle"
 	item_state = "candlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/candle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/whitecandle_box
@@ -114,13 +114,13 @@ CAPABILITIES(/obj/item/storage/fancy/candle_box)
 	icon_state = "whitecandlebox5"
 	icon_type = "whitecandle"
 	item_state = "whitecandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/white = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/blackcandle_box
@@ -130,13 +130,13 @@ CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
 	icon_state = "blackcandlebox5"
 	icon_type = "blackcandle"
 	item_state = "blackcandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /*
@@ -155,14 +155,15 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
 
-
-/obj/item/storage/fancy/crayons/Initialize(mapload)
-	. = ..()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/crayons/proc/one_of_each_colour(datum/roller/R)
+	. = list()
 	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/C = new(src)
+		var/obj/item/pen/crayon/C = new
 		C.variant = v
 		C.apply_variant()
 		C.name = "[C.colourName] [initial(C.name)]"
+		. += C
 
 /obj/item/storage/fancy/crayons/draw(datum/look/look)
 	. = ..()
@@ -181,6 +182,7 @@ READS_AS(/obj/item/storage/fancy/crayons/proc/crayon_colours, STORAGE_CONTENTS_K
 // The mime and rainbow crayons are too sad and too powerful for the box.
 CAPABILITIES(/obj/item/storage/fancy/crayons)
 	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -192,14 +194,15 @@ CAPABILITIES(/obj/item/storage/fancy/crayons)
 	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
 
-
-/obj/item/storage/fancy/markers/Initialize(mapload)
-	. = ..()
+/// Starting contents (initial_contents()): one of each colour, named for it.
+/obj/item/storage/fancy/markers/proc/one_of_each_colour(datum/roller/R)
+	. = list()
 	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
-		var/obj/item/pen/crayon/marker/M = new(src)
-		M.variant = v
-		M.apply_variant()
-		M.name = "[M.colourName] [initial(M.name)]"
+		var/obj/item/pen/crayon/marker/C = new
+		C.variant = v
+		C.apply_variant()
+		C.name = "[C.colourName] [initial(C.name)]"
+		. += C
 
 /obj/item/storage/fancy/markers/draw(datum/look/look)
 	. = ..()
@@ -217,6 +220,7 @@ READS_AS(/obj/item/storage/fancy/markers/proc/marker_colours, STORAGE_CONTENTS_K
 
 CAPABILITIES(/obj/item/storage/fancy/markers)
 	configure(storage(accepts = list(/obj/item/pen/crayon/marker)))
+	initial_contents(PROC_REF(one_of_each_colour))
 
 /*
  * Cracker Pack
@@ -245,8 +249,6 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 	icon_state = "cigpacket"
 	item_state_slots = list(slot_r_hand_str = "cigpacket", slot_l_hand_str = "cigpacket")
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 6
 	icon_type = "cigarette"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
@@ -255,6 +257,8 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	reagents(PROC_REF(pack_volume)) // so people can inject the whole packet without opening it
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette,
@@ -386,8 +390,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	icon_state = "cigarcase"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 5
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
@@ -395,6 +397,8 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigar)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	reagents(PROC_REF(pack_volume)) // so people can inject the cigars without opening the case
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette/cigar,
@@ -456,13 +460,13 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	icon_state = "paperbox"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 14
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
 
 
 CAPABILITIES(/obj/item/storage/rollingpapers)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper)))
 
 /obj/item/storage/rollingpapers/blunt

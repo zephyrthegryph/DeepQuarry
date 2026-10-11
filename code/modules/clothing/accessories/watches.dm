@@ -4,7 +4,6 @@
 	icon_state = "wristwatch_basic"
 	gender = "neuter"
 	slot = ACCESSORY_SLOT_WRIST
-	slot_flags = SLOT_GLOVES
 	icon = 'icons/inventory/hands/item.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_gloves.dmi',
@@ -16,6 +15,7 @@
 		)
 
 CAPABILITIES(/obj/item/clothing/accessory/watch)
+	configure(item_worn(slots = SLOT_GLOVES))
 	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/accessory/watch/examine(mob/user)

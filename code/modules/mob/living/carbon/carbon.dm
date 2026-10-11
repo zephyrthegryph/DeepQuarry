@@ -1,22 +1,22 @@
 /mob/living/carbon/Initialize(mapload)
 	. = ..()
-	//setup reagent holders
-	// The bloodstream is the carbon's owned `reagents`; `bloodstr` is a relation alias of it.
-	rel_set(src, nameof(reagents), new/datum/reagents/metabolism/bloodstream(500, src)) // ALLOW(decl): holder takes constructor args
+	// The bloodstream is the carbon's owned `reagents` (its reagents() in CAPABILITIES); `bloodstr` is a relation alias of it.
 	rel_set(src, nameof(bloodstr), reagents)
-	rel_set(src, nameof(ingested), new/datum/reagents/metabolism/ingested(500, src)) // ALLOW(decl): holder takes constructor args
-	rel_set(src, nameof(touching), new/datum/reagents/metabolism/touch(500, src)) // ALLOW(decl): holder takes constructor args
-	if (!default_language && species_language)
-		default_language = GLOB.all_languages[species_language]
 
-	enable_footsteps(custom_footstep, 1, -6)
-
-	rel_set(src, nameof(cozyloop), new /datum/looping_sound/mob/cozyloop(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+/// Its species' language is its default when it has none (derives(), once at init).
+/mob/living/carbon/proc/species_default_language(target)
+	if(!default_language && species_language)
+		return GLOB.all_languages[species_language]
+	return default_language
 
 /// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).
 /mob/living/carbon
 	fire_heats_body = TRUE
+	// footsteps (footstep() in its CAPABILITIES): a shoe's, the custom_footstep a carbon starts with
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
 	/// Biological time (clock_now(CLOCK_BIO), ds) of the germs stage's last roll, or null
 	/// before the first. Not 0: a biology clock can legitimately read 0 (stopped from the start).
 	var/germs_rolled_at
@@ -191,7 +191,7 @@
 	return shock_damage
 
 /mob/living/carbon/proc/help_shake_act(mob/living/carbon/M)
-	if (!is_critical() || on_fire)
+	if (!is_critical() || stat_value(src, STAT_ON_FIRE))
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
 			act_message(src, null, MSG_SELF(span_notice("You check yourself for injuries.")), \
@@ -246,9 +246,9 @@
 
 			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
-		else if (on_fire)
+		else if (stat_value(src, STAT_ON_FIRE))
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-			if (M.on_fire)
+			if (stat_value(M, STAT_ON_FIRE))
 				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
 					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
@@ -276,10 +276,10 @@
 				if(M.resting == 1) //Are they resting on the ground?
 					act_message(M, src, MSG_SELF(span_notice("You grip onto %T% and pull yourself up off the ground!")), \
 						MSG_OTHERS(span_notice("%U% grabs onto %T% and pulls %THEMSELVES% up")))
-					if(M.fire_stacks >= (src.fire_stacks + 3)) //Fire checks.
+					if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3)) //Fire checks.
 						src.adjust_fire_stacks(1)
 						M.adjust_fire_stacks(-1)
-					if(M.on_fire)
+					if(stat_value(M, STAT_ON_FIRE))
 						src.ignite_mob()
 					M.set_resting(0) //Hoist yourself up up off the ground. No para/stunned/weakened removal.
 					update_canmove()
@@ -288,10 +288,10 @@
 				else
 					act_message(M, src, MSG_SELF(span_notice("You hug %T% to make [H.p_them()] feel better!")), \
 						MSG_OTHERS(span_notice("%U% hugs %T% to make [H.p_them()] feel better!")))
-				if(M.fire_stacks >= (src.fire_stacks + 3))
+				if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3))
 					src.adjust_fire_stacks(1)
 					M.adjust_fire_stacks(-1)
-				if(M.on_fire)
+				if(stat_value(M, STAT_ON_FIRE))
 					src.ignite_mob()
 			status_adjust(STAT_PARALYZED, -3)
 			status_adjust(STAT_STUNNED, -3)
@@ -304,15 +304,15 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 /mob/living/carbon/proc/help_shake_act_carbon_done(datum/act/op/A)
 	var/mob/living/carbon/M = A.actor
 	src.adjust_fire_stacks(-0.5)
-	if (prob(10) && (M.fire_stacks <= 0))
+	if (prob(10) && (fire_stacks_of(M) <= 0))
 		M.adjust_fire_stacks(1)
 	M.ignite_mob()
-	if (M.on_fire)
+	if (stat_value(M, STAT_ON_FIRE))
 		act_message(M, src, MSG_SELF(span_danger("The fire spreads to you as well!")), \
 			MSG_OTHERS(span_danger("The fire spreads from %T% to %U%!")))
 	else
 		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
-		if (src.fire_stacks <= 0)
+		if (fire_stacks_of(src) <= 0)
 			act_message(M, src, MSG_SELF(span_warning("You successfully pat out %T%'s flames.")), \
 				MSG_OTHERS(span_warning("%U% successfully pats out %T%'s flames.")))
 			src.extinguish_mob()
@@ -462,19 +462,19 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 		var/washglasses = 1
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			washgloves = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
-			washshoes = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
+			washgloves = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDEGLOVES)
+			washshoes = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDESHOES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			washmask = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
-			washglasses = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
-			washears = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
+			washmask = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK)
+			washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEYES)
+			washears = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEARS)
 
 		if(H.get_equipped_item(SLOT_ID_MASK))
 			if (washears)
-				washears = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEARS)
+				washears = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEARS)
 			if (washglasses)
-				washglasses = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEYES)
+				washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEYES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
@@ -552,7 +552,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	if(protection_of(get_equipped_item(SLOT_ID_GLOVES)).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
 	for(var/obj/item/clothing/clothing in get_worn_clothing())
-		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (clothing.body_parts_covered & HANDS))
+		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (worn_of(clothing).covers & HANDS))
 			return TRUE
 	return FALSE
 

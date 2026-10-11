@@ -17,16 +17,11 @@
 	var/had_tissue = FALSE
 	var/emp_damage = 0//Handles a type of MMI damage
 	var/alert = null
-	use_me = 0 //Can't use the me verb, it's a freaking immobile brain
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "brain1"
 	no_vore = TRUE
 	can_pain_emote = FALSE // Sanity/safety
 	low_priority = TRUE
-
-/mob/living/carbon/brain/Initialize(mapload)
-	. = ..()
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 // a brain with a player dies and ghosts; its host forgets the view.
 /mob/living/carbon/brain/on_destroy(force)
@@ -87,7 +82,7 @@
 /mob/living/carbon/brain/update_canmove()
 	if(in_contents_of(/obj/mecha) || istype(loc, /obj/item/mmi))
 		canmove = 1
-		use_me = 1
+		set_use_me(1)
 	else
 		canmove = 0
 	return canmove
@@ -135,5 +130,6 @@
 		to_chat(src, span_notice("New notification has been sent."))
 
 CAPABILITIES(/mob/living/carbon/brain)
-	reagents(1000)
+	configure(mob_kind(use_me = 0))
+	knows(LANGUAGE_GALCOM, default = TRUE)
 	ref_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

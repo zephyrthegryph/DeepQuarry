@@ -43,7 +43,7 @@
 
 /mob/living/simple_mob/vore/turkeygirl/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The hot churning stomach of a turkey girl! The doughy flesh presses inward to form to your figure, thick slime coating everything, and very shortly that includes you as well! There isn't any escaping that constant full body motion, as her body works to ball yours up into a tight little package. Gurgling and glubbing with every shifting movement, while her pulse throbs through the flesh all around you with every beat of her heart. All in all, one thing is for certain! You've become turkey stuffing! Oh no..."
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -64,9 +64,9 @@
 	if(stat == DEAD)
 		return
 	var/state = look.state_so_far(src)
-	if(vore_fullness == 2 || nutrition >= 5000)
+	if(vore_fullness == 2 || nutrition_of(src) >= 5000)
 		state = "[icon_living]-2"
-	else if(vore_fullness == 1 || nutrition >= 2500)
+	else if(vore_fullness == 1 || nutrition_of(src) >= 2500)
 		state = "[icon_living]-1"
 	if(resting)
 		state = "[state]-resting"
@@ -86,7 +86,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/turkeygirl)
 	if(!istype(O, /obj/item/reagent_containers/food/snacks))
 		return OP_DECLINE
 
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return

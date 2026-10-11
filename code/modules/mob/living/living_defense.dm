@@ -63,7 +63,7 @@
 
 	// Armour on the struck part scales the secondary effects; the harm itself
 	// is armoured inside injure().
-	var/absorb = armor_against(P.injury_kind, def_zone, P.armor_penetration)
+	var/absorb = armor_against(P.injury_kind, def_zone, combat_of(P).armor_penetration)
 
 	//Stun Beams
 	if(P.taser_effect)
@@ -170,12 +170,12 @@
 
 //Called when the mob is hit with an item in combat, in `stance` (the swing's interaction stance). Returns the blocked result
 /mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
-	act_message(src, user, others = span_danger("%U% has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by %T%!"))
+	act_message(src, user, others = span_danger("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] with [I.name] by %T%!"))
 
 	if(ai_brain)
 		ai_brain.react_to_attack(user)
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
+	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -239,7 +239,7 @@
 
 			if(!O || !src) return
 
-			if(O.sharp) //Projectile is suitable for pinning.
+			if(combat_of(O).sharp) //Projectile is suitable for pinning.
 
 				//Handles embedding for non-humans and simple_animals.
 				embed(O)
@@ -326,12 +326,12 @@
 
 //Finds the effective temperature that the mob is burning at.
 /mob/living/proc/fire_burn_temperature()
-	if (fire_stacks <= 0)
+	if (fire_stacks_of(src) <= 0)
 		return 0
 
 	//Scale quadratically so that single digit numbers of fire stacks don't burn ridiculously hot.
 	//lower limit of 700 K, same as matches and roughly the temperature of a cool flame.
-	return max(2.25*round(FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE*(fire_stacks/FIRE_MAX_FIRESUIT_STACKS)**2), 700)
+	return max(2.25*round(FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE*(fire_stacks_of(src)/FIRE_MAX_FIRESUIT_STACKS)**2), 700)
 
 // Called when struck by lightning.
 /mob/living/proc/lightning_act()

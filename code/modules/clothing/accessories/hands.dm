@@ -3,10 +3,7 @@
 	desc = "A pair of brass knuckles. Generally used to enhance the user's punches."
 	icon_state = "knuckledusters"
 	slot = ACCESSORY_SLOT_RING
-	slot_flags = SLOT_GLOVES
 	MATERIAL_BULK(MAT_STEEL, 500)
-	attack_verb = list("punched", "beaten", "struck")
-	force = 10	//base punch strength is 5
 	punch_force = 5	//added to base punch strength when added as a glove accessory
 	icon = 'icons/inventory/hands/item.dmi'
 	item_icons = list(
@@ -15,6 +12,8 @@
 		)
 
 CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
+	configure(item_worn(slots = SLOT_GLOVES))
+	configure(item_combat(attack_verbs = list("punched", "beaten", "struck"), force = 10))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
@@ -26,8 +25,10 @@ CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "bracelet"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_GLOVES | SLOT_TIE
 	slot = ACCESSORY_SLOT_WRIST
+
+CAPABILITIES(/obj/item/clothing/accessory/bracelet)
+	configure(item_worn(slots = SLOT_GLOVES | SLOT_TIE))
 
 /obj/item/clothing/accessory/bracelet/friendship
 	name = "friendship bracelet"
@@ -100,8 +101,10 @@ TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/glass, bracelet_forced
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "wristband"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_GLOVES  | SLOT_TIE
 	slot = ACCESSORY_SLOT_WRIST
+
+CAPABILITIES(/obj/item/clothing/accessory/wristband)
+	configure(item_worn(slots = SLOT_GLOVES  | SLOT_TIE))
 
 /obj/item/clothing/accessory/wristband/spiked
 	name = "wristband (spiked)"

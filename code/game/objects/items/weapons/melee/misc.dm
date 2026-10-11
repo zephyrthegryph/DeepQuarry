@@ -2,28 +2,30 @@
 	name = "chain of command"
 	desc = "A tool used by great men to placate the frothing masses."
 	icon_state = "chain"
-	slot_flags = SLOT_BELT
-	force = 10
-	throwforce = 7
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined")
-	reach = 2
 
 CAPABILITIES(/obj/item/melee/chainofcommand)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined"), reach = 2))
 	configure(item_sounds(hit = SFX_WEAPONS_WHIP))
 
 /obj/item/melee/chainofcommand/curator_whip
 	name = "leather whip"
 	desc = "A fine weapon for some treasure hunting."
 	icon_state = "curator_whip"
-	force = 5
-	throwforce = 5
+
+CAPABILITIES(/obj/item/melee/chainofcommand/curator_whip)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 5))
 
 /obj/item/melee/chainofcommand/curator_whip/toy
 	name = "toy whip"
 	desc = "A fake whip. Perfect for fake treasure hunting"
-	force = 2
-	throwforce = 2
+
+CAPABILITIES(/obj/item/melee/chainofcommand/curator_whip/toy)
+	configure(item_thrown(force = 2))
+	configure(item_combat(force = 2))
 
 /obj/item/melee/umbrella
 	name = "umbrella"
@@ -31,15 +33,15 @@ CAPABILITIES(/obj/item/melee/chainofcommand)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "umbrella_closed"
 	addblends = "umbrella_closed_a"
-	slot_flags = SLOT_BELT
-	force = 5
-	throwforce = 5
 	w_class = ITEMSIZE_NORMAL
 	var/open = FALSE
 
 TRACKED(/obj/item/melee/umbrella, open)
 
 CAPABILITIES(/obj/item/melee/umbrella)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 5))
 	op("toggle", in_hand(), label("Open or close umbrella"), then(PROC_REF(umbrella_toggled)))
 
 /// The native held-item activation preserves the complete equipment change.
@@ -68,18 +70,15 @@ CAPABILITIES(/obj/item/melee/umbrella/random)
 	name = "crystal blade"
 	desc = "The red crystal blade's polished surface glints in the light, giving off a faint glow."
 	icon_state = "soulblade"
-	slot_flags = SLOT_BELT | SLOT_BACK
-	force = 30
-	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	can_speak = 1
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
 CAPABILITIES(/obj/item/melee/cursedblade)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 30, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	owns_many(nameof(voice_mobs))
 
@@ -115,15 +114,12 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 		slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi',
 		)
-	force = 15
-	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
-	attack_verb = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")
 
 CAPABILITIES(/obj/item/melee/rapier)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 15, sharp = TRUE, edge = FALSE, attack_verbs = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/melee/hammer
@@ -131,11 +127,12 @@ CAPABILITIES(/obj/item/melee/rapier)
 	desc = "A simple claw hammer for hitting things or people with, and the claw part probably does something too."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "claw_hammer"
-	force = 15
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("smashed", "swung at", "pummelled", "nailed", "crushed", "bonked", "hammered", "cracked")
 	defend_chance = 0
+
+CAPABILITIES(/obj/item/melee/hammer)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 15, attack_verbs = list("smashed", "swung at", "pummelled", "nailed", "crushed", "bonked", "hammered", "cracked")))
 
 /obj/item/melee/hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)
 	if(ishuman(target))

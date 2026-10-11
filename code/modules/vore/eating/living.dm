@@ -53,13 +53,13 @@
 			to_chat(src,span_warning("ERROR: You seem to have saved VOREStation prefs, but they couldn't be loaded."))
 			return FALSE
 		if(LAZYLEN(vore_organs))
-			rel_set(src, nameof(vore_selected), vore_organs[1])
+			set_vore_selected(src, vore_organs[1])
 			return TRUE
 
 	//Or, we can create a basic one for them
 	if(!LAZYLEN(vore_organs) && isliving(src))
 		var/obj/belly/B = new /obj/belly(src)
-		rel_set(src, nameof(vore_selected), B)
+		set_vore_selected(src, B)
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
@@ -373,13 +373,13 @@
 				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
-			rel_set(src, nameof(vore_selected), B)
+			set_vore_selected(src, B)
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
 			B.can_taste = TRUE
 		else
-			rel_set(src, nameof(vore_selected), vore_organs[1])
+			set_vore_selected(src, vore_organs[1])
 
 		if(soulgem)
 			src.soulgem.release_mobs()
@@ -790,7 +790,7 @@
 	return bellies
 
 /mob/living/proc/feed_grabbed_to_self(mob/living/user, mob/living/prey)
-	var/belly = user.vore_selected
+	var/belly = vore_selected_of(user)
 	return perform_the_nom(user, prey, user, belly)
 
 // Feeding into someone else's belly asks which one; the pick does the nom (a re-run of the same
@@ -809,7 +809,7 @@
 		if(isnull(belly))
 			return TRUE
 	else
-		belly = pred.vore_selected
+		belly = vore_selected_of(pred)
 	return perform_the_nom(user, prey, pred, belly)
 
 /mob/living/proc/feed_self_to_grabbed(mob/living/user, mob/living/pred)
@@ -931,7 +931,7 @@
 /mob/living/proc/feed_grabbed_to_self_falling_nom(mob/living/user, mob/living/prey)
 	if(user.is_incorporeal())
 		return FALSE
-	var/belly = user.vore_selected
+	var/belly = vore_selected_of(user)
 	return begin_instant_nom(user, prey, user, belly)
 
 /mob/living/proc/get_current_spont_belly(atom/movable/preything)
@@ -953,7 +953,7 @@
 	for(var/obj/belly/lookup_belly in vore_organs)
 		if(lookup_belly.name == spont_belly_name)
 			return lookup_belly
-	return vore_selected
+	return vore_selected_of(src)
 
 /mob/living/proc/glow_toggle()
 	set name = "Glow (Toggle)"
@@ -993,14 +993,14 @@
 
 /// Swallows the held item I into the selected belly.
 /mob/living/proc/swallow_trash(obj/item/I)
-	if(get_active_hand() != I || !vore_selected)
+	if(get_active_hand() != I || !vore_selected_of(src))
 		return
 	drop_item()
-	vore_selected.nom_atom(I)
+	vore_selected_of(src).nom_atom(I)
 	updateVRPanel()
 	log_admin("VORE: [src] used Eat Trash to swallow [I].")
 	I.after_trash_eaten(src)
-	visible_message(span_vwarning(src.vore_selected.belly_format_string(src.vore_selected.trash_eater_in, I, item=I)))
+	visible_message(span_vwarning(vore_selected_of(src).belly_format_string(vore_selected_of(src).trash_eater_in, I, item=I)))
 
 /mob/living/proc/eat_trash()
 	set name = "Eat Trash"
@@ -1011,7 +1011,7 @@
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(src,span_warning("You either don't have a belly selected, or don't have a belly!"))
 		return
 
@@ -1062,7 +1062,7 @@
 	else
 		log_admin("VORE: [src] used Eat Minerals to swallow [I].")
 	//Eat the ore using the vorebelly for the sound then get rid of the ore to prevent infinite nutrition.
-	drop_from_inventory(I, vore_selected) //Never touches the ground - straight to the gut.
+	drop_from_inventory(I, vore_selected_of(src)) //Never touches the ground - straight to the gut.
 	visible_message("[src] crunches [I] to pieces and swallows it down.",
 		span_notice("[nom["remark"]]"),
 		span_notice("You hear the gnashing of jaws with some ominous grinding and crunching noises, then... Swallowing?"))
@@ -1085,7 +1085,7 @@
 	if(!(adminbus_eat_minerals || (istype(H) && H.species.eat_minerals))) //Am I awesome enough to eat a shiny rock?
 		return
 
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		to_chat(src, span_warning("You either don't have a belly selected, or don't have a belly!"))
 		return
 
@@ -1276,8 +1276,8 @@
 	if(latejoin_prey)
 		dat += span_bold("Late join prey auto accept:") + " [no_latejoin_prey_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
 	dat += span_bold("Global Vore Privacy is:") + " [eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
-	dat += span_bold("Current active belly:") + " [vore_selected ? vore_selected.get_belly_name(TRUE) : "None"]<br>"
-	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
+	dat += span_bold("Current active belly:") + " [vore_selected_of(src) ? vore_selected_of(src).get_belly_name(TRUE) : "None"]<br>"
+	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected_of(src) ? vore_selected_of(src).get_belly_name(TRUE) : "None")]<br>"
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Vore Prefs: [src]", dat, src)
 
@@ -1832,8 +1832,8 @@
 
 	if(!(T in view(1,src)))
 		return FALSE
-	if(T.vore_selected)
-		var/obj/belly/B = T.vore_selected
+	if(vore_selected_of(T))
+		var/obj/belly/B = vore_selected_of(T)
 		if(istype(B))
 			if(T == src)
 				custom_emote_vr(1, "rubs their [belly_rub_target ? belly_rub_target : B.get_belly_name()].")
@@ -1891,7 +1891,7 @@
 	set name = "Check Nutrition"
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Check your current nutrition level."
-	to_chat(src, span_vnotice("Current nutrition level: [nutrition]."))
+	to_chat(src, span_vnotice("Current nutrition_of(src) level: [nutrition_of(src)]."))
 
 // This proc will either return the first belly the mob is in or return null if they're not in one
 /mob/living/proc/surrounding_belly()

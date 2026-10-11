@@ -3,8 +3,9 @@
 	desc = "A uniform service jacket, plain and undecorated."
 	icon_state = "blackservice"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/explorer)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/explorer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/clothing/head/beret))))
 

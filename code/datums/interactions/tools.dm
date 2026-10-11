@@ -16,7 +16,7 @@
 		return 0
 	if(!tool)
 		return delay
-	return delay * tool.toolspeed * tool_skill_factor(actor, quality)
+	return delay * tooling_of(tool).speed * tool_skill_factor(actor, quality)
 
 /**
  * Multiplier on tool time for this actor's skill with `quality`. Always 1 until

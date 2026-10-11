@@ -6,9 +6,6 @@
 	icon_override = 'icons/obj/borkmedigun.dmi'
 	icon_state = "mg-backpack"
 	item_state = "mg-backpack-onmob"
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = TRUE
 	w_class = ITEMSIZE_HUGE
 	unacidable = TRUE
@@ -45,13 +42,16 @@ TRACKED(/obj/item/medigun_backpack, toxcharge)
 TRACKED(/obj/item/medigun_backpack, burncharge)
 
 CAPABILITIES(/obj/item/medigun_backpack)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
 	// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
 	every(2 SECONDS, then(PROC_REF(medigun_backpack_step)), when = cond_all(nameof(smanipulator), nameof(scapacitor), nameof(sbin)))
 	owns_one(nameof(scapacitor), /obj/item/stock_parts/capacitor, starts = nameof(scapacitor))
 	owns_one(nameof(slaser), /obj/item/stock_parts/micro_laser, starts = nameof(slaser))
 	owns_one(nameof(smanipulator), /obj/item/stock_parts/manipulator, starts = nameof(smanipulator))
 	owns_one(nameof(smodule), /obj/item/stock_parts/scanning_module, starts = nameof(smodule))
-	owns_one(nameof(bcell), starts = nameof(bcell))
+	owns_one(nameof(bcell), starts = nameof(bcell), starts_set = list("charge" = 0)) // starts empty
 	interface("Medigun")
 	without("ui_open")
 	op("celleject", ui_act("celleject"), then(PROC_REF(ui_act_celleject)))
@@ -304,8 +304,6 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.icon_state = "medblaster_cmo"
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
-	if(bcell) // declared default: starts empty
-		bcell.set_charge(0)
 
 
 /obj/item/medigun_backpack/proc/get_medigun()

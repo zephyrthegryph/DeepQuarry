@@ -3,6 +3,12 @@
 A conversion keeps behaviour. Where it could not, or where keeping it would have kept a bug, the change is listed here with its reason, and the
 test that pinned the old behaviour was edited in the same commit. (conversion_guide.md section 2.)
 
+**base_vars tooling (lane bv-traits, `doc/rewrite/proposals/base_vars.md`).** `set_trait(holder, kind, field, value)` is the one trait writer;
+the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV route a write of a var that moved into a trait block (or
+`@kind.field`, which VV now lists) through it; a map edit of any other unknown var is a stack trace instead of a runtime. A compiled map
+cannot name such a var, so the Southern Cross atmospherics omni mixer is `/obj/machinery/atmospherics/omni/mixer/high_power`, restoring
+its 7500 W active draw lost when `uses_power()` landed. `smoothing_junction` (write-only) and `original_atom` (never filled) are deleted.
+
 ## Chargers (cell charger, recharger, wall recharger)
 
 Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
@@ -4526,6 +4532,39 @@ trait (492 types, `tools/dx/codemods/type_trait.py item_sounds`); a subtype that
 `hitsound` var. No behaviour change intended; pinned by `dq_type_trait/item_sounds_declared`. Run-time writers (the welder's lit sound, a
 borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item its own copy.
 
+## Init burn-down outside objects and mobs (rewrite/init-rest, October 2026)
+
+`Initialize()` overrides in machinery, clothing, power, atmospherics, mining, food, turfs, games, recycling and the rest of `code/` outside
+`code/game/objects/` and `code/modules/mob/` moved to forms. What changed with them:
+
+* **Rolls draw from the instance's stream**, not the world RNG, and a map edit or constructor value of the rolled var wins over the roll (rolls()
+  suppresses itself on a var that differs from its compiled default): wreck salvage, horoscope readings, contraband seed batches, replicator buttons
+  and fail message, cracker prizes and jokes, abandoned crate codes, janicart nicknames, ramen bowls, flask lids, exceptional pies' names, food
+  jitter, dirt and sidewalk wear, random cable colours, cut cable lengths, the emergency shield's facing. A cut cable made with an explicit
+  amount keeps it (it was overwritten by the roll).
+* **A firefighter Ripley wreck rolls its salvage once**, from its own part list (its Initialize used to run the Ripley roll and then its own, up to
+  four parts). Wreck part lists are `TYPE_TABLE(…, wreck_salvage_parts, …)`.
+* **Replicators no longer share one draining list.** The base replicator's `var/static/list/viables` was picked from and removed from by every
+  replicator, so later machines had fewer choices; each now picks from a fresh copy. The vore and clothing replicators carry only their own buttons
+  (they also held the base replicator's buttons under keys their window never showed); `construction` is button text -> type and look.
+* **Noticeboard memos are paper subtypes** started by `owns_many(nameof(notices), starts = …)`: a memo's description is "This is a paper titled …"
+  (paper init now sees the title), and the xenoarchaeology board's five memos are listed notices (they sat in its contents unlisted). The board no
+  longer re-adopts its contents at init.
+* **Vendor and record tables are per type** (`per_type()`, `TYPE_TABLE_DECLARE`): mining and survey vendors, the casino prize dispenser, the
+  biogenerator, the medical, security and skills record consoles, the Orion Trail stops. A mining vendor no longer deletes the shared prize entries
+  when it is destroyed; an admin's `new_prize()` entries are the vendor's own (`extra_prizes`, owned), shown under "Extra".
+* **A chaos cake slice tastes of its kind**: its taste list now reaches the nutriment data (`reagents(data =)`); it was assigned after the reagents
+  were made and lost.
+* **The janicart's initial move delay is 0.5** (a var default): an engine turned off resets to it rather than the train's 1.
+* **The emergency shield's random facing and the built snowmobile's south facing are var-level** (a mapped facing wins).
+* **Atmospheric port mixtures are made at their volume** (`gas_port()`, the `air*_volume` vars) instead of 200 L and then resized by the subtype.
+* **Glasses lay their HUD screen through `hud_overlay`** (a global HUD var name) when `overlay` holds none of its own.
+* **Disposal pipe ends (`dpdir`) derive at init** (`derives()`), from the facing and sprite, before the pipe's update.
+* **Self-observes are `on_notice()` entries** (camera power, uranium floors and walls, headphones, holographic projector, scene tool, sticky
+  note, hosed sprayer, disposal bin, shield projector): active from capability init rather than from the end of Initialize().
+* **Machines that refreshed their parts again after `default_parts()`** (bomb tester, DNA scanner, honey extractor, built abductor RTGs) refresh
+  once; the teleporter hub, microwave, smartfridge and biogenerator use `default_parts()`.
+
 ## Item protection as a type trait (rewrite/look-traits, gap 5)
 
 `heat_protection`, `cold_protection`, `max_heat_protection_temperature`, `min_cold_protection_temperature`, `max_pressure_protection`,
@@ -4599,6 +4638,86 @@ spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move int
 * **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
   adjustment for a client-less mob (it adjusted an image nobody saw).
 * **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.
+## Mob init burn-down (rewrite/init-mob, October 2026)
+
+`Initialize()` overrides under `code/modules/mob/` became forms (doc/rewrite/framework_gaps.md, "Mob init burn-down forms"). What a player or
+mapper can notice:
+
+* **Random looks, names and sizes are seeded** (`rolls()`): a chicken's, mouse's, rabbit's, lizard's colour, a random-skinned mob's skin, a
+  dragon's, zorgoia's or synx's styles and colours, numbered names (mice, constructs, aliens, xenobio slimes), the pet rat's identity, a
+  random lamia's look, an astral collective member's experiment, glitterfly colours, fish colours and offsets, squirrel winter coats, sizes
+  (black-hole mobs, wolftaurs, large lizards, crabs, sakimms). The distributions are the old ones; a map edit of the rolled var now wins
+  (the old overrides overwrote it). The black-hole and wolftaur sizes are set as `size_multiplier` before the first transform instead of
+  through `resize()` after init: no spawn-time grow animation, no station-level size clamp (every range is inside 0.25-2). The wolftaur took
+  two sizes in turn (wolftaur.dm, then syndimobs.dm); it now rolls the second one's range (0.9-2.0) once.
+* **`/mob/Initialize()` applies the transform after `..()`** (it ran before), so a rolled size or icon scale shows from creation.
+* **The astral collective's size changes are visible**: the swift and titan experiments now apply their size before the first transform;
+  the old override changed `size_multiplier` after init without redrawing.
+* **The ai-controlled human's `generate_species` was dead** (it was passed to an `Initialize()` that no longer reads it): it is now the type's
+  `species_at_make`, so a replicant is made as `SPECIES_REPLICANT_BETA` again and named by that species. Its hair (always "Bald") is the type's
+  `h_style`.
+* **The mining mouse "Cooper" keeps its name** (a named mouse, `keep_parent_data`, like Tom and Apple); it was numbered. Its sprites, holder
+  and description are unchanged. **Fleming** (the virology mouse) keeps its strain and may carry a second one, as before.
+* **A mouse whose colour has no holder of its own** (none of the rolled ones) keeps its type's holder unless it is unnamed, when it takes the
+  rat's, as the old chain of `if`s did.
+* **Starting equipment** (`wears()`): the ai-controlled humans and Pun Pun equip their outfit when their init is complete (`after_init(0)`), as
+  before; for a map-loaded one that is after the map load.
+* **Population caps count with registries**: chickens (`REGISTRY_CHICKENS`) and the dog teleporters (`REGISTRY_DOG_TELEPORTERS`; a sender
+  pairs on first use, as it already did when its partner was not up yet). The stardog's eye area finds its eyes among the things it already
+  scans instead of a list the eyes joined.
+* **Swarming is declared** (`swarming()` on giant spiders and carp): a map-placed swarm pairs at creation (it paired on the first move).
+* **Footsteps are declared** (`footstep()` with the type's `footstep_*` vars) on simple mobs; a decoy silicon is not affected yet (silicons
+  still enable them in their init).
+* **The simple mob recolour verb** is `verb_entry(..., when = cond_config(/datum/config_entry/flag/allow_simple_mob_recolor))`; a
+  `verb_source(VERB_SOURCE_CONFIG)` grant before.
+* **A simple mob's languages** (`has_langs`) are learned with `add_language()` (`knows()`), so a hivemind language grants its range verb; the
+  old loop added them to the list directly. The first is the default, as before.
+* **The zorgoia's eye and spike colours** were written `"##RRGGBB"` (a `#` prefixed to `get_random_colour()`'s own); they are valid colours now.
+* **The xenomorph keeps `SEE_MOBS`** as its type's sight; the init-time `sight |= SEE_MOBS` was wiped by the first `update_sight()`.
+* **The pirate loot table, simple mob attack texts, friendly texts, ID access and organ names** are per-type tables (`per_type()`): a mob that
+  changes its own copies first (the synx's stomach attack texts, an expedition spawn's loot).
+* **Autofollow leaders** (the hivebot commander, the shantak leader) rally after the map around them has loaded (`after_init(0)`); they rallied
+  during their own init, missing pack members placed after them.
+* **The pilot catslug** takes a helm after the map load (`after_init()`), so helms placed after it count; the 25% chance is unchanged.
+* **The miasma grenade** goes off when its init is complete (`after_init(0)`), not during it; its beakers are declared kinds.
+* **The slug's glue** expires through `lifecycle_lifetime` and is refused in water by `keeps_if()`; it no longer records its turf.
+* **The macrophage's** disease bonus to endurance and damage is computed once its disease exists (`derives()`).
+* **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
+* **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
+
+
+## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
+
+`/obj/item` `master`, `/mob` `vore_selected`, `/mob/living` `tf_form`, `tf_form_mind` and `nest` are sparse links (LK_ITEM_MASTER,
+LK_VORE_SELECTED, LK_TF_FORM, LK_TF_FORM_MIND, LK_NEST), read through `item_master()`, `vore_selected_of()`, `tf_form_of()`,
+`tf_form_mind_of()`, `nest_of()` and written through their `set_*()` (827 sites, `tools/dx/codemods/var_to_accessor.py`). The hidden uplink
+is the `/obj/item/uplink/hidden` in the item's contents (`item_hidden_uplink()`); the uplink radio, multitool, headset and implant start
+with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
+
+* **A link breaks when either end is deleted**, as the reference vars did through their relation declarations.
+* **The hidden uplink tolerates nullspace** (its keeps_if()), so a slot's starting uplink survives the move into its item.
+* **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
+  hooked to its belly in a setup hook instead of Initialize().
+* `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+
+## Mob stat is TRACKED; the incapacitated var goes (base_vars lane B, bv-hud)
+
+`stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
+subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
+the answer). No behaviour change intended.
+
+## Live mob state into its domains (base_vars lane B, bv-hud)
+
+* **Nutrition and hunger rate live in the body's metabolism** (`/datum/body` `food_energy`, `hunger_rate`): read `nutrition_of(L)` /
+  `hunger_rate_of(L)`, written by `set_nutrition()` (which publishes MOB_KEY_NUTRITION) and `set_hunger_rate()` (308 sites). A type's
+  starting nutrition is `starting_nutrition()` (20 types overrode the var); a human's 200-400 is drawn by rand() there instead of a `rolls()` entry on the instance stream. A body swapped on a species change keeps the nutrition.
+* **Fear and tiredness are statuses** (STAT_FEAR, STAT_TIREDNESS): their points wear off one per cycle on the status layer instead of
+  the human Life step decrementing them; the Life step keeps their effects and republishes MOB_KEY_STATUS each cycle so the HUD bands
+  follow the count down.
+* **Flying is a stat** (STAT_FLYING, ANY): the mob's own flight is the SRC_FLIGHT hold, written by `set_flying()`.
+* **Burning is a stat** (STAT_ON_FIRE) held by the fire-stack status effect while lit; fire stacks are summed from the effects on read
+  (`fire_stacks_of()`), and the decay rate is `fire_stack_decay_rate()` (silicons -0.55). The mob no longer caches either.
+* `exploit_addons` / `exploit_for` are deleted: written, never read.
 
 ### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
 

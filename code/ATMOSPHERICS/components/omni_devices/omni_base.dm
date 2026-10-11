@@ -11,6 +11,8 @@
 	level = 1
 
 	var/configuring = 0
+	/// The volume each of its four port mixtures is made with.
+	var/port_volume = 200
 
 	var/tag_north = ATM_NONE
 	var/tag_south = ATM_NONE

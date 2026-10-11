@@ -3,15 +3,12 @@
 	icon = 'icons/mob/pai.dmi'
 	icon_state = "pai-repairbot"
 
-	emote_type = 2		// pAIs emotes are heard, not seen, so they can be seen through a container (eg. person)
 	pass_flags = 1
 	mob_size = MOB_SMALL
 	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	holder_type = /obj/item/holder/pai
 
-	can_pull_size = ITEMSIZE_SMALL
-	can_pull_mobs = MOB_PULL_SMALLER
 
 	idcard_type = /obj/item/card/id
 	var/idaccessible = 0
@@ -102,13 +99,24 @@
 	vore_capacity_ex = list("stomach" = 1)
 
 CAPABILITIES(/mob/living/silicon/pai)
+	configure(mob_kind(death_message = "fizzles out and clatters to the floor...", emote_type = 2))
+	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
 	ref_one(nameof(hackdoor))
 	every(1 SECOND, then(PROC_REF(hack_tick)), when = nameof(hackdoor))
 	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)
 	owns_one(nameof(sradio), starts = /obj/item/radio/integrated/signal)
 	owns_one(nameof(communicator), starts = /obj/item/communicator/integrated)
 	owns_one(nameof(pai_ui_chassis), starts = /datum/tgui_module/pai_chassis)
-	owns_one(nameof(pda), starts = /obj/item/pda/ai/pai)
+	owns_one(nameof(pda), starts = PROC_REF(start_pda))
+	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
+	derives(nameof(software), PROC_REF(default_software))
+	//Default languages without universal translator software
+	knows(LANGUAGE_SOL_COMMON)
+	knows(LANGUAGE_TRADEBAND)
+	knows(LANGUAGE_GUTTER)
+	knows(LANGUAGE_EAL)
+	knows(LANGUAGE_TERMINUS)
+	knows(LANGUAGE_SIGN)
 	op("pai_access", item(/obj/item), label("Use"), when(req(PROC_REF(swipe_modifies_access))), asks(/datum/prompt/choice, fields = list("title" = "Access Modify", "question" = computed(PROC_REF(access_question)), "choices" = list("Add Access", "Remove Access", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "access"), then(PROC_REF(access_modify_chosen)))
 	op("pai_access_closed", item(/obj/item/card/id), label("Use"), when(req(PROC_REF(swipe_refused))), then(PROC_REF(access_closed)))
 	op("pai_hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT), label("Use"), then(PROC_REF(pai_item_hit)))
@@ -132,10 +140,19 @@ CAPABILITIES(/mob/living/silicon/pai)
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+/// Its PDA: the personal assistant's, in its name, messenger on (owns_one(starts =)).
+/mob/living/silicon/pai/proc/start_pda(current, mapload)
+	var/obj/item/pda/ai/pai/P = new /obj/item/pda/ai/pai(src)
+	P.ownjob = "Personal Assistant"
+	P.owner = "[src]"
+	P.name = P.owner + " (" + P.ownjob + ")"
+	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
+	if(M)
+		M.toff = FALSE
+	return P
+
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
-	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
-
 	if(istype(loc, /obj/item/paicard))
 		rel_set(src, nameof(card), loc)
 	else
@@ -147,23 +164,6 @@ CAPABILITIES(/mob/living/silicon/pai)
 		if(!card.radio)
 			rel_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
 		rel_set(src, nameof(radio), card.radio)
-
-	//Default languages without universal translator software
-	add_language(LANGUAGE_SOL_COMMON, 1)
-	add_language(LANGUAGE_TRADEBAND, 1)
-	add_language(LANGUAGE_GUTTER, 1)
-	add_language(LANGUAGE_EAL, 1)
-	add_language(LANGUAGE_TERMINUS, 1)
-	add_language(LANGUAGE_SIGN, 1)
-
-	//PDA
-	pda.ownjob = "Personal Assistant"
-	pda.owner = text("[]", src)
-	pda.name = pda.owner + " (" + pda.ownjob + ")"
-
-	var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger)
-	if(M)
-		M.toff = FALSE
 
 	if(chassis_name != PAI_DEFAULT_CHASSIS) // For subtypes that override base chassis( like the syndi pet pai )
 		internal_set_chassis( SSpai.chassis_data(chassis_name))
@@ -302,8 +302,8 @@ CAPABILITIES(/mob/living/silicon/pai)
 	vore_capacity_ex = list("stomach" = vore_capacity)
 
 	// Emergency eject if you change to a smaller belly
-	if(vore_fullness > vore_capacity && vore_selected)
-		vore_selected.release_all_contents(TRUE)
+	if(vore_fullness > vore_capacity && vore_selected_of(src))
+		vore_selected_of(src).release_all_contents(TRUE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Click interactions
@@ -335,7 +335,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 /mob/living/silicon/pai/proc/pai_item_hit(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(W.force)
+	if(combat_of(W).force)
 		act_message(src, null, others = span_danger("[user.name] attacks %U% with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else

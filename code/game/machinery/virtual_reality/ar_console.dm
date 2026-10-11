@@ -18,12 +18,6 @@
 	perfect_replica = TRUE //All alien VR sleepers make perfect replicas.
 	spawn_with_clothing = FALSE //alien VR sleepers do not spawn with clothing.
 
-// ALLOW(init/INSTANCE_STATE): rolls which species this pod produces
-/obj/machinery/vr_sleeper/alien/Initialize(mapload)
-	. = ..()
-	if(possible_species && possible_species.len)
-		produce_species = pick(possible_species)
-
 /obj/machinery/vr_sleeper/alien/work_step(datum/act/timer/A)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(broken_now())
@@ -36,6 +30,7 @@
 		perform_exit()
 
 CAPABILITIES(/obj/machinery/vr_sleeper/alien)
+	rolls(nameof(produce_species), PROC_REF(roll_produce_species))
 	op("scan_impl", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_scan_impl)))
 	op("eject_impl", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject"), needs(req_adjacent(), req_capable(), req(PROC_REF(dq_actor_can_act))), then(PROC_REF(interaction_eject_impl)))
 
@@ -195,3 +190,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 	if(!isliving(actor) || actor.incapacitated())
 		return "you can't do that right now"
 	return null
+
+/// A pod with a list of species makes one of them.
+/obj/machinery/vr_sleeper/alien/proc/roll_produce_species(datum/roller/R)
+	return length(possible_species) ? R.choose(possible_species) : produce_species

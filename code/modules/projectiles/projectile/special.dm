@@ -43,10 +43,11 @@ CAPABILITIES(/obj/item/projectile/ion)
 	name ="explosive bolt"
 	icon_state= "bolter"
 	damage = 50
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	hud_state = "rocket_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/gyro)
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/projectile/bullet/gyro/on_hit(atom/target, blocked = 0)
 	explosion(target, -1, 0, 2, 0, 0) // Don't spam admins
@@ -153,7 +154,7 @@ CAPABILITIES(/obj/item/projectile/ion)
 	var/mob/living/M = target
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) < 500))
 			if(prob(15))
 				M.apply_effect((rand(30,80)),IRRADIATE)
 				M.status_at_least(STAT_WEAKENED, 5)
@@ -203,7 +204,7 @@ CAPABILITIES(/obj/item/projectile/ion)
 	var/mob/living/M = target
 	if(ishuman(target)) //These rays make plantmen fat.
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) < 500))
 			M.adjust_nutrition(30)
 	else if (istype(target, /mob/living/carbon/))
 		M.show_message(span_blue("The radiation beam dissipates harmlessly through your body."))
@@ -228,7 +229,7 @@ CAPABILITIES(/obj/item/projectile/ion)
 	var/mob/living/M = target
 	if(ishuman(target)) //Make plantpeople thin, seeing as we're removing reagents from actual plants
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition > 30))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) > 30))
 			M.adjust_nutrition(-30)
 	else if (istype(target, /mob/living/carbon/))
 		M.show_message(span_blue("The radiation beam dissipates harmlessly through your body."))
@@ -273,7 +274,7 @@ CAPABILITIES(/obj/item/projectile/ion)
 	if(ishuman(target))
 		var/mob/living/carbon/human/human_target = target
 		for(var/obj/item/clothing/cloth in list(human_target.get_equipped_item(SLOT_ID_SUIT), human_target.get_equipped_item(SLOT_ID_UNIFORM), human_target.get_equipped_item(SLOT_ID_SHOES))) //Check if we have a thick material covering our feet.
-			if((cloth.body_parts_covered & FEET) && (cloth.item_flags & THICKMATERIAL))
+			if((worn_of(cloth).covers & FEET) && (worn_of(cloth).flags & THICKMATERIAL))
 				..()
 				return
 		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)

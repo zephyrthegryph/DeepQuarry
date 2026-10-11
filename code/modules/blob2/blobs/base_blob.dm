@@ -23,6 +23,7 @@
 REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 CAPABILITIES(/obj/structure/blob)
+	rolls(nameof(dir), pick_one(list(NORTH, SOUTH, EAST, WEST)))
 	ref_one(nameof(overmind))
 	param(nameof(overmind), pos = 1)
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
@@ -33,7 +34,6 @@ CAPABILITIES(/obj/structure/blob)
 /obj/structure/blob/Initialize(mapload)
 	if(overmind)
 		faction = overmind.blob_type.faction
-	set_dir(pick(GLOB.cardinal))
 	consume_tile()
 	sync_overmind_look()
 	. = ..()
@@ -341,7 +341,7 @@ TRACKED(/obj/structure/blob, look_tint)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	switch(W.obj_damage_type())
 		if(BURN)
 			if(overmind)

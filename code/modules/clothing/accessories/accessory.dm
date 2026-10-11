@@ -5,7 +5,6 @@
 	icon_state = "bluetie"
 	item_state_slots = list(slot_r_hand_str = "", slot_l_hand_str = "")
 	appearance_flags = RESET_COLOR	// Stops has_suit's color from being multiplied onto the accessory
-	slot_flags = SLOT_TIE
 	w_class = ITEMSIZE_SMALL
 	var/glove_level = 1							// What 'level' the accessory is on if equipped on the gloveslot. Lower = things can be put on top of it.
 	var/slot = ACCESSORY_SLOT_DECOR
@@ -55,7 +54,7 @@
 	src.forceMove(S)
 	has_suit().add_overlay(get_inv_overlay())
 
-	has_suit().force += force
+	has_suit().set_force(combat_of(has_suit()).force + (combat_of(src).force))
 	if(istype(S,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = S
 		has_gloves.punch_force = has_gloves.punch_force + punch_force
@@ -69,7 +68,7 @@
 		return
 	var/obj/item/clothing/old_suit = has_suit()
 	old_suit.cut_overlay(get_inv_overlay())
-	old_suit.force = initial(old_suit.force)
+	old_suit.set_force(combat_of_type(old_suit.type).force)
 	if(istype(old_suit,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = old_suit
 		has_gloves.punch_force = initial(has_gloves.punch_force)
@@ -87,6 +86,7 @@
 		forceMove(get_turf(src))
 
 CAPABILITIES(/obj/item/clothing/accessory)
+	configure(item_worn(slots = SLOT_TIE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("accessory_attached_hand", hand(), then(PROC_REF(accessory_attached_hand)))
 
@@ -176,11 +176,10 @@ CAPABILITIES(/obj/item/clothing/accessory)
 /obj/item/clothing/accessory/maid_arms
 	name = "maid arm covers"
 	desc = "Cylindrical looking tubes that go over your arms, weird."
-	slot_flags = SLOT_OCLOTHING | SLOT_GLOVES | SLOT_TIE
-	body_parts_covered = ARMS
 	icon_state = "maid_arms"
 
 CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_GLOVES | SLOT_TIE, covers = ARMS))
 	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
 /obj/item/clothing/accessory/stethoscope
@@ -226,7 +225,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 									if(H.size_multiplier < 0.5)
 										beat_size = pick("quiet ", "hushed " ,"low " ,"hushed ")
 									message_holder = pick("You can hear disparate heartbeats as well.", "You can hear a different [beat_size]heartbeat too.", "It sounds like there is more than one heartbeat." ,"You can pick up a [beat_size]heatbeat along with everything else.")
-							if(M.nutrition > 900)	//dead
+							if(nutrition_of(M) > 900)	//dead
 								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
 							var/obj/item/organ/internal/heart/heart = M.organ_in(O_HEART)
@@ -464,11 +463,8 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 	name = "red neck gaiter"
 	desc = "A slightly worn neck gaiter, it's loose enough to be worn comfortably like a scarf. Commonly used by outdoorsmen and mercenaries, both to keep warm and keep debris away from the face."
 	icon_state = "gaiter_red"
-	slot_flags = SLOT_MASK | SLOT_TIE
-	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
-	item_flags = FLEXIBLEMATERIAL
 	var/breath_masked = FALSE
 	var/obj/item/clothing/mask/breath/breathmask
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
@@ -492,7 +488,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
 		rel_set(src, nameof(breathmask), I)
 		breath_masked = TRUE
-		item_flags &= ~FLEXIBLEMATERIAL
+		set_item_flags(worn_of(src).flags & (~FLEXIBLEMATERIAL))
 	return OP_DECLINE
 
 /// Old click_alt: pull the tucked mask out. Falls through to the clothing alt-click (which ran first before).
@@ -503,8 +499,8 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 		breathmask().forceMove(drop_location())
 		rel_clear(src, nameof(breathmask))
 		breath_masked = FALSE
-		item_flags &= ~AIRTIGHT
-		item_flags |= FLEXIBLEMATERIAL
+		set_item_flags(worn_of(src).flags & (~AIRTIGHT))
+		set_item_flags(worn_of(src).flags | (FLEXIBLEMATERIAL))
 	return OP_DECLINE
 
 /// Old attack_self: pull the gaiter up or down.
@@ -515,13 +511,13 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 		src.icon_state = "[icon_state]_up"
 		gaiterstring += "up over your nose[breath_masked ? " and secure the mask tucked underneath." : "."]"
 		if(breath_masked)
-			item_flags |= AIRTIGHT
+			set_item_flags(worn_of(src).flags | (AIRTIGHT))
 	else
 		src.icon_state = initial(icon_state)
 		gaiterstring += "down around your neck[breath_masked ? " and dislodge the mask tucked underneath." : "."]"
-		body_parts_covered &= ~FACE
+		set_body_parts_covered(worn_of(src).covers & (~FACE))
 		if(breath_masked)
-			item_flags &= ~AIRTIGHT
+			set_item_flags(worn_of(src).flags & (~AIRTIGHT))
 	to_chat(user, span_notice(gaiterstring))
 	spent(mob_overlay, user) // we're gonna need to refresh these
 	update_clothing_icon()	//so our mob-overlays update
@@ -602,13 +598,15 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 
 /obj/item/clothing/accessory/choker //A colorable, tagless choker
 	name = "plain choker"
-	slot_flags = SLOT_TIE | SLOT_OCLOTHING
 	desc = "A simple, plain choker. Or maybe it's a collar?"
 	icon_state = "choker_cst"
 	item_state = "choker_cst"
 	overlay_state = "choker_cst"
 	var/customized = 0
 	var/icon_previous_override
+
+CAPABILITIES(/obj/item/clothing/accessory/choker)
+	configure(item_worn(slots = SLOT_TIE | SLOT_OCLOTHING))
 
 //Forces different sprite sheet on equip
 /obj/item/clothing/accessory/choker/on_materialize()
@@ -639,14 +637,12 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 	icon_override = icon_previous_override
 
 /obj/item/clothing/accessory/collar
-	slot_flags = SLOT_TIE | SLOT_OCLOTHING
 	icon_state = "collar_blk"
 	var/writtenon = 0
 	var/icon_previous_override
 	special_handling = TRUE
 	///Var for attack_self chain
 	var/special_collar = FALSE
-	default_worn_icon = INV_ACCESSORIES_DEF_ICON
 
 //Forces different sprite sheet on equip
 /obj/item/clothing/accessory/collar/on_materialize()
@@ -869,6 +865,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 	return FALSE
 
 CAPABILITIES(/obj/item/clothing/accessory/collar)
+	configure(item_worn(slots = SLOT_TIE | SLOT_OCLOTHING, worn_icon = INV_ACCESSORIES_DEF_ICON))
 	op("collar_tag_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Collar tag self"), then(PROC_REF(collar_tag_self)))
 	op("collar_tag_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Collar tag item"), then(PROC_REF(collar_tag_item)))
 
@@ -1402,7 +1399,9 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/casinosentientprize)
 	icon_state = "antediluvian"
 	item_state = "antediluvian"
 	overlay_state = "antediluvian"
-	body_parts_covered = ARMS
+
+CAPABILITIES(/obj/item/clothing/accessory/antediluvian)
+	configure(item_worn(covers = ARMS))
 
 /obj/item/clothing/accessory/antediluvian/loincloth
 	name = "antediluvian loincloth"
@@ -1410,7 +1409,9 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/casinosentientprize)
 	icon_state = "antediluvian_loin"
 	item_state = "antediluvian_loin"
 	overlay_state = "antediluvian_loin"
-	body_parts_covered = LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
+	configure(item_worn(covers = LOWER_TORSO))
 
 //The cloaks below belong to this _vr file but their sprites are contained in non-_vr icon files due to
 //the way the poncho/cloak equipped() proc works. Sorry for the inconvenience
@@ -1456,12 +1457,12 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"
-		flags_inv = HIDETIE|HIDEHOLSTER
+		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You flip the cloak over your shoulder.")
 	else
 		src.icon_state = initial(icon_state)
 		src.item_state = initial(item_state)
-		flags_inv = HIDEHOLSTER
+		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You pull the cloak over your shoulder.")
 	update_clothing_icon()
 
@@ -1543,12 +1544,12 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"
-		flags_inv = HIDETIE|HIDEHOLSTER
+		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
 	else
 		src.icon_state = initial(icon_state)
 		src.item_state = initial(item_state)
-		flags_inv = HIDEHOLSTER
+		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You adjust your poncho.")
 	update_clothing_icon()
 
@@ -1557,8 +1558,10 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	desc = "A thin belt for holding your pants up."
 	icon_state = "belt_thin"
 	item_state = "belt_thin"
-	slot_flags = SLOT_TIE | SLOT_BELT
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/belt)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/belt/thick
 	name = "Thick Belt"
@@ -1583,8 +1586,10 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	desc = "A little fluffy bunny tail to spice up your outfit."
 	icon_state = "bunny_tail"
 	item_state = "bunny_tail"
-	slot_flags = SLOT_TIE | SLOT_BELT
 	slot = ACCESSORY_SLOT_DECOR
+
+CAPABILITIES(/obj/item/clothing/accessory/bunny_tail)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/collar/casinoslave
 	name = "a disabled Sentient Prize Collar"

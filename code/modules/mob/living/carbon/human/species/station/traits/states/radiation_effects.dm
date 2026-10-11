@@ -200,7 +200,7 @@
 	var/rads_to_utilize
 
 	if(radiation_nutrition)
-		if(living_guy.nutrition < radiation_nutrition_cap)
+		if(nutrition_of(living_guy) < radiation_nutrition_cap)
 			rads_to_utilize = rads * rad_removal_mod
 			living_guy.adjust_nutrition(rads_to_utilize)
 
@@ -290,7 +290,7 @@ CAPABILITIES(/datum/trait_state/radiation_effects)
 		"radiation_nutrition" = radiation_nutrition,
 		"nutrition_toggle" = nutrition_toggle,
 		"radiation_nutrition_cap" = radiation_nutrition_cap,
-		"current_nutrition" = living_guy.nutrition
+		"current_nutrition" = nutrition_of(living_guy)
 	)
 
 	return data

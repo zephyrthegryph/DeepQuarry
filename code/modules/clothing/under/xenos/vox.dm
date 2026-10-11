@@ -10,7 +10,9 @@ TYPE_TABLE(/obj/item/clothing/under/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(
 	desc = "This doesn't look very comfortable."
 	icon_state = "vox-casual-1"
 	item_state = "vox-casual-1"
-	body_parts_covered = LEGS
+
+CAPABILITIES(/obj/item/clothing/under/vox/vox_casual)
+	configure(item_worn(covers = LEGS))
 
 /obj/item/clothing/under/vox/vox_robes
 	name = "alien robes"

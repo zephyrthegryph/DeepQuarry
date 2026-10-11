@@ -53,7 +53,8 @@
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
 	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
-	param(nameof(owned_core), pos = 1, apply = PROC_REF(core_given))
+	param(nameof(owned_core), pos = 1)
+	derives(nameof(id_tag), PROC_REF(core_tag), from = list(nameof(owned_core)))
 	keeps_if(PROC_REF(has_core))
 	// the gimmicky things that handle field collisions, laid out around the core
 	spawns_many(nameof(particle_catchers), /obj/effect/fusion_particle_catcher, at = PROC_REF(catcher_layout), back = nameof(/obj/effect/fusion_particle_catcher::parent), each = PROC_REF(catcher_placed), only_if = nameof(owned_core))
@@ -77,9 +78,9 @@ TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
 /obj/effect/fusion_em_field/proc/has_core()
 	return !!owned_core
 
-/// The field answers to its core's id tag (param(apply =): its constructor's core).
-/obj/effect/fusion_em_field/proc/core_given(obj/machinery/power/fusion_core/core)
-	id_tag = core?.id_tag
+/// The field answers to its core's id tag (derives()).
+/obj/effect/fusion_em_field/proc/core_tag()
+	return owned_core?.id_tag
 
 /// The field's reaction (its core's step runs it): it takes fuel gas from the room, reacts, pays its heat to the grid (FUSION_ENERGY_PER_K W
 /// per K), loses 1% of its heat to radiation, checks its stability and radiates.

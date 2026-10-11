@@ -27,8 +27,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	density = FALSE
 
 
@@ -195,17 +193,34 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// 0 stopped, 1 idle drain, 2 active drain.
 /obj/machinery/abstract_grub_machine/var/draining = 1
 TRACKED_BRIDGED(/obj/machinery/abstract_grub_machine, draining, CHANGE_MACHINE_SETTINGS)
-// ALLOW(init/INSTANCE_STATE): rolls its power use and binds to the grub it is made inside
-/obj/machinery/abstract_grub_machine/Initialize(mapload)
-	. = ..()
-	shuffle_power_usages()
-	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(grub), loc)
+/// It names the grub that made it (its owner's owns_one(starts =)).
+/obj/machinery/abstract_grub_machine/default_child_backref()
+	return nameof(grub)
+
+/// It only exists inside a grub (keeps_if()).
+/obj/machinery/abstract_grub_machine/proc/inside_a_grub()
+	return istype(loc, /mob/living/simple_mob/animal/solargrub_larva)
+
+/// Its draw, rolled as it is made (rolls(); shuffle_power_usages() rerolls it now and then): a total, split over the three channels.
+/obj/machinery/abstract_grub_machine/proc/roll_power(datum/roller/R, target)
+	switch(target)
+		if("total_active_power_usage")
+			return R.number(30 KILOWATTS, 60 KILOWATTS)
+		if("total_idle_power_usage")
+			return R.number(1 KILOWATTS, 5 KILOWATTS)
+		if("active_power_usages")
+			return split_into_3(total_active_power_usage)
+		if("idle_power_usages")
+			return split_into_3(total_idle_power_usage)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/abstract_grub_machine)
+	keeps_if(PROC_REF(inside_a_grub))
+	rolls(nameof(total_active_power_usage), PROC_REF(roll_power))
+	rolls(nameof(total_idle_power_usage), PROC_REF(roll_power))
+	rolls(nameof(active_power_usages), PROC_REF(roll_power), from = list(nameof(total_active_power_usage)))
+	rolls(nameof(idle_power_usages), PROC_REF(roll_power), from = list(nameof(total_idle_power_usage)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(draining), wakes_on = list(nameof(draining)))
 
 /obj/machinery/abstract_grub_machine/proc/work_step(datum/act/timer/timer)
@@ -253,6 +268,7 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
 	verb_entry(/mob/living/proc/ventcrawl)
 

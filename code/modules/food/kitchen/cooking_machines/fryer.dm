@@ -47,9 +47,6 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 /datum/reagents/oil_reagents
 	var/optimal_oil = 2500 //Overridden during init of the fryer.
 
-/obj/machinery/appliance/cooker/fryer/Initialize(mapload)
-	. = ..()
-
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
 	. = ..()

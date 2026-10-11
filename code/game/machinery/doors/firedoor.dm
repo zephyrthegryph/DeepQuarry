@@ -358,7 +358,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 /// A thing in hand that pries and is no crowbar tool (a fireaxe, a blade).
 /obj/machinery/door/firedoor/proc/prying_item(datum/act/op/A)
 	var/obj/item/held = A.held
-	return istype(held) && held.pry == 1 // ALLOW(reads): an item's pry is fixed for its life
+	return istype(held) && tooling_of(held).pry == 1
 
 /// A fireaxe must be held in both hands to pry; anything else does not care.
 /obj/machinery/door/firedoor/proc/wielded_if_axe(datum/act/op/A)

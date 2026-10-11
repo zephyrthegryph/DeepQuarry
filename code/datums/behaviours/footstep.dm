@@ -73,7 +73,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	if(source.is_incorporeal())
 		return
 
-	if(source?.buckled_to() || source.throwing || source.movement_type & (source.is_ventcrawling | source.flying))
+	if(source?.buckled_to() || source.throwing || source.movement_type & (source.is_ventcrawling | stat_value(source, STAT_FLYING)))
 		return
 
 	if(source.lying) //play crawling sound if we're lying
@@ -157,7 +157,7 @@ CAPABILITY_TYPE(footstep, CAP_FOOTSTEP, /datum/capability/footstep, key = NONE)
 	//cache for sanic speed (lists are references anyways)
 	var/footstep_sounds = GLOB.footstep
 
-	if ( istype(source.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes) || ( source.get_equipped_item(SLOT_ID_SUIT) && (source.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+	if ( istype(source.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes) || ( source.get_equipped_item(SLOT_ID_SUIT) && (worn_of(source.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 		// we are wearing shoes
 
 		var/obj/item/clothing/shoes/feet = source.get_equipped_item(SLOT_ID_SHOES)

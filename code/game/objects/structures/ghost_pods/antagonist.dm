@@ -40,9 +40,9 @@ CAPABILITIES(/obj/structure/ghost_pod/automatic/xenomorph_egg)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force * 1.25, INJURY_BURN) //It really doesn't like fire
+			receive_weapon_hit(W, user, combat_of(W).force * 1.25, INJURY_BURN) //It really doesn't like fire
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.75) //Bit hard to cut
+			receive_weapon_hit(W, user, combat_of(W).force * 0.75) //Bit hard to cut
 	return TRUE
 
 /// Eggs burn easily.

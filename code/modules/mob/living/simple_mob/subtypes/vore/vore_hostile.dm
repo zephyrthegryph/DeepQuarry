@@ -40,9 +40,6 @@
 
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("flashes", "slaps", "smothers", "grapples")
@@ -69,7 +66,7 @@
 
 /mob/living/simple_mob/vore/vore_hostile/abyss_lurker/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "interior"
 	B.desc = "It's hot and overwhelmingly tight! The interior of the pale creature groans with the effort of squeezing you. Everything is hot and churning and eager to grind and smother you in thick fluids. The weight of the creature's body pressing in at you makes it hard to move at all, while you are squeezed to the very core of the creature! There seems almost not to even be an organ for this so much as the creature has folded around you, trying to incorporate your matter into its body with vigor!"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -81,6 +78,7 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
 /// Old attack_hand: touching a willing prey-player makes the lurker target them instead of the normal touch.
@@ -129,9 +127,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	has_eye_glow = TRUE
@@ -168,9 +163,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
+
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The flesh of the tall creature's stomach folds over you in doughy waves, squeezing you into the tightest shape it can manage with idle flexes churning down on you. Your limbs often find themselves lost between folds and tugged this way or that, held in a skin tight press that is not painful, but is hard to pull away from. You can see a strange, glittering pink and purple light glimmering through the flesh of the monster all around you, like your very own sea of stars. The walls rush in to fill all the space, squeezing you from head to toe no matter how you might wiggle, the weight of the semi-transparent interior flesh keeping you neatly secured deep inside while wringing the fight out of you."
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -258,9 +256,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HUMAN
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("splashes against", "slaps", "smothers", "engulfs")
@@ -287,7 +282,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 /mob/living/simple_mob/vore/vore_hostile/gelatinous_cube/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "interior"
 	B.desc = "An incredibly thick oozing slime surrounds you, filling in all the space around your form! It's hard to catch a breath here as the jiggling gel that makes up the body of the creature swiftly fills in the hole you made in its surface by entering. The gel is semi-transparent, and you can see your surroundings though its surface, and similarly you can be seen floating in the gel from the outside. When the cube moves, your whole body is wobbled along with it. There are clouds of still processing material floating all around you as the corrosive substance works on breaking everything down."
 	B.mode_flags = DM_FLAG_NUMBING
@@ -305,6 +300,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
 
 /// Rolled before init (rolls()): random_color(TRUE)'s saturated colour.

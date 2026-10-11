@@ -92,6 +92,7 @@
 		set_light(0)
 
 CAPABILITIES(/mob/living/bot/secbot)
+	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
 	interface("Secbot")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("idcheck", ui_act("idcheck"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_idcheck)))
@@ -172,10 +173,6 @@ CAPABILITIES(/mob/living/bot/secbot)
 		return TRUE
 	else
 		to_chat(user, span_notice("\The [src] is already corrupt."))
-
-/mob/living/bot/secbot/Initialize(mapload)
-	. = ..()
-	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
 /mob/living/bot/secbot/proc/on_injured(datum/act/notice/A)
@@ -409,6 +406,7 @@ CAPABILITIES(/mob/living/bot/secbot)
 //Secbot Construction
 
 CAPABILITIES(/obj/item/clothing/head/helmet)
+	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR))
 	configure(item_protection(min_cold = HELMET_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.7))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("helmet_secbot_signaler", item(/obj/item/assembly/signaler), label("Add signaler"), then(PROC_REF(helmet_secbot_signaler)))

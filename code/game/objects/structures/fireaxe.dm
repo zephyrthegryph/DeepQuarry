@@ -84,7 +84,7 @@ CAPABILITIES(/obj/structure/fireaxecabinet)
 			return OP_OK
 		else
 			play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 100) //We don't want this playing every time
-		if(W.force < 15)
+		if(combat_of(W).force < 15)
 			to_chat(user, span_notice("The cabinet's protective glass glances off the hit."))
 		else
 			set_hitstaken(hitstaken + 1)

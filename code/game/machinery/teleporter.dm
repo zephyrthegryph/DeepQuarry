@@ -16,6 +16,7 @@ MSG_DEF_SELF(teleporter/data_card_required, "needs a data card")
 	var/datum/tgui_module/teleport_control/teleport_control
 
 CAPABILITIES(/obj/machinery/computer/teleporter)
+	rolls(nameof(id), PROC_REF(roll_id))
 	op("teleporter_computer_insert_card", inputs(item(/obj/item/card/data), menu()), priority(OP_PRIORITY_DEFAULT + 1), label("Insert data card"), needs(req(/obj/item/card/data, because = MSG(teleporter/data_card_required)), req_adjacent(), req_capable()), then(PROC_REF(interaction_insert_card)))
 	op("teleporter_computer_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
 	op("teleporter_silicon_use", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(teleporter_computer_silicon_use)))
@@ -23,7 +24,6 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 	owns_one(nameof(teleport_control), /datum/tgui_module/teleport_control, starts = /datum/tgui_module/teleport_control)
 
 /obj/machinery/computer/teleporter/Initialize(mapload)
-	id = "[rand(1000, 9999)]"
 	. = ..()
 	underlays.Cut()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "telecomp-wires")
@@ -143,11 +143,11 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
-	default_apply_parts()
 
 // the teleporter console forgets its hub.
 
 CAPABILITIES(/obj/machinery/teleport/hub)
+	default_parts()
 	configure(uses_power(idle = 10, active = 2000))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("ghost_follow", observer(), label("Follow the link"), then(PROC_REF(hub_ghost_follow)))
@@ -294,3 +294,7 @@ CAPABILITIES(/obj/machinery/teleport/station)
 /obj/machinery/teleport/station/draw(datum/look/look)
 	..()
 	look.overlay("controller-wires")
+
+/// Its id: a random four-digit number.
+/obj/machinery/computer/teleporter/proc/roll_id(datum/roller/R)
+	return "[R.number(1000, 9999)]"

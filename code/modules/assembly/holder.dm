@@ -3,7 +3,6 @@
 	icon = 'icons/obj/assemblies/new_assemblies.dmi'
 	icon_state = "holder"
 	item_state = "assembly"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
@@ -97,6 +96,7 @@
 
 TRACKED(/obj/item/assembly_holder, secured)
 CAPABILITIES(/obj/item/assembly_holder)
+	configure(item_thrown(force = 5))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("use", in_hand(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("question" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left", "Right"), "buttons" = TRUE, "timeout" = 0), step = "side", when = PROC_REF(asks_side)),
@@ -172,8 +172,8 @@ CAPABILITIES(/obj/item/assembly_holder)
 			a_right.pulsed(0)
 		if(a_left != D)
 			a_left.pulsed(0)
-	if(master)
-		master.receive_signal()
+	if(item_master(src))
+		item_master(src).receive_signal()
 	return 1
 
 /obj/item/assembly_holder/hear_talk(mob/M, list/message_pieces, verb)

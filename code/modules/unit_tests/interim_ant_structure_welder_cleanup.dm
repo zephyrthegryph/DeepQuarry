@@ -15,7 +15,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(welder), "The actual actor holds its original real welding tool")
 	TEST_ASSERT_EQUAL(source.get_integrity(), initial_integrity, "The actual canonical ant structure starts at its exact declared integrity")
 	TEST_ASSERT(!welder.isOn(), "The actual original welding tool starts unlit")
-	var/unlit_damage = round(welder.force / 4, DAMAGE_PRECISION)
+	var/unlit_damage = round(combat_of(welder).force / 4, DAMAGE_PRECISION)
 	TEST_ASSERT(unlit_damage > 0 && unlit_damage < initial_integrity, "The actual unlit welder supplies a real nonlethal hit")
 	TEST_ASSERT_EQUAL(test_op_handler(source, "interaction_hit_ant_structure", actor, welder), OP_PASS, "The actual unlit hit preserves its original handled result")
 	TEST_ASSERT(!QDELETED(source) && source.loc == T, "The actual nonlethal unlit hit preserves its exact original source")

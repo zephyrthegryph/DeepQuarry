@@ -44,10 +44,12 @@
 	endurance = 3300 //TG has megafauna with 2500 HP. Yet to see folks call those overly tanky. Tyr gun can deal 504 with a full clip of the single shot mode. Wanting longer fights, and this are meant for groups of three
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments
-	mob_class = MOB_CLASS_ABERRATION
 	endurance = 2100
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 	movement_cooldown = 40
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 //Watch the ground. No seriously, 2/3s of it is glowing red
 //phase 1 is rather simple, simple lines, bomb drop, limit the area, then another bomb drop
@@ -293,7 +295,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirment
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "flora gut"
 	B.desc = "You have been devoured by the crystaline vulpine. A mix of flesh and flora surrond you, purple bubbling fluid soaking into your body. The beast effortlessly carrying your body, it's motions seemingly exaggerated, alien words spoken, the beast trying to taunt you."
 	B.digest_brute = 1

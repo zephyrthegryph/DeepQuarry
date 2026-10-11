@@ -35,8 +35,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	endurance = 150
 	movement_cooldown = -1
 	pass_flags = PASSTABLE
-	makes_dirt = FALSE	// Goop
-	mob_class = MOB_CLASS_SLIME
 
 	response_help = "pets"
 
@@ -62,7 +60,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 10 // One attack a second.
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("glomped")
 	speak_emote = list("chirps")
@@ -94,6 +91,8 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
+	configure(mob_movement(makes_dirt = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))
@@ -261,7 +260,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/slime, mob_organ_hit_zones, list("cytopla
 
 // === merged from slime_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/slime
-	base_attack_cooldown = 2 SECONDS
 	var/static/list/allowed_attack_types = list(
 							/obj/item/melee/baton/slime,
 							/obj/item/slimepotion)

@@ -2166,7 +2166,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
-			if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
+			if(xc && xc.feral > 0 && nutrition_of(H) > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
 					xc.feral = 0
@@ -2517,7 +2517,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
-			if(xc && xc.feral > 0 && H.nutrition > 100 && H.traumatic_shock < min(60, H.nutrition/10) && H.status_units(STAT_JITTERY) < 100) // same check as feral triggers to stop them immediately re-feralling
+			if(xc && xc.feral > 0 && nutrition_of(H) > 100 && H.traumatic_shock < min(60, nutrition_of(H)/10) && H.status_units(STAT_JITTERY) < 100) // same check as feral triggers to stop them immediately re-feralling
 				xc.feral -= removed * 3 // should calm them down quick, provided they're actually in a state to STAY calm.
 				if (xc.feral <=0) //check if they're unferalled
 					xc.feral = 0
@@ -2607,7 +2607,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/datum/xenochimera/xc = M.get_xenochimera_state()
-		if(xc && xc.feral > 0 && H.nutrition > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
+		if(xc && xc.feral > 0 && nutrition_of(H) > 150 && H.traumatic_shock < 20 && H.status_units(STAT_JITTERY) < 100) //Same check as feral triggers to stop them immediately re-feralling
 			xc.feral -= removed * 3 //Should calm them down quick, provided they're actually in a state to STAY calm.
 			if(xc.feral <=0) //Check if they're unferalled
 				xc.feral = 0
@@ -2903,8 +2903,8 @@
 	var/adj_tiredness = 5
 
 /datum/reagent/drink/coffee/nukie/mega/nega/affect_ingest(mob/living/carbon/human/M, alien, removed)
-	if(M.tiredness < 105)
-		M.set_tiredness((M.tiredness + adj_tiredness))
+	if(M.status_units(STAT_TIREDNESS) < 105)
+		M.status_set(STAT_TIREDNESS, (M.status_units(STAT_TIREDNESS) + adj_tiredness))
 	..()
 
 /datum/reagent/drink/coffee/nukie/mega/shock //Rapidly fills you up and even repairs your NIF, unless you don't have one in which case you'll be confused.
@@ -3218,7 +3218,7 @@
 	if(alien == IS_SLIME)
 		M.status_adjust(STAT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
-			M.set_nutrition((M.nutrition - (removed * 2))) //Sadly this movement starts burning food in higher doses.
+			M.set_nutrition((nutrition_of(M) - (removed * 2))) //Sadly this movement starts burning food in higher doses.
 	..()
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver", "weh", "weh", "weh")) // weh - Jack

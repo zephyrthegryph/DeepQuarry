@@ -8,8 +8,6 @@
 	icon_state = "sizegun-old-0"
 	var/base_icon_state = "sizegun-old"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/beam_range = 4 // How many tiles away it can scan. Changing this also changes the box size.
 	/// The running beam (sizegun_step()): target, user and held-item handles, the target's starting
 	/// scale, the beam handle, the outline filter, the box segments and the user's client.
@@ -217,6 +215,8 @@ TRACKED(/obj/item/slow_sizegun, busy)
 		delete_box(box_segments, C)
 
 CAPABILITIES(/obj/item/slow_sizegun)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
 	op("slow_sizegun_mode_self", in_hand(), label("Switch mode"), then(PROC_REF(slow_sizegun_mode_self)))
 	op("slow_sizegun_trading_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle size trading"), then(PROC_REF(slow_sizegun_trading_alt)))
 	// The beam steps every 0.3 s while busy; sizegun_finish() clears busy, which ends the work.

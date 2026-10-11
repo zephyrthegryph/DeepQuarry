@@ -56,10 +56,6 @@ MSG_DEF_SELF(bomb_tester/simulating, "The simulation is running.")
 /obj/machinery/bomb_tester/proc/not_simulating(datum/act/op/A)
 	return (!simulating) ? null : MSG(bomb_tester/simulating)
 
-/obj/machinery/bomb_tester/Initialize(mapload)
-	. = ..()
-	RefreshParts()
-
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))

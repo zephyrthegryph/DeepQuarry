@@ -29,7 +29,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BLUNT
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			act_message(src, null, \
@@ -40,7 +40,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -62,7 +62,6 @@
 	icon_state = "drone0"
 	icon_living = "drone0"
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "vistor"
 
@@ -88,6 +87,9 @@
 
 	loot_list = list(/obj/item/clothing/suit/armor/protectionbubble = 100
 			)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/should_special_attack(atom/A)
 	var/mob_count = 0				// Are there enough mobs to consider grenading?

@@ -47,10 +47,14 @@
 
 	say_list_type = /datum/say_list/pirate
 
-/mob/living/simple_mob/humanoid/pirate/Initialize(mapload)
+/// Every pirate's loot table also holds pirate salvage (its per_type() table, built once per type).
+/mob/living/simple_mob/humanoid/pirate/per_type_own(var_name)
 	. = ..()
-	loot_list = loot_list ? loot_list.Copy() : list()
-	loot_list += list(/obj/item/salvage/loot/pirate = 35)
+	if(var_name == nameof(loot_list))
+		var/list/inherited = .
+		var/list/table = inherited ? inherited.Copy() : list()
+		table[/obj/item/salvage/loot/pirate] = 35
+		return table
 
 //Armored Variant
 
@@ -151,7 +155,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(15))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
@@ -359,9 +363,11 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERMID
 
 	attack_sound = SFX_WEAPONS_BLADESLICE
-	base_attack_cooldown = 10
 
 	loot_list = list(/obj/item/gun/energy/retro = 100, /obj/item/clothing/suit/pirate = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/mate/ranged)
+	configure(mob_kind(attack_cooldown = 10))
 
 
 /mob/living/simple_mob/humanoid/pirate/mate/ranged/bosun /// Special Mech Pilot Pirate
@@ -395,9 +401,11 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
-	base_attack_cooldown = 5
 
 	loot_list = list(/*/obj/item/gun/projectile/shotgun/doublebarrel/quad = 100, Downstream*/ /obj/item/clothing/suit/pirate = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/mate/ranged/shotgun)
+	configure(mob_kind(attack_cooldown = 5))
 
 ///////////////////////////////
 //		Mate Marksman
@@ -421,9 +429,11 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_HEAVYRIFLESHOT
-	base_attack_cooldown = 10
 
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/rifle = 100, /obj/item/clothing/suit/pirate = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/mate/ranged/rifle)
+	configure(mob_kind(attack_cooldown = 10))
 
 ///////////////////////////////
 //		Pirate Captain
@@ -440,7 +450,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	reload_max = 4
 	projectiletype = /obj/item/projectile/beam/heavylaser
 	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
-	base_attack_cooldown = 5
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate/ranged
 
@@ -449,6 +458,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/shield)
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
+	configure(mob_kind(attack_cooldown = 5))
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/humanoid/pirate/captain/Process_Spacemove(check_drift = 0)
@@ -477,7 +487,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/pirate/captain)
 	armor_spec = "melee=30;bullet=40;laser=50;energy=5;bomb=50;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/pistol
-	base_attack_cooldown = 0.5 SECONDS
 	needs_reload = TRUE
 	reload_max = 30
 	reload_time = 3

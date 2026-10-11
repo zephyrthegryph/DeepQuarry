@@ -197,13 +197,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
  * `starts = nameof(cell_type)` follows a map or subtype override). A list var takes a list of paths or
  * list(path = count). Children are created with `new type(D)` and adopted through rel_set() / rel_add().
  */
-/proc/own_init_starts(datum/D, datum/own_table/T, mapload = FALSE)
+/proc/own_init_starts(datum/D, datum/own_table/T, mapload = FALSE, early_pass = FALSE)
 	if(!T)
 		T = own_table_of(D)
 	var/list/starts = T.start_vars
 	if(!starts)
 		return
+	var/list/early = T.early_vars
 	for(var/var_name in starts)
+		if(!!early?[var_name] != !!early_pass)
+			continue // the early occupants are built before the Initialize() chain (InitAtom()), the others at its root
 		var/current = D.vars[var_name]
 		var/default = starts[var_name]
 		var/list/start_args = null
@@ -234,9 +237,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			lifecycle_decl_adopt_child(D, var_name, starts_construct(path, D, start_args), FALSE)
 	if(T.start_sets)
 		for(var/var_name in T.start_sets)
+			if(!!early?[var_name] != !!early_pass)
+				continue
 			own_apply_starts_set(D, var_name, T.start_sets[var_name])
 
 /// owns_*(starts_set = list(var = value)): each occupant of D.var_name gets each value, through its set_<var>() when it has one.
+/// starts_set = list(var = holder_var(nameof(x))): the occupant takes the holder's x when it is configured (a camera's tag from its drone's
+/// channel), where a constant would not do.
+/proc/holder_var(var_name)
+	return entry_make("holder_var", null, list("var" = var_name))
+
 /proc/own_apply_starts_set(datum/D, var_name, list/settings)
 	var/value = D.vars[var_name]
 	var/list/children = islist(value) ? value : list(value)
@@ -244,11 +254,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(!isdatum(child))
 			continue
 		for(var/key in settings)
+			var/setting = settings[key]
+			if(istype(setting, /datum/entry))
+				var/datum/entry/E = setting
+				if(E.kind == "holder_var")
+					setting = D.vars[E.args["var"]]
 			var/setter = "set_[key]"
 			if(hascall(child, setter))
-				call(child, setter)(settings[key])
+				call(child, setter)(setting)
 			else if(key in child.vars)
-				child.vars[key] = settings[key] // ALLOW(api): the declared post-build setting of an occupant that has no setter for it
+				child.vars[key] = setting // ALLOW(api): the declared post-build setting of an occupant that has no setter for it
 			else
 				OWN_REPORT("[D.type].[var_name]: starts_set names '[key]', which [child.type] doesn't have")
 

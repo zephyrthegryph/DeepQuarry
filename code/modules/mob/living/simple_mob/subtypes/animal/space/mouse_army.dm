@@ -58,23 +58,10 @@
 CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
-
-// ALLOW(init/INSTANCE_STATE): rolls its number and its rank
-/mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
-	. = ..()
-
-
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-	real_name = name
-
-	if(!rank)
-		rank = pick( list("operative","pyro", "ammo", "stealth") )
-	icon_state = "mouse_[rank]" // ALLOW(decl): Initialize picks the mouse's icon from a random rank; a declaration has no random form
-	item_state = "mouse_[rank]"
-	set_icon_living("mouse_[rank]")
-	set_icon_dead("mouse_[rank]_dead")
-	set_icon_rest("mouse_[rank]_sleep")
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	rolls(nameof(rank), pick_one(list("operative", "pyro", "ammo", "stealth")), when = cond_not(nameof(rank)))
+	look_from(nameof(rank), state = "mouse_*", item = "mouse_*", living = "mouse_*", dead = "mouse_*_dead", rest = "mouse_*_sleep")
 
 /mob/living/simple_mob/animal/space/mouse_army/Crossed(AM as mob|obj)
 	var/mob/SK = AM
@@ -135,9 +122,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
-	base_attack_cooldown = 10
 
 	var/ruptured = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
+	configure(mob_kind(attack_cooldown = 10))
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank groans!")))
@@ -305,7 +294,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 
 	movement_cooldown = 2
-	base_attack_cooldown = 8
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
+	configure(mob_kind(attack_cooldown = 8))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/manned
@@ -335,7 +326,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 
 	movement_cooldown = 3
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire/manned
@@ -364,7 +357,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/gyro
 
 	movement_cooldown = 5
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator/manned

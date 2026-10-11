@@ -3,22 +3,23 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick_brush"
 	item_state = "syringe_0"
-	slot_flags = SLOT_EARS
 	digspeed = 20
-	force = 0
-	throwforce = 0
 	desc = "Thick metallic wires for clearing away dust and loose scree (1 centimetre excavation depth)."
 	excavation_amount = 1
 	drill_sound = SFX_WEAPONS_THUDSWOOSH
 	drill_verb = "brushing"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/brush)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
+
 /obj/item/pickaxe/one_pick
 	name = "2cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick1"
 	item_state = "syringe_0"
-	force = 2
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (2 centimetre excavation depth)."
 	excavation_amount = 2
@@ -26,12 +27,14 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/one_pick)
+	configure(item_combat(force = 2))
+
 /obj/item/pickaxe/two_pick
 	name = "4cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick2"
 	item_state = "syringe_0"
-	force = 2
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (4 centimetre excavation depth)."
 	excavation_amount = 4
@@ -39,12 +42,14 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/two_pick)
+	configure(item_combat(force = 2))
+
 /obj/item/pickaxe/three_pick
 	name = "6cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick3"
 	item_state = "syringe_0"
-	force = 3
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (6 centimetre excavation depth)."
 	excavation_amount = 6
@@ -52,12 +57,14 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/three_pick)
+	configure(item_combat(force = 3))
+
 /obj/item/pickaxe/four_pick
 	name = "8cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick4"
 	item_state = "syringe_0"
-	force = 3
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (8 centimetre excavation depth)."
 	excavation_amount = 8
@@ -65,12 +72,14 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/four_pick)
+	configure(item_combat(force = 3))
+
 /obj/item/pickaxe/five_pick
 	name = "10cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick5"
 	item_state = "syringe_0"
-	force = 5
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (10 centimetre excavation depth)."
 	excavation_amount = 10
@@ -78,12 +87,14 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/five_pick)
+	configure(item_combat(force = 5))
+
 /obj/item/pickaxe/six_pick
 	name = "12cm pick"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick6"
 	item_state = "syringe_0"
-	force = 5
 	digspeed = 20
 	desc = "A miniature excavation tool for precise digging (12 centimetre excavation depth)."
 	excavation_amount = 12
@@ -91,18 +102,23 @@
 	drill_verb = "delicately picking"
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/pickaxe/six_pick)
+	configure(item_combat(force = 5))
+
 /obj/item/pickaxe/hand
 	name = "hand pickaxe"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "pick_hand"
 	item_state = "syringe_0"
-	force = 10
 	digspeed = 30
 	desc = "A smaller, more precise version of the pickaxe (30 centimetre excavation depth)."
 	excavation_amount = 30
 	drill_sound = SFX_ITEMS_CROWBAR
 	drill_verb = "clearing"
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/pickaxe/hand)
+	configure(item_combat(force = 10))
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Pack for holding pickaxes
@@ -160,11 +176,10 @@ CAPABILITIES(/obj/item/storage/excavation)
 	desc = "Advanced archaeological drill combining ultrasonic excitation and bluespace manipulation to provide extreme precision. The tip is adjustable from 1 to 30 cm."
 	drill_sound = SFX_WEAPONS_THUDSWOOSH
 	drill_verb = "drilling"
-	force = 5
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("drilled")
 
 CAPABILITIES(/obj/item/pickaxe/excavationdrill)
+	configure(item_combat(force = 5, attack_verbs = list("drilled")))
 	op("depth", in_hand(), label("Set excavation depth"), then(PROC_REF(depth_used)))
 
 /obj/item/pickaxe/excavationdrill/proc/depth_used(datum/act/op/A)

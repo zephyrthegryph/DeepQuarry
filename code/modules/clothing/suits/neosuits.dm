@@ -121,25 +121,33 @@ this file deals with suits/overwear. */
 	name = "gorka jacket"
 	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
 	icon_state = "neo_gorka"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/neo_gorka)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/neo_gorka_cargo
 	name = "cargo gorka"
 	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
 	icon_state = "neo_gorka_cargo"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/neo_gorka_cargo)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/neo_runner_coat
 	name = "runner's coat"
 	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
 	icon_state = "neo_runner_coat"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/neo_runner_coat)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/neo_medical_coat
 	name = "medical coat"
 	desc = "it bears a tag that says 'Product of Total Gear & Co.'"
 	icon_state = "neo_medical_coat"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/neo_medical_coat)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 // non-transforming armoured coats with storage
 

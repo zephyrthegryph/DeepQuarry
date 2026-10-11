@@ -58,7 +58,7 @@
 
 /mob/living/simple_mob/vore/fossiltank/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "furnace"
 	B.desc = "Turns out the skull head opens, and you have been consumed into the beast's furnace! Sweltering heat rages around you as your metal confines rumble with the rurr of strange machinery. The chamber jostling you about as you may attempt to escape, or perhaps accept your fate."
 	B.digest_brute = 0
@@ -170,7 +170,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 
 /mob/living/simple_mob/vore/boss_jellyfish/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "internal chamber"
 	B.desc = "It's smooth and translucent. You can see the world around you distort and wobble with the movement of the space jellyfish. It floats casually, while the delicate flesh seems to form to you. It's surprisingly cool, and flickers with its own light. You're on display for all to see, trapped within the confines of this strange space alien!"
 	B.digest_brute = 1
@@ -183,12 +183,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 /mob/living/simple_mob/vore/boss_jellyfish/apply_melee_effects(atom/A) //Not a real threat unless multiple hits. It acts a timer for special traits.
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
-	if(nutrition > 500)
+	if(nutrition_of(src) > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		after(src, 4 SECONDS, PROC_REF(sniper_shot), with = list(A))
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
@@ -279,7 +279,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 
 /obj/item/projectile/beam/nutrition_gigabeam
 	damage = 40
-	armor_penetration = 90
+
+CAPABILITIES(/obj/item/projectile/beam/nutrition_gigabeam)
+	configure(item_combat(armor_penetration = 90))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/astral_sea_warp(atom/target)
 	if(!target)

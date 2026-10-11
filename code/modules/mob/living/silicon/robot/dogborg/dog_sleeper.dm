@@ -69,8 +69,9 @@ CAPABILITIES(/obj/item/dogborg/sleeper)
 	op("sleeper_compact_mouse", at_target(/mob/living/simple_mob/animal/passive/mouse), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_thing)))
 	op("sleeper_compact_person", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), when(PROC_REF(sleeper_is_compactor)), needs(req(PROC_REF(sleeper_target_free), silent = TRUE), req(PROC_REF(sleeper_has_room), because = MSG(sleeper/full)), req(PROC_REF(sleeper_may_ingest), because = MSG(sleeper/blacklisted)), req(PROC_REF(sleeper_vacant), because = MSG(sleeper/occupied)), req(PROC_REF(sleeper_target_loose), because = MSG(sleeper/buckled))), starts(PROC_REF(sleeper_started)), begins(PROC_REF(sleeper_ingest_text)), wait(3 SECONDS), then(PROC_REF(sleeper_ingested_person)))
 	every(2 SECONDS, then(PROC_REF(sleeper_step)), when = nameof(working))
-	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
-	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
+	// kept in nullspace: it only needs a reference to them
+	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer, starts = /obj/item/healthanalyzer, starts_args = NO_LOC)
+	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper, starts = when(nameof(ore_storage), /obj/item/ore_bag/sleeper), starts_args = NO_LOC)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("RobotSleeper", state = nameof(GLOB.tgui_conscious_state))
 	without("ui_open")
@@ -96,10 +97,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 			experiment_events = destructive_events, \
 		)
-	if(ore_storage)
-		rel_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
 	. = ..()
-	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).
@@ -215,7 +213,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/proc/ingest_atom(atom/ingesting)
 	if (!ingesting || ingesting == hound)
 		return
-	var/obj/belly/belly = hound.vore_selected
+	var/obj/belly/belly = vore_selected_of(hound)
 	if (!istype(hound) || !istype(belly) || !(belly in hound.vore_organs))
 		return
 	if (isliving(ingesting))
@@ -262,7 +260,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	rel_set(src, nameof(hound), src.loc)
 	if (!istype(hound) || contents_count(src) <= 0)
 		return
-	if (!hound.vore_selected)
+	if (!vore_selected_of(hound))
 		to_chat(hound, span_warning("You don't have a belly selected to empty the contents into!"))
 		return
 	for (var/C in contents)

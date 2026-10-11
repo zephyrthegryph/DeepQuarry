@@ -46,7 +46,7 @@
 	var/obj/item/organ/internal/heart/heart = allocate(/obj/item/organ/internal/heart, tile(2, 2))
 	heart.meat_type = /obj/item/reagent_containers/food/snacks/meat
 	var/obj/item/material/knife/knife = allocate(/obj/item/material/knife, tile(2, 1))
-	knife.toolspeed = 1
+	knife.set_toolspeed(1)
 	dq_lo_click(H, heart, knife)
 	test_time(5 SECONDS)
 	TEST_ASSERT(!QDELETED(heart), "the organ is still whole halfway through")
@@ -188,7 +188,7 @@
 
 /datum/unit_test/dq_leftovers/gradual_charge_steps_each_second/run_gate()
 	var/obj/item/cell/C = allocate(/obj/item/cell, tile(2, 2))
-	C.charge = 0
+	C.set_charge(0)
 	C.gradual_charge(4, 1, FALSE, null)
 	var/after_first = C.charge
 	TEST_ASSERT(after_first > 0, "the first step lands at once")

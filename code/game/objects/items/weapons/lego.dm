@@ -9,8 +9,10 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/lego)
+	configure(item_thrown(force = 0))
 
 /obj/item/lego/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())
@@ -37,8 +39,10 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/lego/gib)
+	configure(item_thrown(force = 0))
 
 /obj/item/lego/gib/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

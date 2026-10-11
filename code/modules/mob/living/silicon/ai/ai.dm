@@ -101,9 +101,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/list/multicam_screens // REL_LIST (multicam.dm)
 	var/max_multicams = 6
 
-	can_be_antagged = TRUE
+	canmove = 0
 
 CAPABILITIES(/mob/living/silicon/ai)
+	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_kind(can_be_antagged = TRUE, death_message = "gives one shrill beep before falling lifeless."))
 	// Hardlight nom (vore/eating/silicon.dm): the AI's eye is the actor and has to stay put while the hologram engulfs the prey.
 	op("holo_nom", ai(), takes("prey", "from"), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY), then(PROC_REF(holo_nom_done)))
 	op("ai_status_displays", ai(), label("AI Status"), needs(req_self()), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(status_display_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(ai_status_display_chosen)))
@@ -118,11 +120,44 @@ CAPABILITIES(/mob/living/silicon/ai)
 	remote_interface()
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(core_blast))))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_shell_disconnect)))
-	owns_one(nameof(aiCommunicator), /obj/item/communicator)
-	owns_one(nameof(aiPDA), /obj/item/pda/ai)
-	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated)
-	owns_one(nameof(announcement), /datum/announcement/priority)
-	owns_one(nameof(psupply), /obj/machinery/ai_powersupply)
+	// a dummy (the announcer) carries no PDA or communicator
+	owns_one(nameof(aiCommunicator), /obj/item/communicator, starts = when(cond_not(nameof(is_dummy)), /obj/item/communicator/integrated))
+	owns_one(nameof(aiPDA), /obj/item/pda/ai, starts = when(cond_not(nameof(is_dummy)), /obj/item/pda/ai))
+	// its radio and laws exist before its parents' init: the welcome message lists the radio's channels, and a malf round shows the laws
+	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated, starts = /obj/item/radio/headset/heads/ai_integrated, early = TRUE)
+	owns_one(nameof(laws), /datum/ai_laws, starts = PROC_REF(start_laws), early = TRUE)
+	owns_one(nameof(announcement), /datum/announcement/priority, starts = /datum/announcement/priority, starts_args = NO_LOC, starts_set = list("title" = "A.I. Announcement", "announcement_type" = "A.I. Announcement", "newscast" = 1))
+	owns_one(nameof(psupply), /obj/machinery/ai_powersupply, starts = /obj/machinery/ai_powersupply)
+	rolls(nameof(name), PROC_REF(roll_ai_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	derives(nameof(additional_law_channels), PROC_REF(ai_law_channels))
+	derives(nameof(holo_icon), PROC_REF(default_holo_icon))
+	knows(LANGUAGE_ROBOT_TALK)
+	knows(LANGUAGE_GALCOM)
+	knows(LANGUAGE_SOL_COMMON)
+	knows(LANGUAGE_UNATHI)
+	knows(LANGUAGE_SIIK)
+	knows(LANGUAGE_AKHANI)
+	knows(LANGUAGE_SKRELLIAN)
+	knows(LANGUAGE_TRADEBAND)
+	knows(LANGUAGE_GUTTER)
+	knows(LANGUAGE_EAL)
+	knows(LANGUAGE_SCHECHI)
+	knows(LANGUAGE_SIGN)
+	knows(LANGUAGE_ROOTLOCAL)
+	knows(LANGUAGE_TERMINUS)
+	knows(LANGUAGE_ZADDAT)
+	knows(LANGUAGE_BIRDSONG)
+	knows(LANGUAGE_SAGARU)
+	knows(LANGUAGE_CANILUNZT)
+	knows(LANGUAGE_ECUREUILIAN)
+	knows(LANGUAGE_DAEMON)
+	knows(LANGUAGE_ENOCHIAN)
+	knows(LANGUAGE_DRUDAKAR)
+	knows(LANGUAGE_TAVAN)
+	verb_entry(/mob/living/silicon/ai/proc/deploy_to_shell_act, when = cond_config(/datum/config_entry/flag/allow_ai_shells))
+	setup(PROC_REF(verbs_if_installed))
+	setup(PROC_REF(create_eyeobj)) // its eye, named after it; create_eyeobj() gives the rolled name to its PDA, communicator and announcements
 	owns_one(nameof(research), /datum/malf_research)
 	owns_one(nameof(track), /datum/trackable)
 	owns_one(nameof(aiMulti), starts = /obj/item/multitool)
@@ -155,74 +190,9 @@ CAPABILITIES(/mob/living/silicon/ai)
 /// Made by AIize(): no brain is needed (its constructor param).
 /mob/living/silicon/ai/var/spawn_safety = FALSE
 
-// ALLOW(init/INSTANCE_STATE): an AI sets up its announcement, name, radio, laws and languages before its parents' init, and leaves an empty core when made with no brain
+// ALLOW(init/INSTANCE_STATE): an AI made with no brain leaves an empty core instead; one made from a brain takes its mind before its parents' init
 /mob/living/silicon/ai/Initialize(mapload)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-
-	rel_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
-	announcement.title = "A.I. Announcement"
-	announcement.announcement_type = "A.I. Announcement"
-	announcement.newscast = 1
-
-	var/list/possibleNames = GLOB.ai_names
-
-	var/pickedName = null
-	while(!pickedName)
-		pickedName = pick(GLOB.ai_names)
-		for (var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
-			if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
-				possibleNames -= pickedName
-				pickedName = null
-
-	if(!is_dummy)
-		rel_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
-	SetName(pickedName)
-	set_anchored(TRUE)
-	canmove = 0
-	set_density(TRUE)
-
-	if(!is_dummy)
-		rel_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
-
-	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
-
-	if(!laws)
-		rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
-
-	rel_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
 	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
-	rel_set(aiRadio, nameof(aiRadio.myAi), src)
-	additional_law_channels["Binary"] = "#b"
-	additional_law_channels["Holopad"] = ":h"
-
-	if (istype(loc, /turf))
-		add_ai_verbs(src)
-
-	//Languages
-	add_language(LANGUAGE_ROBOT_TALK, 1)
-	add_language(LANGUAGE_GALCOM, 1)
-	add_language(LANGUAGE_SOL_COMMON, 1)
-	add_language(LANGUAGE_UNATHI, 1)
-	add_language(LANGUAGE_SIIK, 1)
-	add_language(LANGUAGE_AKHANI, 1)
-	add_language(LANGUAGE_SKRELLIAN, 1)
-	add_language(LANGUAGE_TRADEBAND, 1)
-	add_language(LANGUAGE_GUTTER, 1)
-	add_language(LANGUAGE_EAL, 1)
-	add_language(LANGUAGE_SCHECHI, 1)
-	add_language(LANGUAGE_SIGN, 1)
-	add_language(LANGUAGE_ROOTLOCAL, 1)
-	add_language(LANGUAGE_TERMINUS, 1)
-	add_language(LANGUAGE_ZADDAT, 1)
-	add_language(LANGUAGE_BIRDSONG, 1)
-	add_language(LANGUAGE_SAGARU, 1)
-	add_language(LANGUAGE_CANILUNZT, 1)
-	add_language(LANGUAGE_ECUREUILIAN, 1)
-	add_language(LANGUAGE_DAEMON, 1)
-	add_language(LANGUAGE_ENOCHIAN, 1)
-	add_language(LANGUAGE_DRUDAKAR, 1)
-	add_language(LANGUAGE_TAVAN, 1)
-
 	if(!spawn_safety)//Only used by AIize() to successfully spawn an AI.
 		if (!brain_at_make)//If there is no player/brain inside.
 			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
@@ -233,17 +203,39 @@ CAPABILITIES(/mob/living/silicon/ai)
 
 		on_mob_init()
 
-	. = ..()
-	init_id(idcard_type)
+	return ..()
 
-	new /obj/machinery/ai_powersupply(src)
+/// Its laws: those it was made with, else the map's default set (owns_one(starts =), before its parents' init).
+/mob/living/silicon/ai/proc/start_laws(current, mapload)
+	return current || using_map.default_law_type
 
-	if(CONFIG_GET(flag/allow_ai_shells))
-		grant(src, granted_verb(/mob/living/silicon/ai/proc/deploy_to_shell_act), verb_source(VERB_SOURCE_CONFIG))
+/// Its name: one of the AI names no other AI holds (rolls(); create_eyeobj() hands it to its PDA, communicator and announcements).
+/mob/living/silicon/ai/proc/roll_ai_name(datum/roller/R)
+	var/list/possibleNames = GLOB.ai_names.Copy()
+	var/list/taken = list()
+	for(var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
+		taken += A.real_name
+	while(length(possibleNames) > 1)
+		var/picked = R.choose(possibleNames)
+		if(!(picked in taken))
+			return picked
+		possibleNames -= picked //fixing the theoretically possible infinite loop
+	return length(possibleNames) ? possibleNames[1] : name
 
-	create_eyeobj()
-	if(eyeobj)
-		eyeobj.forceMove(src.loc)
+/// The law channels it can state laws on: a silicon's, and binary and the holopads (derives(), once at init).
+/mob/living/silicon/ai/proc/ai_law_channels(target)
+	. = additional_law_channels.Copy()
+	.["Binary"] = "#b"
+	.["Holopad"] = ":h"
+
+/// Its default hologram (derives(), once at init).
+/mob/living/silicon/ai/proc/default_holo_icon(target)
+	return getHologramIcon(icon('icons/mob/AI.dmi', "holo1"))
+
+/// An AI installed on the floor has its verbs; one made inside a card gets them when it is installed (setup()).
+/mob/living/silicon/ai/proc/verbs_if_installed()
+	if(istype(loc, /turf))
+		add_ai_verbs(src)
 
 /mob/living/silicon/ai/proc/on_mob_init()
 	var/init_text = list(span_bold("You are playing the station's AI. The AI cannot move, but can interact with many objects while viewing them (through cameras)."),
@@ -254,11 +246,11 @@ CAPABILITIES(/mob/living/silicon/ai)
 	to_chat(src, span_filter_notice("[jointext(init_text, "<br>")]"))
 
 	var/radio_text = ""
-	for(var/i = 1 to common_radio.channels.len)
-		var/channel = common_radio.channels[i]
+	for(var/i = 1 to aiRadio.channels.len)
+		var/channel = aiRadio.channels[i]
 		var/key = get_radio_key_from_channel(channel)
 		radio_text += "[key] - [channel]"
-		if(i != common_radio.channels.len)
+		if(i != aiRadio.channels.len)
 			radio_text += ", "
 
 	to_chat(src,radio_text)
@@ -367,23 +359,26 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
-// ALLOW(init/INSTANCE_STATE): binds to the AI it is made inside and stands where that AI is
-/obj/machinery/ai_powersupply/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(powered_ai), loc)
-	if(!istype(powered_ai))
-		return INITIALIZE_HINT_QDEL
-	rel_set(powered_ai, nameof(powered_ai.psupply), src)
-	if(istype(powered_ai,/mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
-		forceMove(powered_ai)
-	else
-		forceMove(powered_ai.loc)
+/// It names the AI it powers (that AI's owns_one(starts =)).
+/obj/machinery/ai_powersupply/default_child_backref()
+	return nameof(powered_ai)
 
+/// It exists only for an AI, made inside it (keeps_if()).
+/obj/machinery/ai_powersupply/proc/made_in_an_ai()
+	return istype(loc, /mob/living/silicon/ai)
+
+/// It stands where its AI is (setup()): a nullspace announcer keeps it inside.
+/obj/machinery/ai_powersupply/proc/stand_by_ai()
+	var/mob/living/silicon/ai/ai = loc
+	if(!istype(ai, /mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
+		forceMove(ai.loc)
 	use_power(1) // Just incase we need to wake up the power system.
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/ai_powersupply)
 	configure(uses_power(active = 50000, channel = EQUIP))
+	keeps_if(PROC_REF(made_in_an_ai))
+	setup(PROC_REF(stand_by_ai))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 
 /obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
@@ -1104,11 +1099,6 @@ TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 //Special subtype kept around for global announcements
 /mob/living/silicon/ai/announcer
 	is_dummy = 1
-
-/mob/living/silicon/ai/announcer/Initialize(mapload)
-	var/mob/observer/eye/eyeobj = src?.active_eye()
-	. = ..()
-	QDEL_NULL(eyeobj)
 
 /// The announcer is in no mob registry.
 /mob/living/silicon/ai/announcer/skips_registry(registry_id)

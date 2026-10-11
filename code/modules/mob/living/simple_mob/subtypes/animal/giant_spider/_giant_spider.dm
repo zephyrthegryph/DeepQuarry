@@ -125,21 +125,11 @@
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
 	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	no_pull_when_living = TRUE
 
 
-TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/giant_spider, broodling_initial_scale, null)
-TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/giant_spider, spider_preparent_scale, null)
-
-/mob/living/simple_mob/animal/giant_spider/Initialize(mapload)
-	var/initial_scale = TYPE_TABLE_GET(src, spider_preparent_scale)
-	if(!isnull(initial_scale))
-		adjust_scale(initial_scale)
-	. = ..()
-	enable_swarming()
-	var/broodling_scale = TYPE_TABLE_GET(src, broodling_initial_scale)
-	if(!isnull(broodling_scale))
-		adjust_scale(broodling_scale)
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	configure(mob_movement(no_pull_when_living = TRUE))
+	swarming()
 
 /mob/living/simple_mob/animal/giant_spider/CanPass(atom/movable/mover, turf/target)
 	if(isliving(mover) && !istype(mover, /mob/living/simple_mob/animal/giant_spider) && mover.density == TRUE && stat != DEAD)

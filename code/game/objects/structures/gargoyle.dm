@@ -286,14 +286,14 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
-	if(may_feed && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
+	if(may_feed && gargoyle && vore_selected_of(gargoyle) && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return OP_OK
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
-			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(gargoyle.vore_selected.name)] ."))
+			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(vore_selected_of(gargoyle).name)] ."))
 			user.drop_item()
-			gargoyle.vore_selected.nom_atom(W)
+			vore_selected_of(gargoyle).nom_atom(W)
 			return OP_OK
 		return OP_OK
 	if(!(W.flags & NOBLUDGEON))
@@ -301,7 +301,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			playsound(src, sounds_of(W).hit, 50, 1)
-			damage(W.force)
+			damage(combat_of(W).force)
 	return OP_OK
 
 /obj/structure/gargoyle/proc/attackby_tool_done(datum/act/op/A)
@@ -319,7 +319,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		return
-	if(isitem(source) && gargoyle.vore_selected && gargoyle.trash_catching)
+	if(isitem(source) && vore_selected_of(gargoyle) && gargoyle.trash_catching)
 		var/obj/item/I = source
 		if(gargoyle.adminbus_trash || is_type_in_list(I, GLOB.edible_trash) && I.trash_eatable && !is_type_in_list(I, GLOB.item_vore_blacklist))
 			gargoyle.hitby(source, throwingdatum)

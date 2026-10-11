@@ -43,7 +43,6 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	attack_armor_pen = 40
-	base_attack_cooldown = 2 SECONDS
 	attacktext = list("gouged", "bit", "cut", "clawed", "whipped")
 
 	organ_names = /datum/decl/mob_organ_names/kururak
@@ -70,7 +69,7 @@
 
 /mob/living/simple_mob/animal/sif/kururak/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "Blue innards of a sleek creature surround you in an overwhelmingly tight pressure. Walls, coated in slick, reflective mucus reflect \
 		light from the pool of teal stomach juices, flashing you from random angles. The texture of the surroundings is only mildly soft, it feels \
@@ -94,6 +93,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.
 	op("rend_hatch", ai(), takes("mech"), wait(1 SECOND), then(PROC_REF(rending_strike_kururak_done)))
@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			var/mob/living/carbon/human/H = L
 			if(H.get_active_hand())
 				var/obj/item/I = H.get_active_hand()
-				if(I.force <= 1.25 * melee_damage_upper)
+				if(combat_of(I).force <= 1.25 * melee_damage_upper)
 					return TRUE
 		else if(isanimal(L))
 			var/mob/living/simple_mob/S = L
@@ -362,10 +362,12 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 	else
 		remove_body_effect(/datum/body_effect/ace)
 
-/mob/living/simple_mob/animal/sif/kururak/hibernate/Initialize(mapload)
-	. = ..()
-	lay_down()
-	instinct = 0
+/// Found asleep, with no instinct of its own.
+/mob/living/simple_mob/animal/sif/kururak/hibernate
+	resting = TRUE
+
+/mob/living/simple_mob/animal/sif/kururak/hibernate/roll_instinct(datum/roller/R)
+	return 0
 
 /*
  * Kururak AI

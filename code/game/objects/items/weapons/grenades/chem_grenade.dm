@@ -4,7 +4,6 @@
 	item_state = "grenade"
 	desc = "A hand made chemical grenade."
 	w_class = ITEMSIZE_SMALL
-	force = 2.0
 	det_time = null
 	unacidable = TRUE
 
@@ -21,6 +20,7 @@
 TRACKED(/obj/item/grenade/chem_grenade, stage)
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
+	configure(item_combat(force = 2.0))
 	// a hand-built casing: 0 empty, 1 parts in, 2 locked (armed by its self-use); the screwdriver locks and unlocks it, ahead of the timer
 	stages(nameof(stage),
 		stage_step(1, 2, tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 1), label("Lock the assembly"), when(PROC_REF(hand_built)), wait(0), then(PROC_REF(assembly_locked))),

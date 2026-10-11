@@ -46,13 +46,14 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 	faction = FACTION_SUCCUBUS
 
-/mob/living/simple_mob/vore/succubus/Initialize(mapload)
-	. = ..()
-	safeword = pick(GLOB.succubus_safewords)
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]asleep")
-		set_icon_dead("[icon_living]-dead")
+CAPABILITIES(/mob/living/simple_mob/vore/succubus)
+	rolls(nameof(safeword), PROC_REF(roll_safeword))
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
+
+/// Its safeword (rolls()).
+/mob/living/simple_mob/vore/succubus/proc/roll_safeword(datum/roller/R)
+	return R.choose(GLOB.succubus_safewords)
 
 // Activate Noms!
 /mob/living/simple_mob/vore/succubus
@@ -72,7 +73,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 
 /mob/living/simple_mob/vore/succubus/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You find yourself tightly compressed into the stomach of the succubus, with immense pressure squeezing down on you from every direction. The wrinkled walls of the gut knead over you, like a swelteringly hot, wet massage. You can feel movement from the outside, as though the demoness is running her hands over your form with delight. The world around you groans and gurgles, but the fluids that ooze into this place don't seem harmful, yet. Instead, you feel your very energy being steadily depleted, much to the joy of the woman who's claiming it all for herself."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -150,7 +151,7 @@ GLOBAL_LIST_INIT(succubus_safewords, list(
 	var/string = multilingual_to_message(message_pieces)
 
 	if(findtext(lowertext(string), safeword))
-		vore_selected?.digest_mode = DM_DRAIN
+		vore_selected_of(src)?.digest_mode = DM_DRAIN
 		release_vore_contents()
 		status_set(STAT_STUNNED, 10)
 		say("I'm sorry sweetie, are you okay?")

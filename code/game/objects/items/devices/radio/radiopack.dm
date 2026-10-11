@@ -5,9 +5,6 @@
 	icon_override = 'icons/inventory/back/mob.dmi'
 	icon_state = "radiopack"
 	item_state = "radiopack"
-	slot_flags = SLOT_BACK
-	force = 5
-	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	var/handset_path = /obj/item/radio/bluespacehandset/linked
@@ -17,6 +14,9 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/bluespaceradio)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 5))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	drag_onto(PROC_REF(drop_input))
 
@@ -49,10 +49,11 @@ CAPABILITIES(/obj/item/bluespaceradio)
 	bluespace_radio = TRUE
 	icon = 'icons/obj/device.dmi'
 	icon_state = "handset"
-	slot_flags = null
 	w_class = ITEMSIZE_LARGE
 	canhear_range = 1
-	item_flags = NOSTRIP
+
+CAPABILITIES(/obj/item/radio/bluespacehandset)
+	configure(item_worn(slots = TRAIT_NONE, flags = NOSTRIP))
 
 /obj/item/radio/bluespacehandset/linked/receive_range(freq, list/level)
 	//Only care about megabroadcasts or things that are targeted at us

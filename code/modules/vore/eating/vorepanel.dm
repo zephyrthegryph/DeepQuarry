@@ -321,11 +321,11 @@ CAPABILITIES(/datum/vore_look)
 /// One belly setting: refused without a selected belly; the belly reschedules after (turbo mode, liquid generation and other scheduled
 /// settings may have changed). `ui` is the window the sub-action may ask in.
 /datum/vore_look/proc/vore_nested(mob/user, namespace, attribute, list/data, datum/tgui/ui)
-	if(!host().vore_selected)
+	if(!vore_selected_of(host()))
 		tgui_alert_async(user, "No belly selected to modify.")
 		return FALSE
 	. = namespace == "attr" ? attr_subaction(attribute, data, user, ui) : liq_subaction(attribute, data, user, ui)
-	host().vore_selected?.belly_reschedule()
+	vore_selected_of(host())?.belly_reschedule()
 
 /datum/vore_look/proc/ui_act_change_tab(datum/act/op/A, tab)
 	var/new_tab = tab
@@ -405,7 +405,7 @@ CAPABILITIES(/datum/vore_look)
 
 	var/obj/belly/NB = new(host())
 	NB.name = new_name
-	host().vore_selected = NB
+	set_vore_selected(host(), NB)
 	//Ensures that new stomachs that are made have the same silicon overlay pref as the first stomach.
 	if(LAZYLEN(host().vore_organs))
 		var/obj/belly/belly_to_check = host().vore_organs[1]
@@ -429,7 +429,7 @@ CAPABILITIES(/datum/vore_look)
 /datum/vore_look/proc/ui_act_bellypick(datum/act/op/A, bellypick)
 	if(isnull(bellypick))
 		return FALSE
-	host().vore_selected = bellypick
+	set_vore_selected(host(), bellypick)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_move_belly(datum/act/op/A, dir_arg)
@@ -439,7 +439,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user, span_warning("You can't sort bellies with only one belly to sort..."))
 		return TRUE
 
-	var/current_index = host().vore_organs.Find(host().vore_selected)
+	var/current_index = host().vore_organs.Find(vore_selected_of(host()))
 	if(current_index)
 		var/new_index = clamp(current_index + dir, 1, LAZYLEN(host().vore_organs))
 		host().vore_organs.Swap(current_index, new_index)
@@ -934,7 +934,7 @@ CAPABILITIES(/datum/vore_look)
 		var/mob/living/living_host = host()
 		if(new_size == living_host.size_multiplier)
 			return FALSE
-		if(living_host.nutrition >= VORE_RESIZE_COST)
+		if(nutrition_of(living_host) >= VORE_RESIZE_COST)
 			living_host.adjust_nutrition(-VORE_RESIZE_COST)
 			living_host.resize(new_size, uncapped = living_host.has_large_resize_bounds(), ignore_prefs = TRUE)
 	return TRUE
@@ -1183,11 +1183,11 @@ CAPABILITIES(/datum/vore_look)
 				to_chat(user,span_warning("You can't do that in your state!"))
 				return TRUE
 
-			if(!host().vore_selected)
+			if(!vore_selected_of(host()))
 				to_chat(user,span_warning("Pick a belly on yourself first!"))
 				return TRUE
 
-			var/obj/belly/TB = host().vore_selected
+			var/obj/belly/TB = vore_selected_of(host())
 			to_chat(user,span_vwarning("You begin to [lowertext(TB.vore_verb)] [M] into your [lowertext(TB.name)]!"))
 			to_chat(M,span_vwarning("[host()] begins to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
 			to_chat(OB.owner,span_vwarning("Someone inside you is eating someone else!"))
@@ -1238,7 +1238,7 @@ CAPABILITIES(/datum/vore_look)
 		return pick_all_from_outside(user, params)
 
 	var/atom/movable/target = params["pick"]
-	if(!(target in host().vore_selected))
+	if(!(target in vore_selected_of(host())))
 		return TRUE // Not in our X anymore, update UI
 	var/list/available_options = list("Examine", "Eject", "Launch", "Move", "Transfer")
 	if(ishuman(target))
@@ -1289,7 +1289,7 @@ CAPABILITIES(/datum/vore_look)
 				to_chat(user,span_warning("You can't do that in your state!"))
 				return TRUE
 
-			host().vore_selected.release_all_contents()
+			vore_selected_of(host()).release_all_contents()
 			return TRUE
 
 		if("move_all")
@@ -1301,12 +1301,12 @@ CAPABILITIES(/datum/vore_look)
 			if(!choice)
 				return FALSE
 
-			for(var/atom/movable/target in host().vore_selected)
-				to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
+			for(var/atom/movable/target in vore_selected_of(host()))
+				to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(vore_selected_of(host()))] to their [lowertext(choice.name)]!"))
 				// Send the transfer message to indirect targets as well. Slightly different message because why not.
-				to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
-				host().vore_selected.transfer_contents(target, choice, TRUE)
-			host().vore_selected.handle_visual_update()
+				to_chat(vore_selected_of(host()).get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(vore_selected_of(host()))] to their [lowertext(choice.name)]!"))
+				vore_selected_of(host()).transfer_contents(target, choice, TRUE)
+			vore_selected_of(host()).handle_visual_update()
 			return TRUE
 	return FALSE
 
@@ -1327,7 +1327,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user,span_warning("You can't do that in your state!"))
 		return TRUE
 
-	host().vore_selected.release_specific_contents(target)
+	vore_selected_of(host()).release_specific_contents(target)
 	return TRUE
 
 /// "Launch": Release the prey and throw it.
@@ -1336,7 +1336,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user, span_warning("You can't do that in your state!"))
 		return TRUE
 
-	host().vore_selected.release_specific_contents(target)
+	vore_selected_of(host()).release_specific_contents(target)
 	target.throw_at(get_edge_target_turf(host(), host().dir), 3, 1, host())
 	host().visible_message(span_danger("[host()] launches [target]!"))
 	return TRUE
@@ -1352,12 +1352,12 @@ CAPABILITIES(/datum/vore_look)
 		if(isnull(_answer_a2))
 			return
 		choice = _answer_a2
-	if(!choice || !(target in host().vore_selected))
+	if(!choice || !(target in vore_selected_of(host())))
 		return TRUE
-	to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
+	to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(vore_selected_of(host()).name)] to their [lowertext(choice.name)]!"))
 	// Send the transfer message to indirect targets as well. Slightly different message because why not.
-	to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
-	host().vore_selected.transfer_contents(target, choice)
+	to_chat(vore_selected_of(host()).get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(vore_selected_of(host()))] to their [lowertext(choice.name)]!"))
+	vore_selected_of(host()).transfer_contents(target, choice)
 
 /// "Transfer": Offer the prey to an adjacent predator's belly. Prompts re-run pick_from_outside.
 /datum/vore_look/proc/pick_transfer(mob/user, atom/movable/target, params)
@@ -1386,12 +1386,12 @@ CAPABILITIES(/datum/vore_look)
 	var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
 	if(isnull(choice))
 		return
-	if(!choice || !(target in host().vore_selected) || !belly_owner || !(belly_owner in range(1, host())))
+	if(!choice || !(target in vore_selected_of(host())) || !belly_owner || !(belly_owner in range(1, host())))
 		return TRUE
 
 	if(belly_owner != host())
 		to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
-		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"), buttons = TRUE)
+		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to transfer [target] from their [lowertext(vore_selected_of(host()).name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"), buttons = TRUE)
 		if(isnull(accepted))
 			return
 		if(accepted != "Yes")
@@ -1399,12 +1399,12 @@ CAPABILITIES(/datum/vore_look)
 			return TRUE
 		if(!belly_owner || !(belly_owner in range(1, host())))
 			return TRUE
-		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to [belly_owner]'s [lowertext(choice.name)]!"))
-		to_chat(belly_owner,span_vwarning("[target] is squished from [host()]'s [lowertext(host().vore_selected.name)] to your [lowertext(choice.name)]!"))
-		host().vore_selected.transfer_contents(target, choice)
+		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(vore_selected_of(host()).name)] to [belly_owner]'s [lowertext(choice.name)]!"))
+		to_chat(belly_owner,span_vwarning("[target] is squished from [host()]'s [lowertext(vore_selected_of(host()).name)] to your [lowertext(choice.name)]!"))
+		vore_selected_of(host()).transfer_contents(target, choice)
 	else
-		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
-		host().vore_selected.transfer_contents(target, choice)
+		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(vore_selected_of(host()).name)] to their [lowertext(choice.name)]!"))
+		vore_selected_of(host()).transfer_contents(target, choice)
 	return TRUE
 
 /// "Transform": Open the appearance changer on a human prey.
@@ -1444,7 +1444,7 @@ CAPABILITIES(/datum/vore_look)
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
 
-	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
+	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
 		return
 	if(accepted != "Yes")
@@ -1468,7 +1468,7 @@ CAPABILITIES(/datum/vore_look)
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
 		rel_clear(body_backup, nameof(body_backup.teleop))
 		rel_take(T, nameof(T.body_backup))
-		host().vore_selected.release_specific_contents(T, TRUE)
+		vore_selected_of(host()).release_specific_contents(T, TRUE)
 		if(istype(body_backup, /mob/living/simple_mob))
 			var/mob/living/simple_mob/sm = body_backup
 			if(sm.icon_rest && sm.resting)
@@ -1485,7 +1485,7 @@ CAPABILITIES(/datum/vore_look)
 	if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 		to_chat(user,span_warning("They don't seem to be reformable!"))
 		return TRUE
-	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
+	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/prompt/choice, question = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(vore_selected_of(host()).name)]?", title = "Reforming Attempt", choices = list("Yes", "No"), buttons = TRUE)
 	if(isnull(accepted))
 		return
 	if(accepted != "Yes")

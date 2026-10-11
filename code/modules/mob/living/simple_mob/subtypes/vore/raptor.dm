@@ -64,18 +64,11 @@
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to snap up"
 
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
-/mob/living/simple_mob/vore/raptor/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		initial_icon = icon_living
-		set_icon_rest("[icon_living]")
-		set_icon_dead("[icon_living]_dead")
-
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
+	rolls(nameof(initial_icon), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(initial_icon), living = "*", rest = "*", dead = "*_dead", only_if = nameof(random_skin))
 
 /mob/living/simple_mob/vore/raptor/Login()
 	. = ..()
@@ -85,7 +78,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 
 /mob/living/simple_mob/vore/raptor/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The raptor pounces atop you, pinning you under sharp taloned feet, a heavy weight on your chest. Unable to do much more than look up at the reptilian face, looking back down at you with a curious bird-like expression, you're helpless in the moment. With little more warning, the jaws lunge open and dive down towards your head. Engulfing you in the wet maw, tongue pushing against your face, a cage of jagged teeth hold you in place. Pulling you upwards roughly, the creature begins to chomp it's way down your body, and you're steadily transferred down the rippling, tight tunnel of its gullet. The beast throws its head backwards, sending you spiralling down toward's its stomach, where you land with a wet splash. The walls of the gut immediately clamp down on you, wrinkled flesh grinding the gastric slurry of acids and enzymes into your trapped form. A cacophony of bodily functions, groans, gurgles and heart beats overwhelm your hearing. This creature's body has clearly decided you're little more than meat to it now."
 	B.vore_sound = "Tauric Swallow"
@@ -118,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/raptor)
 
 /// A heavy raptor wears its fat sprite: the living state follows the weight state, then the tracked weight state redraws it.
 /mob/living/simple_mob/vore/raptor/proc/consider_wg()
-	var/new_state = (nutrition >= 900) ? 1 : 0
+	var/new_state = (nutrition_of(src) >= 900) ? 1 : 0
 	if(new_state == wg_state)
 		return
 	set_icon_living(new_state ? "[initial_icon]_fat" : "[initial_icon]")

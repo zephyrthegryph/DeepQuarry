@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 			)
 	item_state = "electropack"
 	frequency = AMAG_ELE_FREQ
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
 
 	var/code = 2
@@ -38,11 +37,11 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 		var/obj/item/assembly/shock_kit/K = new /obj/item/assembly/shock_kit( user )
 		K.icon = 'icons/obj/assemblies.dmi'
 
-		rel_set(W, nameof(W.master), K)
+		set_item_master(W, K)
 		if(!move_into(K, nameof(K.part1), W, user))
 			return OP_OK
 
-		rel_set(src, nameof(src.master), K)
+		set_item_master(src, K)
 		if(!move_into(K, nameof(K.part2), src, user))
 			return OP_OK
 
@@ -58,7 +57,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 		return FALSE
 	if(ishuman(user) && (!SSticker || ticker_mode() != "monkey") && user.contents.Find(src))
 		return TRUE
-	if(user.contents.Find(master))
+	if(user.contents.Find(item_master(src)))
 		return TRUE
 	if(in_range(src, user) && isturf(loc))
 		return TRUE
@@ -93,6 +92,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 	return TRUE
 
 CAPABILITIES(/obj/item/radio/electropack)
+	configure(item_worn(slots = SLOT_BACK))
 	interface("Electropack")
 	without("ui_open")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))

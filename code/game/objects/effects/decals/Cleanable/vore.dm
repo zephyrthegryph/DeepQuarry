@@ -12,7 +12,7 @@
 	var/custombasecolor = null
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
-	param(nameof(spill_name), pos = 1, overrides = TRUE)
+	param(nameof(spill_name), pos = 1, overrides = TRUE, apply = PROC_REF(take_spill))
 	param(nameof(spill_color), pos = 2)
 	param(nameof(spill_reagentid), pos = 3)
 	param(nameof(amount), pos = 4)
@@ -24,9 +24,8 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
 /obj/effect/decal/cleanable/blood/reagent/var/spill_color
 /obj/effect/decal/cleanable/blood/reagent/var/spill_reagentid
 
-// ALLOW(init/INSTANCE_STATE): a spilled reagent's puddle takes the reagent's name and colour (blood and water keep their own)
-/obj/effect/decal/cleanable/blood/reagent/Initialize(mapload)
-	. = ..()
+/// A spilled reagent's puddle takes the reagent's name and colour; blood and water keep their own (param(apply =), at init, with every param given).
+/obj/effect/decal/cleanable/blood/reagent/proc/take_spill(given)
 	switch(spill_reagentid)	//To ensure that if people spill some liquids, it wont cause issues with spawning, like spilling blood. Also allow for spilling of certain things to
 		if("blood")
 			return

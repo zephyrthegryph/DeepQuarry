@@ -41,9 +41,9 @@
 			item = allocate(mode == "weapon" ? /obj/item/melee/cultblade : /obj/item/book, T)
 			TEST_ASSERT(user.put_in_active_hand(item), "the actual item starts in the actor's active hand")
 			if(mode == "weapon")
-				TEST_ASSERT(item.force * 20 - wall.metal * 25 >= 100, "the real cult blade has guaranteed foam-breaking force")
+				TEST_ASSERT(combat_of(item).force * 20 - wall.metal * 25 >= 100, "the real cult blade has guaranteed foam-breaking force")
 			else
-				TEST_ASSERT(item.force * 20 - wall.metal * 25 <= 0, "the real book has no chance to break the aluminum foam")
+				TEST_ASSERT(combat_of(item).force * 20 - wall.metal * 25 <= 0, "the real book has no chance to break the aluminum foam")
 			TEST_ASSERT_EQUAL(test_op_handler(wall, "interaction_item", user, item), OP_PASS, "the actual item entry retains its handled-pass contract")
 			TEST_ASSERT_EQUAL(user.get_active_hand(), item, "the actual item hit preserves the original held item")
 			TEST_ASSERT(!QDELETED(item), "the actual item hit never consumes the attacking item")

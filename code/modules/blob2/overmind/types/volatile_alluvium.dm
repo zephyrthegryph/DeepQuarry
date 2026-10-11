@@ -34,7 +34,7 @@
 		var/obj/item/I = H.get_active_hand()
 		H.drop_item()
 		if(I)
-			if((I.sharp || I.edge) && !istype(I, /obj/item/gun))
+			if((combat_of(I).sharp || combat_of(I).edge) && !istype(I, /obj/item/gun))
 				I.forceMove(get_turf(B)) // Disarmed entirely.
 				B.visible_message(span_danger("The [name] heaves, \the [attacker]'s weapon becoming stuck in the churning mass!"))
 			else

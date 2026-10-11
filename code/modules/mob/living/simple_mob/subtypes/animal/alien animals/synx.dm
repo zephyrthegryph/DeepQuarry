@@ -13,10 +13,9 @@
 	icon_state = "synx_living"
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
-	mob_bump_flag = SIMPLE_ANIMAL //This not existing was breaking vore bump for some reason.
 	parasitic = TRUE //Digestion immunity var
 
-	var/list/speak = list() // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
+	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
 	var/speak_chance = 0 //MAy have forgotten to readd that.
 	//Synx speech code overrides normal speech code but is still a x in 200 chance of triggereing, as all mobs do.
 	//VAR$ SETUP
@@ -29,7 +28,7 @@
 	var/stomach_distended_state = "synx_s"
 	var/transformed = FALSE
 	var/memorysize = 50 //Var for how many messages synxes remember if they know speechcode
-	var/list/voices = list() // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
+	var/list/voices = list("Garbled voice", "Unidentifiable Voice") // ALLOW(instance_list): d: per-mob voices, filled at runtime; mobs are few
 	var/acid_damage_lower = SYNX_LOWER_DAMAGE - 1 //Variables for a hacky way to change to burn damage when they vomit up their stomachs. Set to 1 less than melee damage because it takes a minimum of 1 brute damage for this to activate.
 	var/acid_damage_upper = SYNX_UPPER_DAMAGE - 1
 	var/stomach_distended = 0 //Check for whether or not the synx has vomitted up its stomach.
@@ -133,7 +132,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /mob/living/simple_mob/animal/synx/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	//B.human_prey_swallow_time = 6 SECONDS //doesnt work
 	//B.nonhuman_prey_swallow_time = 3 SECONDS //doesnt work
 	B.vore_verb = "swallow"
@@ -189,33 +188,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	"The synx's body gleefully takes what's left of your life, Asteri's usually-repressed sadism overwhelmed with a sinister satisfaction in snuffing you out as your liquefied remains gush into a bit more heft on the parasite's emaciated frame.",
 	)
 */
-
-/mob/living/simple_mob/animal/synx/Initialize(mapload, is_pet) //this is really cool. Should be able to ventcrawl canonicaly, contort, and make random speech.
-//some things should be here that arent tho.
-	. = ..()
-	src.adjust_nutrition(src.max_nutrition)
-	roll_look()
-	if(!voremob_loaded)
-		voremob_loaded = TRUE
-		init_vore()
-	if(is_pet)
-		// A pet synx keeps to the owner: none of the wild synx verbs.
-		for(var/granted_path in list(
-			/mob/living/proc/ventcrawl,
-			/mob/living/simple_mob/animal/synx/proc/distend_stomach,
-			/mob/living/simple_mob/proc/contort,
-			/mob/living/simple_mob/animal/synx/proc/sonar_ping,
-			/mob/living/proc/shred_limb,
-			/mob/living/simple_mob/animal/synx/proc/disguise,
-			/mob/living/simple_mob/animal/synx/proc/randomspeech,
-			/mob/living/simple_mob/animal/synx/proc/set_style))
-			grant(src, granted_verb(granted_path, hidden = TRUE), src)
-		return
-	realname = name
-	voices += "Garbled voice"
-	voices += "Unidentifiable Voice"
-	speak += "Who is there?"
-	speak += "What is that thing?!"
 
 //////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// SPECIAL ITEMS/REAGENTS !!!! ////////////////////////////
@@ -547,9 +519,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		melee_damage_lower = 1 //Hopefully this will make all brute damage not apply while stomach is distended. I don't see a better way to do this.
 		melee_damage_upper = 1
 		set_icon_living(stomach_distended_state)
-		attacktext = attacktext.Copy()
-		attacktext += distend_attacktext
-		attacktext -= initial_attacktext
+		attacktext = (attacktext + distend_attacktext) - initial_attacktext // a new list: the type's table is shared (per_type())
 
 		for(var/belly in src.vore_organs) //Spit out all contents because our insides are now outsides
 			var/obj/belly/B = belly
@@ -564,9 +534,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		melee_damage_lower = SYNX_LOWER_DAMAGE //This is why I'm using a define
 		melee_damage_upper = SYNX_UPPER_DAMAGE
 		set_icon_living(initial(icon_living))
-		attacktext = attacktext.Copy()
-		attacktext += initial_attacktext
-		attacktext -= distend_attacktext
+		attacktext = (attacktext + initial_attacktext) - distend_attacktext // a new list: the type's table is shared (per_type())
 		return
 
 ///
@@ -602,21 +570,34 @@ TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 	look.overlay(look_overlay_image(icon, "synx_eyes[eyes][suffix]", layer_layer, layer_plane, color = overlay_colors["Eyes"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
 /// Rolls the modular style and colours of a new synx.
-/mob/living/simple_mob/animal/synx/proc/roll_look()
-	var/list/colors = overlay_colors.Copy()
-	var/list/bodycolors = list("#FFFFFF")
-	set_body_style(pick(body_styles))
-	colors["Body"] = pick(bodycolors)
-	set_horns(pick(horn_styles))
-	var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
-	colors["Horns"] = pick(horncolors)
-	var/list/markingcolors = list("#2F2F2F")
-	set_markings(pick(TYPE_TABLE_GET(src, synx_marking_styles)))
-	colors["Marks"] = pick(markingcolors)
-	var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
-	set_eyes(pick(eye_styles))
-	colors["Eyes"] = pick(eyecolors)
-	set_overlay_colors(colors)
+/// Each synx looks its own (rolls()): a style of each part and the colours of its layers.
+/mob/living/simple_mob/animal/synx/proc/roll_look(datum/roller/R, target)
+	switch(target)
+		if("body_style")
+			return R.choose(body_styles)
+		if("horns")
+			return R.choose(horn_styles)
+		if("markings")
+			return R.choose(TYPE_TABLE_GET(src, synx_marking_styles))
+		if("eyes")
+			return R.choose(eye_styles)
+		if("overlay_colors")
+			var/list/colors = overlay_colors.Copy()
+			colors["Body"] = "#FFFFFF"
+			colors["Horns"] = R.choose(list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0"))
+			colors["Marks"] = "#2F2F2F"
+			colors["Eyes"] = R.choose(list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF"))
+			return colors
+
+/// A wild synx remembers its own name to fall back to after mimicking a voice (rolls(), after its name's).
+/mob/living/simple_mob/animal/synx/proc/roll_realname(datum/roller/R)
+	return name
+
+/// Starting vore organs: a synx has its bellies from the start (setup()).
+/mob/living/simple_mob/animal/synx/proc/load_vore_at_spawn()
+	if(!voremob_loaded)
+		voremob_loaded = TRUE
+		init_vore()
 
 /mob/living/simple_mob/animal/synx/proc/set_style()
 	set name = "Set Style"
@@ -722,14 +703,14 @@ TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 
 /mob/living/simple_mob/animal/synx/ai/pet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 1
 	B.digest_brute = 0
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_verb = "swallow"
 	B.digest_burn = 5
 	B.digest_brute = 5
@@ -781,7 +762,7 @@ TRACKED(/mob/living/simple_mob/animal/synx, stomach_distended)
 	icon_dead = "synx_hardlight_dead"
 	icon_gib = null
 	alpha = 127
-	speak = list("SX System Online")
+	speak = list("SX System Online", "Who is there?", "What is that thing?!")
 	faction = "neutral"//Can be safely bapped with newspaper.
 	melee_damage_lower = 0 //Holos do no damage
 	melee_damage_upper = 0
@@ -906,6 +887,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
 /mob/living/simple_mob/animal/synx/ai/pet/debug
 	name = "Syntox"
 	desc = "ERROR Connection to translation server could not be established!"
+	// a pet: no remembered voices or words, and none of the wild synx verbs (its CAPABILITIES)
+	speak = list()
+	voices = list()
+
+/// A pet keeps no name of its own to fall back to.
+/mob/living/simple_mob/animal/synx/ai/pet/debug/roll_realname(datum/roller/R)
+	return null
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename()
 	set name = "rename"
@@ -943,12 +931,19 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/greed/synth)
 			set_icon_state(A.answer.value)
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx/ai/pet/debug)
+	// a pet synx keeps to its owner: none of the wild synx verbs
+	verb_entry(/mob/living/proc/ventcrawl, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/proc/contort, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/sonar_ping, hidden = TRUE)
+	verb_entry(/mob/living/proc/shred_limb, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/disguise, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech, hidden = TRUE)
+	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style, hidden = TRUE)
 	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/rename)
 	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/resprite)
 	verb_entry(/mob/living/simple_mob/animal/synx/ai/pet/debug/verb/redesc)
 
-/mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
-	. = ..(mapload, TRUE)
 
 ////////////////////////////////////////
 ////////////////SYNX SPAWNER////////////
@@ -992,7 +987,15 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(mob_movement(bump = SIMPLE_ANIMAL))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	rolls(nameof(body_style), PROC_REF(roll_look))
+	rolls(nameof(horns), PROC_REF(roll_look))
+	rolls(nameof(markings), PROC_REF(roll_look))
+	rolls(nameof(eyes), PROC_REF(roll_look))
+	rolls(nameof(overlay_colors), PROC_REF(roll_look))
+	rolls(nameof(realname), PROC_REF(roll_realname), from = list(nameof(name)))
+	setup(PROC_REF(load_vore_at_spawn))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/distend_stomach)
 	verb_entry(/mob/living/simple_mob/proc/contort)
@@ -1002,3 +1005,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style)
 
+
+/mob/living/simple_mob/animal/synx/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

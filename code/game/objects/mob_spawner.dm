@@ -65,7 +65,7 @@ CAPABILITIES(/obj/structure/mob_spawner)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
@@ -85,12 +85,12 @@ CAPABILITIES(/obj/structure/mob_spawner)
 /obj/structure/mob_spawner/proc/interaction_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/I = A.held
-	if(!I.force || I.flags & NOBLUDGEON || !destructible)
+	if(!combat_of(I).force || I.flags & NOBLUDGEON || !destructible)
 		return OP_PASS
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
-	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with %I% by %T%."), item = I)
+	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? "[pick(combat_of(I).attack_verbs)]":"attacked"] with %I% by %T%."), item = I)
 	receive_weapon_hit(I, user, silent = FALSE)
 	return OP_PASS
 
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 	//and then we spawn them
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction

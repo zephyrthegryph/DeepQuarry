@@ -138,19 +138,21 @@
 	if(P.nodamage || !P.damage || P.emp_on_hit)
 		react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, P, P.firer)
 		return 0
-	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
-	if(P.edge)
+	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(P).armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
+	if(combat_of(P).edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)
 
 /// Weapon hit. `amount` and `injury_kind` let a type react to the tool (a
 /// welder burns a barricade; a blast door shrugs off most of a blow).
-/atom/proc/receive_weapon_hit(obj/item/W, mob/user, amount = W.force, injury_kind = null, zone = null, silent = TRUE, armored = TRUE)
+/atom/proc/receive_weapon_hit(obj/item/W, mob/user, amount = null, injury_kind = null, zone = null, silent = TRUE, armored = TRUE)
+	if(isnull(amount))
+		amount = combat_of(W).force
 	var/flags = silent ? DAMAGE_PACKET_SILENT : NONE
 	if(!armored)
 		flags |= DAMAGE_PACKET_UNARMORED
-	var/datum/damage_packet/packet = damage_packet(W, user, W, zone, flags, W.armor_penetration, user ? get_dir(user, src) : 0, null, DAMAGE_ENTRY_WEAPON)
-	if(W.edge)
+	var/datum/damage_packet/packet = damage_packet(W, user, W, zone, flags, combat_of(W).armor_penetration, user ? get_dir(user, src) : 0, null, DAMAGE_ENTRY_WEAPON)
+	if(combat_of(W).edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	if(injury_kind)
 		return receive_split(packet, injury_kind, null, amount)
@@ -169,7 +171,7 @@
 	return w_class
 
 /obj/item/impact_mass()
-	return throwforce
+	return thrown_of(src).force
 
 /mob/impact_mass()
 	return mob_size
@@ -188,8 +190,8 @@
 		return
 	var/obj/item/I = AM
 	packet.weapon = I // ALLOW(ownership): pooled transient packet, lives for one hit; the pool resets it on release
-	packet.penetration = I.armor_penetration
-	if(I.edge)
+	packet.penetration = combat_of(I).armor_penetration
+	if(combat_of(I).edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	return receive_split(packet, I.injury_kind, I.injury_kinds, amount)
 

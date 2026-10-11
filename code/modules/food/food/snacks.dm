@@ -7,7 +7,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 16
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	volume = 80
 
 	var/bitesize = 1
@@ -92,7 +91,7 @@
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume)
@@ -101,7 +100,7 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && eater.vore_selected)
+		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && vore_selected_of(eater))
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
@@ -109,7 +108,7 @@
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
 				consumed(V, eater)
-			if(!move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, NR, eater))
+			if(!move_into(vore_selected_of(eater), BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
@@ -148,6 +147,7 @@
 // off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
 // is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	configure(item_combat(force = 0))
 	configure(reagents(last = list(REAGENT_ID_NUTRIMENT = PROC_REF(nutriment_units)), data = list(REAGENT_ID_NUTRIMENT = nameof(nutriment_desc))))
 	edible( 
 		bite = nameof(bitesize),
@@ -1457,6 +1457,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/amanita_pie)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
+	rolls(nameof(name), pick_one(list("exceptional plump pie")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump pie!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
 	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 2)))
@@ -1467,13 +1469,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plump_pie)
 
 /obj/item/reagent_containers/food/snacks/plump_pie/proc/exceptional_contents()
 	return exceptional ? list(REAGENT_ID_NUTRIMENT = 8, REAGENT_ID_TRICORDRAZINE = 5) : null
-
-// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
-/obj/item/reagent_containers/food/snacks/plump_pie/Initialize(mapload)
-	. = ..()
-	if(exceptional)
-		name = "exceptional plump pie"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump pie!"
 
 /obj/item/reagent_containers/food/snacks/xemeatpie
 	name = "Xeno-pie"
@@ -1835,8 +1830,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.can_be_drop_pred && Pred.food_vore && Pred.vore_selected)
-		Pred.vore_selected.nom_atom(Prey)
+	if(Pred.can_be_drop_pred && Pred.food_vore && vore_selected_of(Pred))
+		vore_selected_of(Pred).nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()
 	if(reagents.has_reagent(REAGENT_ID_WATER))
@@ -2338,6 +2333,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/boiledslimecore)
 	bitesize = 2
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
+	rolls(nameof(name), pick_one(list("exceptional plump helmet biscuit")), when = nameof(exceptional), from = list(nameof(exceptional)))
+	rolls(nameof(desc), pick_one(list("Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!")), when = nameof(exceptional), from = list(nameof(exceptional)))
 	rolls(nameof(exceptional), chance(10))
 	configure(reagents(contents_from = PROC_REF(exceptional_contents)))
 	configure(reagents(add = list(REAGENT_ID_FUNGI = 1)))
@@ -2348,13 +2345,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit)
 
 /obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/proc/exceptional_contents()
 	return exceptional ? list(REAGENT_ID_NUTRIMENT = 3) : null
-
-// ALLOW(init/INSTANCE_STATE): names it after the exceptional roll
-/obj/item/reagent_containers/food/snacks/plumphelmetbiscuit/Initialize(mapload)
-	. = ..()
-	if(exceptional)
-		name = "exceptional plump helmet biscuit"
-		desc = "Microwave is taken by a fey mood! It has cooked an exceptional plump helmet biscuit!"
 
 /obj/item/reagent_containers/food/snacks/chawanmushi
 	name = "chawanmushi"
@@ -5974,7 +5964,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 	icon = 'icons/obj/food_snacks.dmi'
 	icon_state = "admint_pack"
 	item_state = "candy"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/reagent_containers/food/snacks/mint/admints = 6)
 	use_sound = SFX_ITEMS_DROP_PAPER
@@ -5984,6 +5973,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/mint)
 
 
 CAPABILITIES(/obj/item/storage/box/admints)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER))
 	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 
@@ -8221,15 +8211,26 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 										"trans" = 3,
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
+	/// The bowl colour it rolled (when randomize_bowl_color): its package states and trash follow it.
+	var/bowl_color
 
-// ALLOW(init/INSTANCE_STATE): rolls its bowl colour when its type says to
-/obj/item/reagent_containers/food/snacks/ratpackramen/Initialize(mapload)
-	. = ..()
-	if(randomize_bowl_color)
-		var/bowl_color = pickweight(bowl_color_options)
-		package_open_state = "altevian_pack_ramen_[bowl_color]-open"
-		package_opening_state = "altevian_pack_ramen_[bowl_color]-opening"
-		trash = text2path("/obj/item/trash/ratpackramen/[bowl_color]")
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratpackramen)
+	rolls(nameof(bowl_color), PROC_REF(roll_bowl_color), when = nameof(randomize_bowl_color))
+	rolls(nameof(package_open_state), PROC_REF(bowl_open_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(package_opening_state), PROC_REF(bowl_opening_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+	rolls(nameof(trash), PROC_REF(bowl_trash), when = nameof(bowl_color), from = list(nameof(bowl_color)))
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/roll_bowl_color(datum/roller/R)
+	return R.weighted(bowl_color_options)
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_open_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-open"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_opening_state(datum/roller/R)
+	return "altevian_pack_ramen_[bowl_color]-opening"
+
+/obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_trash(datum/roller/R)
+	return text2path("/obj/item/trash/ratpackramen/[bowl_color]")
 
 /obj/item/reagent_containers/food/snacks/ratpacktaco
 	name = "Triple Taco Tuck"

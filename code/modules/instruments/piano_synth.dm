@@ -14,15 +14,14 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 	name = "headphones"
 	desc = "Unce unce unce unce. Boop!"
 	icon_state = "headphones"
-	slot_flags = SLOT_EARS | SLOT_HEAD
-	force = 0
 	w_class = ITEMSIZE_SMALL
 	instrument_range = 1
 
-/obj/item/instrument/piano_synth/headphones/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/instrument_start, src, then(PROC_REF(start_playing)))
-	observe(src, /datum/notice/instrument_end, src, then(PROC_REF(stop_playing)))
+CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD))
+	configure(item_combat(force = 0))
+	on_notice(/datum/notice/instrument_start, then(PROC_REF(start_playing)))
+	on_notice(/datum/notice/instrument_end, then(PROC_REF(stop_playing)))
 
 /**
  * Called by a component signal when our song starts playing.
@@ -57,6 +56,8 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 	name = "\improper Nanotrasen space pods"
 	desc = "Flex your money, AND ignore what everyone else says, all at once!"
 	icon_state = "spacepods"
-	slot_flags = SLOT_EARS
 	//strip_delay = 100 //air pods don't fall out
 	instrument_range = 0 //you're paying for quality here
+
+CAPABILITIES(/obj/item/instrument/piano_synth/headphones/spacepods)
+	configure(item_worn(slots = SLOT_EARS))

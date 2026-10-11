@@ -15,8 +15,6 @@
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = 1
 	movement_cooldown = 0.75 //roughly a bit faster than a person
@@ -43,3 +41,6 @@
 	speak_emote = list("rumbles", "chirr?", "churr")
 
 	say_list_type = /datum/say_list/armadillo
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/stray)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))

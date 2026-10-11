@@ -55,7 +55,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
 	// An extrapolator's probe stabs it (extrapolator_act()): the user works on the germ, next to it, for two seconds.
 	op("extrapolate", ai(), takes("extrapolator"), wait(2 SECONDS), then(PROC_REF(extrapolator_act_macrophage_done)))
-	owns_one(nameof(base_disease), /datum/affliction/contagion)
+	owns_one(nameof(base_disease), /datum/affliction/contagion, starts = /datum/affliction/contagion/engineered/random/macrophage, starts_args = NO_LOC)
+	derives(nameof(endurance), PROC_REF(hardened_by_disease))
+	derives(nameof(melee_damage_lower), PROC_REF(hardened_by_disease))
+	derives(nameof(melee_damage_upper), PROC_REF(hardened_by_disease))
 	owns_many(nameof(infections), /datum/affliction/contagion)
 
 
@@ -69,14 +72,17 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 
 	pass_flags = PASSTABLE | PASSGRILLE
 
-// ALLOW(init/INSTANCE_STATE): rolls the disease that hardens it
-/mob/living/simple_mob/vore/aggressive/macrophage/Initialize(mapload)
-	. = ..()
-	var/datum/affliction/contagion/engineered/random/macrophage/D = new
-	endurance += D.resistance
-	melee_damage_lower += max(0, D.resistance)
-	melee_damage_upper += max(0, D.resistance)
-	rel_set(src, nameof(base_disease), D)
+/// The disease it carries hardens it: its resistance adds to its endurance and its bite (derives(), once its disease exists).
+/mob/living/simple_mob/vore/aggressive/macrophage/proc/hardened_by_disease(target)
+	var/datum/affliction/contagion/engineered/disease = base_disease
+	var/resistance = istype(disease) ? disease.resistance : 0
+	switch(target)
+		if("endurance")
+			return initial(endurance) + resistance
+		if("melee_damage_lower")
+			return initial(melee_damage_lower) + max(0, resistance)
+		if("melee_damage_upper")
+			return initial(melee_damage_upper) + max(0, resistance)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -105,7 +111,7 @@ TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
 /// Every 3 minutes while deathwatch is set (its every() in the type's CAPABILITIES).
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck(datum/act/A)
-	if(locate_in_list(vore_selected, /mob/living/carbon/human))
+	if(locate_in_list(vore_selected_of(src), /mob/living/carbon/human))
 		return
 	set_deathwatch(FALSE)
 	death()
@@ -178,6 +184,6 @@ TRACKED(/mob/living/simple_mob/vore/aggressive/macrophage, deathwatch)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 // The macrophage's own strain (owned); victims and decals get their own copies.

@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_purple)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_OK
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("[src] ignited due to being hit with a burning weapon ([W]) by [key_name(user)].")
 		ignite()
 	else
@@ -189,9 +189,8 @@ CAPABILITY(/mob/living/simple_mob/slime/feral/silver, reflects(list(/obj/item/pr
 	coretype = /obj/item/slime_extract/ruby
 	melee_attack_delay = 1 SECOND
 
-/mob/living/simple_mob/slime/feral/ruby/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
+	body_effect(/datum/body_effect/slime_strength) // always swole
 
 /mob/living/simple_mob/slime/feral/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()

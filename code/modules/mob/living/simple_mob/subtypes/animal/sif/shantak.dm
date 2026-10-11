@@ -39,7 +39,6 @@
 	minbodytemp = 175
 	melee_damage_lower = 6
 	melee_damage_upper = 14
-	base_attack_cooldown = 1 SECOND
 	melee_attack_delay = 0.5 SECONDS
 	attack_armor_pen = 5
 	attack_injury_kind = INJURY_CUT
@@ -48,6 +47,9 @@
 	organ_names = /datum/decl/mob_organ_names/shantak
 
 	say_list_type = /datum/say_list/shantak
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak)
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/shantak
 	speak = list("Shuhn.","Shrunnph?","Shunpf.")
@@ -82,9 +84,11 @@
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Suggested to spawn last so it can rally up all the shantaks easily before hunting for tasty explorers.
-/mob/living/simple_mob/animal/sif/shantak/leader/autofollow/Initialize(mapload)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/leader/autofollow)
+	after_init(0, then(PROC_REF(rally_on_arrival))) // once the map around it has loaded: its pack is there
+
+/mob/living/simple_mob/animal/sif/shantak/leader/autofollow/proc/rally_on_arrival(datum/act/timer/A)
 	rally_pack()
-	return ..()
 
 // These ones only retaliate. Used for PoIs.
 /mob/living/simple_mob/animal/sif/shantak/retaliate
@@ -94,8 +98,10 @@
 // ition
 /mob/living/simple_mob/animal/sif/shantak/scruffy
 	name = "Scruffy"
-	makes_dirt = 0
 	faction = FACTION_NEUTRAL
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/shantak/scruffy)
+	configure(mob_movement(makes_dirt = 0))
 
 /datum/decl/mob_organ_names/shantak
 TYPE_TABLE(/datum/decl/mob_organ_names/shantak, mob_organ_hit_zones, list("head", "torso", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "mane", "snout"))

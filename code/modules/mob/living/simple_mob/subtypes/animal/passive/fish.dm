@@ -27,15 +27,9 @@
 
 	var/randomize_location = TRUE
 
-// ALLOW(init/INSTANCE_STATE): rolls where in the water it swims unless the map placed it
-/mob/living/simple_mob/animal/passive/fish/Initialize(mapload)
-	. = ..()
-
-	if(!default_pixel_x && randomize_location)
-		default_pixel_x = rand(-12, 12)
-
-	if(!default_pixel_y && randomize_location)
-		default_pixel_y = rand(-6, 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish)
+	rolls(nameof(default_pixel_x), range_of(-12, 12), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_x))))
+	rolls(nameof(default_pixel_y), range_of(-6, 10), when = cond_all(nameof(randomize_location), cond_not(nameof(default_pixel_y))))
 
 // Makes the AI unable to willingly go on land.
 /mob/living/simple_mob/animal/passive/fish/IMove(turf/newloc, safety = TRUE)
@@ -170,11 +164,13 @@
 	var/belly_color = "#FFFFFF"
 
 
-// ALLOW(init/INSTANCE_STATE): rolls its dorsal and belly colours
-/mob/living/simple_mob/animal/passive/fish/icebass/Initialize(mapload)
-	. = ..()
-	set_dorsal_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
-	set_belly_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/icebass)
+	rolls(nameof(dorsal_color), PROC_REF(roll_colour))
+	rolls(nameof(belly_color), PROC_REF(roll_colour))
+
+/// A colour in its own channel ranges (rolls()).
+/mob/living/simple_mob/animal/passive/fish/icebass/proc/roll_colour(datum/roller/R)
+	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
 TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, dorsal_color)
 TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, belly_color)
@@ -227,10 +223,12 @@ TRACKED(/mob/living/simple_mob/animal/passive/fish/icebass, belly_color)
 
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/fish/sif
 
-// ALLOW(init/INSTANCE_STATE): rolls its head colour
-/mob/living/simple_mob/animal/passive/fish/rockfish/Initialize(mapload)
-	. = ..()
-	set_head_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fish/rockfish)
+	rolls(nameof(head_color), PROC_REF(roll_colour))
+
+/// A colour in its own channel ranges (rolls()).
+/mob/living/simple_mob/animal/passive/fish/rockfish/proc/roll_colour(datum/roller/R)
+	return rgb(R.number(min_red, max_red), R.number(min_green, max_green), R.number(min_blue, max_blue))
 
 TRACKED(/mob/living/simple_mob/animal/passive/fish/rockfish, head_color)
 

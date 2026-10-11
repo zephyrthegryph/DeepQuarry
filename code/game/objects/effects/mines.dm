@@ -17,8 +17,10 @@
 /obj/effect/mine/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
-	if(camo_net)
-		alpha = 50
+
+/// A mine under a camouflage net is faint (derives(), at init).
+/obj/effect/mine/proc/camo_alpha()
+	return camo_net ? 50 : alpha
 
 CAPABILITIES(/obj/effect/mine)
 	owns_one(nameof(trap), starts = nameof(trap))
@@ -33,6 +35,7 @@ CAPABILITIES(/obj/effect/mine)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(mine_shot))))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mine_blast)))
+	derives(nameof(alpha), PROC_REF(camo_alpha))
 
 
 /obj/effect/mine/proc/wire_lights()
@@ -154,7 +157,7 @@ CAPABILITIES(/obj/effect/mine)
 
 	if(istype(M, /mob/living/))
 		var/mob/living/mob = M
-		if(!(dq_get_hovering(mob) || mob.flying || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
+		if(!(dq_get_hovering(mob) || stat_value(mob, STAT_FLYING) || mob.is_incorporeal() || mob.mob_size <= MOB_TINY))
 			explode(M)
 
 /obj/effect/mine/proc/screwdriver_used(datum/act/op/A)
@@ -483,7 +486,7 @@ MSG_DEF(mine/priming, span_infoplain("You start priming %T%. Hold still!"), "%U%
 
 // This tells AI mobs to not be dumb and step on mines willingly.
 /obj/item/mine/is_safe_to_step(mob/living/L)
-	if(!(dq_get_hovering(L) || L.flying || L.is_incorporeal() || L.mob_size <= MOB_TINY))
+	if(!(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal() || L.mob_size <= MOB_TINY))
 		return FALSE
 	return ..()
 

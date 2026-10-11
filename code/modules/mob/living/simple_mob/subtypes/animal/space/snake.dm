@@ -62,7 +62,7 @@
 // Adds vore belly
 /mob/living/simple_mob/animal/passive/snake/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The snake coils its tail around you, pushing you to the ground and pinning you with its weight. It flicks its tongue at you, before pouncing onto your head, engulfing the upper half of your body with ease as it unhinges its jaw. With greedy swallows, it pulls you deeper, and deeper. The tight walls undulate rhythmically as the danger noodle rumbles contentedly at this new meal. The snake sends the last of you down with a deep swallow, hissing softly and closing its eyes as it enjoys its new meal, tucked away nicely under those beautiful, green scales."
 	B.item_digest_mode = IM_DIGEST_FOOD
@@ -132,7 +132,6 @@
 
 	endurance = 20
 
-	makes_dirt = FALSE
 
 	vore_default_mode = DM_HOLD
 
@@ -173,6 +172,7 @@
 		..()
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
+	configure(mob_movement(makes_dirt = FALSE))
 	op("noodle_item", item(/obj/item), then(PROC_REF(noodle_interaction_item)))
 
 /// Old attackby: snake snacks.
@@ -199,13 +199,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_SUGAR = 1)
 
-// ALLOW(init/INSTANCE_STATE): rolls its sugar colour
-/obj/item/reagent_containers/food/snacks/snakesnack/Initialize(mapload)
-	. = ..()
-	if(!snack_colour)
-		snack_colour = pick( list("yellow","green","pink","blue") )
-	icon_state = "snack_[snack_colour]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
+/// Its sugar colour names it (rolls()).
+/obj/item/reagent_containers/food/snacks/snakesnack/proc/colour_desc(datum/roller/R)
+	return "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 
 /obj/item/storage/box/snakesnackbox
 	starts_with = list(
@@ -219,3 +215,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snakesnack)
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
+	rolls(nameof(snack_colour), pick_one(list("yellow", "green", "pink", "blue")), when = cond_not(nameof(snack_colour)))
+	look_from(nameof(snack_colour), state = "snack_*")
+	rolls(nameof(desc), PROC_REF(colour_desc), from = list(nameof(snack_colour)))

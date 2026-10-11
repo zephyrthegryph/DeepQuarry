@@ -39,10 +39,10 @@ CAPABILITIES(/obj/item/flame)
 	var/burnt = 0
 	var/smoketime = 5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	attack_verb = list("burnt", "singed")
 
 CAPABILITIES(/obj/item/flame/match)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/flame/match/flame_step(datum/act/timer/A)
@@ -90,7 +90,6 @@ CAPABILITIES(/obj/item/flame/match)
 /obj/item/clothing/mask/smokable
 	name = DEVELOPER_WARNING_NAME // "smokable item"
 	desc = "You're not sure what this is. You should probably ahelp it."
-	body_parts_covered = 0
 	var/icon_on
 	var/type_butt = null
 	var/chem_volume = 0
@@ -134,6 +133,7 @@ SETTER(/obj/item/clothing/mask/smokable, lit)
 SETTER(/obj/item/clothing/mask/smokable, smoketime)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF))
 	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
@@ -297,7 +297,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
 		smoke(5)
 		return ITEM_INTERACT_SUCCESS
-	if(istype(M) && M.on_fire)
+	if(istype(M) && stat_value(M, STAT_ON_FIRE))
 		user.do_attack_animation(M)
 		light(span_notice("[user] coldly lights the [name] with the burning body of [M]."))
 		return ITEM_INTERACT_SUCCESS
@@ -336,8 +336,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	item_state = "cig"
 	throw_speed = 0.5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
-	attack_verb = list("burnt", "singed")
 	type_butt = /obj/item/trash/cigbutt
 	chem_volume = 15
 	max_smoketime = 300
@@ -359,6 +357,8 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
 	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
 	op("tread_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(tread_out)))
@@ -458,10 +458,10 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
 	icon_state = "cigbutt"
 	randpixel = 10
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	throwforce = 1
 
 CAPABILITIES(/obj/item/trash/cigbutt)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 1))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 	rolls(nameof(transform), PROC_REF(roll_transform))
 
@@ -682,9 +682,6 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 	icon_state = "lighter"
 	item_state = "lighter"
 	w_class = ITEMSIZE_TINY
-	throwforce = 4
-	slot_flags = SLOT_BELT
-	attack_verb = list("burnt", "singed")
 	var/base_state
 	/// Sounds
 	var/activation_sound = SFX_ITEMS_LIGHTER_ON
@@ -719,6 +716,9 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 TRACKED(/obj/item/flame/lighter, detonator_mode)
 
 CAPABILITIES(/obj/item/flame/lighter)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4))
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)

@@ -113,11 +113,8 @@ GLOBAL_LIST_INIT(contrast_colors, list("#ff0000", "#00ff00", "#0000ff", "#ffff00
 /atom/proc/setDir(new_dir)
 	set_dir(new_dir)
 
-/atom
-	var/tmp/smoothing_junction = 0
-
 /atom/proc/set_smoothed_icon_state(new_junction)
-	smoothing_junction = new_junction
+	return
 
 
 // SSair admin TGUI procs override the fork's tgui_state/tgui_interact/tgui_data/

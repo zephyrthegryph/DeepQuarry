@@ -60,18 +60,20 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "arm_blade"
 	w_class = ITEMSIZE_NO_CONTAINER
-	force = 5
-	throwforce = 0 //Just to be on the safe side
 	throw_range = 0
 	throw_speed = 0
 	embed_chance = 0 //No embedding.
-	item_flags = DROPDEL | NOSTRIP
 	var/mob/living/creator	//This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
 	var/weapType = "weapon"
 	var/weapLocation = "arm"
 
 	defend_chance = 40	// The base chance for the weapon to parry.
 	projectile_parry_chance = 15	// The base chance for a projectile to be deflected.
+
+CAPABILITIES(/obj/item/melee/changeling)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 5))
 
 /obj/item/melee/changeling/Initialize(mapload)
 	. = ..()
@@ -114,42 +116,42 @@
 	name = "arm blade"
 	desc = "A grotesque blade made out of bone and flesh that cleaves through people as a hot knife through butter."
 	icon_state = "arm_blade"
-	force = 40
-	armor_penetration = 15
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	pry = 1
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 60
 	projectile_parry_chance = 25
+
+CAPABILITIES(/obj/item/melee/changeling/arm_blade)
+	configure(item_tooling(pry = 1))
+	configure(item_combat(force = 40, armor_penetration = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
 
 /obj/item/melee/changeling/arm_blade/greater
 	name = "arm greatblade"
 	desc = "A grotesque blade made out of bone and flesh that cleaves through people and armor as a hot knife through butter."
-	armor_penetration = 30
 	defend_chance = 70
 	projectile_parry_chance = 35
+
+CAPABILITIES(/obj/item/melee/changeling/arm_blade/greater)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/melee/changeling/claw
 	name = "hand claw"
 	desc = "A grotesque claw made out of bone and flesh that cleaves through people as a hot knife through butter."
 	icon_state = "ling_claw"
-	force = 15
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	defend_chance = 50
 	projectile_parry_chance = 15
 
+CAPABILITIES(/obj/item/melee/changeling/claw)
+	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")))
+
 /obj/item/melee/changeling/claw/greater
 	name = "hand greatclaw"
-	force = 20
-	armor_penetration = 20
-	pry = 1
 	defend_chance = 60
 	projectile_parry_chance = 25
+
+CAPABILITIES(/obj/item/melee/changeling/claw/greater)
+	configure(item_tooling(pry = 1))
+	configure(item_combat(force = 20, armor_penetration = 20))
 
 /// The changeling who grew this (a relation view).
 /obj/item/melee/changeling/proc/creator() as /mob/living

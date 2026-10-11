@@ -72,7 +72,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/succlet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stummy"
 	B.desc = "It's a star shaped stomach. A stummy, if you will. It's warm and soft, not unlike plush, but it's tight!"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
@@ -126,7 +126,6 @@
 	src.succlet_last_health = src.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet
-	death_message = "shrieks in agony as it is eradicated from reality."
 
 /mob/living/simple_mob/vore/alienanimals/succlet/on_death(gibbed)
 	. = ..()
@@ -136,6 +135,7 @@
 	expire(25)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+	configure(mob_kind(death_message = "shrieks in agony as it is eradicated from reality."))
 	op("succlet_item", item(/obj/item), then(PROC_REF(succlet_interaction_item)))
 
 /// Old attackby: newspaper swat.

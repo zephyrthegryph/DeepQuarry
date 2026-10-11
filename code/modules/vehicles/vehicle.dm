@@ -67,9 +67,6 @@ CAPABILITIES(/obj/vehicle)
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-/obj/vehicle/Initialize(mapload)
-	. = ..()
-
 ///obj/vehicle/New()
 //	..()
 // //spawn the cell you want in each vehicle // Commented out in favour of initialize.
@@ -125,13 +122,13 @@ CAPABILITIES(/obj/vehicle)
 		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
 		return TRUE
-	if(W.force && W.obj_damage_type())
+	if(combat_of(W).force && W.obj_damage_type())
 		user.setClickCooldown(user.get_attack_speed(W))
 		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
+				receive_weapon_hit(W, user, combat_of(W).force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
+				receive_weapon_hit(W, user, combat_of(W).force * brute_dam_coeff, silent = FALSE)
 		return OP_PASS
 	return OP_DECLINE
 

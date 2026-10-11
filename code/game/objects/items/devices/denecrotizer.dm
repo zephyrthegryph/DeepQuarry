@@ -30,10 +30,17 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 //The stuff we want to be revivable normally
 /mob/living/simple_mob/animal
 	ic_revivable = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal)
+	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
 /mob/living/simple_mob/vore/otie
 	ic_revivable = TRUE
 /mob/living/simple_mob/vore
 	ic_revivable = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore)
+	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
+	configure(mob_movement(bump = 0))
 //The stuff that would be revivable but that we don't want to be revivable
 /mob/living/simple_mob/animal/giant_spider/nurse //no you can't revive the ones who can lay eggs and get webs everywhere
 	ic_revivable = FALSE

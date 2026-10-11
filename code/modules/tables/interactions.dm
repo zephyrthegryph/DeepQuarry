@@ -123,7 +123,7 @@
 		if(I.anchored)
 			return OP_OK
 		if((isliving(user)) && (Adjacent(user)) && !(user.incapacitated()))
-			if(O.w_class <= user.can_pull_size)
+			if(O.w_class <= movement_of(user).pull_size)
 				O.forceMove(loc)
 				auto_align(I, dq_interaction_click_params(user), TRUE)
 			else

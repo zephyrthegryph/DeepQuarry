@@ -6,7 +6,6 @@
 	icon_override = 'icons/mob/vacpack.dmi'
 	icon_state = "sucker_drop"
 	item_state = "sucker"
-	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
 	/// Where sucked-up things go (a relation view: the belly, sleeper or trash bag we feed).
 	var/atom/movable/output_dest
@@ -33,6 +32,7 @@ TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
 			))
 
 CAPABILITIES(/obj/item/vac_attachment)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 	ref_one(nameof(output_dest), /atom/movable)
 	// the old attack_self: with no output yet, set one; otherwise pick a power level or the output
 	op("settings", in_hand(), label("Settings"),
@@ -102,8 +102,8 @@ CAPABILITIES(/obj/item/vac_attachment)
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
-			if(user.vore_selected)
-				rel_set(src, nameof(output_dest), user.vore_selected)
+			if(vore_selected_of(user))
+				rel_set(src, nameof(output_dest), vore_selected_of(user))
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)

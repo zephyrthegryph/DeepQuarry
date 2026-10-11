@@ -5,7 +5,6 @@
 	desc = "A surprisingly soft stuffed pillow."
 	icon = 'icons/obj/pillows.dmi'
 	icon_state = "pillow_pink_square"
-	slot_flags = 0
 	var/pile_type = "/obj/structure/bed/pillowpile"
 	throw_range = 7
 
@@ -22,6 +21,7 @@
 	icon_state = initial(icon_state)
 
 CAPABILITIES(/obj/item/bedsheet/pillow)
+	configure(item_worn(slots = 0))
 	// the pillow's own uses replace the sheet's (lay_out, use_item)
 	op("lay_out", in_hand(), label("Place"), then(PROC_REF(pillow_self)))
 	op("use_item", item(/obj/item), then(PROC_REF(pillow_interaction_item)))

@@ -5,12 +5,12 @@
 	item_state = "ertsuit"
 	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
 	slowdown = 0.5
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
@@ -18,50 +18,37 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_F
 TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY))))
 
 /obj/item/clothing/suit/space/void/responseteam/command
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/command // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-C Emergency Response Team Commander Suit"
 
-/obj/item/clothing/suit/space/void/responseteam/command/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/command) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/medical
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/medical // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-M Emergency Medical Response Suit"
 	icon_state = "ertsuit_m"
 	item_state = "ertsuit_m"
 
-/obj/item/clothing/suit/space/void/responseteam/medical/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/medical) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/engineer
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/engineer // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-E Emergency Engineering Response Suit"
 	icon_state = "ertsuit_e"
 	item_state = "ertsuit_e"
 
-/obj/item/clothing/suit/space/void/responseteam/engineer/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/engineer) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/security
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/security // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-S Emergency Security Response Suit"
 	icon_state = "ertsuit_s"
 	item_state = "ertsuit_s"
 
-/obj/item/clothing/suit/space/void/responseteam/security/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/security) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/janitor
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/janitor // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-J Emergency Cleanup Response Suit"
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
 	slowdown = 0 //light armor means no slowdown
-	item_flags = NOSLIP //INBUILT NANOGALOSHES
 
-/obj/item/clothing/suit/space/void/responseteam/janitor/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam/janitor)
+	configure(item_worn(flags = NOSLIP))
 
 
 // Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.

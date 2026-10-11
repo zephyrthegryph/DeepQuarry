@@ -7,12 +7,11 @@
 	var/mob/living/silicon/ai/mainframe = null
 	var/first_transfer = TRUE
 
-// Premade AI shell, for roundstart shells.
-/mob/living/silicon/robot/ai_shell/Initialize(mapload)
-	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
-	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
+// Premade AI shell, for roundstart shells: its brain is the AI remote interface (the robot's setup_brain() step, before its parents' init);
+// post_mmi_setup() makes it a shell and grants the transfer verb.
+/mob/living/silicon/robot/ai_shell/setup_brain()
+	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src))
 	post_mmi_setup()
-	return ..()
 
 // Call after inserting or instantiating an MMI.
 /mob/living/silicon/robot/proc/post_mmi_setup()
@@ -129,7 +128,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 			target.first_transfer = FALSE
 			target.copy_from_prefs_vr()
 			if(LAZYLEN(target.vore_organs))
-				rel_set(target, nameof(target.vore_selected), target.vore_organs[1])
+				set_vore_selected(target, target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
 		rel_set(AI, nameof(AI.teleop), target) // So the AI 'hears' messages near its core.
 		target.post_deploy()

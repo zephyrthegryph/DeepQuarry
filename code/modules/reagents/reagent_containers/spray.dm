@@ -8,8 +8,6 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 	flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 10
@@ -24,6 +22,8 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
 // closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
 CAPABILITIES(/obj/item/reagent_containers/spray)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
 	reagent_container(
 		volume = nameof(volume),
 		spray = TRUE,
@@ -149,10 +149,12 @@ CAPABILITIES(/obj/item/reagent_containers/spray/waterflower)
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi', slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	center_of_mass_x = 16
 	center_of_mass_y = 16
-	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
 	max_transfer_amount = null
 	volume = 600
+
+CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer)
+	configure(item_thrown(force = 3))
 
 /// Three puffs in a click: at the target and to each side of it.
 /obj/item/reagent_containers/spray/chemsprayer/reagent_spray_at(atom/target, mob/user, amount)
@@ -199,11 +201,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 	var/heavy_spray = FALSE
 	var/spray_particles = 3
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
-	. = ..()
-	dq_add_recursive_move(src)
-	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_hose)))
-
 /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
@@ -221,6 +218,8 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 
 // The dial is turned by an alt-click (1, 2, 3 streams of a heavy spray), and a control-click, held, switches between the light spray and the heavy one.
 CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(update_hose)))
 	hose_sockets(list(/datum/hose_connector/input))
 	op("dial", hand(), answers(INTENT_TOGGLE), label("Turn dial"), then(PROC_REF(dial_turned)))
 	op("heavy", in_hand(), gesture(GESTURE_CTRL), label("Switch the spray"), then(PROC_REF(spray_switched)))

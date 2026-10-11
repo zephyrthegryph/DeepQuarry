@@ -18,7 +18,6 @@
 	icon_dead = "drone0"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 
@@ -32,6 +31,9 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
+
+CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
 	vore_active = 1
@@ -56,7 +58,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
 
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -81,7 +83,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/redcabold)
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -106,7 +108,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/yellowcabold)
 
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -131,7 +133,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/orangecabold)
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -156,7 +158,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/purplecabold)
 
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -181,7 +183,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 
@@ -429,7 +431,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	icon_dead = "slainouroboros"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 	icon_state = "ouroboros"
@@ -453,6 +454,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/act/A)
@@ -576,22 +578,26 @@ CAPABILITIES(/obj/random/mob/candycritter)
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 20
-	armor_penetration = 30
 	speed = 4.0
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/chilled
 	modifier_duration = 6 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/chocosphere)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/canearrow
 	name = "candy cane arrow"
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "choclate_sphere"
 	damage = 15
-	armor_penetration = 40
 	speed = 2.5
 	flash_strength = 0
 	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 12 SECONDS
+
+CAPABILITIES(/obj/item/projectile/energy/canearrow)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/arc/fragmentation/cherrybomb
 	name = "cherry bomb"
@@ -609,7 +615,9 @@ CAPABILITIES(/obj/random/mob/candycritter)
 	icon = 'icons/mob/candy.dmi'
 	icon_state = "cherry_pit"
 	damage = 25
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/bullet/cherrypit)
+	configure(item_combat(armor_penetration = 30))
 
 //more critters
 //antimelee
@@ -636,7 +644,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/peppermint)
 /mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(80))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% deflects %T% with its shell!")))
 			if(user)
@@ -702,7 +710,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/worm)
 
 /mob/living/simple_mob/vore/candy/peppermint/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The fearsome predator gets a firm grip upon you, before dunking you into it's maw, then with a powerful swift gulp you're sent tumbling into it's stomach."
 

@@ -37,15 +37,13 @@
 	name = "Leggy"
 	desc = "Don't make fun, they have a condition."
 	digestable = 0
-
-TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy, preserve_mouse_identity, TRUE)
+	keep_parent_data = TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/brown/feivel
 	name = "Feivel"
 	desc = "Heading out west wasn't far enough, so he's going to space!"
 	digestable = 0
-
-TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/feivel, preserve_mouse_identity, TRUE)
+	keep_parent_data = TRUE
 
 /mob/living/simple_mob/animal/passive/cat/jones
 	name = "Jones"
@@ -104,5 +102,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/feivel, preserve_mo
 	devourable = 0
 	digestable = 0
 	faction = FACTION_BAR
-	mob_bump_flag = 32
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
+	configure(mob_movement(bump = 32))

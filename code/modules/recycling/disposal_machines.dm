@@ -38,6 +38,7 @@
 	flags = REMOTEVIEW_ON_ENTER
 
 CAPABILITIES(/obj/machinery/disposal)
+	on_notice(/datum/notice/disposal_receive, then(PROC_REF(on_disposal_receive)))
 	configure(uses_power(active = 2200, idle = 100))
 	silicon_ui()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
@@ -96,7 +97,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	add_disposal_connection()
 	face(dir)
-	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(on_disposal_receive)))
 	if(trunk)
 		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 

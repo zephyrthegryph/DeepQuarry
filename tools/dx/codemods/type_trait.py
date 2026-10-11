@@ -40,6 +40,41 @@ SPECS = {
         skip={"code/game/objects/items.dm"},
         skip_refs=r"(^|\.)species$",  # a species' own siemens_coefficient
     ),
+    "item_thrown": dict(
+        base="/obj/item", ctor="item_thrown", reader="thrown_of", type_reader="thrown_of_type",
+        fields={"throwforce": "force", "catchable": "catchable"},
+        skip={"code/game/objects/items/item_thrown.dm"},
+    ),
+    "item_worn": dict(
+        base="/obj/item", ctor="item_worn", reader="worn_of", type_reader="worn_of_type",
+        fields={"slot_flags": "slots", "flags_inv": "hides", "body_parts_covered": "covers", "item_flags": "flags", "default_worn_icon": "worn_icon"},
+        skip={"code/game/objects/items/item_worn.dm"},
+    ),
+    "item_tooling": dict(
+        base="/obj/item", ctor="item_tooling", reader="tooling_of", type_reader="tooling_of_type",
+        fields={"toolspeed": "speed", "pry": "pry", "rock_climbing": "climbing"},
+        skip={"code/game/objects/items/item_tooling.dm"},
+    ),
+    "mob_movement": dict(
+        base="/mob", ctor="mob_movement", reader="movement_of", type_reader="movement_of_type",
+        fields={"mob_bump_flag": "bump", "mob_swap_flags": "swap", "mob_push_flags": "push", "mob_always_swap": "always_swap", "makes_dirt": "makes_dirt", "can_climb": "can_climb", "can_pull_size": "pull_size", "can_pull_mobs": "pull_mobs", "no_pull_when_living": "no_pull_when_living"},
+        skip={"code/modules/mob/mob_movement_trait.dm"},
+        skip_refs=r"(^|\.)species$",  # a species' own can_climb and death_message
+    ),
+    "mob_kind": dict(
+        base="/mob", ctor="mob_kind", reader="kind_of", type_reader="kind_of_type",
+        fields={"mob_class": "mob_class", "base_attack_cooldown": "attack_cooldown", "allow_self_surgery": "self_surgery", "inventory_panel_type": "inventory_panel", "can_be_antagged": "can_be_antagged", "use_me": "use_me", "emote_type": "emote_type", "death_message": "death_message", "attack_icon": "attack_icon", "attack_icon_state": "attack_icon_state"},
+        skip={"code/modules/mob/mob_kind.dm"},
+        skip_refs=r"(^|\.)species$",  # a species' own can_climb and death_message
+    ),
+    "item_combat": dict(
+        base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
+        fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
+                "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
+                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs"},
+        skip={"code/game/objects/items/item_combat.dm"},
+        skip_refs=r"(^|\.)def$",  # a wire definition's own reach  # items.dm is rewritten too: its base declarations are deleted by hand
+    ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 _spec_name = next((a for a in _args if a in SPECS), None)
@@ -108,6 +143,15 @@ def mask_strings(code):
     i = 0
     while i < len(code):
         c = code[i]
+        if in_str and depth and c in "\"'":
+            # a string inside an embedded expression: blank it whole
+            j = i + 1
+            while j < len(code) and code[j] != c:
+                j += 2 if code[j] == "\\" else 1
+            for k in range(i + 1, min(j, len(code))):
+                out[k] = "\0"
+            i = j + 1
+            continue
         if in_str:
             if c == "\\":
                 out[i] = "\0"
@@ -146,6 +190,7 @@ REF = r"(?:[A-Za-z_]\w*(?:\(\))?(?:\??\.[A-Za-z_]\w*(?:\(\))?)*)"
 
 OWNER = [None]  # the type whose proc is being read (None outside a proc)
 LOCALS = {}  # name -> declared type path, for the current proc
+SHADOW = set()  # field names the current proc declares itself (an argument `force`, a local `var/reach`): its bare uses are not the var
 
 
 def under_base(path):
@@ -169,6 +214,8 @@ def ref_ok(ref):
 
 
 def note_locals(code):
+    for m in re.finditer(r"\bvar/(?:[A-Za-z_]\w*/)*(" + NAME_RE + r")\b", code):
+        SHADOW.add(m.group(1))
     for m in re.finditer(r"\bvar/((?:[A-Za-z_]\w*/)*)([A-Za-z_]\w*)", code):
         path = "/" + m.group(1).rstrip("/") if m.group(1) else None
         if path and path != "/list":
@@ -181,8 +228,8 @@ def rewrite_code(code):
     if not re.search(r"\b(" + NAME_RE + r")\b", masked):
         return code
     # statement writes: [ref.]name op= value (the whole rest of the statement)
-    m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)\s*(.+?)\s*$", code)
-    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked) and ref_ok(m.group(2)):
+    m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/|&^]?)=(?!=)\s*(.+?)\s*$", code)
+    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/|&^]?)=(?!=)", masked) and ref_ok(m.group(2)) and (m.group(2) or m.group(3) not in SHADOW):
         indent, ref, name, op, value = m.groups()
         value = rewrite_reads(value, mask_strings(value))
         target = (ref + ".") if ref else ""
@@ -206,6 +253,12 @@ def rewrite_reads(code, masked):
         if ref and ref.startswith("set_"):
             continue
         if not ref_ok(ref):
+            continue
+        if not ref and name in SHADOW:
+            continue
+        if not init and re.match(r"\s*[-+*/|&^]?=(?!=)", masked[end:]):
+            # `f(force = TRUE)` is a named argument, and a compound write inside an expression would mutate the shared trait: leave
+            # both for a hand edit (statement writes were made setters above)
             continue
         if init and close:
             holder = (ref + ".type") if ref else "type"
@@ -265,7 +318,10 @@ def main():
                 pm = re.match(r"^(/[A-Za-z0-9_/]+?)/(?:proc/|verb/)?([A-Za-z_]\w*)\((.*)$", line)
                 OWNER[0] = pm.group(1) if pm and not pm.group(1).startswith("/proc") else None
                 LOCALS.clear()
+                SHADOW.clear()
                 if pm:
+                    for am in re.finditer(r"(?:^|,)\s*(?:var/)?(?:[A-Za-z_]\w*/)*(" + NAME_RE + r")\s*(?=[,=)]|$)", pm.group(3)):
+                        SHADOW.add(am.group(1))
                     for am in re.finditer(r"((?:[A-Za-z_]\w*/)+)([A-Za-z_]\w*)", pm.group(3)):
                         LOCALS[am.group(2)] = "/" + am.group(1).rstrip("/")
             om =OVERRIDE.match(line) if cur else None

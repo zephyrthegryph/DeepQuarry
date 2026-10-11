@@ -25,38 +25,36 @@
 	var/joke //What joke we have loaded
 
 CAPABILITIES(/obj/item/cracker)
+	rolls(nameof(prize), PROC_REF(roll_prize))
+	rolls(nameof(joke), pick_one(list("When is a boat just like snow? When it's adrift.",
+		"What happens to naughty elves? Santa gives them the sack.",
+		"What do you call an old snowman? Water.",
+		"Why has Santa been banned from sooty chimneys? Carbon footprints.",
+		"What goes down but doesn't come up? A yo.",
+		"What's green and fuzzy, has four legs and would kill you if it fell from a tree? A pool table.",
+		"Why did the blind man fall into the well? Because he couldn't see that well.",
+		"What did the pirate get on his report card? Seven Cs",
+		"What do you call a fish with no eyes? Fsh",
+		"How do you make an egg roll? You push it.",
+		"What do you call a deer with no eyes? NO EYED DEER!",
+		"What's red, and smells like blue paint? Red paint.",
+		"Where do cows go to dance? A meat ball.",
+		"What do you call a person who steals all your toenail clippings? A cliptoemaniac.",
+		"What's brown and sticky? A stick.",
+		"What's the best way to kill a circus? Go for the juggler.",
+		"What do you call a cow with no legs? Ground Beef.",
+		"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// What it holds (rolled; the cracker kinds are defines local to this file).
+/obj/item/cracker/proc/roll_prize(datum/roller/R)
+	return R.choose(list(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/cracker/proc/roll_look(datum/roller/R)
 	var/style = R.choose(list("blue","green","yellow","red","heart","hazard"))
 	item_state = style
 	return style
-
-// ALLOW(init/INSTANCE_STATE): rolls its wrapper, its prize and its joke
-/obj/item/cracker/Initialize(mapload)
-	. = ..()
-	if(!prize)
-		prize = pick(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER)
-	if(!joke)
-		joke = pick("When is a boat just like snow? When it's adrift.",
-					"What happens to naughty elves? Santa gives them the sack.",
-					"What do you call an old snowman? Water.",
-					"Why has Santa been banned from sooty chimneys? Carbon footprints.",
-					"What goes down but doesn't come up? A yo.",
-					"What's green and fuzzy, has four legs and would kill you if it fell from a tree? A pool table.",
-					"Why did the blind man fall into the well? Because he couldn't see that well.",
-					"What did the pirate get on his report card? Seven Cs",
-					"What do you call a fish with no eyes? Fsh",
-					"How do you make an egg roll? You push it.",
-					"What do you call a deer with no eyes? NO EYED DEER!",
-					"What's red, and smells like blue paint? Red paint.",
-					"Where do cows go to dance? A meat ball.",
-					"What do you call a person who steals all your toenail clippings? A cliptoemaniac.",
-					"What's brown and sticky? A stick.",
-					"What's the best way to kill a circus? Go for the juggler.",
-					"What do you call a cow with no legs? Ground Beef.",
-					"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")
 
 /obj/item/cracker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	var/mob/living/carbon/human/target = M
@@ -120,7 +118,7 @@ CAPABILITIES(/obj/item/cracker)
 				var/T = get_turf(winner)
 				play_sfx(T, SFX_SPARKS)
 				anim(T,winner,'icons/mob/mob.dmi',,"phaseout",,winner.dir)
-				loser.vore_selected.nom_atom(winner)
+				vore_selected_of(loser).nom_atom(winner)
 		if(WEALTHY_CRACKER)
 			new /obj/random/cash/huge(spawnloc)
 			new /obj/random/cash/huge(spawnloc)
@@ -169,11 +167,10 @@ CAPABILITIES(/obj/item/cracker)
 	item_state = "paper_crown_blue"
 	item_icons = list(slot_head_str = 'icons/inventory/head/mob.dmi')
 	desc = "A paper crown so thin that you can see through it."
-	flags_inv = 0
-	body_parts_covered = 0
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/head/paper_crown)
+	configure(item_worn(hides = 0, covers = 0))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.

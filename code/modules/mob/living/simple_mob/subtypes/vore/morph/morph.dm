@@ -14,7 +14,6 @@
 	movement_cooldown = -1
 	status_flags = CANPUSH
 	pass_flags = PASSTABLE
-	mob_bump_flag = SLIME
 
 	min_oxy = 0
 	max_oxy = 0
@@ -60,6 +59,7 @@
 	/obj/effect))
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph)
+	configure(mob_movement(bump = SLIME))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/take_over_prey)
@@ -225,8 +225,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 						if(target?.buckled_to())
 							var/atom/movable/_tmp_buck_27 = target?.buckled_to()
 							_tmp_buck_27.unbuckle_mob(target, force = TRUE)
-						vore_selected.nom_atom(target)
-						to_chat(target,span_vwarning("\The [src] quickly engulfs you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+						vore_selected_of(src).nom_atom(target)
+						to_chat(target,span_vwarning("\The [src] quickly engulfs you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 	else
 		..()
 
@@ -373,7 +373,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	stop_pulling()
 	rel_set(src, nameof(original_mind), ensure_mind())
 	log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
-	new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
+	new /mob/living/simple_mob/vore/morph/dominated_prey(vore_selected_of(L), L.ensure_mind(), src, L)
 
 
 /mob/living/simple_mob/vore/morph/dominated_prey
@@ -400,7 +400,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	move_player_mind(parent_morph.original_mind, prey_body, "morph took over [prey_body]", share = TRUE)
 	parent_morph.forceMove(src)
 	name = "[prey_body.name]"
-	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [prey_body.vore_selected]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
+	to_chat(prey_body, span_notice("You have completely assumed the form of [prey_body]. Your form is now unable to change anymore until you restore control back to them. You can do this by 'ejecting' them from your [vore_selected_of(prey_body)]. This will not actually release them from your body in this state, but instead return control to them, and restore you to your original form."))
 
 /mob/living/simple_mob/vore/morph/dominated_prey/on_death(gibbed)
 	. = ..()
@@ -435,7 +435,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	else
 		parent_morph.forceMove(get_turf(prey_body))
 		return_bodies()
-		parent_morph.vore_selected.nom_atom(prey_body)
+		vore_selected_of(parent_morph).nom_atom(prey_body)
 		log_and_message_admins("and [key_name_admin(parent_morph)] have been returned to their original bodies. [get_area(src)] - [COORD(src)].", prey_body)
 	dissolved(src)
 

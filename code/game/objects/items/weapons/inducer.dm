@@ -8,7 +8,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 7
 
 	var/powertransfer = 1000 //Transfer per time when charging something
 	var/cell_type = /obj/item/cell/high //Type of cell to spawn in it
@@ -90,6 +89,7 @@ TRACKED(/obj/item/inducer, opened)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/inducer)
+	configure(item_combat(force = 7))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -262,22 +262,26 @@ CAPABILITIES(/obj/item/inducer)
 
 	charge = 100
 	maxcharge = 100
-	item_flags = ABSTRACT
 
 	var/mob/living/carbon/human/hume
+	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
+	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
+	setup(PROC_REF(charge_from_hume))
 
 // ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
 /obj/item/cell/standin/Initialize(mapload)
 	. = ..()
 	if(!istype(hume))
 		return INITIALIZE_HINT_QDEL
-	set_charge(hume.nutrition)
-	set_maxcharge(initial(hume.nutrition))
-	expire(20 SECONDS)
 
+
+/// Setup: the stand-in holds what its human has eaten, up to what a new body starts with.
+/obj/item/cell/standin/proc/charge_from_hume()
+	set_charge(nutrition_of(hume))
+	set_maxcharge(hume.starting_nutrition())
 
 /obj/item/cell/standin/give(amount)
 	. = ..(amount * NUTRITION_COEFF) //Shrink amount to store

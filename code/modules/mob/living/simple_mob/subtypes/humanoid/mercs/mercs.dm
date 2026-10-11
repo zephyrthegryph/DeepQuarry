@@ -104,7 +104,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(20))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
@@ -156,7 +156,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 
 	projectile_dispersion = 7
 	projectile_accuracy = -20
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20
 
 /mob/living/simple_mob/humanoid/merc/ranged/smg/sol
@@ -166,9 +165,11 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	corpse = /obj/effect/landmark/mobcorpse/solarpeacekeeper
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20
 	catalogue_data = list(/datum/category_item/catalogue/fauna/mercenary/human/peacekeeper)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/smg/sol)
+	configure(mob_kind(attack_cooldown = 5))
 
 // Rifles
 /mob/living/simple_mob/humanoid/merc/ranged/rifle
@@ -181,7 +182,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
 	projectile_dispersion = 8
 	projectile_accuracy = -15
-	base_attack_cooldown = 5
 	reload_max = 30
 
 /mob/living/simple_mob/humanoid/merc/ranged/rifle/mag
@@ -191,8 +191,10 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	projectilesound = SFX_WEAPONS_RAPIDSLICE
 	projectile_dispersion = 5
 	projectile_accuracy = -20
-	base_attack_cooldown = 15
 	reload_max = 10
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag)
+	configure(mob_kind(attack_cooldown = 15))
 
 // Laser Rifle
 /mob/living/simple_mob/humanoid/merc/ranged/laser
@@ -406,7 +408,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	icon_state = "syndicatespace-ranged"
 	icon_living = "syndicatespace-ranged"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=35;bio=100;rad=100" // Same armor as their voidsuit.
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20
 	loot_list = list(/obj/item/gun/projectile/automatic/c20r = 100)
 
@@ -427,18 +428,23 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 
 	corpse = /obj/effect/landmark/mobcorpse/syndicatecommando
 
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space)
+	configure(mob_kind(attack_cooldown = 5))
+
 //Combat Shotgun Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/shotgun
 	name = "mercenary tactical"
 	desc = "A tough looking individual armed with a combat shotgun."
 	icon_state = "syndicatespace-shotgun"
 	icon_living = "syndicatespace-shotgun"
-	base_attack_cooldown = 10
 	reload_max = 7
 	reload_time = 2 SECONDS //Takes a While to load all those shells.
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
 	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/combat = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/shotgun)
+	configure(mob_kind(attack_cooldown = 10))
 
 //Auto-Shotgun Space Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/shotgun/auto
@@ -446,11 +452,13 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	desc = "A tough looking individual armed with an automatic shotgun."
 	icon_state = "syndicatespace-ashotgun"
 	icon_living = "syndicatespace-ashotgun"
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 24
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun		// Buckshot
 	projectilesound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	loot_list = list(/obj/item/gun/projectile/automatic/as24 = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/shotgun/auto)
+	configure(mob_kind(attack_cooldown = 5))
 
 //Machine Gun Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/heavy
@@ -458,11 +466,13 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	desc = "A tough looking individual armed with an light machinegun."
 	icon_state = "syndicatespace-heavy"
 	icon_living = "syndicatespace-heavy"
-	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
 	reload_max = 50
 	projectiletype = /obj/item/projectile/bullet/rifle/a545
 	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 	loot_list = list(/obj/item/gun/projectile/automatic/l6_saw = 100)
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/heavy)
+	configure(mob_kind(attack_cooldown = 2.5))
 
 //Tommy-Las Merc
 /mob/living/simple_mob/humanoid/merc/ranged/space/tommylas
@@ -470,12 +480,14 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	desc = "A tough looking individual armed with an automatic laser."
 	icon_state = "syndicatespace-tommylas"
 	icon_living = "syndicatespace-tommylas"
-	base_attack_cooldown = 2.5 // Four Attacks a Second. MOAR DAKKA
 	reload_max = 3
 	reload_time = 0.5  // Meant to Simulate controlled Supressive Bursts
 	projectiletype = /obj/item/projectile/beam/weaklaser
 	projectilesound = SFX_WEAPONS_LASER
 	// loot_list = list(/obj/item/gun/energy/tommylaser = 100) // Downstream
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/tommylas)
+	configure(mob_kind(attack_cooldown = 2.5))
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/fal
 	name = "mercenary commando"
@@ -496,7 +508,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	say_list_type = /datum/say_list/merc/elite
 	projectiletype = /obj/item/projectile/bullet/pistol/medium/ap/suppressor // it's high velocity
 	projectilesound = SFX_WEAPONS_DOOMPISTOL // converted from .wavs extracted from doom 2
-	base_attack_cooldown = 3 // three? attacks a second
 	reload_max = 30 // extended mags
 	special_attack_charges = 5
 	loot_list = list() // oh, you killed him?
@@ -515,6 +526,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 
 // being Actual Professionals, they have better (read: player-level) blocking chances
 CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
+	configure(mob_kind(attack_cooldown = 3))
 	op("suppressor_item", item(/obj/item), then(PROC_REF(suppressor_interaction_item)))
 
 /// Old attackby: shield block.
@@ -522,7 +534,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(50))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)

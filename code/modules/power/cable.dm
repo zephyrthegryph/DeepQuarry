@@ -458,13 +458,10 @@ CAPABILITIES(/obj/structure/cable)
 	color = COLOR_RED
 	gender = NEUTER
 	desc = "A coil of power cable."
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	slot_flags = SLOT_BELT
 	item_state = "coil"
-	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = /obj/item/stack/cable_coil
 	singular_name = "length"
 	tool_qualities = list(TOOL_CABLE_COIL)
@@ -583,6 +580,9 @@ CAPABILITIES(/obj/structure/cable)
 	return GLOB.possible_cable_coil_colours
 
 CAPABILITIES(/obj/item/stack/cable_coil)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
+	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), asks(/datum/prompt/choice, fields = list("question" = "Pick new colour.", "title" = "Cable Colour", "choices" = computed(PROC_REF(colour_choices))), step = "colour"), then(PROC_REF(multitool_used)))
 	op("cable_coil_make_restraint", menu(), label("Make Cable Restraints"), needs(carried()), then(PROC_REF(cable_coil_make_restraint)))
@@ -783,12 +783,9 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 /obj/item/stack/cable_coil/cut
 	item_state = "coil2"
 
-/obj/item/stack/cable_coil/cut/Initialize(mapload)
-	. = ..()
-	set_amount(rand(1,2), TRUE)
-	pixel_x = rand(-2,2)
-	pixel_y = rand(-2,2)
-	update_wclass()
+CAPABILITIES(/obj/item/stack/cable_coil/cut)
+	rolls(nameof(amount_at_make), range_of(1, 2)) // a cut piece is one or two lengths
+	rolls(ROLL_PIXEL, PIXEL_JITTER(2))
 
 /obj/item/stack/cable_coil/yellow
 	stacktype = /obj/item/stack/cable_coil
@@ -862,15 +859,17 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	stacktype = /obj/item/stack/cable_coil
 	color = COLOR_BROWN
 
-/obj/item/stack/cable_coil/random/Initialize(mapload)
+/obj/item/stack/cable_coil/random
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)
-	. = ..()
 
-/obj/item/stack/cable_coil/random_belt/Initialize(mapload)
+CAPABILITIES(/obj/item/stack/cable_coil/random)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_BLUE, COLOR_LIME, COLOR_WHITE, COLOR_PINK, COLOR_YELLOW, COLOR_CYAN, COLOR_SILVER, COLOR_GRAY, COLOR_BLACK, COLOR_MAROON, COLOR_OLIVE, COLOR_LIME, COLOR_TEAL, COLOR_NAVY, COLOR_PURPLE, COLOR_BEIGE, COLOR_BROWN)))
+
+/obj/item/stack/cable_coil/random_belt
 	stacktype = /obj/item/stack/cable_coil
-	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
-	. = ..()
+
+CAPABILITIES(/obj/item/stack/cable_coil/random_belt)
+	rolls(nameof(color), pick_one(list(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)))
 
 //Endless alien cable coil
 
@@ -898,22 +897,18 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 	amount = MAXCOIL
 	max_amount = MAXCOIL
 	color = COLOR_SILVER
-	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 5
-	slot_flags = SLOT_BELT
-	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = null
-	toolspeed = 0.25
 
 /obj/item/stack/cable_coil/alien/Initialize(mapload)		//There has to be a better way to do this.
 	. = ..()
 	if(embed_chance == -1)		//From /obj/item, don't want to do what the normal cable_coil does
-		if(sharp)
-			embed_chance = force/w_class
+		if(combat_of(src).sharp)
+			embed_chance = combat_of(src).force/w_class
 		else
-			embed_chance = force/(w_class*3)
+			embed_chance = combat_of(src).force/(w_class*3)
 
 /// An alien spool always shows its own state.
 /obj/item/stack/cable_coil/alien/look_state()
@@ -939,6 +934,10 @@ CAPABILITIES(/obj/item/stack/cable_coil)
 
 // The endless coil's touch replaces the stack's split: it asks how much wire to take.
 CAPABILITIES(/obj/item/stack/cable_coil/alien)
+	configure(item_tooling(speed = 0.25))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 10))
+	configure(item_combat(attack_verbs = list("whipped", "lashed", "disciplined", "flogged")))
 	op("split", hand(), ungated(), label("Take wire"), when(req(PROC_REF(alien_coil_inactive))),
 		asks(/datum/prompt/number, step = "wire", fields = list("title" = "Split stacks", "question" = computed(PROC_REF(alien_wire_question)), "default" = 1, "max_value" = computed(PROC_REF(alien_wire_maximum)), "min_value" = 1, "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0)), then(PROC_REF(alien_wire_taken)))
 

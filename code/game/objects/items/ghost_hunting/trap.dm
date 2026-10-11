@@ -11,7 +11,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
@@ -19,6 +18,7 @@
 TRACKED(/obj/item/ghost_trap, deployed)
 
 CAPABILITIES(/obj/item/ghost_trap)
+	configure(item_thrown(force = 0))
 	// The captured entity working its way out (container_resist() starts it): two minutes.
 	op("break_out", ai(), wait(2 MINUTES), then(PROC_REF(container_resist_timed_done)))
 	ref_one(nameof(captured_entity))
@@ -251,7 +251,7 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
-			user.begin_instant_nom(user, our_entity, user, user.vore_selected)
+			user.begin_instant_nom(user, our_entity, user, vore_selected_of(user))
 			return
 
 	to_chat(user, span_info("There appears to be nothing in the trap to eat!"))

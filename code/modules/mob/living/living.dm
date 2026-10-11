@@ -23,15 +23,15 @@
 	for(var/datum/soul_link/S as anything in shared_soul_links?.Copy())
 		S.sharer_died(FALSE)
 		S.remove_soul_sharer(src) // If a sharer is destroy()'d, they are simply removed.
-	if(nest) //Ew.
-		if(istype(nest, /obj/structure/prop/nest))
-			var/obj/structure/prop/nest/N = nest
+	if(nest_of(src)) //Ew.
+		if(istype(nest_of(src), /obj/structure/prop/nest))
+			var/obj/structure/prop/nest/N = nest_of(src)
 			N.remove_creature(src)
 		// a blob spore leaves its factory's spores through the pair's teardown
-		if(istype(nest, /obj/structure/mob_spawner))
-			var/obj/structure/mob_spawner/S = nest
+		if(istype(nest_of(src), /obj/structure/mob_spawner))
+			var/obj/structure/mob_spawner/S = nest_of(src)
 			S.get_death_report(src)
-		nest = null
+		set_nest(src, null)
 	// BUCKLED(src) is already null here: the buckled_to relation
 	// (code/datums/om/library.dm) unlinked in the destroy transaction's phase
 	// 5 teardown, before Destroy() ran, and its on_unlink() hook did the
@@ -364,7 +364,7 @@
 		return TRUE
 
 	else if(canmove)
-		if(on_fire)
+		if(stat_value(src, STAT_ON_FIRE))
 			resist_fire() //stop, drop, and roll
 		else
 			resist_restraints()
@@ -506,7 +506,7 @@ sparse(/mob/living, vomiting, type = bool)
 				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
 			return FALSE
 
-	if(nutrition < 100 && !blood)
+	if(nutrition_of(src) < 100 && !blood)
 		if(message)
 			act_message(src, null, MSG_SELF(span_userdanger("You try to throw up, but there's nothing in your stomach!")), \
 				MSG_OTHERS(span_warning("%U% dry heaves!")))
@@ -924,7 +924,7 @@ sparse(/mob/living, vomiting, type = bool)
 	return !(has_status(STAT_BLINDED) || (disabilities & BLIND) || stat || blinded)
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
-	return makes_dirt
+	return movement_of(src).makes_dirt
 
 /// Affected by airborne agents (smoke, choking): a breathing, non-synthetic body (P2-S7: breathes()).
 /mob/living/proc/needs_to_breathe()
@@ -935,21 +935,40 @@ sparse(/mob/living, vomiting, type = bool)
 /mob/living/proc/adjust_nutrition(amount)
 	if(!amount || !isnum(amount))
 		return 0
-	return set_nutrition(nutrition + amount)
+	return set_nutrition(nutrition_of(src) + amount)
 
-/// Set nutrition to `value`, clamped to [0, max_nutrition]: nutrition's only writer (a tracked var the HUD reads).
-/// Returns the change.
+/// Set nutrition to `value`, clamped to [0, max_nutrition]: nutrition's only writer. It lives in the body's metabolism and publishes
+/// MOB_KEY_NUTRITION (the HUD and anything reading nutrition_of() follow). Returns the change.
 /mob/living/proc/set_nutrition(value)
-	if(!isnum(value))
+	if(!isnum(value) || !body)
 		return 0
 	value = between(0, value, max_nutrition)
-	var/old = nutrition
+	var/old = body.food_energy
 	if(old == value)
 		return 0
-	nutrition = value
-	tracked_changed(src, nameof(nutrition))
+	body.food_energy = value
+	PUBLISH_CHANGE(src, MOB_KEY_NUTRITION)
 	return value - old
-SETTER(/mob/living, nutrition)
+
+/// A living mob's nutrition (its body's metabolism); 0 for anything else or before the body exists.
+READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
+/proc/nutrition_of(mob/living/L)
+	READS_FROM(L)
+	return isliving(L) ? (L.body?.food_energy || 0) : 0
+
+/// How fast the mob's body burns nutrition.
+/proc/hunger_rate_of(mob/living/L)
+	READS_FROM(L)
+	return isliving(L) && L.body ? L.body.hunger_rate : DEFAULT_HUNGER_FACTOR
+
+/// Sets how fast the mob's body burns nutrition (a species' hunger factor). Nothing before the body exists.
+/proc/set_hunger_rate(mob/living/L, rate)
+	if(L?.body)
+		L.body.hunger_rate = rate
+
+/// The nutrition a new body of this mob type starts with.
+/mob/living/proc/starting_nutrition()
+	return 400
 
 /// Marks the HUD-list entry `index` (ID_HUD, HEALTH_HUD, ...) stale: the HUD reaction redraws it (MOB_KEY_HUD_FLAGS).
 /// The only producer of hud_updateflag bits (the HUD clears them as it draws).
@@ -961,7 +980,7 @@ SETTER(/mob/living, nutrition)
 	PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /mob/living/proc/nutrition_percent()
-	return 100 * nutrition / max_nutrition
+	return 100 * nutrition_of(src) / max_nutrition
 
 /mob/living/vv_get_header()
 	. = ..()
@@ -1159,7 +1178,6 @@ SETTER(/mob/living, nutrition)
 
 /mob/living/Initialize(mapload)
 	. = ..()
-	life_update_relevance()
 	// Brain creation is handled by the combat AI integration's
 	// /mob/living/Initialize re-open (code/modules/combat_ai/integration/mob_living.dm),
 	// which calls initialize_ai_brain() when the mob opts in via use_modern_ai.
@@ -1173,23 +1191,31 @@ SETTER(/mob/living, nutrition)
 		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
-	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	// stunnedloop = new(list(src), FALSE)
-	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
-		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-			if(prob(30))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-			else if(prob(20))
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-			else
-				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+/// Its burning loop, with one of the extinguish sounds at random (owns_one(starts =)).
+/mob/living/proc/start_fire_loop(current, mapload)
+	var/datum/looping_sound/mob/on_fire/loop = new /datum/looping_sound/mob/on_fire(src, FALSE)
+	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
+		if(prob(30))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
+		else if(prob(20))
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
+		else
+			loop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
+	return loop
+
+/// rolls(nameof(name), PROC_REF(roll_numbered_name)): "mouse" becomes "mouse (417)". The roll is skipped for a renamed or map-named instance.
+/mob/living/proc/roll_numbered_name(datum/roller/R)
+	return "[name] ([R.number(1, 1000)])"
+
+/// rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name))): the real name follows the (rolled) name.
+/mob/living/proc/roll_real_name(datum/roller/R)
+	return name
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 
 /mob/living/Check_Shoegrip()
-	if(flying)
+	if(stat_value(src, STAT_FLYING))
 		return 1
 	..()
 

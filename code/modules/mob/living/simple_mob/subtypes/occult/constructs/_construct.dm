@@ -12,7 +12,6 @@
 	icon_living = "shade"
 	icon_dead = "shade_dead"
 
-	mob_class = MOB_CLASS_DEMONIC
 	biology = BIOLOGY_SYNTHETIC // Runed-metal shells: repaired by artificers, immune to poison and suffocation.
 
 	ui_icons = 'icons/mob/screen1_construct.dmi'
@@ -48,7 +47,6 @@
 
 	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
-	can_be_antagged = TRUE
 	faction = FACTION_CULT
 
 	supernatural = TRUE
@@ -94,16 +92,20 @@
 /mob/living/simple_mob/construct/cultify()
 	return
 
+// Each construct is numbered.
+CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+
+// A construct learns its spells into its spell bar at init
 /mob/living/simple_mob/construct/Initialize(mapload)
 	. = ..()
-	name = text("[initial(name)] ([rand(1, 1000)])")
-	real_name = name
 	for(var/spell in construct_spells)
 		src.add_spell(new spell, "const_spell_ready")
 
 /mob/living/simple_mob/construct
 	delete_on_death = TRUE
-	death_message = "collapses in a shattered heap."
 
 /mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)

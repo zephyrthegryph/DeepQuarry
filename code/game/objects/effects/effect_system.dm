@@ -178,13 +178,13 @@ CAPABILITIES(/obj/effect/effect/smoke)
 /obj/effect/effect/smoke/proc/affect(mob/living/carbon/M)
 	if (!istype(M))
 		return 0
-	if(M.get_equipped_item(SLOT_ID_MASK) && (M.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
+	if(M.get_equipped_item(SLOT_ID_MASK) && (worn_of(M.get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT))
 		return 0
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(!M.get_organ(O_LUNGS)) // Making sure smoke doesn't affect lungless people
 			return 0
-		if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))
+		if(H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 			return 0
 	return 1
 
@@ -428,6 +428,15 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	var/turf/oldposition
 	var/processing = 1
 	var/on = 1
+
+/// A starting occupant (owns_one(nameof(ion_trail), ..., starts = /datum/effect/effect/system/ion_trail_follow)) is made as new type(holder): it
+/// follows its holder from the start, and `start_now` (starts_args = list(TRUE)) lights it at once.
+/datum/effect/effect/system/ion_trail_follow/New(atom/attach_to, start_now = FALSE)
+	..()
+	if(isatom(attach_to))
+		set_up(attach_to)
+		if(start_now)
+			start()
 
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)

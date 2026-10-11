@@ -10,17 +10,32 @@
 	density = TRUE
 	anchored = FALSE
 	opacity = 0
-	var/list/welder_salvage = list(/obj/item/stack/material/plasteel,/obj/item/stack/material/steel,/obj/item/stack/rods) // ALLOW(instance_list): d: edited in place per instance (6 writers)
+	/// What a welder can still cut out: rolled per wreck (roll_welder_salvage()) unless a type or the map gives the list.
+	var/list/welder_salvage
 	var/static/list/wirecutters_salvage = list(/obj/item/stack/cable_coil)
 	var/list/crowbar_salvage
 	var/salvage_num = 5
 
 CAPABILITIES(/obj/effect/decal/mecha_wreckage)
+	rolls(nameof(welder_salvage), PROC_REF(roll_welder_salvage))
 	extend(/datum/act/hit/projectile, instead())
 	op("cut", tool(TOOL_WELDER), label("Cut salvage from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with)), req(PROC_REF(has_welder_salvage), because = MSG(mecha_wreckage/nothing_to_cut))), wait(0), then(PROC_REF(cut_salvage)))
 	op("snip", tool(TOOL_WIRECUTTER), label("Cut wiring from the wreck"), needs(req(PROC_REF(has_salvage_left), because = MSG(mecha_wreckage/nothing_to_cut_with))), wait(0), then(PROC_REF(snip_salvage)))
 	op("pry", tool(TOOL_CROWBAR), label("Pry something out of the wreck"), needs(req(PROC_REF(has_pry_salvage), because = MSG(mecha_wreckage/nothing_to_pry))), wait(0), then(PROC_REF(pry_salvage)))
 
+
+/// The stock a welder cuts from any wreck, plus up to two of the type's own parts (40% each).
+/obj/effect/decal/mecha_wreckage/proc/roll_welder_salvage(datum/roller/R)
+	. = list(/obj/item/stack/material/plasteel, /obj/item/stack/material/steel, /obj/item/stack/rods)
+	var/list/parts = TYPE_TABLE_COPY(src, wreck_salvage_parts)
+	for(var/i in 1 to 2)
+		if(length(parts) && R.chance(40))
+			var/part = R.choose(parts)
+			. += part
+			parts -= part
+
+/// The type's own parts a wreck may hold, up to two of them, 40% each (roll_welder_salvage()); none for a plain wreck.
+TYPE_TABLE_DECLARE(/obj/effect/decal/mecha_wreckage, wreck_salvage_parts, null)
 
 // Salvaging with a welder, wirecutters or a crowbar: mecha_wreckage_salvage.dm.
 
@@ -28,20 +43,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Gygax wreckage"
 	icon_state = "gygax-broken"
 
-// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
-/obj/effect/decal/mecha_wreckage/gygax/Initialize(mapload)
-	. = ..()
-	var/list/parts = list(/obj/item/mecha_parts/part/gygax_torso,
-								/obj/item/mecha_parts/part/gygax_head,
-								/obj/item/mecha_parts/part/gygax_left_arm,
-								/obj/item/mecha_parts/part/gygax_right_arm,
-								/obj/item/mecha_parts/part/gygax_left_leg,
-								/obj/item/mecha_parts/part/gygax_right_leg)
-	for(var/i=0;i<2;i++)
-		if(!isemptylist(parts) && prob(40))
-			var/part = pick(parts)
-			welder_salvage += part
-			parts -= part
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/gygax, wreck_salvage_parts, list(/obj/item/mecha_parts/part/gygax_torso, /obj/item/mecha_parts/part/gygax_head, /obj/item/mecha_parts/part/gygax_left_arm, /obj/item/mecha_parts/part/gygax_right_arm, /obj/item/mecha_parts/part/gygax_left_leg, /obj/item/mecha_parts/part/gygax_right_leg))
 
 /obj/effect/decal/mecha_wreckage/gygax/dark
 	name = "Dark Gygax wreckage"
@@ -76,38 +78,13 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Ripley wreckage"
 	icon_state = "ripley-broken"
 
-// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
-/obj/effect/decal/mecha_wreckage/ripley/Initialize(mapload)
-	. = ..()
-	var/list/parts = list(/obj/item/mecha_parts/part/ripley_torso,
-								/obj/item/mecha_parts/part/ripley_left_arm,
-								/obj/item/mecha_parts/part/ripley_right_arm,
-								/obj/item/mecha_parts/part/ripley_left_leg,
-								/obj/item/mecha_parts/part/ripley_right_leg)
-	for(var/i=0;i<2;i++)
-		if(!isemptylist(parts) && prob(40))
-			var/part = pick(parts)
-			welder_salvage += part
-			parts -= part
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/ripley, wreck_salvage_parts, list(/obj/item/mecha_parts/part/ripley_torso, /obj/item/mecha_parts/part/ripley_left_arm, /obj/item/mecha_parts/part/ripley_right_arm, /obj/item/mecha_parts/part/ripley_left_leg, /obj/item/mecha_parts/part/ripley_right_leg))
 
 /obj/effect/decal/mecha_wreckage/ripley/firefighter
 	name = "Firefighter wreckage"
 	icon_state = "firefighter-broken"
 
-// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
-/obj/effect/decal/mecha_wreckage/ripley/firefighter/Initialize(mapload)
-	. = ..()
-	var/list/parts = list(/obj/item/mecha_parts/part/ripley_torso,
-								/obj/item/mecha_parts/part/ripley_left_arm,
-								/obj/item/mecha_parts/part/ripley_right_arm,
-								/obj/item/mecha_parts/part/ripley_left_leg,
-								/obj/item/mecha_parts/part/ripley_right_leg,
-								/obj/item/clothing/suit/fire)
-	for(var/i=0;i<2;i++)
-		if(!isemptylist(parts) && prob(40))
-			var/part = pick(parts)
-			welder_salvage += part
-			parts -= part
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/ripley/firefighter, wreck_salvage_parts, list(/obj/item/mecha_parts/part/ripley_torso, /obj/item/mecha_parts/part/ripley_left_arm, /obj/item/mecha_parts/part/ripley_right_arm, /obj/item/mecha_parts/part/ripley_left_leg, /obj/item/mecha_parts/part/ripley_right_leg, /obj/item/clothing/suit/fire))
 
 /obj/effect/decal/mecha_wreckage/ripley/deathripley
 	name = "Death-Ripley wreckage"
@@ -117,21 +94,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Durand wreckage"
 	icon_state = "durand-broken"
 
-// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
-/obj/effect/decal/mecha_wreckage/durand/Initialize(mapload)
-	. = ..()
-	var/list/parts = list(
-								/obj/item/mecha_parts/part/durand_torso,
-								/obj/item/mecha_parts/part/durand_head,
-								/obj/item/mecha_parts/part/durand_left_arm,
-								/obj/item/mecha_parts/part/durand_right_arm,
-								/obj/item/mecha_parts/part/durand_left_leg,
-								/obj/item/mecha_parts/part/durand_right_leg)
-	for(var/i=0;i<2;i++)
-		if(!isemptylist(parts) && prob(40))
-			var/part = pick(parts)
-			welder_salvage += part
-			parts -= part
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/durand, wreck_salvage_parts, list(/obj/item/mecha_parts/part/durand_torso, /obj/item/mecha_parts/part/durand_head, /obj/item/mecha_parts/part/durand_left_arm, /obj/item/mecha_parts/part/durand_right_arm, /obj/item/mecha_parts/part/durand_left_leg, /obj/item/mecha_parts/part/durand_right_leg))
 
 /obj/effect/decal/mecha_wreckage/phazon
 	name = "Phazon wreckage"
@@ -142,21 +105,7 @@ CAPABILITIES(/obj/effect/decal/mecha_wreckage)
 	name = "Odysseus wreckage"
 	icon_state = "odysseus-broken"
 
-// ALLOW(init/INSTANCE_STATE): rolls which parts can be salvaged from this wreck
-/obj/effect/decal/mecha_wreckage/odysseus/Initialize(mapload)
-	. = ..()
-	var/list/parts = list(
-								/obj/item/mecha_parts/part/odysseus_torso,
-								/obj/item/mecha_parts/part/odysseus_head,
-								/obj/item/mecha_parts/part/odysseus_left_arm,
-								/obj/item/mecha_parts/part/odysseus_right_arm,
-								/obj/item/mecha_parts/part/odysseus_left_leg,
-								/obj/item/mecha_parts/part/odysseus_right_leg)
-	for(var/i=0;i<2;i++)
-		if(!isemptylist(parts) && prob(40))
-			var/part = pick(parts)
-			welder_salvage += part
-			parts -= part
+TYPE_TABLE(/obj/effect/decal/mecha_wreckage/odysseus, wreck_salvage_parts, list(/obj/item/mecha_parts/part/odysseus_torso, /obj/item/mecha_parts/part/odysseus_head, /obj/item/mecha_parts/part/odysseus_left_arm, /obj/item/mecha_parts/part/odysseus_right_arm, /obj/item/mecha_parts/part/odysseus_left_leg, /obj/item/mecha_parts/part/odysseus_right_leg))
 
 /obj/effect/decal/mecha_wreckage/odysseus/murdysseus
 	icon_state = "murdysseus-broken"

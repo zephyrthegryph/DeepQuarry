@@ -343,13 +343,13 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
 
 	//Would be fun to eat people standing on your ring...
-	if(can_be_drop_pred && vore_selected)
+	if(can_be_drop_pred && vore_selected_of(src))
 		var/list/target_list = src.living_mobs(0)
 		if(target_list.len)
 			for(var/mob/living/M in target_list)
 				if(M.devourable && M.can_be_drop_prey)
-					vore_selected.nom_atom(M)
-					to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected.get_belly_name()]!"))
+					vore_selected_of(src).nom_atom(M)
+					to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected_of(src).get_belly_name()]!"))
 	species.update_lleill_hud(src)
 
 /datum/power/lleill/contact
@@ -578,10 +578,10 @@ CAPABILITIES(/datum/lleill_contact_review)
 	act_message(src, chosen_target, others = span_infoplain(span_bold("%U%") + " and %T% complete their contact."))
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy = species.lleill_energy_max
-	adjust_nutrition((chosen_target.nutrition / 2))
+	adjust_nutrition((nutrition_of(chosen_target) / 2))
 	to_chat(src, span_warning("You feel revitalised."))
-	chosen_target.set_tiredness(chosen_target.tiredness + 70)
-	chosen_target.set_nutrition(max((chosen_target.nutrition / 2),75))
+	chosen_target.status_set(STAT_TIREDNESS, chosen_target.status_units(STAT_TIREDNESS) + 70)
+	chosen_target.set_nutrition(max((nutrition_of(chosen_target) / 2),75))
 	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
 	chosen_target.status_adjust(STAT_BLURRY, 20)
 	to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
@@ -789,8 +789,8 @@ CAPABILITIES(/datum/lleill_contact_review)
 	var/turf/beast_loc = src.loc
 	ourmob.forceMove(beast_loc)
 	ourmob.forceMove(beast_loc)
-	rel_set(ourmob, nameof(ourmob.vore_selected), vore_selected) // a pointer at one of the bellies (vore_organs), never owned
-	rel_clear(src, nameof(vore_selected))
+	set_vore_selected(ourmob, vore_selected_of(src)) // a pointer at one of the bellies (vore_organs), never owned
+	set_vore_selected(src, null)
 	ourmob.mob_belly_transfer(src)
 
 	seq_run_frame_now(ourmob, /datum/sequence/life)

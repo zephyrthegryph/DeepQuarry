@@ -74,7 +74,7 @@
 
 /mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "In a cruel game of cat-and-mouse gone horribly wrong, you struggle to breathe clearly as the giant rat holds your head in its jaws, the rest of its bulk pinning you to the ground. Slimy slurps and its own muffled squeaking fill your senses as it simultaneously tosses its head while backing up. Quickly, ravenously consuming you, bit by bit, packing you down its gullet no matter how you struggle. Passing by its excited heartbeat, your thoroughly slickened head pushes out into its awaiting stomach, a dark and humid hammock eager to accept the rest of you. Soon, those too-warm, plush walls clench and squeeze around you with undeniable need! A need for mere filling, or, perhaps, a proper meal?"
 	B.vore_sound = "Tauric Swallow"
@@ -263,31 +263,44 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 	devourable = 0
 	digestable = 0
 
-// ALLOW(init/INSTANCE_STATE): rolls which pet rat it is
-/mob/living/simple_mob/vore/aggressive/rat/pet/Initialize(mapload)
-	.=..()
+// Which of the pet rats it is: Ratthew and ";help maint" as often as each other, Brick rarely.
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
+	rolls(nameof(sibling), pick_one(list("Ratthew" = 50, ";help maint" = 50, "Brick" = 1)))
+	rolls(nameof(name), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(desc), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(endurance), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_lower), PROC_REF(sibling_trait), from = list(nameof(sibling)))
+	rolls(nameof(melee_damage_upper), PROC_REF(sibling_trait), from = list(nameof(sibling)))
 
-	var/chance = rand(1,101)
-	switch(chance)
-		if(1 to 50)
-			name = "Ratthew"
-			desc = "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
-			When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
-			Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
-			mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
-		if(51 to 100)
-			name = ";help maint"
-			desc = "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
-			of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
-			this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
-			and eighty four rodent pets were named that already."
-		if(101)
-			name = "Brick"
-			desc = "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
-			younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
-			endurance = 1750
-			melee_damage_lower = 1
-			melee_damage_upper = 2
+/// Which sibling it is (rolls()).
+/mob/living/simple_mob/vore/aggressive/rat/pet/var/sibling
+
+/// The sibling's name, story and (Brick's) build (rolls(), after the sibling).
+/mob/living/simple_mob/vore/aggressive/rat/pet/proc/sibling_trait(datum/roller/R, target)
+	switch(target)
+		if("name")
+			return sibling
+		if("desc")
+			switch(sibling)
+				if("Ratthew")
+					return "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
+					When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
+					Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
+					mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
+				if(";help maint")
+					return "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
+					of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
+					this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
+					and eighty four rodent pets were named that already."
+				if("Brick")
+					return "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
+					younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
+		if("endurance")
+			return sibling == "Brick" ? 1750 : endurance
+		if("melee_damage_lower")
+			return sibling == "Brick" ? 1 : melee_damage_lower
+		if("melee_damage_upper")
+			return sibling == "Brick" ? 2 : melee_damage_upper
 
 /datum/say_list/rat
 	speak = list("Squeek!","SQUEEK!","Squeek?")

@@ -13,6 +13,8 @@ Thus, the two variables affect pump operation are set in New():
 */
 
 /obj/machinery/atmospherics/binary/pump
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP
 	material_template = /datum/material_template/pump
 	material_total = 4 * SHEET_MATERIAL_AMOUNT
 	icon = 'icons/atmos/pump.dmi'
@@ -43,14 +45,6 @@ Thus, the two variables affect pump operation are set in New():
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-
-/obj/machinery/atmospherics/binary/pump/Initialize(mapload)
-	. = ..()
-
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP)
-	if(frequency)
-		set_frequency(frequency)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge
 // (device::DeviceParams::Pump). rust_bind_pipe_port fires once per port,
@@ -172,6 +166,7 @@ Thus, the two variables affect pump operation are set in New():
 	return
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("GasPump")
 	pipe_device_switch()

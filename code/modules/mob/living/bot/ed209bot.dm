@@ -10,14 +10,14 @@
 	preparing_arrest_sounds = null
 
 	combat_mode = TRUE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = HEAVY
 
 	used_weapon = /obj/item/gun/energy/taser
 
 	var/shot_delay = 4
 	COOLDOWN_DECLARE(shot_cooldown)
+
+CAPABILITIES(/mob/living/bot/secbot/ed209)
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
 
 /mob/living/bot/secbot/ed209/update_icons()
 	if(on && bot_busy())

@@ -383,8 +383,8 @@ TRACKED(/turf/simulated/floor/snow, crossed_dirs)
 /turf/simulated/floor/snow/Entered(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		if(dq_get_hovering(L) || L.flying) // Flying things shouldn't make footprints.
-			if(L.flying)
+		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING)) // Flying things shouldn't make footprints.
+			if(stat_value(L, STAT_FLYING))
 				L.adjust_nutrition(-0.5)
 			return ..()
 		var/mdir = "[A.dir]"

@@ -69,7 +69,7 @@
 	inherent_verbs = list(/mob/living/carbon/human/proc/telepathy)
 
 /datum/species/grey/environment_effects(mob/living/carbon/human/H)
-	if(H.fire_stacks < 0 && H.get_water_protection() <= 0.5)	// If over half your body is soaked, you're melting.
+	if(fire_stacks_of(H) < 0 && H.get_water_protection() <= 0.5)	// If over half your body is soaked, you're melting.
 		H.injure(INJURY_BURN, max(0,(3 - (3 * H.get_water_protection()))))	// Tripled because 0.5 is miniscule, and fire_stacks are capped in both directions.
 
 /mob/living/carbon/human/grey //makes grey spawnable

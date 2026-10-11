@@ -48,6 +48,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
+	default_parts()
 	configure(uses_power(idle = 5, active = 2000))
 	reagents(100)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
@@ -98,12 +99,6 @@ CAPABILITIES(/obj/machinery/microwave)
 	reagents.maximum_volume = (advanced_microwave ? 200 : 40) * mbrating
 	efficiency = mlrating
 	set_active_power_usage(max(100, 2000 / caprating))
-
-/obj/machinery/microwave/Initialize(mapload)
-	. = ..()
-
-
-	default_apply_parts()
 
 
 // its contents are disposed and a pAI inside is ejected.
@@ -293,7 +288,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 /// How long securing or unsecuring takes: two seconds, shorter with a faster crowbar.
 /obj/machinery/microwave/proc/secure_time(datum/act/op/A)
 	var/obj/item/tool = A.held
-	return (2 SECONDS) / tool.toolspeed
+	return (2 SECONDS) / tooling_of(tool).speed
 
 /obj/machinery/microwave/proc/secure_begins(datum/act/op/A)
 	return msg_text(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%."), span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%."))

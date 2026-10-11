@@ -5,11 +5,11 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "xenobio"
 	item_state = "xenobio"
 	w_class = ITEMSIZE_SMALL
-	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
 
 CAPABILITIES(/obj/item/slime_scanner)
+	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("scan_slime", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan slime"),
 		needs(req_adjacent(), req(/mob/living/simple_mob/slime/xenobio, of = ON_TARGET, because = PROC_REF(scan_refusal))), then(PROC_REF(slime_scanned)))
@@ -26,11 +26,11 @@ CAPABILITIES(/obj/item/slime_scanner)
 	for(var/potential_color in S.slime_mutation)
 		var/mob/living/simple_mob/slime/xenobio/slime = potential_color
 		mutations.Add(initial(slime.slime_color))
-	user.show_message("Potental to mutate into [english_list(mutations)] colors.<br>Extract potential: [S.cores]<br>Nutrition: [S.nutrition]/[S.max_nutrition]")
+	user.show_message("Potental to mutate into [english_list(mutations)] colors.<br>Extract potential: [S.cores]<br>Nutrition: [nutrition_of(S)]/[S.max_nutrition]")
 
-	if (S.nutrition < S.get_starve_nutrition())
+	if (nutrition_of(S) < S.get_starve_nutrition())
 		user.show_message(span_warning("Warning: Subject is starving!"))
-	else if (S.nutrition < S.get_hunger_nutrition())
+	else if (nutrition_of(S) < S.get_hunger_nutrition())
 		user.show_message(span_warning("Warning: Subject is hungry."))
 	user.show_message("Electric change strength: [S.power_charge]")
 

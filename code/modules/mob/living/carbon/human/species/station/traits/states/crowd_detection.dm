@@ -62,7 +62,7 @@
 		if(ms)
 			to_chat(human_parent, ms)
 		COOLDOWN_START(src, next_message_time, 50 SECONDS)
-		human_parent.fear = min((human_parent.fear + 3), 102)
+		human_parent.status_set(STAT_FEAR, min((human_parent.status_units(STAT_FEAR) + 3), 102))
 		is_calm = FALSE // We'll only get one message early
 	// Hallucinations
 	if(discomfort >= warning_cap && human_parent.status_units(STAT_HALLUCINATING) < hallucination_cap)

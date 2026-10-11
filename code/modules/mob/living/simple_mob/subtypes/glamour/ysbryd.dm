@@ -77,7 +77,7 @@
 
 /mob/living/simple_mob/ysbryd/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The horrifying beast yawns it's skull maw wide before your face, unveiling a dark but surprisingly fleshy interior. Not that you have much time to appreciate it before your head is engulfed in the void, and dragged roughly into the depths beyond it. Before long, you're trapped in pitch darkness. Intense pressure binding you from every possible direction, fleshy walls grinding over your form. Despite this, it's quiet in here, uncomfortably so. No bodily functions can be heard, no groaning guts, merely the sound of your own body pressing against the stomach lining."
 	B.digest_brute = 3
@@ -148,7 +148,7 @@
 /mob/living/simple_mob/ysbryd/proc/handle_target()
 	if(!chosen_target)
 		return
-	chosen_target.fear = min((chosen_target.fear + 3),102)
+	chosen_target.status_set(STAT_FEAR, min((chosen_target.status_units(STAT_FEAR) + 3),102))
 	if(COOLDOWN_FINISHED(src, effect_cooldown))
 		if(prob(5))
 			chosen_target.status_at_least(STAT_HALLUCINATING, 10)

@@ -8,6 +8,8 @@
 #define REGULATE_OUTPUT	2	//shuts off when output side is above the target pressure
 
 /obj/machinery/atmospherics/binary/passive_gate
+	air2_volume = ATMOS_DEFAULT_VOLUME_PUMP * 2.5
+	air1_volume = ATMOS_DEFAULT_VOLUME_PUMP * 2.5
 	icon = 'icons/atmos/passive_gate.dmi'
 	icon_state = "map"
 	construction_type = /obj/item/pipe/directional
@@ -31,13 +33,6 @@
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-
-/obj/machinery/atmospherics/binary/passive_gate/Initialize(mapload)
-	. = ..()
-	air1.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
-	air2.set_volume(ATMOS_DEFAULT_VOLUME_PUMP * 2.5)
-	if(frequency)
-		set_frequency(frequency)
 
 // M2 (simulation.md §5): the flow law lives on the Rust device edge and runs
 // every gas tick regardless of DM's process() scheduling. rust_bind_pipe_port
@@ -156,6 +151,7 @@
 // ---- the controls ----
 
 CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	pipe_device_window("PressureRegulator")
 	pipe_device_unwrench()
 	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))

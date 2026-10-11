@@ -17,7 +17,6 @@
 	var/mob/living/carbon/human/myprotean
 	initial_modules = list(/obj/item/rig_module/protean/syphon, /obj/item/rig_module/protean/armor, /obj/item/rig_module/protean/healing)
 	flags = PHORONGUARD
-	item_flags = NOSTRIP
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/protean //These are important for sprite pointers
 	boot_type = /obj/item/clothing/shoes/magboots/rig/protean
@@ -147,6 +146,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	configure(item_worn(flags = NOSTRIP))
 	configure(item_protection(siemens = 1))
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
 	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(protean_rig_item)))
@@ -219,8 +219,10 @@ CAPABILITIES(/obj/item/rig/protean)
 		SPECIES_SHADEKIN		 = 'icons/mob/head.dmi',
 		)
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/mob/head.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/head.dmi'))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
@@ -268,10 +270,10 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_
 		SPECIES_SHADEKIN		 = 'icons/mob/hands.dmi'
 		)
 	icon = 'icons/inventory/hands/item.dmi'
-	default_worn_icon = 'icons/mob/hands.dmi'
 	icon_state = "nanomachine_rig"
 
 CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/hands.dmi'))
 	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
@@ -286,8 +288,10 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/protean, fit_spec, list(REQ_F
 		)
 	sprite_sheets_obj = list()
 	icon = 'icons/inventory/feet/item.dmi'
-	default_worn_icon = 'icons/mob/feet.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/feet.dmi'))
 
 TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
@@ -303,8 +307,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/protean, fit_spec, list(REQ_FIT
 
 	sprite_sheets_obj = list()
 	icon = 'icons/inventory/suit/item.dmi'
-	default_worn_icon = 'icons/mob/spacesuit.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/protean)
+	configure(item_worn(worn_icon = 'icons/mob/spacesuit.dmi'))
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions
 
@@ -506,7 +512,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	for(var/obj/item/clothing/piece in list(chest, helmet, gloves, boots))
 		if(piece.loc != M)
 			continue
-		if(!E || (piece.body_parts_covered & E.body_part))
+		if(!E || (worn_of(piece).covers & E.body_part))
 			return piece
 	return null
 
@@ -517,7 +523,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 
 /// The swarm feeds its cluster's cell from its own nutrition.
 /obj/item/rig/protean/proc/recharge_from(mob/living/P)
-	if(!cell || inert || cell.charge >= cell.maxcharge || P.nutrition <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
+	if(!cell || inert || cell.charge >= cell.maxcharge || nutrition_of(P) <= PROTEAN_RIG_RECHARGE_NUTRITION_FLOOR)
 		return 0
 	var/stored = add_power(ROBOT_CELL_JOULES(PROTEAN_RIG_RECHARGE_UNITS), P)
 	if(stored > 0)
@@ -591,11 +597,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	name = "Protean power cell"
 	desc = "Something terrible must have happened if you're managing to see this."
 	maxcharge = 10000
+	charge = 10000 // starts full
 	charge_amount = 100
-
-/obj/item/cell/protean/Initialize(mapload)
-	. = ..()
-	set_charge(maxcharge)
 
 /obj/item/rig/protean/equipped(mob/living/carbon/human/M)
 	..()
@@ -662,25 +665,25 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		gloves.sprite_sheets_obj = R.gloves.sprite_sheets_obj.Copy()
 		gloves.icon = R.gloves.icon
 		gloves.icon_state = R.gloves.icon_state
-		gloves.default_worn_icon = R.gloves.default_worn_icon
+		gloves.set_default_worn_icon(worn_of(R.gloves).worn_icon)
 	if(R.helmet)
 		helmet.sprite_sheets = R.helmet.sprite_sheets.Copy()
 		helmet.sprite_sheets_obj = R.helmet.sprite_sheets_obj.Copy()
 		helmet.icon = R.helmet.icon
 		helmet.icon_state = R.helmet.icon_state
-		helmet.default_worn_icon = R.helmet.default_worn_icon
+		helmet.set_default_worn_icon(worn_of(R.helmet).worn_icon)
 	if(R.boots)
 		boots.sprite_sheets = R.boots.sprite_sheets.Copy()
 		boots.sprite_sheets_obj = R.boots.sprite_sheets_obj.Copy()
 		boots.icon = R.boots.icon
 		boots.icon_state = R.boots.icon_state
-		boots.default_worn_icon = R.boots.default_worn_icon
+		boots.set_default_worn_icon(worn_of(R.boots).worn_icon)
 	if(R.chest)
 		chest.sprite_sheets = R.chest.sprite_sheets.Copy()
 		chest.sprite_sheets_obj = R.chest.sprite_sheets_obj.Copy()
 		chest.icon = R.chest.icon
 		chest.icon_state = R.chest.icon_state
-		chest.default_worn_icon = R.chest.default_worn_icon
+		chest.set_default_worn_icon(worn_of(R.chest).worn_icon)
 
 	suit_state = R.suit_state
 	name = R.name
@@ -703,7 +706,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
 			piece.icon_state = src.icon_state
 			piece.icon = initial(piece.icon)
-			piece.default_worn_icon = initial(piece.default_worn_icon)
+			piece.set_default_worn_icon(worn_of_type(piece.type).worn_icon)
 
 		//Byond at this time does not support initial() on lists
 		//So we have to create a new rig, just so we can copy the lists we're after

@@ -152,7 +152,7 @@
 
 /// The visible death message ("\The [src] <message>"), or DEATHGASP_NO_MESSAGE.
 /mob/proc/get_death_message(gibbed)
-	return death_message
+	return kind_of(src).death_message
 
 /// A mob dies quietly when the thing holding it says so (muffles_death_of()): the core asks
 /// its container instead of knowing every kind of container.

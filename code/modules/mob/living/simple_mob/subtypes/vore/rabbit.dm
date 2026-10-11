@@ -49,17 +49,9 @@
 	EXPIRY_DECLARE(last_pet) // This tracks the last time someone patted us.
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
-// ALLOW(init/INSTANCE_STATE): rolls its fur colour
-/mob/living/simple_mob/vore/rabbit/Initialize(mapload)
-	. = ..()
-
-	if(!body_color)
-		body_color = pick( list("brown","black","white") )
-	icon_state = "rabbit_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	item_state = "rabbit_[body_color]"
-	set_icon_living("rabbit_[body_color]")
-	set_icon_dead("rabbit_[body_color]_dead")
-	set_icon_rest("rabbit_[body_color]_rest")
+CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 
 /mob/living/simple_mob/vore/rabbit/life_type_post_due()
 	return TRUE
@@ -99,7 +91,7 @@
 /mob/living/simple_mob/vore/rabbit/load_default_bellies()
 	. = ..()
 
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "With a sudden pounce, the rabbit begins swallowing you down with ease! A pink maw and surprisingly unintimidating teeth give way to the thing's pink, tight throat, until you're crammed down inside it's gut! Unless you happen to be drastically smaller than it, the inside of this thing's gut is incredibly cramped, as the fleshy pink walls undulate over your form. It's clearly still able to move with you inside somehow, despite the tiny size of the thing, as gastric sounds flood your ears. You've been bested by a RABBIT of all things!"
 	B.vore_sound = "Tauric Swallow"

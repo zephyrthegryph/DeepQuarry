@@ -9,7 +9,7 @@
 		return
 	if(ishuman(src)) // . Floating code.
 		var/mob/living/carbon/human/H = src
-		if(H.flying)
+		if(stat_value(H, STAT_FLYING))
 			make_floating(1)
 			return
 	var/turf/turf = get_turf(src)
@@ -167,7 +167,7 @@
 		used_item = get_equipped_item(SLOT_ID_HAND_R)
 
 	//Couldn't find an item, do they have a sprite specified (like animal claw stuff?)
-	if(!used_item && !(attack_icon && attack_icon_state))
+	if(!used_item && !(kind_of(src).attack_icon && kind_of(src).attack_icon_state))
 		return FALSE //Didn't find an item, not doing animation.
 
 	// If we were without gravity, the bouncing animation got stopped, so we make sure we restart the bouncing after the next movement.
@@ -182,7 +182,7 @@
 		// Scale the icon.
 		I.transform *= 0.75
 	else //They had a hardcoded one specified
-		I = image(attack_icon, A, attack_icon_state, A.layer + 1)
+		I = image(kind_of(src).attack_icon, A, kind_of(src).attack_icon_state, A.layer + 1)
 		I.dir = dir
 
 	// Show the overlay to the clients

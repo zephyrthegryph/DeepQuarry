@@ -251,9 +251,9 @@ CAPABILITIES(/obj/item/trash/lollibutt)
 	desc = "A disgusting spitwad."
 	icon = 'icons/inventory/face/item.dmi'
 	icon_state = "spit-chew"
-	slot_flags = SLOT_EARS | SLOT_MASK
 
 CAPABILITIES(/obj/item/trash/spitwad)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 
 /obj/item/trash/beef
@@ -527,7 +527,7 @@ CAPABILITIES(/obj/item/trash/brainzsnaxred)
 		if(H.species.trashcan == 1)
 			play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 			user.drop_item()
-			H.vore_selected.nom_atom(src)
+			vore_selected_of(H).nom_atom(src)
 			balloon_alert(H, "you can taste the flavor of garbage. Wait what?")
 			return
 
@@ -536,7 +536,7 @@ CAPABILITIES(/obj/item/trash/brainzsnaxred)
 		if(R.module?.eats_trash) // You can now feed the trash borg yay.
 			play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 			user.drop_item()
-			R.vore_selected.nom_atom(src)
+			vore_selected_of(R).nom_atom(src)
 			R.balloon_alert_visible("[user] feeds [R] with [src]!", "you feed [R] \the [src]!")
 			return
 	// Trash can't be used as a weapon; deal no attack.

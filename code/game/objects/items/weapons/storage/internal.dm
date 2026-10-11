@@ -3,7 +3,9 @@
 /obj/item/storage/internal
 	preserve_item = 1
 	var/obj/item/master_item
-	item_flags = ABSTRACT
+
+CAPABILITIES(/obj/item/storage/internal)
+	configure(item_worn(flags = ABSTRACT))
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()

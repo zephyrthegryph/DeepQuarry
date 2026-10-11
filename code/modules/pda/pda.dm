@@ -8,7 +8,6 @@
 	icon_state = "pda"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi')
 
 	//Main variables
@@ -64,6 +63,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
 	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))
 	owns_one(nameof(cartridge), /obj/item/cartridge, starts = nameof(default_cartridge))
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 			)
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-			slot_flags = SLOT_ID | SLOT_BELT | SLOT_GLOVES
+			set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
 			sprite_sheets = list(
 				SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
@@ -517,21 +517,16 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	icon = 'icons/obj/pda_vr.dmi'
 	icon_state = "pdabox"
 
-// ALLOW(init/INSTANCE_STATE): rolls the department cartridge this box carries
-/obj/item/storage/box/PDAs/Initialize(mapload)
-	. = ..()
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/pda(src)
-	new /obj/item/cartridge/head(src)
+/// Two department cartridges, each rolled on its own.
+/obj/item/storage/box/PDAs/proc/roll_department_cartridges(datum/roller/R)
+	var/static/list/carts = list(/obj/item/cartridge/engineering, /obj/item/cartridge/security, /obj/item/cartridge/medical, /obj/item/cartridge/signal/science, /obj/item/cartridge/quartermaster)
+	return list(R.choose(carts), R.choose(carts))
 
-	var/newcart = pick(	/obj/item/cartridge/engineering,
-						/obj/item/cartridge/security,
-						/obj/item/cartridge/medical,
-						/obj/item/cartridge/signal/science,
-						/obj/item/cartridge/quartermaster)
-	new newcart(src)
+CAPABILITIES(/obj/item/storage/box/PDAs)
+	// two Initialize() overrides ran here (pda.dm and pda_subtypes.dm, the second calling the first): two of each
+	initial_contents(/obj/item/pda, count = 8)
+	initial_contents(/obj/item/cartridge/head, count = 2)
+	initial_contents(PROC_REF(roll_department_cartridges))
 
 // === merged from pda_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/pda

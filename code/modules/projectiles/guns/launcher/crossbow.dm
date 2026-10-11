@@ -6,13 +6,12 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "bolt"
 	item_state = "bolt"
-	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/arrow)
+	configure(item_thrown(force = 8))
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
@@ -21,16 +20,15 @@ CAPABILITIES(/obj/item/arrow)
 /obj/item/spike
 	name = "alloy spike"
 	desc = "It's about a foot of weird silver metal with a wicked point."
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "metal-rod"
 	item_state = "bolt"
 
 CAPABILITIES(/obj/item/spike)
+	configure(item_thrown(force = 5))
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/quill
@@ -39,7 +37,9 @@ CAPABILITIES(/obj/item/spike)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "quill"
 	item_state = "quill"
-	throwforce = 5
+
+CAPABILITIES(/obj/item/arrow/quill)
+	configure(item_thrown(force = 5))
 
 /obj/item/arrow/rod
 	name = "metal rod"
@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/spike)
 	icon_state = "metal-rod"
 
 /obj/item/arrow/rod/removed(mob/user)
-	if(throwforce == 15) // The rod has been superheated - we don't want it to be useable when removed from the bow.
+	if(thrown_of(src).force == 15) // The rod has been superheated - we don't want it to be useable when removed from the bow.
 		to_chat(user , "[src] shatters into a scattering of overstressed metal shards as it leaves the crossbow.")
 		var/obj/item/material/shard/shrapnel/S = new()
 		S.forceMove(get_turf(src))
@@ -62,7 +62,6 @@ CAPABILITIES(/obj/item/spike)
 	fire_sound = SFX_WEAPONS_PUNCHMISS // TODO: Decent THWOK noise.
 	fire_sound_text = "a solid thunk"
 	fire_delay = 25
-	slot_flags = SLOT_BACK
 
 	var/obj/item/bolt
 	var/tension = 0                         // Current draw on the bow.
@@ -80,6 +79,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 // Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
 // losing the bolt ends it with the notches drawn so far, and the string relaxes.
 CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	configure(item_worn(slots = SLOT_BACK))
 	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
 
@@ -220,11 +220,11 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 /obj/item/gun/launcher/crossbow/proc/superheat_rod(mob/user)
 	if(!user || !cell() || !bolt) return
 	if(cell().charge < 500) return
-	if(bolt.throwforce >= 15) return
+	if(thrown_of(bolt).force >= 15) return
 	if(!istype(bolt,/obj/item/arrow/rod)) return
 
 	to_chat(user, span_notice("[bolt] plinks and crackles as it begins to glow red-hot."))
-	bolt.throwforce = 15
+	bolt.set_throwforce(15)
 	bolt.icon_state = "metal-rod-superheated"
 	cell().use(500)
 

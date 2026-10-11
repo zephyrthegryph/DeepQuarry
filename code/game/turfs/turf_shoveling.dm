@@ -45,7 +45,7 @@
 		return
 	// Make a grave
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
-	var/delay = (5 SECONDS * our_shovel.toolspeed)
+	var/delay = (5 SECONDS * tooling_of(our_shovel).speed)
 	user.setClickCooldown(delay)
 	perform_op(user, src, "dig_grave", our_shovel, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("delay" = delay))
 

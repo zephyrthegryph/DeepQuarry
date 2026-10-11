@@ -42,15 +42,11 @@
 		)
 	icon_state = "detective"
 	item_state = "gun"
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 5
-	force = 5
 	preserve_item = 1
-	attack_verb = list("struck", "hit", "bashed")
 	zoomdevicename = "scope"
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
@@ -118,6 +114,9 @@ TRACKED(/obj/item/gun, dna_lock)
 TRACKED(/obj/item/gun, silenced)
 TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
@@ -700,7 +699,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 		if(H.species)
 			P.accuracy += H.species.gun_accuracy_mod
 			P.dispersion = max(P.dispersion + H.species.gun_accuracy_dispersion_mod, 0)
-		if(H.fear > 30)
+		if(H.status_units(STAT_FEAR) > 30)
 			P.accuracy -= 35
 
 //does the actual launching of the projectile

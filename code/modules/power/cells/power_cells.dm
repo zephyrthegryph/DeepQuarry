@@ -124,15 +124,12 @@
  * Infinite
  */
 /obj/item/cell/infinite
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "infinite-capacity power cell!"
 	icon_state = "infinite_b"
 	charge = 30000
 	maxcharge = 30000 //determines how badly mobs get shocked
 	robot_durability = 200
-
-/obj/item/cell/infinite/Initialize(mapload)
-	emp_protection_flags |= EMP_PROTECT_SELF
-	return ..()
 
 /obj/item/cell/infinite/check_charge()
 	return 1
@@ -200,14 +197,11 @@
 	var/amount = 150
 	var/used = FALSE
 
-/obj/item/fbp_backup_cell/Initialize(mapload)
-	. = ..()
-
 /obj/item/fbp_backup_cell/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!used && ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(HAS_SYNTHETIC_BIOLOGY(H))
-			if(H.nutrition <= amount)
+			if(nutrition_of(H) <= amount)
 				use(user,H)
 				return ITEM_INTERACT_SUCCESS
 			else

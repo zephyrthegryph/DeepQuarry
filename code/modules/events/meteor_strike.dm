@@ -81,6 +81,7 @@ CAPABILITIES(/obj/effect/meteor_falling)
 	density = TRUE
 
 CAPABILITIES(/obj/structure/meteorite)
+	initial_contents(PROC_REF(roll_contents))
 	climb()
 	op("item", item(/obj/item/pickaxe), label("Use"), begins(PROC_REF(break_apart_text)), wait(PROC_REF(break_apart_time)), then(PROC_REF(break_apart_done)))
 
@@ -88,18 +89,16 @@ CAPABILITIES(/obj/structure/meteorite)
 /obj/structure/meteorite/Initialize(mapload)
 	. = ..()
 	icon = turn(icon, 90)
-	switch(rand(1,100))
-		if(1 to 60)
-			for(var/i=1 to rand(12,36))
-				new /obj/item/ore/iron(src)
-		if(61 to 90)
-			for(var/i=1 to rand(8,24))
-				new /obj/item/ore/silver(src)
-				new /obj/item/ore/gold(src)
-				new /obj/item/ore/osmium(src)
-				new /obj/item/ore/diamond(src)
-		if(91 to 100)
-			new /obj/machinery/artifact(src)
+
+/// What it holds: mostly iron ore, sometimes a mix of precious ores, now and then an artifact.
+/obj/structure/meteorite/proc/roll_contents(datum/roller/R)
+	var/roll = R.number(1, 100)
+	if(roll <= 60)
+		return list(/obj/item/ore/iron = R.number(12, 36))
+	if(roll <= 90)
+		var/n = R.number(8, 24)
+		return list(/obj/item/ore/silver = n, /obj/item/ore/gold = n, /obj/item/ore/osmium = n, /obj/item/ore/diamond = n)
+	return /obj/machinery/artifact
 
 /obj/structure/meteorite/proc/break_apart_done(datum/act/op/A)
 	var/mob/M = A.actor

@@ -2,7 +2,7 @@
 /// This is the custom_emote that you'll want to use if you want the mob to be able to input their emote.
 /mob/proc/custom_emote(m_type = VISIBLE_MESSAGE, message, range = world.view, check_stat = TRUE)
 
-	if((check_stat && (src && stat)) || is_paralyzed() || (!use_me && usr == src))
+	if((check_stat && (src && stat)) || is_paralyzed() || (!kind_of(src).use_me && usr == src))
 		to_chat(src, "You are unable to emote.")
 		return
 

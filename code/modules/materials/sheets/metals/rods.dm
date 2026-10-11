@@ -4,13 +4,10 @@
 	singular_name = "metal rod"
 	icon_state = "rods"
 	w_class = ITEMSIZE_NORMAL
-	force = 9.0
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, REAGENTS_PER_ROD)
 	max_amount = 60
-	attack_verb = list("hit", "bludgeoned", "whacked")
 
 	color = "#666666"
 
@@ -24,10 +21,6 @@
 	stacktype = /obj/item/stack/rods
 	no_variants = TRUE
 
-/obj/item/stack/rods/Initialize(mapload)
-	. = ..()
-	recipes = GLOB.rods_recipes
-
 /// A few rods show their count; a pile shows the plain state.
 /obj/item/stack/rods/look_state()
 	var/count = get_amount()
@@ -36,6 +29,9 @@
 	return "rods"
 
 CAPABILITIES(/obj/item/stack/rods)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 9.0, attack_verbs = list("hit", "bludgeoned", "whacked")))
+	per_type(nameof(recipes), PROC_REF(rods_recipes))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("splint", item(/obj/item/tape_roll), passes(), then(PROC_REF(taped_into_splint)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
@@ -71,3 +67,7 @@ CAPABILITIES(/obj/item/stack/rods)
 
 /obj/item/stack/rods/reagents_per_sheet()
 	return REAGENTS_PER_ROD
+
+/// What rods build (per_type(): the shared recipe list).
+/obj/item/stack/rods/proc/rods_recipes()
+	return GLOB.rods_recipes

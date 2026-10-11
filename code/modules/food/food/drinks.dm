@@ -131,7 +131,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume && changed)
@@ -206,11 +206,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 	icon_state = "golden_cup"
 	item_state = "" //nope :(
 	w_class = ITEMSIZE_LARGE
-	force = 14
-	throwforce = 10
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = null
 	volume = 150
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/golden_cup)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 14))
 
 /obj/item/reagent_containers/food/drinks/golden_cup/on_reagent_change()
 	..()

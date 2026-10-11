@@ -128,7 +128,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 /// The occupants a predator sitting down on a full seat would eat (none when the seat has room or the sitter is no predator).
 /datum/capability/lib/buckle/proc/swallowed_by(atom/movable/holder, mob/living/victim)
 	. = list()
-	if(!is_vore_predator(victim) || !victim.vore_selected)
+	if(!is_vore_predator(victim) || !vore_selected_of(victim))
 		return
 	for(var/mob/living/L as anything in holder.buckled_mob_list())
 		if(can_stumble_vore(prey = L, pred = victim))
@@ -163,7 +163,7 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 			act_message(victim, L, others = span_warning("%U% sits down on %T%!"))
 		else
 			act_message(A.actor, victim, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
-		victim.begin_instant_nom(A.actor, L, victim, victim.vore_selected)
+		victim.begin_instant_nom(A.actor, L, victim, vore_selected_of(victim))
 	// The capability has done the checks, so the old can_buckle and max_buckled_mobs vars are not asked: the relation is written directly.
 	var/linked = holder.buckle_link(victim)
 	if(!linked)

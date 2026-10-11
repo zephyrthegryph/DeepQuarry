@@ -383,10 +383,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
 	name = "energy spear"
 	icon_state = "arcane_barrage"
 	damage = 35
-	armor_penetration = 35
 	speed = 7.0
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperionspear)
+	configure(item_combat(armor_penetration = 35))
 
 /obj/item/projectile/bullet/imperionblaster
 	use_submunitions = 1
@@ -404,10 +406,12 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
 	name = "energy pellet"
 	icon_state = "dark_pellet"
 	damage = 15
-	armor_penetration = 100
 	speed = 4.5
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperionblaster)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/imperiontesla
 	use_submunitions = 1
@@ -425,11 +429,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion/phase5)
 	name = "energy sphere"
 	icon_state = "tesla_projectile"
 	damage = 50
-	armor_penetration = 50
 	agony = 50
 	speed = 10.0
 
 	flash_strength = 0
+
+CAPABILITIES(/obj/item/projectile/energy/imperiontesla)
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/energy/homing_bolt/missile
 	name = "homing rocket"
@@ -462,9 +468,8 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 
 	factors = alist(BF_DISABLE_DURATION = 0)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/imperion)
+	body_effect(/datum/body_effect/bossbuff)
 
 /datum/body_effect/aura/despair
 	tick_interval = 2 SECONDS
