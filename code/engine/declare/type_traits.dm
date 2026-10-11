@@ -119,8 +119,12 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 	var/datum/type_trait/known = GLOB.type_trait_defaults[kind]
 	if(known)
 		return known
-	var/datum/entry_engine/type_trait/engine = entry_engine_for(kind)
-	var/datum/type_trait/made = new (istype(engine) ? engine.trait_type : /datum/type_trait)
+	var/trait_type = /datum/type_trait
+	for(var/datum/entry_engine/type_trait/engine_type as anything in subtypesof(/datum/entry_engine/type_trait))
+		if(engine_type::kind == kind)
+			trait_type = engine_type::trait_type
+			break
+	var/datum/type_trait/made = new trait_type
 	made.kind = kind
 	GLOB.type_trait_defaults[kind] = made
 	return made
