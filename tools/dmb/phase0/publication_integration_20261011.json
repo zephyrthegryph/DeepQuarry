@@ -704,5 +704,19 @@
     "cleanup": "obsolete compiler library deletion rejected by automatic review: blocked by policy; no deletion performed",
     "user_input_requested": true,
     "coding_continues": true
+  },
+  "latest_1a185_validation": {
+    "compiler_commit": "1a185920ca2adc72884f2ee874955f4fca9c62e5",
+    "archive_sha256": "595cc8786eb691fc5f46a94707c2bcdb223b9b245cd2a8759ad31bdf4f832494",
+    "binary_sha256": "cbc2c51db4c7e59d405cd02c6a399bdadd10ea7356488ecb13e35333b79f586d",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-135646-6d165254-job-cargo.json",
+    "build_passed": true,
+    "prior_build_watchdog_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-135115-94f72220-job-cargo.json",
+    "scope": "Prototype profile; Rust build seconds are not DM compiler benchmarks; later source slices remain unvalidated",
+    "relative_paired_receipt": "E:/dq-cache/dmb-nameof-relative-global/20261011-1a185/e67fe9de0ea64a068e64e7fe13d123e1/receipt.json",
+    "relative_acceptance_class_and_exact_diagnostics_agree": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/20261011-1a185/8c9ca601cfcb4a2bacf00c1207f88699/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_fresh_oracles_passed": 5
   }
 }
