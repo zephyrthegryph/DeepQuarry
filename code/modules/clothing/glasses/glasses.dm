@@ -26,6 +26,8 @@ BLIND     // can't see anything
 	var/active = 1
 	var/activation_sound = SFX_ITEMS_GOGGLES_CHARGE
 	var/tmp/atom/movable/screen/overlay
+	/// The shared global HUD screen these glasses lay over the view (a /datum/global_hud var name), when overlay holds none of its own.
+	var/hud_overlay
 	var/list/away_planes //Holder for disabled planes
 	resistance_flags = FIRE_PROOF
 
@@ -108,6 +110,7 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	return OP_DECLINE
 
 /obj/item/clothing/glasses/meson
+	hud_overlay = "meson"
 	name = "optical meson scanner"
 	desc = "Used for seeing walls, floors, and stuff through anything."
 	icon_state = "meson"
@@ -116,10 +119,6 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	toggleable = 1
 	vision_flags = SEE_TURFS
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
-
-/obj/item/clothing/glasses/meson/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.meson)
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -154,6 +153,7 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	prescription = TRUE
 
 /obj/item/clothing/glasses/science
+	hud_overlay = "science"
 	name = "Science Goggles"
 	desc = "The goggles do nothing!"
 	icon_state = "purple"
@@ -161,10 +161,6 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	toggleable = 1
 	actions_types = list(/datum/action/item_action/toggle_goggles)
 	item_flags = AIRTIGHT
-
-/obj/item/clothing/glasses/science/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.science)
 
 /obj/item/clothing/glasses/goggles
 	name = "goggles"
@@ -175,6 +171,7 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	body_parts_covered = EYES
 
 /obj/item/clothing/glasses/night
+	hud_overlay = "nvg"
 	name = "night vision goggles"
 	desc = "You can totally see in the dark now!"
 	icon_state = "night"
@@ -191,10 +188,6 @@ CAPABILITIES(/obj/item/clothing/glasses)
 	flags = PHORONGUARD
 
 TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYPES(list("Vox"))))
-
-/obj/item/clothing/glasses/night/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.nvg)
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
@@ -254,6 +247,7 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	body_parts_covered = 0
 
 /obj/item/clothing/glasses/material
+	hud_overlay = "material"
 	name = "optical material scanner"
 	desc = "Very confusing glasses."
 	icon_state = "material"
@@ -263,15 +257,12 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	vision_flags = SEE_OBJS
 	enables_planes = list(VIS_FULLBRIGHT)
 
-/obj/item/clothing/glasses/material/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.material)
-
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
 	prescription = TRUE
 
 /obj/item/clothing/glasses/graviton
+	hud_overlay = "material"
 	name = "graviton goggles"
 	desc = "The secrets of space travel are.. not quite yours."
 	icon_state = "grav"
@@ -283,10 +274,6 @@ CAPABILITIES(/obj/item/clothing/glasses/eyepatchwhite)
 	vision_flags = SEE_OBJS | SEE_TURFS
 	flash_protection = FLASH_PROTECTION_REDUCED
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
-
-/obj/item/clothing/glasses/graviton/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
@@ -566,6 +553,7 @@ TRACKED(/obj/item/clothing/glasses/sunglasses/sechud/aviator, on)
 	enables_planes = list(VIS_CH_STATUS,VIS_CH_HEALTH)
 
 /obj/item/clothing/glasses/thermal
+	hud_overlay = "thermal"
 	name = "optical thermal scanner"
 	desc = "Thermals in the shape of glasses."
 	icon_state = "thermal"
@@ -588,10 +576,6 @@ CAPABILITIES(/obj/item/clothing/glasses/thermal)
 			M.status_at_least(STAT_BLINDED, 3)
 			M.status_set(STAT_BLURRY, 5)
 			M.status_at_least(STAT_NEARSIGHTED, 2)
-
-/obj/item/clothing/glasses/thermal/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(overlay), GLOB.global_hud.thermal)
 
 /obj/item/clothing/glasses/thermal/syndi	//These are now a traitor item, concealed as mesons.	-Pete
 	name = "optical meson scanner"
@@ -756,11 +740,11 @@ MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be 
 	item_flags = AIRTIGHT
 	body_parts_covered = EYES
 	actions_types = list(/datum/action/item_action/hands_free/change_scanning_pattern)
-	var/static/list/tac_sec_vis_anim = list()
+	var/list/tac_sec_vis_anim
 
-/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/Initialize(mapload)
-	. = ..()
-	tac_sec_vis_anim = list(
+/// The tac_sec_vis_anim table, one per type (per_type()).
+/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/build_tac_sec_vis_anim()
+	. = list(
 		"Scanning pattern 1" = image(icon = src.icon, icon_state = "tacsecvis1"),
 		"Scanning pattern 2" = image(icon = src.icon, icon_state = "tacsecvis2"),
 		"Scanning pattern 3" = image(icon = src.icon, icon_state = "tacsecvis3"),
@@ -768,6 +752,7 @@ MSG_DEF_SELF(glasses_kit/eyes_covered, span_warning("The person's eyes can't be 
 		)
 
 CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
+	per_type(nameof(tac_sec_vis_anim), PROC_REF(build_tac_sec_vis_anim))
 	op("tactical_sec_vis_pattern_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Scanning pattern"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(tactical_sec_vis_choices)), "radius" = 36, "radial" = TRUE, "autopick_single_option" = TRUE, "timeout" = 0), step = "pattern"), then(PROC_REF(tactical_sec_vis_pattern_self)))
 
 /obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis/proc/tactical_sec_vis_choices(datum/act/op/A)
@@ -862,4 +847,6 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
 
 /// the overlay this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen
-	return overlay
+	if(overlay)
+		return overlay
+	return hud_overlay ? GLOB.global_hud.vars[hud_overlay] : null

@@ -135,6 +135,13 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/", "cod
 # verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
 list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 list_init_exempt_files = ["code/__defines/tgs.dm"]
+# Homes for base-type vars (doc/rewrite/proposals/base_vars.md). A var a home macro names on its own type
+# (`TRACKED(/mob, stat)`), or whose declared type is under a home type path (the HUD datum, the profile records,
+# the sparse and cooldown stores), is not a `base_var` site. A lane that lands a new home adds it here.
+base_var_home_macros = ["TRACKED", "TRACKED_BRIDGED", "TRACKED_SCHEMA", "TRACKED_DATA", "STAT"]
+base_var_home_types = ["/datum/hud", "/datum/record", "/datum/sparse_slots", "/datum/cooldown_table"]
+# records_data_only: the procs a /datum/record may define (accessors).
+record_accessor_prefixes = ["set_", "get_"]
 
 [lint.decl]
 # decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:

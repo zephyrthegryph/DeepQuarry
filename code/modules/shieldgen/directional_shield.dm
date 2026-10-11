@@ -101,6 +101,7 @@ CAPABILITIES(/obj/effect/directional_shield)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/shield_projector)
+	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(moved_event)))
 	when(nameof(always_on), after_init(0, then(PROC_REF(raise_after_init))))
 	owns_many(nameof(active_shields))
 	every(2 SECONDS, then(PROC_REF(regen_step)), when = nameof(regenerating))
@@ -113,9 +114,7 @@ CAPABILITIES(/obj/item/shield_projector)
 TRACKED(/obj/item/shield_projector, regenerating)
 
 /obj/item/shield_projector/Initialize(mapload)
-	max_integrity = max_integrity
 	dq_add_recursive_move(src)
-	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(moved_event)))
 	return ..()
 
 // its shields come down.

@@ -39,6 +39,9 @@ STATIC_ENTRY(uses_power)
 /datum/entry_engine/type_trait/power
 	kind = ENTRY_USES_POWER
 	trait_type = /datum/type_trait/power
+	publish_key = USES_POWER_KEY
+	base_type = /obj/machinery
+	var_names = list("idle_power_usage" = "idle", "active_power_usage" = "active", "power_channel" = "channel")
 
 /// What `M` draws: its channel, idle and active draw (its own values once one was set at run time). Read only. A reader subscribes to
 /// USES_POWER_KEY, which the setters publish.
@@ -54,30 +57,15 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 
 /// Sets the idle draw (the area's demand follows while the machine is idle).
 /obj/machinery/proc/set_idle_power_usage(value)
-	if(power_of(src).idle == value)
-		return FALSE
-	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
-	own.idle = value
-	tracked_changed(src, USES_POWER_KEY)
-	return TRUE
+	return set_trait(src, ENTRY_USES_POWER, "idle", value)
 
 /// Sets the active draw (the area's demand follows while the machine is active).
 /obj/machinery/proc/set_active_power_usage(value)
-	if(power_of(src).active == value)
-		return FALSE
-	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
-	own.active = value
-	tracked_changed(src, USES_POWER_KEY)
-	return TRUE
+	return set_trait(src, ENTRY_USES_POWER, "active", value)
 
 /// Sets the channel the machine draws on (its draw moves between the area's channel demands).
 /obj/machinery/proc/set_power_channel(value)
-	if(power_of(src).channel == value)
-		return FALSE
-	var/datum/type_trait/power/own = type_trait_own(src, ENTRY_USES_POWER)
-	own.channel = value
-	tracked_changed(src, USES_POWER_KEY)
-	return TRUE
+	return set_trait(src, ENTRY_USES_POWER, "channel", value)
 
 // Current power consumption right now.
 #define POWER_CONSUMPTION (use_power == USE_POWER_IDLE ? power_of(src).idle : (use_power >= USE_POWER_ACTIVE ? power_of(src).active : 0))

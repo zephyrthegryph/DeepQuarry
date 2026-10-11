@@ -150,9 +150,6 @@ CAPABILITIES(/obj/effect/hotspot)
 	update_color()
 
 /obj/effect/hotspot/set_smoothed_icon_state(new_junction)
-
-	smoothing_junction = new_junction
-
 	update_color()
 
 /**

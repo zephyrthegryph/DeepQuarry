@@ -156,6 +156,13 @@ CAPABILITIES(/datum/view_variables_panel)
 					"name" = varname,
 					"value_html" = "[thing_datum.vv_get_var(varname)]",
 				))
+		// Its trait blocks (doc/rewrite/proposals/base_vars.md): each field as `@kind.field`, edited through set_trait().
+		var/list/trait_fields = type_trait_fields_of(thing_datum)
+		for(var/field_name in trait_fields)
+			variables += list(list(
+				"name" = field_name,
+				"value_html" = "[debug_variable(field_name, trait_fields[field_name], 0, thing_datum)]",
+			))
 	data["variables"] = variables
 
 	return data

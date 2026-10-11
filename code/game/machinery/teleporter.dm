@@ -143,11 +143,11 @@ CAPABILITIES(/obj/machinery/computer/teleporter)
 /obj/machinery/teleport/hub/Initialize(mapload)
 	. = ..()
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
-	default_apply_parts()
 
 // the teleporter console forgets its hub.
 
 CAPABILITIES(/obj/machinery/teleport/hub)
+	default_parts()
 	configure(uses_power(idle = 10, active = 2000))
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	op("ghost_follow", observer(), label("Follow the link"), then(PROC_REF(hub_ghost_follow)))

@@ -7,6 +7,7 @@
 // Gas mixer - omni variant
 //--------------------------------------------
 /obj/machinery/atmospherics/omni/mixer
+	port_volume = ATMOS_DEFAULT_VOLUME_MIXER
 	name = "omni gas mixer"
 	icon_state = "map_mixer"
 	pipe_state = "omni_mixer"
@@ -51,8 +52,6 @@
 						P.concentration = tag_west_con
 						con += max(0, tag_west_con)
 
-	for(var/datum/omni_port/P in ports)
-		P.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 
 /obj/machinery/atmospherics/omni/mixer/sort_ports()
 	rebuild_port_roles()
@@ -297,3 +296,10 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
+
+/// The Southern Cross atmospherics mixer: draws 7500 W while mixing (the map edit `active_power_usage = 7500` it carried before the draw
+/// became the uses_power() trait; a compiled map cannot name a var that left the type).
+/obj/machinery/atmospherics/omni/mixer/high_power
+
+CAPABILITIES(/obj/machinery/atmospherics/omni/mixer/high_power)
+	configure(uses_power(active = 7500))

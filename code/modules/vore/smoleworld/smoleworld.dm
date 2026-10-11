@@ -75,11 +75,8 @@ CAPABILITIES(/obj/item/storage/smolebrickcase)
 	color = "#ffffff"
 	density = FALSE
 
-/obj/structure/smoletrack/Initialize(mapload)
-	. = ..()
-	make_rotatable()
-
 CAPABILITIES(/obj/structure/smoletrack)
+	rotatable()
 	op("smoletrack_dismantle_hand", hand(), ungated(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Take apart"), then(PROC_REF(smoletrack_dismantle_hand)))
 	op("smoletrack_verb_color", menu(), label("Use Color Pieces"), needs(req_adjacent(), req_capable()), asks(/datum/prompt/color/smole_paint, fields = list("default" = nameof(color)), step = "colour"), then(PROC_REF(smoletrack_verb_color)))
 	op("smoletrack_verb_dismantle", menu(), label("Take Road Apart"), needs(req_adjacent(), req_capable()), then(PROC_REF(smoletrack_verb_dismantle)))
