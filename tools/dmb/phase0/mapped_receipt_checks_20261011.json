@@ -1,0 +1,28 @@
+{
+  "scope": "Focused correctness checks; no benchmark or full runtime parity claim",
+  "commit": "8ddfe63cb9b3bd43cd8d9e44aa2be5e1d47eff9a",
+  "archive_sha256": "86b83b9a0c317e32b8d84d22ae0d47fe68d1fe32446da369904630a582c8176a",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-180821-4795d61d-job-cargo.json",
+  "build_exit": 0,
+  "build_seconds": 130.828,
+  "owned_children_reaped": true,
+  "focused_passed": 19,
+  "focused_failed": 0,
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181042-33068c87-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181043-d805055f-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181045-3c5e1b40-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181055-1f0d2918-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181056-711fad2c-focused.json"
+  ],
+  "initial_empty_filter_receipts_preserved": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181041-42fbdf8d-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181044-ce6ebb8e-focused.json"
+  ],
+  "limitations": [
+    "dmbc mapped disk consumer not included in this focused build",
+    "later ABI observer integration commit bf32440119 not included",
+    "end-to-end speed benefit unmeasured",
+    "BYOND structural and full runtime baseline gates remain open"
+  ]
+}
