@@ -20,6 +20,44 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
     fn observes_answers(&self) -> bool {
         self.0.observes_reads()
     }
+    fn supports_admitted_observation(&self) -> bool {
+        self.0.transparent_receipt_observer().is_some()
+    }
+    fn answer_for_admission(&self, query: &Query) -> Answer {
+        match (query, self.0.transparent_receipt_observer()) {
+            (Query::Semantic(query), Some(observer)) => {
+                Answer::Semantic(observer.provider().resolve(*query))
+            }
+            _ => self.answer(query),
+        }
+    }
+    fn version_for_admission(&self, domain: &Domain) -> Option<u128> {
+        match (domain, self.0.transparent_receipt_observer()) {
+            (Domain::Semantic(domain), Some(observer)) => {
+                observer.provider().domain_version(*domain)
+            }
+            _ => self.version(domain),
+        }
+    }
+    fn observe_admitted(
+        &self,
+        read: &dm_session::Observation<Query, Answer, Domain>,
+        version: Option<u128>,
+    ) {
+        if let (
+            Query::Semantic(query),
+            Answer::Semantic(answer),
+            Domain::Semantic(domain),
+            Some(observer),
+        ) = (
+            &read.query,
+            &read.answer,
+            &read.domain,
+            self.0.transparent_receipt_observer(),
+        ) {
+            observer.record_answer(*query, answer, *domain, version);
+        }
+    }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
         a == b
             || match (a, b) {
@@ -63,7 +101,10 @@ pub(in crate::driver_facts) fn changed(
                 matches!(read.query, Query::Semantic(_))
                     && matches!(read.domain, Domain::Semantic(_))
             });
-            if semantic && !leaf.iter().all(|read| matching.contains(&read.domain)) {
+            if semantic && admission.allows_certificate_reuse() {
+                changed =
+                    admission.first_changed_receipted(&Reads::from(leaf.clone()), versions, |_| {});
+            } else if semantic && !leaf.iter().all(|read| matching.contains(&read.domain)) {
                 // No partial certificate becomes a shared leaf verdict.
                 changed = admission.first_changed(&Reads::from(leaf.clone()), |_| {});
             } else {
@@ -79,4 +120,46 @@ pub(in crate::driver_facts) fn changed(
         }
     });
     changed
+}
+
+#[cfg(test)]
+mod transparent_tests {
+    use super::*;
+    use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    struct Provider(AtomicUsize);
+    impl Resolver for Provider {
+        fn observes_reads(&self) -> bool {
+            false
+        }
+        fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+            self.0.fetch_add(1, Ordering::Relaxed);
+            ResolvedMeaning::Missing
+        }
+        fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
+            Some(7)
+        }
+    }
+    #[test]
+    fn abi_transparent_receipt_delivers_original_negative_without_provider_replay() {
+        let provider = Provider(AtomicUsize::new(0));
+        let recorder = dm_session::RecordingResolver::new(&provider);
+        let host = SemanticHost(&recorder);
+        let admission = ReceiptAdmission::new(&host);
+        let query = ResolveQuery::GlobalProc(SymbolId::of("absent"));
+        let domain = query.domain();
+        let reads = Reads::from(vec![dm_session::Observation {
+            query: Query::Semantic(query),
+            domain: Domain::Semantic(domain),
+            answer: Answer::Semantic(ResolvedMeaning::Missing),
+        }]);
+        assert!(admission
+            .first_changed_receipted(&reads, &[(Domain::Semantic(domain), 7)], |_| {})
+            .is_none());
+        assert_eq!(provider.0.load(Ordering::Relaxed), 0);
+        let actual = recorder.reads();
+        assert_eq!(actual.len(), 1);
+        assert_eq!(actual[0].query, query);
+        assert_eq!(actual[0].answer, ResolvedMeaning::Missing);
+    }
 }

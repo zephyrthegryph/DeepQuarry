@@ -287,6 +287,10 @@ pub struct InitializerReuse<'a> {
 }
 struct ResolverView<'a>(&'a dyn Resolver);
 impl Resolver for ResolverView<'_> {
+    fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
+        self.0.transparent_receipt_observer()
+    }
+
     fn observes_reads(&self) -> bool {
         self.0.observes_reads()
     }

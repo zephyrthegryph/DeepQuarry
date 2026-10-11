@@ -494,8 +494,9 @@ fn prepare_source_abi_mode_on_executor(
         .as_ref()
         .map(|_| abi_artifacts::batch::Capture::default());
     let semantic_host = abi_artifacts::admission::SemanticHost(evaluator.resolver);
-    let shared_admission = (!evaluator.resolver.observes_reads())
-        .then(|| dm_session::ReceiptAdmission::new(&semantic_host));
+    let shared_admission = (!evaluator.resolver.observes_reads()
+        || evaluator.resolver.transparent_receipt_observer().is_some())
+    .then(|| dm_session::ReceiptAdmission::new(&semantic_host));
     let artifact_keys = std::sync::Mutex::new(Vec::new());
     let owned_index;
     let index = match issued_units {
