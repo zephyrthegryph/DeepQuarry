@@ -17,7 +17,7 @@ human|none click: Click: Ui open
 -click: nothing
 +0 menu: Make Deployable
 +3 menu: Ui open
-+4 menu: Unscrew the control panel (refused: 	he the Nuclear Fission Explosive emits a buzzing noise, the panel staying locked in)
++4 menu: Unscrew the control panel (refused: the Nuclear Fission Explosive emits a buzzing noise, the panel staying locked in)
 +5 menu: Use
 +6 click: Click: Unscrew the control panel
 @obj human|/obj/item/tool/crowbar

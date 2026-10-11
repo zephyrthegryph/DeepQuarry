@@ -1,5 +1,6 @@
 @obj.structure.bed human|none
-@obj.structure.bed robot|none
+robot|none menu: Disassemble
+robot|none click: Click: Disassemble
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure.bed human|/obj/item/tool/screwdriver
