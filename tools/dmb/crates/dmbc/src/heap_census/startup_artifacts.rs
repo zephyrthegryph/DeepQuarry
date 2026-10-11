@@ -2,7 +2,12 @@
 use super::*;
 use crate::startup::{StartupArtifact, StartupArtifacts};
 use dm_session::ObservedArtifactStorageView as View;
-fn declarations(census: &mut HeapCensus, rows: &Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>) {
+#[path = "startup_compact.rs"]
+pub(crate) mod compact;
+pub(super) fn declarations(
+    census: &mut HeapCensus,
+    rows: &Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>,
+) {
     census.slice("startup.static_declarations", rows, true);
     for declaration in rows.iter() {
         if census.arc_object("startup.static_declaration", declaration) {

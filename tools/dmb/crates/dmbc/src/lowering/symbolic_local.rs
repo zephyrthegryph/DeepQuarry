@@ -132,7 +132,14 @@ impl SessionSymbolicMemo {
         }
         let attempt = self.attempt.as_ref()?;
         let observer = crate::lowering_memo::RecordingResolver::new(host);
-        for candidate in candidates.take_identity(row.source().identity) {
+        // A failed weak issuer witness cannot consume the semantic certificate
+        // needed by ordinary exact-key/ABI admission later in this same request.
+        for candidate in candidates.take_identity_if(row.source().identity, |record| {
+            record
+                .local
+                .as_ref()
+                .is_some_and(|local| local.matches(roster, row, policy, record).is_some())
+        }) {
             let mut completed = None;
             let claimed = attempt
                 .with_pending(|leases| {

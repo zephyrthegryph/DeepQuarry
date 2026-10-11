@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicUsize;
 struct Host {
     versions: AtomicUsize,
     answers: AtomicUsize,
+    current: u128,
 }
 impl Resolver for Host {
     fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
@@ -11,7 +12,7 @@ impl Resolver for Host {
     }
     fn domain_version(&self, _: dm_ir::ReadDomain) -> Option<u128> {
         self.versions.fetch_add(1, Ordering::Relaxed);
-        Some(7)
+        Some(self.current)
     }
     fn observes_reads(&self) -> bool {
         false
@@ -58,9 +59,11 @@ fn symbolic_request_dispatch_uses_one_current_certificate_and_preserves_local_gu
     let host = Host {
         versions: AtomicUsize::new(0),
         answers: AtomicUsize::new(0),
+        current: 7,
     };
     let admission = RequestAdmission::new(&host);
     let roster = next.candidate_roster(&admission).unwrap();
+    assert!(roster.take_identity_if(identity, |_| false).is_empty());
     assert_eq!(host.versions.load(Ordering::Relaxed), 1);
     for (bytes, license) in [(b"first".as_slice(), false), (b"second".as_slice(), true)] {
         let key = symbolic_publication::locator(identity, bytes);
@@ -83,4 +86,15 @@ fn symbolic_request_dispatch_uses_one_current_certificate_and_preserves_local_gu
     }
     assert_eq!(host.versions.load(Ordering::Relaxed), 1);
     assert_eq!(host.answers.load(Ordering::Relaxed), 0);
+    let changed = Host {
+        current: 8,
+        versions: AtomicUsize::new(0),
+        answers: AtomicUsize::new(0),
+    };
+    let changed_admission = RequestAdmission::new(&changed);
+    assert!(next
+        .candidate_roster(&changed_admission)
+        .unwrap()
+        .take_identity(identity)
+        .is_empty());
 }

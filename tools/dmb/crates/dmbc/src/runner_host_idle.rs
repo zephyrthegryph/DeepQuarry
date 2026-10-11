@@ -26,7 +26,10 @@ impl BuildHost {
             let report = owner.compact_for_pressure(96 * 1024 * 1024);
             eprintln!("dmbd compact initializer classification {report:?}");
         }
-        self.startup = None;
+        if let Some((_, owner)) = &self.startup {
+            let report = owner.compact_for_pressure(32 * 1024 * 1024);
+            eprintln!("dmbd compact startup {report:?}");
+        }
         self.abi = None;
         self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {

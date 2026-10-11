@@ -167,6 +167,16 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
         &mut self,
         prefix: &[u8],
     ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
+        self.take_prefix_if(prefix, |_| true)
+    }
+    /// Borrow a local routing predicate without consuming declined tokens.
+    /// This exposes no admitted output: selected tokens still require the same
+    /// exact-key/local-input admission and pending lease claim.
+    pub fn take_prefix_if(
+        &mut self,
+        prefix: &[u8],
+        mut qualify: impl FnMut(&Arc<T>) -> bool,
+    ) -> Vec<UnchangedCandidate<'request, 'host, T, Q, A, D, H>> {
         let start = self
             .candidates
             .partition_point(|candidate| candidate.key.as_ref() < prefix);
@@ -179,6 +189,9 @@ impl<'request, 'host, T, Q, A: Eq, D, H> UnchangedCandidates<'request, 'host, T,
             .iter_mut()
             .rev()
             .filter_map(|candidate| {
+                if !qualify(&candidate.artifact.as_ref()?.value) {
+                    return None;
+                }
                 Some(UnchangedCandidate {
                     local_domain: candidate.local_domain.clone(),
                     key: Arc::clone(&candidate.key),

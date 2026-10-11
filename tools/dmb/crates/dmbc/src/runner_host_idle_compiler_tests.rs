@@ -77,7 +77,10 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
     ));
     assert!(host.symbolic.is_none());
     assert!(host.abi.is_none());
-    assert!(host.startup.is_none());
+    assert!(
+        host.startup.is_some(),
+        "compact startup facade remains bounded"
+    );
     assert!(host.generation.is_none());
     assert!(host.host_facts.is_none());
     let regenerated = host.procedure_memo(17, None, true).unwrap();

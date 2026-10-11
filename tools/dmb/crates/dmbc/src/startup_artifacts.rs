@@ -90,6 +90,13 @@ pub(super) fn key(identity: ProcedureIdentity, source: &str) -> Vec<u8> {
     key
 }
 impl StartupArtifacts {
+    pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
+        self.clear_callable_index();
+        self.values.prune_for_pressure(
+            bytes,
+            crate::heap_census::startup_artifacts::compact::weight,
+        )
+    }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         Arc::new(Self {
             callables: Arc::clone(&self.callables),

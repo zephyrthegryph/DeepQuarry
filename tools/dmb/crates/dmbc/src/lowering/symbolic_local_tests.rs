@@ -153,6 +153,62 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     record.value = RecordValue::Executable(value.shared_artifact());
     record.required_types = Arc::clone(value.required_types_owner());
     record.relative_debug = capture.borrow().debug.clone();
+    let mut expired = record.local.clone().unwrap();
+    expired.inputs = std::sync::Weak::new();
+    let fallback_owner = SessionSymbolicMemo::current_revision();
+    let initial = fallback_owner.for_request(true);
+    assert!(initial.insert_record(
+        row.source().identity,
+        Record {
+            local: Some(expired),
+            recipe: crate::lowering_memo::key_recipe::KeyRecipe::new(
+                &record.key,
+                Arc::clone(current.metadata)
+            ),
+            key: Arc::clone(&record.key),
+            reads: record.reads.clone(),
+            versions: Arc::clone(&record.versions),
+            value: RecordValue::Executable(value.shared_artifact()),
+            relative_debug: record.relative_debug.clone(),
+            required_types: Arc::clone(&record.required_types),
+            modified_recipes: Arc::clone(&record.modified_recipes),
+        }
+    ));
+    assert!(initial.publish_successful());
+    drop(initial);
+    for changed_key in [true, false] {
+        let fallback = fallback_owner.for_request(false);
+        let request = RequestAdmission::new(front.snapshot.tree.as_ref());
+        let candidates = fallback.candidate_roster(&request).unwrap();
+        assert!(fallback
+            .lookup_unchanged_local(
+                &licensed,
+                &candidates,
+                7,
+                front.snapshot.tree.as_ref(),
+                &front,
+                row,
+                &arena
+            )
+            .is_none());
+        let candidate = candidates
+            .take_identity(row.source().identity)
+            .pop()
+            .expect("expired local witness preserves ordinary semantic candidate");
+        let accepted = fallback
+            .attempt
+            .as_ref()
+            .unwrap()
+            .with_pending(|leases| {
+                leases.records.claim_current(
+                    candidate,
+                    |_, current| !changed_key && current.key == record.key,
+                    |_| {},
+                )
+            })
+            .flatten();
+        assert_eq!(accepted.is_some(), !changed_key);
+    }
     let owner = SessionSymbolicMemo::current_revision();
     let first = owner.for_request(true);
     assert!(first.insert_record(row.source().identity, record));

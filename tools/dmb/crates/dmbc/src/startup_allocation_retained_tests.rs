@@ -35,6 +35,11 @@ fn retained_allocation_rebinds_shifted_sources_and_recomputes_changed_order() {
         assert!(current.allocation.bind_current(plan, &frontend));
         if let Some(old) = previous.as_ref() { assert_eq!(Arc::ptr_eq(old, &current.allocation), index == 1); }
         previous = Some(Arc::clone(&current.allocation));
+        if index == 0 {
+            let compact = store.compact_for_pressure(1024 * 1024);
+            assert_eq!(compact.retained_entries, 1);
+            assert!(compact.charged_bytes > std::mem::size_of::<AllocationReceipt>());
+        }
         let mut malformed = plan.clone();
         Arc::make_mut(&mut malformed.origins)[0].provenance.span.start += 1;
         assert!(!current.allocation.bind_current(&malformed, &frontend));

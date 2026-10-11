@@ -43,11 +43,28 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
             R,
         >,
     > {
+        self.take_identity_if(identity, |_| true)
+    }
+    pub(super) fn take_identity_if(
+        &self,
+        identity: UnitIdentity,
+        qualify: impl FnMut(&Arc<Record>) -> bool,
+    ) -> Vec<
+        dm_session::UnchangedCandidate<
+            'request,
+            'host,
+            Record,
+            dm_ir::ResolveQuery,
+            dm_ir::ResolvedMeaning,
+            dm_ir::ReadDomain,
+            R,
+        >,
+    > {
         let prefix = symbolic_publication::locator(identity, &[]);
         self.values
             .lock()
             .unwrap_or_else(|error| error.into_inner())
-            .take_prefix(&prefix)
+            .take_prefix_if(&prefix, qualify)
     }
     #[cfg(test)]
     pub(super) fn take(
