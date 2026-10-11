@@ -42,7 +42,7 @@ pub struct SourceFile {
     pub line_starts: Arc<[usize]>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceLocation {
     pub span: Span,
     pub path: Arc<PathBuf>,

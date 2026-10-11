@@ -106,7 +106,7 @@ pub struct ExpansionSegment {
     pub macros: MacroEnvironment,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DefinitionOrigin {
     pub path: Arc<PathBuf>,
     pub source_span: Span,
@@ -116,7 +116,7 @@ pub struct DefinitionOrigin {
 /// One actually executed macro expansion, with its replacement ancestry. The
 /// invocation span is relative to the expansion input, not an invented absolute
 /// byte range when that input came from a replacement or argument rescan.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MacroExpansion {
     pub name: Arc<str>,
     pub invocation_span: Span,
