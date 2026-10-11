@@ -43,6 +43,10 @@ TRACKED(/obj/structure/toilet, cistern)
 
 TRACKED(/obj/structure/toilet, refilling)
 
+/// The bluespace model describes itself (derives(), at init).
+/obj/structure/toilet/proc/model_desc()
+	return teleplumb_crystal ? "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean." : desc
+
 CAPABILITIES(/obj/structure/toilet)
 	hose_sockets(list(/datum/hose_connector/endless_drain))
 	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin, starts = nameof(bin))
@@ -68,18 +72,18 @@ CAPABILITIES(/obj/structure/toilet)
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt_harm)))
 	op("flush", hand(), ungated(), gesture(GESTURE_ALT), stance(I_HELP, I_DISARM, I_GRAB), label("Flush"), when(req_actor_kind(/mob/living)),
 		needs(req_conscious(), req_is(nameof(open), TRUE, because = MSG(toilet/lid_closed))), then(PROC_REF(interaction_alt)))
+	on_notice(/datum/notice/disposal_receive, then(PROC_REF(toilet_reflux)))
+	derives(nameof(desc), PROC_REF(model_desc))
 
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
 
 	if(teleplumb_crystal)
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
-		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
-	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(toilet_reflux)))
 	if(trunk)
 		PUBLISH_LEGACY(src, /datum/notice/disposal_link, trunk)
 
