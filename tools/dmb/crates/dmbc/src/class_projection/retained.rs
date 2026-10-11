@@ -90,6 +90,7 @@ struct Owner<'a> {
     hit: Option<Arc<OwnerProjection>>,
     inputs: Vec<MemberInput>,
     produced: Vec<MemberContribution>,
+    rejected_local_input: bool,
     recorder: RecordingResolver<'a, dm_tree::SemanticTree>,
     next: usize,
 }
@@ -270,17 +271,20 @@ impl ClassProjections {
                         self.declined.fetch_add(1, Ordering::Relaxed);
                         return None;
                     };
+                    let mut rejected_local_input = false;
                     let hit =
                         self.attempt
                             .with_pending(|leases| {
                                 leases
                                     .values
                                     .visit_explained(&key, tree, &mut |value| {
-                                        value.inputs.len() == inputs.len()
+                                        let matches = value.inputs.len() == inputs.len()
                                             && value.values.len() == value.inputs.len()
                                             && inputs.iter().zip(&value.inputs).all(
                                                 |(current, previous)| current.matches(previous),
-                                            )
+                                            );
+                                        rejected_local_input |= !matches;
+                                        matches
                                     })
                                     .0
                             })
@@ -303,6 +307,7 @@ impl ClassProjections {
                             hit,
                             inputs,
                             produced: Vec::new(),
+                            rejected_local_input,
                             recorder: RecordingResolver::new(tree),
                             next: 0,
                         },
@@ -392,6 +397,21 @@ impl Request<'_> {
             };
             self.store.recomputed.fetch_add(1, Ordering::Relaxed);
             self.store.attempt.with_pending(|leases| {
+                if owner.rejected_local_input {
+                    // Locator and semantic reads do not contain local defaults
+                    // or metadata. Preserve the actual fresh owner after this
+                    // rejection; equal ledgers cannot re-admit its old payload.
+                    return leases.values.insert_fresh_with_qualified_receipt(
+                        owner.key.into(),
+                        reads.into(),
+                        versions.into(),
+                        weight,
+                        || OwnerProjection {
+                            inputs: owner.inputs,
+                            values: owner.produced,
+                        },
+                    );
+                }
                 leases
                     .values
                     .insert_with(owner.key.into(), reads, versions, weight, || {

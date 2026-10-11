@@ -79,6 +79,35 @@ fn project_source(
     retained
 }
 #[test]
+fn changed_default_refreshes_owner_and_next_unchanged_projection_hits() {
+    let store = ClassProjections::default();
+    let original = project_source(&store, "/datum/a\n    var/x = 3\n", false);
+    let old_recomputed = store.recomputed.load(Ordering::Relaxed);
+    let changed = project_source(&store, "/datum/a\n    var/x = 4\n", false);
+    assert_ne!(original.fields[0].value, changed.fields[0].value);
+    assert_eq!(
+        changed.fields[0].value,
+        DefaultValue::Scalar(SemanticValue::NumberBits(4f32.to_bits()))
+    );
+    assert!(store.recomputed.load(Ordering::Relaxed) > old_recomputed);
+    let recomputed = store.recomputed.load(Ordering::Relaxed);
+    let hits = store.hits.load(Ordering::Relaxed);
+    let unchanged = project_source(&store, "/datum/a\n    var/x = 4\n", false);
+    assert_eq!(unchanged.fields, changed.fields);
+    assert_eq!(
+        store.recomputed.load(Ordering::Relaxed),
+        recomputed,
+        "fresh owner must replace the rejected local-input candidate"
+    );
+    assert!(
+        store.hits.load(Ordering::Relaxed) > hits,
+        "next unchanged request must reuse the newly produced owner"
+    );
+    // project_source independently compares every retained projection with its
+    // ordinary fresh producer, including changed and subsequently reused rows.
+}
+
+#[test]
 fn interleaved_owner_payloads_rebind_shifted_sources_and_match_fresh_reorder() {
     let store = ClassProjections::default();
     let source = "/datum/a\n    var/x = 3\n/datum/b\n    var/y = 3\n/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n";
