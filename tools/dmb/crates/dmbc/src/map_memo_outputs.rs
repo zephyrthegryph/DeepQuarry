@@ -111,30 +111,36 @@ impl MapMemo {
             }
         };
         let key = key(self.policy, maps, projection, &paths, context);
-        if let Some(retained) = &self.retained {
+        if self.retained.is_some() {
             self.current
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .outputs
                 .push(key.clone());
-            let (hit, _) = retained
-                .outputs
-                .visit_explained(&key, host, &mut |artifact| {
-                    let MapOutputs::Bundle(artifact) = artifact.as_ref() else {
-                        return false;
-                    };
-                    artifact.paths == paths
-                        && same_projection(&artifact.projection, projection)
-                        && artifact.maps.len() == maps.len()
-                        && artifact.maps.iter().zip(maps).all(|(old, new)| {
-                            old.captured.path == new.captured.path
-                                && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
-                                    || old.captured.source == new.captured.source)
-                                && (Arc::ptr_eq(&old.model, &new.model) || old.model == new.model)
-                                && old.template_origins == new.template_origins
-                                && old.block_origins == new.block_origins
+            let hit = self
+                .with_pending_maps(|leases| {
+                    leases
+                        .outputs
+                        .visit_explained(&key, host, &mut |artifact| {
+                            let MapOutputs::Bundle(artifact) = artifact.as_ref() else {
+                                return false;
+                            };
+                            artifact.paths == paths
+                                && same_projection(&artifact.projection, projection)
+                                && artifact.maps.len() == maps.len()
+                                && artifact.maps.iter().zip(maps).all(|(old, new)| {
+                                    old.captured.path == new.captured.path
+                                        && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
+                                            || old.captured.source == new.captured.source)
+                                        && (Arc::ptr_eq(&old.model, &new.model)
+                                            || old.model == new.model)
+                                        && old.template_origins == new.template_origins
+                                        && old.block_origins == new.block_origins
+                                })
                         })
-                });
+                        .0
+                })
+                .flatten();
             if let Some(hit) = hit {
                 let MapOutputs::Bundle(hit) = hit.as_ref() else {
                     unreachable!()
@@ -144,6 +150,17 @@ impl MapMemo {
                     .unwrap_or_else(|e| e.into_inner())
                     .outputs
                     .extend(hit.unit_keys.iter().cloned());
+                // A bundle admission must also claim its exact unit variants;
+                // a key roster alone does not keep leased entries alive.
+                for unit_key in &hit.unit_keys {
+                    self.with_pending_maps(|leases| {
+                        leases
+                            .outputs
+                            .visit_explained(unit_key, host, &mut |value| {
+                                matches!(value.as_ref(), MapOutputs::Unit(_))
+                            })
+                    });
+                }
                 self.counts.output_hits.fetch_add(1, Ordering::Relaxed);
                 let descriptors = prepare_descriptors(Some(&hit.descriptors))?;
                 let artifacts =
@@ -154,7 +171,7 @@ impl MapMemo {
         self.counts.outputs_prepared.fetch_add(1, Ordering::Relaxed);
         let descriptors = prepare_descriptors(None)?;
         let artifacts = prepare_initializers(None, &descriptors, &recording)?;
-        if let Some(retained) = &self.retained {
+        if self.retained.is_some() {
             let maps: Arc<[MapPlan]> = maps.to_vec().into();
             let reads = recording.reads();
             let versions = recording.domain_receipts();
@@ -185,18 +202,20 @@ impl MapMemo {
                     &versions,
                     &unit_keys,
                 ) {
-                    retained
-                        .outputs
-                        .insert_with(key, reads, versions, weight, || {
-                            MapOutputs::Bundle(MapBundle {
-                                maps,
-                                projection: projection.clone(),
-                                paths,
-                                descriptors: descriptors.clone(),
-                                artifacts: artifacts.clone(),
-                                unit_keys,
+                    self.with_pending_maps(|leases| {
+                        leases
+                            .outputs
+                            .insert_with(key, reads, versions, weight, || {
+                                MapOutputs::Bundle(MapBundle {
+                                    maps,
+                                    projection: projection.clone(),
+                                    paths,
+                                    descriptors: descriptors.clone(),
+                                    artifacts: artifacts.clone(),
+                                    unit_keys,
+                                })
                             })
-                        });
+                    });
                 }
             }
             return Ok((descriptors, artifacts.to_vec()));

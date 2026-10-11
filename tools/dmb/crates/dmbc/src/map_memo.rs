@@ -61,7 +61,7 @@ struct Resident {
 }
 pub struct MapMemo {
     retained: Option<Arc<RetainedMaps>>,
-    retained_revision: u64,
+    pending_maps: Option<dm_session::ArtifactAttempt<retained::MapLeases>>,
     current: Mutex<retained::CurrentRoster>,
     pub policy: u128,
     budget: usize,
@@ -93,7 +93,7 @@ impl MapMemo {
     pub fn new(policy: u128, byte_budget: usize) -> Self {
         Self {
             retained: None,
-            retained_revision: 0,
+            pending_maps: None,
             current: Mutex::new(retained::CurrentRoster::default()),
             policy,
             budget: byte_budget,

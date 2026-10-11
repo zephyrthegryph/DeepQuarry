@@ -1,6 +1,8 @@
 use super::*;
 use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId};
 use std::path::PathBuf;
+#[path = "map_memo_request_tests.rs"]
+mod request_tests;
 struct Host(bool);
 impl Resolver for Host {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {

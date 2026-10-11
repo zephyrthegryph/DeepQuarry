@@ -669,9 +669,6 @@ fn capture_with_resource_operation<
         };
         (Some(map), Some(descriptors), artifacts)
     };
-    if let Some(memo) = map_memo {
-        memo.finish_revision();
-    }
     Ok(CapturedNonTextOutput {
         captured,
         resolver,

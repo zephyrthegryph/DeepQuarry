@@ -1,22 +1,62 @@
 //! Current-revision map artifacts. Locators select buckets; exact immutable
 //! source/model owners and the shared read ledger authorize every admission.
 use super::*;
-use std::collections::BTreeMap;
 use dm_preprocess::{RetainedText, SourceProvider};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 pub struct RetainedMaps {
-    parse: dm_session::ArtifactStore<MapPlan>,
-    geometry: dm_session::ArtifactStore<GeometryArtifact>,
-    pub(super) outputs: dm_session::ArtifactStore<super::outputs::MapOutputs>,
-    sources: Mutex<BTreeMap<PathBuf, RetainedText>>,
-    revision: AtomicU64,
+    parse: Arc<dm_session::ArtifactStore<MapPlan>>,
+    geometry: Arc<dm_session::ArtifactStore<GeometryArtifact>>,
+    pub(super) outputs: Arc<dm_session::ArtifactStore<super::outputs::MapOutputs>>,
+    sources: Mutex<BTreeMap<PathBuf, CachedSource>>,
+    publication: Arc<dm_session::ArtifactPublication<MapLeases>>,
+}
+struct CachedSource {
+    text: RetainedText,
+    generation: dm_session::ArtifactGeneration,
+}
+pub(super) struct MapLeases {
+    sources: Mutex<Vec<PathBuf>>,
+    parse: dm_session::ObservedArtifactLease<
+        MapPlan,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
+    geometry: dm_session::ObservedArtifactLease<
+        GeometryArtifact,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
+    pub(super) outputs: dm_session::ObservedArtifactLease<
+        super::outputs::MapOutputs,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
 }
 struct GeometryArtifact {
     maps: Arc<[MapPlan]>,
     value: Projection,
 }
 impl RetainedMaps {
+    #[cfg(test)]
+    pub(super) fn test_entries(&self) -> usize {
+        let mut count = 0;
+        self.parse.visit_storage(|view| {
+            if let dm_session::ArtifactStorageView::Store { entries, .. } = view {
+                count += entries;
+            }
+        });
+        self.geometry.visit_storage(|view| {
+            if let dm_session::ArtifactStorageView::Store { entries, .. } = view {
+                count += entries;
+            }
+        });
+        count
+    }
     pub fn artifact_admitted_bytes(&self) -> usize {
         self.parse
             .admitted_bytes()
@@ -25,20 +65,17 @@ impl RetainedMaps {
     }
     pub fn current_revision() -> Self {
         Self {
-            parse: dm_session::ArtifactStore::current_revision(),
-            geometry: dm_session::ArtifactStore::current_revision(),
-            outputs: dm_session::ArtifactStore::current_revision(),
+            parse: dm_session::ArtifactStore::shared_current_rosters(),
+            geometry: dm_session::ArtifactStore::shared_current_rosters(),
+            outputs: dm_session::ArtifactStore::shared_current_rosters(),
             sources: Mutex::new(BTreeMap::new()),
-            revision: AtomicU64::new(0),
+            publication: Arc::new(dm_session::ArtifactPublication::default()),
         }
     }
 }
 #[derive(Default)]
 pub(super) struct CurrentRoster {
-    parse: Vec<Arc<[u8]>>,
-    geometry: Vec<Arc<[u8]>>,
     pub(super) outputs: Vec<Arc<[u8]>>,
-    sources: Vec<PathBuf>,
 }
 struct NoReads;
 impl Resolver for NoReads {
@@ -53,9 +90,9 @@ impl MapMemo {
             let sources = retained.sources.lock().unwrap_or_else(|e| e.into_inner());
             if let Some(source) = sources
                 .get(&path)
-                .filter(|source| Arc::ptr_eq(source.text(), &captured.source))
+                .filter(|source| Arc::ptr_eq(source.text.text(), &captured.source))
             {
-                return parse_key_with_identity(self.policy, captured, source.text_identity());
+                return parse_key_with_identity(self.policy, captured, source.text.text_identity());
             }
         }
         parse_key(self.policy, captured)
@@ -65,11 +102,26 @@ impl MapMemo {
         resident: Arc<RetainedMaps>,
         disk: Option<Arc<crate::runner_disk::LazyDisk>>,
     ) -> Self {
+        Self::with_resident_for_request(policy, resident, disk, true)
+    }
+    pub fn with_resident_for_request(
+        policy: u128,
+        resident: Arc<RetainedMaps>,
+        disk: Option<Arc<crate::runner_disk::LazyDisk>>,
+        publishable: bool,
+    ) -> Self {
         let mut memo = Self::new(policy, 0);
-        memo.retained_revision = resident
-            .revision
-            .fetch_add(1, Ordering::AcqRel)
-            .wrapping_add(1);
+        let leases = MapLeases {
+            sources: Mutex::new(Vec::new()),
+            parse: resident.parse.lease(),
+            geometry: resident.geometry.lease(),
+            outputs: resident.outputs.lease(),
+        };
+        memo.pending_maps = Some(if publishable {
+            resident.publication.begin(leases)
+        } else {
+            resident.publication.begin_ephemeral(leases)
+        });
         memo.retained = Some(resident);
         memo.disk = disk;
         memo
@@ -82,91 +134,113 @@ impl MapMemo {
         let Some(retained) = &self.retained else {
             return provider.read(path).map(Arc::from);
         };
-        let path = dm_preprocess::regions::canonical_path(path);
-        let previous = retained
-            .sources
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .get(&path)
-            .cloned();
-        let source = provider.retained_nontext(&path, previous.as_ref())?;
-        self.current
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .sources
-            .push(path.clone());
-        if let Some(source) = source {
-            let text = source.text().clone();
-            retained
-                .sources
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .insert(path, source);
-            Ok(text)
-        } else {
-            // A provider that cannot certify this receipt must perform its read.
-            retained
-                .sources
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .remove(&path);
-            provider.read(&path).map(Arc::from)
-        }
-    }
-    pub fn finish_revision(&self) {
-        let Some(retained) = &self.retained else {
-            return;
+        let Some(attempt) = &self.pending_maps else {
+            return provider.read(path).map(Arc::from);
         };
-        if retained.revision.load(Ordering::Acquire) != self.retained_revision {
-            return;
+        attempt
+            .with_pending(|leases| {
+                let path = dm_preprocess::regions::canonical_path(path);
+                let previous = retained
+                    .sources
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .get(&path)
+                    .map(|source| source.text.clone());
+                let source = provider.retained_nontext(&path, previous.as_ref())?;
+                leases
+                    .sources
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push(path.clone());
+                if let Some(source) = source {
+                    let text = source.text().clone();
+                    // Advisory cache only: an older request must not replace newer bookkeeping.
+                    if attempt.is_latest() {
+                        retained
+                            .sources
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .insert(
+                                path,
+                                CachedSource {
+                                    text: source,
+                                    generation: attempt.generation().clone(),
+                                },
+                            );
+                    }
+                    Ok(text)
+                } else {
+                    provider.read(&path).map(Arc::from)
+                }
+            })
+            .unwrap_or_else(|| provider.read(path).map(Arc::from))
+    }
+    /// Seal exact pending claims after required request publication succeeds.
+    pub fn publish_successful(&self) -> bool {
+        let Some(attempt) = &self.pending_maps else {
+            return false;
+        };
+        if !attempt.publish_successful() {
+            return false;
         }
-        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        retained
-            .parse
-            .retain_current_keys(current.parse.iter().map(|k| k.as_ref()));
-        retained
-            .geometry
-            .retain_current_keys(current.geometry.iter().map(|k| k.as_ref()));
-        retained
-            .outputs
-            .retain_current_keys(current.outputs.iter().map(|k| k.as_ref()));
-        retained
-            .sources
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .retain(|path, _| current.sources.contains(path));
+        if let Some(retained) = &self.retained {
+            let paths = retained
+                .publication
+                .with_published(|leases| {
+                    leases
+                        .sources
+                        .lock()
+                        .unwrap_or_else(|e| e.into_inner())
+                        .clone()
+                })
+                .unwrap_or_default();
+            retained
+                .sources
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .retain(|path, value| {
+                    paths.contains(path) || retained.publication.is_latest(&value.generation)
+                });
+        }
+        true
+    }
+    pub(super) fn with_pending_maps<T>(
+        &self,
+        operation: impl FnOnce(&MapLeases) -> T,
+    ) -> Option<T> {
+        self.pending_maps.as_ref()?.with_pending(operation)
+    }
+    /// Explicit successful-stage compatibility API. Drop never commits.
+    pub fn finish_revision(&self) {
+        self.publish_successful();
     }
     pub(super) fn retained_parse(
         &self,
         key: &Arc<[u8]>,
         captured: &CapturedMap,
     ) -> Option<MapPlan> {
-        let retained = self.retained.as_ref()?;
-        self.current
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .parse
-            .push(key.clone());
-        let (hit, _) = retained.parse.visit_explained(key, &NoReads, &mut |plan| {
-            (Arc::ptr_eq(&plan.captured.source, &captured.source)
-                || plan.captured.source == captured.source)
-                && plan.captured.path == captured.path
-        });
-        hit.map(|plan| {
-            let mut plan = (*plan).clone();
-            plan.captured = captured.clone();
-            plan
+        self.with_pending_maps(|retained| {
+            let (hit, _) = retained.parse.visit_explained(key, &NoReads, &mut |plan| {
+                (Arc::ptr_eq(&plan.captured.source, &captured.source)
+                    || plan.captured.source == captured.source)
+                    && plan.captured.path == captured.path
+            });
+            hit.map(|plan| {
+                let mut plan = (*plan).clone();
+                plan.captured = captured.clone();
+                plan
+            })
         })
+        .flatten()
     }
     pub(super) fn admit_retained_parse(&self, key: Arc<[u8]>, plan: &MapPlan) {
-        let Some(retained) = &self.retained else {
-            return;
-        };
-        if let Some(weight) = crate::heap_census::resident_map_plan_weight(plan, &key) {
-            retained
-                .parse
-                .insert_with(key, Vec::new(), Vec::new(), weight, || plan.clone());
-        }
+        self.with_pending_maps(|retained| {
+            if let Some(weight) = crate::heap_census::resident_map_plan_weight(plan, &key) {
+                retained
+                    .parse
+                    .insert_with(key, Vec::new(), Vec::new(), weight, || plan.clone());
+            }
+        });
     }
     pub(super) fn retained_geometry<R: Resolver>(
         &self,
@@ -174,24 +248,21 @@ impl MapMemo {
         maps: &[MapPlan],
         host: &R,
     ) -> Option<Projection> {
-        let retained = self.retained.as_ref()?;
-        self.current
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .geometry
-            .push(key.clone());
-        let (hit, _) = retained
-            .geometry
-            .visit_explained(key, host, &mut |artifact| {
-                artifact.maps.len() == maps.len()
-                    && artifact.maps.iter().zip(maps).all(|(old, new)| {
-                        old.captured.path == new.captured.path
-                            && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
-                                || old.captured.source == new.captured.source)
-                            && (Arc::ptr_eq(&old.model, &new.model) || old.model == new.model)
-                    })
-            });
-        hit.map(|artifact| artifact.value.clone())
+        self.with_pending_maps(|retained| {
+            let (hit, _) = retained
+                .geometry
+                .visit_explained(key, host, &mut |artifact| {
+                    artifact.maps.len() == maps.len()
+                        && artifact.maps.iter().zip(maps).all(|(old, new)| {
+                            old.captured.path == new.captured.path
+                                && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
+                                    || old.captured.source == new.captured.source)
+                                && (Arc::ptr_eq(&old.model, &new.model) || old.model == new.model)
+                        })
+                });
+            hit.map(|artifact| artifact.value.clone())
+        })
+        .flatten()
     }
     pub(super) fn admit_retained_geometry(
         &self,
@@ -201,27 +272,45 @@ impl MapMemo {
         reads: Vec<ResolverRead>,
         versions: Vec<(dm_ir::ReadDomain, u128)>,
     ) {
-        let Some(retained) = &self.retained else {
-            return;
-        };
-        let maps: Arc<[MapPlan]> = maps.to_vec().into();
-        if let Some(weight) =
-            crate::heap_census::resident_map_geometry_weight(&maps, value, &key, &reads, &versions)
-        {
-            retained
-                .geometry
-                .insert_with(key, reads, versions, weight, || GeometryArtifact {
-                    maps,
-                    value: value.clone(),
-                });
-        }
+        self.with_pending_maps(|retained| {
+            let maps: Arc<[MapPlan]> = maps.to_vec().into();
+            if let Some(weight) = crate::heap_census::resident_map_geometry_weight(
+                &maps, value, &key, &reads, &versions,
+            ) {
+                retained
+                    .geometry
+                    .insert_with(key, reads, versions, weight, || GeometryArtifact {
+                        maps,
+                        value: value.clone(),
+                    });
+            }
+        });
     }
 }
 impl Drop for MapMemo {
     fn drop(&mut self) {
-        // Failed or cancelled requests must not accumulate historical map keys.
-        // A partial current roster may evict reusable work, never authorize it.
-        self.finish_revision();
+        let (Some(retained), Some(attempt)) = (&self.retained, &self.pending_maps) else {
+            return;
+        };
+        // Remove only advisory entries owned by this attempt and not needed by
+        // the last successful roster. Exact artifact claims release separately.
+        let published = retained
+            .publication
+            .with_published(|leases| {
+                leases
+                    .sources
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone()
+            })
+            .unwrap_or_default();
+        retained
+            .sources
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .retain(|path, value| {
+                !value.generation.same_as(attempt.generation()) || published.contains(path)
+            });
     }
 }
 pub(super) fn geometry_locator(

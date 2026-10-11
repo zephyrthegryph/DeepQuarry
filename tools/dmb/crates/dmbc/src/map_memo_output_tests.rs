@@ -242,13 +242,18 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
         )
         .unwrap();
         let mut retained_units = 0;
-        owner.outputs.visit_storage(&mut |view: dm_session::ArtifactStorageView<'_, outputs::MapOutputs>| {
-            if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
-                if matches!(value.as_ref(), outputs::MapOutputs::Unit(_)) {
-                    retained_units += 1;
+        owner
+            .outputs
+            .visit_storage(&mut |view: dm_session::ArtifactStorageView<
+                '_,
+                outputs::MapOutputs,
+            >| {
+                if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
+                    if matches!(value.as_ref(), outputs::MapOutputs::Unit(_)) {
+                        retained_units += 1;
+                    }
                 }
-            }
-        });
+            });
         assert!(
             retained_units > 0,
             "modified unit did not populate the existing output store"
@@ -284,9 +289,9 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
             assert!(!Arc::ptr_eq(code, current[0].code.code_owner()));
         }
         previous = Some(Arc::clone(current[0].code.code_owner()));
-        // Failed requests prune their partial roster on Drop. Keep that
-        // independent rejection control from deleting the successful owner's
-        // units before the next identical/shifted-source admission above.
+        assert!(memo.publish_successful());
+        // Keep the separate negative semantic control independent of this
+        // successful roster. Failed pending requests never publish their claims.
         let changed = MapMemo::with_resident(1, Arc::new(RetainedMaps::current_revision()), None);
         prepare(
             &changed,

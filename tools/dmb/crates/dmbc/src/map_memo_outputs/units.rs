@@ -96,18 +96,22 @@ impl MapMemo {
         symbols: &SymbolTable,
         host: &R,
     ) -> Option<(crate::InitializerCode, Arc<DebugOrigins>)> {
-        let retained = self.retained.as_ref()?;
+        self.pending_maps.as_ref()?;
         self.current
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .outputs
             .push(key.clone());
-        let (hit, _) = retained
-            .outputs
-            .visit_explained(key, &Replay(host), &mut |value| {
-                matches!(value.as_ref(), MapOutputs::Unit(_))
-            });
-        let hit = hit?;
+        let hit = self
+            .with_pending_maps(|leases| {
+                leases
+                    .outputs
+                    .visit_explained(key, &Replay(host), &mut |value| {
+                        matches!(value.as_ref(), MapOutputs::Unit(_))
+                    })
+                    .0
+            })
+            .flatten()?;
         let MapOutputs::Unit(value) = hit.as_ref() else {
             return None;
         };
@@ -159,7 +163,7 @@ impl MapMemo {
         offsets: &[usize],
         recording: &RecordingResolver<'_, R>,
     ) {
-        let Some(retained) = &self.retained else {
+        let Some(_) = &self.pending_maps else {
             return;
         };
         let Some(sites) = offsets
@@ -220,16 +224,18 @@ impl MapMemo {
             .unwrap_or_else(|e| e.into_inner())
             .outputs
             .push(key.clone());
-        retained
-            .outputs
-            .insert_with(key, reads, versions, weight, || {
-                MapOutputs::Unit(RetainedUnit {
-                    code: stripped,
-                    sites,
-                    recipes,
-                    root_indexes,
-                    references,
+        self.with_pending_maps(|leases| {
+            leases
+                .outputs
+                .insert_with(key, reads, versions, weight, || {
+                    MapOutputs::Unit(RetainedUnit {
+                        code: stripped,
+                        sites,
+                        recipes,
+                        root_indexes,
+                        references,
+                    })
                 })
-            });
+        });
     }
 }
