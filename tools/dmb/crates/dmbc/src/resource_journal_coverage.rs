@@ -50,6 +50,15 @@ impl CaptureProvider for JournalProvider<'_> {
             if matches!(listing, crate::input_snapshot::FolderListing::Missing) {
                 return Err(invalid("resource file contradicts missing search folder"));
             }
+            let name = path.file_name().and_then(|name| name.to_str())
+                .ok_or_else(|| invalid("resource candidate name is not Unicode"))?;
+            if let crate::input_snapshot::FolderListing::Present(names) = listing {
+                if !names.iter().any(|entry| {
+                    if cfg!(windows) { entry.eq_ignore_ascii_case(name) } else { entry == name }
+                }) {
+                    return Err(invalid("resource file contradicts search folder membership"));
+                }
+            }
             let size = usize::try_from(file.stamp.size).map_err(|_| invalid("resource payload exceeds address space"))?;
             let bytes = self.bytes.get().checked_add(size).ok_or_else(|| invalid("resource coverage byte overflow"))?;
             if bytes > self.limits.source_payload_bytes { return Err(invalid("resource coverage payload budget exceeded")); }

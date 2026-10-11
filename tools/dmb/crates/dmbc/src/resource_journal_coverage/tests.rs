@@ -52,6 +52,25 @@ fn observed_resource_coverage_authenticates_winner_and_preceding_absence() {
         assert!(validate_observed_demand(current.clone(), &captured, config, &view, limits()).is_err()); Ok(())
     }).unwrap();
 }
+
+#[test]
+fn observed_resource_coverage_declines_file_created_after_folder_observation() {
+    let root = Root::new();
+    let journal = Inputs::record(&root.0.join("journal")).unwrap();
+    journal.list(&root.0).unwrap();
+    let source = root.0.join("asset.txt");
+    std::fs::write(&source, b"new asset").unwrap();
+    journal.read(&source).unwrap();
+    let policy = raw_policy();
+    let config = CaptureConfig { policy: &policy, encoded: &[], additional: &[] };
+    let current = demand(&root.0, "asset.txt");
+    let captured = capture_discovered(current.clone(), config, &crate::input_snapshot::FileSystemInputs).unwrap();
+    journal.with_access_view(|view| {
+        let error = validate_observed_demand(current, &captured, config, &view, limits()).err().unwrap();
+        assert!(error.to_string().contains("resource file contradicts search folder membership"));
+        Ok(())
+    }).unwrap();
+}
 #[test]
 fn observed_resource_coverage_uses_real_encoder_source_receipt_and_declines_changed_source() {
     use sha2::{Digest, Sha256};
