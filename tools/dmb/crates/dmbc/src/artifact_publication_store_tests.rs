@@ -4,7 +4,7 @@ impl ObservationHost<u8, u8, u8> for Host {
     fn answer(&self, _: &u8) -> u8 {
         self.0
     }
-    fn domain_version(&self, _: &u8) -> Option<u128> {
+    fn version(&self, _: &u8) -> Option<u128> {
         None
     }
 }
