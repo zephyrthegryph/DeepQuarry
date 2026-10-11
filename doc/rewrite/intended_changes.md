@@ -4814,3 +4814,11 @@ seed and stream serial are scoped and restored at teardown. Fresh and reused
 probes therefore inspect the same initialized instance state regardless of prior
 allocations. This repairs fixture determinism; it does not change production
 randomization or authorize blessing an unexplained appearance difference.
+# Retired capability-test paper appearance (2026-10-11)
+
+Master `6d986cf503` (2026-10-09 19:58:38 -05:00) deleted
+`dx_cap_writable_tests.dm`, including the only declaration of
+`/obj/item/paper/cap_fixture`. Its four old rows are removed from the paper
+appearance golden. The fresh failed hygiene run contains no such type, and no
+production paper behavior changed. No other paper rows are refreshed here.
+
