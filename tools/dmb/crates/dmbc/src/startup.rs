@@ -50,6 +50,29 @@ impl std::ops::Deref for CapturedStartup<'_> {
     }
 }
 impl StartupFacts {
+    pub(crate) fn static_inventory(
+        &self,
+    ) -> &std::sync::Arc<dm_tree::procedure_statics::StaticInventory> {
+        &self.static_inventory
+    }
+    pub fn procedures(&self) -> impl ExactSizeIterator<Item = (&OccurrenceId, &StaticPlan)> {
+        self.procedures
+            .iter()
+            .map(|(occurrence, capture)| (occurrence, &**capture))
+    }
+    pub(crate) fn procedure_captures(&self) -> &[(OccurrenceId, ProcedureCapture)] {
+        &self.procedures
+    }
+
+    pub fn plan(&self) -> &InitializerPlan {
+        &self.plan
+    }
+    pub fn procedure(&self, occurrence: OccurrenceId) -> Option<&StaticPlan> {
+        self.procedure_index
+            .get(&occurrence)
+            .map(|index| &*self.procedures[*index].1)
+    }
+
     pub(crate) fn unit_members(
         &self,
     ) -> &std::sync::Arc<std::collections::BTreeMap<crate::lowering::UnitIdentity, dm_tree::MemberId>>
@@ -635,27 +658,6 @@ impl crate::initializer_policy::CapturedInitializerEvaluator for StartupEvaluato
 impl CapturedStartup<'_> {
     pub fn facts(&self) -> std::sync::Arc<StartupFacts> {
         std::sync::Arc::clone(&self.facts)
-    }
-    pub fn plan(&self) -> &InitializerPlan {
-        &self.plan
-    }
-    pub(crate) fn static_inventory(
-        &self,
-    ) -> &std::sync::Arc<dm_tree::procedure_statics::StaticInventory> {
-        &self.static_inventory
-    }
-    pub fn procedures(&self) -> impl ExactSizeIterator<Item = (&OccurrenceId, &StaticPlan)> {
-        self.procedures
-            .iter()
-            .map(|(occurrence, capture)| (occurrence, &**capture))
-    }
-    pub(crate) fn procedure_captures(&self) -> &[(OccurrenceId, ProcedureCapture)] {
-        &self.procedures
-    }
-    pub fn procedure(&self, occurrence: OccurrenceId) -> Option<&StaticPlan> {
-        self.procedure_index
-            .get(&occurrence)
-            .map(|index| &*self.procedures[*index].1)
     }
     /// Issued facts are immutable and borrow the exact frontend throughout use.
     /// Independently supplied generic plans still use the strict recapture API.
