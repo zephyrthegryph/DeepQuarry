@@ -18,6 +18,8 @@ pub use certified::{UnchangedCandidate, UnchangedCandidates};
 #[cfg(test)]
 mod incidence_tests;
 mod leased;
+mod pressure;
+pub use pressure::PressurePrune;
 #[cfg(test)]
 mod payload_validation_tests;
 pub use leased::ObservedArtifactLease;

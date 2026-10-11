@@ -10,6 +10,8 @@ mod direct_input_tests;
 mod folded_features_tests;
 #[path = "preparation_tests.rs"]
 mod preparation_tests;
+#[path = "pressure_tests.rs"]
+mod pressure_tests;
 
 struct Host {
     value: AtomicU32,

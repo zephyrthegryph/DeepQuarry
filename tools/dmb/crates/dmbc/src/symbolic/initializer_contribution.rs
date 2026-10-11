@@ -6,7 +6,7 @@ use dm_codegen_byond::lower_resolver::ResolverProc;
 /// Installed only on an initializer assembly admitted by the common artifact
 /// store. This memo belongs to that semantic payload, never to a dense output.
 pub(crate) struct InitializerEncoding {
-    ready: std::sync::OnceLock<Arc<FrozenInitializerContribution>>,
+    ready: std::sync::Mutex<Option<Arc<FrozenInitializerContribution>>>,
     types: Arc<crate::initializer_code::TypeRequests>,
 }
 
@@ -30,12 +30,25 @@ impl InitializerEncoding {
     pub(crate) fn retained_types(&self) -> &Arc<crate::initializer_code::TypeRequests> {
         &self.types
     }
-    pub(crate) fn retained(&self) -> Option<&Arc<FrozenInitializerContribution>> {
-        self.ready.get()
+    pub(crate) fn retained(&self) -> Option<Arc<FrozenInitializerContribution>> {
+        self.get()
     }
 
     pub(crate) fn get(&self) -> Option<Arc<FrozenInitializerContribution>> {
-        self.ready.get().map(Arc::clone)
+        self.ready
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
+    }
+
+    /// Drop only recreatable physical/frozen encoding; escaped readers stay valid.
+    pub(crate) fn release_encoded(&self) {
+        let detached = self
+            .ready
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .take();
+        drop(detached);
     }
 
     /// The caller must complete the same current semantic-reference licensing
@@ -44,7 +57,8 @@ impl InitializerEncoding {
         &self,
         contribution: FrozenInitializerContribution,
     ) -> Arc<FrozenInitializerContribution> {
-        Arc::clone(self.ready.get_or_init(|| Arc::new(contribution)))
+        let mut ready = self.ready.lock().unwrap_or_else(|error| error.into_inner());
+        Arc::clone(ready.get_or_insert_with(|| Arc::new(contribution)))
     }
 }
 
@@ -141,6 +155,14 @@ mod tests {
         assert_eq!(
             first.frozen.code().canonical_bytes(),
             independent.frozen.code().canonical_bytes()
+        );
+        unit.encoding.as_ref().unwrap().release_encoded();
+        assert!(unit.encoding.as_ref().unwrap().get().is_none());
+        let regenerated = freeze_current(&unit, context, &bindings, &external, false).unwrap();
+        assert!(!Arc::ptr_eq(&first, &regenerated));
+        assert_eq!(
+            first.frozen.code().canonical_bytes(),
+            regenerated.frozen.code().canonical_bytes()
         );
         let mut invalid = unit.code.as_ref().clone();
         invalid

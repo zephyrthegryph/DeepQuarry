@@ -2,6 +2,41 @@
 use super::*;
 use crate::initializer_lowering::InitializerAssemblies;
 use dm_session::ObservedArtifactStorageView as View;
+pub(crate) fn compact_weight(
+    key: &Arc<[u8]>,
+    reads: &dm_session::Receipt<
+        crate::initializer_lowering::receipts::Query,
+        crate::initializer_lowering::receipts::Answer,
+        crate::initializer_lowering::receipts::Domain,
+    >,
+    versions: &Arc<[(crate::initializer_lowering::receipts::Domain, u128)]>,
+    code: &Arc<dm_codegen_byond::lower_resolver::ResolverProc>,
+    recipes: &Vec<crate::modified_initializers::ExpressionRecipe>,
+    root_indexes: &Vec<usize>,
+    references: &Vec<dm_ir::SymRef>,
+    encoding: &Arc<crate::symbolic::InitializerEncoding>,
+) -> Option<usize> {
+    let mut census = HeapCensus::new("compact_initializer_assembly_charge");
+    census.slice("compact.key", key, true);
+    census.receipt("compact.reads", reads);
+    census.slice("compact.versions", versions, true);
+    for read in reads.iter() {
+        match &read.answer {
+            crate::initializer_lowering::receipts::Answer::Semantic(answer) => {
+                super::resident_weight::answer(&mut census, answer)
+            }
+            crate::initializer_lowering::receipts::Answer::Input(input) => {
+                census.initializer_receipt(input)
+            }
+        }
+    }
+    let private = super::resident_weight::resolver_code_charge(&mut census, code);
+    census.arc_object("compact.code", code);
+    census.initializer_fragment_recipes(recipes, references);
+    census.vec_payload("compact.root_indexes", root_indexes);
+    census.initializer_encoding(encoding);
+    super::initializer_artifacts::compact_charge(census, private)
+}
 
 pub(crate) fn inspect(store: &InitializerAssemblies) -> HeapCensusReport {
     let mut census = HeapCensus::new("retained_initializer_assemblies");
@@ -58,7 +93,7 @@ impl HeapCensus {
         if self.arc_object("initializer_encoding", encoding) {
             self.initializer_type_requests(encoding.retained_types());
             if let Some(ready) = encoding.retained() {
-                if self.arc_object("initializer_encoding.payload", ready) {
+                if self.arc_object("initializer_encoding.payload", &ready) {
                     self.latest_image(&ready.image_owner);
                     self.frozen_code(&ready.frozen);
                     self.vec_payload("initializer_encoding.slots", &ready.slots);

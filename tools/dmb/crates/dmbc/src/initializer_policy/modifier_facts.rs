@@ -166,6 +166,9 @@ impl Default for ModifierArtifacts {
     }
 }
 impl ModifierArtifacts {
+    pub(crate) fn evict_for_pressure(&self) {
+        self.values.evict_all_claims();
+    }
     pub(super) fn for_request(&self, publishable: bool) -> Self {
         Self {
             values: self.values.for_request(publishable),

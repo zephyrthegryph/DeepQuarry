@@ -75,6 +75,13 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
     }
 }
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationStore<T, Q, A, D> {
+    pub(crate) fn prune_for_pressure(
+        &self,
+        limit: usize,
+        charge: impl FnMut(&Arc<[u8]>, &Receipt<Q, A, D>, &Arc<[(D, u128)]>, &Arc<T>) -> Option<usize>,
+    ) -> dm_session::PressurePrune {
+        self.core.prune_for_pressure(limit, charge)
+    }
     pub(crate) fn lookup<H: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],

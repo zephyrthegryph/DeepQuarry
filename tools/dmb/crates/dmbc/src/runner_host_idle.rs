@@ -17,11 +17,19 @@ impl BuildHost {
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
         self.symbolic = None;
-        self.initializers = None;
+        // Preserve only fully charged source-neutral initializer nodes. This is
+        // a logical retention cap, not a claim about process private memory.
+        if let Some((_, owner)) = &self.initializers {
+            let report = owner.compact_for_pressure(96 * 1024 * 1024);
+            eprintln!("dmbd compact initializer classification {report:?}");
+        }
         self.startup = None;
         self.abi = None;
         self.initializer_fragments = None;
-        self.initializer_assemblies = None;
+        if let Some((_, owner)) = &self.initializer_assemblies {
+            let report = owner.compact_for_pressure(64 * 1024 * 1024);
+            eprintln!("dmbd compact initializer assembly {report:?}");
+        }
         self.class_projections = None;
         self.required_types = None;
         self.link_bindings = None;
@@ -73,7 +81,10 @@ impl BuildHost {
             initializers.release_runtime_syntax();
         }
         self.initializer_fragments = None;
-        self.initializer_assemblies = None;
+        if let Some((_, owner)) = &self.initializer_assemblies {
+            let report = owner.compact_for_pressure(64 * 1024 * 1024);
+            eprintln!("dmbd compact initializer assembly {report:?}");
+        }
         self.link_bindings = None;
         self.maps = None;
         if let Some((_, generation)) = &self.generation {

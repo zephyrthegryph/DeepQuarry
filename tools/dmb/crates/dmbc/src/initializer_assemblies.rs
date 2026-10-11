@@ -121,6 +121,22 @@ impl Default for InitializerAssemblies {
     }
 }
 impl InitializerAssemblies {
+    pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
+        self.values
+            .prune_for_pressure(bytes, |key, reads, versions, value| {
+                value.encoding.release_encoded();
+                crate::heap_census::initializer_assemblies::compact_weight(
+                    key,
+                    reads,
+                    versions,
+                    &value.code,
+                    &value.recipes,
+                    &value.root_indexes,
+                    &value.references,
+                    &value.encoding,
+                )
+            })
+    }
     pub(crate) fn with_disk_transport(mut self, disk: Arc<super::disk::Transport>) -> Self {
         self.disk = Some(disk);
         self

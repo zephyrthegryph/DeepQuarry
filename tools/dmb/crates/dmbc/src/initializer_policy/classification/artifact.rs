@@ -99,6 +99,19 @@ impl Default for InitializerArtifacts {
     }
 }
 impl InitializerArtifacts {
+    pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
+        self.release_runtime_syntax();
+        self.roster.clear();
+        self.roster_publication
+            .with_published(|roster| roster.clear());
+        // Placement identities no longer pin removed semantic payloads. Modifier
+        // facts are cheap to reconstruct and their input/key graph is released.
+        self.modifiers.evict_for_pressure();
+        self.values.prune_for_pressure(
+            bytes,
+            crate::heap_census::initializer_artifacts::compact_weight,
+        )
+    }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         let previous = self
             .roster_publication

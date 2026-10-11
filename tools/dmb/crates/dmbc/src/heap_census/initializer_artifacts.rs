@@ -81,6 +81,39 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
         }
     });
 }
+pub(crate) fn compact_weight(
+    key: &Arc<[u8]>,
+    reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
+    versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
+    value: &Arc<SemanticClassification>,
+) -> Option<usize> {
+    let mut census = HeapCensus::new("compact_initializer_classification_charge");
+    census.slice("compact.key", key, true);
+    census.receipt("compact.reads", reads);
+    census.slice("compact.versions", versions, true);
+    for read in reads.iter() {
+        super::resident_weight::answer(&mut census, &read.answer);
+    }
+    classification(&mut census, value);
+    compact_charge(census, 0)
+}
+
+/// Conservative logical charge; repeated shared owners may be charged again.
+/// Private store/lease/index envelopes are charged per entry, not called exact.
+pub(crate) fn compact_charge(census: HeapCensus, private: usize) -> Option<usize> {
+    let encounters = census.buffer_encounters;
+    let report = census.finish();
+    if report.unknown_capacity_payload_bytes != 0
+        || report.owners.iter().any(|owner| !owner.unknown.is_empty())
+    {
+        return None;
+    }
+    usize::try_from(report.unique_known_capacity_bytes)
+        .ok()?
+        .checked_add(encounters.checked_mul(64)?)?
+        .checked_add(private)?
+        .checked_add(4096)
+}
 impl HeapCensus {
     pub(crate) fn initializer_artifacts(&mut self, store: &InitializerArtifacts) {
         self.unknown("initializer_classification.publication", "private publication and lease control/index allocations excluded; pending and published payload owners visited together");
