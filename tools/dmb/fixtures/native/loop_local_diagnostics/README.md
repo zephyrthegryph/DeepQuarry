@@ -32,3 +32,12 @@ body an accepted following statement executes in.
 `--backend byond-only` exits successfully when capture completes. It does not
 certify native parity. The original default roster remains separate from these
 additional controls so existing captures remain reproducible.
+
+Further pinned compile-only controls cover range and C-style loops at EOF
+and with an explicit semicolon, plus bare each/pair loops followed by global
+variable declarations spelled both `var/global` and `/var/global`. BYOND rejects
+the EOF and declaration-boundary cases with `: invalid expression`, while the
+semicolon controls compile. The native parser records the boundary through
+the declaration issuer, and the same category participates in its existing
+procedure cache key; changing a following declaration cannot replay an old
+accepted body. These controls are opt-in and do not alter the default roster.

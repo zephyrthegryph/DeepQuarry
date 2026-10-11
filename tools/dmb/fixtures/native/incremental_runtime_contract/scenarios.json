@@ -111,6 +111,38 @@
       ]
     },
     {
+      "name": "parent_change",
+      "before": "parent_type = /datum/runtime_contract/base\n",
+      "after": "parent_type = /datum/runtime_contract/alternate\n",
+      "expected": [
+        21,
+        57,
+        53,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14
+      ]
+    },
+    {
+      "name": "parent_restore",
+      "before": "parent_type = /datum/runtime_contract/alternate\n",
+      "after": "parent_type = /datum/runtime_contract/base\n",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        0,
+        14
+      ]
+    },
+    {
       "name": "structural_add",
       "before": "/datum/runtime_contract/base/child/proc/extra()\n    return 0",
       "after": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
@@ -127,8 +159,24 @@
       ]
     },
     {
-      "name": "structural_delete",
+      "name": "runtime_initializer",
       "before": "/datum/runtime_contract/base/child\n    var/extra_value = 13\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "after": "/datum/runtime_contract/base/child\n    var/list/extra_value = list(19)\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value[1]\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
+      "expected": [
+        9,
+        45,
+        41,
+        9,
+        17,
+        41,
+        42,
+        19,
+        14
+      ]
+    },
+    {
+      "name": "structural_delete",
+      "before": "/datum/runtime_contract/base/child\n    var/list/extra_value = list(19)\n\n/datum/runtime_contract/base/child/proc/added()\n    return extra_value[1]\n\n/datum/runtime_contract/base/child/proc/extra()\n    return added()",
       "after": "/datum/runtime_contract/base/child/proc/extra()\n    return 0",
       "expected": [
         9,

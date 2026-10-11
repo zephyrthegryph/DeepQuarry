@@ -49,10 +49,28 @@ class RuntimeContractHelperTests(unittest.TestCase):
             log.write_text("\n".join(expected) + "\nruntime error: invalid proc call\n", encoding="utf-8")
             self.assertFalse(helper.observations(log, expected)["matches_expected"])
 
+    def test_parent_and_runtime_initializer_structural_transitions_have_independent_oracles(self):
+        steps = helper.read_steps(HERE / "scenarios.json")
+        source = (HERE / "probe.dm").read_text(encoding="utf-8")
+        seen = {}
+        for step in steps:
+            source = helper.apply_step(source, step)
+            seen[step["name"]] = (source, step["expected"])
+        self.assertIn("parent_type = /datum/runtime_contract/alternate", seen["parent_change"][0])
+        self.assertEqual(seen["parent_change"][1][:3], [21, 57, 53])
+        self.assertEqual(seen["parent_restore"][1][:3], [9, 45, 41])
+        self.assertIn('var/list/extra_value = list(19)', seen["runtime_initializer"][0])
+        self.assertIn('return extra_value[1]', seen["runtime_initializer"][0])
+        self.assertEqual(seen["runtime_initializer"][1][7], 19)
+        self.assertNotIn("extra_value", seen["structural_delete"][0])
+        self.assertNotIn("proc/added()", seen["structural_delete"][0])
+        self.assertEqual(seen["structural_delete"][1][7], 0)
+        self.assertLessEqual(len(steps), 16)
+
     def test_cumulative_edits_and_full_expectations_are_exact_and_bounded(self):
         source = (HERE / "probe.dm").read_text(encoding="utf-8")
         steps = helper.read_steps(HERE / "scenarios.json")
-        self.assertEqual(len(steps), 11)
+        self.assertEqual(len(steps), 14)
         resource = (HERE / "contract-resource.txt").read_text(encoding="utf-8")
         initial = source
         for step in steps:
@@ -76,7 +94,7 @@ class RuntimeContractHelperTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "one exact"):
             helper.apply_step("duplicate duplicate", {"before": "duplicate", "after": "x"})
         self.assertEqual(int(resource), 29)
-        with self.assertRaisesRegex(ValueError, "nine integer"):
+        with self.assertRaisesRegex(ValueError, "declared integer expectations"):
             helper.expected_markers([0] * 7)
 
     def test_owned_namespace_matches_probe_daemon_and_client_despite_ambient_namespace(self):

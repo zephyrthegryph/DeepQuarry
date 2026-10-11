@@ -7,9 +7,10 @@ and a field/procedure structural extension, plus the numeric contents of an
 embedded resource. It has no game boot or FFI. Runtime directories contain only
 the DMB and RSC; the resource observation must come from the archive.
 
-The eleven revisions are initial, unchanged, body edit, inherited default edit,
+The fourteen revisions are initial, unchanged, body edit, inherited default edit,
 argument default edit, procedure-static initializer edit, global initializer
-edit, field/procedure addition, removal, resource replacement and an unchanged
+edit, parent change and restoration, field/procedure addition, runtime field
+initializer replacement, removal of that initializer/field/procedure, resource replacement and an unchanged
 resource build. Edits are cumulative and identify
 one exact source site. `scenarios.json` contains the expected values for each
 revision. Both compilers returning the same wrong result is a failure.
@@ -63,3 +64,14 @@ Focused helper checks (no compilers or DD):
 ```powershell
 python tools/dmb/fixtures/native/incremental_runtime_contract/test_run.py
 ```
+
+Validated capture: all 14 revisions passed with immutable native compiler
+`d105b4c75a` (SHA256
+`6cdc14ecd339ad81baa53be83fc775a42ab652d70e5ca92d4c232a884c6777d8`)
+and pinned BYOND 516.1687. All three runtime oracles matched their declared
+values, no runtimes occurred, and each retained DMB/RSC matched fresh bytes.
+Receipt: `E:/dq-cache/dmb-incremental-runtime-contract/d6efec759d8142f7ac48cbec55707aee/receipt.json`.
+The owned daemon was reaped; sampled registered private peak was 79.6 MB.
+This is a focused tiny corpus, not a DeepQuarry timing or full-suite gate.
+An earlier attempt stopped when BYOND rejected `text2num` in a declaration;
+that invalid fixture was replaced with a runtime list initializer.

@@ -23,6 +23,10 @@ CASES += tuple('bodyless_context_' + kind + '_' + context
                for kind in ('each', 'pair')
                for context in ('absolute_datum_proc', 'relative_datum_proc',
                                'following_type', 'following_statement'))
+CASES += ('bodyless_range_eof', 'bodyless_range_semicolon',
+          'bodyless_cstyle_eof', 'bodyless_cstyle_semicolon',
+          'bodyless_each_global_boundary', 'bodyless_pair_global_boundary',
+          'bodyless_each_absolute_global_boundary', 'bodyless_pair_absolute_global_boundary')
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
 def diagnostics(text):
@@ -134,6 +138,13 @@ def main():
                 "byond": byond_errors[0]["message"] if byond_errors else None,
                 "native": native_errors[0]["message"] if native_errors else None,
             }
+        receipt["pin_after_checks"] = {}
+        for name in pins:
+            actual = h.sha(getattr(args, name))
+            receipt["pin_after_checks"][name] = {
+                "sha256": actual, "unchanged": actual == receipt["pins"][name]["sha256"]}
+            if not receipt["pin_after_checks"][name]["unchanged"]:
+                raise ValueError("compiler/template pin changed during probe: " + name)
         receipt["complete"] = True
         if args.backend == "byond-only":
             receipt["backend"] = "byond-only"

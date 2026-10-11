@@ -7,6 +7,15 @@ var/global/runtime_contract_global = 11
 /datum/runtime_contract/base/proc/measure(delta = 4)
     return inherited_value + delta
 
+/datum/runtime_contract/alternate
+    var/inherited_value = 21
+
+/datum/runtime_contract/alternate/proc/measure(delta = 4)
+    return inherited_value + delta
+
+/datum/runtime_contract/base/child
+    parent_type = /datum/runtime_contract/base
+
 /datum/runtime_contract/base/child/measure(delta = 5)
     return ..(delta) + 10
 
