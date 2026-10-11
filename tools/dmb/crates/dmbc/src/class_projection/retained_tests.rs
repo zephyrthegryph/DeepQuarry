@@ -193,19 +193,17 @@ fn admitted_method_roster_shares_body_shift_and_replaces_changed_membership() {
     );
     assert!(!Arc::ptr_eq(&first.chains, &changed.chains));
     assert_ne!(first.procedure_membership, changed.procedure_membership);
-    let weak = Arc::downgrade(store.methods.lock().unwrap().as_ref().unwrap());
-    // A current request that fails before completing projection drops its
-    // candidate; old returned projections own outputs, not the recipe facade.
+    let weak = Arc::downgrade(&store.method_candidate().unwrap());
+    // An incomplete candidate does not consume successful bookkeeping.
     drop(store.begin_methods());
-    assert!(store.methods.lock().unwrap().is_none());
-    assert!(weak.upgrade().is_none());
+    assert!(weak.upgrade().is_some());
     let rebuilt = project_source(
         &store,
         "/datum/a/proc/p()\n    return 1\n/datum/b/proc/added()\n    return 2\n",
         false,
     );
     assert_eq!(rebuilt.chains, changed.chains);
-    assert!(!Arc::ptr_eq(&rebuilt.chains, &changed.chains));
+    assert!(Arc::ptr_eq(&rebuilt.chains, &changed.chains));
 }
 
 #[test]
@@ -267,3 +265,6 @@ fn streaming_method_admission_allocates_replacement_only_on_actual_difference() 
     }
     assert_eq!(current.finish().membership, first.membership);
 }
+
+#[path = "publication_tests.rs"]
+mod publication_tests;

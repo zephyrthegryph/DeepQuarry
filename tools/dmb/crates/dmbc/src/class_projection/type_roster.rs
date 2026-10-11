@@ -27,13 +27,21 @@ impl ObservationHost<(), TypesObservation, ()> for Current {
         self.0.clone()
     }
 }
+pub(super) type TypeLease =
+    dm_session::ObservedArtifactLease<ProjectedTypes, (), TypesObservation, ()>;
 pub(crate) struct TypeRoster {
-    values: ObservedArtifactStore<ProjectedTypes, (), TypesObservation, ()>,
+    values: Arc<ObservedArtifactStore<ProjectedTypes, (), TypesObservation, ()>>,
+    local: Option<Arc<TypeLease>>,
+    attempt: Option<Arc<super::retained::ProjectionAttempt>>,
 }
 impl Default for TypeRoster {
     fn default() -> Self {
+        let values = ObservedArtifactStore::shared_current_rosters();
+        let local = Some(Arc::new(values.lease()));
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            values,
+            local,
+            attempt: None,
         }
     }
 }
@@ -51,6 +59,22 @@ pub(super) fn produce(types: &[dm_tree::TypeNode]) -> Arc<[TypeProjection]> {
         .into()
 }
 impl TypeRoster {
+    pub(super) fn lease(&self) -> TypeLease {
+        self.values.lease()
+    }
+    pub(super) fn for_attempt(&self, attempt: Arc<super::retained::ProjectionAttempt>) -> Self {
+        Self {
+            values: Arc::clone(&self.values),
+            local: None,
+            attempt: Some(attempt),
+        }
+    }
+    fn with_lease<T>(&self, operation: impl FnOnce(&TypeLease) -> T) -> Option<T> {
+        match &self.attempt {
+            Some(attempt) => attempt.with_pending(|leases| operation(&leases.types)),
+            None => self.local.as_deref().map(operation),
+        }
+    }
     pub(super) fn obtain(&self, tree: &dm_tree::SemanticTree) -> Arc<ProjectedTypes> {
         self.obtain_payload(tree.shared_types())
     }
@@ -60,27 +84,36 @@ impl TypeRoster {
     }
     fn obtain_payload(&self, types: Arc<[dm_tree::TypeNode]>) -> Arc<ProjectedTypes> {
         let current = Current(TypesObservation(types));
-        if let Some(value) = self.values.lookup(KEY, &current) {
+        if let Some(value) = self
+            .with_lease(|lease| lease.visit_explained(KEY, &current, &mut |_| true).0)
+            .flatten()
+        {
             return Arc::clone(&value);
         }
         let projected = produce(&current.0 .0);
-        let value = self
-            .values
-            .insert_with_owned(
-                Arc::from(KEY),
-                vec![Observation {
-                    domain: (),
-                    query: (),
-                    answer: current.0,
-                }],
-                Vec::new(),
-                0,
-                || ProjectedTypes {
-                    types: projected,
-                    construction: Default::default(),
-                },
-            )
-            .expect("current-revision type roster admits the current semantic owner");
+        let value = ProjectedTypes {
+            types: projected,
+            construction: Default::default(),
+        };
+        let mut value = Some(value);
+        let admitted = self
+            .with_lease(|lease| {
+                lease.insert_with_owned(
+                    Arc::from(KEY),
+                    vec![Observation {
+                        domain: (),
+                        query: (),
+                        answer: current.0,
+                    }],
+                    Vec::new(),
+                    0,
+                    || value.take().expect("single producer"),
+                )
+            })
+            .flatten();
+        // A sealed compatibility facade cannot add claims to published state.
+        let value =
+            admitted.unwrap_or_else(|| Arc::new(value.expect("unconsumed sealed producer")));
         Arc::clone(&value)
     }
     pub(crate) fn visit_storage(

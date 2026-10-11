@@ -9,11 +9,23 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 pub struct ClassProjections {
     pub(crate) types: super::type_roster::TypeRoster,
-    values: dm_session::ArtifactStore<OwnerProjection>,
-    methods: std::sync::Mutex<Option<Arc<super::method_roster::MethodRoster>>>,
+    values: Arc<dm_session::ArtifactStore<OwnerProjection>>,
+    publication: Arc<dm_session::ArtifactPublication<ProjectionLeases>>,
+    pub(super) attempt: Arc<dm_session::ArtifactAttempt<ProjectionLeases>>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+}
+pub(super) type ProjectionAttempt = dm_session::ArtifactAttempt<ProjectionLeases>;
+pub(super) struct ProjectionLeases {
+    values: dm_session::ObservedArtifactLease<
+        OwnerProjection,
+        dm_ir::ResolveQuery,
+        dm_ir::ResolvedMeaning,
+        dm_ir::ReadDomain,
+    >,
+    pub(super) types: super::type_roster::TypeLease,
+    methods: std::sync::Mutex<Option<Arc<super::method_roster::MethodRoster>>>,
 }
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) struct MemberInput {
@@ -54,10 +66,19 @@ pub(crate) struct OwnerProjection {
 }
 impl Default for ClassProjections {
     fn default() -> Self {
-        Self {
-            types: Default::default(),
+        let types = super::type_roster::TypeRoster::default();
+        let values = dm_session::ArtifactStore::shared_current_rosters();
+        let publication = Arc::new(dm_session::ArtifactPublication::default());
+        let attempt = Arc::new(publication.begin(ProjectionLeases {
+            values: values.lease(),
+            types: types.lease(),
             methods: Default::default(),
-            values: dm_session::ArtifactStore::current_revision(),
+        }));
+        Self {
+            types: types.for_attempt(Arc::clone(&attempt)),
+            values,
+            publication,
+            attempt,
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
@@ -117,36 +138,84 @@ impl MethodRequest<'_> {
             (_, Some(inputs)) => Arc::new(super::method_roster::MethodRoster::produce(inputs)),
             (None, None) => Arc::new(super::method_roster::MethodRoster::produce(Vec::new())),
         };
-        *self.store.methods.lock().unwrap_or_else(|e| e.into_inner()) = Some(roster.clone());
+        self.store.attempt.with_pending(|leases| {
+            *leases.methods.lock().unwrap_or_else(|e| e.into_inner()) = Some(roster.clone());
+        });
         roster
     }
 }
 impl ClassProjections {
+    /// Borrow the retained owner as a request-scoped pending group. Analysis
+    /// can admit values but cannot supersede or publish a build's successful group.
+    pub fn with_request(&self, publishable: bool) -> Self {
+        let leases = ProjectionLeases {
+            values: self.values.lease(),
+            types: self.types.lease(),
+            methods: Default::default(),
+        };
+        let attempt = Arc::new(if publishable {
+            self.publication.begin(leases)
+        } else {
+            self.publication.begin_ephemeral(leases)
+        });
+        Self {
+            types: self.types.for_attempt(Arc::clone(&attempt)),
+            values: Arc::clone(&self.values),
+            publication: Arc::clone(&self.publication),
+            attempt,
+            hits: AtomicU64::new(0),
+            recomputed: AtomicU64::new(0),
+            declined: AtomicU64::new(0),
+        }
+    }
+    pub fn publish_successful(&self) -> bool {
+        self.attempt.publish_successful()
+    }
+    fn method_candidate(&self) -> Option<Arc<super::method_roster::MethodRoster>> {
+        self.attempt
+            .with_pending(|leases| {
+                leases
+                    .methods
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone()
+            })
+            .flatten()
+            .or_else(|| {
+                self.publication
+                    .with_published(|leases| {
+                        leases
+                            .methods
+                            .lock()
+                            .unwrap_or_else(|e| e.into_inner())
+                            .clone()
+                    })
+                    .flatten()
+            })
+    }
     pub(super) fn begin_methods(&self) -> MethodRequest<'_> {
-        // Take the candidate before validation. Failure drops it without retaining
-        // stale keys; concurrent requests may decline reuse but cannot admit it.
         MethodRequest {
             store: self,
             replacement: None,
             next: 0,
-            previous: self
-                .methods
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .take(),
+            previous: self.method_candidate(),
         }
     }
     pub(crate) fn census_methods(&self, census: &mut crate::heap_census::HeapCensus) {
-        if let Some(roster) = self
-            .methods
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .as_ref()
-        {
-            if census.arc_object("retained.class_projection.method_roster", roster) {
-                roster.census(census);
+        let mut inspect = |leases: &ProjectionLeases| {
+            if let Some(roster) = leases
+                .methods
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .as_ref()
+            {
+                if census.arc_object("retained.class_projection.method_roster", roster) {
+                    roster.census(census);
+                }
             }
-        }
+        };
+        self.attempt.with_pending(&mut inspect);
+        self.publication.with_published(&mut inspect);
     }
 
     pub(super) fn begin<'a>(
@@ -191,53 +260,55 @@ impl ClassProjections {
             Some(keys)
         })();
         let Some(keys) = keys else {
-            self.values.retain_current_keys(std::iter::empty::<&[u8]>());
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         };
-        self.values.retain_current_keys(
-            keys.values()
-                .filter_map(|key| key.as_ref().map(|(key, _)| key.as_slice())),
-        );
-        let owners = keys
-            .into_iter()
-            .filter_map(|(owner, key)| {
-                let Some((key, inputs)) = key else {
-                    self.declined.fetch_add(1, Ordering::Relaxed);
-                    return None;
-                };
-                let hit = self.values.lookup(&key, tree).filter(|value| {
-                    value.inputs.len() == inputs.len()
-                        && value.values.len() == value.inputs.len()
-                        && inputs
-                            .iter()
-                            .zip(&value.inputs)
-                            .all(|(current, previous)| current.matches(previous))
-                });
-                if hit.is_some() {
-                    self.hits.fetch_add(1, Ordering::Relaxed);
-                }
-                let inputs = if hit.is_some() {
-                    Vec::new()
-                } else {
-                    inputs
-                        .into_iter()
-                        .map(CurrentMemberInput::into_owned)
-                        .collect()
-                };
-                Some((
-                    owner,
-                    Owner {
-                        key,
-                        hit,
-                        inputs,
-                        produced: Vec::new(),
-                        recorder: RecordingResolver::new(tree),
-                        next: 0,
-                    },
-                ))
-            })
-            .collect();
+        let owners =
+            keys.into_iter()
+                .filter_map(|(owner, key)| {
+                    let Some((key, inputs)) = key else {
+                        self.declined.fetch_add(1, Ordering::Relaxed);
+                        return None;
+                    };
+                    let hit =
+                        self.attempt
+                            .with_pending(|leases| {
+                                leases
+                                    .values
+                                    .visit_explained(&key, tree, &mut |value| {
+                                        value.inputs.len() == inputs.len()
+                                            && value.values.len() == value.inputs.len()
+                                            && inputs.iter().zip(&value.inputs).all(
+                                                |(current, previous)| current.matches(previous),
+                                            )
+                                    })
+                                    .0
+                            })
+                            .flatten();
+                    if hit.is_some() {
+                        self.hits.fetch_add(1, Ordering::Relaxed);
+                    }
+                    let inputs = if hit.is_some() {
+                        Vec::new()
+                    } else {
+                        inputs
+                            .into_iter()
+                            .map(CurrentMemberInput::into_owned)
+                            .collect()
+                    };
+                    Some((
+                        owner,
+                        Owner {
+                            key,
+                            hit,
+                            inputs,
+                            produced: Vec::new(),
+                            recorder: RecordingResolver::new(tree),
+                            next: 0,
+                        },
+                    ))
+                })
+                .collect();
         Some(Request {
             store: self,
             owners,
@@ -320,14 +391,16 @@ impl Request<'_> {
                 continue;
             };
             self.store.recomputed.fetch_add(1, Ordering::Relaxed);
-            self.store
-                .values
-                .insert_with(owner.key.into(), reads, versions, weight, || {
-                    OwnerProjection {
-                        inputs: owner.inputs,
-                        values: owner.produced,
-                    }
-                });
+            self.store.attempt.with_pending(|leases| {
+                leases
+                    .values
+                    .insert_with(owner.key.into(), reads, versions, weight, || {
+                        OwnerProjection {
+                            inputs: owner.inputs,
+                            values: owner.produced,
+                        }
+                    })
+            });
         }
     }
 }
