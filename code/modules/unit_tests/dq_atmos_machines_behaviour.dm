@@ -196,6 +196,8 @@
 	var/list/area_saved
 
 /datum/unit_test/dq_atmos_m/Run()
+	// Prompt capture is test-local; restore the incoming recorder in fixture teardown.
+	set_global(nameof(GLOB.test_prompts), list())
 	test_driver_begin()
 	p2cl_capture_prompts()
 	var/area/room = get_area(run_loc_floor_bottom_left)

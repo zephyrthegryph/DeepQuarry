@@ -40,8 +40,8 @@ TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 		return C.Copy()
 	return D
 
-/datum/reagent/blood/get_data() // Just in case you have a reagent that handles data differently.
-	return copy_data(data)
+/datum/reagent/blood/get_data(datum/reagent_payload/snapshot) // Just in case you have a reagent that handles data differently.
+	return copy_data(data, snapshot)
 
 /datum/reagent/blood/touch_turf(turf/simulated/T)
 	if(!istype(T) || volume < 3)
@@ -131,38 +131,52 @@ TYPE_TABLE(/datum/reagent/blood, reagent_data_codec_keys, list("viruses"))
 
 		var/list/to_mix = list()
 		var/list/preserve = list()
+		var/datum/reagent_payload/staging = new
 
 		for(var/datum/affliction/contagion/engineered/AD in mix1)
 			to_mix += AD
 		for(var/datum/affliction/contagion/engineered/AD in mix2)
 			to_mix += AD
 
-		var/datum/affliction/contagion/engineered/mixed_AD = Advance_Mix(to_mix)
+		try
+			var/datum/affliction/contagion/engineered/mixed_AD = Advance_Mix(to_mix)
 
-		if(mixed_AD)
-			preserve += mixed_AD
+			if(mixed_AD)
+				rel_add(staging, nameof(staging.codec_children), mixed_AD)
+				preserve += mixed_AD
 
-		for(var/datum/affliction/contagion/D1 in mix1)
-			if(!istype(D1, /datum/affliction/contagion/engineered))
-				var/keep = TRUE
-				for(var/datum/affliction/contagion/D2 in preserve)
-					if(D1.IsSame(D2))
-						keep = FALSE
-						break
-				if(keep)
-					preserve += D1
+			for(var/datum/affliction/contagion/D1 in mix1)
+				if(!istype(D1, /datum/affliction/contagion/engineered))
+					var/keep = TRUE
+					for(var/datum/affliction/contagion/D2 in preserve)
+						if(D1.IsSame(D2))
+							keep = FALSE
+							break
+					if(keep)
+						var/datum/affliction/contagion/child = D1.Copy()
+						rel_add(staging, nameof(staging.codec_children), child)
+						preserve += child
 
-		for(var/datum/affliction/contagion/D1 in mix2)
-			if(!istype(D1, /datum/affliction/contagion/engineered))
-				var/keep = TRUE
-				for(var/datum/affliction/contagion/D2 in preserve)
-					if(D1.IsSame(D2))
-						keep = FALSE
-						break
-				if(keep)
-					preserve += D1
+			for(var/datum/affliction/contagion/D1 in mix2)
+				if(!istype(D1, /datum/affliction/contagion/engineered))
+					var/keep = TRUE
+					for(var/datum/affliction/contagion/D2 in preserve)
+						if(D1.IsSame(D2))
+							keep = FALSE
+							break
+					if(keep)
+						var/datum/affliction/contagion/child = D1.Copy()
+						rel_add(staging, nameof(staging.codec_children), child)
+						preserve += child
 
+		catch(var/exception/fault)
+			qdel(staging)
+			throw fault
 		data["viruses"] = preserve
+		rel_clear(src, nameof(codec_children))
+		for(var/datum/affliction/contagion/C as anything in rel_take_all(staging, nameof(staging.codec_children)))
+			rel_add(src, nameof(codec_children), C)
+		qdel(staging)
 
 /datum/reagent/blood/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_SLIME)	//They don't have blood, so it seems weird that they would instantly 'process' the chemical like another species does.

@@ -1,3 +1,20 @@
+/// Immutable path catalog, shared without constructing or mutating a vendor.
+DECLARE_SHARED_CACHE(nifsoft_starting_catalog, GLOBAL_PROC_REF(build_nifsoft_starting_catalog), SC_NEVER)
+
+/proc/build_nifsoft_starting_catalog(key)
+	if(key != /obj/machinery/vending/nifsoft_shop)
+		CRASH("unexpected NIFSoft catalog key")
+	var/list/legal = list()
+	var/list/illegal = list()
+	for(var/datum/nifsoft/NS as anything in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package)))
+		if(initial(NS.vended))
+			switch(initial(NS.illegal))
+				if(TRUE)
+					illegal += NS
+				if(FALSE)
+					legal += NS
+	return list(legal, illegal)
+
 //Custom vendors
 /obj/machinery/vending/nifsoft_shop
 	name = "NIFSoft Shop"
@@ -87,20 +104,11 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 
 // Special Treatment!
 /obj/machinery/vending/nifsoft_shop/build_inventory()
-	//Firsties
-	if(!GLOB.starting_legal_nifsoft)
-		GLOB.starting_legal_nifsoft = list()
-		GLOB.starting_illegal_nifsoft = list()
-		for(var/datum/nifsoft/NS as anything in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package)))
-			if(initial(NS.vended))
-				switch(initial(NS.illegal))
-					if(TRUE)
-						GLOB.starting_illegal_nifsoft += NS
-					if(FALSE)
-						GLOB.starting_legal_nifsoft += NS
-
-	products = GLOB.starting_legal_nifsoft.Copy()
-	contraband = GLOB.starting_illegal_nifsoft.Copy()
+	var/list/catalog = CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop)
+	var/list/legal = catalog[CAT_NORMAL]
+	var/list/illegal = catalog[CAT_HIDDEN]
+	products = legal.Copy()
+	contraband = illegal.Copy()
 
 	var/list/all_products = list(
 		list(products, CAT_NORMAL),

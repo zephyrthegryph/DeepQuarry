@@ -992,16 +992,16 @@ GLOBAL_VAR(dq_test_select_names)
 	// is still on its block once `allocated` is gone fails the test.
 	var/leak = release_unit_test_block(block, test)
 	var/site_leak = unit_test_site_leak(sites_before, test_path)
-	unit_test_globals_guard(globals_before, test_path)
-	unit_test_gravity_guard(gravity_before, test_path)
-	unit_test_watch_guard(watching_before, test_path)
+	for(var/state_leak in list(unit_test_globals_guard(globals_before, test_path), unit_test_gravity_guard(gravity_before, test_path), unit_test_watch_guard(watching_before, test_path)))
+		if(state_leak)
+			leak = leak ? "[leak]\n\t[state_leak]" : state_leak
 	if(site_leak)
 		leak = leak ? "[leak]\n\t[site_leak]" : site_leak
 	if(leak && !skip_test)
 		GLOB.failed_any_test = TRUE
 		if(final_status == UNIT_TEST_PASSED)
-			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc] (leaked objects)")
-		final_status = UNIT_TEST_FAILED
+			log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc] (leaked shared state or objects)")
+		final_status = unit_test_leak_status(final_status, skip_test, leak)
 		message = message ? "[message]\n\t[leak]" : "\t[leak]"
 		log_test("\t[leak]")
 
@@ -1012,6 +1012,10 @@ GLOBAL_VAR(dq_test_select_names)
 	var/static/list/ignored = list(
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
+		// Cumulative profiling counts, not Boolean world state (including their first 0 -> 1).
+		"act_taken" = TRUE, "coalesce_runs" = TRUE,
+		// Real world clock progress; fixtures never restore or backdate this counter.
+		"midnight_rollovers" = TRUE,
 		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
 	)
 	return ignored
@@ -1032,12 +1036,13 @@ GLOBAL_VAR(dq_test_select_names)
  * shows only in a long focused run and never alone (dq_rule_thresholds, vent_internal_check). After each test, a
  * scalar GLOB var that changed is logged in tests.log: "STATE LEAK" for a flag (null, 0 or 1 before and after, not
  * a counter or a lazy-init marker), "STATE LEAK?" for text and paths; numbers that are not flags are ignored. It
- * only flags, never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
+ * returns the leak to the runner, never restores: a lazy-init flag put back would rebuild what it guards. When a test fails only in a
  * long run, grep the run's tests.log for STATE LEAK before it (tools/dq_focused_test.sh prints them on a failure). Change shared state with set_global()/set_var() (restored in teardown) and the guard stays quiet.
  */
-/proc/unit_test_globals_guard(list/before, test_path)
+/proc/unit_test_globals_guard(list/before, test_path, emit = TRUE)
 	var/list/ignored = unit_test_globals_ignored()
 	var/static/regex/counter = regex(@"(built|initialized|ready|done|loaded|roundstat|count|next|total|_id$|^id_|gen$|_gen|serial|tick|time|last|seq|index|builds|cursor|stamp)", "i")
+	var/list/leaks
 	for(var/name in GLOB.vars)
 		if(ignored[name])
 			continue
@@ -1049,10 +1054,16 @@ GLOBAL_VAR(dq_test_select_names)
 		if(was == value)
 			continue
 		var/flag = (isnull(was) || was == 0 || was == 1) && (isnull(value) || value == 0 || value == 1)
+		var/message
 		if(flag && !counter.Find(name))
-			log_test("STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). If a later test fails only in a long run, this is a suspect: change it with set_global() in the test.")
+			message = "STATE LEAK: [test_path] left GLOB.[name] = [isnull(value) ? "null" : value] (was [isnull(was) ? "null" : was]). Change shared state with set_global() so teardown restores it."
 		else if(!(isnum(was) && isnum(value))) // a number that moved is a counter: quiet
-			log_test("STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)")
+			message = "STATE LEAK?: [test_path] changed GLOB.[name]: [isnull(was) ? "null" : was] -> [isnull(value) ? "null" : value] (not restored)"
+		if(message)
+			if(emit)
+				log_test(message)
+			LAZYADD(leaks, message)
+	return length(leaks) ? jointext(leaks, "\n") : null
 
 /// What the watch index holds, as "type|key xholders": the leftover, named, when a test finds it not empty.
 /proc/unit_test_watch_index_text()
@@ -1069,10 +1080,13 @@ GLOBAL_VAR(dq_test_select_names)
 
 /// Logs "STATE LEAK" when the test left more entries in the watch index than it found: a wait, task or every() hop watch that never ended
 /// poisons the tests that assert the index is empty (dq_p1/wait_rechecks_on_a_published_read), which then fail only in a long run.
-/proc/unit_test_watch_guard(watching_before, test_path)
+/proc/unit_test_watch_guard(watching_before, test_path, emit = TRUE)
 	var/now = length(GLOB.op_watchers)
 	if(now > watching_before)
-		log_test("STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])")
+		var/message = "STATE LEAK: [test_path] left [now - watching_before] more entry(ies) in the watch index than it found ([unit_test_watch_index_text()])"
+		if(emit)
+			log_test(message)
+		return message
 
 /// Every area's gravity, as area -> has_gravity: an area's gravity outlives the test that switched it (a gravity generator destroyed, a holodeck
 /// program), and every later test's mobs then drift.
@@ -1082,10 +1096,19 @@ GLOBAL_VAR(dq_test_select_names)
 		.[A] = A.has_gravity
 
 /// Logs "STATE LEAK" for each area whose gravity the test changed (the state guard's rule: it flags, it does not restore).
-/proc/unit_test_gravity_guard(list/before, test_path)
+/proc/unit_test_gravity_guard(list/before, test_path, emit = TRUE)
+	var/list/leaks
 	for(var/area/A as anything in before)
 		if(!QDELETED(A) && A.has_gravity != before[A])
-			log_test("STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Its mobs drift in every later test: put it back (gravitychange()) in the test.")
+			var/message = "STATE LEAK: [test_path] left [A] ([A.type]) with has_gravity = [A.has_gravity] (was [before[A]]). Its mobs drift in every later test: put it back (gravitychange()) in the test."
+			if(emit)
+				log_test(message)
+			LAZYADD(leaks, message)
+	return length(leaks) ? jointext(leaks, "\n") : null
+
+/// Shared by the runner and guard regression: a leak cannot leave a pass in the JSON.
+/proc/unit_test_leak_status(status, skipped, reason)
+	return reason && !skipped ? UNIT_TEST_FAILED : status
 
 /// Expedition sites are global (each holds a whole z-level) and outlive the test block, so a test
 /// that generates one must release it, through defer_cleanup() so a failing assert can't skip

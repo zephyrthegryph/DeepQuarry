@@ -140,7 +140,6 @@
 	status_policies()
 
 /datum/unit_test/dq_medpod/sleeper_refusals/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	..()
 
 /datum/unit_test/dq_medpod/sleeper_refusals/run_pods()

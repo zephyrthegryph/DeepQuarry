@@ -310,10 +310,10 @@ TRACKED(/datum/reagents, master_id)
 		return current.volume
 	return 0
 
-/datum/reagents/proc/get_data(id)
+/datum/reagents/proc/get_data(id, datum/reagent_payload/snapshot)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		return current.get_data()
+		return current.get_data(snapshot)
 	return 0
 
 /datum/reagents/proc/get_reagents()
@@ -359,7 +359,13 @@ TRACKED(/datum/reagents, master_id)
 	for(var/datum/reagent/current in reagent_list)
 		var/amount_to_transfer = current.volume * part
 		if(current.dialysis_returnable || (!current.dialysis_returnable && ismob(target))) //Prevents duplication of reagents.
-			target.add_reagent(current.id, amount_to_transfer * multiplier, current.get_data(), safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis) // We don't react until everything is in place
+			var/datum/reagent_payload/snapshot = reagent_payload(current)
+			try
+				target.add_reagent(current.id, amount_to_transfer * multiplier, snapshot.value, safety = 1, was_from_belly = (current.from_belly || target_is_belly), can_dialysis = can_dialysis)
+			catch(var/exception/fault)
+				qdel(snapshot)
+				throw fault
+			qdel(snapshot)
 		if(!copy)
 			remove_reagent(current.id, amount_to_transfer, 1)
 
@@ -416,14 +422,24 @@ TRACKED(/datum/reagents, master_id)
 		return
 
 	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(rtype)
-	F.add_reagent(rtype, amount, tmpdata)
-	remove_reagent(rtype, amount)
-
-	if (istype(target, /atom))
-		return F.trans_to(target, amount) // Let this proc check the atom's type
-	else if (istype(target, /datum/reagents))
-		return F.trans_to_holder(target, amount)
+	var/datum/reagent/source = get_reagent(rtype)
+	var/datum/reagent_payload/snapshot = reagent_payload(source)
+	var/result
+	try
+		F.add_reagent(rtype, amount, snapshot.value)
+		qdel(snapshot)
+		remove_reagent(rtype, amount)
+		if(istype(target, /atom))
+			result = F.trans_to(target, amount)
+		else if(istype(target, /datum/reagents))
+			result = F.trans_to_holder(target, amount)
+	catch(var/exception/fault)
+		if(snapshot && !QDELETED(snapshot))
+			qdel(snapshot)
+		qdel(F)
+		throw fault
+	qdel(F)
+	return result
 
 /datum/reagents/proc/trans_id_to(atom/target, id, amount = 1, force_open_container = FALSE)
 	if (!target || !target.reagents)
@@ -435,16 +451,22 @@ TRACKED(/datum/reagents, master_id)
 		return
 
 	var/datum/reagents/F = new /datum/reagents(amount)
-	var/tmpdata = get_data(id)
-	F.add_reagent(id, amount, tmpdata)
-	remove_reagent(id, amount)
+	var/datum/reagent/source = get_reagent(id)
+	var/datum/reagent_payload/snapshot = reagent_payload(source)
+	var/result
+	try
+		F.add_reagent(id, amount, snapshot.value)
+		qdel(snapshot)
+		remove_reagent(id, amount)
+		result = F.trans_to(target, amount, force_open_container = force_open_container)
+	catch(var/exception/fault)
+		if(snapshot && !QDELETED(snapshot))
+			qdel(snapshot)
+		qdel(F)
+		throw fault
+	qdel(F)
+	return result
 
-	return F.trans_to(target, amount, force_open_container = force_open_container) // Let this proc check the atom's type
-
-// When applying reagents to an atom externally, touch() is called to trigger any on-touch effects of the reagent.
-// This does not handle transferring reagents to things.
-// For example, splashing someone with water will get them wet and extinguish them if they are on fire,
-// even if they are wearing an impermeable suit that prevents the reagents from contacting the skin.
 /datum/reagents/proc/touch(atom/target, amount, mob/user = null)
 	if(ismob(target))
 		touch_mob(target, amount)

@@ -4705,3 +4705,8 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+## Test teardown and culture-copy lifetime (codex/test-hygiene-1011)
+
+State-leak diagnostics now fail the test's final JSON result after teardown. Genuine cumulative action/coalescing counters and clock rollovers remain counters; fixtures restore prompt overrides and warm immutable policy caches before taking their state snapshots. The NIFSoft starting catalog is a shared immutable path catalog, with independent vendor inventory records and unchanged stock, prices and ordering.
+
+Blood/culture copies own their copied contagion children, including temporary transfer and serialization payloads. Deleting a temporary payload removes its children and their watches while preserving the donor and borrowed registry identities. A freshly materialized child is also deleted if applying its saved state throws. Reagent quantities and culture selection are unchanged; this fixes leaked temporary contagions rather than re-blessing snapshot rows.

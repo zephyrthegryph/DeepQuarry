@@ -1027,7 +1027,8 @@
 	result_amount = 5
 
 /datum/decl/chemical_reaction/instant/blood_paint/send_data(datum/reagents/T)
-	var/t = T.get_data(REAGENT_ID_BLOOD)
+	var/datum/reagent/blood/B = T.get_reagent(REAGENT_ID_BLOOD)
+	var/list/t = B ? B.data : null
 	if(t && t["blood_colour"])
 		return t["blood_colour"]
 	return "#FE191A" // Probably red

@@ -626,8 +626,12 @@ GLOBAL_DATUM(state_registry_adapter, /datum/state_registry_adapter)
 	if(!path)
 		return null
 	var/datum/D = new path
-	apply_vars(D, blob)
-	D.state_post_apply(blob, NONE)
+	try
+		apply_vars(D, blob)
+		D.state_post_apply(blob, NONE)
+	catch(var/exception/fault)
+		qdel(D)
+		throw fault
 	return D
 
 /datum/state_context/proc/decode_value(value)

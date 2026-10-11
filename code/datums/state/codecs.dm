@@ -4,6 +4,69 @@
 // ---------------------------------------------------------------------------
 /datum/state_codec/reagents
 
+/datum/state_codec/reagents/proc/encode_payload(datum/reagent/R, datum/state_context/ctx, where)
+	if(!islist(R.data) || !length(R.reagent_data_codec()))
+		return ctx.encode_value(R.data, where)
+	var/list/plain = R.data.Copy()
+	var/list/children = list()
+	for(var/key in R.reagent_data_codec())
+		var/list/encoded = list()
+		for(var/datum/D as anything in R.data[key])
+			encoded += list(list(STATE_WRAP_OWNED = ctx.serialize_datum(D, NONE)))
+		children[key] = encoded
+		plain -= key
+	return list("reagent_payload" = TRUE, "plain" = ctx.encode_value(plain, where), "children" = children)
+
+/datum/state_codec/reagents/proc/decode_payload(datum/reagent/prototype, encoded, datum/state_context/ctx)
+	var/datum/reagent_payload/P = new
+	try
+		if(islist(encoded) && encoded["reagent_payload"])
+			P.value = ctx.decode_value(encoded["plain"])
+			var/list/data = P.value
+			var/list/children = encoded["children"]
+			for(var/key in prototype.reagent_data_codec())
+				var/list/fresh = list()
+				for(var/list/child_blob as anything in children[key])
+					var/datum/D = ctx.decode_value(child_blob)
+					if(!child_blob[STATE_WRAP_OWNED])
+						var/datum/borrowed = D
+						D = prototype.copy_data_value(key, borrowed)
+						if(!D || D == borrowed)
+							CRASH("Reagent codec borrowed child must produce an independent copy")
+					if(!isdatum(D))
+						CRASH("Reagent codec owned child must decode to a datum")
+					rel_add(P, nameof(P.codec_children), D)
+					fresh += D
+				data[key] = fresh
+		else
+			if(islist(encoded) && length(prototype.reagent_data_codec()))
+				var/list/plain = encoded.Copy()
+				for(var/key in prototype.reagent_data_codec())
+					plain -= key
+				P.value = ctx.decode_value(plain)
+				var/list/data = P.value
+				for(var/key in prototype.reagent_data_codec())
+					var/list/fresh = list()
+					var/list/blobs = encoded[key]
+					for(var/child_blob as anything in blobs)
+						var/datum/D = ctx.decode_value(child_blob)
+						if(!islist(child_blob) || !child_blob[STATE_WRAP_OWNED])
+							var/datum/borrowed = D
+							D = prototype.copy_data_value(key, borrowed)
+							if(!D || D == borrowed)
+								CRASH("Reagent codec borrowed child must produce an independent copy")
+						if(!isdatum(D))
+							CRASH("Reagent codec owned child must decode to a datum")
+						rel_add(P, nameof(P.codec_children), D)
+						fresh += D
+					data[key] = fresh
+			else
+				P.value = ctx.decode_value(encoded)
+	catch(var/exception/fault)
+		qdel(P)
+		throw fault
+	return P
+
 /datum/state_codec/reagents/encode(datum/owner, var_name, value, datum/state_context/ctx)
 	var/datum/reagents/holder = value
 	if(isnull(holder))
@@ -13,7 +76,7 @@
 		return null
 	var/list/reagents = list()
 	for(var/datum/reagent/R as anything in holder.reagent_list)
-		var/data = isnull(R.data) ? null : ctx.encode_value(R.data, "[owner.type].[var_name] [R.id] data")
+		var/data = encode_payload(R, ctx, "[owner.type].[var_name] [R.id] data")
 		reagents += list(list(R.id, R.volume, data))
 	return list("max" = holder.maximum_volume, "list" = reagents)
 
@@ -32,7 +95,14 @@
 	holder.maximum_volume = encoded["max"]
 	for(var/list/entry as anything in encoded["list"])
 		// safety = TRUE: the saved mix was stable, so adding it back must not react.
-		holder.add_reagent(entry[1], entry[2], ctx.decode_value(entry[3]), TRUE)
+		var/datum/reagent/prototype = SSchemistry.ready().chemical_reagents[entry[1]]
+		var/datum/reagent_payload/snapshot = decode_payload(prototype, entry[3], ctx)
+		try
+			holder.add_reagent(entry[1], entry[2], snapshot.value, TRUE)
+		catch(var/exception/fault)
+			qdel(snapshot)
+			throw fault
+		qdel(snapshot)
 
 // ---------------------------------------------------------------------------
 // frame_type: /obj/item/circuitboard/board_type (roadmap C6, containment.md

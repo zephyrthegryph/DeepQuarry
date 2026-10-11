@@ -273,7 +273,6 @@
 
 // Old/new compiled requirement boundary, not copied callback Boolean results.
 /datum/unit_test/dq_requirement_boundary_pin/machines_d/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, H.loc)
 	heater.set_panel_open(FALSE)
@@ -424,7 +423,6 @@
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_fifth_machinery/pipelayer/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/obj/machinery/pipelayer/P = allocate(/obj/machinery/pipelayer, run_loc_floor_bottom_left)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	P.set_on(FALSE)
@@ -459,7 +457,6 @@
 	L.set_sheets(0)
 
 /datum/unit_test/dq_requirement_fifth_machinery/portable/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/portable_atmospherics/powered/pump/P = allocate(/obj/machinery/portable_atmospherics/powered/pump, run_loc_floor_bottom_left)
 	P.set_destroyed(TRUE)
@@ -475,7 +472,6 @@
 	parent_type = /datum/unit_test/dq_requirement_fourth_boundary
 
 /datum/unit_test/dq_requirement_industry_boundary/pump/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/pump/P = allocate(/obj/machinery/pump, H.loc)
 	var/obj/item/cell/C = allocate(/obj/item/cell, H.loc)
@@ -505,7 +501,6 @@
 	check(S, H, "stab", "may_stab", null, null, H)
 
 /datum/unit_test/dq_requirement_industry_boundary/chem_master/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/chem_master/M = allocate(/obj/machinery/chem_master, H.loc)
 	for(var/key in list("create_pill_multiple", "create_patch_multiple", "create_bottle_two", "create_bottle_multiple"))
@@ -521,7 +516,6 @@
 	check(M, H, "create_pill_multiple", "makes_drugs", /datum/msg/req_silent)
 
 /datum/unit_test/dq_requirement_industry_boundary/mixer/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/appliance/mixer/candy/M = allocate(/obj/machinery/appliance/mixer/candy, H.loc)
 	var/datum/cooking_item/CI = LAZYACCESS(M.cooking_objs, 1)
@@ -535,7 +529,6 @@
 	check(M, H, "appliance_toggle_power_effect", "can_toggle_power_verb_holds", "there's nothing in it, add ingredients before turning [M] on")
 
 /datum/unit_test/dq_requirement_industry_boundary/furnace/Run()
-	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/machinery/material_furnace/F = allocate(/obj/machinery/material_furnace, H.loc)
 	var/obj/item/stack/material/steel/S = allocate(/obj/item/stack/material/steel, H.loc)
@@ -1088,3 +1081,64 @@
 		A.target = I
 		TEST_ASSERT_EQUAL(I.topic_usable(A), MSG(op/topic_gate), "[type] must preserve its real parent client denial")
 	A.release()
+
+/datum/unit_test/dq_nifsoft_shared_catalog/New()
+	..()
+	CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop)
+
+/datum/unit_test/dq_nifsoft_shared_catalog/Run()
+	var/list/catalog = CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop)
+	var/datum/shared_cache/cache = SHARED_CACHE(nifsoft_starting_catalog)
+	var/builds_before = cache.builds
+	TEST_ASSERT_EQUAL(CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop), catalog, "catalog hits return the same immutable list")
+	TEST_ASSERT_EQUAL(cache.builds, builds_before, "repeat lookup does not rebuild the catalog")
+	var/list/legal = catalog[CAT_NORMAL]
+	var/list/illegal = catalog[CAT_HIDDEN]
+	TEST_ASSERT(length(legal) > 0 && length(illegal) > 0, "real legal and contraband catalogs are populated")
+	for(var/datum/nifsoft/NS as anything in legal)
+		TEST_ASSERT(initial(NS.vended) && !initial(NS.illegal), "legal catalog contains only real vended legal paths")
+	for(var/datum/nifsoft/NS as anything in illegal)
+		TEST_ASSERT(initial(NS.vended) && initial(NS.illegal), "hidden catalog contains only real vended illegal paths")
+	var/list/expected_legal = list()
+	var/list/expected_illegal = list()
+	for(var/datum/nifsoft/expected_path as anything in (subtypesof(/datum/nifsoft) - typesof(/datum/nifsoft/package)))
+		if(initial(expected_path.vended))
+			if(initial(expected_path.illegal) == TRUE)
+				expected_illegal += expected_path
+			else if(initial(expected_path.illegal) == FALSE)
+				expected_legal += expected_path
+	TEST_ASSERT_EQUAL(length(legal), length(expected_legal), "legal catalog contains every eligible software exactly once")
+	TEST_ASSERT_EQUAL(length(illegal), length(expected_illegal), "hidden catalog contains every eligible software exactly once")
+	for(var/i in 1 to length(expected_legal))
+		TEST_ASSERT_EQUAL(legal[i], expected_legal[i], "legal catalog preserves metadata enumeration order")
+	for(var/i in 1 to length(expected_illegal))
+		TEST_ASSERT_EQUAL(illegal[i], expected_illegal[i], "hidden catalog preserves metadata enumeration order")
+	var/obj/machinery/vending/nifsoft_shop/V = allocate(/obj/machinery/vending/nifsoft_shop, test_floor())
+	TEST_ASSERT_EQUAL(length(V.product_records), length(legal) + length(illegal), "real vendor materializes exactly one record per software")
+	var/list/seen = list()
+	for(var/datum/stored_item/vending_product/record as anything in V.product_records)
+		var/datum/nifsoft/path = record.item_path
+		TEST_ASSERT(path in (legal + illegal), "real vendor records use the immutable catalog paths")
+		TEST_ASSERT(!(path in seen), "real vendor has no duplicate software records")
+		seen += path
+		TEST_ASSERT_EQUAL(record.get_amount(), 10, "real vendor stock starts at ten")
+		TEST_ASSERT_EQUAL(record.price, initial(path.cost), "real vendor preserves software price")
+		TEST_ASSERT_EQUAL(record.category, initial(path.illegal) ? CAT_HIDDEN : CAT_NORMAL, "real vendor preserves stock category")
+	var/ready_before = V.vend_ready
+	var/vending_before = V.currently_vending
+	CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop)
+	TEST_ASSERT_EQUAL(V.vend_ready, ready_before, "catalog lookup cannot change vendor readiness")
+	TEST_ASSERT_EQUAL(V.currently_vending, vending_before, "catalog lookup cannot start a vend")
+	TEST_ASSERT(V.products != legal && V.contraband != illegal, "real vendor owns independent input list copies")
+	var/list/legal_before = legal.Copy()
+	var/list/illegal_before = illegal.Copy()
+	V.products.Cut()
+	V.contraband.Cut()
+	TEST_ASSERT_EQUAL(length(legal), length(legal_before), "vendor input mutation does not alter shared legal data")
+	TEST_ASSERT_EQUAL(length(illegal), length(illegal_before), "vendor input mutation does not alter shared hidden data")
+	for(var/i in 1 to length(legal_before))
+		TEST_ASSERT_EQUAL(legal[i], legal_before[i], "vendor mutation preserves exact legal catalog contents")
+	for(var/i in 1 to length(illegal_before))
+		TEST_ASSERT_EQUAL(illegal[i], illegal_before[i], "vendor mutation preserves exact hidden catalog contents")
+	TEST_ASSERT_EQUAL(CACHED(nifsoft_starting_catalog, /obj/machinery/vending/nifsoft_shop), catalog, "provider lookup after vendor mutation preserves catalog identity")
+	TEST_ASSERT_EQUAL(cache.builds, builds_before, "vendor construction and mutation do not rebuild the shared provider")

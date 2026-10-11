@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Clean up temporary disease copies after reagent transfers and saved-state operations."

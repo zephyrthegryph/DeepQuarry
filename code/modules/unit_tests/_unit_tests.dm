@@ -388,6 +388,8 @@
 #include "dq_snapshot_files.dm"
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
+#include "dq_culture_payload_ownership.dm"
+#include "dq_state_leak_guard_tests.dm"
 #include "dq_conversion_pins.dm"
 #include "dq_legacy_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"

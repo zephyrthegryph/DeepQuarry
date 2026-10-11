@@ -1,4 +1,23 @@
+// Scoped copies only. value indexes codec_children; donor/noncodec datums remain borrowed.
+/datum/reagent_payload
+	var/value
+	var/list/codec_children
+
+CAPABILITIES(/datum/reagent_payload)
+	owns_many(nameof(codec_children))
+
+/proc/reagent_payload(datum/reagent/R)
+	var/datum/reagent_payload/P = new
+	try
+		P.value = R.get_data(P)
+	catch(var/exception/fault)
+		qdel(P)
+		throw fault
+	return P
+
+
 /datum/reagent
+	var/list/codec_children
 	var/name = REAGENT_DEVELOPER_WARNING
 	var/id = REAGENT_ID_DEVELOPER_WARNING
 	var/description = REAGENT_DESC_DEVELOPER_WARNING
@@ -348,7 +367,7 @@ TYPE_TABLE_DECLARE(/datum/reagent, reagent_data_codec_keys, null)
 
 /// A copy of the data list `source` that shares no owned datum with it (reagent_data_codec() keys
 /// get fresh copies through copy_data_value()).
-/datum/reagent/proc/copy_data(list/source)
+/datum/reagent/proc/copy_data(list/source, datum/reagent_payload/snapshot)
 	if(!islist(source))
 		return source
 	var/list/copy = source.Copy()
@@ -357,19 +376,31 @@ TYPE_TABLE_DECLARE(/datum/reagent, reagent_data_codec_keys, null)
 		if(islist(value))
 			var/list/fresh = list()
 			for(var/datum/D in value)
-				fresh += copy_data_value(key, D)
+				if(!snapshot)
+					CRASH("Codec-containing reagent data needs a scoped payload owner")
+				var/datum/child = copy_data_value(key, D)
+				if(child == D)
+					CRASH("Owned reagent codec did not make an independent child")
+				rel_add(snapshot, nameof(snapshot.codec_children), child)
+				fresh += child
 			copy[key] = fresh
 		else if(isdatum(value))
-			copy[key] = copy_data_value(key, value)
+			if(!snapshot)
+				CRASH("Codec-containing reagent data needs a scoped payload owner")
+			var/datum/child = copy_data_value(key, value)
+			if(child == value)
+				CRASH("Owned reagent codec did not make an independent child")
+			rel_add(snapshot, nameof(snapshot.codec_children), child)
+			copy[key] = child
 	return copy
 
 /// The copy of one owned datum in `data[key]`.
 /datum/reagent/proc/copy_data_value(key, datum/D)
 	return D
 
-/datum/reagent/proc/get_data() // Just in case you have a reagent that handles data differently.
+/datum/reagent/proc/get_data(datum/reagent_payload/snapshot) // Just in case you have a reagent that handles data differently.
 	if(data && istype(data, /list))
-		return copy_data(data)
+		return copy_data(data, snapshot)
 	else if(data)
 		return data
 	return null
@@ -431,3 +462,6 @@ TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 /datum/reagent/proc/on_mob_end_metabolize(mob/living/affected_mob, datum/reagents/location)
 	SHOULD_CALL_PARENT(TRUE)
 	remove_traits_in(affected_mob, "metabolize_location:[location]reagent:[type]")
+
+CAPABILITIES(/datum/reagent)
+	owns_many(nameof(codec_children))

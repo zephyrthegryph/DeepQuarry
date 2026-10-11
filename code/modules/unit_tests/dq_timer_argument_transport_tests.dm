@@ -643,7 +643,6 @@
 /datum/unit_test/c4_toilet_deleted_flush_target_timer_boundary/Run()
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	test_driver_begin()
-	set_global("act_taken", GLOB.act_taken)
 	set_global("om_resolve_nulled", GLOB.om_resolve_nulled)
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global("dview_mob", GLOB.dview_mob)

@@ -76,8 +76,11 @@
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/empty
 	empty_grab = TRUE
 
+/datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/New()
+	..()
+	status_policies()
+
 /datum/unit_test/dq_timed_pin/last_occupant/cycler_shock/run_pin()
-	set_global(nameof(GLOB.status_policies), GLOB.status_policies)
 	var/turf/T = run_loc_floor_bottom_left
 	var/area/A = get_area(T)
 	var/obj/machinery/power/apc/old_apc = A.get_apc()

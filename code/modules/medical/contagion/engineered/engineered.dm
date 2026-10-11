@@ -480,47 +480,79 @@ CAPABILITIES(/datum/affliction/contagion/engineered)
 			return 2
 
 // Mix a list of advance diseases and return the mixed result.
+/datum/contagion_mix_workspace
+	var/list/diseases
+
+CAPABILITIES(/datum/contagion_mix_workspace)
+	owns_many(nameof(diseases))
+
 /proc/Advance_Mix(list/D_list)
-
-	var/list/diseases = list()
-
-	for(var/datum/affliction/contagion/engineered/A in D_list)
+	// Reject first: never leave partial allocated copies when a later input is immutable.
+	for(var/datum/affliction/contagion/engineered/A as anything in D_list)
 		if(global_flag_check(A.virus_modifiers, IMMUTABLE))
-			return
-		diseases += A.Copy()
-
-	if(!length(diseases))
+			return null
+	var/datum/contagion_mix_workspace/W = new
+	try
+		for(var/datum/affliction/contagion/engineered/A as anything in D_list)
+			rel_add(W, nameof(W.diseases), A.Copy())
+	catch(var/exception/fault)
+		qdel(W)
+		throw fault
+	if(!length(W.diseases))
+		qdel(W)
 		return null
-	if(length(diseases) <= 1)
-		return pick(diseases) // Just return the only entry.
-
+	if(length(W.diseases) <= 1)
+		var/datum/affliction/contagion/engineered/only = W.diseases[1]
+		var/datum/affliction/contagion/engineered/result = rel_take(W, nameof(W.diseases), only)
+		qdel(W)
+		return result
 	var/i = 0
-	// Mix our diseases until we are left with only one result.
-	while(i < 20 && length(diseases) > 1)
-
+	while(i < 20 && length(W.diseases) > 1)
 		i++
-
-		var/datum/affliction/contagion/engineered/D1 = pick(diseases)
-		diseases -= D1
-
-		var/datum/affliction/contagion/engineered/D2 = pick(diseases)
-		D2.Mix(D1)
-
-	// Should be only 1 entry left, but if not let's only return a single entry
-	var/datum/affliction/contagion/engineered/to_return = pick(diseases)
-	to_return.disease_flags &= ~DORMANT
-	to_return.Refresh(new_name = TRUE)
+		var/datum/affliction/contagion/engineered/D1 = pick(W.diseases)
+		var/datum/affliction/contagion/engineered/consumed = rel_take(W, nameof(W.diseases), D1)
+		var/datum/affliction/contagion/engineered/D2 = pick(W.diseases)
+		try
+			D2.Mix(consumed)
+		catch(var/exception/fault)
+			qdel(consumed)
+			qdel(W)
+			throw fault
+		qdel(consumed)
+	var/datum/affliction/contagion/engineered/selected = pick(W.diseases)
+	var/datum/affliction/contagion/engineered/to_return = rel_take(W, nameof(W.diseases), selected)
+	try
+		to_return.disease_flags &= ~DORMANT
+		to_return.Refresh(new_name = TRUE)
+	catch(var/exception/fault)
+		qdel(to_return)
+		qdel(W)
+		throw fault
+	qdel(W)
 	return to_return
 
-/proc/SetViruses(datum/reagent/R, list/data)
-	if(data)
-		var/list/preserve = list()
-		if(istype(data) && data["viruses"])
-			for(var/datum/affliction/contagion/A in data["viruses"])
-				preserve += A.Copy()
-			R.data = data.Copy()
-		if(length(preserve))
-			R.data["viruses"] = preserve
+/proc/SetViruses(datum/reagent/R, list/incoming)
+	// Paint payloads are scalar colour values; preserve their existing initialize_data path.
+	if(!islist(incoming) || !("viruses" in incoming))
+		return
+	var/list/next = incoming.Copy()
+	var/datum/reagent_payload/staging = new
+	var/list/fresh = list()
+	try
+		for(var/datum/affliction/contagion/C as anything in incoming["viruses"])
+			var/datum/affliction/contagion/child = C.Copy()
+			rel_add(staging, nameof(staging.codec_children), child)
+			fresh += child
+	catch(var/exception/fault)
+		qdel(staging)
+		throw fault
+	// The old data is a borrowed index, not an additional owner.
+	next["viruses"] = fresh
+	R.data = next
+	rel_clear(R, nameof(R.codec_children))
+	for(var/datum/affliction/contagion/C as anything in rel_take_all(staging, nameof(staging.codec_children)))
+		rel_add(R, nameof(R.codec_children), C)
+	qdel(staging)
 
 ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create an advanced virus and release it.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/mob/answerer = user.mob
