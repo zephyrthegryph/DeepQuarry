@@ -949,9 +949,10 @@ fn actual_stored_nameof_uses_current_parameters_and_captured_prior_locals() {
             declared_array: declaration.declared_array.clone(),
             declaration_flags: Some(declaration.modifiers),
         };
-        let (value, _) = evaluator
-            .evaluate_prepared_write(&write, write.value.as_ref().unwrap())
-            .unwrap();
+        let dm_ir::InitializerValue::Expression(expression) = &write.value else {
+            panic!("stored nameof fixture must retain its captured expression");
+        };
+        let (value, _) = evaluator.evaluate_prepared_write(&write, expression).unwrap();
         let expected = if declaration.identity.name == SymbolId::of("parameter_name") {
             "argument"
         } else {
