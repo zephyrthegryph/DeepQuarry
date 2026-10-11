@@ -72,7 +72,9 @@ function check(ref, master) {
   const s = found.stamp;
   const tests = s.tests || [];
   if (found.error) return { verdict: 'INVALID', why: found.error, tests };
-  if (!s.ok || s.failed > 0) return { verdict: 'INVALID', why: `the stamp records a failed run (${s.failed} failed)`, tests };
+  // A failure tools/ci/known_failures.txt lists is not the lane's (new_failed counts the others; an older stamp has only failed).
+  const lost = s.new_failed ?? s.failed;
+  if (!s.ok || lost > 0) return { verdict: 'INVALID', why: `the stamp records a failed run (${lost} failed)`, tests };
   const masterTip = git(['rev-parse', master]);
   if (!masterTip.ok) return { verdict: 'INVALID', why: `no ${master}`, tests };
   if (s.master_commit === masterTip.out) return { verdict: 'VALID', why: `base is current (master ${masterTip.out.slice(0, 10)})`, tests };
