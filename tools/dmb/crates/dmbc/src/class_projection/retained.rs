@@ -23,6 +23,31 @@ pub(crate) struct MemberInput {
     pub metadata: Arc<dm_ir::DeclarationMeaning>,
     pub default: Option<DefaultValue>,
 }
+// Current inputs are borrowed until reuse is decided. In particular, unchanged
+// list/string defaults are never copied just to compare against their owner.
+struct CurrentMemberInput<'a> {
+    member: &'a dm_tree::MemberNode,
+    default: Option<&'a DefaultValue>,
+}
+impl CurrentMemberInput<'_> {
+    fn matches(&self, previous: &MemberInput) -> bool {
+        previous.kind == self.member.kind
+            && previous.definition == self.member.definition
+            && previous.name == self.member.name
+            && (Arc::ptr_eq(&previous.metadata, &self.member.metadata)
+                || previous.metadata == self.member.metadata)
+            && previous.default.as_ref() == self.default
+    }
+    fn into_owned(self) -> MemberInput {
+        MemberInput {
+            kind: self.member.kind,
+            definition: self.member.definition,
+            name: self.member.name,
+            metadata: Arc::clone(&self.member.metadata),
+            default: self.default.cloned(),
+        }
+    }
+}
 pub(crate) struct OwnerProjection {
     pub inputs: Vec<MemberInput>,
     pub values: Vec<MemberContribution>,
@@ -128,11 +153,12 @@ impl ClassProjections {
         &'a self,
         source: &'a TreeSnapshot,
         order: &[OccurrenceId],
-        defaults: &HashMap<OccurrenceId, &DefaultValue>,
+        defaults: &HashMap<OccurrenceId, &'a DefaultValue>,
     ) -> Option<Request<'a>> {
         let tree = source.tree.as_ref();
         let keys = (|| {
-            let mut keys: HashMap<SymbolId, Option<(Vec<u8>, Vec<MemberInput>)>> = HashMap::new();
+            let mut keys: HashMap<SymbolId, Option<(Vec<u8>, Vec<CurrentMemberInput<'_>>)>> =
+                HashMap::new();
             // This scan issues no diagnostics or semantic queries: uncertain input
             // declines retention, leaving original encounter/error order to produce.
             for &id in order {
@@ -150,23 +176,17 @@ impl ClassProjections {
                 // A source-bearing default disqualifies only its own type. All
                 // occurrences still pass current membership/default admission.
                 let default = if member.kind == MemberKind::Var {
-                    Some((*defaults.get(&id)?).clone())
+                    Some(*defaults.get(&id)?)
                 } else {
                     None
                 };
-                if matches!(&default, Some(DefaultValue::Scalar(value)) if source_bearing(value)) {
+                if matches!(default, Some(DefaultValue::Scalar(value)) if source_bearing(value)) {
                     *slot = None;
                 }
                 let Some((_, inputs)) = slot.as_mut() else {
                     continue;
                 };
-                inputs.push(MemberInput {
-                    kind: member.kind,
-                    definition: member.definition,
-                    name: member.name,
-                    metadata: Arc::clone(&member.metadata),
-                    default,
-                });
+                inputs.push(CurrentMemberInput { member, default });
             }
             Some(keys)
         })();
@@ -186,13 +206,24 @@ impl ClassProjections {
                     self.declined.fetch_add(1, Ordering::Relaxed);
                     return None;
                 };
-                let hit = self
-                    .values
-                    .lookup(&key, tree)
-                    .filter(|value| value.inputs == inputs);
+                let hit = self.values.lookup(&key, tree).filter(|value| {
+                    value.inputs.len() == inputs.len()
+                        && inputs
+                            .iter()
+                            .zip(&value.inputs)
+                            .all(|(current, previous)| current.matches(previous))
+                });
                 if hit.is_some() {
                     self.hits.fetch_add(1, Ordering::Relaxed);
                 }
+                let inputs = if hit.is_some() {
+                    Vec::new()
+                } else {
+                    inputs
+                        .into_iter()
+                        .map(CurrentMemberInput::into_owned)
+                        .collect()
+                };
                 Some((
                     owner,
                     Owner {
