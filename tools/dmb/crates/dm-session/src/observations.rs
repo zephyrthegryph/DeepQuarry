@@ -3,6 +3,8 @@
 mod receipt;
 mod receipt_admission;
 mod receipt_pool;
+mod input_delta;
+pub use input_delta::{DependencyCoverage, InputDelta};
 pub use receipt::{Receipt, ReceiptIter, ReceiptStorageView};
 pub use receipt_admission::ReceiptAdmission;
 pub use receipt_pool::ReceiptGroupPool;

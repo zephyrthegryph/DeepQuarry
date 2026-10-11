@@ -4,6 +4,9 @@
 
 #[path = "frontend_callable_roster.rs"]
 mod callable_roster;
+#[path = "frontend_procedure_delta.rs"]
+mod procedure_delta;
+pub use procedure_delta::ProcedureInputDelta;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
 pub use callable_roster::{
