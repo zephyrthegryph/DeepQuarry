@@ -23,7 +23,6 @@
 
 	speed = 3
 
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	mob_size = MOB_LARGE
 
@@ -51,6 +50,7 @@
 
 // It speaks the swarm's language.
 CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	configure(mob_movement(softfall = TRUE))
 	configure(mob_kind(can_be_antagged = TRUE))
 	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, always_swap = 1))
 	knows(LANGUAGE_SWARMBOT)

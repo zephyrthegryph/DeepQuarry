@@ -29,7 +29,6 @@
 
 	endurance = 50
 	movement_cooldown = 1.5
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	projectiletype = /obj/item/projectile/energy/excavate
 	projectilesound = SFX_WEAPONS_PULSE3
@@ -67,6 +66,7 @@
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/mechanical/mining_drone, mining_drone_allowed_tools, list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly breaks apart."))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 	owns_one(nameof(my_storage), starts = /obj/item/ore_bag)

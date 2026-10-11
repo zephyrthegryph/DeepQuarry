@@ -4725,3 +4725,9 @@ the answer). No behaviour change intended.
 * **Burning is a stat** (STAT_ON_FIRE) held by the fire-stack status effect while lit; fire stacks are summed from the effects on read
   (`fire_stacks_of()`), and the decay rate is `fire_stack_decay_rate()` (silicons -0.55). The mob no longer caches either.
 * `exploit_addons` / `exploit_for` are deleted: written, never read.
+
+## Softfall, hovering and parachuting type defaults are trait fields (base_vars lane B, bv-hud)
+
+The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
+30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
+behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).

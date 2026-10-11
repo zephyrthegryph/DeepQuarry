@@ -22,9 +22,6 @@
 	response_disarm = "flailed at"
 	response_harm   = "punched"
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_CULT)
 
@@ -94,6 +91,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
 	rolls(nameof(name), PROC_REF(roll_numbered_name))
 	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))

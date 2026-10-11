@@ -11,54 +11,13 @@
 //   cloaked            — antag cloaking flag (set only on cloak/uncloak events)
 //   parachute          — multi-Z parachute-deployed flag (rare)
 //   parachuting        — multi-Z falling-with-parachute flag (rare)
-//   softfall           — type-default for mobs that survive falls (6 mob types; see GLOB lookup)
-//   hovering           — type-default for hovering mobs (~25 mob types; GLOB lookup)
+//   softfall           — per-instance override of the mob_movement() trait's softfall
+//   hovering           — per-instance override of the mob_movement() trait's hovering
 //
-// For softfall and hovering, type-defaults are kept in GLOBs so removing the
-// var from /atom/movable doesn't lose per-type behavior.
+// The per-type defaults of softfall, hovering and parachuting are the mob_movement() trait (configure(mob_movement(...)) on the type).
 
-GLOBAL_LIST_INIT(dq_softfall_by_type, list(
-	/mob/living/simple_mob/humanoid/astral_collective = TRUE,
-	/mob/living/simple_mob/vore/squirrel = TRUE,
-	/mob/living/simple_mob/animal/passive/bird = TRUE,
-	/mob/living/simple_mob/construct = TRUE,
-	/mob/living/silicon/pai = TRUE,
-	/mob/living/silicon/robot/drone/swarm = TRUE,
-))
 
-GLOBAL_LIST_INIT(dq_hovering_by_type, list(
-	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/siege = TRUE,
-	/mob/living/simple_mob/animal/tyr/rainbow_fly = TRUE,
-	/mob/living/simple_mob/vore/spacecritter = TRUE,
-	/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray = TRUE,
-	/mob/living/simple_mob/vore/smokestar = TRUE,
-	/mob/living/simple_mob/blob/spore = TRUE,
-	/mob/living/simple_mob/mechanical/cyber_horror = TRUE,
-	/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror = TRUE,
-	/mob/living/simple_mob/mechanical/viscerator = TRUE,
-	/mob/living/simple_mob/mechanical/corrupt_maint_drone = FALSE,
-	/mob/living/simple_mob/mechanical/mining_drone = TRUE,
-	/mob/living/simple_mob/mechanical/combat_drone = TRUE,
-	/mob/living/simple_mob/mechanical/mecha/hoverpod = TRUE,
-	/mob/living/simple_mob/mechanical/ward = TRUE,
-	/mob/living/simple_mob/animal/space/gnat = TRUE,
-	/mob/living/simple_mob/animal/space/shark = TRUE,
-	/mob/living/simple_mob/animal/space/ray = TRUE,
-	/mob/living/simple_mob/animal/space/carp = TRUE,
-	/mob/living/simple_mob/animal/space/space_worm/head = TRUE,
-	/mob/living/simple_mob/animal/passive/bird = TRUE,
-	/mob/living/simple_mob/animal/sif/tymisian = TRUE,
-	/mob/living/simple_mob/animal/sif/glitterfly = TRUE,
-	/mob/living/simple_mob/vore/alienanimals/space_ghost = TRUE,
-	/mob/living/simple_mob/vore/alienanimals/spooky_ghost = TRUE,
-	/mob/living/simple_mob/vore/alienanimals/space_jellyfish = TRUE,
-	/mob/living/simple_mob/construct = TRUE,
-))
 
-GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
-	/mob/living/simple_mob/animal/passive/bird = TRUE,
-	/mob/living/simple_mob/construct = TRUE,
-))
 
 // The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
 sparse(/atom/movable, belly_cycles, type = num)
@@ -161,14 +120,11 @@ sparse(/atom/movable, hovering, type = bool)
 	resolved_cache[t] = default_value
 	return default_value
 
-GLOBAL_LIST_EMPTY(_dq_parachuting_resolved)
-GLOBAL_LIST_EMPTY(_dq_softfall_resolved)
-GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
 /proc/dq_get_parachuting(atom/movable/am)
 	if(sparse_has(am, parachuting))
 		return sparse_get(am, parachuting)
-	return _dq_resolve_typed_default(am.type, GLOB.dq_parachuting_by_type, GLOB._dq_parachuting_resolved, FALSE)
+	return ismob(am) ? movement_of(am).parachuting : FALSE // the type's mob_movement() trait
 
 /proc/dq_set_parachuting(atom/movable/am, v)
 	sparse_set_or(am, parachuting, v, FALSE)
@@ -176,7 +132,7 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 /proc/dq_get_softfall(atom/movable/am)
 	if(sparse_has(am, softfall))
 		return sparse_get(am, softfall)
-	return _dq_resolve_typed_default(am.type, GLOB.dq_softfall_by_type, GLOB._dq_softfall_resolved, FALSE)
+	return ismob(am) ? movement_of(am).softfall : FALSE // the type's mob_movement() trait
 
 /proc/dq_set_softfall(atom/movable/am, v)
 	if(isnull(v) && !sparse_has(am, softfall))
@@ -186,13 +142,13 @@ GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 /proc/dq_get_hovering(atom/movable/am)
 	if(sparse_has(am, hovering))
 		return sparse_get(am, hovering)
-	return _dq_resolve_typed_default(am.type, GLOB.dq_hovering_by_type, GLOB._dq_hovering_resolved, FALSE)
+	return ismob(am) ? movement_of(am).hovering : FALSE // the type's mob_movement() trait
 
 /proc/dq_set_hovering(atom/movable/am, v)
 	if(isnull(v) && !sparse_has(am, hovering))
 		return
 	sparse_set(am, hovering, v ? TRUE : FALSE)
-/// Clears the per-instance override so the type-default (GLOB lookup) re-applies.
+/// Clears the per-instance override so the type default (the mob_movement() trait) re-applies.
 /proc/dq_clear_hovering(atom/movable/am)
 	sparse_set(am, hovering, null)
 /proc/dq_clear_softfall(atom/movable/am)

@@ -29,7 +29,6 @@
 	faction = FACTION_GNAT
 	endurance = 5
 	movement_cooldown = 0
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "baps the"
 	response_disarm = "gently pushes aside the"
@@ -50,6 +49,7 @@
 	organ_names = /datum/decl/mob_organ_names/space_gnat
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/gnat)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 10))
 	configure(mob_movement(bump = 0))
 

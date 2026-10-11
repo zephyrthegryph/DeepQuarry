@@ -31,7 +31,6 @@
 	can_be_drop_prey = FALSE
 	can_be_drop_pred = TRUE
 	pass_flags = PASSTABLE //mostly for the melee mobs.
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	min_oxy = 0
 	max_oxy = 0
@@ -497,6 +496,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	configure(mob_movement(softfall = TRUE))
 	immune_to_incapacitation()
 	rolls(nameof(experiment_effect), pick_one(list(/datum/body_effect/astralcollect_swift, /datum/body_effect/astralcollect_regen, /datum/body_effect/astralcollect_titan, /datum/body_effect/astralcollect_mistake)))
 	rolls(nameof(size_multiplier), PROC_REF(experiment_size), from = list(nameof(experiment_effect)))

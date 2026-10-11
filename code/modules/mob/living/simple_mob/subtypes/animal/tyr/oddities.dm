@@ -21,10 +21,10 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 5
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
 	configure(light_glow(color = "#FF3300"))
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5))
 
 /obj/item/projectile/energy/blob/rainbowfly
