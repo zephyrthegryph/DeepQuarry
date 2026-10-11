@@ -6,7 +6,7 @@
 	var/obj/item/cell/device/weapon/recharge/alien/cell = allocate(/obj/item/cell/device/weapon/recharge/alien, T)
 	TEST_ASSERT_EQUAL(cell.swaps_to, /obj/item/cell/void, "the actual cell declares its real reciprocal replacement type")
 	TEST_ASSERT(cell.maxcharge > 0, "the original actual cell has positive capacity")
-	cell.charge = cell.maxcharge / 4
+	cell.set_charge(cell.maxcharge / 4)
 	cell.persist_storable = FALSE
 	var/original_charge = cell.charge
 	var/floor_items_before = length(contents_of(T, /obj/item))

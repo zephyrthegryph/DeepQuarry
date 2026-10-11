@@ -140,6 +140,11 @@
 			actual_by_type[type] = list("runtime while reading it: [read.name]")
 		qdel(target)
 		TEST_ASSERT(dq_pin_cleanup_target(baseline_atoms, baseline_allocated, sweep_room, target_gravity), "capture left fixture products")
+	// Compare substantive text while discarding only volatile fixture IDs and diagnostic source locations.
+	for(var/type in actual_by_type)
+		actual_by_type[type] = dq_pin_stable_rows(type, actual_by_type[type])
+	for(var/type in expected_by_type)
+		expected_by_type[type] = dq_pin_stable_rows(type, expected_by_type[type])
 	var/report = dq_snapshot_compare(snapshot_directory(), snapshot_name(), actual_by_type, expected_by_type, bad)
 	TEST_ASSERT(isnull(report), report)
 
@@ -369,3 +374,36 @@ CAPABILITIES(/obj/dq_pin_rejected_constructor)
 		TEST_ASSERT_NULL(locate(/obj/item/dq_pin_wrong_part) in T, "cleanup removes the rejected child")
 		var/list/after_atoms = dq_pin_fixture_atoms()
 		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")
+
+/// Pin-only normalization: no gameplay refusal or constructor diagnostic is suppressed.
+/proc/dq_pin_stable_rows(type, list/rows)
+	. = list()
+	var/static/regex/robot_serial = regex(@"Default Cyborg-[0-9]+", "g")
+	var/static/regex/source_line = regex(@",[0-9]+\]", "g")
+	for(var/row in rows)
+		var/text = row
+		if(ispath(type, /obj/machinery/vr_sleeper) && (findtext(text, "(refused: The virtual reality sleeper rejects Default Cyborg-") || findtext(text, "(refused: The strange pod rejects Default Cyborg-")))
+			text = robot_serial.Replace(text, "Default Cyborg-<serial>")
+		if(findtext(text, "runtime while making it: ") == 1)
+			var/list/parts = splittext(text, "%//%")
+			for(var/index in 1 to length(parts))
+				var/part = parts[index]
+				if(copytext(part, 1, 2) == "\[" && findtext(part, ".dm"))
+					parts[index] = source_line.Replace(part, @",<line>]")
+			text = jointext(parts, "%//%")
+		. += text
+
+/datum/unit_test/dq_conversion_pin_stable_capture/Run()
+	var/list/old = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-751 with a sharp beep.)"))
+	var/list/new = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: The virtual reality sleeper rejects Default Cyborg-648 with a sharp beep.)"))
+	TEST_ASSERT_EQUAL(old[1], new[1], "Only random default robot serial is volatile")
+	var/list/alien_old = dq_pin_stable_rows(/obj/machinery/vr_sleeper/alien, list("robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-751 with a sharp beep.)"))
+	var/list/alien_new = dq_pin_stable_rows(/obj/machinery/vr_sleeper/alien, list("robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-648 with a sharp beep.)"))
+	TEST_ASSERT_EQUAL(alien_old[1], alien_new[1], "Alien capsule default serial is equally volatile")
+	var/list/changed = dq_pin_stable_rows(/obj/machinery/vr_sleeper, list("robot|none menu: Enter VR Capsule (refused: capsule is broken)"))
+	TEST_ASSERT_NOTEQUAL(old[1], changed[1], "A changed substantive refusal remains different")
+	var/list/where = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: Holder was not passed a mob.%//%\[\"code/engine/lifeforms/params.dm\",239]%//%"))
+	var/list/moved = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: Holder was not passed a mob.%//%\[\"code/engine/lifeforms/params.dm\",251]%//%"))
+	TEST_ASSERT_EQUAL(where[1], moved[1], "Only diagnostic source line is volatile")
+	var/list/fault = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: different constructor fault.%//%\[\"code/engine/lifeforms/params.dm\",251]%//%"))
+	TEST_ASSERT_NOTEQUAL(where[1], fault[1], "Constructor fault text remains substantive")

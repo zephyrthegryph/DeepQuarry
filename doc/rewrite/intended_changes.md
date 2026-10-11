@@ -4655,3 +4655,7 @@ mapper can notice:
 * **The macrophage's** disease bonus to endurance and damage is computed once its disease exists (`derives()`).
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
+
+## Acceptance prerequisite pin refresh (2026-10-11)
+
+The robot and robot/platform conversion-pin key rows now include the eight `robot_utility.*` ops declared by master `8b3e4f9ed9`. Platform also includes `platform_cargo.eject_cargo`, declared by master `babfc5a10a`. Only these two key rows changed; clicks and menu rows are unchanged. The pin comparison discards random default Cyborg serials only in VR-capsule refusal text and numeric source locations only in constructor traceback segments, retaining the complete refusal/fault text and source paths. These are capture stability repairs, not gameplay changes.

@@ -98,7 +98,7 @@
 /// A cell with `percent` of its charge, on a tile beside the rack.
 /datum/unit_test/dq_p2_smes/proc/p2_rack_cell(percent = 100, type = /obj/item/cell/high)
 	var/obj/item/cell/C = allocate(type, p2_side_spot())
-	C.charge = C.maxcharge * percent / 100
+	C.set_charge(C.maxcharge * percent / 100)
 	return C
 
 /// The actor clicks a cell onto the rack and waits.
@@ -419,7 +419,7 @@
 	R.remove_charge(20 / CELLRATE)
 	TEST_ASSERT(abs(first.charge - (first_before - 20)) < 0.01, "the first cell paid")
 	TEST_ASSERT_EQUAL(second.charge, before, "the second paid nothing")
-	first.charge = 5
+	first.set_charge(5)
 	R.remove_charge(20 / CELLRATE)
 	TEST_ASSERT_EQUAL(first.charge, 0, "the first is empty")
 	TEST_ASSERT(abs(second.charge - (before - 15)) < 0.01, "and the second paid the rest")
@@ -477,7 +477,7 @@
 	var/expected = total / CELLRATE * SMESRATE
 	TEST_ASSERT(abs(p2_rack_stored(R) - expected) < 1, "the stored charge is the cells'")
 	var/obj/item/cell/first = cells[1]
-	first.charge = 0
+	first.set_charge(0)
 	p2_rack_power_step(R)
 	TEST_ASSERT(abs(p2_rack_stored(R) - (total - first.maxcharge) / CELLRATE * SMESRATE) < 1, "and follows a cell that was drained")
 
@@ -547,7 +547,7 @@
 	p2_rack_power_step(R)
 	TEST_ASSERT("charge7" in p2_rack_overlays(R), "a full rack is at seven")
 	var/obj/item/cell/C = p2_rack_cells(R)[1]
-	C.charge = 0
+	C.set_charge(0)
 	p2_rack_power_step(R)
 	TEST_ASSERT("charge0" in p2_rack_overlays(R), "an empty rack is at zero")
 
