@@ -202,7 +202,7 @@ pub fn collect_with_defaults<'a, R: Resolver>(
     for (code, debug) in seeds {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls, None)
+    finish_collection(seen, pending, symbols, host, calls, None, None)
 }
 /// Consume compact body seeds before initializer/map seeds in their original order.
 pub fn collect_prepared_with_defaults<'a, R: Resolver>(
@@ -242,6 +242,21 @@ pub(crate) fn collect_owned_prepared_retained<'a, R: Resolver>(
     calls: Option<&dyn dm_tree::constants::PureCalls>,
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
 ) -> Result<Collected, String> {
+    collect_owned_prepared_retained_verified(
+        prepared, trailing, defaults, symbols, host, calls, fragments, None,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn collect_owned_prepared_retained_verified<'a, R: Resolver>(
+    prepared: impl IntoIterator<Item = PreparedSeed>,
+    trailing: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+    fragments: Option<&crate::initializer_lowering::InitializerFragments>,
+    verification: Option<&crate::lowering_memo::VerifyPolicy>,
+) -> Result<Collected, String> {
     let mut seen = HashMap::new();
     let mut pending = VecDeque::new();
     enqueue_defaults(defaults, &mut seen, &mut pending)?;
@@ -265,7 +280,7 @@ pub(crate) fn collect_owned_prepared_retained<'a, R: Resolver>(
     for (code, debug) in trailing {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls, fragments)
+    finish_collection(seen, pending, symbols, host, calls, fragments, verification)
 }
 fn finish_collection<R: Resolver>(
     mut seen: HashMap<SymRef, Arc<[u8]>>,
@@ -274,6 +289,7 @@ fn finish_collection<R: Resolver>(
     host: &R,
     calls: Option<&dyn dm_tree::constants::PureCalls>,
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
+    verification: Option<&crate::lowering_memo::VerifyPolicy>,
 ) -> Result<Collected, String> {
     let mut current_keys = Vec::new();
     let mut result = Collected {
@@ -290,6 +306,7 @@ fn finish_collection<R: Resolver>(
             host,
             calls,
             fragments,
+            verification,
             &mut current_keys,
         )?;
         let debug_origins = DebugOrigins {

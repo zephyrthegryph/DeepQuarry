@@ -52,6 +52,8 @@ pub struct InitializerAssemblies {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    verification_checked: AtomicU64,
+    verification_mismatches: AtomicU64,
 }
 pub(crate) struct RetainedAssembly {
     code: std::sync::Arc<ResolverProc>,
@@ -111,6 +113,8 @@ impl Default for InitializerAssemblies {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            verification_checked: AtomicU64::new(0),
+            verification_mismatches: AtomicU64::new(0),
         }
     }
 }
@@ -121,7 +125,16 @@ impl InitializerAssemblies {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            verification_checked: AtomicU64::new(0),
+            verification_mismatches: AtomicU64::new(0),
         })
+    }
+    /// Request-scoped assembly verification only.
+    pub fn assembly_verification_counts(&self) -> (u64, u64) {
+        (
+            self.verification_checked.load(Ordering::Relaxed),
+            self.verification_mismatches.load(Ordering::Relaxed),
+        )
     }
     pub(crate) fn publish_successful(&self) -> bool {
         self.values.publish_successful()
@@ -171,26 +184,61 @@ impl InitializerAssemblies {
             host,
         )
     }
+    #[cfg(test)]
     pub(super) fn lookup_with_current_roots<'expr, R: Resolver>(
         &self,
         key: &receipts::Binding,
         root_count: usize,
-        mut root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
+        root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
         symbols: &SymbolTable,
         host: &R,
     ) -> Option<(
         crate::InitializerCode,
         std::sync::Arc<crate::symbolic::InitializerEncoding>,
     )> {
-        let payload = self.values.lookup(
-            &key.key,
-            &receipts::Host {
-                binding: key,
-                resolver: host,
-            },
-        )?;
+        self.lookup_with_current_roots_verified(key, root_count, root, symbols, host, None)
+            .ok()
+            .flatten()
+    }
+    #[allow(clippy::type_complexity)]
+    pub(super) fn lookup_with_current_roots_verified<'expr, R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        root_count: usize,
+        mut root: impl FnMut(usize) -> Option<std::borrow::Cow<'expr, dm_syntax::Expr>>,
+        symbols: &SymbolTable,
+        host: &R,
+        mut verify: Option<
+            &mut dyn FnMut(
+                &super::fragments::verify::Receipt,
+                &crate::InitializerCode,
+            )
+                -> Result<(), dm_codegen_byond::initializer::InitializerError>,
+        >,
+    ) -> Result<
+        Option<(
+            crate::InitializerCode,
+            Arc<crate::symbolic::InitializerEncoding>,
+        )>,
+        dm_codegen_byond::initializer::InitializerError,
+    > {
+        let admission_host = receipts::Host {
+            binding: key,
+            resolver: host,
+        };
+        let accepted = verify
+            .as_ref()
+            .and_then(|_| self.values.lookup_accepted(&key.key, &admission_host));
+        let payload = match if verify.is_some() {
+            accepted.as_ref().map(|value| Arc::clone(&value.value))
+        } else {
+            self.values.lookup(&key.key, &admission_host)
+        } {
+            Some(payload) => payload,
+            None => return Ok(None),
+        };
         if root_count != payload.root_count || payload.recipes.len() != payload.root_indexes.len() {
-            return None;
+            return Ok(None);
         }
         let recorder = crate::lowering_memo::RecordingResolver::new(host);
         let captured = payload
@@ -201,14 +249,17 @@ impl InitializerAssemblies {
                 let current = root(*index)?;
                 recipe.reissue(current.as_ref(), &recorder, symbols)
             })
-            .collect::<Option<std::collections::BTreeMap<_, _>>>()?;
+            .collect::<Option<std::collections::BTreeMap<_, _>>>();
+        let Some(captured) = captured else {
+            return Ok(None);
+        };
         if captured
             .keys()
             .copied()
             .ne(payload.references.iter().copied())
         {
             self.declined.fetch_add(1, Ordering::Relaxed);
-            return None;
+            return Ok(None);
         }
         let code = if captured.is_empty() {
             crate::InitializerCode::from_admitted_owner(
@@ -220,8 +271,15 @@ impl InitializerAssemblies {
             code.modified_instances = captured;
             crate::InitializerCode::from_admitted(code, payload.encoding.type_requests())
         };
+        if let (Some(verify), Some(accepted)) = (verify.as_mut(), accepted.as_ref()) {
+            self.verification_checked.fetch_add(1, Ordering::Relaxed);
+            if let Err(error) = verify(&accepted.reads, &code) {
+                self.verification_mismatches.fetch_add(1, Ordering::Relaxed);
+                return Err(error);
+            }
+        }
         self.hits.fetch_add(1, Ordering::Relaxed);
-        Some((code, std::sync::Arc::clone(&payload.encoding)))
+        Ok(Some((code, std::sync::Arc::clone(&payload.encoding))))
     }
     #[cfg(test)]
     pub(super) fn remember_with_recipes(

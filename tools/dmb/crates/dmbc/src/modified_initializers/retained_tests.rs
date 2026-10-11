@@ -202,3 +202,52 @@ fn nested_modified_replay_reissues_current_fields_and_preserves_fifo_and_fresh_c
     });
     assert_eq!(entries, 0);
 }
+
+#[test]
+fn modified_fragment_hit_verifies_same_fresh_producer_after_origin_shift() {
+    let mut symbols = SymbolTable::default();
+    for text in [
+        "/",
+        "/obj/outer",
+        "/obj/inner",
+        "child",
+        "amount",
+        "zz_unused",
+    ] {
+        symbols.intern(text).unwrap();
+    }
+    let host = Host { inner_exists: true };
+    let store = crate::initializer_lowering::InitializerFragments::default();
+    let policy = crate::lowering_memo::VerifyPolicy::all();
+    let old = [seed(0, 7)];
+    collect_owned_prepared_retained_verified(
+        std::iter::empty(),
+        std::iter::empty(),
+        &old,
+        &symbols,
+        &host,
+        None,
+        Some(&store),
+        Some(&policy),
+    )
+    .unwrap();
+    let current = [seed(100, 7)];
+    let reused = collect_owned_prepared_retained_verified(
+        std::iter::empty(),
+        std::iter::empty(),
+        &current,
+        &symbols,
+        &host,
+        None,
+        Some(&store),
+        Some(&policy),
+    )
+    .unwrap();
+    let fresh = collect_with_defaults(std::iter::empty(), &current, &symbols, &host, None).unwrap();
+    assert_eq!(store.modified_fragment_verification_counts(), (2, 0));
+    assert_eq!(reused.artifacts.len(), fresh.artifacts.len());
+    for (actual, fresh) in reused.artifacts.iter().zip(&fresh.artifacts) {
+        assert_eq!(code_bytes(actual), code_bytes(fresh));
+        assert_eq!(actual.debug_origins, fresh.debug_origins);
+    }
+}

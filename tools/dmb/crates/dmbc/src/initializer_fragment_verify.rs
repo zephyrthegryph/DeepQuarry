@@ -1,8 +1,7 @@
-//! Fragment-only missing-read verification. Assemblies and modified fragments
-//! are not covered here; ordinary exact admission remains mandatory everywhere.
+//! Shared initializer verification comparisons; ordinary exact admission remains mandatory.
 use super::*;
 use std::collections::BTreeMap;
-type Receipt = dm_session::Receipt<receipts::Query, receipts::Answer, receipts::Domain>;
+pub(crate) type Receipt = dm_session::Receipt<receipts::Query, receipts::Answer, receipts::Domain>;
 fn ledger(
     reads: impl IntoIterator<
         Item = dm_session::Observation<receipts::Query, receipts::Answer, receipts::Domain>,
@@ -25,7 +24,7 @@ fn ledger(
     }
     Some(result)
 }
-fn same_reads(
+pub(in crate::initializer_lowering) fn same_reads(
     key: &receipts::Binding,
     old: &Receipt,
     fresh: Vec<dm_session::Observation<receipts::Query, receipts::Answer, receipts::Domain>>,
@@ -69,31 +68,94 @@ pub(super) fn fragment<R: Resolver>(
     }
     let fresh = prepared.try_lower_fragment(index, &recorder);
     let reads = receipts::reads(key, recorder.reads());
+    let fresh = fresh.and_then(|fragment| {
+        fragment
+            .map(|value| value.code().clone())
+            .ok_or_else(|| InitializerError::Unsupported("fresh fragment unavailable".into()))
+    });
+    code(
+        key,
+        old_reads,
+        old.code(),
+        fresh,
+        reads,
+        "assignment fragment",
+    )
+}
+
+pub(crate) fn code(
+    key: &receipts::Binding,
+    old_reads: &Receipt,
+    old: &dm_codegen_byond::lower_resolver::ResolverProc,
+    fresh: Result<dm_codegen_byond::lower_resolver::ResolverProc, InitializerError>,
+    reads: Vec<dm_session::Observation<receipts::Query, receipts::Answer, receipts::Domain>>,
+    stage: &str,
+) -> Result<(), InitializerError> {
     let category = if !same_reads(key, old_reads, reads) {
         Some("complete canonical read ledger")
     } else {
         match fresh {
-            Ok(Some(fresh))
-                if old.modified_references() == fresh.modified_references()
-                    && crate::lowering_memo_wire::verification_code_equal(
-                        old.code(),
-                        fresh.code(),
-                    ) =>
-            {
-                None
-            }
-            Ok(Some(_)) => Some("semantic fragment output"),
-            Ok(None) => Some("fresh producer no longer supports this fragment"),
-            Err(_) => Some("fresh producer rejected this fragment"),
+            Ok(fresh) if crate::lowering_memo_wire::verification_code_equal(old, &fresh) => None,
+            Ok(_) => Some("semantic fragment output"),
+            Err(_) => Some("fresh producer rejected this initializer"),
         }
     };
     match category {
         None => Ok(()),
         Some(category) => Err(InitializerError::Invalid(format!(
-            "initializer fragment verification mismatch: {category}; target={:?}",
-            write.target
+            "initializer {stage} verification mismatch: {category}"
         ))),
     }
+}
+
+/// Same complete assembly producer, with current views created only for a selected hit.
+pub(in crate::initializer_lowering) fn assembly<R: Resolver>(
+    classified: &crate::initializer_policy::ClassifiedInitializers,
+    group: &crate::initializer_policy::RuntimeGroup,
+    context: dm_codegen_byond::initializer::InitializerContext<'_>,
+    host: &R,
+) -> Result<dm_codegen_byond::lower_resolver::ResolverProc, InitializerError> {
+    let values = group
+        .writes
+        .iter()
+        .map(|&index| {
+            let write = classified.writes.get(index).ok_or_else(|| {
+                InitializerError::Invalid("current assembly write missing".into())
+            })?;
+            let value = write.runtime_value.as_ref().ok_or_else(|| {
+                InitializerError::Invalid("current assembly runtime value missing".into())
+            })?;
+            Ok(super::super::value_expression(value))
+        })
+        .collect::<Result<Vec<_>, InitializerError>>()?;
+    let views = group
+        .writes
+        .iter()
+        .enumerate()
+        .map(|(index, &write_index)| {
+            let write = &classified.writes[write_index].write;
+            dm_codegen_byond::initializer::AssignmentView {
+                source_site: write.source_site,
+                target: &write.target,
+                lexical_owner: write.lexical_owner,
+                value: values[index].as_ref(),
+                occurrence: dm_syntax::Span::new(index, index),
+            }
+        })
+        .collect::<Vec<_>>();
+    let continuations = group
+        .writes
+        .iter()
+        .map(|&index| {
+            super::super::value_continuation(&classified.writes[index], group.receiver.is_none())
+        })
+        .collect();
+    dm_codegen_byond::initializer::lower_with_value_continuations(
+        &views,
+        context,
+        host,
+        continuations,
+    )
 }
 
 #[cfg(test)]

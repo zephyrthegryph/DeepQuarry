@@ -15,7 +15,7 @@ use std::{
 #[path = "initializer_fragments_modified.rs"]
 mod modified;
 #[path = "initializer_fragment_verify.rs"]
-mod verify;
+pub(crate) mod verify;
 
 pub struct InitializerFragments {
     values: receipts::Store<RetainedFragment>,
@@ -25,6 +25,8 @@ pub struct InitializerFragments {
     pub declined: AtomicU64,
     verification_checked: AtomicU64,
     verification_mismatches: AtomicU64,
+    modified_verification_checked: AtomicU64,
+    modified_verification_mismatches: AtomicU64,
 }
 pub(super) struct FragmentWithRecipes {
     pub code: AssignmentFragment,
@@ -87,6 +89,8 @@ impl Default for InitializerFragments {
             declined: AtomicU64::new(0),
             verification_checked: AtomicU64::new(0),
             verification_mismatches: AtomicU64::new(0),
+            modified_verification_checked: AtomicU64::new(0),
+            modified_verification_mismatches: AtomicU64::new(0),
         }
     }
 }
@@ -157,6 +161,8 @@ impl InitializerFragments {
             declined: AtomicU64::new(0),
             verification_checked: AtomicU64::new(0),
             verification_mismatches: AtomicU64::new(0),
+            modified_verification_checked: AtomicU64::new(0),
+            modified_verification_mismatches: AtomicU64::new(0),
         })
     }
     /// Request-scoped fragment verification only; assemblies are not included.
@@ -164,6 +170,13 @@ impl InitializerFragments {
         (
             self.verification_checked.load(Ordering::Relaxed),
             self.verification_mismatches.load(Ordering::Relaxed),
+        )
+    }
+    pub fn modified_fragment_verification_counts(&self) -> (u64, u64) {
+        (
+            self.modified_verification_checked.load(Ordering::Relaxed),
+            self.modified_verification_mismatches
+                .load(Ordering::Relaxed),
         )
     }
     pub(crate) fn publish_successful(&self) -> bool {

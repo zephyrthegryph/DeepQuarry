@@ -13,6 +13,7 @@ use std::sync::Arc;
 mod fragments;
 #[path = "initializer_receipts.rs"]
 pub(crate) mod receipts;
+pub(crate) use fragments::verify as verification;
 pub use fragments::InitializerFragments;
 #[path = "initializer_assemblies.rs"]
 mod assemblies;
@@ -606,16 +607,40 @@ fn lower_group<R: Resolver>(
         }
     };
     if let Some((store, key)) = assembly {
-        if let Some((code, encoding)) = store.lookup_with_current_roots(
-            key,
-            group.writes.len(),
-            |index| {
-                let write = classified.writes.get(*group.writes.get(index)?)?;
-                Some(value_expression(write.runtime_value.as_ref()?))
-            },
-            symbols,
-            host,
-        ) {
+        let selected = memo.is_some_and(|memo| memo.verification.select());
+        let mut verify = |old_reads: &fragments::verify::Receipt, old: &crate::InitializerCode| {
+            let recorder = crate::lowering_memo::RecordingResolver::new(host);
+            for &index in &group.writes {
+                let write = &classified.writes[index].write;
+                recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.lexical_owner));
+                if let Some(identity) = write.lexical_procedure {
+                    recorder.record_occurrence(identity);
+                }
+            }
+            let fresh = fragments::verify::assembly(classified, group, context(), &recorder);
+            fragments::verify::code(
+                key,
+                old_reads,
+                old,
+                fresh,
+                receipts::reads(key, recorder.reads()),
+                "assembly",
+            )
+        };
+        if let Some((code, encoding)) = store
+            .lookup_with_current_roots_verified(
+                key,
+                group.writes.len(),
+                |index| {
+                    let write = classified.writes.get(*group.writes.get(index)?)?;
+                    Some(value_expression(write.runtime_value.as_ref()?))
+                },
+                symbols,
+                host,
+                if selected { Some(&mut verify) } else { None },
+            )
+            .map_err(map_error)?
+        {
             return Ok(LoweredInitializerUnit {
                 declaration_presence,
                 scope: group
@@ -646,28 +671,7 @@ fn lower_group<R: Resolver>(
     let value_continuations = group
         .writes
         .iter()
-        .map(
-            |&index| match classified.writes[index].runtime_value.as_ref() {
-                Some(RuntimeValue::SizedArrayExplicit {
-                    dimensions,
-                    expression,
-                }) => Some(dm_codegen_byond::initializer::ValueContinuation {
-                    dimensions,
-                    before_assignment: group.receiver.is_none(),
-                    emit_assignment: expression.is_some(),
-                    assignment_is_allocation: false,
-                }),
-                Some(RuntimeValue::SizedArray(dimensions)) => {
-                    Some(dm_codegen_byond::initializer::ValueContinuation {
-                        dimensions,
-                        before_assignment: false,
-                        emit_assignment: true,
-                        assignment_is_allocation: true,
-                    })
-                }
-                _ => None,
-            },
-        )
+        .map(|&index| value_continuation(&classified.writes[index], group.receiver.is_none()))
         .collect::<Vec<_>>();
     let assignment_views = assignments
         .iter()
@@ -947,3 +951,29 @@ fn lower_group<R: Resolver>(
 
 #[path = "initializer_recipe_handoff.rs"]
 mod recipe_handoff;
+
+fn value_continuation(
+    write: &crate::initializer_policy::ClassifiedWrite,
+    global: bool,
+) -> Option<dm_codegen_byond::initializer::ValueContinuation<'_>> {
+    match write.runtime_value.as_ref() {
+        Some(RuntimeValue::SizedArrayExplicit {
+            dimensions,
+            expression,
+        }) => Some(dm_codegen_byond::initializer::ValueContinuation {
+            dimensions,
+            before_assignment: global,
+            emit_assignment: expression.is_some(),
+            assignment_is_allocation: false,
+        }),
+        Some(RuntimeValue::SizedArray(dimensions)) => {
+            Some(dm_codegen_byond::initializer::ValueContinuation {
+                dimensions,
+                before_assignment: false,
+                emit_assignment: true,
+                assignment_is_allocation: true,
+            })
+        }
+        _ => None,
+    }
+}

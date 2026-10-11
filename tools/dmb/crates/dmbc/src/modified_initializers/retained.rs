@@ -45,6 +45,7 @@ pub(super) fn lower<R: Resolver>(
     host: &R,
     calls: Option<&dyn dm_tree::constants::PureCalls>,
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
+    verification: Option<&crate::lowering_memo::VerifyPolicy>,
     current_keys: &mut Vec<Arc<[u8]>>,
 ) -> Result<Lowered, String> {
     // External pure-call providers cannot license reuse of their evaluations.
@@ -61,8 +62,49 @@ pub(super) fn lower<R: Resolver>(
         // This request-local root memo is populated only after exact admission,
         // and only for field indexes named by nested expression recipes.
         let mut roots = CurrentFields::new(descriptor.fields(), calls);
-        if let Some((code, encoding)) =
-            store.modified(binding, symbols, &proof_host, |index| roots.root(index))
+        let selected = verification.is_some_and(|policy| policy.select());
+        let verify = |old_reads: &crate::initializer_lowering::verification::Receipt,
+                      old: &crate::InitializerCode| {
+            // Fresh evaluator values and reads do not come from the replay recorder/root memo.
+            let fields = descriptor
+                .fields()
+                .iter()
+                .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
+                .collect::<Result<Vec<_>, String>>()?;
+            let recorder = crate::lowering_memo::RecordingResolver::new(&proof_host);
+            let fresh = dm_codegen_byond::initializer::lower_modified_assignments(
+                &fields,
+                descriptor.runtime_type(),
+                dm_codegen_byond::initializer::InitializerContext {
+                    symbols,
+                    resource_search_context: descriptor.resource_context(),
+                    debug: Some(source),
+                },
+                &recorder,
+            );
+            crate::initializer_lowering::verification::code(
+                binding,
+                old_reads,
+                old,
+                fresh,
+                crate::initializer_lowering::receipts::reads(binding, recorder.reads()),
+                "modified fragment",
+            )
+            .map_err(|error| format!("{error:?}"))
+        };
+        let mut verifier = |reads: &crate::initializer_lowering::verification::Receipt,
+                            code: &crate::InitializerCode| {
+            verify(reads, code).map_err(dm_codegen_byond::initializer::InitializerError::Invalid)
+        };
+        if let Some((code, encoding)) = store
+            .modified_verified(
+                binding,
+                symbols,
+                &proof_host,
+                |index| roots.root(index),
+                if selected { Some(&mut verifier) } else { None },
+            )
+            .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?
         {
             return Ok(Lowered {
                 code,

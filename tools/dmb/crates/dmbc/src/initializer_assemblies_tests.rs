@@ -342,3 +342,111 @@ fn admitted_plain_assembly_shares_actual_code_owner_and_rebinds_current_debug() 
         previous = Some(std::sync::Arc::clone(current.code.code_owner()));
     }
 }
+
+#[test]
+fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_output() {
+    let store = InitializerAssemblies::default();
+    let key = receipts::Binding::fixture(b"verified-assembly");
+    let mut symbols = SymbolTable::default();
+    for name in ["/", "value"] {
+        symbols.intern(name).unwrap();
+    }
+    let target = InitializerTarget::Shared {
+        slot: SymbolId::of("value"),
+        owner: SymbolId::of("/"),
+        name: SymbolId::of("value"),
+    };
+    let value = dm_syntax::parse_expression("7").expr.unwrap();
+    let roots = [AssignmentView {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: &target,
+        lexical_owner: SymbolId::of("/"),
+        value: &value,
+        occurrence: dm_syntax::Span::new(0, 0),
+    }];
+    let host = Host(1);
+    let context = || InitializerContext {
+        symbols: &symbols,
+        resource_search_context: None,
+        debug: None,
+    };
+    let recorder = crate::lowering_memo::RecordingResolver::new(&host);
+    let original = Arc::new(lower_assignment_views(&roots, context(), &recorder).unwrap());
+    store
+        .remember_shared_with_recipes(&key, &original, &roots, &recorder, None)
+        .unwrap();
+    let mut verify = |reads: &super::super::fragments::verify::Receipt,
+                      old: &crate::InitializerCode| {
+        let fresh_recorder = crate::lowering_memo::RecordingResolver::new(&host);
+        let fresh = lower_assignment_views(&roots, context(), &fresh_recorder);
+        super::super::fragments::verify::code(
+            &key,
+            reads,
+            old,
+            fresh,
+            receipts::reads(&key, fresh_recorder.reads()),
+            "assembly",
+        )
+    };
+    assert!(store
+        .lookup_with_current_roots_verified(
+            &key,
+            1,
+            |_| panic!("no recipes"),
+            &symbols,
+            &host,
+            Some(&mut verify)
+        )
+        .unwrap()
+        .is_some());
+    assert_eq!(store.assembly_verification_counts(), (1, 0));
+    let accepted = store
+        .values
+        .lookup_accepted(
+            &key.key,
+            &receipts::Host {
+                binding: &key,
+                resolver: &host,
+            },
+        )
+        .unwrap();
+    let changed = dm_syntax::parse_expression("8").expr.unwrap();
+    let changed_roots = [AssignmentView {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: &target,
+        lexical_owner: SymbolId::of("/"),
+        value: &changed,
+        occurrence: dm_syntax::Span::new(0, 0),
+    }];
+    let changed_code = Arc::new(lower_assignment_views(&changed_roots, context(), &host).unwrap());
+    store.values.insert_with(
+        Arc::clone(&key.key),
+        accepted.reads.iter().cloned().collect(),
+        Vec::new(),
+        std::mem::size_of::<RetainedAssembly>(),
+        || RetainedAssembly {
+            code: Arc::clone(&changed_code),
+            recipes: Vec::new(),
+            root_indexes: Vec::new(),
+            references: Vec::new(),
+            root_count: 1,
+            encoding: Arc::new(crate::symbolic::InitializerEncoding::new(&changed_code)),
+        },
+    );
+    let error = store
+        .lookup_with_current_roots_verified(
+            &key,
+            1,
+            |_| panic!("no recipes"),
+            &symbols,
+            &host,
+            Some(&mut verify),
+        )
+        .err()
+        .expect("corrupt assembly cannot return a hit");
+    assert!(
+        matches!(error, dm_codegen_byond::initializer::InitializerError::Invalid(ref message) if message.contains("semantic fragment output"))
+    );
+    assert_eq!(store.assembly_verification_counts(), (2, 1));
+    assert_eq!(store.hits.load(Ordering::Relaxed), 1);
+}
