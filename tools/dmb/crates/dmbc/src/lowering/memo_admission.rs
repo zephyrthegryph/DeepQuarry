@@ -3,12 +3,12 @@ use super::*;
 #[cfg(test)]
 #[path = "memo_admission_tests.rs"]
 mod tests;
-pub(super) enum Admission<'a> {
+pub(in crate::lowering) enum Admission<'a> {
     Admitted(CompletedInput),
     NeedsLowering(Box<dyn FnOnce() -> Result<CompletedInput, Vec<LoweringDiagnostic>> + Send + 'a>),
 }
 impl Admission<'_> {
-    pub(super) fn finish(self) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
+    pub(in crate::lowering) fn finish(self) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
         match self {
             Self::Admitted(input) => Ok(input),
             Self::NeedsLowering(produce) => produce(),
@@ -18,7 +18,7 @@ impl Admission<'_> {
 
 /// Both phases use the existing bracketed executor and retain source positions.
 /// A panicked phase leaves an empty slot for the caller's ordinary diagnostic.
-pub(super) fn map_stage<I: Sync, O: Send>(
+pub(in crate::lowering) fn map_stage<I: Sync, O: Send>(
     executor: &dm_exec::BuildExecutor,
     inputs: &[I],
     chunk: usize,
@@ -62,20 +62,20 @@ pub(super) fn map_stage<I: Sync, O: Send>(
         })
         .collect()
 }
-pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub(in crate::lowering) fn lower_one_input<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     body: &BodyOccurrence,
     host: &R,
     request_admission: Option<&symbolic_input::RequestAdmission<'_, R>>,
     policy: &P,
-    startup: Option<&crate::startup::CapturedStartup>,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
-    bodies: &dm_tree::frontend::BodyArena<'_>,
+    bodies: &dm_tree::frontend::BodyArena<'frontend>,
     symbolic: bool,
     capture_references: bool,
     selections_only: bool,
     disk_replay_bindings: Option<DiskReplayBindings<'_>>,
-    prepared_body: Option<&PreparedBody<'_>>,
+    prepared_body: Option<&PreparedBody<'frontend>>,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
     super::admit_one_input(
         frontend,
