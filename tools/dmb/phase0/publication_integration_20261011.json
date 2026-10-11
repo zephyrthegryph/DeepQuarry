@@ -79,11 +79,31 @@
       "change": "Prepared request roster issues shared symbolic source binding set",
       "tests_run": false,
       "cross_request_reuse": false
+    },
+    {
+      "commit": "4619268921",
+      "change": "One-shot initializer shared fragment/assembly core and optional exact portable disk transport",
+      "tests_run": false,
+      "focused_filter": "initializer_lowering::disk::tests::",
+      "disk_reuse_declines": [
+        "modified descriptors",
+        "resource-bearing recipes",
+        "unproven custom evaluator policies",
+        "failure payloads"
+      ]
+    },
+    {
+      "commit": "4a8de8750d",
+      "change": "Generic exact local input delta and authenticated frontend procedure issuer",
+      "tests_run": false,
+      "semantic_read_coverage": "UncoveredAll",
+      "scheduler_skip_enabled": false,
+      "abi_graph_comparison": "once per revision pair"
     }
   ],
   "validation_blocker": {
     "kind": "owned E disk space",
-    "free_bytes_observed": 279080960,
+    "free_bytes_observed": 278351872,
     "rust_and_runtime_jobs_active": false,
     "automatic_cleanup_rejected": true,
     "manual_script": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-old-compiler-rcgu.ps1"
