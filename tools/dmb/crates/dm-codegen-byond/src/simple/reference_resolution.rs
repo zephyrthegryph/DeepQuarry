@@ -111,13 +111,9 @@ impl Compiler<'_> {
                 let Some(slot) = slots.get(&SymRef::VariableSlot(*slot)) else {
                     return Ok(());
                 };
-                if slot.owner == SymbolId::of("/") {
-                    Q::GlobalVar(slot.name)
-                } else {
-                    Q::DeclaredVarType {
-                        owner: slot.owner,
-                        name: slot.name,
-                    }
+                Q::DeclaredVarType {
+                    owner: slot.owner,
+                    name: slot.name,
                 }
             }
             // Locals/arguments and procedure statics use separate declaration issuers.

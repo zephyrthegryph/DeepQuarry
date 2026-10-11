@@ -21,6 +21,9 @@ impl dm_ir::Resolver for TypedGlobal {
                 owner,
                 name,
             },
+            Q::DeclaredVarType { owner: o, name: n } if o == owner && n == name => {
+                R::DeclaredType(Some(path))
+            }
             Q::RuntimeType(p) if p == path => match self.0 {
                 0 => R::Missing,
                 1 => R::Symbol(SymbolId::of("/datum/current_runtime")),
