@@ -7,22 +7,22 @@
 
 /datum/trait_state/diabetic/life_tick()
 	var/mob/living/living_guy = owner
-	if(living_guy.nutrition > nutrition_threshold || isbelly(living_guy.loc))
+	if(nutrition_of(living_guy) > nutrition_threshold || isbelly(living_guy.loc))
 		return
-	if((living_guy.nutrition < nutrition_threshold) && prob(5))
-		if(living_guy.nutrition > nutrition_weak)
+	if((nutrition_of(living_guy) < nutrition_threshold) && prob(5))
+		if(nutrition_of(living_guy) > nutrition_weak)
 			to_chat(living_guy, span_warning("You start to feel noticeably weak as your stomach rumbles, begging for more food. Maybe you should eat something to keep your blood sugar up"))
-		else if(living_guy.nutrition > nutrition_danger)
+		else if(nutrition_of(living_guy) > nutrition_danger)
 			to_chat(living_guy, span_warning("You begin to feel rather weak, and your stomach rumbles loudly. You feel lightheaded and it's getting harder to think. You really need to eat something."))
-		else if(living_guy.nutrition > nutrition_critical)
+		else if(nutrition_of(living_guy) > nutrition_critical)
 			to_chat(living_guy, span_danger("You're feeling very weak and lightheaded, and your stomach continously rumbles at you. You really need to eat something!"))
 		else
 			to_chat(living_guy,span_critical("You're feeling extremely weak and lightheaded. You feel as though you might pass out any moment and your stomach is screaming for food by now! You should really find something to eat!"))
-	if((living_guy.nutrition < nutrition_weak) && prob(10))
+	if((nutrition_of(living_guy) < nutrition_weak) && prob(10))
 		living_guy.status_at_least(STAT_CONFUSED, 10)
-	if((living_guy.nutrition < nutrition_danger) && prob(25))
+	if((nutrition_of(living_guy) < nutrition_danger) && prob(25))
 		living_guy.status_set(STAT_HALLUCINATING, min(30,living_guy.status_units(STAT_HALLUCINATING)+8))
-	if((living_guy.nutrition < nutrition_critical) && prob(5))
+	if((nutrition_of(living_guy) < nutrition_critical) && prob(5))
 		living_guy.status_set(STAT_DROWSY, min(100,living_guy.status_units(STAT_DROWSY)+30))
 
 /// Trait system: low blood sugar.

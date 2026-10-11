@@ -47,7 +47,12 @@
 	var/transforming = null	//Carbon
 	var/other = 0.0
 	var/real_name = null
-	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
+	var/nickname = null
+	var/flavor_text = ""
+	var/med_record = ""
+	var/sec_record = ""
+	var/gen_record = ""
+	var/exploit_record = ""
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
@@ -226,7 +231,6 @@ CAPABILITIES(/mob)
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
-	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))

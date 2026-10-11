@@ -81,7 +81,7 @@
 /datum/species/custom/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE)
 	. = ..(traits, H, custom_base,reset_dna)
 	H.endurance = H.species.total_health
-	H.hunger_rate = H.species.hunger_factor
+	set_hunger_rate(H, H.species.hunger_factor)
 
 // Stub species overrides for shoving trait abilities into
 

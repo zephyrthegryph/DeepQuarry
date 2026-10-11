@@ -1148,7 +1148,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(FIRE_LAYER)
 
-	if(!on_fire)
+	if(!stat_value(src, STAT_ON_FIRE))
 		return
 
 	overlays_standing[FIRE_LAYER] = image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state(), layer = BODY_LAYER+FIRE_LAYER)
@@ -1353,7 +1353,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/proc/stop_flying()
 	if(QDESTROYING(src))
 		return
-	flying = FALSE
+	set_flying(src, FALSE)
 	return 1
 
 /mob/living/carbon/human/stop_flying()

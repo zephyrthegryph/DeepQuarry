@@ -106,5 +106,5 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 		if(H.species)
 			P.accuracy += H.species.gun_accuracy_mod
 			P.dispersion = max(P.dispersion + H.species.gun_accuracy_dispersion_mod, 0)
-		if(H.fear > 30)
+		if(H.status_units(STAT_FEAR) > 30)
 			P.accuracy -= 35

@@ -8,7 +8,6 @@
 
 	icon = 'icons/mob/xenos_32.dmi'
 	vis_height = 32
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	sight = SEE_MOBS
 
 	faction = "xeno"
@@ -173,3 +172,6 @@ CAPABILITIES(/mob/living/simple_mob/xeno_ch/queen)
 	icon_living = "alienqmaid"
 	icon_rest = "alienqmaid_sleep"
 	icon_state = "alienqmaid"
+
+/mob/living/simple_mob/xeno_ch/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

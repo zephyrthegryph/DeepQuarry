@@ -109,9 +109,9 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 	if(consent_refusal(B, L))
 		return null
 
-	var/old_nutrition = L.nutrition
+	var/old_nutrition = nutrition_of(L)
 	B.steal_nutrition(L, delta_factor)
-	if(L.nutrition < 100)
+	if(nutrition_of(L) < 100)
 		B.absorb_living(L)
 		if(B.show_liquids && B.reagent_mode_flags & DM_FLAG_REAGENTSABSORB && B.reagents.total_volume < B.reagents.maximum_volume) //absorption reagent production
 			B.GenerateBellyReagents_absorbed() //A bonus for pred, I know for a fact prey is usually at zero nutrition when absorption finally happens
@@ -125,7 +125,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 
 /datum/digest_mode/unabsorb/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
 	if(L.absorbed)
-		if(B.owner.nutrition >= 100)
+		if(nutrition_of(B.owner) >= 100)
 			B.owner.adjust_nutrition(-100)
 			B.unabsorb_living(L)
 			return GLOB.digest_result_update
@@ -140,7 +140,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 	noise_chance = 10
 
 /datum/digest_mode/drain/process_mob(obj/belly/B, mob/living/L, delta_factor = 1)
-	var/old_nutrition = L.nutrition
+	var/old_nutrition = nutrition_of(L)
 	B.steal_nutrition(L, delta_factor)
 	consider_healthbar(L, old_nutrition, B.owner)
 
@@ -189,7 +189,7 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 	if(consent_refusal(B, L)) //healpref check; can't heal the dead with healbelly
 		return null
 	var/old_vitality = L.vitality()
-	if(B.owner.nutrition > 90 && L.is_injured())
+	if(nutrition_of(B.owner) > 90 && L.is_injured())
 		// Organic tissue: the body resolves which afflictions each mechanism can reach.
 		var/organic_mended = 0
 		organic_mended += L.mend(TREAT_TISSUE_REPAIR, 2.5 * delta_factor)
@@ -209,9 +209,9 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		if(B.health_impacts_size)
 			PUBLISH(B.owner, belly_change)
 		consider_healthbar(L, old_vitality, B.owner)
-		if(organic_mended > 0 && L.nutrition <= 400)
+		if(organic_mended > 0 && nutrition_of(L) <= 400)
 			L.adjust_nutrition(1 * delta_factor)
-	else if(B.owner.nutrition > 90 && (L.nutrition <= 400))
+	else if(nutrition_of(B.owner) > 90 && (nutrition_of(L) <= 400))
 		B.owner.adjust_nutrition(-1 * delta_factor)
 		L.adjust_nutrition(1 * delta_factor)
 	if(L.stat != oldstat)
@@ -431,11 +431,11 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 		L.chat_healthbar(L)
 
 /datum/digest_mode/absorb/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
-	if(old_nutrition <= L.nutrition)
+	if(old_nutrition <= nutrition_of(L))
 		return
 
 	var/old_percent = ((old_nutrition - 100) / 500) * 100
-	var/new_percent = ((L.nutrition - 100) / 500) * 100
+	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
 	var/lets_announce = FALSE
 	if(new_percent <= 95 && old_percent > 95)
 		lets_announce = TRUE
@@ -454,11 +454,11 @@ GLOBAL_LIST_INIT(digest_result_update, list("to_update" = TRUE))
 
 /datum/digest_mode/drain/consider_healthbar(mob/living/L, old_nutrition, mob/living/reciever)
 
-	if(old_nutrition <= L.nutrition)
+	if(old_nutrition <= nutrition_of(L))
 		return
 
 	var/old_percent = ((old_nutrition - 100) / 500) * 100
-	var/new_percent = ((L.nutrition - 100) / 500) * 100
+	var/new_percent = ((nutrition_of(L) - 100) / 500) * 100
 
 	var/lets_announce = FALSE
 	if(new_percent <= 95 && old_percent > 95)

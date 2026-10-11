@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	var/mob/living/M = target
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) < 500))
 			if(prob(15))
 				M.apply_effect((rand(30,80)),IRRADIATE)
 				M.status_at_least(STAT_WEAKENED, 5)
@@ -204,7 +204,7 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	var/mob/living/M = target
 	if(ishuman(target)) //These rays make plantmen fat.
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition < 500))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) < 500))
 			M.adjust_nutrition(30)
 	else if (istype(target, /mob/living/carbon/))
 		M.show_message(span_blue("The radiation beam dissipates harmlessly through your body."))
@@ -229,7 +229,7 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	var/mob/living/M = target
 	if(ishuman(target)) //Make plantpeople thin, seeing as we're removing reagents from actual plants
 		var/mob/living/carbon/human/H = M
-		if((H.species.flags & IS_PLANT) && (M.nutrition > 30))
+		if((H.species.flags & IS_PLANT) && (nutrition_of(M) > 30))
 			M.adjust_nutrition(-30)
 	else if (istype(target, /mob/living/carbon/))
 		M.show_message(span_blue("The radiation beam dissipates harmlessly through your body."))

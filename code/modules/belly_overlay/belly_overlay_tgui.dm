@@ -74,7 +74,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 	. = "[B.belly_fullscreen]|[alpha]|[B.belly_fullscreen_color]|[B.belly_fullscreen_color2]|[B.belly_fullscreen_color3]|[B.belly_fullscreen_color4]|[B.digest_mode]|[B.item_digest_mode]"
 	var/mob/living/lp = prey
 	if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
-		var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
+		var/mush_content = B.owner ? (nutrition_of(B.owner) + LAZYLEN(B.contents) * B.item_mush_val) : 0
 		// max/min_mush, max_liquid_level and custom_max_volume are runtime-editable
 		// (VorePanel liq-attribute setters) and feed the layers' pixel_y/alpha math —
 		// leave any out of the signature and an edit doesn't repaint until something
@@ -125,10 +125,10 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 			var/mob/living/lp = prey
 			if(istype(lp) && B.show_liquids && lp.liquidbelly_visuals)
 				var/icon/bubbles = 'icons/mob/vore_fullscreens/bubbles.dmi'
-				if(B.mush_overlay && (B.owner?.nutrition > 0 || B.max_mush == 0 || B.min_mush > 0 \
+				if(B.mush_overlay && (nutrition_of(B.owner) > 0 || B.max_mush == 0 || B.min_mush > 0 \
 						|| (LAZYLEN(B.contents) * B.item_mush_val) > 0))
-					var/mush_content = B.owner ? (B.owner.nutrition + LAZYLEN(B.contents) * B.item_mush_val) : 0
-					var/mush_alpha = min(B.mush_alpha, prey.vore_prefs.max_voreoverlay_alpha)
+					var/mush_content = B.owner ? (nutrition_of(B.owner) + LAZYLEN(B.contents) * B.item_mush_val) : 0
+					var/mush_alpha = min(B.mush_alpha, prey.max_voreoverlay_alpha)
 					var/pixel_y = -450 + (450 / max(B.max_mush, 1) * max(min(B.max_mush, mush_content), 1))
 					if(pixel_y < -450 + (450 / 100 * B.min_mush))
 						pixel_y = -450 + (450 / 100 * B.min_mush)

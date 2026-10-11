@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/nif)
 	data["theme"] = save_data["ui_theme"]
 
 	// Random biometric information
-	data["nutrition"] = human.nutrition
+	data["nutrition_of(src)"] = nutrition_of(human)
 	data["isSynthetic"] = HAS_SYNTHETIC_BIOLOGY(human)
 
 	data["nif_percent"] = round((durability/initial(durability))*100)

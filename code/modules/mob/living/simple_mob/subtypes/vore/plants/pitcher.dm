@@ -127,16 +127,16 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	var/lastmeat = src.meat //If Life procs every 2 seconds that means it takes 20 seconds to digest a steak
 	src.meat = max(0,src.meat - src.meatspeed) //Clamp it to zero
 	src.adjust_nutrition(lastmeat - src.meat) //If there's no meat, this will just be zero.
-	if(src.nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
+	if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_FRUIT)
 		if(prob(10)) //Should be about once every 20 seconds.
 			src.grow_fruit()
-	var/lastnutrition = src.nutrition
+	var/lastnutrition = nutrition_of(src)
 	src.adjust_nutrition(-src.pitcher_metabolism)
-	var/digested = lastnutrition - src.nutrition // Metabolising nutrients heals the pitcher.
+	var/digested = lastnutrition - nutrition_of(src) // Metabolising nutrients heals the pitcher.
 	if(digested > 0)
 		src.mend(TREAT_TISSUE_REPAIR, digested)
 		src.mend(TREAT_ANTITOXIN, digested * 3)
-	if(src.nutrition < src.pitcher_metabolism) // Starving.
+	if(nutrition_of(src) < src.pitcher_metabolism) // Starving.
 		src.injure(INJURY_TOXIN, src.pitcher_metabolism, flags = INJURE_SILENT)
 	if(COOLDOWN_FINISHED(src, lifechecks_cooldown))
 		COOLDOWN_START(src, lifechecks_cooldown, 30 SECONDS)
@@ -155,14 +155,14 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/grow_fruit() //This proc handles the pitcher turning nutrition into fruit (and new pitchers).
 	if(!fruit)
-		if(nutrition >= PITCHER_SATED + NUTRITION_FRUIT)
+		if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_FRUIT)
 			fruit = TRUE
 			adjust_nutrition(-NUTRITION_FRUIT)
 			return
 		else
 			return
 	if(fruit)
-		if(nutrition >= PITCHER_SATED + NUTRITION_PITCHER)
+		if(nutrition_of(src) >= PITCHER_SATED + NUTRITION_PITCHER)
 			var/turf/T = safepick(circleviewturfs(src, 2))
 			if(T.density) //No spawning in walls
 				return
@@ -269,7 +269,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 			vore_selected_of(src).release_all_contents() //If there's no prey, spit out everything.
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/handle_hungry() //Let's run this check every 30 seconds. This is how a hungry pitcher tries to lure prey.
-	if(nutrition <= PITCHER_HUNGRY) //Is sanity check another way to say redundancy?
+	if(nutrition_of(src) <= PITCHER_HUNGRY) //Is sanity check another way to say redundancy?
 		var/turf/T = get_turf(src)
 		var/cardinal_turfs = T.CardinalTurfs()
 

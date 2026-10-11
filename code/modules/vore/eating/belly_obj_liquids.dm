@@ -12,7 +12,7 @@
 			gen_interval++
 			return
 
-		if(owner.nutrition >= gen_cost && gen_interval >= gen_time)
+		if(nutrition_of(owner) >= gen_cost && gen_interval >= gen_time)
 			if(owner.nutrition_percent() >= reagent_gen_cost_limit)
 				GenerateBellyReagents()
 			gen_interval = 0

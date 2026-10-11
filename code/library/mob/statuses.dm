@@ -31,6 +31,9 @@ STAT(/mob, drowsy, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
 STAT(/mob, hallucinating, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
 STAT(/mob, dizzy, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
 STAT(/mob, jittery, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
+/// Fear (phobias, frights) and tiredness (vore drain): points that wear off one per cycle; a human reacts to how many are left.
+STAT(/mob, fear, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
+STAT(/mob, tiredness, MAX, base = 0, units = LIFE_CYCLE, virtual = TRUE)
 /// Godmode: no harm reaches the mob, and it holds the incapacitation immunities while on.
 STAT(/mob, godmode, ANY, virtual = TRUE)
 
@@ -95,6 +98,8 @@ GLOBAL_LIST_INIT(status_policy_rows, list(
 		list(STAT_SLURRING),
 		list(STAT_DROWSY),
 		list(STAT_HALLUCINATING, "wear" = 2),
+		list(STAT_FEAR),
+		list(STAT_TIREDNESS),
 		// Dizziness and jitters are 0-1000 points: 3 wear off per cycle, 15 while resting.
 		list(STAT_DIZZY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_dizzy_started, "on_end" = /mob/proc/status_dizzy_ended),
 		list(STAT_JITTERY, "wear" = 3, "wear_resting" = 15, "max_units" = 1000, "on_start" = /mob/proc/status_jittery_started, "on_end" = /mob/proc/status_jittery_ended),

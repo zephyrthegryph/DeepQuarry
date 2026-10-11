@@ -934,7 +934,7 @@ CAPABILITIES(/datum/vore_look)
 		var/mob/living/living_host = host()
 		if(new_size == living_host.size_multiplier)
 			return FALSE
-		if(living_host.nutrition >= VORE_RESIZE_COST)
+		if(nutrition_of(living_host) >= VORE_RESIZE_COST)
 			living_host.adjust_nutrition(-VORE_RESIZE_COST)
 			living_host.resize(new_size, uncapped = living_host.has_large_resize_bounds(), ignore_prefs = TRUE)
 	return TRUE

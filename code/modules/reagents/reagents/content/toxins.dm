@@ -622,7 +622,7 @@
 
 /datum/reagent/thermite/venom/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_BURN, 3 * removed, source = src)
-	if(M.fire_stacks <= 1.5)
+	if(fire_stacks_of(M) <= 1.5)
 		M.adjust_fire_stacks(0.15)
 	if(inert_for(M))
 		return

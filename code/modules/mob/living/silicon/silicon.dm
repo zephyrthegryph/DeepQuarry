@@ -30,12 +30,14 @@
 	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
 
 	var/hudmode = null
-	fire_stack_decay_rate = -0.55
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
 	footstep_type = FOOTSTEP_MOB_SHOE
 	footstep_volume = 1
 	footstep_e_range = -6
+
+/mob/living/silicon/fire_stack_decay_rate()
+	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
 	immune_to(STAT_DIZZY)

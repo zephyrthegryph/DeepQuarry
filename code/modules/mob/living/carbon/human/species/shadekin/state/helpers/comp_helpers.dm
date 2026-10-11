@@ -156,7 +156,7 @@
 		owner.adjust_nutrition(current_gains * 5 * nutrition_conversion_scaling)
 		return current_gains
 
-	if(shadekin_get_energy() < 50 && owner.nutrition > 500)
+	if(shadekin_get_energy() < 50 && nutrition_of(owner) > 500)
 		owner.adjust_nutrition(-(nutrition_conversion_scaling * 50))
 		current_gains += nutrition_conversion_scaling
 	return current_gains

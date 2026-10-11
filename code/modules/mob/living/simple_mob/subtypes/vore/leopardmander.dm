@@ -1,5 +1,4 @@
 /mob/living/simple_mob/vore/leopardmander
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	name = "leopardmander"
 	desc = "A huge salamander-like drake. They are best known for their rarity, their voracity, their very potent paralyzing venom, and their healing stomach. This one is white."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leopardmander)
@@ -246,3 +245,6 @@ CAPABILITIES(/obj/random/mob/leopardmander)
 			/mob/living/simple_mob/vore/leopardmander = 89,
 			/mob/living/simple_mob/vore/leopardmander/blue = 10,
 			/mob/living/simple_mob/vore/leopardmander/exotic = 1)))
+
+/mob/living/simple_mob/vore/leopardmander/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

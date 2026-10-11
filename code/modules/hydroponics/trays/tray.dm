@@ -209,7 +209,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
 			set_weedlevel(0)
 			act_message(nymph, src, MSG_SELF(span_notice("You begin rooting through %T%, ripping out weeds and eating them noisily.")), \
 				MSG_OTHERS(span_notice(span_bold("%U%") + " begins rooting through %T%, ripping out weeds and eating them noisily.")))
-		else if(nymph.nutrition > 100 && nutrilevel < 10)
+		else if(nutrition_of(nymph) > 100 && nutrilevel < 10)
 			nymph.adjust_nutrition(-(((10-nutrilevel)*5)))
 			set_nutrilevel(10)
 			act_message(nymph, src, MSG_SELF(span_notice("You secrete a trickle of green liquid, refilling %T%.")), \

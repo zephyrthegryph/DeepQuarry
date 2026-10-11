@@ -85,10 +85,10 @@
 /// its own, twice as fast asleep. Scaled by the server's regeneration config.
 /datum/body/humanoid/regeneration_level()
 	var/mob/living/carbon/human/H = owner
-	if(H.is_dead() || H.nutrition < REGENERATION_STARVING_NUTRITION)
+	if(H.is_dead() || nutrition_of(H) < REGENERATION_STARVING_NUTRITION)
 		return 0
 	. = REGENERATION_BASE_LEVEL * CONFIG_GET(number/organ_regeneration_multiplier)
-	if(H.nutrition < REGENERATION_HUNGRY_NUTRITION)
+	if(nutrition_of(H) < REGENERATION_HUNGRY_NUTRITION)
 		. *= REGENERATION_HUNGRY_MULT
 	if(H.has_status(STAT_SLEEPING))
 		. *= REGENERATION_SLEEP_MULT

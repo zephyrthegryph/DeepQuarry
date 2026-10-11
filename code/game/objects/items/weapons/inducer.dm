@@ -269,15 +269,19 @@ CAPABILITIES(/obj/item/inducer)
 CAPABILITIES(/obj/item/cell/standin)
 	configure(item_worn(flags = ABSTRACT))
 	param(nameof(hume), pos = 1)
+	setup(PROC_REF(charge_from_hume))
 
 // ALLOW(init/INSTANCE_STATE): a stand-in cell charges from its human's nutrition, over its parents' charge, and lasts twenty seconds
 /obj/item/cell/standin/Initialize(mapload)
 	. = ..()
 	if(!istype(hume))
 		return INITIALIZE_HINT_QDEL
-	set_charge(hume.nutrition)
-	set_maxcharge(initial(hume.nutrition))
 
+
+/// Setup: the stand-in holds what its human has eaten, up to what a new body starts with.
+/obj/item/cell/standin/proc/charge_from_hume()
+	set_charge(nutrition_of(hume))
+	set_maxcharge(hume.starting_nutrition())
 
 /obj/item/cell/standin/give(amount)
 	. = ..(amount * NUTRITION_COEFF) //Shrink amount to store

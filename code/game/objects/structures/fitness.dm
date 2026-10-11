@@ -17,7 +17,7 @@ CAPABILITIES(/obj/structure/fitness/punchingbag)
 	var/mob/living/carbon/human/user = A.actor
 	if(!istype(user))
 		return TRUE
-	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
+	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to use the punching bag. Go eat something."))
 	else if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
@@ -59,7 +59,7 @@ CAPABILITIES(/obj/structure/fitness/weightlifter)
 	var/mob/living/carbon/human/user = lifter
 	if(user.loc != loc)
 		return "You must be on the weight machine to use it."
-	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
+	if(nutrition_of(user) < 70) // Set minimum nutrition_of(src) to be the same as in fitness_machines_vr.dm
 		return "You need more energy to lift weights, go eat something."
 	if(user.weight < 70) // Add weight loss to old fitness equipment
 		return "You're too skinny to risk losing any more weight."

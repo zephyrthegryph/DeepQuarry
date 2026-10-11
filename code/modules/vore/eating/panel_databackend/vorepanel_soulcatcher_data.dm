@@ -81,7 +81,7 @@
 	var/nutri_value = 0
 	if(isliving(owner))
 		var/mob/living/H = owner
-		nutri_value = H.nutrition
+		nutri_value = nutrition_of(H)
 
 	abilities["nutrition"] = nutri_value
 	abilities["size_change"] = list (

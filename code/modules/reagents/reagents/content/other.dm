@@ -220,7 +220,7 @@
 	M.status_set(STAT_SLEEPING, 0)
 	M.purge_radiation(INFINITY)
 	M.extinguish_mob()
-	M.fire_stacks = 0
+	M.set_fire_stacks(0)
 	M.mend(TREAT_ANTITOXIN, 100)
 	if(M.body_temperature() > BODYTEMP_NORMAL)
 		M.adjust_bodytemperature(-(40 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = BODYTEMP_NORMAL)

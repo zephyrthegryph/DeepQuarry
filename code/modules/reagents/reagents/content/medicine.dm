@@ -961,7 +961,7 @@ TYPE_TABLE(/datum/reagent/gastirodaxon, daxon_partners, list(REAGENT_ID_HEPANEPH
 /datum/reagent/gastirodaxon/daxon_clash(mob/living/carbon/human/H, removed)
 	if(prob(10))
 		H.vomit(1)
-	else if(H.nutrition > 30)
+	else if(nutrition_of(H) > 30)
 		H.adjust_nutrition(-removed * 30)
 
 /datum/reagent/hepanephrodaxon

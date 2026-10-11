@@ -137,7 +137,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
-	if(nutrition >= max_nutrition)
+	if(nutrition_of(src) >= max_nutrition)
 		if(user == src)
 			to_chat(src, span_notice("You're too full to eat another bite."))
 			return

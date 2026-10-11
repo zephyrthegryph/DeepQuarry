@@ -170,7 +170,7 @@
 
 		if(SMITE_TERROR)
 			if(ishuman(target))
-				target.fear = 200
+				target.status_set(STAT_FEAR, 200)
 
 		if(SMITE_PEPPERNADE)
 			var/obj/item/grenade/chem_grenade/teargas/grenade = new /obj/item/grenade/chem_grenade/teargas

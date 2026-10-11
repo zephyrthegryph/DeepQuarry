@@ -384,28 +384,28 @@
 		owner_adjust_nutrition((nutrition_percent / 100) * compensation * 4.5 * personal_nutrition_modifier * pred_digestion_efficiency)
 
 /obj/belly/proc/steal_nutrition(mob/living/L, delta_factor = 1)
-	if(L.nutrition <= 110)
+	if(nutrition_of(L) <= 110)
 		if(drainmode == DR_SLEEP && ishuman(L)) //Slowly put prey to sleep
-			if(L.tiredness <= 105)
-				L.set_tiredness((L.tiredness + 6 * delta_factor))
-			if(L.tiredness <= 90 && L.tiredness >= 75)
+			if(L.status_units(STAT_TIREDNESS) <= 105)
+				L.status_set(STAT_TIREDNESS, (L.status_units(STAT_TIREDNESS) + 6 * delta_factor))
+			if(L.status_units(STAT_TIREDNESS) <= 90 && L.status_units(STAT_TIREDNESS) >= 75)
 				to_chat(L, span_warning("You are about to fall unconscious!"))
 				to_chat(owner, span_warning("[L] is about to fall unconscious!"))
 		if(drainmode == DR_FAKE && ishuman(L)) //Slowly bring prey to the edge of sleep without crossing it
-			if(L.tiredness <= 93)
-				L.set_tiredness((L.tiredness + 6 * delta_factor))
+			if(L.status_units(STAT_TIREDNESS) <= 93)
+				L.status_set(STAT_TIREDNESS, (L.status_units(STAT_TIREDNESS) + 6 * delta_factor))
 		if(drainmode == DR_WEIGHT && ishuman(L)) //Slowly drain your prey's weight and add it to your own
 			if(L.weight > 70)
 				L.weight -= (0.01 * L.weight_loss * delta_factor)
 				owner.weight += (0.01 * L.weight_loss * delta_factor) //intentionally dependant on the prey's weight loss ratio rather than the preds weight gain to keep them in pace with one another.
-	if(L.nutrition >= 100)
+	if(nutrition_of(L) >= 100)
 		// Multiplicative drain: prey loses 5% of nutrition per baseline tick. Convert
 		// to a per-tick rate raised to delta_factor so a faster subsystem drains the
 		// equivalent fraction per real second instead of a flat 5% per (shorter) tick.
 		// At delta_factor == 1 this is exactly the original 0.95 multiplier.
 		var/keep_fraction = 0.95 ** delta_factor
-		var/oldnutrition = (L.nutrition * (1 - keep_fraction))
-		L.set_nutrition((L.nutrition * keep_fraction))
+		var/oldnutrition = (nutrition_of(L) * (1 - keep_fraction))
+		L.set_nutrition((nutrition_of(L) * keep_fraction))
 		if(show_liquids && reagent_mode_flags & DM_FLAG_REAGENTSDRAIN && reagents.total_volume < reagents.maximum_volume)   // draining reagent production //Added to this proc now since it's used for draining
 			owner_adjust_nutrition(oldnutrition * 0.75) //keeping the price static, due to how much nutrition can flunctuate
 			GenerateBellyReagents_absorbing() //Dont need unique proc so far

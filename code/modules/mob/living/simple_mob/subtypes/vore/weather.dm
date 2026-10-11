@@ -185,12 +185,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 /mob/living/simple_mob/vore/boss_jellyfish/apply_melee_effects(atom/A) //Not a real threat unless multiple hits. It acts a timer for special traits.
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
-	if(nutrition > 500)
+	if(nutrition_of(src) > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		after(src, 4 SECONDS, PROC_REF(sniper_shot), with = list(A))
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks

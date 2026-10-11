@@ -51,7 +51,7 @@
 
 /// Spend the cached demand through the ledger. A shortfall is a brownout.
 /mob/living/silicon/robot/proc/process_power()
-	if(cell && nutrition >= ROBOT_NUTRITION_BURN && cell.charge < cell.maxcharge)
+	if(cell && nutrition_of(src) >= ROBOT_NUTRITION_BURN && cell.charge < cell.maxcharge)
 		adjust_nutrition(-ROBOT_NUTRITION_BURN)
 		add_power(ROBOT_NUTRITION_JOULES, src)
 	var/delivered = power_bus_ok() && draw_power(power_demand, src)
@@ -224,5 +224,5 @@
 
 /mob/living/silicon/robot/update_fire()
 	cut_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
-	if(on_fire)
+	if(stat_value(src, STAT_ON_FIRE))
 		add_overlay(image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state()))
