@@ -4556,19 +4556,6 @@ borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item
 * **Disposal pipe ends (`dpdir`) derive at init** (`derives()`), from the facing and sprite, before the pipe's update.
 * **Self-observes are `on_notice()` entries** (camera power, uranium floors and walls, headphones, holographic projector, scene tool, sticky
   note, hosed sprayer, disposal bin, shield projector): active from capability init rather than from the end of Initialize().
-* **Telecomms hums are sound loop subtypes** (`/datum/looping_sound/tcomms/two`, `three`, `four`) picked by `owns_one(starts = pick_one(...))` at
-  the old odds (40 % the first midloop, 24 / 7.2 / 28.8 % the others) for telecomms machines, the exonet node, message server, NTNet relay and PDA
-  multicaster.
-* **Radio machines tune through `radio_listen(via = PROC_REF(set_frequency))`** at capability init instead of the end of Initialize(): pumps,
-  passive gates, volume pumps, filters, digital valves, injectors, air sensors and consoles, airlocks, airlock sensors, access buttons, mech sensors.
-  A machine whose frequency is null no longer calls set_frequency(null) at init.
-* **The PDA multicaster's PDAs are initial contents**; its unused `internal_PDAs` list is gone.
-* **Cutouts, cameras, alarms and the petrifier roll at preinit**: a cutout's name and description follow its rolled fake name, a camera's tag its
-  area, and an air alarm, fire alarm or petrifier the map did not offset sits on the wall it faces (`rolls(ROLL_PIXEL, ...)`).
-* **Library archive rows, looking glass programs, Halloween box pile costumes, paper and emotion mask designs are per type** (`per_type()`).
-* **ERT voidsuits start with their hood made in the suit** (`hood = /path`, as the AutoLok does): the hood does not get the attached-light flag
-  until it is first deployed or reattached.
-* **Old exosuits' lowered integrity is a var default**; suit pockets are sized by `starts_set`.
 * **Machines that refreshed their parts again after `default_parts()`** (bomb tester, DNA scanner, honey extractor, built abductor RTGs) refresh
   once; the teleporter hub, microwave, smartfridge and biogenerator use `default_parts()`.
 
