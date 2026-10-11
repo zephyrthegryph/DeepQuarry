@@ -15,6 +15,7 @@ use std::{
 mod source_recipe;
 pub(crate) use source_recipe::{RecipeWire, SourceRecipe};
 mod descriptor_recipe;
+mod diagnostics;
 mod expression_recipe;
 mod retained;
 #[cfg(test)]
@@ -202,7 +203,8 @@ pub fn collect_with_defaults<'a, R: Resolver>(
     for (code, debug) in seeds {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls, None, None)
+    finish_collection(seen, pending, symbols, host, calls, None, None, None)
+        .map_err(|error| error.to_string())
 }
 /// Consume compact body seeds before initializer/map seeds in their original order.
 pub fn collect_prepared_with_defaults<'a, R: Resolver>(
@@ -257,6 +259,31 @@ pub(crate) fn collect_owned_prepared_retained_verified<'a, R: Resolver>(
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
     verification: Option<&crate::lowering_memo::VerifyPolicy>,
 ) -> Result<Collected, String> {
+    collect_owned_prepared_diagnosed(
+        prepared,
+        trailing,
+        defaults,
+        symbols,
+        host,
+        calls,
+        fragments,
+        verification,
+        None,
+    )
+    .map_err(|error| error.to_string())
+}
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn collect_owned_prepared_diagnosed<'a, R: Resolver>(
+    prepared: impl IntoIterator<Item = PreparedSeed>,
+    trailing: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+    fragments: Option<&crate::initializer_lowering::InitializerFragments>,
+    verification: Option<&crate::lowering_memo::VerifyPolicy>,
+    frontend: Option<&dm_tree::frontend::ColdFrontend>,
+) -> Result<Collected, crate::initializer_diagnostics::InitializerLoweringError> {
     let mut seen = HashMap::new();
     let mut pending = VecDeque::new();
     enqueue_defaults(defaults, &mut seen, &mut pending)?;
@@ -280,7 +307,16 @@ pub(crate) fn collect_owned_prepared_retained_verified<'a, R: Resolver>(
     for (code, debug) in trailing {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls, fragments, verification)
+    finish_collection(
+        seen,
+        pending,
+        symbols,
+        host,
+        calls,
+        fragments,
+        verification,
+        frontend,
+    )
 }
 fn finish_collection<R: Resolver>(
     mut seen: HashMap<SymRef, Arc<[u8]>>,
@@ -290,7 +326,8 @@ fn finish_collection<R: Resolver>(
     calls: Option<&dyn dm_tree::constants::PureCalls>,
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
     verification: Option<&crate::lowering_memo::VerifyPolicy>,
-) -> Result<Collected, String> {
+    frontend: Option<&dm_tree::frontend::ColdFrontend>,
+) -> Result<Collected, crate::initializer_diagnostics::InitializerLoweringError> {
     let mut current_keys = Vec::new();
     let mut result = Collected {
         descriptors: Vec::new(),
@@ -308,6 +345,7 @@ fn finish_collection<R: Resolver>(
             fragments,
             verification,
             &mut current_keys,
+            frontend,
         )?;
         let debug_origins = DebugOrigins {
             entries: source.entries,

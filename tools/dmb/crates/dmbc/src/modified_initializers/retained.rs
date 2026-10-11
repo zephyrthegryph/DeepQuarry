@@ -47,7 +47,8 @@ pub(super) fn lower<R: Resolver>(
     fragments: Option<&crate::initializer_lowering::InitializerFragments>,
     verification: Option<&crate::lowering_memo::VerifyPolicy>,
     current_keys: &mut Vec<Arc<[u8]>>,
-) -> Result<Lowered, String> {
+    frontend: Option<&dm_tree::frontend::ColdFrontend>,
+) -> Result<Lowered, crate::initializer_diagnostics::InitializerLoweringError> {
     // External pure-call providers cannot license reuse of their evaluations.
     let policy = match calls {
         None => Some(None),
@@ -141,7 +142,7 @@ pub(super) fn lower<R: Resolver>(
             },
             &recorder,
         )
-        .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?,
+        .map_err(|error| super::diagnostics::project(error, &fields, source, frontend))?,
     );
     let encoding = if let (Some(store), Some(binding)) = (fragments, &binding) {
         store.remember_modified_with_attempt(

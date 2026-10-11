@@ -216,11 +216,26 @@ impl ProjectResolver<'_> {
         source_span: dm_syntax::Span,
     ) -> Result<SymbolId, LowerError> {
         let query = Q::RuntimeType(SymbolId::of(path));
-        let M::Symbol(runtime_type) = self.answer(query)? else {
-            return Err(self.error(
-                query,
-                "modified instance needs a captured ordinary runtime type",
-            ));
+        let runtime_type = match self.answer(query) {
+            Ok(M::Symbol(runtime_type)) => runtime_type,
+            answer => {
+                // A missing runtime operand alone is not source invalidity.
+                // Ask the same current semantic namespace for exact absence;
+                // opaque/native operand coverage remains unsupported.
+                if matches!(self.answer(Q::Type(SymbolId::of(path))), Ok(M::Missing)) {
+                    return Err(LowerError {
+                        kind: crate::LowerErrorKind::SourceError,
+                        reason: format!("{path}: undefined type path"),
+                        ..self.error(query, "modified type is absent")
+                    });
+                }
+                return Err(answer.err().unwrap_or_else(|| {
+                    self.error(
+                        query,
+                        "modified instance needs a captured ordinary runtime type",
+                    )
+                }));
+            }
         };
         if runtime_type != SymbolId::of(path) {
             return Err(self.error(query, "modified instance base is not an ordinary type"));

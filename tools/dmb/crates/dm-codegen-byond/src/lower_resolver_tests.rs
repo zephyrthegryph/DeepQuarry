@@ -1,5 +1,65 @@
 use super::*;
 use std::sync::Mutex;
+#[test]
+fn missing_nested_modified_type_requires_current_semantic_absence() {
+    let mut symbols = SymbolTable::default();
+    for name in ["/obj/outer", "/obj/missing", "child", "value"] {
+        symbols.intern(name).unwrap();
+    }
+    for (answer, kind) in [
+        (
+            (|query| match query {
+                Q::RuntimeType(path) if path == SymbolId::of("/obj/missing") => {
+                    M::Unsupported(query)
+                }
+                Q::RuntimeType(path) => M::Symbol(path),
+                Q::Type(path) if path == SymbolId::of("/obj/missing") => M::Missing,
+                Q::HasMemberVar { .. } => M::Presence(true),
+                _ => M::Unsupported(query),
+            }) as fn(Q) -> M,
+            crate::LowerErrorKind::SourceError,
+        ),
+        (
+            (|query| match query {
+                Q::RuntimeType(path) if path != SymbolId::of("/obj/missing") => M::Symbol(path),
+                Q::HasMemberVar { .. } => M::Presence(true),
+                _ => M::Unsupported(query),
+            }) as fn(Q) -> M,
+            crate::LowerErrorKind::UnsupportedModel,
+        ),
+    ] {
+        // Lower the current nested descriptor field, where the missing inner
+        // runtime type is actually demanded, through the common initializer.
+        let ast = dm_syntax::parse_expression("/obj/missing{value=1}")
+            .expr
+            .unwrap();
+        let host = Host {
+            reads: Default::default(),
+            answer,
+        };
+        let error = crate::initializer::lower_modified_assignments(
+            &[("child".into(), ast)],
+            SymbolId::of("/obj/outer"),
+            crate::initializer::InitializerContext {
+                symbols: &symbols,
+                resource_search_context: None,
+                debug: None,
+            },
+            &host,
+        )
+        .err()
+        .unwrap();
+        let crate::initializer::InitializerError::Lowering(errors) = error else {
+            panic!("typed lowering failure")
+        };
+        assert_eq!(errors[0].kind, kind);
+        assert!(host
+            .reads
+            .lock()
+            .unwrap()
+            .contains(&Q::Type(SymbolId::of("/obj/missing"))));
+    }
+}
 struct Host {
     reads: Mutex<Vec<Q>>,
     answer: fn(Q) -> M,

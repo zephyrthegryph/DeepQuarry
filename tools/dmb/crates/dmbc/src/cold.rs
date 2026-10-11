@@ -750,7 +750,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
                 .map(|unit| (unit.code.as_ref(), unit.debug_origins.as_ref())),
         );
     let modified_defaults = pending_modified_defaults.map_err(ColdError::Initializer)?;
-    let modified = crate::modified_initializers::collect_owned_prepared_retained_verified(
+    let modified = crate::modified_initializers::collect_owned_prepared_diagnosed(
         body_seeds,
         seeds,
         &modified_defaults,
@@ -759,8 +759,9 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         declarations.initializers.pure_calls(),
         memo.and_then(|memo| memo.initializer_fragments.as_deref()),
         memo.map(|memo| &memo.verification),
+        Some(frontend),
     )
-    .map_err(ColdError::Initializer)?;
+    .map_err(initializer_lowering_error)?;
     // Descriptor/debug facts are owned by modified; release their seed copies.
     drop(modified_defaults);
     crate::modified_output::contribute(&modified.descriptors, &mut inventory)
