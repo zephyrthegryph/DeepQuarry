@@ -23,41 +23,90 @@ fn build(state: &mut RetainedSemanticTree, text: &'static str) -> ColdFrontend {
     )
     .unwrap()
 }
+struct Chunks {
+    p: &'static str,
+    q: &'static str,
+}
+impl dm_preprocess::SourceProvider for Chunks {
+    fn read(&self, path: &Path) -> Result<String, String> {
+        match path.file_name().and_then(|name| name.to_str()) {
+            Some("p.dm") => Ok(self.p.into()),
+            Some("q.dm") => Ok(self.q.into()),
+            _ => Ok("#include \"q.dm\"\n#include \"p.dm\"\n".into()),
+        }
+    }
+}
+fn chunks(state: &mut RetainedSemanticTree, p: &'static str, q: &'static str) -> ColdFrontend {
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    build_with_executor_and_semantic_state(
+        Path::new("body-code.dme"),
+        &Chunks { p, q },
+        &BTreeMap::new(),
+        FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+        None,
+        &executor,
+        Some(state),
+    )
+    .unwrap()
+}
+fn p_body(front: &ColdFrontend) -> &BodyOccurrence {
+    front
+        .bodies
+        .iter()
+        .find(|body| {
+            front.snapshot.tree.member(body.member).unwrap().name == dm_ir::SymbolId::of("p")
+        })
+        .unwrap()
+}
 #[test]
 fn body_code_owner_reuses_unchanged_chunks_with_current_shifted_origins() {
     let mut state = RetainedSemanticTree::default();
-    let old = build(
+    // A changed sibling within the SAME source chunk conservatively remints
+    // tokens. The producer's real reuse unit is an exact declaration chunk.
+    let old = chunks(
         &mut state,
-        "/proc/p(value = 1)\n    return value\n/proc/q()\n    return 2\n",
+        "/proc/p(value = 1)\n    return value\n",
+        "/proc/q()\n    return 2\n",
     );
-    let shifted = build(
+    let shifted = chunks(
         &mut state,
-        "\n/proc/p(value = 1)\n    return value\n/proc/q()\n    return 3\n",
+        "/proc/p(value = 1)\n    return value\n",
+        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
     );
-    let a = old.body_code(&old.bodies[0]).unwrap();
-    let b = shifted.body_code(&shifted.bodies[0]).unwrap();
+    let a = old.body_code(p_body(&old)).unwrap();
+    let b = shifted.body_code(p_body(&shifted)).unwrap();
     assert!(Arc::ptr_eq(a.identity(), b.identity()));
     assert_eq!(a.termination(), b.termination());
-    assert_ne!(a.occurrence().source.line, b.occurrence().source.line);
-    let fresh = build(
-        &mut RetainedSemanticTree::default(),
-        "\n/proc/p(value = 1)\n    return value\n/proc/q()\n    return 3\n",
+    assert_ne!(
+        a.occurrence().expanded_span.start,
+        b.occurrence().expanded_span.start
     );
+    let fresh = chunks(
+        &mut RetainedSemanticTree::default(),
+        "/proc/p(value = 1)\n    return value\n",
+        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
+    );
+    assert_eq!(b.occurrence().source, p_body(&fresh).source);
     assert_eq!(
         b.termination(),
-        fresh.body_code(&fresh.bodies[0]).unwrap().termination()
+        fresh.body_code(p_body(&fresh)).unwrap().termination()
     );
-    let changed = build(
+    let changed = chunks(
         &mut state,
-        "\n/proc/p(value = 9)\n    return value\n/proc/q()\n    return 3\n",
+        "/proc/p(value = 9)\n    return value\n",
+        "// shifted preceding include\n\n/proc/q()\n    return 333\n",
     );
     assert!(!Arc::ptr_eq(
         b.identity(),
-        changed.body_code(&changed.bodies[0]).unwrap().identity()
+        changed.body_code(p_body(&changed)).unwrap().identity()
     ));
     let mut foreign = shifted.clone();
     foreign.bodies = Arc::from(foreign.bodies.to_vec());
-    assert!(foreign.body_code(&foreign.bodies[0]).is_err());
+    assert!(foreign.body_code(p_body(&foreign)).is_err());
 }
 #[test]
 fn current_body_code_boundary_distinguishes_eof_and_following_declaration() {
