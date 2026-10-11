@@ -152,7 +152,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	vore_pounce_chance = 35
 	vore_pounce_falloff = 0
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
 
 TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types, list( \
 		/obj/item/organ/internal/brain, \
@@ -421,6 +420,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
 	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
 	op("teppi_item_disarm", item(/obj/item), stance(I_DISARM), label("Hit"), then(PROC_REF(teppi_interaction_item_disarm)))
