@@ -69,9 +69,14 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
     complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
 ) -> CompletedLoweringBatch<T, E> {
     let executor = execution.executor;
+    let prepared = execution
+        .prepared_roster
+        .filter(|roster| roster.authenticates(frontend));
+    // A foreign request owner is never authority; compatibility callers take
+    // the ordinary current-input path, including its own diagnostics.
     if symbolic {
         if let Some(store) = memo.and_then(|memo| memo.symbolic.as_ref()) {
-            store.retain_current(frontend);
+            store.retain_current(frontend, prepared);
         }
     }
     let request_admission = memo
@@ -82,14 +87,34 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
     let workers = executor.workers();
     let chunk = config.max_chunk.clamp(1, 256);
     let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
-        || frontend.bodies.iter().collect(),
-        |selected| selected.iter().copied().collect(),
+        || {
+            prepared.map_or_else(
+                || frontend.bodies.iter().map(|body| (body, None)).collect(),
+                |roster| {
+                    roster
+                        .ordered()
+                        .map(|row| (row.body(), Some(row)))
+                        .collect()
+                },
+            )
+        },
+        |selected| {
+            selected
+                .iter()
+                .map(|body| (*body, prepared.and_then(|roster| roster.selected(body))))
+                .collect()
+        },
     );
     if execution.selected_bodies.is_some() {
         let mut seen = std::collections::BTreeSet::new();
         let mut invalid = Vec::new();
-        for body in &bodies {
-            if frontend.body_input(body).is_err() || !seen.insert(body.declaration.0) {
+        for (body, row) in &bodies {
+            let admitted = if prepared.is_some() {
+                row.is_some()
+            } else {
+                frontend.body_input(body).is_ok()
+            };
+            if !admitted || !seen.insert(body.declaration.0) {
                 invalid.push(LoweringDiagnostic {
                     related: Vec::new(),
                     kind: DiagnosticKind::Internal,
@@ -106,13 +131,15 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
             };
         }
     }
-    bodies.sort_by_key(|body| {
-        (
-            body.source.encounter_ordinal,
-            body.expanded_span.start,
-            body.declaration.0,
-        )
-    });
+    if prepared.is_none() || execution.selected_bodies.is_some() {
+        bodies.sort_by_key(|(body, _)| {
+            (
+                body.source.encounter_ordinal,
+                body.expanded_span.start,
+                body.declaration.0,
+            )
+        });
+    }
     // Only final outputs occupy indexed slots. Each worker holds at most one
     // bounded chunk; publication remains inside the existing memo producer.
     let slices: Vec<_> = bodies.chunks(chunk).collect();
@@ -137,7 +164,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                                 slice
                                     .iter()
-                                    .map(|body| {
+                                    .map(|(body, prepared_body)| {
                                         memo::lower_one_input(
                                             frontend,
                                             body,
@@ -151,6 +178,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                             execution.capture_references,
                                             execution.selections_only,
                                             execution.disk_replay_bindings,
+                                            *prepared_body,
                                         )
                                         .map(|unit| {
                                             // Memo capture/remember already completed. The
@@ -172,7 +200,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                             .unwrap_or_else(|_| {
                                 slice
                                     .iter()
-                                    .map(|body| {
+                                    .map(|(body, _)| {
                                         Err(vec![LoweringDiagnostic {
                                             related: Vec::new(),
                                             kind: DiagnosticKind::Internal,
@@ -200,7 +228,7 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
         let outcomes = outcomes.unwrap_or_else(|| {
             slices[index]
                 .iter()
-                .map(|body| {
+                .map(|(body, _)| {
                     Err(vec![LoweringDiagnostic {
                         related: Vec::new(),
                         kind: DiagnosticKind::Internal,

@@ -128,11 +128,11 @@ fn symbolic_census_deduplicates_shared_records_and_counts_pruned_members() {
         .owners
         .iter()
         .any(|owner| !owner.unknown.is_empty()));
-    memo.retain_current(&frontend);
+    memo.retain_current(&frontend, None);
     let pruned = memo.retention_stats();
     assert_eq!(pruned.records, 1);
     assert_eq!(pruned.pruned_members, 1);
     assert_eq!(pruned.known_capacity_bytes, one.known_capacity_bytes);
-    memo.retain_current(&frontend);
+    memo.retain_current(&frontend, None);
     assert_eq!(memo.retention_stats().pruned_members, 1);
 }

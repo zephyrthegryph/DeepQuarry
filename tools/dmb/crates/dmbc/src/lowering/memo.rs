@@ -14,6 +14,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     capture_references: bool,
     selections_only: bool,
     disk_replay_bindings: Option<DiskReplayBindings<'_>>,
+    prepared_body: Option<&PreparedBody<'_>>,
 ) -> Result<CompletedInput, Vec<LoweringDiagnostic>> {
     // Symbolic completion cannot discard an explicitly requested analysis sidecar.
     if symbolic && capture_references {
@@ -31,6 +32,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             startup,
             bodies,
             capture_references,
+            prepared_body.map(PreparedBody::source),
         )
         .map(CompletedInput::lowered);
     };
@@ -44,16 +46,25 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             startup,
             bodies,
             capture_references,
+            prepared_body.map(PreparedBody::source),
         )
         .map(CompletedInput::lowered);
     }
-    let Some(current_key) = crate::lowering_memo::key_recipe::CurrentKey::new(
-        frontend,
-        body,
-        memo.policy,
-        capture_references,
-        selections_only,
-    ) else {
+    let owned_body = if prepared_body.is_none() {
+        PreparedBody::issue(frontend, body).ok()
+    } else {
+        None
+    };
+    let current_body = prepared_body.or(owned_body.as_ref());
+    let Some(current_key) = current_body.and_then(|row| {
+        crate::lowering_memo::key_recipe::CurrentKey::from_prepared(
+            frontend,
+            row,
+            memo.policy,
+            capture_references,
+            selections_only,
+        )
+    }) else {
         return lower_one(
             frontend,
             body,
@@ -62,27 +73,28 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             startup,
             bodies,
             capture_references,
+            None,
         )
         .map(CompletedInput::lowered);
     };
+    let current_body = current_body.expect("current key was issued from this row");
     // Frozen ABI policies are prepared before this stage. Their actual folded
     // outputs must enter the key because no resolver call happens on replay.
     let tree = &frontend.snapshot.tree;
     let recording = crate::lowering_memo::RecordingResolver::new(host);
     let ready = (|| {
         let _profile = dm_profile::item("lowering.abi_key_prepare");
-        let node = tree.member(body.member)?;
-        let identity = source_unit_identity(frontend, body).ok()?.identity;
-        let issued = frontend.body_input(body).ok()?;
+        let identity = current_body.source().identity;
+        let issued = current_body.input();
         let context = AbiContext {
             identity,
             origin: &body.source,
             resolver: &recording,
             symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
         };
-        let metadata = node.metadata.procedure.as_ref()?;
+        let metadata = current_key.metadata;
         let (needs_parsed, prepared, prepared_tail) = match policy
-            .prepare_issued(metadata, &issued, &context)
+            .prepare_issued(metadata, issued, &context)
             .ok()?
         {
             Some(replay) => {
@@ -133,6 +145,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             startup,
             bodies,
             capture_references,
+            Some(current_body.source()),
         )
         .map(CompletedInput::lowered);
     };
@@ -167,6 +180,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 &prepared,
                 bodies,
                 selections_only,
+                current_body,
             ) {
                 bodies
                     .discard_parsed(body)
@@ -230,12 +244,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 if let Some(metadata) = &member.metadata.procedure {
                     unit.metadata = Arc::clone(metadata);
                 }
-                unit.effective =
-                    frontend
-                        .snapshot
-                        .tree
-                        .resolve(member.owner, member.name, member.kind)
-                        == Some(body.member);
+                unit.effective = current_body.source().effective;
             }
             bodies
                 .discard_parsed(body)
@@ -282,8 +291,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .abi
             .as_ref()
             .is_none_or(|abi| abi.source_helpers.is_empty()))
-        .then(|| frontend.compact_body(body).ok())
-        .flatten();
+        .then(|| current_body.input().compact());
         lookup_disk(header.map(Into::into), None)
     };
     if let Some(errors) = disk
@@ -310,15 +318,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             .discard_parsed(body)
             .map_err(|diagnostic| body_diagnostic(body, diagnostic))?;
         note(MemoOutcome::DiskHit, None, None);
-        let current = source_unit_identity(frontend, body).map_err(|message| {
-            vec![LoweringDiagnostic {
-                related: Vec::new(),
-                kind: dm_tree::frontend::DiagnosticKind::Internal,
-                identity: None,
-                origin: body.source.clone(),
-                message,
-            }]
-        })?;
+        let current = current_body.source();
         if let Some(promotion) = &disk.resident {
             symbolic_input::remember_selections(
                 memo,
@@ -409,6 +409,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
             capture: Some(&capture),
             ready: needs_parsed.then_some(prepared),
             capture_references,
+            current: Some(current_body.source()),
         },
     );
     let mut admission = None;

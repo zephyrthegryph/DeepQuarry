@@ -189,7 +189,11 @@ pub struct SourceUnitIdentity {
 }
 #[path = "lowering_source_identity.rs"]
 mod source_identity;
+pub(crate) use source_identity::from_issued as source_identity_for_issued;
 pub use source_identity::source_unit_identity;
+#[path = "lowering/prepared_roster.rs"]
+mod prepared_roster;
+pub(crate) use prepared_roster::{PreparedBody, PreparedBodyRoster};
 /// Same authored ordering as the completion scheduler, without lowering bodies.
 pub fn source_unit_roster(
     frontend: &ColdFrontend,
@@ -377,6 +381,7 @@ pub struct LoweringExecution<'a, 'frontend> {
     /// Analysis query selection; compilation uses the complete issued roster.
     pub selected_bodies: Option<&'a [&'frontend BodyOccurrence]>,
     pub disk_replay_bindings: Option<DiskReplayBindings<'a>>,
+    pub(crate) prepared_roster: Option<&'a PreparedBodyRoster<'frontend>>,
 }
 impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
     pub fn new(
@@ -390,10 +395,18 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
             selections_only: false,
             selected_bodies: None,
             disk_replay_bindings: None,
+            prepared_roster: None,
         }
     }
     pub fn with_disk_replay_bindings(mut self, bindings: DiskReplayBindings<'a>) -> Self {
         self.disk_replay_bindings = Some(bindings);
+        self
+    }
+    pub(crate) fn with_prepared_roster(
+        mut self,
+        roster: &'a PreparedBodyRoster<'frontend>,
+    ) -> Self {
+        self.prepared_roster = Some(roster);
         self
     }
     /// Explicit analysis clients pay for typed-node selection recording.

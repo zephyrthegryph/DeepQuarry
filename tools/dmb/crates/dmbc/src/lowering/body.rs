@@ -5,6 +5,7 @@ pub(super) struct LoweringCapture<'a, 'frontend> {
     pub capture: Option<&'a RefCell<MemoCapture>>,
     pub ready: Option<PreparedUnit>,
     pub capture_references: bool,
+    pub current: Option<SourceUnitIdentity>,
 }
 pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
@@ -14,6 +15,7 @@ pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
     startup: Option<&crate::startup::CapturedStartup>,
     bodies: &dm_tree::frontend::BodyArena<'_>,
     capture_references: bool,
+    current: Option<SourceUnitIdentity>,
 ) -> Result<LoweredUnit, Vec<LoweringDiagnostic>> {
     lower_one_captured(
         frontend,
@@ -26,6 +28,7 @@ pub(super) fn lower_one<R: Resolver, P: AbiPolicy>(
             capture: None,
             ready: None,
             capture_references,
+            current,
         },
     )
 }
@@ -42,6 +45,7 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         capture,
         ready,
         capture_references,
+        current,
     } = captured;
     let tree = &frontend.snapshot.tree;
     let error = |identity, message| {
@@ -61,8 +65,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
     let node = tree
         .member(body.member)
         .ok_or_else(|| error(None, "body member missing from immutable tree".into()))?;
-    let source_identity =
-        source_unit_identity(frontend, body).map_err(|message| error(None, message))?;
+    let source_identity = match current {
+        Some(current) => current,
+        None => source_unit_identity(frontend, body).map_err(|message| error(None, message))?,
+    };
     let identity = source_identity.identity;
     let owner = identity.owner;
     let unsupported = |message| {

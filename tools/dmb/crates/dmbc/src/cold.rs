@@ -636,7 +636,8 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let mut warnings =
         crate::initializer_policy::warnings::capture(frontend, plan, &initialization.classified)
             .map_err(initializer_lowering_error)?;
-    warnings.extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    warnings
+        .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.
@@ -648,7 +649,8 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
     let mut inventory = links.inventory;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
-    let roster = crate::lowering::source_unit_roster(frontend).map_err(ColdError::Lowering)?;
+    let roster =
+        crate::lowering::PreparedBodyRoster::issue(frontend).map_err(ColdError::Lowering)?;
     let mut source_bindings: std::collections::BTreeSet<_> = frontend
         .snapshot
         .tree
@@ -656,7 +658,11 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         .iter()
         .map(|node| dm_ir::SymRef::Type(node.path))
         .collect();
-    for source in roster.into_iter().filter(|source| source.effective) {
+    for source in roster
+        .ordered()
+        .map(|row| row.source())
+        .filter(|source| source.effective)
+    {
         let identity = source.identity;
         source_bindings.insert(match identity.namespace {
             crate::lowering::Namespace::Proc => dm_ir::SymRef::Proc {
@@ -688,12 +694,12 @@ fn prepare_with_startup<R: Resolver, P: AbiPolicy>(
         config,
         Some(startup),
         memo,
-        crate::lowering::LoweringExecution::new(executor, &bodies).with_disk_replay_bindings(
-            crate::lowering::DiskReplayBindings {
+        crate::lowering::LoweringExecution::new(executor, &bodies)
+            .with_prepared_roster(&roster)
+            .with_disk_replay_bindings(crate::lowering::DiskReplayBindings {
                 source: &source_bindings,
                 external: links.references,
-            },
-        ),
+            }),
         true,
         &complete,
     );

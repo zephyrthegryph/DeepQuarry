@@ -1,6 +1,6 @@
 //! Borrowed current key inputs; exact bytes remain the sole persisted format.
 use std::{ops::Range, sync::Arc};
-pub(super) const PREFIX: &[u8] = b"dmbc-procedure-memo-v16-strict-root-obj-iterator\0";
+pub(super) const PREFIX: &[u8] = b"dmbc-procedure-memo-v17-implied-type-constructor\0";
 pub(crate) struct CurrentKey<'a> {
     prefix: [u8; 41],
     pub metadata: &'a Arc<dm_ir::ProcedureMetadata>,
@@ -58,15 +58,37 @@ impl<'a> CurrentKey<'a> {
         selections: bool,
     ) -> Option<Self> {
         let issued = frontend.body_input(body).ok()?;
+        let identity = crate::lowering::source_identity_for_issued(frontend, &issued).ok()?;
+        Self::from_issued(frontend, &issued, identity, policy, references, selections)
+    }
+    pub(crate) fn from_prepared(
+        frontend: &'a dm_tree::frontend::ColdFrontend,
+        row: &crate::lowering::PreparedBody<'a>,
+        policy: u128,
+        references: bool,
+        selections: bool,
+    ) -> Option<Self> {
+        if !row.authenticates(frontend) { return None; }
+        Self::from_issued(frontend, row.input(), row.source(), policy, references, selections)
+    }
+    fn from_issued(
+        frontend: &'a dm_tree::frontend::ColdFrontend,
+        issued: &dm_tree::frontend::IssuedBodyInput<'a>,
+        identity: crate::lowering::SourceUnitIdentity,
+        policy: u128,
+        references: bool,
+        selections: bool,
+    ) -> Option<Self> {
+        let body = issued.occurrence();
         let tree = &frontend.snapshot.tree;
         let member = tree.member(body.member)?;
         let mut prefix = [0; 41];
         prefix[..16].copy_from_slice(&policy.to_le_bytes());
-        prefix[16..24].copy_from_slice(&tree.type_node(member.owner)?.path.bits().to_le_bytes());
-        prefix[24..32].copy_from_slice(&member.name.bits().to_le_bytes());
-        prefix[32] = u8::from(member.kind == dm_tree::MemberKind::Verb);
+        prefix[16..24].copy_from_slice(&identity.identity.owner.bits().to_le_bytes());
+        prefix[24..32].copy_from_slice(&identity.identity.name.bits().to_le_bytes());
+        prefix[32] = u8::from(identity.identity.namespace == crate::lowering::Namespace::Verb);
         prefix[33..41]
-            .copy_from_slice(&u64::from(tree.member_occurrence(body.member)?).to_le_bytes());
+            .copy_from_slice(&u64::from(identity.identity.occurrence).to_le_bytes());
         Some(Self {
             prefix,
             metadata: member.metadata.procedure.as_ref()?,

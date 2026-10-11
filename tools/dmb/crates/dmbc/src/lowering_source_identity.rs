@@ -4,7 +4,14 @@ pub fn source_unit_identity(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,
 ) -> Result<SourceUnitIdentity, String> {
-    frontend.body_input(body).map_err(|error| error.message)?;
+    let issued = frontend.body_input(body).map_err(|error| error.message)?;
+    from_issued(frontend, &issued)
+}
+pub(crate) fn from_issued(
+    frontend: &ColdFrontend,
+    issued: &dm_tree::frontend::IssuedBodyInput<'_>,
+) -> Result<SourceUnitIdentity, String> {
+    let body = issued.occurrence();
     let tree = &frontend.snapshot.tree;
     let node = tree
         .member(body.member)

@@ -76,20 +76,41 @@ impl PreparedContribution {
         modified_seeds: Vec<PreparedModifiedSeed>,
         modified_recipes: Option<Arc<[crate::modified_initializers::SourceRecipe]>>,
     ) -> Option<Self> {
-        let identity = crate::lowering::source_unit_identity(frontend, body)
-            .ok()?
-            .identity;
+        Self::rebind_with_modified_current(
+            artifact,
+            frontend,
+            body,
+            prepared,
+            debug,
+            required_types,
+            modified_seeds,
+            modified_recipes,
+            None,
+        )
+    }
+    pub(crate) fn rebind_with_modified_current(
+        artifact: &Arc<ReusableProcedureArtifact>,
+        frontend: &dm_tree::frontend::ColdFrontend,
+        body: &dm_tree::frontend::BodyOccurrence,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        debug: crate::debug_sources::DebugOrigins,
+        required_types: Arc<[SymbolId]>,
+        modified_seeds: Vec<PreparedModifiedSeed>,
+        modified_recipes: Option<Arc<[crate::modified_initializers::SourceRecipe]>>,
+        current: Option<&crate::lowering::PreparedBody<'_>>,
+    ) -> Option<Self> {
+        let current = match current {
+            Some(current) if current.authenticates_body(frontend, body) => current.source(),
+            Some(_) => return None,
+            None => crate::lowering::source_unit_identity(frontend, body).ok()?,
+        };
+        let identity = current.identity;
         prepared.require_production_abi().ok()?;
         if artifact.identity() != identity || !artifact.can_rebind(&prepared.abi) {
             return None;
         }
-        let node = frontend.snapshot.tree.member(body.member)?;
         let helpers = artifact.helper_origins(frontend, body, prepared)?;
-        let effective = frontend
-            .snapshot
-            .tree
-            .resolve(node.owner, node.name, node.kind)
-            == Some(body.member);
+        let effective = current.effective;
         Some(Self {
             identity,
             effective,

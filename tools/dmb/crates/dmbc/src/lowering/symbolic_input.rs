@@ -278,16 +278,27 @@ impl SessionSymbolicMemo {
             .capture_excluded
             .fetch_add(1, Ordering::Relaxed);
     }
-    pub(super) fn retain_current(&self, frontend: &ColdFrontend) {
-        let identities: std::collections::BTreeSet<_> = frontend
-            .bodies
-            .iter()
-            .filter_map(|body| {
-                source_unit_identity(frontend, body)
-                    .ok()
-                    .map(|source| source.identity)
-            })
-            .collect();
+    pub(super) fn retain_current(
+        &self,
+        frontend: &ColdFrontend,
+        prepared: Option<&PreparedBodyRoster<'_>>,
+    ) {
+        let identities: std::collections::BTreeSet<_> = if let Some(prepared) = prepared {
+            prepared
+                .ordered()
+                .map(|row| row.source().identity)
+                .collect()
+        } else {
+            frontend
+                .bodies
+                .iter()
+                .filter_map(|body| {
+                    source_unit_identity(frontend, body)
+                        .ok()
+                        .map(|source| source.identity)
+                })
+                .collect()
+        };
         let mut records = self.records.lock().unwrap_or_else(|e| e.into_inner());
         let before = records.len();
         let mut code_keys = Vec::new();
@@ -321,15 +332,9 @@ impl SessionSymbolicMemo {
         prepared: &PreparedUnit,
         bodies: &dm_tree::frontend::BodyArena<'_>,
         selections_only: bool,
+        current: &PreparedBody<'_>,
     ) -> Option<CompletedInput> {
-        let identity = source_unit_identity(frontend, body)
-            .map_err(|_| {
-                self.declines
-                    .source_identity
-                    .fetch_add(1, Ordering::Relaxed);
-            })
-            .ok()?
-            .identity;
+        let identity = current.source().identity;
         let record = self
             .records
             .lock()
@@ -385,10 +390,9 @@ impl SessionSymbolicMemo {
                     return None;
                 }
                 self.reused.fetch_add(1, Ordering::Relaxed);
-                let current = source_unit_identity(frontend, body).ok()?;
                 return Some(CompletedInput::selections(
-                    current.identity,
-                    current.effective,
+                    current.source().identity,
+                    current.source().effective,
                     body.clone(),
                     Arc::clone(facts),
                 ));
@@ -429,7 +433,7 @@ impl SessionSymbolicMemo {
                     None
                 })?
         };
-        let contribution = crate::symbolic::PreparedContribution::rebind_with_modified(
+        let contribution = crate::symbolic::PreparedContribution::rebind_with_modified_current(
             artifact,
             frontend,
             body,
@@ -438,6 +442,7 @@ impl SessionSymbolicMemo {
             Arc::clone(&record.required_types),
             modified_seeds,
             Some(Arc::clone(&record.modified_recipes)),
+            Some(current),
         )
         .or_else(|| {
             // Includes ABI/identity, current helper-origin and source-binding
