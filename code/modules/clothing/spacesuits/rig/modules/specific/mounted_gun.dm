@@ -16,11 +16,7 @@
 	var/obj/item/gun/gun
 
 CAPABILITIES(/obj/item/rig_module/mounted)
-	owns_one(nameof(gun), starts = nameof(gun_type))
-
-/obj/item/rig_module/mounted/Initialize(mapload)
-	. = ..()
-	gun.mounted_gun = TRUE
+	owns_one(nameof(gun), starts = nameof(gun_type), starts_set = list("mounted_gun" = TRUE))
 
 /obj/item/rig_module/mounted/engage(atom/target, notify_ai, mob/user)
 

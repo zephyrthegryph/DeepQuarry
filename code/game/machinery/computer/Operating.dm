@@ -20,14 +20,6 @@
 	var/healthAlarm = 50
 	var/spo2 = 1 //SpO2 beeping toggle
 
-/obj/machinery/computer/operating/Initialize(mapload)
-	. = ..()
-	for(var/direction in list(NORTH,EAST,SOUTH,WEST))
-		rel_set(src, nameof(table), locate(/obj/machinery/optable, get_step(src, direction)))
-		if(table)
-			rel_set(table, nameof(table.computer), src)
-			break
-
 /obj/machinery/computer/operating/relations()
 	. = ..()
 	. += rel_one(nameof(table), back = nameof(/obj/machinery/optable::computer))
@@ -41,6 +33,7 @@ TRACKED(/obj/machinery/computer/operating, healthAlarm)
 TRACKED(/obj/machinery/computer/operating, spo2)
 
 CAPABILITIES(/obj/machinery/computer/operating)
+	finds(nameof(table), /obj/machinery/optable) // the paired rel_one writes the table's computer
 	started_work(step = PROC_REF(work_step))
 	interface("OperatingComputer", title = "Patient Monitor")
 	extend("ui_open", needs(req_operable()), then(PROC_REF(control_fingerprinted)))

@@ -9,9 +9,6 @@
 	var/device_type
 	var/obj/item/device
 
-/obj/item/rig_module/device/Initialize(mapload)
-	. = ..()
-
 /obj/item/rig_module/device/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
 		return 0

@@ -67,9 +67,6 @@ CAPABILITIES(/obj/vehicle)
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
-/obj/vehicle/Initialize(mapload)
-	. = ..()
-
 ///obj/vehicle/New()
 //	..()
 // //spawn the cell you want in each vehicle // Commented out in favour of initialize.

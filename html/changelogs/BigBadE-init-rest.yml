@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - code_imp: "Machines, clothing, power, atmospherics, food, turfs, games and more declare their starting state (rolled values, per-type tables, starting cards and memos, gas port volumes) instead of setting it in Initialize()."
+  - bugfix: "Replicators no longer drain a shared list of what they can make; chaos cake slices taste of their kind; the xenoarchaeology notice board lists its memos."
