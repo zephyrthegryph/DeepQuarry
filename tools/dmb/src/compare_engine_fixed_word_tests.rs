@@ -6,10 +6,9 @@ use super::*;
 fn native_code(path: &[u8]) -> Vec<crate::bytecode::Instruction> {
     let dmb =
         crate::dmb::Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
-    let id = dmb
-        .procs
-        .iter()
-        .position(|proc| dmb.string(proc.strings[0]) == Some(path))
+    // Native wrapper names retain explicit /proc/ markers. Use the same exact
+    // canonical path and owning-class rank selection as structural comparison.
+    let id = ranked_proc_by_path(&dmb, path, 0)
         .unwrap_or_else(|| {
             panic!(
                 "missing pinned engine procedure {}",
