@@ -739,10 +739,6 @@ CAPABILITIES(/obj/machinery/power/rtg/abductor)
 /obj/machinery/power/rtg/abductor/built
 	starting_cell = /obj/item/cell/void
 
-/obj/machinery/power/rtg/abductor/built/Initialize(mapload)
-	. = ..()
-	RefreshParts()
-
 // Bloo version
 /obj/machinery/power/rtg/abductor/hybrid
 	icon_state = "coreb-nocell"
@@ -754,10 +750,6 @@ CAPABILITIES(/obj/machinery/power/rtg/abductor)
 
 /obj/machinery/power/rtg/abductor/hybrid/built
 	starting_cell = /obj/item/cell/void/hybrid
-
-/obj/machinery/power/rtg/abductor/hybrid/built/Initialize(mapload)
-	. = ..()
-	RefreshParts()
 
 // Kugelblitz generator, confined black hole like a singulo but smoller and higher tech
 // Presumably whoever made these has better tech than most

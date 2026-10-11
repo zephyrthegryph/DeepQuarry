@@ -245,11 +245,6 @@ TRACKED(/obj/machinery/honey_extractor, honey)
 
 TRACKED(/obj/machinery/honey_extractor, processing)
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/honey_extractor/Initialize(mapload)
-	. = ..()
-	RefreshParts()
-
 /obj/machinery/honey_extractor/examine(mob/user)
 	. = ..()
 
