@@ -69,14 +69,14 @@ impl CurrentProcedureReferences {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn query<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn query<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
 ) -> Result<Vec<CurrentProcedureReferences>, Vec<LoweringDiagnostic>> {
     let batch = query_partial(frontend, host, policy, config, startup, memo, execution)?;
     if batch.diagnostics.is_empty() {
@@ -93,14 +93,14 @@ pub struct QueryBatch {
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn query_partial<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn query_partial<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
 ) -> Result<QueryBatch, Vec<LoweringDiagnostic>> {
     let selected: Vec<_> = execution.selected_bodies.map_or_else(
         || frontend.bodies.iter().collect(),

@@ -472,7 +472,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     config: LoweringConfig,
     map_initializers: Vec<crate::initialization_artifact::InitializationArtifact>,
     non_text: Option<&dyn crate::composition::NonTextOutputStage>,
-    startup: &crate::startup::CapturedStartup<'_>,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     observer: Option<&ColdObserver<'_>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
     executor: &dm_exec::BuildExecutor,

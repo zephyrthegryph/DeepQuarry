@@ -171,7 +171,7 @@ fn modified_only_disk_requires_exact_policy_runtime_and_complete_current_roots()
         &warm_collection.artifacts[0].code,
         &fresh_collection.artifacts[0].code
     ));
-    assert_ne!(warm_collection.artifacts[0].debug_origins, old_origins);
+    assert_ne!(warm_collection.artifacts[0].debug_origins.as_ref(), &old_origins);
     let nested = dm_syntax::parse_expression("/datum/example{value=11}")
         .expr
         .unwrap();
