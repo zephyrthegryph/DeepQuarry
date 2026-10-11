@@ -47,6 +47,7 @@ pub(crate) fn write_resolved<R: dm_ir::Resolver>(
         |_| Ok(()),
     )
 }
+#[cfg(test)]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn write_resolved_observed<R: dm_ir::Resolver>(
     frontend: &dm_tree::frontend::FrontendRevision,
@@ -72,7 +73,37 @@ pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     writer: &mut impl Write,
     selected: Option<&[&dm_tree::frontend::BodyOccurrence]>,
+    observe: impl FnMut(&crate::selected_query::CurrentProcedureReferences) -> std::io::Result<()>,
+) -> Result<usize, Box<dyn std::error::Error>> {
+    write_resolved_selected_with_owners(
+        frontend,
+        engine,
+        resolver,
+        spellings,
+        executor,
+        memo,
+        writer,
+        selected,
+        observe,
+        |_, _| Ok(()),
+    )
+}
+/// Transfer only actual immutable preparation owners after successful analysis.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    engine: &crate::engine::EngineSnapshot,
+    resolver: &R,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    writer: &mut impl Write,
+    selected: Option<&[&dm_tree::frontend::BodyOccurrence]>,
     mut observe: impl FnMut(&crate::selected_query::CurrentProcedureReferences) -> std::io::Result<()>,
+    mut capture: impl FnMut(
+        &std::sync::Arc<crate::driver_facts::PreparedAbiUnits>,
+        std::sync::Arc<crate::startup::StartupFacts>,
+    ) -> std::io::Result<()>,
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let mut totals = CoverageTotals {
         requested: selected.map_or(frontend.bodies.len(), |bodies| bodies.len()),
@@ -168,6 +199,7 @@ pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
         "compiler-selected reference subset; unsupported and unbound selections remain explicit",
     )?;
     reject_errors(&diagnostics, writer)?;
+    capture(prepared.prepared.units_owner(), startup.facts())?;
     Ok(totals.returned)
 }
 fn reject_errors(

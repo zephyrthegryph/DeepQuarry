@@ -307,6 +307,34 @@ impl QueryAttempt {
         if !self.enabled {
             return Ok(());
         }
+        self.capture_resolved_context(
+            frontend,
+            resolved::ResolvedContext::new(resolver, abi, startup),
+        )
+    }
+    pub(crate) fn capture_analysis_host(
+        &mut self,
+        frontend: &ColdFrontend,
+        resolver: resolved::ScalarResolver,
+        abi: Arc<crate::driver_facts::PreparedAbiUnits>,
+        startup: Arc<crate::startup::StartupFacts>,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return Ok(());
+        }
+        self.capture_resolved_context(
+            frontend,
+            resolved::ResolvedContext::for_analysis(resolver, abi, startup),
+        )
+    }
+    fn capture_resolved_context(
+        &mut self,
+        frontend: &ColdFrontend,
+        context: resolved::ResolvedContext,
+    ) -> std::io::Result<()> {
+        if !self.enabled {
+            return Ok(());
+        }
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         let snapshot = state
             .snapshot
@@ -320,21 +348,13 @@ impl QueryAttempt {
                 .bodies
                 .as_ref()
                 .is_none_or(|bodies| !Arc::ptr_eq(bodies, &frontend.bodies))
-            || !Arc::ptr_eq(&startup.plan().source.tree, &frontend.snapshot.tree)
-            || !Arc::ptr_eq(
-                &startup.plan().source.occurrences,
-                &frontend.snapshot.occurrences,
-            )
-            || !Arc::ptr_eq(
-                &resolver.tree().shared_source().source.tree,
-                &frontend.snapshot.tree,
-            )
+            || !context.matches_current(frontend)
         {
             return Err(std::io::Error::other(
                 "resolved capture current source owners differ",
             ));
         }
-        snapshot.resolved = Some(resolved::ResolvedContext::new(resolver, abi, startup));
+        snapshot.resolved = Some(context);
         Ok(())
     }
     pub(crate) fn capture_selected(

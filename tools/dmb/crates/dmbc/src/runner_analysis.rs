@@ -1,4 +1,4 @@
-//! Existing explicit analysis output, separate from request-local selected demand.
+//! Explicit analysis and retained body queries share actual issued preparation owners.
 use super::*;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn finish(
@@ -23,7 +23,8 @@ pub(super) fn finish(
         let links = retained_engine.link_overlay()?;
         let fallback_memo = dmbc::lowering_memo::ProcedureMemo::new(memo_policy);
         let memo = procedure_memo.unwrap_or(&fallback_memo);
-        let procedures = crate::analysis_export::write_resolved_observed(
+        let mut owners = None;
+        let procedures = crate::analysis_export::write_resolved_selected_with_owners(
             &frontend,
             &retained_engine.snapshot,
             &resolver,
@@ -31,8 +32,16 @@ pub(super) fn finish(
             executor,
             memo,
             &mut output,
+            None,
             |procedure| query_attempt.capture_selected(&frontend, procedure),
+            |abi, startup| {
+                owners = Some((Arc::clone(abi), startup));
+                Ok(())
+            },
         )?;
+        if let Some((abi, startup)) = owners {
+            query_attempt.capture_analysis_host(frontend, resolver, abi, startup)?;
+        }
         dmbc::daemon_eprintln!("resolved executable analysis: {procedures} issued procedures; selected-reference coverage remains partial");
     }
     if command == BuildCommand::AnalyzeBodies {

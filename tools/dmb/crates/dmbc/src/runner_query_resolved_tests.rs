@@ -36,7 +36,8 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     let memo = crate::lowering_memo::ProcedureMemo::new(123);
     let mut expected = Vec::new();
-    crate::analysis_export::write_resolved_selected(
+    let mut captured = None;
+    crate::analysis_export::write_resolved_selected_with_owners(
         &frontend,
         &engine.snapshot,
         &resolver,
@@ -49,56 +50,56 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
             row.write_jsonl(&mut expected).map_err(io::Error::other)?;
             Ok(())
         },
+        |abi, startup| {
+            captured = Some((Arc::clone(abi), startup));
+            Ok(())
+        },
     )
     .unwrap();
-    let bodies = dm_tree::frontend::BodyArena::new_typed(
-        &frontend,
-        dm_codegen_byond::typed_statements_supported_for_capture,
-    );
-    let startup = crate::startup::capture_revision_facts_with_executor_and_bodies(
-        &frontend,
-        &links.inventory.spellings,
-        &executor,
-        &bodies,
-    )
-    .unwrap();
-    let startup_view = startup.view_revision(&frontend).unwrap();
-    let prepared =
-        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
-            &frontend,
-            &engine.snapshot,
-            &resolver,
-            &startup_view,
-            None,
-            &executor,
-            None,
-        )
-        .unwrap();
-    assert!(prepared.prepared.diagnostics.is_empty());
     let archive = frontend.body_archive().unwrap();
     let declaration = frontend.bodies[0].declaration.0;
-    let resolver = NativeResourceResolver::from_shared_symbols(
-        resolver,
-        frontend.snapshot.tree.shared_symbols(),
-        Default::default(),
-        [],
-        [],
-    )
-    .unwrap();
-    let context = ResolvedContext::new(
-        resolver,
-        Arc::clone(prepared.prepared.units_owner()),
-        Arc::clone(&startup),
-    );
-    assert!(context.resolver.resources().is_none());
-    drop(prepared);
-    drop(startup_view);
-    drop(startup);
-    drop(bodies);
+    let (abi, startup) = captured.expect("successful SAME analysis issued owners");
+    let tree = Arc::clone(&frontend.snapshot.tree);
+    let source_revision = dm_analysis::tree_export::source_revision(&frontend);
+    let state = Arc::new(std::sync::Mutex::new(super::super::QueryState::default()));
+    let mut attempt = super::super::QueryAttempt::new(Arc::clone(&state), true);
+    attempt.capture(&frontend);
+    // No per-procedure rows are inserted into the bounded captured-row cache.
+    attempt
+        .capture_analysis_host(&frontend, resolver, abi, startup)
+        .unwrap();
+    attempt.finish_analyzed();
+    drop(attempt);
     drop(frontend);
-    let current = context.query(&archive, declaration).unwrap();
-    let mut actual = Vec::new();
-    current.write_jsonl(&mut actual).unwrap();
-    assert_eq!(actual, expected);
-    assert!(context.query(&archive, u32::MAX).is_err());
+    let request = crate::daemon::query::QueryRequest {
+        timeout_seconds: None,
+        project: "project.dme".into(),
+        defines: Default::default(),
+        engine_template: None,
+        bootstrap_catalog: true,
+        expected_revision: Some(format!("{:032x}", tree.identity())),
+        expected_source_revision: Some(format!("{source_revision:032x}")),
+        queries: vec![],
+        source_queries: vec![crate::daemon::query::SourceQuery::SelectedReferences {
+            ordinal: declaration,
+        }],
+    };
+    let answer =
+        crate::daemon::query::evaluate_snapshot(&request, &tree, &state.lock().unwrap()).unwrap();
+    let row: serde_json::Value = serde_json::from_str(answer.jsonl.trim()).unwrap();
+    assert_eq!(row["captured_jsonl"].as_str().unwrap().as_bytes(), expected);
+    assert_eq!(archive.len(), 1);
+    state
+        .lock()
+        .unwrap()
+        .snapshot
+        .as_mut()
+        .unwrap()
+        .release_body_queries();
+    assert_eq!(
+        crate::daemon::query::evaluate_snapshot(&request, &tree, &state.lock().unwrap())
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::NotFound
+    );
 }

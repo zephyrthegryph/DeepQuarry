@@ -73,7 +73,24 @@ impl HeapCensus {
                 dm_resources::native_resolver::CapturedResourceOutcome,
             )>(owner, lookups as *const _ as usize, lookups.len());
         });
-        let scalar = resolver.tree().shared_source();
+        self.query_scalar_snapshot(resolver.tree().shared_source());
+        self.unknown(owner, "private resource HashMap backing and Arc control blocks; metadata-only host has no ResourceSet or encoded RSC");
+    }
+    pub(crate) fn resolved_analysis_host(
+        &mut self,
+        resolver: &Arc<
+            crate::engine_host::EngineResolverHost<dm_tree::constant_resolution::ScalarSnapshot>,
+        >,
+    ) {
+        if self.arc_object("query_snapshot.analysis_resolver", resolver) {
+            self.query_scalar_snapshot(resolver.shared_source());
+        }
+    }
+    fn query_scalar_snapshot(
+        &mut self,
+        scalar: &Arc<dm_tree::constant_resolution::ScalarSnapshot>,
+    ) {
+        let owner = "query_snapshot.scalar";
         if self.arc_object("query_snapshot.scalar", scalar) {
             self.snapshot(&scalar.source);
             self.slice(owner, &scalar.requested, true);
@@ -134,7 +151,10 @@ impl HeapCensus {
                 }
             }
         }
-        self.unknown(owner, "private engine catalogs, scalar certificate BTree backing, resource HashMap backing and Arc control blocks; metadata-only host has no ResourceSet or encoded RSC");
+        self.unknown(
+            owner,
+            "private engine catalogs, scalar BTree backing and Arc control blocks are not exposed",
+        );
     }
     pub(crate) fn source_export_mapping(
         &mut self,

@@ -1,11 +1,45 @@
 //! Lazy compiler-selected facts from the exact successful current capture owners.
 use crate::{driver_facts::PreparedAbiUnits, engine_host::EngineResolverHost};
+use dm_ir::Resolver;
 use dm_resources::native_resolver::NativeResourceResolver;
 use std::{cell::RefCell, collections::BTreeMap, io, sync::Arc};
 pub(crate) type CapturedResolver =
     NativeResourceResolver<EngineResolverHost<dm_tree::constant_resolution::ScalarSnapshot>>;
+pub(crate) type ScalarResolver = EngineResolverHost<dm_tree::constant_resolution::ScalarSnapshot>;
+enum ResolverOwner {
+    Native(Arc<CapturedResolver>),
+    Analysis(Arc<ScalarResolver>),
+}
+impl ResolverOwner {
+    fn host(&self) -> &ScalarResolver {
+        match self {
+            Self::Native(owner) => owner.tree(),
+            Self::Analysis(owner) => owner,
+        }
+    }
+}
+impl dm_ir::Resolver for ResolverOwner {
+    fn observes_reads(&self) -> bool {
+        match self {
+            Self::Native(owner) => owner.observes_reads(),
+            Self::Analysis(owner) => owner.observes_reads(),
+        }
+    }
+    fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        match self {
+            Self::Native(owner) => owner.domain_version(domain),
+            Self::Analysis(owner) => owner.domain_version(domain),
+        }
+    }
+    fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+        match self {
+            Self::Native(owner) => owner.resolve(query),
+            Self::Analysis(owner) => owner.resolve(query),
+        }
+    }
+}
 pub(super) struct ResolvedContext {
-    resolver: Arc<CapturedResolver>,
+    resolver: ResolverOwner,
     abi: Arc<PreparedAbiUnits>,
     startup: Arc<crate::startup::StartupFacts>,
 }
@@ -16,10 +50,32 @@ impl ResolvedContext {
         startup: Arc<crate::startup::StartupFacts>,
     ) -> Self {
         Self {
-            resolver: Arc::new(resolver.into_metadata()),
+            resolver: ResolverOwner::Native(Arc::new(resolver.into_metadata())),
             abi,
             startup,
         }
+    }
+    pub(super) fn for_analysis(
+        resolver: ScalarResolver,
+        abi: Arc<PreparedAbiUnits>,
+        startup: Arc<crate::startup::StartupFacts>,
+    ) -> Self {
+        Self {
+            resolver: ResolverOwner::Analysis(Arc::new(resolver)),
+            abi,
+            startup,
+        }
+    }
+    pub(super) fn matches_current(&self, frontend: &dm_tree::frontend::ColdFrontend) -> bool {
+        Arc::ptr_eq(&self.startup.plan().source.tree, &frontend.snapshot.tree)
+            && Arc::ptr_eq(
+                &self.startup.plan().source.occurrences,
+                &frontend.snapshot.occurrences,
+            )
+            && Arc::ptr_eq(
+                &self.resolver.host().shared_source().source.tree,
+                &frontend.snapshot.tree,
+            )
     }
     pub(super) fn query(
         &self,
@@ -136,7 +192,7 @@ impl ResolvedContext {
                 view,
                 &inputs,
                 symbols,
-                self.resolver.as_ref(),
+                &self.resolver,
                 Some(&debug),
                 occurrence.expanded_span,
             )
@@ -152,7 +208,7 @@ impl ResolvedContext {
                 &executable,
                 &inputs,
                 symbols,
-                self.resolver.as_ref(),
+                &self.resolver,
                 Some(&debug),
             )
             .map(|_| None)
@@ -185,7 +241,10 @@ impl ResolvedContext {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         census.prepared_abi_units(&self.abi);
         census.startup_facts(&self.startup);
-        census.resolved_query_host(&self.resolver);
+        match &self.resolver {
+            ResolverOwner::Native(owner) => census.resolved_query_host(owner),
+            ResolverOwner::Analysis(owner) => census.resolved_analysis_host(owner),
+        }
     }
 }
 struct Debug<'a, 'archive> {
