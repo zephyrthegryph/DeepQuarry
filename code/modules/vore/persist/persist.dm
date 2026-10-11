@@ -119,15 +119,15 @@
 /proc/apply_coloration_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)
 	if(!istype(character)) return
 	// h_style/f_style/s_tone/b_type migrated to /datum/preference.
-	prefs.update_preference_by_type(/datum/preference/text/human/h_style, character.h_style)
+	prefs.update_preference_by_type(/datum/preference/text/human/h_style, character.looks.hair_style)
 
-	prefs.update_preference_by_type(/datum/preference/color/human/eyes_color, rgb(character.r_eyes, character.g_eyes, character.b_eyes))
-	prefs.update_preference_by_type(/datum/preference/color/human/hair_color, rgb(character.r_hair, character.g_hair, character.b_hair))
-	prefs.update_preference_by_type(/datum/preference/color/human/facial_color, rgb(character.r_facial, character.g_facial, character.b_facial))
-	prefs.update_preference_by_type(/datum/preference/color/human/skin_color, rgb(character.r_skin, character.g_skin, character.b_skin))
+	prefs.update_preference_by_type(/datum/preference/color/human/eyes_color, character.looks.eyes_color)
+	prefs.update_preference_by_type(/datum/preference/color/human/hair_color, character.looks.hair_color)
+	prefs.update_preference_by_type(/datum/preference/color/human/facial_color, character.looks.facial_color)
+	prefs.update_preference_by_type(/datum/preference/color/human/skin_color, character.looks.skin_color)
 
-	prefs.update_preference_by_type(/datum/preference/text/human/f_style, character.f_style)
-	prefs.update_preference_by_type(/datum/preference/numeric/human/s_tone, character.s_tone)
+	prefs.update_preference_by_type(/datum/preference/text/human/f_style, character.looks.facial_style)
+	prefs.update_preference_by_type(/datum/preference/numeric/human/s_tone, character.looks.skin_tone)
 	prefs.update_preference_by_type(/datum/preference/text/human/b_type, character.dna ? character.dna.b_type : DEFAULT_BLOOD_TYPE)
 
 // Saves mob's current custom species, ears, tail, wings and digitigrade legs state to prefs.
@@ -157,7 +157,7 @@
 	prefs.update_preference_by_type(/datum/preference/numeric/human/wing_alpha, character.a_wing)
 
 	prefs.update_preference_by_type(/datum/preference/text/human/custom_species, character.custom_species) // migrated pref
-	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.digitigrade) // migrated pref
+	prefs.update_preference_by_type(/datum/preference/toggle/human/digitigrade, character.looks.digitigrade) // migrated pref
 
 // Saves mob's current organ state to prefs.
 /proc/apply_organs_to_prefs(mob/living/carbon/human/character, datum/preferences/prefs)

@@ -3,47 +3,10 @@
 	organs = list()
 	organs_by_name = list()
 
-	//Hair colour and style
-	var/r_hair = 0
-	var/g_hair = 0
-	var/b_hair = 0
-	var/h_style = "Bald"
-
-	var/r_grad = 0
-	var/g_grad = 0
-	var/b_grad = 0
-	var/grad_style = "none"
-	//Facial hair colour and style
-	var/r_facial = 0
-	var/g_facial = 0
-	var/b_facial = 0
-	var/f_style = "Shaved"
-
-	//Eye colour
-	var/r_eyes = 0
-	var/g_eyes = 0
-	var/b_eyes = 0
-
-	var/s_tone = 0	//Skin tone
-
-	//Skin colour
-	var/r_skin = 0
-	var/g_skin = 0
-	var/b_skin = 0
-
-
-	//Synth colors
-	var/synth_color	= 0					//Lets normally uncolorable synth parts be colorable.
-	var/r_synth							//Used with synth_color to color synth parts that normaly can't be colored.
-	var/g_synth							//Same as above
-	var/b_synth							//Same as above
-	var/synth_markings = 0				//Enables/disables markings on synth parts.
-
-	var/digitigrade = 0 // 0 = no digi, 1 = default, 2+ = digi styles... (Not used yet)
+	// Hair, eye, skin and synth colours, styles, skin tone, digitigrade and lips: the looks profile record
+	// (/datum/record/appearance, profile_records.dm).
 
 	var/damage_multiplier = 1 //multiplies melee combat damage
-
-	var/lip_style = null	//no lipstick by default- arguably misleading, as it could be used for general makeup
 
 	var/age = 30		//Player's age (pure fluff)
 
@@ -158,10 +121,6 @@
 
 
 /mob/living/carbon/human
-	r_skin = 238 // TO DO: Set defaults for other races.
-	g_skin = 206
-	b_skin = 179
-
 	var/vantag_pref = VANTAG_NONE //What's my status?
 	var/ability_flags = 0	//Shadekin abilities/potentially other species-based?
 	var/sensorpref = 5		//Suit sensor loadout pref
@@ -187,4 +146,3 @@ TRACKED(/mob/living/carbon/human, vantag_pref)
 /// Limbs and organs attach and detach through the body (body/parts/attach.dm invalidates it): MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
-TRACKED(/mob/living/carbon/human, lip_style)

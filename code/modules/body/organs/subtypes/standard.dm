@@ -379,7 +379,7 @@ CAPABILITIES(/obj/item/organ/external/head)
 					eyes_icon.Blend(rgb(128,0,0), ICON_ADD)
 			//We have weird other-sorts of eyes (as we're not supposed to have eye organ, but we have HAS_EYE_COLOR species)
 			else
-				eyes_icon.Blend(rgb(owner.r_eyes, owner.g_eyes, owner.b_eyes), ICON_ADD)
+				eyes_icon.Blend(owner.looks.eyes_color, ICON_ADD)
 
 
 		// allow rendering of eyes over markings.
@@ -391,8 +391,8 @@ CAPABILITIES(/obj/item/organ/external/head)
 			icon_cache_key += "[eye_icon]"
 
 	//Lip color/icon
-	if(owner.lip_style && (data.get_species_appearance_flags() & HAS_LIPS))
-		var/icon/lip_icon = new/icon('icons/mob/human_face.dmi', "lips_[owner.lip_style]_s")
+	if(owner.looks.lip_style && (data.get_species_appearance_flags() & HAS_LIPS))
+		var/icon/lip_icon = new/icon('icons/mob/human_face.dmi', "lips_[owner.looks.lip_style]_s")
 		add_overlay(lip_icon)
 		mob_icon.Blend(lip_icon, ICON_OVERLAY)
 

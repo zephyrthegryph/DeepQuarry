@@ -49,7 +49,7 @@
 	return -75
 
 /datum/preference/numeric/human/s_tone/apply_to_human(mob/living/carbon/human/target, value)
-	target.s_tone = value
+	target.looks.set_skin_tone(value)
 
 
 /datum/preference/text/human/h_style
@@ -69,7 +69,7 @@
 	return sprite_accessory_thumbs(GLOB.hair_styles_list)
 
 /datum/preference/text/human/h_style/apply_to_human(mob/living/carbon/human/target, value)
-	target.h_style = value
+	target.looks.set_hair_style(value)
 
 
 /datum/preference/text/human/f_style
@@ -89,7 +89,7 @@
 	return sprite_accessory_thumbs(GLOB.facial_hair_styles_list)
 
 /datum/preference/text/human/f_style/apply_to_human(mob/living/carbon/human/target, value)
-	target.f_style = value
+	target.looks.set_facial_style(value)
 
 
 /datum/preference/text/human/grad_style
@@ -113,7 +113,7 @@
 	return out
 
 /datum/preference/text/human/grad_style/apply_to_human(mob/living/carbon/human/target, value)
-	target.grad_style = value
+	target.looks.set_grad_style(value)
 
 
 /datum/preference/toggle/human/digitigrade
@@ -124,7 +124,7 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/digitigrade/apply_to_human(mob/living/carbon/human/target, value)
-	target.digitigrade = value
+	target.looks.set_digitigrade(value)
 
 
 /datum/preference/toggle/human/synth_color
@@ -135,7 +135,7 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/synth_color/apply_to_human(mob/living/carbon/human/target, value)
-	target.synth_color = value
+	target.looks.set_synth_color(value)
 
 
 /datum/preference/toggle/human/synth_markings
@@ -146,4 +146,4 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/synth_markings/apply_to_human(mob/living/carbon/human/target, value)
-	target.synth_markings = value
+	target.looks.set_synth_markings(value)

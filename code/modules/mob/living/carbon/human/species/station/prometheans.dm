@@ -189,10 +189,10 @@
 	after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_flesh_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_additional_examine_text(mob/living/carbon/human/H)
 

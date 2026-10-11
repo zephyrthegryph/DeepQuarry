@@ -21,11 +21,9 @@
 	ask.answerer = operator
 	ask.field = "hair_color"
 	ask.value = "#040506"
-	target.change_hair_color(1, 2, 3)
+	target.change_hair_color(rgb(1, 2, 3))
 	TEST_ASSERT(changer.apply_color(ask), "the actual callback changes the target's hair")
-	TEST_ASSERT_EQUAL(target.r_hair, 4, "the callback writes the actual red channel")
-	TEST_ASSERT_EQUAL(target.g_hair, 5, "the callback writes the actual green channel")
-	TEST_ASSERT_EQUAL(target.b_hair, 6, "the callback writes the actual blue channel")
+	TEST_ASSERT_EQUAL(target.looks.hair_color, "#040506", "the callback writes the actual colour")
 	TEST_ASSERT_EQUAL(changer.actor_ref_seen, REF(operator), "the delayed callback forwards its prompt answerer")
 	TEST_ASSERT_EQUAL(changer.change_flag_seen, APPEARANCECHANGER_CHANGED_HAIRCOLOR, "the real hair-color feedback flag is preserved")
 	TEST_ASSERT_EQUAL(changer.hook_calls, 1, "a real change invokes the feedback hook exactly once")

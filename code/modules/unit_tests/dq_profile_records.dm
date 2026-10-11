@@ -24,26 +24,16 @@
 
 /// Dresses H in a fixed, non-default appearance: every colour channel, both styles, a gradient, skin tone, lips.
 /datum/unit_test/proc/dq_profile_dress(mob/living/carbon/human/H, tone)
-	H.h_style = dq_profile_style(H, GLOB.hair_styles_list, "Bald")
-	H.f_style = dq_profile_style(H, GLOB.facial_hair_styles_list, "Shaved")
-	H.grad_style = GLOB.hair_gradients[min(2, length(GLOB.hair_gradients))]
-	H.r_hair = 200
-	H.g_hair = 40
-	H.b_hair = 90
-	H.r_grad = 10
-	H.g_grad = 220
-	H.b_grad = 30
-	H.r_facial = 120
-	H.g_facial = 130
-	H.b_facial = 5
-	H.r_eyes = 0
-	H.g_eyes = 255
-	H.b_eyes = 128
-	H.r_skin = 90
-	H.g_skin = 160
-	H.b_skin = 70
-	H.s_tone = tone
-	H.set_lip_style("red")
+	H.looks.set_hair_style(dq_profile_style(H, GLOB.hair_styles_list, "Bald"))
+	H.looks.set_facial_style(dq_profile_style(H, GLOB.facial_hair_styles_list, "Shaved"))
+	H.looks.set_grad_style(GLOB.hair_gradients[min(2, length(GLOB.hair_gradients))])
+	H.looks.set_hair_color(rgb(200, 40, 90))
+	H.looks.set_grad_color(rgb(10, 220, 30))
+	H.looks.set_facial_color(rgb(120, 130, 5))
+	H.looks.set_eyes_color(rgb(0, 255, 128))
+	H.looks.set_skin_color(rgb(90, 160, 70))
+	H.looks.set_skin_tone(tone)
+	H.looks.set_lip_style("red")
 
 /datum/unit_test/dq_profile_human_look_pin
 
@@ -66,7 +56,7 @@
 	var/mob/living/carbon/human/taj = allocate(/mob/living/carbon/human, T)
 	taj.set_species(SPECIES_TAJARAN)
 	dq_profile_dress(taj, 0)
-	taj.digitigrade = 1
+	taj.looks.set_digitigrade(1)
 	got["tajaran_digi"] = dq_profile_look_hash(taj)
 
 	var/mob/living/carbon/human/unathi = allocate(/mob/living/carbon/human, T)
@@ -78,15 +68,15 @@
 	human.dna.ResetUIFrom(human)
 	var/mob/living/carbon/human/clone = allocate(/mob/living/carbon/human, T)
 	clone.set_species(SPECIES_HUMAN)
-	clone.set_lip_style("red")
+	clone.looks.set_lip_style("red")
 	clone.dna = human.dna.Clone()
 	clone.UpdateAppearance()
 	got["dna_copy"] = dq_profile_look_hash(clone)
 
 	var/mob/living/carbon/human/copy = allocate(/mob/living/carbon/human, T)
 	copy.set_species(SPECIES_HUMAN)
-	copy.set_lip_style("red")
-	copy.copy_colours_from(human)
+	copy.looks.set_lip_style("red")
+	record_copy(copy.looks, human.looks)
 	got["colour_copy"] = dq_profile_look_hash(copy)
 
 	var/list/moved = list()
@@ -97,3 +87,26 @@
 	TEST_ASSERT(!length(moved), "these looks differ from the ones recorded before the profile move: [jointext(moved, ", ")]")
 	// the hash is of a real picture: two different looks hash differently
 	TEST_ASSERT(got["human"] != got["unathi"], "a human and an unathi look different")
+
+/// A human is made with its looks record: owned, edited through VV by its setters, shown in place, copied whole, gone with it.
+/datum/unit_test/dq_profile_record_basics
+
+/datum/unit_test/dq_profile_record_basics/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/datum/record/appearance/looks = H.looks
+	TEST_ASSERT(istype(looks), "a human is made with its looks record")
+	TEST_ASSERT_EQUAL(owner_of(looks), H, "the human owns it")
+	TEST_ASSERT_EQUAL(looks.skin_color, "#eeceb3", "the record starts with the human skin colour the old vars had")
+
+	looks.vv_edit_var("hair_color", "#123456")
+	TEST_ASSERT_EQUAL(looks.hair_color, "#123456", "an admin edit of a field goes through its setter")
+	TEST_ASSERT(findtext(debug_variable("looks", looks, 0, H), "hair_color"), "VV shows the record's fields under the mob")
+
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	record_copy(other.looks, looks)
+	TEST_ASSERT(record_equal(other.looks, looks), "a copy holds every field: [jointext(record_diff(other.looks, looks), ", ")]")
+	TEST_ASSERT(other.looks != looks, "and is its own record")
+
+	qdel(H)
+	TEST_ASSERT(QDELETED(looks), "the record goes with its holder")

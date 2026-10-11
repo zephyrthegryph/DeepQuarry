@@ -50,7 +50,7 @@ CAPABILITIES(/obj/item/lipstick)
 	if(!ishuman(A.target))
 		return FALSE
 	var/mob/living/carbon/human/H = A.target
-	return !H.lip_style
+	return !H.looks.lip_style
 
 /obj/item/lipstick/proc/lip_refusal(datum/act/op/A)
 	return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/lipstick)
 	else
 		act_message(A.actor, src, MSG_SELF(span_notice("You apply %T%.")), \
 			MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
-	H.set_lip_style(colour)
+	H.looks.set_lip_style(colour)
 	H.update_icons_body()
 	return OP_OK
 

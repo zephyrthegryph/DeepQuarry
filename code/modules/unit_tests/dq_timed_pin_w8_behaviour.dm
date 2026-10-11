@@ -178,13 +178,13 @@
 	dq_give_zone_sel(user)
 	user.zone_sel.selecting = O_MOUTH
 	var/mob/living/carbon/human/patient = person(get_step(user, NORTH))
-	patient.set_lip_style("red")
+	patient.looks.set_lip_style("red")
 	target = patient
 	held = hold(/obj/item/paper)
 
 /datum/unit_test/dq_timed_pin_w8/paper_wipe/is_done()
 	var/mob/living/carbon/human/patient = target
-	return !QDELETED(patient) && isnull(patient.lip_style)
+	return !QDELETED(patient) && isnull(patient.looks.lip_style)
 
 /datum/unit_test/dq_timed_pin_w8/paper_wipe/extra_pin()
 	// aimed at the eyes it only shows the paper, at once
@@ -192,7 +192,7 @@
 	user.zone_sel.selecting = O_EYES
 	refused()
 	var/mob/living/carbon/human/patient = target
-	TEST_ASSERT(!isnull(patient.lip_style), "and wipes nothing")
+	TEST_ASSERT(!isnull(patient.looks.lip_style), "and wipes nothing")
 	clear_scene()
 
 // ---- A smart magazine: a cell put in, and taken out by hand ----

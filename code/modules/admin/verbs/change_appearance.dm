@@ -167,37 +167,29 @@ CAPABILITIES(/datum/admin_edit_appearance_review)
 /datum/admin_edit_appearance_review/proc/replay_prefix()
 	var/mob/living/carbon/human/target_human = target
 	if(stage >= 3 && new_facial)
-		target_human.r_facial = hex2num(copytext(new_facial, 2, 4))
-		target_human.g_facial = hex2num(copytext(new_facial, 4, 6))
-		target_human.b_facial = hex2num(copytext(new_facial, 6, 8))
+		target_human.looks.set_facial_color(new_facial)
 
 	if(stage >= 4 && new_hair)
-		target_human.r_hair = hex2num(copytext(new_hair, 2, 4))
-		target_human.g_hair = hex2num(copytext(new_hair, 4, 6))
-		target_human.b_hair = hex2num(copytext(new_hair, 6, 8))
+		target_human.looks.set_hair_color(new_hair)
 
 	if(stage >= 5 && new_eyes)
-		target_human.r_eyes = hex2num(copytext(new_eyes, 2, 4))
-		target_human.g_eyes = hex2num(copytext(new_eyes, 4, 6))
-		target_human.b_eyes = hex2num(copytext(new_eyes, 6, 8))
+		target_human.looks.set_eyes_color(new_eyes)
 		target_human.update_eyes()
 
 	if(stage >= 6 && new_skin)
-		target_human.r_skin = hex2num(copytext(new_skin, 2, 4))
-		target_human.g_skin = hex2num(copytext(new_skin, 4, 6))
-		target_human.b_skin = hex2num(copytext(new_skin, 6, 8))
+		target_human.looks.set_skin_color(new_skin)
 
 	if(stage >= 7 && new_tone)
-		target_human.s_tone = max(min(round(text2num(new_tone)), 220), 1)
-		target_human.s_tone =  -target_human.s_tone + 35
+		target_human.looks.set_skin_tone(max(min(round(text2num(new_tone)), 220), 1))
+		target_human.looks.set_skin_tone(-target_human.looks.skin_tone + 35)
 
 	// hair
 	if(stage >= 8 && new_hstyle)
-		target_human.h_style = new_hstyle
+		target_human.looks.set_hair_style(new_hstyle)
 
 	// facial hair
 	if(stage >= 9 && new_fstyle)
-		target_human.f_style = new_fstyle
+		target_human.looks.set_facial_style(new_fstyle)
 
 	if(stage >= 10 && new_gender)
 		target_human.set_gender(new_gender)

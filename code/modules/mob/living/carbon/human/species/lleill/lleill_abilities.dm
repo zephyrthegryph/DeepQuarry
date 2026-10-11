@@ -75,7 +75,7 @@
 
 	COOLDOWN_START(src, last_special, 5 SECONDS)
 
-	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/lleill_colour_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -84,12 +84,8 @@
 
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
 
-	r_skin =   hex2num(copytext(new_skin, 2, 4))
-	g_skin =   hex2num(copytext(new_skin, 4, 6))
-	b_skin =   hex2num(copytext(new_skin, 6, 8))
-	r_synth = r_skin
-	g_synth = g_skin
-	b_synth = b_skin
+	looks.set_skin_color(new_skin)
+	looks.set_synth_color_rgb(looks.skin_color)
 
 	for(var/obj/item/organ/external/E in organs)
 		E.sync_colour_to_human(src)

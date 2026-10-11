@@ -162,7 +162,7 @@
 
 /datum/species/protean/handle_post_spawn(mob/living/carbon/human/H)
 	..()
-	H.synth_color = TRUE
+	H.looks.set_synth_color(TRUE)
 
 /datum/species/protean/equip_survival_gear(mob/living/carbon/human/H)
 	..()

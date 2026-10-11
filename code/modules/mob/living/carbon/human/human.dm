@@ -51,7 +51,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		species_at_make = forced_species
 	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
 	if(forced_hair)
-		h_style = forced_hair
+		looks.set_hair_style(forced_hair)
 	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
 	if(forced_faction)
 		faction = forced_faction
@@ -975,7 +975,7 @@ CAPABILITIES(/datum/morph_review)
 	return !why_not() && (A.answer || (A.request.outcome == REQ_CANCELLED && isnull(A.request.value)))
 
 /datum/morph_review/proc/start_step()
-	open_request(src, /datum/prompt/color/morph, PROC_REF(facial_color_picked), answerer = actor, question = "Please select facial hair color.", default = rgb(actor.r_facial, actor.g_facial, actor.b_facial))
+	open_request(src, /datum/prompt/color/morph, PROC_REF(facial_color_picked), answerer = actor, question = "Please select facial hair color.", default = actor.looks.facial_color)
 
 /datum/morph_review/proc/facial_color_picked(datum/act/request/A)
 	run_step(PROC_REF(facial_color_picked_step), A)
@@ -985,7 +985,7 @@ CAPABILITIES(/datum/morph_review)
 		retire()
 		return
 	facial_color = A.answer ? A.request.value : ""
-	open_request(src, /datum/prompt/color/morph, PROC_REF(hair_color_picked), answerer = actor, question = "Please select hair color.", default = rgb(actor.r_hair, actor.g_hair, actor.b_hair))
+	open_request(src, /datum/prompt/color/morph, PROC_REF(hair_color_picked), answerer = actor, question = "Please select hair color.", default = actor.looks.hair_color)
 
 /datum/morph_review/proc/hair_color_picked(datum/act/request/A)
 	run_step(PROC_REF(hair_color_picked_step), A)
@@ -995,7 +995,7 @@ CAPABILITIES(/datum/morph_review)
 		retire()
 		return
 	hair_color = A.answer ? A.request.value : ""
-	open_request(src, /datum/prompt/color/morph, PROC_REF(eye_color_picked), answerer = actor, question = "Please select eye color.", default = rgb(actor.r_eyes, actor.g_eyes, actor.b_eyes))
+	open_request(src, /datum/prompt/color/morph, PROC_REF(eye_color_picked), answerer = actor, question = "Please select eye color.", default = actor.looks.eyes_color)
 
 /datum/morph_review/proc/eye_color_picked(datum/act/request/A)
 	run_step(PROC_REF(eye_color_picked_step), A)
@@ -1037,22 +1037,16 @@ CAPABILITIES(/datum/morph_review)
 
 /mob/living/carbon/human/proc/morph_answered(new_facial, new_hair, new_eyes, new_h_style, new_f_style, new_gender)
 	if(new_facial)
-		r_facial = hex2num(copytext(new_facial, 2, 4))
-		g_facial = hex2num(copytext(new_facial, 4, 6))
-		b_facial = hex2num(copytext(new_facial, 6, 8))
+		looks.set_facial_color(new_facial)
 	if(new_hair)
-		r_hair = hex2num(copytext(new_hair, 2, 4))
-		g_hair = hex2num(copytext(new_hair, 4, 6))
-		b_hair = hex2num(copytext(new_hair, 6, 8))
+		looks.set_hair_color(new_hair)
 	if(new_eyes)
-		r_eyes = hex2num(copytext(new_eyes, 2, 4))
-		g_eyes = hex2num(copytext(new_eyes, 4, 6))
-		b_eyes = hex2num(copytext(new_eyes, 6, 8))
+		looks.set_eyes_color(new_eyes)
 		update_eyes()
 	if(new_h_style)
-		h_style = new_h_style
+		looks.set_hair_style(new_h_style)
 	if(new_f_style)
-		f_style = new_f_style
+		looks.set_facial_style(new_f_style)
 	switch(new_gender)
 		if("Male")
 			gender = MALE
@@ -1469,13 +1463,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 	if(species.base_color)
 		//Apply color.
-		r_skin = hex2num(copytext(species.base_color,2,4))
-		g_skin = hex2num(copytext(species.base_color,4,6))
-		b_skin = hex2num(copytext(species.base_color,6,8))
+		looks.set_skin_color(species.base_color)
 	else
-		r_skin = 0
-		g_skin = 0
-		b_skin = 0
+		looks.set_skin_color(rgb(0, 0, 0))
 
 	if(species.holder_type)
 		holder_type = species.holder_type

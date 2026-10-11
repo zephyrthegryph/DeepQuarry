@@ -422,7 +422,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 /obj/item/paper/proc/wipe_lipstick_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	act_message(A.actor, H, MSG_SELF(span_notice("You wipe off %T%'s lipstick.")), MSG_OTHERS(span_notice("%U% wipes %T%'s lipstick off with \the [src].")))
-	H.set_lip_style(null)
+	H.looks.set_lip_style(null)
 	H.update_icons_body()
 	return OP_OK
 
@@ -437,7 +437,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 			var/mob/living/carbon/human/H = M
 			if(H == user)
 				to_chat(user, span_notice("You wipe off the lipstick with [src]."))
-				H.set_lip_style(null)
+				H.looks.set_lip_style(null)
 				H.update_icons_body()
 
 /obj/item/paper/proc/set_content(text,title)

@@ -16,16 +16,16 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
 		if(!(franchise && franchise.skin_tone) && !(franchise && franchise.skin_color))
-			if(human.synth_color)
-				s_col = list(human.r_synth, human.g_synth, human.b_synth)
+			if(human.looks.synth_color)
+				s_col = hex2rgb(human.looks.synth_color_rgb)
 			return
 	if(human.species && data.get_species_name() != human.species.name)
 		return
-	if(!isnull(human.s_tone) && (human.species.appearance_flags & HAS_SKIN_TONE))
-		s_tone = human.s_tone
+	if(!isnull(human.looks.skin_tone) && (human.species.appearance_flags & HAS_SKIN_TONE))
+		s_tone = human.looks.skin_tone
 	if(human.species.appearance_flags & HAS_SKIN_COLOR)
-		s_col = list(human.r_skin, human.g_skin, human.b_skin)
-	h_col = list(human.r_hair, human.g_hair, human.b_hair)
+		s_col = hex2rgb(human.looks.skin_color)
+	h_col = hex2rgb(human.looks.hair_color)
 
 /obj/item/organ/external/proc/sync_colour_to_dna()
 	s_tone = null
@@ -51,17 +51,17 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 /obj/item/organ/external/head/proc/get_hair_icon()
 	var/image/res = image('icons/mob/human_face.dmi',"bald_s")
 	//Facial hair
-	if(owner.f_style)
-		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[owner.f_style]
+	if(owner.looks.facial_style)
+		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[owner.looks.facial_style]
 		if(facial_hair_style && facial_hair_style.species_allowed && (data.get_species_bodytype(owner) in facial_hair_style.species_allowed))
 			var/icon/facial_s = new/icon("icon" = facial_hair_style.icon, "icon_state" = "[facial_hair_style.icon_state]_s")
 			if(facial_hair_style.do_colouration)
-				facial_s.Blend(rgb(owner.r_facial, owner.g_facial, owner.b_facial), facial_hair_style.color_blend_mode)
+				facial_s.Blend(owner.looks.facial_color, facial_hair_style.color_blend_mode)
 			res.add_overlay(facial_s)
 
 	//Head hair
-	if(owner.h_style)
-		var/style = owner.h_style
+	if(owner.looks.hair_style)
+		var/style = owner.looks.hair_style
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[style]
 		if(owner.get_equipped_item(SLOT_ID_HEAD) && (owner.get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHEADHAIR))
 			if(!(hair_style.flags & HAIR_VERY_SHORT))
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	// this also allows the preview mannequin to update properly because customisation topic calls don't call a DNA check
 	var/check_digi = istype(src,/obj/item/organ/external/leg) || istype(src,/obj/item/organ/external/foot)
 	if(owner)
-		digitigrade = check_digi && owner.digitigrade
+		digitigrade = check_digi && owner.looks.digitigrade
 	else if(data)
 		digitigrade = check_digi && data.digitigrade
 
@@ -135,7 +135,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		apply_colouration(mob_icon)
 
 	//Body markings, actually does not include head this time. Done separately above.
-	if((!istype(src,/obj/item/organ/external/head) && !(force_icon && !skip_forced_icon)) || (model && owner && owner.synth_markings))
+	if((!istype(src,/obj/item/organ/external/head) && !(force_icon && !skip_forced_icon)) || (model && owner && owner.looks.synth_markings))
 		for(var/M in markings)
 			if (!markings[M]["on"])
 				continue

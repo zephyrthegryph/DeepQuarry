@@ -445,10 +445,10 @@
 		to_chat(src, span_warning("You feel exhausted."))
 		src.status_adjust(STAT_WEAKENED, 3)
 	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && src.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
-		if((src.h_style != "Bald" || src.f_style != "Shaved" ))
+		if((src.looks.hair_style != "Bald" || src.looks.facial_style != "Shaved" ))
 			to_chat(src, span_warning("Your hair falls out."))
-			src.h_style = "Bald"
-			src.f_style = "Shaved"
+			src.looks.set_hair_style("Bald")
+			src.looks.set_facial_style("Shaved")
 			src.update_hair()
 	if(prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //Rare chance of vomiting.
 		life_radiation_vomit()

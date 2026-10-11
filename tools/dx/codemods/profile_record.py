@@ -31,6 +31,18 @@ SPECS = {
         known_refs={"owner", "human", "character", "H", "target_human", "temp_human", "target", "M", "new_character", "mannequin"},
         skip={"code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/living/carbon/human/profile_records.dm"},
     ),
+    "identity": dict(
+        holder="/mob", rec="bio",
+        singles={n: n for n in ("age", "home_system", "birthplace", "citizenship", "personal_faction", "religion", "antag_faction",
+                                "antag_vis", "med_record", "sec_record", "gen_record", "exploit_record", "flavor_text", "flavor_texts",
+                                "nickname", "headset", "backbag", "pdachoice", "custom_say", "custom_ask", "custom_whisper",
+                                "custom_exclaim")},
+        tracked=False,
+        ambiguous=set(),
+        known_refs={"H", "M", "L", "character", "new_character", "target", "mannequin", "human", "owner", "mob", "user", "src"},
+        skip={"code/modules/mob/mob_defines.dm", "code/modules/mob/living/living_defines.dm",
+              "code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/profile_records.dm"},
+    ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 _spec_name = next((a for a in _args if a in SPECS), None)
@@ -43,11 +55,45 @@ REC = SPEC["rec"]
 TRIPLES = SPEC.get("triples", {})
 SINGLES = SPEC.get("singles", {})
 TRACKED = SPEC.get("tracked", False)
-AMBIG = SPEC.get("ambiguous", set())
+AMBIG = set(SPEC.get("ambiguous", set()))
 KNOWN = SPEC.get("known_refs", set())
 SKIP = SPEC["skip"]
 CHAN_NAMES = {c + "_" + t: (t, c) for t in TRIPLES for c in "rgb"}
+
+
+def _auto_ambiguous(names):
+    """Names some type outside the holder also declares as a var (a block var at one tab, or `/type/var/name`)."""
+    found = set()
+    decl = re.compile(r"^\tvar/(?:[A-Za-z_]\w*/)*(" + "|".join(names) + r")\b")
+    path_decl = re.compile(r"^(/[A-Za-z0-9_/]+?)/var/(?:[A-Za-z_]\w*/)*(" + "|".join(names) + r")\b")
+    for d, _, files in os.walk("code"):
+        if "_generated" in d:
+            continue
+        for f in files:
+            if not f.endswith(".dm"):
+                continue
+            cur = None
+            with open(os.path.join(d, f), encoding="utf-8", errors="surrogateescape") as fh:
+                for line in fh:
+                    line = line.rstrip("\r\n")
+                    tm = re.match(r"^(/[A-Za-z0-9_/]+)\s*(//.*)?$", line)
+                    if tm and "/proc/" not in line and "/verb/" not in line:
+                        cur = tm.group(1)
+                        continue
+                    if line and not line[0].isspace():
+                        cur = None
+                        pm = path_decl.match(line)
+                        if pm and not (pm.group(1) == SPEC["holder"] or pm.group(1).startswith(SPEC["holder"] + "/")):
+                            found.add(pm.group(2))
+                        continue
+                    m = decl.match(line)
+                    if m and cur and not (cur == SPEC["holder"] or cur.startswith(SPEC["holder"] + "/")):
+                        found.add(m.group(1))
+    return found
+
+
 ALL_NAMES = sorted(list(CHAN_NAMES) + list(SINGLES), key=len, reverse=True)
+AMBIG |= _auto_ambiguous(ALL_NAMES)
 NAME_RE = "|".join(ALL_NAMES)
 REF = r"(?:[A-Za-z_]\w*(?:\(\))?(?:\??\.[A-Za-z_]\w*(?:\(\))?)*)"
 TYPE_LINE = re.compile(r"^(/[A-Za-z0-9_/]+)\s*(//.*)?$")
@@ -156,7 +202,7 @@ def ref_ok(ref, name):
     if t is not None:
         return under_base(t) or (not ambiguous and (BASE.startswith(t + "/")))
     if ambiguous:
-        return head in KNOWN or head.endswith("()") or (head.startswith("owner"))
+        return head in KNOWN or head.replace("()", "") in KNOWN
     return True
 
 

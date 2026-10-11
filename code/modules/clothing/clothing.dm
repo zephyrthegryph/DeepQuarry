@@ -1434,7 +1434,7 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		var/mob/living/carbon/human/H = user
 
 		// if digitigrade-use flag is set
-		if(H.digitigrade)
+		if(H.looks.digitigrade)
 
 			// Don't reset if already set
 			if(!fit_for_digi)

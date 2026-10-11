@@ -156,9 +156,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 			O.s_col[3] = 0
 
 		// Resetting the UI does strange things for the skin of a non-human robot, which should be controlled by a whole different thing.
-		H.r_skin = 0
-		H.g_skin = 0
-		H.b_skin = 0
+		H.looks.set_skin_color(rgb(0, 0, 0))
 		H.dna.ResetUIFrom(H)
 
 		H.allow_spontaneous_tf = TRUE // Allows vore customization of synthmorphs
