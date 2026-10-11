@@ -108,3 +108,84 @@ fn two_real_frontends_share_relative_payloads_and_issue_fresh_bodies() {
     assert!(!views(&a).is_empty());
     assert_eq!(views(&a), views(&b));
 }
+
+#[test]
+fn failed_and_analysis_frontends_preserve_published_claims_and_rebind_fresh_origins() {
+    let source = "/obj/base\n    var/count = 1\n/proc/probe()\n    return 7\n";
+    let engine = Arc::new(crate::SharedNormalizedDeclarations::default());
+    let mut state = RetainedSemanticTree::with_shared_normalized(engine);
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let build = |state: &mut RetainedSemanticTree, path: &str, text: &'static str| {
+        build_with_executor_and_semantic_state(
+            Path::new(path),
+            &Source(text),
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+            Some(state),
+        )
+    };
+    let first_request = state.begin_declaration_request(true);
+    let first = build(&mut state, "previous.dme", source).unwrap();
+    assert!(first_request.publish_successful());
+    drop(first_request);
+    let failed = state.begin_declaration_request(true);
+    assert!(build(
+        &mut state,
+        "failed.dme",
+        "/obj/partial\n    var/other = 2\n#error deliberate frontend failure\n"
+    )
+    .is_err());
+    drop(failed);
+    let analysis = state.begin_declaration_request(false);
+    build(
+        &mut state,
+        "analysis.dme",
+        "/obj/analysis\n    var/temporary = 3\n",
+    )
+    .unwrap();
+    assert!(!analysis.publish_successful());
+    drop(analysis);
+    let current_request = state.begin_declaration_request(true);
+    let current = build(&mut state, "current.dme", source).unwrap();
+    assert!(state.declaration_retention_stats().hits > 0);
+    let fresh = build(&mut RetainedSemanticTree::new(), "current.dme", source).unwrap();
+    assert_eq!(
+        current.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        current.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    assert_eq!(current.bodies.len(), fresh.bodies.len());
+    for (actual, expected) in current.bodies.iter().zip(fresh.bodies.iter()) {
+        assert_eq!(actual.expanded_span, expected.expanded_span);
+        assert_eq!(actual.source, expected.source);
+        assert_eq!(
+            actual.setting_context_origins,
+            expected.setting_context_origins
+        );
+        assert_eq!(actual.member, expected.member);
+    }
+    assert_eq!(
+        current.bodies[0].source.path.file_name().unwrap(),
+        "current.dme"
+    );
+    assert_eq!(
+        first.bodies[0].source.path.file_name().unwrap(),
+        "previous.dme"
+    );
+    assert!(BodyArena::new(&current)
+        .with_parsed(&first.bodies[0], |_| ())
+        .is_err());
+    assert!(BodyArena::new(&current)
+        .with_parsed(&current.bodies[0], |_| ())
+        .is_ok());
+    assert!(current_request.publish_successful());
+}
