@@ -118,6 +118,75 @@ mod tests {
         assert_eq!(escaped.as_slice(), &[1; 8]);
         drop((first, second));
     }
+
+    #[test]
+    fn final_reconciliation_rejects_a_row_behind_the_streaming_cursor() {
+        let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
+        let lease = store.lease();
+        let first = lease
+            .insert_with_owned(Arc::from(b"first".as_slice()), vec![], vec![], 1, || {
+                vec![1; 8]
+            })
+            .unwrap();
+        let mut retained = BTreeMap::new();
+        retained.insert(Arc::as_ptr(&first) as usize, first.capacity());
+        // Simulate the unlocked interval after the streaming cursor passed:
+        // this current row has never had its payload charged.
+        let late = lease
+            .insert_with_owned(Arc::from(b"late".as_slice()), vec![], vec![], 1, || {
+                vec![2; 8]
+            })
+            .unwrap();
+        let detached = {
+            let mut state = store.state.lock().unwrap();
+            let (report, detached) = reconcile(&mut state, &retained, usize::MAX, 0);
+            assert!(report.is_none());
+            detached.unwrap()
+        };
+        assert!(Arc::ptr_eq(&detached.value, &late));
+        drop(detached);
+        let mut state = store.state.lock().unwrap();
+        let (report, detached) = reconcile(&mut state, &retained, usize::MAX, 1);
+        let report = report.unwrap();
+        assert!(detached.is_none());
+        assert_eq!(report.retained_entries, 1);
+        assert_eq!(report.evicted_entries, 1);
+        assert_eq!(state.bytes, report.charged_bytes);
+        drop(state);
+        assert_eq!(late.as_slice(), &[2; 8]);
+        drop(lease);
+    }
+
+    #[test]
+    fn final_reconciliation_rechecks_claim_growth_after_streaming_charge() {
+        let store = ObservedArtifactStore::<Vec<u8>, u8, u8, u8>::shared_current_rosters();
+        let first = store.lease();
+        let value = first
+            .insert_with_owned(Arc::from(b"key".as_slice()), vec![], vec![], 1, || {
+                vec![1; 8]
+            })
+            .unwrap();
+        let original =
+            store.prune_for_pressure(usize::MAX, |_, _, _, value| Some(value.capacity()));
+        let mut retained = BTreeMap::new();
+        retained.insert(Arc::as_ptr(&value) as usize, value.capacity());
+        let second = store.lease();
+        let (accepted, changed) =
+            second.visit_receipted_with(b"key", &mut |_, _| None, &mut |_| true);
+        assert!(accepted.is_some());
+        assert!(changed.is_none());
+        let detached = {
+            let mut state = store.state.lock().unwrap();
+            let (report, detached) = reconcile(&mut state, &retained, original.charged_bytes, 0);
+            assert!(report.is_none());
+            assert!(state.claims.is_empty());
+            assert!(state.leases.values().all(|roster| roster.is_empty()));
+            detached.unwrap()
+        };
+        drop(detached);
+        assert_eq!(value.as_slice(), &[1; 8]);
+        drop((first, second));
+    }
 }
 
 impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
@@ -278,8 +347,90 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
                 break;
             }
         }
-        report
+        // The streaming cursor cannot certify rows inserted behind it, nor
+        // claims added to an already visited row. Reconcile the CURRENT state
+        // under one lock before returning. Only an offending row is detached;
+        // its potentially large payload is destroyed outside the lock, then
+        // reconciliation starts again. No whole-store strong snapshot is held.
+        loop {
+            let (complete, detached) = {
+                let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+                reconcile(&mut state, &retained, limit, report.evicted_entries)
+            };
+            if let Some(complete) = complete {
+                return complete;
+            }
+            report.evicted_entries += 1;
+            drop(detached);
+        }
     }
+}
+
+fn reconcile<T, Q, A, D: Copy + Ord>(
+    state: &mut Resident<T, Q, A, D>,
+    retained: &BTreeMap<usize, usize>,
+    limit: usize,
+    evicted_entries: usize,
+) -> (Option<PressurePrune>, Option<Variant<T, Q, A, D>>) {
+    let mut report = PressurePrune {
+        evicted_entries,
+        ..PressurePrune::default()
+    };
+    let mut rejected = None;
+    for (hash, bucket) in &state.buckets {
+        for (position, entry) in bucket.iter().enumerate() {
+            let pointer = Arc::as_ptr(&entry.value) as usize;
+            let index = entry_index_charge(state, *hash, position);
+            let admitted = retained.get(&pointer).and_then(|payload| {
+                payload.checked_add(index).and_then(|weight| {
+                    report
+                        .charged_bytes
+                        .checked_add(weight)
+                        .filter(|total| *total <= limit)
+                        .map(|total| (*payload, total))
+                })
+            });
+            let Some((payload, total)) = admitted else {
+                rejected = Some((*hash, position));
+                break;
+            };
+            report.charged_bytes = total;
+            report.payload_bytes += payload;
+            report.index_logical_bytes += index;
+            report.retained_entries += 1;
+        }
+        if rejected.is_some() {
+            break;
+        }
+    }
+    if let Some((hash, position)) = rejected {
+        return (None, detach(state, hash, position));
+    }
+    // Still holding the same lock: commit exactly the weights just validated.
+    // No insertion or claim change can intervene between proof and accounting.
+    let mut cursor = None;
+    loop {
+        let hash = match cursor {
+            None => state.buckets.keys().next().copied(),
+            Some(previous) => state
+                .buckets
+                .range((
+                    std::ops::Bound::Excluded(previous),
+                    std::ops::Bound::Unbounded,
+                ))
+                .next()
+                .map(|(hash, _)| *hash),
+        };
+        let Some(hash) = hash else { break };
+        cursor = Some(hash);
+        for position in 0..state.buckets[&hash].len() {
+            let pointer = Arc::as_ptr(&state.buckets[&hash][position].value) as usize;
+            let weight = retained[&pointer] + entry_index_charge(state, hash, position);
+            state.buckets.get_mut(&hash).unwrap()[position].weight = weight;
+        }
+    }
+    state.bytes = report.charged_bytes;
+    (Some(report), None)
 }
 
 /// Occupied scalar slot plus a modeled link/control envelope. This deliberately
