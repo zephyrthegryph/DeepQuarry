@@ -176,13 +176,18 @@
 
 //attack by item
 //weldingtool: unfasten and convert to obj/disposalconstruct
-/obj/structure/disposalpipe/welder_act(mob/user, obj/item/I)
+CAPABILITIES(/obj/structure/disposalpipe)
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+
+/obj/structure/disposalpipe/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	var/turf/T = get_turf(src)
 	if(!T.is_plating())
-		return ITEM_INTERACT_BLOCKING // prevent interaction with T-scanner revealed pipes
+		return OP_OK // prevent interaction with T-scanner revealed pipes
 	add_fingerprint(user)
 	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing [src]....", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), on_fail = PROC_REF(welder_act_tool_failed), fail_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/structure/disposalpipe/proc/welder_act_tool_done(mob/user)
 	if(!src)

@@ -386,6 +386,7 @@
 #include "dq_chem_math_pins.dm"
 #include "dq_reagents_start_snapshot.dm"
 #include "dq_conversion_pins.dm"
+#include "dq_legacy_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
 #include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"

@@ -33,7 +33,8 @@
 +2 menu: Interaction alt
 +3 menu: Interaction item
 +5 menu: Set transfer amount
-+7 click: Click: Interaction item
++7 menu: Use wrench
++8 click: Click: Use wrench
 @obj.structure human|/obj/item/tool/wirecutters
 -menu: Use
 -click: Click: Use
@@ -99,4 +100,4 @@ human|/obj/item/assembly_holder menu: Move To Top
 human|/obj/item/assembly_holder menu: Set transfer amount
 human|/obj/item/assembly_holder menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly_holder click: Click: Fueltank interaction item
-keys: climb.climb, climb.climb_menu, drag_buckle, fueltank_interaction_item, hand, interaction_alt, interaction_item, melee_hit, reagent_dispenser_set_aptft
+keys: climb.climb, climb.climb_menu, drag_buckle, fueltank_interaction_item, hand, interaction_alt, interaction_item, melee_hit, reagent_dispenser_set_aptft, use_wrench

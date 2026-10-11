@@ -104,15 +104,6 @@ human|/obj/item/tool/crowbar menu: Toggle DNA Samples Allowance (refused: You ca
 human|/obj/item/tool/crowbar menu: Unload
 human|/obj/item/tool/crowbar menu: Use Scope (refused: You can't do that.)
 human|/obj/item/tool/crowbar click: Click: Fit
-human|/obj/item/tool/screwdriver menu: Fit
-human|/obj/item/tool/screwdriver menu: Give DNA (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Remove DNA (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Unload
-human|/obj/item/tool/screwdriver menu: Use Scope (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Fit
 human|/obj/item/tool/wirecutters menu: Fit
 human|/obj/item/tool/wirecutters menu: Give DNA (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Move To Top

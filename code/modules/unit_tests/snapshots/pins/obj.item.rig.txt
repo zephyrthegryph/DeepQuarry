@@ -64,7 +64,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use screwdriver
++18 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -82,7 +83,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use crowbar
++18 click: Click: Use crowbar
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -100,7 +102,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use wrench
++18 click: Click: Use wrench
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -118,7 +121,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use wirecutter
++18 click: Click: Use wirecutter
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -136,7 +140,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use multitool
++18 click: Click: Use multitool
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -154,7 +159,8 @@
 +14 menu: Toggle Helmet (refused: You can't do that.)
 +15 menu: Toggle Module (refused: You can't do that.)
 +16 menu: Toggle Visor (refused: You can't do that.)
-+17 click: Click: Rig item
++17 menu: Use welder
++18 click: Click: Use welder
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -277,4 +283,4 @@
 +16 menu: Toggle Visor (refused: You can't do that.)
 +17 click: Click: Rig item
 wires: AI Override, Interface Lock, Interface Shock, Security, System Control
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock, use_crowbar, use_multitool, use_screwdriver, use_welder, use_wirecutter, use_wrench

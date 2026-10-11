@@ -14,7 +14,6 @@ init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
-init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
 init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
 init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
 init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
@@ -30,7 +29,6 @@ init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "c
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remains"
 init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remainsrobot"
 init_new_child	code/ATMOSPHERICS/environmental/LINDA_fire.dm	rel_set(src, nameof(our_hot_group), new /datum/hot_group)
-init_new_child	code/game/machinery/computer/ai_core.dm	rel_set(src, nameof(laws), new using_map.default_law_type)
 init_new_child	code/game/machinery/frame.dm	rel_set(src, nameof(circuit), new frame_type.circuit(src))
 init_new_child	code/game/objects/items/devices/flipper.dm	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
 init_new_child	code/modules/artifice/telecube.dm	rel_set(src, nameof(mate), new /obj/item/telecube(src.loc))
@@ -41,7 +39,6 @@ init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.
 init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 init_new_child	code/modules/projectiles/guns/energy.dm	rel_set(src, nameof(power_supply), new cell_type(src))
-init_new_child	code/modules/research/tg/machinery/destructive_analyzer.dm	rel_set(src, nameof(rmat), new /datum/remote_materials( \
 init_new_child	code/modules/xenoarcheaology/finds/find_spawning.dm	rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
 destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
 destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))

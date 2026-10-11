@@ -42,7 +42,8 @@
 +0 menu: Interaction alt
 +1 menu: Interaction item
 +3 menu: Set Face
-+5 click: Click: Interaction item
++5 menu: Use welder
++6 click: Click: Use welder
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Interaction alt
@@ -76,4 +77,4 @@
 +1 menu: Interaction item
 +3 menu: Set Face
 +5 click: Click: Interaction item
-keys: collect_item, dice_verb_set_face, drag_buckle, gen_silicon_item_silicon_equip_module, interaction_alt, interaction_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, roll, toggle_digestable
+keys: collect_item, dice_verb_set_face, drag_buckle, gen_silicon_item_silicon_equip_module, interaction_alt, interaction_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, roll, toggle_digestable, use_welder

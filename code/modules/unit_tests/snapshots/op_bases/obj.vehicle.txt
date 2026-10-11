@@ -89,8 +89,9 @@ human|/obj/item/tool/crowbar menu: Start engine
 human|/obj/item/tool/crowbar menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Unlatch
+human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar menu: Vehicle item
-human|/obj/item/tool/crowbar click: Click: Vehicle item
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Insert key
 human|/obj/item/tool/screwdriver menu: Interaction train hand
@@ -101,8 +102,9 @@ human|/obj/item/tool/screwdriver menu: Start engine
 human|/obj/item/tool/screwdriver menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Unlatch
+human|/obj/item/tool/screwdriver menu: Use screwdriver
 human|/obj/item/tool/screwdriver menu: Vehicle item
-human|/obj/item/tool/screwdriver click: Click: Vehicle item
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Insert key
 human|/obj/item/tool/wirecutters menu: Interaction train hand
@@ -137,8 +139,9 @@ human|/obj/item/weldingtool menu: Start engine
 human|/obj/item/weldingtool menu: Stop engine (refused: The engine is already stopped.)
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Unlatch
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool menu: Vehicle item
-human|/obj/item/weldingtool click: Click: Vehicle item
+human|/obj/item/weldingtool click: Click: Use welder
 human|none menu: Interaction train hand
 human|none menu: Remove key
 human|none menu: Start engine

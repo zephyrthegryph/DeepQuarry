@@ -12,7 +12,10 @@
 @obj.item.material human|/obj/item/tool/wrench
 +3 menu: Use
 @obj.item.material human|/obj/item/tool/wirecutters
+-click: Click: Repair
 +3 menu: Use
++4 menu: Use wirecutter
++5 click: Click: Use wirecutter
 @obj.item.material human|/obj/item/multitool
 +3 menu: Use
 @obj.item.material human|/obj/item/weldingtool
@@ -29,4 +32,4 @@
 +4 menu: Use
 @obj.item.material human|/obj/item
 +3 menu: Use
-keys: collect_item, drag_buckle, fishing_rod_item, fishing_rod_string, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable
+keys: collect_item, drag_buckle, fishing_rod_item, fishing_rod_string, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, repair, sharpen, toggle_digestable, use_wirecutter

@@ -5,7 +5,8 @@
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +2 menu: Use
-+3 click: Click: Use
++3 menu: Use screwdriver
++4 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +2 menu: Use
@@ -25,7 +26,8 @@
 @obj human|/obj/item/weldingtool
 -click: nothing
 +2 menu: Use
-+3 click: Click: Use
++3 menu: Use welder
++4 click: Click: Use welder
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +3 menu: Use
@@ -45,4 +47,4 @@
 +3 menu: Use
 +4 click: Click: Use
 @obj.item human|/obj/item
-keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, use_screwdriver, use_welder

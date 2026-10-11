@@ -31,6 +31,7 @@ TRACKED(/obj/item/gun/magnetic, removable_components)
 /obj/item/gun/magnetic/var/obj/item/stock_parts/capacitor/capacitor
 
 CAPABILITIES(/obj/item/gun/magnetic)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	every(2 SECONDS, then(PROC_REF(magnetic_step)), when = PROC_REF(steps_now))
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor, starts = nameof(capacitor))
 	owns_one(nameof(loaded), /obj/item, starts = nameof(loaded))
@@ -134,17 +135,20 @@ CAPABILITIES(/obj/item/gun/magnetic)
 			else
 				. += span_notice("The capacitor charge indicator is [span_green("green")].")
 
-/obj/item/gun/magnetic/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/magnetic/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!removable_components)
-		return NONE
+		return OP_DECLINE
 	if(!capacitor)
 		to_chat(user, span_warning("\The [src] has no capacitor installed."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	rel_take(src, nameof(capacitor))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby.
 /obj/item/gun/magnetic/gun_item(datum/act/op/A)

@@ -16,11 +16,16 @@
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +3 menu: Set Valve Pressure (refused: You can't do that.)
-@obj.item.gun human|/obj/item/tool/screwdriver
--menu: Unload
--menu: Use Scope (refused: You can't do that.)
-+4 menu: Set Valve Pressure (refused: You can't do that.)
-+7 menu: Use
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++4 menu: Remove the DNA lock (refused: the pneumatic cannon is not accepting modifications at this time)
++5 menu: Set Valve Pressure (refused: You can't do that.)
++7 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++8 menu: Use
++9 click: Click: Remove the DNA lock
 @obj.item.gun human|/obj/item/tool/crowbar
 -menu: Unload
 -menu: Use Scope (refused: You can't do that.)
@@ -80,4 +85,4 @@
 -menu: Use Scope (refused: You can't do that.)
 +4 menu: Set Valve Pressure (refused: You can't do that.)
 +7 menu: Use
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, pneumatic_hand, pneumatic_verb_set_pressure, suicide, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, pneumatic_hand, pneumatic_verb_set_pressure, suicide, toggle_digestable, use_screwdriver

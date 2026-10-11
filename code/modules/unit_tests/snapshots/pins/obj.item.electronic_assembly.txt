@@ -12,17 +12,20 @@
 -click: nothing
 +1 menu: Rename Circuit (refused: You can't do that.)
 +3 menu: Use
-+4 click: Click: Use
++4 menu: Use screwdriver
++5 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +1 menu: Rename Circuit (refused: You can't do that.)
 +3 menu: Use
-+4 click: Click: Use
++4 menu: Use crowbar
++5 click: Click: Use crowbar
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +1 menu: Rename Circuit (refused: You can't do that.)
 +3 menu: Use
-+4 click: Click: Use
++4 menu: Use wrench
++5 click: Click: Use wrench
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +1 menu: Rename Circuit (refused: You can't do that.)
@@ -63,4 +66,4 @@
 +5 click: Click: Use
 @obj.item human|/obj/item
 +1 menu: Rename Circuit (refused: You can't do that.)
-keys: assembly_item, assembly_rename, assembly_robot_use, assembly_self, collect_item, drag_buckle, export_circuit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, open_circuit, pick_up_item, remove_all_wires, remove_cell, remove_circuit, rename, toggle_digestable, update_component_position, wire_internal
+keys: assembly_item, assembly_rename, assembly_robot_use, assembly_self, collect_item, drag_buckle, export_circuit, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, open_circuit, pick_up_item, remove_all_wires, remove_cell, remove_circuit, rename, toggle_digestable, update_component_position, use_crowbar, use_screwdriver, use_wrench, wire_internal

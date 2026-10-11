@@ -27,7 +27,8 @@
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
 +3 menu: Interaction item
-+6 click: Click: Interaction hand
++6 menu: Use screwdriver
++7 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alternate use
@@ -41,7 +42,8 @@
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
 +3 menu: Interaction item
-+6 click: Click: Interaction hand
++6 menu: Use wrench
++7 click: Click: Use wrench
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alternate use
@@ -108,4 +110,4 @@
 +2 menu: Interaction hand
 +3 menu: Interaction item
 +6 click: Click: Interaction hand
-keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, weld_repair
+keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, use_screwdriver, use_wrench, weld_repair

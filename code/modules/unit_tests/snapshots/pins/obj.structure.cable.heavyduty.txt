@@ -6,8 +6,17 @@
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
 @obj.structure human|/obj/item/tool/wirecutters
+-click: Click: Use
++4 menu: Use wirecutter
++5 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
+-click: Click: Use
++4 menu: Use multitool
++5 click: Click: Use multitool
 @obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++4 menu: Use welder
++5 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 -click: Click: Use
 +0 menu: Connect cable (refused: you will need heavier cables to connect to these)
@@ -15,4 +24,4 @@
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-keys: drag_buckle, heavy_coil, item, melee_hit
+keys: drag_buckle, heavy_coil, item, melee_hit, use_multitool, use_welder, use_wirecutter

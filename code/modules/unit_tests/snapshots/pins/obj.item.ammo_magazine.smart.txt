@@ -17,7 +17,8 @@
 +1 menu: Load
 +3 menu: Smart item
 +5 menu: Use
-+6 click: Click: Load
++6 menu: Use screwdriver
++7 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Clear Ammo Data (refused: You can't do that.)
@@ -106,4 +107,4 @@ human|/obj/item/cell/device menu: Smart item
 human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell/device menu: Use
 human|/obj/item/cell/device click: Click: Load
-keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable
+keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable, use_screwdriver

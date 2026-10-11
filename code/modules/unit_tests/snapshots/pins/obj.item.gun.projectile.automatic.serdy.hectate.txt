@@ -2,7 +2,16 @@
 @obj.item.gun robot|none
 @obj.item ai|none
 @obj.item.gun ghost|none
-@obj.item.gun human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++3 menu: Remove DNA (refused: You can't do that.)
++4 menu: Remove the DNA lock (refused: Hectate II is not accepting modifications at this time)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++7 menu: Unload
++8 menu: Use Scope (refused: You can't do that.)
++9 click: Click: Remove the DNA lock
 @obj.item.gun human|/obj/item/tool/crowbar
 @obj.item.gun human|/obj/item/tool/wrench
 @obj.item.gun human|/obj/item/tool/wirecutters
@@ -15,4 +24,4 @@
 @obj.item.gun human|/obj/item/storage
 @obj.item.gun human|/obj/item/card/emag
 @obj.item.gun human|/obj/item
-keys: bolt_work, chamber_round, collect_item, drag_buckle, emag.subvert, emag.use, feed_rounds, gen_silicon_item_silicon_equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_hectate_verb_scope, suicide, toggle_digestable
+keys: bolt_work, chamber_round, collect_item, drag_buckle, emag.subvert, emag.use, feed_rounds, gen_silicon_item_silicon_equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, serdy_hectate_verb_scope, suicide, toggle_digestable, use_screwdriver

@@ -17,7 +17,7 @@
 	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/airlock_electronics)), 0, "actual holographic fixture starts without physical electronics")
 	if(!windoor)
 		var/obj/structure/window/reinforced/holowindow/window = glass
-		TEST_ASSERT_EQUAL(window.wrench_act(user, wrench), ITEM_INTERACT_BLOCKING, "actual holographic window refuses physical disassembly")
+		TEST_ASSERT_EQUAL(window.interaction_tool_act(user, wrench, TOOL_WRENCH), ITEM_INTERACT_BLOCKING, "actual holographic window refuses physical disassembly")
 		TEST_ASSERT(!QDELETED(window), "actual disassembly refusal preserves the holographic window")
 	glass.take_damage(0, BRUTE, MELEE, sound_effect = FALSE)
 	TEST_ASSERT(!QDELETED(glass), "actual zero-damage hit preserves holographic glass")

@@ -16,8 +16,9 @@
 +0 menu: Fit
 +1 menu: Give DNA (refused: You can't do that.)
 +3 menu: Remove DNA (refused: You can't do that.)
-+5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-+6 click: Click: Fit
++4 menu: Remove the DNA lock (refused: the gun is not accepting modifications at this time)
++6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++7 click: Click: Remove the DNA lock
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Fit
@@ -99,4 +100,4 @@
 +3 menu: Remove DNA (refused: You can't do that.)
 +5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 +6 click: Click: Fit
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver

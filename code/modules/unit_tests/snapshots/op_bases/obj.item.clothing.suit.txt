@@ -115,8 +115,9 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welder
 human|/obj/item/weldingtool menu: Voidsuit install item
-human|/obj/item/weldingtool click: Click: Voidsuit install item
+human|/obj/item/weldingtool click: Click: Use welder
 human|none menu: Alternate use
 human|none menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|none menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)

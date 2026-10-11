@@ -133,4 +133,4 @@ ghost|none click: nothing
 +5 menu: Toggle Engine
 +6 menu: Toggle Kickstand
 +7 menu: Toggle kickstand
-keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, vehicle_item, vehicle_paint
+keys: bike_drag, bike_hand, bike_kickstand, bike_kickstand_alt, bike_toggle_engine, drag_buckle, emag.subvert, emag.use, melee_hit, use_crowbar, use_screwdriver, use_welder, vehicle_item, vehicle_paint

@@ -2,7 +2,16 @@
 @obj.item.gun.energy robot|none
 @obj.item ai|none
 @obj.item.gun ghost|none
-@obj.item.gun.energy human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Fit
++1 menu: Give DNA (refused: You can't do that.)
++2 menu: Interaction hand
++4 menu: Remove DNA (refused: You can't do that.)
++5 menu: Remove the DNA lock (refused: the marksman energy rifle is not accepting modifications at this time)
++7 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++8 menu: Use Scope (refused: You can't do that.)
++9 click: Click: Remove the DNA lock
 @obj.item.gun.energy human|/obj/item/tool/crowbar
 @obj.item.gun.energy human|/obj/item/tool/wrench
 @obj.item.gun.energy human|/obj/item/tool/wirecutters
@@ -16,4 +25,4 @@
 @obj.item.gun.energy human|/obj/item/card/emag
 @obj.item.gun.energy human|/obj/item
 @obj.item.gun human|/obj/item/cell
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, sniperrifle_verb_scope, suicide, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, sniperrifle_verb_scope, suicide, toggle_digestable, use_screwdriver

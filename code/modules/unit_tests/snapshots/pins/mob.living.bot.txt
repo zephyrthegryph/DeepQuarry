@@ -13,7 +13,8 @@ ai|none click: Click: Use
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Bot item
-+9 click: Click: Bot item
++9 menu: Use screwdriver
++10 click: Click: Use screwdriver
 @mob.living human|/obj/item/tool/crowbar
 -menu: Nutrition heal
 -click: Click: Use on
@@ -39,7 +40,8 @@ ai|none click: Click: Use
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Bot item
-+9 click: Click: Bot item
++9 menu: Use welder
++10 click: Click: Use welder
 @mob human|/obj/item/stack/cable_coil
 -click: Click: Use on
 +0 menu: Bot item
@@ -67,4 +69,4 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
-keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, melee_swing, polymorph, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, use_screwdriver, use_welder, ventcrawl_in, vertical_nom, work, yank_out, zmove

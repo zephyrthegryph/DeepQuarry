@@ -14,7 +14,7 @@
 	var/obj/item/electronic_assembly/assembly = allocate(/obj/item/electronic_assembly, floor)
 	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, floor)
 	TEST_ASSERT(user.put_in_active_hand(crowbar), "Real actor holds assembly opening tool")
-	assembly.crowbar_act(user, crowbar)
+	assembly.interaction_tool_act(user, crowbar, TOOL_CROWBAR)
 	TEST_ASSERT(assembly.opened, "Actual crowbar handler opens the assembly for the wiring fixture")
 	var/obj/item/integrated_circuit/source = allocate(/obj/item/integrated_circuit/arithmetic/addition, floor)
 	var/obj/item/integrated_circuit/circuit = allocate(circuit_type, floor)

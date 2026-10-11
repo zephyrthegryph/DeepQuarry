@@ -8,9 +8,16 @@
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +0 menu: Aim Down Sights (refused: You can't do that.)
-@obj.item.gun.energy human|/obj/item/tool/screwdriver
--menu: Use Scope (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
 +0 menu: Aim Down Sights (refused: You can't do that.)
++1 menu: Fit
++2 menu: Give DNA (refused: You can't do that.)
++3 menu: Interaction hand
++5 menu: Remove DNA (refused: You can't do that.)
++6 menu: Remove the DNA lock (refused: the antique mono-rifle is not accepting modifications at this time)
++8 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++9 click: Click: Remove the DNA lock
 @obj.item.gun.energy human|/obj/item/tool/crowbar
 -menu: Use Scope (refused: You can't do that.)
 +0 menu: Aim Down Sights (refused: You can't do that.)
@@ -50,4 +57,4 @@
 @obj.item.gun human|/obj/item/cell
 -menu: Use Scope (refused: You can't do that.)
 +0 menu: Aim Down Sights (refused: You can't do that.)
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, monorifle_verb_sights, move_to_top, pick_up_item, suicide, toggle_digestable
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, monorifle_verb_sights, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver

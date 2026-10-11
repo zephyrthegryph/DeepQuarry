@@ -7,9 +7,9 @@
 @obj.structure human|/obj/item/tool/wrench
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
-@obj.structure human|/obj/item/weldingtool
+@obj.structure.disposalpipe human|/obj/item/weldingtool
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-keys: drag_buckle, item, melee_hit
+keys: drag_buckle, item, melee_hit, use_welder

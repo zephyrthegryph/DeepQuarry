@@ -53,8 +53,7 @@ CAPABILITIES(/obj/item/implant/integrated_circuit)
 /// A crowbar or a screwdriver on the implant works its assembly, as the assembly's own tool use does.
 /obj/item/implant/integrated_circuit/proc/assembly_tool_used(datum/act/op/A)
 	var/obj/item/tool = A.held
-	var/result = tool.has_tool_quality(TOOL_CROWBAR) ? IC.crowbar_act(A.actor, tool) : IC.screwdriver_act(A.actor, tool)
-	return ITEM_INTERACT_CONSUMED(result) ? OP_OK : OP_DECLINE
+	return tool.has_tool_quality(TOOL_CROWBAR) ? IC.crowbar_used(A) : IC.screwdriver_used(A)
 
 /// Using the implant uses the assembly.
 /obj/item/implant/integrated_circuit/proc/circuit_use(datum/act/op/A)

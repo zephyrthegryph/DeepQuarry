@@ -118,4 +118,4 @@ ghost|none click: nothing
 +8 menu: Unlatch
 +9 menu: Vehicle item
 +10 click: Click: Relabel
-keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, vehicle_item
+keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, use_crowbar, use_screwdriver, use_welder, vehicle_item

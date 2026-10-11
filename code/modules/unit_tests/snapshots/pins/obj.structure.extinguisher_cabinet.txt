@@ -6,9 +6,6 @@ human|none click: Click: Use
 @obj.structure human|/obj/item/tool/screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
--click: Click: Use
-+3 menu: Unwrench
-+5 click: Click: Unwrench
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool

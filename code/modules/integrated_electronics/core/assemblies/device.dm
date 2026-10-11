@@ -16,6 +16,7 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 	owns_one(nameof(EA), starts = /obj/item/electronic_assembly/device)
 	op("electronic_assembly_interaction_item", item(/obj/item), then(PROC_REF(electronic_assembly_interaction_item)))
 	op("device_assembly_verb_toggle", menu(), label("Open/Close Device Assembly"), needs(carried()), then(PROC_REF(device_assembly_verb_toggle)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
@@ -32,9 +33,10 @@ CAPABILITIES(/obj/item/assembly/electronic_assembly)
 		return interaction_item(A)
 	return OP_PASS
 
-/obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+/obj/item/assembly/electronic_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
 	toggle_open(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/assembly/electronic_assembly/proc/toggle_open(mob/user)
 	play_sfx(src, SFX_ITEMS_CROWBAR)

@@ -1,0 +1,6 @@
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder

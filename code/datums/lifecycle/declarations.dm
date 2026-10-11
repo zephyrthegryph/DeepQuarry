@@ -31,7 +31,7 @@
 	if(start_table.engine_hooks & ENGINE_HOOK_PREINIT)
 		engine_holder_preinit(D, mapload)
 	if(start_table.start_vars)
-		own_init_starts(D, start_table)
+		own_init_starts(D, start_table, mapload)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
 	if(!decls || !(decls.work & DECL_WORK_INIT))
 		return

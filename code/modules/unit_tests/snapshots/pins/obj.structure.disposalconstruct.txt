@@ -37,7 +37,8 @@
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
 +6 menu: Turn Around
-+7 click: nothing
++7 menu: Use wrench
++8 click: Click: Use wrench
 @obj.structure human|/obj/item/tool/wirecutters
 -menu: Use
 -click: Click: Use
@@ -61,7 +62,8 @@
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
 +6 menu: Turn Around
-+7 click: nothing
++7 menu: Use welder
++8 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 -menu: Use
 -click: Click: Use
@@ -94,4 +96,4 @@
 +4 menu: Rotate Counter Clockwise
 +6 menu: Turn Around
 +7 click: nothing
-keys: drag_buckle, flip, melee_hit, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around
+keys: drag_buckle, flip, melee_hit, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, use_welder, use_wrench

@@ -4,7 +4,7 @@
 @obj.item ghost|none
 @obj.item.clothing human|/obj/item/tool/screwdriver
 @obj.item.clothing human|/obj/item/tool/crowbar
-@obj.item.clothing human|/obj/item/tool/wrench
+@obj.item.clothing.accessory.collar.shock human|/obj/item/tool/wrench
 @obj.item.clothing human|/obj/item/tool/wirecutters
 @obj.item.clothing human|/obj/item/multitool
 @obj.item.clothing human|/obj/item/weldingtool
@@ -15,4 +15,4 @@
 @obj.item.clothing human|/obj/item/storage
 @obj.item.clothing human|/obj/item
 @obj.item human|/obj/item/assembly/signaler
-keys: accessory_attached_hand, bluespace_collar_wire_signaler, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, code, collar_tag_item, collar_tag_self, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, malfunctioning_collar_signaler, move_to_top, pick_up_item, power, size, tag, toggle_digestable
+keys: accessory_attached_hand, bluespace_collar_wire_signaler, clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, code, collar_tag_item, collar_tag_self, collect_item, controls, drag_buckle, freq, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, malfunctioning_collar_signaler, move_to_top, pick_up_item, power, size, tag, toggle_digestable, use_wrench

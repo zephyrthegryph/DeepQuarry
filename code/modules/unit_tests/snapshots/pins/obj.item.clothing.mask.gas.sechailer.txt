@@ -23,7 +23,8 @@
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
-+7 click: Click: Use
++7 menu: Use screwdriver
++8 click: Click: Use screwdriver
 @obj.item.clothing human|/obj/item/tool/crowbar
 -menu: Accessory attached hand
 -menu: Collar tag item
@@ -31,7 +32,8 @@
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
-+7 click: Click: Use
++7 menu: Use crowbar (refused: this mask has an integrated hailer, you can't remove it)
++8 click: Click: Use crowbar
 @obj.item.clothing human|/obj/item/tool/wrench
 -menu: Accessory attached hand
 -menu: Collar tag item
@@ -47,7 +49,8 @@
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
-+7 click: Click: Use
++7 menu: Use wirecutter
++8 click: Click: Use wirecutter
 @obj.item.clothing human|/obj/item/multitool
 -menu: Accessory attached hand
 -menu: Collar tag item
@@ -115,4 +118,4 @@
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
-keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, sechailer_halt_verb, sechailer_phrase_alt, sechailer_selectphrase_verb, toggle_digestable, use_crowbar, use_screwdriver, use_wirecutter

@@ -1,1 +1,29 @@
-runtime while making it: Cannot read null.vars
+human|none menu: Embedded controller open ui
+human|none menu: Ui open
+human|none click: Click: Embedded controller open ui
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Embedded controller open ui
++2 menu: Ui open
++4 click: Click: Embedded controller open ui
+@obj ai|none
+-click: Click: Use
++0 menu: Ui open
++2 click: Click: Ui open
+@obj ghost|none
+@obj.machinery.embedded_controller human|/obj/item/tool/screwdriver
+@obj.machinery.embedded_controller human|/obj/item/tool/crowbar
+@obj.machinery.embedded_controller human|/obj/item/tool/wrench
+@obj.machinery.embedded_controller human|/obj/item/tool/wirecutters
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Embedded controller open ui
++3 menu: Ui open
++4 menu: Use multitool
++5 click: Click: Embedded controller open ui
+@obj.machinery.embedded_controller human|/obj/item/weldingtool
+@obj.machinery.embedded_controller human|/obj/item/stack/cable_coil
+@obj.machinery.embedded_controller human|/obj/item/stack/material/steel
+@obj.machinery.embedded_controller human|/obj/item/card/id
+@obj.machinery.embedded_controller human|/obj/item
+keys: drag_buckle, edit_tag, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, set_frequency, silicon_hand, silicon_ui, ui_open, use_multitool

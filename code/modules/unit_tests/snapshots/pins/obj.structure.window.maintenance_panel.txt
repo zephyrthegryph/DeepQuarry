@@ -10,10 +10,10 @@ ghost|none click: Click: Nothing
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
 +0 menu: Bang on
-+1 menu: Fasten to or free from the floor
-+3 menu: Knock
-+4 menu: Maintenance panel interaction item
-+8 click: Click: Fasten to or free from the floor
++2 menu: Knock
++3 menu: Maintenance panel interaction item
++7 menu: Use screwdriver
++8 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Bang on
 +2 menu: Knock
@@ -54,4 +54,4 @@ ghost|none click: Click: Nothing
 +0 menu: Bang on
 +2 menu: Knock
 +3 menu: Maintenance panel interaction item
-keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, pry_in, pry_out, swallow, tk_knock, unfasten_frame, weld_repair, weld_toggle, weld_toggle_help
+keys: bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, pry_in, pry_out, swallow, tk_knock, unfasten_frame, use_screwdriver, weld_repair, weld_toggle, weld_toggle_help

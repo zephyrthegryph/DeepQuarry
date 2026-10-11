@@ -963,7 +963,7 @@
 /datum/unit_test/dq_timed_pin_w7/proc/r_legacy_call(mob/user, atom/target, obj/item/held)
 	var/mob/living/silicon/robot/R = target
 	if(istype(R) && held?.has_tool_quality(TOOL_WRENCH))
-		R.wrench_act(user, held)
+		R.interaction_tool_act(user, held, TOOL_WRENCH)
 	else if(held)
 		held.afterattack(target, user, TRUE)
 
