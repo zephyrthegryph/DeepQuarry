@@ -9,7 +9,16 @@ impl Resolver for FeatureHost {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.reads.lock().unwrap().push(query);
         match query {
-            ResolveQuery::RuntimeType(path) => ResolvedMeaning::Symbol(path),
+            ResolveQuery::Type(path) | ResolveQuery::RuntimeType(path) => {
+                ResolvedMeaning::Symbol(path)
+            }
+            ResolveQuery::HasMemberVar { name, .. }
+                if ["cpu", "icon", "overlays", "underlays"]
+                    .into_iter()
+                    .any(|text| name == SymbolId::of(text)) =>
+            {
+                ResolvedMeaning::Bool(true)
+            }
             ResolveQuery::Ancestry(owner) if self.opaque.load(Ordering::Relaxed) => {
                 ResolvedMeaning::Unsupported(ResolveQuery::Ancestry(owner))
             }

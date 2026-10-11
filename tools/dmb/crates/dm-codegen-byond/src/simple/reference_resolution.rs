@@ -93,7 +93,7 @@ impl Compiler<'_> {
     }
     /// Validate the selected declaration, never another namespace with the same name.
     /// Runtime aliases remain licensed by the ordinary current resolver.
-    fn validate_variable_type(
+    pub(super) fn validate_variable_type(
         &self,
         meaning: &M,
         name: &str,

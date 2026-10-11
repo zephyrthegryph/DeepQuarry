@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "scope": "compile-only nameof reference legality observations; no runtime",
+  "complete": true,
+  "runtime": "not run",
+  "root": "E:\\dq-cache\\dmb-nameof-reference-diagnostics\\98b8e54e354d480f8e7e8fb859ded862",
+  "overall_watchdog_seconds": 300,
+  "child_watchdog_seconds": 30,
+  "job_memory_bytes": 4294967296,
+  "pins": {
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    }
+  },
+  "cases": {
+    "untyped_member": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.3979655000148341,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "untyped_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "R.missing: undefined var"
+          },
+          {
+            "file": "untyped_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "untyped_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "colon_member": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.4010638000909239,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "colon_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "R:missing: undefined var"
+          },
+          {
+            "file": "colon_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "colon_member.dm",
+            "line": 2,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "member_proc": {
+      "byond": {
+        "child": {
+          "exit": 4294967295,
+          "wall_s": 0.3860980999888852,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": [
+          {
+            "file": "member_proc.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "R.known: undefined var"
+          },
+          {
+            "file": "member_proc.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "nameof: requires a var, proc reference, or type path"
+          },
+          {
+            "file": "member_proc.dm",
+            "line": 4,
+            "severity": "error",
+            "message": "return: missing expression"
+          }
+        ]
+      }
+    },
+    "static_instance": {
+      "byond": {
+        "child": {
+          "exit": 0,
+          "wall_s": 0.38661389995831996,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "diagnostics": []
+      }
+    }
+  },
+  "source_sha256": {
+    "untyped_member.dm": "d5520814d7e0029d264387f92dfac222758025f34338846ab34917bff2a7aa81",
+    "untyped_member.dme": "53317c5c1d44fadb927d5acffedd220ec1db7345c7c36918bdd4e4d73aadea9b",
+    "colon_member.dm": "a10fafa033b28859fefc81e75c5dd9590f9e02605af2fabc9fb7c17e188d360f",
+    "colon_member.dme": "0432625ad64b387134e5a4ed5f5f9cb1b98316b49c22da5c4abd6ec46d522ed2",
+    "member_proc.dm": "823a1f9384ea86b815c37cd7bf2b7234e6431984cb46dcb940a16319a418004d",
+    "member_proc.dme": "c05642645b29516ae5c62c297fd7ba3e95c7699e412b1cf6df15c10830a2321b",
+    "static_instance.dm": "c82342c7ed0a36b0607c461b8e39f62b6410c87c2f46498ba1249bebbb06ae0b",
+    "static_instance.dme": "13f819e00c33329dfa472625a03f03934684ae6cb16acbcbd4e1b85f8260b7f8"
+  },
+  "pin_after_checks": {
+    "dm": {
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "unchanged": true
+    }
+  },
+  "backend": "byond-only",
+  "paired_parity": "not measured",
+  "acceptance_agrees": false,
+  "rejection_class_agrees": false,
+  "diagnostics_agree": false,
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 4294967296,
+      "peak_job_commit_bytes": 60088320,
+      "peak_process_commit_bytes": 58781696,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  }
+}

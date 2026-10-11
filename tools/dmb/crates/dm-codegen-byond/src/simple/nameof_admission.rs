@@ -1,4 +1,6 @@
 //! Reference admission for nameof, without evaluating receivers or emitting operands.
+#[path = "nameof_member_admission.rs"]
+mod members;
 use super::*;
 impl Compiler<'_> {
     pub(super) fn admit_nameof_reference(
@@ -58,8 +60,12 @@ impl Compiler<'_> {
                     }
                 }
             }
-            // Member references retain the existing feature/receiver authority.
-            // No ordinary receiver expression is evaluated for reflection.
+            ExprKind::Member {
+                object, selector, ..
+            }
+            | ExprKind::StaticMember { object, selector } => {
+                self.admit_nameof_member(object, selector, statement)?;
+            }
             _ => (),
         }
         if matches!(&expression.kind, ExprKind::TypePath(path) if reflective_type_role(path) == ReflectiveTypeRole::BuiltinListValue)
