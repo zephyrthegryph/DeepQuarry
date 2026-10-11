@@ -4692,3 +4692,7 @@ mapper can notice:
 ## Acceptance prerequisite pin refresh (2026-10-11)
 
 The robot and robot/platform conversion-pin key rows now include the eight `robot_utility.*` ops declared by master `8b3e4f9ed9`. Platform also includes `platform_cargo.eject_cargo`, declared by master `babfc5a10a`. Only these two key rows changed; clicks and menu rows are unchanged. The pin comparison discards random default Cyborg serials only in VR-capsule refusal text and numeric source locations only in constructor traceback segments, retaining the complete refusal/fault text and source paths. These are capture stability repairs, not gameplay changes.
+
+## Acceptance foundation: master rotation rows (2026-10-11)
+
+Master `81e61e24e9` (2026-10-10 23:39 -0500) replaces Initialize-granted rotation verbs with native `rotatable()` on `/obj/item/pipe` and `/obj/structure/smoletrack`. Their pins now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around and the three native rotation keys. `/obj/machinery/pipedispenser`, its `/disposal` subtype and `/obj/machinery/pipelayer` also expose these menu choices through the held pipe. These five classes alone are refreshed; existing plain-click rows and refusal text remain unchanged. The acceptance landing did not add or rank these operations. Commit provenance was checked with pickaxe on the indented declaration and the exact master source diff.
