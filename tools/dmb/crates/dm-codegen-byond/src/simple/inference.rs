@@ -9,7 +9,7 @@ impl Compiler<'_> {
         expr: &Expr,
     ) -> Result<Option<String>, LowerError> {
         dm_ir::receiver_resolution::infer_receiver_type(
-            &receiver_resolution::ReceiverContext(self),
+            &receiver_resolution::ReceiverContext(self, false),
             expr,
         )
     }

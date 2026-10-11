@@ -1,7 +1,10 @@
 //! Adapter preserving the existing resolver calls and error observations.
 use super::*;
 use dm_ir::receiver_resolution::ReceiverTypeContext;
-pub(super) struct ReceiverContext<'a, 'compiler>(pub(super) &'a Compiler<'compiler>);
+pub(super) struct ReceiverContext<'a, 'compiler>(
+    pub(super) &'a Compiler<'compiler>,
+    pub(super) bool,
+);
 impl ReceiverTypeContext for ReceiverContext<'_, '_> {
     type Error = LowerError;
     fn current_type_path(&self) -> Option<&str> {
@@ -86,6 +89,24 @@ impl ReceiverTypeContext for ReceiverContext<'_, '_> {
         self.0.procedure_return_type_text(query)
     }
     fn normalize_type(&self, path: &str) -> Result<String, LowerError> {
+        if self.1 {
+            if let Some(lookup) = self.0.lookup {
+                let query = dm_ir::ResolveQuery::Type(SymbolId::of(path));
+                return match self.0.semantic(lookup.answer(query))? {
+                    dm_ir::ResolvedMeaning::Symbol(actual) if actual == SymbolId::of(path) => {
+                        Ok(path.to_owned())
+                    }
+                    dm_ir::ResolvedMeaning::Missing => Err(LowerError {
+                        kind: LowerErrorKind::SourceError,
+                        ..error(path, &format!("{path}: undefined type path"))
+                    }),
+                    _ => {
+                        self.0.semantic(Err(lookup
+                            .error(query, "reflective receiver type is not positively captured")))
+                    }
+                };
+            }
+        }
         self.0.normalize_inferred_type(path)
     }
 }

@@ -31,7 +31,11 @@ impl Compiler<'_> {
                 }
             }
             ExprKind::Ident(name) if name == "type" => self.bindings.current_type_path.clone(),
-            _ => self.inferred_expression_type(object)?,
+            // Reflection requires semantic existence, not a runtime class operand.
+            _ => dm_ir::receiver_resolution::infer_receiver_type(
+                &receiver_resolution::ReceiverContext(self, true),
+                object,
+            )?,
         };
         let Some(owner) = owner else {
             // Successful inference with no static type is not an opaque host answer:
@@ -73,9 +77,8 @@ mod tests {
                 return dm_ir::ResolvedMeaning::Unsupported(query);
             }
             match query {
-                dm_ir::ResolveQuery::Type(path) | dm_ir::ResolveQuery::RuntimeType(path) => {
-                    dm_ir::ResolvedMeaning::Symbol(path)
-                }
+                dm_ir::ResolveQuery::Type(path) => dm_ir::ResolvedMeaning::Symbol(path),
+                dm_ir::ResolveQuery::RuntimeType(_) => dm_ir::ResolvedMeaning::Unsupported(query),
                 dm_ir::ResolveQuery::HasMemberVar { name, .. } => {
                     dm_ir::ResolvedMeaning::Presence(name == SymbolId::of("known"))
                 }

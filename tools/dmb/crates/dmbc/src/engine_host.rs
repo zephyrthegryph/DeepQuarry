@@ -750,3 +750,7 @@ mod tests;
 #[cfg(test)]
 #[path = "engine_host/owner_domain_tests.rs"]
 mod owner_domain_tests;
+
+#[cfg(test)]
+#[path = "engine_host/nameof_native_tests.rs"]
+mod nameof_native_tests;
