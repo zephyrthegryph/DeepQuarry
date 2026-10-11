@@ -4566,7 +4566,6 @@ borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item
 * **Cutouts, cameras, alarms and the petrifier roll at preinit**: a cutout's name and description follow its rolled fake name, a camera's tag its
   area, and an air alarm, fire alarm or petrifier the map did not offset sits on the wall it faces (`rolls(ROLL_PIXEL, ...)`).
 * **Library archive rows, looking glass programs, Halloween box pile costumes, paper and emotion mask designs are per type** (`per_type()`).
-* **Vendor slogans and ads derive from the vendor's strings at init** (`derives()`), per instance.
 * **ERT voidsuits start with their hood made in the suit** (`hood = /path`, as the AutoLok does): the hood does not get the attached-light flag
   until it is first deployed or reattached.
 * **Old exosuits' lowered integrity is a var default**; suit pockets are sized by `starts_set`.

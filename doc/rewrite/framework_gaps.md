@@ -698,7 +698,8 @@ atmospherics device's port mixture made at capability init through `atmos_air_se
 holder's stream (a box's random cartridge, a starter capture crystal). `radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency))`
 (`code/engine/lifeforms/registry.dm`) hands the frequency to a radio machine's own tuner at init and when the var is written, so the machine keeps
 its `radio_connection` and filter; fourteen `if(frequency) set_frequency(frequency)` sites declare it (the air alarm and the embedded controllers keep
-theirs: the alarm's filter needs its area id, set later in its init, and a controller must tune before its program is made). `/obj/item/archaeological_find` (710 lines) is a generator, not
+theirs: the alarm's filter needs its area id, set later in its init, and a controller must tune before its program is made). `derives()` on a type with a `param()` still fails ("bad index") under
+`param_write()` from `/atom/New()` (the gap the fusion field found): vendors keep splitting their slogans in Initialize() for that reason. `/obj/item/archaeological_find` (710 lines) is a generator, not
 per-instance state: it needs a data table of find recipes (one record per ARCHAEO_ type) before its Initialize can go.
 
 **The init ratchet counts lines (ratchet-fw, October 2026).** The init lint's `initialize` rule counted `Initialize()` overrides (1005 at the
