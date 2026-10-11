@@ -762,10 +762,10 @@
     "scope": "borrowed exact lookup, logical pressure, six publication owners, concurrent refresh and immutable rebind; not six real worktrees or whole-program parity"
   },
   "current_six_package_check": {
-    "commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
-    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141952-a54276b1-job-cargo.json",
+    "commit": "13a852d0b3b42b07dcfb3ca65befc3d60677f322",
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-143533-5a2a6473-job-cargo.json",
     "passed": true,
-    "scope": "All six packages and test targets typecheck; this is not fixture execution or whole-program parity"
+    "scope": "Six packages and test targets typecheck; includes eager freezer removal and rich promotion dependency fix; not execution or runtime proof"
   },
   "latest_d12_build_attempt": {
     "compiler_commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
@@ -807,5 +807,31 @@
     "assertions": 245,
     "runtime": "Bun1.3.14",
     "scope": "mocked process outcomes and publication contracts; not real integration or DM runtime proof"
+  },
+  "latest_13a_validation": {
+    "compiler_commit": "13a852d0b3b42b07dcfb3ca65befc3d60677f322",
+    "binary_sha256": "35b1a332f12e6652edf6e9399047a31949d3a613e36e780fca2bde4288bcfc9c",
+    "pin": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-13a852d0b3-dmbc.exe.pin.json",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-143637-4bb6da73-job-cargo.json",
+    "build_passed": true,
+    "scope": "Prototype profile, fixed asset report panic; actual runtime rerun and new real benchmark pending",
+    "runtime_contract": {
+      "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-13a/a013d7f1f43a4fe592d63739682f5c68/receipt.json",
+      "complete": true,
+      "matches": true,
+      "passed_revisions": 14,
+      "daemon_reaped": true,
+      "scope": "Explicit standalone retained/fresh/BYOND runtime expectations and retained/fresh DMB/RSC byte equality, including resource replacement; not full DeepQuarry suite or runtime baseline"
+    },
+    "benchmark_status": "Failed during daemon pressure compaction before first output admission; no completed four-row timings",
+    "failed_benchmark": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261011-144232-0ff773c7/receipt.json",
+      "reason": "Daemon memory allocation failure under6GiB ownedJob; pressuretier2 private6008659968 ->5765988352 thenallocation192 failed",
+      "daemon_exit": 3221226505,
+      "daemon_reaped": true,
+      "unadmitted_child_wall_s": 110.406,
+      "timing_admitted": false,
+      "fix_work": "bounded streaming pressure pruning and non-diagnostic compact census; preserve limits"
+    }
   }
 }
