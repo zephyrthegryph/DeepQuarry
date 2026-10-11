@@ -57,7 +57,13 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
             census.receipt("startup.artifact_reads", reads);
             census.slice("startup.artifact_versions", versions, true);
             for read in reads.iter() {
-                declarations(census, &read.answer);
+                match &read.answer {
+                    crate::startup::StartupAnswer::Static(rows) => declarations(census, rows),
+                    crate::startup::StartupAnswer::Resolver(answer) => {
+                        super::resident_weight::answer(census, answer)
+                    }
+                    crate::startup::StartupAnswer::Unavailable => (),
+                }
             }
             census.arc_object("startup.artifact_owner", value);
             match value.as_ref() {
@@ -83,9 +89,63 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
                     }
                     inventory(census, owner);
                 }
+                StartupArtifact::Allocation(owner) => allocation(census, owner),
+                StartupArtifact::AllocationFinal(owner) => {
+                    if census.arc_object("startup.allocation_final", owner) {
+                        allocation(census, &owner.input.allocation);
+                        census.vec_payload(
+                            "startup.allocation_classifications",
+                            &owner.input.classifications,
+                        );
+                        for (_, _, _, classification) in &owner.input.classifications {
+                            classification.visit(|owner| {
+                                super::initializer_artifacts::classification(census, owner)
+                            });
+                        }
+                        if census.arc_object("startup.allocation_ordered", &owner.ordered) {
+                            census.vec_payload("startup.allocation_keys", &owner.ordered.keys);
+                            census.observe_items(
+                                "startup.allocation_ranks",
+                                owner.ordered.ranks.len(),
+                            );
+                            census.unknown(
+                                "startup.allocation_ranks",
+                                "private BTree node backing unavailable",
+                            );
+                        }
+                    }
+                }
             }
         }
     });
+}
+fn allocation(census: &mut HeapCensus, owner: &Arc<crate::startup_allocation::AllocationReceipt>) {
+    if !census.arc_object("startup.allocation", owner) {
+        return;
+    }
+    census.vec_payload("startup.allocation_keys", &owner.keys);
+    census.vec_payload("startup.allocation_bindings", &owner.bindings);
+    if let Some(input) = &owner.input {
+        census.vec_payload("startup.allocation_targets", &input.targets);
+        census.vec_payload("startup.allocation_source_owners", &input.owners);
+        census.vec_payload("startup.allocation_registrations", &input.registrations);
+        census.vec_payload("startup.allocation_callables", &input.callables);
+    }
+    for (label, len) in [
+        ("startup.allocation_ranks", owner.ranks.len()),
+        (
+            "startup.allocation_registration_owners",
+            owner.registration_owners.len(),
+        ),
+        ("startup.allocation_owner_ranks", owner.source_owners.len()),
+        (
+            "startup.allocation_callable_positions",
+            owner.callable_positions.len(),
+        ),
+    ] {
+        census.observe_items(label, len);
+        census.unknown(label, "private BTree node backing unavailable");
+    }
 }
 
 pub(super) fn inventory(

@@ -8,7 +8,7 @@ use dm_syntax::{Span as SyntaxSpan, TokenKind};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 // Sibling defaults now retain their original lexical owner after flattening.
-const SCHEMA: u32 = 4;
+const SCHEMA: u32 = 5;
 #[derive(Serialize, Deserialize)]
 enum ScalarConstant {
     Null,
@@ -71,7 +71,7 @@ enum Declaration {
 enum Event {
     Type(SymbolId, SymbolId, bool),
     Namespace(SymbolId, u8, bool),
-    Field(SymbolId, bool, bool, Option<[usize; 2]>),
+    Field(SymbolId, SymbolId, bool, bool, Option<[usize; 2]>),
     Procedure(SymbolId, bool, bool, SymbolId, [usize; 2]),
     Parent(SymbolId, [usize; 2]),
 }
@@ -495,11 +495,13 @@ pub(super) fn encode(
                         ),
                         AllocationKind::Field {
                             owner,
+                            name,
                             formal,
                             var_namespace,
                             initializer,
                         } => Event::Field(
                             owner,
+                            name,
                             formal,
                             var_namespace,
                             initializer
@@ -642,10 +644,12 @@ pub(super) fn decode(
                         absolute,
                     }
                 }
-                Event::Field(owner, formal, var_namespace, initializer) => {
+                Event::Field(owner, name, formal, var_namespace, initializer) => {
                     symbols.text(owner)?;
+                    symbols.text(name)?;
                     AllocationKind::Field {
                         owner,
+                        name,
                         formal,
                         var_namespace,
                         initializer: initializer

@@ -245,6 +245,7 @@ mod tests {
                 header_span: Span::new(1, 3),
                 kind: AllocationKind::Field {
                     owner,
+                    name: SymbolId::of("field"),
                     formal: true,
                     var_namespace: false,
                     initializer: Some(Span::new(5, 9)),

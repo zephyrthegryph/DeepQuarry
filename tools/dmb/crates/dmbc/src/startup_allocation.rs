@@ -8,18 +8,17 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
+#[path = "startup_allocation_receipt.rs"]
+mod receipt;
+pub(crate) use receipt::{retained_keys, ALLOCATION_KEY, FINAL_KEY};
+pub(crate) use receipt::{
+    AllocationInput, AllocationReceipt, FinalInput, FinalReceipt, OrderedRoster,
+};
 pub(crate) struct StartupAllocationRoster {
     writes: Arc<[InitializerWrite]>,
-    keys: Vec<Key>,
-    ranks: BTreeMap<Key, usize>,
-    registration_owners: BTreeMap<Key, SymbolId>,
-    source_owners: BTreeMap<SymbolId, usize>,
-    callable_positions: BTreeMap<(SymbolId, SymbolId), usize>,
-    finalized: OnceLock<OrderedRoster>,
-}
-struct OrderedRoster {
-    keys: Vec<Key>,
-    ranks: BTreeMap<Key, usize>,
+    allocation: Arc<AllocationReceipt>,
+    finalized: OnceLock<Arc<OrderedRoster>>,
+    artifacts: Option<Arc<crate::startup::StartupArtifacts>>,
 }
 impl StartupAllocationRoster {
     /// `source_owners` is the existing admitted fresh type allocation roster;
@@ -36,14 +35,35 @@ impl StartupAllocationRoster {
         source_owners: &[SymbolId],
         frontend: &dm_tree::frontend::ColdFrontend,
     ) -> Result<Self, String> {
+        Self::issue_current_with_artifacts(plan, source_owners, frontend, None)
+    }
+    pub(crate) fn issue_current_with_artifacts(
+        plan: &InitializerPlan,
+        source_owners: &[SymbolId],
+        frontend: &dm_tree::frontend::ColdFrontend,
+        artifacts: Option<&Arc<crate::startup::StartupArtifacts>>,
+    ) -> Result<Self, String> {
         if !Arc::ptr_eq(&plan.source.tree, &frontend.snapshot.tree) {
             return Err("startup registration belongs to another current tree".into());
         }
         if !Arc::ptr_eq(&plan.source.occurrences, &frontend.snapshot.occurrences) {
             return Err("startup registration belongs to another current source".into());
         }
+        let input = AllocationInput::capture(plan, source_owners, frontend)?;
+        if let Some(allocation) = artifacts.and_then(|store| {
+            store
+                .allocation(&input)
+                .filter(|receipt| receipt.bind_current(plan, frontend))
+        }) {
+            return Ok(Self {
+                writes: Arc::clone(&plan.writes),
+                allocation,
+                finalized: OnceLock::new(),
+                artifacts: artifacts.cloned(),
+            });
+        }
         let mut rows = BTreeMap::<_, std::collections::VecDeque<_>>::new();
-        for (write, origin) in plan.writes.iter().zip(plan.origins.iter()) {
+        for (index, (write, origin)) in plan.writes.iter().zip(plan.origins.iter()).enumerate() {
             if matches!(
                 origin.kind,
                 dm_tree::initializers::InitializerOriginKind::Declaration(_)
@@ -55,10 +75,11 @@ impl StartupAllocationRoster {
                     origin.provenance.include_occurrence as usize,
                 ))
                 .or_default()
-                .push_back(key(write)?);
+                .push_back((index, key(write)?));
             }
         }
         let mut registrations = BTreeMap::new();
+        let mut bindings = Vec::new();
         for (span, registration_owner) in frontend.allocation_ledger.root_field_registrations() {
             let location = frontend
                 .location(span.start)
@@ -70,12 +91,17 @@ impl StartupAllocationRoster {
             );
             // Root instance declarations can have no shared write. Only source
             // rows admitted by the ordinary initializer producer are selected.
-            if let Some(row) = rows.get_mut(&coordinate).and_then(|rows| rows.pop_front()) {
+            if let Some((index, row)) = rows.get_mut(&coordinate).and_then(|rows| rows.pop_front())
+            {
+                bindings.push(Some(index));
                 if let Some(owner) = registration_owner {
                     registrations.insert(row, owner);
                 }
-            } else if registration_owner.is_some() {
-                return Err("late startup registration has no current initializer row".into());
+            } else {
+                bindings.push(None);
+                if registration_owner.is_some() {
+                    return Err("late startup registration has no current initializer row".into());
+                }
             }
         }
         let mut callable_positions = BTreeMap::new();
@@ -98,7 +124,16 @@ impl StartupAllocationRoster {
                 .entry((owner, member.name))
                 .or_insert(body.declaration.0 as usize);
         }
-        Self::issue_with_registrations(plan, source_owners, registrations, callable_positions)
+        let mut current =
+            Self::issue_with_registrations(plan, source_owners, registrations, callable_positions)?;
+        let receipt = Arc::get_mut(&mut current.allocation).expect("new allocation owner");
+        receipt.input = Some(input);
+        receipt.bindings = bindings;
+        if let Some(store) = artifacts {
+            current.allocation = store.remember_allocation(Arc::clone(&current.allocation));
+        }
+        current.artifacts = artifacts.cloned();
+        Ok(current)
     }
     fn issue_with_registrations(
         plan: &InitializerPlan,
@@ -150,17 +185,23 @@ impl StartupAllocationRoster {
             .collect();
         Ok(Self {
             writes: Arc::clone(&plan.writes),
-            keys,
-            ranks,
-            registration_owners: registrations,
-            source_owners: owners,
-            callable_positions,
+            allocation: Arc::new(AllocationReceipt {
+                input: None,
+                bindings: Vec::new(),
+                keys,
+                ranks,
+                registration_owners: registrations,
+                source_owners: owners,
+                callable_positions,
+            }),
             finalized: OnceLock::new(),
+            artifacts: None,
         })
     }
     fn registration_owner(&self, write: &InitializerWrite) -> Result<SymbolId, String> {
         let entry = key(write)?;
         Ok(self
+            .allocation
             .registration_owners
             .get(&entry)
             .copied()
@@ -181,6 +222,18 @@ impl StartupAllocationRoster {
         if let Some(roster) = self.finalized.get() {
             return Ok(roster);
         }
+        let final_input = FinalInput::capture(&self.allocation, plan, classified);
+        if let Some(input) = final_input.as_ref() {
+            if let Some(owner) = self
+                .artifacts
+                .as_ref()
+                .and_then(|store| store.final_allocation(input, host))
+            {
+                let _ = self.finalized.set(Arc::clone(&owner.ordered));
+                return Ok(self.finalized.get().unwrap());
+            }
+        }
+        let recording = crate::lowering_memo::RecordingResolver::new(host);
         let mut eager = BTreeSet::new();
         let mut forward = BTreeSet::new();
         for row in &classified.writes {
@@ -188,7 +241,7 @@ impl StartupAllocationRoster {
                 continue;
             }
             let owner = self.registration_owner(&row.write)?;
-            if !self.source_owners.contains_key(&owner) {
+            if !self.allocation.source_owners.contains_key(&owner) {
                 continue;
             }
             let origin = plan
@@ -208,8 +261,8 @@ impl StartupAllocationRoster {
                     ast,
                     row.write.lexical_owner,
                     origin.encounter_ordinal,
-                    &self.callable_positions,
-                    host,
+                    &self.allocation.callable_positions,
+                    &recording,
                 );
                 if availability.known {
                     eager.insert(owner);
@@ -219,7 +272,7 @@ impl StartupAllocationRoster {
                 }
             }
         }
-        let count = self.source_owners.len();
+        let count = self.allocation.source_owners.len();
         let mut seen = BTreeSet::new();
         let mut entries = Vec::new();
         for (ordinal, write) in plan.writes.iter().enumerate() {
@@ -231,7 +284,7 @@ impl StartupAllocationRoster {
                 continue;
             }
             let owner = self.registration_owner(write)?;
-            let group = match self.source_owners.get(&owner) {
+            let group = match self.allocation.source_owners.get(&owner) {
                 Some(rank)
                     if registration_is_deferred(
                         eager.contains(&owner),
@@ -258,8 +311,14 @@ impl StartupAllocationRoster {
             .enumerate()
             .map(|(rank, key)| (key, rank))
             .collect();
+        let ordered = Arc::new(OrderedRoster { keys, ranks });
+        let ordered = if let (Some(store), Some(input)) = (&self.artifacts, final_input) {
+            store.remember_final_allocation(FinalReceipt { input, ordered }, &recording)
+        } else {
+            ordered
+        };
         self.finalized
-            .set(OrderedRoster { keys, ranks })
+            .set(ordered)
             .map_err(|_| "startup registration roster issued twice")?;
         Ok(self.finalized.get().unwrap())
     }
@@ -280,6 +339,7 @@ impl StartupAllocationRoster {
             }
             for index in &group.writes {
                 if !self
+                    .allocation
                     .ranks
                     .contains_key(&key(&classified.writes[*index].write)?)
                 {
@@ -303,7 +363,7 @@ impl StartupAllocationRoster {
         let keys = self
             .finalized
             .get()
-            .map_or(&self.keys, |roster| &roster.keys);
+            .map_or(&self.allocation.keys, |roster| &roster.keys);
         let ordered: Vec<_> = keys
             .iter()
             .copied()
@@ -382,6 +442,9 @@ fn key(write: &InitializerWrite) -> Result<Key, String> {
         }
     }
 }
+#[cfg(test)]
+#[path = "startup_allocation_retained_tests.rs"]
+mod retained_tests;
 
 #[cfg(test)]
 mod tests {
@@ -545,13 +608,11 @@ mod tests {
             names,
             ["empty_late", "later_first", "root_first", "root_second"]
         );
-        assert!(
-            StartupAllocationRoster::issue(
-                plan,
-                &[SymbolId::of("/datum/empty"), SymbolId::of("/datum/empty")]
-            )
-            .is_err()
-        );
+        assert!(StartupAllocationRoster::issue(
+            plan,
+            &[SymbolId::of("/datum/empty"), SymbolId::of("/datum/empty")]
+        )
+        .is_err());
         let mut omitted = membership.to_vec();
         omitted.push(Key::Variable {
             owner: SymbolId::of("/"),

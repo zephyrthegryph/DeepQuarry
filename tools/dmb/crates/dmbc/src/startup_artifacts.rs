@@ -8,6 +8,8 @@ use std::sync::{
     Arc,
 };
 
+#[path = "startup_allocation_store.rs"]
+mod allocation_store;
 #[path = "startup_callable_index.rs"]
 mod callable_index;
 #[path = "startup_inventory_receipt.rs"]
@@ -16,12 +18,7 @@ const INVENTORY_KEY: &[u8] = b"dmbc-startup-inventory-v1\0";
 
 pub struct StartupArtifacts {
     callables: callable_index::CallableIndex,
-    values: dm_session::ObservedArtifactStore<
-        Artifact,
-        ProcedureIdentity,
-        Arc<[Arc<ProcedureStaticDeclaration>]>,
-        (),
-    >,
+    values: dm_session::ObservedArtifactStore<Artifact, Query, Answer, Option<dm_ir::ReadDomain>>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -45,13 +42,27 @@ pub(crate) enum Artifact {
     Syntax(Arc<RelativeStaticPlan>),
     Layout(Arc<dm_tree::procedure_statics::StaticLayout>),
     Inventory(inventory_receipt::InventoryReceipt),
+    Allocation(Arc<crate::startup_allocation::AllocationReceipt>),
+    AllocationFinal(Arc<crate::startup_allocation::FinalReceipt>),
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Query {
+    Static(ProcedureIdentity),
+    Resolver(dm_ir::ResolveQuery),
+}
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) enum Answer {
+    Static(Arc<[Arc<ProcedureStaticDeclaration>]>),
+    Resolver(dm_ir::ResolvedMeaning),
+    Unavailable,
 }
 struct StaticInputs(Arc<[Arc<ProcedureStaticDeclaration>]>);
-impl ObservationHost<ProcedureIdentity, Arc<[Arc<ProcedureStaticDeclaration>]>, ()>
-    for StaticInputs
-{
-    fn answer(&self, _: &ProcedureIdentity) -> Arc<[Arc<ProcedureStaticDeclaration>]> {
-        Arc::clone(&self.0)
+impl ObservationHost<Query, Answer, Option<dm_ir::ReadDomain>> for StaticInputs {
+    fn answer(&self, query: &Query) -> Answer {
+        match query {
+            Query::Static(_) => Answer::Static(Arc::clone(&self.0)),
+            Query::Resolver(_) => Answer::Unavailable,
+        }
     }
 }
 fn layout_key(procedure: ProcedureIdentity) -> Arc<[u8]> {
@@ -114,6 +125,7 @@ impl StartupArtifacts {
         let mut roster: Vec<Arc<[u8]>> = keys.into_iter().map(Arc::from).collect();
         roster.extend(procedures.into_iter().map(layout_key));
         roster.push(Arc::from(INVENTORY_KEY));
+        roster.extend(crate::startup_allocation::retained_keys().map(Arc::from));
         self.values
             .retain_current_keys(roster.iter().map(AsRef::as_ref));
     }
@@ -158,7 +170,12 @@ impl StartupArtifacts {
             }
         }
         let ledger = dm_session::observations::ObservationLedger::default();
-        ledger.record(procedure, Arc::clone(&declarations), (), None);
+        ledger.record(
+            Query::Static(procedure),
+            Answer::Static(Arc::clone(&declarations)),
+            None,
+            None,
+        );
         // Current-roster store has no byte admission budget. Exact owner
         // accounting belongs to explicit census, not a hot-path heap walk.
         let layout = dm_tree::procedure_statics::StaticLayout::capture(procedure, declarations)?;
@@ -171,7 +188,7 @@ impl StartupArtifacts {
         )?;
         match owner.as_ref() {
             Artifact::Layout(layout) => Some(Arc::clone(layout)),
-            Artifact::Syntax(_) | Artifact::Inventory(_) => None,
+            _ => None,
         }
     }
     /// Called only after current source capture and initializer assembly succeed.
@@ -250,9 +267,9 @@ impl StartupArtifacts {
             dm_session::ObservedArtifactStorageView<
                 '_,
                 Artifact,
-                ProcedureIdentity,
-                Arc<[Arc<ProcedureStaticDeclaration>]>,
-                (),
+                Query,
+                Answer,
+                Option<dm_ir::ReadDomain>,
             >,
         ),
     ) {

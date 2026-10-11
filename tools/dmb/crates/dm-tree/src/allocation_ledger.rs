@@ -29,6 +29,7 @@ pub enum AllocationKind {
     },
     Field {
         owner: SymbolId,
+        name: SymbolId,
         formal: bool,
         var_namespace: bool,
         initializer: Option<Span>,
@@ -56,12 +57,24 @@ pub struct AllocationEvent {
 pub struct AllocationLedger {
     pub events: AllocationEvents,
 }
+/// Exact symbolic registration semantics; current source coordinates are a sidecar.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RootFieldRegistration {
+    pub name: SymbolId,
+    pub registration_owner: Option<SymbolId>,
+}
 impl AllocationLedger {
     /// Root-global semantics and allocation registration are separate: a bare
     /// declaration following a non-root procedure joins its late registrations.
     /// Once registered, subsequent bare root fields keep that allocation group.
     /// An explicitly qualified var or root procedure resets that context.
     pub fn root_field_registrations(&self) -> impl Iterator<Item = (Span, Option<SymbolId>)> + '_ {
+        self.root_field_descriptors()
+            .map(|(span, row)| (span, row.registration_owner))
+    }
+    pub fn root_field_descriptors(
+        &self,
+    ) -> impl Iterator<Item = (Span, RootFieldRegistration)> + '_ {
         let root = SymbolId::of("/");
         let mut procedure = None;
         let mut root_registration = None;
@@ -81,6 +94,7 @@ impl AllocationLedger {
                 }
                 AllocationKind::Field {
                     owner,
+                    name,
                     var_namespace,
                     ..
                 } => {
@@ -93,7 +107,13 @@ impl AllocationLedger {
                     }
                     let registration = *root_registration
                         .get_or_insert_with(|| procedure.filter(|owner| *owner != root));
-                    Some((event.header_span, registration))
+                    Some((
+                        event.header_span,
+                        RootFieldRegistration {
+                            name,
+                            registration_owner: registration,
+                        },
+                    ))
                 }
                 AllocationKind::Parent { .. } => None,
             })
@@ -295,10 +315,14 @@ fn walk(
                 || matches!(ns_kind, Some(NamespaceKind::Proc | NamespaceKind::Verb)))
         {
             let mut member_owner = effective_owner.to_owned();
-            let name = parts.last().copied().ok_or_else(|| Error {
-                span: item.header_span,
-                message: "procedure name absent".into(),
-            })?;
+            let name = normalized
+                .split('[')
+                .next()
+                .and_then(|target| target.rsplit('/').next())
+                .ok_or_else(|| Error {
+                    span: item.header_span,
+                    message: "procedure name absent".into(),
+                })?;
             if explicit.is_none() && namespace.is_none() && parts.len() > 1 {
                 member_owner = path(owner, &normalized[..normalized.rfind('/').unwrap()]);
             }
@@ -392,6 +416,14 @@ fn walk(
                     item,
                     AllocationKind::Field {
                         owner: owner_id,
+                        name: intern(
+                            symbols,
+                            parts.last().copied().ok_or_else(|| Error {
+                                span: item.header_span,
+                                message: "field allocation name absent".into(),
+                            })?,
+                            item.header_span,
+                        )?,
                         formal: ns_kind == Some(NamespaceKind::Var) || item.kind == ItemKind::Var,
                         var_namespace: normalized.starts_with('/')
                             || namespace
@@ -433,6 +465,25 @@ fn walk(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn root_field_descriptors_keep_symbolic_array_names_across_source_shifts() {
+        let capture_rows = |source: &str| {
+            let ast = dm_syntax::parse(source);
+            let mut symbols = SymbolTable::default();
+            let ledger = capture(&ast.items, "/", &mut symbols).unwrap();
+            ledger
+                .root_field_descriptors()
+                .map(|(_, row)| row)
+                .collect::<Vec<_>>()
+        };
+        let first = capture_rows("/var/global/list/values[3]\n/var/global/value = 1\n");
+        let shifted =
+            capture_rows("// shifted\n/var/global/list/values[3]\n/var/global/value = 2\n");
+        assert_eq!(first, shifted);
+        assert_eq!(first.len(), 2);
+        assert_eq!(first[0].name, SymbolId::of("values"));
+        assert_eq!(first[1].name, SymbolId::of("value"));
+    }
     #[test]
     fn absolute_header_type_effects_precede_procedure_and_keep_exact_current_spans() {
         let source = "/proc/probe(datum/ordinary/arg, /datum/marker_target/target, /datum/second_marker/value)\n    return arg\n";

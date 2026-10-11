@@ -6,6 +6,7 @@ use dm_tree::{
 };
 #[path = "startup_artifacts.rs"]
 mod artifacts;
+pub(crate) use artifacts::Answer as StartupAnswer;
 pub(crate) use artifacts::Artifact as StartupArtifact;
 pub use artifacts::StartupArtifacts;
 #[cfg(test)]

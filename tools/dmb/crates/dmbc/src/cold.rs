@@ -548,12 +548,14 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             });
         }
     };
-    let startup_allocation = crate::startup_allocation::StartupAllocationRoster::issue_current(
-        plan,
-        declarations.source_type_order,
-        frontend,
-    )
-    .map_err(ColdError::InitializerInvariant)?;
+    let startup_allocation =
+        crate::startup_allocation::StartupAllocationRoster::issue_current_with_artifacts(
+            plan,
+            declarations.source_type_order,
+            frontend,
+            memo.and_then(|memo| memo.startup.as_ref()),
+        )
+        .map_err(ColdError::InitializerInvariant)?;
     let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
         frontend,
         startup,
