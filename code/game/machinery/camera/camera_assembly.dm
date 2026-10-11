@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Configure"), when(req_stage(nameof(state), 3)), starts(PROC_REF(configure_started)),
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Configure"), wait(0), when(req_stage(nameof(state), 3)), starts(PROC_REF(configure_started)),
 		asks(/datum/prompt/text, fields = list("title" = "Set Network", "question" = computed(PROC_REF(networks_question)), "default" = computed(PROC_REF(networks_default)), "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "networks"),
 		asks(/datum/prompt/text, fields = list("title" = "Set Camera Name", "question" = "How would you like to name the camera?", "default" = computed(PROC_REF(name_default)), "max_len" = MAX_NAME_LEN, "encode" = FALSE, "ask_flags" = ASK_ADJACENT | ASK_CAPABLE, "timeout" = 0), step = "name", when = PROC_REF(networks_given)),
 		then(PROC_REF(camera_configured)))

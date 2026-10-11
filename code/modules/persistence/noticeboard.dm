@@ -24,7 +24,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(noticeboard_blast_dismantle))))
 	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(5 SECONDS), then(PROC_REF(wrench_act_tool_done)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Offset"), asks(/datum/prompt/choice/noticeboard_offset, step = "offset"), then(PROC_REF(offset_chosen)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Offset"), wait(0), asks(/datum/prompt/choice/noticeboard_offset, step = "offset"), then(PROC_REF(offset_chosen)))
 
 // ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
 /obj/structure/noticeboard/Initialize(mapload)

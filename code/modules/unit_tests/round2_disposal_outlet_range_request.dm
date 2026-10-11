@@ -16,9 +16,9 @@
 	TEST_ASSERT_EQUAL(outlet.interaction_tool_act(actor, screwdriver, TOOL_SCREWDRIVER), ITEM_INTERACT_SUCCESS, "The screwdriver opens the outlet")
 
 	cooldown_set_end(actor, next_click, 0)
-	var/datum/op_result/R = test_click(actor, outlet, tool)
+	test_click(actor, outlet, tool)
 	var/datum/prompt/number/disposal_outlet_range/ask = SSrequests.open_for(actor)
-	TEST_ASSERT(istype(ask), "The multitool asks the range: [R?.key] [R?.outcome] [reason_text(R?.reason)] mode=[outlet.mode] held=[actor.get_active_hand()]")
+	TEST_ASSERT(istype(ask), "The multitool asks the range")
 	TEST_ASSERT_EQUAL(ask.default, original_range, "The question offers the current range")
 	test_answer(actor, 2.5)
 	TEST_ASSERT_EQUAL(outlet.eject_range, 2.5, "A numeric answer sets the range")
