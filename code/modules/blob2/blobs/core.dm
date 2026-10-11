@@ -24,7 +24,7 @@ CAPABILITIES(/obj/structure/blob/core)
 	after_init(0, then(PROC_REF(make_overmind_after_init)))
 	every(2 SECONDS, then(PROC_REF(core_step)))
 	owns_one(nameof(Q), /datum/ghost_query)
-	param(nameof(controller), pos = 1)
+	param(nameof(controller), pos = 1, overrides = TRUE)
 	param(nameof(point_rate), pos = 2)
 	param(nameof(placed_at_make), pos = 3)
 

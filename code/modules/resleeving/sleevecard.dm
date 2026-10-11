@@ -62,7 +62,7 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 				to_chat(our_infomorph, span_warning("You can feel the restricting binds of your card's directives taking hold of your mind as \the [user] swipes their [E] over you. You must serve your master."))
 
 /obj/item/paicard/sleevecard/proc/sleeveInto(datum/transhuman/mind_record/MR, db_key)
-	var/mob/living/silicon/pai/infomorph/infomorph = new(src,MR.mindname,db_key)
+	var/mob/living/silicon/pai/infomorph/infomorph = new(src, MR.mindname)
 
 	for(var/datum/language/L in MR.mind_ref.get_identity()?.languages)
 		infomorph.add_language(L.name)
@@ -103,7 +103,7 @@ MSG_DEF_SELF(sleevecard/no_backup, span_notice("Your sleevemate flashes an error
 	var/emagged = FALSE
 
 CAPABILITIES(/mob/living/silicon/pai/infomorph)
-	param(nameof(name), pos = 1, default = "Unknown")
+	param(nameof(name), pos = 1, default = "Unknown", overrides = TRUE)
 
 // ALLOW(init/INSTANCE_STATE): an infomorph names its PDA after itself and speaks Galactic Common
 /mob/living/silicon/pai/infomorph/Initialize(mapload)

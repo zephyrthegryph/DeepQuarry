@@ -18,7 +18,7 @@ CAPABILITIES(/obj/effect/anomaly/weather)
 	when(nameof(telegraph_delay), after_init(nameof(telegraph_delay), then(PROC_REF(start_weather_after_init))))
 	owns_one(nameof(selected_weather), /datum/anomalous_weather, starts = PROC_REF(make_weather))
 
-/obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
+/obj/effect/anomaly/weather/Initialize(mapload)
 	. = ..()
 
 	LAZYADD(affected_areas, impact_area())

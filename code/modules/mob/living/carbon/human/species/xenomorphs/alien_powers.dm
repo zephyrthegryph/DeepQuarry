@@ -152,7 +152,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 
 	if(check_alien_ability(50,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
-		new /obj/effect/alien/weeds/node(get_turf(src), null, "#321D37")
+		new /obj/effect/alien/weeds/node(get_turf(src))
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)

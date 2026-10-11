@@ -18,7 +18,7 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	var/image/base_image
 	var/max_butts = 10
 
-/obj/item/material/ashtray/Initialize(mapload, material_key)
+/obj/item/material/ashtray/Initialize(mapload)
 	. = ..()
 	if(!material)
 		return INITIALIZE_HINT_QDEL
