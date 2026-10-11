@@ -174,7 +174,7 @@ CAPABILITIES(/obj/item/organ/internal/fruitgland)
 	if(parent && generated_reagents && organ_owner) //Is it in the chest/an organ, has reagents, and is 'activated'
 		before_gen = reagents.total_volume
 		if(reagents.total_volume < reagents.maximum_volume)
-			if(organ_owner.nutrition >= gen_cost)
+			if(nutrition_of(organ_owner) >= gen_cost)
 				do_generation()
 
 	if(reagents)

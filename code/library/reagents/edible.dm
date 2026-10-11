@@ -135,7 +135,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 
 /// How full the stomach is: its nutrition and the nutriment in it, as the old messages counted.
 /datum/capability/lib/edible/proc/fullness_of(mob/living/eater)
-	return eater.nutrition + (eater.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 25)
+	return nutrition_of(eater) + (eater.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 25)
 
 /datum/capability/lib/edible/proc/room_in_stomach(datum/act/op/A)
 	var/mob/living/eater = A.target

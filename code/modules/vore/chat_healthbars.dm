@@ -77,7 +77,7 @@
 	var/datum/digest_mode/selective/DM_S = GLOB.digest_modes[DM_SELECT]
 	var/digest_mode = ourbelly.digest_mode == DM_SELECT ? DM_S.get_selective_mode(ourbelly, src) : ourbelly.digest_mode
 	if(digest_mode == DM_ABSORB || digest_mode == DM_DRAIN)
-		ourpercent = round(((nutrition - 100) / 500) * 100)
+		ourpercent = round(((nutrition_of(src) - 100) / 500) * 100)
 		which_var = "Nutrition"	//It's secretly also a nutrition bar depending on your digest mode
 
 	ourpercent = round(ourpercent)

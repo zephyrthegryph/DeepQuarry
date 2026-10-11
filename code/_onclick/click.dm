@@ -129,9 +129,9 @@
 	LE.fire()
 
 /mob/living/carbon/human/LaserEyes(atom/A, params)
-	if(nutrition>0)
+	if(nutrition_of(src)>0)
 		..()
-		set_nutrition(max(nutrition - rand(1,5),0))
+		set_nutrition(max(nutrition_of(src) - rand(1,5),0))
 	else
 		to_chat(src, span_warning("You're out of energy!  You need food!"))
 

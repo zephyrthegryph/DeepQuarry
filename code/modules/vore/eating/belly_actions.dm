@@ -86,8 +86,8 @@
 		return FALSE
 	if(isliving(user))
 		var/mob/living/l = user
-		l.adjust_nutrition(target.nutrition)
-		var/n = 0 - target.nutrition
+		l.adjust_nutrition(nutrition_of(target))
+		var/n = 0 - nutrition_of(target)
 		target.adjust_nutrition(n)
 	absorb_living(target)
 	return TRUE

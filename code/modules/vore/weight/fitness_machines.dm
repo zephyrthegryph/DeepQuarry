@@ -17,7 +17,7 @@ CAPABILITIES(/obj/machinery/fitness)
 /// Old attack_hand: work out, burning nutrition and weight.
 /obj/machinery/fitness/proc/fitness_workout_hand(datum/act/op/A)
 	var/mob/living/user = A.actor
-	if(user.nutrition < 70)
+	if(nutrition_of(user) < 70)
 		to_chat(user, span_notice("You need more energy to workout with the [src]!"))
 
 	else if(user.weight < 70)

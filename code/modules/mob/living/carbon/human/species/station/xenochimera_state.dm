@@ -77,7 +77,7 @@ CAPABILITIES(/datum/xenochimera)
 	//first, calculate how stressed the chimera is
 
 	//Low-ish nutrition has messages and can eventually cause feralness
-	var/hunger = max(0, 150 - owner.nutrition)
+	var/hunger = max(0, 150 - nutrition_of(owner))
 
 	//pain makes feralness a thing
 	var/shock = 0.75*owner.traumatic_shock
@@ -107,8 +107,8 @@ CAPABILITIES(/datum/xenochimera)
 			feral = currentstress //update the local var
 
 		//they didn't go feral, give 'em a chance of hunger messages
-		else if(owner.nutrition <= 200 && prob(0.5))
-			switch(owner.nutrition)
+		else if(nutrition_of(owner) <= 200 && prob(0.5))
+			switch(nutrition_of(owner))
 				if(150 to 200)
 					to_chat(owner,span_info("You feel rather hungry. It might be a good idea to find some some food..."))
 				if(100 to 150)
@@ -338,7 +338,7 @@ CAPABILITIES(/datum/xenochimera)
 		to_chat(owner, "You can't use that ability again so soon!")
 		return
 
-	var/time = min(900, (120+780/(1 + owner.nutrition/100))) //capped at 15 mins, roughly 6 minutes at 250 (yellow) nutrition, 4.1 minutes at 500 (grey), cannot be below 2 mins
+	var/time = min(900, (120+780/(1 + nutrition_of(owner)/100))) //capped at 15 mins, roughly 6 minutes at 250 (yellow) nutrition_of(src), 4.1 minutes at 500 (grey), cannot be below 2 mins
 	if (owner.quickcheckuninjured()) //if you're completely uninjured, then you get a speedymode - check health first for quickness
 		time = 30
 
@@ -460,7 +460,7 @@ CAPABILITIES(/datum/xenochimera)
 		if(stat == DEAD)
 			//Reviving from ded takes extra nutrition - if it isn't provided from outside sources, it comes from you
 			if(!hasnutriment())
-				set_nutrition(nutrition * 0.75)
+				set_nutrition(nutrition_of(src) * 0.75)
 				// sickness_duration = 20 MINUTES //
 			has_braindamage = TRUE
 
@@ -480,7 +480,7 @@ CAPABILITIES(/datum/xenochimera)
 	revoke(owner, granted_verb(/mob/living/carbon/human/proc/hatch), src)
 	to_chat(owner, span_notice("Your new body awakens, bursting free from your old skin."))
 	//Modify and record values (half nutrition and braindamage)
-	var/old_nutrition = owner.nutrition
+	var/old_nutrition = nutrition_of(owner)
 	var/braindamage = min(5, max(0, (owner.injury_load(INJURY_CATEGORY_NEURAL)-1) * 0.5)) //brain damage is tricky to heal and might take a couple of goes to get rid of completely.
 	var/uninjured=owner.quickcheckuninjured()
 	trigger_revival(from_save_slot)

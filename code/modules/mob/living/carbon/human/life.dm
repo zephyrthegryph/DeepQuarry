@@ -1057,7 +1057,7 @@
 		return FALSE
 	if(src.stat != DEAD && src.robobody_count)
 		return TRUE
-	return !src.on_fire && abs(src.thermal_setpoint() - src.body_temperature()) >= 0.5
+	return !stat_value(src, STAT_ON_FIRE) && abs(src.thermal_setpoint() - src.body_temperature()) >= 0.5
 
 /// C16 / P2-S10: the temperature this body regulates toward — the species norm
 /// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
@@ -1107,13 +1107,13 @@
 			src.set_metabolic_power(watts)
 			return
 
-	if (src.on_fire)
+	if (stat_value(src, STAT_ON_FIRE))
 		src.set_metabolic_power(watts)
 		return //too busy for pesky metabolic regulation
 
 	var/recovery_amt = 0
 	if(body < src.species.cold_level_1) //260.15 is 310.15 - 50, the temperature where you start to feel effects.
-		if(src.nutrition >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
+		if(nutrition_of(src) >= 2) //If we are very, very cold we'll use up quite a bit of nutriment to heat us up.
 			src.adjust_nutrition(-2)
 		recovery_amt = max((body_temperature_difference / BODYTEMP_AUTORECOVERY_DIVISOR), BODYTEMP_AUTORECOVERY_MINIMUM)
 	else if(src.species.cold_level_1 <= body && body <= src.species.heat_level_1)
@@ -1168,7 +1168,7 @@
 	var/bio_now = clock_now(src, CLOCK_BIO)
 	var/hunger_cycles = src.nutrition_drained_at ? clamp((bio_now - src.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
 	src.nutrition_drained_at = bio_now
-	if(src.nutrition > 0 && src.stat != DEAD)
+	if(nutrition_of(src) > 0 && src.stat != DEAD)
 		var/nutrition_reduction = src.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
 		// covers the species) raises or lowers nutrition cost.
@@ -1180,14 +1180,14 @@
 			nutrition_reduction *= comp.get_nutrition_multiplier()
 		src.adjust_nutrition(-nutrition_reduction)
 
-	if(src.noisy == TRUE && src.nutrition < 250 && prob(10))
+	if(src.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
 		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
-		var/growlmultiplier = 100 - (src.nutrition / 250 * 100)
+		var/growlmultiplier = 100 - (nutrition_of(src) / 250 * 100)
 		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-	if(src.nutrition > 500 && src.noisy_full == TRUE)
+	if(nutrition_of(src) > 500 && src.noisy_full == TRUE)
 		var/belch_prob = 5 //Maximum belch prob.
-		if(src.nutrition < 4075)
-			belch_prob = ((src.nutrition-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
+		if(nutrition_of(src) < 4075)
+			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
 		if(prob(belch_prob))
 			src.emote("belch")
 	if(src.factor(BF_DARKSIGHT) && src.chemical_darksight == 0)
@@ -1214,7 +1214,7 @@
 		return TRUE
 	if(!src.factor(BF_DARKSIGHT) != !src.chemical_darksight)
 		return TRUE
-	if((src.noisy && src.nutrition < 250) || (src.noisy_full && src.nutrition > 500))
+	if((src.noisy && nutrition_of(src) < 250) || (src.noisy_full && nutrition_of(src) > 500))
 		return TRUE
 	return FALSE
 
@@ -1234,7 +1234,7 @@
 	if(!B || LAZYLEN(B.afflictions) || B.dirty || src.current_pain() || src.oxygen_debt() || src.is_critical())
 		return TRUE
 	// blinded is reset every frame (type_pre) and set again here, so anything that blinds keeps it awake.
-	if(src.tiredness || src.fear || src.embedded_flag || src.resting || src.wearing_blindfold() || life_status_rig_visor_blinds())
+	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.embedded_flag || src.resting || src.wearing_blindfold() || life_status_rig_visor_blinds())
 		return TRUE
 	if(src.has_status(STAT_SLEEPING) || src.has_status(STAT_DROWSY) || src.has_status(STAT_HALLUCINATING) || src.has_status(STAT_BLINDED) || src.has_status(STAT_DEAFENED))
 		return TRUE
@@ -1308,24 +1308,27 @@
 
 /// Tiredness from vore drain wears off; very tired bodies fall asleep.
 /mob/living/carbon/human/proc/life_status_update_tiredness()
-	if(!src.tiredness)
+	// The points wear off on their own (a status); only the effect is here. The HUD's tiredness band follows the count down.
+	if(!src.has_status(STAT_TIREDNESS))
 		return
-	src.set_tiredness((src.tiredness - 1))
-	if(src.tiredness >= 100)
+	PUBLISH_CHANGE(src, MOB_KEY_STATUS)
+	if(src.status_units(STAT_TIREDNESS) >= 100)
 		src.status_at_least(STAT_SLEEPING, 5)
 
 /// Fear wears off; a frightened organic body shakes, drops things and shows it.
 /mob/living/carbon/human/proc/life_status_update_fear()
-	if(!src.fear)
+	// The points wear off on their own (a status); only the effects are here.
+	var/fear = src.status_units(STAT_FEAR)
+	if(!fear)
 		return
-	src.set_fear((src.fear - 1))
-	if(src.fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
+	PUBLISH_CHANGE(src, MOB_KEY_STATUS) // the HUD's fear band follows the count down
+	if(fear >= 80 && src.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
 		if(cooldown_ready(src, fear_sound_cooldown))
 			src << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
 			cooldown_start(src, fear_sound_cooldown, 51 SECONDS)
 	if(!(src.biology() & BIOLOGY_ORGANIC))
 		return
-	if(src.fear >= 80)
+	if(fear >= 80)
 		if(prob(1) && src.get_active_hand())
 			var/stuff_to_drop = src.get_active_hand()
 			src.drop_item()
@@ -1333,7 +1336,7 @@
 				MSG_OTHERS(span_notice("%U% suddenly drops their [stuff_to_drop].")))
 		if(prob(5))
 			life_status_fear_emote()
-	else if(src.fear >= 30 && prob(2))
+	else if(fear >= 30 && prob(2))
 		life_status_fear_emote()
 
 /mob/living/carbon/human/proc/life_status_fear_emote()
@@ -1453,7 +1456,7 @@
 		return TRUE
 	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || src.damageoverlaytemp)
 		return FALSE
-	if(src.tiredness || src.fear || src.blinded)
+	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.blinded)
 		return FALSE
 	return !src.has_status(STAT_BLURRY) && !src.has_status(STAT_DRUGGED)
 
@@ -1528,13 +1531,13 @@
 	else
 		src.clear_fullscreen("brute")
 
-	if(src.tiredness)
-		src.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, life_hud_overlay_band(src.tiredness, tired_bands))
+	if(src.status_units(STAT_TIREDNESS))
+		src.overlay_fullscreen("tired", /atom/movable/screen/fullscreen/oxy, life_hud_overlay_band(src.status_units(STAT_TIREDNESS), tired_bands))
 	else
 		src.clear_fullscreen("tired")
 
-	if(src.fear)
-		src.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, life_hud_overlay_band(src.fear, fear_bands))
+	if(src.status_units(STAT_FEAR))
+		src.overlay_fullscreen("fear", /atom/movable/screen/fullscreen/fear, life_hud_overlay_band(src.status_units(STAT_FEAR), fear_bands))
 	else
 		src.clear_fullscreen("fear")
 
@@ -1546,7 +1549,7 @@
 		"[HUNGER_ALERT_VAMPIRE]" = list(/atom/movable/screen/alert/fat/vampire, /atom/movable/screen/alert/hungry/vampire, /atom/movable/screen/alert/starving/vampire),
 	)
 	var/list/alerts = alerts_by_style["[src.hunger_alert_style()]"] || alerts_by_style["[HUNGER_ALERT_ORGANIC]"]
-	switch(src.nutrition)
+	switch(nutrition_of(src))
 		if(450 to INFINITY)
 			src.throw_alert("nutrition", alerts[1])
 		if(250 to 450)
@@ -1635,7 +1638,7 @@
 		trauma_val = src.pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
 	var/hallucination_hud = src.get_hallucination_state()?.get_hud_state()
-	var/burning = src.on_fire || hallucination_hud == HUD_HALLUCINATION_ONFIRE
+	var/burning = stat_value(src, STAT_ON_FIRE) || hallucination_hud == HUD_HALLUCINATION_ONFIRE
 	if(hallucination_hud == HUD_HALLUCINATION_CRIT)
 		trauma_val = 2
 
@@ -2282,8 +2285,8 @@
 // === merged from life_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
 /mob/living/carbon/human/proc/life_weight_due()
-	var/gaining = src.weight_gain && src.nutrition > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
-	var/losing = src.weight_loss && src.nutrition <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
+	var/gaining = src.weight_gain && nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT
+	var/losing = src.weight_loss && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
 	return gaining || losing
 
 /mob/living/carbon/human/proc/life_weight_rewake()
@@ -2291,11 +2294,11 @@
 
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)
-	if (src.nutrition >= 0 && src.stat != 2)
-		if (src.nutrition > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && src.weight_gain)
+	if (nutrition_of(src) >= 0 && src.stat != 2)
+		if (nutrition_of(src) > MIN_NUTRITION_TO_GAIN && src.weight < MAX_MOB_WEIGHT && src.weight_gain)
 			src.weight += src.species.metabolism*(0.01*src.weight_gain)
 
-		else if (src.nutrition <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && src.weight_loss)
+		else if (nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.stat != 2 && src.weight > MIN_MOB_WEIGHT && src.weight_loss)
 			src.weight -= src.species.metabolism*(0.01*src.weight_loss) // starvation weight loss
 
 //Our call for the NIF to do whatever
@@ -2319,9 +2322,9 @@
 
 	// Technically this does mean being dragged takes nutrition
 	if(stat != DEAD)
-		adjust_nutrition(hunger_rate/-10)
+		adjust_nutrition(hunger_rate_of(src)/-10)
 		if(m_intent == I_RUN)
-			adjust_nutrition(hunger_rate/-10)
+			adjust_nutrition(hunger_rate_of(src)/-10)
 
 	// Moving around increases germ_level faster
 	if(germ_level < GERM_LEVEL_MOVE_CAP && prob(8))

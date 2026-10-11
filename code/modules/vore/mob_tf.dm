@@ -44,7 +44,7 @@
 			N.identifying_gender = src.gender
 
 	new_mob.mob_belly_transfer(src)
-	new_mob.set_nutrition(src.nutrition)
+	new_mob.set_nutrition(nutrition_of(src))
 
 	src.soulgem?.transfer_self(new_mob)
 

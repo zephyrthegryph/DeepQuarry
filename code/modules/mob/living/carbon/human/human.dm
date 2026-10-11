@@ -378,7 +378,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	var/obj/item/organ/external/affected_organ = get_organ(check_zone(def_zone))
 	siemens_coeff = siemens_coeff * get_siemens_coefficient_organ(affected_organ)
-	if(fire_stacks < 0) // Water makes you more conductive.
+	if(fire_stacks_of(src) < 0) // Water makes you more conductive.
 		siemens_coeff *= 1.5
 
 	. = ..(shock_damage, source, siemens_coeff, def_zone)
@@ -1425,7 +1425,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		// Clear out their species abilities.
 		species.remove_inherent_verbs(src)
 		holder_type = null
-		hunger_rate = initial(hunger_rate)
+		set_hunger_rate(src, DEFAULT_HUNGER_FACTOR)
 
 	var/datum/species/replaced = proto_replace(src, nameof(species), GLOB.all_species[new_species])
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
@@ -1468,8 +1468,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
+		var/kept_nutrition = body.food_energy // the metabolism carries over to the new plan
 		rel_clear(src, nameof(body))
 		rel_set(src, nameof(body), new body_type(src))
+		body.food_energy = kept_nutrition
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).
@@ -1483,7 +1485,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	species.apply_components(src)
 
 	endurance = species.total_health
-	hunger_rate = species.hunger_factor
+	set_hunger_rate(src, species.hunger_factor)
 
 	default_pixel_x = initial(pixel_x) + species.pixel_offset_x //For giving datum/species ways to change 64x64 sprite offsets
 	default_pixel_y = initial(pixel_y) + species.pixel_offset_y
@@ -1847,7 +1849,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/Check_Shoegrip()
 	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
-	if(flying) // Checks to see if they have wings and are flying.
+	if(stat_value(src, STAT_FLYING)) // Checks to see if they have wings and are stat_value(src, STAT_FLYING).
 		return 1
 	return 0
 

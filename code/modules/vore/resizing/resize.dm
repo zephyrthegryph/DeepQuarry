@@ -301,7 +301,7 @@
 			src_message = "You carefully step over [tmob]."
 			tmob_message = "[src] steps over you carefully!"
 			var/mob/living/carbon/human/H = src
-			if(H.flying)
+			if(stat_value(H, STAT_FLYING))
 				return TRUE //Silently pass without a message.
 			if(istaurtail(H.tail_style))
 				var/datum/sprite_accessory/tail/taur/tail = H.tail_style
@@ -334,10 +334,10 @@
 /mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0, stance = I_HURT) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
-	if(flying)
+	if(stat_value(src, STAT_FLYING))
 		return
 	//If the prey is flying, don't smush them.
-	if(tmob.flying)
+	if(stat_value(tmob, STAT_FLYING))
 		return
 	//We can't be stepping on anyone
 	if(!canmove || src?.buckled_to())

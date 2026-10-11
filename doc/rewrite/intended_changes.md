@@ -4706,6 +4706,19 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
 
+## Live mob state into its domains (base_vars lane B, bv-hud)
+
+* **Nutrition and hunger rate live in the body's metabolism** (`/datum/body` `food_energy`, `hunger_rate`): read `nutrition_of(L)` /
+  `hunger_rate_of(L)`, written by `set_nutrition()` (which publishes MOB_KEY_NUTRITION) and `set_hunger_rate()` (308 sites). A type's
+  starting nutrition is `starting_nutrition()` (20 types overrode the var); a human's 200-400 is drawn by rand() there instead of a `rolls()` entry on the instance stream. A body swapped on a species change keeps the nutrition.
+* **Fear and tiredness are statuses** (STAT_FEAR, STAT_TIREDNESS): their points wear off one per cycle on the status layer instead of
+  the human Life step decrementing them; the Life step keeps their effects and republishes MOB_KEY_STATUS each cycle so the HUD bands
+  follow the count down.
+* **Flying is a stat** (STAT_FLYING, ANY): the mob's own flight is the SRC_FLIGHT hold, written by `set_flying()`.
+* **Burning is a stat** (STAT_ON_FIRE) held by the fire-stack status effect while lit; fire stacks are summed from the effects on read
+  (`fire_stacks_of()`), and the decay rate is `fire_stack_decay_rate()` (silicons -0.55). The mob no longer caches either.
+* `exploit_addons` / `exploit_for` are deleted: written, never read.
+
 ## Softfall, hovering and parachuting type defaults are trait fields (base_vars lane B, bv-hud)
 
 The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:

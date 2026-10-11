@@ -104,11 +104,11 @@
 /datum/unit_test/dq_k_b_s11_nutrition_writers_clamp/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
-	TEST_ASSERT_EQUAL(H.nutrition, 100, "set_nutrition sets")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 100, "set_nutrition sets")
 	H.adjust_nutrition(-500)
-	TEST_ASSERT_EQUAL(H.nutrition, 0, "adjust_nutrition never goes below zero")
+	TEST_ASSERT_EQUAL(nutrition_of(H), 0, "adjust_nutrition never goes below zero")
 	H.set_nutrition(H.max_nutrition + 1000)
-	TEST_ASSERT_EQUAL(H.nutrition, H.max_nutrition, "set_nutrition never exceeds max_nutrition")
+	TEST_ASSERT_EQUAL(nutrition_of(H), H.max_nutrition, "set_nutrition never exceeds max_nutrition")
 
 /// P2-S13: the species gate is data on the reagent, applied through effective_dose().
 /datum/unit_test/dq_k_b_s13_species_gate_data

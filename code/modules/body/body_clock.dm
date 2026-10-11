@@ -182,9 +182,9 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			status_at_least(STAT_SLEEPING, 3)
 			injure(INJURY_TOXIN, (factor(BF_STABILIZATION) ? 1.5 : 3) * cycles, flags = INJURE_SILENT)
 		// Without enough blood you slowly go hungry.
-		if(nutrition >= 300)
+		if(nutrition_of(src) >= 300)
 			adjust_nutrition(-10 * cycles)
-		else if(nutrition >= 200)
+		else if(nutrition_of(src) >= 200)
 			adjust_nutrition(-3 * cycles)
 
 	bleed(cycles)

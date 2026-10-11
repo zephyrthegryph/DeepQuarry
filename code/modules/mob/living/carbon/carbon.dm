@@ -191,7 +191,7 @@
 	return shock_damage
 
 /mob/living/carbon/proc/help_shake_act(mob/living/carbon/M)
-	if (!is_critical() || on_fire)
+	if (!is_critical() || stat_value(src, STAT_ON_FIRE))
 		if(src == M && ishuman(src))
 			var/mob/living/carbon/human/H = src
 			act_message(src, null, MSG_SELF(span_notice("You check yourself for injuries.")), \
@@ -246,9 +246,9 @@
 
 			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
-		else if (on_fire)
+		else if (stat_value(src, STAT_ON_FIRE))
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-			if (M.on_fire)
+			if (stat_value(M, STAT_ON_FIRE))
 				act_message(M, src, MSG_SELF(span_warning("You try to pat out %T%'s flames, but to no avail! Put yourself out first!")), \
 					MSG_OTHERS(span_warning("%U% tries to pat out %T%'s flames, but to no avail!")))
 			else
@@ -276,10 +276,10 @@
 				if(M.resting == 1) //Are they resting on the ground?
 					act_message(M, src, MSG_SELF(span_notice("You grip onto %T% and pull yourself up off the ground!")), \
 						MSG_OTHERS(span_notice("%U% grabs onto %T% and pulls %THEMSELVES% up")))
-					if(M.fire_stacks >= (src.fire_stacks + 3)) //Fire checks.
+					if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3)) //Fire checks.
 						src.adjust_fire_stacks(1)
 						M.adjust_fire_stacks(-1)
-					if(M.on_fire)
+					if(stat_value(M, STAT_ON_FIRE))
 						src.ignite_mob()
 					M.set_resting(0) //Hoist yourself up up off the ground. No para/stunned/weakened removal.
 					update_canmove()
@@ -288,10 +288,10 @@
 				else
 					act_message(M, src, MSG_SELF(span_notice("You hug %T% to make [H.p_them()] feel better!")), \
 						MSG_OTHERS(span_notice("%U% hugs %T% to make [H.p_them()] feel better!")))
-				if(M.fire_stacks >= (src.fire_stacks + 3))
+				if(fire_stacks_of(M) >= (fire_stacks_of(src) + 3))
 					src.adjust_fire_stacks(1)
 					M.adjust_fire_stacks(-1)
-				if(M.on_fire)
+				if(stat_value(M, STAT_ON_FIRE))
 					src.ignite_mob()
 			status_adjust(STAT_PARALYZED, -3)
 			status_adjust(STAT_STUNNED, -3)
@@ -304,15 +304,15 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 /mob/living/carbon/proc/help_shake_act_carbon_done(datum/act/op/A)
 	var/mob/living/carbon/M = A.actor
 	src.adjust_fire_stacks(-0.5)
-	if (prob(10) && (M.fire_stacks <= 0))
+	if (prob(10) && (fire_stacks_of(M) <= 0))
 		M.adjust_fire_stacks(1)
 	M.ignite_mob()
-	if (M.on_fire)
+	if (stat_value(M, STAT_ON_FIRE))
 		act_message(M, src, MSG_SELF(span_danger("The fire spreads to you as well!")), \
 			MSG_OTHERS(span_danger("The fire spreads from %T% to %U%!")))
 	else
 		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
-		if (src.fire_stacks <= 0)
+		if (fire_stacks_of(src) <= 0)
 			act_message(M, src, MSG_SELF(span_warning("You successfully pat out %T%'s flames.")), \
 				MSG_OTHERS(span_warning("%U% successfully pats out %T%'s flames.")))
 			src.extinguish_mob()
