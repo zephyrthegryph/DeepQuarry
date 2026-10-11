@@ -184,6 +184,7 @@ def main():
         report['status'] = 'passed'
     except Exception as error:
         report.update(status='failed', error=str(error))
+        print(json.dumps({'status': 'failed', 'stage': 'captured compiler pair', 'error': str(error)}), file=sys.stderr)
     finally:
         cleanup = job.close()
         report['owned_child_cleanup'] = cleanup
