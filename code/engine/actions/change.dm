@@ -54,7 +54,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	if(hascall(E, "__setter_[cond]"))
 		. |= list(cond)
 	for(var/read in stat_generated_reads(E, cond))
-		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1))
+		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1 || findtext(read, "stat:") == 1))
 			. |= read
 
 /// The value the hook's condition or key has on E now: a boolean for an edge hook, the raw value for ANY.

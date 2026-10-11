@@ -87,16 +87,94 @@ APPEARANCE_NONE(/obj/machinery/dq_appearance_probe/bare)
 /// The watch mask comes from the declared fields the declarations read, not from plain vars.
 /datum/unit_test/dq_sys_appearance_mask
 
+/obj/machinery/dq_native_appearance_probe
+	abstract_type = /obj/machinery/dq_native_appearance_probe
+	icon = 'icons/obj/stationobjs.dmi'
+	icon_state = "probe"
+	use_power = USE_POWER_OFF
+	var/charge = null
+	var/label = "a"
+	var/on = FALSE
+	var/active = FALSE
+	var/locked = FALSE
+
+TRACKED(/obj/machinery/dq_native_appearance_probe, on)
+TRACKED(/obj/machinery/dq_native_appearance_probe, active)
+TRACKED(/obj/machinery/dq_native_appearance_probe, locked)
+TRACKED(/obj/machinery/dq_native_appearance_probe, charge)
+TRACKED(/obj/machinery/dq_native_appearance_probe, label)
+
+/obj/machinery/dq_native_appearance_probe/draw(look)
+	. = ..()
+	var/datum/look/L = look
+	var/tag = label ? label : ""
+	L.state(locked ? "probe-locked" : "probe[on][operable()][tag][initial(icon_state)]")
+	if(!isnull(charge))
+		var/step = clamp(round(charge * 4 / 100, 1), 0, 4)
+		L.overlay("lvl[round(step * 100 / 4, 1)]")
+	if(active)
+		L.overlay(emissive_appearance(icon, "glow"))
+
+/obj/machinery/dq_native_appearance_probe/other
+	abstract_type = /obj/machinery/dq_native_appearance_probe/other
+	icon_state = "other"
+
+/obj/machinery/dq_native_appearance_probe/bare
+	abstract_type = /obj/machinery/dq_native_appearance_probe/bare
+
+/obj/machinery/dq_native_appearance_probe/bare/draw(look)
+	return
+
 /datum/unit_test/dq_sys_appearance_mask/Run()
-	var/obj/machinery/dq_appearance_probe/P = allocate(/obj/machinery/dq_appearance_probe)
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(P)
-	TEST_ASSERT(decls.appearance_mask & CHANGE_MACHINE_SETTINGS, "on (a field) adds its channel")
-	TEST_ASSERT(decls.appearance_mask & CHANGE_MACHINE_MODE, "locked (a field) adds its channel")
-	var/list/operable_reads = stat_generated_reads(P, TYPE_PROC_REF(/obj/machinery, operable))
-	TEST_ASSERT("stat:[STAT_OPERABLE]" in operable_reads, "The template reader operable() declares its real native stat dependency")
-	TEST_ASSERT(P.om_listen & CHANGE_MACHINE_SETTINGS, "the instance listens on its watch mask")
-	var/obj/structure/dq_appearance_procedural/S = allocate(/obj/structure/dq_appearance_procedural)
-	TEST_ASSERT_EQUAL(appearance_mask_of(S), 0, "a type declaring nothing watches nothing")
+	var/obj/machinery/dq_native_appearance_probe/P = allocate(/obj/machinery/dq_native_appearance_probe)
+	dq_machine_clear(P)
+	refresh_look(P)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(P.icon_state, "probe01aprobe", "Native fixture preserves template including real operable condition")
+	var/list/reads = stat_generated_reads(P, TYPE_PROC_REF(/obj/machinery/dq_native_appearance_probe, draw))
+	for(var/key in list(nameof(P.on), nameof(P.locked), nameof(P.active), nameof(P.charge), nameof(P.label)))
+		TEST_ASSERT(key in reads, "Native draw records actual tracked [key]")
+	TEST_ASSERT("stat:[STAT_OPERABLE]" in stat_generated_reads(P, TYPE_PROC_REF(/obj/machinery, operable)), "Actual operable condition declares composed stat key")
+	P.set_on(TRUE)
+	P.set_on(FALSE)
+	P.set_on(TRUE)
+	TEST_ASSERT(P.refresh_queued & DEP_DRAW, "Native setter queues draw dependency")
+	var/count = 0
+	for(var/datum/D as anything in GLOB.refresh_queue)
+		if(D == P)
+			count++
+	TEST_ASSERT_EQUAL(count, 1, "Three real tracked transitions enqueue one native draw")
+	TEST_ASSERT_EQUAL(P.icon_state, "probe01aprobe", "Draw waits for presentation drain")
+	refresh_flush()
+	TEST_ASSERT_EQUAL(P.icon_state, "probe11aprobe", "Native drain applies queued template transition")
+	P.set_on(TRUE)
+	TEST_ASSERT(!(P.refresh_queued & DEP_DRAW), "Unchanged value does not queue another native draw")
+	P.set_charge(60)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "lvl50"), 1, "Native draw preserves old four-step quantization")
+	P.set_charge(100)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "lvl50"), 0, "Old native level overlay is replaced")
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "lvl100"), 1, "Full native level draws")
+	P.set_charge(null)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "lvl100"), 0, "Null removes native level overlay")
+	P.set_active(TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "glow"), 1, "Native drawer preserves emissive overlay state")
+	P.set_locked(TRUE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(P.icon_state, "probe-locked", "Locked state overrides template")
+	P.set_locked(FALSE)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(P.icon_state, "probe11aprobe", "Unlock restores real native template")
+	var/obj/machinery/dq_native_appearance_probe/other/O = allocate(/obj/machinery/dq_native_appearance_probe/other)
+	dq_machine_clear(O)
+	O.set_label(null)
+	refresh_look(O)
+	TEST_ASSERT_EQUAL(O.icon_state, "probe01other", "Inherited native draw uses concrete subtype initial state")
+	var/obj/machinery/dq_native_appearance_probe/bare/B = allocate(/obj/machinery/dq_native_appearance_probe/bare)
+	TEST_ASSERT(isnull(refresh_look(B, FALSE)), "Bare subtype explicitly drops inherited native drawing")
 
 /// A watched field's setter queues one refresh per frame, however many changes it sees.
 /datum/unit_test/dq_sys_appearance_auto_refresh
