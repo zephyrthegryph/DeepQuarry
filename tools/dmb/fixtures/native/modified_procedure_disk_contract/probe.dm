@@ -3,6 +3,6 @@
 /obj/inner
     var/amount
 /proc/modified_value()
-    return /obj/outer{child=/obj/inner{amount=7}}
+    return (/obj/outer{child=/obj/inner{amount=7}})
 /proc/unrelated()
     return 2
