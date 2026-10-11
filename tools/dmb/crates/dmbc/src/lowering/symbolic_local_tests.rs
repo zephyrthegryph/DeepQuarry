@@ -209,6 +209,55 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             .flatten();
         assert_eq!(accepted.is_some(), !changed_key);
     }
+    let refreshed = fallback_owner.for_request(true);
+    let request = RequestAdmission::new(front.snapshot.tree.as_ref());
+    let candidates = refreshed.candidate_roster(&request).unwrap();
+    let observer = crate::lowering_memo::RecordingResolver::new(front.snapshot.tree.as_ref());
+    let mut ordinary = refreshed
+        .lookup(
+            &current,
+            &tail,
+            front.snapshot.tree.as_ref(),
+            Some(&request),
+            Some(&candidates),
+            &observer,
+            &front,
+            row.body(),
+            &prepared,
+            &arena,
+            false,
+            false,
+            row,
+        )
+        .expect("ordinary current admission succeeds");
+    ordinary.refresh_local_admission(&refreshed, Certificate::issue(&licensed, row, 7));
+    ordinary
+        .prepare(
+            front.snapshot.tree.symbols(),
+            roster.source_bindings(&front).unwrap(),
+            &Default::default(),
+            false,
+        )
+        .unwrap();
+    assert!(refreshed.publish_successful());
+    drop(refreshed);
+    let next_local = fallback_owner.for_request(false);
+    let local_request = RequestAdmission::new(front.snapshot.tree.as_ref());
+    let local_candidates = next_local.candidate_roster(&local_request).unwrap();
+    assert!(
+        next_local
+            .lookup_unchanged_local(
+                &licensed,
+                &local_candidates,
+                7,
+                front.snapshot.tree.as_ref(),
+                &front,
+                row,
+                &arena
+            )
+            .is_some(),
+        "successful current completion must publish the new weak certificate"
+    );
     let owner = SessionSymbolicMemo::current_revision();
     let first = owner.for_request(true);
     assert!(first.insert_record(row.source().identity, record));

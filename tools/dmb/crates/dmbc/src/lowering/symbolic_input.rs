@@ -72,6 +72,7 @@ enum RecordValue {
     },
 }
 pub(crate) struct Admission {
+    previous: Option<Arc<Record>>,
     local: Option<local::Certificate>,
     metadata: Option<Arc<dm_ir::ProcedureMetadata>>,
     store: Option<Arc<SessionSymbolicMemo>>,
@@ -130,6 +131,19 @@ impl ProcedureSelections {
     }
 }
 impl CompletedInput {
+    pub(super) fn refresh_local_admission(
+        &mut self,
+        store: &Arc<SessionSymbolicMemo>,
+        certificate: Option<local::Certificate>,
+    ) {
+        let Some(certificate) = certificate else {
+            return;
+        };
+        if let Some(admission) = self.admission.as_mut().filter(|a| a.previous.is_some()) {
+            admission.store = Some(Arc::clone(store));
+            admission.local = Some(certificate.bind_key(&admission.key));
+        }
+    }
     pub(super) fn selections(
         identity: UnitIdentity,
         effective: bool,
@@ -280,7 +294,11 @@ impl CompletedInput {
                                 .expect("reusable contribution has source recipes"),
                         ),
                     };
-                    if store.insert_record(value.identity(), record) {
+                    if store.insert_record_rebinding(
+                        value.identity(),
+                        record,
+                        admission.previous.as_ref(),
+                    ) {
                         store.admitted.fetch_add(1, Ordering::Relaxed);
                     }
                 } else {
@@ -564,9 +582,18 @@ impl SessionSymbolicMemo {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
-        self.rebind_record(
+        if reads_validated {
+            // The core claim callback runs after the current-input predicate.
+            // Populate this same recorder before building the refreshed receipt.
+            record.reads.visit_storage(|view| {
+                if let dm_session::ReceiptStorageView::Flat(leaf) = view {
+                    observer.record_admitted(leaf);
+                }
+            });
+        }
+        let mut input = self.rebind_record(
             record,
-            host,
+            observer,
             frontend,
             body,
             prepared,
@@ -574,7 +601,24 @@ impl SessionSymbolicMemo {
             selections_only,
             verify,
             current,
-        )
+        )?;
+        if !selections_only {
+            // Exact key/ABI/reads and current source reissue have all succeeded.
+            // Publish only through completion's existing pending lease; the old
+            // immutable payload remains claimed by its previous publication.
+            input.admission = Some(Admission {
+                previous: Some(Arc::clone(record)),
+                local: None,
+                metadata: Some(Arc::clone(key.metadata)),
+                store: None,
+                disk: None,
+                key: Arc::clone(&record.key),
+                reads: receipt_groups::grouped(&self.receipt_groups, observer.reads()),
+                versions: observer.domain_receipts().into(),
+                relative_debug: record.relative_debug.clone(),
+            });
+        }
+        Some(input)
     }
     #[allow(clippy::too_many_arguments)]
     fn rebind_record<R: Resolver>(
@@ -715,6 +759,7 @@ pub(super) fn admission(
         |store| receipt_groups::grouped(&store.receipt_groups, reads.iter().cloned().collect()),
     );
     Some(Admission {
+        previous: None,
         local: None,
         metadata: None,
         store,
@@ -743,6 +788,7 @@ pub(super) fn disk_admission<R: Resolver>(
         .collect();
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
+        previous: None,
         local: None,
         metadata: None,
         store: Some(store),
@@ -800,6 +846,7 @@ pub(super) fn accepted_admission(
         accepted.reads.iter().cloned().collect(),
     );
     Some(Admission {
+        previous: None,
         local: None,
         metadata: None,
         store: Some(store),

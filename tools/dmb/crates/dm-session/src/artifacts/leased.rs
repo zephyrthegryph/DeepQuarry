@@ -343,18 +343,58 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
+        self.insert_qualified(key, reads, versions, weight, None, create)
+    }
+    /// Republish a current immutable producer value only for this exact already
+    /// admitted payload and ledger. Previous publication claims remain live;
+    /// replacing this request's claim does not mutate escaped values.
+    pub fn rebind_with_qualified_receipt(
+        &self,
+        previous: &Arc<T>,
+        key: Arc<[u8]>,
+        reads: crate::Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
+        self.insert_qualified(key, reads, versions, weight, Some(previous), create)
+    }
+    fn insert_qualified(
+        &self,
+        key: Arc<[u8]>,
+        reads: crate::Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        previous: Option<&Arc<T>>,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self
             .store
             .state
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        if let Some(previous) = previous {
+            if !state.buckets.get(&hash).into_iter().flatten().any(|entry| {
+                entry.key == key
+                    && entry.reads == reads
+                    && entry.versions == versions
+                    && Arc::ptr_eq(&entry.value, previous)
+            }) {
+                return None;
+            }
+        }
         let existing = state
             .buckets
             .get(&hash)
             .into_iter()
             .flatten()
-            .find(|entry| entry.key == key && entry.reads == reads && entry.versions == versions)
+            .find(|entry| {
+                previous.is_none()
+                    && entry.key == key
+                    && entry.reads == reads
+                    && entry.versions == versions
+            })
             .map(|entry| (Arc::clone(&entry.value), Arc::clone(&entry.key)));
         if existing.is_none() && !self.permits_charge(state.bytes, weight) {
             return None;

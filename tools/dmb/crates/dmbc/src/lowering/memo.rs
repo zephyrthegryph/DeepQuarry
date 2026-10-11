@@ -104,7 +104,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .with_metadata(Arc::clone(current_key.metadata))
             .with_local(
                 (!capture_references && !selections_only)
-                    .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+                    .then(|| {
+                        symbolic_input::local_certificate(local_inputs?, current_body, memo.policy)
+                    })
                     .flatten(),
             )
     };
@@ -208,7 +210,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     use crate::lowering_memo::{MemoMissReason, MemoOutcome};
     if symbolic || selections_only {
         if let Some(store) = &memo.symbolic {
-            if let Some(input) = store.lookup(
+            if let Some(mut input) = store.lookup(
                 &current_key,
                 &prepared_tail,
                 host,
@@ -239,6 +241,14 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                         disk_replay_bindings,
                         "symbolic resident",
                     )?;
+                }
+                if !selections_only {
+                    input.refresh_local_admission(
+                        store,
+                        local_inputs.and_then(|roster| {
+                            symbolic_input::local_certificate(roster, current_body, memo.policy)
+                        }),
+                    );
                 }
                 bodies
                     .discard_parsed(body)
@@ -322,9 +332,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             note(MemoOutcome::ResidentHit, None, None);
             return Ok(Admission::Admitted(
-                CompletedInput::lowered(unit).with_admission(
-                    admission.map(promote_admission),
-                ),
+                CompletedInput::lowered(unit).with_admission(admission.map(promote_admission)),
             ));
         }
         miss = MemoMissReason::UnrebasablePrivateSidecar;
@@ -460,9 +468,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .compact_disk_hits
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
-        return Ok(Admission::Admitted(input.with_admission(
-            admission.map(promote_admission),
-        )));
+        return Ok(Admission::Admitted(
+            input.with_admission(admission.map(promote_admission)),
+        ));
     }
     if let Some(unit) = disk
         .unit
@@ -500,9 +508,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         note(MemoOutcome::DiskHit, None, None);
         return Ok(Admission::Admitted(
-            CompletedInput::lowered(unit).with_admission(
-                admission.map(promote_admission),
-            ),
+            CompletedInput::lowered(unit).with_admission(admission.map(promote_admission)),
         ));
     }
     if let Some(reason) = disk.miss {

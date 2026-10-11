@@ -82,6 +82,14 @@ impl SessionSymbolicMemo {
             .is_some_and(|attempt| attempt.publish_successful())
     }
     pub(super) fn insert_record(&self, identity: UnitIdentity, record: Record) -> bool {
+        self.insert_record_rebinding(identity, record, None)
+    }
+    pub(super) fn insert_record_rebinding(
+        &self,
+        identity: UnitIdentity,
+        record: Record,
+        previous: Option<&Arc<Record>>,
+    ) -> bool {
         if record
             .reads
             .iter()
@@ -97,6 +105,20 @@ impl SessionSymbolicMemo {
             // actual payload ownership remains reported by the explicit census.
             attempt
                 .with_pending(|leases| {
+                    if let Some(previous) = previous.filter(|previous| {
+                        previous.key == record.key
+                            && previous.reads == reads
+                            && previous.versions == versions
+                    }) {
+                        return leases.records.rebind_with_qualified_receipt(
+                            previous,
+                            key.into(),
+                            reads,
+                            versions,
+                            1,
+                            || record,
+                        );
+                    }
                     leases.records.insert_with_qualified_receipt(
                         key.into(),
                         reads,

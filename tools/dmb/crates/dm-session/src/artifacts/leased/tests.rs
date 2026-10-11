@@ -296,3 +296,6 @@ fn bounded_shared_roster_callbacks_can_admit_in_parallel_outside_core_lock() {
     });
     assert_eq!(store.admitted_bytes(), 2);
 }
+
+#[path = "rebind_tests.rs"]
+mod rebind_tests;
