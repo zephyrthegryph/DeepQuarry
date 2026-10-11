@@ -18,7 +18,7 @@ import os
 import re
 import sys
 
-ROOT = "code"
+ROOTS = ("code", "maps")
 SPECS = {
     "power": dict(
         base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
@@ -62,7 +62,7 @@ CAPS = re.compile(r"^CAPABILITIES\((/[A-Za-z0-9_/]+)\)\s*$")
 
 
 def code_files():
-    for d, _, files in os.walk(ROOT):
+    for d, _, files in (w for r in ROOTS for w in os.walk(r)):
         if "_generated" in d.replace("\\", "/"):
             continue
         for f in files:
