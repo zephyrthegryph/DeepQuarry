@@ -1,6 +1,6 @@
 //! Pinned modified_source_features controls through current startup/evaluator.
 use super::*;
-use crate::initializer_policy::Evaluator;
+use crate::initializer_policy::CapturedInitializerEvaluator;
 struct Source(&'static str);
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, _: &std::path::Path) -> Result<String, String> {
