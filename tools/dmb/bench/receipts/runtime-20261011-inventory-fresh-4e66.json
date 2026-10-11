@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "kind": "bounded_runtime_suite",
+  "status": "completed",
+  "backend": "native",
+  "tier": null,
+  "focus": [
+    "/datum/unit_test/nuke_cinematic"
+  ],
+  "command": [
+    "D:\\Program Files\\Git\\bin\\bash.exe",
+    "tools/dq_focused_test.sh",
+    "/datum/unit_test/nuke_cinematic"
+  ],
+  "checkout": "E:\\projects\\dq-wt\\dmb-review",
+  "compilation_performed": true,
+  "historical_same_generation": false,
+  "compile_watchdog_seconds": 300,
+  "dd_watchdog_seconds": 300,
+  "cohort_watchdog_seconds": 600,
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "job_memory_bytes": 6000000000,
+  "runner_sha256": "88f77dcc3cc92b4bc2280a285f7b026051c308ad5b199a282ea13d3213291171",
+  "log": "E:\\dq-cache\\dmb-native-v2\\inventory-fresh-4e66-20261011\\build.log",
+  "pins": {
+    "bash": {
+      "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+      "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+      "bytes": 45560
+    },
+    "byond": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+      "bytes": 46080
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dreamdaemon.exe",
+      "sha256": "d410d44cade616cb5ef57a440a4c531eb5f6589eeb56211682d1ca6a10ff8999",
+      "bytes": 268800
+    },
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-4e66f8ff4a-dmbc.exe",
+      "sha256": "57dc978ab61dc0964635c984ca1038f186b32c511bdefbc79fa3482adf0965c2",
+      "bytes": 32202240
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540",
+      "bytes": 15100
+    }
+  },
+  "owned_child_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 5999996928,
+      "peak_job_commit_bytes": 4823846912,
+      "peak_process_commit_bytes": 4218908672,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "build_configuration": {
+    "workers": 2,
+    "ordered_extra_defines": [],
+    "security": "trusted",
+    "cargo_home": "E:\\dq-cache\\dmb-native-v2\\cargo-home",
+    "cargo_target": "E:\\dq-cache\\dmb-native-v2\\cargo-target"
+  },
+  "root_pid": 28544,
+  "owned_memory": {
+    "configured_job_memory_bytes": 5999996928,
+    "peak_job_commit_bytes": 4823846912,
+    "peak_process_commit_bytes": 4218908672,
+    "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+  },
+  "compile_receipt": "E:\\projects\\dq-wt\\dmb-review\\data\\compiler-attempts\\compiler-54a8e9ce-8a7a-4b98-a88f-c5f07cd0bd62.json",
+  "actual_compilation": {
+    "requestedBackend": "native",
+    "actualBackend": "native",
+    "orderedDefines": [
+      "CBT",
+      "CIBUILDING",
+      "CITESTING",
+      "DEBUG"
+    ],
+    "fallback": null,
+    "compiler": {
+      "executable": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-4e66f8ff4a-dmbc.exe",
+      "sha256": "57dc978ab61dc0964635c984ca1038f186b32c511bdefbc79fa3482adf0965c2",
+      "version": null,
+      "build": null
+    },
+    "nativePair": {
+      "pairId": "f262bb06383f9914461dfe3d4bc9f176",
+      "dmbHash": "fc1792358f5e3a9686d60fb8e46ba6a2",
+      "rscHash": "94187ddf583bf8a6c80f0712194aba15",
+      "dmbBytes": 68628311,
+      "rscBytes": 223679641
+    }
+  },
+  "preserved_output": {
+    "capture": "E:\\dq-cache\\dmb-native-v2\\inventory-fresh-4e66-20261011\\preserved-output\\capture.json",
+    "sha256": "3e77cc2109d37c65f6f5ca49a79b288c82a4cb517e9228b7426380bb7e6125b6",
+    "pairEvidence": {
+      "kind": "issued_native_acquisition",
+      "receipt": "E:\\dq-cache\\dmb-native-v2\\inventory-fresh-4e66-20261011\\preserved-output\\acquire.json",
+      "sha256": "98933fdb7ab78bafc02c86e25e01a1278fcfaf235629c1457234fc575d88308d",
+      "pairId": "f262bb06383f9914461dfe3d4bc9f176"
+    },
+    "sharedInputClosure": false,
+    "inputClosureAuthenticated": false
+  },
+  "preservation_receipt": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\inventory-fresh-4e66-20261011\\preserved-output\\preservation.json",
+    "sha256": "793a4e4c41bd0f0ddfc25af7cb07a0b63b07f8678e3d3f25f058d6fca19e1619",
+    "bytes": 565
+  },
+  "root_returncode": 0,
+  "exit_code": 0,
+  "wall_seconds": 212.89549820002867
+}

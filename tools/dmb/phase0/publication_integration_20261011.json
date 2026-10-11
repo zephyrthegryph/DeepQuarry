@@ -64,6 +64,27 @@
     "session_payload_tests_passed": 2,
     "session_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-072450-2e23d121-job-cargo.json"
   },
+  "latest_prototype_real_game_compile": {
+    "source_commit": "4e66f8ff4a8f8a1a65abd5ef8d178430a684ee4c",
+    "native_compilation_seconds": 122.728,
+    "initializer_seconds": 23.677,
+    "procedure_lowering_seconds": 26.680,
+    "peak_owned_job_commit_bytes": 4823846912,
+    "focused_tests_passed": 1,
+    "receipt": "tools/dmb/bench/receipts/runtime-20261011-inventory-fresh-4e66.json",
+    "optimized_benchmark_acceptance": false,
+    "full_suite": false
+  },
+  "corrected_normal_inventory": {
+    "compiled_type_paths": 2045,
+    "eligible_normal_tests": 2001,
+    "permanent_exclusions": 30,
+    "exhaustive_tier_exclusions": 14,
+    "complete_type_path_accounting": true,
+    "suite_execution_complete": false,
+    "fix_commit": "5cb64725ef",
+    "native_fresh_retained_and_byond_fixture": "tools/dmb/bench/receipts/runtime-20261011-type-path-inventory-4e66.json"
+  },
   "full_runtime_baseline": "open",
   "latest_full_game_incremental_benchmark": "open",
   "six_worktree_acceptance": "open",
