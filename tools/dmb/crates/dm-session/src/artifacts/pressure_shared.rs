@@ -277,7 +277,7 @@ impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
     }
 }
 
-fn shared_index_charge<T, Q, A, D>(
+fn shared_index_charge<T, Q, A, D: Copy + Ord>(
     state: &Resident<T, Q, A, D>,
     hash: u128,
     position: usize,
