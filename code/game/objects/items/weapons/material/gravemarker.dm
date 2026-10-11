@@ -34,13 +34,17 @@
 		epitaph += carving_2
 	return OP_OK
 
-/obj/item/material/gravemarker/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, start_self = "You start carving 	he [src.name].", start_others = "[user] starts carving 	he [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return OP_DECLINE
+/obj/item/material/gravemarker/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
+/obj/item/material/gravemarker/proc/wrench_begins(datum/act/op/A)
+	return msg_text("You start carving 	he [src.name].", "[A.actor] starts carving 	he [src.name].")
+
+/obj/item/material/gravemarker/proc/wrench_duration(datum/act/op/A)
+	return material.hardness
+
+/obj/item/material/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	var/datum/material/refund_material = material
 	var/turf/location = get_turf(src)
 	var/marker_name = "	he [src]"
@@ -76,7 +80,7 @@ CAPABILITIES(/obj/item/material/gravemarker)
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
 		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
 		then(PROC_REF(carved)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(PROC_REF(wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
 
 MSG_DEF_SELF(gravemarker/placing, "You begin to place %T%.")
 MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
