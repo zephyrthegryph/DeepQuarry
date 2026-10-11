@@ -8,10 +8,20 @@ var/global/source_frame_calls = 0
 /proc/earlier(first, value in observe_frame("earlier", first, args.len, args[1]))
     return value
 
-/proc/argument_count(first, value in list(args.len))
+/proc/observe_count(first, count, first_argument)
+    source_frame_calls++
+    world.log << "DQ_ARGFRAME helper count first=[first] count=[count] arg1=[first_argument]"
+    return list(count)
+
+/proc/observe_first(first, count, first_argument)
+    source_frame_calls++
+    world.log << "DQ_ARGFRAME helper first first=[first] count=[count] arg1=[first_argument]"
+    return list(first_argument)
+
+/proc/argument_count(first, value in observe_count(first, args.len, args[1]))
     return value
 
-/proc/argument_first(first, value in list(args[1]))
+/proc/argument_first(first, value in observe_first(first, args.len, args[1]))
     return value
 
 /world/New()
