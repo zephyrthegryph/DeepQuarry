@@ -17,10 +17,18 @@ runtime fixture, with an owned E:/dq-cache output root. Both map and resource ar
 explicit hash-checked assets. No new executor or cache is introduced.
 
 `run_retained.py` uses the existing common retained contract with explicit
-immutable map/resource assets. Initial, unchanged, body13â†’17 and unrelated field
+immutable map/resource assets. Initial, unchanged, body13Ã¢â€ â€™17 and unrelated field
 insertion revisions require exact retained/fresh DMB/RSC equality and all BYOND
-runtime values. The map stays constant; no file-specific map edit is claimed. Retained revisions
-remain unrun and await the newer853 executable; the paired64b8 result does not
-admit retained behavior.
+runtime values. The map stays constant; no file-specific map edit is claimed.
+
+Actual retained validation passed all four revisions with source
+`853e1dddeb0a2e6cb2aa63b544df40115e2de1c6`, compiler SHA256
+`55720ef6559d943413fd952cd2a1118bf71b29fd1dd996a81d5802535e5493d8`.
+Each revision matched all six BYOND/retained/fresh markers, with zero runtime
+errors and exact fresh/retained DMB and RSC SHA256 equality. The owned daemon
+was reaped with no cleanup errors.
+Receipt: `E:/dq-cache/dmb-nested-modified-map-retained/77a5547638ae4a98a50ebb753dd1b8fe/receipt.json`.
+This is focused runtime correctness evidence, not full-suite or performance
+acceptance.
 This is focused execution evidence when run, not full-suite parity or historical
 initializer root-cause proof.
