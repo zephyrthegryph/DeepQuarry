@@ -36,9 +36,10 @@ def capture(root, output, byond, native, template, pins, defines, launch, deadli
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:=.*)?', value):
             raise ValueError('invalid ordered define')
     tools = {'byond': Path(byond), 'native': Path(native), 'template': Path(template)}
+    tools = {name: absolute_nonreparse(tool) for name, tool in tools.items()}
     for tool in tools.values():
-        absolute_nonreparse(tool)
         regular(tool)
+    byond, native, template = (tools[name] for name in ('byond', 'native', 'template'))
     if any(sha(tool, deadline) != pins.get(name) for name, tool in tools.items()):
         raise ValueError('focused compiler/template pin mismatch')
     version = file_version(byond)
@@ -121,6 +122,8 @@ def main():
     pins = {name: getattr(args, name + '_sha256') for name in ('byond', 'native', 'template')}
     if any(not re.fullmatch('[0-9a-f]{64}', value) for value in pins.values()):
         raise ValueError('pins require lowercase SHA256')
+    if args.output.exists():
+        raise ValueError('focused output must be new; preexisting paths are never owned')
     deadline = time.monotonic() + args.seconds
     job = OwnedJob(memory_bytes=4_000_000_000)
     child = None
