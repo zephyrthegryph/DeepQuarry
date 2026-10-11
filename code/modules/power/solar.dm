@@ -44,7 +44,7 @@ CAPABILITIES(/obj/machinery/power/solar)
 	climb()
 	ref_one(nameof(control), /obj/machinery/power/solar_control)
 	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
-	param(nameof(glass_type), pos = 1)
+	param(nameof(glass_type), pos = 1, overrides = TRUE)
 
 // ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
 /obj/machinery/power/solar/Initialize(mapload)

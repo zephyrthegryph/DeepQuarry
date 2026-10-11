@@ -12,7 +12,7 @@
 	var/custombasecolor = null
 
 CAPABILITIES(/obj/effect/decal/cleanable/blood/reagent)
-	param(nameof(spill_name), pos = 1)
+	param(nameof(spill_name), pos = 1, overrides = TRUE)
 	param(nameof(spill_color), pos = 2)
 	param(nameof(spill_reagentid), pos = 3)
 	param(nameof(amount), pos = 4)

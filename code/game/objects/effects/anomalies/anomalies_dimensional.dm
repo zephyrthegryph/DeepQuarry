@@ -23,7 +23,7 @@
 CAPABILITIES(/obj/effect/anomaly/dimensional)
 	owns_one(nameof(theme), /datum/dimension_theme)
 
-/obj/effect/anomaly/dimensional/Initialize(mapload, new_lifespan, drops_core)
+/obj/effect/anomaly/dimensional/Initialize(mapload)
 	. = ..()
 	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
 

@@ -8,5 +8,14 @@ while read -r _local_ref local_sha remote_ref _remote_sha; do
 		echo "pre-push: REFUSED: push to master only through 'bash tools/dq_push_master.sh' (it builds and checks the exact merged HEAD first)." >&2
 		exit 1
 	fi
+	# The pushed commit (or, for a merge, each parent) must carry a passing lane-ready / merge-gates test stamp
+	# (tools/dq_push_stamp.sh). A checkout that predates the stamp checker pushes as before.
+	stamp="$(git rev-parse --show-toplevel)/tools/dq_push_stamp.sh"
+	if [ -f "$stamp" ]; then
+		if ! verdict="$(bash "$stamp" "$local_sha")"; then
+			echo "pre-push: REFUSED: $verdict" >&2
+			exit 1
+		fi
+	fi
 done
 exit 0

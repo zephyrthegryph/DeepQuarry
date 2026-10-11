@@ -18,7 +18,7 @@
 CAPABILITIES(/obj/item/spell/reflect)
 	look_glow(GLOW(3, 2, "#006AFF"))
 
-/obj/item/spell/reflect/Initialize(mapload, coreless)
+/obj/item/spell/reflect/Initialize(mapload)
 	. = ..()
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)

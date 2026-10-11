@@ -34,7 +34,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 	configure(uses_power(active = 100))
 	on_change(nameof(operating), ANY, then(PROC_REF(operating_changed)))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(operating), gate = PROC_REF(operable), wakes_on = list(nameof(operating), STAT_OPERABLE))
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 	param(nameof(starts_on), pos = 2)
 	adjacency(ADJ_KIND_CONVEYOR, dirs = ADJ_ALL_AROUND)
 	// a cyborg's module never drops onto the belt: its item click is taken and nothing happens

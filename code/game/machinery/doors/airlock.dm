@@ -240,7 +240,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the bolt lights"),
 		needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
-	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE)
+	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE, overrides = TRUE)
 
 
 // ---- power ----

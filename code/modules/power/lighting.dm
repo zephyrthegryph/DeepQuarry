@@ -122,7 +122,7 @@ CAPABILITIES(/obj/machinery/light)
 	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed)))
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
-	param(nameof(construct_at_make), pos = 1, keep = FALSE)
+	param(nameof(construct_at_make), pos = 1, keep = FALSE, overrides = TRUE)
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)

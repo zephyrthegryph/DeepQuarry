@@ -208,7 +208,7 @@
 
 /datum/surgical_step/organ/install_nymph/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/holder/diona/N = tool
-	new /obj/item/organ/internal/brain/cephalon(target, 1) // takes the brain slot in its limb
+	new /obj/item/organ/internal/brain/cephalon(target) // takes the brain slot in its limb
 	var/mob/living/carbon/alien/diona/D = N.held_mob
 	user.drop_from_inventory(tool)
 	if(D?.mind)

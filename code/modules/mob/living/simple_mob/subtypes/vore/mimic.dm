@@ -35,7 +35,7 @@
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/new_mimic = new(loc)
 			visible_message(span_bolddanger("[new_mimic] suddenly growls as it turns out to be a mimic!"))
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
@@ -171,7 +171,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/airlock/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/airlock/new_mimic = new(loc)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the vars of the mimic that spawns
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	if(mimic_active)
 		mimic_active = FALSE
 		if(prob(mimic_chance))
-			var/mob/living/simple_mob/vore/aggressive/mimic/closet/new_mimic = new(loc, src)
+			var/mob/living/simple_mob/vore/aggressive/mimic/closet/new_mimic = new(loc)
 			visible_message(span_bolddanger("The [new_mimic] suddenly growls as it turns out to be a mimic!")) //Controls the mimic that spawns
 			forceMove(new_mimic)
 			rel_set(new_mimic, nameof(new_mimic.real_crate), src)

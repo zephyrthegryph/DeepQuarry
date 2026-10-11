@@ -75,7 +75,7 @@
 
 	var/node_range = NODERANGE
 
-/obj/effect/alien/weeds/node/Initialize(mapload, node, newcolor)
+/obj/effect/alien/weeds/node/Initialize(mapload)
 	. = ..()
 
 	for(var/obj/effect/alien/weeds/existing in contents_of(loc))

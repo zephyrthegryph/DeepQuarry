@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/light_construct)
 	extend("cell_bay.cell.take", when(req_empty_hand()))
 	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
 	examine_line(PROC_REF(examine_cell))
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 	param(nameof(fixture_at_make), pos = 4, keep = FALSE)
 
 /// The fixture the frame was taken down from (its constructor param, dropped after init).

@@ -163,7 +163,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	name = "crusty dried vomit"
 	desc = "You try not to look at the chunks, and fail."
 
-/obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
+/obj/effect/decal/cleanable/vomit/old/Initialize(mapload)
 	. = ..()
 	icon_state += "-old"
 	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
@@ -178,7 +178,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/dirt)
 	dryname = "nasty dried blood"
 	drydesc = "Why hasn't anyone cleaned this up yet?"
 
-/obj/effect/decal/cleanable/blood/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
+/obj/effect/decal/cleanable/blood/old/Initialize(mapload)
 	. = ..()
 	set_basecolor(get_random_colour(rand(0, 1)))
 	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)

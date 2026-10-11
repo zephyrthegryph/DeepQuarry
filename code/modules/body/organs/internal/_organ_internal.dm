@@ -7,7 +7,7 @@
 	var/supply_conversion_value = 0
 
 
-/obj/item/organ/internal/Initialize(mapload, internal)
+/obj/item/organ/internal/Initialize(mapload)
 	. = ..()
 	if(supply_conversion_value)
 		make_sellable(/datum/sellable/organ)
