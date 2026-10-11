@@ -152,3 +152,55 @@ fn finalized_production_classification_reuses_only_current_admitted_owners() {
     classified_b.accepted[0] = None;
     assert!(FinalInput::capture(&b.allocation, plan, &classified_b).is_none());
 }
+
+#[test]
+fn retained_array_allocation_and_final_receipts_match_fresh_semantic_changes() {
+    use crate::initializer_policy::{
+        CapturedInitializerEvaluator, InitializerArtifacts, InitializerReuse,
+    };
+    let base =
+        "/var/global/list/values[2]\n/var/global/list/unsized[]\n/var/global/default_value = 1\n";
+    for (source, allocation_hit, final_hit) in [
+        ("// current source shift\n/var/global/list/values[2]\n/var/global/list/unsized[]\n/var/global/default_value = 1\n", true, true),
+        ("/var/global/list/renamed[2]\n/var/global/list/unsized[]\n/var/global/default_value = 1\n", false, false),
+        ("/var/global/list/values[3]\n/var/global/list/unsized[]\n/var/global/default_value = 1\n", true, false),
+        ("/var/global/list/values[2]\n/var/global/list/unsized[]\n/var/global/default_value = 2\n", true, false),
+        ("/var/global/list/values[2]\n/var/global/list/unsized[1]\n/var/global/default_value = 1\n", true, false),
+    ] {
+        let store = Arc::new(crate::startup::StartupArtifacts::default());
+        let classifications = InitializerArtifacts::default();
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        let mut previous = None;
+        for text in [base, source] {
+            let frontend = frontend(text);
+            let declaration = dm_tree::initializers::capture_declaration_plan(
+                &frontend.snapshot, &frontend.emission_order,
+            ).unwrap();
+            let plan = declaration.plan();
+            assert_eq!(plan.writes.len(), 3);
+            let host = frontend.snapshot.tree.as_ref();
+            let evaluator = crate::driver_facts::DriverEvaluator {
+                pure_calls: None, resource_search_context: None, resolver: host, symbols: &plan.symbols,
+            };
+            let classified = crate::initializer_policy::classify_with_reuse_on_executor(
+                &plan.writes, &plan.symbols, evaluator.parallel_evaluator().unwrap(), false, &executor,
+                InitializerReuse { store: &classifications, resolver: host, policy: 1, resource_search_context: None },
+            ).unwrap();
+            let current = StartupAllocationRoster::issue_current_with_artifacts(
+                plan, &[], &frontend, Some(&store),
+            ).unwrap();
+            let fresh = StartupAllocationRoster::issue_current(plan, &[], &frontend).unwrap();
+            assert!(current.allocation.bind_current(plan, &frontend));
+            current.finalize(plan, &classified, host).unwrap();
+            fresh.finalize(plan, &classified, host).unwrap();
+            let final_owner = current.finalized.get().unwrap();
+            assert_eq!(final_owner.keys, fresh.finalized.get().unwrap().keys);
+            assert_eq!(final_owner.ranks, fresh.finalized.get().unwrap().ranks);
+            if let Some((allocation, final_roster)) = previous.as_ref() {
+                assert_eq!(Arc::ptr_eq(allocation, &current.allocation), allocation_hit, "{source}");
+                assert_eq!(Arc::ptr_eq(final_roster, final_owner), final_hit, "{source}");
+            }
+            previous = Some((Arc::clone(&current.allocation), Arc::clone(final_owner)));
+        }
+    }
+}
