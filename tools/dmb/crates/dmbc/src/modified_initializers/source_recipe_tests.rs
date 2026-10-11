@@ -30,6 +30,13 @@ fn frontend(text: &'static str) -> dm_tree::frontend::ColdFrontend {
     .unwrap()
 }
 fn seed(frontend: &dm_tree::frontend::ColdFrontend, host: &Host) -> PreparedSeed {
+    seed_with_context(frontend, host, None)
+}
+fn seed_with_context(
+    frontend: &dm_tree::frontend::ColdFrontend,
+    host: &Host,
+    context: Option<u128>,
+) -> PreparedSeed {
     let arena = dm_tree::frontend::BodyArena::new_typed(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
@@ -54,7 +61,7 @@ fn seed(frontend: &dm_tree::frontend::ColdFrontend, host: &Host) -> PreparedSeed
             let captured = dm_codegen_byond::lower_resolver::ModifiedCaptureContext {
                 resolver: host,
                 symbols: frontend.snapshot.tree.symbols(),
-                resource_search_context: None,
+                resource_search_context: context,
             }
             .capture(path, "/", fields, Some(0), expr.span)
             .unwrap();
@@ -274,6 +281,45 @@ fn resource_free_disk_recipe_allows_current_project_context_but_resource_proof_i
             wire.resource_context = Some(41);
             assert!(reissue(&wire, Some(42)).is_none());
             assert!(reissue(&wire, None).is_none());
+        })
+        .unwrap();
+}
+
+#[test]
+fn resource_bearing_disk_recipe_requires_its_authentic_current_context() {
+    let current = frontend("/obj/base\n/proc/p()\n    return (/obj/base{icon='x.dmi'})\n");
+    let previous = seed_with_context(&current, &Host(7), Some(41));
+    let recipe = previous
+        .source_recipe(current.bodies[0].expanded_span)
+        .unwrap();
+    let debug = DebugOrigins {
+        entries: vec![DebugOrigin {
+            semantic_path: "project.dme".into(),
+            line: 3,
+        }],
+    };
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        &current,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    arena
+        .with_parsed(&current.bodies[0], |parsed| {
+            let wire = recipe.disk_evidence();
+            assert_eq!(wire.resource_context, Some(41));
+            let reissue = |context| {
+                wire.reissue(
+                    parsed,
+                    &current,
+                    &Host(7),
+                    current.snapshot.tree.symbols(),
+                    &debug,
+                    context,
+                    SymbolId::of("/"),
+                )
+            };
+            assert!(reissue(Some(41)).is_some());
+            assert!(reissue(Some(42)).is_none());
+            assert!(reissue(None).is_none());
         })
         .unwrap();
 }
