@@ -30,6 +30,7 @@ CASES += ('bodyless_range_eof', 'bodyless_range_semicolon',
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 SCOPE = "compiler-only loop declaration controls; BYOND legality is observed, not assumed"
 DEFAULT_OUTPUT_ROOT = Path("E:/dq-cache/dmb-loop-local-diagnostics")
+FEATURE_CAPTURE_FILES = ()
 
 def diagnostics(text):
     return [{"file": match[1], "line": int(match[2]), "severity": match[3], "message": match[4]}
@@ -60,10 +61,19 @@ def main():
         parser.add_argument("--" + name + "-sha256", required=name == "dm")
     parser.add_argument("--output-root", type=Path,
                         default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--feature-header-gate", action="store_true")
+    parser.add_argument("--feature-inspector", type=Path)
+    parser.add_argument("--feature-inspector-sha256")
     args = parser.parse_args()
     cases = tuple(args.cases)
     backends = ("byond", "native") if args.backend == "both" else ("byond",)
     pins = ("native", "template", "dm") if args.backend == "both" else ("dm",)
+    if args.feature_header_gate:
+        if args.backend != "both" or not FEATURE_CAPTURE_FILES:
+            parser.error("feature header gate requires a paired feature corpus")
+        if args.feature_inspector is None or args.feature_inspector_sha256 is None:
+            parser.error("feature header gate requires explicit inspector path and SHA256")
+        pins += ("feature_inspector",)
     if any(getattr(args, name) is None or getattr(args, name + "_sha256") is None for name in pins):
         parser.error("selected backends require explicit executable/template pins")
     if os.name != "nt":
@@ -148,6 +158,20 @@ def main():
                 "byond": byond_errors[0]["message"] if byond_errors else None,
                 "native": native_errors[0]["message"] if native_errors else None,
             }
+            if args.feature_header_gate:
+                if outcomes["byond"]["child"]["exit"] == 0 and outcomes["native"]["child"]["exit"] == 0:
+                    spec = importlib.util.spec_from_file_location("paired_feature_headers",
+                        Path(__file__).resolve().parent / "header_features.py")
+                    features = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(features)
+                    outcomes["header_features"] = features.compare(case, root / case, HERE,
+                        FEATURE_CAPTURE_FILES, args, h, BENCH, deadline, bounded_log)
+                else:
+                    outcomes["header_features"] = {"scope": "rejected cases use diagnostic parity only",
+                                                    "not_compared": True}
+                for suffix in (".dm", ".dme"):
+                    if h.sha(HERE / (case + suffix)) != source_hashes[case + suffix]:
+                        raise ValueError("source changed during feature gate")
         receipt["pin_after_checks"] = {}
         for name in pins:
             actual = h.sha(getattr(args, name))
@@ -164,6 +188,10 @@ def main():
         receipt["acceptance_agrees"] = all(receipt["cases"][case].get("acceptance_agrees", False) for case in cases)
         receipt["rejection_class_agrees"] = all(receipt["cases"][case].get("rejection_class_agrees", False) for case in cases)
         receipt["diagnostics_agree"] = all(receipt["cases"][case].get("diagnostics_agree", False) for case in cases)
+        receipt["feature_header_gate"] = args.feature_header_gate
+        receipt["header_features_agree"] = all(
+            row.get("header_features", {}).get("matches", row.get("header_features", {}).get("not_compared", False))
+            for row in receipt["cases"].values()) if args.feature_header_gate else None
     except Exception as error:
         receipt["error"] = str(error)
     finally:
@@ -179,7 +207,8 @@ def main():
     # source coordinates. Legality alone must not close the diagnostic gate.
     return 0 if receipt["complete"] and (args.backend == "byond-only" or (
         receipt.get("acceptance_agrees") and receipt.get("rejection_class_agrees")
-        and receipt.get("diagnostics_agree"))) else 1
+        and receipt.get("diagnostics_agree")
+        and (not args.feature_header_gate or receipt.get("header_features_agree")))) else 1
 
 if __name__ == "__main__":
     raise SystemExit(main())

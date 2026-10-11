@@ -11,6 +11,7 @@ def main():
     spec.loader.exec_module(driver)
     driver.HERE = HERE
     driver.CASES = driver.ORIGINAL_CASES = CASES
+    driver.FEATURE_CAPTURE_FILES = ('byond-capture.json',)
     driver.SCOPE = 'compile-only modified/default nameof source-feature observations; no runtime'
     return driver.main()
 if __name__ == '__main__':
