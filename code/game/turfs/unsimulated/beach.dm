@@ -18,9 +18,6 @@
 	init_from_table = FALSE
 	movement_cost = 4 // Water should slow you down, just like simulated turf.
 
-/turf/unsimulated/beach/water/Initialize(mapload)
-	. = ..()
-
 /turf/simulated/floor/beach
 	name = "Beach"
 	icon = 'icons/misc/beach.dmi'
@@ -76,9 +73,6 @@ CAPABILITIES(/turf/simulated/floor/beach/sand/desert)
 	icon_state = "seadeep"
 	movement_cost = 8 // Deep water should be difficult to wade through.
 	initial_flooring = /datum/decl/flooring/water/beach/deep
-
-/turf/simulated/floor/beach/water/Initialize(mapload)
-	. = ..()
 
 /datum/decl/flooring/water/beach/deep // We're custom-defining a 'deep' water turf for the beach.
 	name = "deep water"

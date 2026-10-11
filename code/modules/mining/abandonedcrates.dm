@@ -8,16 +8,19 @@
 	var/codelen = 4
 	locked = 1
 
-// ALLOW(init/INSTANCE_STATE): rolls its lock code and its loot
+// ALLOW(init/INSTANCE_STATE): fills itself with its rolled loot
 /obj/structure/closet/crate/secure/loot/Initialize(mapload)
 	. = ..()
-	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
-
-	for(var/i in 1 to codelen)
-		LAZYADD(code, pick(digits))
-		digits -= code[length(code)]
-
 	generate_loot()
+
+/// Its lock code: codelen distinct digits.
+/obj/structure/closet/crate/secure/loot/proc/roll_code(datum/roller/R)
+	var/list/digits = list("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
+	. = list()
+	for(var/i in 1 to codelen)
+		var/digit = R.choose(digits)
+		. += digit
+		digits -= digit
 
 /* see abandonedcrates_vr.dm for virgo version. Keeping legacy proc in comments for reference.
 
@@ -153,6 +156,7 @@ MSG_DEF_SELF(loot_crate/locked_with_code, "The crate is locked with a Deca-code 
 
 // An abandoned crate has no ID lock: a hand or any held thing asks for the code, an emag opens it, and a multitool reads how close the last guess was.
 CAPABILITIES(/obj/structure/closet/crate/secure/loot)
+	rolls(nameof(code), PROC_REF(roll_code))
 	without("lock.toggle")
 	without("lock.toggle_worn")
 	without("lock_with_item")
@@ -418,8 +422,6 @@ CAPABILITIES(/obj/structure/closet/crate/secure/loot)
 		/obj/item/capture_crystal
 	)
 
-// ALLOW(init/INSTANCE_STATE): rolls the capture crystal this pack starts with
-/obj/item/storage/backpack/sport/hyd/catchemall/Initialize(mapload) //gotta have your starter 'mon too (or an improved way to catch one)
-	. = ..()
-	var/path = pick(subtypesof(/obj/item/capture_crystal))
-	new path(src)
+CAPABILITIES(/obj/item/storage/backpack/sport/hyd/catchemall)
+	initial_contents(pick_one(subtypesof(/obj/item/capture_crystal))) // your starter 'mon (or an improved way to catch one)
+

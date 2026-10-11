@@ -45,11 +45,14 @@ CAPABILITIES(/obj/item/deck)
 	var/deck_size = 1 // # of times we will generate cards within this deck
 
 CAPABILITIES(/obj/item/deck/cards)
+	owns_many(nameof(cards), starts = PROC_REF(init_cards))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 
+/// The deck it starts with: deck_size standard decks, each with its two jokers (owns_many(starts =)).
 /obj/item/deck/cards/proc/init_cards()
 	PROTECTED_PROC(TRUE)
 	var/datum/playingcard/pcard
+	. = list()
 	for(var/i = 0, i < deck_size, i++)
 		for(var/suit in list("spades","clubs","diamonds","hearts"))
 			var/colour
@@ -64,28 +67,26 @@ CAPABILITIES(/obj/item/deck/cards)
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]num"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				rel_add(src, nameof(cards), pcard)
+				. += pcard
 
 			for(var/number in list("jack","queen","king"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]col"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				rel_add(src, nameof(cards), pcard) // Make it so.
+				. += pcard // Make it so.
 
-		init_jokers()
+		. += init_jokers()
 
+/// Two jokers.
 /obj/item/deck/cards/proc/init_jokers()
 	var/datum/playingcard/pcard
+	. = list()
 	for(var/i = 0, i<2, i++)
 		pcard = new()
 		pcard.name = "joker"
 		pcard.card_icon = "joker"
-		rel_add(src, nameof(cards), pcard)
-
-/obj/item/deck/cards/Initialize(mapload)
-	. = ..()
-	init_cards()
+		. += pcard
 
 /// Old attackby.
 /obj/item/deck/proc/interaction_item(datum/act/op/A)

@@ -691,6 +691,15 @@ instance's init is complete (the teleporter station's hub). Both in `code/librar
 `derives()` recomputes inside `param_write()` from `/atom/New()`, before the lifeform plan has run, and fails ("bad index"); the field uses
 `param(apply =)` for its id tag instead.
 
+**Init forms added by the init-rest lane (October 2026).** `gas_port(nameof(var), volume =)` (`code/domains/atmos/gas_port.dm`): an
+atmospherics device's port mixture made at capability init through `atmos_air_set()` (the PROTO port a pipe network may repoint), `volume` litres or
+`nameof()` a holder var; the unary, binary and trinary bases and the pipe turbine declare theirs, and a subtype's pump or filter sets `air*_volume`
+(nine `atmos_air_set(..., new /datum/gas_mixture)` + `set_volume()` pairs). `initial_contents(pick_one(list))` rolls each item it makes from the
+holder's stream (a box's random cartridge, a starter capture crystal). Open: `set_frequency(frequency)` at init on radio machines (18 sites in
+atmospherics, airlocks, sensors) has no form: `radio_listen()` keeps its own connection table and does not set the machine's `radio_connection`,
+so these keep the call until radio machines move to `radio_listen()` as a family. `/obj/item/archaeological_find` (710 lines) is a generator, not
+per-instance state: it needs a data table of find recipes (one record per ARCHAEO_ type) before its Initialize can go.
+
 **The init ratchet counts lines (ratchet-fw, October 2026).** The init lint's `initialize` rule counted `Initialize()` overrides (1005 at the
 switch, 848 of them `initialize` and 157 `world_reads`); an override with twenty jobs and one with one counted the same, and an
 `ALLOW(init/CODE)` took a whole override off the count. The new `init_lines` rule counts each imperative line in every override body, kept or

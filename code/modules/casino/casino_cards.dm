@@ -25,7 +25,7 @@
 	card_icon_prefix = "casino_"
 
 /obj/item/deck/cards/casino/init_jokers()
-	return
+	return list()
 
 /obj/item/deck/cards/casino/triple
 	name = "big deck of casino cards"

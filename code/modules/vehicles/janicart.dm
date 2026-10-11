@@ -4,6 +4,7 @@
 	value = CATALOGUER_REWARD_TRIVIAL
 
 /obj/vehicle/train/engine/janicart
+	move_delay = 0.5
 	name = "janicart"
 	desc = "A ridable station cleaning cart. Has a large water tank to feed its floor scrubbers, the opening is big enough to fit a mop through to wet it. It also has a hook to hang a trashbag from. You're riding in style now!"
 	icon_state = "pussywagon"
@@ -41,6 +42,7 @@
 	. += owns(nameof(key), policy = OWN_CONTAINED, starts = nameof(key_type))
 
 CAPABILITIES(/obj/vehicle/train/engine/janicart)
+	rolls(nameof(callme), PROC_REF(roll_callme)) // one cart in five gets a nickname
 	reagents(600)
 	op("janicart_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart item"), then(PROC_REF(interaction_janicart_item)))
 	op("janicart_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Interaction janicart hand"), then(PROC_REF(interaction_janicart_hand)))
@@ -48,12 +50,7 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()
-	// apply speed
-	move_delay = 0.5
 	turn_off()	//so engine verbs are correctly set
-
-	if(prob(20))
-		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
 
 // Nothing to unlatch (old verbs -= unlatch_v on Initialize).
 /obj/vehicle/train/engine/janicart/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
@@ -142,3 +139,9 @@ CAPABILITIES(/obj/vehicle/train/engine/janicart)
 /// Accessor for the mybag var.
 /obj/vehicle/train/engine/janicart/proc/mybag() as /obj/item/storage/bag/trash
 	return mybag
+
+/// What people call it: usually "janitor cart", now and then a nickname.
+/obj/vehicle/train/engine/janicart/proc/roll_callme(datum/roller/R)
+	if(!R.chance(20))
+		return callme
+	return R.choose(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))

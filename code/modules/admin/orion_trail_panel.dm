@@ -85,6 +85,8 @@
 	return data
 
 CAPABILITIES(/obj/machinery/computer/arcade/orion_trail)
+	per_type(nameof(stops), PROC_REF(build_stops))
+	per_type(nameof(stopblurbs), PROC_REF(build_stopblurbs))
 	op("href_slow", topic("slow"), then(PROC_REF(topic_orion_slow)))
 	op("href_useengine", topic("useengine"), then(PROC_REF(topic_orion_useengine)))
 	op("href_useelec", topic("useelec"), then(PROC_REF(topic_orion_useelec)))
