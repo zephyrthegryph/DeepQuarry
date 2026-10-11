@@ -14,6 +14,10 @@ HERE = Path(__file__).resolve().parent
 BENCH = HERE.parents[2] / "bench"
 CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range', 'same_pair_name', 'filtered_each', 'pair_value_blank', 'pair_value_comments', 'pair_value_inline', 'pair_value_eof', 'pair_value_continued', 'same_pair_comments')
 ORIGINAL_CASES = CASES
+CASES += ('bodyless_each_typed_eof', 'bodyless_each_typed_empty_braces',
+          'bodyless_each_typed_semicolon', 'bodyless_each_typed_dedented_return',
+          'bodyless_pair_eof', 'bodyless_pair_empty_braces',
+          'bodyless_pair_semicolon', 'bodyless_pair_dedented_return')
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
 def diagnostics(text):
