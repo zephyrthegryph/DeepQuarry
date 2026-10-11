@@ -2,8 +2,8 @@
 //! coordinates to the exact current captured signature expression.
 use super::*;
 use crate::lowering::{LoweringDiagnostic, RelatedDiagnostic};
-use dm_tree::frontend::DiagnosticKind;
 use dm_codegen_byond::{DiagnosticAnchor, LowerError, LowerErrorKind, LowerSpan};
+use dm_tree::frontend::DiagnosticKind;
 
 #[derive(Debug)]
 pub enum HelperFailure {
@@ -31,11 +31,43 @@ pub(super) fn lowered(
     expression: &str,
     errors: Vec<LowerError>,
 ) -> HelperFailure {
+    // Helper rendering is token-equivalent, not byte-equivalent to authored
+    // whitespace/comments. Bind through the exact current token sequence.
+    let synthetic = dm_syntax::lex(expression);
+    let current = dm_syntax::lex(
+        frontend
+            .expanded
+            .text
+            .get(absolute..header.header_span.end)
+            .unwrap_or(""),
+    );
+    let significant = |token: &&dm_syntax::Token| {
+        !matches!(
+            token.kind,
+            TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+        )
+    };
+    let synthetic_tokens: Vec<_> = synthetic.tokens.iter().filter(significant).collect();
+    let current_tokens: Vec<_> = current.tokens.iter().filter(significant).collect();
     let map_offset = |offset: usize| {
-        offset
-            .checked_sub(SYNTAX_PREFIX.len())
-            .filter(|offset| *offset <= expression.len())
-            .and_then(|offset| absolute.checked_add(offset))
+        let relative = offset.checked_sub(SYNTAX_PREFIX.len())?;
+        let (index, token) = synthetic_tokens
+            .iter()
+            .enumerate()
+            .find(|(_, token)| token.span.start <= relative && relative < token.span.end)
+            .or_else(|| {
+                synthetic_tokens
+                    .iter()
+                    .enumerate()
+                    .find(|(_, token)| token.span.end == relative)
+            })?;
+        let actual = current_tokens.get(index)?;
+        if token.kind != actual.kind || token.text != actual.text {
+            return None;
+        }
+        absolute
+            .checked_add(actual.span.start)?
+            .checked_add(relative.checked_sub(token.span.start)?)
     };
     let map_span = |span: LowerSpan| {
         if span.start > span.end {
@@ -137,8 +169,8 @@ mod tests {
 
     #[test]
     fn helper_failure_preserves_kind_and_rebinds_current_signature_and_related_parameter() {
-        for padding in ["", "\n\n"] {
-            let text = format!("{padding}/proc/probe(x in list(1, 2))\n    return x\n");
+        for (padding, authored) in [("", "list(1, 2)"), ("\n\n", "list( 1, /* current */ 2)")] {
+            let text = format!("{padding}/proc/probe(x in {authored})\n    return x\n");
             let frontend = dm_tree::frontend::build(
                 std::path::Path::new("project.dme"),
                 &Source(&text),
@@ -198,6 +230,32 @@ mod tests {
                 );
                 assert_eq!(diagnostics[0].message, "issued failure");
             }
+            let error = LowerError {
+                reason: "nested expression failure".into(),
+                kind: LowerErrorKind::SourceError,
+                primary_anchor: Some(DiagnosticAnchor::AtOffset(
+                    SYNTAX_PREFIX.len() + "list(1, 2)".find('2').unwrap(),
+                )),
+                ..Default::default()
+            };
+            let HelperFailure::Diagnostics(diagnostics) = lowered(
+                &frontend,
+                header.into(),
+                metadata,
+                owner,
+                absolute,
+                &origin,
+                "list(1, 2)",
+                vec![error],
+            ) else {
+                panic!("typed failure lost")
+            };
+            assert_eq!(
+                diagnostics[0].origin,
+                frontend
+                    .location(absolute + authored.find('2').unwrap())
+                    .unwrap()
+            );
         }
     }
 }
