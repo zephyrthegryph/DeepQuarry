@@ -22,6 +22,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	default_parts()
 	configure(uses_power(idle = 2500))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	emp_disable(300 SECONDS)
@@ -40,7 +41,6 @@ CAPABILITIES(/obj/machinery/exonet_node)
 /obj/machinery/exonet_node/Initialize(mapload)
 	. = ..()
 	soundloop.start()
-	default_apply_parts()
 	if(mapload)
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
