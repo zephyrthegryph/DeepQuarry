@@ -1,0 +1,16 @@
+{
+  "scope": "Historical captured generation, partial normal suite; no full parity or latest compiler acceptance",
+  "evidence": "E:\\projects\\dq-wt\\dmb-review\\data\\normal-suite\\20261011T131221_3d8a326c86_normal-batches-5a0270a1-1886-475e-b84c-820444ebcd80.json",
+  "evidence_sha256": "92cc17ae96e30cfae57c10e6801428689cffeb2706e3c6a6e797392530fba03e",
+  "completed_batches": 7,
+  "selected_passed": 224,
+  "selected_failed": 0,
+  "selected_runtimes": 0,
+  "all_normal_eligible": 2001,
+  "wrapper_exit": 124,
+  "watchdog_seconds": 300,
+  "cleanup_reaped": true,
+  "compilation_performed": false,
+  "wrapper_metadata_limitation": "Original wrapper incorrectly labelled resume as fresh compilation; fixed in 74640e63ce. Original receipt preserved unchanged.",
+  "remaining_suite_open": true
+}
