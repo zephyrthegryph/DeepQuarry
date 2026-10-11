@@ -437,7 +437,10 @@ human|/obj/item/pickaxe/plasmacutter click: Click: Slice apart
 human|/obj/item/pipe menu: Flip Pipe
 human|/obj/item/pipe menu: Move To Top
 human|/obj/item/pipe menu: Put back
+human|/obj/item/pipe menu: Rotate Clockwise
+human|/obj/item/pipe menu: Rotate Counter Clockwise
 human|/obj/item/pipe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe menu: Turn Around
 human|/obj/item/pipe menu: Ui open
 human|/obj/item/pipe click: Click: Put back
 human|/obj/item/pipe_meter menu: Move To Top

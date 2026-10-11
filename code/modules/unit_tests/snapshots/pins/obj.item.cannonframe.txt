@@ -17,8 +17,8 @@
 -menu: Put back
 -menu: Ui open
 -click: Click: Put back
-+2 menu: Secure the piping
-+4 click: Click: Secure the piping
++4 menu: Secure the piping
++7 click: Click: Secure the piping
 human|/obj/item/transfer_valve menu: Move To Top
 human|/obj/item/transfer_valve menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/transfer_valve click: nothing
