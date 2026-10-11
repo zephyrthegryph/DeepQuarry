@@ -95,3 +95,70 @@ def capture(root, output, byond, native, template, pins, defines, launch, deadli
             'implicitCompilerReads': 'unissued', 'acceptedRuntimeBaseline': False,
             'pin': str(output / 'focused-source-pin.json'), 'configuration': configuration,
             'runtime': 'not run', 'byond': byond_result, 'native': native_result}
+
+
+def main():
+    import argparse
+    import subprocess
+    from upgrade_owned_job import OwnedJob
+    from watchdog import terminate_owned
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--prepared-root', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    for name in ('byond', 'native', 'template'):
+        parser.add_argument('--' + name, type=Path, required=True)
+        parser.add_argument('--' + name + '-sha256', required=True)
+    parser.add_argument('--define', action='append', default=[])
+    parser.add_argument('--focus', action='append', required=True)
+    parser.add_argument('--seconds', type=int, default=900)
+    args = parser.parse_args()
+    if os.name != 'nt' or not 1 <= args.seconds <= 900:
+        raise ValueError('Windows owned Job and aggregate watchdog 1..900 required')
+    if any(not re.fullmatch(r'/datum/unit_test/[A-Za-z0-9_/]+', value) for value in args.focus):
+        raise ValueError('focus requires exact absolute unit-test paths')
+    if 'UNIT_TESTS' not in args.define:
+        raise ValueError('focused captured pair requires explicit UNIT_TESTS define')
+    pins = {name: getattr(args, name + '_sha256') for name in ('byond', 'native', 'template')}
+    if any(not re.fullmatch('[0-9a-f]{64}', value) for value in pins.values()):
+        raise ValueError('pins require lowercase SHA256')
+    deadline = time.monotonic() + args.seconds
+    job = OwnedJob(memory_bytes=4_000_000_000)
+    child = None
+    report = {'schema': 1, 'status': 'preparing', 'focus': args.focus,
+              'inputClosureAuthenticated': False, 'runtime': 'not run'}
+    try:
+        def launch(command, cwd, log, deadline):
+            nonlocal child
+            remaining = min(300, deadline - time.monotonic())
+            if remaining <= 0:
+                raise TimeoutError('focused captured pair watchdog expired')
+            started = time.monotonic()
+            with log.open('xb') as stream:
+                child = subprocess.Popen(command, cwd=cwd, stdout=stream, stderr=subprocess.STDOUT,
+                    creationflags=subprocess.CREATE_NO_WINDOW | 0x00000004)
+                job.add(child)
+                job.resume(child)
+                try:
+                    code = child.wait(timeout=remaining)
+                except subprocess.TimeoutExpired:
+                    cleanup = terminate_owned(child)
+                    raise TimeoutError('focused compiler exceeded300s: ' + str(cleanup))
+            return {'command': command, 'exit_code': code, 'timeout': False,
+                    'seconds': time.monotonic() - started, 'log': str(log), 'reaped': True}
+        report.update(capture(args.prepared_root, args.output, args.byond, args.native,
+                              args.template, pins, args.define, launch, deadline))
+        report['status'] = 'passed'
+    except Exception as error:
+        report.update(status='failed', error=str(error))
+    finally:
+        cleanup = job.close()
+        report['owned_child_cleanup'] = cleanup
+        if not cleanup.get('reaped'):
+            report.update(status='failed', error='owned Job failed to reap')
+        if args.output.is_dir():
+            write(args.output / 'focused-pair-receipt.json', report)
+    return 0 if report['status'] == 'passed' else 1
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
