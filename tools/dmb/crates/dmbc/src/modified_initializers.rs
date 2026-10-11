@@ -17,6 +17,8 @@ pub(crate) use source_recipe::{RecipeWire, SourceRecipe};
 mod descriptor_recipe;
 mod expression_recipe;
 mod retained;
+#[cfg(test)]
+mod retained_tests;
 pub(crate) use expression_recipe::ExpressionRecipe;
 
 pub struct Collected {
@@ -280,17 +282,26 @@ fn finish_collection<R: Resolver>(
     };
     while let Some((symbol, captured, source)) = pending.pop_front() {
         let descriptor = &captured.descriptor;
-        let code = retained::lower(symbol, descriptor, &source, symbols, host, calls, fragments, &mut current_keys)?;
+        let lowered = retained::lower(
+            symbol,
+            descriptor,
+            &source,
+            symbols,
+            host,
+            calls,
+            fragments,
+            &mut current_keys,
+        )?;
         let debug_origins = DebugOrigins {
             entries: source.entries,
         };
-        enqueue(&code, &debug_origins, &mut seen, &mut pending)?;
+        enqueue(&lowered.code, &debug_origins, &mut seen, &mut pending)?;
         let artifact = InitializationArtifact {
-            encoding: None,
+            encoding: lowered.encoding,
             identity: dm_link::InitializerIdentity::Modified(SymbolId::of(
                 &captured.descriptor.alias(),
             )),
-            code: code.into(),
+            code: lowered.code,
             debug_origins: Arc::new(debug_origins),
             coverage: InitializationCoverage::ModifiedAssignments {
                 count: u32::try_from(descriptor.fields().len())
@@ -302,7 +313,9 @@ fn finish_collection<R: Resolver>(
         result.descriptors.push((symbol, captured));
         result.artifacts.push(artifact);
     }
-    if let Some(fragments) = fragments { fragments.retain_modified_keys(current_keys); }
+    if let Some(fragments) = fragments {
+        fragments.retain_modified_keys(current_keys);
+    }
     Ok(result)
 }
 /// Seed stored defaults from the exact classified source occurrence ledger.
@@ -640,29 +653,80 @@ mod resource_tests {
         }
         let defaults = [(symbol, captured, debug)];
         let retained = crate::initializer_lowering::InitializerFragments::default();
-        let first = collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &defaults,
-            &symbols, &Host { content: 99 }, None, Some(&retained)).unwrap();
+        let first = collect_owned_prepared_retained(
+            std::iter::empty(),
+            std::iter::empty(),
+            &defaults,
+            &symbols,
+            &Host { content: 99 },
+            None,
+            Some(&retained),
+        )
+        .unwrap();
         // Ordinary fragment pruning must not evict the previous modified roster.
         retained.retain_keys(&Default::default());
         let mut shifted = defaults.clone();
         shifted[0].2.entries[0].semantic_path = "included/current.dm".into();
         shifted[0].2.entries[0].line = 41;
-        let second = collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &shifted,
-            &symbols, &Host { content: 99 }, None, Some(&retained)).unwrap();
+        let second = collect_owned_prepared_retained(
+            std::iter::empty(),
+            std::iter::empty(),
+            &shifted,
+            &symbols,
+            &Host { content: 99 },
+            None,
+            Some(&retained),
+        )
+        .unwrap();
         assert_eq!(retained.hits.load(std::sync::atomic::Ordering::Relaxed), 1);
-        assert_eq!(second.artifacts[0].debug_origins, Arc::new(shifted[0].2.clone()));
-        assert_eq!(dm_codegen_byond::encoder::freeze_proc(&first.artifacts[0].code.procedure.code).unwrap().code().canonical_bytes(),
-            dm_codegen_byond::encoder::freeze_proc(&second.artifacts[0].code.procedure.code).unwrap().code().canonical_bytes());
-        assert!(collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &shifted,
-            &symbols, &Host { content: 100 }, None, Some(&retained)).is_err());
+        assert!(Arc::ptr_eq(
+            first.artifacts[0].code.code_owner(),
+            second.artifacts[0].code.code_owner()
+        ));
+        assert_eq!(
+            second.artifacts[0].debug_origins,
+            Arc::new(shifted[0].2.clone())
+        );
+        assert_eq!(
+            dm_codegen_byond::encoder::freeze_proc(&first.artifacts[0].code.procedure.code)
+                .unwrap()
+                .code()
+                .canonical_bytes(),
+            dm_codegen_byond::encoder::freeze_proc(&second.artifacts[0].code.procedure.code)
+                .unwrap()
+                .code()
+                .canonical_bytes()
+        );
+        assert!(collect_owned_prepared_retained(
+            std::iter::empty(),
+            std::iter::empty(),
+            &shifted,
+            &symbols,
+            &Host { content: 100 },
+            None,
+            Some(&retained)
+        )
+        .is_err());
         assert_eq!(retained.hits.load(std::sync::atomic::Ordering::Relaxed), 1);
         let mut changed_input = crate::initializer_lowering::receipts::Binding::modified(
-            symbol, &defaults[0].1.descriptor, None);
+            symbol,
+            &defaults[0].1.descriptor,
+            None,
+        );
         changed_input.inputs = Arc::new(crate::initializer_lowering::receipts::Inputs::Modified {
             canonical: Arc::from(defaults[0].1.descriptor.canonical_bytes()),
-            policy: Some(17), lexical_owner: SymbolId::of("/"), resource_context: Some(7),
+            policy: Some(17),
+            lexical_owner: SymbolId::of("/"),
+            resource_context: Some(7),
         });
-        assert!(retained.modified(&changed_input, &Host { content: 99 }).is_none());
+        assert!(retained
+            .modified(
+                &changed_input,
+                defaults[0].1.descriptor.fields(),
+                &symbols,
+                &Host { content: 99 }
+            )
+            .is_none());
         let output = collect_with_defaults(
             std::iter::empty(),
             &defaults,

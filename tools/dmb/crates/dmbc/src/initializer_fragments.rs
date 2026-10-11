@@ -12,6 +12,8 @@ use std::{
     sync::atomic::{AtomicU64, Ordering},
     sync::Arc,
 };
+#[path = "initializer_fragments_modified.rs"]
+mod modified;
 
 pub struct InitializerFragments {
     values: receipts::Store<RetainedFragment>,
@@ -28,10 +30,14 @@ pub(crate) struct RetainedFragment {
     code: RetainedCode,
     recipes: Vec<crate::modified_initializers::ExpressionRecipe>,
     references: Vec<dm_ir::SymRef>,
+    root_indexes: Vec<usize>,
 }
 enum RetainedCode {
     Assignment(AssignmentFragment),
-    Modified(dm_codegen_byond::lower_resolver::ResolverProc),
+    Modified {
+        code: Arc<dm_codegen_byond::lower_resolver::ResolverProc>,
+        encoding: Arc<crate::symbolic::InitializerEncoding>,
+    },
 }
 impl RetainedFragment {
     #[allow(clippy::type_complexity)]
@@ -43,10 +49,28 @@ impl RetainedFragment {
         &Vec<dm_ir::SymRef>,
     ) {
         (
-            match &self.code { RetainedCode::Assignment(code) => code.code(), RetainedCode::Modified(code) => code },
+            match &self.code {
+                RetainedCode::Assignment(code) => code.code(),
+                RetainedCode::Modified { code, .. } => code,
+            },
             &self.recipes,
-            match &self.code { RetainedCode::Assignment(code) => code.modified_references(), RetainedCode::Modified(_) => &self.references },
+            match &self.code {
+                RetainedCode::Assignment(code) => code.modified_references(),
+                RetainedCode::Modified { .. } => &self.references,
+            },
         )
+    }
+    pub(crate) fn modified_owners(
+        &self,
+    ) -> Option<(
+        &Arc<dm_codegen_byond::lower_resolver::ResolverProc>,
+        &Arc<crate::symbolic::InitializerEncoding>,
+        &Vec<usize>,
+    )> {
+        match &self.code {
+            RetainedCode::Modified { code, encoding } => Some((code, encoding, &self.root_indexes)),
+            _ => None,
+        }
     }
 }
 impl Default for InitializerFragments {
@@ -124,32 +148,22 @@ impl InitializerFragments {
     }
     pub(crate) fn retain_keys(&self, keys: &HashMap<usize, receipts::Binding>) {
         let mut roster = self.roster.lock().unwrap();
-        roster.0 = keys.values().map(|binding| Arc::clone(&binding.key)).collect();
-        self.values.retain_current_keys(roster.0.iter().chain(&roster.1).map(|key| key.as_ref()));
+        roster.0 = keys
+            .values()
+            .map(|binding| Arc::clone(&binding.key))
+            .collect();
+        self.values
+            .retain_current_keys(roster.0.iter().chain(&roster.1).map(|key| key.as_ref()));
     }
     pub(crate) fn retain_modified_keys(&self, keys: Vec<Arc<[u8]>>) {
         let mut roster = self.roster.lock().unwrap();
         roster.1 = keys;
-        self.values.retain_current_keys(roster.0.iter().chain(&roster.1).map(|key| key.as_ref()));
+        self.values
+            .retain_current_keys(roster.0.iter().chain(&roster.1).map(|key| key.as_ref()));
     }
     pub(crate) fn visit_key_roster(&self, visit: impl FnOnce(&Vec<Arc<[u8]>>, &Vec<Arc<[u8]>>)) {
         let roster = self.roster.lock().unwrap();
         visit(&roster.0, &roster.1);
-    }
-    pub(crate) fn modified<R: Resolver>(&self, key: &receipts::Binding, host: &R) -> Option<dm_codegen_byond::lower_resolver::ResolverProc> {
-        let value = self.values.lookup(&key.key, &receipts::Host { binding: key, resolver: host })?;
-        let RetainedCode::Modified(code) = &value.code else { return None };
-        self.hits.fetch_add(1, Ordering::Relaxed);
-        Some(code.clone())
-    }
-    pub(crate) fn remember_modified(&self, key: &receipts::Binding, recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>, code: &dm_codegen_byond::lower_resolver::ResolverProc) {
-        // Nested current expression captures require their own current recipe.
-        // Decline retention rather than retaining their source AST or spans.
-        if !code.modified_instances.is_empty() { self.declined.fetch_add(1, Ordering::Relaxed); return; }
-        self.values.insert_with(Arc::clone(&key.key), receipts::reads(key, recorder.reads()), receipts::versions(recorder.domain_receipts()), std::mem::size_of::<RetainedFragment>(), || RetainedFragment {
-            code: RetainedCode::Modified(code.clone()), recipes: Vec::new(), references: Vec::new(),
-        });
-        self.recomputed.fetch_add(1, Ordering::Relaxed);
     }
     #[cfg(test)]
     pub(super) fn fragment<R: Resolver>(
@@ -189,13 +203,13 @@ impl InitializerFragments {
                 .collect::<Option<std::collections::BTreeMap<_, _>>>();
             if let Some(captured) = captured {
                 if let RetainedCode::Assignment(retained) = &fragment.code {
-                if let Ok(code) = retained.clone().bind_modified(captured) {
-                    self.hits.fetch_add(1, Ordering::Relaxed);
-                    return Ok(Some(FragmentWithRecipes {
-                        code,
-                        recipes: Some(fragment.recipes.clone()),
-                    }));
-                }
+                    if let Ok(code) = retained.clone().bind_modified(captured) {
+                        self.hits.fetch_add(1, Ordering::Relaxed);
+                        return Ok(Some(FragmentWithRecipes {
+                            code,
+                            recipes: Some(fragment.recipes.clone()),
+                        }));
+                    }
                 }
             }
             // A recipe is only a candidate. Uncertain current binding executes
@@ -232,6 +246,7 @@ impl InitializerFragments {
                 .insert_with(Arc::clone(&key.key), reads, versions, weight, || {
                     RetainedFragment {
                         references: Vec::new(),
+                        root_indexes: Vec::new(),
                         code: RetainedCode::Assignment(stripped),
                         recipes,
                     }

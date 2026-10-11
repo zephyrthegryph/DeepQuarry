@@ -37,7 +37,9 @@ impl HeapCensus {
                 store.visit_key_roster(|ordinary, modified| {
                     for keys in [ordinary, modified] {
                         if self.vec_payload("cold_boundary.fragment_key_roster", keys) {
-                            for key in keys { self.slice("cold_boundary.fragment_keys", key, true); }
+                            for key in keys {
+                                self.slice("cold_boundary.fragment_keys", key, true);
+                            }
                         }
                     }
                 });
@@ -61,7 +63,11 @@ impl HeapCensus {
                         }
                         if self.arc_object("cold_boundary.fragment_payload", value) {
                             let (code, recipes, references) = value.retained_parts();
-                            self.resolver_code(code);
+                            if let Some((owner, encoding, roots)) = value.modified_owners() {
+                                if self.arc_object("cold_boundary.modified_code", owner) { self.resolver_code(code); }
+                                self.initializer_encoding(encoding);
+                                self.vec_payload("cold_boundary.modified_roots", roots);
+                            } else { self.resolver_code(code); }
                             self.initializer_fragment_recipes(recipes, references);
                         }
                     }

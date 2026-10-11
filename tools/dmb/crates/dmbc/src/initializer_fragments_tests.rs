@@ -211,7 +211,7 @@ fn retained_modifier_reissues_current_ast_after_old_source_is_dropped() {
         );
         store.values.visit_storage(|view| {
             if let dm_session::ObservedArtifactStorageView::Entry { value, .. } = view {
-                assert!(value.code.code().modified_instances.is_empty());
+                assert!(value.retained_parts().0.modified_instances.is_empty());
                 assert_eq!(value.recipes.len(), 1);
             }
         });
