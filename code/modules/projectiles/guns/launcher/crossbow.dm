@@ -8,11 +8,10 @@
 	item_state = "bolt"
 	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 
 CAPABILITIES(/obj/item/arrow)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
@@ -21,8 +20,6 @@ CAPABILITIES(/obj/item/arrow)
 /obj/item/spike
 	name = "alloy spike"
 	desc = "It's about a foot of weird silver metal with a wicked point."
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	throwforce = 5
 	w_class = ITEMSIZE_SMALL
@@ -31,6 +28,7 @@ CAPABILITIES(/obj/item/arrow)
 	item_state = "bolt"
 
 CAPABILITIES(/obj/item/spike)
+	configure(item_combat(sharp = TRUE, edge = FALSE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/quill

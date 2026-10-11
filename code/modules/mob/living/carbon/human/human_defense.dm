@@ -205,7 +205,7 @@ emp_act
 		act_message(user, src, others = span_danger("%U% misses %T% with %I%!"), item = I)
 		return null
 
-	if(check_shields(I.force, I, user, target_zone, "the [I.name]"))
+	if(check_shields(combat_of(I).force, I, user, target_zone, "the [I.name]"))
 		return
 
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
@@ -220,9 +220,9 @@ emp_act
 	if(!affecting)
 		return //should be prevented by attacked_with_item() but for sanity.
 
-	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
+	visible_message(span_danger("[src] has been [LAZYLEN(combat_of(I).attack_verbs) ? pick(combat_of(I).attack_verbs) : "attacked"] in the [affecting.name] with [I.name] by [user]!"))
 
-	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
+	var/blocked = armor_against(I.injury_kind, hit_zone, combat_of(I).armor_penetration)
 
 	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
@@ -387,7 +387,7 @@ emp_act
 		if(ismob(thrower))
 			add_attack_logs(thrower,src,"Hit with thrown [thrown_object.name]")
 
-		var/armor = armor_against(thrown_object.injury_kind, affecting, thrown_object.armor_penetration)
+		var/armor = armor_against(thrown_object.injury_kind, affecting, combat_of(thrown_object).armor_penetration)
 		if(armor < 100)
 			receive_thrown(thrown_object, throwingdatum, zone = zone)
 
@@ -421,7 +421,7 @@ emp_act
 
 			if(!thrown_object || !src) return
 
-			if(thrown_object.loc == src && thrown_object.sharp) //Projectile is embedded and suitable for pinning.
+			if(thrown_object.loc == src && combat_of(thrown_object).sharp) //Projectile is embedded and suitable for pinning.
 				var/turf/T = near_wall(dir,2)
 
 				if(T)
@@ -447,7 +447,7 @@ emp_act
 	// Alright, our hand works? Time to try the catching.
 	var/catch_chance = 90	// Default 90% catch rate
 
-	if(O.sharp)
+	if(combat_of(O).sharp)
 		catch_chance -= 50	// Catching knives is hard
 
 	catch_chance -= get_accuracy_penalty()	// Same issues with shooting a gun, or swinging a weapon
@@ -574,7 +574,7 @@ emp_act
 	var/obj/item/grab/G = grab_held_by(user)
 	if(!G || !W) //check that we still have a grab
 		return 0
-	var/organ_chance = W.edge ? 75 : 50
+	var/organ_chance = combat_of(W).edge ? 75 : 50
 	var/damage = shank_armor_helper(W, G, user)
 	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
 

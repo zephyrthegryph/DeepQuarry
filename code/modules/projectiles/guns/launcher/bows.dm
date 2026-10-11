@@ -6,8 +6,6 @@
 	item_state = "bolt"
 	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = FALSE
 
 /obj/item/arrow/energy
 	name = "hardlight arrow"
@@ -17,11 +15,12 @@
 	item_state = "bolt"
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0 // it fizzles!
 	catchable = FALSE // oh god
+
+CAPABILITIES(/obj/item/arrow/energy)
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/arrow/energy/throw_impact(atom/hit_atom)
 	. = ..()
@@ -190,5 +189,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow/bow)
 	name = "glamour arrow"
 	icon = 'icons/obj/guns/projectile/bows.dmi'
 	icon_state = "garrow"
-	edge = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/arrow/standard/glamour)
+	configure(item_combat(edge = TRUE))

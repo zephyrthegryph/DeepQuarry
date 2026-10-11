@@ -10,18 +10,20 @@
 /obj/item/clothing/under/primitive
 	name = "primitive clothes"
 	desc = "Some patched together rags. Better than being naked."
-	force = 0
 	has_sensor = 0
 	icon_state = "rag"
 	worn_state = "rag"
+
+CAPABILITIES(/obj/item/clothing/under/primitive)
+	configure(item_combat(force = 0))
 
 /obj/item/clothing/shoes/primitive
 	name = "primitive shoes"
 	desc = "Some patched together rags. Better than being barefoot."
 	icon_state = "rag"
-	force = 0
 
 CAPABILITIES(/obj/item/clothing/shoes/primitive)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 /*

@@ -288,7 +288,7 @@ TRACKED(/obj/machinery/porta_turret, ailock)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	user.setClickCooldown(user.get_attack_speed(I))
-	var/dam = I.force * 0.5
+	var/dam = combat_of(I).force * 0.5
 	take_damage(dam, BRUTE, MELEE)
 	attempt_retaliate(dam)
 	return OP_OK

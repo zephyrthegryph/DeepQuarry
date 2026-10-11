@@ -9,7 +9,6 @@
 		)
 	item_flags = DROPDEL | NOSTRIP
 	throwforce = 0
-	force = 0
 	show_examine = FALSE
 	var/mob/living/owner
 	var/obj/item/technomancer_core/core = null
@@ -108,6 +107,7 @@
 	return null
 
 CAPABILITIES(/obj/item/spell)
+	configure(item_combat(force = 0))
 	param(nameof(coreless), pos = 1)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

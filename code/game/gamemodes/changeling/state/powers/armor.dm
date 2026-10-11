@@ -83,13 +83,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOL
 		item_flags &= ~NOSLIP
 		magpulse = 0
 		set_slowdown()
-		force = 3
+		set_force(3)
 		to_chat(user, "We release our grip on the floor.")
 	else
 		item_flags |= NOSLIP
 		magpulse = 1
 		set_slowdown()
-		force = 5
+		set_force(5)
 		to_chat(user, "We cling to the terrain below us.")
 
 //Armor

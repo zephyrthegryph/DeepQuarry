@@ -14,7 +14,6 @@
 			slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 0
 	throwforce = 7
 	throw_speed = 1
 	throw_range = 3
@@ -306,6 +305,7 @@ TRACKED(/obj/item/taskmanager, scancount)
 TRACKED(/obj/item/taskmanager, scanreq)
 
 CAPABILITIES(/obj/item/taskmanager)
+	configure(item_combat(force = 0))
 	op("choose_department", in_hand(), label("Choose department"), needs(req_adjacent(), req_capable(), req(PROC_REF(living_operator))),
 		asks(/datum/prompt/choice/taskmanager_department, keeps = 0), then(PROC_REF(department_chosen)))
 

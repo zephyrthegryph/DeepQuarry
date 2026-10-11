@@ -10,7 +10,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "multitool"
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
 	throwforce = 5.0
 	throw_range = 15
@@ -33,6 +32,7 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 TRACKED(/obj/item/multitool, uplink)
 
 CAPABILITIES(/obj/item/multitool)
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MULTITOOL, pickup = SFX_ITEMS_PICKUP_MULTITOOL))
 	ref_one(nameof(selected_io), /datum/integrated_io)
 	// the old attack_self: a wired connection is cleared; otherwise the multitool's menu

@@ -1058,17 +1058,16 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	force = 1
 	throwforce = 3
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = CHEST
-	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/suit/caution)
+	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 	op("caution_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(caution_toggle_self)))
 	op("caution_toggle_alt", hand(), ungated(), gesture(GESTURE_ALT), label("Toggle"), then(PROC_REF(caution_toggle_alt)))

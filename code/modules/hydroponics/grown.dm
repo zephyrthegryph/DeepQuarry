@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 		if(reagents.total_volume > 0)
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 		if(seed().get_trait(TRAIT_STINGS))
-			force = 1
+			set_force(1)
 
 /// The seed's chemicals at its potency (reagents(contents_from =)); glamour is never put in. Null for produce with no known plant.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed_contents()
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 				consume(src, user)
 				return OP_PASS
 
-		if(W.sharp)
+		if(combat_of(W).sharp)
 
 			if(seed().kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
@@ -217,7 +217,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 
 			if(seed().chems)
 
-				if(W.sharp && W.edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
+				if(combat_of(W).sharp && combat_of(W).edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
 					user.show_message(span_notice("You make planks out of \the [src]!"), 1)
 					play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 					var/flesh_colour = seed().get_trait(TRAIT_FLESH_COLOUR)

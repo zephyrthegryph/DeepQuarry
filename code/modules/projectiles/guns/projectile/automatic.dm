@@ -66,7 +66,6 @@
 	wielded_item_state = "arifle-wielded"
 	item_state = null
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "5.45mm"
 	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
@@ -81,6 +80,9 @@
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/sts35)
+	configure(item_combat(force = 10))
 
 /*
  * X-9mm (PDW)
@@ -150,7 +152,6 @@
 	item_state = "z8carbine"
 	wielded_item_state = "z8bulldog-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "7.62mm"
 	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
@@ -174,6 +175,7 @@
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	configure(item_combat(force = 10))
 	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung, starts = /obj/item/gun/launcher/grenade/underslung)
 
 /// Old attackby.
@@ -224,7 +226,6 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	item_state = "l6closed"
 	wielded_item_state = "genericLMG-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	slot_flags = 0
 	max_shells = 50
 	caliber = "5.45mm"
@@ -246,6 +247,9 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 		)
 
 	special_weapon_handling = TRUE
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
+	configure(item_combat(force = 10))
 
 TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 
@@ -312,7 +316,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	item_state = "ashot"
 	wielded_item_state = "ashot-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "12g"
 	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
@@ -326,6 +329,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
+	configure(item_combat(force = 10))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/as24/draw(datum/look/look)
@@ -430,7 +436,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	item_state = "bullpup"
 	wielded_item_state = "sexyrifle-wielded" //Placeholder, this is a bullpup at least
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
 	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
@@ -445,6 +450,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
+	configure(item_combat(force = 10))
 
 /obj/item/gun/projectile/automatic/bullpup/draw(datum/look/look)
 	..()
@@ -590,7 +598,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "fal"
 	item_state = "fal"
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
 	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
@@ -603,6 +610,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto",       burst=1, fire_delay=0,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/fal)
+	configure(item_combat(force = 10))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/fal/draw(datum/look/look)
@@ -756,7 +766,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "mg42closed"
 	item_state = "mg42"
 	w_class = ITEMSIZE_HUGE
-	force = 10
 	slot_flags = 0
 	max_shells = 75
 	caliber = "mauser"
@@ -777,6 +786,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		)
 
 	var/cover_open = 0
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/mg42)
+	configure(item_combat(force = 10))
 
 TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
 

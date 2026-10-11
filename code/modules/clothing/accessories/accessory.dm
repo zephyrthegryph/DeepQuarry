@@ -55,7 +55,7 @@
 	src.forceMove(S)
 	has_suit().add_overlay(get_inv_overlay())
 
-	has_suit().force += force
+	has_suit().set_force(combat_of(has_suit()).force + (combat_of(src).force))
 	if(istype(S,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = S
 		has_gloves.punch_force = has_gloves.punch_force + punch_force
@@ -69,7 +69,7 @@
 		return
 	var/obj/item/clothing/old_suit = has_suit()
 	old_suit.cut_overlay(get_inv_overlay())
-	old_suit.force = initial(old_suit.force)
+	old_suit.set_force(combat_of_type(old_suit.type).force)
 	if(istype(old_suit,/obj/item/clothing/gloves))
 		var/obj/item/clothing/gloves/has_gloves = old_suit
 		has_gloves.punch_force = initial(has_gloves.punch_force)

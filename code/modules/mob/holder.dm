@@ -314,10 +314,10 @@
 	held_mob?.lay_down()
 
 /obj/item/holder/fish
-	attack_verb = list("fished", "disrespected", "smacked", "smackereled")
 	slot_flags = SLOT_HOLSTER
 
 CAPABILITIES(/obj/item/holder/fish)
+	configure(item_combat(attack_verbs = list("fished", "disrespected", "smacked", "smackereled")))
 	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)

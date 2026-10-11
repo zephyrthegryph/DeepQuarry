@@ -8,7 +8,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_gloves.dmi',
 			)
 	item_state = "lgloves"
-	force = 0
 	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 1
@@ -17,6 +16,7 @@
 	var/datum/gas_mixture/air_contents = null
 
 CAPABILITIES(/obj/item/latexballon)
+	configure(item_combat(force = 0))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(balloon_blast))))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(balloon_shot))))

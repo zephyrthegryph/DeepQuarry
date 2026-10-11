@@ -2,16 +2,15 @@
 /obj/item/melee/jellyfishwhip
 	name = "dettached jellyfish tendril"
 	desc = "The detatched limb of a titan jellyfish."
-	sharp = FALSE
-	edge = FALSE
-	force = 28
-	armor_penetration = 50
 	flags = NOCONDUCT | NOBLOODY
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "whip"
 	item_state = "chain"
+
+CAPABILITIES(/obj/item/melee/jellyfishwhip)
+	configure(item_combat(sharp = FALSE, edge = FALSE, force = 28, armor_penetration = 50))
 
 /obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_HURT) //Healy mode

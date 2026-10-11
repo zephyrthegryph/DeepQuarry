@@ -1287,10 +1287,10 @@ init_lines	code/game/objects/items.dm	tool_qualities = intern_list(tool_qualitie
 init_lines	code/game/objects/items.dm	for(var/path in actions_types)
 init_lines	code/game/objects/items.dm	add_item_action(path)
 init_lines	code/game/objects/items.dm	if(embed_chance < 0)
-init_lines	code/game/objects/items.dm	if(sharp)
-init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/w_class))
+init_lines	code/game/objects/items.dm	if(combat_of(src).sharp)
+init_lines	code/game/objects/items.dm	embed_chance = max(5, round(combat_of(src).force/w_class))
 init_lines	code/game/objects/items.dm	else
-init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/(w_class*3)))
+init_lines	code/game/objects/items.dm	embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
 init_lines	code/game/objects/items/bodybag.dm	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
 init_lines	code/game/objects/items/contraband.dm	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
 init_lines	code/game/objects/items/contraband.dm	for(var/reagent in picked_reagents)
@@ -3698,7 +3698,7 @@ init_lines	code/modules/hydroponics/grown.dm	update_desc()
 init_lines	code/modules/hydroponics/grown.dm	if(reagents.total_volume > 0)
 init_lines	code/modules/hydroponics/grown.dm	bitesize = 1+round(reagents.total_volume / 2, 1)
 init_lines	code/modules/hydroponics/grown.dm	if(seed().get_trait(TRAIT_STINGS))
-init_lines	code/modules/hydroponics/grown.dm	force = 1
+init_lines	code/modules/hydroponics/grown.dm	set_force(1)
 init_lines	code/modules/hydroponics/grown.dm	var/datum/seed/S = slice_seed
 init_lines	code/modules/hydroponics/grown.dm	if(!istype(S))
 init_lines	code/modules/hydroponics/grown.dm	return INITIALIZE_HINT_QDEL
@@ -5821,10 +5821,10 @@ init_lines	code/modules/power/cable.dm	color = pick(COLOR_RED, COLOR_BLUE, COLOR
 init_lines	code/modules/power/cable.dm	stacktype = /obj/item/stack/cable_coil
 init_lines	code/modules/power/cable.dm	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
 init_lines	code/modules/power/cable.dm	if(embed_chance == -1) //From /obj/item, don't want to do what the normal cable_coil does
-init_lines	code/modules/power/cable.dm	if(sharp)
-init_lines	code/modules/power/cable.dm	embed_chance = force/w_class
+init_lines	code/modules/power/cable.dm	if(combat_of(src).sharp)
+init_lines	code/modules/power/cable.dm	embed_chance = combat_of(src).force/w_class
 init_lines	code/modules/power/cable.dm	else
-init_lines	code/modules/power/cable.dm	embed_chance = force/(w_class*3)
+init_lines	code/modules/power/cable.dm	embed_chance = combat_of(src).force/(w_class*3)
 init_lines	code/modules/power/cell.dm	apply_blueprint_effects()
 init_lines	code/modules/power/cell.dm	enable_material_service()
 init_lines	code/modules/power/cell.dm	c_uid = cell_uid++
@@ -6922,7 +6922,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = "
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CLAYMORE)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/material/sword(src.loc)
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.force = 10
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_force(10)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(30))
@@ -6965,7 +6965,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_material_de
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_KATANA)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/material/sword/katana(src.loc)
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.force = 10
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_force(10)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = "katana"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_LASER)
@@ -7240,7 +7240,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/mate
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_unwielded *= 0.7
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_wielded *= 0.5
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	else
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.force *= 0.3
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.set_force(combat_of(MW).force * (0.3))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(istype(secondary_item, /obj/item/material))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/possible_object_paths = list()
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	possible_object_paths += subtypesof(/datum/material)
@@ -7260,7 +7260,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/mate
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_unwielded *= 0.7
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_wielded *= 0.5
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	else
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.force *= 0.3
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.set_force(combat_of(MW).force * (0.3))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(istype(new_item, /obj/item/clothing/accessory/ring/material))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/possible_object_paths = list()
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	possible_object_paths += subtypesof(/datum/material)

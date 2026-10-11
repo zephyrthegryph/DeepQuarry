@@ -61,12 +61,13 @@
 	name = "icicle"
 	icon_state = "ice_2"
 	damage = 40
-	armor_penetration = 30
 	speed = 2
 	icon_scale_x = 2 // It hits like a truck.
 	icon_scale_y = 2
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/projectile/icicle)
+	configure(item_combat(armor_penetration = 30, sharp = TRUE))
 
 /obj/item/projectile/icicle/on_impact(atom/A)
 	play_sfx(A, SFX_SHATTER)

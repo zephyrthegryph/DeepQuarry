@@ -244,6 +244,9 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of item_sounds() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_SOUNDS "item_sounds"
 #define ITEM_SOUNDS_KEY "item_sounds"
+/// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_COMBAT "item_combat"
+#define ITEM_COMBAT_KEY "item_combat"
 
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"

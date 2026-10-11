@@ -71,7 +71,7 @@ CAPABILITIES(/obj/structure/mirror)
 		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 		return OP_OK
 
-	if(prob(I.force * 2))
+	if(prob(combat_of(I).force * 2))
 		act_message(user, src, others = span_warning("%U% smashes %T% with [I]!"))
 		if(glass)
 			shatter()

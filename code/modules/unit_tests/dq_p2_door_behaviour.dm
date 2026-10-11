@@ -1140,7 +1140,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 30
+	bar.set_force(30)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)
@@ -1151,7 +1151,7 @@
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 2
+	bar.set_force(2)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)
@@ -1882,11 +1882,11 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/bar = give_item(H, /obj/item/pen)
 	H.set_combat_mode(TRUE)
-	bar.force = 5
+	bar.set_force(5)
 	var/before = B.get_integrity()
 	click(H, B, bar)
 	TEST_ASSERT_EQUAL(B.get_integrity(), before, "a weak hit leaves no mark")
-	bar.force = 60
+	bar.set_force(60)
 	click(H, B, bar)
 	TEST_ASSERT(B.get_integrity() < before, "a hard one damages it")
 
@@ -2029,7 +2029,7 @@
 	var/obj/machinery/door/window/D = make_door(/obj/machinery/door/window, list(ACCESS_ENGINE))
 	var/mob/living/carbon/human/H = make_person(null, tile(1, 2))
 	var/obj/item/bar = give_item(H, /obj/item/pen)
-	bar.force = 20
+	bar.set_force(20)
 	H.set_combat_mode(TRUE)
 	var/before = D.get_integrity()
 	click(H, D, bar)

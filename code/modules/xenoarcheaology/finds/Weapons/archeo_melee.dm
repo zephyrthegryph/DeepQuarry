@@ -16,12 +16,8 @@
 	desc = "A mysterious blade that emanates terrifying power"
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	force = 30
 	throwforce = 10
 	toolspeed = 5 //Syncs perfectly with the animation time.
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
 	var/stored_blood = 0 //How much energy we have!
@@ -36,6 +32,7 @@
 /obj/item/melee/artifact_blade/var/tmp/mob/living/carbon/human/last_touched
 
 CAPABILITIES(/obj/item/melee/artifact_blade)
+	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 	op("convert_turf", ai(), takes("turf"), wait(PROC_REF(convert_time)), then(PROC_REF(convert_turf_done)))
 	ref_one(nameof(last_touched))
@@ -92,9 +89,9 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 	if(M == user) //No accidentally hitting yourself and exploding.
 		return
 	var/zone = (user.hand ? BP_L_ARM:BP_R_ARM) //Which arm we're in!
-	var/prior_force = force
+	var/prior_force = combat_of(src).force
 	if(empowered)
-		force = force*2
+		set_force(combat_of(src).force*2)
 		empowered = 0
 	/// First, we check a few things.
 	/// Check 1: We aren't a cultist and they're a human AND they're not AI controlled
@@ -107,7 +104,7 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 		user.drop_from_inventory(src, user.loc)
 		user.status_at_least(STAT_WEAKENED, 5)
 		throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,10),5)
-		user.injure(INJURY_BURN, rand(force/2, force), zone, src)
+		user.injure(INJURY_BURN, rand(combat_of(src).force/2, combat_of(src).force), zone, src)
 		return ITEM_INTERACT_SUCCESS
 
 	..() //We hit them!
@@ -130,7 +127,7 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 
 		/// If the thing we're hitting is dead, our faction, friendly, or synthetic, we get no blood.
 		if(M.stat < DEAD && M.faction != user.faction && !ispassive(M) && !issilicon(M) && !isbot(M) && !isslime(M))
-			stored_blood += force
+			stored_blood += combat_of(src).force
 
 	//If the user isn't 'worthy' they get a single swing before the sword THROWS itself away from them. Possibly even off-screen!
 	else if(istype(user, /mob/living/simple_mob/construct))
@@ -147,7 +144,7 @@ DESTROY_EFFECTS(/obj/item/melee/artifact_blade, new /datum/destroy_effects_data(
 		var/spooky = SFX_EFFECTS_GHOST_MIX //It's just a cursed, talking sword. Nothing to fear!
 		playsound(src, spooky, 50, 1)
 
-	force = prior_force //Return our force back.
+	set_force(prior_force)//Return our force back.
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/melee/artifact_blade/pickup(mob/living/user as mob)

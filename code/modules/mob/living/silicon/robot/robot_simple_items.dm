@@ -159,10 +159,10 @@ CAPABILITIES(/obj/item/tool/screwdriver/cyborg)
 	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
-	force = 10
 	toolspeed = 0.5
 
 CAPABILITIES(/obj/item/tool/crowbar/cyborg)
+	configure(item_combat(force = 10))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /obj/item/tool/crowbar/cyborg/jaws
@@ -170,10 +170,9 @@ CAPABILITIES(/obj/item/tool/crowbar/cyborg)
 	desc = "The jaws of a small dog. Still strong enough to pry things."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "smalljaws_textless"
-	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
-	force = 15
 
 CAPABILITIES(/obj/item/tool/crowbar/cyborg/jaws)
+	configure(item_combat(attack_verbs = list("nibbled", "bit", "gnawed", "chomped", "nommed"), force = 15))
 	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
 /obj/item/weldingtool/electric/mounted/cyborg

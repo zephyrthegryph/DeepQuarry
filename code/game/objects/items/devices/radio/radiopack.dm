@@ -6,7 +6,6 @@
 	icon_state = "radiopack"
 	item_state = "radiopack"
 	slot_flags = SLOT_BACK
-	force = 5
 	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
@@ -17,6 +16,7 @@
 	. = ..()
 
 CAPABILITIES(/obj/item/bluespaceradio)
+	configure(item_combat(force = 5))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	drag_onto(PROC_REF(drop_input))
 

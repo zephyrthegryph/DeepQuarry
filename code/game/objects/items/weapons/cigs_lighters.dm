@@ -40,9 +40,9 @@ CAPABILITIES(/obj/item/flame)
 	var/smoketime = 5
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
-	attack_verb = list("burnt", "singed")
 
 CAPABILITIES(/obj/item/flame/match)
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD, pickup = SFX_ITEMS_PICKUP_FOOD))
 
 /obj/item/flame/match/flame_step(datum/act/timer/A)
@@ -337,7 +337,6 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	throw_speed = 0.5
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_MASK
-	attack_verb = list("burnt", "singed")
 	type_butt = /obj/item/trash/cigbutt
 	chem_volume = 15
 	max_smoketime = 300
@@ -359,6 +358,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette/joint/blunt)
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2))) // 4 total
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/cigarette)
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	configure(reagents(add = list(REAGENT_ID_NICOTINE = 2)))
 	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
 	op("tread_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(tread_out)))
@@ -686,7 +686,6 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 	w_class = ITEMSIZE_TINY
 	throwforce = 4
 	slot_flags = SLOT_BELT
-	attack_verb = list("burnt", "singed")
 	var/base_state
 	/// Sounds
 	var/activation_sound = SFX_ITEMS_LIGHTER_ON
@@ -721,6 +720,7 @@ CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
 TRACKED(/obj/item/flame/lighter, detonator_mode)
 
 CAPABILITIES(/obj/item/flame/lighter)
+	configure(item_combat(attack_verbs = list("burnt", "singed")))
 	op("toggle", in_hand(), then(PROC_REF(toggled)))
 
 // TODO: Remove this path from POIs and loose maps (it's no longer needed)

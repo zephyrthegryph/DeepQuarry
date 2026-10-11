@@ -249,7 +249,7 @@ TRACKED(/obj/item/grab, inspect_zone)
 	var/damage = 20
 	var/obj/item/clothing/hat = attacker.get_equipped_item(SLOT_ID_HEAD)
 	if(istype(hat))
-		damage += hat.force * 3
+		damage += combat_of(hat).force * 3
 
 	var/armor = target.armor_against(INJURY_BLUNT, BP_HEAD)
 	target.injure(INJURY_BLUNT, damage, BP_HEAD, attacker, flags = INJURE_ARMORED)

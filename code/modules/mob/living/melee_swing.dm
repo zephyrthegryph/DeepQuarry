@@ -24,23 +24,23 @@
 
 /// Deciseconds of windup before the swing lands. Override `melee_windup` per weapon.
 /obj/item/proc/get_melee_windup()
-	if(melee_windup)
-		return melee_windup
+	if(combat_of(src).windup)
+		return combat_of(src).windup
 	// Indexed by w_class: TINY, SMALL, NORMAL, LARGE, HUGE.
 	var/static/list/windup_by_size = list(2, 3, 4, 6, 9)
 	return windup_by_size[clamp(w_class, ITEMSIZE_TINY, ITEMSIZE_HUGE)]
 
 /// Deciseconds of recovery (post-swing click cooldown). Override `melee_recovery` per weapon.
 /obj/item/proc/get_melee_recovery()
-	if(melee_recovery)
-		return melee_recovery
+	if(combat_of(src).recovery)
+		return combat_of(src).recovery
 	var/static/list/recovery_by_size = list(3, 4, 5, 7, 10)
 	return recovery_by_size[clamp(w_class, ITEMSIZE_TINY, ITEMSIZE_HUGE)]
 
 /// TRUE if this weapon's swing sweeps a 3-tile frontal arc instead of a single tile.
 /obj/item/proc/melee_is_sweep()
-	if(!isnull(melee_sweep))
-		return melee_sweep
+	if(!isnull(combat_of(src).sweep))
+		return combat_of(src).sweep
 	return w_class >= ITEMSIZE_LARGE
 
 // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@
 		return FALSE
 	if(QDELETED(target) || QDELETED(weapon))
 		return FALSE
-	if(!weapon.force || (weapon.flags & NOBLUDGEON))
+	if(!combat_of(weapon).force || (weapon.flags & NOBLUDGEON))
 		return FALSE
 	if(!Adjacent(target))
 		return FALSE

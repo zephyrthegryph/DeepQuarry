@@ -446,7 +446,6 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 /obj/item/mail_scanner
 	name = "mail scanner"
 	desc = "Sponsored by the Intergalactic Mail Service, this device logs mail deliveries in exchance for financial compensation."
-	force = 0
 	throwforce = 0
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "mail_scanner"
@@ -455,6 +454,9 @@ CAPABILITIES(/obj/item/storage/bag/mail)
 	var/cargo_points = 5
 	/// Relation view: the last scanned envelope (it stays wherever it is).
 	var/obj/item/mail/saved
+
+CAPABILITIES(/obj/item/mail_scanner)
+	configure(item_combat(force = 0))
 
 /obj/item/mail_scanner/examine(mob/user)
 	. = ..()

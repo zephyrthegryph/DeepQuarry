@@ -4,7 +4,6 @@
 	icon = 'icons/obj/capture_crystal_vr.dmi'
 	icon_state = "inactive"
 	throwforce = 0
-	force = 0
 	actions_types = list(/datum/action/item_action/command)
 	w_class = ITEMSIZE_SMALL
 
@@ -22,6 +21,7 @@
 	var/loadout = FALSE
 
 CAPABILITIES(/obj/item/capture_crystal)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	ref_one(nameof(owner), /mob/living)
 	ref_one(nameof(bound_mob), /mob/living)

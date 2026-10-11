@@ -8,7 +8,6 @@
 	icon_state = "defibunit"
 	item_state = "defibunit"
 	slot_flags = SLOT_BACK
-	force = 5
 	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
@@ -18,6 +17,7 @@
 	var/obj/item/cell/bcell = null
 
 CAPABILITIES(/obj/item/defib_kit)
+	configure(item_combat(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(bcell), /obj/item/cell, starts = nameof(bcell))
@@ -169,7 +169,6 @@ CAPABILITIES(/obj/item/defib_kit)
 	icon_state = "defibpaddles"
 	item_state = "defibpaddles"
 	gender = PLURAL
-	force = 2
 	throwforce = 6
 	w_class = ITEMSIZE_LARGE
 	item_flags = NOSTRIP
@@ -563,6 +562,7 @@ TRACKED(/obj/item/shockpaddles, chargecost)
 		return OP_OK
 
 CAPABILITIES(/obj/item/shockpaddles)
+	configure(item_combat(force = 2))
 	// The revive chain and the shock, started by do_revive() / do_electrocute() with the patient: each claims the paddles while it runs.
 	op("revive_place", ai(), takes("patient", "spot"), claims(CLAIM_TARGET), wait(3 SECONDS), then(PROC_REF(do_revive_timed_done)))
 	op("revive_charge", ai(), takes("patient", "spot", "envelope"), claims(CLAIM_TARGET), wait(PROC_REF(charge_wait)), then(PROC_REF(do_revive_charged)))

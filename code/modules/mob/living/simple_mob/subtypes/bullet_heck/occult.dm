@@ -34,10 +34,12 @@
 	name = "blood bolt"
 	icon_state = "red_pellet"
 	damage = 8 //A little more then 12 hits to kill
-	armor_penetration = 60 //And due to the low low base damage, will ignore most armors
 	speed = 8
 	crawl_destroy = TRUE
 	hits_phased = TRUE //because the wierd redspace stuff being able to touch the other extradimensional thing seems intresting
+
+CAPABILITIES(/obj/item/projectile/energy/blood_bullet)
+	configure(item_combat(armor_penetration = 60))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/occult
 	icon_state = "bloodguardian"

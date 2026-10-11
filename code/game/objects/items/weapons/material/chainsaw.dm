@@ -24,11 +24,11 @@ TRACKED(/obj/item/chainsaw, on)
 /obj/item/chainsaw/proc/turnOff(mob/user as mob)
 	if(!on) return
 	to_chat(user, "You switch the gas nozzle on the chainsaw, turning it off.")
-	attack_verb = list("bluntly hit", "beat", "knocked")
+	set_attack_verb(list("bluntly hit", "beat", "knocked"))
 	play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF)
-	force = inactive_force
-	edge = FALSE
-	sharp = FALSE
+	set_force(inactive_force)
+	set_edge(FALSE)
+	set_sharp(FALSE)
 	set_on(FALSE)
 
 MSG_DEF(chainsaw/pulling, "You start pulling the string on %T%.", "%U% starts pulling the string on %T%.")
@@ -58,11 +58,11 @@ CAPABILITIES(/obj/item/chainsaw)
 		to_chat(user, "\The [src] won't start!")
 		return OP_OK
 	act_message(user, src, MSG_SELF("You start %T% up with a loud grinding!"), MSG_OTHERS("%U% starts %T% up with a loud grinding!"))
-	attack_verb = list("shredded", "ripped", "torn")
+	set_attack_verb(list("shredded", "ripped", "torn"))
 	play_sfx(src, SFX_WEAPONS_CHAINSAW_STARTUP, 4, vary = TRUE)
-	force = active_force
-	edge = TRUE
-	sharp = TRUE
+	set_force(active_force)
+	set_edge(TRUE)
+	set_sharp(TRUE)
 	set_on(TRUE)
 	return OP_OK
 

@@ -5,13 +5,9 @@
 	icon_state = "stunbaton"
 	item_state = "baton"
 	slot_flags = SLOT_BELT
-	force = 15
-	sharp = FALSE
-	edge = FALSE
 	throwforce = 7
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("beaten")
 	var/lightcolor = "#FF6A00"
 	var/stunforce = 0
 	var/agonyforce = 60
@@ -27,6 +23,7 @@
 TRACKED(/obj/item/melee/baton, status)
 
 CAPABILITIES(/obj/item/melee/baton)
+	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	owns_one(nameof(bcell), /obj/item/cell)
 	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
@@ -235,16 +232,15 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 	desc = "An improvised stun baton."
 	icon_state = "stunprod_nocell"
 	item_state = "prod"
-	force = 3
 	throwforce = 5
 	stunforce = 0
 	agonyforce = 60	//same force as a stunbaton, but uses way more charge.
 	hitcost = 2500	//runs off the same kind of big batteries as APCs, not small cells!
-	attack_verb = list("poked")
 	slot_flags = null
 	grip_safety = FALSE
 
 CAPABILITIES(/obj/item/melee/baton/cattleprod)
+	configure(item_combat(force = 3, attack_verbs = list("poked")))
 	op("cattleprod_interaction_item", item(/obj/item), then(PROC_REF(cattleprod_interaction_item)))
 	without("baton_item")   // its own item use replaces the baton's
 
@@ -281,10 +277,11 @@ CAPABILITIES(/obj/item/melee/baton/cattleprod)
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
 	icon_state = "shocker"
-	force = 10
 	throwforce = 5
 	agonyforce = 25 // Less efficent than a regular baton.
-	attack_verb = list("poked")
+
+CAPABILITIES(/obj/item/melee/baton/shocker)
+	configure(item_combat(force = 10, attack_verbs = list("poked")))
 
 /obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	..(target, user, hit_zone, attack_modifier, stance)

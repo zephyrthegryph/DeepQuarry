@@ -191,8 +191,8 @@ def rewrite_code(code):
     if not re.search(r"\b(" + NAME_RE + r")\b", masked):
         return code
     # statement writes: [ref.]name op= value (the whole rest of the statement)
-    m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)\s*(.+?)\s*$", code)
-    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked) and ref_ok(m.group(2)) and (m.group(2) or m.group(3) not in SHADOW):
+    m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/|&^]?)=(?!=)\s*(.+?)\s*$", code)
+    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/|&^]?)=(?!=)", masked) and ref_ok(m.group(2)) and (m.group(2) or m.group(3) not in SHADOW):
         indent, ref, name, op, value = m.groups()
         value = rewrite_reads(value, mask_strings(value))
         target = (ref + ".") if ref else ""
@@ -218,6 +218,10 @@ def rewrite_reads(code, masked):
         if not ref_ok(ref):
             continue
         if not ref and name in SHADOW:
+            continue
+        if not init and re.match(r"\s*[-+*/|&^]?=(?!=)", masked[end:]):
+            # `f(force = TRUE)` is a named argument, and a compound write inside an expression would mutate the shared trait: leave
+            # both for a hand edit (statement writes were made setters above)
             continue
         if init and close:
             holder = (ref + ".type") if ref else "type"

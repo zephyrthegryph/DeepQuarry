@@ -6,7 +6,6 @@
 	amount_per_transfer_from_this = 10
 	volume = 100
 	item_state = "broken_beer" //Generic held-item sprite until unique ones are made.
-	force = 6
 	var/smash_duration = 5 //Directly relates to the 'weaken' duration. Lowered by armor (i.e. helmets)
 	var/isGlass = 1 //Whether the 'bottle' is made of glass or not so that milk cartons dont shatter when someone gets hit by it
 
@@ -111,6 +110,7 @@
 
 // A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
+	configure(item_combat(force = 6))
 	without("open")
 	op("bottle_self", in_hand(), then(PROC_REF(bottle_self)))
 	op("bottle_item", item(/obj/item), then(PROC_REF(bottle_item)))
@@ -177,7 +177,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	// You are going to knock someone out for longer if they are not wearing a helmet.
 	var/weaken_duration = 0
 	if(blocked < 100)
-		weaken_duration = smash_duration + min(0, force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
+		weaken_duration = smash_duration + min(0, combat_of(src).force - target.injury_armor(INJURY_BLUNT, hit_zone) + 10)
 
 	if(hit_zone == "head" && istype(target, /mob/living/carbon/))
 		act_message(user, src, others = span_danger("%U% smashes %T% over [target]'s head!"))
@@ -215,17 +215,16 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	desc = "A bottle with a sharp broken bottom."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "broken_bottle"
-	force = 10
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
 	item_state = "beer"
 	flags = NOCONDUCT
-	attack_verb = list("stabbed", "slashed", "attacked")
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
+
+CAPABILITIES(/obj/item/broken_bottle)
+	configure(item_combat(force = 10, attack_verbs = list("stabbed", "slashed", "attacked"), sharp = TRUE, edge = FALSE))
 
 /obj/item/broken_bottle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	play_sfx(src, SFX_WEAPONS_BLADESLICE)

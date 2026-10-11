@@ -200,7 +200,7 @@
 	var/obj/item/stack/material/log/L = allocate(/obj/item/stack/material/log, run_loc_floor_bottom_left, 2)
 	var/obj/item/material/knife/K = allocate(/obj/item/material/knife, run_loc_floor_bottom_left)
 	user.put_in_active_hand(K)
-	var/expected = round((3 SECONDS / max(K.force / 10, 1)) * K.toolspeed)
+	var/expected = round((3 SECONDS / max(combat_of(K).force / 10, 1)) * K.toolspeed)
 	TEST_ASSERT(expected > 2, "the knife makes a measurable time")
 	test_chat_clear()
 	test_click(user, L, K)

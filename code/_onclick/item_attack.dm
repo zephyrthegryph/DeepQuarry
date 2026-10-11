@@ -251,7 +251,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
 	// tiles, then resolves (see code/modules/mob/living/melee_swing.dm). Diverts the instant
 	// attack. Non-harm intents, unarmed, and item-use on objects never reach this branch.
-	if(isliving(user) && stance == I_HURT && I.force && !(I.flags & NOBLUDGEON))
+	if(isliving(user) && stance == I_HURT && combat_of(I).force && !(I.flags & NOBLUDGEON))
 		var/mob/living/attacker = user
 		if(attacker.is_swinging)
 			return FALSE // already mid-swing — ignore the queued attack click
@@ -270,7 +270,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 /mob/living/get_attack_speed(obj/item/W)
 	var/speed = base_attack_cooldown
 	if(W && istype(W))
-		speed = W.attackspeed
+		speed = combat_of(W).attack_speed
 	return speed * factor(BF_ATTACK_SPEED)
 
 // Proximity_flag is 1 if this afterattack was called on something adjacent, in your square, or on your person.
@@ -282,7 +282,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 //I would prefer to rename this attack_as_weapon(), but that would involve touching hundreds of files.
 /// Used as a weapon on M in `stance`, the stance of the interaction that swung it (a mob's per-stance item defaults).
 /obj/item/proc/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(!force || (flags & NOBLUDGEON))
+	if(!combat_of(src).force || (flags & NOBLUDGEON))
 		return ITEM_INTERACT_FAILURE
 	if(M == user && stance != I_HURT)
 		return ITEM_INTERACT_FAILURE
@@ -319,7 +319,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	if(sounds_of(src).hit)
 		playsound(src, sounds_of(src).hit, 50, 1, -1)
 
-	var/power = force * user.factor(BF_MELEE_DAMAGE)
+	var/power = combat_of(src).force * user.factor(BF_MELEE_DAMAGE)
 
 	if(user.has_mutation(HULK))
 		power *= 2

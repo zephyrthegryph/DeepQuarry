@@ -441,7 +441,6 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 	icon_state = "tape_white"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_TINY
-	force = 1
 	throwforce = 0
 	var/max_capacity = 1800
 	var/used_capacity = 0
@@ -457,6 +456,7 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 
 
 CAPABILITIES(/obj/item/rectape)
+	configure(item_combat(force = 1))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

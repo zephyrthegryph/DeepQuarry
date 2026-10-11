@@ -17,7 +17,7 @@
 		var/hit_embed_chance = I.embed_chance
 		if(dq_armor_turns_edge(INJURY_CUT, blocked)) // Armour that turns the edge also keeps the blade from lodging.
 			weapon_sharp = FALSE
-			hit_embed_chance = I.force/(I.w_class*3)
+			hit_embed_chance = combat_of(I).force/(I.w_class*3)
 		var/damage = effective_force
 		if (blocked)
 			damage *= (100 - blocked)/100
@@ -48,7 +48,7 @@
 // Knifing
 /mob/living/carbon/proc/attack_throat(obj/item/W, obj/item/grab/G, mob/user)
 
-	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
+	if(!combat_of(W).edge || !combat_of(W).force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
 	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
@@ -80,7 +80,7 @@ MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%
 
 	var/total_damage = 0
 	for(var/i in 1 to 3)
-		var/damage = min(W.force*1.5, 20)*damage_mod
+		var/damage = min(combat_of(W).force*1.5, 20)*damage_mod
 		receive_weapon_hit(W, user, damage, zone = BP_HEAD, silent = FALSE, armored = FALSE)
 		total_damage += damage
 
@@ -107,7 +107,7 @@ MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%
 
 /mob/living/carbon/proc/shank_attack(obj/item/W, obj/item/grab/G, mob/user, hit_zone)
 
-	if(!W.sharp || !W.force || W.obj_damage_type() != BRUTE)
+	if(!combat_of(W).sharp || !combat_of(W).force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
 	act_message(user, src, others = span_danger("%U% plunges %I% into %T%!"), item = W)
@@ -123,9 +123,9 @@ MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%
 	return 1
 
 /mob/living/carbon/proc/shank_armor_helper(obj/item/W, obj/item/grab/G, mob/user)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	var/damage_mod = 1
-	if(W.edge)
+	if(combat_of(W).edge)
 		damage = damage * 1.25 //small damage bonus for having sharp and edge
 
 	// Whatever is worn over the chest, combined (worn protection cache).

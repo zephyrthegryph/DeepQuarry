@@ -919,7 +919,9 @@ CAPABILITIES(/obj/item/projectile/beam/shock/bh1)
 	fire_sound = SFX_WEAPONS_RPG
 	damage = 40
 	speed = 0.6
-	armor_penetration = 90
+
+CAPABILITIES(/obj/item/projectile/explosive_rocket/blackhole)
+	configure(item_combat(armor_penetration = 90))
 
 /obj/item/projectile/explosive_rocket/blackhole/on_impact(turf/T)
 	new /obj/effect/explosion(T) // Weak explosions don't produce this on their own, apparently.

@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			var/mob/living/carbon/human/H = L
 			if(H.get_active_hand())
 				var/obj/item/I = H.get_active_hand()
-				if(I.force <= 1.25 * melee_damage_upper)
+				if(combat_of(I).force <= 1.25 * melee_damage_upper)
 					return TRUE
 		else if(isanimal(L))
 			var/mob/living/simple_mob/S = L

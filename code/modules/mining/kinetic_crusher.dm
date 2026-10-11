@@ -16,15 +16,10 @@
 	name = "proto-kinetic crusher"
 	desc = "An early design of the proto-kinetic accelerator, it is little more than an combination of various mining tools cobbled together, forming a high-tech club. \
 	While it is an effective mining tool, it did little to aid any but the most skilled and/or suicidal miners against local fauna."
-	force = 25
 	w_class = ITEMSIZE_LARGE
 	slot_flags = SLOT_BACK
 	throwforce = 5
 	throw_speed = 4
-	armor_penetration = 10
-	attack_verb = list("smashed", "crushed", "cleaved", "chopped", "pulped")
-	sharp = FALSE //crushing damage
-	edge = FALSE
 	embed_chance = FALSE
 	actions_types = list(/datum/action/item_action/toggle_light)
 	var/charged = TRUE
@@ -56,12 +51,15 @@ TRACKED(/obj/item/kinetic_crusher, integ_light_on)
 
 /obj/item/kinetic_crusher/cyborg //probably give this a unique sprite later
 	desc = "An integrated version of the standard kinetic crusher with a grinded down axe head to dissuade mis-use against crewmen. Deals damage equal to the standard crusher against creatures, however."
-	force = 10 //wouldn't want to give a borg a 20 brute melee weapon unemagged now would we
 	detonation_damage = 60
 	wielded = 1
 
+CAPABILITIES(/obj/item/kinetic_crusher/cyborg)
+	configure(item_combat(force = 10))
+
 
 CAPABILITIES(/obj/item/kinetic_crusher)
+	configure(item_combat(force = 25, armor_penetration = 10, attack_verbs = list("smashed", "crushed", "cleaved", "chopped", "pulped"), sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 
@@ -86,8 +84,8 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 
 /obj/item/kinetic_crusher/examine(mob/living/user)
 	. = ..()
-	. += span_notice("Mark a[emagged ? "nything": " creature"] with the destabilizing force, then hit them in melee to do <b>[force + detonation_damage]</b> damage.")
-	. += span_notice("Does <b>[force + detonation_damage + backstab_bonus]</b> damage if the target is backstabbed, instead of <b>[force + detonation_damage]</b>.")
+	. += span_notice("Mark a[emagged ? "nything": " creature"] with the destabilizing force, then hit them in melee to do <b>[combat_of(src).force + detonation_damage]</b> damage.")
+	. += span_notice("Does <b>[combat_of(src).force + detonation_damage + backstab_bonus]</b> damage if the target is backstabbed, instead of <b>[combat_of(src).force + detonation_damage]</b>.")
 
 /obj/item/kinetic_crusher/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(!wielded && requires_wield)
@@ -170,13 +168,14 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 /obj/item/kinetic_crusher/glaive
 	name = "kinetic glaive"
 	icon_state = "crusher-glaive"
-	force = 20
 	detonation_damage = 20 // 40
 	backstab_bonus = 30 // 60
-	reach = 2
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	requires_wield = FALSE
+
+CAPABILITIES(/obj/item/kinetic_crusher/glaive)
+	configure(item_combat(force = 20, reach = 2))
 
 /obj/item/kinetic_crusher/machete
 	// general purpose. cleaves though
@@ -189,19 +188,17 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 			)
 	item_state = "c-machete"
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("cleaved", "chopped", "pulped", "stabbed", "skewered")
-	can_cleave = TRUE
 	requires_wield = FALSE
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	// yeah yeah buff but polaris mobs are meatwalls.
-	force = 24
 	detonation_damage = 36 // 60
 	backstab_bonus = 80 // 140
 	thrown_bonus = 20 // 160
 	update_item_state = FALSE
 	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete)
+	configure(item_combat(attack_verbs = list("cleaved", "chopped", "pulped", "stabbed", "skewered"), can_cleave = TRUE, sharp = TRUE, edge = TRUE, force = 24))
 
 /obj/item/kinetic_crusher/machete/gauntlets
 	// did someone say single target damage
@@ -210,19 +207,16 @@ CAPABILITIES(/obj/item/kinetic_crusher)
 	embed_chance = 0
 	icon_state = "crusher-hands"
 	item_state = "c-gauntlets"
-	attack_verb = list("bashed", "kicked", "punched", "struck", "axe kicked", "uppercut", "cross-punched", "jabbed", "hammerfisted", "roundhouse kicked")
 	integ_light_icon = FALSE
 	w_class = ITEMSIZE_NORMAL
-	can_cleave = FALSE
 	requires_wield = TRUE
-	armor_penetration = 0
-	force = 35
 	detonation_damage = 65 // 100
 	backstab_bonus = 25 // 125
 	var/obj/item/offhand/crushergauntlets/offhand
 	slot_flags = null
 
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
+	configure(item_combat(attack_verbs = list("bashed", "kicked", "punched", "struck", "axe kicked", "uppercut", "cross-punched", "jabbed", "hammerfisted", "roundhouse kicked"), can_cleave = FALSE, armor_penetration = 0, force = 35))
 	configure(item_sounds(hit = SFX_WEAPONS_RESONATOR_BLAST))
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
@@ -331,12 +325,13 @@ CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets/rig)
 	requires_wield = FALSE
 	charge_overlay = FALSE
 	charge_time = 10 // lowered charge in return for lowered damage
-	force = 18
-	armor_penetration = 50
 	detonation_damage = 27 // 45
 	backstab_bonus = 30 // 75
 	// gimmick mode
 	thrown_bonus = 60 // 135 but you drop your knife because you threw it
+
+CAPABILITIES(/obj/item/kinetic_crusher/machete/dagger)
+	configure(item_combat(force = 18, armor_penetration = 50))
 
 //destablizing force
 /obj/item/projectile/destabilizer

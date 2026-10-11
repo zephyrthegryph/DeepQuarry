@@ -7,7 +7,6 @@
 	icon_state = "heavysniper"
 	wielded_item_state = "heavysniper-wielded"
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
 	slot_flags = SLOT_BACK
 	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "14.5mm"
@@ -69,6 +68,7 @@
 	perform_scope_interaction(user, "heavysniper_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/heavysniper)
+	configure(item_combat(force = 10))
 	op("heavysniper_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(heavysniper_verb_scope_op)))
 
 /// The heavysniper_verb_scope op: the verb's effect, as the old resolver ran it.
@@ -94,7 +94,6 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	item_state = "SVD"
 	wielded_item_state = "heavysniper-wielded" //Placeholder
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
 	slot_flags = SLOT_BACK // Needs a sprite.
 	actions_types = list(/datum/action/item_action/use_scope)
 	caliber = "7.62mm"
@@ -115,6 +114,7 @@ CAPABILITIES(/obj/item/gun/projectile/heavysniper)
 	perform_scope_interaction(user, "svd_verb_scope")
 
 CAPABILITIES(/obj/item/gun/projectile/SVD)
+	configure(item_combat(force = 10))
 	op("svd_verb_scope", menu(), label("Use Scope"), needs(carried()), then(PROC_REF(svd_verb_scope_op)))
 
 /// The svd_verb_scope op: the verb's effect, as the old resolver ran it.

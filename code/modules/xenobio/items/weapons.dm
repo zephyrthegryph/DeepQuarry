@@ -7,10 +7,12 @@
 	icon_state = "slimebaton"
 	item_state = "slimebaton"
 	slot_flags = SLOT_BELT
-	force = 9
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
+
+CAPABILITIES(/obj/item/melee/baton/slime)
+	configure(item_combat(force = 9))
 
 /obj/item/melee/baton/slime/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M) && status) // Is it on?

@@ -4,13 +4,13 @@
 	icon_state = "nullrod"
 	item_state = "nullrod"
 	slot_flags = SLOT_BELT
-	force = 15
 	throw_speed = 1
 	throw_range = 4
 	throwforce = 10
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/nullrod)
+	configure(item_combat(force = 15))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/nullrod/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -76,9 +76,11 @@ CAPABILITIES(/obj/item/nullrod)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "energynet"
 	throwforce = 0
-	force = 0
 	var/net_type = /obj/effect/energy_net
 	item_flags = DROPDEL
+
+CAPABILITIES(/obj/item/energy_net)
+	configure(item_combat(force = 0))
 
 /obj/item/energy_net/throw_impact(atom/hit_atom)
 	..()

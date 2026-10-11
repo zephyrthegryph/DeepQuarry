@@ -210,7 +210,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_OK
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
@@ -704,7 +704,7 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	. = OP_OK
-	if(istype(W) && W.force && W.obj_damage_type() == BURN)
+	if(istype(W) && combat_of(W).force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else

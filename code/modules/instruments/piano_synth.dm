@@ -15,9 +15,11 @@ CAPABILITIES(/obj/item/instrument/piano_synth)
 	desc = "Unce unce unce unce. Boop!"
 	icon_state = "headphones"
 	slot_flags = SLOT_EARS | SLOT_HEAD
-	force = 0
 	w_class = ITEMSIZE_SMALL
 	instrument_range = 1
+
+CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
+	configure(item_combat(force = 0))
 
 /obj/item/instrument/piano_synth/headphones/Initialize(mapload)
 	. = ..()

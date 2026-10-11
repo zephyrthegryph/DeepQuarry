@@ -5,9 +5,9 @@
 	throwforce = 0
 	throw_speed = 5
 	throw_range = 4
-	force = 0
 
 CAPABILITIES(/obj/item/surplus_voucher)
+	configure(item_combat(force = 0))
 	op("redeem", in_hand(), label("Redeem"), then(PROC_REF(interaction_redeem)))
 
 /// Redeem the voucher: its surplus delivery lands here. Each kind of voucher overrides spawn_item().

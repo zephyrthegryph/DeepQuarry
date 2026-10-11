@@ -21,7 +21,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "cataloguer"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
 	slot_flags = SLOT_BELT
 	var/points_stored = 0 // Amount of 'exploration points' this device holds.
 	var/scan_range = 3 // How many tiles away it can scan. Changing this also changes the box size.

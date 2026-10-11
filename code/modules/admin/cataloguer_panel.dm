@@ -50,6 +50,7 @@
 	return data
 
 CAPABILITIES(/obj/item/cataloguer)
+	configure(item_combat(force = 0))
 	// A scan of something within scan_range: the user may walk about, the cataloguer stays in hand, and the scan is judged against the range where it ends.
 	op("scan", ai(), claims(), takes("scanned", "delay", "effects", "scan_start_time"), wait(PROC_REF(scan_time), keeps = HELD | ALIVE), on_interrupt(PROC_REF(scan_failed)), then(PROC_REF(scan_finished)))
 	op("pulse_scan", ui_act(), then(PROC_REF(ui_act_pulse_scan)))

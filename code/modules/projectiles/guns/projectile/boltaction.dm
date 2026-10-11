@@ -172,4 +172,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle)
 	item_state = "vox_hunting"
 	ammo_type = /obj/item/ammo_casing/a762
 	throwforce = 10
-	force = 20
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/vox_hunting)
+	configure(item_combat(force = 20))

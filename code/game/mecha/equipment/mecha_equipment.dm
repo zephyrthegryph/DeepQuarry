@@ -5,7 +5,6 @@
 	name = "mecha equipment"
 	icon = 'icons/mecha/mecha_equipment.dmi'
 	icon_state = "mecha_equip"
-	force = 5
 	var/equip_cooldown = 0
 	var/equip_ready = TRUE
 	var/energy_drain = 0
@@ -253,6 +252,7 @@
 	return
 
 CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
+	configure(item_combat(force = 5))
 	ref_one(nameof(chassis))
 	op("detach", topic("detach"), then(PROC_REF(topic_detach)))
 

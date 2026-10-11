@@ -33,7 +33,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 7
 	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
@@ -244,6 +243,7 @@ TRACKED(/obj/item/rms, mode_index)
 TRACKED(/obj/item/rms, charge_cost)
 
 CAPABILITIES(/obj/item/rms)
+	configure(item_combat(force = 7))
 	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(operator_living), because = MSG(op/not_available))),
 		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), then(PROC_REF(multitool_used)))

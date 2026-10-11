@@ -98,11 +98,11 @@ CAPABILITIES(/obj/item/clothing/gloves/duty)
 	name = "tactical gloves"
 	icon_state = "work"
 	item_state = "wgloves"
-	force = 5
 	punch_force = 3
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/gloves/tactical)
+	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.75, permeability = 0.05))
 
 /obj/item/clothing/gloves/vox

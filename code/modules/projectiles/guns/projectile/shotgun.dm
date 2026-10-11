@@ -19,7 +19,6 @@
 	item_state = "shotgun"
 	max_shells = 4
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	slot_flags = SLOT_BACK
 	caliber = "12g"
 	load_method = SINGLE_CASING|SPEEDLOADER
@@ -120,7 +119,6 @@
 	handle_casings = CYCLE_CASINGS
 	max_shells = 2
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	slot_flags = SLOT_BACK
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
@@ -154,7 +152,6 @@
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	sawn_off = TRUE
 
 //Sjorgen Inertial Shotgun
@@ -182,7 +179,6 @@
 	handle_casings = CYCLE_CASINGS
 	max_shells = 4
 	w_class = ITEMSIZE_LARGE
-	force = 5
 	accuracy = 40
 	slot_flags = SLOT_BACK
 	ammo_type = /obj/item/ammo_casing/a12g/pellet
@@ -195,6 +191,9 @@
 	firemodes = list(
 		list(mode_name="fire one barrel at a time", burst=1),
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
+	configure(item_combat(force = 5))
 
 /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt
 	icon = 'icons/obj/gun.dmi'
@@ -233,7 +232,6 @@
 	item_state = "cshotgun"
 	max_shells = 4 //short magazine tube means small capacity
 	w_class = ITEMSIZE_NORMAL //Starts folded, becomes large when stock is extended
-	force = 10
 	slot_flags = SLOT_BELT|SLOT_BACK
 	caliber = "12g"
 	load_method = SINGLE_CASING|SPEEDLOADER
@@ -276,6 +274,7 @@
 	user.update_mob_action_buttons()
 
 CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
+	configure(item_combat(force = 10))
 	op("compact_shotgun_verb_toggle_stock", menu(), label("Toggle stock"), needs(carried(), req_actor_kind(/mob/living/silicon, not = TRUE, because = /datum/msg/req_silent)), then(PROC_REF(compact_shotgun_verb_toggle_stock)))
 
 /// Old Toggle stock verb.
@@ -306,7 +305,6 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
 	icon_state = "revolvshot"
 	item_state = null
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "12g"
 	slot_flags = SLOT_BACK|SLOT_BELT|SLOT_HOLSTER
 	handle_casings = EJECT_CASINGS
@@ -372,6 +370,9 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/compact)
 	icon_state = "bullet"
 	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 13
+
+CAPABILITIES(/obj/item/projectile/bullet/shotgun/scatterprojectile)
+	configure(item_combat(armor_penetration = 0))
 
 /obj/item/storage/box/scattershot
 	name = "box of shotgun scatter shells"

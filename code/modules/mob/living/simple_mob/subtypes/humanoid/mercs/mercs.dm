@@ -104,7 +104,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/melee/sword)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(20))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
@@ -522,7 +522,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(50))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)

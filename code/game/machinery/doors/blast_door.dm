@@ -177,12 +177,12 @@ CAPABILITIES(/obj/machinery/door/blast)
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		if(W.force < min_force)
+		if(combat_of(W).force < min_force)
 			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
 		else
 			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
 			playsound(src, hitsound, 100, 1)
-			receive_weapon_hit(W, user, W.force * (W.pry == 1 ? 0.35 : 0.15), silent = FALSE)
+			receive_weapon_hit(W, user, combat_of(W).force * (W.pry == 1 ? 0.35 : 0.15), silent = FALSE)
 	return OP_OK
 
 /// Sheets of plasteel it would take to mend it fully (one per 150 points).

@@ -82,12 +82,12 @@ CAPABILITIES(/obj/item/stack/material/log)
 /// The held item has a cutting edge and some force.
 /obj/item/stack/material/log/proc/item_cuts(datum/act/op/A)
 	var/obj/item/W = A.held
-	return read_once(istype(W) && W.force > 0 && W.sharp && W.edge)
+	return read_once(istype(W) && combat_of(W).force > 0 && combat_of(W).sharp && combat_of(W).edge)
 
 /// A sharper, stronger blade cuts faster.
 /obj/item/stack/material/log/proc/cut_time(datum/act/op/A)
 	var/obj/item/W = A.held
-	return (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
+	return (3 SECONDS / max(combat_of(W).force / 10, 1)) * W.toolspeed
 
 /obj/item/stack/material/log/proc/cut_planks_done(datum/act/op/A)
 	var/mob/user = A.actor

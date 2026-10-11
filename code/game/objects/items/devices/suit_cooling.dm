@@ -9,7 +9,6 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	slot_flags = SLOT_BACK
 
 	//copied from tank.dm
-	force = 5.0
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
@@ -25,6 +24,7 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	//TODO: make it heat up the surroundings when not in space
 
 CAPABILITIES(/obj/item/suit_cooling_unit)
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

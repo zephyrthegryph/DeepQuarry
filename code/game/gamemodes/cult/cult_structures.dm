@@ -58,7 +58,7 @@ CAPABILITIES(/obj/structure/cult/pylon)
 /obj/structure/cult/pylon/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	attackpylon(user, W.force)
+	attackpylon(user, combat_of(W).force)
 	return OP_PASS
 
 /obj/structure/cult/pylon/take_damage(damage)

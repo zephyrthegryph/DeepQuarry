@@ -59,7 +59,6 @@ CAPABILITIES(/obj/machinery/chipmachine)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	force = 1.0
 	throwforce = 1.0
 	throw_speed = 1
 	throw_range = 2
@@ -123,6 +122,7 @@ TRACKED(/obj/item/spacecasinocash, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecasinocash)
+	configure(item_combat(force = 1.0))
 	rolls(nameof(note_seed), range_of(0, 49))
 	op("casino_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k142"),
@@ -214,13 +214,13 @@ CAPABILITIES(/obj/item/spacecasinocash)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	force = 1.0
 	throwforce = 1.0
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/casino_platinum_chip)
+	configure(item_combat(force = 1.0))
 	op("flip", in_hand(), label("Flip chip"), then(PROC_REF(platinum_chip_flip_requested)))
 
 /obj/item/casino_platinum_chip/proc/platinum_chip_flip_requested(datum/act/op/A)
@@ -247,7 +247,6 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	opacity = 0
 	density = 0
 	anchored = 0.0
-	force = 1.0
 	throwforce = 1.0
 	throw_speed = 1
 	throw_range = 2
@@ -311,6 +310,7 @@ TRACKED(/obj/item/spacecasinocash_fake, note_seed)
 		return 0
 
 CAPABILITIES(/obj/item/spacecasinocash_fake)
+	configure(item_combat(force = 1.0))
 	rolls(nameof(note_seed), range_of(0, 49))
 	op("casino_fake_take", in_hand(), label("Use"),
 		asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(casino_fake_take_question)), "title" = "Take chips", "default" = 20, "max_value" = nameof(worth), "timeout" = 0), step = "k323"),

@@ -74,9 +74,9 @@ MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 		play_sfx(src, SFX_WEAPONS_SMASH)
 	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force, INJURY_BURN)
+			receive_weapon_hit(W, user, combat_of(W).force, INJURY_BURN)
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.75)
+			receive_weapon_hit(W, user, combat_of(W).force * 0.75)
 	return OP_OK
 
 /obj/structure/barricade/atom_destruction(damage_flag)
@@ -181,5 +181,5 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 			var/obj/item/projectile/P = mover
 
 			if(P.firer && get_dist(P.firer, src) > 1)	// If you're firing from adjacent turfs, you are unobstructed.
-				if(P.armor_penetration < (material.protectiveness + material.hardness) || prob(33))
+				if(combat_of(P).armor_penetration < (material.protectiveness + material.hardness) || prob(33))
 					return FALSE

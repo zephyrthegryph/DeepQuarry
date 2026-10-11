@@ -8,9 +8,11 @@
 	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/ion
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle)
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/ionrifle/empty
 	cell_type = null
@@ -22,11 +24,13 @@
 	icon_state = "ionpistol"
 	item_state = null
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/ion/pistol
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/decloner
 	name = "biological demolecularisor"
@@ -377,7 +381,6 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 /obj/item/gun/energy/medigun //Adminspawn/ERT etc // CH edit - Changes ML3M  to NERD
 	name = "directed restoration system"
 	desc = "The BL-3 'Phoenix' is an adaptation on the NERD 'Medbeam' design that channels the power of the beam into a single healing laser. It is highly energy-inefficient, but its medical power cannot be denied."
-	force = 5
 	icon_state = "medbeam"
 	item_state = "medbeam"
 	item_icons = list(
@@ -394,6 +397,9 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	accept_cell_type = /obj/item/cell
 	cell_type = /obj/item/cell/high
 	charge_cost = 2500
+
+CAPABILITIES(/obj/item/gun/energy/medigun)
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/bfgtaser
 	name = "9000-series Ball Lightning Taser"
@@ -506,12 +512,14 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
 	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
-	armor_penetration = 10
 	range = 9
 	damage = 0
 	agony = 0
 	vacuum_traversal = 1
 	hud_state = "plasma_rifle_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/plasmastun/slow)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/plasmastun/slow/on_hit(atom/target)
 	if(isliving(target))
@@ -549,11 +557,13 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	icon_state = "fuel-supermatter"
 	damage = 1500 //You are not being defibbed from this.
 	weaken = 2
-	armor_penetration = 100
 	penetrating = 1500 //Theoretically, this shouldn't stop flying for a while, unless someoneI t lines it up with a wall or fires it into a mountain.
 	range = 200
 	hud_state = "rocket_thermobaric"
 	speed = 0.2
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/supercannon)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
@@ -587,12 +597,14 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	projectile_type = /obj/item/projectile/bullet/magnetic/supercannon //Fuck you.
 	cell_type = /obj/item/cell/device/weapon
 	battery_lock = 1
-	force = 15 //pretty robust
 	one_handed_penalty = 90
 	item_icons = list(
 		slot_l_hand_str = 'icons/obj/guns/supercannon/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
+
+CAPABILITIES(/obj/item/gun/energy/supercannon)
+	configure(item_combat(force = 15))
 
 /obj/item/gun/energy/floragun/ownership()
 	. = ..()

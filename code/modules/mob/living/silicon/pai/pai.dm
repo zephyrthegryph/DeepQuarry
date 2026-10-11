@@ -335,7 +335,7 @@ MSG_DEF_SELF(pai/not_accepting, span_notice("%T% is not accepting access modifca
 /mob/living/silicon/pai/proc/pai_item_hit(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(W.force)
+	if(combat_of(W).force)
 		act_message(src, null, others = span_danger("[user.name] attacks %U% with [W]!"))
 		receive_weapon_hit(W, user, silent = FALSE)
 	else

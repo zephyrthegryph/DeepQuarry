@@ -19,7 +19,6 @@
 	icon_state = "shieldpack_basic"
 	item_state = "defibunit" //Placeholder
 	slot_flags = SLOT_BACK
-	force = 5
 	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_HUGE //It's a giant shield generator!!!
@@ -38,6 +37,7 @@
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 CAPABILITIES(/obj/item/personal_shield_generator)
+	configure(item_combat(force = 5))
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
 	owns_one(nameof(bcell), /obj/item/cell/device, starts = nameof(bcell))
 	every(2 SECONDS, then(PROC_REF(personal_shield_generator_step)), when = nameof(shield_active))

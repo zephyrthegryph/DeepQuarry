@@ -118,7 +118,7 @@
 		J.desc = "Zappy paws. For rebooting a full body prostetic."
 		J.icon = 'icons/mob/dogborg_vr.dmi'
 		J.icon_state = "defibpaddles0"
-		J.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		J.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/science/vale
 	name = "Hound V2"
@@ -172,7 +172,7 @@
 		J.desc = "Zappy paws. For rebooting a full body prostetic."
 		J.icon = 'icons/mob/dogborg_vr.dmi'
 		J.icon_state = "defibpaddles0"
-		J.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		J.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/tall/science/raptor
 	name = "Raptor V-4"

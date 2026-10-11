@@ -49,11 +49,11 @@
 	icon_override = 'icons/obj/clothing/wolfbrigade.dmi'
 	icon_state = "wbboots-mob"
 	item_state = "wbboots-mob"
-	force = 5
 	armor_spec = "melee=60;bullet=60;laser=40;energy=30;bomb=50;rad=10"
 	item_flags = NOSLIP
 
 CAPABILITIES(/obj/item/clothing/shoes/combat/wolfbrigade)
+	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.6, cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/gloves/arm_guard/combat/wolfbrigade

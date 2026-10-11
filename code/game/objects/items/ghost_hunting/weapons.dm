@@ -4,7 +4,6 @@
 	icon = 'icons/obj/guns/ghost_beam.dmi'
 	icon_state = "ghost_beam"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
 	slot_flags = SLOT_BELT
 	var/grab_range = 5 // How many tiles away it can grab. Changing this also changes the box size.
 	/// Stops multiple grabbs if set to TRUE
@@ -154,6 +153,7 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/ghost_catcher)
+	configure(item_combat(force = 0))
 	// Holding a ghost in the beam, up to a minute; the catcher is claimed (busy) until it ends. The user may walk about while it lasts.
 	op("grab", ai(), takes("subject", "effects"), claims(CLAIM_TARGET), wait(60 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(grab_broken)), then(PROC_REF(grab_timed_out)))
 

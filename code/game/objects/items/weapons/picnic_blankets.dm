@@ -8,10 +8,9 @@
 	icon = 'icons/obj/picnic_vr.dmi'
 	icon_state = "picnic_carried"
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("flicked", "whipped", "swooshed")
-	force = 0.5
 
 CAPABILITIES(/obj/item/picnic_blankets_carried)
+	configure(item_combat(attack_verbs = list("flicked", "whipped", "swooshed"), force = 0.5))
 	configure(item_sounds(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	// the old object verb: spread it out where the carrier stands
 	op("fold_out", menu(), label("Fold out"), needs(carried(), req_bool(PROC_REF(can_unfold), because = PROC_REF(unfold_refusal))), then(PROC_REF(picnic_blankets_carried_fold_out_effect)))

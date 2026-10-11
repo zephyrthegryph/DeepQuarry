@@ -19,18 +19,9 @@
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
 	var/obj/item/master = null // the item this one is attached to
-	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
-	var/force = 0
 	var/throwforce = 0
-	var/sharp = FALSE		// whether this object cuts
-	var/edge = FALSE		// whether this object is more likely to dismember
-	var/armor_penetration = 0
 	// --- Phased player melee (windup -> swing -> recovery). See code/modules/mob/living/melee_swing.dm ---
-	var/melee_windup = 0	// Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
-	var/melee_recovery = 0	// Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
-	var/melee_sweep = null	// TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
 	var/catchable = TRUE
-	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 	var/pry = 0			//Used in attackby() to open doors
 
 
@@ -81,8 +72,6 @@
 	var/list/sprite_sheets_obj
 
 	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works.  e.g. setting this to 0.5 will make the tool work twice as fast.
-	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
-	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
 	var/default_worn_icon	//Default on-mob icon
@@ -132,17 +121,16 @@ TRACKED(/obj/item, gurgled_color)
 /obj/item/Initialize(mapload)
 	. = ..()
 	// Read-only per-type tables: share identical ones (writers assign a new list).
-	attack_verb = intern_list(attack_verb)
 	tool_qualities = intern_list(tool_qualities)
 
 	for(var/path in actions_types)
 		add_item_action(path)
 
 	if(embed_chance < 0)
-		if(sharp)
-			embed_chance = max(5, round(force/w_class))
+		if(combat_of(src).sharp)
+			embed_chance = max(5, round(combat_of(src).force/w_class))
 		else
-			embed_chance = max(5, round(force/(w_class*3)))
+			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component

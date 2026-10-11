@@ -153,11 +153,11 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 /obj/item/clothing/head/cakehat/proc/cakehat_light_self(datum/act/op/A)
 	set_onfire(!onfire)
 	if (onfire)
-		force = 3
+		set_force(3)
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
 	else
-		force = null
+		set_force(null)
 		injury_kind = INJURY_BLUNT
 		icon_state = "cake0"
 	return
@@ -345,16 +345,15 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	force = 1
 	throwforce = 3
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = HEAD
-	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
 
 CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 
 /obj/item/clothing/head/cone

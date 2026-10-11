@@ -9,7 +9,9 @@
 	damage = 10
 	injury_kind = INJURY_TOXIN
 	agony = 10
-	armor_penetration = 50
+
+CAPABILITIES(/obj/item/projectile/energy/metroidacid)
+	configure(item_combat(armor_penetration = 50))
 
 //EGG! Metroid egg and its mechanics. Ripped from spiders.
 /obj/effect/metroid/egg

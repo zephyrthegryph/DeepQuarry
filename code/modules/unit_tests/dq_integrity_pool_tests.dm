@@ -331,10 +331,10 @@
 
 	knife.fragile = FALSE
 	knife.can_dull = TRUE
-	knife.sharp = TRUE
+	knife.set_sharp(TRUE)
 	knife.material_wear(knife.get_integrity())
 	TEST_ASSERT(knife.dulled, "a worn-out blade goes dull")
-	TEST_ASSERT(!knife.sharp, "a dull blade loses its edge")
+	TEST_ASSERT(!combat_of(knife).sharp, "a dull blade loses its edge")
 	TEST_ASSERT(!QDELETED(knife), "a dulled blade survives")
 
 	var/obj/item/material/knife/glass = allocate(/obj/item/material/knife, T)

@@ -9,7 +9,6 @@
 	icon_state = "pulse"
 	item_state = null	//so the human update icon uses the icon_state instead.
 	slot_flags = SLOT_BELT|SLOT_BACK
-	force = 10
 	projectile_type = /obj/item/projectile/beam
 	charge_cost = 120
 	fire_delay = 8
@@ -21,6 +20,9 @@
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, fire_delay=null, charge_cost = 120),
 		list(mode_name="DESTROY", projectile_type=/obj/item/projectile/beam/pulse, fire_delay=null, charge_cost = 240),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/pulse_rifle)
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/pulse_rifle/mounted
 	self_recharge = 1

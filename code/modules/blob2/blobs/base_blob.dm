@@ -341,7 +341,7 @@ TRACKED(/obj/structure/blob, look_tint)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	act_message(src, user, others = span_danger("%U% has been attacked with %I%[user ? " by %T%." : "."]"), item = W)
-	var/damage = W.force
+	var/damage = combat_of(W).force
 	switch(W.obj_damage_type())
 		if(BURN)
 			if(overmind)

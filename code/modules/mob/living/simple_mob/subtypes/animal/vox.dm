@@ -182,9 +182,9 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 		return
 
 	base_attack_cooldown = 5
-	if(O.force)
-		if(O.force >= 25)
-			var/damage = O.force
+	if(combat_of(O).force)
+		if(combat_of(O).force >= 25)
+			var/damage = combat_of(O).force
 			if (O.injury_kind == INJURY_PAIN)
 				damage = 0
 			injure(O.injury_kind, damage, null, O)

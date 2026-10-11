@@ -36,9 +36,11 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor)
 /obj/item/projectile/arc/blue_energy/precusor
 	name = "energy missile"
 	icon_state = "force_missile"
-	armor_penetration = 10
 	damage = 50 // Mimics the precusor laser damage and armor peircing with a tad more damage because of the lobbying style.
 	color = "#A020F0"
+
+CAPABILITIES(/obj/item/projectile/arc/blue_energy/precusor)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/shield_projector/rectangle/automatic/hivebot_drone
 	max_integrity = 100 //Old 50

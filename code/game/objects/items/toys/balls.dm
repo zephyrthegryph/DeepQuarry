@@ -63,8 +63,10 @@
 	item_state = "baseball"
 	slot_flags = SLOT_MASK
 	throw_range = 16
-	force = 2.0
 	throwforce = 5.0
 	throw_speed = 5
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/toy/baseball)
+	configure(item_combat(force = 2.0))

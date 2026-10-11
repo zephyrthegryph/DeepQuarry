@@ -38,7 +38,9 @@ CAPABILITIES(/obj/item/rig/breacher/fancy)
 	configure(item_protection(siemens = 0.2))
 
 /obj/item/clothing/head/helmet/space/rig/breacher
-	force = 5
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/breacher)
+	configure(item_combat(force = 5))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/breacher, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_UNATHI))))
 

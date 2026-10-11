@@ -4,11 +4,12 @@
 	desc = "A non-descript bone. It's so old and worn you can barely tell which part of the body it's from."
 	icon = 'icons/obj/bones.dmi'
 	icon_state = "bone"
-	force = 5
 	throwforce = 6
 	item_state = "bone"
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned")
+
+CAPABILITIES(/obj/item/bone)
+	configure(item_combat(force = 5, attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned")))
 
 /obj/item/bone/skull
 	name = "skull"
@@ -31,14 +32,18 @@
 /obj/item/bone/arm
 	name = "arm bone"
 	desc = "Wielding this, you're armed and dangerous, no bones about it."
-	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned", "slapped", "punched")
 	icon_state = "arm"
+
+CAPABILITIES(/obj/item/bone/arm)
+	configure(item_combat(attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned", "slapped", "punched")))
 
 /obj/item/bone/leg
 	name = "leg bone"
 	desc = "Don't worry about getting into an argument with the owner of this. They don't have a leg to stand on."
-	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned", "kicked")
 	icon_state = "leg"
+
+CAPABILITIES(/obj/item/bone/leg)
+	configure(item_combat(attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "bonked", "boned", "kicked")))
 
 /obj/item/bone/ribs
 	name = "ribcage"

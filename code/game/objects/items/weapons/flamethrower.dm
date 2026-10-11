@@ -16,7 +16,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi',
 			)
 	item_state = "flamethrower_0"
-	force = 3.0
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 5
@@ -34,6 +33,7 @@
 TRACKED(/obj/item/flamethrower, status)
 
 CAPABILITIES(/obj/item/flamethrower)
+	configure(item_combat(force = 3.0))
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
 	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool)

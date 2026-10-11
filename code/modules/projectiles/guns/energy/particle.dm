@@ -35,7 +35,6 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	item_state = "particle"
 	desc = "An antiparticle projector gun with an enhanced power-generation unit."
 	slot_flags = SLOT_BELT
-	force = 8 //looks heavier than a pistol
 	w_class = ITEMSIZE_LARGE	//bigger than a pistol, too.
 	fire_delay = 6	//This one's not a handgun, it should have the same fire delay as everything else
 	self_recharge = 1
@@ -43,6 +42,9 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	battery_lock = 1
 	recharge_time = 6 // every 6 ticks, recharge 2 shots. Slightly slower than AEG.
 	charge_delay = 10 //Starts recharging faster after firing than an AEG though.
+
+CAPABILITIES(/obj/item/gun/energy/particle/advanced)
+	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/particle/cannon //particle version of laser cannon
 	name = "Anti-particle cannon"
@@ -55,13 +57,15 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	battery_lock = 1
 	fire_delay = 15 // fires faster than a laser cannon. c'mon, it's an awesome-but-impractical endgame gun.
 	w_class = ITEMSIZE_HUGE // So it can't fit in a backpack.
-	force = 10
 	one_handed_penalty = 8 // The thing's heavy and huge.
 	accuracy = 3
 	charge_cost = 400 // 6 shots
 	self_recharge = 1
 	charge_delay = 15 //won't start charging until it's ready to fire again
 	recharge_time = 8 //40 ticks after that to refill the whole thing.
+
+CAPABILITIES(/obj/item/gun/energy/particle/cannon)
+	configure(item_combat(force = 10))
 
 //special behaviours for particle guns below
 
@@ -179,10 +183,12 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	name = "antimatter slug"
 	icon_state = "particle-heavy"
 	damage = 80 // same as a laser cannon
-	armor_penetration = 25 //it explodes on the surface of things, so less armor pen than the laser cannon
 	light_range = 3
 	light_power = 1
 	light_color = "#CCFFFF"
+
+CAPABILITIES(/obj/item/projectile/bullet/particle/heavy)
+	configure(item_combat(armor_penetration = 25))
 
 /turf/simulated/mineral/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/bullet/particle))

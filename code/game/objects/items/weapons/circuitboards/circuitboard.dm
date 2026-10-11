@@ -5,7 +5,6 @@
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_SMALL
-	force = 5.0
 	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 15
@@ -19,6 +18,7 @@
 	var/hidden = FALSE
 
 CAPABILITIES(/obj/item/circuitboard)
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /// board_type is a /datum/frame/frame_types instance owned only by this

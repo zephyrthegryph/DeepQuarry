@@ -184,11 +184,10 @@
 	desc = "It's a purple gem, attached to a rod and a handle, along with small wires.  It looks like it would make a good club."
 	icon = 'icons/obj/technomancer.dmi'
 	icon_state = "scepter"
-	force = 15
 	slot_flags = SLOT_BELT
-	attack_verb = list("beaten", "smashed", "struck", "whacked")
 
 CAPABILITIES(/obj/item/scepter)
+	configure(item_combat(force = 15, attack_verbs = list("beaten", "smashed", "struck", "whacked")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

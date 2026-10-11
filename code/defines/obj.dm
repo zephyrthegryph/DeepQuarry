@@ -168,12 +168,12 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	density = FALSE
 	anchored = FALSE
 	w_class = ITEMSIZE_LARGE
-	force = 0.0
 	throwforce = 0.0
 	throw_speed = 1
 	throw_range = 20
 
 CAPABILITIES(/obj/item/beach_ball)
+	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/beach_ball/afterattack(atom/target as mob|obj|turf|area, mob/user as mob)
@@ -188,12 +188,12 @@ CAPABILITIES(/obj/item/beach_ball)
 	name = "dodgeball"
 	desc = "Think fast, chucklenuts!"
 	w_class = ITEMSIZE_LARGE //Stops people from hiding it in their bags/pockets
-	force = 0.1
 	throwforce = 0.1
 	throw_speed = 5
 	throw_range = 15
 
 CAPABILITIES(/obj/item/beach_ball/dodgeball)
+	configure(item_combat(force = 0.1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER, hit = SFX_WEAPONS_DODGEBALL))
 
 /obj/effect/spawner

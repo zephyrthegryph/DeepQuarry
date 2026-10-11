@@ -11,7 +11,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	slot_flags = SLOT_BELT
 
 	//Amount of OUCH when it's thrown
-	force = 3.0
 	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
@@ -172,6 +171,7 @@ TRACKED(/obj/item/weldingtool, always_process)
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
+	configure(item_combat(force = 3.0))
 	configure(item_sounds(use = SFX_ITEMS_WELDER2, drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
 	every(2 SECONDS, then(PROC_REF(weldingtool_step)), when = PROC_REF(burner_active))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -284,7 +284,7 @@ CAPABILITIES(/obj/item/weldingtool)
 			else if(T)
 				T.visible_message(span_danger("\The [src] turns on."))
 			playsound(src, acti_sound, 50, 1)
-			src.force = 15
+			src.set_force(15)
 			src.injury_kind = INJURY_BURN
 			src.w_class = ITEMSIZE_LARGE
 			src.set_hitsound('sound/items/Welder.ogg')
@@ -301,7 +301,7 @@ CAPABILITIES(/obj/item/weldingtool)
 		else if(T)
 			T.visible_message(span_warning("\The [src] turns off."))
 		playsound(src, deac_sound, 50, 1)
-		src.force = 3
+		src.set_force(3)
 		src.injury_kind = initial(src.injury_kind)
 		src.w_class = initial(src.w_class)
 		set_welding(0)
@@ -453,7 +453,9 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	toolspeed = 0.25
 	w_class = ITEMSIZE_NORMAL
 	flame_intensity = 5
-	reach = 2
+
+CAPABILITIES(/obj/item/weldingtool/experimental/hybrid)
+	configure(item_combat(reach = 2))
 
 /*
  * Backpack Welder.

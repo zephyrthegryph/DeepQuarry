@@ -3,7 +3,6 @@
 	desc = "A painted holy figure of a plain looking human man in a robe."
 	icon = 'icons/obj/chaplain.dmi'
 	icon_state = "mrobe"
-	force = 10
 	throw_speed = 1
 	throw_range = 4
 	throwforce = 10
@@ -137,5 +136,6 @@
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/godfig)
+	configure(item_combat(force = 10))
 	op("resprite_figure_effect", menu(), label("Customize Figure"), needs(carried()), then(PROC_REF(resprite_figure_effect)))
 	op("rename_fig_effect", menu(), label("Name Figure"), needs(carried()), then(PROC_REF(rename_fig_effect)))

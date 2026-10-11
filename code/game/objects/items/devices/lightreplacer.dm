@@ -36,7 +36,6 @@
 
 	name = "light replacer"
 	desc = "A device to automatically replace lights. Refill with working lightbulbs or sheets of glass."
-	force = 8
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "lightreplacer0"
 	slot_flags = SLOT_BELT
@@ -73,6 +72,7 @@ TRACKED(/obj/item/lightreplacer, max_uses)
 TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
+	configure(item_combat(force = 8))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),

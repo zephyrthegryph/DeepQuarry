@@ -27,12 +27,12 @@ TRACKED(/obj/item/oldtwohanded, wielded)
 
 /obj/item/oldtwohanded/proc/unwield()
 	set_wielded(0)
-	force = initial(force)
+	set_force(combat_of_type(type).force)
 	name = "[initial(name)]"
 
 /obj/item/oldtwohanded/proc/wield()
 	set_wielded(1)
-	force = force_wielded
+	set_force(force_wielded)
 	name = "[initial(name)] (Wielded)"
 
 TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
@@ -119,16 +119,13 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	base_icon = "spearglass"
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
-	force = 14
 	w_class = 4.0
 	slot_flags = SLOT_BACK
 	force_wielded = 22 // Was 13, Buffed - RR
 	throwforce = 20
 	throw_speed = 3
-	edge = 0
-	sharp = 1
 	injury_kind = INJURY_PIERCE
-	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 
 CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_combat(force = 14, edge = 0, sharp = 1, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

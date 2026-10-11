@@ -9,9 +9,9 @@
 	throw_range = 7
 	throwforce = 10
 	injury_kind = INJURY_BURN
-	force = 10
 
 CAPABILITIES(/obj/item/scrying)
+	configure(item_combat(force = 10))
 	configure(item_sounds(hit = SFX_ITEMS_WELDER2))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 

@@ -10,9 +10,7 @@
 	item_state = "fishing_rod"
 	force_divisor = 0.02
 	throwforce = 1
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	attack_verb = list("whipped", "battered", "slapped", "fished", "hooked")
 	applies_material_colour = TRUE
 	default_material = MAT_WOOD
 	can_dull = FALSE
@@ -24,7 +22,6 @@
 
 	var/cast = FALSE
 
-	attackspeed = 3 SECONDS
 TRACKED(/obj/item/material/fishing_rod, strung)
 
 /obj/item/material/fishing_rod/built
@@ -56,6 +53,7 @@ TRACKED(/obj/item/material/fishing_rod, strung)
 	return rand(10 SECONDS, 20 SECONDS)
 
 CAPABILITIES(/obj/item/material/fishing_rod)
+	configure(item_combat(sharp = TRUE, attack_verbs = list("whipped", "battered", "slapped", "fished", "hooked"), attack_speed = 3 SECONDS))
 	configure(item_sounds(hit = SFX_WEAPONS_PUNCHMISS))
 	op("fishing_rod_string", stack(/obj/item/stack/cable_coil, 5), priority(OP_PRIORITY_DEFAULT), label("Use"), when(req_is(nameof(strung), FALSE)), wait(PROC_REF(string_time)), then(PROC_REF(string_done)))
 	op("fishing_rod_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(fishing_rod_item)))
@@ -118,11 +116,12 @@ CAPABILITIES(/obj/item/material/fishing_rod)
 	desc = "A refined rod for catching fish."
 	icon_state = "fishing_rod_modern"
 	item_state = "fishing_rod"
-	reach = 4
-	attackspeed = 2 SECONDS
 	default_material = MAT_TITANIUM
 
 	toolspeed = 0.75
+
+CAPABILITIES(/obj/item/material/fishing_rod/modern)
+	configure(item_combat(reach = 4, attack_speed = 2 SECONDS))
 
 /obj/item/material/fishing_rod/modern/built
 	strung = FALSE

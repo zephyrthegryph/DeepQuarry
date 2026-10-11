@@ -22,7 +22,6 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_NORMAL
 
-	force = 5.0
 	throwforce = 10.0
 	throw_speed = 1
 	throw_range = 4
@@ -49,6 +48,7 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
 CAPABILITIES(/obj/item/tank)
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or worn by a mob. MANY tanks
 	// during rounds are never touched, and an intact, sealed tank lying about has no reason to explode spontaneously.

@@ -43,10 +43,11 @@ CAPABILITIES(/obj/item/projectile/ion)
 	name ="explosive bolt"
 	icon_state= "bolter"
 	damage = 50
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	hud_state = "rocket_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/gyro)
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/projectile/bullet/gyro/on_hit(atom/target, blocked = 0)
 	explosion(target, -1, 0, 2, 0, 0) // Don't spam admins

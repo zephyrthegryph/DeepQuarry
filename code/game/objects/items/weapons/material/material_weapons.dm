@@ -6,8 +6,6 @@
 	throw_speed = 3
 	throw_range = 7
 	w_class = ITEMSIZE_NORMAL
-	sharp = FALSE
-	edge = FALSE
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
@@ -55,13 +53,13 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	return material
 
 /obj/item/material/proc/update_force()
-	if(edge || sharp)
-		force = material.edge_damage()
+	if(combat_of(src).edge || combat_of(src).sharp)
+		set_force(material.edge_damage())
 	else
-		force = material.blunt_damage()
-	force = round(force*force_divisor)
+		set_force(material.blunt_damage())
+	set_force(round(combat_of(src).force*force_divisor))
 	if(dulled)
-		force = round(force*dulled_divisor)
+		set_force(round(combat_of(src).force*dulled_divisor))
 	throwforce = round(material.blunt_damage()*thrown_force_divisor)
 
 /obj/item/material/proc/set_material(new_material)
@@ -95,6 +93,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
 // EXTEND, not DECLARE: many subtypes DECLARE interactions of their own, which this must not replace.
 CAPABILITIES(/obj/item/material)
+	configure(item_combat(sharp = FALSE, edge = FALSE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 	op("material_interaction_item", item(/obj/item), label("Repair"), then(PROC_REF(material_interaction_item)))
 	// The whetstone's repair and the sharpening kit's re-edging take the time the tool says; the amount and the new material come from the tool.
@@ -147,8 +146,8 @@ CAPABILITIES(/obj/item/material)
 	play_sfx(src, SFX_SHATTER)
 	dulled = 1
 	if(is_sharp(src) || has_edge(src))
-		sharp = FALSE
-		edge = FALSE
+		set_sharp(FALSE)
+		set_edge(FALSE)
 
 /obj/item/material/proc/repair(repair_amount, repair_time, mob/living/user)
 	if(!fragile)
@@ -168,8 +167,8 @@ CAPABILITIES(/obj/item/material)
 	act_message(A.actor, src, MSG_SELF("You finish repairing %T%."), MSG_OTHERS("%U% has finished repairing %T%"))
 	repair_damage(A.arg("repair_amount") * MATERIAL_WEAR_UNIT)
 	dulled = 0
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
 	return OP_OK
 
 /obj/item/material/proc/sharpen(material, sharpen_time, kit, mob/living/M)

@@ -111,7 +111,7 @@ CAPABILITIES(/obj/item/material/ashtray)
 		sync_butts()
 	else
 		to_chat(user, "You hit [src] with [W].")
-		material_wear(W.force * MATERIAL_WEAR_UNIT)
+		material_wear(combat_of(W).force * MATERIAL_WEAR_UNIT)
 	return OP_OK
 
 /obj/item/material/ashtray/throw_impact(atom/hit_atom)

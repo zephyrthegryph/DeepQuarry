@@ -24,8 +24,8 @@ CAPABILITIES(/obj/effect/weaversilk)
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
-	if(W.force)
-		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
+	if(combat_of(W).force)
+		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with %I% by %U%."), item = W)
 		consume(src, user)
 	return OP_PASS
 

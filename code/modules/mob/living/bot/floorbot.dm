@@ -347,7 +347,6 @@ CAPABILITIES(/obj/item/storage/toolbox/mechanical)
 	name = "tiles and toolbox"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "toolbox_tiles"
-	force = 3.0
 	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
@@ -355,6 +354,7 @@ CAPABILITIES(/obj/item/storage/toolbox/mechanical)
 	var/created_name = "Floorbot"
 
 CAPABILITIES(/obj/item/toolbox_tiles)
+	configure(item_combat(force = 3.0))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
@@ -377,7 +377,6 @@ CAPABILITIES(/obj/item/toolbox_tiles)
 	name = "tiles, toolbox and sensor arrangement"
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "toolbox_tiles_sensor"
-	force = 3.0
 	throwforce = 10.0
 	throw_speed = 2
 	throw_range = 5
@@ -385,6 +384,7 @@ CAPABILITIES(/obj/item/toolbox_tiles)
 	var/created_name = "Floorbot"
 
 CAPABILITIES(/obj/item/toolbox_tiles_sensor)
+	configure(item_combat(force = 3.0))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

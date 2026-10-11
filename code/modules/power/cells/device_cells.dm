@@ -7,13 +7,15 @@
 	icon_state = "m_st"
 	item_state = "egg6"
 	w_class = ITEMSIZE_SMALL
-	force = 0
 	throw_speed = 5
 	throw_range = 7
 	charge = 480
 	maxcharge = 480
 	charge_amount = 5
 	preserve_item = 1
+
+CAPABILITIES(/obj/item/cell/device)
+	configure(item_combat(force = 0))
 
 /obj/item/cell/device/empty
 	charge = 0

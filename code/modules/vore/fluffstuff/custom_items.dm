@@ -172,12 +172,10 @@
 	icon_state = "joanaria"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "joanariamob"
-	force = 15
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/sword/fluff/joanaria)
+	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -214,7 +212,9 @@ CAPABILITIES(/obj/item/sword/fluff/joanaria)
 	desc = "Large hammer that looks like it can do a great deal of damage if properly used."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "harmonymjollnir"
-	attack_verb = list("attacked", "hammered", "smashed", "slammed", "crushed")
+
+CAPABILITIES(/obj/item/twohanded/fireaxe/fluff/mjollnir)
+	configure(item_combat(attack_verbs = list("attacked", "hammered", "smashed", "slammed", "crushed")))
 
 //JoanRisu:Joan Risu
 /obj/item/card/id/centcom/station/fluff/joanbadge
@@ -389,17 +389,19 @@ CAPABILITIES(/obj/item/flag)
 
 	flags = NOBLOODY
 	slot_flags = SLOT_BELT
-	force = 10
 	throwforce = 3
 	w_class = ITEMSIZE_NORMAL
 	injury_kind = INJURY_PAIN
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain)
+	configure(item_combat(force = 10, attack_verbs = list("flogged", "whipped", "lashed", "disciplined", "chastised", "flayed")))
 
 //General use
 /obj/item/melee/fluff/holochain/mass
 	desc = "A mass produced version of the original. It has faux leather and an aluminium base, but still stings like the original."
-	force = 8
-	attack_verb = list("flogged", "whipped", "lashed", "flayed")
+
+CAPABILITIES(/obj/item/melee/fluff/holochain/mass)
+	configure(item_combat(force = 8, attack_verbs = list("flogged", "whipped", "lashed", "flayed")))
 
 // joey4298:Emoticon
 /obj/item/fluff/id_kit_mime
@@ -680,11 +682,12 @@ CAPABILITIES(/obj/item/storage/box/khcrystal)
 	icon_state = "browncane"
 	item_icons = list (slot_r_hand_str = 'icons/vore/custom_items_vr.dmi', slot_l_hand_str = 'icons/vore/custom_items_vr.dmi')
 	item_state_slots = list(slot_r_hand_str = "browncane_r", slot_l_hand_str = "browncane_l")
-	force = 5.0
 	throwforce = 7.0
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 50)
-	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+
+CAPABILITIES(/obj/item/cane/fluff)
+	configure(item_combat(force = 5.0, attack_verbs = list("bludgeoned", "whacked", "disciplined", "thrashed")))
 
 /obj/item/cane/fluff/tasald
 	name = "Ornate Walking Cane"
@@ -982,12 +985,8 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 	item_icons = list(slot_l_hand_str = 'icons/vore/custom_items_left_hand_vr.dmi', slot_r_hand_str = 'icons/vore/custom_items_right_hand_vr.dmi')
 	icon_state = "stunstaff00"
 	var/base_icon = "stunstaff"
-	force = 5
-	sharp = FALSE
-	edge = FALSE
 	throwforce = 7
 	w_class = ITEMSIZE_HUGE
-	attack_verb = list("beaten")
 	lightcolor = "#CC33FF"
 
 	//Two Handed
@@ -998,6 +997,7 @@ TYPE_TABLE(/obj/item/material/twohanded/fluff, weapon_forced_material, " ") //Se
 TRACKED(/obj/item/melee/baton/fluff/stunstaff, wielded)
 
 CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
+	configure(item_combat(force = 5, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	owns_one(nameof(bcell), /obj/item/cell, starts = /obj/item/cell/device/weapon)
 	op("stunstaff_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(stunstaff_toggle_self)))
 
@@ -1005,11 +1005,11 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		force = 15
+		set_force(15)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		force = 8
+		set_force(8)
 		name = "[base_name]"
 	..()
 
@@ -1081,18 +1081,16 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	var/active_throwforce
 	var/active_w_class
 	var/active_embed_chance = 0
-	sharp = FALSE
-	edge = FALSE
 
 /obj/item/melee/fluffstuff/proc/activate(mob/living/user)
 	if(active)
 		return
 	active = 1
 	embed_chance = active_embed_chance
-	force = active_force
+	set_force(active_force)
 	throwforce = active_throwforce
-	sharp = TRUE
-	edge = TRUE
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
@@ -1102,13 +1100,14 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
 	embed_chance = initial(embed_chance)
-	force = initial(force)
+	set_force(combat_of_type(type).force)
 	throwforce = initial(throwforce)
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
 	w_class = initial(w_class)
 
 CAPABILITIES(/obj/item/melee/fluffstuff)
+	configure(item_combat(sharp = FALSE, edge = FALSE))
 	op("fluffstuff_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(fluffstuff_toggle_self)))
 
 /// Old attack_self: activate or deactivate the blade.
@@ -1141,7 +1140,6 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	active_force = 15
 	active_throwforce = 7
 	active_w_class = ITEMSIZE_LARGE
-	force = 1
 	throwforce = 1
 	throw_speed = 1
 	throw_range = 5
@@ -1149,6 +1147,9 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi', slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi', slot_back_str = 'icons/vore/custom_items_vr.dmi', slot_wear_suit_str = 'icons/vore/custom_items_vr.dmi')
 	var/active_state = "wolfgirlsword"
 	injury_kind = INJURY_PAIN
+
+CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	configure(item_combat(force = 1))
 
 TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
 
@@ -1162,9 +1163,9 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 		to_chat(user, span_notice("The [src] is now sharpened. It will cut!"))
 
 	..()
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	sharp = TRUE
-	edge = TRUE
+	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	icon_state = "[active_state]_sharp"
 	injury_kind = INJURY_CUT
 
@@ -1172,7 +1173,7 @@ TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOL
 	if(active)
 		to_chat(user, span_notice("The [src] grows dull!"))
 	..()
-	attack_verb = list("bapped", "thwapped", "bonked", "whacked")
+	set_attack_verb(list("bapped", "thwapped", "bonked", "whacked"))
 	icon_state = initial(icon_state)
 	injury_kind = initial(injury_kind)
 
@@ -1410,9 +1411,11 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 /obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette
 	name = "sawtooth ritual knife"
 	desc = "A mostly decorative knife made from thin ceramic and toothed with large black fangs. Printed on the flat is an eight-armed cross, like an asterisk with an extra stroke, ringed by a calligraphy-style crescent."
-	attack_verb = list("mauled", "bit", "sawed", "butchered")
 	dulled = 1
 	default_material = MAT_GLASS
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet/unathiknife/fluff/antoinette)
+	configure(item_combat(attack_verbs = list("mauled", "bit", "sawed", "butchered")))
 
 //Ashling - Antoinette deKaultieste
 /obj/item/clothing/accessory/storage/ritualharness/fluff/antoinette
@@ -1497,10 +1500,10 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon_state = "revclaymore"
 	icon_override = 'icons/vore/custom_items_vr.dmi'
 	item_state = "revclaymoremob"
-	force = 1
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/sword/fluff/revolver)
+	configure(item_combat(force = 1, sharp = TRUE, edge = TRUE))
 
 //YeCrowbarMan - Lemon Yellow
 /obj/item/toy/plushie/fluff/lemonplush
@@ -1508,7 +1511,9 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	desc = "A well-worn slime custom-made yellow plushie, extensively hugged and loved. It reeks of lemon."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "lemonplush"
-	attack_verb = list("blorbled", "slimed", "absorbed", "glomped")
+
+CAPABILITIES(/obj/item/toy/plushie/fluff/lemonplush)
+	configure(item_combat(attack_verbs = list("blorbled", "slimed", "absorbed", "glomped")))
 
 //Bricker98:Nettie Stough
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie
@@ -1543,7 +1548,6 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "pandorba"
 	pokephrase = "Gecker!"
-	attack_verb = list("fluffed", "fwomped", "fuwa'd", "squirmshed")
 	special_handling = TRUE
 
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/search_done(datum/act/op/A)
@@ -1556,6 +1560,7 @@ CAPABILITIES(/obj/item/surgical/scalpel/amaryll_claws)
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 CAPABILITIES(/obj/item/toy/plushie/fluff/seona_mofuorb)
+	configure(item_combat(attack_verbs = list("fluffed", "fwomped", "fuwa'd", "squirmshed")))
 	op("mofuorb_search", in_hand(), priority(OP_PRIORITY_DEFAULT), label("Search"), when(req(PROC_REF(search_ready))), claims(), wait(1 SECOND), then(PROC_REF(search_done)))
 	op("mofuorb_hug", in_hand(), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 1), label("Hug"), then(PROC_REF(mofuorb_hug)))
 	op("mofuorb_poke", in_hand(), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 1), label("Poke"), then(PROC_REF(mofuorb_poke)))

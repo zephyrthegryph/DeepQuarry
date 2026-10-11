@@ -121,7 +121,7 @@
 
 // Handles the actual harming by a melee weapon.
 /mob/living/simple_mob/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
-	effective_force = O.force
+	effective_force = combat_of(O).force
 
 	//Animals can't be stunned(?)
 	if(O.injury_kind == INJURY_PAIN)
@@ -129,7 +129,7 @@
 	if(supernatural && istype(O,/obj/item/nullrod))
 		effective_force *= 2
 		set_purge(3)
-	if(O.force <= resistance)
+	if(combat_of(O).force <= resistance)
 		to_chat(user,span_danger("This weapon is ineffective, it does no damage."))
 		return 2 //???
 

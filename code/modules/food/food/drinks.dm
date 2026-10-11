@@ -206,11 +206,13 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks)
 	icon_state = "golden_cup"
 	item_state = "" //nope :(
 	w_class = ITEMSIZE_LARGE
-	force = 14
 	throwforce = 10
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = null
 	volume = 150
+
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/golden_cup)
+	configure(item_combat(force = 14))
 
 /obj/item/reagent_containers/food/drinks/golden_cup/on_reagent_change()
 	..()

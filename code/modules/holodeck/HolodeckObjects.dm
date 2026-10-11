@@ -229,7 +229,7 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 	if(W.flags & NOBLUDGEON) return OP_PASS
 
 	if(W.obj_damage_type())
-		hit(W.force)
+		hit(combat_of(W).force)
 		if(get_integrity() <= 7)
 			set_anchored(FALSE)
 			step(src, get_dir(user, src))
@@ -281,7 +281,6 @@ CAPABILITIES(/obj/structure/window/reinforced/holowindow)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	force = 3.0
 	throw_speed = 1
 	throw_range = 5
 	throwforce = 0
@@ -309,6 +308,7 @@ TRACKED(/obj/item/holo/esword, lcolor)
 	return FALSE
 
 CAPABILITIES(/obj/item/holo/esword)
+	configure(item_combat(force = 3.0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -317,13 +317,13 @@ CAPABILITIES(/obj/item/holo/esword)
 	var/mob/user = A.actor
 	set_active(!active)
 	if (active)
-		force = 30
+		set_force(30)
 		item_state = "[icon_state]_blade"
 		w_class = ITEMSIZE_LARGE
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("[src] is now active."))
 	else
-		force = 3
+		set_force(3)
 		item_state = "[icon_state]"
 		w_class = ITEMSIZE_SMALL
 		play_sfx(src, SFX_WEAPONS_SABEROFF)

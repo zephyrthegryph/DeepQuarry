@@ -172,7 +172,7 @@
 
 	else
 		var/weapon_attack_speed = get_attack_speed(I) / (1 SECOND)
-		var/weapon_damage = I.force * factor(BF_MELEE_DAMAGE)
+		var/weapon_damage = combat_of(I).force * factor(BF_MELEE_DAMAGE)
 
 		if(istype(I, /obj/item/gun))
 			will_point_blank = TRUE

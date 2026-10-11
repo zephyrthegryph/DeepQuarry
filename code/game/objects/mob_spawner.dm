@@ -85,12 +85,12 @@ CAPABILITIES(/obj/structure/mob_spawner)
 /obj/structure/mob_spawner/proc/interaction_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/I = A.held
-	if(!I.force || I.flags & NOBLUDGEON || !destructible)
+	if(!combat_of(I).force || I.flags & NOBLUDGEON || !destructible)
 		return OP_PASS
 
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	user.do_attack_animation(src)
-	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(I.attack_verb) ? "[pick(I.attack_verb)]":"attacked"] with %I% by %T%."), item = I)
+	act_message(src, user, others = span_warning("%U% has been [LAZYLEN(combat_of(I).attack_verbs) ? "[pick(combat_of(I).attack_verbs)]":"attacked"] with %I% by %T%."), item = I)
 	receive_weapon_hit(I, user, silent = FALSE)
 	return OP_PASS
 

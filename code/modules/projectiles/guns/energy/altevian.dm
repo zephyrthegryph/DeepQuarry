@@ -6,10 +6,12 @@
 	fire_delay = 8
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	MATERIAL_BULK(MAT_STEEL, 1000)
 	projectile_type = /obj/item/projectile/beam/meeplaser
 	charge_cost = 400
+
+CAPABILITIES(/obj/item/gun/energy/altevian)
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/altevian/large
 	name = "Proto-Reactive Beam Thruster"
@@ -18,10 +20,12 @@
 	item_state = "altevian-pdw"
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/beam/meeplaser/strong
 	charge_cost = 200
+
+CAPABILITIES(/obj/item/gun/energy/altevian/large)
+	configure(item_combat(force = 10))
 
 /obj/item/projectile/beam/meeplaser
 	name = "meep beam"
@@ -67,11 +71,13 @@
 	fire_delay = 12
 	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/scatter/ratminer
 	charge_cost = 400
 	fire_sound = SFX_WEAPONS_LASER3
+
+CAPABILITIES(/obj/item/gun/energy/ratminer)
+	configure(item_combat(force = 10))
 
 /obj/item/projectile/scatter/ratminer
 	spread_submunition_damage = FALSE

@@ -3,14 +3,13 @@
 	desc = "Should anything ever go wrong..."
 	icon = 'icons/obj/radio.dmi'
 	icon_state = "red_phone"
-	force = 3.0
 	throwforce = 2.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("called", "rang")
 
 CAPABILITIES(/obj/item/phone)
+	configure(item_combat(force = 3.0, attack_verbs = list("called", "rang")))
 	configure(item_sounds(hit = SFX_WEAPONS_RING, drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/rsp
@@ -39,7 +38,6 @@ CAPABILITIES(/obj/item/rsp)
 	slot_flags = SLOT_HOLSTER
 	throw_speed = 3
 	throw_range = 15
-	attack_verb = list("HONKED")
 	var/honk_sound = SFX_ITEMS_BIKEHORN
 	var/cooldown = 0
 	var/honk_text = FALSE
@@ -47,6 +45,7 @@ CAPABILITIES(/obj/item/rsp)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/bikehorn)
+	configure(item_combat(attack_verbs = list("HONKED")))
 	op("honk", in_hand(), label("Honk"), when(cond_not(nameof(special_handling))), then(PROC_REF(honked)))
 
 /obj/item/bikehorn/proc/honked(datum/act/op/A)
@@ -130,12 +129,13 @@ CAPABILITIES(/obj/item/SWF_uplink)
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	force = 3.0
 	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("bludgeoned", "whacked", "disciplined")
+
+CAPABILITIES(/obj/item/staff)
+	configure(item_combat(force = 3.0, attack_verbs = list("bludgeoned", "whacked", "disciplined")))
 
 /obj/item/staff/broom
 	name = "broom"
@@ -155,11 +155,13 @@ CAPABILITIES(/obj/item/SWF_uplink)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "stick"
 	item_state = "cane"
-	force = 3.0
 	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/staff/stick)
+	configure(item_combat(force = 3.0))
 
 /obj/item/module
 	icon = 'icons/obj/module.dmi'

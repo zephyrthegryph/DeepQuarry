@@ -494,7 +494,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(30))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)

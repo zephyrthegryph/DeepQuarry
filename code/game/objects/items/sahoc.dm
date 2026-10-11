@@ -7,7 +7,6 @@
 	throwforce = 00
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 	var/colorindex = 0
 	var/mob/living/capsuleowner //taken from Capsule Code
 	var/sizetouse = 0.25
@@ -17,6 +16,7 @@
 		rel_set(src, nameof(capsuleowner), user)
 
 CAPABILITIES(/obj/item/buttonofnormal)
+	configure(item_combat(force = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -68,7 +68,6 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	throwforce = 00
 	throw_speed = 2
 	throw_range = 20
-	force = 0
 	var/luckynumber7 = 0
 	var/colorindex = 1
 
@@ -89,6 +88,7 @@ CAPABILITIES(/obj/item/buttonofnormal)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/daredevice)
+	configure(item_combat(force = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 

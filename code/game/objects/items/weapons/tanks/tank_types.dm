@@ -103,9 +103,11 @@ DECLARE_GAS(/obj/item/tank/phoron/pressurized, "air_contents", "volume", T20C, l
 	name = "emergency tank"
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	force = 4
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 	volume = 2 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
+
+CAPABILITIES(/obj/item/tank/emergency)
+	configure(item_combat(force = 4))
 
 /obj/item/tank/emergency/oxygen
 	name = "emergency oxygen tank"

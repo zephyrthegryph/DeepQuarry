@@ -98,13 +98,15 @@
 	item_state = "laser"
 	wielded_item_state = "laser-wielded"
 	fire_delay = 8
-	force = 10
 	projectile_type = /obj/item/projectile/beam/midlaser
 	firemodes = list(
 		list(mode_name="normal", fire_delay=8, projectile_type=/obj/item/projectile/beam/midlaser, charge_cost = 240),
 		list(mode_name="suppressive", fire_delay=5, projectile_type=/obj/item/projectile/beam/weaklaser, charge_cost = 60),
 		)
 	one_handed_penalty = 0
+
+CAPABILITIES(/obj/item/gun/energy/robotic/laser/rifle)
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/robotic/laser/heavy
 	name = "mounted laser cannon"
@@ -155,34 +157,32 @@
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	pry = 1
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 	tool_qualities = list(TOOL_CROWBAR)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws)
+	configure(item_combat(edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BITE))
 
 /obj/item/melee/robotic/jaws/big
 	name = "combat jaws"
 	icon_state = "jaws"
 	desc = "The jaws of the law."
-	force = 30
-	armor_penetration = 25
 	defend_chance = 15
-	attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+
+CAPABILITIES(/obj/item/melee/robotic/jaws/big)
+	configure(item_combat(force = 30, armor_penetration = 25, attack_verbs = list("chomped", "bit", "ripped", "mauled", "enforced")))
 
 /obj/item/melee/robotic/jaws/small
 	name = "puppy jaws"
 	icon_state = "smalljaws"
 	desc = "The jaws of a small dog."
-	force = 15
 	defend_chance = 5
-	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	var/emagged = 0
 TRACKED(/obj/item/melee/robotic/jaws/small, emagged)
 
 CAPABILITIES(/obj/item/melee/robotic/jaws/small)
+	configure(item_combat(force = 15, attack_verbs = list("nibbled", "bit", "gnawed", "chomped", "nommed")))
 	op("jaw_mode", in_hand(), label("Toggle combat jaws"), then(PROC_REF(jaw_mode_toggled)))
 
 /obj/item/melee/robotic/jaws/small/proc/jaw_mode_toggled(datum/act/op/A)
@@ -196,18 +196,18 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				name = "combat jaws"
 				icon_state = "jaws"
 				desc = "The jaws of the law."
-				force = 30
-				armor_penetration = 25
+				set_force(30)
+				set_armor_penetration(25)
 				defend_chance = 15
-				attack_verb = list("chomped", "bit", "ripped", "mauled", "enforced")
+				set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 			else
 				name = "puppy jaws"
 				icon_state = "smalljaws"
 				desc = "The jaws of a small dog."
-				force = 15
-				armor_penetration = 0
+				set_force(15)
+				set_armor_penetration(0)
 				defend_chance = 5
-				attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
+				set_attack_verb(list("nibbled", "bit", "gnawed", "chomped", "nommed"))
 		else
 			if(emagged)
 				name = "claymore"
@@ -215,9 +215,9 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				icon = 'icons/obj/tools_robot.dmi'
 				icon_state = "claymore_cyborg"
 				set_hitsound(SFX_WEAPONS_SLICE)
-				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
-				force = 30
-				armor_penetration = 25
+				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
+				set_force(30)
+				set_armor_penetration(25)
 				defend_chance = 15
 			else
 				name = "self defense knife"
@@ -225,9 +225,9 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 				icon_state = "knife_cyborg"
 				set_hitsound(SFX_WEAPONS_SLASH)
 				desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use."
-				attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
-				force = 15
-				armor_penetration = 0
+				set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
+				set_force(15)
+				set_armor_penetration(0)
 				defend_chance = 5
 	return OP_OK
 
@@ -237,14 +237,13 @@ CAPABILITIES(/obj/item/melee/robotic/jaws/small)
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "combatshocker"
 	desc = "Shocking!"
-	force = 15
 	throwforce = 0
-	attack_verb = list("hit")
 	w_class = ITEMSIZE_NORMAL
 	var/charge_cost = 15
 	var/dogborg = FALSE
 
 CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
+	configure(item_combat(force = 15, attack_verbs = list("hit")))
 	configure(item_sounds(hit = SFX_WEAPONS_GENHIT1))
 
 /obj/item/melee/robotic/borg_combat_shocker/proc/deductcharge()
@@ -304,19 +303,15 @@ CAPABILITIES(/obj/item/melee/robotic/borg_combat_shocker)
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE | COUNTS_AS_ROBOT_BLADE
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "swordtail"
-	force = 0
-	armor_penetration = 70
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	throwforce = 0 //This shouldn't be thrown in the first place.
-	attack_verb = list("slashed", "stabbed", "jabbed", "mauled", "sliced")
 	w_class = ITEMSIZE_NORMAL
 	var/active_force = 35
 	var/active = 0 //Off by default.
 	var/lcolor = "#38e541"
 
 CAPABILITIES(/obj/item/melee/robotic/blade)
+	configure(item_combat(force = 0, armor_penetration = 70, sharp = TRUE, edge = TRUE, attack_verbs = list("slashed", "stabbed", "jabbed", "mauled", "sliced")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADE1))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("recolor", hand(), ungated(), gesture(GESTURE_ALT), needs(req_capable()),
@@ -329,10 +324,10 @@ CAPABILITIES(/obj/item/melee/robotic/blade)
 	var/mob/user = A.actor
 	if(active) //turning off
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
-		force = 0
+		set_force(0)
 	else //turning on
 		play_sfx(src, SFX_WEAPONS_SABERON)
-		force = active_force
+		set_force(active_force)
 	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "on" : "off"]."))
 	return OP_OK
@@ -385,8 +380,10 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 /obj/item/melee/robotic/blade/ninja
 	lcolor = "#38e541"
 	active_force = 40
-	armor_penetration = 100
 	projectile_parry_chance = 60
+
+CAPABILITIES(/obj/item/melee/robotic/blade/ninja)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/melee/robotic/blade/dagger //For downstreams that use dagger
 	name = "Robotic Dagger"
@@ -416,21 +413,21 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 		// Do some extra damage.  Not a whole lot more since emp_act() is pretty nasty on FBPs already.
 		target.emp_act(3) // A weaker severity is used because this has infinite uses.
 		play_sfx(target, SFX_EFFECTS_EMPULSE)
-		target.injure(INJURY_BURN, force * 3, hit_zone, src) // 15 Burn, for 20 total.
+		target.injure(INJURY_BURN, combat_of(src).force * 3, hit_zone, src) // 15 Burn, for 20 total.
 		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
 		if(target.mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
-			target.injure(INJURY_BURN, force * 6, hit_zone, src) // 30 Burn, for 50 total.
+			target.injure(INJURY_BURN, combat_of(src).force * 6, hit_zone, src) // 30 Burn, for 50 total.
 
 /obj/item/melee/robotic/blade/ionic/lance
 	name = "zero-point lance"
 	desc = "Designed specifically for disrupting electronics at relatively close range, however it is still capable of dealing some damage to living beings."
-	force = 20
-	armor_penetration = 15
-	reach = 2
+
+CAPABILITIES(/obj/item/melee/robotic/blade/ionic/lance)
+	configure(item_combat(force = 20, armor_penetration = 15, reach = 2))
 
 /obj/item/melee/robotic/baton
 	name = "stunbaton"
@@ -439,12 +436,8 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 	icon_state = "stunbaton"
 	item_state = "baton"
 	slot_flags = SLOT_BELT
-	force = 15
-	sharp = FALSE
-	edge = FALSE
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("beaten")
 	var/stunforce = 0
 	var/agonyforce = 60
 	var/hitcost = 500
@@ -472,6 +465,7 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 TRACKED(/obj/item/melee/robotic/baton, status)
 
 CAPABILITIES(/obj/item/melee/robotic/baton)
+	configure(item_combat(force = 15, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("blocked_pickup", hand(), when(req_empty_hand()), label("Touch baton"), then(PROC_REF(baton_pickup_blocked)))
 	op("power", in_hand(), label("Toggle baton"), then(PROC_REF(baton_power_toggled)))
@@ -562,9 +556,10 @@ CAPABILITIES(/obj/item/melee/robotic/baton)
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
 	icon_state = "shocker"
-	force = 10
 	agonyforce = 25 // Less efficent than a regular baton.
-	attack_verb = list("poked")
+
+CAPABILITIES(/obj/item/melee/robotic/baton/shocker)
+	configure(item_combat(force = 10, attack_verbs = list("poked")))
 
 /obj/item/melee/robotic/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	..(target, user, hit_zone, attack_modifier, stance)
@@ -576,10 +571,12 @@ CAPABILITIES(/obj/item/melee/robotic/baton)
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
 	icon_state = "slimebaton_active"
 	item_state = "slimebaton"
-	force = 10 //we like round numbers here
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
+
+CAPABILITIES(/obj/item/melee/robotic/baton/slime)
+	configure(item_combat(force = 10))
 
 
 /obj/item/melee/robotic/baton/slime/attack(mob/living/L, mob/living/user, target_zone, attack_modifier)

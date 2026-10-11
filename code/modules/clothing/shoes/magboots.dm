@@ -6,7 +6,6 @@
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
 	center_of_mass_x = 17
 	center_of_mass_y = 12
-	force = 3
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
 	preserve_item = 1
@@ -30,6 +29,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 		slowdown += 3
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		item_flags &= ~NOSLIP
 		magpulse = FALSE
 		set_slowdown()
-		force = 3
+		set_force(3)
 		if(icon_base) icon_state = "[icon_base]0"
 		to_chat(user, mag_disable)
 		if(unremovable_when_enabled)
@@ -60,7 +60,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 		item_flags |= NOSLIP
 		magpulse = TRUE
 		set_slowdown()
-		force = 5
+		set_force(5)
 		if(icon_base) icon_state = "[icon_base]1"
 		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)

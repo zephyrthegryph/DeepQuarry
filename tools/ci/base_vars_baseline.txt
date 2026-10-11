@@ -181,17 +181,8 @@ base_var	code/game/objects/items.dm	var/storage_cost = null
 base_var	code/game/objects/items.dm	var/slot_flags = 0 //This is used to determine on which slots an item can fit.
 base_var	code/game/objects/items.dm	var/no_attack_log = 0 //If it's an item we don't want to log attack_logs with, set this to 1
 base_var	code/game/objects/items.dm	var/obj/item/master = null // the item this one is attached to
-base_var	code/game/objects/items.dm	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
-base_var	code/game/objects/items.dm	var/force = 0
 base_var	code/game/objects/items.dm	var/throwforce = 0
-base_var	code/game/objects/items.dm	var/sharp = FALSE // whether this object cuts
-base_var	code/game/objects/items.dm	var/edge = FALSE // whether this object is more likely to dismember
-base_var	code/game/objects/items.dm	var/armor_penetration = 0
-base_var	code/game/objects/items.dm	var/melee_windup = 0 // Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
-base_var	code/game/objects/items.dm	var/melee_recovery = 0 // Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
-base_var	code/game/objects/items.dm	var/melee_sweep = null // TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
 base_var	code/game/objects/items.dm	var/catchable = TRUE
-base_var	code/game/objects/items.dm	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 base_var	code/game/objects/items.dm	var/pry = 0 //Used in attackby() to open doors
 base_var	code/game/objects/items.dm	var/tmp/list/actions //list of /datum/action's that this item has.
 base_var	code/game/objects/items.dm	var/list/actions_types //list of paths of action datums to give to the item on New().
@@ -210,8 +201,6 @@ base_var	code/game/objects/items.dm	var/list/item_icons
 base_var	code/game/objects/items.dm	var/list/sprite_sheets
 base_var	code/game/objects/items.dm	var/list/sprite_sheets_obj
 base_var	code/game/objects/items.dm	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works. e.g. setting this to 0.5 will make the tool work twice as fast.
-base_var	code/game/objects/items.dm	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
-base_var	code/game/objects/items.dm	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 base_var	code/game/objects/items.dm	var/addblends // Icon overlay for ADD highlights when applicable.
 base_var	code/game/objects/items.dm	var/default_worn_icon //Default on-mob icon
 base_var	code/game/objects/items.dm	var/worn_layer //Default on-mob layer

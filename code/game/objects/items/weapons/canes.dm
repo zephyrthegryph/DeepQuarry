@@ -7,11 +7,12 @@
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
-	force = 5.0
 	throwforce = 7.0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 50)
-	attack_verb = list("bludgeoned", "whacked", "disciplined", "thrashed")
+
+CAPABILITIES(/obj/item/cane)
+	configure(item_combat(force = 5.0, attack_verbs = list("bludgeoned", "whacked", "disciplined", "thrashed")))
 
 /obj/item/cane/crutch
 	name ="crutch"
@@ -87,12 +88,12 @@ CAPABILITIES(/obj/item/cane/concealed)
 		)
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	force = 3
 	var/on = 0
 
 TRACKED(/obj/item/cane/white/collapsible, on)
 
 CAPABILITIES(/obj/item/cane/white/collapsible)
+	configure(item_combat(force = 3))
 	op("toggle", in_hand(), label("Extend or collapse cane"), then(PROC_REF(collapsed_toggled)))
 
 /// The native held-item activation preserves the complete equipment change.
@@ -106,8 +107,8 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		icon_state = "whitecane1out"
 		item_state_slots = list(slot_r_hand_str = "whitecane", slot_l_hand_str = "whitecane")
 		w_class = ITEMSIZE_NORMAL
-		force = 5
-		attack_verb = list("smacked", "struck", "cracked", "beaten")
+		set_force(5)
+		set_attack_verb(list("smacked", "struck", "cracked", "beaten"))
 	else
 		act_message(user, null, MSG_SELF(span_notice("You collapse the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses the white cane.")), \
@@ -115,8 +116,8 @@ CAPABILITIES(/obj/item/cane/white/collapsible)
 		icon_state = "whitecane1in"
 		item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
 		w_class = ITEMSIZE_SMALL
-		force = 3
-		attack_verb = list("hit", "poked", "prodded")
+		set_force(3)
+		set_attack_verb(list("hit", "poked", "prodded"))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user

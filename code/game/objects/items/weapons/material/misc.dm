@@ -1,13 +1,13 @@
 /obj/item/material/harpoon
 	name = "harpoon"
-	sharp = TRUE
-	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	desc = "Tharr she blows!"
 	icon_state = "harpoon"
 	item_state = "harpoon"
 	force_divisor = 0.3 // 18 with hardness 60 (steel)
-	attack_verb = list("jabbed","stabbed","ripped")
+
+CAPABILITIES(/obj/item/material/harpoon)
+	configure(item_combat(sharp = TRUE, edge = FALSE, attack_verbs = list("jabbed","stabbed","ripped")))
 
 /obj/item/material/knife/machete/hatchet
 	name = "hatchet"
@@ -17,12 +17,10 @@
 	force_divisor = 0.2 // 12 with hardness 60 (steel)
 	thrown_force_divisor = 0.75 // 15 with weight 20 (steel)
 	w_class = ITEMSIZE_SMALL
-	sharp = TRUE
-	edge = TRUE
-	attack_verb = list("chopped", "torn", "cut")
 	applies_material_colour = 0
 
 CAPABILITIES(/obj/item/material/knife/machete/hatchet)
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("chopped", "torn", "cut")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
@@ -31,7 +29,9 @@ CAPABILITIES(/obj/item/material/knife/machete/hatchet)
 	force_divisor = 0.2
 	icon_state = "rock"
 	item_state = "rock"
-	attack_verb = list("chopped", "torn", "cut")
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet/stone)
+	configure(item_combat(attack_verbs = list("chopped", "torn", "cut")))
 
 /obj/item/material/knife/machete/hatchet/stone/set_material(new_material)
 	var/old_name = name
@@ -43,8 +43,9 @@ CAPABILITIES(/obj/item/material/knife/machete/hatchet)
 	desc = "A length of leather-bound wood studded with razor-sharp teeth. How crude."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "unathiknife"
-	attack_verb = list("ripped", "torn", "cut")
-	can_cleave = FALSE
+
+CAPABILITIES(/obj/item/material/knife/machete/hatchet/unathiknife)
+	configure(item_combat(attack_verbs = list("ripped", "torn", "cut"), can_cleave = FALSE))
 
 /obj/item/material/minihoe // -- Numbers
 	name = "mini hoe"
@@ -55,7 +56,9 @@ CAPABILITIES(/obj/item/material/knife/machete/hatchet)
 	thrown_force_divisor = 0.25 // as above
 	dulled_divisor = 0.75	//Still metal on a long pole
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("slashed", "sliced", "cut", "clawed")
+
+CAPABILITIES(/obj/item/material/minihoe)
+	configure(item_combat(attack_verbs = list("slashed", "sliced", "cut", "clawed")))
 
 /obj/item/material/snow/snowball
 	name = "loose packed snowball"
@@ -67,9 +70,9 @@ CAPABILITIES(/obj/item/material/knife/machete/hatchet)
 	force_divisor = 0.01
 	thrown_force_divisor = 0.10
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("mushed", "splatted", "splooshed", "splushed") // Words that totally exist.
 
 CAPABILITIES(/obj/item/material/snow/snowball)
+	configure(item_combat(attack_verbs = list("mushed", "splatted", "splooshed", "splushed")))
 	op("compact", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), label("Compact"), begins(MSG(snowball/compacting)), wait(2 SECONDS), then(PROC_REF(compacted)))
 	op("smash", in_hand(), stance(I_HURT), label("Smash"), then(PROC_REF(interaction_smash)))
 
@@ -102,10 +105,8 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 	default_material = MAT_LEATHER
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("flogged", "whipped", "lashed", "disciplined")
 	force_divisor = 0.15
 	thrown_force_divisor = 0.25
-	reach = 2
 
 	item_icons = list(
 			slot_l_hand_str = 'icons/mob/items/lefthand_melee.dmi',
@@ -132,7 +133,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 
 			else
 				user.visible_message(span_warning("\The [AM] is snatched by \the [src]!"))
-				AM.throw_at(user, reach, 0.1, user)
+				AM.throw_at(user, combat_of(src).reach, 0.1, user)
 
 /obj/item/material/whip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	switch(stance)
@@ -141,7 +142,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 				to_chat(target, span_warning("\The [src] rips at your hands!"))
 				ranged_disarm(target)
 		if(I_DISARM)
-			if(prob(min(90, force * 3)) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
+			if(prob(min(90, combat_of(src).force * 3)) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				ranged_disarm(target)
 			else
 				act_message(target, src, others = span_danger("%T% sends %U% stumbling away."))
@@ -193,6 +194,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 						return
 
 CAPABILITIES(/obj/item/material/whip)
+	configure(item_combat(attack_verbs = list("flogged", "whipped", "lashed", "disciplined"), reach = 2))
 	op("crack", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -230,28 +232,26 @@ CAPABILITIES(/obj/item/material/whip)
 			)
 	item_state = "cleaving_saw"
 	active = 0
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	w_class = ITEMSIZE_LARGE
-	edge = 1
-	sharp = 1
 	injury_kind = INJURY_CUT
 	force_divisor = 0.7 //42 When Wielded in line with a sword
 	thrown_force_divisor = 0.1 // 2 when thrown with weight 20 (steel) since frankly its too bulk to throw
 
 CAPABILITIES(/obj/item/material/butterfly/saw)
+	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = 1, sharp = 1))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
 
 /obj/item/material/butterfly/saw/update_force()
 	if(active)
 		w_class = ITEMSIZE_HUGE
-		can_cleave = 1
+		set_can_cleave(1)
 		force_divisor = 0.4 //24 when wielded, Gains cleave and is better than a machete
 		icon_state = "sawcleaver_open"
 		item_state = "cleaving_saw_open"
 		..()
 	else
 		w_class = initial(w_class)
-		can_cleave = initial(can_cleave)
+		set_can_cleave(combat_of_type(type).can_cleave)
 		force_divisor = initial(force_divisor)
 		icon_state = initial(icon_state)
 		item_state = initial(item_state)

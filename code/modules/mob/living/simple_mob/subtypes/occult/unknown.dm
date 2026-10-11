@@ -49,10 +49,12 @@
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 15
-	armor_penetration = 40
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/slow_orb)
+	configure(item_combat(armor_penetration = 40))
 
 /mob/living/simple_mob/glitch_boss
 	delete_on_death = TRUE
@@ -305,10 +307,12 @@
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 0
-	armor_penetration = 0
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
+	configure(item_combat(armor_penetration = 0))
 
 #undef GA_ADS
 #undef GA_CALLDOWN

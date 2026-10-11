@@ -6,14 +6,11 @@
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
 	randpixel = 8
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_SMALL
 	force_divisor = 0.25 // 7.5 with hardness 30 (glass)
 	thrown_force_divisor = 0.5
 	item_state = "shard-glass"
-	attack_verb = list("stabbed", "slashed", "sliced", "cut")
 	default_material = MAT_GLASS
 	unbreakable = 1 //It's already broken.
 	drops_debris = 0
@@ -41,6 +38,7 @@
 		spent(src)
 
 CAPABILITIES(/obj/item/material/shard)
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("stabbed", "slashed", "sliced", "cut")))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /obj/item/material/shard/proc/welder_used(datum/act/op/A)
@@ -135,7 +133,7 @@ CAPABILITIES(/obj/item/material/shard)
 				if(affecting)
 					if(affecting.is_robotic())
 						return
-					H.injure(INJURY_BLUNT, force, affecting, src)
+					H.injure(INJURY_BLUNT, combat_of(src).force, affecting, src)
 					if(affecting.organ_can_feel_pain())
 						H.status_at_least(STAT_WEAKENED, 3)
 					return

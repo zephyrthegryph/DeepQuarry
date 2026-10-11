@@ -6,8 +6,6 @@
 	slot_flags = SLOT_BACK
 
 	//stopping power/lethality
-	force = 35
-	armor_penetration = 20		//the sheer impact force bypasses quite a bit of armour
 	var/unwielded_force_divisor = 0.25
 	var/wielded = 0
 	var/force_unwielded = 8.75
@@ -26,14 +24,9 @@
 	var/excavation_amount = 200
 	var/destroy_artefacts = TRUE	//sorry, breaks stuff
 
-	can_cleave = TRUE	//SSSSMITE!
-	attackspeed = 12	//very slow!!
-	sharp = FALSE
-	edge = FALSE
 	throwforce = 25
 	flags = NOCONDUCT
 	w_class = ITEMSIZE_HUGE
-	attack_verb = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")
 	var/lightcolor = "#D3FDFD"
 	var/status = 0		//whether the thing is on or not
 	var/obj/item/cell/bcell = null
@@ -44,22 +37,22 @@
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
 		set_wielded(1)
 		if(status)
-			force = initial(force)*charge_force_mult
-			armor_penetration *= charge_force_mult
+			set_force(combat_of_type(type).force*charge_force_mult)
+			set_armor_penetration(combat_of(src).armor_penetration * (charge_force_mult))
 		else
-			force = initial(force)
-			armor_penetration = initial(armor_penetration)
+			set_force(combat_of_type(type).force)
+			set_armor_penetration(combat_of_type(type).armor_penetration)
 		launch_force = initial(launch_force)
 		weaken_force = initial(weaken_force)
 		name = "[initial(name)] (wielded)"
 	else
 		set_wielded(0)
 		if(status)
-			force = force_unwielded*charge_force_mult
-			armor_penetration *= charge_force_mult
+			set_force(force_unwielded*charge_force_mult)
+			set_armor_penetration(combat_of(src).armor_penetration * (charge_force_mult))
 		else
-			force = force_unwielded
-			armor_penetration = initial(armor_penetration)
+			set_force(force_unwielded)
+			set_armor_penetration(combat_of_type(type).armor_penetration)
 		launch_force = launch_force_unwielded
 		weaken_force = weaken_force_unwielded
 		name = "[initial(name)]"
@@ -186,6 +179,7 @@ TRACKED(/obj/item/melee/shock_maul, status)
 TRACKED(/obj/item/melee/shock_maul, wielded)
 
 CAPABILITIES(/obj/item/melee/shock_maul)
+	configure(item_combat(force = 35, armor_penetration = 20, can_cleave = TRUE, attack_speed = 12, sharp = FALSE, edge = FALSE, attack_verbs = list("beaten","slammed","smashed","mauled","hammered","bludgeoned")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON, pickup = SFX_ITEMS_PICKUP_METALWEAPON))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("self", in_hand(), label("Use"), when(PROC_REF(uncharged)), needs(req(PROC_REF(handy_user), silent = TRUE)), starts(PROC_REF(charge_started)), wait(PROC_REF(charge_duration)), then(PROC_REF(charged)))
@@ -272,7 +266,7 @@ CAPABILITIES(/obj/item/melee/shock_maul)
 		else if(istype(A, /turf/simulated/wall))
 			var/turf/simulated/wall/W = A
 			if(W.density)
-				W.take_damage(force*3)	//One hit for regular walls, 3 hits for r_wall
+				W.take_damage(combat_of(src).force*3)	//One hit for regular walls, 3 hits for r_wall
 		else if(istype(A, /obj/structure/girder))
 			var/obj/structure/girder/G = A
 			G.dismantle()

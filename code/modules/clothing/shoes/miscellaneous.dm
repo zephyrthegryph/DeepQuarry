@@ -102,8 +102,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 	name = "clown shoes"
 	icon_state = "clown"
 	slowdown = SHOES_SLOWDOWN+0.5
-	force = 0
 	//removed built in squeak sounds
+
+CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
+	configure(item_combat(force = 0))
 
 /* Replaced with squeak component
 /obj/item/clothing/shoes/clown_shoes/handle_movement(turf/walking, running)
@@ -124,9 +126,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
 	desc = "A pair of boots worn by the followers of Nar-Sie."
 	icon_state = "cult"
 	item_state_slots = list(slot_r_hand_str = "cult", slot_l_hand_str = "cult")
-	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/cult)
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -144,10 +146,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	name = "bunny slippers"
 	desc = "Fluffy!"
 	icon_state = "slippers"
-	force = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/slippers)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
@@ -206,10 +208,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	icon_state = "clothwrap"
 	item_state = "clothwrap"
 	blocks_footsteps = FALSE
-	force = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
@@ -386,9 +388,9 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
 	can_hold_knife = 1
-	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component

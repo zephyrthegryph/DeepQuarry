@@ -8,7 +8,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_vr.dmi',
 	)
-	force = 7
 
 	var/powertransfer = 1000 //Transfer per time when charging something
 	var/cell_type = /obj/item/cell/high //Type of cell to spawn in it
@@ -94,6 +93,7 @@ TRACKED(/obj/item/inducer, opened)
 	return OP_DECLINE
 
 CAPABILITIES(/obj/item/inducer)
+	configure(item_combat(force = 7))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

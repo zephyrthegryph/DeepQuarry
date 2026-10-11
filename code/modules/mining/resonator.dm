@@ -11,7 +11,6 @@
 		)
 	desc = "A handheld device that creates small fields of energy that resonate until they detonate, crushing rock. It can also be activated without a target to create a field at the user's location, to act as a delayed time trap. It's more effective in low temperature."
 	w_class = ITEMSIZE_NORMAL
-	force = 8
 	throwforce = 10
 	var/cooldown = 0
 	var/fieldsactive = 0
@@ -87,6 +86,7 @@ TRACKED(/obj/item/resonator, cascading)
 TRACKED(/obj/item/resonator, fieldlimit)
 
 CAPABILITIES(/obj/item/resonator)
+	configure(item_combat(force = 8))
 	op("settings", in_hand(), label("Settings"),
 		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
 		then(PROC_REF(settings_picked)))

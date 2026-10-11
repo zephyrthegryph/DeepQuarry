@@ -3,14 +3,11 @@
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	force = 30
 	throwforce = 10
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
+	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/cultblade/cultify()
@@ -26,7 +23,7 @@ CAPABILITIES(/obj/item/melee/cultblade)
 		var/obj/item/organ/external/affecting = H.get_organ(zone)
 		to_chat(user, span_danger("An inexplicable force rips through your [affecting.name], tearing the sword from your grasp!"))
 		//random amount of damage between half of the blade's force and the full force of the blade.
-		user.injure(INJURY_CUT, rand(force/2, force), zone, src)
+		user.injure(INJURY_CUT, rand(combat_of(src).force/2, combat_of(src).force), zone, src)
 		user.status_at_least(STAT_WEAKENED, 5)
 	else if(!istype(user, /mob/living/simple_mob/construct))
 		to_chat(user, span_danger("An inexplicable force rips through you, tearing the sword from your grasp!"))

@@ -55,9 +55,9 @@ Deployable items
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	switch(W.obj_damage_type())
 		if(BURN)
-			receive_weapon_hit(W, user, W.force * 0.75, INJURY_BURN)
+			receive_weapon_hit(W, user, combat_of(W).force * 0.75, INJURY_BURN)
 		if(BRUTE)
-			receive_weapon_hit(W, user, W.force * 0.5)
+			receive_weapon_hit(W, user, combat_of(W).force * 0.5)
 	play_sfx(src, SFX_WEAPONS_SMASH)
 	return OP_DECLINE
 

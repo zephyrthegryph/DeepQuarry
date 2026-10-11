@@ -30,7 +30,6 @@
 	icon_state = "riflestun"
 	item_state = null //so the human update icon uses the icon_state instead.
 	wielded_item_state = "riflestun-wielded"
-	force = 8
 	w_class = ITEMSIZE_LARGE
 	fire_delay = 6
 	one_handed_penalty = 30
@@ -52,7 +51,6 @@
 	between stun or kill with a three round burst option for both settings."
 	icon_state = "energystun"
 	item_state = null //so the human update icon uses the icon_state instead.
-	force = 8
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //and so I did.
 	slot_flags = SLOT_BELT|SLOT_BACK //. Let's make it so that if it doesn't fit in a backpack, it doesn't fit in a holster either.
 	fire_delay = 6
@@ -80,7 +78,6 @@
 	of their ease of use and firepower."
 	icon_state = "etommy"
 	item_state = "fm-2tkill"
-	force = 8
 	w_class = ITEMSIZE_LARGE
 	fire_delay = 7
 	charge_meter = 0 // tommylaser doesn't have charge sprites.
@@ -149,7 +146,6 @@
 	icon_state = "nucgunstun"
 	projectile_type = /obj/item/projectile/beam/stun
 	slot_flags = SLOT_BELT
-	force = 8 //looks heavier than a pistol
 	w_class = ITEMSIZE_HUGE	//Looks bigger than a pistol, too. //Looks like a cannon, lol.
 	fire_delay = 6	//This one's not a handgun, it should have the same fire delay as everything else
 	cell_type = /obj/item/cell/device/weapon/recharge
@@ -160,6 +156,9 @@
 		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun, modifystate="nucgunstun", charge_cost = 240),
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="nucgunkill", charge_cost = 480),
 		)
+
+CAPABILITIES(/obj/item/gun/energy/gun/nuclear)
+	configure(item_combat(force = 8))
 
 /obj/item/gun/energy/sf2000
 	name = "SF 2000"
@@ -187,7 +186,6 @@
 	item_state = null	//so the human update icon uses the icon_state instead.
 	fire_sound = SFX_WEAPONS_LASER
 	charge_cost = 1
-	force = 8
 	w_class = ITEMSIZE_HUGE //Probably gonna make it a rifle sooner or later //Dude, come on. It's a machine gun.
 	fire_delay = 6
 	burst_delay = 0.5

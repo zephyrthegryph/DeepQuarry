@@ -405,7 +405,7 @@ CAPABILITIES(/datum/artifact_master)
 
 		//Otherwise, let's see if we were hit with something with enough force to activate us.
 		else
-			if (my_effect.trigger == TRIGGER_FORCE && W.force >= 10)
+			if (my_effect.trigger == TRIGGER_FORCE && combat_of(W).force >= 10)
 				my_effect.ToggleActivate()
 
 /datum/artifact_master/proc/on_reagent(datum/act/notice/A)

@@ -6,7 +6,6 @@
 	icon_state = "rcd"
 	item_state = "rcd"
 	flags = NOBLUDGEON
-	force = 10
 	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
@@ -315,6 +314,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
+	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	owns_many(nameof(effects))

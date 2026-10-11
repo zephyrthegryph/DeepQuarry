@@ -137,7 +137,7 @@
 	if(!weapon)
 		return 0
 	if(isnull(armor_pen))
-		armor_pen = weapon.armor_penetration
+		armor_pen = combat_of(weapon).armor_penetration
 	return injure_split(weapon.injury_kind, weapon.injury_kinds, amount, zone, weapon, armor_pen, flags | INJURE_ARMORED)
 
 /// `amount` as `kind`, or shared out over `kinds` (INJURY_* -> share) for a

@@ -356,12 +356,11 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	desc = "A very, very heavy duty flashlight."
 	icon_state = "maglight"
 	light_color = LIGHT_COLOR_FLUORESCENT_FLASHLIGHT
-	force = 10
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list ("smacked", "thwacked", "thunked")
 
 CAPABILITIES(/obj/item/flashlight/maglight)
+	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/flashlight/drone
@@ -383,7 +382,6 @@ CAPABILITIES(/obj/item/flashlight/maglight)
 	name = "desk lamp"
 	desc = "A desk lamp with an adjustable mount."
 	icon_state = "lamp"
-	force = 10
 	center_of_mass_x = 13
 	center_of_mass_y = 11
 	light_range = 5
@@ -463,7 +461,7 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
-	src.force = initial(src.force)
+	src.set_force(combat_of_type(src.type).force)
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
@@ -478,13 +476,13 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 	// All good, turn it on.
 	if(. == CAN_USE)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
-		force = on_damage
+		set_force(on_damage)
 		injury_kind = INJURY_BURN
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
 	update_brightness()
-	force = on_damage
+	set_force(on_damage)
 	injury_kind = INJURY_BURN
 	return 1
 
@@ -584,4 +582,5 @@ TRACKED(/obj/item/flashlight/glowstick, fuel)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/flashlight/lamp)
+	configure(item_combat(force = 10))
 	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))

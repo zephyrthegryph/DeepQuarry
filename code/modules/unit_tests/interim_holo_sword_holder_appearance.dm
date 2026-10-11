@@ -40,7 +40,7 @@
 	bystander.right_redraws = 0
 	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(sword.active, "the actual sword interaction extends its blade")
-	TEST_ASSERT_EQUAL(sword.force, 30, "actual holo activation applies its configured active force")
+	TEST_ASSERT_EQUAL(combat_of(sword).force, 30, "actual holo activation applies its configured active force")
 	TEST_ASSERT_EQUAL(sword.w_class, ITEMSIZE_LARGE, "actual holo activation enlarges its real blade")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword_blade", "the actual extended blade has its held item state")
 	sword.observe_look()
@@ -56,7 +56,7 @@
 	TEST_ASSERT_EQUAL(holder.get_active_hand(), sword, "appearance generation preserves actual held ownership")
 	test_op_handler(sword, "interaction_self", holder, sword)
 	TEST_ASSERT(!sword.active, "the actual sword interaction retracts its blade")
-	TEST_ASSERT_EQUAL(sword.force, 3, "actual holo retraction restores its force")
+	TEST_ASSERT_EQUAL(combat_of(sword).force, 3, "actual holo retraction restores its force")
 	TEST_ASSERT_EQUAL(sword.w_class, ITEMSIZE_SMALL, "actual holo retraction restores its concealable size")
 	TEST_ASSERT_EQUAL(sword.item_state, "esword", "the actual retracted sword restores its held item state")
 	sword.observe_look()

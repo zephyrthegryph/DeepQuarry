@@ -15,7 +15,6 @@
 /obj/item/toy/mecha
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
-	reach = 2 // So you can battle across the table!
 
 	// Mech Battle Vars
 	var/timer = 0 // Timer when it'll be off cooldown
@@ -113,6 +112,7 @@
 
 //all credit to skasi for toy mech fun ideas
 CAPABILITIES(/obj/item/toy/mecha)
+	configure(item_combat(reach = 2))
 	configure(item_sounds(drop = SFX_MECHA_MECHSTEP))
 	// the old attack_self (and attack_tk): play with it
 	op("play", in_hand(), label("Play"), then(PROC_REF(interaction_self)))

@@ -67,7 +67,7 @@
 		P = ammo.BB
 	if(!P)
 		return "no"
-	var/penetration = P.armor_penetration
+	var/penetration = combat_of(P).armor_penetration
 	if(created_projectile)
 		spent(P)
 	switch(penetration)
@@ -154,11 +154,11 @@
 		weapon_stats += "\nThis is an entirely non-lethal weapon, such as a mouseray, toy, or sizegun! Its effects cannot easily be quantified."
 	else
 		weapon_stats += "\nIt isn't loaded!"
-	if(force)
-		weapon_stats += "\nIf used in melee, it deals [describe_power(src)] [sharp ? "sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
-	if(can_cleave)
+	if(combat_of(src).force)
+		weapon_stats += "\nIf used in melee, it deals [describe_power(src)] [combat_of(src).sharp ? "combat_of(src).sharp" : "blunt"] damage, [describe_penetration(src)], and has [describe_speed(src)]."
+	if(combat_of(src).can_cleave)
 		weapon_stats += "\nIt is capable of hitting multiple targets with a single swing."
-	if(reach > 1)
-		weapon_stats += "\nIt can attack targets up to [reach] tiles away, and can attack over certain objects."
+	if(combat_of(src).reach > 1)
+		weapon_stats += "\nIt can attack targets up to [combat_of(src).reach] tiles away, and can attack over certain objects."
 
 	return weapon_stats

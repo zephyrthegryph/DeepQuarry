@@ -11,10 +11,10 @@
 	throw_range = 15
 	MATERIAL_BULK(MAT_STEEL, 60)
 	pressure_resistance = 2
-	attack_verb = list("stamped")
 	var/stamptext = null
 
 CAPABILITIES(/obj/item/stamp)
+	configure(item_combat(attack_verbs = list("stamped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_DEVICE, pickup = SFX_ITEMS_PICKUP_DEVICE))
 
 /obj/item/stamp/captain
@@ -52,7 +52,9 @@ CAPABILITIES(/obj/item/stamp)
 /obj/item/stamp/denied
 	name = "\improper DENIED rubber stamp"
 	icon_state = "stamp-deny"
-	attack_verb = list("DENIED")
+
+CAPABILITIES(/obj/item/stamp/denied)
+	configure(item_combat(attack_verbs = list("DENIED")))
 
 /obj/item/stamp/accepted
 	name = "\improper ACCEPTED rubber stamp"

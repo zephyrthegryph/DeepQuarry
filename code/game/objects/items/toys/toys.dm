@@ -21,9 +21,9 @@
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 
 CAPABILITIES(/obj/item/toy)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES))
 
 /*
@@ -98,12 +98,12 @@ CAPABILITIES(/obj/item/toy/balloon)
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "syndballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/syndicateballoon)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/nanotrasenballoon
@@ -112,12 +112,12 @@ CAPABILITIES(/obj/item/toy/syndicateballoon)
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "ntballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/nanotrasenballoon)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /obj/item/toy/colorballoon /// To color it, VV the 'color' var with a hex color code with the # included.
@@ -126,12 +126,12 @@ CAPABILITIES(/obj/item/toy/nanotrasenballoon)
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
-	force = 0
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "colorballoon"
 	w_class = ITEMSIZE_LARGE
 
 CAPABILITIES(/obj/item/toy/colorballoon)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 
 /*
@@ -169,9 +169,9 @@ CAPABILITIES(/obj/item/toy/colorballoon)
 		)
 	var/active = 0
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list("attacked", "struck", "hit")
 
 CAPABILITIES(/obj/item/toy/sword)
+	configure(item_combat(attack_verbs = list("attacked", "struck", "hit")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN))
 	op("toggle", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
@@ -246,10 +246,11 @@ TRACKED(/obj/item/toy/sword, lcolor)
 		slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
 		)
 	slot_flags = SLOT_BELT | SLOT_BACK
-	force = 5
 	throwforce = 5
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced")
+
+CAPABILITIES(/obj/item/toy/katana)
+	configure(item_combat(force = 5, attack_verbs = list("attacked", "slashed", "stabbed", "sliced")))
 
 /*
  * Snap pops
@@ -654,9 +655,11 @@ CAPABILITIES(/obj/item/toy/figure)
 	desc = "An adorable stuffed toy that resembles a space carp."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "basecarp"
-	attack_verb = list("bitten", "eaten", "fin slapped")
 	squeeze_sound = SFX_WEAPONS_BITE
 	cooldown_length = 1 SECOND
+
+CAPABILITIES(/obj/item/toy/plushie/carp)
+	configure(item_combat(attack_verbs = list("bitten", "eaten", "fin slapped")))
 
 // Attack mob
 /obj/item/toy/plushie/carp/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -1304,7 +1307,9 @@ CAPABILITIES(/obj/item/toy/plushie)
 		slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 		)
 	w_class = ITEMSIZE_LARGE
-	attack_verb = list("attacked", "slashed", "stabbed", "poked")
+
+CAPABILITIES(/obj/item/toy/cultsword)
+	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "poked")))
 
 //Flowers fake & real
 
@@ -1470,10 +1475,10 @@ CAPABILITIES(/obj/item/inflatable_duck)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "tinyxmastree"
 	w_class = ITEMSIZE_TINY
-	force = 1
 	throwforce = 1
 
 CAPABILITIES(/obj/item/toy/xmastree)
+	configure(item_combat(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOX))
 
 //////////////////////////////////////////////////////
@@ -1485,10 +1490,10 @@ CAPABILITIES(/obj/item/toy/xmastree)
 	desc = "This should never display."
 	icon = 'icons/obj/chess.dmi'
 	w_class = ITEMSIZE_SMALL
-	force = 1
 	throwforce = 1
 
 CAPABILITIES(/obj/item/toy/chess)
+	configure(item_combat(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS))
 
 /obj/item/toy/chess/pawn_white
@@ -1721,7 +1726,9 @@ CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer/toy)
 	desc = "An adorable stuffed toy that resembles a lizardperson."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_lizard"
-	attack_verb = list("clawed", "hissed", "tail slapped")
+
+CAPABILITIES(/obj/item/toy/plushie/lizardplushie)
+	configure(item_combat(attack_verbs = list("clawed", "hissed", "tail slapped")))
 
 /obj/item/toy/plushie/lizardplushie/kobold
 	name = "kobold plushie"
@@ -1729,9 +1736,9 @@ CAPABILITIES(/obj/item/clothing/gloves/ring/buzzer/toy)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "kobold"
 	pokephrase = "Wehhh!"
-	attack_verb = list("raided", "kobolded", "weh'd")
 
 CAPABILITIES(/obj/item/toy/plushie/lizardplushie/kobold)
+	configure(item_combat(attack_verbs = list("raided", "kobolded", "weh'd")))
 	configure(item_sounds(drop = SFX_VOICE_WEH))
 
 /* // Disable, this is an upstream player reference.
@@ -1741,7 +1748,9 @@ CAPABILITIES(/obj/item/toy/plushie/lizardplushie/kobold)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "marketable_resh"
 	pokephrase = "Halt! Sssecurity!"		//"Butts!" would be too obvious
-	attack_verb = list("valided", "justiced", "batoned")
+
+CAPABILITIES(/obj/item/toy/plushie/lizardplushie/resh)
+	configure(item_combat(attack_verbs = list("valided", "justiced", "batoned")))
 */ // end
 
 /obj/item/toy/plushie/slimeplushie
@@ -1749,15 +1758,19 @@ CAPABILITIES(/obj/item/toy/plushie/lizardplushie/kobold)
 	desc = "An adorable stuffed toy that resembles a slime. It is practically just a hacky sack."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_slime"
-	attack_verb = list("blorbled", "slimed", "absorbed", "glomped")
 	gender = FEMALE	//given all the jokes and drawings, I'm not sure the xenobiologists would make a slimeboy
+
+CAPABILITIES(/obj/item/toy/plushie/slimeplushie)
+	configure(item_combat(attack_verbs = list("blorbled", "slimed", "absorbed", "glomped")))
 
 /obj/item/toy/plushie/box
 	name = "cardboard plushie"
 	desc = "A toy box plushie, it holds cotton. Only a baddie would place a bomb through the postal system..."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "box"
-	attack_verb = list("open", "closed", "packed", "hidden", "rigged", "bombed", "sent", "gave")
+
+CAPABILITIES(/obj/item/toy/plushie/box)
+	configure(item_combat(attack_verbs = list("open", "closed", "packed", "hidden", "rigged", "bombed", "sent", "gave")))
 
 /obj/item/toy/plushie/borgplushie
 	name = "robot plushie"
@@ -1765,7 +1778,9 @@ CAPABILITIES(/obj/item/toy/plushie/lizardplushie/kobold)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "securityk9"
 	bubble_icon = "security"
-	attack_verb = list("beeped", "booped", "pinged")
+
+CAPABILITIES(/obj/item/toy/plushie/borgplushie)
+	configure(item_combat(attack_verbs = list("beeped", "booped", "pinged")))
 
 /obj/item/toy/plushie/borgplushie/medihound
 	name = "medihound plushie"
@@ -1851,7 +1866,9 @@ CAPABILITIES(/obj/item/toy/plushie/borgplushie/drake)
 	icon_state = "plushie_nuke"
 	pokephrase = "Hey, has anyone seen the nuke disk?"
 	bubble_icon = "synthetic_evil"
-	attack_verb = list("shot", "nuked", "detonated")
+
+CAPABILITIES(/obj/item/toy/plushie/nukeplushie)
+	configure(item_combat(attack_verbs = list("shot", "nuked", "detonated")))
 
 /obj/item/toy/plushie/otter
 	name = "otter plush"
@@ -1917,25 +1934,31 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	name = "toaster plushie"
 	desc = "A stuffed toy of a pleasant art-deco toaster. It has a small tag on it reading 'Bricker Home Appliances! All rights reserved, copyright 2298.' It's a tad heavy on account of containing a heating coil. Want to make toast?"
 	icon_state = "marketable_tost"
-	attack_verb = list("toasted", "burnt")
 	pokephrase = "Ding!"
 	bubble_icon = "machine"
 	squeeze_sound = SFX_MACHINES_DING
+
+CAPABILITIES(/obj/item/toy/plushie/ipc/toaster)
+	configure(item_combat(attack_verbs = list("toasted", "burnt")))
 
 /obj/item/toy/plushie/snakeplushie
 	name = "snake plushie"
 	desc = "An adorable stuffed toy that resembles a snake. Not to be mistaken for the real thing."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "plushie_snake"
-	attack_verb = list("hissed", "snek'd", "rattled")
+
+CAPABILITIES(/obj/item/toy/plushie/snakeplushie)
+	configure(item_combat(attack_verbs = list("hissed", "snek'd", "rattled")))
 
 /obj/item/toy/plushie/generic
 	name = "perfectly generic plushie"
 	desc = "An average-sized green cube. It isn't notable in any way."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "generic"
-	attack_verb = list("existed near")
 	bubble_icon = "textbox"
+
+CAPABILITIES(/obj/item/toy/plushie/generic)
+	configure(item_combat(attack_verbs = list("existed near")))
 
 
 /obj/item/toy/plushie/moth
@@ -1951,7 +1974,9 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	desc = "A soft crab plushie with hard shiny plastic on it's claws."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "crab"
-	attack_verb = list("snipped", "carcinated")
+
+CAPABILITIES(/obj/item/toy/plushie/crab)
+	configure(item_combat(attack_verbs = list("snipped", "carcinated")))
 
 /obj/item/toy/plushie/possum
 	name = "opossum plushie"
@@ -1966,7 +1991,9 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	compells you to hide any loose objects it might steal."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "goose"
-	attack_verb = list("honked")
+
+CAPABILITIES(/obj/item/toy/plushie/goose)
+	configure(item_combat(attack_verbs = list("honked")))
 
 /obj/item/toy/plushie/mouse/white
 	name = "white mouse plush"
@@ -1980,8 +2007,10 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	icon_state = "sus_red"
 	pokephrase = "Stab!"
 	bubble_icon = "security"
-	attack_verb = list("stabbed", "slashed")
 	squeeze_sound = SFX_WEAPONS_SLICE
+
+CAPABILITIES(/obj/item/toy/plushie/sus)
+	configure(item_combat(attack_verbs = list("stabbed", "slashed")))
 
 /obj/item/toy/plushie/sus/blue
 	name = "blue spaceman plushie"
@@ -2027,9 +2056,9 @@ CAPABILITIES(/obj/item/toy/plushie/ipc)
 	plastic that you can draw on if you wanted."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "rock"
-	attack_verb = list("grug'd", "unga'd")
 
 CAPABILITIES(/obj/item/toy/rock)
+	configure(item_combat(attack_verbs = list("grug'd", "unga'd")))
 	op("draw_face", item(/obj/item/pen), label("Draw a face"), then(PROC_REF(interaction_draw_face)))
 
 /// Old attackby.
@@ -2286,11 +2315,11 @@ CAPABILITIES(/obj/item/toy/nuke)
 	desc = "A miniature recreation of NanoTrasen's famous meat grinder. Equipped with a special interlock that prevents insertion of organic material."
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "gibber"
-	attack_verb = list("grinded", "gibbed")
 	COOLDOWN_DECLARE(cooldown)
 	var/obj/stored_minature = null // owned: the miniature held by the toy gibber, kept in its contents
 
 CAPABILITIES(/obj/item/toy/minigibber)
+	configure(item_combat(attack_verbs = list("grinded", "gibbed")))
 	owns_one(nameof(stored_minature), /obj)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("feed", item(/obj/item/toy/figure), item(/obj/item/toy/character), label("Feed"), when(req(PROC_REF(can_feed))), claims(), begins(PROC_REF(feed_begins)), wait(1 SECOND), on_interrupt(PROC_REF(feed_stopped)), then(PROC_REF(interaction_feed)))
@@ -2384,8 +2413,6 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	throwforce = 5
 	throw_speed = 4
 	throw_range = 5
-	force = 5
-	attack_verb = list("struck", "hit", "bashed")
 	var/bullets_left = 0
 	var/max_shots = 6
 
@@ -2393,6 +2420,7 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 	spin_cylinder()
 
 CAPABILITIES(/obj/item/toy/russian_revolver)
+	configure(item_combat(force = 5, attack_verbs = list("struck", "hit", "bashed")))
 	after_init(0, then(PROC_REF(revolver_after_init)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -2482,14 +2510,13 @@ CAPABILITIES(/obj/item/toy/russian_revolver/trick_revolver)
 	desc = "A toy chainsaw with a rubber edge. Ages 8 and up"
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
-	force = 0
 	throwforce = 0
 	throw_speed = 4
 	throw_range = 20
-	attack_verb = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")
 	var/cooldown = 0
 
 CAPABILITIES(/obj/item/toy/chainsaw)
+	configure(item_combat(force = 0, attack_verbs = list("sawed", "cut", "hacked", "carved", "cleaved", "butchered", "felled", "timbered")))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

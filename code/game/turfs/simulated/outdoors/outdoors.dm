@@ -254,12 +254,14 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	singular_name = "floor tile"
 	desc = "A stone tile fit for covering a section of floor."
 	icon_state = "tile"
-	force = 6.0
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
 	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	no_variants = FALSE
+
+CAPABILITIES(/obj/item/stack/tile/floor/sidewalk)
+	configure(item_combat(force = 6.0))
 
 // ALLOW(init/INSTANCE_STATE): rolls its sidewalk wear pattern for each tile
 /turf/simulated/floor/outdoors/sidewalk/Initialize(mapload)
@@ -310,12 +312,14 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	singular_name = "floor tile"
 	desc = "A concrete tile fit for covering a section of floor."
 	icon_state = "tile"
-	force = 6.0
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
 	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	no_variants = TRUE
+
+CAPABILITIES(/obj/item/stack/tile/floor/concrete)
+	configure(item_combat(force = 6.0))
 
 /datum/decl/flooring/concrete
 	build_type = /obj/item/stack/tile/floor/concrete

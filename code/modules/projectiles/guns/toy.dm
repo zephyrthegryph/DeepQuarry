@@ -42,7 +42,6 @@
 	item_state = "shotgun"
 	max_shells = 6
 	w_class = ITEMSIZE_LARGE
-	force = 2
 	slot_flags = null
 	caliber = "foam"
 	load_method = SINGLE_CASING
@@ -52,6 +51,9 @@
 	handle_casings = null
 	recoil = 0
 	fire_sound = SFX_ITEMS_SYRINGEPROJ
+
+CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/toy)
+	configure(item_combat(force = 2))
 
 /*
  * Moist Nugget

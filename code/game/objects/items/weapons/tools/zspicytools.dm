@@ -8,9 +8,9 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "heavysniper"
 	toolspeed = 0.1
-	force = 30
 
 CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
+	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_GUNSHOT_CANNON))
 
 /obj/item/weldingtool/lasercannon
@@ -44,9 +44,9 @@ CAPABILITIES(/obj/item/weldingtool/lasercannon)
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "coilgun"
 	toolspeed = 0.1
-	force = 30
 
 CAPABILITIES(/obj/item/tool/wrench/fuelrod)
+	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_RAILGUN))
 
 /obj/item/tool/wirecutters/chainsaw
@@ -57,9 +57,9 @@ CAPABILITIES(/obj/item/tool/wrench/fuelrod)
 	item_state = "chainsaw0"
 	random_color = FALSE
 	toolspeed = 0.1
-	force = 30
 
 CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
+	configure(item_combat(force = 30))
 	configure(item_sounds(use = SFX_WEAPONS_CHAINSAW_ATTACK))
 
 /obj/item/tool/screwdriver/diamonddrill
@@ -70,9 +70,9 @@ CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
 	item_state = "jackhammer"
 	random_color = FALSE
 	toolspeed = 0.1
-	force = 30
 
 CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
+	configure(item_combat(force = 30))
 	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/stack/cable_coil/alien/blood

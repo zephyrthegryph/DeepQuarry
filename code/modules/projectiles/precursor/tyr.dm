@@ -19,21 +19,25 @@
 	icon = 'icons/obj/guns/precursor/tyr.dmi'
 	icon_state = "blaster_blast"
 	damage = 35
-	armor_penetration = 15
 	range = 6
 	penetrating = 2
+
+CAPABILITIES(/obj/item/projectile/energy/tyr_rifle)
+	configure(item_combat(armor_penetration = 15))
 
 /obj/item/projectile/beam/precursor_tyr
 	name = "laser"
 	icon_state = "laser"
 	damage = 9
-	armor_penetration = 40
 	penetrating = 2
 	range = 4
 	eyeblur = 0 //no no no no no
 	hitscan = 1
 	hud_state = "laser"
 	hud_state_empty = "battery_empty"
+
+CAPABILITIES(/obj/item/projectile/beam/precursor_tyr)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/tyrshotburst
 	use_submunitions = 1
@@ -59,7 +63,6 @@
 	cell_type = /obj/item/cell/device/weapon/recharge/alien/tyr
 	projectile_type = /obj/item/projectile/energy/tyr_rifle
 
-	force = 35
 
 	recoil_mode = 0
 	charge_meter = 1
@@ -71,6 +74,9 @@
 
 	move_delay = 0
 	one_handed_penalty = 50
+
+CAPABILITIES(/obj/item/gun/energy/tyr_rifle)
+	configure(item_combat(force = 35))
 
 /obj/item/cell/device/weapon/recharge/alien/tyr
 	name = "odd cell"
@@ -90,11 +96,13 @@
 	injury_kind = INJURY_BLUNT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 20 //16 with intended armor
-	armor_penetration = 20
 	speed = 10
 	color = "#FF6600"
 	modifier_type_to_apply = /datum/body_effect/deep_wounds //reduced healing
 	modifier_duration = 1 MINUTE
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/tyrjavelin)
+	configure(item_combat(armor_penetration = 20))
 
 /obj/item/projectile/energy/eclipse_boss/tyrjavelin/speed
 	speed = 7
@@ -129,10 +137,12 @@
 	damage = 15
 	injury_kind = INJURY_ELECTRIC
 	icon_state = "tesla_projectile"
-	armor_penetration = 30
 	speed = 15
 	penetrating = 5
 	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/agate_lighting)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/agate_lighting/fast
 	damage = 20

@@ -330,7 +330,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 	var/punch_injury_kind						//What punches in these gloves inflict (INJURY_*); null = the punch's own kind.
 	body_parts_covered = HANDS
 	slot_flags = SLOT_GLOVES
-	attack_verb = list("challenged")
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
@@ -344,6 +343,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 		|ACCESSORY_SLOT_WRIST)
 
 CAPABILITIES(/obj/item/clothing/gloves)
+	configure(item_combat(attack_verbs = list("challenged")))
 	configure(item_protection(siemens = 0.9, heat_parts = HANDS, cold_parts = HANDS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
@@ -620,7 +620,6 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
 	slowdown = SHOES_SLOWDOWN
-	force = 2
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',
@@ -635,6 +634,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
 	// A micro climbing out of the shoes (container_resist()): they are inside them, so what is kept is that the shoes stay where they were and the micro stays put.

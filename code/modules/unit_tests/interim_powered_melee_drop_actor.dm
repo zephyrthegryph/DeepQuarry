@@ -13,7 +13,7 @@
 	var/obj/item/cell/cell = tool.get_cell()
 	TEST_ASSERT_NOTNULL(cell, "the actual loaded weapon owns its installed cell")
 	var/initial_charge = cell.charge
-	var/initial_force = tool.force
+	var/initial_force = combat_of(tool).force
 	TEST_ASSERT(actor.put_in_r_hand(tool), "the real tool begins held by its actual actor")
 	TEST_ASSERT_EQUAL(tool.loc, actor, "actual tool location satisfies the original owner guard")
 	set_var(tool, nameof(tool.canremove), FALSE)
@@ -47,7 +47,7 @@
 	TEST_ASSERT_EQUAL(tool.get_cell(), cell, "inventory routing preserves the exact installed cell")
 	TEST_ASSERT_EQUAL(cell.loc, tool, "the actual installed cell remains physically contained")
 	TEST_ASSERT_EQUAL(cell.charge, initial_charge, "inventory routing spends no actual cell charge")
-	TEST_ASSERT_EQUAL(tool.force, initial_force, "inventory routing preserves actual weapon force")
+	TEST_ASSERT_EQUAL(combat_of(tool).force, initial_force, "inventory routing preserves actual weapon force")
 
 /// Real held weapon movement exercises existing actor ownership and slot guards.
 /datum/unit_test/interim_shock_maul_drop_actor/Run()
@@ -65,9 +65,9 @@
 	TEST_ASSERT_NOTNULL(cell, "the actual loaded weapon owns its installed cell")
 	var/initial_charge = cell.charge
 	TEST_ASSERT(actor.put_in_r_hand(tool), "the real tool begins held by its actual actor")
-	TEST_ASSERT_EQUAL(tool.force, initial(tool.force), "actual equipped maul with a free second hand uses its declared wielded force")
+	TEST_ASSERT_EQUAL(combat_of(tool).force, combat_of_type(tool.type).force, "actual equipped maul with a free second hand uses its declared wielded force")
 	TEST_ASSERT(tool.is_held_twohanded(actor) && tool.wielded, "the actual free second hand establishes real two-handed wielding")
-	var/initial_force = tool.force
+	var/initial_force = combat_of(tool).force
 	TEST_ASSERT_EQUAL(tool.loc, actor, "actual tool location satisfies the original owner guard")
 	set_var(tool, nameof(tool.canremove), FALSE)
 	TEST_ASSERT_EQUAL(tool.handle_inventory_drop(actor, blocker), TRUE, "a nonremovable real tool retains the earlier consumed guard even for a non-screen target")
@@ -100,5 +100,5 @@
 	TEST_ASSERT_EQUAL(tool.get_cell(), cell, "inventory routing preserves the exact installed cell")
 	TEST_ASSERT_EQUAL(cell.loc, tool, "the actual installed cell remains physically contained")
 	TEST_ASSERT_EQUAL(cell.charge, initial_charge, "inventory routing spends no actual cell charge")
-	TEST_ASSERT_EQUAL(tool.force, initial_force, "the real free-hand roundtrip preserves the original equipped wielded force")
+	TEST_ASSERT_EQUAL(combat_of(tool).force, initial_force, "the real free-hand roundtrip preserves the original equipped wielded force")
 	TEST_ASSERT(tool.is_held_twohanded(actor) && tool.wielded, "the actual roundtrip restores the real free-hand wielding state")

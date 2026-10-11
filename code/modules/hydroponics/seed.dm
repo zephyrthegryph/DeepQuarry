@@ -843,7 +843,7 @@
 					blight = 5
 				product.set_light(blight, 0.5, l_color = clr)
 			if(get_trait(TRAIT_STINGS) && isitem(product)) //Sometimes the product can be a mob.
-				product.force = 1
+				product.set_force(1)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(isliving(product))

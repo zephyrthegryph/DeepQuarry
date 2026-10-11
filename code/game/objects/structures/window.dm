@@ -220,7 +220,7 @@
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
-			hit(W.force)
+			hit(combat_of(W).force)
 			if(get_integrity() <= 7)
 				set_anchored(FALSE)
 				step(src, get_dir(user, src))

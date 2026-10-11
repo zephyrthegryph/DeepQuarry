@@ -5,7 +5,6 @@
 	icon_state = "jar"
 	density = FALSE
 	anchored = FALSE
-	force = 8
 	throwforce = 10
 	throw_speed = 1
 	throw_range = 2
@@ -16,6 +15,7 @@
 
 
 CAPABILITIES(/obj/item/am_containment)
+	configure(item_combat(force = 8))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(jar_blast))))
 
 /// A devastating blast, or a lucky one against an unstable jar, sets off the fuel; any other blast only destabilises it.

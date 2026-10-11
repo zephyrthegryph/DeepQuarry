@@ -7,15 +7,14 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "wrench"
 	slot_flags = SLOT_BELT
-	force = 6
 	throwforce = 7
 	w_class = ITEMSIZE_SMALL
 	material_total = 150
-	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
 	toolspeed = 1
 	tool_qualities = list(TOOL_WRENCH)
 
 CAPABILITIES(/obj/item/tool/wrench)
+	configure(item_combat(force = 6, attack_verbs = list("bashed", "battered", "bludgeoned", "whacked")))
 	configure(item_sounds(use = SFX_ITEMS_RATCHET, drop = SFX_ITEMS_DROP_WRENCH, pickup = SFX_ITEMS_PICKUP_WRENCH))
 
 /obj/item/tool/wrench/pipe
@@ -23,8 +22,10 @@ CAPABILITIES(/obj/item/tool/wrench)
 	desc = "A wrench used for plumbing. Can make a good makeshift weapon."
 	icon_state = "pipe_wrench"
 	slot_flags = SLOT_BELT
-	force = 8
 	throwforce = 10
+
+CAPABILITIES(/obj/item/tool/wrench/pipe)
+	configure(item_combat(force = 8))
 
 /obj/item/tool/wrench/hybrid	// Slower and bulkier than normal power tools, but it has the power of reach. If reach even worked half the time.
 	name = "strange wrench"
@@ -32,14 +33,12 @@ CAPABILITIES(/obj/item/tool/wrench)
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "hybwrench"
 	slot_flags = SLOT_BELT
-	force = 8
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("bashed", "battered", "bludgeoned", "whacked", "warped", "blasted")
 	toolspeed = 0.5
-	reach = 2
 
 CAPABILITIES(/obj/item/tool/wrench/hybrid)
+	configure(item_combat(force = 8, attack_verbs = list("bashed", "battered", "bludgeoned", "whacked", "warped", "blasted"), reach = 2))
 	configure(item_sounds(use = SFX_EFFECTS_STEALTHOFF))
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_wrench
@@ -71,10 +70,9 @@ CAPABILITIES(/obj/item/tool/wrench/alien)
 /obj/item/tool/wrench/power
 	name = "power wrench"
 	desc = "You shouldn't see this."
-	force = 8
 	throwforce = 8
-	attack_verb = list("drilled", "screwed", "jabbed")
 	toolspeed = 0.25
 
 CAPABILITIES(/obj/item/tool/wrench/power)
+	configure(item_combat(force = 8, attack_verbs = list("drilled", "screwed", "jabbed")))
 	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))
