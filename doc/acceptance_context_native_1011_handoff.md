@@ -11,3 +11,5 @@ The prerequisites carry 141 tracked mutation conversions in 70 files from the ea
 Old-table boundary fixtures exercise real content: distinct wearer/mover, exact ordered fit and size refusals, physical equip/remove custody, absent and empty suit storage, paperwork slots, instance override/adopt semantics and sprite fallback. Runtime proof remains pending. Missing concrete conversion pins must be recorded before the declaration cohort is converted; inherited factoring alone is not coverage.
 
 Verification is pending. No pins have been blessed, no baseline increased and no ALLOW annotation added by this landing.
+
+Generator verification: eight focused actions-generator Rust tests passed (zero failures; 187 unrelated tests filtered out), with one cargo job at a time and two build workers. Generation passed. The 140 missing old-table pin files are currently empty recording inputs, not successful coverage. No production acceptance table has been converted. The compile, DreamChecker, ratchet and focused runtime gate remains pending.
