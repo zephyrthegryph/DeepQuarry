@@ -1,1 +1,0 @@
-{"version":1,"branch":"probe","branch_commit":"47af48e7d2706feb7b898d1c5f5965cd16feee9a","tested_commit":"47af48e7d2706feb7b898d1c5f5965cd16feee9a","master_commit":"b6daa8777ad3d10447f5c02ba51fe5e19b1e80fe","tests":["dq_lifeform_params"],"covers":[],"ok":true,"passed":1,"failed":0,"new_failed":0}
