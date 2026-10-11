@@ -542,12 +542,40 @@
       "Final release performance/CPU/memory/I/O gates"
     ],
     "archive_sha256": "fade99efa4e9bd01e78b0c3ec4fd32549546c8a9174469e7aa8d3c8330776bdd",
-    "cohort_status": "running; initializer classification and code generation succeeded, complete output not yet admitted",
+    "cohort_status": "failed: initial request exceeded 300 seconds during ProcedureLowering; no output or timings admitted; daemon and client reaped",
     "build_exit_code": 0,
     "acceptance_profile": false,
     "source_commit": "51a148bc3e8d3c2abe1fdff8d280b5f240f9c34d",
     "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-51a148bc3e-dmbc.exe",
     "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-120313-3e315ebc/receipt.json",
-    "cleanup_reaped": true
+    "cleanup_reaped": true,
+    "current_gates": {
+      "modified_features": {
+        "acceptance_agrees": true,
+        "header_bits_match": true,
+        "cases": 8,
+        "exact_diagnostics_agree": false,
+        "rejection_class_agrees": true,
+        "receipt": "E:/dq-cache/dmb-modified-source-features/20261011-51a148/f28f0367a1394facb0329330abeef802/receipt.json"
+      },
+      "disk_fixture": {
+        "failure": "fixture supplied unsupported --cache-root flag; no disk replay admitted",
+        "complete": false,
+        "receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/3a4c21da79654ee798deb1456aa7f48d/receipt.json"
+      },
+      "compile_error_contract": {
+        "exit": 0,
+        "cases": 18,
+        "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-51a148/544d86c9fdc548b78c34e9096c926806/receipt.json"
+      },
+      "folded_features": {
+        "acceptance_agrees": true,
+        "header_bits_match": true,
+        "cases": 14,
+        "exact_diagnostics_agree": false,
+        "rejection_class_agrees": true,
+        "receipt": "E:/dq-cache/dmb-folded-source-features/20261011-51a148/3a2919f6d28a46408935ddb3110c3669/receipt.json"
+      }
+    }
   }
 }
