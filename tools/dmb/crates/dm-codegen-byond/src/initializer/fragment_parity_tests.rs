@@ -49,7 +49,7 @@ fn resolver_failure_uses_issued_assignment_coordinate() {
     }];
     let error = lower_assignment_views(&assignments, InitializerContext {
         symbols: &symbols, resource_search_context: None, debug: None,
-    }, &Host).unwrap_err();
+    }, &Host).err().unwrap();
     let InitializerError::Lowering(errors) = error else { panic!("expected a typed lowering error") };
     assert_eq!(errors.len(), 1);
     assert_eq!(errors[0].span, Some(crate::LowerSpan { start: 7, end: 7 }));

@@ -354,10 +354,10 @@ fn dynamic_colon_verb_uses_native_verb_namespace_operand() {
 
 #[test]
 fn c_style_typed_local_records_current_native_receiver_reads() {
-    struct Host(std::cell::RefCell<Vec<Q>>);
+    struct Host(std::sync::Mutex<Vec<Q>>);
     impl Resolver for Host {
         fn resolve(&self, query: Q) -> M {
-            self.0.borrow_mut().push(query);
+            self.0.lock().unwrap().push(query);
             match query {
                 Q::RuntimeType(owner) if owner == SymbolId::of("/list") => M::Symbol(owner),
                 Q::Proc {
@@ -403,7 +403,7 @@ fn c_style_typed_local_records_current_native_receiver_reads() {
             &host,
         )
         .unwrap();
-        assert!(host.0.borrow().iter().any(
+        assert!(host.0.lock().unwrap().iter().any(
             |query| matches!(query, Q::Proc { owner, .. } if *owner == SymbolId::of("/list"))
         ));
     }
