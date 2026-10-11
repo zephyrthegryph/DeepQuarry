@@ -11,11 +11,11 @@ class CorpusTests(unittest.TestCase):
         driver = contract.driver()
         self.assertEqual(driver.HERE, HERE)
         self.assertEqual(driver.CASES, driver.ORIGINAL_CASES)
-        self.assertEqual(len(driver.CASES), 5)
+        self.assertEqual(len(driver.CASES), 9)
         for name in driver.CASES:
             self.assertEqual((HERE / (name + ".dme")).read_text(),
                              '#include "' + name + '.dm"\n')
-            self.assertIn("return first", (HERE / (name + ".dm")).read_text())
+            self.assertIn("/proc/probe()", (HERE / (name + ".dm")).read_text())
 
 if __name__ == "__main__":
     unittest.main()

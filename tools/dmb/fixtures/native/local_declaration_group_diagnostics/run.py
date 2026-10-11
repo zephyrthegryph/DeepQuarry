@@ -2,7 +2,7 @@
 import importlib.util
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
-CASES = ('comma_initialized', 'comma_uninitialized', 'comma_typed_list', 'separate_control', 'group_block_control')
+CASES = ('comma_initialized', 'comma_uninitialized', 'comma_typed_list', 'separate_control', 'group_block_control', 'group_typed_prefix', 'group_nested_typed_comma', 'group_side_effect_order', 'group_duplicate_name')
 
 
 def driver():
