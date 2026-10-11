@@ -55,12 +55,17 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
 /// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
+	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
-	if(GLOB.op_menu_read_frame)
-		var/list/pairs = list()
-		op_reads_of(A, cond, pairs)
-		op_menu_record_reads(pairs)
-	. = op_cond_eval(A, cond)
+	try
+		if(GLOB.op_menu_read_frame)
+			var/list/pairs = list()
+			op_reads_of(A, cond, pairs)
+			op_menu_record_reads(pairs)
+		. = op_cond_eval(A, cond)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
 	op_pure_end()
 
 /proc/op_cond_eval(datum/act/op/A, cond)

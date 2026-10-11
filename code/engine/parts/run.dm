@@ -303,10 +303,15 @@
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
-	if(GLOB.op_menu_read_frame)
-		op_menu_record_reads(op_watch_reads(A))
-	. = op_require_reason_inner(A, P, B)
+	try
+		if(GLOB.op_menu_read_frame)
+			op_menu_record_reads(op_watch_reads(A))
+		. = op_require_reason_inner(A, P, B)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
 	op_pure_end()
 
 /// What a hand() op on this atom must pass first, as a refusal reason (a /datum/msg type), or null. The base asks nothing; a machine asks its hand gate.
@@ -972,7 +977,17 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 // Every published read has one registration, regardless of how many conditions read it.
 /datum/pending_op/proc/watch_reconcile(datum/act/op/A)
 	var/list/next = list()
-	for(var/list/pair as anything in op_watch_reads(A))
+	var/list/reads
+	var/previous_pure_depth = GLOB.op_pure_depth
+	op_pure_begin()
+	try
+		reads = op_watch_reads(A)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
+	op_pure_end()
+	// Collection is pure; bookkeeping below changes subscriptions only after success.
+	for(var/list/pair as anything in reads)
 		watch_collect(next, pair)
 	for(var/index in watch_extra?.Copy())
 		var/list/extra = watch_extra[index]

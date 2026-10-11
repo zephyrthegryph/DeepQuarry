@@ -330,3 +330,86 @@ CAPABILITIES(/obj/dq_acceptance_wait)
 	TEST_ASSERT(R && !R["enabled"], "Deleted dependency fails closed")
 	TEST_ASSERT_EQUAL(R["reason"], "dependency deleted", "Deletion reason retained")
 	TEST_ASSERT_NULL(F.dependency, "Declared reference clears on target deletion")
+
+// Add to the existing foundation test translation unit.
+/obj/dq_acceptance_metadata_cleanup
+	var/fault_metadata = FALSE
+	var/probe = 0
+TRACKED(/obj/dq_acceptance_metadata_cleanup, fault_metadata)
+TRACKED(/obj/dq_acceptance_metadata_cleanup, probe)
+/obj/dq_acceptance_metadata_cleanup/needs_fault
+CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/needs_fault)
+	op("cleanup", ui_act("cleanup"), needs(part_make(/datum/entry/part/req/dq_metadata_cleanup)), wait(10 SECONDS), then(PROC_REF(done)))
+/obj/dq_acceptance_metadata_cleanup/when_fault
+CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
+	op("cleanup", ui_act("cleanup"), when(part_make(/datum/entry/part/req/dq_metadata_cleanup)), then(PROC_REF(done)))
+/obj/dq_acceptance_metadata_cleanup/proc/done(datum/act/op/A)
+	return OP_OK
+/datum/entry/part/req/dq_metadata_cleanup/check(datum/act/op/A)
+	return null
+/datum/entry/part/req/dq_metadata_cleanup/holds(datum/act/op/A)
+	return TRUE
+/datum/entry/part/req/dq_metadata_cleanup/read_keys(datum/act/op/A)
+	var/obj/dq_acceptance_metadata_cleanup/F = A.holder
+	if(F.fault_metadata)
+		F.set_probe(F.probe + 1)
+		CRASH("expected metadata cleanup fault")
+	return list(list(F, nameof(F.probe)))
+
+/datum/unit_test/dq_acceptance_metadata_cleanup/Run()
+	test_driver_begin()
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture)
+	var/obj/dq_acceptance_metadata_cleanup/needs_fault/F = allocate(/obj/dq_acceptance_metadata_cleanup/needs_fault)
+	var/datum/op_result/result = test_ui(M, F, "cleanup", list())
+	TEST_ASSERT_NULL(result.outcome, "Real native wait starts without metadata fault")
+	var/datum/pending_op/P = op_pending_for(M, "cleanup")
+	TEST_ASSERT(P?.active, "Real wait has a live pending record")
+	var/key = nameof(F.probe)
+	var/readers = F.rx.observed[key]
+	var/list/index_before = P.watch_index.Copy()
+	var/depth = GLOB.op_pure_depth
+	var/expected_before = GLOB.op_pure_expected
+	var/list/violations_before = GLOB.op_pure_violations
+	GLOB.op_pure_violations = violations_before ? violations_before.Copy() : list()
+	GLOB.op_pure_expected = TRUE
+	// Test-only flag change avoids invoking automatic recheck before the explicit fault probe.
+	F.fault_metadata = TRUE
+	var/caught = FALSE
+	var/count_before = length(GLOB.op_pure_violations)
+	try
+		P.watch_reconcile(P.act)
+	catch(var/exception/fault)
+		caught = TRUE
+	TEST_ASSERT(caught, "Pending metadata fault propagates")
+	TEST_ASSERT_EQUAL(F.probe, 1, "Real metadata setter ran")
+	TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Pending metadata runs under purity guard")
+	TEST_ASSERT_EQUAL(GLOB.op_pure_depth, depth, "Pending fault restores exact caller purity depth")
+	TEST_ASSERT_EQUAL(F.rx.observed[key], readers, "Failed read collection preserves live reader count")
+	TEST_ASSERT_EQUAL(length(P.watch_index), length(index_before), "Failed collection preserves subscription count")
+	for(var/index in index_before)
+		TEST_ASSERT(P in GLOB.op_watchers[index], "Failed collection preserves every original registration")
+	F.fault_metadata = FALSE
+	P.end_with(ACT_REFUSED, /datum/msg/op/cancelled)
+	// Both requirement and selector fault paths must release pooled candidate acts.
+	for(var/path in list(/obj/dq_acceptance_metadata_cleanup/needs_fault, /obj/dq_acceptance_metadata_cleanup/when_fault))
+		var/obj/dq_acceptance_metadata_cleanup/target = allocate(path)
+		// Warm pools without caching a faulting row.
+		op_menu(M, target, null)
+		target.set_fault_metadata(TRUE)
+		var/datum/object_pool/pool = GLOB.object_pools[/datum/act/op]
+		var/out_before = pool.out
+		var/list/frame_before = GLOB.op_menu_read_frame
+		count_before = length(GLOB.op_pure_violations)
+		caught = FALSE
+		try
+			op_menu(M, target, null)
+		catch(var/exception/fault)
+			caught = TRUE
+		TEST_ASSERT(caught, "Real menu metadata callback fault propagates")
+		TEST_ASSERT_EQUAL(pool.out, out_before, "Menu fault releases the actual pooled candidate act")
+		TEST_ASSERT_EQUAL(GLOB.op_pure_depth, depth, "Menu fault restores exact caller purity depth")
+		TEST_ASSERT_EQUAL(GLOB.op_menu_read_frame, frame_before, "Menu fault restores prior read frame")
+		TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Menu callback's actual setter was detected")
+	GLOB.op_pure_expected = expected_before
+	GLOB.op_pure_violations = violations_before
+	test_driver_end()

@@ -467,12 +467,16 @@
 		return TRUE
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
-	for(var/cond in C.oplan.conds)
-		if(!op_cond(A, cond))
-			C.dropped_by = GATE_MATCH
-			C.dropped_cond = cond
-			ok = FALSE
-			break
+	try
+		for(var/cond in C.oplan.conds)
+			if(!op_cond(A, cond))
+				C.dropped_by = GATE_MATCH
+				C.dropped_cond = cond
+				ok = FALSE
+				break
+	catch(var/exception/fault)
+		A.release()
+		throw fault
 	A.release()
 	return ok
 
@@ -791,7 +795,12 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
 /proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C)
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
-	var/why = op_require_reason(A, C.oplan, C.binding)
+	var/why
+	try
+		why = op_require_reason(A, C.oplan, C.binding)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
 	A.release()
 	return why
 
