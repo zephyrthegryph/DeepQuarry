@@ -142,7 +142,7 @@ pub(super) fn initializer_totals(
             let (modifier_hits, modifier_recomputed) = store.modifier_reuse_counts();
             let (token_roster_hits, token_roster_recomputed) = store.token_roster_reuse_counts();
             serde_json::json!({
-                "scope": "retained_session_total",
+                "scope": "current_request",
                 "hits": store.hits.load(Relaxed),
                 "recomputed": store.recomputed.load(Relaxed),
                 "declined": store.declined.load(Relaxed),
@@ -160,7 +160,7 @@ pub(super) fn startup_totals(
     use std::sync::atomic::Ordering::Relaxed;
     memo.and_then(|memo| memo.startup.as_ref()).map(|store| {
         serde_json::json!({
-            "scope": "retained_session_total",
+            "scope": "current_request",
             "hits": store.hits.load(Relaxed),
             "recomputed": store.recomputed.load(Relaxed),
         })
@@ -187,7 +187,7 @@ pub(super) fn initializer_fragment_totals(
     memo.and_then(|memo| memo.initializer_fragments.as_ref())
         .map(|store| {
             serde_json::json!({
-                "scope": "retained_session_total",
+                "scope": "current_request",
                 "hits": store.hits.load(Relaxed),
                 "recomputed": store.recomputed.load(Relaxed),
                 "declined": store.declined.load(Relaxed),
