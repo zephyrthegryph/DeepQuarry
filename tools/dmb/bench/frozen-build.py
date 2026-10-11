@@ -107,8 +107,10 @@ def main():
         commit = subprocess.check_output(
             ["git", "rev-parse", "--verify", args.commit + "^{commit}"], timeout=30
         ).decode().strip()
+        # This archive is immediately unpacked, never stored or transferred.
+        # Compression adds CPU work to every source pin without changing bytes.
         archive = subprocess.check_output(
-            ["git", "archive", "--format=zip", commit, "tools/dmb"], timeout=60
+            ["git", "archive", "--format=zip", "-0", commit, "tools/dmb"], timeout=60
         )
         source = cache / "source"
         marker = cache / "source-owner.json"
