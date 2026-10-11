@@ -400,5 +400,53 @@
     "receipt": "20261011-103540-d067b295-job-cargo.json",
     "exit_code": 0,
     "scope": "cargo check --tests; not compiler performance"
+  },
+  "combined_migration_compile_check_dd1022": {
+    "source_commit": "dd1022c74d31c27223bbb41e3106c902419bb405",
+    "archive_sha256": "5b534ef5bec51d81d31c0bad8466f2c3b80c2388845687f35bde221b7865d26f",
+    "receipt": "20261011-111126-50f21aa6-job-cargo.json",
+    "exit_code": 0,
+    "packages": [
+      "dmbc",
+      "dm-codegen-byond",
+      "dm-ir",
+      "dm-tree"
+    ],
+    "scope": "cargo check --tests only; includes lazy body-owner migration and current nameof admission, not executed tests or compiler benchmark",
+    "remaining": [
+      "focused fixture execution",
+      "proc-static lexical context migration",
+      "current CLI paired BYOND compilation",
+      "real DeepQuarry end-to-end timings",
+      "full DM runtime parity"
+    ]
+  },
+  "focused_validation_dd1022": {
+    "source_commit": "dd1022c74d31c27223bbb41e3106c902419bb405",
+    "archive_sha256": "5b534ef5bec51d81d31c0bad8466f2c3b80c2388845687f35bde221b7865d26f",
+    "build_receipt": "20261011-111222-55e23f80-job-cargo.json",
+    "passed": 19,
+    "failed": 1,
+    "receipts": [
+      "20261011-111709-8f9855e9-focused.json",
+      "20261011-111709-b8c5e755-focused.json",
+      "20261011-111709-d952f2f5-focused.json",
+      "20261011-111738-bc78a33f-focused.json",
+      "20261011-111737-d4a7933d-focused.json"
+    ],
+    "failures": [
+      "Unchanged-chunk body owner fixture did not retain identity after source-origin shift; shared executor investigating"
+    ],
+    "no_test_filter_receipts": [
+      "20261011-111709-296d71e3-focused.json",
+      "20261011-111709-b8c5e755-focused.json second filter only"
+    ],
+    "scope": "Focused source-feature/nameof/modified scalar, real graphics declaration header, borrowed prepared roster, lazy envelope and local proof execution; not full suite or compiler benchmark",
+    "remaining": [
+      "body owner shift fix and rerun",
+      "new lexical static carrier check",
+      "actual current CLI paired BYOND and real DeepQuarry cohort",
+      "full runtime parity"
+    ]
   }
 }
