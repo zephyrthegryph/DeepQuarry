@@ -1090,3 +1090,34 @@ Second bounded BYOND all-tier cohort preserved 34 completed batches: 1065 passin
 Immutable cf955 compiler: retained callable four-revision runtime and fresh DMB/RSC byte oracle passed (receipt c14cf2dadada4bddaf703b3758620fc8). Paired loop diagnostics receipt 426bd81f4dd4457f87dd53b8b70c610e agrees on acceptance/error class 9/9; exact diagnostics 7/9, with two primary pair-value lookahead coordinates open. The old driver exit did not require diagnostic equality; that gate now fails on any exact diagnostic difference. Include-return receipt a4e6f75053764261ac1940a4fa7a3ae3 has 8/8 matching locations/status and wording differences.
 Real all-tier native cohort started from immutable cf955 against the captured BYOND plan; compilation 85.607 s under prototype O0/tree O1, not a performance acceptance benchmark. Inventory boot clean, 2014 selected test plan; batch runtime comparison remains in progress and is not complete. Source closure and formal runtime baseline remain open.
 New symbol-only semantic owner reuse, common binary EOF wording, and filtered iterator duplicate fixes are source implementations awaiting focused Rust rebuild and immutable paired checks; no validation claim for them yet.
+
+
+## 2026-10-10 continuation: runtime prefix and retained-owner fixes
+
+- Native compiler cf9552bd7e, pinned executable d13da0bc..., completed 18 of
+  63 all-tier batches within the owned 1800-second cohort. The interrupted 19th
+  batch is excluded. 576 selected tests and 18 framework checks passed, zero
+  runtime errors, all completed boots clean. Owned children reaped.
+- The same 594 completed rows match the captured BYOND prefix in status, message,
+  runtime count, runtime error arrays and truncation counts. This is a prefix
+  diagnostic comparison, not the completed formal runtime baseline.
+- Native runtime receipt: E:/dq-cache/dmb-native-v2/phase5-all-native-20261010-continue/receipt.json.
+- Resume checkpoint SHA256: 57550c35e64db1437bfc93e26d5a4845a351629d7033be496ae24303f158240b.
+  Continuation now authenticates reference inventory/order independently of
+  reference-runtime completion; the final comparator still rejects an incomplete
+  reference. Fifteen focused Bun tests passed (75 assertions).
+- Retained semantic-owner and diagnostic-cursor slice committed as 93cf1c2b3d.
+  Seventeen focused Rust fixtures passed across tree, codegen, syntax, preprocess
+  and dmbc. The initial combined Cargo build hit its 300-second deadline after
+  emitting most binaries; smaller cached package gates then succeeded and reaped
+  (27.15 seconds for four packages, 0.57 seconds for dmbc). No full Rust suite run.
+- The focused checks cover request-drop ABI retention, lexical add/delete owner
+  rebinds, exact named override-chain certificates, and primary error anchors on
+  fresh/resident/disk paths. These checks do not establish real-game edit timings.
+- Bodyless-loop BYOND observations show that a following declaration or input
+  exhaustion produces an independent invalid-expression error. Explicit empty
+  delimiters and a following parent statement are accepted. Parser-issued
+  termination/context and ordered multi-error integration remain in progress.
+- Full suite completion, new-generation paired diagnostics, fresh-vs-incremental
+  real-game output gates, six-worktree acceptance and formal runtime baseline
+  remain open. No new accepted end-to-end performance measurements this cohort.
