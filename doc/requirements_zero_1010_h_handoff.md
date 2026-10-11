@@ -21,3 +21,7 @@ Final focused selectors are in `rule-native-H-final-focus.txt`: both mandatory r
 The current real domain provider exposes thermal nodes; the two-property dynamic RHS regression uses actual TRACKED keyed properties and a private registry. It does not fabricate a second thermal domain node. Generic op subscription support and acceptance-context migration remain separate work.
 
 The old-code proof reported existing dview/latency diagnostic cache warnings and an act_taken allocation-counter warning in the representative threshold fixture. They remain queued for the separate hygiene landing; no cleanup is claimed here.
+
+## Fresh stamped landing
+
+Lane-ready passed on 004fda4625b6ee824fe79c909f57e777f41dec27 against master 73c3f0fbc8: 40 passed, zero failed. Production/test builds had zero errors (43/57 existing warnings); DreamChecker had zero diagnostics and all ratchets passed. No pin re-bless or rerun was needed. Result logs and stamp are in data/merge-gates/004fda4625b6 and the lane-ready git note. Existing fixture STATE LEAK warnings remain queued for hygiene; they were not suppressed or repaired here. The baseline remains zero. REQ_ raw tracked-code occurrences fell 801 to 785; PRED_ occurrences fell 362 to 317. These literal counts include tests and snapshot text; the migration count is the 16 actual calls above.
