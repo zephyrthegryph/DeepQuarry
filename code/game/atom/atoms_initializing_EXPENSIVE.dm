@@ -37,6 +37,12 @@
 	// keeps_if() (code/engine/lifeforms/keeps_if.dm): a failed condition is the atom's INITIALIZE_HINT_QDEL.
 	if(init_discard_pending?[A] && keeps_if_discarded(A) && result == INITIALIZE_HINT_NORMAL)
 		result = INITIALIZE_HINT_QDEL
+	// setup() and name_prefix() (code/engine/lifeforms/setup.dm): the type's own setup, once its Initialize() chain has returned.
+	if(setup_pending?[A])
+		if(result == INITIALIZE_HINT_NORMAL)
+			setup_run(A)
+		else
+			setup_pending -= A
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)

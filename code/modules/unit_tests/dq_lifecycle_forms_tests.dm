@@ -477,3 +477,28 @@ CAPABILITIES(/obj/item/dq_forms_finder)
 	TEST_ASSERT(istype(F.neighbour, /obj/item/dq_forms_spawn_child), "finds() links the adjacent child")
 	for(var/obj/item/dq_forms_spawn_child/C as anything in S.children.Copy())
 		qdel(C)
+
+/// setup() and name_prefix(): run when Initialize() returns, in declaration order, after the type's own code after ..().
+/obj/item/dq_forms_setup
+	name = "probe"
+	var/list/order
+
+/obj/item/dq_forms_setup/proc/first_hook()
+	LAZYADD(order, "first")
+
+/obj/item/dq_forms_setup/proc/second_hook()
+	LAZYADD(order, "second")
+
+/obj/item/dq_forms_setup/Initialize(mapload)
+	. = ..()
+	LAZYADD(order, "init")
+
+CAPABILITIES(/obj/item/dq_forms_setup)
+	setup(PROC_REF(first_hook))
+	setup(PROC_REF(second_hook))
+	name_prefix("empty")
+
+/datum/unit_test/dq_forms_setup_hooks/Run()
+	var/obj/item/dq_forms_setup/S = allocate(/obj/item/dq_forms_setup, dq_containment_floor())
+	TEST_ASSERT_EQUAL(jointext(S.order, ","), "init,first,second", "the hooks run after Initialize(), in order")
+	TEST_ASSERT_EQUAL(S.name, "empty probe", "name_prefix() prefixes the name")
