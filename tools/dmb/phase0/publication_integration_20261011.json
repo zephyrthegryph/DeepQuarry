@@ -833,5 +833,12 @@
       "timing_admitted": false,
       "fix_work": "bounded streaming pressure pruning and non-diagnostic compact census; preserve limits"
     }
+  },
+  "pressure_allocation_repair": {
+    "streaming_core_commit": "3198a0a4d8",
+    "bounded_compact_census_commit": "400ae2720a",
+    "early_facade_release_commit": "4b0444bae0",
+    "store_entry_logs_commit": "c547f3ff31",
+    "scope": "Source fixes for observed pressure allocation failure; current boundedcheckrunning, no claimed memory/speed improvement untilrealrerun"
   }
 }
