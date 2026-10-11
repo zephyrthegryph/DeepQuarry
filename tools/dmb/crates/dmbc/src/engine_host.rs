@@ -365,7 +365,7 @@ impl<R: Resolver> EngineResolverHost<R> {
         }
         if self.callable_absence.is_some() {
             bytes.extend_from_slice(intrinsic_methods::CLOSED_NAMESPACE_POLICY);
-            bytes.extend_from_slice(b"pinned-callable-policy-v5;documented-member-name-union;documented-datum-closed-namespace;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
+            bytes.extend_from_slice(b"pinned-callable-policy-v6;documented-list-exclusion-union;documented-member-name-union;documented-datum-closed-namespace;explicit-runtime-receiver-methods;receiver-proof-sha256:5b09e0c80aeecb5b864a556a18f038313158f240adefd6d5503e8daf5961a8d9");
             bytes.extend_from_slice(include_bytes!(
                 "../../../fixtures/native_template_nativebuiltins_5161687.json"
             ));
