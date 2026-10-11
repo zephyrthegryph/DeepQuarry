@@ -63,7 +63,7 @@ impl SessionSymbolicMemo {
     }
     /// Borrow one quiescent record roster into the caller's allocation ledger.
     /// No materialization, decoder, resolver or callback into this store runs.
-    pub(crate) fn retained_census(&self, mut census: &mut HeapCensus) -> usize {
+    pub(crate) fn retained_census(&self, census: &mut HeapCensus) -> usize {
         census.arc_object("session_symbolic.counters", &self.admitted);
         census.arc_object("session_symbolic.counters", &self.reused);
         census.arc_object("session_symbolic.counters", &self.pruned);

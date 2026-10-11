@@ -418,7 +418,7 @@ fn link_prepared_execution(
 mod tests {
     use super::*;
     #[test]
-    fn consuming_early_freeze_matches_legacy_order_and_images() {
+    fn shared_contributions_match_fresh_production_order_and_independent_content() {
         struct Source;
         impl dm_preprocess::SourceProvider for Source {
             fn read(&self, _: &std::path::Path) -> Result<String, String> {
@@ -495,7 +495,7 @@ mod tests {
             })
             .collect();
         let external = ReferenceBindings::default();
-        let legacy = freeze_and_link_tables(
+        let fresh = link_test_batch(
             crate::lowering::LoweringBatch {
                 units: batch.units.clone(),
                 diagnostics: Vec::new(),
@@ -532,13 +532,13 @@ mod tests {
             Vec::new(),
         )
         .unwrap();
-        assert_eq!(legacy.tables.assignments(), early.tables.assignments());
+        assert_eq!(fresh.tables.assignments(), early.tables.assignments());
         for (key, bytes) in expected_content {
             assert_eq!(early.tables.content(key), Some(bytes.as_slice()));
         }
 
-        assert_eq!(legacy.units.len(), early.units.len());
-        assert_eq!(retained.len(), legacy.units.len());
+        assert_eq!(fresh.units.len(), early.units.len());
+        assert_eq!(retained.len(), fresh.units.len());
         for (index, artifact) in retained.iter().enumerate() {
             assert_eq!(artifact.identity(), early.units[index].lowered.identity);
             assert!(Arc::ptr_eq(
@@ -546,15 +546,15 @@ mod tests {
                 &early.units[index].frozen.shared_code()
             ));
             assert_eq!(
-                legacy.units[index].lowered.debug_origins,
+                fresh.units[index].lowered.debug_origins,
                 early.units[index].lowered.debug_origins
             );
             assert_eq!(
-                legacy.units[index].lowered.identity,
+                fresh.units[index].lowered.identity,
                 early.units[index].lowered.identity
             );
             assert_eq!(
-                legacy.link_unit(index, &SourceBindings::default()).unwrap(),
+                fresh.link_unit(index, &SourceBindings::default()).unwrap(),
                 early.link_unit(index, &SourceBindings::default()).unwrap()
             );
         }

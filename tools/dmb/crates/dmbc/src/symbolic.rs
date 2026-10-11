@@ -1,5 +1,5 @@
 //! Real lowering→shared encoder→canonical linker bridge, with explicit externals.
-use crate::lowering::{LoweredUnit, LoweringBatch, Namespace, UnitIdentity};
+use crate::lowering::{LoweredUnit, Namespace, UnitIdentity};
 use dm_codegen_byond::encoder::{freeze_proc_observed, FreezeStage};
 use dm_codegen_byond::FrozenProc;
 use dm_ir::{SymRef, SymbolId, SymbolTable};
@@ -395,144 +395,14 @@ impl FrozenBatch {
         )
     }
 }
-pub fn freeze_and_link_tables(
-    batch: LoweringBatch,
-    symbols: &SymbolTable,
-    external: &ReferenceBindings,
-    inventory: LinkInventory,
-) -> Result<FrozenBatch, IntegrationError> {
-    freeze_program_tables(batch, symbols, external, inventory, Vec::new())
-}
-/// Ordinary procedures, helper expressions and initializers use the same
-/// binder and encoder before one immutable table assignment is published.
-pub fn freeze_program_tables(
-    batch: LoweringBatch,
-    symbols: &SymbolTable,
-    external: &ReferenceBindings,
-    inventory: LinkInventory,
-    initialization: Vec<crate::initializer_lowering::LoweredInitializerUnit>,
-) -> Result<FrozenBatch, IntegrationError> {
-    freeze_artifact_tables(
-        batch,
-        symbols,
-        external,
-        inventory,
-        initialization.into_iter().map(Into::into).collect(),
-    )
-}
-pub fn freeze_artifact_tables(
-    batch: LoweringBatch,
-    symbols: &SymbolTable,
-    external: &ReferenceBindings,
-    inventory: LinkInventory,
-    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
-) -> Result<FrozenBatch, IntegrationError> {
-    freeze_artifact_tables_with_workers(batch, symbols, external, inventory, initialization, 1)
-}
-/// Bounded unit/helper freezing; global inventory mutations remain source ordered.
-pub fn freeze_artifact_tables_with_workers(
-    batch: LoweringBatch,
-    symbols: &SymbolTable,
-    external: &ReferenceBindings,
-    inventory: LinkInventory,
-    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
-    workers: usize,
-) -> Result<FrozenBatch, IntegrationError> {
-    let executor = dm_exec::BuildExecutor::new(workers)
-        .map_err(|error| IntegrationError::InvalidInitializer(format!("executor: {error}")))?;
-    freeze_artifact_tables_with_executor(
-        batch,
-        symbols,
-        external,
-        inventory,
-        initialization,
-        &executor,
-    )
-}
-
-pub fn freeze_artifact_tables_with_executor(
-    batch: LoweringBatch,
-    symbols: &SymbolTable,
-    external: &ReferenceBindings,
-    mut inventory: LinkInventory,
-    initialization: Vec<crate::initialization_artifact::InitializationArtifact>,
-    executor: &dm_exec::BuildExecutor,
-) -> Result<FrozenBatch, IntegrationError> {
-    if !batch.diagnostics.is_empty() {
-        return Err(IntegrationError::LoweringFailed(batch.diagnostics.len()));
-    }
-    batch
-        .identity_index()
-        .map_err(IntegrationError::DuplicateUnit)?;
-    let mut units = Vec::with_capacity(batch.units.len());
-    let mut helpers = Vec::new();
-    let mut source_bindings = std::collections::BTreeSet::new();
-    let mut string_inventory = StringInventory::new(&inventory);
-    for entry in inventory.entry_iter() {
-        if let Key::Type(id) = entry.key {
-            let path = symbols
-                .text(id)
-                .ok_or(IntegrationError::MissingSpelling(id))?;
-            if SymbolId::of(path) != id {
-                return Err(IntegrationError::MissingSpelling(id));
-            }
-            source_bindings.insert(SymRef::Type(id));
-        }
-    }
-    for unit in &batch.units {
-        if !unit.effective {
-            continue;
-        }
-        for symbol in [unit.identity.owner, unit.identity.name] {
-            symbols
-                .text(symbol)
-                .ok_or(IntegrationError::MissingSpelling(symbol))?;
-        }
-        let reference = unit_reference(unit.identity);
-        if !source_bindings.insert(reference) {
-            return Err(IntegrationError::DuplicateUnit(unit.identity));
-        }
-    }
-    // Tiny per-procedure scopes materially perturb throughput and yield broad
-    // quantization bounds. Enable them only for a separate diagnostic run.
-    let freeze_detail =
-        std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
-    let freeze_profile = dm_profile::stage("linking.freeze_artifacts");
-    let contributions = parallel::freeze_units_with_executor(
-        batch.units,
-        symbols,
-        &source_bindings,
-        external,
-        freeze_detail,
-        executor,
-        |contribution| {
-            contribution.replay(
-                &mut inventory,
-                &mut string_inventory,
-                symbols,
-                &mut units,
-                &mut helpers,
-            );
-        },
-    );
-    contributions?;
-    drop(freeze_profile);
-    finish_frozen_inventory(
-        FrozenInventory {
-            inventory,
-            string_inventory,
-            units,
-            helpers,
-            source_bindings,
-        },
-        symbols,
-        external,
-        initialization,
-        freeze_detail,
-        Some(executor),
-        None,
-    )
-}
+#[cfg(test)]
+mod test_batch;
+#[cfg(test)]
+pub(crate) use test_batch::{link_test_batch, link_test_artifacts, link_test_artifacts_with_workers};
+// Preserve this test-only facade for an independently edited initializer fixture.
+// It delegates to the current contribution producer; no eager freezer remains.
+#[cfg(test)]
+pub(crate) use test_batch::link_test_artifacts_with_workers as freeze_artifact_tables_with_workers;
 struct FrozenInventory {
     inventory: LinkInventory,
     string_inventory: StringInventory,

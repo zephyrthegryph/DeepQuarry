@@ -20,7 +20,7 @@ fn debug_inventory_retains_first_path_encounter_without_duplicate_lines() {
     assert_eq!(origins.entries.len(), 4);
 }
 use super::*;
-use crate::lowering::{lower_frontend, AbiPolicy, LoweringConfig};
+use crate::lowering::{lower_frontend, AbiPolicy, LoweringBatch, LoweringConfig};
 use dm_codegen_byond::ProcedureInputs;
 use dm_ir::{ProcedureMetadata, ResolveQuery, ResolvedMeaning, Resolver};
 use dm_tree::frontend::{ColdFrontend, SourceLocation};
@@ -62,7 +62,7 @@ fn current_link_image_reuses_only_exact_code_tables_and_source_roster() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
-    let mut batch = freeze_and_link_tables(
+    let mut batch = link_test_batch(
         lowered,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -151,7 +151,7 @@ fn current_proc_values_link_each_repeated_body_to_its_exact_occurrence() {
     let lowered = lower_frontend(&frontend, &host, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
     assert_eq!(lowered.units.len(), 2);
-    let frozen = freeze_and_link_tables(
+    let frozen = link_test_batch(
         lowered,
         tree.symbols(),
         &ReferenceBindings::default(),
@@ -214,7 +214,7 @@ fn runtime_list_procedure_literal_keeps_formal_body_identity() {
     assert_ne!(formal, effective);
     let lowered = lower_frontend(&frontend, tree, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
-    let frozen = freeze_and_link_tables(
+    let frozen = link_test_batch(
         lowered,
         tree.symbols(),
         &ReferenceBindings::default(),
@@ -322,7 +322,7 @@ fn implicit_before_formal_binds_the_certified_effective_body() {
         .find(|unit| unit.identity.name == read && !unit.effective)
         .unwrap()
         .identity;
-    let frozen = freeze_and_link_tables(
+    let frozen = link_test_batch(
         batch,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -347,7 +347,7 @@ fn actual_lowered_string_body_freezes_and_links_without_legacy_ledger() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty(), "{:?}", lowered.diagnostics);
-    let batch = freeze_and_link_tables(
+    let batch = link_test_batch(
         lowered,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -400,7 +400,7 @@ fn captured_binding_conflict_fails_before_table_assignment() {
         },
     );
     assert!(matches!(
-        freeze_and_link_tables(
+        link_test_batch(
             lowered,
             frontend.snapshot.tree.symbols(),
             &bindings,
@@ -415,7 +415,7 @@ fn certified_feature_facts_match_decoded_images_and_decline_changed_origins() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
     assert!(lowered.diagnostics.is_empty());
-    let mut batch = freeze_and_link_tables(
+    let mut batch = link_test_batch(
         lowered,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -521,7 +521,7 @@ fn request_string_inventory_reuses_exact_bytes_and_preserves_conflicts() {
 fn consuming_current_image_transfers_unique_words_and_invalidates_feature_receipt() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
-    let mut batch = freeze_and_link_tables(
+    let mut batch = link_test_batch(
         lowered,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -556,7 +556,7 @@ fn consuming_current_image_transfers_unique_words_and_invalidates_feature_receip
 fn consuming_changed_origins_relinks_instead_of_taking_stale_image() {
     let frontend = frontend();
     let lowered = lower_frontend(&frontend, &Host, &Policy, LoweringConfig::default());
-    let mut batch = freeze_and_link_tables(
+    let mut batch = link_test_batch(
         lowered,
         frontend.snapshot.tree.symbols(),
         &ReferenceBindings::default(),
@@ -625,7 +625,7 @@ fn parallel_fixture() -> (ColdFrontend, Vec<LoweredUnit>) {
 fn current_image_workers_return_first_image_error_in_serial_artifact_order() {
     let (frontend, units) = parallel_fixture();
     let freeze = || {
-        freeze_artifact_tables_with_workers(
+        link_test_artifacts_with_workers(
             LoweringBatch {
                 units: units.clone(),
                 diagnostics: Vec::new(),
@@ -671,10 +671,10 @@ fn current_image_workers_return_first_image_error_in_serial_artifact_order() {
     }
 }
 #[test]
-fn parallel_freeze_preserves_tables_code_helpers_and_debug_at_one_two_eight_workers() {
+fn prepared_link_preserves_tables_code_helpers_and_debug_at_one_two_eight_workers() {
     let (frontend, units) = parallel_fixture();
     let freeze = |workers| {
-        freeze_artifact_tables_with_workers(
+        link_test_artifacts_with_workers(
             LoweringBatch {
                 units: units.clone(),
                 diagnostics: Vec::new(),
@@ -721,7 +721,7 @@ fn parallel_freeze_preserves_tables_code_helpers_and_debug_at_one_two_eight_work
     }
 }
 #[test]
-fn parallel_freeze_returns_first_source_error_even_when_later_tasks_fail() {
+fn prepared_batch_returns_first_source_error_before_linking() {
     let (frontend, mut units) = parallel_fixture();
     let first = units[0].identity;
     units[0].source_helpers[0].owner = units[1].identity;
@@ -732,7 +732,7 @@ fn parallel_freeze_returns_first_source_error_even_when_later_tasks_fail() {
         },
     )];
     for workers in [1, 2, 8] {
-        let result = freeze_artifact_tables_with_workers(
+        let result = link_test_artifacts_with_workers(
             LoweringBatch {
                 units: units.clone(),
                 diagnostics: Vec::new(),

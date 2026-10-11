@@ -71,7 +71,7 @@ impl<Q, A, D> Incidence<Q, A, D> {
                     .saturating_add(shared)
                     .saturating_add(scalar_slot::<u64, ()>());
                 for domain in &leaf.domains {
-                    if let Some(leaves) = self.domains.get(domain) {
+                    if self.domains.contains_key(domain) {
                         let shared = scalar_slot::<D, BTreeSet<LeafId>>()
                             .saturating_add(scalar_slot::<LeafId, ()>());
                         bytes = bytes.saturating_add(shared);
@@ -80,14 +80,14 @@ impl<Q, A, D> Incidence<Q, A, D> {
             }
         }
         for certificate in &row.certificates {
-            if let Some(rows) = self.certificates.get(certificate) {
+            if self.certificates.contains_key(certificate) {
                 bytes = bytes
                     .saturating_add(scalar_slot::<(D, u128), BTreeSet<u64>>())
                     .saturating_add(scalar_slot::<u64, ()>());
             }
         }
         for domain in &row.uncovered {
-            if let Some(rows) = self.uncovered.get(domain) {
+            if self.uncovered.contains_key(domain) {
                 bytes = bytes
                     .saturating_add(scalar_slot::<D, BTreeSet<u64>>())
                     .saturating_add(scalar_slot::<u64, ()>());

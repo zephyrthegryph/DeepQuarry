@@ -439,7 +439,7 @@ fn ownership_fixture_with_initializers(
     } else {
         Vec::new()
     };
-    let batch = crate::symbolic::freeze_artifact_tables(
+    let batch = crate::symbolic::link_test_artifacts(
         lowered,
         &symbols,
         &links.references,
