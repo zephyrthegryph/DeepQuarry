@@ -11,8 +11,8 @@
 		var/obj/item/I = A
 		I.inhabit_item(src, object_name, src, allow_emotes)
 		var/mob/living/possessed_voice = I.possessed_voice
-		I.trash_eatable = devourable
-		I.unacidable = !digestable
+		I.trash_eatable = vore_prefs.devourable
+		I.unacidable = !vore_prefs.digestable
 		forceMove(possessed_voice)
 
 /mob/living/proc/mob_belly_transfer(mob/living/M)
@@ -142,14 +142,19 @@
 	new_mob.appendage_color = appendage_color
 	new_mob.appendage_alt_setting = appendage_alt_setting
 
-	VORE_PREF_TRANSFER(new_mob, src)
+	record_copy(new_mob.vore_prefs, vore_prefs)
+	new_mob.spont_belly_rear = spont_belly_rear
+	new_mob.spont_belly_left = spont_belly_left
+	new_mob.spont_belly_front = spont_belly_front
+	new_mob.spont_belly_right = spont_belly_right
+	new_mob.autotransferable = autotransferable
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.
 // Just handles mob TF right now, but maybe we'll want to do something similar for items in the future.
 /mob/living/proc/transform_into_mob(mob/living/new_form, pref_override = FALSE, revert = FALSE, shapeshifting = FALSE)
 	if(!src.mind)
 		return
-	if(!src.allow_spontaneous_tf && !pref_override)
+	if(!src.vore_prefs.allow_spontaneous_tf && !pref_override)
 		return
 	if(src.tf_mob_holder) //If we're already transformed
 		if(revert)

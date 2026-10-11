@@ -153,7 +153,7 @@ default behaviour is:
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
-		if(step_mechanics_pref && tmob.step_mechanics_pref)
+		if(vore_prefs.step_mechanics_pref && tmob.vore_prefs.step_mechanics_pref)
 			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
 			if(handle_micro_bump_other(tmob, 1, stance)) return

@@ -152,7 +152,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -237,7 +237,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	if(M.tf_mob_holder)
 		M.revert_mob_tf()

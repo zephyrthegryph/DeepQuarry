@@ -75,7 +75,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 		var/mob/living/L = AM
 		if(L in eaten_mobs)
 			return
-		if(L.devourable && L.allowmobvore && (src.vore_fullness < src.vore_capacity))
+		if(L.vore_prefs.devourable && L.vore_prefs.allowmobvore && (src.vore_fullness < src.vore_capacity))
 			begin_instant_nom(src,L,src,src.vore_selected)
 			rel_add(src, nameof(eaten_mobs), L)
 

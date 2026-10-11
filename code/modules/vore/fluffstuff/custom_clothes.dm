@@ -2061,7 +2061,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 		return 0
 
 	// Because other mobs (i.e. monkeys) apparently have dropnom prey set to 0, we check SPECIFICALLY for humans' dropnom setting.
-	if (target.type == /mob/living/carbon/human && !target.can_be_drop_prey)
+	if (target.type == /mob/living/carbon/human && !target.vore_prefs.can_be_drop_prey)
 		teleport_fail(user, target)
 		return 0
 

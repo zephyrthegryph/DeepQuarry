@@ -2108,7 +2108,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	var/mob/living/M = target
 	if(!istype(M))
 		return
-	if(!M.allow_spontaneous_tf)
+	if(!M.vore_prefs.allow_spontaneous_tf)
 		return
 	if(M.tf_mob_holder)
 		M.revert_mob_tf()
@@ -2205,7 +2205,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/change_drug/affect_blood(mob/living/carbon/human/M, alien, removed)
-	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.allow_spontaneous_tf)
+	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.vore_prefs.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
 		M.gender_change_cooldown = 1
 		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \

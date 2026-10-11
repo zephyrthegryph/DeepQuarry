@@ -18,11 +18,11 @@
 			return FALSE
 	if(!pred.vore_selected)
 		return FALSE
-	if(!pred.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
 		return FALSE
-	if(!prey.is_dead() && !prey.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
 		return FALSE
-	if(!prey.allowmobvore && isanimal(pred) && !pred.ckey)
+	if(!prey.vore_prefs.allowmobvore && isanimal(pred) && !pred.ckey)
 		return FALSE
 	return TRUE
 
@@ -31,49 +31,49 @@
 /proc/can_spontaneous_vore(mob/living/pred, mob/living/prey, allow_incorporeal = FALSE)
 	if(!can_vore(pred, prey, allow_incorporeal))
 		return FALSE
-	if(!pred.can_be_drop_pred || !prey.can_be_drop_prey)
+	if(!pred.vore_prefs.can_be_drop_pred || !prey.vore_prefs.can_be_drop_prey)
 		return FALSE
 	return TRUE
 
 /proc/can_stumble_vore(mob/living/pred, mob/living/prey)
 	if(!can_spontaneous_vore(pred, prey))
 		return FALSE
-	if(!pred.stumble_vore || !prey.stumble_vore)
+	if(!pred.vore_prefs.stumble_vore || !prey.vore_prefs.stumble_vore)
 		return FALSE
 	return TRUE
 
 /proc/can_drop_vore(mob/living/pred, mob/living/prey)
 	if(!can_spontaneous_vore(pred, prey))
 		return FALSE
-	if(!pred.drop_vore || !prey.drop_vore)
+	if(!pred.vore_prefs.drop_vore || !prey.vore_prefs.drop_vore)
 		return FALSE
 	return TRUE
 
 /proc/can_throw_vore(mob/living/pred, mob/living/prey)
 	if(!can_spontaneous_vore(pred, prey))
 		return FALSE
-	if(!pred.throw_vore || !prey.throw_vore)
+	if(!pred.vore_prefs.throw_vore || !prey.vore_prefs.throw_vore)
 		return FALSE
 	return TRUE
 
 /proc/can_food_vore(mob/living/pred, mob/living/prey)
 	if(!can_spontaneous_vore(pred, prey))
 		return FALSE
-	if(!pred.food_vore || !prey.food_vore)
+	if(!pred.vore_prefs.food_vore || !prey.vore_prefs.food_vore)
 		return FALSE
 	return TRUE
 
 /proc/can_phase_vore(mob/living/pred, mob/living/prey, allow_incorporeal = FALSE)
 	if(!can_spontaneous_vore(pred, prey, allow_incorporeal))
 		return FALSE
-	if(!pred.phase_vore || !prey.phase_vore)
+	if(!pred.vore_prefs.phase_vore || !prey.vore_prefs.phase_vore)
 		return FALSE
 	return TRUE
 
 /proc/can_slip_vore(mob/living/pred, mob/living/prey)
 	if(!can_spontaneous_vore(pred, prey))
 		return FALSE
-	if(!pred.slip_vore && !prey.slip_vore)
+	if(!pred.vore_prefs.slip_vore && !prey.vore_prefs.slip_vore)
 		return FALSE
 	if(!pred.is_slipping && !prey.is_slipping)
 		return FALSE

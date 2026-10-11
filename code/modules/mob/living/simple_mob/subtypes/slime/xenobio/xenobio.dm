@@ -144,11 +144,11 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 /mob/living/simple_mob/slime/proc/update_allowed_vore_types(allowed, harmless)
 	if(harmless) // If we're harmless, we should always be able to be eaten.
 		allowed = TRUE
-	can_be_drop_prey = allowed
-	stumble_vore = allowed
-	slip_vore = allowed
-	drop_vore = allowed
-	throw_vore = allowed
+	vore_prefs.can_be_drop_prey = allowed
+	vore_prefs.stumble_vore = allowed
+	vore_prefs.slip_vore = allowed
+	vore_prefs.drop_vore = allowed
+	vore_prefs.throw_vore = allowed
 
 //enrage / relax / pacify bodies live in
 // code/modules/combat_ai/ports/slime_mob_overrides.dm; they now drive slime_state.

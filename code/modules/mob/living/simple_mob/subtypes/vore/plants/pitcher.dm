@@ -258,7 +258,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 		FOR_CONTENTS(L, vore_selected)
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
-			if(!L.digestable)
+			if(!L.vore_prefs.digestable)
 				vore_selected.digest_mode = DM_DRAIN
 				N = 1
 				hasindigestable = 1

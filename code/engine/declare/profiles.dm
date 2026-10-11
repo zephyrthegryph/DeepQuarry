@@ -76,6 +76,32 @@
 		else
 			into.vars[field] = value // ALLOW(api): record_copy writes a plain data field of a record by name
 
+/// Writes each field of R into the var of the same name on `into` (a save format such as /datum/vore_preferences); a field
+/// `into` lacks is skipped. A list is copied.
+/proc/record_export(datum/record/R, datum/into)
+	for(var/field in record_fields(R))
+		if(!(field in into.vars))
+			continue
+		var/value = R.vars[field]
+		if(islist(value))
+			var/list/L = value
+			value = L.Copy()
+		into.vars[field] = value // ALLOW(api): record_export writes a save format's field of the record's name
+
+/// Reads each field of R from the var of the same name on `from` (record_export()'s inverse), through the field's setter.
+/proc/record_import(datum/record/R, datum/from)
+	for(var/field in record_fields(R))
+		if(!(field in from.vars))
+			continue
+		var/value = from.vars[field]
+		if(islist(value))
+			var/list/L = value
+			value = L.Copy()
+		if(hascall(R, "__setter_[field]"))
+			call(R, "set_[field]")(value)
+		else
+			R.vars[field] = value // ALLOW(api): record_import writes a plain data field of a record by name
+
 /// TRUE when two records of one type hold equal fields (lists compared by content).
 /proc/record_equal(datum/record/a, datum/record/b)
 	if(!a || !b || a.type != b.type)

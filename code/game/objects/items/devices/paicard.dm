@@ -977,7 +977,7 @@ CAPABILITIES(/obj/random/paicard)
 	loot(table = list(/obj/item/paicard, /obj/item/paicard/typeb))
 
 /obj/item/paicard/digest_act(atom/movable/item_storage = null)
-	if(pai?.digestable)
+	if(pai.vore_prefs.digestable)
 		return ..()
 
 /obj/machinery/ownership()

@@ -8,7 +8,7 @@
 	micro.set_combat_mode(FALSE)
 	grabber.set_combat_mode(FALSE)
 	TEST_ASSERT(micro.species.is_micro_carry(micro) && micro.holder_type, "the actual teshari species supplies real micro-carry and holder support")
-	TEST_ASSERT(micro.pickup_pref && grabber.pickup_active, "actual default preferences enable both supported pickup actors")
+	TEST_ASSERT(micro.vore_prefs.pickup_pref && grabber.pickup_active, "actual default preferences enable both supported pickup actors")
 	TEST_ASSERT(micro.Adjacent(grabber), "actual scoop participants begin adjacent")
 	TEST_ASSERT_EQUAL(micro.micro_scoop_with_actor(other, grabber), FALSE, "unrelated actor selects original native parent fallback")
 	TEST_ASSERT_EQUAL(micro.loc, T, "unrelated actor cannot scoop the actual micro")

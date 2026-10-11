@@ -106,7 +106,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 /// What is in it may be given to this one: a mob that does not take what a belly made refuses it.
 /datum/capability/lib/edible/proc/belly_free(datum/act/op/A)
 	var/mob/target = A.target
-	return (!istype(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/edible/from_belly
+	return (!istype(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/edible/from_belly
 
 /// The one eaten by has a mouth (only a person can lack one).
 /datum/capability/lib/edible/proc/mouth_present(datum/act/op/A)
@@ -144,7 +144,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 /// The one fed takes whole things: they permit it, and have a belly to take it.
 /datum/capability/lib/edible/proc/takes_whole_feeding(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (!!target.feeding && length(target.feedable_bellies()) > 0) ? null : /datum/msg/edible/no_whole_feeding
+	return (!!target.vore_prefs.feeding && length(target.feedable_bellies()) > 0) ? null : /datum/msg/edible/no_whole_feeding
 
 /// The bellies the one fed has that take food.
 /datum/capability/lib/edible/proc/belly_choices(datum/act/op/A)

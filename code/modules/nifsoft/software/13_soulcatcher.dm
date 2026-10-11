@@ -245,7 +245,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 //Complex version for catching in-round characters
 /datum/nifsoft/soulcatcher/proc/catch_mob(mob/M)
 	if(!M.mind)	return
-	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
+	if(!(M.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())

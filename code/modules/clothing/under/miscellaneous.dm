@@ -1812,7 +1812,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	var/mob/M = src.loc
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			return
 		if(H.size_multiplier != target_size)
 			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
@@ -1829,7 +1829,7 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	. = ..()
 	if(. && ishuman(M) && original_size && !disable_warning)
 		var/mob/living/carbon/human/H = M
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			return
 		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 		H.resize(original_size, ignore_prefs = FALSE) // no uncapped

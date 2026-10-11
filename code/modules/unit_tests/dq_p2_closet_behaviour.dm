@@ -1725,7 +1725,7 @@
 	var/mob/living/carbon/human/helper = person(tile(1, 2))
 	var/mob/living/carbon/human/pred = person(at)
 	var/mob/living/carbon/human/prey = person(at)
-	prey.devourable = FALSE
+	prey.vore_prefs.devourable = FALSE
 	open_it(helper, C)
 	pred.forceMove(at)
 	prey.forceMove(at)
@@ -1734,7 +1734,7 @@
 	p2cl_devour(C, pred)
 	test_time(1 SECOND)
 	TEST_ASSERT(!p2cl_has_question(pred), "no question while nobody inside can be eaten")
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 	p2cl_devour(C, pred)
 	test_time(1 SECOND)
 	TEST_ASSERT(p2cl_has_question(pred), "the predator is asked whom to eat")
@@ -1746,7 +1746,7 @@
 	var/obj/structure/closet/C = make(/obj/structure/closet, at)
 	var/mob/living/carbon/human/helper = person(tile(1, 2))
 	var/mob/living/carbon/human/prey = person(at)
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 	open_it(helper, C)
 	prey.forceMove(at)
 	close_it(helper, C)

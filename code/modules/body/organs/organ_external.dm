@@ -1279,7 +1279,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			scream = FALSE
 		if(isbelly(owner.loc) || isliving(owner.loc))
 			scream = FALSE
-			if(!owner.digest_pain)
+			if(!owner.vore_prefs.digest_pain)
 				show_message = FALSE
 
 		if(show_message)

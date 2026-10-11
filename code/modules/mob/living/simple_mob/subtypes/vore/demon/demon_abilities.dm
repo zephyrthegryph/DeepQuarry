@@ -170,7 +170,7 @@
 						break
 
 	//Potential phase-in vore
-	if(can_be_drop_pred) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
@@ -345,7 +345,7 @@
 					break
 
 	//Potential phase-in vore
-	if(can_be_drop_pred) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)

@@ -103,7 +103,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 
 /mob/living/simple_mob/vore/morph/proc/assume(atom/movable/target)
 	var/mob/living/carbon/human/humantarget = target
-	if(istype(humantarget) && !humantarget.allow_mimicry)
+	if(istype(humantarget) && !humantarget.vore_prefs.allow_mimicry)
 		to_chat(src, span_warning("[target] cannot be impersonated!"))
 		return
 	if(morphed)
@@ -217,7 +217,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 		else
 			plane = MOB_PLANE
 			to_chat(src,span_notice("Your form quivers back to life, allowing you to move again!"))
-			if(can_be_drop_pred) //Toggleable in vore panel
+			if(vore_prefs.can_be_drop_pred) //Toggleable in vore panel
 				var/list/potentials = living_mobs(0)
 				if(potentials.len)
 					var/mob/living/target = pick(potentials)
@@ -321,7 +321,7 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 	if(QDELETED(prey))
 		retire()
 		return
-	if(!prey.allow_mimicry)
+	if(!prey.vore_prefs.allow_mimicry)
 		to_chat(actor, span_warning("\The [prey] cannot be impersonated!"))
 		retire()
 		return

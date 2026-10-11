@@ -140,7 +140,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/overmap/spacewhale)
 	. = ..()
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.stat == DEAD && !L.allowmobvore)
+		if(L.stat == DEAD && !L.vore_prefs.allowmobvore)
 			L.gib()
 		else
 			return .

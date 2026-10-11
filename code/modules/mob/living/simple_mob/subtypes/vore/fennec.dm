@@ -147,7 +147,7 @@
 	*/
 
 /mob/living/simple_mob/vore/fennec/huge/on_death(gibbed)
-	devourable = TRUE
+	vore_prefs.devourable = TRUE
 	return ..()
 
 /mob/living/simple_mob/vore/fennec/huge/apply_attack(atom/A, damage_to_do, stance = I_HURT)
@@ -160,7 +160,7 @@
 			B.nom_atom(L)
 			ai_brain?.find_target()  // recalc primary threat now that prey is in belly
 			return
-		else if(L.size_multiplier <= 0.5 && L.step_mechanics_pref)
+		else if(L.size_multiplier <= 0.5 && L.vore_prefs.step_mechanics_pref)
 			automatic_custom_emote(message = "stomps [L] into oblivion!")
 			L.gib()
 			return

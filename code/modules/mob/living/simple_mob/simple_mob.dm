@@ -267,7 +267,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	if(picked_size)
 		to_chat(src, span_notice("You have already picked a size! If you picked the wrong size, ask an admin to change your picked_size variable to 0."))
 		return
-	if(!resizable)
+	if(!vore_prefs.resizable)
 		to_chat(src, span_warning("You are immune to resizing!"))
 		return
 
@@ -563,10 +563,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		return 0
 	if(M.is_incorporeal()) // No eating the phased ones
 		return 0
-	if(vore_ignores_undigestable && !M.digestable) //Don't eat people with nogurgle prefs
+	if(vore_ignores_undigestable && !M.vore_prefs.digestable) //Don't eat people with nogurgle prefs
 		// ai_log("vr/wont eat [M] because I am picky", 3) // AI TEMPORARY REMOVAL
 		return 0
-	if(!M.allowmobvore || !M.devourable) // Don't eat people who don't want to be ate by mobs
+	if(!M.vore_prefs.allowmobvore || !M.vore_prefs.devourable) // Don't eat people who don't want to be ate by mobs
 		// ai_log("vr/wont eat [M] because they don't allow mob vore", 3) // AI TEMPORARY REMOVAL
 		return 0
 	if(LAZYFIND(prey_excludes, M)) // They're excluded
@@ -678,7 +678,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(LAZYLEN(vore_organs))
 		return
 
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	load_default_bellies()
 
 /mob/living/simple_mob/proc/load_default_bellies()
@@ -725,7 +725,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		"The juices pooling beneath you sizzle against your sore skin.",
 		"The churning walls slowly pulverize you into meaty nutrients.",
 		"The stomach glorps and gurgles as it tries to work you into slop.")
-	can_be_drop_pred = TRUE // Mobs will eat anyone that decides to drop/slip into them by default.
+	vore_prefs.can_be_drop_pred = TRUE// Mobs will eat anyone that decides to drop/slip into them by default.
 	B.belly_fullscreen = "a_tumby"
 	B.belly_fullscreen_color = "#823232"
 	B.belly_fullscreen_color2 = "#823232"

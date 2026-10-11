@@ -43,6 +43,14 @@ SPECS = {
         skip={"code/modules/mob/mob_defines.dm", "code/modules/mob/living/living_defines.dm",
               "code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/profile_records.dm"},
     ),
+    "vore": dict(
+        holder="/mob", rec="vore_prefs",
+        singles={n: n for n in ('digestable', 'devourable', 'feeding', 'absorbable', 'allowmobvore', 'permit_healbelly', 'allowtemp', 'vore_taste', 'vore_smell', 'noisy', 'show_vore_fx', 'selective_preference', 'size_strip_preference', 'digest_leave_remains', 'digest_pain', 'noisy_full', 'eating_privacy_global', 'vore_death_privacy', 'can_be_drop_prey', 'can_be_drop_pred', 'can_be_afk_prey', 'can_be_afk_pred', 'throw_vore', 'food_vore', 'drop_vore', 'slip_vore', 'stumble_vore', 'phase_vore', 'resizable', 'step_mechanics_pref', 'pickup_pref', 'allow_spontaneous_tf', 'allow_mind_transfer', 'allow_mimicry', 'consume_liquid_belly', 'receive_reagents', 'apply_reagents', 'give_reagents', 'nutrition_messages', 'nutrition_message_visible', 'weight_message_visible', 'weight_messages', 'latejoin_vore', 'latejoin_prey', 'no_latejoin_vore_warning', 'no_latejoin_prey_warning', 'no_latejoin_vore_warning_time', 'no_latejoin_prey_warning_time', 'no_latejoin_vore_warning_persists', 'no_latejoin_prey_warning_persists', 'max_voreoverlay_alpha', 'strip_pref', 'contaminate_pref', 'vore_sprite_multiply', 'vore_sprite_color', 'belly_rub_target', 'soulcatcher_pref_flags', 'persistend_edit_mode')},
+        tracked=False,
+        ambiguous=set(),
+        known_refs={"H", "M", "L", "user", "target", "prey", "pred", "predator", "victim", "owner", "mob", "living", "character", "new_mob", "eater", "SM", "C", "R", "src", "host", "bound_mob", "pai", "human_owner", "selected_soul"},
+        skip={"code/modules/vore/eating/vore_profile.dm", "code/modules/vore/eating/vore.dm"},
+    ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
 _spec_name = next((a for a in _args if a in SPECS), None)
@@ -324,6 +332,8 @@ def rewrite_reads(code, masked):
         if before == "." or before.isalnum() or before == "_" or before == "/":
             continue
         ref, name = m.groups()
+        if masked[end:].lstrip().startswith("("):
+            continue  # a proc of that name
         if ref and (ref.startswith("set_") or ref.endswith("." + REC) or ref == REC):
             continue
         if name in LOCALS and not ref:

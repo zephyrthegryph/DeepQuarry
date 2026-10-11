@@ -143,7 +143,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 			else
 				user.forceMove(ToTurf)
 				var/vore_happened = FALSE
-				if(can_dropnom && living_user.can_be_drop_pred)
+				if(can_dropnom && living_user.vore_prefs.can_be_drop_pred)
 					var/obj/belly/belly_dest
 					if(living_user.vore_selected)
 						belly_dest = living_user.vore_selected
@@ -156,10 +156,10 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 								vore_happened = TRUE
 								to_chat(prey, span_vdanger("[living_user] materializes around you, as you end up in their [belly_dest]!"))
 								to_chat(living_user, span_vnotice("You materialize around [prey] as they end up in your [belly_dest]!"))
-				if(can_dropnom && !vore_happened && living_user.can_be_drop_prey)
+				if(can_dropnom && !vore_happened && living_user.vore_prefs.can_be_drop_prey)
 					var/mob/living/pred
 					for(var/mob/living/potential_pred in turf_contents_of_type(ToTurf, /mob/living))
-						if(potential_pred != user && potential_pred.can_be_drop_pred)
+						if(potential_pred != user && potential_pred.vore_prefs.can_be_drop_pred)
 							pred = potential_pred
 					if(pred)
 						var/obj/belly/belly_dest
@@ -187,7 +187,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 				M.forceMove(pick(trange(24,user)))
 			else
 				M.forceMove(ToTurf)
-				if(can_dropnom && living_user.can_be_drop_pred && M.can_be_drop_prey)
+				if(can_dropnom && living_user.vore_prefs.can_be_drop_pred && M.vore_prefs.can_be_drop_prey)
 					var/obj/belly/belly_dest
 					if(living_user.vore_selected)
 						belly_dest = living_user.vore_selected
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 						M.forceMove(belly_dest)
 						to_chat(living_user, span_vnotice("[M] materializes inside you as they end up in your [belly_dest]!"))
 						to_chat(M, span_vdanger("You materialize inside [living_user] as you end up in their [belly_dest]!"))
-				else if(can_dropnom && living_user.can_be_drop_prey && M.can_be_drop_pred && !user_vored)
+				else if(can_dropnom && living_user.vore_prefs.can_be_drop_prey && M.vore_prefs.can_be_drop_pred && !user_vored)
 					var/obj/belly/belly_dest
 					if(M.vore_selected)
 						belly_dest = M.vore_selected

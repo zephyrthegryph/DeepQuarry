@@ -203,7 +203,7 @@ MSG_DEF(needle/begin_hunt, "You begin hunting for an injection port on %T%'s sui
 /// Whatever the container holds was not produced from a belly, or the one injected takes such things.
 /datum/capability/lib/needle/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (!ishuman(target) || target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/needle/from_belly
+	return (!ishuman(target) || target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/needle/from_belly
 
 /// The limb the injector aims at (a person other than the one injecting): the aimed organ, or null.
 /datum/capability/lib/needle/proc/limb_aimed(datum/act/op/A)

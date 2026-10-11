@@ -274,7 +274,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 
 /obj/item/capture_crystal/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(bound_mob)
-		if(!bound_mob.devourable)	//Don't eat if prefs are bad
+		if(!bound_mob.vore_prefs.devourable)	//Don't eat if prefs are bad
 			return ITEM_INTERACT_FAILURE
 		if(user.zone_sel.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
@@ -628,7 +628,7 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 //IF the crystal somehow ends up in a tummy and digesting with a bound mob who doesn't want to be eaten, let's move them to the ground
 /obj/item/capture_crystal/digest_act(atom/movable/item_storage = null)
 	if(bound_mob)
-		if((bound_mob in contents) && !bound_mob.devourable)
+		if((bound_mob in contents) && !bound_mob.vore_prefs.devourable)
 			bound_mob.forceMove(src.drop_location())
 	return ..()
 

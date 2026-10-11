@@ -80,7 +80,7 @@
 		return
 	if(!isliving(speaker))
 		return
-	if(!speaker.devourable || !speaker.allowmobvore || !speaker.can_be_drop_prey)
+	if(!speaker.vore_prefs.devourable || !speaker.vore_prefs.allowmobvore || !speaker.vore_prefs.can_be_drop_prey)
 		return
 	if(speaker.z != z)
 		return

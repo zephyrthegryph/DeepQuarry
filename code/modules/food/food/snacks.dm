@@ -101,7 +101,7 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && eater.vore_selected)
+		if(possessed_voice && possessed_voice.len && eater.vore_prefs.can_be_drop_pred && eater.vore_prefs.food_vore && eater.vore_selected)
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
@@ -1835,7 +1835,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.can_be_drop_pred && Pred.food_vore && Pred.vore_selected)
+	if(Pred.vore_prefs.can_be_drop_pred && Pred.vore_prefs.food_vore && Pred.vore_selected)
 		Pred.vore_selected.nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()

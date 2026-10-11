@@ -83,7 +83,7 @@
 	if(istype(M,/mob/living/carbon) && !M.mind)
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			return
 	M.drop_both_hands()
 	if(M.tf_mob_holder && M.tf_mob_holder.loc == M)
@@ -150,7 +150,7 @@
 	if(!istype(M))
 		return
 	if(target != firer)	//If you shot yourself, you probably want to be TFed so don't bother with prefs.
-		if(!M.allow_spontaneous_tf && !tf_admin_pref_override)
+		if(!M.vore_prefs.allow_spontaneous_tf && !tf_admin_pref_override)
 			firer.visible_message(span_warning("\The [src] buzzes impolitely."))
 			return
 	if(M.tf_mob_holder)

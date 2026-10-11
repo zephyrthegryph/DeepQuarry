@@ -114,7 +114,7 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target
-	return (target.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
+	return (target.vore_prefs.consume_liquid_belly || !reagents_from_belly(A.holder)) ? null : /datum/msg/reagent_container/from_belly
 
 /datum/capability/lib/dose/proc/mouth_free(datum/act/op/A)
 	return (isnull(mouth_blocked_reason(A.actor, A.target))) ? null : /datum/msg/reagent_container/mouth_blocked

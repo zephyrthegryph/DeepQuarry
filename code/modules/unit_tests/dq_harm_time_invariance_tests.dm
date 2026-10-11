@@ -56,10 +56,10 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	pred.can_be_drop_pred = TRUE
-	pred.food_vore = TRUE
-	prey.can_be_drop_prey = TRUE
-	prey.food_vore = TRUE
+	pred.vore_prefs.can_be_drop_pred = TRUE
+	pred.vore_prefs.food_vore = TRUE
+	prey.vore_prefs.can_be_drop_prey = TRUE
+	prey.vore_prefs.food_vore = TRUE
 	var/obj/item/clothing/mask/chewable/candy/lolli/lolli = new(pred)
 	prey.forceMove(lolli)
 	rel_set(lolli, nameof(lolli.victims), list(prey))

@@ -14,22 +14,22 @@
 // ---- Clause procs: called on the subject with (actor, target, held) ----
 
 /mob/living/proc/vore_pref_devourable(mob/actor, atom/target, obj/item/held)
-	return devourable
+	return vore_prefs.devourable
 
 /mob/living/proc/vore_pref_digestable(mob/actor, atom/target, obj/item/held)
-	return digestable
+	return vore_prefs.digestable
 
 /mob/living/proc/vore_pref_absorbable(mob/actor, atom/target, obj/item/held)
-	return absorbable
+	return vore_prefs.absorbable
 
 /mob/living/proc/vore_pref_healbelly(mob/actor, atom/target, obj/item/held)
-	return permit_healbelly
+	return vore_prefs.permit_healbelly
 
 /mob/living/proc/vore_pref_strippable(mob/actor, atom/target, obj/item/held)
-	return strip_pref
+	return vore_prefs.strip_pref
 
 /mob/living/proc/vore_pref_contaminable(mob/actor, atom/target, obj/item/held)
-	return contaminate_pref
+	return vore_prefs.contaminate_pref
 
 /mob/living/proc/vore_not_absorbed(mob/actor, atom/target, obj/item/held)
 	return !absorbed

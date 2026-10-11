@@ -187,7 +187,7 @@
 				if (digest_mode == DM_SELECT)
 					var/datum/digest_mode/selective/DM_S = GLOB.digest_modes[DM_SELECT]
 					EL = emote_lists[DM_S.get_selective_mode(src, M)]
-				else if(digest_mode == DM_DIGEST && !M.digestable)
+				else if(digest_mode == DM_DIGEST && !M.vore_prefs.digestable)
 					EL = emote_lists[DM_HOLD]					// Use Hold's emote list if we're indigestible
 
 				if(LAZYLEN(EL))
@@ -367,14 +367,14 @@
 	var/personal_nutrition_modifier = M.get_digestion_nutrition_modifier()
 	var/pred_digestion_efficiency = owner.get_digestion_efficiency_modifier()
 
-	if(ishuman(M) && (mode_flags & DM_FLAG_SPARELIMB) && M.digest_leave_remains)
+	if(ishuman(M) && (mode_flags & DM_FLAG_SPARELIMB) && M.vore_prefs.digest_leave_remains)
 		var/mob/living/carbon/human/H = M
 		var/list/detachable_limbs = H.get_modular_limbs(return_first_found = FALSE, validate_proc = /obj/item/organ/external/proc/can_remove_modular_limb)
 		for(var/obj/item/organ/external/E in detachable_limbs)
 			if(H.species.name != SPECIES_PROTEAN)
 				E.removed(H)
 				E.dropInto(src)
-	if((mode_flags & DM_FLAG_LEAVEREMAINS) && M.digest_leave_remains)
+	if((mode_flags & DM_FLAG_LEAVEREMAINS) && M.vore_prefs.digest_leave_remains)
 		handle_remains_leaving(M)
 	digestion_death(M)
 	if(show_liquids && reagent_mode_flags & DM_FLAG_REAGENTSDIGEST && reagents.total_volume < reagents.maximum_volume) // digestion producing reagents

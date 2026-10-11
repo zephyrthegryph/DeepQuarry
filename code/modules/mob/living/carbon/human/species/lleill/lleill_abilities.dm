@@ -339,11 +339,11 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
 
 	//Would be fun to eat people standing on your ring...
-	if(can_be_drop_pred && vore_selected)
+	if(vore_prefs.can_be_drop_pred && vore_selected)
 		var/list/target_list = src.living_mobs(0)
 		if(target_list.len)
 			for(var/mob/living/M in target_list)
-				if(M.devourable && M.can_be_drop_prey)
+				if(M.vore_prefs.devourable && M.vore_prefs.can_be_drop_prey)
 					vore_selected.nom_atom(M)
 					to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected.get_belly_name()]!"))
 	species.update_lleill_hud(src)

@@ -257,6 +257,8 @@
 CAPABILITIES(/mob)
 	// Who the character says they are (profile_records.dm).
 	profile(nameof(bio), /datum/record/identity)
+	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
+	profile(nameof(vore_prefs), /datum/record/vore_prefs)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
 	ref_one(nameof(control_object)) // the object an admin possesses
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):

@@ -356,7 +356,7 @@ This device records all warnings given and teleport events for admin review in c
 	var/televored = FALSE
 	if(isbelly(real_dest))
 		var/obj/belly/B = real_dest
-		if(target.devourable && target.can_be_drop_prey && B.owner != target)
+		if(target.vore_prefs.devourable && target.vore_prefs.can_be_drop_prey && B.owner != target)
 			televored = TRUE
 			to_chat(target, span_vwarning("\The [src] teleports you right into \a [lowertext(real_dest.name)]!"))
 		else

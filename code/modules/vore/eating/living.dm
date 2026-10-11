@@ -67,7 +67,7 @@
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
 			if(istype(H.species,/datum/species/monkey))
-				allow_spontaneous_tf = TRUE
+				vore_prefs.allow_spontaneous_tf = TRUE
 		if(!soulgem)
 			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 		return TRUE
@@ -103,7 +103,7 @@
 			else if((src == G?.grab_target()) && (stance == I_GRAB) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
 				if(istype(victim) && !victim.client && !victim.ai_brain) //Check whether the victim is: A carbon mob, has no client, but has a ckey. This should indicate an SSD player.
 					log_and_message_admins("attempted to force feed themselves to [key_name_admin(G?.grab_target())] whilst they were AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
-				if(!victim.feeding)
+				if(!victim.vore_prefs.feeding)
 					to_chat(user, span_vnotice("[G?.grab_target()] isn't willing to be fed."))
 					log_and_message_admins("attempted to feed themselves to [key_name_admin(G?.grab_target())] against their prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", src)
 					return FALSE
@@ -121,11 +121,11 @@
 				if(istype(victim_fed) && !victim_fed.client && !victim_fed.ai_brain)
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] whilst [key_name_admin(src)] was AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 
-				if(!feeding)
+				if(!vore_prefs.feeding)
 					to_chat(user, span_vnotice("[src] isn't willing to be fed."))
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against predator's prefs ([src ? ADMIN_JMP(src) : "null"])", attacker)
 					return FALSE
-				if(!(victim.devourable))
+				if(!(victim.vore_prefs.devourable))
 					to_chat(user, span_vnotice("[G?.grab_target()] isn't able to be devoured."))
 					log_and_message_admins("attempted to feed [key_name_admin(G?.grab_target())] to [key_name_admin(src)] against prey's prefs ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 					return FALSE
@@ -329,7 +329,12 @@
 
 	var/datum/vore_preferences/P = client.prefs_vr
 
-	VORE_PREF_TRANSFER(P, src)
+	record_export(vore_prefs, P)
+	P.spont_belly_rear = spont_belly_rear
+	P.spont_belly_left = spont_belly_left
+	P.spont_belly_front = spont_belly_front
+	P.spont_belly_right = spont_belly_right
+	P.autotransferable = autotransferable
 
 	var/list/serialized = list()
 	for(var/obj/belly/B as anything in src.vore_organs)
@@ -360,7 +365,12 @@
 
 	var/datum/vore_preferences/P = client.prefs_vr
 
-	VORE_PREF_TRANSFER(src, P)
+	record_import(vore_prefs, P)
+	spont_belly_rear = P.spont_belly_rear
+	spont_belly_left = P.spont_belly_left
+	spont_belly_front = P.spont_belly_front
+	spont_belly_right = P.spont_belly_right
+	autotransferable = P.autotransferable
 
 	if(bellies)
 		if(isliving(src))
@@ -574,12 +584,12 @@
 		tasted.adjust_wet_stacks(2)
 
 /mob/living/proc/get_taste_message(allow_generic = 1)
-	if(!vore_taste && !allow_generic)
+	if(!vore_prefs.vore_taste && !allow_generic)
 		return FALSE
 
 	var/taste_message = ""
-	if(vore_taste && (vore_taste != ""))
-		taste_message += "[vore_taste]"
+	if(vore_prefs.vore_taste && (vore_prefs.vore_taste != ""))
+		taste_message += "[vore_prefs.vore_taste]"
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
@@ -623,12 +633,12 @@
 			MSG_BLIND(span_infoplain(span_bold("Sniff!"))))
 
 /mob/living/proc/get_smell_message(allow_generic = 1)
-	if(!vore_smell && !allow_generic)
+	if(!vore_prefs.vore_smell && !allow_generic)
 		return FALSE
 
 	var/smell_message = ""
-	if(vore_smell && (vore_smell != ""))
-		smell_message += "[vore_smell]"
+	if(vore_prefs.vore_smell && (vore_prefs.vore_smell != ""))
+		smell_message += "[vore_prefs.vore_smell]"
 	else
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
@@ -1234,50 +1244,50 @@
 		dat += span_red(span_bold("OOC DISABLED")) + "<br>"
 	if(!client?.prefs?.read_preference(/datum/preference/toggle/show_looc))
 		dat += span_red(span_bold("LOOC DISABLED")) + "<br>"
-	dat += span_bold("Devourable:") + " [devourable ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(devourable)
-		dat += span_bold("Healbelly permission:") + " [permit_healbelly ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Digestable:") + " [digestable ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Absorption Permission:") + " [absorbable ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Selective Mode Pref:") + " [src.selective_preference]<br>"
-		dat += span_bold("Mob Vore:") + " [allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Affected by temperature:") + " [allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Devourable:") + " [vore_prefs.devourable ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.devourable)
+		dat += span_bold("Healbelly permission:") + " [vore_prefs.permit_healbelly ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Digestable:") + " [vore_prefs.digestable ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Absorption Permission:") + " [vore_prefs.absorbable ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Selective Mode Pref:") + " [src.vore_prefs.selective_preference]<br>"
+		dat += span_bold("Mob Vore:") + " [vore_prefs.allowmobvore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Affected by temperature:") + " [vore_prefs.allowtemp ? span_green("Enabled") : span_red("Disabled")]<br>"
 		dat += span_bold("Autotransferable:") + " [autotransferable ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Can be stripped:") + " [strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Size Change Strip Mode Pref:") + " [src.size_strip_preference]<br>"
-		dat += span_bold("Worn items can be contaminated:") + " [contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Applying reagents:") + " [apply_reagents ? span_green("Allowed") : span_red("Disallowed")]<br>"
-		dat += span_bold("Leaves Remains:") + " [digest_leave_remains ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Spontaneous vore prey:") + " [can_be_drop_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("AFK/Disconnected vore prey:") + " [can_be_afk_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Spontaneous vore pred:") + " [can_be_drop_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("AFK/Disconnected vore pred:") + " [can_be_afk_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(can_be_drop_prey || can_be_drop_pred)
-		dat += span_bold("Drop Vore:") + " [drop_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Slip Vore:") + " [slip_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Stumble Vore:") + " [stumble_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Throw vore:") + " [throw_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Food Vore:") + " [food_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-		dat += span_bold("Phase Vore:") + " [phase_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Can be stepped on/over:") + " [step_mechanics_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Can be picked up:") + " [pickup_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Can be resized:") + " [resizable ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Spontaneous transformation:") + " [allow_spontaneous_tf ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Mind transfer:") + " [allow_mind_transfer ? span_green("Allowed") : span_red("Disallowed")]<br>"
-	dat += span_bold("Allow Mimicry:") + " [allow_mimicry ? span_green("Yes") : span_red("No")]<br>"
-	dat += span_bold("Feedable:") + " [feeding ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Receiving liquids:") + " [receive_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Giving liquids:") + " [give_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Consuming liquids:") + " [consume_liquid_belly ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Late join spawn point belly:") + " [latejoin_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(latejoin_vore)
-		dat += span_bold("Late join spawn auto accept:") + " [no_latejoin_vore_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Can be late join prey:") + " [latejoin_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
-	if(latejoin_prey)
-		dat += span_bold("Late join prey auto accept:") + " [no_latejoin_prey_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
-	dat += span_bold("Global Vore Privacy is:") + " [eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
+		dat += span_bold("Can be stripped:") + " [vore_prefs.strip_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Size Change Strip Mode Pref:") + " [src.vore_prefs.size_strip_preference]<br>"
+		dat += span_bold("Worn items can be contaminated:") + " [vore_prefs.contaminate_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Applying reagents:") + " [vore_prefs.apply_reagents ? span_green("Allowed") : span_red("Disallowed")]<br>"
+		dat += span_bold("Leaves Remains:") + " [vore_prefs.digest_leave_remains ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Spontaneous vore prey:") + " [vore_prefs.can_be_drop_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("AFK/Disconnected vore prey:") + " [vore_prefs.can_be_afk_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Spontaneous vore pred:") + " [vore_prefs.can_be_drop_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("AFK/Disconnected vore pred:") + " [vore_prefs.can_be_afk_pred ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.can_be_drop_prey || vore_prefs.can_be_drop_pred)
+		dat += span_bold("Drop Vore:") + " [vore_prefs.drop_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Slip Vore:") + " [vore_prefs.slip_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Stumble Vore:") + " [vore_prefs.stumble_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Throw vore:") + " [vore_prefs.throw_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Food Vore:") + " [vore_prefs.food_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+		dat += span_bold("Phase Vore:") + " [vore_prefs.phase_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Can be stepped on/over:") + " [vore_prefs.step_mechanics_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Can be picked up:") + " [vore_prefs.pickup_pref ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Can be resized:") + " [vore_prefs.resizable ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Spontaneous transformation:") + " [vore_prefs.allow_spontaneous_tf ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Mind transfer:") + " [vore_prefs.allow_mind_transfer ? span_green("Allowed") : span_red("Disallowed")]<br>"
+	dat += span_bold("Allow Mimicry:") + " [vore_prefs.allow_mimicry ? span_green("Yes") : span_red("No")]<br>"
+	dat += span_bold("Feedable:") + " [vore_prefs.feeding ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Receiving liquids:") + " [vore_prefs.receive_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Giving liquids:") + " [vore_prefs.give_reagents ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Consuming liquids:") + " [vore_prefs.consume_liquid_belly ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Late join spawn point belly:") + " [vore_prefs.latejoin_vore ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.latejoin_vore)
+		dat += span_bold("Late join spawn auto accept:") + " [vore_prefs.no_latejoin_vore_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Can be late join prey:") + " [vore_prefs.latejoin_prey ? span_green("Enabled") : span_red("Disabled")]<br>"
+	if(vore_prefs.latejoin_prey)
+		dat += span_bold("Late join prey auto accept:") + " [vore_prefs.no_latejoin_prey_warning ? span_green("Enabled") : span_red("Disabled")]<br>"
+	dat += span_bold("Global Vore Privacy is:") + " [vore_prefs.eating_privacy_global ? span_green("Subtle") : span_red("Loud")]<br>"
 	dat += span_bold("Current active belly:") + " [vore_selected ? vore_selected.get_belly_name(TRUE) : "None"]<br>"
-	dat += span_bold("Belly rub target:") + " [belly_rub_target ? belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
+	dat += span_bold("Belly rub target:") + " [vore_prefs.belly_rub_target ? vore_prefs.belly_rub_target : (vore_selected ? vore_selected.get_belly_name(TRUE) : "None")]<br>"
 	// structured TGUI AdminReport.
 	dq_admin_report_html(user, "Vore Prefs: [src]", dat, src)
 
@@ -1601,7 +1611,7 @@
 		return
 	if(!TG)
 		return FALSE
-	if(TG.give_reagents == FALSE && user != TG) //User isnt forced to allow giving in prefs if they are the one doing it
+	if(TG.vore_prefs.give_reagents == FALSE && user != TG) //User isnt forced to allow giving in prefs if they are the one doing it
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
@@ -1687,7 +1697,7 @@
 		if(RTB.count_liquid_for_sprite || TB.count_liquid_for_sprite)
 			PUBLISH(src, belly_change)
 
-	else if(TR.receive_reagents == FALSE)
+	else if(TR.vore_prefs.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
@@ -1742,7 +1752,7 @@
 		if(RTB.count_liquid_for_sprite)
 			PUBLISH(src, belly_change)
 
-	else if(TR.receive_reagents == FALSE)
+	else if(TR.vore_prefs.receive_reagents == FALSE)
 		to_chat(user, span_vwarning("This person's prefs dont allow that!"))
 		return FALSE
 
@@ -1836,9 +1846,9 @@
 		var/obj/belly/B = T.vore_selected
 		if(istype(B))
 			if(T == src)
-				custom_emote_vr(1, "rubs their [belly_rub_target ? belly_rub_target : B.get_belly_name()].")
+				custom_emote_vr(1, "rubs their [vore_prefs.belly_rub_target ? vore_prefs.belly_rub_target : B.get_belly_name()].")
 			else
-				custom_emote_vr(1, "gives some rubs over [T]'s [T.belly_rub_target ? T.belly_rub_target : B.get_belly_name()].")
+				custom_emote_vr(1, "gives some rubs over [T]'s [T.vore_prefs.belly_rub_target ? T.vore_prefs.belly_rub_target : B.get_belly_name()].")
 			B.quick_cycle()
 			return TRUE
 	to_chat(src, span_vwarning("There is no suitable belly for rubs."))

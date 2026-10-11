@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(M.z != user.z || get_dist(user,M) > 10)
 			continue
-		if(!M.allow_mimicry)
+		if(!M.vore_prefs.allow_mimicry)
 			continue
 		targets |= M
 	return targets
@@ -435,7 +435,7 @@ CAPABILITIES(/obj/item/glamour_unstable)
 		if(1) //teleport
 			blink_mob(M)
 		if(2) //mob_tf, uses polymorph potion code
-			if(!M.allow_spontaneous_tf)
+			if(!M.vore_prefs.allow_spontaneous_tf)
 				M.status_adjust(STAT_WEAKENED, 50)
 			else
 				mob_tf(M)

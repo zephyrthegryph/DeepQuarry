@@ -213,7 +213,7 @@
 			src.Vac.afterattack(T, src, 1)
 			return
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
-		if(!L.anchored && L.devourable && L != src && !L?.buckled_to() && L.can_be_drop_prey)
+		if(!L.anchored && L.vore_prefs.devourable && L != src && !L?.buckled_to() && L.vore_prefs.can_be_drop_prey)
 			src.Vac.afterattack(L, src, 1)
 			return
 

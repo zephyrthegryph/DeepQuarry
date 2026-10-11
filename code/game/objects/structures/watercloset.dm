@@ -831,7 +831,7 @@ CAPABILITIES(/obj/item/bikehorn/rubberducky/pink)
 /obj/item/bikehorn/rubberducky/pink/proc/duck_pink_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
-		if(!user.devourable)
+		if(!user.vore_prefs.devourable)
 			to_chat(user, span_vnotice("You can't bring yourself to squeeze it..."))
 			return OP_OK
 		COOLDOWN_START(src, cooldown, 2 SECONDS)

@@ -249,7 +249,7 @@ MSG_DEF(ghost_trap/deactivated, span_notice("You have deactivated %T%!"), span_d
 
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
-		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
+		if(our_entity && (our_entity.loc == src) && our_entity.vore_prefs.devourable)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			rel_clear(src, nameof(captured_entity))
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)

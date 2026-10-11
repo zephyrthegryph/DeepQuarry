@@ -1097,7 +1097,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
@@ -1210,7 +1210,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
@@ -1291,7 +1291,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return

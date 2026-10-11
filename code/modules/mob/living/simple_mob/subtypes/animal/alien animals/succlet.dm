@@ -159,7 +159,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
 
 	if(isliving(target))
 		l = target
-		if(l.devourable && l.allowmobvore && l.can_be_drop_prey)
+		if(l.vore_prefs.devourable && l.vore_prefs.allowmobvore && l.vore_prefs.can_be_drop_prey)
 			target_turf = get_turf(l)
 		else
 			to_chat(src, span_warning("You can't move on to [l], they are watching..."))

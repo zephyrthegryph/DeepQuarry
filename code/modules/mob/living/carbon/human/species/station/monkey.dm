@@ -96,8 +96,8 @@
 
 /datum/species/monkey/handle_post_spawn(mob/living/carbon/human/H)
 	if(!H.ckey)
-		H.can_be_drop_prey = TRUE
-		H.digest_leave_remains = TRUE
+		H.vore_prefs.can_be_drop_prey = TRUE
+		H.vore_prefs.digest_leave_remains = TRUE
 		H.set_low_priority(TRUE)
 	return ..()
 

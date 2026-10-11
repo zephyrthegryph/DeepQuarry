@@ -700,7 +700,7 @@
 	fur_turf.ChangeTurf(/turf/simulated/floor/outdoors/fur)
 	fur_turf = get_step(T, NORTH)
 	var/mob/living/carbon/human/H = person(T)
-	H.pickup_pref = TRUE
+	H.vore_prefs.pickup_pref = TRUE
 	H.pickup_active = TRUE
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, fur_turf)
 	victim.enable_godmode()

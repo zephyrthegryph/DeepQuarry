@@ -212,7 +212,7 @@ CAPABILITIES(/datum/protean_power/blobform)
 		to_chat(H, span_warning("You can't hide while resting."))
 		return
 	B.set_hiding(H, !B.hiding)
-	if(B.hiding || !H.can_be_drop_pred || !H.vore_selected)
+	if(B.hiding || !H.vore_prefs.can_be_drop_pred || !H.vore_selected)
 		return
 	// Springing the trap: engulf something standing on us.
 	var/list/potentials = H.living_mobs(0)

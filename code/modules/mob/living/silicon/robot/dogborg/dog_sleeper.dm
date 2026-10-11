@@ -239,7 +239,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 		log_admin("VORE: [hound] used their [src] to swallow [to_eat].")
 
 /obj/item/dogborg/sleeper/proc/ingest_living(mob/living/victim, obj/belly/belly)
-	if (victim.devourable && is_vore_predator(hound))
+	if (victim.vore_prefs.devourable && is_vore_predator(hound))
 		belly.nom_atom(victim, hound)
 		add_attack_logs(hound, victim, "Eaten via [belly.name]")
 		return TRUE
@@ -552,7 +552,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
-	if(in_godmode(T) || !T.digestable)
+	if(in_godmode(T) || !T.vore_prefs.digestable)
 		rel_add(src, nameof(items_preserved), T)
 		return
 	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
