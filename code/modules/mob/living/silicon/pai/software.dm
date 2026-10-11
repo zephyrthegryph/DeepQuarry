@@ -1,8 +1,8 @@
-/mob/living/silicon/pai/Initialize(mapload)
-	. = ..()
-	software = list()
+/// It starts with the default software installed (derives(), once at init; its CAPABILITIES in pai.dm).
+/mob/living/silicon/pai/proc/default_software(target)
+	. = list()
 	for(var/id in GLOB.default_pai_software)
-		software[id] = TRUE
+		.[id] = TRUE
 
 /mob/living/silicon/pai/verb/paiInterface()
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS

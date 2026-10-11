@@ -49,10 +49,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/Initialize(mapload)
 	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 	lastarea = get_area(src)
-	if(speak_emote)
-		speak_emote = shared_type_list(type, "speak_emote", speak_emote)
-	if(shouldnt_see)
-		shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
 	set_focus(src) // Key Handling
 	. = ..()
 	// after ..(): a rolled size_multiplier or icon scale (rolls()) is in place by then

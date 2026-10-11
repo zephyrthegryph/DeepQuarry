@@ -92,6 +92,7 @@
 		set_light(0)
 
 CAPABILITIES(/mob/living/bot/secbot)
+	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))
 	interface("Secbot")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
 	op("idcheck", ui_act("idcheck"), when(cond_any(req_on_authority(AUTH_REMOTE_ACCESS), req_is(nameof(locked), FALSE))), then(PROC_REF(ui_act_idcheck)))
@@ -172,10 +173,6 @@ CAPABILITIES(/mob/living/bot/secbot)
 		return TRUE
 	else
 		to_chat(user, span_notice("\The [src] is already corrupt."))
-
-/mob/living/bot/secbot/Initialize(mapload)
-	. = ..()
-	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
 /mob/living/bot/secbot/proc/on_injured(datum/act/notice/A)

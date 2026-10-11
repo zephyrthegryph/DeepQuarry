@@ -234,9 +234,9 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 	var/current = holder.vars[target]
 	var/compiled = initial(holder.vars[target])
 	if(islist(current))
-		// A list default (var/list/x = list(...)) is made per instance at runtime, and initial() does not return it: such a var counts as
-		// untouched (a list map edit or list param on a rolled var is not supported).
-		return isnull(compiled) || (islist(compiled) && current ~= compiled)
+		// A list default (var/list/x = list(...)) is made per instance at runtime and initial() cannot be compared with it: a list var counts
+		// as untouched (a list map edit or list param on a rolled var is not supported).
+		return TRUE
 	return current == compiled
 
 /proc/roll_one(datum/holder, datum/roller/R, datum/centry/C)

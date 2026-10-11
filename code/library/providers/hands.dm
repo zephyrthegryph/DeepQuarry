@@ -47,10 +47,14 @@
 CAPABILITIES(/mob/living/carbon)
 	every(PROC_REF(dream_interval), then(PROC_REF(dream_sequence)), when = nameof(dream_fragments))
 	rel_grants(nameof(species))
-	owns_one(nameof(cozyloop), /datum/looping_sound/mob/cozyloop)
+	owns_one(nameof(cozyloop), /datum/looping_sound/mob/cozyloop, starts = /datum/looping_sound/mob/cozyloop, starts_args = list(FALSE))
 	owns_one(nameof(hallucinations), /datum/hallucinations)
-	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested)
-	owns_one(nameof(touching), /datum/reagents/metabolism/touch)
+	// its reagent holders: the bloodstream (`reagents`), the stomach and the skin, 500 units each
+	reagents(500, holder = /datum/reagents/metabolism/bloodstream)
+	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested, starts = /datum/reagents/metabolism/ingested, starts_args = list(NO_LOC, 500, OWNER))
+	owns_one(nameof(touching), /datum/reagents/metabolism/touch, starts = /datum/reagents/metabolism/touch, starts_args = list(NO_LOC, 500, OWNER))
+	derives(nameof(default_language), PROC_REF(species_default_language))
+	footstep()
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(species_emp_effects)))
 	// Resisting (resist.dm): resist_restraints() / resist_buckle() start these by key; the resister has to stand still. A throat cut from a neck grab (carbon_defense.dm).
 	op("cuff_remove", ai(), begins(PROC_REF(cuff_remove_text)), wait(PROC_REF(cuff_breakout_time)), then(PROC_REF(cuff_remove_done)))

@@ -313,6 +313,8 @@
 	var/list/start_sets
 	/// var name -> PROC_REF the holder runs with an occupant that left the var (owns_*(on_lost =)), or null.
 	var/list/lost_handlers
+	/// var name -> TRUE for the starting occupants built before the Initialize() chain runs (owns_*(early = TRUE)), or null.
+	var/list/early_vars
 	/// ENGINE_HOOK_*: the engine work the type's compiled declarations (code/engine/declare) ask for at init, or 0.
 	var/engine_hooks = 0
 
@@ -394,6 +396,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		var/datum/entry/E = C.item
 		if(!istype(E) || (E.kind != ENTRY_OWNS_ONE && E.kind != ENTRY_OWNS_MANY))
 			continue
+		if(E.args["early"])
+			LAZYSET(T.early_vars, E.args["var"], TRUE)
 		if(E.args["starts_set"])
 			LAZYSET(T.start_sets, E.args["var"], E.args["starts_set"])
 		if(E.args["on_lost"])
