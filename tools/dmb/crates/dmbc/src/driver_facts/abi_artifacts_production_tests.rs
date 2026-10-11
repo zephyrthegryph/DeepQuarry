@@ -737,9 +737,9 @@ fn admitted_abi_seed_dispatches_only_dirty_dependency_roots() {
     let current = frontend("/datum/a/proc/p(x=1)\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n", &owner.snapshot);
     let prepared = prepared(&current, &owner.snapshot, None);
     let roster = current.callable_roster().unwrap();
-    let all: BTreeMap<_, _> = prepared.prepared.units().iter().enumerate()
-        .map(|(ordinal, (_, unit))| (ordinal, unit.clone())).collect();
-    let all_seed = abi_scheduler::seed(&current, roster, all.clone()).unwrap();
+    let all = || -> BTreeMap<_, _> { prepared.prepared.units().iter().enumerate()
+        .map(|(ordinal, (_, unit))| (ordinal, crate::procedure_policy::PreparedReplay::from_unit(unit).unwrap().into_view())).collect() };
+    let all_seed = abi_scheduler::seed(&current, roster, all()).unwrap();
     assert!(all_seed.ready.is_empty(), "fully admitted graph performs no executor wave");
     assert!(all_seed.remaining.iter().all(|pending| !pending));
     for (ordinal, (_, expected)) in prepared.prepared.units().iter().enumerate() {
@@ -747,7 +747,7 @@ fn admitted_abi_seed_dispatches_only_dirty_dependency_roots() {
         assert!(Arc::ptr_eq(&actual.inputs, &expected.inputs));
         assert!(Arc::ptr_eq(actual.abi.as_ref().unwrap(), expected.abi.as_ref().unwrap()));
     }
-    let selected = all.into_iter().filter(|(ordinal, _)| *ordinal == 0 || *ordinal == 3).collect();
+    let selected = all().into_iter().filter(|(ordinal, _)| *ordinal == 0 || *ordinal == 3).collect();
     let partial = abi_scheduler::seed(&current, roster, selected).unwrap();
     assert_eq!(partial.ready, vec![1], "only first dirty descendant is ready, not its child or admitted sibling");
     assert_eq!(partial.remaining, vec![false, true, true, false]);

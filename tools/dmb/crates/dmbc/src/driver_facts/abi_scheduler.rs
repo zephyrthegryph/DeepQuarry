@@ -1,5 +1,6 @@
 //! Current-request scheduling over actual retained ABI receipts.
 use super::*;
+use crate::procedure_policy::PreparedAbi;
 use abi_artifacts::{
     observations::{Answer, Current, Domain, Inputs, Query},
     Artifact,
