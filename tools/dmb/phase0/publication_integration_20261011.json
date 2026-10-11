@@ -351,5 +351,27 @@
       "map fresh-recomputation verification pending",
       "current real DeepQuarry cohort and full runtime parity pending"
     ]
+  },
+  "focused_validation_0e075": {
+    "source_commit": "0e075b3ad96d56b9e4716757a5299e7bfc97135e",
+    "archive_sha256": "5b42cf664adea17324edb3b0ff906690adad91608b4e44ea50a31cabb6f1e605",
+    "build_receipt": "20261011-102549-8ee5164a-job-cargo.json",
+    "passed": 15,
+    "failed": 3,
+    "receipts": [
+      "20261011-103106-a087b3c2-focused.json",
+      "20261011-103106-91a1dd6a-focused.json",
+      "20261011-103106-cdeefff5-focused.json",
+      "20261011-103124-24a2c7bf-focused.json",
+      "20261011-103152-76e0c44c-focused.json",
+      "20261011-103200-e59cb768-focused.json"
+    ],
+    "failures": [
+      "scalar constant mock read still fails after untyped metadata correction",
+      "graphics declaration-only frontend fixture lacks native icon override authority",
+      "real pinned host returns RuntimeType(/list) Unsupported rather than assumed Symbol authority"
+    ],
+    "no_test_filter_receipt": "20261011-103106-10f177be-focused.json (incorrect prefix; rerun with actual listed prefix; not a test failure)",
+    "scope": "focused shared grammar, source metadata, pinned headers, semantic transport, current-host read validity and retained error recovery; not full suite or DeepQuarry benchmark"
   }
 }
