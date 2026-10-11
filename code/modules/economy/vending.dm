@@ -120,6 +120,8 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	derives(nameof(slogan_list), PROC_REF(split_slogans))
+	derives(nameof(ads_list), PROC_REF(split_ads))
 	configure(uses_power(idle = 10))
 	machine_basics(repair = NONE)
 	panel()
@@ -182,11 +184,14 @@ CAPABILITIES(/obj/machinery/vending)
 // ALLOW(init/INSTANCE_STATE): the vendor's slogans and ads are split from its type's strings once, and its stock records are built from its product lists
 /obj/machinery/vending/Initialize(mapload)
 	. = ..()
-	if(product_slogans)
-		LAZYADD(slogan_list, splittext(product_slogans, ";"))
-	if(product_ads)
-		LAZYADD(ads_list, splittext(product_ads, ";"))
 	build_inventory()
+
+/// Its slogans and ads, split from its strings (derives() at init).
+/obj/machinery/vending/proc/split_slogans()
+	return product_slogans ? splittext(product_slogans, ";") : null
+
+/obj/machinery/vending/proc/split_ads()
+	return product_ads ? splittext(product_ads, ";") : null
 
 /// So not all machines speak at the exact same time: the first pitch comes at the slogan delay plus up to as much again after the vendor is made.
 /obj/machinery/vending/proc/slogans_start(datum/act/timer/A)
