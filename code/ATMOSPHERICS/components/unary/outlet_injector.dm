@@ -3,6 +3,7 @@
 //When it receives the "inject" signal, it will try to pump it's entire contents into the environment regardless of pressure, using power.
 
 /obj/machinery/atmospherics/unary/outlet_injector
+	air_volume = ATMOS_DEFAULT_VOLUME_PUMP + 500 // a small reservoir for injecting; also allows a higher flow rate limit than vent pumps
 	icon = 'icons/atmos/injector.dmi'
 	icon_state = "map_injector"
 	pipe_state = "injector"
@@ -26,7 +27,6 @@
 /obj/machinery/atmospherics/unary/outlet_injector/Initialize(mapload)
 	. = ..()
 
-	air_contents.set_volume(ATMOS_DEFAULT_VOLUME_PUMP + 500)	//Give it a small reservoir for injecting. Also allows it to have a higher flow rate limit than vent pumps, to differentiate injectors a bit more.
 	if(frequency)
 		set_frequency(frequency)
 

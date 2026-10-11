@@ -4532,6 +4532,39 @@ trait (492 types, `tools/dx/codemods/type_trait.py item_sounds`); a subtype that
 `hitsound` var. No behaviour change intended; pinned by `dq_type_trait/item_sounds_declared`. Run-time writers (the welder's lit sound, a
 borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item its own copy.
 
+## Init burn-down outside objects and mobs (rewrite/init-rest, October 2026)
+
+`Initialize()` overrides in machinery, clothing, power, atmospherics, mining, food, turfs, games, recycling and the rest of `code/` outside
+`code/game/objects/` and `code/modules/mob/` moved to forms. What changed with them:
+
+* **Rolls draw from the instance's stream**, not the world RNG, and a map edit or constructor value of the rolled var wins over the roll (rolls()
+  suppresses itself on a var that differs from its compiled default): wreck salvage, horoscope readings, contraband seed batches, replicator buttons
+  and fail message, cracker prizes and jokes, abandoned crate codes, janicart nicknames, ramen bowls, flask lids, exceptional pies' names, food
+  jitter, dirt and sidewalk wear, random cable colours, cut cable lengths, the emergency shield's facing. A cut cable made with an explicit
+  amount keeps it (it was overwritten by the roll).
+* **A firefighter Ripley wreck rolls its salvage once**, from its own part list (its Initialize used to run the Ripley roll and then its own, up to
+  four parts). Wreck part lists are `TYPE_TABLE(…, wreck_salvage_parts, …)`.
+* **Replicators no longer share one draining list.** The base replicator's `var/static/list/viables` was picked from and removed from by every
+  replicator, so later machines had fewer choices; each now picks from a fresh copy. The vore and clothing replicators carry only their own buttons
+  (they also held the base replicator's buttons under keys their window never showed); `construction` is button text -> type and look.
+* **Noticeboard memos are paper subtypes** started by `owns_many(nameof(notices), starts = …)`: a memo's description is "This is a paper titled …"
+  (paper init now sees the title), and the xenoarchaeology board's five memos are listed notices (they sat in its contents unlisted). The board no
+  longer re-adopts its contents at init.
+* **Vendor and record tables are per type** (`per_type()`, `TYPE_TABLE_DECLARE`): mining and survey vendors, the casino prize dispenser, the
+  biogenerator, the medical, security and skills record consoles, the Orion Trail stops. A mining vendor no longer deletes the shared prize entries
+  when it is destroyed; an admin's `new_prize()` entries are the vendor's own (`extra_prizes`, owned), shown under "Extra".
+* **A chaos cake slice tastes of its kind**: its taste list now reaches the nutriment data (`reagents(data =)`); it was assigned after the reagents
+  were made and lost.
+* **The janicart's initial move delay is 0.5** (a var default): an engine turned off resets to it rather than the train's 1.
+* **The emergency shield's random facing and the built snowmobile's south facing are var-level** (a mapped facing wins).
+* **Atmospheric port mixtures are made at their volume** (`gas_port()`, the `air*_volume` vars) instead of 200 L and then resized by the subtype.
+* **Glasses lay their HUD screen through `hud_overlay`** (a global HUD var name) when `overlay` holds none of its own.
+* **Disposal pipe ends (`dpdir`) derive at init** (`derives()`), from the facing and sprite, before the pipe's update.
+* **Self-observes are `on_notice()` entries** (camera power, uranium floors and walls, headphones, holographic projector, scene tool, sticky
+  note, hosed sprayer, disposal bin, shield projector): active from capability init rather than from the end of Initialize().
+* **Machines that refreshed their parts again after `default_parts()`** (bomb tester, DNA scanner, honey extractor, built abductor RTGs) refresh
+  once; the teleporter hub, microwave, smartfridge and biogenerator use `default_parts()`.
+
 ## Item protection as a type trait (rewrite/look-traits, gap 5)
 
 `heat_protection`, `cold_protection`, `max_heat_protection_temperature`, `min_cold_protection_temperature`, `max_pressure_protection`,

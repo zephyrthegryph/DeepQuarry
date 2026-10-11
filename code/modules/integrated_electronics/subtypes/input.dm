@@ -702,7 +702,6 @@ DECLARE_REGISTRY(/obj/item/integrated_circuit/input/microphone, REGISTRY_LISTENI
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 30
 
-	var/list/my_langs
 	var/static/list/readable_langs = list(
 		LANGUAGE_GALCOM,
 		LANGUAGE_SOL_COMMON,
@@ -711,12 +710,6 @@ DECLARE_REGISTRY(/obj/item/integrated_circuit/input/microphone, REGISTRY_LISTENI
 		LANGUAGE_TERMINUS,
 		LANGUAGE_SIGN
 		)
-
-/obj/item/integrated_circuit/input/microphone/sign/Initialize(mapload)
-	. = ..()
-	for(var/lang in readable_langs)
-		var/datum/language/newlang = GLOB.all_languages[lang]
-		LAZYOR(my_langs, newlang)
 
 /obj/item/integrated_circuit/input/microphone/sign/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces)

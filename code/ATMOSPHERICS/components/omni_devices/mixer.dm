@@ -7,6 +7,7 @@
 // Gas mixer - omni variant
 //--------------------------------------------
 /obj/machinery/atmospherics/omni/mixer
+	port_volume = ATMOS_DEFAULT_VOLUME_MIXER
 	name = "omni gas mixer"
 	icon_state = "map_mixer"
 	pipe_state = "omni_mixer"
@@ -51,8 +52,6 @@
 						P.concentration = tag_west_con
 						con += max(0, tag_west_con)
 
-	for(var/datum/omni_port/P in ports)
-		P.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 
 /obj/machinery/atmospherics/omni/mixer/sort_ports()
 	rebuild_port_roles()

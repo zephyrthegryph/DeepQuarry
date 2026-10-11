@@ -17,7 +17,6 @@
 
 /obj/structure/disposalpipe/tagger/Initialize(mapload)
 	. = ..()
-	dpdir = dir | turn(dir, 180)
 	if(sort_tag)
 		LAZYADD(GLOB.tagger_locations["[sort_tag]"], get_z(src))
 	updatename()
@@ -30,6 +29,7 @@
 		LAZYREMOVE(GLOB.tagger_locations["[sort_tag]"], get_z(src))
 
 CAPABILITIES(/obj/structure/disposalpipe/tagger)
+	derives(nameof(dpdir), PROC_REF(tagger_ends)) // at init: the pipe's ends follow how it was placed
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.
@@ -64,3 +64,7 @@ CAPABILITIES(/obj/structure/disposalpipe/tagger)
 	name = "partial package tagger"
 	icon_state = "pipe-tagger-partial"
 	partial = 1
+
+/// A tagger is a straight run.
+/obj/structure/disposalpipe/tagger/proc/tagger_ends()
+	return dir | turn(dir, 180)

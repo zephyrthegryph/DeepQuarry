@@ -14,15 +14,8 @@
 
 /// The patient lying on it; the table checks on them every machine frame while there is one.
 /obj/machinery/optable/var/mob/living/carbon/human/victim
-/obj/machinery/optable/Initialize(mapload)
-	. = ..()
-	for(var/direction in list(NORTH,EAST,SOUTH,WEST))
-		rel_set(src, nameof(computer), locate(/obj/machinery/computer/operating, get_step(src, direction)))
-		if(computer)
-			rel_set(computer, nameof(computer.table), src)
-			break
-
 CAPABILITIES(/obj/machinery/optable)
+	finds(nameof(computer), /obj/machinery/computer/operating) // the paired rel_one writes the console's table
 	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))

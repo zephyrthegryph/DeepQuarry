@@ -277,13 +277,12 @@ CAPABILITIES(/obj/structure/disposalpipe)
 /obj/structure/disposalpipe/segment
 	icon_state = "pipe-s"
 
+CAPABILITIES(/obj/structure/disposalpipe/segment)
+	derives(nameof(dpdir), PROC_REF(segment_ends)) // at init: the pipe's ends follow how it was placed
+
 // ALLOW(init/INSTANCE_STATE): its pipe directions follow the way it was placed
 /obj/structure/disposalpipe/segment/Initialize(mapload)
 	. = ..()
-	if(icon_state == "pipe-s")
-		dpdir = dir | turn(dir, 180)
-	else
-		dpdir = dir | turn(dir, -90)
 
 	update()
 
@@ -291,10 +290,12 @@ CAPABILITIES(/obj/structure/disposalpipe)
 /obj/structure/disposalpipe/up
 	icon_state = "pipe-u"
 
+CAPABILITIES(/obj/structure/disposalpipe/up)
+	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
+
 // ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/up/Initialize(mapload)
 	. = ..()
-	dpdir = dir
 	update()
 
 /obj/structure/disposalpipe/up/nextdir(fromdir)
@@ -341,10 +342,12 @@ CAPABILITIES(/obj/structure/disposalpipe)
 /obj/structure/disposalpipe/down
 	icon_state = "pipe-d"
 
+CAPABILITIES(/obj/structure/disposalpipe/down)
+	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
+
 // ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
 /obj/structure/disposalpipe/down/Initialize(mapload)
 	. = ..()
-	dpdir = dir
 	update()
 
 /obj/structure/disposalpipe/down/nextdir(fromdir)
@@ -430,3 +433,15 @@ CAPABILITIES(/obj/structure/disposalpipe/broken)
 	else
 		dirs = GLOB.alldirs.Copy()
 	streak(dirs)
+
+/// A straight segment joins its two ends, a bent one turns.
+/obj/structure/disposalpipe/segment/proc/segment_ends()
+	return icon_state == "pipe-s" ? (dir | turn(dir, 180)) : (dir | turn(dir, -90))
+
+/// Its one end faces the way it was placed.
+/obj/structure/disposalpipe/up/proc/facing_end()
+	return dir
+
+/// Its one end faces the way it was placed.
+/obj/structure/disposalpipe/down/proc/facing_end()
+	return dir
