@@ -653,8 +653,22 @@ fn run_build_attempt(
                 )
                 .map_err(|error| error.to_string())
         };
+        let resource_journal_admission = std::sync::Mutex::new(None);
+        let capture_resource_evidence = |demand: &dm_resources::capture::ResourceDemand,
+            resources: &dm_resources::capture::CapturedResources, extra: &dmbc::assets::ExtraAssets| {
+            let policy = dm_resources::encoding::byond516_raw_policy();
+            let receipt = dmbc::resource_journal_coverage::admit_recorded_demand(
+                &input_provider, demand, resources,
+                dm_resources::capture::CaptureConfig { policy: &policy,
+                    encoded: &extra.encoded_skins, additional: &extra.skins },
+                dmbc::resource_journal_coverage::CoverageLimits {
+                    candidate_reads: 262_144, source_payload_bytes: 512 * 1024 * 1024,
+                },
+            );
+            *resource_journal_admission.lock().unwrap_or_else(|error| error.into_inner()) = Some(receipt);
+        };
         let mut nontext =
-            dmbc::captured_non_text_driver::capture_with_resource_reuse_on_executor_with_sink(
+            dmbc::captured_non_text_driver::capture_with_resource_reuse_on_executor_with_sink_and_evidence(
                 &frontend,
                 &inputs_capture,
                 &inputs_capture,
@@ -669,6 +683,8 @@ fn run_build_attempt(
                 resource_sink
                     .as_ref()
                     .map(|sink| sink as &dyn dmbc::assets::ResourceArchiveSink),
+                verification_capture.then_some(&capture_resource_evidence
+                    as dmbc::captured_non_text_driver::ResourceCaptureEvidence<'_>),
             )?
             .into_prepared(&frontend)?;
         // Only this one-shot request discards expansion execution inputs. No
@@ -887,7 +903,8 @@ fn run_build_attempt(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
-        let publication_proof = verification_capture.then(|| crate::publication_proof::issue(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path())).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
+        let resource_journal_admission = resource_journal_admission.into_inner().unwrap_or_else(|error| error.into_inner());
+        let publication_proof = verification_capture.then(|| crate::publication_proof::issue_with_resource_admission(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path(), resource_journal_admission)).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
         if !verification_capture && (session.is_some() || resource_owner.is_some()) {
             let inputs = publication_inputs;
             let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;

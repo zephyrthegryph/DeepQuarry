@@ -346,6 +346,13 @@ pub type ResourceAdmission<'a> =
     &'a dyn Fn(
         &dm_resources::capture::ResourceDemand,
     ) -> Result<Option<crate::resource_manifest::ValidatedResources>, String>;
+/// Native journal evidence only; a decline does not change fresh compilation.
+/// Called after complete ordinary capture, before payload owners are consumed.
+pub type ResourceCaptureEvidence<'a> = &'a dyn Fn(
+    &dm_resources::capture::ResourceDemand,
+    &dm_resources::capture::CapturedResources,
+    &crate::assets::ExtraAssets,
+);
 #[allow(clippy::too_many_arguments)] // Existing explicit capture inputs plus independently validated archive admission.
 pub fn capture_with_resource_reuse<
     R: Resolver,
@@ -374,6 +381,7 @@ pub fn capture_with_resource_reuse<
         observer,
         map_memo,
         admission,
+        None,
         None,
         crate::assets::capture_discovered,
     )
@@ -432,6 +440,24 @@ pub fn capture_with_resource_reuse_on_executor_with_sink<
     executor: &dm_exec::BuildExecutor,
     sink: Option<&dyn crate::assets::ResourceArchiveSink>,
 ) -> Result<CapturedNonTextOutput<R>, String> {
+    capture_with_resource_reuse_on_executor_with_sink_and_evidence(
+        frontend, provider, resource_provider, host, engine, known_roots,
+        world_directives, observer, map_memo, admission, executor, sink, None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)] // Existing producer with optional native observed-input evidence.
+pub fn capture_with_resource_reuse_on_executor_with_sink_and_evidence<
+    R: Resolver, P: dm_preprocess::SourceProvider,
+    C: dm_resources::capture::CaptureProvider + Sync,
+>(
+    frontend: &ColdFrontend, provider: &P, resource_provider: &C, host: R,
+    engine: &byond_dmb::dmb::Dmb, known_roots: &BTreeSet<SymbolId>,
+    world_directives: &[Directive], observer: Option<CaptureObserver<'_>>,
+    map_memo: Option<&crate::map_memo::MapMemo>, admission: Option<ResourceAdmission<'_>>,
+    executor: &dm_exec::BuildExecutor, sink: Option<&dyn crate::assets::ResourceArchiveSink>,
+    evidence: Option<ResourceCaptureEvidence<'_>>,
+) -> Result<CapturedNonTextOutput<R>, String> {
     capture_with_resource_operation(
         frontend,
         provider,
@@ -444,6 +470,7 @@ pub fn capture_with_resource_reuse_on_executor_with_sink<
         map_memo,
         admission,
         sink,
+        evidence,
         |demand, extra, provider| {
             crate::assets::capture_discovered_on_executor(demand, extra, provider, executor)
         },
@@ -467,6 +494,7 @@ fn capture_with_resource_operation<
     map_memo: Option<&crate::map_memo::MapMemo>,
     admission: Option<ResourceAdmission<'_>>,
     sink: Option<&dyn crate::assets::ResourceArchiveSink>,
+    evidence: Option<ResourceCaptureEvidence<'_>>,
     capture_resources: impl FnOnce(
         dm_resources::capture::ResourceDemand,
         &crate::assets::ExtraAssets,
@@ -555,6 +583,7 @@ fn capture_with_resource_operation<
             )
         } else {
             let resources = timed(observer, CaptureStage::AssetCapture, || {
+                let evidence_demand = evidence.map(|_| demand.clone());
                 let resources = capture_resources(demand, &captured.assets, resource_provider)
                     .map_err(|error| error.to_string())?;
                 reject_missing_literals(frontend, &captured, &resources)?;
@@ -565,6 +594,9 @@ fn capture_with_resource_operation<
                 resources
                     .require_complete()
                     .map_err(|error| error.to_string())?;
+                if let (Some(evidence), Some(demand)) = (evidence, evidence_demand.as_ref()) {
+                    evidence(demand, &resources, &captured.assets);
+                }
                 Ok(resources)
             })?;
             let order = timed(observer, CaptureStage::ResourceOrder, || {

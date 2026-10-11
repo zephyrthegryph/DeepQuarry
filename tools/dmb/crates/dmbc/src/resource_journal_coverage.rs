@@ -12,6 +12,7 @@ pub struct CoverageLimits {
     pub candidate_reads: usize,
     pub source_payload_bytes: usize,
 }
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ObservedResourceCoverage {
     pub candidate_reads: usize,
     pub source_payload_bytes: usize,
@@ -30,6 +31,32 @@ struct JournalProvider<'a, 'journal> {
     limits: CoverageLimits,
     physical: Option<&'a JournalAccessView<'journal>>,
     root_identity: Cell<Option<u128>>,
+}
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct ResourceJournalAdmission {
+    pub schema_version: u32,
+    pub physical_observed_demand_admitted: bool,
+    pub shared_input_closure_complete: bool,
+    pub coverage: Option<ObservedResourceCoverage>,
+    pub decline_reason: Option<String>,
+}
+/// Called with the production capture's exact current demand/encoding receipts.
+/// Missing/unsupported physical evidence declines this optional admission only;
+/// ordinary fresh compilation and observed-only analysis remain available.
+pub fn admit_recorded_demand(
+    inputs: &crate::frozen_inputs::Inputs, demand: &ResourceDemand,
+    captured: &CapturedResources, config: CaptureConfig<'_>, limits: CoverageLimits,
+) -> ResourceJournalAdmission {
+    let result = inputs.with_access_view(|journal|
+        validate_physically_contained_demand(demand.clone(), captured, config, &journal, limits));
+    let (coverage, decline_reason) = match result {
+        Ok(Some(coverage)) => (Some(coverage), None),
+        Ok(None) => (None, Some("provider has no recorded journal authority".into())),
+        Err(error) => (None, Some(error.to_string())),
+    };
+    ResourceJournalAdmission { schema_version: 1,
+        physical_observed_demand_admitted: coverage.is_some(),
+        shared_input_closure_complete: false, coverage, decline_reason }
 }
 impl CaptureProvider for JournalProvider<'_, '_> {
     fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {

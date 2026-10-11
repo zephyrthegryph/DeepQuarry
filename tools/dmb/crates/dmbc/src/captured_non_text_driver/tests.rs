@@ -245,6 +245,28 @@ fn map_skin_asset_capture_produces_shared_inventory_and_initializer_artifact() {
     )
     .unwrap();
     assert!(output.symbols.text(SymbolId::of("asset")).is_some());
+    let evidence_calls = std::cell::Cell::new(0);
+    let evidence = |demand: &dm_resources::capture::ResourceDemand,
+        resources: &dm_resources::capture::CapturedResources, extra: &crate::assets::ExtraAssets| {
+        let policy = dm_resources::encoding::byond516_raw_policy();
+        let receipt = crate::resource_journal_coverage::admit_recorded_demand(
+            &crate::frozen_inputs::Inputs::Live, demand, resources,
+            dm_resources::capture::CaptureConfig { policy: &policy, encoded: &extra.encoded_skins, additional: &extra.skins },
+            crate::resource_journal_coverage::CoverageLimits { candidate_reads: 32, source_payload_bytes: 1024 * 1024 },
+        );
+        assert!(!receipt.physical_observed_demand_admitted);
+        assert!(!receipt.shared_input_closure_complete);
+        evidence_calls.set(evidence_calls.get() + 1);
+    };
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let with_declined_evidence = capture_with_resource_reuse_on_executor_with_sink_and_evidence(
+        &frontend, &Source, &Source, Tree(frontend.snapshot.tree.clone()), &decoded,
+        &roots, &directives, None, None, None, &executor, None, Some(&evidence),
+    ).unwrap();
+    assert_eq!(evidence_calls.get(), 1);
+    assert_eq!(with_declined_evidence.resources.records, output.resources.records);
+    assert_eq!(with_declined_evidence.resource_archive_order, output.resource_archive_order);
+    assert_eq!(with_declined_evidence.resource_catalog.record(), output.resource_catalog.record());
     assert_eq!(
         output.symbols.text(SymbolId::of("asset.txt")),
         Some("asset.txt")

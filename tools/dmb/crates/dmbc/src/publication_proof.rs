@@ -10,6 +10,8 @@ use std::{
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct NativePublicationProof {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_journal_admission: Option<crate::resource_journal_coverage::ResourceJournalAdmission>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target_configuration: Option<crate::pinned_target::ConfigurationReceipt>,
     pub schema_version: u32,
     pub kind: String,
@@ -25,6 +27,8 @@ pub struct NativePublicationProof {
 #[derive(Serialize)]
 struct Document<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
+    resource_journal_admission: Option<&'a crate::resource_journal_coverage::ResourceJournalAdmission>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     target_configuration: Option<crate::pinned_target::ConfigurationReceipt>,
     schema_version: u32,
     kind: &'static str,
@@ -38,6 +42,7 @@ struct Document<'a> {
     // rather than roundtripping through a generic JSON number representation.
     snapshot_json: &'a str,
 }
+#[cfg(test)]
 fn encode(
     snapshot: &InputSnapshot,
     pair: &OutputPair,
@@ -46,11 +51,19 @@ fn encode(
     engine_identity: u128,
     bootstrap_catalog: bool,
 ) -> io::Result<(Vec<u8>, usize, u128)> {
+    encode_with_resource_admission(snapshot, pair, manifest, defines, engine_identity, bootstrap_catalog, None)
+}
+fn encode_with_resource_admission(
+    snapshot: &InputSnapshot, pair: &OutputPair, manifest: &Path,
+    defines: &BTreeMap<String, String>, engine_identity: u128, bootstrap_catalog: bool,
+    resource_journal_admission: Option<&crate::resource_journal_coverage::ResourceJournalAdmission>,
+) -> io::Result<(Vec<u8>, usize, u128)> {
     let snapshot = serde_json::to_vec(snapshot).map_err(io::Error::other)?;
     let length = snapshot.len();
     let digest = xxhash_rust::xxh3::xxh3_128(&snapshot);
     let text = std::str::from_utf8(&snapshot).map_err(io::Error::other)?;
     let bytes = serde_json::to_vec(&Document {
+        resource_journal_admission,
         target_configuration: crate::pinned_target::configuration(defines, engine_identity),
         schema_version: 1,
         kind: "native_publication_inputs",
@@ -66,6 +79,7 @@ fn encode(
     Ok((bytes, length, digest))
 }
 /// Invoke only after successful installation; this function performs no input reads.
+#[cfg(test)]
 pub(crate) fn issue(
     snapshot: &InputSnapshot,
     pair: &OutputPair,
@@ -75,13 +89,21 @@ pub(crate) fn issue(
     bootstrap_catalog: bool,
     store: &Path,
 ) -> io::Result<NativePublicationProof> {
-    let (bytes, snapshot_bytes, snapshot_digest) = encode(
+    issue_with_resource_admission(snapshot, pair, manifest, defines, engine_identity, bootstrap_catalog, store, None)
+}
+pub(crate) fn issue_with_resource_admission(
+    snapshot: &InputSnapshot, pair: &OutputPair, manifest: &Path,
+    defines: &BTreeMap<String, String>, engine_identity: u128, bootstrap_catalog: bool,
+    store: &Path, resource_journal_admission: Option<crate::resource_journal_coverage::ResourceJournalAdmission>,
+) -> io::Result<NativePublicationProof> {
+    let (bytes, snapshot_bytes, snapshot_digest) = encode_with_resource_admission(
         snapshot,
         pair,
         manifest,
         defines,
         engine_identity,
         bootstrap_catalog,
+        resource_journal_admission.as_ref(),
     )?;
     let digest = xxhash_rust::xxh3::xxh3_128(&bytes);
     let directory = store.join("publication-proofs");
@@ -136,6 +158,7 @@ pub(crate) fn issue(
         Err(error) => return Err(error),
     }
     Ok(NativePublicationProof {
+        resource_journal_admission,
         target_configuration: crate::pinned_target::configuration(defines, engine_identity),
         schema_version: 1,
         kind: "native_publication_inputs".into(),
@@ -153,6 +176,28 @@ pub(crate) fn issue(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn document_binds_partial_resource_admission_and_preserves_decline() {
+        let snapshot = InputSnapshot::new(1);
+        let pair = OutputPair::from_bytes(b"dmb", b"rsc");
+        let defines = BTreeMap::new();
+        let receipt = crate::resource_journal_coverage::ResourceJournalAdmission {
+            schema_version: 1, physical_observed_demand_admitted: false,
+            shared_input_closure_complete: false, coverage: None,
+            decline_reason: Some("journal has no physical path authority".into()),
+        };
+        let ordinary = encode(&snapshot, &pair, Path::new("E:/probe.dme"), &defines, 7, false).unwrap();
+        let issued = encode_with_resource_admission(&snapshot, &pair, Path::new("E:/probe.dme"),
+            &defines, 7, false, Some(&receipt)).unwrap();
+        assert_ne!(ordinary.0, issued.0);
+        assert_eq!(ordinary.1, issued.1);
+        assert_eq!(ordinary.2, issued.2);
+        let document: serde_json::Value = serde_json::from_slice(&issued.0).unwrap();
+        assert_eq!(document["resource_journal_admission"]["physical_observed_demand_admitted"], false);
+        assert_eq!(document["resource_journal_admission"]["shared_input_closure_complete"], false);
+        assert_eq!(document["resource_journal_admission"]["decline_reason"], receipt.decline_reason.unwrap());
+    }
 
     #[test]
     fn issued_sidecar_reuses_exact_document_and_rejects_tampering() {
