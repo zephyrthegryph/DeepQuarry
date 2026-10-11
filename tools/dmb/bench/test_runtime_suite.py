@@ -60,7 +60,10 @@ class Contracts(unittest.TestCase):
         args = self.args('--tier', 'normal', '--batch-size', '32')
         self.assertIn('--normal-batches=32', runner.command(args, runner.validate(args)))
         args = self.args('--focus', '/datum/unit_test/a', '--focus', '/datum/unit_test/b')
-        self.assertIn('--focus=/datum/unit_test/a,/datum/unit_test/b', runner.command(args, runner.validate(args)))
+        focused = runner.command(args, runner.validate(args))
+        self.assertEqual(focused[1:], ['tools/dq_focused_test.sh',
+                                      '/datum/unit_test/a', '/datum/unit_test/b'])
+        self.assertNotIn('dm-test', focused)
 
     def test_missing_native_pins_conflicting_modes_and_cleanup_fail_closed(self):
         args = self.args('--tier', 'all', '--batch-size', '32'); args.backend = 'native'
