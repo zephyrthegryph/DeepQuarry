@@ -49,6 +49,12 @@ pub use selected_references::{
 mod memo_resolver;
 pub use memo_resolver::{MemoResolver, MemoStats};
 
+mod word_storage;
+pub use word_storage::{
+    ByteOwnerStorage, ImmutableByteOwner, SharedWords, WordIter, WordStorage, WordStorageError,
+    WordStorageView,
+};
+
 mod symbolic;
 pub use symbolic::{
     Relocation, RelocationEncoding, RelocationError, RelocationKind, RelocationView, SymRef,
