@@ -10,7 +10,7 @@ import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
 import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
-import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, type CompiledOutput } from './native_pair';
+import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './native_pair';
 import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 
 /** Cached path to DM compiler */
@@ -588,14 +588,47 @@ export async function DreamDaemon(
   });
 }
 
+/** Runtime input failures must escape the runner's ordinary nonzero-exit handling. */
+export async function withRuntimeIdentityChecks<T>(run: () => Promise<T>, verify: () => void): Promise<T> {
+  let runtimeFailed = false;
+  let runtimeError: unknown;
+  try {
+    return await run();
+  } catch (error) {
+    runtimeFailed = true;
+    runtimeError = error;
+    throw error;
+  } finally {
+    try {
+      verify();
+    } catch (cleanupError) {
+      const evidence = { runtimeError: runtimeFailed ? runtimeError : null, runtimeIdentityError: cleanupError };
+      if (runtimeError instanceof CompilerProvenanceError || runtimeError instanceof NativeAcquisitionError) {
+        // These already stop admission. Preserve their original typed identity.
+        try {
+          // Do not create a self-referencing error/evidence object.
+          Object.assign(runtimeError, { runtimeIdentityCleanup: { runtimeIdentityError: cleanupError } });
+        } catch {
+          const failure = new CompilerProvenanceError(`Runtime input identity or library cleanup failed: ${cleanupError}`);
+          Object.assign(failure, { runtimeIdentityCleanup: evidence });
+          throw failure;
+        }
+        throw runtimeError;
+      }
+      const failure = new CompilerProvenanceError(`Runtime input identity or library cleanup failed: ${cleanupError}`);
+      Object.assign(failure, { runtimeIdentityCleanup: evidence });
+      throw failure;
+    }
+  }
+}
+
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
   checkVerdigrisAbi();
   const library = options.compiledOutput?.kind === 'native_pair'
     ? stageRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
     : undefined;
-  let runtimeFailed = false;
   let conventionalLibrary: HostedLibraryIdentity | undefined;
-  try {
+  return withRuntimeIdentityChecks(async () => {
   await approveWorldDlls(options.dmbFile);
   const ddExePath = await resolveDreamDaemonExecutable(options.namedDmVersion, getDmPath);
   if (options.onRuntimeIdentity) {
@@ -619,17 +652,8 @@ async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult
     return await runDreamDaemonWithWatchdog(ddExePath, [options.dmbFile, ...args], options);
   }
   return await Juke.exec(ddExePath, [options.dmbFile, ...args]);
-  } catch (error) {
-    runtimeFailed = true;
-    throw error;
-  } finally {
-    try {
-      if (conventionalLibrary) verifyObservedRuntimeLibrary(conventionalLibrary);
-      library?.remove();
-    }
-    catch (error) {
-      if (!runtimeFailed) throw error;
-      console.warn('Runtime library cleanup failed; preserving the original runtime failure:', error);
-    }
-  }
+  }, () => {
+    if (conventionalLibrary) verifyObservedRuntimeLibrary(conventionalLibrary);
+    library?.remove();
+  });
 }
