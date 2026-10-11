@@ -88,7 +88,7 @@ impl HeapCensus {
                             self.observe_items("cold_boundary.link_assignments", assignments);
                             self.observe_items("cold_boundary.link_slots", slots);
                             if assignments != 0 || slots != 0 {
-                                self.unknown("cold_boundary.link_bindings_indexes", "BTree assignment/slot node allocation backing and Arc control blocks private; logical entry counts are not capacity measurements");
+                                self.unknown("cold_boundary.link_bindings_indexes", "BTree assignment/slot node allocation backing, publication/pending lease controls and Arc control blocks private; logical entry counts are not capacity measurements");
                             }
                         }
                     }

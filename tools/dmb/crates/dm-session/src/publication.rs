@@ -179,7 +179,11 @@ mod tests {
             first.with_pending(|_| panic!("sealed operation")),
             None::<()>
         );
-        drop(begin(&owner, &drops, 2));
+        let aborted = begin(&owner, &drops, 2);
+        aborted.abort();
+        assert!(aborted.with_pending(|_| ()).is_none());
+        assert!(!aborted.publish_successful());
+        drop(aborted);
         assert_eq!(owner.with_published(|group| group.value), Some(1));
         let older = begin(&owner, &drops, 3);
         let newer = begin(&owner, &drops, 4);
