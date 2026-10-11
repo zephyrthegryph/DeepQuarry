@@ -18,6 +18,12 @@ impl HeapCensus {
             if !index_admitted { return; }
             match view {
             V::IndexOwner(_) => unreachable!("handled index owner"),
+            V::SourceOrder(values) => { self.vec_payload(name, values); },
+            V::Effective(values) => { self.vec_payload(name, values); },
+            V::Bindings(values) => {
+                self.observe_items(name, values.len());
+                self.unknown(name, "symbolic source binding BTreeSet private nodes excluded");
+            },
             V::Members(values) => { self.vec_payload(name, values); },
             V::Identities(values) => { self.vec_payload(name, values); },
             V::Ready(values) => { self.vec_payload(name, values); },

@@ -36,7 +36,15 @@ pub(crate) fn from_issued(
             },
             occurrence: issued.occurrence,
         },
-        effective: tree.resolve(node.owner, node.name, node.kind) == Some(body.member),
+        effective: frontend
+            .callable_roster()?
+            .effective(
+                frontend
+                    .callable_roster()?
+                    .ordinal(body.member)
+                    .ok_or("body ordinal missing")?,
+            )
+            .ok_or("body effective selection missing")?,
     })
 }
 #[cfg(test)]

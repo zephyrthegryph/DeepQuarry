@@ -23,6 +23,9 @@ pub struct CallableIndexRecipe {
     ordinals: HashMap<MemberId, usize>,
     dependents: Vec<Vec<usize>>,
     ready: Vec<usize>,
+    source_order: Vec<usize>,
+    effective: Vec<bool>,
+    bindings: BTreeSet<dm_ir::SymRef>,
 }
 impl PartialEq for CallableRoster {
     fn eq(&self, other: &Self) -> bool {
@@ -75,6 +78,44 @@ impl CallableRoster {
                 }
             }
         }
+        let mut source_order: Vec<_> = (0..bodies.len()).collect();
+        source_order.sort_by_key(|&i| {
+            let body = &bodies[i];
+            (
+                body.source.encounter_ordinal,
+                body.expanded_span.start,
+                body.declaration.0,
+            )
+        });
+        let effective: Vec<_> = members
+            .iter()
+            .map(|&member| {
+                let node = tree.member(member).expect("issued member");
+                tree.resolve(node.owner, node.name, node.kind) == Some(member)
+            })
+            .collect();
+        let mut bindings: BTreeSet<_> = tree
+            .types()
+            .iter()
+            .map(|node| dm_ir::SymRef::Type(node.path))
+            .collect();
+        for (identity, &selected) in identities.iter().zip(&effective) {
+            if selected {
+                bindings.insert(if identity.verb {
+                    dm_ir::SymRef::Verb {
+                        owner: identity.owner,
+                        name: identity.name,
+                        occurrence: identity.occurrence,
+                    }
+                } else {
+                    dm_ir::SymRef::Proc {
+                        owner: identity.owner,
+                        name: identity.name,
+                        occurrence: identity.occurrence,
+                    }
+                });
+            }
+        }
         let abi = CallableAbiRoster::issue(tree, &members, &identities).ok();
         Ok(Arc::new(Self {
             tree: Arc::clone(tree),
@@ -84,6 +125,9 @@ impl CallableRoster {
                 ordinals,
                 dependents,
                 ready,
+                source_order,
+                effective,
+                bindings,
             }),
             abi,
         }))
@@ -144,6 +188,17 @@ impl CallableRoster {
     }
     pub(super) fn matches(&self, tree: &Arc<SemanticTree>, bodies: &[BodyOccurrence]) -> bool {
         self.authenticates_tree(tree)
+            && self.index.source_order.windows(2).all(|pair| {
+                let key = |i: usize| {
+                    let b = &bodies[i];
+                    (
+                        b.source.encounter_ordinal,
+                        b.expanded_span.start,
+                        b.declaration.0,
+                    )
+                };
+                pair[1] < bodies.len() && pair[0] < bodies.len() && key(pair[0]) <= key(pair[1])
+            })
             && self
                 .index
                 .members
@@ -154,6 +209,16 @@ impl CallableRoster {
     /// Exact issued semantic owner, never a structural hash or source revision.
     pub fn authenticates_tree(&self, tree: &Arc<SemanticTree>) -> bool {
         Arc::ptr_eq(&self.tree, tree)
+    }
+    /// Source-neutral ordering, admitted against current occurrence order below.
+    pub fn source_order(&self) -> &[usize] {
+        &self.index.source_order
+    }
+    pub fn source_bindings(&self) -> &BTreeSet<dm_ir::SymRef> {
+        &self.index.bindings
+    }
+    pub fn effective(&self, ordinal: usize) -> Option<bool> {
+        self.index.effective.get(ordinal).copied()
     }
     pub fn identity(&self, ordinal: usize) -> Option<ProcedureIdentity> {
         self.index.identities.get(ordinal).copied()
@@ -183,6 +248,9 @@ impl CallableRoster {
         visitor(CallableRosterStorage::IndexOwner(&self.index));
         visitor(CallableRosterStorage::Members(&self.index.members));
         visitor(CallableRosterStorage::Identities(&self.index.identities));
+        visitor(CallableRosterStorage::SourceOrder(&self.index.source_order));
+        visitor(CallableRosterStorage::Effective(&self.index.effective));
+        visitor(CallableRosterStorage::Bindings(&self.index.bindings));
         visitor(CallableRosterStorage::Ready(&self.index.ready));
         visitor(CallableRosterStorage::Dependents(&self.index.dependents));
         visitor(CallableRosterStorage::Ordinals {
@@ -196,6 +264,9 @@ pub enum CallableRosterStorage<'a> {
     Members(&'a Vec<MemberId>),
     Identities(&'a Vec<ProcedureIdentity>),
     Ready(&'a Vec<usize>),
+    SourceOrder(&'a Vec<usize>),
+    Effective(&'a Vec<bool>),
+    Bindings(&'a BTreeSet<dm_ir::SymRef>),
     Dependents(&'a Vec<Vec<usize>>),
     Ordinals { len: usize, capacity: usize },
 }

@@ -200,3 +200,28 @@ fn current_chunk_rebind_shares_index_and_refreshes_exact_abi_metadata() {
         .rebind_semantic_owner(&Arc::new(changed))
         .is_none());
 }
+
+#[test]
+fn callable_source_recipe_reuses_exact_bindings_and_order_across_body_shifts() {
+    let mut state = RetainedSemanticTree::default();
+    let before = build(&mut state, "/datum/a/proc/p()\n    return 1\n/datum/a/p()\n    return 2\n/datum/a/verb/v()\n    return 3\n");
+    let after = build(&mut state, "\n/datum/a/proc/p()\n    return 4\n/datum/a/p()\n    return 2\n/datum/a/verb/v()\n    return 3\n");
+    let old = before.callable_roster().unwrap();
+    let current = after.callable_roster().unwrap();
+    assert!(Arc::ptr_eq(&old.index, &current.index));
+    assert!(std::ptr::eq(
+        old.source_bindings(),
+        current.source_bindings()
+    ));
+    assert!(std::ptr::eq(old.source_order(), current.source_order()));
+    let fresh = CallableRoster::issue(&after.snapshot.tree, &after.bodies).unwrap();
+    assert_eq!(fresh.source_bindings(), current.source_bindings());
+    assert_eq!(fresh.source_order(), current.source_order());
+    for ordinal in 0..after.bodies.len() {
+        assert_eq!(fresh.effective(ordinal), current.effective(ordinal));
+    }
+    let added = build(&mut state, "/datum/a/proc/p()\n    return 4\n/datum/a/p()\n    return 2\n/datum/a/verb/v()\n    return 3\n/proc/added()\n    return 5\n");
+    let replacement = added.callable_roster().unwrap();
+    assert!(!Arc::ptr_eq(&current.index, &replacement.index));
+    assert_ne!(current.source_bindings(), replacement.source_bindings());
+}

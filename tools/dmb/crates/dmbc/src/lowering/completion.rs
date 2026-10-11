@@ -33,6 +33,40 @@ impl<T, E> CompletedLoweringBatch<T, E> {
         Ok(index)
     }
 }
+/// Borrow the producer's exact current order; only explicit/custom selections own rows.
+enum CurrentBodies<'request, 'frontend> {
+    Prepared(&'request PreparedBodyRoster<'frontend>),
+    Selected(
+        Vec<(
+            &'frontend BodyOccurrence,
+            Option<&'request PreparedBody<'frontend>>,
+        )>,
+    ),
+}
+impl<'request, 'frontend> CurrentBodies<'request, 'frontend> {
+    fn len(&self) -> usize {
+        match self {
+            Self::Prepared(r) => r.len(),
+            Self::Selected(v) => v.len(),
+        }
+    }
+    fn at(
+        &self,
+        index: usize,
+    ) -> (
+        &'frontend BodyOccurrence,
+        Option<&'request PreparedBody<'frontend>>,
+    ) {
+        match self {
+            Self::Prepared(r) => {
+                let roster: &'request PreparedBodyRoster<'frontend> = *r;
+                let row = roster.at(index);
+                (row.body(), Some(row))
+            }
+            Self::Selected(v) => v[index],
+        }
+    }
+}
 #[allow(clippy::too_many_arguments)]
 pub fn lower_frontend_completed_on_execution<
     'frontend,
@@ -113,29 +147,32 @@ pub fn lower_frontend_completed_input_on_execution<
         )
     });
     let chunk = config.max_chunk.clamp(1, 256);
-    let mut bodies: Vec<_> = execution.selected_bodies.map_or_else(
-        || {
-            prepared.map_or_else(
-                || frontend.bodies.iter().map(|body| (body, None)).collect(),
-                |roster| {
-                    roster
-                        .ordered()
-                        .map(|row| (row.body(), Some(row)))
-                        .collect()
-                },
+    let bodies = if execution.selected_bodies.is_none() && prepared.is_some() {
+        CurrentBodies::Prepared(prepared.expect("checked current roster"))
+    } else {
+        let mut rows: Vec<_> = execution.selected_bodies.map_or_else(
+            || frontend.bodies.iter().map(|body| (body, None)).collect(),
+            |selected| {
+                selected
+                    .iter()
+                    .map(|body| (*body, prepared.and_then(|roster| roster.selected(body))))
+                    .collect()
+            },
+        );
+        rows.sort_by_key(|(body, _)| {
+            (
+                body.source.encounter_ordinal,
+                body.expanded_span.start,
+                body.declaration.0,
             )
-        },
-        |selected| {
-            selected
-                .iter()
-                .map(|body| (*body, prepared.and_then(|roster| roster.selected(body))))
-                .collect()
-        },
-    );
+        });
+        CurrentBodies::Selected(rows)
+    };
     if execution.selected_bodies.is_some() {
         let mut seen = std::collections::BTreeSet::new();
         let mut invalid = Vec::new();
-        for (body, row) in &bodies {
+        for position in 0..bodies.len() {
+            let (body, row) = bodies.at(position);
             let admitted = if prepared.is_some() {
                 row.is_some()
             } else {
@@ -158,15 +195,6 @@ pub fn lower_frontend_completed_input_on_execution<
             };
         }
     }
-    if prepared.is_none() || execution.selected_bodies.is_some() {
-        bodies.sort_by_key(|(body, _)| {
-            (
-                body.source.encounter_ordinal,
-                body.expanded_span.start,
-                body.declaration.0,
-            )
-        });
-    }
     let internal = |body: &BodyOccurrence, message: String| {
         vec![LoweringDiagnostic {
             related: Vec::new(),
@@ -187,12 +215,12 @@ pub fn lower_frontend_completed_input_on_execution<
                         effective,
                         value,
                     })
-                    .map_err(|error| Box::new((bodies[position].0.clone(), error)))
+                    .map_err(|error| Box::new((bodies.at(position).0.clone(), error)))
             })
         }))
         .unwrap_or_else(|_| {
             Err(internal(
-                bodies[position].0,
+                bodies.at(position).0,
                 "procedure lowering worker panicked".into(),
             ))
         })
@@ -201,8 +229,9 @@ pub fn lower_frontend_completed_input_on_execution<
     // Bound live miss preparation to one worker-sized window. Cold requests
     // must not retain every parsed body and proof ledger before producing code.
     let window_size = chunk.saturating_mul(executor.workers().max(1)).max(1);
-    for (window_index, window) in bodies.chunks(window_size).enumerate() {
-        let start = window_index * window_size;
+    for start in (0..bodies.len()).step_by(window_size) {
+        let end = start.saturating_add(window_size).min(bodies.len());
+        let window: Vec<_> = (start..end).map(|position| bodies.at(position)).collect();
         // Current admission remains exhaustive. Only declined candidates enter the
         // cold lowering queue; neither phase creates another cache or model.
         let indexed: Vec<_> = window.iter().enumerate().collect();
@@ -275,7 +304,7 @@ pub fn lower_frontend_completed_input_on_execution<
                 Some(Err(errors)) => outcomes[position] = Some(Err(errors)),
                 None | Some(Ok(_)) => {
                     outcomes[position] = Some(Err(internal(
-                        bodies[position].0,
+                        bodies.at(position).0,
                         "procedure admission worker panicked".into(),
                     )))
                 }
@@ -289,14 +318,14 @@ pub fn lower_frontend_completed_input_on_execution<
                 .take()
                 .expect("each pending producer runs once");
             let input = crate::daemon::control::checkpoint()
-                .map_err(|error| internal(bodies[*position].0, error.to_string()))
+                .map_err(|error| internal(bodies.at(*position).0, error.to_string()))
                 .and_then(|_| attempt.finish());
             consume(*position, input)
         });
         for ((position, _), result) in pending.into_iter().zip(produced) {
             outcomes[position] = Some(result.unwrap_or_else(|| {
                 Err(internal(
-                    bodies[position].0,
+                    bodies.at(position).0,
                     "procedure lowering worker panicked".into(),
                 ))
             }));
@@ -306,7 +335,7 @@ pub fn lower_frontend_completed_input_on_execution<
     for (position, outcome) in outcomes.into_iter().enumerate() {
         match outcome.unwrap_or_else(|| {
             Err(internal(
-                bodies[position].0,
+                bodies.at(position).0,
                 "procedure lowering job did not complete".into(),
             ))
         }) {

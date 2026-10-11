@@ -164,3 +164,33 @@ fn completed_prepared_roster_matches_fresh_code_and_retains_selected_duplicate_r
         .iter()
         .any(|error| error.message.contains("unique current body issuance")));
 }
+
+#[test]
+fn prepared_roster_borrows_issued_recipe_without_reconstructing_order_or_namespace() {
+    let current = frontend("\n/datum/a/proc/p()\n    return 1\n/datum/a/p()\n    return 2\n");
+    let recipe = current.callable_roster().unwrap();
+    let roster = PreparedBodyRoster::issue(&current).ok().unwrap();
+    assert!(std::ptr::eq(roster.order, recipe.source_order()));
+    assert!(std::ptr::eq(
+        roster.source_bindings(&current).unwrap(),
+        recipe.source_bindings()
+    ));
+    let oracle = source_unit_roster(&current).unwrap();
+    assert_eq!(
+        roster
+            .ordered()
+            .map(PreparedBody::source)
+            .collect::<Vec<_>>(),
+        oracle
+    );
+    for position in 0..roster.len() {
+        assert!(std::ptr::eq(
+            roster.at(position).body(),
+            &current.bodies[recipe.source_order()[position]]
+        ));
+        assert_eq!(
+            roster.at(position).input().occurrence().source,
+            current.bodies[recipe.source_order()[position]].source
+        );
+    }
+}
