@@ -276,12 +276,19 @@ impl InitializerFragments {
             self.values.lookup(&key.key, &admission_host)
         };
         if candidate.is_none() {
-            if let Some((code, semantic_reads)) = self
+            if let Some((code, semantic_reads, modified)) = self
                 .disk
                 .as_ref()
-                .and_then(|disk| disk.lookup(key, &[root], host))
+                .and_then(|disk| disk.lookup(key, &[root], host, prepared.symbols()))
             {
-                if let Ok(code) = AssignmentFragment::from_transport(code) {
+                let recipes = modified
+                    .into_iter()
+                    .map(|(_, recipe)| recipe)
+                    .collect::<Vec<_>>();
+                let references = recipes.iter().map(|recipe| recipe.reference()).collect();
+                if let Ok(code) =
+                    AssignmentFragment::from_transport_with_references(code, references)
+                {
                     self.values.insert_with(
                         Arc::clone(&key.key),
                         receipts::reads(key, semantic_reads),
@@ -289,7 +296,7 @@ impl InitializerFragments {
                         std::mem::size_of::<RetainedFragment>(),
                         || RetainedFragment {
                             code: RetainedCode::Assignment(code),
-                            recipes: Vec::new(),
+                            recipes,
                             references: Vec::new(),
                             root_indexes: Vec::new(),
                         },

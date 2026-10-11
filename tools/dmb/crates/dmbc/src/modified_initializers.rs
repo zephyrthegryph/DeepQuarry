@@ -19,7 +19,7 @@ mod expression_recipe;
 mod retained;
 #[cfg(test)]
 mod retained_tests;
-pub(crate) use expression_recipe::ExpressionRecipe;
+pub(crate) use expression_recipe::{ExpressionEvidence, ExpressionRecipe};
 
 pub struct Collected {
     pub descriptors: Vec<(SymRef, CapturedModifiedInstance)>,

@@ -261,7 +261,12 @@ impl InitializerAssemblies {
                 let roots = (0..root_count).map(&mut root).collect::<Option<Vec<_>>>();
                 if let Some(roots) = roots {
                     let refs = roots.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
-                    if let Some((code, semantic_reads)) = disk.lookup(key, &refs, host) {
+                    if let Some((code, semantic_reads, modified)) =
+                        disk.lookup(key, &refs, host, symbols)
+                    {
+                        let (root_indexes, recipes): (Vec<_>, Vec<_>) =
+                            modified.into_iter().unzip();
+                        let references = recipes.iter().map(|recipe| recipe.reference()).collect();
                         let code = Arc::new(code);
                         let encoding = Arc::new(crate::symbolic::InitializerEncoding::new(&code));
                         self.values.insert_with(
@@ -272,9 +277,9 @@ impl InitializerAssemblies {
                             || RetainedAssembly {
                                 code,
                                 encoding,
-                                recipes: Vec::new(),
-                                root_indexes: Vec::new(),
-                                references: Vec::new(),
+                                recipes,
+                                root_indexes,
+                                references,
                                 root_count,
                             },
                         );

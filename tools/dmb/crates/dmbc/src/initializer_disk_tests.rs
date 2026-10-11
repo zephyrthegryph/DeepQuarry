@@ -249,7 +249,7 @@ fn initializer_bucket_rejects_missing_mandatory_and_corrupt_later_row_before_rep
     let reads = vec![dm_session::ResolverRead {
         domain: query.domain(),
         query,
-        answer: dm_ir::ResolvedMeaning::Missing(query),
+        answer: dm_ir::ResolvedMeaning::Missing,
     }];
     let valid = crate::lowering_memo_wire::initializer::encode(
         recipe.bytes.clone(),
@@ -331,4 +331,144 @@ fn initializer_transport_declines_foreign_current_engine_owner() {
         engine: Some(&foreign),
     }));
     assert!(matches!(transport.policy.get(), Some(None)));
+}
+
+#[test]
+fn modified_initializer_disk_reissues_moved_nested_ast_and_declines_changed_inputs() {
+    let root = Temp::new();
+    let source = "/datum/item\n    var/amount = 0\n/datum/example\n    var/list/value = list(/datum/item{amount = 7})\n";
+    let (disk, writer) = request(&root.0);
+    let first = run(source, Some(&writer));
+    assert_eq!(first.units.len(), 1);
+    assert_eq!(first.units[0].code.modified_instances.len(), 1);
+    assert!(disk.finish_batch().unwrap().records >= 2);
+    let shifted = format!("\n\n{source}");
+    let (_, reader) = request(&root.0);
+    let warm = run(&shifted, Some(&reader));
+    equal(&warm, &run(&shifted, None));
+    assert_eq!(
+        reader
+            .initializer_assemblies
+            .as_ref()
+            .unwrap()
+            .hits
+            .load(Ordering::Relaxed),
+        1
+    );
+    assert_eq!(
+        warm.units[0]
+            .code
+            .modified_instances
+            .values()
+            .next()
+            .unwrap()
+            .source_span,
+        run(&shifted, None).units[0]
+            .code
+            .modified_instances
+            .values()
+            .next()
+            .unwrap()
+            .source_span
+    );
+    for changed in [
+        source.replace("amount = 7", "amount = 8"),
+        source.replace("/datum/item", "/datum/other"),
+    ] {
+        let (_, current) = request(&root.0);
+        equal(&run(&changed, Some(&current)), &run(&changed, None));
+        assert_eq!(
+            current
+                .initializer_assemblies
+                .as_ref()
+                .unwrap()
+                .hits
+                .load(Ordering::Relaxed),
+            0
+        );
+        assert_eq!(
+            current
+                .initializer_fragments
+                .as_ref()
+                .unwrap()
+                .recomputed
+                .load(Ordering::Relaxed),
+            1
+        );
+    }
+    let mut host = crate::runner_host::BuildHost::one_shot();
+    let current = host
+        .procedure_memo(38, Some(Arc::new(LazyDisk::new(root.0.clone()))), true)
+        .unwrap();
+    equal(&run(source, Some(&current)), &run(source, None));
+    assert_eq!(
+        current
+            .initializer_assemblies
+            .as_ref()
+            .unwrap()
+            .hits
+            .load(Ordering::Relaxed),
+        0
+    );
+}
+
+#[test]
+fn modified_initializer_bucket_requires_complete_unique_reference_roster() {
+    let source = "/datum/item\n    var/amount = 0\n/datum/example\n    var/list/value = list(/datum/item{amount = 7})\n";
+    let output = run(source, None);
+    let code = &output.units[0].code;
+    let root = dm_syntax::parse_expression("list(/datum/item{amount = 7})")
+        .expr
+        .unwrap();
+    let (reference, captured) = code.modified_instances.iter().next().unwrap();
+    let expression =
+        crate::modified_initializers::ExpressionRecipe::from_capture(*reference, captured, &root)
+            .unwrap();
+    let mut stripped = code.as_ref().clone();
+    stripped.modified_instances.clear();
+    let bytes = crate::lowering_memo_wire::initializer::encode_with_modified(
+        b"modified-unit-codec".to_vec(),
+        true,
+        1,
+        Vec::new(),
+        &[],
+        &stripped,
+        vec![(0, expression.disk_evidence().unwrap())],
+    )
+    .unwrap();
+    let valid = dm_cache::encode_variants(&[bytes.clone()]).unwrap();
+    let candidate = crate::lowering_memo_wire::initializer::decode_bucket(&valid)
+        .unwrap()
+        .pop()
+        .unwrap();
+    assert_eq!(candidate.modified.len(), 1);
+    assert!(candidate.modified[0].1.accepts_current_path(&root));
+    let wrong_path = dm_syntax::parse_expression("list(7)").expr.unwrap();
+    assert!(!candidate.modified[0].1.accepts_current_path(&wrong_path));
+    struct ChangedRuntimeType;
+    impl dm_ir::Resolver for ChangedRuntimeType {
+        fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+            match query {
+                dm_ir::ResolveQuery::RuntimeType(_) => {
+                    dm_ir::ResolvedMeaning::Symbol(dm_ir::SymbolId::of("/datum/other"))
+                }
+                _ => dm_ir::ResolvedMeaning::Unsupported(query),
+            }
+        }
+    }
+    let mut symbols = dm_ir::SymbolTable::default();
+    symbols.intern("/datum/example").unwrap();
+    assert!(
+        candidate.modified[0]
+            .1
+            .reissue(&root, &ChangedRuntimeType, &symbols)
+            .is_none(),
+        "current runtime-type meaning is mandatory even for identical syntax/evidence"
+    );
+    for duplicate in [false, true] {
+        let bad =
+            crate::lowering_memo_wire::initializer::corrupt_modified_roster(&bytes, duplicate);
+        let bucket = dm_cache::encode_variants(&[bytes.clone(), bad]).unwrap();
+        assert!(crate::lowering_memo_wire::initializer::decode_bucket(&bucket).is_err());
+    }
 }

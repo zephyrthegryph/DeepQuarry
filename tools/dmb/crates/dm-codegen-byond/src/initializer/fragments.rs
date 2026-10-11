@@ -69,12 +69,47 @@ impl AssignmentFragment {
     /// Recertify a source-neutral transported continuation using the SAME
     /// producer invariants. Semantic/current-source admission remains external.
     pub fn from_transport(code: ResolverProc) -> Result<Self, InitializerError> {
+        Self::from_transport_with_references(code, Vec::new())
+    }
+    /// A stripped transport retains the complete original modified-reference
+    /// roster; current descriptors must still be reissued before binding.
+    pub fn from_transport_with_references(
+        code: ResolverProc,
+        references: Vec<SymRef>,
+    ) -> Result<Self, InitializerError> {
         if !code.modified_instances.is_empty() {
             return Err(invalid(
                 "transported fragment requires current modified recipes",
             ));
         }
-        Self::certify(code)
+        let expected = code
+            .procedure
+            .instance_paths
+            .iter()
+            .copied()
+            .map(SymRef::Instance)
+            .collect::<BTreeSet<_>>();
+        let mut used = BTreeSet::new();
+        code.procedure.code.for_each_reference(|reference| {
+            if matches!(reference, SymRef::Instance(_)) {
+                used.insert(reference);
+            }
+        });
+        if expected.len() != code.procedure.instance_paths.len()
+            || references.iter().copied().ne(expected.iter().copied())
+        {
+            return Err(invalid(
+                "transported modified-reference roster differs from instance operands",
+            ));
+        }
+        if !used.is_subset(&expected) {
+            return Err(invalid(
+                "transported instance operand has no declared instance",
+            ));
+        }
+        let mut certified = Self::certify(code)?;
+        certified.modified_references = references;
+        Ok(certified)
     }
 
     /// The assembly producer appends exactly one End. Validate its frame,
@@ -82,6 +117,13 @@ impl AssignmentFragment {
     pub fn validate_assembly_transport(
         code: &ResolverProc,
         root_count: usize,
+    ) -> Result<(), InitializerError> {
+        Self::validate_assembly_transport_with_references(code, root_count, Vec::new())
+    }
+    pub fn validate_assembly_transport_with_references(
+        code: &ResolverProc,
+        root_count: usize,
+        references: Vec<SymRef>,
     ) -> Result<(), InitializerError> {
         let mut continuation = code.clone();
         match continuation.procedure.code.items.pop() {
@@ -103,7 +145,7 @@ impl AssignmentFragment {
                 }
             }
         }
-        Self::from_transport(continuation).map(|_| ())
+        Self::from_transport_with_references(continuation, references).map(|_| ())
     }
 
     /// Modified descriptors still require a current typed-expression reissuer.

@@ -4,7 +4,7 @@ use super::{CodeWire, ResolverProc};
 use dm_codegen_byond::initializer::AssignmentFragment;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 use serde::{Deserialize, Serialize};
-const SCHEMA: u32 = 0x0206_0018;
+const SCHEMA: u32 = 0x0206_0019;
 pub(crate) const LIMIT: usize = 8 * 1024 * 1024;
 #[derive(Serialize, Deserialize)]
 struct Payload {
@@ -14,6 +14,7 @@ struct Payload {
     mandatory: Vec<ResolveQuery>,
     reads: Vec<(ResolveQuery, Vec<u8>)>,
     code: CodeWire,
+    modified: Vec<(usize, crate::modified_initializers::ExpressionEvidence)>,
 }
 pub(crate) struct Candidate {
     pub recipe: Vec<u8>,
@@ -22,6 +23,7 @@ pub(crate) struct Candidate {
     pub mandatory: Vec<ResolveQuery>,
     pub reads: Vec<(ResolveQuery, Vec<u8>)>,
     pub code: ResolverProc,
+    pub modified: Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
 }
 struct NoReads;
 impl Resolver for NoReads {
@@ -52,6 +54,7 @@ fn valid_reads(reads: &[(ResolveQuery, Vec<u8>)], required: &[ResolveQuery]) -> 
             .iter()
             .all(|q| reads.iter().any(|(old, a)| old == q && !a.is_empty()))
 }
+#[cfg(test)]
 pub(crate) fn encode(
     recipe: Vec<u8>,
     assembly: bool,
@@ -59,6 +62,17 @@ pub(crate) fn encode(
     mandatory: Vec<ResolveQuery>,
     reads: &[dm_session::ResolverRead],
     code: &ResolverProc,
+) -> Option<Vec<u8>> {
+    encode_with_modified(recipe, assembly, roots, mandatory, reads, code, Vec::new())
+}
+pub(crate) fn encode_with_modified(
+    recipe: Vec<u8>,
+    assembly: bool,
+    roots: usize,
+    mandatory: Vec<ResolveQuery>,
+    reads: &[dm_session::ResolverRead],
+    code: &ResolverProc,
+    modified: Vec<(usize, crate::modified_initializers::ExpressionEvidence)>,
 ) -> Option<Vec<u8>> {
     if reads.iter().any(|r| {
         !portable(&r.answer)
@@ -69,10 +83,28 @@ pub(crate) fn encode(
     }) {
         return None;
     }
+    let references = modified
+        .iter()
+        .map(|(_, r)| r.reference())
+        .collect::<Vec<_>>();
+    if modified.iter().any(|(index, r)| {
+        *index >= roots || r.origin() as usize != *index || r.resident_recipe().is_none()
+    }) {
+        return None;
+    }
+    if code.instances.iter().any(|(alias, instance)| {
+        !modified.iter().any(|(_, r)| {
+            r.reference() == dm_ir::SymRef::Instance(*alias)
+                && r.runtime_type() == instance.runtime_type
+        })
+    }) {
+        return None;
+    }
     if assembly {
-        AssignmentFragment::validate_assembly_transport(code, roots).ok()?;
+        AssignmentFragment::validate_assembly_transport_with_references(code, roots, references)
+            .ok()?;
     } else {
-        AssignmentFragment::from_transport(code.clone()).ok()?;
+        AssignmentFragment::from_transport_with_references(code.clone(), references).ok()?;
     }
     let code = CodeWire::capture(code);
     if !code.source_neutral_initializer() {
@@ -94,6 +126,7 @@ pub(crate) fn encode(
             mandatory,
             reads,
             code,
+            modified,
         },
         LIMIT,
     )
@@ -104,6 +137,16 @@ pub(crate) fn omit_mandatory(bytes: &[u8]) -> Vec<u8> {
     let mut payload: Payload = dm_wire::decode(SCHEMA, bytes, LIMIT).unwrap();
     payload.mandatory.clear();
     payload.reads.clear();
+    dm_wire::encode(SCHEMA, &payload).unwrap()
+}
+#[cfg(test)]
+pub(crate) fn corrupt_modified_roster(bytes: &[u8], duplicate: bool) -> Vec<u8> {
+    let mut payload: Payload = dm_wire::decode(SCHEMA, bytes, LIMIT).unwrap();
+    if duplicate {
+        payload.modified.push(payload.modified[0].clone());
+    } else {
+        payload.modified.clear();
+    }
     dm_wire::encode(SCHEMA, &payload).unwrap()
 }
 pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
@@ -126,11 +169,38 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
                 .code
                 .rehydrate(&NoReads, p.roots)
                 .ok_or("invalid initializer code descriptors")?;
+            if code.instances.iter().any(|(alias, instance)| {
+                !p.modified.iter().any(|(_, r)| {
+                    r.reference() == dm_ir::SymRef::Instance(*alias)
+                        && r.runtime_type() == instance.runtime_type
+                })
+            }) {
+                return Err("modified runtime type table differs from recipe evidence".into());
+            }
+            let modified = p
+                .modified
+                .into_iter()
+                .map(|(index, evidence)| {
+                    if index >= p.roots || evidence.origin() as usize != index {
+                        return Err("invalid modified assignment origin".to_string());
+                    }
+                    evidence
+                        .resident_recipe()
+                        .map(|recipe| (index, recipe))
+                        .ok_or_else(|| "invalid modified expression evidence".to_string())
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let references = modified
+                .iter()
+                .map(|(_, r)| r.reference())
+                .collect::<Vec<_>>();
             if p.assembly {
-                AssignmentFragment::validate_assembly_transport(&code, p.roots)
-                    .map_err(|e| format!("invalid initializer assembly: {e:?}"))?;
+                AssignmentFragment::validate_assembly_transport_with_references(
+                    &code, p.roots, references,
+                )
+                .map_err(|e| format!("invalid initializer assembly: {e:?}"))?;
             } else {
-                AssignmentFragment::from_transport(code.clone())
+                AssignmentFragment::from_transport_with_references(code.clone(), references)
                     .map_err(|e| format!("invalid initializer fragment: {e:?}"))?;
             }
             Ok(Candidate {
@@ -140,6 +210,7 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
                 mandatory: p.mandatory,
                 reads: p.reads,
                 code,
+                modified,
             })
         })
         .collect()

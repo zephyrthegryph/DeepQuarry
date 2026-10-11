@@ -101,7 +101,7 @@ impl Transport {
     fn key(recipe: &disk_recipe::Recipe) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: if recipe.assembly { 12 } else { 11 },
-            version: 1,
+            version: 2,
             content: xxhash_rust::xxh3::xxh3_128(&recipe.bytes),
         }
     }
@@ -110,9 +110,11 @@ impl Transport {
         key: &receipts::Binding,
         roots: &[&dm_syntax::Expr],
         host: &R,
+        symbols: &dm_ir::SymbolTable,
     ) -> Option<(
         dm_codegen_byond::lower_resolver::ResolverProc,
         Vec<dm_session::ResolverRead>,
+        Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
     )> {
         let recipe = self.recipe(key, roots)?;
         if !self.engine_matches() {
@@ -125,6 +127,19 @@ impl Transport {
                 return Err("initializer unexpected spelling sidecar".into());
             }
             let candidates = Self::current_candidates(bytes, &recipe)?;
+            // All matching rows must select a current issued typed node before
+            // even the first semantic query/factory callback can run.
+            for candidate in &candidates {
+                if candidate.recipe == recipe.bytes
+                    && candidate.modified.iter().any(|(index, recipe)| {
+                        roots
+                            .get(*index)
+                            .is_none_or(|root| !recipe.accepts_current_path(root))
+                    })
+                {
+                    return Err("initializer modified path differs from current issued AST".into());
+                }
+            }
             for candidate in candidates.into_iter().rev() {
                 if candidate.recipe != recipe.bytes {
                     continue;
@@ -137,7 +152,16 @@ impl Transport {
                 }) {
                     continue;
                 }
-                *accepted.borrow_mut() = Some((candidate.code, recorder.reads()));
+                if candidate.modified.iter().any(|(index, recipe)| {
+                    roots
+                        .get(*index)
+                        .and_then(|root| recipe.reissue(root, &recorder, symbols))
+                        .is_none()
+                }) {
+                    continue;
+                }
+                *accepted.borrow_mut() =
+                    Some((candidate.code, recorder.reads(), candidate.modified));
                 return Ok(true);
             }
             Ok(false)
@@ -175,13 +199,38 @@ impl Transport {
         let Some(recipe) = self.recipe(key, roots) else {
             return;
         };
-        let Some(bytes) = crate::lowering_memo_wire::initializer::encode(
+        let mut modified = Vec::new();
+        for (reference, captured) in &code.modified_instances {
+            if captured.descriptor.resource_context().is_some()
+                || captured.descriptor.requires_captured_resources()
+            {
+                return;
+            }
+            let Some(origin) = captured.origin else {
+                return;
+            };
+            let index = origin as usize;
+            let Some(root) = roots.get(index) else {
+                return;
+            };
+            let Some(evidence) = crate::modified_initializers::ExpressionRecipe::from_capture(
+                *reference, captured, root,
+            )
+            .and_then(|recipe| recipe.disk_evidence()) else {
+                return;
+            };
+            modified.push((index, evidence));
+        }
+        let mut stripped = code.clone();
+        stripped.modified_instances.clear();
+        let Some(bytes) = crate::lowering_memo_wire::initializer::encode_with_modified(
             recipe.bytes.clone(),
             recipe.assembly,
             recipe.roots,
             recipe.mandatory.clone(),
             reads,
-            code,
+            &stripped,
+            modified,
         ) else {
             return;
         };
