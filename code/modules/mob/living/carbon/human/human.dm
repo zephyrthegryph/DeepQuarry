@@ -52,8 +52,10 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 /mob/living/carbon/human/Initialize(mapload)
 	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
-		if(species_at_make)
-			set_species(species_at_make)
+		// a canonical subtype (skrell, xdrone, monkey) compiles its own species and keeps it whatever the caller passed
+		var/canonical = initial(species_at_make)
+		if(canonical || species_at_make)
+			set_species(canonical || species_at_make)
 		else
 			set_species()
 
