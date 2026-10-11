@@ -9,10 +9,6 @@
 
 	faction = "synthtide"
 
-CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
-	configure(mob_movement(hovering = TRUE))
-
-
 	endurance = 175
 
 	melee_damage_lower = 5
@@ -35,6 +31,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
 	var/nanobot_chance = 40
 
 	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	configure(mob_movement(hovering = TRUE))
 
 /datum/say_list/cyber_horror
 	speak = list("H@!#$$P M@!$#",
