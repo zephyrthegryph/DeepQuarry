@@ -169,7 +169,7 @@
       "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080758-3661f3f1-focused.json",
       "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080804-a30067d1-focused.json"
     ],
-    "focused_passed": 31,
+    "focused_passed": 33,
     "focused_failed": 4,
     "fixes_committed_pending_rerun": [
       "57b434487e",
