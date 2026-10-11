@@ -71,13 +71,12 @@ CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
 	desc = "Tell a coder if you're seeing this."
 	icon_state = "nothing"
 	light_system = MOVABLE_LIGHT
-	light_range = MINIMUM_USEFUL_LIGHT_RANGE
-	light_color = COLOR_WHITE
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT
 	light_on = TRUE
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 
 CAPABILITIES(/obj/effect/dummy/lighting_obj)
+	configure(light_glow(range = MINIMUM_USEFUL_LIGHT_RANGE, color = COLOR_WHITE))
 	param(nameof(glow_range), pos = 1)
 	param(nameof(glow_power), pos = 2)
 	param(nameof(glow_color), pos = 3)
@@ -112,8 +111,9 @@ CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight)
 
 /obj/effect/dummy/lighting_obj/moblight/fire
 	name = "fire"
-	light_color = LIGHT_COLOR_FIRE
-	light_range = LIGHT_RANGE_FIRE
+
+CAPABILITIES(/obj/effect/dummy/lighting_obj/moblight/fire)
+	configure(light_glow(color = LIGHT_COLOR_FIRE, range = LIGHT_RANGE_FIRE))
 
 /obj/effect/abstract
 	mouse_opacity = MOUSE_OPACITY_TRANSPARENT

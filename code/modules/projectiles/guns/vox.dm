@@ -84,11 +84,13 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	taser_effect = 1
 	agony = 55
 	injury_kind = INJURY_PAIN
-	light_color = "#8837A3"
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatterstun
 	tracer_type = /obj/effect/projectile/tracer/darkmatterstun
 	impact_type = /obj/effect/projectile/impact/darkmatterstun
+
+CAPABILITIES(/obj/item/projectile/beam/stun/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/beam/darkmatter
 	name = "dark matter bolt"
@@ -97,13 +99,15 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	damage = 35
 	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
 
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
 	tracer_type = /obj/effect/projectile/tracer/darkmatter
 	impact_type = /obj/effect/projectile/impact/darkmatter
+
+CAPABILITIES(/obj/item/projectile/beam/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /obj/item/projectile/energy/darkmatter
 	name = "dark matter pellet"
@@ -112,9 +116,11 @@ CAPABILITIES(/obj/item/gun/launcher/spikethrower)
 	damage = 20
 	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
-	light_color = "#8837A3"
 
 	embed_chance = 0
+
+CAPABILITIES(/obj/item/projectile/energy/darkmatter)
+	configure(light_glow(color = "#8837A3"))
 
 /*
  * Vox Sonic Cannon

@@ -284,7 +284,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	icon_dead = "holo4"
 	alpha = 127
 	// Hologram lighting, lit from the start (applied when it materializes).
-	light_range = 2
 	light_on = TRUE
 	icon_gib = null
 	meat_amount = 0
@@ -292,6 +291,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	vore_icons = FALSE
 
 	mob_class = MOB_CLASS_PHOTONIC // Xeno-taser won't work on this as its not a 'real' carp.
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(light_glow(range = 2))
 
 // Presumably the holodeck emag code requires this.
 // Pass TRUE to make safe. Pass FALSE to make unsafe.

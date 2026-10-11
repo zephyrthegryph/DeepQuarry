@@ -90,8 +90,8 @@ CAPABILITIES(/obj/effect/temp_visual/impact_effect/monochrome_laser)
 /obj/effect/temp_visual/impact_effect/monochrome_laser/proc/take_colour(obj/item/projectile/P)
 	if(!P)
 		return
-	if(P.light_color)
-		color = P.light_color
+	if(glow_of(P).color)
+		color = glow_of(P).color
 	else if(P.color)
 		color = P.color
 

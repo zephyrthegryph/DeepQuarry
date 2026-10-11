@@ -78,20 +78,20 @@ CAPABILITIES(/obj/item/projectile/beam/shock/clockwork)
 /obj/effect/projectile/muzzle/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "muzzle_volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))
 
 /obj/effect/projectile/tracer/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/tracer/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))
 
 /obj/effect/projectile/impact/voltbeam
 	icon = 'icons/obj/guns/clockwork/projectiles_tracer_ch.dmi'
 	icon_state = "impact_volt_ray"
-	light_range = 2
-	light_power = 1
-	light_color = "#DAAA18"
+
+CAPABILITIES(/obj/effect/projectile/impact/voltbeam)
+	configure(light_glow(range = 2, power = 1, color = "#DAAA18"))

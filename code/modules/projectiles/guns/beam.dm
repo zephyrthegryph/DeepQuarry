@@ -2,11 +2,20 @@
 /obj/item/projectile/beam/phaser //The "medium" phaser beam.
 	mob_bonus_damage = 10
 
+CAPABILITIES(/obj/item/projectile/beam/phaser)
+	configure(light_glow(color = "#F18F12"))
+
 /obj/item/projectile/beam/phaser/light
 	mob_bonus_damage = 5
 
+CAPABILITIES(/obj/item/projectile/beam/phaser/light)
+	configure(light_glow(range = 1.5, power = 0.3))
+
 /obj/item/projectile/beam/phaser/heavy
 	mob_bonus_damage = 12
+
+CAPABILITIES(/obj/item/projectile/beam/phaser/heavy)
+	configure(light_glow(range = 3, power = 1))
 
 /obj/item/projectile/beam/phaser/heavy/cannon
 	mob_bonus_damage = 15
@@ -25,4 +34,6 @@
 	name = "prismatic beam"
 	icon_state = "omnilaser"
 	damage = 10 //Old 5?
-	light_color = "#00C6FF"
+
+CAPABILITIES(/obj/item/projectile/beam/prismatic)
+	configure(light_glow(color = "#00C6FF"))

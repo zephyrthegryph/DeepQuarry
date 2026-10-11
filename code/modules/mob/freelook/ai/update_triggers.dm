@@ -44,7 +44,7 @@
 	if(src.can_use())
 		GLOB.cameranet.addCamera(src)
 	else
-		src.set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		GLOB.cameranet.removeCamera(src)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/camera, REGISTRY_CAMERAS)

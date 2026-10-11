@@ -105,7 +105,6 @@
 	melee_damage_upper = 17
 	attack_armor_pen = 20
 	glow_color = "#14ff20"
-	light_color = "#14ff20"
 	glow_range = 7
 	glow_intensity = 3
 	special_attack_min_range = 1
@@ -145,6 +144,7 @@ TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	configure(light_glow(color = "#14ff20"))
 	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))
 
 /// A dash or a puddle summon at the target (its every() runs while attacks remain in the chain).

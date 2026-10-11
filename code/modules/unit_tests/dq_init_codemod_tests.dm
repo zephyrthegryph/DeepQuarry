@@ -62,7 +62,7 @@
 	var/obj/mecha/combat/gorilla/G = allocate(/obj/mecha/combat/gorilla, dq_containment_floor())
 	TEST_ASSERT(istype(G.energy_relay, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay), "the gorilla's relay is its energy relay")
 
-/// Types whose Initialize() only called set_light() with constants carry the same light in their light vars.
+/// Types whose Initialize() only called set_light() with constants declare the same light in their light_glow() trait.
 /datum/unit_test/dq_init_codemod/constant_lights
 
 /datum/unit_test/dq_init_codemod/constant_lights/Run()
@@ -74,9 +74,9 @@
 	for(var/light_type in expected)
 		var/list/light = expected[light_type]
 		var/atom/movable/A = allocate(light_type, dq_containment_floor())
-		TEST_ASSERT_EQUAL(A.light_range, light[1], "[light_type] light range")
-		TEST_ASSERT_EQUAL(A.light_power, light[2], "[light_type] light power")
-		TEST_ASSERT_EQUAL(A.light_color, light[3], "[light_type] light colour")
+		TEST_ASSERT_EQUAL(glow_of(A).range, light[1], "[light_type] light range")
+		TEST_ASSERT_EQUAL(glow_of(A).power, light[2], "[light_type] light power")
+		TEST_ASSERT_EQUAL(glow_of(A).color, light[3], "[light_type] light colour")
 		TEST_ASSERT(A.light_on, "[light_type] is lit")
 
 /// A stocked pizza box starts with its pizza from pizza_type (starts =) and keeps its tag; a plain box starts empty.

@@ -7,7 +7,6 @@
 	desc = "Computer designed to remotely monitor power levels around the station"
 	icon_keyboard = "power_key"
 	icon_screen = "power_monitor"
-	light_color = "#ffcc33"
 
 	//computer stuff
 	density = TRUE
@@ -25,6 +24,7 @@ TRACKED(/obj/machinery/computer/power_monitor, alerting)
 // The power monitoring console: its window is its monitor module's (an empty hand on a working console), and it watches its sensors for alerts
 // (monitor_step()).
 CAPABILITIES(/obj/machinery/computer/power_monitor)
+	configure(light_glow(color = "#ffcc33"))
 	configure(uses_power(idle = 300, active = 300))
 	owns_one(nameof(power_monitor), starts = /datum/tgui_module/power_monitor)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(monitor_step)))

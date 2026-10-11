@@ -32,6 +32,7 @@
 /atom/var/datum/artifact_master/artifact_master
 
 CAPABILITIES(/atom)
+	light_glow(range = 0, power = 1, color = COLOR_WHITE) // the light it casts while light_on: a type trait (code/modules/lighting/glow.dm)
 	ref_many(nameof(light_sources))
 	owns_one(nameof(artifact_master), /datum/artifact_master)
 	owns_one(nameof(forensic_data), /datum/forensics_crime)

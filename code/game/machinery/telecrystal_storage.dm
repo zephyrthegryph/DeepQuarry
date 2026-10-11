@@ -5,11 +5,11 @@
 	icon_base = "donkvendor"
 	icon_contents = null
 	icon = 'icons/obj/survival_pod_vend.dmi'
-	light_range = 5
-	light_power = 1.2
-	light_color = "#DDFFD3"
 	pixel_y = -4
 	max_n_of_items = 1000000
+
+CAPABILITIES(/obj/machinery/smartfridge/tcrystal)
+	configure(light_glow(range = 5, power = 1.2, color = "#DDFFD3"))
 
 /obj/machinery/smartfridge/tcrystal/accept_check(obj/item/O)
 	return istype(O,/obj/item/stack/telecrystal)

@@ -100,9 +100,9 @@
 
 /turf/space/proc/update_starlight()
 	if(locate_in_list(orange(src,1), /turf/simulated))
-		set_light(CONFIG_GET(number/starlight))
+		set_glow(src, GLOW(CONFIG_GET(number/starlight), null, null))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 CAPABILITIES(/turf/space)
 	op("space_build", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Build"), then(PROC_REF(space_build)))

@@ -77,11 +77,11 @@ CAPABILITIES(/obj/item/projectile/energy)
 	fire_sound = SFX_WEAPONS_GUNSHOT2
 	taser_effect = 1
 	agony = 40
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
 	hud_state = "taser"
 	//Damage will be handled on the MOB side, to prevent window shattering.
+
+CAPABILITIES(/obj/item/projectile/energy/electrode)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/electrode/strong
 	agony = 55
@@ -108,13 +108,13 @@ CAPABILITIES(/obj/item/projectile/energy)
 	nodamage = 1
 	injury_kind = INJURY_CELLULAR
 	irradiate = 40
-	light_range = 2
-	light_power = 0.5
-	light_color = "#33CC00"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
 	combustion = FALSE
 	hud_state = "plasma_pistol"
+
+CAPABILITIES(/obj/item/projectile/energy/declone)
+	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/excavate
 	name = "kinetic blast"
@@ -217,13 +217,13 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	damage = 20
 	injury_kind = INJURY_TOXIN
 	irradiate = 20
-	light_range = 2
-	light_power = 0.5
-	light_color = "#33CC00"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "plasma_rifle"
 
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/energy/phoron)
+	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/plasmastun
 	name = "plasma pulse"
@@ -274,12 +274,14 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 	damage = 5
 	armor_penetration = 75
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
-	light_color = "#00AAFF"
 
 	embed_chance = 0
 	muzzle_type = /obj/effect/projectile/muzzle/pulse
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "plasma_sphere"
+
+CAPABILITIES(/obj/item/projectile/energy/blue_pellet)
+	configure(light_glow(color = "#00AAFF"))
 
 /* ChompEdit, moving over to energy_ch.dm
 /obj/item/projectile/energy/phase
@@ -331,13 +333,13 @@ CAPABILITIES(/obj/item/projectile/energy/neurotoxin)
 
 /obj/item/projectile/energy/anomaly
 	name = "anomaly emitter projectile"
-	light_color = "#be008f"
 	icon_state = "purple_laser"
 	damage = 5
 	speed = 1.6
 	var/particle_type
 
 CAPABILITIES(/obj/item/projectile/energy/anomaly)
+	configure(light_glow(color = "#be008f"))
 	param(nameof(particle_type), pos = 1)
 
 /obj/item/projectile/energy/phase/bolt

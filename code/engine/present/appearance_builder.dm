@@ -164,7 +164,7 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
  * Two things glow, and the first argument says which.
  *
  * A light: `look.glow(range, power, color)` (numbers first) or `look.glow(GLOW(range, power, color))`. The holder casts that light while
- * this look holds; the engine applies it when the look is applied (draw() never calls set_light(): a draw writes no state). A look that
+ * this look holds; the engine applies it when the look is applied (draw() never calls set_glow(): a draw writes no state). A look that
  * names no light (or a range or power of 0) turns off a light an earlier look gave; `look.glow(GLOW_OFF)` is dark even where the type starts lit. The values may come from tracked reads, or from a proc whose reads are declared: `look.glow(scan_light())`.
  *
  * An emissive part: `look.glow(name, value)` draws the part `name` (with a `value`, the part of that value) so it shows in the dark. A part

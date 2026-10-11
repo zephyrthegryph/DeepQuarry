@@ -206,13 +206,13 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 		destroyed(src, null, "explosion")
 		return
 
-	set_light(2, null, "#E38F46")
+	set_glow(src, GLOW(2, null, "#E38F46"))
 	set_rag_lit(TRUE)
 	update_name()
 
 /obj/item/reagent_containers/glass/rag/extinguish()
 	. = ..()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_rag_lit(FALSE)
 
 	//rags sitting around with 1 second of burn time left is dumb.

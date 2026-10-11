@@ -3,7 +3,6 @@
 	desc = "Used to track exosuits, as well as view their logs and activate EMP beacons."
 	icon_keyboard = "rd_key"
 	icon_screen = "mecha"
-	light_color = "#a97faa"
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/mecha_control
 	var/list/located
@@ -36,6 +35,7 @@
 
 // The console's window: a beacon's message is asked in the op (asks()), its handler sends the answer.
 CAPABILITIES(/obj/machinery/computer/mecha)
+	configure(light_glow(color = "#a97faa"))
 	interface("MechaControlConsole")
 	without("ui_open")
 	op("send_message", ui_act("send_message", arg("mt", schema_ref(/obj/item/mecha_parts/mecha_tracking))), needs(req(PROC_REF(beacon_named), silent = TRUE)),

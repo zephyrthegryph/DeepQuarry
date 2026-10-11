@@ -37,6 +37,8 @@
 	icon_dead = "driderdead"
 
 	glow_color = "#1F000F"
-	light_color = "#1F000F"
 	glow_range = 5
 	glow_intensity = -1
+
+CAPABILITIES(/mob/living/simple_mob/vore/smokestar/drider)
+	configure(light_glow(color = "#1F000F"))

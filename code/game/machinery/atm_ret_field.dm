@@ -198,9 +198,6 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	can_atmos_pass = ATMOS_PASS_NO
 	var/basestate = "arfg_field"
 
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
@@ -224,6 +221,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 	smoothing()
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 

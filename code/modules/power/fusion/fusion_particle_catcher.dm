@@ -6,10 +6,10 @@
 	var/obj/effect/fusion_em_field/parent
 	var/mysize = 0
 
-	light_color = COLOR_BLUE
 
 // The field owns its catchers (rel_add in fusion_em_field/Initialize()); a catcher names its field.
 CAPABILITIES(/obj/effect/fusion_particle_catcher)
+	configure(light_glow(color = COLOR_BLUE))
 	ref_one(nameof(parent), /obj/effect/fusion_em_field)
 
 /obj/effect/fusion_particle_catcher/proc/SetSize(newsize)

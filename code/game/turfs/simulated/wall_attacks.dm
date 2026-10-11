@@ -11,7 +11,7 @@
 		set_density(FALSE)
 		blocks_air = ZONE_BLOCKED
 		update_air()
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		src.blocks_air = 0
 		set_opacity(0)
 		for(var/turf/simulated/turf in contents_of(loc))
@@ -21,7 +21,7 @@
 		set_density(TRUE)
 		blocks_air = AIR_BLOCKED
 		update_air()
-		set_light(1)
+		set_glow(src, GLOW(1, null, null))
 		src.blocks_air = 1
 		set_opacity(1)
 		for(var/turf/simulated/turf in contents_of(loc))

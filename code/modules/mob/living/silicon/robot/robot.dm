@@ -488,7 +488,7 @@
 
 /mob/living/silicon/robot/life_light(datum/seq_frame/life/F)
 	if(src.lights_on)
-		src.set_light(src.integrated_light_power, 1, src.robot_light_col)
+		set_glow(src, GLOW(src.integrated_light_power, 1, src.robot_light_col))
 		return TRUE
 	return ..()
 

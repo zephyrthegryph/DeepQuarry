@@ -7,7 +7,6 @@
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
-	light_color = "#315ab4"
 	bubble_icon = "medical"
 	circuit = /obj/item/circuitboard/resleeving_control
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
@@ -672,6 +671,7 @@ CAPABILITIES(/obj/item/cmo_disk_holder)
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
 CAPABILITIES(/obj/machinery/computer/transhuman/resleeving)
+	configure(light_glow(color = "#315ab4"))
 	op("resleeving_console_interaction_item", item(/obj/item), then(PROC_REF(resleeving_console_interaction_item)))
 	op("resleeving_console_interaction_hand", hand(), ungated(), then(PROC_REF(resleeving_console_interaction_hand)))
 	op("clear_b_rec", ui_act(), then(PROC_REF(ui_act_clear_b_rec)))

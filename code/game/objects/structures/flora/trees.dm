@@ -133,7 +133,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	set_density(FALSE)
 	icon_state = "[base_state]_stump"
 	cut_overlays() // For the Sif tree and other future glowy trees.
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 
 /// A blast tears into the tree through its own health, ruining some of the wood.

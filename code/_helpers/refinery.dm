@@ -67,7 +67,7 @@
 
 // start: Repurposed coffee grinders and supermatter do not mix.
 /proc/puny_protons(regrets = 0, atom/our_atom, list/holdingitems)
-	our_atom.set_light(0)
+	set_glow(our_atom, GLOW(0, null, null))
 	if(regrets > 0) // If you thought grinding supermatter would end well. Values taken from ex_act() for the supermatter stacks.
 		radiation_pulse(
 			source = get_turf(our_atom),

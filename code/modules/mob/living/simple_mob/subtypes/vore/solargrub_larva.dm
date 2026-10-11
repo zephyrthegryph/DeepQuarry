@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.set_draining(0)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	return ..()
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /mob/living/simple_mob/animal/solargrub_larva/life_light(datum/seq_frame/life/F)
 	. = ..()
 	if(. == 0 && !src.is_dead())
-		src.set_light(1.5, 1, COLOR_YELLOW)
+		set_glow(src, GLOW(1.5, 1, COLOR_YELLOW))
 		return 1
 	else if(src.is_dead())
 		src.set_glow_override(FALSE)

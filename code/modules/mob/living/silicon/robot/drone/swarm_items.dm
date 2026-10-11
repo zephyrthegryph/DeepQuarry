@@ -89,13 +89,11 @@
 	desc = "This is something you do not want to near."
 	icon = 'icons/mob/swarmbot.dmi'
 	icon_state = "disintegrate_pulse"
-	light_range = 4
-	light_power = 5
-	light_color = "#00B4D9"
 	pulses_remaining = 5
 	pulse_delay = 2 SECONDS
 
 CAPABILITIES(/obj/effect/temporary_effect/pulse/disintegrate)
+	configure(light_glow(range = 4, power = 5, color = "#00B4D9"))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(emp_disperse))))
 
 /obj/effect/temporary_effect/pulse/disintegrate/proc/emp_disperse(datum/act/A)

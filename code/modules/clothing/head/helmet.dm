@@ -121,11 +121,11 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat)
 	desc = "A tan helmet made from advanced ceramic with an integrated tactical flashlight."
 	icon_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
-	light_range = 6
 	light_overlay = "helmet_light_dual_green"
 	actions_types = list(/datum/action/item_action/toggle_head_light)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/flexitac)
+	configure(light_glow(range = 6))
 	configure(item_protection(siemens = 0.6, min_cold = T0C - 20, cold_parts = HEAD))
 
 /obj/item/clothing/head/helmet/explorer

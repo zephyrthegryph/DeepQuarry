@@ -198,7 +198,7 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				splat.set_light(blight, 0.5, l_color = clr)
+				set_glow(splat, GLOW(blight, 0.5, clr))
 			var/flesh_colour = get_trait(TRAIT_FLESH_COLOUR)
 			if(!flesh_colour) flesh_colour = get_trait(TRAIT_PRODUCT_COLOUR)
 			if(flesh_colour) splat.color = get_trait(TRAIT_PRODUCT_COLOUR)
@@ -841,7 +841,7 @@
 				var/blight = get_trait(TRAIT_BIOLUM)
 				if(blight >= 5)
 					blight = 5
-				product.set_light(blight, 0.5, l_color = clr)
+				set_glow(product, GLOW(blight, 0.5, clr))
 			if(get_trait(TRAIT_STINGS) && isitem(product)) //Sometimes the product can be a mob.
 				product.force = 1
 

@@ -118,9 +118,9 @@
 	damage = 20
 	eyeblur = 0
 	armor_penetration = 50
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
+
+CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift
 	vore_active = 1

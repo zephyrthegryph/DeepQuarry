@@ -183,7 +183,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		cell.give(max(1, round(material.radiovoltaic_efficiency * max(strength, 1))))
 	if(material.scintillation_efficiency > 0)
 		var/obj/item/item = parent
-		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
+		set_glow(item, GLOW(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff"))
 		if(after_pending(src, "scintillation_timer"))
 			cancel_after(src, "scintillation_timer")
 		after(src, 5 SECONDS, PROC_REF(end_scintillation), key = "scintillation_timer")
@@ -195,9 +195,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	var/base_light = dq_material_luminescence(material)
 	if(base_light > 0)
-		item.set_light(clamp(base_light / 20, 0.5, 4), clamp(base_light / 30, 0.3, 2), material.icon_colour)
+		set_glow(item, GLOW(clamp(base_light / 20, 0.5, 4), clamp(base_light / 30, 0.3, 2), material.icon_colour))
 	else
-		item.set_light(0)
+		set_glow(item, GLOW(0, null, null))
 
 /datum/material_response/proc/on_attackby(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)

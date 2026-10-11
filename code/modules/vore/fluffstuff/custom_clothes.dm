@@ -822,7 +822,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/fluff/hos, fit_spe
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	w_class = ITEMSIZE_SMALL
-	light_range = 5
 	light_overlay = null
 	light_system = MOVABLE_LIGHT
 
@@ -837,6 +836,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/fluff/hos, fit_spe
 
 // The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
 CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
+	configure(light_glow(range = 5))
 	op("pompom_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle light"), then(PROC_REF(pompom_light_self)))
 
 /// Old attack_self: light or dim the pom-pom.

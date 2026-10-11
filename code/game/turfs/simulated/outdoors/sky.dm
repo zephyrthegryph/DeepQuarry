@@ -22,7 +22,7 @@ CAPABILITIES(/turf/simulated/sky)
 /turf/simulated/sky/Initialize(mapload)
 	. = ..()
 	// SSplanets.addTurf(src) Handled by parent
-	set_light(2, 2, sky_color)
+	set_glow(src, GLOW(2, 2, sky_color))
 
 /turf/simulated/sky/north
 	dir = NORTH

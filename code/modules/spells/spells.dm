@@ -251,9 +251,10 @@
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/unrestricted/mend)
+	configure(light_glow(color = "#FF5C5C", power = -2))
 
 /obj/item/spell/unrestricted/mend/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))

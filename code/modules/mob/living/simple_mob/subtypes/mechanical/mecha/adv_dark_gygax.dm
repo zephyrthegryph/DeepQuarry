@@ -145,7 +145,7 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 /// One second of the charging energy ball (10 pulses), then the discharge.
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_pulse(i, old_shock_resist)
 	energy_ball.adjust_scale(0.5 + (i/10))
-	energy_ball.set_light(i/2, i/2, "#0000FF")
+	set_glow(energy_ball, GLOW(i/2, i/2, "#0000FF"))
 	for(var/thing in range(3, src))
 		// This is stupid because mechs are stupid and not mobs.
 		if(isliving(thing))
@@ -233,13 +233,13 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
 	desc = "It's sucking everything in!"
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "bhole3"
-	light_range = 4
-	light_power = 5
-	light_color = "#2ECCFA"
 	pulses_remaining = 10
 	pulse_delay = 0.5 SECONDS
 	var/pull_radius = 3
 	var/pull_strength = STAGE_THREE
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/microsingulo)
+	configure(light_glow(range = 4, power = 5, color = "#2ECCFA"))
 
 /obj/effect/temporary_effect/pulse/microsingulo/on_pulse()
 	for(var/atom/A in range(pull_radius, src))

@@ -7,7 +7,6 @@
 	desc = "Control the station's atmospheric systems from afar! Certified atmospherics technicians only."
 	icon_keyboard = "generic_key"
 	icon_screen = "comm_logs"
-	light_color = "#00b000"
 	density = TRUE
 	anchored = TRUE
 	circuit = /obj/item/circuitboard/atmoscontrol
@@ -19,6 +18,7 @@ MSG_DEF(atmoscontrol/emagged, "You cause the screen to flash as you gain full co
 
 /// The console is its controller's window (ui_redirect()): a hand or a silicon's link opens it; an emag gives anyone full control of every alarm.
 CAPABILITIES(/obj/machinery/computer/atmoscontrol)
+	configure(light_glow(color = "#00b000"))
 	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control)
 	op("use", inputs(hand(), remote()), label("Use"), wait(0), needs(req(PROC_REF(console_works))), then(PROC_REF(open_console)))
 	emag(then(PROC_REF(emag_screen)), say = MSG(atmoscontrol/emagged), powered = FALSE)
@@ -31,8 +31,10 @@ CAPABILITIES(/obj/machinery/computer/atmoscontrol)
 	icon_state = "pcu_engi"
 	icon_keyboard = "pcu_key"
 	density = FALSE
-	light_color = "#00cc00"
 	density = 0
+
+CAPABILITIES(/obj/machinery/computer/atmoscontrol/laptop)
+	configure(light_glow(color = "#00cc00"))
 
 /obj/machinery/computer/atmoscontrol/proc/console_works(datum/act/A)
 	return (operable()) ? null : MSG(machine/inoperable)

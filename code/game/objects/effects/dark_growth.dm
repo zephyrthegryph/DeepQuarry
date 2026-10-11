@@ -109,14 +109,14 @@ CAPABILITIES(/obj/effect/dark/floor)
 	var/list/children_effects
 	var/until_full_process = 0
 
-	light_range = 3
 	var/node_range = 9
 
 /obj/structure/prop/dark_node/proc/init_dark_light(datum/act/timer/A)
-	set_light(light_range, -20, "#FFFFFF")
+	set_glow(src, GLOW(glow_of(src).range, -20, "#FFFFFF"))
 
 
 CAPABILITIES(/obj/structure/prop/dark_node)
+	configure(light_glow(range = 3))
 	after_init(0, then(PROC_REF(init_dark_light)))
 	every(2 SECONDS, then(PROC_REF(dark_node_step)))
 
@@ -185,13 +185,17 @@ CAPABILITIES(/obj/effect/dark)
 	name = "crystal dust"
 	desc = "A small scattering of bluespace crystals, dark energy sparks and flickers between them."
 	icon_state = "bsc_dust"
-	light_range = 1
 	node_range = 5
+
+CAPABILITIES(/obj/structure/prop/dark_node/dust)
+	configure(light_glow(range = 1))
 
 /obj/structure/prop/dark_node/statue
 	name = "phoronic cascade"
 	desc = "A huge structure made of pure phoron. Dark energy roils and bursts within it."
 	icon = 'icons/obj/props/decor32x64.dmi'
 	icon_state = "phoronic"
-	light_range = 5
 	node_range = 15
+
+CAPABILITIES(/obj/structure/prop/dark_node/statue)
+	configure(light_glow(range = 5))

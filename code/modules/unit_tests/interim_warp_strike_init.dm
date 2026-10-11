@@ -25,7 +25,7 @@
 	TEST_ASSERT(destination && !destination.density, "The real target floor must be two tiles away and passable")
 	// Native view requires world illumination: use a real lamp and drain the actual lighting service's pending work.
 	var/obj/item/flashlight/lamp/lamp = allocate(/obj/item/flashlight/lamp, destination)
-	TEST_ASSERT(lamp.on && lamp.light_range == 5, "The actual desk lamp starts lit with its normal five-tile illumination")
+	TEST_ASSERT(lamp.on && glow_of(lamp).range == 5, "The actual desk lamp starts lit with its normal five-tile illumination")
 	SSlighting.light_step(0, TRUE)
 	TEST_ASSERT_NOTNULL(lamp.light, "The actual lamp constructor creates its real world light source")
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, start)

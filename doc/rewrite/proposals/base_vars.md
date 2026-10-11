@@ -21,11 +21,15 @@ type fails the `base_vars` lint (shrink-only baseline, `tools/ci/base_vars_basel
 `light_range`, `light_power` and `light_color` on `/atom` (about 700 overrides, 880 reads, 270 `set_light` calls): the
 look is the only light source.
 
-- A per-type default becomes `look_glow(GLOW(r, p, c))` (codemod over the overrides).
-- A run-time change is tracked state the draw reads (`L.glow(...)`).
-- An ad-hoc `set_light(r, p, c)` becomes `set_glow(src, GLOW(r, p, c))`, a sparse glow override applied by the base draw.
-- The light system reads only `glow_of(A)`.
-- Then the three vars and `/mob/living` `last_glow_*` are deleted.
+- A per-type default becomes the `light_glow(range =, power =, color =)` type trait (`tools/dx/codemods/type_trait.py light`,
+  323 types). As landed it is a trait, not `look_glow()`: the vars were configuration gated by `light_on` (a flashlight declares its light
+  and is dark until switched on), and a `look_glow()` row casts whenever it holds. A type that casts from creation keeps `light_on = TRUE`;
+  `look_glow()` stays the form for a light a look condition gates.
+- An ad-hoc `set_light(r, p, c)` becomes `set_glow(src, GLOW(r, p, c))` (`tools/dx/codemods/set_light_to_glow.py`): the atom's own copy of
+  the trait (copy on write, the sparse override), a null part kept, and the light turned on for a range above 0, as `set_light()` did.
+  A look's light (`look.glow()`) applies through it.
+- The light system reads only `glow_of(A).range / .power / .color`.
+- The three vars and `/mob/living` `last_glow_*` are deleted (Life compares against `glow_of()`).
 
 ## Tooling
 

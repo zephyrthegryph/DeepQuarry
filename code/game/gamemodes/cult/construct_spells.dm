@@ -165,9 +165,10 @@
 	name = "Juggerwall"
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "m_shield_cult"
-	light_color = "#B40000"
-	light_range = 2
 	invisibility = INVISIBILITY_NONE
+
+CAPABILITIES(/obj/effect/forcefield/cult)
+	configure(light_glow(color = "#B40000", range = 2))
 
 /obj/effect/forcefield/cult/cultify()
 	return
@@ -592,13 +593,13 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
 	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#FFFFFF"
 
 	muzzle_type = /obj/effect/projectile/muzzle/inversion
 	tracer_type = /obj/effect/projectile/tracer/inversion
 	impact_type = /obj/effect/projectile/impact/inversion
+
+CAPABILITIES(/obj/item/projectile/beam/inversion)
+	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/inversion
 	name = "inversion blast"
@@ -632,12 +633,12 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	desc = "A portal to some hellish place. Its screams wrack your body with pain.."
 	icon_state = "red_static_sphere"
 	time_to_die = null
-	light_range = 4
-	light_power = 5
-	light_color = "#FF0000"
 	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/agonizing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#FF0000"))
 
 /obj/effect/temporary_effect/pulse/agonizing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
@@ -655,9 +656,10 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/construct/mend_occult)
+	configure(light_glow(color = "#FF5C5C", power = -2))
 
 /obj/item/spell/construct/mend_occult/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))
@@ -672,8 +674,6 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	icon_state = "toggled_old"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#FF5C5C"
-	light_power = -2
 	light_on = TRUE
 	cooldown = 15
 
@@ -701,6 +701,7 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	consume(src, user)
 
 CAPABILITIES(/obj/item/spell/construct/slam)
+	configure(light_glow(color = "#FF5C5C", power = -2))
 	op("slam_wall", ai(), takes("wall", "attack_message", "windup"), wait(PROC_REF(slam_windup)), on_interrupt(PROC_REF(slam_lowered)), then(PROC_REF(slam_wall)))
 
 /obj/item/spell/construct/slam/proc/slam_windup(datum/act/op/A)
@@ -749,13 +750,13 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 20
 	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
 
 /obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
 	to_chat(M, span_danger("You hear a loud roar."))
@@ -811,13 +812,13 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	damage = 15
 	mob_bonus_damage = 45
 	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
 	impact_type = /obj/effect/projectile/impact/lightning
+
+CAPABILITIES(/obj/item/projectile/beam/banishment)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
 
 /obj/item/projectile/beam/banishment/proc/banish(mob/living/simple_mob/construct)
 	if(construct)
@@ -859,13 +860,13 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	damage = 5
 	injury_kind = INJURY_BLUNT
 	armor_penetration = 60
-	light_range = 2
-	light_power = -2
-	light_color = "#64B4E6"
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
 	impact_type = /obj/effect/projectile/impact/tungsten
+
+CAPABILITIES(/obj/item/projectile/beam/force_beam)
+	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
 
 /obj/item/projectile/beam/force_beam/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))
@@ -907,12 +908,12 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	icon = 'icons/effects/effects.dmi'
 	icon_state = "blue_static_sphere"
 	time_to_die = null
-	light_range = 4
-	light_power = 5
-	light_color = "#64B4E6"
 	light_on = TRUE
 	pulses_remaining = 10
 	pulse_delay = 1 SECOND
+
+CAPABILITIES(/obj/effect/temporary_effect/pulse/soothing_sphere)
+	configure(light_glow(range = 4, power = 5, color = "#64B4E6"))
 
 /obj/effect/temporary_effect/pulse/soothing_sphere/on_pulse()
 	for(var/mob/living/L in view(4,src))
@@ -959,9 +960,10 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	icon_state = "mend_wounds"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_UNHOLY
-	light_color = "#64B4E6"
-	light_power = -2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/spell/construct/mend_purity)
+	configure(light_glow(color = "#64B4E6", power = -2))
 
 /obj/item/spell/construct/mend_purity/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
 	if(isliving(hit_atom))

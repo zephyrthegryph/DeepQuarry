@@ -180,9 +180,9 @@ MSG_DEF_SELF(particle_gun/removing_safety, span_notice("You begin removing %I% f
 	icon_state = "particle-heavy"
 	damage = 80 // same as a laser cannon
 	armor_penetration = 25 //it explodes on the surface of things, so less armor pen than the laser cannon
-	light_range = 3
-	light_power = 1
-	light_color = "#CCFFFF"
+
+CAPABILITIES(/obj/item/projectile/bullet/particle/heavy)
+	configure(light_glow(range = 3, power = 1, color = "#CCFFFF"))
 
 /turf/simulated/mineral/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/bullet/particle))

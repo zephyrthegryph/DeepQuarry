@@ -39,7 +39,7 @@ CAPABILITIES(/obj/machinery/hyperpad/centre)
 /obj/machinery/hyperpad/centre/proc/detect_and_light(datum/act/timer/A)
 	if(map_pad_id)
 		detect()
-	set_light(3, 1, newcolor)
+	set_glow(src, GLOW(3, 1, newcolor))
 
 // Its linked pads go with it.
 

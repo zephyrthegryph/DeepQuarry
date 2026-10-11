@@ -478,7 +478,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/mob/user = A.actor
 	if(special_handling)
 		return OP_DECLINE
-	if(light_range)
+	if(glow_of(src).range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
 			return OP_DECLINE

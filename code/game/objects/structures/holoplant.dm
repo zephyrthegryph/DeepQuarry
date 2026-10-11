@@ -3,7 +3,6 @@
 	desc = "One of those Ward-Takahashi holoplants! Give your space a bit of the comfort of being outdoors, by buying this blue buddy. A rugged case guarantees that your flower will outlive you, and variety of plant types won't let you to get bored along the way!"
 	icon = 'icons/obj/holoplants.dmi'
 	icon_state = "holopot"
-	light_color = "#3C94C5"
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_WRENCH
 	maintenance_wrench_time = 1 SECOND
@@ -37,13 +36,13 @@
 	plant = prepare_icon(emagged() ? "emagged" : null)
 	cut_overlays()
 	add_overlay(plant)
-	set_light(2)
+	set_glow(src, GLOW(2, null, null))
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/holoplant/proc/deactivate()
 	cut_overlays()
 	QDEL_NULL(plant)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_use_power(USE_POWER_OFF)
 
 /obj/machinery/holoplant/power_change()
@@ -60,10 +59,10 @@
 /obj/machinery/holoplant/proc/flicker_step(n)
 	if(n % 2)
 		cut_overlays()
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	else
 		add_overlay(plant)
-		set_light(2)
+		set_glow(src, GLOW(2, null, null))
 	if(n >= 4)
 		interference = FALSE
 		return
@@ -76,6 +75,7 @@
 	return getHologramIcon(plant_icon, 0)
 
 CAPABILITIES(/obj/machinery/holoplant)
+	configure(light_glow(color = "#3C94C5"))
 	configure(uses_power(idle = 0, active = 5))
 	after_init(0, then(PROC_REF(init_activate)))
 	on_change(nameof(anchored), ANY, then(PROC_REF(anchoring_changed)))

@@ -28,10 +28,10 @@ CAPABILITIES(/obj/item/uv_light)
 /obj/item/uv_light/proc/interaction_self(datum/act/op/A)
 	set_on(!on)
 	if(on)
-		set_light(range, 2, "#007fff")
+		set_glow(src, GLOW(range, 2, "#007fff"))
 		icon_state = "uv_on"
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		clear_last_scan()
 		icon_state = "uv_off"
 	return TRUE

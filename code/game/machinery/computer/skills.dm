@@ -14,7 +14,6 @@
 	icon_screen = "pcu_generic"
 	icon_state = "pcu"
 	icon_keyboard = "pcu_key"
-	light_color = "#5284e7"
 	req_one_access = list(ACCESS_HEADS)
 	circuit = /obj/item/circuitboard/skills/pcu
 	density = FALSE
@@ -237,6 +236,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/skills, skills_field_choices, list(
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/skills)
+	configure(light_glow(color = "#5284e7"))
 	per_type(nameof(field_edit_questions), PROC_REF(build_field_edit_questions))
 	per_type(nameof(field_edit_choices), PROC_REF(build_field_edit_choices))
 	ref_one(nameof(active1), /datum/data/record)

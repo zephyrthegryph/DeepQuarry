@@ -11,7 +11,6 @@
 	desc = "Used to monitor the nearby asteroid belt and detect new areas."
 	icon_keyboard = "tech_key"
 	icon_screen = "request"
-	light_color = "#315ab4"
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/roguezones
 
@@ -39,6 +38,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/roguezones)
+	configure(light_glow(color = "#315ab4"))
 	configure(uses_power(idle = 250, active = 500))
 	after_init(0, then(PROC_REF(make_controller)))
 	interface("RogueZones")

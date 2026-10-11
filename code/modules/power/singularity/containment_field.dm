@@ -12,9 +12,6 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	light_on = TRUE
-	light_range = 2
-	light_power = 0.5
-	light_color = "#5BA8FF"
 	var/tmp/obj/machinery/field_generator/FG1
 	var/tmp/obj/machinery/field_generator/FG2
 	var/list/shockdirs
@@ -24,6 +21,7 @@
 // whoever touches it or stands beside it (at most every 2 s), destroys any dense object that crosses it, and falls when either generator is
 // gone. A singularity cannot step onto it (/obj/singularity/proc/can_move()).
 CAPABILITIES(/obj/machinery/containment_field)
+	configure(light_glow(range = 2, power = 0.5, color = "#5BA8FF"))
 	ref_one(nameof(FG1), /obj/machinery/field_generator)
 	ref_one(nameof(FG2), /obj/machinery/field_generator)
 	op("touch", hand(), when(req_empty_hand()), label("Touch"), ungated(), wait(0), then(PROC_REF(touched)))

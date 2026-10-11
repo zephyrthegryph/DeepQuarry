@@ -1188,7 +1188,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /atom/proc/get_light_and_color(atom/origin)
 	if(origin)
 		color = origin.color
-		set_light(origin.light_range, origin.light_power, origin.light_color)
+		set_glow(src, GLOW(glow_of(origin).range, glow_of(origin).power, glow_of(origin).color))
 
 /// We don't want to be in any mob registry; we're a dummy not a mob.
 /mob/dview/skips_registry(registry_id)

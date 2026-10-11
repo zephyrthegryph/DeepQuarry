@@ -38,11 +38,6 @@
 	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
 
 
-	// Last params applied by the light life system, so we can skip redundant set_light() calls each tick.
-	var/last_glow_range = null
-	var/last_glow_intensity = null
-	var/last_glow_color = null
-
 	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
 
 	var/see_invisible_default = SEE_INVISIBLE_LIVING

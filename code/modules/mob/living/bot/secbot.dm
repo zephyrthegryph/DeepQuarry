@@ -87,9 +87,9 @@
 		icon_state = "[default_icon_state][on]"
 
 	if(on)
-		set_light(2, 1, baton_glow)
+		set_glow(src, GLOW(2, 1, baton_glow))
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 CAPABILITIES(/mob/living/bot/secbot)
 	on_notice(/datum/notice/living_injured, then(PROC_REF(on_injured)))

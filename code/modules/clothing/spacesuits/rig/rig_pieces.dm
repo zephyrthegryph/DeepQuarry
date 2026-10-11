@@ -6,7 +6,6 @@
 	name = "helmet"
 	item_flags = THICKMATERIAL|ALLOW_SURVIVALFOOD
 	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	light_range = 4
 	sprite_sheets = list(
 		SPECIES_TAJARAN 		= 'icons/inventory/head/mob_tajaran.dmi',
 		SPECIES_SKRELL 			= 'icons/inventory/head/mob_skrell.dmi',
@@ -26,6 +25,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig)
+	configure(light_glow(range = 4))
 	configure(item_protection(max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))

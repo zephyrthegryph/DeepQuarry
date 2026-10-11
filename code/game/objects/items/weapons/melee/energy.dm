@@ -68,7 +68,7 @@
 	injury_kinds = active_injury_kinds
 	w_class = active_w_class
 	play_sfx(src, SFX_WEAPONS_SABERON)
-	set_light(lrange, lpower, lcolor)
+	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 /obj/item/melee/energy/proc/deactivate(mob/living/user)
 	if(!active)
@@ -85,7 +85,7 @@
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
 	w_class = initial(w_class)
-	set_light(0,0)
+	set_glow(src, GLOW(0, 0, null))
 
 /obj/item/melee/energy/proc/use_charge(cost)
 	if(active)
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/item/melee/energy)
 	if(R.value)
 		set_lcolor(sanitize_hexcolor(R.value))
 	if(active)
-		set_light(lrange, lpower, lcolor)
+		set_glow(src, GLOW(lrange, lpower, lcolor))
 	return OP_OK
 
 /*
@@ -446,7 +446,7 @@ CAPABILITIES(/obj/item/melee/energy/sword)
 /obj/item/melee/energy/blade/Initialize(mapload)
 	. = ..()
 
-	set_light(lrange, lpower, lcolor)
+	set_glow(src, GLOW(lrange, lpower, lcolor))
 
 CAPABILITIES(/obj/item/melee/energy/blade)
 	without("power") // special_handling: a summoned blade is never toggled, only dismissed

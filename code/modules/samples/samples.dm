@@ -270,7 +270,7 @@ CAPABILITIES(/obj/item/research_sample/bluespace)
 
 /// The sample glows from the start.
 /obj/item/research_sample/bluespace/proc/start_glowing(datum/act/timer/A)
-	set_light(1, 3, lightcolor)
+	set_glow(src, GLOW(1, 3, lightcolor))
 
 //catalogue data
 /datum/category_item/catalogue/information/research_sample/core_data
