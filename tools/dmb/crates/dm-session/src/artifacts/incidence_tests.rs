@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::BTreeSet;
 type Store = ObservedArtifactStore<u8, u8, bool, u8>;
 fn reads(domain: u8) -> Receipt<u8, bool, u8> {
     vec![Observation {
