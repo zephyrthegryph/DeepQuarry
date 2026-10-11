@@ -482,8 +482,8 @@ fn sized_local_array_receivers_use_issued_list_type_and_validate_methods() {
     );
     assert!(batch.units.is_empty());
     assert_eq!(batch.diagnostics.len(), 1);
-    // Complete source and reviewed native member-union absence certify this
-    // negative without pretending the list namespace itself is closed.
-    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::SourceError);
+    // The source roster cannot certify an absent native list method. Preserve
+    // the open namespace instead of manufacturing a source-error diagnosis.
+    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::UnsupportedModel);
     assert_eq!(batch.diagnostics[0].origin.line, 3);
 }

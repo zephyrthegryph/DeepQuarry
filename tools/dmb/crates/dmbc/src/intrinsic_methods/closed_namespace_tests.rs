@@ -96,13 +96,13 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
         }),
         ResolvedMeaning::Member { .. }
     ));
-    for owner in ["/client", "/datum/open"] {
+    for owner in ["/client", "/list", "/datum/open"] {
         let query = ResolveQuery::Proc {
             owner: SymbolId::of(owner),
             name: SymbolId::of("arbitrary_missing_one"),
             verb: false,
         };
-        assert_eq!(host.resolve(query), ResolvedMeaning::Missing);
+        assert_eq!(host.resolve(query), ResolvedMeaning::Unsupported(query));
     }
     for owner in ["/not_current"] {
         let query = ResolveQuery::Proc {
