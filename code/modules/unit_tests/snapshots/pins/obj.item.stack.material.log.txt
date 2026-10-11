@@ -15,10 +15,8 @@
 @obj.item.stack.material human|/obj/item/stack/cable_coil
 @obj.item.stack.material human|/obj/item/stack/material/steel
 @obj.item.stack.material human|/obj/item/card/id
-@obj.item.stack human|/obj/item/kit
-+4 menu: Use
-@obj.item.stack human|/obj/item/storage
-+4 menu: Use
+@obj.item.stack.material human|/obj/item/kit
+@obj.item.stack.material human|/obj/item/storage
 @obj human|/obj/item/gripper
 @obj.item.stack.material human|/obj/item/stack
 @obj.item.stack human|/obj/item

@@ -43,7 +43,7 @@ human|none click: Click: Open
 -click: nothing
 +1 menu: Open
 +3 click: Click: Open
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +1 menu: Open

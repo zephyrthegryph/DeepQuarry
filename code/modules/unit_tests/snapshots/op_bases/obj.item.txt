@@ -7,19 +7,6 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-human|/obj/item/assembly/signaler menu: Accessory attached hand
-human|/obj/item/assembly/signaler menu: Alternate use
-human|/obj/item/assembly/signaler menu: Collar tag item
-human|/obj/item/assembly/signaler menu: Move To Top
-human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
-human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/assembly/signaler menu: Use
-human|/obj/item/assembly/signaler menu: Wire signaler
-human|/obj/item/assembly/signaler click: Click: Wire signaler
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: Click: Use
 human|/obj/item/stack menu: Combine
 human|/obj/item/stack menu: Move To Top
 human|/obj/item/stack menu: Split

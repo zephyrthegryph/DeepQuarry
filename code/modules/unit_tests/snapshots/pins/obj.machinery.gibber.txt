@@ -72,7 +72,7 @@ human|none click: Click: Start gibbing
 +2 menu: Start gibbing
 +4 menu: Use
 +5 click: Click: Use
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +0 menu: Empty Gibber

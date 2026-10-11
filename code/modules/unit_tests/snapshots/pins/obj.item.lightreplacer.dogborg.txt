@@ -16,7 +16,10 @@
 -click: Click: Collect
 +1 menu: Fill from box
 +4 click: Click: Fill from box
-@obj.item human|/obj/item/card/emag
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/stack/material/glass menu: Add glass
 human|/obj/item/stack/material/glass menu: Move To Top
 human|/obj/item/stack/material/glass menu: Toggle Digestable (refused: You can't do that.)

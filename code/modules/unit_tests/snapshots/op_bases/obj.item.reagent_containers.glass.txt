@@ -10,6 +10,13 @@ human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Set transfer amount
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Dip into it
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Open or close the lid
+human|/obj/item/kit menu: Set transfer amount
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/multitool menu: Dip into it
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Open or close the lid

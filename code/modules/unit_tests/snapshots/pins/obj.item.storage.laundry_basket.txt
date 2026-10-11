@@ -35,18 +35,12 @@
 @obj.item.storage human|/obj/item/card/id
 +0 menu: Empty contents
 +5 menu: Switch gathering method (refused: You can't do that.)
-@obj human|/obj/item/kit
+@obj.item.storage human|/obj/item/kit
 +1 menu: Empty contents
-+3 menu: Open
-+4 menu: Put in
 +5 menu: Switch gathering method (refused: You can't do that.)
-@obj human|/obj/item/storage
--click: Click: Collect
+@obj.item.storage human|/obj/item/storage
 +1 menu: Empty contents
-+3 menu: Open
-+4 menu: Put in
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
 @obj.item.storage human|/obj/item
 +0 menu: Empty contents
 +4 menu: Switch gathering method (refused: You can't do that.)

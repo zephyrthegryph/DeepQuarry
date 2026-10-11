@@ -1,3 +1,18 @@
+human|/obj/item/assembly/signaler menu: Hammer on the door
+human|/obj/item/assembly/signaler menu: Hold the door open
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Open
+human|/obj/item/assembly/signaler menu: Ring the bell
+human|/obj/item/assembly/signaler menu: Signaler
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler click: Click: Signaler
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use item
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
 human|/obj/item/cell menu: Climb
 human|/obj/item/cell menu: Drain its charge (refused: not in your hand)

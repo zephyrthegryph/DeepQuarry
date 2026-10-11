@@ -87,11 +87,14 @@
 +4 menu: Remove DNA (refused: You can't do that.)
 +6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 +7 click: Click: Fit
-@obj.item human|/obj/item/card/emag
-+0 menu: Fit
-+1 menu: Give DNA (refused: You can't do that.)
-+3 menu: Remove DNA (refused: You can't do that.)
-+5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/card/emag menu: Fit
+human|/obj/item/card/emag menu: Give DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 @obj.item human|/obj/item
 -menu: Use
 -click: Click: Use

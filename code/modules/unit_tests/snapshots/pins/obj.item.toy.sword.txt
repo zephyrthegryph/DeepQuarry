@@ -32,15 +32,11 @@
 -menu: Name Plushie (refused: You can't do that.)
 +3 menu: Recolor
 @obj.item.toy human|/obj/item/kit
--menu: Use
-+1 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +3 menu: Recolor
 @obj.item.toy human|/obj/item/storage
--menu: Use
--click: Click: Use
-+1 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +3 menu: Recolor
-+5 click: Click: Item
 @obj.item.toy human|/obj/item
 -menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor

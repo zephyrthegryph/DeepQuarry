@@ -44,8 +44,11 @@
 -click: Click: Collect
 +1 menu: Load
 +4 click: Click: Load
-@obj.item human|/obj/item/card/emag
-+0 menu: Load
+human|/obj/item/card/emag menu: Load
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 @obj.item human|/obj/item
 -menu: Use
 -click: Click: Use

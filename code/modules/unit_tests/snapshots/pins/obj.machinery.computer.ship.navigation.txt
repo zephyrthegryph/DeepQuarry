@@ -26,6 +26,6 @@
 @obj.machinery.computer human|/obj/item
 +1 menu: Emote Beyond
 @obj human|/obj/item/gripper
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 +1 menu: Emote Beyond
 keys: climb.climb, climb.climb_menu, close, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, ship_console_use, ship_emote_beyond, ship_ghost_view, ship_silicon_use, silicon_hand, sync, use_gripper, use_item

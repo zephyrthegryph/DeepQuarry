@@ -58,6 +58,6 @@ human|none click: Click: Use
 +0 menu: Climb
 +3 menu: Use
 +4 click: Click: Use
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Use item
 keys: change_radius, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shield_gen_open_ui, shield_gen_swipe_id, silicon_hand, strengthen_rate, target_field_strength, toggle, use_wrench, z_range

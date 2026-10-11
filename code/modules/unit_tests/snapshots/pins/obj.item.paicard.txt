@@ -50,7 +50,10 @@
 -click: Click: Collect
 +3 menu: Use
 +4 click: Click: Use
-@obj.item human|/obj/item/card/emag
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/paiparts/cell menu: Install part (refused: <span class='warning'>You would need to remove the installed %I% first!</span>)
 human|/obj/item/paiparts/cell menu: Move To Top
 human|/obj/item/paiparts/cell menu: Toggle Digestable (refused: You can't do that.)

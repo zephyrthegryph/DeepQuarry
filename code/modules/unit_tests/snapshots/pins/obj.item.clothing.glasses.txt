@@ -1,69 +1,17 @@
 @obj.item.clothing human|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
-+5 click: Click: Use
 @obj.item.clothing robot|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
-+6 click: Click: Use
 @obj.item ai|none
 @obj.item ghost|none
 @obj.item.clothing human|/obj/item/tool/screwdriver
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/tool/crowbar
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/tool/wrench
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/tool/wirecutters
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/multitool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/weldingtool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/stack/cable_coil
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+5 click: Click: Use
 @obj.item.clothing human|/obj/item/stack/material/steel
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 @obj.item.clothing human|/obj/item/card/id
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+5 click: Click: Use
 @obj.item.clothing human|/obj/item/kit
--menu: Accessory attached hand
--menu: Collar tag item
 @obj.item.clothing human|/obj/item/storage
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+5 click: Click: Collect
 @obj.item.clothing human|/obj/item
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
-+4 click: Click: Use
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, glasses_toggle_self, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

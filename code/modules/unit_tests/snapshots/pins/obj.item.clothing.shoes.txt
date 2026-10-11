@@ -1,13 +1,11 @@
 @obj.item.clothing human|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +4 menu: Shoes draw knife hand
 +5 menu: Switch Shoe Layer (refused: You can't do that.)
 +8 click: Click: Shoes draw knife hand
 @obj.item.clothing robot|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +5 menu: Shoes draw knife hand
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
@@ -17,9 +15,7 @@
 +0 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Switch Shoe Layer (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/tool/screwdriver
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -27,9 +23,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/crowbar
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -37,9 +31,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/wrench
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -47,9 +39,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/wirecutters
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -57,9 +47,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/multitool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -67,9 +55,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/weldingtool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -77,9 +63,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/stack/cable_coil
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +5 menu: Shoes draw knife hand
@@ -87,9 +71,7 @@
 +7 menu: Switch Shoe Layer (refused: You can't do that.)
 +10 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/stack/material/steel
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand
@@ -97,9 +79,7 @@
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/card/id
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +5 menu: Shoes draw knife hand
@@ -107,27 +87,19 @@
 +7 menu: Switch Shoe Layer (refused: You can't do that.)
 +10 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/kit
--menu: Accessory attached hand
--menu: Collar tag item
 +2 menu: Draw Boot Knife (refused: You can't do that.)
 +3 menu: Drop onto
 +5 menu: Shoes draw knife hand
 +6 menu: Shoes stuff item
 +7 menu: Switch Shoe Layer (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/storage
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
 +2 menu: Draw Boot Knife (refused: You can't do that.)
 +3 menu: Drop onto
 +5 menu: Shoes draw knife hand
 +6 menu: Shoes stuff item
 +7 menu: Switch Shoe Layer (refused: You can't do that.)
-+10 click: Click: Collect
 @obj.item.clothing human|/obj/item
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto
 +4 menu: Shoes draw knife hand

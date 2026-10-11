@@ -117,7 +117,7 @@ human|none click: Click: Ui open
 +8 click: Click: Ui open
 @obj human|/obj/item/clothing/head/helmet/space/void
 @obj human|/obj/item/clothing/suit/space/void
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +0 menu: Eject Cycler

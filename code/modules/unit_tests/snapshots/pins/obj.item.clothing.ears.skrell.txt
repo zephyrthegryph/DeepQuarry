@@ -1,0 +1,57 @@
+@obj.item.clothing human|none
+-click: Click: Use
++1 menu: Ears take off hand
++6 click: Click: Ears take off hand
+@obj.item.clothing robot|none
+-click: Click: Use
++1 menu: Ears take off hand
++7 click: Click: Ears take off hand
+@obj.item ai|none
+@obj.item ghost|none
+@obj.item.clothing human|/obj/item/tool/screwdriver
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/tool/crowbar
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/tool/wrench
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/tool/wirecutters
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/multitool
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/weldingtool
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/stack/cable_coil
+-click: Click: Use
++1 menu: Ears take off hand
++6 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/card/id
+-click: Click: Use
++1 menu: Ears take off hand
++6 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item/kit
++2 menu: Ears take off hand
+@obj.item.clothing human|/obj/item/storage
+-click: Click: Collect
++2 menu: Ears take off hand
++6 click: Click: Ears take off hand
+@obj.item.clothing human|/obj/item
+-click: Click: Use
++1 menu: Ears take off hand
++5 click: Click: Ears take off hand
+keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, ears_take_off_hand, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

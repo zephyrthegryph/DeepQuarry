@@ -70,7 +70,7 @@
 @obj human|/obj/item/taperoll
 -menu: Open
 +3 menu: Open (refused: Access denied.)
-@obj human|/obj/item/assembly/signaler
+@obj.machinery human|/obj/item/assembly/signaler
 -menu: Open
 +3 menu: Open (refused: Access denied.)
 @obj human|/obj/item/pai_cable

@@ -35,16 +35,12 @@
 @obj.item.clothing.glasses human|/obj/item/card/id
 -menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)
-@obj.item.clothing human|/obj/item/kit
--menu: Accessory attached hand
--menu: Collar tag item
+@obj.item.clothing.glasses human|/obj/item/kit
+-menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)
-@obj.item.clothing human|/obj/item/storage
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+@obj.item.clothing.glasses human|/obj/item/storage
+-menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)
-+6 click: Click: Collect
 @obj.item.clothing.glasses human|/obj/item
 -menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)
