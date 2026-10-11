@@ -4,21 +4,30 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::Arc,
 };
-
 type LeafId = (usize, usize);
 struct Leaf<Q, A, D> {
     owner: Arc<[Observation<Q, A, D>]>,
     subscribers: BTreeSet<u64>,
+    domains: BTreeSet<D>,
 }
-/// Owned by Resident, under its existing lock. Variant addresses identify only
-/// live store allocations; removal precedes destruction. They are not proof.
+struct Variant<D> {
+    bucket: u128,
+    leaves: BTreeSet<LeafId>,
+    certificates: BTreeSet<(D, u128)>,
+    uncovered: BTreeSet<D>,
+}
+/// SAME live scheduling index. Addresses identify allocations, never validity.
 pub(super) struct Incidence<Q, A, D> {
     leaves: BTreeMap<LeafId, Leaf<Q, A, D>>,
-    variants: BTreeMap<u64, (u128, BTreeSet<LeafId>)>,
-    domains: Vec<(D, BTreeSet<LeafId>)>,
-    certificates: Vec<(D, u128, BTreeSet<u64>)>,
-    uncovered: Vec<(D, BTreeSet<u64>)>,
+    variants: BTreeMap<u64, Variant<D>>,
+    domains: BTreeMap<D, BTreeSet<LeafId>>,
+    certificates: BTreeMap<(D, u128), BTreeSet<u64>>,
+    uncovered: BTreeMap<D, BTreeSet<u64>>,
     conflicting: BTreeSet<u64>,
+    // Drop of generic artifact owners has no domain trait bounds. Only the
+    // Ord+Clone insertion path can populate this index and installs its exact
+    // monomorphized removal operation; no callback or external policy is accepted.
+    remove_ordered: Option<fn(&mut Self, u64)>,
     #[cfg(test)]
     pub(super) removal_visits: usize,
 }
@@ -27,10 +36,11 @@ impl<Q, A, D> Default for Incidence<Q, A, D> {
         Self {
             leaves: BTreeMap::new(),
             variants: BTreeMap::new(),
-            domains: Vec::new(),
-            certificates: Vec::new(),
-            uncovered: Vec::new(),
+            domains: BTreeMap::new(),
+            certificates: BTreeMap::new(),
+            uncovered: BTreeMap::new(),
             conflicting: BTreeSet::new(),
+            remove_ordered: None,
             #[cfg(test)]
             removal_visits: 0,
         }
@@ -41,30 +51,6 @@ impl<Q, A, D> Incidence<Q, A, D> {
         for leaf in self.leaves.values() {
             visit(&leaf.owner);
         }
-    }
-    pub(super) fn domain_buffer(&self) -> (usize, usize, usize) {
-        let size = std::mem::size_of::<(D, BTreeSet<LeafId>)>();
-        (
-            self.domains.as_ptr() as usize,
-            self.domains.len() * size,
-            self.domains.capacity() * size,
-        )
-    }
-    pub(super) fn certificate_buffer(&self) -> (usize, usize, usize) {
-        let size = std::mem::size_of::<(D, u128, BTreeSet<u64>)>();
-        (
-            self.certificates.as_ptr() as usize,
-            self.certificates.len() * size,
-            self.certificates.capacity() * size,
-        )
-    }
-    pub(super) fn uncovered_buffer(&self) -> (usize, usize, usize) {
-        let size = std::mem::size_of::<(D, BTreeSet<u64>)>();
-        (
-            self.uncovered.as_ptr() as usize,
-            self.uncovered.len() * size,
-            self.uncovered.capacity() * size,
-        )
     }
     pub(super) fn counts(&self) -> (usize, usize, usize, usize) {
         (
@@ -78,44 +64,61 @@ impl<Q, A, D> Incidence<Q, A, D> {
         )
     }
     pub(super) fn remove(&mut self, variant: u64) {
-        // Fresh physical variants have no subscriptions to remove. Insertion
-        // calls this common replacement path, so reject absent variants before
-        // walking the complete certificate/domain subscription roster.
-        let Some((_, ids)) = self.variants.remove(&variant) else {
+        if let Some(remove) = self.remove_ordered {
+            remove(self, variant);
+        }
+    }
+}
+impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
+    fn remove_exact(&mut self, variant: u64) {
+        let Some(previous) = self.variants.remove(&variant) else {
             return;
         };
         self.conflicting.remove(&variant);
-        self.uncovered.retain_mut(|(_, members)| {
+        for domain in previous.uncovered {
             #[cfg(test)]
             {
                 self.removal_visits += 1;
             }
+            let members = self
+                .uncovered
+                .get_mut(&domain)
+                .expect("indexed uncovered domain");
             members.remove(&variant);
-            !members.is_empty()
-        });
-        self.certificates.retain_mut(|(_, _, members)| {
+            if members.is_empty() {
+                self.uncovered.remove(&domain);
+            }
+        }
+        for certificate in previous.certificates {
             #[cfg(test)]
             {
                 self.removal_visits += 1;
             }
+            let members = self
+                .certificates
+                .get_mut(&certificate)
+                .expect("indexed certificate");
             members.remove(&variant);
-            !members.is_empty()
-        });
-        for id in ids {
+            if members.is_empty() {
+                self.certificates.remove(&certificate);
+            }
+        }
+        for id in previous.leaves {
             let leaf = self.leaves.get_mut(&id).expect("indexed receipt leaf");
             leaf.subscribers.remove(&variant);
             if !leaf.subscribers.is_empty() {
                 continue;
             }
-            let _leaf = self.leaves.remove(&id).expect("indexed receipt leaf");
-            self.domains.retain_mut(|(_, members)| {
+            let leaf = self.leaves.remove(&id).expect("indexed receipt leaf");
+            for domain in leaf.domains {
+                let members = self.domains.get_mut(&domain).expect("indexed leaf domain");
                 members.remove(&id);
-                !members.is_empty()
-            });
+                if members.is_empty() {
+                    self.domains.remove(&domain);
+                }
+            }
         }
     }
-}
-impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     pub(super) fn insert(
         &mut self,
         variant: u64,
@@ -123,6 +126,9 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
         receipt: &Receipt<Q, A, D>,
         versions: &[(D, u128)],
     ) {
+        if self.remove_ordered.is_none() {
+            self.remove_ordered = Some(Self::remove_exact);
+        }
         self.remove(variant);
         let mut ids = BTreeSet::new();
         receipt.visit_storage(|view| {
@@ -139,75 +145,67 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             let leaf = self.leaves.entry(id).or_insert_with(|| {
                 let domains: BTreeSet<_> = owner.iter().map(|read| read.domain.clone()).collect();
                 for domain in &domains {
-                    match self
-                        .domains
-                        .binary_search_by(|(current, _)| current.cmp(domain))
-                    {
-                        Ok(position) => {
-                            self.domains[position].1.insert(id);
-                        }
-                        Err(position) => {
-                            self.domains
-                                .insert(position, (domain.clone(), BTreeSet::from([id])));
-                        }
-                    }
+                    self.domains.entry(domain.clone()).or_default().insert(id);
                 }
                 Leaf {
                     owner: owner.clone(),
                     subscribers: BTreeSet::new(),
+                    domains,
                 }
             });
-            // The retained owner prevents address recycling while indexed.
             debug_assert!(Arc::ptr_eq(owner, &leaf.owner));
             leaf.subscribers.insert(variant);
         });
-        self.variants.insert(variant, (bucket, ids));
+        let mut supplied = BTreeMap::new();
+        for (domain, version) in versions {
+            supplied
+                .entry(domain.clone())
+                .and_modify(|value: &mut Option<u128>| {
+                    if *value != Some(*version) {
+                        *value = None;
+                    }
+                })
+                .or_insert(Some(*version));
+        }
+        let mut row = Variant {
+            bucket,
+            leaves: ids,
+            certificates: BTreeSet::new(),
+            uncovered: BTreeSet::new(),
+        };
         let domains: BTreeSet<_> = receipt.iter().map(|read| read.domain.clone()).collect();
         for domain in domains {
-            let mut supplied = versions
-                .iter()
-                .filter(|(d, _)| d == &domain)
-                .map(|(_, v)| *v);
-            let Some(version) = supplied.next() else {
-                match self
-                    .uncovered
-                    .binary_search_by(|(current, _)| current.cmp(&domain))
-                {
-                    Ok(position) => {
-                        self.uncovered[position].1.insert(variant);
-                    }
-                    Err(position) => self
-                        .uncovered
-                        .insert(position, (domain, BTreeSet::from([variant]))),
+            match supplied.get(&domain) {
+                None => {
+                    self.uncovered
+                        .entry(domain.clone())
+                        .or_default()
+                        .insert(variant);
+                    row.uncovered.insert(domain);
                 }
-                continue;
-            };
-            if supplied.any(|other| other != version) {
-                self.conflicting.insert(variant);
-                continue;
-            }
-            match self
-                .certificates
-                .binary_search_by(|(d, v, _)| (d, *v).cmp(&(&domain, version)))
-            {
-                Ok(position) => {
-                    self.certificates[position].2.insert(variant);
+                Some(None) => {
+                    self.conflicting.insert(variant);
                 }
-                Err(position) => self
-                    .certificates
-                    .insert(position, (domain, version, BTreeSet::from([variant]))),
+                Some(Some(version)) => {
+                    let certificate = (domain, *version);
+                    self.certificates
+                        .entry(certificate.clone())
+                        .or_default()
+                        .insert(variant);
+                    row.certificates.insert(certificate);
+                }
             }
         }
+        self.variants.insert(variant, row);
     }
     pub(super) fn certificate_domains(&self) -> Vec<D> {
         self.certificates
-            .iter()
-            .map(|(domain, _, _)| domain.clone())
+            .keys()
+            .map(|(domain, _)| domain.clone())
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
     }
-    // Current versions are supplied by the existing immutable request admission.
     pub(super) fn certified(&self, current: &[(D, Option<u128>)]) -> BTreeSet<u64> {
         self.certified_with_local(current, None)
     }
@@ -216,23 +214,20 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
         current: &[(D, Option<u128>)],
         local: Option<&D>,
     ) -> BTreeSet<u64> {
+        // Preserve the existing first-occurrence rule for duplicate current
+        // domains, but index the request roster once instead of rescanning it.
+        let mut versions = BTreeMap::new();
+        for (domain, version) in current {
+            versions.entry(domain.clone()).or_insert(*version);
+        }
         let mut rejected = self.conflicting.clone();
         for (domain, members) in &self.uncovered {
             if local != Some(domain) {
                 rejected.extend(members);
             }
         }
-
-        for (domain, version, members) in &self.certificates {
-            if local == Some(domain) {
-                continue;
-            }
-            if current
-                .iter()
-                .find(|(d, _)| d == domain)
-                .and_then(|(_, v)| *v)
-                != Some(*version)
-            {
+        for ((domain, version), members) in &self.certificates {
+            if local != Some(domain) && versions.get(domain).copied().flatten() != Some(*version) {
                 rejected.extend(members);
             }
         }
@@ -242,35 +237,24 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             .copied()
             .collect()
     }
-    /// Route live variants into their existing store buckets. Hashes locate only;
-    /// callers still check live allocation identity and perform exact admission.
     pub(super) fn affected_buckets(&self, affected: &BTreeSet<u64>) -> BTreeSet<u128> {
         affected
             .iter()
-            .filter_map(|id| self.variants.get(id).map(|(bucket, _)| *bucket))
+            .filter_map(|id| self.variants.get(id).map(|row| row.bucket))
             .collect()
     }
-    /// Each supplied domain includes all its subscribed variants. Callers must
-    /// include every unversioned/unproved domain, not just known changed ones.
-    /// This result cannot authorize replay omission or return producer values.
     pub(super) fn affected<'a>(&self, domains: impl IntoIterator<Item = &'a D>) -> BTreeSet<u64>
     where
         D: 'a,
     {
         domains
             .into_iter()
-            .filter_map(|domain| {
-                self.domains
-                    .binary_search_by(|(current, _)| current.cmp(domain))
-                    .ok()
-                    .map(|position| &self.domains[position].1)
-            })
+            .filter_map(|domain| self.domains.get(domain))
             .flat_map(|ids| ids.iter())
             .flat_map(|id| self.leaves[id].subscribers.iter().copied())
             .collect()
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;

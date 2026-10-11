@@ -188,3 +188,50 @@ fn fresh_incidence_variants_skip_removal_walk_and_replacement_keeps_exact_edges(
     store.retain_current_keys(std::iter::empty());
     assert_eq!(store.visit_incidence_storage(|_| {}), Some((0, 0, 0, 0)));
 }
+
+#[test]
+fn ordered_incidence_replacement_touches_only_its_reverse_domains() {
+    let mut index = incidence::Incidence::default();
+    for domain in (0u32..1024).rev() {
+        let receipt: Receipt<u32, bool, u32> = vec![Observation {
+            query: domain,
+            answer: false,
+            domain,
+        }]
+        .into();
+        index.insert(domain as u64, domain as u128, &receipt, &[(domain, 7)]);
+    }
+    assert_eq!(index.removal_visits, 0);
+    let current: Vec<_> = (0u32..1024).rev().map(|domain| (domain, Some(7))).collect();
+    assert_eq!(index.certified(&current).len(), 1024);
+    index.remove(511);
+    assert_eq!(
+        index.removal_visits, 1,
+        "removal visits its one certificate, not global domains"
+    );
+    assert!(index.affected([&511]).is_empty());
+    assert_eq!(index.affected([&512]), BTreeSet::from([512]));
+    let receipt: Receipt<u32, bool, u32> = vec![Observation {
+        query: 511,
+        answer: false,
+        domain: 511,
+    }]
+    .into();
+    index.insert(511, 9, &receipt, &[(511, 7), (511, 8)]);
+    assert!(
+        !index.certified(&current).contains(&511),
+        "conflicting certificates never authorize skipping replay"
+    );
+    index.insert(511, 9, &receipt, &[]);
+    assert!(!index.certified(&current).contains(&511));
+    assert!(index
+        .certified_with_local(&current, Some(&511))
+        .contains(&511));
+    let mut changed = current;
+    changed.iter_mut().find(|row| row.0 == 512).unwrap().1 = Some(8);
+    assert!(!index.certified(&changed).contains(&512));
+    for variant in 0..1024 {
+        index.remove(variant);
+    }
+    assert_eq!(index.counts(), (0, 0, 0, 0));
+}

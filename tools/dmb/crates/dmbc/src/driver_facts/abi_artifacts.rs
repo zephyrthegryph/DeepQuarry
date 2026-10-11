@@ -89,9 +89,6 @@ impl AbiArtifacts {
     pub(crate) fn visit_group_storage(&self, visitor: impl FnMut(usize, usize, usize)) {
         self.groups.visit_storage(visitor);
     }
-    pub(crate) fn visit_incidence_buffer(&self, visit: impl FnMut(usize, usize, usize)) {
-        self.store.visit_incidence_buffer(visit);
-    }
     pub fn structural_selection_counts(&self) -> (usize, usize) {
         (
             self.batch_rows_selected.load(Ordering::Relaxed),

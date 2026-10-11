@@ -129,9 +129,6 @@ impl HeapCensus {
                 }
             }
         });
-        artifacts.visit_incidence_buffer(|address, len, capacity| {
-            self.buffer("prepared_abi.incidence_domains", address, len, capacity);
-        });
         if let Some((leaves, variants, domains, subscriptions)) =
             artifacts.visit_incidence_storage(|leaf| {
                 self.slice("prepared_abi.incidence_reads", leaf, true);

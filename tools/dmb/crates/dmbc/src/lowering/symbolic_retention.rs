@@ -76,16 +76,6 @@ impl SessionSymbolicMemo {
             census.arc_object("session_symbolic.observed_core", &owner.values);
             // Receipt leaf payloads are visited through the actual records below,
             // including nested answers, before any shared allocation is deduplicated.
-            owner
-                .values
-                .visit_incidence_buffer(|address, payload, capacity| {
-                    census.exposed_buffer(
-                        "session_symbolic.incidence_buffers",
-                        address,
-                        payload,
-                        capacity,
-                    );
-                });
             census.unknown("session_symbolic.incidence", "private certificate subscription, uncovered variant and leaf subscriber BTree nodes are not exposed");
             owner.values.visit_storage(|view| match view {
                 dm_session::ArtifactStorageView::Bucket {

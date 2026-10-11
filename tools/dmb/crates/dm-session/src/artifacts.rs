@@ -154,17 +154,6 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         index.visit_storage(&mut visit);
         Some(index.counts())
     }
-    pub fn visit_incidence_buffer(&self, mut visit: impl FnMut(usize, usize, usize)) {
-        let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(index) = &state.incidence {
-            let (address, len, capacity) = index.domain_buffer();
-            visit(address, len, capacity);
-            let (address, len, capacity) = index.certificate_buffer();
-            visit(address, len, capacity);
-            let (address, len, capacity) = index.uncovered_buffer();
-            visit(address, len, capacity);
-        }
-    }
     pub fn with_limit(limit: usize) -> Self {
         Self {
             state: Mutex::new(Resident {
