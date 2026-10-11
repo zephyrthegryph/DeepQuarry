@@ -58,3 +58,61 @@ fn prior_owner_never_hides_current_collision_or_allocator_errors() {
         Err(LinkError::DuplicateFixed(_))
     ));
 }
+
+#[test]
+fn retained_assignment_recipe_reuses_after_current_validation_and_rejects_policy_changes() {
+    let retained = RetainedBindings::default();
+    let first = retained.build(inventory(b"before")).unwrap();
+    let body = retained.build(inventory(b"after")).unwrap();
+    assert_eq!(retained.assignment_reuses(), 1);
+    assert!(first.binding_tables().same_owner(&body.binding_tables()));
+    assert_eq!(
+        body.content(Key::String(SymbolId::of("name"))),
+        Some(&b"after"[..])
+    );
+    let mut conflict = inventory(b"after");
+    conflict.entries.push(Entry {
+        key: Key::String(SymbolId::of("name")),
+        content: b"conflict".to_vec().into(),
+    });
+    assert!(matches!(
+        retained.build(conflict),
+        Err(LinkError::ContentCollision(_))
+    ));
+    assert_eq!(retained.assignment_reuses(), 1);
+    let mut invalid = inventory(b"after");
+    invalid.orders.insert(Table::String, vec![]);
+    assert_eq!(
+        retained.build(invalid).err(),
+        Some(LinkError::IncompleteOrder(Table::String))
+    );
+    assert_eq!(retained.assignment_reuses(), 1);
+    let mut fixed = inventory(b"after");
+    fixed.fixed.push((Key::String(SymbolId::of("name")), 7));
+    let fresh = LinkTables::build(fixed.clone()).unwrap();
+    let changed = retained.build(fixed).unwrap();
+    assert_eq!(changed.assignments(), fresh.assignments());
+    assert!(!changed.binding_tables().same_owner(&body.binding_tables()));
+    assert_eq!(retained.assignment_reuses(), 1);
+    let mut added = inventory(b"after");
+    let name = SymbolId::of("added");
+    added.entries.push(Entry {
+        key: Key::String(name),
+        content: b"added".to_vec().into(),
+    });
+    added.spellings.push((name, Arc::from(&b"added"[..])));
+    let fresh = LinkTables::build(added.clone()).unwrap();
+    let current = retained.build(added).unwrap();
+    assert_eq!(current.assignments(), fresh.assignments());
+    assert_eq!(retained.assignment_reuses(), 1);
+    let removed = retained.build(inventory(b"current")).unwrap();
+    assert_eq!(
+        removed.assignments(),
+        LinkTables::build(inventory(b"current"))
+            .unwrap()
+            .assignments()
+    );
+    assert_eq!(retained.assignment_reuses(), 1);
+    retained.build(inventory(b"last")).unwrap();
+    assert_eq!(retained.assignment_reuses(), 2);
+}

@@ -128,6 +128,8 @@ pub enum StatementKind {
 pub struct ParsedBody {
     pub statements: Vec<Statement>,
     pub diagnostics: Vec<Diagnostic>,
+    /// Source-issued grammar context, kept separate to preserve semantic error order.
+    pub pending_bodies: Vec<crate::PendingBody>,
 }
 
 /// Parse the body of a structural `Proc` or `Verb` item. Unsupported forms are retained as
@@ -150,6 +152,22 @@ pub fn parse_body_items(items: &[Item]) -> ParsedBody {
     let mut result = ParsedBody::default();
     result.statements = parse_sequence(items, &mut result.diagnostics);
     result
+}
+
+/// Issue pending-body context from the complete current lexical input.
+pub fn parse_body_items_with_source(items: &[Item], source: &str) -> ParsedBody {
+    parse_body_items_with_context(items, source, &|_| None)
+}
+
+pub fn parse_body_items_with_context(
+    items: &[Item],
+    source: &str,
+    context: &dyn Fn(usize) -> Option<ItemKind>,
+) -> ParsedBody {
+    let mut parsed = parse_body_items(items);
+    parsed.pending_bodies =
+        crate::pending_body::pending_bodies(&parsed.statements, source, context);
+    parsed
 }
 
 fn parse_sequence(items: &[Item], diagnostics: &mut Vec<Diagnostic>) -> Vec<Statement> {

@@ -466,14 +466,22 @@ pub struct IssuedBodyInput<'a> {
     compact: ItemView<'a>,
     source: &'a str,
 }
-impl IssuedBodyInput<'_> {
+impl<'a> IssuedBodyInput<'a> {
     /// Lexical prefilter minted with the exact relative source recipe. This is
     /// only a candidate fact; actual declarations still require semantic capture.
     pub fn may_contain_stored_declarations(&self) -> bool {
         self.occurrence.stored_candidates
     }
-    pub fn source(&self) -> &str {
+    pub fn source(&self) -> &'a str {
         self.source
+    }
+    /// Current lexical context outside the envelope, issued from the same private arena.
+    pub fn termination(&self) -> dm_syntax::BodyTermination {
+        dm_syntax::termination_after_with_context(
+            &self.issuer.issued_arena,
+            self.occurrence.expanded_span.end,
+            &|offset| self.issuer.issued_syntax.declaration_header_at(offset),
+        )
     }
     pub fn compact(&self) -> ItemView<'_> {
         self.compact
@@ -559,7 +567,11 @@ impl ParsedBody<'_> {
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Self {
         self.statement_attempted = true;
-        let parsed = dm_syntax::parse_body_items(&self.item.children);
+        let parsed = dm_syntax::parse_body_items_with_context(
+            &self.item.children,
+            &self.issuer.issued_arena,
+            &|offset| self.issuer.issued_syntax.declaration_header_at(offset),
+        );
         fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
             for item in items {
                 if item.header.trim_start().starts_with("var/") {

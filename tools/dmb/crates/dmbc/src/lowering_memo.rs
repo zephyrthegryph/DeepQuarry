@@ -2,7 +2,7 @@
 //! A matching complete issuer domain version certifies its recorded answers;
 //! changed or uncertified domains still recheck every exact semantic answer.
 // Native formal scope rules change both successful code and diagnostics.
-pub const PROCEDURE_VERSION: u32 = 20;
+pub const PROCEDURE_VERSION: u32 = 21;
 #[cfg(test)]
 use dm_ir::ResolvedMeaning;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
@@ -689,7 +689,8 @@ pub(crate) fn key(
     let tree = &frontend.snapshot.tree;
     let member = tree.member(body.member)?;
     let owner = tree.type_node(member.owner)?.path;
-    let source = frontend.expanded.text.get(body.expanded_span.range())?;
+    let issued = frontend.body_input(body).ok()?;
+    let source = issued.source();
     let mut key = key_recipe::PREFIX.to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.extend_from_slice(&owner.bits().to_le_bytes());
@@ -706,6 +707,7 @@ pub(crate) fn key(
         &member.metadata.procedure.as_ref()?.canonical_bytes(),
     );
     part(&mut key, source.as_bytes());
+    key.push(issued.termination().canonical_tag());
     // Provenance is rebuilt from producer-issued relative source anchors.
     // Expanded __FILE__/__LINE__ values, when executable, are already in source.
     Some(key)

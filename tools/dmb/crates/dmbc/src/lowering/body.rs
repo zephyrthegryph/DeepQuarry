@@ -387,8 +387,8 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                 Some(&debug),
             ),
         }
-    }
-    .map_err(|errors| {
+    };
+    let code = super::grammar::append(code, statements.as_deref()).map_err(|errors| {
         if let Some(capture) = capture {
             let relative = errors
                 .iter()

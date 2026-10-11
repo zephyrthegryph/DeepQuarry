@@ -201,8 +201,22 @@ pub fn visit_tokens_while(
 
 /// First nontrivia lookahead token after an exact lexer boundary. Lexical errors
 /// before that token decline the answer rather than inventing a cursor.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LexerLookahead {
+    Token(SpanToken),
+    End,
+    Unknown,
+}
 pub fn next_significant_token(source: &str, after: usize) -> Option<SpanToken> {
-    let suffix = source.get(after..)?;
+    match lookahead_after(source, after) {
+        LexerLookahead::Token(token) => Some(token),
+        _ => None,
+    }
+}
+pub fn lookahead_after(source: &str, after: usize) -> LexerLookahead {
+    let Some(suffix) = source.get(after..) else {
+        return LexerLookahead::Unknown;
+    };
     let mut found = None;
     let diagnostics = visit_tokens_while(suffix, |mut token| {
         if matches!(
@@ -216,7 +230,11 @@ pub fn next_significant_token(source: &str, after: usize) -> Option<SpanToken> {
         found = Some(token);
         false
     });
-    diagnostics.is_empty().then_some(found).flatten()
+    if !diagnostics.is_empty() {
+        LexerLookahead::Unknown
+    } else {
+        found.map_or(LexerLookahead::End, LexerLookahead::Token)
+    }
 }
 
 #[cfg(test)]

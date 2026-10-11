@@ -1,10 +1,11 @@
 //! Borrowed current key inputs; exact bytes remain the sole persisted format.
 use std::{ops::Range, sync::Arc};
-pub(super) const PREFIX: &[u8] = b"dmbc-procedure-memo-v14-dynamic-verb-array-type\0";
+pub(super) const PREFIX: &[u8] = b"dmbc-procedure-memo-v15-pending-loop-body-context\0";
 pub(crate) struct CurrentKey<'a> {
     prefix: [u8; 41],
     pub metadata: &'a Arc<dm_ir::ProcedureMetadata>,
     source: &'a [u8],
+    termination: u8,
     references: bool,
     selections: bool,
 }
@@ -56,6 +57,7 @@ impl<'a> CurrentKey<'a> {
         references: bool,
         selections: bool,
     ) -> Option<Self> {
+        let issued = frontend.body_input(body).ok()?;
         let tree = &frontend.snapshot.tree;
         let member = tree.member(body.member)?;
         let mut prefix = [0; 41];
@@ -68,11 +70,8 @@ impl<'a> CurrentKey<'a> {
         Some(Self {
             prefix,
             metadata: member.metadata.procedure.as_ref()?,
-            source: frontend
-                .expanded
-                .text
-                .get(body.expanded_span.range())?
-                .as_bytes(),
+            source: issued.source().as_bytes(),
+            termination: issued.termination().canonical_tag(),
             references,
             selections,
         })
@@ -85,6 +84,7 @@ impl<'a> CurrentKey<'a> {
             key.extend_from_slice(&(part.len() as u64).to_le_bytes());
             key.extend_from_slice(part);
         }
+        key.push(self.termination);
         if self.references {
             key.push(0);
             key.extend_from_slice(dm_ir::SELECTED_REFERENCES_POLICY);
@@ -116,7 +116,9 @@ impl<'a> CurrentKey<'a> {
                     && r.tail == layout.tail
             },
         );
-        let mut tail = &key[layout.tail];
+        let Some(mut tail) = key[layout.tail].strip_prefix(&[self.termination]) else {
+            return false;
+        };
         if self.references {
             let Some(rest) = tail
                 .strip_prefix(&[0])

@@ -165,6 +165,7 @@ mod relocation_binding;
 pub use relocation_binding::{BindingAnswers, BoundRelocations, SourceBindingAccess};
 mod inventory_contribution;
 pub use inventory_contribution::{InventoryContribution, SharedContribution};
+mod assignment_recipe;
 mod bindings;
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
@@ -196,6 +197,15 @@ impl LinkTables {
         inventory: LinkInventory,
         previous: Option<&BindingTables>,
     ) -> Result<Self, LinkError> {
+        Self::build_with_assignment_recipe(inventory, previous, None, false)
+            .map(|(tables, _)| tables)
+    }
+    fn build_with_assignment_recipe(
+        inventory: LinkInventory,
+        previous: Option<&BindingTables>,
+        recipe: Option<&assignment_recipe::AssignmentRecipe>,
+        retain_recipe: bool,
+    ) -> Result<(Self, Option<assignment_recipe::AssignmentRecipe>), LinkError> {
         inventory.validate_shared()?;
         let mut spellings = BTreeMap::new();
         for (id, bytes) in inventory.spelling_iter() {
@@ -243,6 +253,22 @@ impl LinkTables {
                 }));
             }
         }
+        // Content/spelling/slot errors above remain current and retain their
+        // original order. Only previously successful exact allocation inputs
+        // may bypass numeric assignment derivation.
+        if let Some(previous) = previous.filter(|previous| {
+            recipe.is_some_and(|recipe| recipe.admits(&inventory, &content, &slots, previous))
+        }) {
+            return Ok((
+                Self {
+                    bindings: previous.clone(),
+                    content: Arc::new(content),
+                },
+                None,
+            ));
+        }
+        let captured =
+            retain_recipe.then(|| assignment_recipe::AssignmentRecipe::capture(&inventory));
         let mut indexes = BTreeMap::new();
         let mut occupied: BTreeMap<Table, BTreeSet<u32>> = BTreeMap::new();
         for (key, index) in inventory.fixed {
@@ -371,10 +397,13 @@ impl LinkTables {
                 }
             }
         }
-        Ok(Self {
-            bindings: BindingTables::validated(indexes, slots, previous),
-            content: Arc::new(content),
-        })
+        Ok((
+            Self {
+                bindings: BindingTables::validated(indexes, slots, previous),
+                content: Arc::new(content),
+            },
+            captured,
+        ))
     }
     pub fn link(
         &self,

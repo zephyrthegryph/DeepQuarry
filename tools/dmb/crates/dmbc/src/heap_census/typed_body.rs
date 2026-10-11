@@ -41,6 +41,7 @@ impl HeapCensus {
         self.typed_parsed_body(owner, body.parsed());
     }
     fn typed_parsed_body(&mut self, owner: &str, parsed: &dm_syntax::ParsedBody) {
+        self.vec_payload(owner, &parsed.pending_bodies);
         if self.vec_payload(owner, &parsed.diagnostics) {
             for diagnostic in &parsed.diagnostics {
                 self.string(owner, &diagnostic.message);
@@ -278,6 +279,7 @@ mod tests {
                 raw_header: String::from("return"),
             }],
             diagnostics: Vec::new(),
+            pending_bodies: Vec::new(),
         };
         let expected =
             parsed.statements.capacity() * size_of::<Statement>() + size_of::<Expr>() + 7 + 6;

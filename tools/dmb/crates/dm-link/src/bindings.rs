@@ -50,16 +50,41 @@ impl BindingTables {
 
 /// Latest successful validated binding owner for a live compiler session. This
 /// retains no contents, diagnostic locations, or historical variants.
+struct Current {
+    bindings: BindingTables,
+    recipe: Arc<super::assignment_recipe::AssignmentRecipe>,
+}
 #[derive(Default)]
 pub struct RetainedBindings {
-    current: std::sync::Mutex<Option<BindingTables>>,
+    current: std::sync::Mutex<Option<Arc<Current>>>,
+    assignment_reuses: std::sync::atomic::AtomicUsize,
 }
 impl RetainedBindings {
     /// Observe the current immutable owner without cloning or rebuilding tables.
     /// The callback must not call back into this retained owner.
     pub fn visit_current(&self, visitor: impl FnOnce(Option<&BindingTables>)) {
         let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        visitor(current.as_ref());
+        visitor(current.as_ref().map(|current| &current.bindings));
+    }
+    pub fn assignment_reuses(&self) -> usize {
+        self.assignment_reuses
+            .load(std::sync::atomic::Ordering::Relaxed)
+    }
+    /// Borrowed exact inline owners and recipe buffers; Arc control blocks and
+    /// private BTree backing remain explicitly unknown.
+    pub fn visit_recipe_storage(
+        &self,
+        mut buffer: impl FnMut(usize, usize, usize),
+        maps: impl FnMut(usize),
+    ) {
+        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(current) = current.as_ref() {
+            let size = std::mem::size_of::<Current>();
+            buffer(Arc::as_ptr(current) as usize, size, size);
+            let size = std::mem::size_of::<super::assignment_recipe::AssignmentRecipe>();
+            buffer(Arc::as_ptr(&current.recipe) as usize, size, size);
+            current.recipe.visit_storage(buffer, maps);
+        }
     }
     pub fn build(&self, inventory: LinkInventory) -> Result<LinkTables, LinkError> {
         let previous = self
@@ -67,8 +92,28 @@ impl RetainedBindings {
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone();
-        let tables = LinkTables::build_with_bindings(inventory, previous.as_ref())?;
-        *self.current.lock().unwrap_or_else(|e| e.into_inner()) = Some(tables.binding_tables());
+        let (tables, captured) = LinkTables::build_with_assignment_recipe(
+            inventory,
+            previous.as_ref().map(|current| &current.bindings),
+            previous.as_ref().map(|current| current.recipe.as_ref()),
+            true,
+        )?;
+        let recipe = match captured {
+            Some(recipe) => Arc::new(recipe),
+            None => {
+                self.assignment_reuses
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                previous
+                    .as_ref()
+                    .expect("exact assignment reuse has prior owner")
+                    .recipe
+                    .clone()
+            }
+        };
+        *self.current.lock().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(Current {
+            bindings: tables.binding_tables(),
+            recipe,
+        }));
         Ok(tables)
     }
 }

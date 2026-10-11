@@ -298,8 +298,52 @@ pub struct DeclarationSyntax {
     chunks: Arc<[CurrentSyntaxChunk]>,
     prefix: Arc<[usize]>,
     len: usize,
+    ordered_chunks: bool,
 }
 impl DeclarationSyntax {
+    /// Exact current parser header context. Procedure executable children are
+    /// deliberately excluded from declaration authority.
+    pub fn declaration_header_at(&self, offset: usize) -> Option<ItemKind> {
+        fn search<'a>(
+            len: usize,
+            item: &dyn Fn(usize) -> Option<ItemView<'a>>,
+            offset: usize,
+        ) -> Option<ItemKind> {
+            let (mut low, mut high) = (0, len);
+            while low < high {
+                let mid = low + (high - low) / 2;
+                if item(mid)?.header_span().start <= offset {
+                    low = mid + 1;
+                } else {
+                    high = mid;
+                }
+            }
+            let node = item(low.checked_sub(1)?)?;
+            if node.header_span().start == offset {
+                return matches!(
+                    node.kind(),
+                    ItemKind::Type | ItemKind::Var | ItemKind::Proc | ItemKind::Verb
+                )
+                .then_some(node.kind());
+            }
+            if offset >= node.span().end || !matches!(node.kind(), ItemKind::Type | ItemKind::Var) {
+                return None;
+            }
+            search(node.children().len(), &|index| node.child(index), offset)
+        }
+        if !self.ordered_chunks {
+            return None;
+        }
+        let index = self
+            .chunks
+            .partition_point(|chunk| chunk.offset <= offset)
+            .checked_sub(1)?;
+        let chunk = &self.chunks[index];
+        if offset.checked_sub(chunk.offset)? >= chunk.relative.source_len {
+            return None;
+        }
+        search(chunk.len(), &|index| chunk.item(index), offset)
+    }
     pub(crate) fn body_recipes(&self) -> impl Iterator<Item = CurrentBodyRecipe<'_>> {
         self.chunks
             .iter()
@@ -317,6 +361,14 @@ impl DeclarationSyntax {
             })
     }
     pub(crate) fn new(chunks: Vec<CurrentSyntaxChunk>) -> Result<Self, BindingError> {
+        // Public compatibility binding may supply unsorted/overlapping chunks.
+        // Preserve iteration but decline coordinate authority for that topology.
+        let ordered_chunks = chunks.windows(2).all(|pair| {
+            pair[0]
+                .offset
+                .checked_add(pair[0].relative.source_len)
+                .is_some_and(|end| end <= pair[1].offset)
+        });
         let mut prefix = Vec::with_capacity(chunks.len());
         let mut len = 0usize;
         for chunk in &chunks {
@@ -329,6 +381,7 @@ impl DeclarationSyntax {
             chunks: chunks.into(),
             prefix: prefix.into(),
             len,
+            ordered_chunks,
         })
     }
     pub fn chunks(&self) -> &Arc<[CurrentSyntaxChunk]> {
@@ -517,7 +570,7 @@ mod tests {
     }
     #[test]
     fn bindings_reject_overflow_foreign_lengths_and_non_utf8_span_boundaries() {
-        let source = "/datum/é\n";
+        let source = "/datum/ÃƒÆ’Ã‚Â©\n";
         let mut items = dm_syntax::parse_declaration_skeleton(source).items;
         let relative = Arc::new(RelativeSyntax::capture(items.clone(), source).unwrap());
         assert!(matches!(
@@ -569,5 +622,62 @@ mod tests {
         assert_eq!(mixed.next_back().unwrap().span().start, 27);
         assert!(mixed.next().is_none());
         assert!(mixed.next_back().is_none());
+    }
+}
+
+#[cfg(test)]
+mod header_lookup_tests {
+    use super::*;
+    #[test]
+    fn issued_declaration_headers_exclude_executable_calls_and_rebind_chunks() {
+        let source = "/datum/a\n    proc/run()\n        for(var/i=0; i<1; i++)\n            foo()\n        foo()\n    verb/act()\n        foo()\n/proc/top()\n    foo()\n/var/value=1\n";
+        let parsed = dm_syntax::parse(source);
+        let relative = Arc::new(RelativeSyntax::capture(parsed.items, source).unwrap());
+        let shift = source.len() + 30;
+        let syntax = DeclarationSyntax::new(vec![
+            relative.bind(source.len(), 0).unwrap(),
+            relative.bind(source.len(), shift).unwrap(),
+        ])
+        .unwrap();
+        for base in [0, shift] {
+            for (text, kind) in [
+                ("/datum/a", ItemKind::Type),
+                ("proc/run()", ItemKind::Proc),
+                ("verb/act()", ItemKind::Verb),
+                ("/proc/top()", ItemKind::Proc),
+                ("/var/value", ItemKind::Var),
+            ] {
+                let offset = base + source.find(text).unwrap();
+                assert_eq!(syntax.declaration_header_at(offset), Some(kind));
+                assert_eq!(syntax.declaration_header_at(offset + 1), None);
+            }
+            for (offset, _) in source.match_indices("foo()") {
+                assert_eq!(syntax.declaration_header_at(base + offset), None);
+            }
+            assert_eq!(
+                syntax.declaration_header_at(base + source.find("for(").unwrap()),
+                None
+            );
+        }
+        assert_eq!(syntax.declaration_header_at(source.len() + 2), None);
+        assert_eq!(syntax.declaration_header_at(usize::MAX), None);
+    }
+    #[test]
+    fn foreign_chunk_topology_cannot_issue_header_context() {
+        let source = "/proc/top()\n    return 1\n";
+        let relative =
+            Arc::new(RelativeSyntax::capture(dm_syntax::parse(source).items, source).unwrap());
+        for offsets in [[40, 0], [0, 1]] {
+            let syntax = DeclarationSyntax::new(
+                offsets
+                    .into_iter()
+                    .map(|offset| relative.bind(source.len(), offset).unwrap())
+                    .collect(),
+            )
+            .unwrap();
+            for offset in offsets {
+                assert_eq!(syntax.declaration_header_at(offset), None);
+            }
+        }
     }
 }

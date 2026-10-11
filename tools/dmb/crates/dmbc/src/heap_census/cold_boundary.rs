@@ -80,6 +80,27 @@ impl HeapCensus {
                         }
                     }
                 });
+                let mut recipe_buffers = Vec::new();
+                let mut recipe_entries = 0usize;
+                store.visit_recipe_storage(
+                    |address, bytes, capacity| recipe_buffers.push((address, bytes, capacity)),
+                    |entries| recipe_entries = recipe_entries.saturating_add(entries),
+                );
+                for (address, bytes, capacity) in recipe_buffers {
+                    self.buffer(
+                        "cold_boundary.link_assignment_recipe",
+                        address,
+                        bytes,
+                        capacity,
+                    );
+                }
+                self.observe_items(
+                    "cold_boundary.link_assignment_recipe_policy",
+                    recipe_entries,
+                );
+                if recipe_entries != 0 {
+                    self.unknown("cold_boundary.link_assignment_recipe_policy", "BTree policy nodes and Arc control blocks are private; only exposed inline payloads and vector capacities are counted");
+                }
             }
         }
         if self.arc_object("cold_boundary.rich_store", &memo.values) {

@@ -21,6 +21,8 @@ struct MemoCapture {
 mod diagnostic_anchor_tests;
 #[path = "lowering/error_anchor.rs"]
 mod error_anchor;
+#[path = "lowering/grammar.rs"]
+mod grammar;
 fn replay_errors(
     frontend: &ColdFrontend,
     body: &BodyOccurrence,

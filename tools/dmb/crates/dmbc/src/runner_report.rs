@@ -25,6 +25,10 @@ pub(super) fn memo_statistics(
         "resident_dropped":memo.counts.resident_dropped.load(Relaxed),
         "resident_retention":format!("{:?}",memo.resident_retention()),
         "symbolic_declines":memo.symbolic.as_ref().map(|store| store.decline_stats()),
+        "link_assignments":memo.link_bindings.as_ref().map(|store| serde_json::json!({
+            "scope":"process_local_cumulative",
+            "reuses":store.assignment_reuses()
+        })),
         "required_type_ancestry":memo.required_types.as_ref().map(|store| serde_json::json!({
             "scope":"process_local_cumulative",
             "hits":store.hits.load(Relaxed),

@@ -260,6 +260,21 @@ pub(super) enum Nodes<'a> {
 }
 impl<'a> Iterator for Nodes<'a> {
     type Item = Ref<'a>;
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        match self {
+            Self::Compact { arena, front, back } => {
+                if n >= *back - *front {
+                    *front = *back;
+                    return None;
+                }
+                *front += n;
+                let index = *front;
+                *front += 1;
+                Some(Ref::Compact(arena, index))
+            }
+            Self::Wide(items) => items.nth(n).map(Ref::Wide),
+        }
+    }
     fn next(&mut self) -> Option<Self::Item> {
         match self {
             Self::Compact { arena, front, back } => {

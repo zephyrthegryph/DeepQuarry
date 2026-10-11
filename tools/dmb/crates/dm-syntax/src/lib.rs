@@ -14,8 +14,12 @@ pub use stable_chunks::scan_stable_source_chunks_from;
 mod declaration_type;
 pub use declaration_type::{normalize_declaration_type, project_declaration_type, DeclarationType};
 pub mod map;
+mod pending_body;
 mod scope_map;
 mod statements;
+pub use pending_body::{
+    termination_after, termination_after_with_context, BodyTermination, PendingBody,
+};
 pub use scope_map::{ScopeCheckpoint, ScopeMap};
 mod lexical_scope;
 mod reference_roles;
@@ -32,8 +36,9 @@ pub use audit::{
     ChunkReport, StreamingAudit,
 };
 pub use statements::{
-    parse_body_items, parse_proc_body, ForControl, ForInitializer, ParsedBody, Statement,
-    StatementKind, SwitchAlternative, SwitchCase,
+    parse_body_items, parse_body_items_with_context, parse_body_items_with_source, parse_proc_body,
+    ForControl, ForInitializer, ParsedBody, Statement, StatementKind, SwitchAlternative,
+    SwitchCase,
 };
 pub use visit::{
     for_each_expression_child, visit_expression, visit_statement_view, visit_statements, NodeStep,
@@ -124,8 +129,8 @@ pub struct Lexed {
 mod lexer_items;
 use lexer_items::*;
 pub use lexer_items::{
-    lex, lex_spans, lexical_balance, next_significant_token, quoted_end, visit_comment_spans,
-    visit_tokens, visit_tokens_while, LexicalBalance,
+    lex, lex_spans, lexical_balance, lookahead_after, next_significant_token, quoted_end,
+    visit_comment_spans, visit_tokens, visit_tokens_while, LexerLookahead, LexicalBalance,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
