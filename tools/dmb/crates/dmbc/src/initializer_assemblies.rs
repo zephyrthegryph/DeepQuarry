@@ -53,7 +53,7 @@ pub struct InitializerAssemblies {
     pub declined: AtomicU64,
 }
 pub(crate) struct RetainedAssembly {
-    code: ResolverProc,
+    code: std::sync::Arc<ResolverProc>,
     recipes: Vec<ExpressionRecipe>,
     root_indexes: Vec<usize>,
     references: Vec<SymRef>,
@@ -68,7 +68,7 @@ impl RetainedAssembly {
     pub(crate) fn retained_parts(
         &self,
     ) -> (
-        &ResolverProc,
+        &std::sync::Arc<ResolverProc>,
         &Vec<ExpressionRecipe>,
         &Vec<usize>,
         &Vec<SymRef>,
@@ -133,7 +133,7 @@ impl InitializerAssemblies {
         host: &R,
     ) -> Option<ResolverProc> {
         self.lookup_with_encoding(key, roots, symbols, host)
-            .map(|(code, _)| code)
+            .map(|(code, _)| code.as_ref().clone())
     }
     #[cfg(test)]
     pub(super) fn lookup_with_encoding<R: Resolver>(
@@ -143,7 +143,7 @@ impl InitializerAssemblies {
         symbols: &SymbolTable,
         host: &R,
     ) -> Option<(
-        ResolverProc,
+        crate::InitializerCode,
         std::sync::Arc<crate::symbolic::InitializerEncoding>,
     )> {
         self.lookup_with_current_roots(
@@ -166,7 +166,7 @@ impl InitializerAssemblies {
         symbols: &SymbolTable,
         host: &R,
     ) -> Option<(
-        ResolverProc,
+        crate::InitializerCode,
         std::sync::Arc<crate::symbolic::InitializerEncoding>,
     )> {
         let payload = self.values.lookup(
@@ -197,8 +197,16 @@ impl InitializerAssemblies {
             self.declined.fetch_add(1, Ordering::Relaxed);
             return None;
         }
-        let mut code = payload.code.clone();
-        code.modified_instances = captured;
+        let code = if captured.is_empty() {
+            crate::InitializerCode::from_admitted_owner(
+                std::sync::Arc::clone(&payload.code),
+                payload.encoding.type_requests(),
+            )
+        } else {
+            let mut code = payload.code.as_ref().clone();
+            code.modified_instances = captured;
+            crate::InitializerCode::from_admitted(code, payload.encoding.type_requests())
+        };
         self.hits.fetch_add(1, Ordering::Relaxed);
         Some((code, std::sync::Arc::clone(&payload.encoding)))
     }
@@ -212,10 +220,27 @@ impl InitializerAssemblies {
     ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
         self.remember_with_recipes(key, code, roots, recorder, None)
     }
+    #[cfg(test)]
     pub(super) fn remember_with_recipes(
         &self,
         key: &receipts::Binding,
         code: &ResolverProc,
+        roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
+        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
+        admitted: Option<Vec<(usize, ExpressionRecipe)>>,
+    ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
+        self.remember_shared_with_recipes(
+            key,
+            &std::sync::Arc::new(code.clone()),
+            roots,
+            recorder,
+            admitted,
+        )
+    }
+    pub(super) fn remember_shared_with_recipes(
+        &self,
+        key: &receipts::Binding,
+        code: &std::sync::Arc<ResolverProc>,
         roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
         recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
         admitted: Option<Vec<(usize, ExpressionRecipe)>>,
@@ -257,8 +282,13 @@ impl InitializerAssemblies {
             }
         }
         let references = code.modified_instances.keys().copied().collect();
-        let mut stripped = code.clone();
-        stripped.modified_instances.clear();
+        let stripped = if code.modified_instances.is_empty() {
+            std::sync::Arc::clone(code)
+        } else {
+            let mut stripped = code.as_ref().clone();
+            stripped.modified_instances.clear();
+            std::sync::Arc::new(stripped)
+        };
         let reads = receipts::reads(key, recorder.reads());
         let versions = receipts::versions(recorder.domain_receipts());
         // This store retains the current roster without a byte admission budget.

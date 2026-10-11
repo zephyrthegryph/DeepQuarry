@@ -623,7 +623,7 @@ fn lower_group<R: Resolver>(
                     .map(InitializerScope::Instance)
                     .unwrap_or(InitializerScope::Global),
                 write_ordinals,
-                code: crate::InitializerCode::from_admitted(code, encoding.type_requests()),
+                code,
                 debug_origins: debug.origins,
                 encoding: Some(encoding),
             });
@@ -909,9 +909,16 @@ fn lower_group<R: Resolver>(
         )
         .map_err(map_error)?
     };
+    let code = Arc::new(code);
     let encoding =
         if let (Some((store, key)), Some(recorder)) = (assembly, assembly_recorder.as_ref()) {
-            store.remember_with_recipes(key, &code, &assignment_views, recorder, assembled_recipes)
+            store.remember_shared_with_recipes(
+                key,
+                &code,
+                &assignment_views,
+                recorder,
+                assembled_recipes,
+            )
         } else {
             None
         };
@@ -923,7 +930,7 @@ fn lower_group<R: Resolver>(
             .unwrap_or(InitializerScope::Global),
         write_ordinals,
         code: match &encoding {
-            Some(owner) => crate::InitializerCode::from_admitted(code, owner.type_requests()),
+            Some(owner) => crate::InitializerCode::from_admitted_owner(code, owner.type_requests()),
             None => code.into(),
         },
         debug_origins: debug.origins,

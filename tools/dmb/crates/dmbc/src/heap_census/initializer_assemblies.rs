@@ -31,7 +31,9 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, store: &InitializerAssem
             }
             if census.arc_object("initializer_assemblies.payload", value) {
                 let (code, recipes, root_indexes, references) = value.retained_parts();
-                census.resolver_code(code);
+                if census.arc_object("initializer_assemblies.code", code) {
+                    census.resolver_code(code);
+                }
                 census.initializer_fragment_recipes(recipes, references);
                 census.vec_payload("initializer_assemblies.root_indexes", root_indexes);
                 census.initializer_encoding(value.encoding());

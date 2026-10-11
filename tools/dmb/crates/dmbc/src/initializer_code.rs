@@ -74,6 +74,12 @@ impl InitializerCode {
             requests,
         }
     }
+    pub(crate) fn from_admitted_owner(
+        code: Arc<ResolverProc>,
+        requests: Arc<TypeRequests>,
+    ) -> Self {
+        Self { code, requests }
+    }
     pub(crate) fn requests(&self) -> &Arc<TypeRequests> {
         &self.requests
     }

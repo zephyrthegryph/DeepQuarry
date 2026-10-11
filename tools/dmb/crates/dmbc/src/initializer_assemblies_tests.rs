@@ -59,8 +59,8 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
         resource_search_context: None,
         debug: None,
     };
-    let code = lower_assignment_views(&roots, context(), &recorder).unwrap();
-    store.remember(&key, &code, &roots, &recorder);
+    let code = std::sync::Arc::new(lower_assignment_views(&roots, context(), &recorder).unwrap());
+    store.remember_shared_with_recipes(&key, &code, &roots, &recorder, None);
     assert!(store
         .lookup_with_current_roots(
             &key,
@@ -87,7 +87,17 @@ fn assembled_resource_reads_invalidate_and_shifted_current_roots_match_fresh() {
         value: &root,
         occurrence: dm_syntax::Span::new(0, 0),
     }];
-    let replay = store.lookup(&key, &current, &symbols, &first).unwrap();
+    let (replay, _) = store
+        .lookup_with_encoding(&key, &current, &symbols, &first)
+        .unwrap();
+    assert!(std::sync::Arc::ptr_eq(&code, replay.code_owner()));
+    let (again, _) = store
+        .lookup_with_encoding(&key, &current, &symbols, &first)
+        .unwrap();
+    assert!(std::sync::Arc::ptr_eq(
+        replay.code_owner(),
+        again.code_owner()
+    ));
     let cold = lower_assignment_views(&current, context(), &first).unwrap();
     assert_eq!(replay.procedure, cold.procedure);
     assert_eq!(replay.resources, cold.resources);
@@ -239,4 +249,82 @@ fn earlier_unrelated_receiver_preserves_assembly_locator_and_admission() {
     classified.groups.push(classified.groups[1].clone());
     let duplicate_keys = current_keys(&classified, &fragments).unwrap();
     assert_ne!(current.key, duplicate_keys[2].key);
+}
+
+#[test]
+fn admitted_plain_assembly_shares_actual_code_owner_and_rebinds_current_debug() {
+    use std::path::Path;
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok(self.0.into())
+        }
+    }
+    let store = InitializerAssemblies::default();
+    let key = receipts::Binding::fixture(b"same-exact-sized-array-assembly");
+    store.retain_keys(&[key.clone()]);
+    let mut previous = None;
+    for (index, source) in [
+        "/var/global/list/values[2]\n",
+        "// shifted current source\n/var/global/list/values[2]\n",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let frontend = dm_tree::frontend::build(
+            Path::new("assembly.dme"),
+            &Source(source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let declarations = dm_tree::initializers::capture_declaration_plan(
+            &frontend.snapshot,
+            &frontend.emission_order,
+        )
+        .unwrap();
+        let plan = declarations.plan();
+        let host = Host(11);
+        let evaluator = crate::driver_facts::DriverEvaluator {
+            pure_calls: None,
+            resource_search_context: None,
+            resolver: &host,
+            symbols: &plan.symbols,
+        };
+        let classified =
+            crate::initializer_policy::classify(&plan.writes, &plan.symbols, &evaluator).unwrap();
+        assert_eq!(classified.groups.len(), 1);
+        let current = super::super::lower_group(
+            &frontend,
+            plan,
+            &classified,
+            &classified.groups[0],
+            &host,
+            None,
+            None,
+            None,
+            Some((&store, &key)),
+        )
+        .unwrap();
+        let fresh = super::super::lower_group(
+            &frontend,
+            plan,
+            &classified,
+            &classified.groups[0],
+            &host,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(current.code.procedure, fresh.code.procedure);
+        assert_eq!(current.debug_origins, fresh.debug_origins);
+        assert_eq!(current.debug_origins.entries[0].line, index as u32 + 1);
+        assert_eq!(store.hits.load(Ordering::Relaxed), index as u64);
+        if let Some(code) = previous.as_ref() {
+            assert!(std::sync::Arc::ptr_eq(code, current.code.code_owner()));
+        }
+        previous = Some(std::sync::Arc::clone(current.code.code_owner()));
+    }
 }
