@@ -930,5 +930,19 @@
     "query_overall_test_passed": false,
     "query_failure": "Ordinary host-query oracle used tree-only symbols; expected static spelling null versus actual shared. Meaning/fingerprint equal; fixture corrected e9d982d365, full rerun pending",
     "scope": "Focused fixtures; release compiler build running; actual paired helper rerun and real cohort not yet complete"
+  },
+  "latest_57_release": {
+    "compiler_commit": "57d5207098ad02a3c3d7f00635f26d43c7fe5ee0",
+    "binary_sha256": "9a3110c4557401b4dd1e748acf3bf133a312a4ef1228975304e00b69219c3cb6",
+    "build_receipt": "20261011-152907-8f72ac73-job-cargo.json",
+    "acceptance_profile": false,
+    "argument_source_receipt": "E:/dq-cache/dmb-argument-source-contract/03f7f35b44be4d0aadb85a03a049868a/receipt.json",
+    "helper_metadata_equal": true,
+    "argument_source_runtime_limitation": "Direct calls match but hidden allowed-values helpers not executed",
+    "incremental_runtime_receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-57d/9e0be85859a84092a34da1bc9697d74c/receipt.json",
+    "incremental_runtime_scenarios_passed": 14,
+    "retained_fresh_bytes_equal": true,
+    "trusted_observations_match_byond": true,
+    "scope": "Standalone bounded runtime fixtures, not full DeepQuarry suite or benchmark"
   }
 }
