@@ -159,8 +159,37 @@ pub(super) fn explanations(
         let name = symbols.text(entry.identity.name).unwrap_or("<unknown>");
         let namespace = if entry.identity.verb { "verb" } else { "proc" };
         let path = format!("{}/{namespace}/{name}", owner.trim_end_matches('/'));
-        serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query})
+        serde_json::json!({"path":path,"occurrence":entry.identity.occurrence,"outcome":format!("{:?}",entry.outcome),"reason":entry.reason.map(|reason|format!("{reason:?}")),"changed_query":entry.changed_query.map(explained_query)})
     }).collect()
+}
+
+/// Resource search identities are full 128-bit values. JSON's numeric value
+/// representation cannot carry them; encode that identity losslessly as hex.
+/// This is reporting only and does not alter resolver keys or persisted receipts.
+fn explained_query(query: dm_ir::ResolveQuery) -> serde_json::Value {
+    match query {
+        dm_ir::ResolveQuery::ResourceIn { path, search_context } => serde_json::json!({
+            "ResourceIn": { "path": path, "search_context": format!("{search_context:032x}") }
+        }),
+        query => serde_json::json!(query),
+    }
+}
+
+#[cfg(test)]
+mod resource_explanation_tests {
+    #[test]
+    fn resource_search_identity_is_lossless_above_json_integer_range() {
+        let path = dm_ir::SymbolId::of("contract-resource.txt");
+        let value = super::explained_query(dm_ir::ResolveQuery::ResourceIn {
+            path,
+            search_context: u128::MAX,
+        });
+        assert_eq!(value["ResourceIn"]["search_context"], "ffffffffffffffffffffffffffffffff");
+        assert_eq!(value["ResourceIn"]["path"], serde_json::json!(path));
+        let encoded = serde_json::to_string(&value).unwrap();
+        assert_eq!(serde_json::from_str::<serde_json::Value>(&encoded).unwrap(), value);
+        assert_eq!(super::explained_query(dm_ir::ResolveQuery::GlobalProc(path)), serde_json::json!(dm_ir::ResolveQuery::GlobalProc(path)));
+    }
 }
 
 pub(super) fn initializer_totals(
