@@ -124,3 +124,29 @@ fn roster_pruning_and_lease_drop_destroy_payloads_after_unlock() {
         assert_eq!(store.admitted_bytes(), 0);
     }
 }
+
+#[test]
+fn accepted_receipt_shares_exact_ledger_and_claims_only_after_admission() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    let published = store.lease();
+    let pending = store.lease();
+    let value = published
+        .insert_with_owned(Arc::from(b"owner".as_slice()), reads(1), vec![], 7, || 11)
+        .unwrap();
+    assert!(pending
+        .visit_explained_accepted(b"owner", &Host(1), &mut |_| false)
+        .0
+        .is_none());
+    let accepted = pending
+        .visit_explained_accepted(b"owner", &Host(1), &mut |_| true)
+        .0
+        .unwrap();
+    assert!(Arc::ptr_eq(&accepted.value, &value));
+    assert_eq!(accepted.reads.iter().count(), 1);
+    assert_eq!(accepted.reads.iter().next().unwrap().answer, 1);
+    drop(published);
+    assert_eq!(store.admitted_bytes(), 7);
+    drop(pending);
+    assert_eq!(store.admitted_bytes(), 0);
+    assert_eq!(*accepted.value, 11);
+}

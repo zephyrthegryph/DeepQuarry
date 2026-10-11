@@ -196,8 +196,29 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         host: &R,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<Arc<T>>, Option<Q>) {
+        let (receipt, changed) = self.visit_explained_accepted(key, host, accept);
+        (receipt.map(|receipt| receipt.value), changed)
+    }
+    /// Return the SAME accepted read owners after ordinary exact host and caller
+    /// admission. Declined candidates never acquire a pending lease claim.
+    pub fn visit_explained_accepted<R: ObservationHost<Q, A, D>>(
+        &self,
+        key: &[u8],
+        host: &R,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (receipt, changed) = self.store.visit_receipted(key, &Exact(host), accept);
-        (receipt.map(|receipt| self.claim(key, receipt)), changed)
+        let accepted = receipt.map(|receipt| {
+            let claim = ObservedArtifact {
+                value: Arc::clone(&receipt.value),
+                reads: receipt.reads.clone(),
+                versions: Arc::clone(&receipt.versions),
+                weight: receipt.weight,
+            };
+            self.claim(key, claim);
+            receipt
+        });
+        (accepted, changed)
     }
     pub fn insert_with(
         &self,
