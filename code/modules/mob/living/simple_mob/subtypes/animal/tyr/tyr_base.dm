@@ -10,8 +10,6 @@
 
 	faction = FACTION_TYR
 
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
 
 	//I know very little of this and yes, I copy and pasted from ants
 	swallowTime = 3 SECONDS
@@ -27,6 +25,9 @@
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
 	unacidable = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE))
 
 /mob/living/simple_mob/animal/tyr/load_default_bellies()
 	. = ..()

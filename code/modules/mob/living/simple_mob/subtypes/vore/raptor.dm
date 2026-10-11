@@ -47,7 +47,6 @@
 		"raptorwhite"
 	)
 
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/raptor
 
@@ -74,6 +73,7 @@
 		set_icon_dead("[icon_living]_dead")
 
 CAPABILITIES(/mob/living/simple_mob/vore/raptor)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

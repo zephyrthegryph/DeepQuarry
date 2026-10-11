@@ -26,7 +26,6 @@
 
 	say_list_type = /datum/say_list/jelly
 
-	can_be_drop_prey = FALSE
 
 	min_oxy = 0
 	max_oxy = 0
@@ -38,13 +37,15 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	allow_mind_transfer = TRUE
 
 // Activate Noms!
 	vore_active = 1
 	vore_pounce_chance = 0
 	vore_icons = SA_ICON_LIVING
 	swallowTime = 2 SECONDS // Hungry little bastards.
+
+CAPABILITIES(/mob/living/simple_mob/vore/jelly)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/jelly
 	emote_hear = list("squishes","spluts","splorts","sqrshes","makes slime noises")

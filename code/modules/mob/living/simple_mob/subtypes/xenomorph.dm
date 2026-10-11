@@ -54,7 +54,6 @@
 	var/datum/action/innate/xeno_ch/xeno_pounce/pounce_action = new
 	var/datum/action/innate/xeno_ch/xeno_spin/spin_action = new
 
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/xeno_ch/Initialize(mapload)
 	. = ..()
@@ -63,6 +62,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/xeno_ch)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("xeno_build", menu(button = "Build Resin Structure"), asks(/datum/prompt/choice, fields = list("choices" = computed(PROC_REF(xeno_build_choices)), "radial" = TRUE, "radius" = 60, "autopick_single_option" = TRUE, "timeout" = 0), step = "choice"), wait(PROC_REF(xeno_build_wait)), then(PROC_REF(xeno_build_done)))
 	verb_entry(/mob/living/simple_mob/verb/toggle_speech_sounds, login = TRUE) // TGPanel
 

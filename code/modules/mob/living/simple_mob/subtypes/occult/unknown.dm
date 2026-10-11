@@ -39,8 +39,10 @@
 
 	loot_list = list(/obj/item/nif/glitch = 100)
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/glitch_boss)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /obj/item/projectile/energy/slow_orb
 	name = "TROJAN"

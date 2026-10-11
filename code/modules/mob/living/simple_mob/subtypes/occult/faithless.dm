@@ -40,8 +40,10 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/faithless)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/faithless/Process_Spacemove(check_drift = 0)
 	return 1

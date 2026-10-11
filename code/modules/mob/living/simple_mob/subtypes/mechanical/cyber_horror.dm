@@ -32,7 +32,9 @@
 	var/emp_damage = 0
 	var/nanobot_chance = 40
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/mechanical/cyber_horror)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /datum/say_list/cyber_horror
 	speak = list("H@!#$$P M@!$#",

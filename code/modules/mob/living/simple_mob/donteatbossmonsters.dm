@@ -1,41 +1,39 @@
 //I've come to nerf vore in the vorecode, and only the headmins and maintainers can stop me.
 
 /mob/living/simple_mob/mobs_monsters/clowns
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/mobs_monsters/clowns)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 
 /mob/living/simple_mob/vore/aggressive/dragon
-	digestable = 0
-	devourable = 0
 
 /mob/living/simple_mob/vore/greatwolf
-	digestable = 0
-	devourable = 0
 
 /mob/living/simple_mob/vore/leopardmander
-	digestable = 0
-	devourable = 0
 
 /mob/living/simple_mob/vore/solarmoth
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/solarmoth)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 
 /mob/living/simple_mob/construct
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/construct)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/mechanical/mecha
-	digestable = 0
-	devourable = 0
 
 /mob/living/simple_mob/mechanical/hivebot/tank
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/tank)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 
 /mob/living/simple_mob/animal/space/alien/queen
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother
-	digestable = 0
-	devourable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodmother)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))

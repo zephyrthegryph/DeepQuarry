@@ -59,9 +59,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	var/powerdraw = 100000
 	var/tracked = FALSE
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 	glow_override = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
 /datum/say_list/solargrub
 	emote_see = list("squelches", "squishes")

@@ -45,13 +45,12 @@
 	vore_capacity = 1
 	vore_pounce_chance = 45
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_TINY
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	every(3 MINUTES, then(PROC_REF(deathcheck)), when = nameof(deathwatch))
 	// An extrapolator's probe stabs it (extrapolator_act()): the user works on the germ, next to it, for two seconds.
 	op("extrapolate", ai(), takes("extrapolator"), wait(2 SECONDS), then(PROC_REF(extrapolator_act_macrophage_done)))

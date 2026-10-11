@@ -4797,7 +4797,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/bageltwo)
 
 /mob/living/simple_mob/slime
 	composition_reagent = REAGENT_ID_SLIMEJELLY
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob
 	var/kitchen_tag = "animal" //Used for cooking with animals

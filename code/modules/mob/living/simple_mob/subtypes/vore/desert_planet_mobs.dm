@@ -29,7 +29,6 @@
 	melee_damage_upper = 7
 	attacktext = list("nips", "bumps", "scratches")
 
-	vore_taste = "wet dog"
 
 	min_oxy = 16 //Require atleast 16kPA oxygen
 	minbodytemp = 223		//Below -50 Degrees Celcius
@@ -43,3 +42,6 @@
 	speak_emote = list("rumbles", "chirr?", "churr")
 
 	say_list_type = /datum/say_list/armadillo
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/stray)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "wet dog"))

@@ -31,7 +31,9 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/xenomeat
 	meat_amount = 5
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/space/alien)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/animal/space/alien/drone
 	name = "alien drone"

@@ -15,9 +15,35 @@
 /// A profile record: data fields only, one owner (profile()), copied whole by record_copy().
 /datum/record
 
-/// profile(nameof(var), /datum/record/T): the holder owns one T in var, built before the holder's init and deleted with it.
-/proc/profile(var_name, type)
-	return owns_one(var_name, type, starts = type)
+/// profile(nameof(var), /datum/record/T, fields = list(field = value)): the holder owns one T in var, built before the holder's init and
+/// deleted with it. `fields` gives a type's own starting values (a subtype's fields add to its ancestors', field by field), where the old
+/// base-type var was overridden in the type's definition: profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = FALSE)).
+/proc/profile(var_name, type, fields = null)
+	var/datum/entry/E = owns_one(var_name, type, starts = type)
+	if(fields)
+		E.args["profile_set"] = fields
+	return E
+
+/// var name -> list(field = value): the merged profile(fields =) values of D's type, ancestors first (cached per type).
+/proc/profile_sets_of(datum/D)
+	var/static/list/by_type = list()
+	if(D.type in by_type)
+		return by_type[D.type]
+	var/list/sets = null
+	var/list/chain = list()
+	D.declared_entries(chain)
+	for(var/datum/entry/E in chain)
+		if(E.kind != ENTRY_OWNS_ONE || !islist(E.args["profile_set"]))
+			continue
+		var/var_name = E.args["var"]
+		LAZYINITLIST(sets)
+		LAZYINITLIST(sets[var_name])
+		var/list/fields = sets[var_name]
+		var/list/given = E.args["profile_set"]
+		for(var/field in given)
+			fields[field] = given[field]
+	by_type[D.type] = sets
+	return sets
 
 /// Builds the profile records of a new mob before anything of its type runs (/atom/New()): a mob's Initialize() writes them
 /// before its parent's init would build an ordinary starting occupant.
@@ -29,7 +55,18 @@
 		var/path = starts[var_name]
 		if(!ispath(path, /datum/record) || !isnull(D.vars[var_name]))
 			continue
-		lifecycle_decl_adopt_child(D, var_name, new path, FALSE)
+		var/datum/record/R = new path
+		var/list/fields = profile_sets_of(D)?[var_name]
+		for(var/field in fields)
+			if(!(field in R.vars))
+				stack_trace("profile(fields =) of [D.type] names [field], which [path] doesn't have")
+				continue
+			var/value = fields[field]
+			if(islist(value))
+				var/list/L = value
+				value = L.Copy()
+			R.vars[field] = value // ALLOW(api): a type's declared starting values of its profile record, before anyone reads it
+		lifecycle_decl_adopt_child(D, var_name, R, FALSE)
 
 /// TRACKED_DATA(T, field) published `field` of record R: the key is published on the record and on its holder.
 /proc/record_changed(datum/record/R, field)

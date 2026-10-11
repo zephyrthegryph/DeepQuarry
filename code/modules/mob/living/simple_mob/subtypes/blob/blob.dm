@@ -29,7 +29,6 @@
 
 	mob_class = MOB_CLASS_SLIME
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/blob/speech_bubble_appearance()
@@ -45,6 +44,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/blob)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	links(/mob/living/simple_mob/blob::overmind, /mob/observer/blob::blob_mobs, b_many = TRUE)
 	links(/mob/living/simple_mob/blob::factory, /obj/structure/blob/factory::spores, b_many = TRUE)
 

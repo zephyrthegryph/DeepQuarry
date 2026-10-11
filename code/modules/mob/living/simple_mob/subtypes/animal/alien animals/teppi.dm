@@ -914,14 +914,15 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	vore_active = FALSE		//it's a tiny baby :O
-	devourable = FALSE
-	digestable = FALSE
 	vore_bump_chance = 0
 	vore_pounce_chance = 0
 	vis_height = 32
 	meat_amount = 2
 	loot_list = list()
 	say_list_type = /datum/say_list/teppibaby
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/init_vore(force) //shouldn't need all the vore bidness if they aren't using it as babbies. They get their tummies when they grow up.
 	return

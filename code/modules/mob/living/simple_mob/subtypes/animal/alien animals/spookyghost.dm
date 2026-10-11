@@ -67,7 +67,9 @@
 	reload_count = 0
 	reload_time = 7 SECONDS
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_ghost)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 
 /mob/living/simple_mob/vore/alienanimals/space_ghost/apply_melee_effects(atom/A)

@@ -51,9 +51,10 @@
 	pixel_x = -16
 	pixel_y = -16
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/giant_snake)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/giant_snake

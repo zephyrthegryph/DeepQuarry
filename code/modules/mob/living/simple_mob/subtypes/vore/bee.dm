@@ -41,9 +41,9 @@
 	var/poison_chance = 10			// Chance for injection to occur.
 	var/poison_per_bite = 1			// Amount added per injection.
 
-	allow_mind_transfer = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/bee)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	after_init(0, then(PROC_REF(bee_swarm_ready)))
 
 /mob/living/simple_mob/vore/bee/proc/bee_swarm_ready(datum/act/timer/A)

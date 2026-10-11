@@ -28,8 +28,6 @@
 	projectile_dispersion = 0
 	armor_spec = "melee=20;bullet=20;laser=20;energy=60;bomb=20;bio=100;rad=100" // Simple mob immunuties plus minour armor
 
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
 	pass_flags = PASSTABLE //mostly for the melee mobs.
 	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
@@ -66,7 +64,6 @@
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
 	unacidable = TRUE
-	devourable = FALSE
 
 	movement_cooldown = 0
 
@@ -505,4 +502,5 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
 	immune_to_incapacitation()

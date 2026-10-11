@@ -22,8 +22,10 @@
 	pain_emote_3p = list("shouts out in pain", "growls in pain", "grunts in pain", "gasps out in pain")
 	species_sounds = "Human Male" // Yes, we should allow them to differ based on gender, but if someone's making a custom humanoid later:tm: - set your humanoid's species_sounds to match, or var-edit it after spawn.
 
+CAPABILITIES(/mob/living/simple_mob/humanoid)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
-	can_be_drop_prey = FALSE
+
 
 /mob/living/simple_mob/humanoid
 	delete_on_death = TRUE

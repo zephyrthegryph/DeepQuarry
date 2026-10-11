@@ -156,11 +156,9 @@ CAPABILITIES(/obj/item/deadringer)
 	corpse().emote("deathgasp") //Done after the name is set.
 	corpse().death(1) //Kills the new mob
 	corpse().set_species(corpse().dna.species)
-	corpse().change_hair(H.looks.hair_style)
-	corpse().change_facial_hair(H.looks.facial_style)
-	corpse().change_hair_color(H.looks.hair_color)
-	corpse().change_facial_hair_color(H.looks.facial_color)
-	corpse().change_skin_color(H.looks.skin_color)
+	record_copy(corpse().looks, H.looks) // the fake body looks like its wearer
+	corpse().force_update_limbs()
+	corpse().update_hair()
 	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
 	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
 	corpse().UpdateAppearance()

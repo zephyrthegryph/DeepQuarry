@@ -156,9 +156,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
-	throw_vore = TRUE
 	unacidable = TRUE
 
 	special_attack_min_range = 2
@@ -167,6 +164,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
+
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()

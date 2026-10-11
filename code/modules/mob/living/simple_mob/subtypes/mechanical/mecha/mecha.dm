@@ -107,6 +107,7 @@
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 
 /// Old attackby: armour deflection.

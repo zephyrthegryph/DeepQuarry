@@ -26,12 +26,13 @@
 
 	speak_emote = list("gibbers")
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/creature)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 // Strong Variant
 /mob/living/simple_mob/creature/strong

@@ -53,7 +53,9 @@
 
 	say_list_type = /datum/say_list/lamia
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/lamia)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/vore/lamia/draw(datum/look/look)
 	..()

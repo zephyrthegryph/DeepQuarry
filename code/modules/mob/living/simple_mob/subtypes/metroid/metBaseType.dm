@@ -59,7 +59,6 @@
 	var/next
 	meat_type = /obj/item/reagent_containers/food/snacks/metroidmeat
 
-	can_be_drop_prey = FALSE
 
 	can_pain_emote = TRUE
 	species_sounds = "Metroid"
@@ -67,6 +66,7 @@
 	pain_emote_3p = list("skrees")
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)

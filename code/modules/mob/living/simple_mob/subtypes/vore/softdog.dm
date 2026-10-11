@@ -164,7 +164,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	gender = PLURAL
 	vore_digest_chance = 0
 	vore_escape_chance = 25
-	digestable = 0
 
 /mob/living/simple_mob/vore/woof/apply_melee_effects(atom/A)
 	if(isliving(A))
@@ -205,6 +204,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/woof)
 	projectilesound = SFX_VOICE_LONG_AWOO
 
 CAPABILITIES(/mob/living/simple_mob/vore/woof/cass)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 	op("cass_revive", hand(), ungated(), stance(I_HELP), label("Pet"), when(PROC_REF(playing_dead)), priority(OP_PRIORITY_TAKE_OUT), begins(MSG(cass/petting)), wait(30 SECONDS), then(PROC_REF(stops_playing_dead)), on_interrupt(PROC_REF(petting_interrupted)))
 	op("cass_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(cass_interaction_hand_help)))
 	op("cass_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Shove"), then(PROC_REF(cass_interaction_hand_disarm)))

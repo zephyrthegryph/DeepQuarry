@@ -57,7 +57,6 @@
 	var/open_maw = FALSE	// Are we trying to eat things?
 	var/segment_dir = 0	// The directions of the links around this segment, from where its neighbours stand.
 
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/animal/space/space_worm/head
 	name = "space worm"
@@ -473,6 +472,7 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()
 	// The maw's jobs (AttemptToEat()): each frees the worm's AI again however it ends.
 	op("eat_wall", ai(), takes("wall"), wait(PROC_REF(eat_wall_time)), on_interrupt(PROC_REF(eat_interrupted)), then(PROC_REF(eat_wall_done)))

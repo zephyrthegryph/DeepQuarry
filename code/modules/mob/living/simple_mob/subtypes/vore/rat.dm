@@ -69,8 +69,6 @@
 
 	say_list_type = /datum/say_list/rat
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/aggressive/rat/load_default_bellies()
 	. = ..()
@@ -224,6 +222,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/tame)
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
@@ -260,8 +259,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 
 /mob/living/simple_mob/vore/aggressive/rat/pet
 	name = "Giant Rat Siblings"
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/pet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 // ALLOW(init/INSTANCE_STATE): rolls which pet rat it is
 /mob/living/simple_mob/vore/aggressive/rat/pet/Initialize(mapload)
@@ -300,7 +300,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 	endurance = 50
 	vore_pounce_chance = 10
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/event)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/vore/aggressive/rat/labrat
 	name = "giant lab rat"
@@ -327,6 +329,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat)
 	vore_pounce_maxhealth = 80
 	vore_bump_emote = "knocks over and attempts to engulf"
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = FALSE
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/rat/labrat/genetics)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = FALSE))
+
 

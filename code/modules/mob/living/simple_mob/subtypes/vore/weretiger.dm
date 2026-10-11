@@ -29,8 +29,9 @@
 
 	has_hands = 1
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/weretiger)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
+
 
 // Nomnomn
 /mob/living/simple_mob/vore/weretiger

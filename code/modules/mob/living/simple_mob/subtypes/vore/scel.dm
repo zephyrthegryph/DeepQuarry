@@ -55,7 +55,6 @@
 		"scel_green"
 	)
 
-	allow_mind_transfer = TRUE
 
 // ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/scel/Initialize(mapload)
@@ -80,9 +79,9 @@
 	vore_default_mode = DM_SELECT
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/scel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	verb_entry(/mob/living/proc/glow_toggle, login = TRUE)

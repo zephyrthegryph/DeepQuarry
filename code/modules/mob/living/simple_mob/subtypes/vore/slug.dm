@@ -33,7 +33,6 @@
 	var/slime_max = 35 //With a slug which moves once every 10 seconds and a 5 minute delete timer, this should never exceed 30.
 	var/mob/living/last_prey = null
 
-	can_be_drop_prey = FALSE
 
 	vore_bump_chance = 100 //Always attempt a bump nom if possible...
 	vore_bump_emote = "knocks over and begins slowly engulfing"
@@ -44,6 +43,9 @@
 	vore_ignores_undigestable = 0
 	swallowTime = 100 //10 seconds. Easy to crawl away from when knocked over.
 	vore_default_mode = DM_DIGEST
+
+CAPABILITIES(/mob/living/simple_mob/vore/slug)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/vore/slug/load_default_bellies()
 	. = ..()

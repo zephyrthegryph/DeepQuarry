@@ -34,9 +34,11 @@
 		"catgirlbrown"
 	)
 
-	can_be_drop_prey = FALSE
 
 	faction = FACTION_CATGIRL
+
+CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 // ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
 /mob/living/simple_mob/vore/catgirl/Initialize(mapload)

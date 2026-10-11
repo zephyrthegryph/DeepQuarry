@@ -1,7 +1,9 @@
 /mob/living/simple_mob/vore
 	mob_class = MOB_CLASS_ANIMAL
 	mob_bump_flag = 0
-	can_be_drop_pred = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = TRUE))
 
 /mob/living/simple_mob
 	var/nameset

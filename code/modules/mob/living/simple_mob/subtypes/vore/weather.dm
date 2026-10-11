@@ -31,7 +31,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 	faction = FACTION_ECLIPSE
 	size_multiplier = 2
 	var/regenration_rate = -15
@@ -39,6 +38,9 @@
 	loot_list = list(/obj/item/personal_shield_generator/belt/fossiltank  = 100,
 		/obj/item/prop/tyrlore/fossiltank = 100,
 		)
+
+CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
@@ -125,7 +127,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 
 	faction = FACTION_TYR_ANT
 
@@ -145,6 +146,7 @@ TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))
 
 /// A dash or a puddle summon at the target (its every() runs while attacks remain in the chain).

@@ -49,7 +49,6 @@
 
 	say_list_type = /datum/say_list/dragonboss
 
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/aggressive/dragon/Process_Spacemove(check_drift = 0)
 	return 1	//No drifting in space for space dragons!
@@ -114,6 +113,7 @@
 	vore_eyes = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/dragon)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

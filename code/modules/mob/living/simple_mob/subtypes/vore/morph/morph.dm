@@ -66,6 +66,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph)
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 	verb_entry(/mob/living/simple_mob/vore/morph/proc/morph_color, hidden = TRUE)
 	param(nameof(prey_mind), pos = 1)
 	param(nameof(parent_morph), pos = 2)
@@ -379,8 +380,6 @@ CAPABILITIES(/datum/control_transfer_review/morph_takeover)
 /mob/living/simple_mob/vore/morph/dominated_prey
 	name = "subservient node"
 	color = "#171717"
-	digestable = 0
-	devourable = 0
 	var/mob/living/simple_mob/vore/morph/parent_morph
 	var/mob/living/carbon/human/prey_body
 	/// The prey's mind, held in this node while the morph wears the prey.

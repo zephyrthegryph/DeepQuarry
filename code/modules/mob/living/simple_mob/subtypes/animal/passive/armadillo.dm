@@ -30,7 +30,6 @@
 	melee_damage_upper = 1
 	attacktext = list("nips", "bumps", "scratches")
 
-	vore_taste = "sand"
 
 	min_oxy = 16 //Require atleast 16kPA oxygen
 	minbodytemp = 223		//Below -50 Degrees Celcius
@@ -49,6 +48,7 @@
 
 //Hat simulator stolen from slime code.
 CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "sand"))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	op("armadillo_item", item(/obj/item), then(PROC_REF(armadillo_interaction_item)))
 	op("armadillo_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(armadillo_interaction_hand_grab)))

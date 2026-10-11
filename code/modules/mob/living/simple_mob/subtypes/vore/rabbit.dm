@@ -41,13 +41,15 @@
 	vore_default_mode = DM_HOLD
 	vore_icons = SA_ICON_LIVING
 
-	allow_mind_transfer = TRUE
 
 	var/body_color 				//brown, black and white, leave blank for random
 
 	var/grumpiness = 0 			// This determines how grumpy we are. Pet us to increase it, leave us alone to decrease.
 	EXPIRY_DECLARE(last_pet) // This tracks the last time someone patted us.
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
+
+CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 // ALLOW(init/INSTANCE_STATE): rolls its fur colour
 /mob/living/simple_mob/vore/rabbit/Initialize(mapload)

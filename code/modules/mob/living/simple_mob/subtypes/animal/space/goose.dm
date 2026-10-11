@@ -27,7 +27,9 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
 	meat_amount = 3
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/space/goose)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /datum/say_list/goose
 	speak = list("HONK!")
@@ -66,7 +68,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/goose, mob_organ_hit_zones, list("head", 
 	desc = "It's a domesticated goose. It still looks pretty angry."
 	faction = "neutral" //Mess with this and the goose will eat anyones face, will eat other factions faces, appropiate considering its a hellbird - Jack
 
-	can_be_drop_prey = TRUE
+CAPABILITIES(/mob/living/simple_mob/animal/space/goose/domesticated)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+
 
 /mob/living/simple_mob/animal/space/goose/domesticated/casino
 	name = "Donella"

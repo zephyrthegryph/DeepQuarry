@@ -75,7 +75,6 @@
 	vore_default_mode = DM_DIGEST
 	vore_pounce_maxhealth = 125
 	vore_bump_emote = "tries to devour"
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/ddraig/faster
 	special_attack_cooldown = 10 SECONDS
@@ -85,6 +84,7 @@
 	movement_cooldown = -3
 
 CAPABILITIES(/mob/living/simple_mob/vore/ddraig)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)

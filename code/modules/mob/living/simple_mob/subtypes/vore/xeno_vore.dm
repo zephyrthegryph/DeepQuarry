@@ -62,7 +62,9 @@
 
 	say_list_type = /datum/say_list/xeno_defanged
 
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/xeno_defanged)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+
 
 /datum/say_list/xeno_defanged
 	say_got_target = list("hisses angrily!")

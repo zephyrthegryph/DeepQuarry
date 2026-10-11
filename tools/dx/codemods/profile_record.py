@@ -21,7 +21,7 @@ import sys
 ROOTS = ("code",)
 SPECS = {
     "appearance": dict(
-        holder="/mob/living/carbon/human", rec="looks",
+        holder="/mob/living/carbon/human", rec="looks", record="/datum/record/appearance",
         triples={"hair": "hair_color", "grad": "grad_color", "facial": "facial_color", "eyes": "eyes_color", "skin": "skin_color",
                  "synth": "synth_color_rgb"},
         singles={"h_style": "hair_style", "f_style": "facial_style", "grad_style": "grad_style", "s_tone": "skin_tone",
@@ -32,7 +32,7 @@ SPECS = {
         skip={"code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/living/carbon/human/profile_records.dm"},
     ),
     "identity": dict(
-        holder="/mob", rec="bio",
+        holder="/mob", rec="bio", record="/datum/record/identity",
         singles={n: n for n in ("age", "home_system", "birthplace", "citizenship", "personal_faction", "religion", "antag_faction",
                                 "antag_vis", "med_record", "sec_record", "gen_record", "exploit_record", "flavor_text", "flavor_texts",
                                 "nickname", "headset", "backbag", "pdachoice", "custom_say", "custom_ask", "custom_whisper",
@@ -44,7 +44,7 @@ SPECS = {
               "code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/profile_records.dm"},
     ),
     "vore": dict(
-        holder="/mob", rec="vore_prefs",
+        holder="/mob", rec="vore_prefs", record="/datum/record/vore_prefs",
         singles={n: n for n in ('digestable', 'devourable', 'feeding', 'absorbable', 'allowmobvore', 'permit_healbelly', 'allowtemp', 'vore_taste', 'vore_smell', 'noisy', 'show_vore_fx', 'selective_preference', 'size_strip_preference', 'digest_leave_remains', 'digest_pain', 'noisy_full', 'eating_privacy_global', 'vore_death_privacy', 'can_be_drop_prey', 'can_be_drop_pred', 'can_be_afk_prey', 'can_be_afk_pred', 'throw_vore', 'food_vore', 'drop_vore', 'slip_vore', 'stumble_vore', 'phase_vore', 'resizable', 'step_mechanics_pref', 'pickup_pref', 'allow_spontaneous_tf', 'allow_mind_transfer', 'allow_mimicry', 'consume_liquid_belly', 'receive_reagents', 'apply_reagents', 'give_reagents', 'nutrition_messages', 'nutrition_message_visible', 'weight_message_visible', 'weight_messages', 'latejoin_vore', 'latejoin_prey', 'no_latejoin_vore_warning', 'no_latejoin_prey_warning', 'no_latejoin_vore_warning_time', 'no_latejoin_prey_warning_time', 'no_latejoin_vore_warning_persists', 'no_latejoin_prey_warning_persists', 'max_voreoverlay_alpha', 'strip_pref', 'contaminate_pref', 'vore_sprite_multiply', 'vore_sprite_color', 'belly_rub_target', 'soulcatcher_pref_flags', 'persistend_edit_mode')},
         tracked=False,
         ambiguous=set(),
@@ -374,7 +374,87 @@ def rewrite_code(code):
     return rewrite_reads(code, masked)
 
 
+CAPS = re.compile(r"^CAPABILITIES\((/[A-Za-z0-9_/]+)\)\s*$")
+OVERRIDE = re.compile(r"^\t(" + NAME_RE + r")\s*=\s*(.+?)\s*(//.*)?$")
+
+
+def continues_def(lines, j):
+    line = lines[j].rstrip("\r")
+    if line.startswith("\t") or line.startswith(" "):
+        return True
+    if line == "" or line.startswith("//"):
+        k = j + 1
+        while k < len(lines) and (lines[k].rstrip("\r") == "" or lines[k].startswith("//")):
+            k += 1
+        return k < len(lines) and lines[k].startswith("\t")
+    return False
+
+
+def type_defaults():
+    """--type-defaults: a type block under the holder that overrides a moved var (`\tdigestable = FALSE`) loses the line, and the
+    type's CAPABILITIES block (found anywhere, else made after the definition) gains profile(nameof(rec), /datum/record/x, set = list(...))."""
+    files = {p: read(p) for p in code_files()}
+    caps_at = {}
+    for p, text in files.items():
+        for i, line in enumerate(text.split("\n")):
+            m = CAPS.match(line.rstrip("\r"))
+            if m:
+                caps_at[m.group(1)] = p
+    entries = {}
+    new = {}
+    for p, text in files.items():
+        if p in SKIP or not re.search(r"\b(" + NAME_RE + r")\b", text):
+            continue
+        lines = text.split("\n")
+        cur = None
+        keep = []
+        for raw in lines:
+            line = raw.rstrip("\r")
+            tm = TYPE_LINE.match(line)
+            if tm and "/proc/" not in line and "/verb/" not in line:
+                cur = tm.group(1).rstrip("/")
+            elif line and not line.startswith("\t") and not line.startswith(" ") and not (cur and line.startswith("//")):
+                cur = None
+            om = OVERRIDE.match(line) if cur else None
+            if om and under_base(cur) and om.group(1) in SINGLES:
+                entries.setdefault(cur, []).append((SINGLES[om.group(1)], om.group(2)))
+                continue
+            keep.append(raw)
+        if len(keep) != len(lines):
+            new[p] = keep
+    for t, rows in entries.items():
+        last = {}
+        for k, v in rows:
+            last[k] = v
+        entry = '\tprofile(nameof(%s), %s, fields = list(%s))' % (REC, SPEC["record"], ", ".join('"%s" = %s' % (k, v) for k, v in last.items()))
+        if t in caps_at:
+            p = caps_at[t]
+            if p not in new:
+                new[p] = files[p].split("\n")
+            lines = new[p]
+            idx = next(i for i, l in enumerate(lines) if l.rstrip("\r") == "CAPABILITIES(%s)" % t)
+            cr = "\r" if lines[idx].endswith("\r") else ""
+            lines.insert(idx + 1, entry + cr)
+        else:
+            p = next(p for p in new if any(TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1).rstrip("/") == t for l in new[p]))
+            lines = new[p]
+            idx = next(i for i, l in enumerate(lines) if TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1).rstrip("/") == t)
+            cr = "\r" if lines[idx].endswith("\r") else ""
+            j = idx + 1
+            while j < len(lines) and continues_def(lines, j):
+                j += 1
+            lines[j:j] = [cr, "CAPABILITIES(%s)%s" % (t, cr), entry + cr]
+            caps_at[t] = p
+    for p, lines in new.items():
+        text = "\n".join(lines)
+        if text != files[p]:
+            write(p, text)
+    print("profile_record %s --type-defaults: %d types, %d files" % (_spec_name, len(entries), len(new)))
+
+
 def main():
+    if "--type-defaults" in sys.argv:
+        return type_defaults()
     changed = 0
     for p in code_files():
         if p in SKIP:

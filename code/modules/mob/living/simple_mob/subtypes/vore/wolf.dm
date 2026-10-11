@@ -33,15 +33,16 @@
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/wolf)
 
-	allow_mind_transfer = TRUE
 	vore_active = TRUE
 	vore_capacity = 1
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 	species_sounds = "Canine"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolf)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/animal/vore/wolf/load_default_bellies()
 	. = ..()

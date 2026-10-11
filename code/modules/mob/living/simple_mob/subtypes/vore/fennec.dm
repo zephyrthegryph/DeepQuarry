@@ -48,10 +48,12 @@
 
 	say_list_type = /datum/say_list/fennec
 
-	allow_mind_transfer = TRUE
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 	species_sounds = "Vulpine"
+
+CAPABILITIES(/mob/living/simple_mob/vore/fennec)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/fennec
@@ -108,7 +110,6 @@
 	// If you're immune to digestion, they can't digest you anyway!
 	vore_ignores_undigestable = TRUE
 	vore_default_mode = DM_DIGEST
-	devourable = FALSE // until KO'd
 	vore_icons = 0
 
 	// Handled in apply_attack
@@ -124,6 +125,9 @@
 	response_disarm = "somehow shoves aside"
 
 	var/autodoom = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/vore/fennec/huge)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 
 /// The huge fennec's shadow under its body.
 /mob/living/simple_mob/vore/fennec/huge/draw(datum/look/look)

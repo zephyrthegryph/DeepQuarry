@@ -49,7 +49,6 @@
 	var/do_seasons = TRUE
 	picked_color = FALSE
 
-	allow_mind_transfer = TRUE
 
 /////////////////////////////////////// Vore stuff///////////////////////////////////////////
 
@@ -65,6 +64,9 @@
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
+
+CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 /mob/living/simple_mob/vore/squirrel/load_default_bellies()
 	. = ..()

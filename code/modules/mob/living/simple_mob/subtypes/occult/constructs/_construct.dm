@@ -56,7 +56,6 @@
 	var/construct_type = "shade"
 	var/list/construct_spells = list() // ALLOW(instance_list): d: per-mob construct_spells, sized at creation and filled in place; mobs are few
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /mob/living/simple_mob/construct/place_spell_in_hand(path)

@@ -15,7 +15,6 @@
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
-	digest_leave_remains = TRUE
 
 	var/tt_desc = null //Tooltip description
 
@@ -168,7 +167,6 @@
 	var/obj/movement_target //Used by some mobs to hunt down food. Mainly noodle and Ian.
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 TRACKED(/mob/living/simple_mob, icon_living)
@@ -180,6 +178,7 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
 	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
@@ -533,8 +532,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	var/obj/item/radio/headset/mob_radio		//Adminbus headset for simplemob shenanigans.
 	does_spin = FALSE
-	can_be_drop_pred = TRUE				// Mobs are pred by default.
-	can_be_drop_prey = TRUE
 	var/damage_threshold  = 0 //For some mobs, they have a damage threshold required to deal damage to them.
 
 	var/nom_mob = FALSE //If a mob is meant to be hostile for vore purposes but is otherwise not hostile, if true makes certain AI ignore the mob
@@ -940,7 +937,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	var/spit_projectile = null // what our spit projectile is. Can be anything
 
 	//no stripping of simplemobs
-	strip_pref = FALSE
 
 /mob/living/simple_mob/RangedAttack(atom/A)
 	if(!isnull(spit_projectile) && spitting)
