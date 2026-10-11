@@ -18,9 +18,6 @@
 	excludes = list(/obj/item/dq_rule_test)
 #endif
 	test_types = list(/obj/item/paper)
-	condition = list(
-		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_IGNITION_POINT),
-	)
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/proc/rule_ignite
 
@@ -41,9 +38,6 @@
 	excludes = list(/obj/item/dq_rule_test)
 #endif
 	test_types = list(/obj/item/reagent_containers/glass/cooler_bottle)
-	condition = list(
-		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_MELTING_POINT),
-	)
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/item/proc/rule_melt
 
@@ -62,9 +56,6 @@
 	applies_to = list(/obj/structure, /obj/machinery, /obj/mecha, /obj/vehicle, /obj/effect/alien/weeds, /obj/effect/spider, /obj/effect/shield)
 	excludes = list(/obj/machinery/door/blast)
 	test_types = list(/obj/structure/window/basic)
-	condition = list(
-		REQ_COMPARE(PRED_TARGET, PROP_TEMPERATURE, PRED_CMP_GTE, PRED_TARGET, PROP_MELTING_POINT),
-	)
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/proc/rule_overheat
 	exit_proc = /obj/proc/rule_cooled
@@ -84,7 +75,6 @@
 	name = "cooking"
 	applies_to = list(/obj/item/reagent_containers/food/snacks)
 	test_types = list(/obj/item/reagent_containers/food/snacks/meat)
-	condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(FOOD_COOKING_TEMPERATURE)))
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/item/reagent_containers/food/snacks/proc/rule_cook
 	hold_for = FOOD_COOKING_TIME
@@ -101,7 +91,6 @@
 	name = "cook-off"
 	applies_to = list(/obj/item/ammo_casing)
 	test_types = list(/obj/item/ammo_casing/a357)
-	condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(AMMO_COOK_OFF_TEMPERATURE)))
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/item/ammo_casing/proc/rule_cook_off
 
@@ -113,10 +102,8 @@
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	abstract_type = /datum/rule/heat_behaviour
 
-/datum/rule/heat_behaviour/New()
-	if(!condition)
-		condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(kelvin())))
-	..()
+/datum/rule/heat_behaviour/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(kelvin()))
 
 /datum/rule/heat_behaviour/proc/kelvin()
 	return FIRE_MINIMUM_TEMPERATURE_TO_EXIST
@@ -285,10 +272,6 @@
 /datum/rule/integrity_breaks
 	name = "breaking point"
 	applies_to = list(/obj)
-	condition = list(
-		REQ_ABOVE(PRED_TARGET, PROP_INTEGRITY_FAILURE, RATIO(0)),
-		REQ_COMPARE(PRED_TARGET, PROP_INTEGRITY_RATIO, PRED_CMP_LTE, PRED_TARGET, PROP_INTEGRITY_FAILURE),
-	)
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /atom/proc/rule_break
 	exit_proc = /atom/proc/rule_fix
@@ -316,24 +299,20 @@
 /datum/rule/damage_flavour/light
 	name = "damaged below 3/4"
 	band = DAMAGE_BAND_LIGHT
-	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.75)))
 
 /datum/rule/damage_flavour/moderate
 	name = "damaged below 1/2"
 	band = DAMAGE_BAND_MODERATE
-	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.5)))
 
 /datum/rule/damage_flavour/heavy
 	name = "damaged below 1/4"
 	band = DAMAGE_BAND_HEAVY
-	condition = list(REQ_BELOW(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0.25)))
 
 /// Destroyed at zero integrity. Declared after the break so one hit that does
 /// both breaks first.
 /datum/rule/integrity_destroyed
 	name = "destroyed"
 	applies_to = list(/obj)
-	condition = list(REQ_AT_MOST(PRED_TARGET, PROP_INTEGRITY_RATIO, RATIO(0)))
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /atom/proc/rule_destroy
 	// Repaired from zero (a survivor of atom_destruction), it re-arms.
@@ -368,3 +347,35 @@
 /atom/proc/rule_leave_damage_band(datum/rule/rule)
 	if(damage_band >= rule.band)
 		damage_band = rule.band - 1
+
+// Native simulation condition factories.
+
+/datum/rule/ignition/rule_condition()
+	return cond_compare(PROP_TEMPERATURE, SIM_COMPARE_GTE, PROP_IGNITION_POINT)
+
+/datum/rule/melting/rule_condition()
+	return cond_compare(PROP_TEMPERATURE, SIM_COMPARE_GTE, PROP_MELTING_POINT)
+
+/datum/rule/overheating/rule_condition()
+	return cond_compare(PROP_TEMPERATURE, SIM_COMPARE_GTE, PROP_MELTING_POINT)
+
+/datum/rule/cooking/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(FOOD_COOKING_TEMPERATURE))
+
+/datum/rule/cook_off/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(AMMO_COOK_OFF_TEMPERATURE))
+
+/datum/rule/integrity_breaks/rule_condition()
+	return cond_all(cond_measure(PROP_INTEGRITY_FAILURE, SIM_COMPARE_GT, RATIO(0)), cond_compare(PROP_INTEGRITY_RATIO, SIM_COMPARE_LTE, PROP_INTEGRITY_FAILURE))
+
+/datum/rule/damage_flavour/light/rule_condition()
+	return cond_measure(PROP_INTEGRITY_RATIO, SIM_COMPARE_LT, RATIO(0.75))
+
+/datum/rule/damage_flavour/moderate/rule_condition()
+	return cond_measure(PROP_INTEGRITY_RATIO, SIM_COMPARE_LT, RATIO(0.5))
+
+/datum/rule/damage_flavour/heavy/rule_condition()
+	return cond_measure(PROP_INTEGRITY_RATIO, SIM_COMPARE_LT, RATIO(0.25))
+
+/datum/rule/integrity_destroyed/rule_condition()
+	return cond_measure(PROP_INTEGRITY_RATIO, SIM_COMPARE_LTE, RATIO(0))
