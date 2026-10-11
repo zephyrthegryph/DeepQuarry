@@ -9851,9 +9851,8 @@
 	pixel_y = -35
 	},
 /obj/structure/dogbed,
-/mob/living/simple_mob/animal/sif/glitterfly{
+/mob/living/simple_mob/animal/sif/glitterfly/tidy{
 	desc = "A large, shiny butterfly! The explorer who caught it refused to change the name after learning it was not a moth.";
-	makes_dirt = 0;
 	name = "Lomp"
 	},
 /turf/simulated/floor/carpet,

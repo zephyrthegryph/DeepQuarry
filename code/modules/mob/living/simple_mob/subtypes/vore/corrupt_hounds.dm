@@ -107,7 +107,6 @@
 		..()
 
 /mob/living/simple_mob/vore/aggressive/corrupthound
-	death_message = "shudders and collapses!"
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/on_death(gibbed)
 	.=..()
@@ -115,6 +114,7 @@
 	icon_state = icon_dead
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
+	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
@@ -350,7 +350,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 		..()
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound
-	death_message = "shudders and collapses!"
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/on_death(gibbed)
 	.=..()
@@ -358,6 +357,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound)
 	icon_state = icon_dead
 
 CAPABILITIES(/mob/living/simple_mob/vore/retaliate/corrupthound/janihound)
+	configure(mob_kind(death_message = "shudders and collapses!"))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

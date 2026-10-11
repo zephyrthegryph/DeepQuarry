@@ -3,9 +3,11 @@
 	name = "fireball"
 	icon_state = "fireball2"
 	damage = 15
-	armor_penetration = 25	// It's a great ball of fire.
 
 	combustion = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/fireball)
+	configure(item_combat(armor_penetration = 25))
 
 /obj/item/projectile/energy/fireball/on_hit(atom/target, blocked = 0)
 	new /obj/effect/explosion(get_turf(target))

@@ -16,6 +16,7 @@ GLOBAL_LIST_INIT(dq_variants_under_teshari_smock, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/teshari/smock)
+	configure(item_worn(covers = 0))
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

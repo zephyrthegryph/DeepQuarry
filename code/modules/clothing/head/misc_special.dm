@@ -21,8 +21,6 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	item_state_slots = list(slot_r_hand_str = "welding", slot_l_hand_str = "welding")
 	var/up = 0
 	armor_spec = "melee=10"
-	flags_inv = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
-	body_parts_covered = HEAD|FACE|EYES
 	actions_types = list(/datum/action/item_action/flip_welding_mask)
 	w_class = ITEMSIZE_NORMAL
 	var/base_state
@@ -32,6 +30,7 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/welding)
+	configure(item_worn(hides = (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE), covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 	op("welding_mask_flip_self", in_hand(), label("Flip"), then(PROC_REF(welding_mask_flip_self)))
@@ -55,16 +54,16 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
-			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers | ((EYES|FACE)))
+			set_flags_inv(worn_of(src).hides | ((HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = base_state
 			flash_protection = FLASH_PROTECTION_MAJOR
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
-			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
+			set_body_parts_covered(worn_of(src).covers & (~(EYES|FACE)))
+			set_flags_inv(worn_of(src).hides & (~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)))
 			icon_state = "[base_state]up"
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
@@ -129,7 +128,6 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 	name = "cake-hat"
 	desc = "It's tasty looking!"
 	icon_state = "cake0"
-	body_parts_covered = HEAD
 	special_handling = TRUE
 
 /obj/item/clothing/head/cakehat/var/onfire = FALSE
@@ -146,6 +144,7 @@ TRACKED(/obj/item/clothing/head/cakehat, onfire)
 		location.hotspot_expose(700, 1)
 
 CAPABILITIES(/obj/item/clothing/head/cakehat)
+	configure(item_worn(covers = HEAD))
 	op("cakehat_light_self", in_hand(), label("Light"), then(PROC_REF(cakehat_light_self)))
 	every(2 SECONDS, then(PROC_REF(cakehat_step)), when = nameof(onfire))
 
@@ -153,11 +152,11 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 /obj/item/clothing/head/cakehat/proc/cakehat_light_self(datum/act/op/A)
 	set_onfire(!onfire)
 	if (onfire)
-		force = 3
+		set_force(3)
 		injury_kind = INJURY_BURN
 		icon_state = "cake1"
 	else
-		force = null
+		set_force(null)
 		injury_kind = INJURY_BLUNT
 		icon_state = "cake0"
 	return
@@ -169,10 +168,10 @@ CAPABILITIES(/obj/item/clothing/head/cakehat)
 	name = "ushanka"
 	desc = "Perfect for those cold winter nights."
 	icon_state = "ushankadown"
-	flags_inv = HIDEEARS
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head/ushanka)
+	configure(item_worn(hides = HIDEEARS))
 	op("flaps", in_hand(), label("Toggle ear flaps"), then(PROC_REF(ushanka_flaps_self)))
 
 /// Old attack_self.
@@ -207,13 +206,12 @@ CAPABILITIES(/obj/item/clothing/head/ushanka)
 	name = "carved pumpkin"
 	desc = "A jack o' lantern! Believed to ward off evil spirits."
 	icon_state = "hardhat0_pumpkin"//Could stand to be renamed
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 	light_overlay = "jackolantern"
 	w_class = ITEMSIZE_NORMAL
 
 CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
 	configure(light_glow(range = 2))
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /*
@@ -223,10 +221,10 @@ CAPABILITIES(/obj/item/clothing/head/pumpkinhead)
 	name = "kitty ears"
 	desc = "A pair of kitty ears. Meow!"
 	icon_state = "kitty"
-	body_parts_covered = 0
 	item_icons = null
 
 CAPABILITIES(/obj/item/clothing/head/kitty)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1.5))
 
 /obj/item/clothing/head/richard
@@ -234,22 +232,27 @@ CAPABILITIES(/obj/item/clothing/head/kitty)
 	desc = "You can hear the distant sounds of rhythmic electronica."
 	icon_state = "richard"
 	item_state_slots = list(slot_r_hand_str = "chickenhead", slot_l_hand_str = "chickenhead")
-	body_parts_covered = HEAD|FACE
-	flags_inv = BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/richard)
+	configure(item_worn(covers = HEAD|FACE, hides = BLOCKHAIR))
 
 /obj/item/clothing/head/santa
 	name = "santa hat"
 	desc = "It's a festive christmas hat, in red!"
 	icon_state = "santahatnorm"
 	item_state_slots = list(slot_r_hand_str = "santahat", slot_l_hand_str = "santahat")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/santa)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/santa/green
 	name = "green santa hat"
 	desc = "It's a festive christmas hat, in green!"
 	icon_state = "santahatgreen"
 	item_state_slots = list(slot_r_hand_str = "santahatgreen", slot_l_hand_str = "santahatgreen")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/santa/green)
+	configure(item_worn(covers = 0))
 
 /*
  * Xenoarch/Surface Loot Hats
@@ -345,16 +348,15 @@ CAPABILITIES(/obj/item/clothing/head/psy_crown)
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	force = 1
-	throwforce = 3
 	throw_speed = 2
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD
-	attack_verb = list("warned", "cautioned", "smashed")
 	armor_spec = "melee=5"
 
 CAPABILITIES(/obj/item/clothing/head/cone)
+	configure(item_worn(covers = HEAD))
+	configure(item_thrown(force = 3))
+	configure(item_combat(force = 1, attack_verbs = list("warned", "cautioned", "smashed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES))
 
 /obj/item/clothing/head/cone

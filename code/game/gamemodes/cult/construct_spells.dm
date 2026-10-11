@@ -426,8 +426,6 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	throwforce = 0
-	force = 0
 	show_examine = FALSE
 	core = null
 	coreless = TRUE // a construct spell never needs a technomancer core (coreless is a constructor param now, not Initialize's second argument)
@@ -437,6 +435,10 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 	cooldown = 0 				// If set, will add a cooldown overlay and adjust click delay.  Must be a multiple of 5 for overlays.
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
+
+CAPABILITIES(/obj/item/spell/construct)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 
 // ALLOW(init/INSTANCE_STATE): a construct spell made without an owner mob is refused at creation
 /obj/item/spell/construct/Initialize(mapload)
@@ -592,7 +594,6 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
-	armor_penetration = 60
 
 	muzzle_type = /obj/effect/projectile/muzzle/inversion
 	tracer_type = /obj/effect/projectile/tracer/inversion
@@ -600,15 +601,18 @@ CAPABILITIES(/obj/item/spell/construct/projectile)
 
 CAPABILITIES(/obj/item/projectile/beam/inversion)
 	configure(light_glow(range = 2, power = -2, color = "#FFFFFF"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/energy/inversion
 	name = "inversion blast"
 	icon = 'icons/obj/projectiles_impact.dmi'
 	icon_state = "impact_invert"
 	damage = 30
-	armor_penetration = 60
 	color = "#ffffff"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
+
+CAPABILITIES(/obj/item/projectile/energy/inversion)
+	configure(item_combat(armor_penetration = 60))
 
 //Harvester Pain Orb
 
@@ -749,7 +753,6 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 	icon_state = "invert"
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 20
-	armor_penetration = 60
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
@@ -757,6 +760,7 @@ CAPABILITIES(/obj/item/spell/construct/slam)
 
 CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
 	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
 	to_chat(M, span_danger("You hear a loud roar."))
@@ -811,7 +815,6 @@ CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
 	mob_bonus_damage = 45
-	armor_penetration = 60
 
 	muzzle_type = /obj/effect/projectile/muzzle/lightning
 	tracer_type = /obj/effect/projectile/tracer/lightning
@@ -819,6 +822,7 @@ CAPABILITIES(/obj/item/projectile/beam/crippling_beam)
 
 CAPABILITIES(/obj/item/projectile/beam/banishment)
 	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/beam/banishment/proc/banish(mob/living/simple_mob/construct)
 	if(construct)
@@ -859,7 +863,6 @@ CAPABILITIES(/obj/item/projectile/beam/banishment)
 	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 5
 	injury_kind = INJURY_BLUNT
-	armor_penetration = 60
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
@@ -867,6 +870,7 @@ CAPABILITIES(/obj/item/projectile/beam/banishment)
 
 CAPABILITIES(/obj/item/projectile/beam/force_beam)
 	configure(light_glow(range = 2, power = -2, color = "#64B4E6"))
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/beam/force_beam/on_hit(atom/movable/target, blocked = 0)
 	if(isliving(target))

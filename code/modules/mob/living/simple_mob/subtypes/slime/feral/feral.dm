@@ -50,23 +50,26 @@
 	cold_damage_per_tick = 0
 
 	projectiletype = /obj/item/projectile/icicle
-	base_attack_cooldown = 2 SECONDS
 	ranged_attack_delay = 1 SECOND
 
 	player_msg = "You can fire an icicle projectile every two seconds. It hits hard, and armor has a hard time resisting it.<br>\
 	You are also immune to the cold, and you cause enemies around you to suffer periodic harm from the cold, if unprotected.<br>\
 	Unprotected enemies are also Chilled, making them slower and less evasive, and disabling effects last longer."
 
+CAPABILITIES(/mob/living/simple_mob/slime/feral/dark_blue)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
 /obj/item/projectile/icicle
 	name = "icicle"
 	icon_state = "ice_2"
 	damage = 40
-	armor_penetration = 30
 	speed = 2
 	icon_scale_x = 2 // It hits like a truck.
 	icon_scale_y = 2
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/projectile/icicle)
+	configure(item_combat(armor_penetration = 30, sharp = TRUE))
 
 /obj/item/projectile/icicle/on_impact(atom/A)
 	play_sfx(A, SFX_SHATTER)

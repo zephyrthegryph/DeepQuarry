@@ -11,13 +11,13 @@
 	desc = "Transports delicate fossils in suspension so they don't break during transit."
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "satchel"
-	slot_flags = SLOT_BELT | SLOT_POCKET
 	w_class = ITEMSIZE_NORMAL
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
 
 
 CAPABILITIES(/obj/item/storage/bag/fossils)
+	configure(item_worn(slots = SLOT_BELT | SLOT_POCKET))
 	configure(storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/samplebags
@@ -40,7 +40,6 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	icon_state = "xenoarch_scanner"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 
 	EXPIRY_DECLARE(last_scan_time)
 	var/scan_delay = 25
@@ -48,6 +47,7 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	var/repopulation_delay = 600 //Anti spam.
 
 CAPABILITIES(/obj/item/ano_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	op("scan_anomalies", in_hand(), then(PROC_REF(scan_requested)))
 
 /obj/item/ano_scanner/proc/scan_requested(datum/act/op/A)
@@ -107,13 +107,13 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	icon_state = "depth_scanner"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	/// Owned: the depth scans this scanner recorded.
 	var/list/positive_locations
 	/// Relation view: the selected scan (one of positive_locations).
 	var/tmp/datum/depth_scan/current
 
 CAPABILITIES(/obj/item/depth_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_many(nameof(positive_locations))
 	op("view_depth_scans", in_hand(), opens_ui())
 	interface("XenoarchDepthScanner", state = nameof(GLOB.tgui_deep_inventory_state))
@@ -332,12 +332,12 @@ MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5
 	item_state = "lampgreen"
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	var/mode = 1 //Start off scanning. 1 = scanning, 0 = measuring
 	var/obj/item/ano_scanner/anomaly_scanner = null
 	var/obj/item/depth_scanner/depth_scanner = null
 
 CAPABILITIES(/obj/item/xenoarch_multi_tool)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(anomaly_scanner), starts = /obj/item/ano_scanner)
 	owns_one(nameof(depth_scanner), starts = /obj/item/depth_scanner)
 	held_verb(/obj/item/xenoarch_multi_tool/proc/swap_functionality, SLOT_ANY_CARRIED)

@@ -98,7 +98,6 @@
 	name = "pellet"
 	fire_sound = SFX_WEAPONS_GUNSHOT_SHOTGUN
 	damage = 12
-	armor_penetration = 0
 
 /obj/item/projectile/scatter/flechette
 	damage = 60

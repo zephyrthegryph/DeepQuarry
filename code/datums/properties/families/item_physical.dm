@@ -57,12 +57,14 @@
 /datum/property_provider/type_var/tag/sharp
 	property = TAG_SHARP
 	applies_to = /obj/item
-	state_var = "sharp"
 	variant_var = "sharp"
 
 /datum/property_provider/type_var/tag/sharp/read_initial(path)
-	var/obj/item/I = path
-	return initial(I.sharp)
+	return combat_of_type(path).sharp
+
+/// An instance reads its item_combat() trait (its own copy once set_sharp() wrote one), not a saved var.
+/datum/property_provider/type_var/tag/sharp/instance_value(datum/D)
+	return normalize(combat_of(D).sharp)
 
 /datum/property_def/tag/conductive
 	id = TAG_CONDUCTIVE

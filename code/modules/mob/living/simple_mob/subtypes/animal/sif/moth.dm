@@ -44,7 +44,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 10
-	base_attack_cooldown = 1.5 SECONDS
 	attacktext = list("nipped", "bit", "pinched")
 
 	organ_names = /datum/decl/mob_organ_names/moth
@@ -137,6 +136,7 @@
 TYPE_TABLE(/datum/decl/mob_organ_names/moth, mob_organ_hit_zones, list("head", "thorax", "abdomen", "left forewing", "left hindwing", "right forewing", "right hindwing", "left foreleg", "right foreleg", "left hindleg", "right hindleg"))
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/tymisian)
+	configure(mob_kind(attack_cooldown = 1.5 SECONDS))
 	owns_one(nameof(smoke_spore), starts = /datum/effect/effect/system/smoke_spread/mothspore)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

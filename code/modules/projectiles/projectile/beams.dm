@@ -74,8 +74,10 @@ CAPABILITIES(/obj/item/projectile/beam/smalllaser/ion)
 
 /obj/item/projectile/beam/burstlaser
 	damage = 30
-	armor_penetration = 10
 	hud_state = "laser"
+
+CAPABILITIES(/obj/item/projectile/beam/burstlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/burstlaser/ion
 	injury_kind = INJURY_ELECTRIC
@@ -89,8 +91,10 @@ CAPABILITIES(/obj/item/projectile/beam/burstlaser/ion)
 
 /obj/item/projectile/beam/midlaser
 	damage = 40
-	armor_penetration = 10
 	hud_state = "laser"
+
+CAPABILITIES(/obj/item/projectile/beam/midlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/midlaser/ion
 	injury_kind = INJURY_ELECTRIC
@@ -105,7 +109,6 @@ CAPABILITIES(/obj/item/projectile/beam/midlaser/ion)
 /obj/item/projectile/beam/mininglaser
 	name = "pulsating laser"
 	damage = 10
-	armor_penetration = 20
 	fire_sound = SFX_WEAPONS_ELUGER
 
 	excavation_amount = 100
@@ -114,12 +117,14 @@ CAPABILITIES(/obj/item/projectile/beam/midlaser/ion)
 	tracer_type = /obj/effect/projectile/tracer/emitter
 	impact_type = /obj/effect/projectile/impact/emitter
 
+CAPABILITIES(/obj/item/projectile/beam/mininglaser)
+	configure(item_combat(armor_penetration = 20))
+
 /obj/item/projectile/beam/heavylaser
 	name = "heavy laser"
 	icon_state = "heavylaser"
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	damage = 60
-	armor_penetration = 30
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_heavy
 	tracer_type = /obj/effect/projectile/tracer/laser_heavy
@@ -128,6 +133,7 @@ CAPABILITIES(/obj/item/projectile/beam/midlaser/ion)
 
 CAPABILITIES(/obj/item/projectile/beam/heavylaser)
 	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/beam/heavylaser/fakeemitter
 	name = "emitter beam"
@@ -155,18 +161,18 @@ CAPABILITIES(/obj/item/projectile/beam/heavylaser/ion)
 
 /obj/item/projectile/beam/heavylaser/cannon
 	damage = 80
-	armor_penetration = 50
 	hud_state = "laser_overcharge"
 
 CAPABILITIES(/obj/item/projectile/beam/heavylaser/cannon)
 	configure(light_glow(color = "#FF0D00"))
+	configure(light_glow(color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/beam/xray
 	name = "xray beam"
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 25
-	armor_penetration = 50
 	hud_state = "laser_sniper"
 
 	muzzle_type = /obj/effect/projectile/muzzle/xray
@@ -175,13 +181,13 @@ CAPABILITIES(/obj/item/projectile/beam/heavylaser/cannon)
 
 CAPABILITIES(/obj/item/projectile/beam/xray)
 	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/beam/gamma
 	name = "gamma beam"
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 12
-	armor_penetration = 90
 	irradiate = 20
 	hud_state = "laser_sniper"
 
@@ -191,6 +197,7 @@ CAPABILITIES(/obj/item/projectile/beam/xray)
 
 CAPABILITIES(/obj/item/projectile/beam/gamma)
 	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 90))
 
 /obj/item/projectile/beam/cyan
 	name = "cyan beam"
@@ -211,7 +218,6 @@ CAPABILITIES(/obj/item/projectile/beam/cyan)
 	icon_state = "u_laser"
 	fire_sound=SFX_WEAPONS_GAUSS_SHOOT // Needs a more meaty sound than what pulse.ogg currently is; this will be a placeholder for now.
 	damage = 100	//Badmin toy, don't care
-	armor_penetration = 100
 	hud_state = "pulse"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_pulse
@@ -220,6 +226,7 @@ CAPABILITIES(/obj/item/projectile/beam/cyan)
 
 CAPABILITIES(/obj/item/projectile/beam/pulse)
 	configure(light_glow(color = "#0066FF"))
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/beam/pulse/on_hit(atom/target, blocked = 0)
 	if(isturf(target))
@@ -296,7 +303,6 @@ CAPABILITIES(/obj/item/projectile/beam/lasertag/omni)
 	icon_state = "xray"
 	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	damage = 50
-	armor_penetration = 10
 	hud_state = "laser_sniper"
 
 	muzzle_type = /obj/effect/projectile/muzzle/xray
@@ -305,6 +311,7 @@ CAPABILITIES(/obj/item/projectile/beam/lasertag/omni)
 
 CAPABILITIES(/obj/item/projectile/beam/sniper)
 	configure(light_glow(color = "#00CC33"))
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/beam/stun
 	name = "stun beam"
@@ -424,7 +431,6 @@ CAPABILITIES(/obj/item/projectile/beam/shock)
 	icon_state = "laser"
 	damage = 15
 	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
-	sharp = FALSE //"Wide" spectrum beam
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -434,6 +440,7 @@ CAPABILITIES(/obj/item/projectile/beam/shock)
 
 CAPABILITIES(/obj/item/projectile/beam/pointdefense)
 	configure(light_glow(color = COLOR_GOLD))
+	configure(item_combat(sharp = FALSE))
 
 // a physical/projectile coil-gun type pointdefense
 /obj/item/projectile/beam/coildefense
@@ -441,7 +448,6 @@ CAPABILITIES(/obj/item/projectile/beam/pointdefense)
 	icon_state = "coil"
 	damage = 15
 	injury_kind = INJURY_ELECTRIC //You should be safe inside a voidsuit
-	sharp = FALSE //"Wide" spectrum beam
 
 	excavation_amount = 200 // Good at shooting rocks
 
@@ -451,6 +457,7 @@ CAPABILITIES(/obj/item/projectile/beam/pointdefense)
 
 CAPABILITIES(/obj/item/projectile/beam/coildefense)
 	configure(light_glow(color = "#FFFFFF"))
+	configure(item_combat(sharp = FALSE))
 
 
 /obj/item/projectile/beam/precursor // added Precursor beam
@@ -463,10 +470,11 @@ CAPABILITIES(/obj/item/projectile/beam/coildefense)
 	impact_type = /obj/effect/projectile/impact/precursor
 	hud_state = "plasma_rifle"
 	damage = 48
-	armor_penetration = 10
 
 CAPABILITIES(/obj/item/projectile/beam/precursor)
 	configure(light_glow(color = "#FF0099"))
+	configure(light_glow(color = "#FF0099"))
+	configure(item_combat(armor_penetration = 10))
 /obj/item/projectile/beam/eluger
 	name = "laser beam"
 	icon_state = "xray"
@@ -539,7 +547,6 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	name = "point defense salvo"
 	icon_state = "laser"
 	damage = 15
-	sharp = FALSE //"Wide" spectrum beam
 	injury_kind = INJURY_ELECTRIC
 	hud_state = "monkey"
 	excavation_amount = 200 // Good at shooting rocks
@@ -552,7 +559,6 @@ CAPABILITIES(/obj/item/projectile/beam/sparkledog)
 	name = "defense coil salvo"
 	icon_state = "coil"
 	damage = 15
-	sharp = FALSE //"Wide" spectrum beam
 	injury_kind = INJURY_ELECTRIC
 
 	excavation_amount = 200 // Good at shooting rocks

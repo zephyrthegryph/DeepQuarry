@@ -42,7 +42,7 @@
 	TEST_ASSERT_EQUAL(spell.owner_ref(), actor, "The parent constructor records the exact caster")
 	TEST_ASSERT(actor.put_in_active_hand(spell), "The caster holds its actual initialized warp spell")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, start)
-	TEST_ASSERT_EQUAL(pen.force, 0, "The actual ordinary pen provides the harmless off-hand attack")
+	TEST_ASSERT_EQUAL(combat_of(pen).force, 0, "The actual ordinary pen provides the harmless off-hand attack")
 	TEST_ASSERT(actor.put_in_inactive_hand(pen), "The real pen occupies the caster's inactive hand")
 	TEST_ASSERT_EQUAL(opponent.stat, CONSCIOUS, "The actual target starts conscious without artificial status setup")
 	TEST_ASSERT(!spell.is_ally(opponent), "The actual unrelated target is not a caster ally")

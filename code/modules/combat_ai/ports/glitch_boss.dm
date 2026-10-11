@@ -14,6 +14,9 @@
 /mob/living/simple_mob/glitch_boss
 	use_modern_ai = TRUE
 
+CAPABILITIES(/mob/living/simple_mob/glitch_boss)
+	configure(mob_kind(attack_cooldown = 2.5 SECONDS, death_message = "suddenly %runtime error in unknown.dm, line 56%"))
+
 TYPE_TABLE(/mob/living/simple_mob/glitch_boss, get_ai_behaviors, list( \
 	/datum/ai_behavior/glitch_ads, \
 	/datum/ai_behavior/glitch_calldown, \

@@ -92,11 +92,13 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "electric_hand"
 	show_examine = FALSE
-	item_flags = DROPDEL | NOSTRIP
 
 	var/shock_cost = 10
 	var/agony_amount = 60
 	var/electrocute_amount = 10
+
+CAPABILITIES(/obj/item/electric_hand)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
 
 /obj/item/electric_hand/efficent
 	shock_cost = 5

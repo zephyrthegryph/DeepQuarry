@@ -36,10 +36,8 @@
 
 	name = "light replacer"
 	desc = "A device to automatically replace lights. Refill with working lightbulbs or sheets of glass."
-	force = 8
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "lightreplacer0"
-	slot_flags = SLOT_BELT
 
 	var/max_uses = 32
 	var/uses = 32
@@ -69,6 +67,8 @@ TRACKED(/obj/item/lightreplacer, max_uses)
 TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 8))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
 	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),
@@ -256,7 +256,6 @@ MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "lightreplacer0"
 	color = "#bbbbff"
-	slot_flags = SLOT_BELT
 
 
 	var/static/dcolor = "#e0eff0"
@@ -277,6 +276,7 @@ MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 			. += "It is currently coloring lights."
 
 CAPABILITIES(/obj/item/lightpainter)
+	configure(item_worn(slots = SLOT_BELT))
 	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light)))
 	op("use", in_hand(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose Light Color", "default" = nameof(setcolor)), when = PROC_REF(not_painting)), then(PROC_REF(used_in_hand)))
 

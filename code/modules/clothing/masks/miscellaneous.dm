@@ -2,7 +2,6 @@
 	name = "muzzle"
 	desc = "To stop that awful noise."
 	icon_state = "muzzle"
-	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 	voicechange = 1
 	say_messages = list("Mmfph!", "Mmmf mrrfff!", "Mmmf mnnf!")
@@ -18,6 +17,7 @@
 
 // Clumsy folks can't take the mask off themselves.
 CAPABILITIES(/obj/item/clothing/mask/muzzle)
+	configure(item_worn(covers = FACE))
 	configure(item_protection(gas_transfer = 0.90))
 	op("muzzle_worn_hand", hand(), then(PROC_REF(muzzle_worn_hand)))
 
@@ -34,8 +34,6 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 	icon_state = "sterile"
 	item_state_slots = list(slot_r_hand_str = "sterile", slot_l_hand_str = "sterile")
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = FACE
-	item_flags = FLEXIBLEMATERIAL
 	armor_spec = "bio=60"
 	var/hanging = 0
 
@@ -44,13 +42,13 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 		src.hanging = !src.hanging
 		if (src.hanging)
 			set_gas_transfer_coefficient(1)
-			body_parts_covered = body_parts_covered & ~FACE
+			set_body_parts_covered(worn_of(src).covers & ~FACE)
 			set_armor(dq_armor_none())
 			icon_state = "steriledown"
 			to_chat(user, "You pull the mask below your chin.")
 		else
 			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
-			body_parts_covered = initial(body_parts_covered)
+			set_body_parts_covered(worn_of_type(type).covers)
 			icon_state = initial(icon_state)
 			set_armor(null)
 			to_chat(user, "You pull the mask up to cover your face.")
@@ -58,6 +56,7 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 		worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/mask/surgical)
+	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.01))
 	op("surgical_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(surgical_toggle_verb)))
 
@@ -88,15 +87,17 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	name = "fake moustache"
 	desc = "Warning: moustache is fake."
 	icon_state = "fake-moustache"
-	flags_inv = HIDEFACE
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/mask/fakemoustache)
+	configure(item_worn(hides = HIDEFACE, covers = 0))
 
 /obj/item/clothing/mask/snorkel
 	name = "Snorkel"
 	desc = "For the Swimming Savant."
 	icon_state = "snorkel"
-	flags_inv = HIDEFACE
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/mask/snorkel)
+	configure(item_worn(hides = HIDEFACE, covers = 0))
 
 //scarves (fit in in mask slot)
 //None of these actually have on-mob sprites...
@@ -105,113 +106,103 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	name = "blue neck scarf"
 	desc = "A blue neck scarf."
 	icon_state = "blueneckscarf"
-	body_parts_covered = FACE
-	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/bluescarf)
+	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90))
 
 /obj/item/clothing/mask/redscarf
 	name = "red scarf"
 	desc = "A red and white checkered neck scarf."
 	icon_state = "redwhite_scarf"
-	body_parts_covered = FACE
-	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/redscarf)
+	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90))
 
 /obj/item/clothing/mask/greenscarf
 	name = "green scarf"
 	desc = "A green neck scarf."
 	icon_state = "green_scarf"
-	body_parts_covered = FACE
-	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/greenscarf)
+	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90))
 */
 /obj/item/clothing/mask/ninjascarf
 	name = "ninja scarf"
 	desc = "A stealthy, dark scarf."
 	icon_state = "s-ninja"
-	body_parts_covered = FACE
-	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/ninjascarf)
+	configure(item_worn(covers = FACE, flags = FLEXIBLEMATERIAL))
 	configure(item_protection(gas_transfer = 0.90, siemens = 0))
 
 /obj/item/clothing/mask/pig
 	name = "pig mask"
 	desc = "A rubber pig mask."
 	icon_state = "pig"
-	flags_inv = HIDEFACE|BLOCKHAIR
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/mask/pig)
+	configure(item_worn(hides = HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/shark
 	name = "shark mask"
 	desc = "A rubber shark mask."
 	icon_state = "shark"
-	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/mask/shark)
+	configure(item_worn(hides = HIDEFACE, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/dolphin
 	name = "dolphin mask"
 	desc = "A rubber dolphin mask."
 	icon_state = "dolphin"
-	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/mask/dolphin)
+	configure(item_worn(hides = HIDEFACE, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/goblin
 	name = "goblin mask"
 	desc = "A rubber goblin mask."
 	icon_state = "goblin"
-	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/mask/goblin)
+	configure(item_worn(hides = HIDEFACE, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/demon
 	name = "demon mask"
 	desc = "A rubber demon mask."
 	icon_state = "demon"
-	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/mask/demon)
+	configure(item_worn(hides = HIDEFACE, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/horsehead
 	name = "horse head mask"
 	desc = "A mask made of soft vinyl and latex, representing the head of a horse."
 	icon_state = "horsehead"
-	flags_inv = HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 	w_class = ITEMSIZE_SMALL
 	// The horse mask does not change voices by default; wizard spells enable and replace these tables.
 	say_messages = list("NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!")
 	say_verbs = list("whinnies", "neighs", "says")
 
 CAPABILITIES(/obj/item/clothing/mask/horsehead)
+	configure(item_worn(hides = HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.9))
 /* //Lost to time.
 /obj/item/clothing/mask/nock_scarab
@@ -219,39 +210,46 @@ CAPABILITIES(/obj/item/clothing/mask/horsehead)
 	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
 	icon_state = "nock_scarab"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE
+
+CAPABILITIES(/obj/item/clothing/mask/nock_scarab)
+	configure(item_worn(covers = HEAD|FACE))
 
 /obj/item/clothing/mask/nock_demon
 	name = "nock mask (purple, demon)"
 	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
 	icon_state = "nock_demon"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE
+
+CAPABILITIES(/obj/item/clothing/mask/nock_demon)
+	configure(item_worn(covers = HEAD|FACE))
 
 /obj/item/clothing/mask/nock_life
 	name = "nock mask (green, life)"
 	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
 	icon_state = "nock_life"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE
+
+CAPABILITIES(/obj/item/clothing/mask/nock_life)
+	configure(item_worn(covers = HEAD|FACE))
 
 /obj/item/clothing/mask/nock_ornate
 	name = "nock mask (red, ornate)"
 	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
 	icon_state = "nock_ornate"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = HEAD|FACE
+
+CAPABILITIES(/obj/item/clothing/mask/nock_ornate)
+	configure(item_worn(covers = HEAD|FACE))
 */
 /obj/item/clothing/mask/ai
 	name = "camera MIU"
 	desc = "Allows for direct mental connection to accessible camera networks."
 	icon_state = "s-ninja"
 	item_state_slots = list(slot_r_hand_str = "mime", slot_l_hand_str = "mime")
-	flags_inv = HIDEFACE
-	body_parts_covered = 0
 	var/mob/observer/eye/aiEye/eye
 
 CAPABILITIES(/obj/item/clothing/mask/ai)
+	configure(item_worn(hides = HIDEFACE, covers = 0))
 	owns_one(nameof(eye), starts = /mob/observer/eye/aiEye)
 
 /obj/item/clothing/mask/ai/equipped(mob/user, slot)
@@ -275,22 +273,22 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 	name = "black bandana"
 	desc = "A fine black bandana with nanotech lining. Can be worn on the head or face."
 	w_class = ITEMSIZE_TINY
-	flags_inv = HIDEFACE
-	slot_flags = SLOT_MASK|SLOT_HEAD
-	body_parts_covered = FACE
 	icon_state = "bandblack"
 	item_state_slots = list(slot_r_hand_str = "bandblack", slot_l_hand_str = "bandblack")
+
+CAPABILITIES(/obj/item/clothing/mask/bandana)
+	configure(item_worn(hides = HIDEFACE, slots = SLOT_MASK|SLOT_HEAD, covers = FACE))
 
 /obj/item/clothing/mask/bandana/equipped(mob/user, slot)
 	switch(slot)
 		if(SLOT_ID_MASK) //Mask is the default for all the settings
-			flags_inv = initial(flags_inv)
-			body_parts_covered = initial(body_parts_covered)
+			set_flags_inv(worn_of_type(type).hides)
+			set_body_parts_covered(worn_of_type(type).covers)
 			icon_state = initial(icon_state)
 
 		if(SLOT_ID_HEAD)
-			flags_inv = 0
-			body_parts_covered = HEAD
+			set_flags_inv(0)
+			set_body_parts_covered(HEAD)
 			icon_state = "[initial(icon_state)]_up"
 
 	return ..()
@@ -329,14 +327,15 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 	name = "black veil"
 	desc = "A black veil, typically worn at funerals or by goths."
 	w_class = ITEMSIZE_TINY
-	body_parts_covered = FACE
 	icon_state = "veil"
+
+CAPABILITIES(/obj/item/clothing/mask/veil)
+	configure(item_worn(covers = FACE))
 
 /obj/item/clothing/mask/paper
 	name = "paper mask"
 	desc = "A neat, circular mask made out of paper. Perhaps you could try drawing on it with a pen!"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = FACE
 	icon_state = "papermask"
 	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
 	var/list/papermask_designs
@@ -373,6 +372,7 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/paper)
+	configure(item_worn(covers = FACE))
 	per_type(nameof(papermask_designs), PROC_REF(build_papermask_designs))
 	op("paper_mask_design_self", in_hand(), label("Change design"), then(PROC_REF(paper_mask_design_self)))
 
@@ -409,7 +409,6 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	name = "emotional mask"
 	desc = "Express your happiness or hide your sorrows with this modular cutout. Draw your current emotions onto it with a pen!"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = FACE
 	icon_state = "joy"
 	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
 	var/list/joymask_designs
@@ -426,6 +425,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/emotions)
+	configure(item_worn(covers = FACE))
 	per_type(nameof(joymask_designs), PROC_REF(build_joymask_designs))
 	op("emotion_mask_design_self", in_hand(), label("Change emotion"), then(PROC_REF(emotion_mask_design_self)))
 
@@ -454,15 +454,19 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	desc = "100% synthetic \"Country Girls LLC.\" brand mouth wheat. Warning: not for actual consumption."
 	icon_state = "mouthwheat"
 	w_class = ITEMSIZE_SMALL
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/mask/mouthwheat)
+	configure(item_worn(covers = 0))
 
 
 /obj/item/clothing/mask/lacemask
 	name = "lace mask"
 	desc = "A sheer lace mask that rests above the nose and trails down below the chin."
 	icon_state = "lace_mask"
-	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
+
+CAPABILITIES(/obj/item/clothing/mask/lacemask)
+	configure(item_worn(flags = FLEXIBLEMATERIAL))
 
 
 /obj/item/clothing/mask/costume/ghost
@@ -471,7 +475,7 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	icon = 'icons/inventory/face/item.dmi'
 	icon_override = 'icons/inventory/face/mob.dmi'
 	icon_state = "ghost"
-	body_parts_covered = HEAD|FACE
-	item_flags = FLEXIBLEMATERIAL
-	flags_inv = HIDEFACE|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/mask/costume/ghost)
+	configure(item_worn(covers = HEAD|FACE, flags = FLEXIBLEMATERIAL, hides = HIDEFACE|BLOCKHAIR))
 

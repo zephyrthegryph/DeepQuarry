@@ -122,7 +122,7 @@
 	A.set_held_provider(welder)
 	TEST_ASSERT_EQUAL(A.held_provider(), welder, "The generic interface preserves the exact inventory provider")
 	TEST_ASSERT_EQUAL(A.held.get_welder(), welder, "The unchanged inventory field exposes the real welder")
-	TEST_ASSERT_EQUAL(A.held.toolspeed, 1, "Inventory tool speed retains its declared value")
+	TEST_ASSERT_EQUAL(tooling_of(A.held).speed, 1, "Inventory tool speed retains its declared value")
 	TEST_ASSERT_EQUAL(sounds_of(A.held).use, SFX_ITEMS_WELDER2, "Inventory use sound retains its declared value")
 	A.set_held_provider(multitool)
 	TEST_ASSERT_EQUAL(A.held.get_multitool(), multitool, "Replacing a provider retains concrete item dispatch")

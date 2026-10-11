@@ -179,7 +179,6 @@ CAPABILITIES(/obj/item/storage/secure)
 	icon_state = "secure"
 	item_state_slots = list(slot_r_hand_str = "case", slot_l_hand_str = "case")
 	desc = "A large briefcase with a digital locking system."
-	force = 8.0
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
@@ -187,6 +186,7 @@ CAPABILITIES(/obj/item/storage/secure)
 
 // A briefcase's keypad is its use in hand.
 CAPABILITIES(/obj/item/storage/secure/briefcase)
+	configure(item_combat(force = 8.0))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	extend("ui_open", inputs(in_hand(), remote()))
 
@@ -203,7 +203,6 @@ CAPABILITIES(/obj/item/storage/secure/briefcase)
 	icon_opened = "safe0"
 	icon_locking = "safeb"
 	icon_sparking = "safespark"
-	force = 8.0
 	w_class = ITEMSIZE_NO_CONTAINER
 	flags = WALL_ITEM
 	anchored = TRUE
@@ -214,4 +213,5 @@ CAPABILITIES(/obj/item/storage/secure/briefcase)
 	)
 
 CAPABILITIES(/obj/item/storage/secure/safe)
+	configure(item_combat(force = 8.0))
 	configure(storage(refuses = list(/obj/item/storage/secure/briefcase), max_size = ITEMSIZE_LARGE))

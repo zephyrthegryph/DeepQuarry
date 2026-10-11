@@ -7,10 +7,11 @@
 	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 60 //Old 25
-	armor_penetration = 30
 
 CAPABILITIES(/obj/item/projectile/energy/mob/heavylaser)
 	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(light_glow(range = 3, power = 1, color = "#FF0D00"))
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/mob/midlaser
 	name = "laser"
@@ -18,7 +19,9 @@ CAPABILITIES(/obj/item/projectile/energy/mob/heavylaser)
 	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40 //old 20
-	armor_penetration = 10
+
+CAPABILITIES(/obj/item/projectile/energy/mob/midlaser)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/mob/smalllaser
 	name = "laser"
@@ -26,7 +29,9 @@ CAPABILITIES(/obj/item/projectile/energy/mob/heavylaser)
 	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 30 //Old 10
-	armor_penetration = 0
+
+CAPABILITIES(/obj/item/projectile/energy/mob/smalllaser)
+	configure(item_combat(armor_penetration = 0))
 
 
 /obj/item/projectile/energy/mob/drone
@@ -59,20 +64,22 @@ CAPABILITIES(/obj/item/projectile/energy/mob/electric_spider)
 
 	hud_state = "plasma_rifle"
 	damage = 48 //Old 25
-	armor_penetration = 10
 
 CAPABILITIES(/obj/item/projectile/energy/mob/precursor)
 	configure(light_glow(color = "#FF0099"))
+	configure(item_combat(armor_penetration = 10))
 
 
 //Eclipse mob stuff
 
 /obj/item/projectile/energy/blob/moth
 	damage = 30 //old 15
-	armor_penetration = 15
 	flammability = 0.25
 	color = "#38b9ff"
 	speed = 3.2
+
+CAPABILITIES(/obj/item/projectile/energy/blob/moth)
+	configure(item_combat(armor_penetration = 15))
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(REAGENT_ID_FUEL, REAGENT_ID_MOLD))
 
@@ -105,12 +112,14 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(RE
 	spread_range = 7
 
 /obj/item/projectile/energy/mob/heavysniper
-	armor_penetration = 40
 	damage = 60 //Old 40, not doubling that lol
 	speed = 1.2
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	name = "sniper beam"
 	icon_state = "impact_xray"
+
+CAPABILITIES(/obj/item/projectile/energy/mob/heavysniper)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/energy/declone/burn
 	damage = 30 //Old 15

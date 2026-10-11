@@ -14,7 +14,6 @@
 	item_state = "rifle"
 	w_class = ITEMSIZE_LARGE
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE // ToDo: Make it so MAGAZINE, SPEEDLOADER and SINGLE_CASING can all be used on the same gun.
 	magazine_type = /obj/item/ammo_magazine/m762enbloc
 	allowed_magazines = list(/obj/item/ammo_magazine/m762enbloc)
@@ -44,7 +43,6 @@
 	item_state = "rifle"
 	w_class = ITEMSIZE_LARGE
 	caliber = ".44"
-	slot_flags = SLOT_BACK
 	handle_casings = CYCLE_CASINGS
 	load_method = SINGLE_CASING|SPEEDLOADER
 	max_shells = 6

@@ -41,10 +41,11 @@ CAPABILITIES(/obj/item/projectile/ion)
 	name ="explosive bolt"
 	icon_state= "bolter"
 	damage = 50
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	hud_state = "rocket_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/gyro)
+	configure(item_combat(sharp = TRUE, edge = TRUE))
 
 /obj/item/projectile/bullet/gyro/on_hit(atom/target, blocked = 0)
 	explosion(target, -1, 0, 2, 0, 0) // Don't spam admins
@@ -271,7 +272,7 @@ CAPABILITIES(/obj/item/projectile/energy/floraprune)
 	if(ishuman(target))
 		var/mob/living/carbon/human/human_target = target
 		for(var/obj/item/clothing/cloth in list(human_target.get_equipped_item(SLOT_ID_SUIT), human_target.get_equipped_item(SLOT_ID_UNIFORM), human_target.get_equipped_item(SLOT_ID_SHOES))) //Check if we have a thick material covering our feet.
-			if((cloth.body_parts_covered & FEET) && (cloth.item_flags & THICKMATERIAL))
+			if((worn_of(cloth).covers & FEET) && (worn_of(cloth).flags & THICKMATERIAL))
 				..()
 				return
 		var/obj/item/handcuffs/legcuffs/bola/B = new(src.loc)

@@ -512,7 +512,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
-		if(prob(1+W.force * 5))
+		if(prob(1+combat_of(W).force * 5))
 
 			to_chat(user, "You hit the light, and it smashes!")
 			for(var/mob/M in viewers(src))
@@ -897,8 +897,6 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 /obj/item/light
 	icon = 'icons/obj/lighting.dmi'
-	force = 2
-	throwforce = 5
 	w_class = ITEMSIZE_TINY
 	MATERIAL_BULK(MAT_STEEL, 60)
 
@@ -1007,6 +1005,8 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
@@ -1196,8 +1196,8 @@ CAPABILITIES(/obj/item/light)
 	if(status == LIGHT_OK || status == LIGHT_BURNED)
 		src.visible_message(span_red("[name] shatters."),span_red("You hear a small glass object shatter."))
 		set_status(LIGHT_BROKEN)
-		force = 5
-		sharp = TRUE
+		set_force(5)
+		set_sharp(TRUE)
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 
 //Lamp Shade

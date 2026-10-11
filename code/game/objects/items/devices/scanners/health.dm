@@ -9,8 +9,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "health"
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -39,6 +37,8 @@ TRACKED(/obj/item/healthanalyzer, showadvscan)
 TRACKED(/obj/item/healthanalyzer, guide)
 
 CAPABILITIES(/obj/item/healthanalyzer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED)
 	op("scan_patient", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan vitals"),

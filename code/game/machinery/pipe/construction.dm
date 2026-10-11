@@ -10,8 +10,6 @@ Buildable meters
 	desc = "A pipe."
 	var/pipe_type
 	var/pipename
-	force = 7
-	throwforce = 7
 	icon = 'icons/obj/pipe-item.dmi'
 	icon_state = "simple"
 	item_state = "buildpipe"
@@ -149,6 +147,8 @@ MSG_DEF_SELF(pipe_item/cannot_flip, "You can't do that now.")
 MSG_DEF(pipe_item/fastened, "You fasten %T%.", "%U% fastens %T%.")
 
 CAPABILITIES(/obj/item/pipe)
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 7))
 	rotatable()
 	op("rotate", in_hand(), label("Rotate"), wait(0), then(PROC_REF(rotated)))
 	op("flip", menu(), label("Flip Pipe"), wait(0), needs(req(PROC_REF(actor_able), because = MSG(pipe_item/cannot_flip))), then(PROC_REF(flipped)))

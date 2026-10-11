@@ -27,8 +27,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	mob_size = MOB_MINISCULE
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	density = FALSE
 
 
@@ -270,6 +268,7 @@ CAPABILITIES(/obj/machinery/abstract_grub_machine)
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/solargrub_larva)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(powermachine), starts = /obj/machinery/abstract_grub_machine)
 	verb_entry(/mob/living/proc/ventcrawl)
 

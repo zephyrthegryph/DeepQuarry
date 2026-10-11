@@ -251,9 +251,9 @@ CAPABILITIES(/obj/item/trash/lollibutt)
 	desc = "A disgusting spitwad."
 	icon = 'icons/inventory/face/item.dmi'
 	icon_state = "spit-chew"
-	slot_flags = SLOT_EARS | SLOT_MASK
 
 CAPABILITIES(/obj/item/trash/spitwad)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_FLESH, pickup = SFX_ITEMS_PICKUP_FLESH))
 
 /obj/item/trash/beef

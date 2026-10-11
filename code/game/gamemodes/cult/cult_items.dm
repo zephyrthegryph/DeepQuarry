@@ -3,14 +3,11 @@
 	desc = "An arcane weapon wielded by the followers of Nar-Sie."
 	icon_state = "cultblade"
 	w_class = ITEMSIZE_LARGE
-	force = 30
-	throwforce = 10
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
 
 CAPABILITIES(/obj/item/melee/cultblade)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 30, attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/melee/cultblade/cultify()
@@ -26,7 +23,7 @@ CAPABILITIES(/obj/item/melee/cultblade)
 		var/obj/item/organ/external/affecting = H.get_organ(zone)
 		to_chat(user, span_danger("An inexplicable force rips through your [affecting.name], tearing the sword from your grasp!"))
 		//random amount of damage between half of the blade's force and the full force of the blade.
-		user.injure(INJURY_CUT, rand(force/2, force), zone, src)
+		user.injure(INJURY_CUT, rand(combat_of(src).force/2, combat_of(src).force), zone, src)
 		user.status_at_least(STAT_WEAKENED, 5)
 	else if(!istype(user, /mob/living/simple_mob/construct))
 		to_chat(user, span_danger("An inexplicable force rips through you, tearing the sword from your grasp!"))
@@ -52,10 +49,10 @@ CAPABILITIES(/obj/item/melee/cultblade)
 	name = "cult hood"
 	icon_state = "culthood"
 	desc = "A hood worn by the followers of Nar-Sie."
-	flags_inv = HIDEFACE
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 
 CAPABILITIES(/obj/item/clothing/head/culthood)
+	configure(item_worn(hides = HIDEFACE))
 	configure(item_protection(min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
 /obj/item/clothing/head/culthood/cultify()
@@ -65,8 +62,9 @@ CAPABILITIES(/obj/item/clothing/head/culthood)
 	name = "magus helm"
 	icon_state = "magus"
 	desc = "A helm worn by the followers of Nar-Sie."
-	flags_inv = HIDEFACE | BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/culthood/magus)
+	configure(item_worn(hides = HIDEFACE | BLOCKHAIR, covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/head/culthood/alt
 	icon_state = "cult_hoodalt"
@@ -75,11 +73,10 @@ CAPABILITIES(/obj/item/clothing/head/culthood)
 	name = "cult robes"
 	desc = "A set of armored robes worn by the followers of Nar-Sie."
 	icon_state = "cultrobes"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
-	flags_inv = HIDEJUMPSUIT
 
 CAPABILITIES(/obj/item/clothing/suit/cultrobes)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, hides = HIDEJUMPSUIT))
 	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))))
@@ -94,8 +91,9 @@ TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(
 	name = "magus robes"
 	desc = "A set of armored robes worn by the followers of Nar-Sie."
 	icon_state = "magusred"
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes/magusred)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 
 /obj/item/clothing/head/helmet/space/cult
 	name = "cult helmet"
@@ -116,9 +114,9 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0.5
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/space/cult)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/cult, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))))

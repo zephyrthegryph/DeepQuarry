@@ -36,9 +36,11 @@
 	icon_state = "arcane_barrage"
 	icon_state = "red_pellet"
 	damage = 20
-	armor_penetration = 0
 	speed = 8
 	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/merc_boss)
+	configure(item_combat(armor_penetration = 0))
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,2)

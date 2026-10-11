@@ -8,9 +8,11 @@
 	icon_expected_width = 64 // Gun Sprites
 	wielded_item_state = "ionrifle-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/ion
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/energy/ionrifle/empty
 	cell_type = null
@@ -22,11 +24,13 @@
 	icon_state = "ionpistol"
 	item_state = null
 	w_class = ITEMSIZE_NORMAL
-	force = 5
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/ion/pistol
 	move_delay = 0 // Pistols have move_delay of 0
+
+CAPABILITIES(/obj/item/gun/energy/ionrifle/pistol)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
+	configure(item_combat(force = 5))
 
 /obj/item/gun/energy/decloner
 	name = "biological demolecularisor"
@@ -145,7 +149,6 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	desc = "For the love of god, make sure you're aiming this the right way!"
 	icon_state = "riotgun"
 	item_state = "c20r"
-	slot_flags = SLOT_BELT|SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 	projectile_type = /obj/item/projectile/meteor
 	cell_type = /obj/item/cell/potato
@@ -154,6 +157,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	recharge_time = 5 //Time it takes for shots to recharge (in ticks)
 	charge_meter = 0
 
+CAPABILITIES(/obj/item/gun/energy/meteorgun)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /obj/item/gun/energy/meteorgun/pen
 	name = "meteor pen"
 	desc = "The pen is mightier than the sword."
@@ -161,7 +167,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	icon_state = "pen"
 	item_state = "pen"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT
+
+CAPABILITIES(/obj/item/gun/energy/meteorgun/pen)
+	configure(item_worn(slots = SLOT_BELT))
 
 
 /obj/item/gun/energy/mindflayer
@@ -187,13 +195,15 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	icon = 'icons/obj/gun.dmi'
 	item_icons = null
 	icon_state = "staffofchange"
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_LARGE
 	charge_cost = 480
 	projectile_type = /obj/item/projectile/change
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 	charge_meter = 0
+
+CAPABILITIES(/obj/item/gun/energy/staff)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/staff/special_check(mob/user)
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
@@ -220,7 +230,6 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 	desc = "An artifact that channels the will of the user into destructive bolts of force. If you aren't careful with it, you might poke someone's brain out."
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "focus"
-	slot_flags = SLOT_BACK
 	projectile_type = /obj/item/projectile/forcebolt
 	/*
 	attack_self(mob/living/user as mob)
@@ -233,6 +242,9 @@ CAPABILITIES(/obj/item/gun/energy/floragun)
 			to_chat(user, span_warning("The [src.name] will now strike only a single person."))
 			projectile_type = "/obj/item/projectile/forcebolt"
 	*/
+
+CAPABILITIES(/obj/item/gun/energy/staff/focus)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/energy/dakkalaser
 	name = "suppression gun"
@@ -377,14 +389,12 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 /obj/item/gun/energy/medigun //Adminspawn/ERT etc // CH edit - Changes ML3M  to NERD
 	name = "directed restoration system"
 	desc = "The BL-3 'Phoenix' is an adaptation on the NERD 'Medbeam' design that channels the power of the beam into a single healing laser. It is highly energy-inefficient, but its medical power cannot be denied."
-	force = 5
 	icon_state = "medbeam"
 	item_state = "medbeam"
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_guns_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi',
 		)
-	slot_flags = SLOT_BELT
 	accuracy = 100
 	fire_delay = 12
 	fire_sound = SFX_WEAPONS_ELUGER
@@ -395,6 +405,10 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	cell_type = /obj/item/cell/high
 	charge_cost = 2500
 
+CAPABILITIES(/obj/item/gun/energy/medigun)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 5))
+
 /obj/item/gun/energy/bfgtaser
 	name = "9000-series Ball Lightning Taser"
 	desc = "The brainchild of Hephaestus Industries Civil Pacification Division, the BLT-9000 was intended for riot control but despite enthusiastic interest from law-enforcement agencies across the Commonwealth and beyond, its indiscriminate nature led to it being banned from civilian use in virtually all jurisdictions. As a result, most pieces are found in the hands of collectors."
@@ -402,7 +416,6 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	fire_sound = SFX_EFFECTS_PHASEIN
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded" //Placeholder
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
@@ -442,6 +455,7 @@ CAPABILITIES(/obj/item/gun/energy/maghowitzer)
 	spun = FALSE
 
 CAPABILITIES(/obj/item/gun/energy/bfgtaser)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 	op("spin_up", ai(), takes("aim", "clickparams", "pointblank", "reflex", "stance"), wait(0.8 SECONDS), on_interrupt(PROC_REF(spin_ended)), then(PROC_REF(spun_up)))
 
 /obj/item/projectile/beam/stun/weak/BFG
@@ -506,12 +520,14 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
 	fire_sound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
-	armor_penetration = 10
 	range = 9
 	damage = 0
 	agony = 0
 	vacuum_traversal = 1
 	hud_state = "plasma_rifle_blast"
+
+CAPABILITIES(/obj/item/projectile/energy/plasmastun/slow)
+	configure(item_combat(armor_penetration = 10))
 
 /obj/item/projectile/energy/plasmastun/slow/on_hit(atom/target)
 	if(isliving(target))
@@ -549,11 +565,13 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	icon_state = "fuel-supermatter"
 	damage = 1500 //You are not being defibbed from this.
 	weaken = 2
-	armor_penetration = 100
 	penetrating = 1500 //Theoretically, this shouldn't stop flying for a while, unless someoneI t lines it up with a wall or fires it into a mountain.
 	range = 200
 	hud_state = "rocket_thermobaric"
 	speed = 0.2
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/supercannon)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/supercannon/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(istype(target,/turf/simulated/wall) || istype(target,/mob/living))
@@ -580,19 +598,21 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser)
 	wielded_item_state = "supercannon-wielded"
 	w_class = ITEMSIZE_HUGE
 	fire_sound = SFX_WEAPONS_GUNSHOT_CANNON
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 2400 //You got 1 shot...
 	self_recharge = TRUE
 	recharge_time = 6 HOURS //This is how to get around rechargers being able to recharge it, I dont wanna rewrite base level code
 	projectile_type = /obj/item/projectile/bullet/magnetic/supercannon //Fuck you.
 	cell_type = /obj/item/cell/device/weapon
 	battery_lock = 1
-	force = 15 //pretty robust
 	one_handed_penalty = 90
 	item_icons = list(
 		slot_l_hand_str = 'icons/obj/guns/supercannon/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
+
+CAPABILITIES(/obj/item/gun/energy/supercannon)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+	configure(item_combat(force = 15))
 
 /obj/item/gun/energy/floragun/ownership()
 	. = ..()

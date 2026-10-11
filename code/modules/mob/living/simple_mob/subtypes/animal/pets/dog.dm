@@ -121,8 +121,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
 	gender = MALE
 	desc = "It's a corgi."
 	var/turns_since_scan = 0
-	makes_dirt = FALSE // no more dirt
 	holder_type = /obj/item/holder/corgi
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/corgi/Ian)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/dog/corgi/Ian/life_type_post_due()
 	return TRUE
@@ -210,8 +212,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/dog)
 	icon_rest = "narsian_rest"
 	icon_dead = "narsian_dead"
 
-	makes_dirt = FALSE
 	holder_type = /obj/item/holder/narsian
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/corgi/narsian)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/dog/void_puppy
 	name = "void puppy"

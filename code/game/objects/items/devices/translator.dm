@@ -113,9 +113,11 @@ CAPABILITIES(/obj/item/universal_translator)
 	desc = "This handy device appears to translate the languages it hears into another language for a user."
 	icon_state = "earpiece"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	visual = 0
 	audio = 1
+
+CAPABILITIES(/obj/item/universal_translator/ear)
+	configure(item_worn(slots = SLOT_EARS))
 
 //////////////Single language translators
 

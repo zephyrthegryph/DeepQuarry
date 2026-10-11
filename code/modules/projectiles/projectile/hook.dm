@@ -10,7 +10,6 @@
 
 	damage = 5
 	speed = 2
-	armor_penetration = 15
 
 	var/impact_sound = SFX_EFFECTS_UNCLOAK
 	var/crack_sound = 'sound/effects/teleport.ogg'
@@ -27,6 +26,7 @@
 	var/datum/beam/chain = null
 
 CAPABILITIES(/obj/item/projectile/energy/hook)
+	configure(item_combat(armor_penetration = 15))
 	owns_one(nameof(chain), /datum/beam)
 
 /obj/item/projectile/energy/hook/receive_firer_stance(stance)
@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 		switch(launcher_intent)
 			if(I_HURT)
 				damage *= 3
-				sharp = TRUE
+				set_sharp(TRUE)
 				agony = 20
 			if(I_GRAB)
 				injury_kind = INJURY_PAIN

@@ -12,7 +12,7 @@ CAPABILITY_TYPE(absorbent, CAP_ABSORBENT, /datum/capability/absorbent, key = NON
 		return
 	var/turf/T = get_turf(H)
 	if(istype(T))
-		if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
+		if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET))))
 			//We do this first as it gives nutrition for each item on the turf.
 			for(var/obj/O in turf_contents_of_type(T, /obj))
 				if(O.wash(CLEAN_WASH))

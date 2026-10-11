@@ -49,14 +49,14 @@ CAPABILITIES(/obj/effect/decal/writing)
 
 /// Requirement: persistent graffiti is refused to the jobbanned; other items fall through in the effect.
 /obj/effect/decal/writing/proc/can_engrave(mob/user, atom/target, obj/item/held)
-	if(held?.sharp && jobban_isbanned(user, JOB_GRAFFITI))
+	if(combat_of(held).sharp && jobban_isbanned(user, JOB_GRAFFITI))
 		return "you are banned from leaving persistent information across rounds"
 	return TRUE
 
 /// The engraving question is asked only of a sharp item.
 /obj/effect/decal/writing/proc/sharp_held(datum/act/op/A)
 	var/obj/item/thing = A.held
-	return !!read_once(thing?.sharp)
+	return !!read_once(combat_of(thing).sharp)
 
 /// Whether there is a message to carve and the carver is still able to: the wait follows only then.
 /obj/effect/decal/writing/proc/engrave_ready(datum/act/op/A)

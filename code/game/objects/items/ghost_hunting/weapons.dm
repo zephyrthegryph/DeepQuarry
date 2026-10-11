@@ -4,8 +4,6 @@
 	icon = 'icons/obj/guns/ghost_beam.dmi'
 	icon_state = "ghost_beam"
 	w_class = ITEMSIZE_NORMAL
-	force = 0
-	slot_flags = SLOT_BELT
 	var/grab_range = 5 // How many tiles away it can grab. Changing this also changes the box size.
 	/// Stops multiple grabbs if set to TRUE
 	/// The entity we are currently grabbing.
@@ -154,6 +152,8 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/ghost_catcher)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 0))
 	// Holding a ghost in the beam, up to a minute; the catcher is claimed (busy) until it ends. The user may walk about while it lasts.
 	op("grab", ai(), takes("subject", "effects"), claims(CLAIM_TARGET), wait(60 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE), on_interrupt(PROC_REF(grab_broken)), then(PROC_REF(grab_timed_out)))
 
@@ -173,10 +173,8 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	name = "proton pack"
 	desc = "A complex backpack that houses a miniature antimatter reactor to power a spectral capture device."
 	icon = 'icons/obj/technomancer.dmi'
-	default_worn_icon = 'icons/inventory/back/mob.dmi'
 	icon_state = "technomancer_core"
 	item_state = "proton_pack"
-	slot_flags = SLOT_BACK
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
@@ -187,6 +185,7 @@ CAPABILITIES(/obj/item/ghost_catcher)
 	. = ..()
 
 CAPABILITIES(/obj/item/proton_pack)
+	configure(item_worn(worn_icon = 'icons/inventory/back/mob.dmi', slots = SLOT_BACK))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 	drag_onto(PROC_REF(drop_input))
 

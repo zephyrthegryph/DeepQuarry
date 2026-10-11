@@ -1,8 +1,14 @@
 /mob/living/simple_mob/mechanical/mecha/combat/durand
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/durand)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
 /mob/living/simple_mob/mechanical/mecha/combat/marauder
 	projectiletype = /obj/item/projectile/energy/mob/heavylaser
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/marauder)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod
 	projectiletype = /obj/item/projectile/energy/mob/smalllaser
@@ -33,12 +39,18 @@
 /mob/living/simple_mob/mechanical/mecha/odysseus
 	endurance = 60
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/odysseus)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
+
 /mob/living/simple_mob/mechanical/mecha/combat
 	melee_damage_lower = 15
 	melee_damage_upper = 15
 
 /mob/living/simple_mob/mechanical/mecha/ripley
 	endurance = 100
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/ripley)
+	configure(mob_kind(attack_cooldown = 5))
 
 // Immune to heat damage, resistant to lasers, and somewhat beefier. Still tries to melee you.
 /mob/living/simple_mob/mechanical/mecha/ripley/firefighter

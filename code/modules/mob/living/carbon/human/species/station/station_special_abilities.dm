@@ -1181,7 +1181,6 @@ CAPABILITIES(/obj/effect/projectile/impact/appendage)
 	icon_state = "synthtongue"
 	item_state = "gun"
 	fire_delay = null
-	force = 0
 	fire_delay = 1 //Adminspawn. No delay.
 	charge_cost = 0 //This is an adminspawn gun...No reason to force it to have a charge state.
 
@@ -1194,6 +1193,9 @@ CAPABILITIES(/obj/effect/projectile/impact/appendage)
 	firemodes = list(
 		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
+CAPABILITIES(/obj/item/gun/energy/gun/tongue)
+	configure(item_combat(force = 0))
+
 /// The look: always the tongue, whatever the charge.
 /obj/item/gun/energy/gun/tongue/draw_charge_state(datum/look/look)
 	look.state("synthtongue")
@@ -1201,13 +1203,15 @@ CAPABILITIES(/obj/effect/projectile/impact/appendage)
 /obj/item/gun/energy/bfgtaser/tongue
 	name = "9000-series Ball Tongue Taser"
 	desc = "A banned riot control device."
-	slot_flags = SLOT_BELT|SLOT_BACK
 	projectile_type = /obj/item/projectile/bullet/BFGtaser/tongue
 	fire_delay = 20
 	w_class = ITEMSIZE_LARGE
 	one_handed_penalty = 90 // The thing's heavy and huge.
 	accuracy = 45
 	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
+
+CAPABILITIES(/obj/item/gun/energy/bfgtaser/tongue)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"

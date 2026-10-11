@@ -159,7 +159,6 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "slime_crystal_small"
 	w_class = ITEMSIZE_TINY
-	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
 
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(loc?.release_refusal(src, user))
@@ -169,6 +168,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	consume(src, user)
 
 CAPABILITIES(/obj/item/slime_crystal)
+	configure(item_combat(force = 1))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

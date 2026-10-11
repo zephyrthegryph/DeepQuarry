@@ -25,6 +25,9 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
     let t = Instant::now();
     let Some(sem) = super::sem_for(&engine.tree) else { return ExitCode::from(2) };
     eprintln!("sem build: {:.2?}, {} parse errors", t.elapsed(), sem.errors.len());
+    for e in sem.errors.iter().take(20) {
+        eprintln!("  {}", e);
+    }
     let t = Instant::now();
     let decls = Decls::get(&engine.tree);
     eprintln!("decls: {:.2?} ({} markers)", t.elapsed(), decls.markers.len());

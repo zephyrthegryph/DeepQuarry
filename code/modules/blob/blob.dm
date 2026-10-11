@@ -151,7 +151,7 @@ CAPABILITIES(/obj/effect/blob)
 	if(damage_type == BURN && W.has_tool_quality(TOOL_WELDER))
 		playsound(src, sounds_of(W).use, 100, 1)
 	if(damage_type == BRUTE || damage_type == BURN)
-		blob_damage(W.force, damage_type)
+		blob_damage(combat_of(W).force, damage_type)
 	return OP_PASS
 
 /obj/effect/blob/core

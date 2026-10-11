@@ -6,7 +6,6 @@
 	icon_living = "drone0"
 	icon_dead = "drone0"
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "smokestar"
 
@@ -23,6 +22,9 @@
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
+
+CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /*
 /mob/living/simple_mob/vore/smokestar/wendigo

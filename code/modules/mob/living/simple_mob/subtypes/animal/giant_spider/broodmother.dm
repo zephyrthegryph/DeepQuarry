@@ -67,12 +67,13 @@
 	damage = 35
 	injury_kind = INJURY_CORROSIVE
 	agony = 15
-	armor_penetration = 40
 
 	combustion = FALSE
 
+CAPABILITIES(/obj/item/projectile/energy/spidertoxin)
+	configure(item_combat(armor_penetration = 40))
+
 /mob/living/simple_mob/animal/giant_spider/broodmother
-	death_message = "falls over and makes its last twitches as its birthing sack bursts!"
 
 /mob/living/simple_mob/animal/giant_spider/broodmother/on_death(gibbed)
 	var/count = 0

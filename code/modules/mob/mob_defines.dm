@@ -36,7 +36,6 @@
 	Changing this around would probably require a good look-over the pre-existing code.
 	*/
 
-	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 	var/damageoverlaytemp = 0
 
 	var/computer_id = null
@@ -76,14 +75,12 @@
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
 	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
-	var/emote_type = 1		// Define emote default type, 1 for seen emotes, 2 for heard emotes
 	var/facing_dir = null   // Used for the ancient art of moonwalking.
 
 	var/name_archive //For admin things like possession
 
 	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
-	var/death_message = "seizes up and falls limp..."
 
 	var/bodytemperature = BODYTEMP_NORMAL
 	var/charges = 0.0
@@ -92,7 +89,6 @@
 	var/m_int = null//Living
 	var/m_intent = I_RUN//Living
 	var/lastKnownIP = null
-	var/no_pull_when_living = FALSE //Test for if it can be pulled when alive
 	/// Set around a holder-driven forced step (a chair/wheelchair moving its
 	/// own buckled occupant directly, handle_buckled_mob_movement()) so
 	/// /mob/living/Move() doesn't redirect that step back into the buckled
@@ -117,8 +113,6 @@
 	var/const/deafness = 2//Carbon
 	var/const/muteness = 4//Carbon
 
-	var/can_pull_size = ITEMSIZE_NO_CONTAINER // Maximum w_class the mob can pull.
-	var/can_pull_mobs = MOB_PULL_LARGER // Whether or not the mob can pull other mobs.
 
 	var/datum/dna/dna = null//Carbon
 	var/radiation = 0.0//Carbon
@@ -135,7 +129,6 @@
 
 	var/faction = FACTION_NEUTRAL //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
-	var/can_be_antagged = FALSE // To prevent pAIs/mice/etc from getting antag in autotraitor and future auto- modes. Uses inheritance instead of a bunch of typechecks.
 	var/away_from_keyboard = FALSE	//are we at, or away, from our keyboard?
 	var/manual_afk = FALSE			//did we set afk manually or was it automatic?
 
@@ -192,8 +185,6 @@
 	var/default_pixel_x = 0 //For offsetting mobs
 	var/default_pixel_y = 0
 
-	var/attack_icon //Icon to use when attacking w/o anything in-hand
-	var/attack_icon_state //State for above
 
 	var/registered_z
 
@@ -224,6 +215,8 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
+	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
+	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
 	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby

@@ -32,9 +32,9 @@
 	TEST_ASSERT(huge.get_melee_windup() > small.get_melee_windup(), "bigger weapons should wind up slower")
 	TEST_ASSERT(huge.get_melee_recovery() > small.get_melee_recovery(), "bigger weapons should recover slower")
 
-	small.melee_windup = 99
+	small.set_melee_windup(99)
 	TEST_ASSERT_EQUAL(small.get_melee_windup(), 99, "an explicit melee_windup should override the size default")
-	small.melee_sweep = TRUE
+	small.set_melee_sweep(TRUE)
 	TEST_ASSERT(small.melee_is_sweep(), "an explicit melee_sweep should force sweeping")
 
 
@@ -78,7 +78,7 @@
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, north)
 	victim.set_anchored(TRUE)
 	var/obj/item/weapon = allocate(/obj/item)
-	weapon.force = 8
+	weapon.set_force(8)
 	weapon.w_class = ITEMSIZE_SMALL
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
@@ -106,7 +106,7 @@
 	var/obj/item/material/knife/knife = new(base)
 	attacker.put_in_active_hand(knife)
 	attacker.set_combat_mode(TRUE)
-	TEST_ASSERT(knife.force > 0, "a newly initialized kitchen knife has no melee force")
+	TEST_ASSERT(combat_of(knife).force > 0, "a newly initialized kitchen knife has no melee force")
 	TEST_ASSERT_EQUAL(attacker.get_active_hand(), knife, "the kitchen knife was not held in the active hand")
 	var/before = victim.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/committed = attacker.begin_melee_swing(victim, knife)
@@ -133,7 +133,7 @@
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
 	var/obj/item/weapon = allocate(/obj/item)
-	weapon.force = 8
+	weapon.set_force(8)
 	weapon.w_class = ITEMSIZE_HUGE // long windup for timing headroom
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)
@@ -162,7 +162,7 @@
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/simple_mob/animal/passive/mouse/victim = allocate(/mob/living/simple_mob/animal/passive/mouse, north)
 	var/obj/item/weapon = allocate(/obj/item)
-	weapon.force = 5
+	weapon.set_force(5)
 	weapon.w_class = ITEMSIZE_NORMAL
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)

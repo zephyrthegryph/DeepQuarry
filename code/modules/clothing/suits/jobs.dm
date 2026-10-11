@@ -9,7 +9,9 @@
 	icon_state = "apron"
 	item_state_slots = list(slot_r_hand_str = "overalls", slot_l_hand_str = "overalls")
 	blood_overlay_type = "armor"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/suit/storage/apron)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/apron, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/reagent_containers/spray/plantbgone, /obj/item/analyzer/plant_analyzer, /obj/item/seeds, \
 	/obj/item/reagent_containers/glass/bottle, /obj/item/material/minihoe))))
@@ -31,15 +33,17 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/apron, suit_storage_spec, list(HOLD_O
 	name = "site manager's parade tunic"
 	desc = "Worn by a " + JOB_SITE_MANAGER + " to show their class."
 	icon_state = "captunic"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/captunic)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/captunic/capjacket
 	name = "site manager's uniform jacket"
 	desc = "A less formal jacket for everyday " + JOB_SITE_MANAGER + " use."
 	icon_state = "capjacket"
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/captunic/capjacket)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEHOLSTER))
 
 //Command
 /obj/item/clothing/suit/storage/toggle/cmddressjacket
@@ -53,9 +57,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/apron, suit_storage_spec, list(HOLD_O
 	desc = "This suit says to you \"Hush\"!"
 	icon_state = "chaplain_hoodie"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv = HIDEHOLSTER
 	hoodtype = /obj/item/clothing/head/chaplain_hood
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEHOLSTER))
 
 //Chaplain but spookier
 
@@ -65,26 +70,28 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie, suit_storage_
 	desc = "A long, flowing white robe. It looks comfortable, but not very warm."
 	icon_state = "whiteout_robe"
 	item_state_slots = list(slot_r_hand_str = "suit_white", slot_l_hand_str = "suit_white")
-	flags_inv = HIDETIE|HIDEHOLSTER
 	hoodtype = /obj/item/clothing/head/chaplain_hood/whiteout
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie/whiteout)
+	configure(item_worn(hides = HIDETIE|HIDEHOLSTER))
 
 //Chaplain
 /obj/item/clothing/suit/nun
 	name = "nun robe"
 	desc = "Maximum piety in this star system."
 	icon_state = "nun"
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/nun)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 
 //Chef
 /obj/item/clothing/suit/chef
 	name = "chef's apron"
 	desc = "An apron used by a high class chef."
 	icon_state = "chef"
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDETIE|HIDEHOLSTER
 
 CAPABILITIES(/obj/item/clothing/suit/chef)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 
 //Chef
@@ -95,8 +102,9 @@ TYPE_TABLE(/obj/item/clothing/suit/chef, suit_storage_spec, list(HOLD_ONLY(list 
 	desc = "A basic, dull, white chef's apron."
 	icon_state = "apronchef"
 	blood_overlay_type = "armor"
-	body_parts_covered = 0
-	flags_inv = 0
+
+CAPABILITIES(/obj/item/clothing/suit/chef/classic)
+	configure(item_worn(covers = 0, hides = 0))
 
 //Security
 /obj/item/clothing/suit/security/navyofficer
@@ -104,24 +112,27 @@ TYPE_TABLE(/obj/item/clothing/suit/chef, suit_storage_spec, list(HOLD_ONLY(list 
 	desc = "This jacket is for those special occasions when a security officer actually feels safe."
 	icon_state = "officerbluejacket"
 	item_state_slots = list(slot_r_hand_str = "suit_navy", slot_l_hand_str = "suit_navy")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/security/navyofficer)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/security/navywarden
 	name = "warden's jacket"
 	desc = "Perfectly suited for the warden that wants to leave an impression of style on those who visit the brig."
 	icon_state = "wardenbluejacket"
 	item_state_slots = list(slot_r_hand_str = "suit_navy", slot_l_hand_str = "suit_navy")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/security/navywarden)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 
 /obj/item/clothing/suit/security/navyhos
 	name = "head of security's jacket"
 	desc = "This piece of clothing was specifically designed for asserting superior authority."
 	icon_state = "hosbluejacket"
 	item_state_slots = list(slot_r_hand_str = "suit_navy", slot_l_hand_str = "suit_navy")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/security/navyhos)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER))
 
 //Detective
 /obj/item/clothing/suit/storage/det_trench
@@ -129,9 +140,10 @@ TYPE_TABLE(/obj/item/clothing/suit/chef, suit_storage_spec, list(HOLD_ONLY(list 
 	desc = "A rugged canvas trenchcoat, designed and created by TX Fabrication Corp. The coat is externally impact resistant - perfect for your next act of autodefenestration!"
 	icon_state = "detective"
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/det_trench)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/det_trench, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
@@ -139,15 +151,18 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/det_trench, suit_storage_spec, list(H
 	name = "grey trenchcoat"
 	icon_state = "detective2"
 	item_state_slots = list(slot_r_hand_str = "leather_jacket", slot_l_hand_str = "leather_jacket")
-	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/det_trench/grey)
+	configure(item_worn(hides = HIDEHOLSTER))
 
 //Forensics
 /obj/item/clothing/suit/storage/forensics
 	name = DEVELOPER_WARNING_NAME
 	desc = "A forensics technician jacket."
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 	armor_spec = "melee=10;bullet=10;laser=15;energy=10"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/forensics)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/forensics, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE))))
 
@@ -179,8 +194,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/forensics, suit_storage_spec, list(HO
 	desc = "A high-visibility vest used in work zones."
 	icon_state = "hazard"
 	blood_overlay_type = "armor"
-	body_parts_covered = UPPER_TORSO
 	armor_spec = "rad=20"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest)
+	configure(item_worn(covers = UPPER_TORSO))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/analyzer, /obj/item/flashlight, /obj/item/multitool, /obj/item/pipe_painter, /obj/item/radio, /obj/item/t_scanner, \
 	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency, \
@@ -212,7 +229,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(H
 	icon_state = "suitjacket_blue"
 	item_state_slots = list(slot_r_hand_str = "suit_blue", slot_l_hand_str = "suit_blue")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/lawyer/bluejacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 /obj/item/clothing/suit/storage/toggle/lawyer/purpjacket
 	name = "purple suit jacket"
@@ -220,7 +239,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(H
 	icon_state = "suitjacket_purp"
 	item_state_slots = list(slot_r_hand_str = "suit_purple", slot_l_hand_str = "suit_purple")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/lawyer/purpjacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //Internal Affairs
 /obj/item/clothing/suit/storage/toggle/internalaffairs
@@ -229,7 +250,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(H
 	icon_state = "ia_jacket"
 	item_state_slots = list(slot_r_hand_str = "suit_black", slot_l_hand_str = "suit_black")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/internalaffairs)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //Medical
 /obj/item/clothing/suit/storage/toggle/fr_jacket
@@ -238,7 +261,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hazardvest, suit_storage_spec, list(H
 	icon_state = "fr_jacket"
 	item_state_slots = list(slot_r_hand_str = "fr_jacket", slot_l_hand_str = "fr_jacket")
 	blood_overlay_type = "armor"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/fr_jacket)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/fr_jacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
@@ -253,7 +278,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/fr_jacket, suit_storage_spec, 
 	desc = "A sterile blue apron for performing surgery."
 	icon_state = "surgical"
 	blood_overlay_type = "armor"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/suit/surgicalapron)
+	configure(item_worn(covers = CHEST))
 
 //Mime
 
@@ -264,7 +291,9 @@ TYPE_TABLE(/obj/item/clothing/suit/surgicalapron, suit_storage_spec, list(HOLD_O
 	icon = 'icons/inventory/belt/item.dmi'
 	icon_state = "suspenders"
 	blood_overlay_type = "armor" //it's the less thing that I can put here
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/suit/suspenders)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/suit/suspenders/blue
 	name = "blue suspenders"

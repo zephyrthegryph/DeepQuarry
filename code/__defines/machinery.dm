@@ -247,6 +247,24 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of light_glow() (code/modules/lighting/glow.dm) and the key its run-time writes publish.
 #define ENTRY_LIGHT_GLOW "light_glow"
 #define LIGHT_GLOW_KEY "light_glow"
+/// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_COMBAT "item_combat"
+#define ITEM_COMBAT_KEY "item_combat"
+/// The entry kind of mob_movement() (code/modules/mob/mob_movement_trait.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_MOVEMENT "mob_movement"
+#define MOB_MOVEMENT_KEY "mob_movement"
+/// The entry kind of mob_kind() (code/modules/mob/mob_kind.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_KIND "mob_kind"
+#define MOB_KIND_KEY "mob_kind"
+/// The entry kind of item_thrown() (code/game/objects/items/item_thrown.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_THROWN "item_thrown"
+#define ITEM_THROWN_KEY "item_thrown"
+/// The entry kind of item_worn() (code/game/objects/items/item_worn.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_WORN "item_worn"
+#define ITEM_WORN_KEY "item_worn"
+/// The entry kind of item_tooling() (code/game/objects/items/item_tooling.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_TOOLING "item_tooling"
+#define ITEM_TOOLING_KEY "item_tooling"
 
 /// The entry kind of item_protection() (code/game/objects/items.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_PROTECTION "item_protection"

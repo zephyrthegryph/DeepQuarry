@@ -10,7 +10,9 @@
 	name = "precursor relic"
 	desc = "An angular, faintly humming artifact of unknown origin. Xenoarchaeology will want this back at the station."
 	w_class = ITEMSIZE_NORMAL
-	throwforce = 5
+
+CAPABILITIES(/obj/item/expedition_artifact)
+	configure(item_thrown(force = 5))
 
 // ---------------------------------------------------------------------------
 // Rescue target: a sealed stasis capsule holding a stranded surveyor. Unanchored

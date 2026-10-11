@@ -48,9 +48,11 @@
 
 /obj/item/projectile/energy/spikeenergy_ball/boss
 	damage = 40
-	armor_penetration = 60
 	speed = 10
 	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/spikeenergy_ball/boss)
+	configure(item_combat(armor_penetration = 60))
 
 
 /mob/living/simple_mob/mechanical/hivebot/eclipse

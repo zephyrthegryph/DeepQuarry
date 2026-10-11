@@ -3,7 +3,7 @@
 		if(jobban_isbanned(player.current, bantype))
 			return FALSE
 		if(!isnewplayer(player.current) && !isobserver(player.current))
-			if(!player.current.can_be_antagged) // Stop autotraitoring pAIs!
+			if(!kind_of(player.current).can_be_antagged) // Stop autotraitoring pAIs!
 				return FALSE
 	if(!ignore_role)
 		if(player.assigned_role in restricted_jobs)

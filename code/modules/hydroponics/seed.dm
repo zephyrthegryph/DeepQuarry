@@ -169,8 +169,8 @@
 		for(var/obj/item/clothing/clothes in target)
 			if(target.item_is_in_hands(clothes))
 				continue
-			if(clothes.item_flags & THICKMATERIAL)
-				body_coverage &= ~(clothes.body_parts_covered)
+			if(worn_of(clothes).flags & THICKMATERIAL)
+				body_coverage &= ~(worn_of(clothes).covers)
 
 		if(!body_coverage)
 			return
@@ -211,7 +211,7 @@
 			for(var/obj/item/clothing/clothes in contents_of(M))
 				if(M.item_is_in_hands(clothes))
 					continue
-				body_coverage &= ~(clothes.body_parts_covered)
+				body_coverage &= ~(worn_of(clothes).covers)
 			if(!body_coverage)
 				continue
 			var/datum/reagents/R = M.reagents
@@ -843,7 +843,7 @@
 					blight = 5
 				set_glow(product, GLOW(blight, 0.5, clr))
 			if(get_trait(TRAIT_STINGS) && isitem(product)) //Sometimes the product can be a mob.
-				product.force = 1
+				product.set_force(1)
 
 			//Handle spawning in living, mobile products (like dionaea).
 			if(isliving(product))

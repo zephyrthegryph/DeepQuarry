@@ -6,7 +6,6 @@
 	icon_state = "powersink0"
 	icon = 'icons/obj/device.dmi'
 	w_class = ITEMSIZE_LARGE
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 2
 
@@ -59,6 +58,7 @@ TRACKED(/obj/item/powersink, mode)
 
 
 CAPABILITIES(/obj/item/powersink)
+	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Drains the attached powernet while operating.
 	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))

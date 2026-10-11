@@ -256,7 +256,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 				user.trigger_aiming(TARGET_CAN_CLICK)
 				return
 		else
-			if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm
+			if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, combat_of(W).reach))) // see adjacent.dm
 				if(W && !user.restrained())
 					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
 					var/resolved = W.resolve_attackby(A, user, click_parameters = params)
@@ -478,7 +478,7 @@ TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
 
 	var/sdepth = A.storage_depth_turf()
 	if(isturf(A) || isturf(A.loc) || (sdepth <= MAX_STORAGE_REACH))
-		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, W.reach))) // see adjacent.dm, allows robots to use ranged melee weapons
+		if(A.Adjacent(user) || (W && W.attack_can_reach(user, A, combat_of(W).reach))) // see adjacent.dm, allows robots to use ranged melee weapons
 			PUBLISH_LEGACY(user, /datum/notice/robot_item_attack, W, user, params)
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)

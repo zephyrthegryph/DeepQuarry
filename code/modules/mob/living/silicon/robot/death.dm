@@ -1,5 +1,4 @@
 /mob/living/silicon/robot
-	death_message = "shudders violently for a moment, then becomes motionless, its eyes slowly darkening."
 
 /mob/living/silicon/robot/dust()
 	//Delete the MMI first so that it won't go popping out.

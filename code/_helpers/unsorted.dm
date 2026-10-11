@@ -1046,9 +1046,9 @@ GLOBAL_LIST_INIT(common_tools, list(
 	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.sharp) // ALLOW(reads): a helper a butchery condition asks about the held thing; the click asks again
+	if(combat_of(O).sharp)
 		return TRUE
-	if(O.edge) // ALLOW(reads): a helper a butchery condition asks about the held thing; the click asks again
+	if(combat_of(O).edge)
 		return TRUE
 	return FALSE
 
@@ -1057,7 +1057,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.edge) // ALLOW(reads): a helper a food condition asks about the held thing; the click asks again
+	if(combat_of(O).edge)
 		return TRUE
 	return FALSE
 
@@ -1066,7 +1066,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 	READS_FROM(W)
 	if(!W)
 		return FALSE
-	if(W.sharp) // ALLOW(reads): a helper a balloon condition asks about the held thing; the click asks again
+	if(combat_of(W).sharp)
 		return TRUE
 	return ( \
 		W.has_tool_quality(TOOL_SCREWDRIVER)		     				              || \
@@ -1084,7 +1084,7 @@ GLOBAL_LIST_INIT(common_tools, list(
 /proc/can_operate(mob/living/carbon/M, mob/living/user, stance)
 	if(M != user)
 		. = M.lying
-	else if(user && user.allow_self_surgery && stance == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
+	else if(user && kind_of(user).self_surgery && stance == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
 		. = TRUE
 	return .
 

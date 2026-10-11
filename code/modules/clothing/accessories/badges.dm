@@ -8,7 +8,6 @@
 	name = "detective's badge"
 	desc = "A corporate security badge, made from gold and set on false leather."
 	icon_state = "marshalbadge"
-	slot_flags = SLOT_BELT | SLOT_TIE
 	slot = ACCESSORY_SLOT_MEDAL
 
 	var/stored_name
@@ -27,6 +26,7 @@
 /obj/item/clothing/accessory/badge/proc/set_desc(mob/living/carbon/human/H)
 
 CAPABILITIES(/obj/item/clothing/accessory/badge)
+	configure(item_worn(slots = SLOT_BELT | SLOT_TIE))
 	op("badge_display_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Display"), then(PROC_REF(badge_display_self)))
 
 /// Old attack_self: polish or display the badge. Returns FALSE where the old body returned nothing,
@@ -112,7 +112,9 @@ TRACKED(/obj/item/clothing/accessory/badge/holo, emagged)
 
 /obj/item/clothing/accessory/badge/holo/cord
 	icon_state = "holobadge-cord"
-	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/cord)
+	configure(item_worn(slots = SLOT_MASK | SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/proc/on_emag(datum/act/op/A)
 	set_emagged(TRUE)
@@ -162,25 +164,33 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
 	name = "officer's badge"
 	desc = "A bronze corporate security badge. Stamped with the words '" + JOB_SECURITY_OFFICER + ".'"
 	icon_state = "bronzebadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/officer)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/warden
 	name = "warden's holobadge"
 	desc = "A silver corporate security badge. Stamped with the words '" + JOB_WARDEN + ".'"
 	icon_state = "silverbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/warden)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/hos
 	name = "head of security's holobadge"
 	desc = "An immaculately polished gold security badge. Stamped with the words '" + JOB_HEAD_OF_SECURITY + ".'"
 	icon_state = "goldbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/hos)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/detective
 	name = "detective's holobadge"
 	desc = "An immaculately polished gold security badge on leather. Labeled '" + JOB_DETECTIVE + ".'"
 	icon_state = "marshalbadge"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/detective)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/investigator
 	name = "\improper investigator holobadge"
@@ -188,13 +198,17 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
 	icon_state = "invbadge"
 	badge_string = "Corporate Investigator"
 	valid_access = list(ACCESS_SECURITY, ACCESS_LAWYER)	//Permitting both sec and IAA!
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/investigator)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/clothing/accessory/badge/holo/sheriff
 	name = "sheriff badge"
 	desc = "A star-shaped brass badge denoting who the law is around these parts."
 	icon_state = "sheriff"
-	slot_flags = SLOT_TIE | SLOT_BELT
+
+CAPABILITIES(/obj/item/clothing/accessory/badge/holo/sheriff)
+	configure(item_worn(slots = SLOT_TIE | SLOT_BELT))
 
 /obj/item/storage/box/holobadge/hos
 	name = "holobadge box"
@@ -301,12 +315,12 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
 	icon_state = "dosimeter"
 	item_state = "dosimeter"
 	overlay_state = "dosimeter"
-	slot_flags = SLOT_TIE
 
 /// The loaded film (set at init by its owns_one starts).
 /obj/item/clothing/accessory/dosimeter/var/obj/item/dosimeter_film/current_film
 
 CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
+	configure(item_worn(slots = SLOT_TIE))
 	owns_one(nameof(current_film), /obj/item/dosimeter_film, starts = /obj/item/dosimeter_film)
 	op("dosimeter_remove_film_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Dosimeter remove film hand"), then(PROC_REF(dosimeter_remove_film_hand)))
 	op("dosimeter_insert_film", item(/obj/item/dosimeter_film), priority(OP_PRIORITY_DEFAULT - 1), label("Insert film"), then(PROC_REF(dosimeter_insert_film)))

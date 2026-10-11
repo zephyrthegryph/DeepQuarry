@@ -630,15 +630,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	var/mob/M = AM
 	if(ismob(AM))
 
-		if(!can_pull_mobs || !can_pull_size)
+		if(!movement_of(src).pull_mobs || !movement_of(src).pull_size)
 			to_chat(src, span_warning("They won't budge!"))
 			return
 
-		if((mob_size < M.mob_size) && (can_pull_mobs != MOB_PULL_LARGER))
+		if((mob_size < M.mob_size) && (movement_of(src).pull_mobs != MOB_PULL_LARGER))
 			to_chat(src, span_warning("[M] is too large for you to move!"))
 			return
 
-		if((mob_size == M.mob_size) && (can_pull_mobs == MOB_PULL_SMALLER))
+		if((mob_size == M.mob_size) && (movement_of(src).pull_mobs == MOB_PULL_SMALLER))
 			to_chat(src, span_warning("[M] is too heavy for you to move!"))
 			return
 
@@ -663,13 +663,13 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		else
 			rel_set(M, nameof(M.LAssailant), src)
 
-		if(M.no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
+		if(movement_of(M).no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))
 			return
 
 	else if(isobj(AM))
 		var/obj/I = AM
-		if(!can_pull_size || can_pull_size < I.w_class)
+		if(!movement_of(src).pull_size || movement_of(src).pull_size < I.w_class)
 			to_chat(src, span_warning("It won't budge!"))
 			return
 

@@ -3,7 +3,6 @@
 	icon = 'icons/obj/robot_parts.dmi'
 	item_state = "buildpipe"
 	icon_state = "blank"
-	slot_flags = SLOT_BELT
 	var/list/part = null // Order of args is important for installing robolimbs.
 	var/sabotaged = 0 //Emagging limbs can have repercussions when installed as prosthetics.
 	var/model_info
@@ -280,6 +279,7 @@ CAPABILITIES(/obj/item/robot_parts/head)
 
 
 CAPABILITIES(/obj/item/robot_parts)
+	configure(item_worn(slots = SLOT_BELT))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 
 /obj/item/robot_parts/proc/on_emag(datum/act/op/A)

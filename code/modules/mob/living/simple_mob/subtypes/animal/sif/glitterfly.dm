@@ -107,3 +107,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
 /datum/decl/mob_organ_names/smallflying
 //For flying things too tiny to be granular
 TYPE_TABLE(/datum/decl/mob_organ_names/smallflying, mob_organ_hit_zones, list("body", "left wing", "right wing"))
+
+/// The explorers' pet glitterfly on Southern Cross: leaves no dirt (the map edit `makes_dirt = 0` it carried before makes_dirt became the
+/// mob_movement() trait; a compiled map cannot name a var that left the type).
+/mob/living/simple_mob/animal/sif/glitterfly/tidy
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly/tidy)
+	configure(mob_movement(makes_dirt = FALSE))

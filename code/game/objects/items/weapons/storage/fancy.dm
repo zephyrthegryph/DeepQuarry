@@ -98,13 +98,13 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box)
 	icon_state = "candlebox5"
 	icon_type = "candle"
 	item_state = "candlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/candle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/whitecandle_box
@@ -114,13 +114,13 @@ CAPABILITIES(/obj/item/storage/fancy/candle_box)
 	icon_state = "whitecandlebox5"
 	icon_type = "whitecandle"
 	item_state = "whitecandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/white = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/blackcandle_box
@@ -130,13 +130,13 @@ CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
 	icon_state = "blackcandlebox5"
 	icon_type = "blackcandle"
 	item_state = "blackcandlebox5"
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
 
 CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /*
@@ -249,8 +249,6 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 	icon_state = "cigpacket"
 	item_state_slots = list(slot_r_hand_str = "cigpacket", slot_l_hand_str = "cigpacket")
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 6
 	icon_type = "cigarette"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
@@ -259,6 +257,8 @@ CAPABILITIES(/obj/item/storage/fancy/crackers)
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	reagents(PROC_REF(pack_volume)) // so people can inject the whole packet without opening it
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette,
@@ -390,8 +390,6 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 	icon_state = "cigarcase"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 5
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
@@ -399,6 +397,8 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes)
 
 
 CAPABILITIES(/obj/item/storage/fancy/cigar)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	reagents(PROC_REF(pack_volume)) // so people can inject the cigars without opening the case
 	configure(storage(accepts = list(
 		/obj/item/clothing/mask/smokable/cigarette/cigar,
@@ -460,13 +460,13 @@ CAPABILITIES(/obj/item/storage/fancy/cigar)
 	icon_state = "paperbox"
 	icon = 'icons/obj/cigarettes.dmi'
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_BELT
 	storage_slots = 14
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
 
 
 CAPABILITIES(/obj/item/storage/rollingpapers)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 2))
 	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper)))
 
 /obj/item/storage/rollingpapers/blunt

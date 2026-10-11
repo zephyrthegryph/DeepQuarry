@@ -8,7 +8,6 @@
 	desc = "A large gas-powered cannon."
 	icon_state = "pneumatic"
 	item_state = "pneumatic"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_HUGE
 	fire_sound_text = "a loud whoosh of moving air"
 	fire_delay = 50
@@ -28,6 +27,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/gun/launcher/pneumatic)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(item_storage), starts = /obj/item/storage)
 	op("pneumatic_hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("pneumatic_verb_set_pressure", menu(), label("Set Valve Pressure"), needs(carried()),

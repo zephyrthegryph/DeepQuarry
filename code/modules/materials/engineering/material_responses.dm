@@ -230,7 +230,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	if(electrical_form && material.piezoelectric_coefficient > 0 && COOLDOWN_FINISHED(src, next_piezo_response))
 		var/obj/item/cell/cell = istype(item, /obj/item/cell) ? item : item.get_cell()
-		var/impact_force = max(item.force, item.throwforce)
+		var/impact_force = max(combat_of(item).force, thrown_of(item).force)
 		if(cell && impact_force > 0)
 			COOLDOWN_START(src, next_piezo_response, 1 SECOND)
 			cell.give(max(1, round(material.piezoelectric_coefficient * impact_force)))

@@ -36,7 +36,6 @@
 
 /mob/living/simple_mob/vox/armalis
 	delete_on_death = TRUE
-	death_message = DEATHGASP_NO_MESSAGE
 
 /mob/living/simple_mob/vox/armalis/on_death(gibbed)
 	. = ..()
@@ -158,6 +157,7 @@ CAPABILITIES(/datum/armalis_commune_review)
 	set desc = "Give voice to a psychic shriek."
 
 CAPABILITIES(/mob/living/simple_mob/vox/armalis)
+	configure(mob_kind(death_message = DEATHGASP_NO_MESSAGE))
 	op("armalis_item", item(/obj/item), then(PROC_REF(armalis_interaction_item)))
 	immune_to_incapacitation()
 
@@ -181,10 +181,10 @@ CAPABILITIES(/mob/living/simple_mob/vox/armalis)
 		regenerate_icons()
 		return
 
-	base_attack_cooldown = 5
-	if(O.force)
-		if(O.force >= 25)
-			var/damage = O.force
+	set_base_attack_cooldown(5)
+	if(combat_of(O).force)
+		if(combat_of(O).force >= 25)
+			var/damage = combat_of(O).force
 			if (O.injury_kind == INJURY_PAIN)
 				damage = 0
 			injure(O.injury_kind, damage, null, O)

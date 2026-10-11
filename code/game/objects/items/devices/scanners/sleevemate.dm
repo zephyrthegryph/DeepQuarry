@@ -7,8 +7,6 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "sleevemate"
 	item_state = "healthanalyzer"
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -98,6 +96,8 @@ CAPABILITIES(/datum/prompt/choice/sleevemate_target)
 		return ITEM_INTERACT_FAILURE
 
 CAPABILITIES(/obj/item/sleevemate)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	extend(TAG_TOPIC, then(PROC_REF(topic_click_spent), early = TRUE))
 	// The timed scans and transfers, started by the topic ops above once they have checked the target.

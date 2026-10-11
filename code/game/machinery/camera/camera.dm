@@ -202,7 +202,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	if (!isobj(source))
 		return
 	var/obj/item/O = source
-	if(O.throwforce >= src.toughness)
+	if(thrown_of(O).force >= src.toughness)
 		visible_message(span_boldwarning("[src] was hit by [O]."))
 
 /obj/machinery/camera/proc/setViewRange(num = 7)
@@ -293,7 +293,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 
 /obj/machinery/camera/proc/weld_duration(datum/act/op/A)
 	var/obj/item/W = A.held_provider()
-	return 10 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
+	return 10 SECONDS * tooling_of(W).speed * tool_skill_factor(A.actor, TOOL_WELDER)
 
 /obj/machinery/camera/proc/welder_used(datum/act/op/A)
 	welded_off(A.actor, A.held)
@@ -372,9 +372,9 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 	var/obj/item/W = A.held
 	update_coverage()
 	user.setClickCooldown(user.get_attack_speed(W))
-	if (W.force >= src.toughness)
+	if (combat_of(W).force >= src.toughness)
 		user.do_attack_animation(src)
-		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with [W] by %T%!"))
+		act_message(src, user, others = span_boldwarning("%U% has been [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "attacked"] with [W] by %T%!"))
 		if (sounds_of(W).hit)
 			playsound(src, sounds_of(W).hit, 50, 1, -1)
 	receive_weapon_hit(W, user, silent = FALSE)

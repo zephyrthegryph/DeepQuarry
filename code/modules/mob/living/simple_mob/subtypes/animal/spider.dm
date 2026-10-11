@@ -6,6 +6,9 @@
 	endurance = 60
 	projectiletype = /obj/item/projectile/energy/mob/electric_spider
 
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric)
+	configure(mob_kind(attack_cooldown = 15))
+
 /mob/living/simple_mob/animal/giant_spider/frost //tank, old 175
 	endurance = 75
 
@@ -14,6 +17,9 @@
 
 /mob/living/simple_mob/animal/giant_spider/ion //disrupter, old 90
 	endurance = 45
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/ion)
+	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/giant_spider/hunter //disrupter, old 120
 	endurance = 40
@@ -35,6 +41,9 @@
 
 /mob/living/simple_mob/animal/giant_spider/webslinger //disrupter, old 90
 	endurance = 40
+
+CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger)
+	configure(mob_kind(attack_cooldown = 10))
 
 /obj/effect/spider/eggcluster
 	spider_type = /obj/effect/spider/spiderling/varied

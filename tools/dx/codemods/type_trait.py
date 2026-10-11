@@ -78,7 +78,8 @@ SPECS = {
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
                 "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
                 "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs"},
-        skip={"code/game/objects/items/item_combat.dm"},  # items.dm is rewritten too: its base declarations are deleted by hand
+        skip={"code/game/objects/items/item_combat.dm"},
+        skip_refs=r"(^|\.)def$",  # a wire definition's own reach  # items.dm is rewritten too: its base declarations are deleted by hand
     ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]

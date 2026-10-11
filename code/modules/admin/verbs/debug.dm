@@ -26,7 +26,7 @@ ADMIN_VERB(simple_DPS, R_DEBUG, "Simple DPS", "Gives a really basic idea of how 
 		return
 	var/weapon_attack_speed = user_mob.get_attack_speed(I) / 10
 	var/modified_damage_percent = user_mob.factor(BF_MELEE_DAMAGE)
-	var/weapon_damage = I.force * modified_damage_percent
+	var/weapon_damage = combat_of(I).force * modified_damage_percent
 
 	if(istype(I, /obj/item/gun))
 		var/obj/item/gun/G = I

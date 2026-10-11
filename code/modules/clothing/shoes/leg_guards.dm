@@ -1,7 +1,6 @@
 /obj/item/clothing/shoes/leg_guard
 	name = DEVELOPER_WARNING_NAME // "leg guards"
 	desc = "These will protect your legs and feet."
-	body_parts_covered = LEGS|FEET
 	slowdown = SHOES_SLOWDOWN+0.5
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
@@ -9,6 +8,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
+	configure(item_worn(covers = LEGS|FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, fit_spec, null)
@@ -18,10 +18,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, equip_spec, dq_spec_join(..(), li
 /obj/item/clothing/shoes/leg_guard/proc/suit_clearance(mob/living/carbon/human/H)
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
 		return TRUE
-	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & LEGS)
+	if(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & LEGS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
 	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
-		if(A.body_parts_covered & LEGS)
+		if(worn_of(A).covers & LEGS)
 			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
 	return TRUE
 

@@ -179,7 +179,7 @@
 
 	// Welders reach the wall's interactions (wall_construction.dm) before attackby.
 	if(locate_on(src, /obj/effect/overlay/wallrot))
-		if(!is_sharp(W) && W.force >= 10 || W.force >= 20)
+		if(!is_sharp(W) && combat_of(W).force >= 10 || combat_of(W).force >= 20)
 			to_chat(user, span_notice("\The [src] crumbles away under the force of your [W.name]."))
 			src.dismantle_wall(1)
 			return OP_PASS

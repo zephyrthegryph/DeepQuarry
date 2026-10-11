@@ -7,7 +7,6 @@
 	icon_state = "railgun"
 	power_cost = 300
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BELT
 	slowdown = 1	// Slowdown equals slowdown_worn, until we decide to import the system to differentiate between held and worn items
 	fire_delay = 1
 
@@ -22,6 +21,9 @@
 	var/slowdown_held = 2
 	var/slowdown_worn = 1
 	var/empty_sound = SFX_MACHINES_TWOBEEP
+
+CAPABILITIES(/obj/item/gun/magnetic/railgun)
+	configure(item_worn(slots = SLOT_BELT))
 
 // Not going to check type repeatedly, if you code or varedit
 // load_type and get runtime errors, don't come crying to me.
@@ -61,7 +63,6 @@
 	slowdown_held = 3
 	slowdown_worn = 2
 
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_NO_CONTAINER
 
 	firemodes = list(
@@ -69,6 +70,9 @@
 		list(mode_name="short bursts", burst=3, fire_delay=null, move_delay=5, one_handed_penalty=30, burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)),
 		list(mode_name="long bursts", burst=6, fire_delay=null, move_delay=10, one_handed_penalty=30, burst_accuracy=list(0,-15,-15,-15,-30), dispersion=list(0.6, 0.6, 1.0, 1.0, 1.2)),
 		)
+
+CAPABILITIES(/obj/item/gun/magnetic/railgun/automatic)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/magnetic/railgun/automatic/examine(mob/user)
 	. = ..()
@@ -88,7 +92,6 @@
 	fire_delay = 0.1
 
 	w_class = ITEMSIZE_HUGE //.
-	slot_flags = SLOT_BACK
 
 	slowdown = 0
 	slowdown_held = 0
@@ -106,6 +109,9 @@
 		list(mode_name="short bursts", burst=3, fire_delay=null, move_delay=5, one_handed_penalty=30, burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)),
 		)
 
+CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette)
+	configure(item_worn(slots = SLOT_BACK))
+
 /obj/item/gun/magnetic/railgun/flechette/pistol
 	name = "flechette pistol"
 	desc = "The MI-6a Ullr is a small-form-factor railgun that fires flechette rounds at high velocity. Deadly against armour, but much less effective against soft targets."
@@ -122,7 +128,6 @@
 	fire_delay = 0.1
 	move_delay = 0 // Pistols have move_delay of 0
 
-	slot_flags = SLOT_BELT
 
 	slowdown = 0
 	slowdown_held = 0
@@ -139,6 +144,9 @@
 		list(mode_name="short bursts", burst=3, fire_delay=null, move_delay=5, one_handed_penalty=30, burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)),
 	)
 
+CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/pistol)
+	configure(item_worn(slots = SLOT_BELT))
+
 /obj/item/gun/magnetic/railgun/heater
 	name = "coil rifle"
 	desc = "A large rifle designed and produced after the Grey Hour."
@@ -153,7 +161,6 @@
 
 	fire_delay = 8
 
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE //.
 
 	slowdown = 0
@@ -169,6 +176,9 @@
 		list(mode_name="high power", power_cost = 400, projectile_type = /obj/item/projectile/bullet/magnetic/heated, burst=1, fire_delay=8, move_delay=null, one_handed_penalty=15),
 		list(mode_name="low power", power_cost = 150, projectile_type = /obj/item/projectile/bullet/magnetic/heated/weak, burst=1, fire_delay=5, move_delay=null, one_handed_penalty=15),
 		)
+
+CAPABILITIES(/obj/item/gun/magnetic/railgun/heater)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/gun/magnetic/railgun/heater/pistol
 	name = "coil pistol"
@@ -187,12 +197,14 @@
 	capacitor = /obj/item/stock_parts/capacitor
 	removable_components = TRUE //CHOMPstation Edit
 
-	slot_flags = SLOT_BELT|SLOT_HOLSTER
 
 	firemodes = list(
 		list(mode_name="lethal", power_cost = 500, projectile_type = /obj/item/projectile/bullet/magnetic/heated, burst=1, fire_delay=10, move_delay=null, one_handed_penalty=0),
 		list(mode_name="stun", power_cost = 350, projectile_type = /obj/item/projectile/energy/electrode/strong, burst=1, fire_delay=7, move_delay=null, one_handed_penalty=0),
 		)
+
+CAPABILITIES(/obj/item/gun/magnetic/railgun/heater/pistol)
+	configure(item_worn(slots = SLOT_BELT|SLOT_HOLSTER))
 
 /obj/item/gun/magnetic/railgun/heater/pistol/hos
 	name = "prototype peacemaker"
@@ -217,7 +229,6 @@
 	capacitor = /obj/item/stock_parts/capacitor
 	removable_components = TRUE //CHOMPstation Edit.
 
-	slot_flags = SLOT_BELT|SLOT_BACK //CHOMPstation Edit. This is a carbine.
 
 	slowdown_held = 0.3
 
@@ -229,6 +240,9 @@
 		list(mode_name="semiauto", burst=1, fire_delay=0.1, move_delay=null, one_handed_penalty=15, burst_accuracy=null, dispersion=null),
 		list(mode_name="short bursts", burst=3, fire_delay=null, move_delay=5, one_handed_penalty=30, burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0)),
 		)
+
+CAPABILITIES(/obj/item/gun/magnetic/railgun/flechette/sif)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 
 /obj/item/gun/magnetic/railgun

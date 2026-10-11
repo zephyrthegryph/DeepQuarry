@@ -188,7 +188,6 @@ CAPABILITIES(/obj/item/storage/photo_album)
 	icon_state = "camera"
 	item_state = "camera"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	var/pictures_max = 10
 	var/pictures_left = 10
@@ -217,6 +216,7 @@ CAPABILITIES(/obj/item/storage/photo_album)
 	return NONE
 
 CAPABILITIES(/obj/item/camera)
+	configure(item_worn(slots = SLOT_BELT))
 	op("camera_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("camera_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("camera_focus", menu(), label("Set Photo Focus"), needs(carried()), then(PROC_REF(camera_focus_op)))

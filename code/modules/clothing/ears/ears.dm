@@ -7,9 +7,11 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "earmuffs"
 	item_state_slots = list(slot_r_hand_str = "earmuffs", slot_l_hand_str = "earmuffs")
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
 	ear_protection = 2
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/ears/earmuffs)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
 
 /obj/item/clothing/ears/earmuffs/headphones
 	name = "headphones"
@@ -17,9 +19,9 @@
 	var/headphones_on = 0
 	icon_state = "headphones_off"
 	item_state_slots = list(slot_r_hand_str = "headphones", slot_l_hand_str = "headphones")
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
 
 CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
 	op("headphones_togglemusic_verb", menu(), label("Toggle Headphone Music"), needs(carried()), then(PROC_REF(headphones_togglemusic_verb)))
 
 /// Old verb "Toggle Headphone Music".
@@ -49,8 +51,10 @@ CAPABILITIES(/obj/item/clothing/ears/earmuffs/headphones)
 	desc = "Some stuff worn by skrell to adorn their head tentacles."
 	icon = 'icons/inventory/ears/item.dmi'
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/ears/skrell)
+	configure(item_worn(slots = SLOT_EARS))
 
 TYPE_TABLE(/obj/item/clothing/ears/skrell, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_SKRELL))))
 

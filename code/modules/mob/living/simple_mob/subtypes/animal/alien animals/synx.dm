@@ -13,7 +13,6 @@
 	icon_state = "synx_living"
 	icon_living = "synx_living"
 	icon_dead = "synx_dead"
-	mob_bump_flag = SIMPLE_ANIMAL //This not existing was breaking vore bump for some reason.
 	parasitic = TRUE //Digestion immunity var
 
 	var/list/speak = list("Who is there?", "What is that thing?!") // ALLOW(instance_list): d: per-mob speak, filled at runtime; mobs are few
@@ -989,6 +988,7 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 	name = realname
 
 CAPABILITIES(/mob/living/simple_mob/animal/synx)
+	configure(mob_movement(bump = SIMPLE_ANIMAL))
 	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
 	rolls(nameof(body_style), PROC_REF(roll_look))
 	rolls(nameof(horns), PROC_REF(roll_look))

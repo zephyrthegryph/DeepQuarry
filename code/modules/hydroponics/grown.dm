@@ -6,7 +6,6 @@
 	icon_state = "blank"
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
-	slot_flags = SLOT_HOLSTER
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
@@ -14,6 +13,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
+	configure(item_worn(slots = SLOT_HOLSTER))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 	param(nameof(plantname), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
@@ -49,7 +49,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 		if(reagents.total_volume > 0)
 			bitesize = 1+round(reagents.total_volume / 2, 1)
 		if(seed().get_trait(TRAIT_STINGS))
-			force = 1
+			set_force(1)
 
 /// The seed's chemicals at its potency (reagents(contents_from =)); glamour is never put in. Null for produce with no known plant.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed_contents()
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
-				if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)
+				if(H.get_equipped_item(SLOT_ID_SHOES) && worn_of(H.get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP)
 					return
 
 			M.stop_pulling()
@@ -208,7 +208,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 				consume(src, user)
 				return OP_PASS
 
-		if(W.sharp)
+		if(combat_of(W).sharp)
 
 			if(seed().kitchen_tag == PLANT_PUMPKIN) // Ugggh these checks are awful.
 				user.show_message(span_notice("You carve a face into [src]!"), 1)
@@ -217,7 +217,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/grown)
 
 			if(seed().chems)
 
-				if(W.sharp && W.edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
+				if(combat_of(W).sharp && combat_of(W).edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
 					user.show_message(span_notice("You make planks out of \the [src]!"), 1)
 					play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 					var/flesh_colour = seed().get_trait(TRAIT_FLESH_COLOUR)

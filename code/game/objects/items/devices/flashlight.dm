@@ -19,7 +19,6 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "flashlight"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	actions_types = list(/datum/action/item_action/toggle_flashlight)
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
@@ -36,6 +35,7 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 
 CAPABILITIES(/obj/item/flashlight)
 	configure(light_glow(range = 4, power = 0.8, color = "#FFFFFF"))
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
@@ -137,7 +137,7 @@ TRACKED(/obj/item/flashlight, power_use)
 		var/mob/living/carbon/human/H = M	//mob has protective eyewear
 		if(istype(H))
 			for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD),H.get_equipped_item(SLOT_ID_MASK),H.get_equipped_item(SLOT_ID_EYES)))
-				if(istype(C) && (C.body_parts_covered & EYES))
+				if(istype(C) && (worn_of(C).covers & EYES))
 					to_chat(user, span_warning("You're going to need to remove [C.name] first."))
 					return ITEM_INTERACT_FAILURE
 
@@ -306,13 +306,13 @@ TRACKED(/obj/item/flashlight, power_use)
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
 	item_state = "pen"
-	slot_flags = SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	power_use = 0
 	cell_type = null
 
 CAPABILITIES(/obj/item/flashlight/pen)
 	configure(light_glow(range = 2))
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/flashlight/color	//Default color is blue
@@ -350,13 +350,12 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	name = "maglight"
 	desc = "A very, very heavy duty flashlight."
 	icon_state = "maglight"
-	force = 10
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	attack_verb = list ("smacked", "thwacked", "thunked")
 
 CAPABILITIES(/obj/item/flashlight/maglight)
 	configure(light_glow(color = LIGHT_COLOR_FLUORESCENT_FLASHLIGHT))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10, attack_verbs = list ("smacked", "thwacked", "thunked")))
 	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/flashlight/drone
@@ -380,7 +379,6 @@ CAPABILITIES(/obj/item/flashlight/drone)
 	name = "desk lamp"
 	desc = "A desk lamp with an adjustable mount."
 	icon_state = "lamp"
-	force = 10
 	center_of_mass_x = 13
 	center_of_mass_y = 11
 	w_class = ITEMSIZE_LARGE
@@ -459,7 +457,7 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 
 /obj/item/flashlight/flare/proc/turn_off()
 	set_on(0)
-	src.force = initial(src.force)
+	src.set_force(combat_of_type(src.type).force)
 	src.injury_kind = initial(src.injury_kind)
 	update_brightness()
 
@@ -474,13 +472,13 @@ TRACKED(/obj/item/flashlight/flare, fuel)
 	// All good, turn it on.
 	if(. == CAN_USE)
 		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
-		force = on_damage
+		set_force(on_damage)
 		injury_kind = INJURY_BURN
 
 /obj/item/flashlight/flare/proc/ignite() //Used for flare launchers.
 	set_on(!on)
 	update_brightness()
-	force = on_damage
+	set_force(on_damage)
 	injury_kind = INJURY_BURN
 	return 1
 
@@ -587,4 +585,5 @@ CAPABILITIES(/obj/item/flashlight/glowstick/radioisotope)
 /// Old object verbs.
 CAPABILITIES(/obj/item/flashlight/lamp)
 	configure(light_glow(range = 5))
+	configure(item_combat(force = 10))
 	op("lamp_toggle_light_effect", menu(), label("Toggle light"), then(PROC_REF(lamp_toggle_light_effect)))

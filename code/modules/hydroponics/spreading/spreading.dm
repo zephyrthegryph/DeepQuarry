@@ -268,8 +268,8 @@ TRACKED(/obj/effect/plant, wall_shift)
 
 	if(istype(held, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
-	else if(held.force)
-		set_health(health - held.force)
+	else if(combat_of(held).force)
+		set_health(health - combat_of(held).force)
 	return OP_PASS
 
 /// Old attack_hand: pull free whoever the plant has entangled.

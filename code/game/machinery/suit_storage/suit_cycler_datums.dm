@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	helmet.item_state_slots = tmp.item_state_slots?.Copy()
 	helmet.sprite_sheets = tmp.sprite_sheets?.Copy()
 	helmet.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
-	helmet.default_worn_icon = tmp.default_worn_icon
+	helmet.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 /datum/suit_cycler_choice/department/proc/can_refit_suit(obj/item/clothing/suit/space/suit)
 	return suit && !!suit_becomes
@@ -41,7 +41,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	suit.item_state_slots = tmp.item_state_slots?.Copy()
 	suit.sprite_sheets = tmp.sprite_sheets?.Copy()
 	suit.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
-	suit.default_worn_icon = tmp.default_worn_icon
+	suit.set_default_worn_icon(worn_of(tmp).worn_icon)
 
 // Ye olde 'noop' choice for refits
 /datum/suit_cycler_choice/department/noop

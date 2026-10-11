@@ -66,8 +66,8 @@ CAPABILITIES(/obj/effect/energy_field)
 /obj/effect/energy_field/proc/interaction_hit_energy_field(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/held = A.held
-	if(held.force)
-		adjust_strength(-held.force / 20)
+	if(combat_of(held).force)
+		adjust_strength(-combat_of(held).force / 20)
 		user.do_attack_animation(src)
 		user.setClickCooldown(user.get_attack_speed(held))
 	return OP_DECLINE

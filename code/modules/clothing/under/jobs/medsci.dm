@@ -19,7 +19,9 @@
 	desc = "Feminine fashion for the style conscious RD. Its fabric provides minor protection from biological contaminants."
 	icon_state = "dress_rd"
 	armor_spec = "bio=10"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/under/rank/research_director/dress_rd)
+	configure(item_worn(covers = CHEST|ARMS))
 
 /obj/item/clothing/under/rank/scientist
 	desc = "It's made of a special fiber that provides minor protection against biohazards. It has markings that denote the wearer as a scientist."
@@ -92,10 +94,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/virologist)
 	name = "nurse's suit"
 	icon_state = "nursesuit"
 	armor_spec = "bio=10"
-	body_parts_covered = CHEST
 	rolled_sleeves = -1
 
 CAPABILITIES(/obj/item/clothing/under/rank/nursesuit)
+	configure(item_worn(covers = CHEST))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/nurse
@@ -104,10 +106,10 @@ CAPABILITIES(/obj/item/clothing/under/rank/nursesuit)
 	icon_state = "nurse"
 	item_state_slots = list(slot_r_hand_str = "nursesuit", slot_l_hand_str = "nursesuit")
 	armor_spec = "bio=10"
-	body_parts_covered = CHEST
 	rolled_sleeves = -1
 
 CAPABILITIES(/obj/item/clothing/under/rank/nurse)
+	configure(item_worn(covers = CHEST))
 	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/orderly
@@ -144,17 +146,21 @@ CAPABILITIES(/obj/item/clothing/under/rank/medical)
 	desc = "It's made of a special fiber that provides minor protection against biohazards. This one is the color scheme that designates a rapid first responder."
 	icon_state = "paramedic"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	body_parts_covered = CHEST|LEGS
 	rolled_down = -1
 	rolled_sleeves = -1
+
+CAPABILITIES(/obj/item/clothing/under/rank/medical/paramedic)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/rank/medical/paramedic_alt
 	name = "short sleeve medical jumpsuit"
 	desc = "It's made of a special fiber that provides minor protection against biohazards. This one has a cross on the chest denoting that the wearer is trained medical personnel."
 	icon_state = "medical_short"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	body_parts_covered = CHEST|LEGS
 	rolled_sleeves = -1
+
+CAPABILITIES(/obj/item/clothing/under/rank/medical/paramedic_alt)
+	configure(item_worn(covers = CHEST|LEGS))
 
 /obj/item/clothing/under/rank/medical/scrubs
 	name = "blue scrubs"

@@ -48,8 +48,10 @@
 	desc = "A bitingly cold metal necklace with a swirling gem in the center. Haters will say it's not magical"
 	icon_state = "necklace_inactive"
 	icon_root = "necklace"
-	slot_flags = SLOT_MASK
 	replacementType = /obj/item/remote_scene_tool/voodoo_doll
+
+CAPABILITIES(/obj/item/remote_scene_tool/voodoo_necklace)
+	configure(item_worn(slots = SLOT_MASK))
 
 /obj/item/storage/box/remote_scene_tools/voodoo
 	icon_state = "voodoobox"

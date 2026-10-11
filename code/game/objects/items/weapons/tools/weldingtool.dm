@@ -8,11 +8,8 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "welder"
 	item_state = "welder"
-	slot_flags = SLOT_BELT
 
 	//Amount of OUCH when it's thrown
-	force = 3.0
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -35,7 +32,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	var/eye_safety_modifier = 0 // Increasing this will make less eye protection needed to stop eye damage.  IE at 1, sunglasses will fully protect.
 	var/burned_fuel_for = 0 // Keeps track of how long the welder's been on, used to gradually empty the welder if left one, without RNG.
 	var/no_passive_burn = FALSE // If true, the welder will not passively burn fuel. Used for things like electric welders.
-	toolspeed = 1
 	tool_qualities = list(TOOL_WELDER)
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
@@ -166,6 +162,10 @@ TRACKED(/obj/item/weldingtool, always_process)
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
+	configure(item_tooling(speed = 1))
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 3.0))
 	configure(item_sounds(use = SFX_ITEMS_WELDER2, drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
 	every(2 SECONDS, then(PROC_REF(weldingtool_step)), when = PROC_REF(burner_active))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
@@ -279,7 +279,7 @@ CAPABILITIES(/obj/item/weldingtool)
 			else if(T)
 				T.visible_message(span_danger("\The [src] turns on."))
 			playsound(src, acti_sound, 50, 1)
-			src.force = 15
+			src.set_force(15)
 			src.injury_kind = INJURY_BURN
 			src.w_class = ITEMSIZE_LARGE
 			src.set_hitsound('sound/items/Welder.ogg')
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/weldingtool)
 		else if(T)
 			T.visible_message(span_warning("\The [src] turns off."))
 		playsound(src, deac_sound, 50, 1)
-		src.force = 3
+		src.set_force(3)
 		src.injury_kind = initial(src.injury_kind)
 		src.w_class = initial(src.w_class)
 		set_welding(0)
@@ -373,8 +373,10 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 	max_fuel = 10
 	w_class = ITEMSIZE_SMALL
 	change_icons = 0
-	toolspeed = 2
 	eye_safety_modifier = 1 // Safer on eyes.
+
+CAPABILITIES(/obj/item/weldingtool/mini)
+	configure(item_tooling(speed = 2))
 
 /obj/item/weldingtool/mini/two
 	icon_state = "miniwelder2"
@@ -409,11 +411,13 @@ MATERIAL_MIX(/obj/item/weldingtool/mini, list(MAT_METAL = 30, MAT_GLASS = 10))
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_welder)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "welder"
-	toolspeed = 0.1
 	flame_color = "#6699FF" // Light bluish.
 	eye_safety_modifier = 2
 	change_icons = 0
 	always_process = TRUE
+
+CAPABILITIES(/obj/item/weldingtool/alien)
+	configure(item_tooling(speed = 0.1))
 
 /obj/item/weldingtool/alien/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
@@ -427,11 +431,13 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	icon_state = "exwelder"
 	max_fuel = 40
 	w_class = ITEMSIZE_NORMAL
-	toolspeed = 0.5
 	change_icons = 0
 	flame_intensity = 3
 	always_process = TRUE
 	var/nextrefueltick = 0
+
+CAPABILITIES(/obj/item/weldingtool/experimental)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/weldingtool/experimental/weldingtool_step(datum/act/timer/A)
 	..()
@@ -445,10 +451,12 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	icon_state = "hybwelder"
 	max_fuel = 80 //more max fuel is better! Even if it doesn't actually use fuel.
 	eye_safety_modifier = -2	// Brighter than the sun. Literally, you can look at the sun with a welding mask of proper grade, this will burn through that.
-	toolspeed = 0.25
 	w_class = ITEMSIZE_NORMAL
 	flame_intensity = 5
-	reach = 2
+
+CAPABILITIES(/obj/item/weldingtool/experimental/hybrid)
+	configure(item_tooling(speed = 0.25))
+	configure(item_combat(reach = 2))
 
 /*
  * Backpack Welder.
@@ -461,7 +469,6 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	max_fuel = 10
 	w_class = ITEMSIZE_NO_CONTAINER
 	MATERIAL_NONE
-	toolspeed = 1.25
 	change_icons = 0
 	flame_intensity = 1
 	eye_safety_modifier = 1
@@ -514,8 +521,10 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	desc = "A bulky, cooler-burning welding tool that draws from a worn welding tank."
 	icon_state = "tubewelder"
 	max_fuel = 5
-	toolspeed = 1.75
 	eye_safety_modifier = 2
+
+CAPABILITIES(/obj/item/weldingtool/tubefed/survival)
+	configure(item_tooling(speed = 1.75))
 
 /*
  * Electric/Arc Welder
@@ -699,5 +708,6 @@ CAPABILITIES(/obj/item/weldingtool/electric)
 	return equip_mount
 
 CAPABILITIES(/obj/item/weldingtool/tubefed)
+	configure(item_tooling(speed = 1.25))
 	ref_one(nameof(mounted_pack))
 	keeps_if(PROC_REF(on_a_pack))

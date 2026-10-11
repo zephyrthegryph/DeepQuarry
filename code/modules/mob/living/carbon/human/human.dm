@@ -324,9 +324,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return ACT_REPLY
 	act_cancel(shown)
 
-	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
+	if(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).hides&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
 		return get_id_name("Unknown")
-	if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv&HIDEFACE))
+	if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides&HIDEFACE))
 		return get_id_name("Unknown")		//Likewise for hats
 	var/face_name = get_face_name()
 	var/id_name = get_id_name("")
@@ -1184,7 +1184,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		if(VISIBLE_GENDER_FORCE_BIOLOGICAL)
 			return gender
 		else
-			if(((get_equipped_item(SLOT_ID_MASK)?.flags_inv & HIDEFACE) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEMASK) || (get_equipped_item(SLOT_ID_HEAD)?.flags_inv & HIDEFACE)) && (get_equipped_item(SLOT_ID_SUIT)?.flags_inv & HIDEJUMPSUIT))
+			if(((worn_of(get_equipped_item(SLOT_ID_MASK)).hides & HIDEFACE) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK) || (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT))
 				return PLURAL
 			if(species?.ambiguous_genders && user)
 				if(ishuman(user))
@@ -1639,10 +1639,10 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	else
 		switch(target_zone)
 			if(BP_HEAD)
-				if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 			else
-				if(get_equipped_item(SLOT_ID_SUIT) && (get_equipped_item(SLOT_ID_SUIT).item_flags & THICKMATERIAL) && !ignore_thickness)
+				if(get_equipped_item(SLOT_ID_SUIT) && (worn_of(get_equipped_item(SLOT_ID_SUIT)).flags & THICKMATERIAL) && !ignore_thickness)
 					. = 0
 	if(!. && error_msg && user)
 		if(!fail_msg)
@@ -1661,21 +1661,21 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/feet_exposed = 1
 
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			head_exposed = 0
-		if(C.body_parts_covered & FACE)
+		if(worn_of(C).covers & FACE)
 			face_exposed = 0
-		if(C.body_parts_covered & EYES)
+		if(worn_of(C).covers & EYES)
 			eyes_exposed = 0
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			torso_exposed = 0
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			arms_exposed = 0
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			hands_exposed = 0
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			legs_exposed = 0
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			feet_exposed = 0
 
 	flavor_text = ""
@@ -1722,14 +1722,14 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	var/list/equipment = list(get_equipped_item(SLOT_ID_UNIFORM),get_equipped_item(SLOT_ID_SUIT),get_equipped_item(SLOT_ID_SHOES))
 	var/footcoverage_check = FALSE
 	for(var/obj/item/clothing/C in equipment)
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			footcoverage_check = TRUE
 			break
 	if(lying)
 		play_sfx(src, SFX_MISC_SLIP)
 		drop_both_hands()
 		return FALSE
-	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.
+	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP))) //Footwear negates a species' natural traction.
 		return FALSE
 	if(..(slipped_on,stun_duration))
 		drop_both_hands()
@@ -1845,7 +1845,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	return ..()
 
 /mob/living/carbon/human/Check_Shoegrip()
-	if(get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
+	if(get_equipped_item(SLOT_ID_SHOES) && (worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP) && istype(get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/magboots))  //magboots + dense_object = no floating
 		return 1
 	if(flying) // Checks to see if they have wings and are flying.
 		return 1

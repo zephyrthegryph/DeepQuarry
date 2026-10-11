@@ -5,7 +5,6 @@
 	name = "storage pouch (medium)"
 	desc = "This storage pouch can be used to provide some additional storage for quick access."
 	icon = 'icons/inventory/pockets/item.dmi'
-	slot_flags = SLOT_POCKET
 
 	icon_state = "medium_generic"
 	max_storage_space = INVENTORY_POUCH_SPACE
@@ -19,6 +18,7 @@
 
 // A slow pouch takes what is put into it after a wait: the wait is this op's (a progress bar, and walking away cancels it), run by stall_insertion().
 CAPABILITIES(/obj/item/storage/pouch)
+	configure(item_worn(slots = SLOT_POCKET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert)))

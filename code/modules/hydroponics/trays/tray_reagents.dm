@@ -2,14 +2,16 @@
 	icon = 'icons/obj/hydroponics_machines.dmi'
 	item_state = "spraycan"
 	flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
-	throwforce = 4
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 2
 	throw_range = 10
 	var/toxicity = 4
 	var/pest_kill_str = 0
 	var/weed_kill_str = 0
+
+CAPABILITIES(/obj/item/plantspray)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 4))
 
 /obj/item/plantspray/weeds // -- Skie
 
