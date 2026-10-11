@@ -254,6 +254,18 @@ fn slot_flags_guard_lines(text: &str, pattern: &regex::Regex, mutations: &std::c
     }).collect()
 }
 
+fn mask_act_holder_fields(text: &str, positions: &std::collections::BTreeSet<(usize, usize)>) -> String {
+    text.split('\n').enumerate().map(|(i, line)| {
+        let mut bytes = line.as_bytes().to_vec();
+        for &(row, column) in positions.range((i + 1, 0)..=(i + 1, usize::MAX)) {
+            if row == i + 1 && bytes.get(column - 1..column + 6) == Some(b".holder") {
+                bytes[column - 1..column + 6].fill(b' ');
+            }
+        }
+        String::from_utf8(bytes).expect("masking ASCII fields preserves UTF-8")
+    }).collect::<Vec<_>>().join("\n")
+}
+
 fn strict_allowed(composite: &str) -> bool {
     static R: std::sync::LazyLock<Rx> =
         std::sync::LazyLock::new(|| Rx::new(r"ALLOW\([^)]*check_grep[^)]*\)[[:space:]]*:[[:space:]]*[^[:space:]]"));
@@ -302,6 +314,19 @@ impl Lint for CheckGrep {
             let hits = slot_flags_guard_lines(f.text(), &raw_slot_flags, &mutations);
             out.cur = f.rel.clone();
             slot_rule.scan_lines(cx, f, out, hits);
+        }
+        // Only actual inherited /datum/act borrowed-holder fields are masked.
+        // Existing admin filters remain unchanged and see every other occurrence.
+        let admin_rule = self.compiled().iter().find(|c| c.rule == "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder").unwrap();
+        let holder_pattern = regex::Regex::new(r"\.holder\b").unwrap();
+        for f in cx.files() {
+            if !Files::Code.matches(f) || !f.text().contains(".holder") { continue; }
+            let positions = semantic.as_ref().map(|sem| crate::sem::checks::act_holder_positions(sem, &f.rel, f.text())).unwrap_or_default();
+            let masked = mask_act_holder_fields(f.text(), &positions);
+            let hits: Vec<usize> = masked.split('\n').enumerate().filter_map(|(i, l)| holder_pattern.is_match(l).then_some(i + 1)).collect();
+            let filtered = SourceFile::from_text(&f.rel, &masked);
+            out.cur = f.rel.clone();
+            admin_rule.scan_lines(cx, &filtered, out, hits);
         }
         // the checks whose pattern is read from the generated bindings
         let dynamic = dynamic_parts(cx);
@@ -602,6 +627,48 @@ TRACKED(/obj/item/flagged, slot_flags)
         lint.scan_tree(&cx, &mut out);
         let actual: Vec<usize> = out.sites.iter().filter(|site| site.rule == "legacy_equip_restriction_vars__slot_flags").map(|site| site.line as usize).collect();
         assert_eq!(actual, findings, "Tree pass keeps the existing rule identity and finding locations");
+    }
+
+    #[test]
+    fn admin_holder_masks_actual_context_only_before_legacy_filters() {
+        let source = r#"/datum/act
+    var/datum/holder
+/datum/act/op
+/datum/act/admission_query
+    parent_type = /datum/act/op
+/datum/act/op/acceptance
+    parent_type = /datum/act/admission_query
+/datum/query_nonlexical
+    parent_type = /datum/act/op/acceptance
+/client
+    var/datum/holder
+/obj/proc/probe(datum/act/op/acceptance/Q, client/C, U, datum/query_nonlexical/N)
+    var/a = Q.holder
+    var/b = N.holder
+    var/c = C.holder
+    var/d = U.holder
+    var/e = list(Q.holder, C.holder)
+    var/f = list(Q.holder, U.holder)
+"#;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("code")).unwrap();
+        std::fs::write(dir.path().join("code/holder.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/holder.dm", source)]);
+        tree.root = dir.path().to_path_buf();
+        let sem = crate::sem::Sem::build(&tree.root, &tree).unwrap();
+        assert!(sem.errors.is_empty(), "{:?}", sem.errors);
+        let positions = crate::sem::checks::act_holder_positions(&sem, "code/holder.dm", source);
+        assert_eq!(positions.len(), 4, "Actual query and nonlexical inherited types are proven; client/unknown are not");
+        let masked = mask_act_holder_fields(source, &positions);
+        assert!(!masked.contains("Q.holder") && !masked.contains("N.holder"));
+        assert!(masked.contains("list(Q       , C.holder)"));
+        let lint = CheckGrep::new();
+        let scope = LintScope::default();
+        let cx = Cx { tree: &tree, meta: lint.meta, scope: &scope };
+        let mut out = Sink::new();
+        lint.scan_tree(&cx, &mut out);
+        let actual: Vec<&str> = out.sites.iter().filter(|s| s.rule == "admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder").map(|s| source.lines().nth(s.line as usize - 1).unwrap().trim()).collect();
+        assert_eq!(actual, vec!["var/c = C.holder", "var/d = U.holder", "var/e = list(Q.holder, C.holder)", "var/f = list(Q.holder, U.holder)"]);
     }
 
     #[test]

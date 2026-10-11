@@ -59,7 +59,7 @@ pub fn parts() -> Vec<Part> {
             "admin rights: shrink-only baseline (one mechanism: admin_can)",
             "raw .holder reads outside modules/admin/holder* over the ratchet. Use admin_can(client, rights).",
             Files::Code,
-            line(r"\.holder\b"),
+            Find::Tree,
         )
         .flt(vec![
             Flt::DropLit("code/modules/admin/holder"),

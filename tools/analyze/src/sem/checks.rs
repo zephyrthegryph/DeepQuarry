@@ -602,3 +602,53 @@ pub fn slot_flags_mutation_positions(sem: &super::Sem, decls: &super::decls::Dec
     }
     positions
 }
+
+// Prove direct borrowed action-context fields without relying on receiver names.
+pub fn act_holder_positions(sem: &super::Sem, file: &str, text: &str) -> BTreeSet<(usize, usize)> {
+    fn declared(v: &dreammaker::ast::VarType) -> Option<String> {
+        (!v.type_path.is_empty()).then(|| format!("/{}", v.type_path.join("/")))
+    }
+    fn collect(b: &Block, types: &mut BTreeMap<String, Option<String>>) {
+        for s in b {
+            let mut add = |name: &str, ty: Option<String>| {
+                if types.contains_key(name) { types.insert(name.to_owned(), None); }
+                else { types.insert(name.to_owned(), ty); }
+            };
+            match &s.elem {
+                Statement::Var(v) => add(v.name.as_str(), declared(&v.var_type)),
+                Statement::Vars(vs) => for v in vs { add(v.name.as_str(), declared(&v.var_type)); },
+                Statement::ForList(v) => add(v.name.as_str(), v.var_type.as_ref().and_then(declared)),
+                Statement::ForKeyValue(v) => { add(v.key.as_str(), None); add(v.value.as_str(), None); },
+                _ => {}
+            }
+            for child in stmt_blocks(&s.elem) { collect(child, types); }
+        }
+    }
+    let mut positions = BTreeSet::new();
+    for (_, owner, name) in sem.defs_in(file) {
+        let Some(proc) = sem.proc_ref(owner, name) else { continue; };
+        let body = sem.proc_body(proc);
+        if body.file != file { continue; }
+        let Some(code) = body.code else { continue; };
+        let mut types: BTreeMap<String, Option<String>> = body.params.iter().map(|p| (p.name.to_string(), declared(&p.var_type))).collect();
+        collect(code, &mut types);
+        walk_block(code, &mut |e, _| {
+            let Expression::Base { term, follow } = e else { return; };
+            let (Term::Ident(receiver), [field]) = (&term.elem, follow.as_ref()) else { return; };
+            if !matches!(&field.elem, Follow::Field(_, n) if n.as_str() == "holder") { return; }
+            let ty = if receiver.as_str() == "src" { Some(owner.as_str()) }
+                else { types.get(receiver.as_str()).and_then(|ty| ty.as_deref()) };
+            let Some(ty) = ty else { return; };
+            if !sem.is_subtype(ty, "/datum/act") || sem.var_owner(ty, "holder").as_deref() != Some("/datum/act") { return; }
+            if sem.rel(term.location) != file { return; }
+            let Some(line) = text.lines().nth(term.location.line as usize - 1) else { return; };
+            let start = term.location.column as usize - 1;
+            let Some(tail) = line.get(start..) else { return; };
+            let Some(after_name) = tail.strip_prefix(receiver.as_str()) else { return; };
+            let optional = after_name.starts_with('?');
+            if !(after_name.starts_with(".holder") || after_name.starts_with("?.holder")) { return; }
+            positions.insert((term.location.line as usize, start + receiver.len() + usize::from(optional) + 1));
+        });
+    }
+    positions
+}

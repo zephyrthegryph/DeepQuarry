@@ -58,3 +58,15 @@ CAPABILITIES(/obj/item/dq_derives_probe)
 	var/before = D.computes
 	D.set_volume(3)
 	TEST_ASSERT_EQUAL(D.computes, before, "an unchanged write recomputes nothing")
+
+// Teardown of the last derived holder releases the lazy recursion guard.
+// A later holder must still initialize and recompute normally.
+/datum/unit_test/dq_lifeform_derives/recreate/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_derives_probe/first = allocate(/obj/item/dq_derives_probe, T)
+	TEST_ASSERT_EQUAL(first.summary, "1000", "The first real holder computes its initial value")
+	qdel(first)
+	var/obj/item/dq_derives_probe/second = allocate(/obj/item/dq_derives_probe, T)
+	TEST_ASSERT_EQUAL(second.summary, "1000", "A new holder computes after the previous holder was deleted")
+	second.set_pressure(7)
+	TEST_ASSERT_EQUAL(second.summary, "70", "The new holder continues to recompute after input changes")

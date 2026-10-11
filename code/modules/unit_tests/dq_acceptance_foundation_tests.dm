@@ -133,7 +133,7 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 		try
 			acceptance_reason(D, "dq-acceptance-pure", D, I, options = list("fault" = TRUE))
 		catch(var/exception/fault)
-			caught = TRUE
+			caught = !isnull(fault)
 		op_pure_end()
 		TEST_ASSERT(caught, "Actual requirement callback fault propagates")
 		act_pool = GLOB.object_pools[/datum/act/op/acceptance]
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 			else
 				acceptance_read_keys(D, "dq-acceptance-metadata-fault", D, I)
 		catch(var/exception/fault)
-			caught = TRUE
+			caught = !isnull(fault)
 		TEST_ASSERT(caught, "Direct metadata callback fault propagates")
 		TEST_ASSERT_EQUAL(D.probe, probe_before + 1, "Real tracked setter executed in read metadata callback")
 		TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Query's native purity guard detected the actual tracked write")
@@ -247,7 +247,7 @@ CAPABILITIES(/obj/dq_acceptance_wait)
 	P.watch_kept(kept)
 	rel_set(F, nameof(F.dependency), replacement)
 	test_time(1 TICK)
-	TEST_ASSERT(P.active && isnull(R.outcome), "Successful real tracked recheck keeps wait alive")
+	TEST_ASSERT(P.active && isnull(R.outcome), "Successful real tracked recheck keeps wait alive; actual outcome [R.outcome], reason [reason_text(R.reason)]")
 	TEST_ASSERT_EQUAL((old.rx?.observed?[key] || 0), old_readers, "Old dependency subscription released")
 	TEST_ASSERT_EQUAL((replacement.rx?.observed?[key] || 0), replacement_readers + 1, "New dependency subscribed exactly once")
 	TEST_ASSERT(P in GLOB.op_watchers["[REF(answerer)]|[OP_KEEP_MOVED]"], "Answerer supplement survives requirement replacement")
@@ -347,16 +347,18 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	var/depth = GLOB.op_pure_depth
 	var/expected_before = GLOB.op_pure_expected
 	var/list/violations_before = GLOB.op_pure_violations
-	GLOB.op_pure_violations = violations_before ? violations_before.Copy() : list()
-	GLOB.op_pure_expected = TRUE
+	set_global(nameof(GLOB.op_pure_violations), violations_before ? violations_before.Copy() : list())
+	set_global(nameof(GLOB.op_pure_expected), TRUE)
 	// Test-only flag change avoids invoking automatic recheck before the explicit fault probe.
 	F.fault_metadata = TRUE
 	var/caught = FALSE
 	var/count_before = length(GLOB.op_pure_violations)
+	TEST_ASSERT(P.resume_act(), "Pending metadata probe restores actual suspended context")
 	try
 		P.watch_reconcile(P.act)
 	catch(var/exception/metadata_fault_0)
 		caught = TRUE
+	P.suspend_act()
 	TEST_ASSERT(caught, "Pending metadata fault propagates")
 	TEST_ASSERT_EQUAL(F.probe, 1, "Real metadata setter ran")
 	TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Pending metadata runs under purity guard")
@@ -418,7 +420,7 @@ CAPABILITIES(/obj/item/dq_acceptance_target_reads)
 	try
 		acceptance_act(D, D, I, options = list("escape" = I))
 	catch(var/exception/fault)
-		caught = TRUE
+		caught = !isnull(fault)
 	TEST_ASSERT(caught, "World references cannot escape through query options")
 
 /obj/item/dq_acceptance_query_hop
@@ -532,6 +534,8 @@ CAPABILITIES(/obj/item/dq_acceptance_query_members_reader)
 	assert_pair(pairs, I, nameof(I.members))
 	assert_pair(pairs, first, nameof(first.acceptance_limit))
 	assert_pair(pairs, second, nameof(second.acceptance_limit))
+	for(var/list/pair as anything in pairs)
+		TEST_ASSERT(pair[2] == "members" || pair[2] == "acceptance_limit", "Generated list hops use exact normalized membership/far-state keys")
 	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-query-members", D, I), "member limit", "Actual foreach callback refuses")
 	first.set_acceptance_limit(1)
 	second.set_acceptance_limit(1)

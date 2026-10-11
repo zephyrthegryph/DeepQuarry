@@ -307,7 +307,7 @@
 	op_pure_begin()
 	try
 		if(GLOB.op_menu_read_frame)
-			op_menu_record_reads(op_watch_reads(A))
+			op_menu_record_reads(op_watch_reads(A, P))
 		. = op_require_reason_inner(A, P, B)
 	catch(var/exception/fault)
 		GLOB.op_pure_depth = previous_pure_depth
@@ -981,7 +981,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try
-		reads = op_watch_reads(A)
+		reads = op_watch_reads(A, oplan)
 	catch(var/exception/fault)
 		GLOB.op_pure_depth = previous_pure_depth
 		throw fault
@@ -1088,8 +1088,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rechecking = FALSE
 
 /// The (entity, key) rows an op wait watches: the reads of its conditions, requirements and resource costs, and the keeps.
-/proc/op_watch_reads(datum/act/op/A)
-	var/datum/op_plan/P = A.oplan
+/proc/op_watch_reads(datum/act/op/A, datum/op_plan/P = null)
+	if(!P)
+		P = A.oplan
 	var/list/pairs = list()
 	for(var/cond in P.conds)
 		op_reads_of(A, cond, pairs)
