@@ -337,7 +337,10 @@ def main(argv=None):
                 if not captured:
                     raise ValueError('successful build lacks actual compiler evidence')
                 receipt['compile_receipt'], receipt['actual_compilation'] = captured
-        if code == 0 and args.focus and not args.focused_compiled_output and not args.suite_compiled_output:
+        # A failed test still needs its successfully compiled generation for
+        # opcode comparison. The issuer checks the actual finalized attempt;
+        # a compiler failure without output evidence never enters this path.
+        if receipt.get('actual_compilation') and receipt.get('compile_receipt') and args.focus and not args.focused_compiled_output and not args.suite_compiled_output:
             preserve_focused_output(args, checkout, receipt, job, env, args.seconds - (time.monotonic() - started))
         for value in receipt['pins'].values():
             pin(Path(value['path']), value['sha256'])
