@@ -17,6 +17,28 @@ fn code() -> ResolverProc {
     }
 }
 #[test]
+fn shared_code_wire_preserves_issued_features_and_rejects_old_executable_schema() {
+    let mut original = code();
+    original.procedure.source_features = dm_codegen_byond::SourceFeatures {
+        world_cpu: true,
+        native_graphics: true,
+    };
+    let wire = CodeWire::capture(&original);
+    let bytes = dm_wire::encode(EXECUTABLE_SCHEMA, &wire).unwrap();
+    let restored: CodeWire = dm_wire::decode(EXECUTABLE_SCHEMA, &bytes, bytes.len()).unwrap();
+    let restored = restored.rehydrate(&Host, 0).unwrap();
+    assert_eq!(
+        restored.procedure.source_features,
+        original.procedure.source_features
+    );
+    assert!(
+        restored.procedure.code.items.is_empty(),
+        "semantic features do not require inferred opcodes"
+    );
+    let old = dm_wire::encode(0x0206_0011, &wire).unwrap();
+    assert!(dm_wire::decode::<CodeWire>(EXECUTABLE_SCHEMA, &old, old.len()).is_err());
+}
+#[test]
 fn exact_slot_and_callable_occurrences_roundtrip_and_reject_forged_keys() {
     let slot = SymbolId::of("exact-slot");
     let owner = SymbolId::of("/datum/base");
