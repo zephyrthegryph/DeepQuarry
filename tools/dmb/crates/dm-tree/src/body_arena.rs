@@ -7,6 +7,7 @@ use std::sync::{Mutex, MutexGuard};
 pub struct BodyArena<'frontend> {
     frontend: &'frontend ColdFrontend,
     statement_support: Option<fn(&[dm_syntax::Statement]) -> bool>,
+    ordinal_base: usize,
     slots: Vec<Mutex<BodyState<'frontend>>>,
     #[cfg(test)]
     parses: std::sync::atomic::AtomicUsize,
@@ -40,7 +41,7 @@ impl<'frontend> BodyArena<'frontend> {
         for (ordinal, slot) in self.slots.iter().enumerate() {
             let slot = slot.lock().unwrap_or_else(|error| error.into_inner());
             if let BodyState::Ready(result) = &*slot {
-                visitor(ordinal, result.as_ref().as_ref());
+                visitor(self.ordinal_base + ordinal, result.as_ref().as_ref());
             }
         }
         BodyArenaStorage {
@@ -54,6 +55,7 @@ impl<'frontend> BodyArena<'frontend> {
         Self {
             frontend,
             statement_support: None,
+            ordinal_base: 0,
             slots: (0..frontend.issued_bodies.len())
                 .map(|_| Mutex::new(BodyState::Unparsed))
                 .collect(),
@@ -71,6 +73,21 @@ impl<'frontend> BodyArena<'frontend> {
         let mut arena = Self::new(frontend);
         arena.statement_support = Some(supported);
         arena
+    }
+    /// Independently parse one current issued body with the same statement policy.
+    /// The original slot may be consumed; no parsed state or other body slots are copied.
+    pub fn fork_body(&self, occurrence: &BodyOccurrence) -> Result<Self, Diagnostic> {
+        // The ordinary slot lookup authenticates both the exact issuance and scope.
+        drop(self.slot(occurrence)?);
+        let ordinal = self.frontend.body_by_declaration[&occurrence.declaration];
+        Ok(Self {
+            frontend: self.frontend,
+            statement_support: self.statement_support,
+            ordinal_base: ordinal,
+            slots: vec![Mutex::new(BodyState::Unparsed)],
+            #[cfg(test)]
+            parses: std::sync::atomic::AtomicUsize::new(0),
+        })
     }
     /// Inspect one issued body. The callback runs under this body's slot lock;
     /// it must not recursively access the same slot. Other bodies are independent.
@@ -132,7 +149,11 @@ impl<'frontend> BodyArena<'frontend> {
                 "body arena occurrence belongs to a different issuance",
             ));
         }
-        Ok(self.slots[ordinal]
+        let index = ordinal
+            .checked_sub(self.ordinal_base)
+            .filter(|index| *index < self.slots.len())
+            .ok_or_else(|| internal("body is outside this arena's issued scope"))?;
+        Ok(self.slots[index]
             .lock()
             .unwrap_or_else(|error| error.into_inner()))
     }
@@ -170,6 +191,24 @@ mod tests {
         build(Path::new("project.dme"), &Source("/proc/probe()\n    if(1)\n        set waitfor = 0\n        return 7\n/proc/other()\n    return 2\n"), &BTreeMap::new(), 1).unwrap()
     }
 
+    #[test]
+    fn single_body_fork_preserves_policy_and_current_issuance_after_consumption() {
+        let frontend = frontend();
+        let foreign = self::frontend();
+        let arena = BodyArena::new_typed(&frontend, |_| true);
+        let body = &frontend.bodies[1];
+        arena.discard_parsed(body).unwrap();
+        let fork = arena.fork_body(body).unwrap();
+        assert_eq!(fork.slots.len(), 1);
+        assert!(fork.fork_body(&foreign.bodies[1]).is_err());
+        assert!(fork.take_parsed(&frontend.bodies[0]).is_err());
+        let parsed = fork.take_parsed(body).unwrap();
+        assert!(parsed.statement_body().is_some());
+        assert!(parsed.item().children.is_empty());
+        assert!(arena.take_parsed(body).is_err());
+        assert_eq!(arena.parses.load(Ordering::Relaxed), 0);
+        assert_eq!(fork.parses.load(Ordering::Relaxed), 1);
+    }
     #[test]
     fn lazy_slots_do_not_reserve_each_unparsed_body_payload() {
         let compact = std::mem::size_of::<Mutex<BodyState<'static>>>();

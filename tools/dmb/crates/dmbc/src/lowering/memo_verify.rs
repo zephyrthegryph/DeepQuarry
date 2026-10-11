@@ -66,13 +66,25 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
     });
     // No memo/store/publication is passed to the producer. Current source and
     // policy are mandatory, and fresh observations never contain replay edges.
+    let independent = bodies.fork_body(body).map_err(|error| {
+        vec![LoweringDiagnostic {
+            kind: DiagnosticKind::Internal,
+            identity: Some(identity),
+            origin: body.source.clone(),
+            related: Vec::new(),
+            message: format!(
+                "procedure verification parser fork failed: {}",
+                error.message
+            ),
+        }]
+    })?;
     let fresh = lower_one(
         frontend,
         body,
         &recording,
         policy,
         startup,
-        bodies,
+        &independent,
         capture_references,
         Some(current.source()),
     );
@@ -122,9 +134,22 @@ pub(super) fn verify<R: Resolver, P: AbiPolicy>(
                     false
                 }
             }
-            _ => false,
+            (Expected::Errors(_), Ok(_)) => {
+                difference = Some("cached failure became a successful current producer result");
+                false
+            }
+            (_, Err(ref errors)) => {
+                difference = Some(
+                    if errors.iter().any(|e| e.kind == DiagnosticKind::Internal) {
+                        "fresh producer returned an internal diagnostic"
+                    } else {
+                        "cached success became a current producer rejection"
+                    },
+                );
+                false
+            }
         };
-        if !equal {
+        if !equal && difference.is_none() {
             difference = Some("symbolic output, helpers, warnings or current diagnostics");
         }
     }
@@ -320,13 +345,14 @@ mod tests {
         .unwrap();
         let body = &frontend.bodies[0];
         let current = PreparedBody::issue(&frontend, body).unwrap();
-        let arena = dm_tree::frontend::BodyArena::new_typed(
-            &frontend,
-            dm_codegen_byond::typed_statements_supported,
-        );
         let host = frontend.snapshot.tree.as_ref();
         let memo = crate::lowering_memo::ProcedureMemo::new(17).with_all_procedure_verification();
         for _ in 0..2 {
+            let arena = dm_tree::frontend::BodyArena::new_typed(
+                &frontend,
+                dm_codegen_byond::typed_statements_supported,
+            );
+
             let result = super::super::lower_one_input(
                 &frontend,
                 body,
