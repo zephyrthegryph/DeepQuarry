@@ -92,7 +92,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/scel)
 
 /mob/living/simple_mob/vore/scel/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The strange beast pounces atop of you, pinning you with it's hefty weight, the greedy stomach sloshing atop you before it looms closer, with that maw stretching almost impossibly wide and easily enveloping your body. The jaws of the scel are solid and fleshy, preventing any movement. Immediately you are embraced into the tight pull of oily black flesh, and you are rapidly dragged down into the humid, more malleable depths of the creature! Splashing down into a thick, ominously bubbling sludge, you fall into place as food among the remnants of previous meals. As you settle, you are completely hidden away inside of it's serpentine body, left to complete darkness and the sounds of squelching bodily functions. Movement is not difficult as the flesh around you is easily pushed back, but it quickly snaps back into place to keep you constrained. Slowly, the neon liquid that you could see from the outside of the creature begins to seep into the chamber. With that hefty stomach bloated with yet another meal, a lazy burp signals its meal complete. Leaving you to simmer in its depths as it continues its prowling..."
 	B.vore_sound = "Tauric Swallow"

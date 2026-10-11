@@ -20,7 +20,6 @@ TRACKED(/obj/item, body_parts_covered)
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null // the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -50,7 +49,6 @@ TRACKED(/obj/item, body_parts_covered)
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -1099,19 +1097,21 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return FALSE
 
 
-/// The hidden uplink (owned, in the item's contents); a global helper keeps the proc off the base type.
+/// The hidden uplink in the item's contents (its uplink slot), or null; a global helper keeps the proc off the base type. The uplink is a
+/// thing the item holds, so it goes with the item's contents: no var on /obj/item.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return I?.hidden_uplink
-
-/obj/item/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED)
+	return I ? locate_within(I, /obj/item/uplink/hidden) : null
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return I?.my_augment
 
-// An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
+// An item's master is the thing holding it (an assembly's valve, a chair's kit): a sparse link (LK_ITEM_MASTER).
+/proc/item_master(obj/item/I) as /obj/item
+	return link_get(I, LK_ITEM_MASTER)
+
+/proc/set_item_master(obj/item/I, obj/item/master)
+	return link_set_one(I, LK_ITEM_MASTER, master)
 
 // ---- what an item sounds like: the item_sounds() type trait ----
 //

@@ -175,8 +175,8 @@
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
 			if(can_phase_vore(src, target))
-				vore_selected.nom_atom(target)
-				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+				vore_selected_of(src).nom_atom(target)
+				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
 
@@ -350,8 +350,8 @@
 		if(potentials.len)
 			var/mob/living/target = pick(potentials)
 			if(can_phase_vore(src, target))
-				vore_selected.nom_atom(target)
-				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+				vore_selected_of(src).nom_atom(target)
+				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected_of(src).vore_verb]ing you into their [vore_selected_of(src).get_belly_name()]!"))
 
 	// Do this after the potential vore, so we get the belly
 

@@ -23,7 +23,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 	C.set_dir(dir)
 	if(part)
 		part.forceMove(loc)
-		rel_clear(part, nameof(part.master))
+		set_item_master(part, null)
 		rel_take(src, nameof(part))
 	replace_with(src, C)
 	return OP_OK
