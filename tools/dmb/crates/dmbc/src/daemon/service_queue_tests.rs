@@ -13,6 +13,7 @@ fn shared() -> Arc<Shared> {
         running: Mutex::new(0),
         workers: Mutex::new(0),
         max_workers: 8,
+        soft_private_bytes: soft_memory::DEFAULT,
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     })

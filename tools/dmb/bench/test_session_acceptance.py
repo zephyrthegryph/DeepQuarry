@@ -1,5 +1,5 @@
 import unittest
-from session_acceptance import required_edit_coverage, bounded_policy, edit_sessions, session_edit_coverage
+from session_acceptance import required_edit_coverage, bounded_policy, edit_sessions, session_edit_coverage, daemon_reserve
 
 class CoverageTests(unittest.TestCase):
     def test_each_required_edit_is_explicit(self):
@@ -46,3 +46,11 @@ class AssignmentTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             session_edit_coverage([{"kind": "body", "sessions": [0]},
                 {"kind": "structural", "structural_kind": "newvar", "sessions": [0]}], 6)
+
+
+class ReserveTests(unittest.TestCase):
+    def test_reserve_uses_smaller_aggregate_gate(self):
+        self.assertEqual(daemon_reserve(4096 * 1024 ** 2, 4_000_000_000), 2_000_000_000)
+        self.assertEqual(daemon_reserve(1024 * 1024 ** 2, 2_000_000_000), 512 * 1024 ** 2)
+        self.assertEqual(daemon_reserve(512 * 1024 ** 2, 512 * 1024 ** 2), 256 * 1024 ** 2)
+        with self.assertRaises(ValueError): daemon_reserve(512 * 1024 ** 2, 1)

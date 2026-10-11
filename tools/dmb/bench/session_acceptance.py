@@ -61,3 +61,11 @@ def session_edit_coverage(edits, session_count):
             "per_session": [sorted(labels) for labels in observed],
             "required": sorted(required),
             "scope": "exact edit assignments; every session requires an independent fresh byte oracle; no runtime claim"}
+
+
+def daemon_reserve(job_bytes, sampled_bytes):
+    """Leave aggregate headroom; pressure remains sampled, not a peak bound."""
+    aggregate = min(job_bytes, sampled_bytes)
+    if aggregate < 512 * 1024 * 1024:
+        raise ValueError("six-session memory budget must allow at least 512 MiB for daemon and clients")
+    return min(aggregate // 2, 32 * 1024 ** 3)

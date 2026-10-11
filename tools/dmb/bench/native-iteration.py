@@ -27,7 +27,7 @@ import worktree_authority
 import build_receipt
 from iteration_memory import OwnedMemory, iteration_concurrency
 from upgrade_owned_job import OwnedJob
-from session_acceptance import session_edit_coverage, edit_sessions, bounded_policy
+from session_acceptance import session_edit_coverage, edit_sessions, bounded_policy, daemon_reserve
 
 _owned_memory = None
 _owned_job = None
@@ -356,7 +356,7 @@ def main():
                         help='JSON ordered list: {kind:"body"|"structural",path,before,after}')
     parser.add_argument("--workers", type=int, choices=(2, 8), default=2)
     parser.add_argument("--total-workers", type=int, default=2, help="total simultaneously active request workers (1..8; default 2)")
-    parser.add_argument("--job-memory-mib", type=int, default=4096, help="owned process-tree commit cap in MiB (default 4096; daemon soft limit unchanged)")
+    parser.add_argument("--job-memory-mib", type=int, default=4096, help="owned process-tree commit cap in MiB (default 4096; six-root daemon reserves half aggregate budget)")
     parser.add_argument("--owned-memory-budget-bytes", type=int, default=4_000_000_000,
                         help="six-worktree sampled owned-process stop budget (default 4GB; not strict peak proof)")
     parser.add_argument("--sample-owned-memory", action="store_true",
@@ -375,6 +375,7 @@ def main():
     args = parser.parse_args()
     try:
         job_bytes = bounded_policy(args.total_workers, args.workers, args.job_memory_mib, args.owned_memory_budget_bytes)
+        soft_bytes = daemon_reserve(job_bytes, args.owned_memory_budget_bytes) if args.worktree_sources else None
     except ValueError as error:
         parser.error(str(error))
     if args.worktree_sources and not args.one_shot_requests and not args.require_owned_daemon:
@@ -497,6 +498,8 @@ def main():
     try:
         _owned_job = OwnedJob(job_bytes)
         receipt["owned_job_memory_limit_bytes"] = job_bytes
+        receipt["daemon_soft_private_limit_bytes"] = soft_bytes
+        receipt["memory_reserve_scope"] = "six-root soft pressure reserve; active builds can exceed it; six resident graphs are not guaranteed" if soft_bytes else "ordinary daemon startup policy"
         endpoint.probe()
         projects = [root / ("project" if len(sources) == 1 else f"project-{index}") for index in range(len(sources))]
         receipt["isolated_source_files"] = []
@@ -516,6 +519,8 @@ def main():
         daemon_environment["DMB_CACHE_DIR"] = str(cache_directory)
         daemon_environment["DMB_DAEMON_NAMESPACE"] = _daemon_namespace
         daemon_environment["DMB_DAEMON_MAX_WORKERS"] = str(args.total_workers)
+        if soft_bytes is not None:
+            daemon_environment["DMB_DAEMON_SOFT_PRIVATE_BYTES"] = str(soft_bytes)
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(executable), "--serve-daemon"], stdout=out, stderr=err, env=daemon_environment,
                                       creationflags=subprocess.CREATE_NO_WINDOW | 0x4)
@@ -536,6 +541,8 @@ def main():
         if f"max-workers={args.total_workers} " not in startup:
             raise RuntimeError("owned daemon did not report the requested global worker admission limit")
         receipt["daemon_worker_limit_observed"] = args.total_workers
+        if soft_bytes is not None and f"soft-private-limit={soft_bytes}" not in startup:
+            raise RuntimeError("owned daemon did not report the requested soft memory reserve")
         # Initial population, unchanged request, then each real ordered edit.
         edit_history = EditHistory(len(projects))
         receipt["preparation"]["status"] = "complete"

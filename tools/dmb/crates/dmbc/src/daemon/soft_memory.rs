@@ -1,0 +1,40 @@
+//! Startup-only soft pressure policy; this is not a hard allocation bound.
+//! DMB_DAEMON_SOFT_PRIVATE_BYTES accepts 256 MiB..32 GiB integer bytes.
+//! Unset preserves ordinary CLI pressure at 4,000,000,000 bytes.
+use std::{ffi::OsStr, io};
+pub(super) const DEFAULT: u64 = 4_000_000_000;
+pub(super) fn startup() -> io::Result<u64> {
+    parse(std::env::var_os("DMB_DAEMON_SOFT_PRIVATE_BYTES").as_deref())
+}
+fn parse(value: Option<&OsStr>) -> io::Result<u64> {
+    let Some(value) = value else {
+        return Ok(DEFAULT);
+    };
+    value.to_str().filter(|text| !text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit()))
+        .and_then(|text| text.parse::<u64>().ok())
+        .filter(|value| (268_435_456..=34_359_738_368).contains(value))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput,
+            "DMB_DAEMON_SOFT_PRIVATE_BYTES must be integer bytes from 268435456 through 34359738368"))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn startup_policy_default_bounds_and_overflow() {
+        assert_eq!(parse(None).unwrap(), DEFAULT);
+        for value in [268_435_456, 2_000_000_000, 34_359_738_368] {
+            assert_eq!(parse(Some(OsStr::new(&value.to_string()))).unwrap(), value);
+        }
+        for value in [
+            "",
+            "0",
+            "-1",
+            " 268435456",
+            "268435455",
+            "34359738369",
+            "18446744073709551616",
+        ] {
+            assert!(parse(Some(OsStr::new(value))).is_err());
+        }
+    }
+}

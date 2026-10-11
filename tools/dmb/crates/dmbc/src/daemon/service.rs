@@ -22,6 +22,8 @@ mod housekeeping;
 #[cfg(test)]
 #[path = "service_queue_tests.rs"]
 mod queue_tests;
+#[path = "soft_memory.rs"]
+mod soft_memory;
 /// Hosts are retained per manifest and semantic configuration. Supersession also
 /// requires the same logical destination. Different defines targeting one file
 /// serialize through the existing output lease but do not cancel each other.
@@ -166,10 +168,14 @@ struct Shared {
     running: Mutex<usize>,
     workers: Mutex<usize>,
     max_workers: usize,
+    soft_private_bytes: u64,
     capacity: Condvar,
     connections: AtomicUsize,
 }
 impl Shared {
+    fn under_memory_pressure(&self, bytes: u64) -> bool {
+        bytes >= self.soft_private_bytes
+    }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
         *host = crate::runner_host::BuildHost::with_daemon_owners(
             Arc::clone(&self.engines),
@@ -244,7 +250,8 @@ impl Shared {
         // can grow past the limit. Preserve a single-build progress lane.
         while (*active >= 3
             || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > self.max_workers
-            || *active > 0 && private_bytes().is_some_and(|bytes| bytes >= 4_000_000_000))
+            || *active > 0
+                && private_bytes().is_some_and(|bytes| self.under_memory_pressure(bytes)))
             && !self.retiring.load(Ordering::Acquire)
         {
             control::checkpoint()?;
@@ -265,7 +272,8 @@ impl Shared {
         Ok(Permit(Arc::clone(self), workers))
     }
     fn trim(&self) {
-        let pressured = transport::private_bytes().is_some_and(|bytes| bytes > 4_000_000_000);
+        let pressured =
+            transport::private_bytes().is_some_and(|bytes| self.under_memory_pressure(bytes));
         self.housekeep(Instant::now(), pressured);
         // Host releases above have finished; no slot/host lock is held here.
         self.engines.prune_idle();
@@ -290,8 +298,9 @@ impl Drop for Connection {
 }
 pub(super) fn serve() -> io::Result<()> {
     let max_workers = admission_limits::max_workers()?;
+    let soft_private_bytes = soft_memory::startup()?;
     super::emit_stderr(format_args!(
-        "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit=4000000000",
+        "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit={soft_private_bytes}",
         std::process::id(),
         max_workers
     ));
@@ -307,6 +316,7 @@ pub(super) fn serve() -> io::Result<()> {
         running: Mutex::new(0),
         workers: Mutex::new(0),
         max_workers,
+        soft_private_bytes,
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     });
@@ -571,9 +581,18 @@ mod tests {
             running: Mutex::new(0),
             workers: Mutex::new(0),
             max_workers: 8,
+            soft_private_bytes: soft_memory::DEFAULT,
             capacity: Condvar::new(),
             connections: AtomicUsize::new(0),
         })
+    }
+    #[test]
+    fn custom_memory_policy_is_shared_by_admission_and_trim() {
+        let mut owner = shared();
+        Arc::get_mut(&mut owner).unwrap().soft_private_bytes = 2_000_000_000;
+        assert!(!owner.under_memory_pressure(1_999_999_999));
+        assert!(owner.under_memory_pressure(2_000_000_000));
+        assert!(owner.under_memory_pressure(2_000_000_001));
     }
     #[test]
     fn retiring_refuses_admission_and_permit_drops_exactly_once() {

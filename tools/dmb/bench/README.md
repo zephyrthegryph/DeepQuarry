@@ -109,3 +109,14 @@ and default edits in every root, plus all fresh byte oracles and existing
 worktree/source/process proofs. An isolation probe requires distinct body and
 structural sessions and at least one entirely unchanged session. Existing
 worker and memory bounds apply. Scenario labels alone never certify outputs.
+
+The six-root runner also sets the real daemon startup policy
+`DMB_DAEMON_SOFT_PRIVATE_BYTES` to half the smaller configured aggregate Job
+cap and sampled-memory stop budget (2,000,000,000 bytes with defaults). It
+checks the daemon startup report, so older binaries that ignore this policy
+fail admission. Admission and housekeeping use the same stored threshold.
+Unset preserves the ordinary CLI default of4,000,000,000 bytes. Accepted
+explicit values are256 MiB through32 GiB; invalid values reject startup.
+This threshold is soft: one active build can exceed it, and eviction means
+six graphs are not guaranteed resident. The independent aggregate Job and
+sampled stop gates still apply; receipts record both limits separately.
