@@ -319,13 +319,13 @@ CAPABILITIES(/obj/item/holo/esword)
 	if (active)
 		force = 30
 		item_state = "[icon_state]_blade"
-		w_class = ITEMSIZE_LARGE
+		set_w_class(ITEMSIZE_LARGE)
 		play_sfx(src, SFX_WEAPONS_SABERON)
 		to_chat(user, span_notice("[src] is now active."))
 	else
 		force = 3
 		item_state = "[icon_state]"
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 		play_sfx(src, SFX_WEAPONS_SABEROFF)
 		to_chat(user, span_notice("[src] can now be concealed."))
 

@@ -1,3 +1,8 @@
+TRACKED(/obj/item/clothing, valid_accessory_slots)
+TRACKED(/obj/item/clothing, restricted_accessory_slots)
+
+TRACKED(/obj/item/clothing/shoes, overshoes)
+
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
 	siemens_coefficient = 0.9
@@ -1378,8 +1383,8 @@ CAPABILITIES(/obj/item/clothing/under)
 
 	rolled_down = !rolled_down
 	if(rolled_down)
-		body_parts_covered = initial(body_parts_covered)
-		body_parts_covered &= ~(UPPER_TORSO|ARMS)
+		set_body_parts_covered(initial(body_parts_covered))
+		set_body_parts_covered(body_parts_covered & (~(UPPER_TORSO|ARMS)))
 		heat_protection &= ~(UPPER_TORSO|ARMS)
 		cold_protection &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
@@ -1390,7 +1395,7 @@ CAPABILITIES(/obj/item/clothing/under)
 
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
-		body_parts_covered = initial(body_parts_covered)
+		set_body_parts_covered(initial(body_parts_covered))
 		heat_protection = initial(heat_protection)
 		cold_protection = initial(cold_protection)
 		if(icon_override == rolled_down_icon)
@@ -1416,7 +1421,7 @@ CAPABILITIES(/obj/item/clothing/under)
 
 	rolled_sleeves = !rolled_sleeves
 	if(rolled_sleeves)
-		body_parts_covered &= ~(ARMS)
+		set_body_parts_covered(body_parts_covered & (~(ARMS)))
 		heat_protection &= ~(ARMS)
 		cold_protection &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
@@ -1426,7 +1431,7 @@ CAPABILITIES(/obj/item/clothing/under)
 			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
-		body_parts_covered = initial(body_parts_covered)
+		set_body_parts_covered(initial(body_parts_covered))
 		heat_protection = initial(heat_protection)
 		cold_protection = initial(cold_protection)
 		if(icon_override == rolled_down_sleeves_icon)
@@ -1662,3 +1667,6 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 	if(!istype(suit) || QDELETED(suit) || QDELETED(answerer))
 		return "gone"
 	return suit.sensor_mode_refusal(answerer, !isnull(value))
+
+TRACKED(/obj/item/clothing/gloves, glove_level)
+TRACKED(/obj/item/clothing/gloves, overgloves)

@@ -252,3 +252,16 @@
 	. = ..()
 	. += validstring
 	. += registring
+
+/datum/species/protean/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	. = ..()
+	. += list(list(src, nameof(base_species)))
+	if(!H || base_species == name)
+		return
+	var/list/visited = seen ? seen.Copy() : list()
+	if(src in visited)
+		return
+	visited += src
+	var/datum/species/S = GLOB.all_species[base_species]
+	if(S && !(S in visited))
+		. += S.acceptance_bodytype_reads(H, visited)

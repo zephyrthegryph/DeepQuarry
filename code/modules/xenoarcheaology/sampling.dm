@@ -177,7 +177,7 @@ CAPABILITIES(/obj/item/core_sampler)
 			var/image/I = image("icon"=R, "layer"=FLOAT_LAYER)
 			add_overlay(I)
 			add_overlay("evidence")
-			filled_bag.w_class = ITEMSIZE_TINY
+			filled_bag.set_w_class(ITEMSIZE_TINY)
 
 			to_chat(user, span_notice("You take a core sample of the [item_to_sample]."))
 	else

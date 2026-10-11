@@ -310,7 +310,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 	trash = /obj/item/seeds/pitcherseed
 	nutriment_amt = 1
 	nutriment_desc = list("pineapple" = 1)
-	w_class = ITEMSIZE_SMALL
+	set_w_class(ITEMSIZE_SMALL)
 	var/datum/seed/seed = null
 	var/obj/item/seeds/pit = null
 	special_handling = TRUE

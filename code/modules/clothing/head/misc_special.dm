@@ -56,7 +56,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
+			set_body_parts_covered(body_parts_covered | ((EYES|FACE)))
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = base_state
 			flash_protection = FLASH_PROTECTION_MAJOR
@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 			to_chat(user, "You flip the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
+			set_body_parts_covered(body_parts_covered & (~(EYES|FACE)))
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]up"
 			flash_protection = FLASH_PROTECTION_NONE

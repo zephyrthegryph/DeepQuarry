@@ -226,7 +226,7 @@ CAPABILITIES(/obj/item/pen/blade)
 	throwforce = active_throwforce
 	sharp = TRUE
 	edge = TRUE
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON, 0.3)
 	injury_kind = INJURY_CUT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_CUT = 2/3)
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/item/pen/blade)
 	throwforce = initial(throwforce)
 	sharp = initial(sharp)
 	edge = initial(edge)
-	w_class = initial(w_class)
+	set_w_class(initial(w_class))
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
 	catchable = TRUE

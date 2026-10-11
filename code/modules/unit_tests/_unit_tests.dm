@@ -1259,6 +1259,9 @@
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
 
+#include "dq_acceptance_foundation_tests.dm"
+#include "dq_acceptance_tracking_tests.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

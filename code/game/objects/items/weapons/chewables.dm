@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 		set_wrapped(FALSE)
 		to_chat(user, span_notice("You unwrap \the [name]."))
 		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER)
-		slot_flags = SLOT_EARS | SLOT_MASK
+		set_slot_flags(SLOT_EARS | SLOT_MASK)
 	return OP_DECLINE
 
 /obj/item/clothing/mask/chewable/draw(datum/look/look)
@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable)
 	. = ..()
 	flags |= NOREACT // so it doesn't react until you light it
 	if(wrapped)
-		slot_flags = null
+		set_slot_flags(null)
 
 /obj/item/clothing/mask/chewable/equipped(mob/living/user, slot)
 	..()

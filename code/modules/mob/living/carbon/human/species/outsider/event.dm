@@ -231,3 +231,7 @@ Variables you may want to make use of are:
 /datum/species/event1/sub2
 	name = SPECIES_EVENT3
 	name_plural = SPECIES_EVENT3
+
+TRACKED(/datum/species/event1, use_bodyshape)
+/datum/species/event1/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	return list(list(src, nameof(use_bodyshape)))

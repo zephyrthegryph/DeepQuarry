@@ -569,9 +569,9 @@ CAPABILITIES(/obj/structure/cable)
 
 /obj/item/stack/cable_coil/proc/update_wclass()
 	if(amount == 1)
-		w_class = ITEMSIZE_TINY
+		set_w_class(ITEMSIZE_TINY)
 	else
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 
 /// A multitool recolours the coil to the picked colour.
 /obj/item/stack/cable_coil/proc/multitool_used(datum/act/op/A)

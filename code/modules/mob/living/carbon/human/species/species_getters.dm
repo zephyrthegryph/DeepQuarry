@@ -149,3 +149,8 @@
 	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return HUNGER_ALERT_SYNTH
 	return species?.hunger_alert_style || HUNGER_ALERT_ORGANIC
+
+// Native acceptance dependency hook follows the final bodytype getter.
+TRACKED(/datum/species, name)
+/datum/species/proc/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	return list(list(src, nameof(name)))

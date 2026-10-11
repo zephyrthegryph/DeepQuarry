@@ -278,13 +278,13 @@ TRACKED(/obj/item/uav, state)
 	switch(state)
 		if(UAV_OFF) //Packing
 			set_state(UAV_PACKED)
-			w_class = ITEMSIZE_LARGE
+			set_w_class(ITEMSIZE_LARGE)
 			slowdown = 0.5
 			set_density(FALSE)
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			set_state(UAV_OFF)
-			w_class = ITEMSIZE_HUGE
+			set_w_class(ITEMSIZE_HUGE)
 			slowdown = 1.5
 			set_density(TRUE)
 			return TRUE

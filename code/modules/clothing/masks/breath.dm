@@ -21,13 +21,13 @@
 		src.hanging = !src.hanging
 		if (src.hanging)
 			gas_transfer_coefficient = 1
-			body_parts_covered = body_parts_covered & ~FACE
+			set_body_parts_covered(body_parts_covered & ~FACE)
 			item_flags = item_flags & ~AIRTIGHT
 			icon_state = "breathdown"
 			to_chat(user, "Your mask is now hanging on your neck.")
 		else
 			gas_transfer_coefficient = initial(gas_transfer_coefficient)
-			body_parts_covered = initial(body_parts_covered)
+			set_body_parts_covered(initial(body_parts_covered))
 			item_flags = initial(item_flags)
 			icon_state = initial(icon_state)
 			to_chat(user, "You pull the mask up to cover your face.")

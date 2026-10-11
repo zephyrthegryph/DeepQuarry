@@ -1,3 +1,5 @@
+TRACKED(/obj/item/clothing/accessory, slot)
+
 /obj/item/clothing/accessory
 	name = "tie"
 	desc = "A neosilk clip-on tie."
@@ -518,7 +520,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/scarf/teshari/neckscarf, fit_spec, list(
 	else
 		src.icon_state = initial(icon_state)
 		gaiterstring += "down around your neck[breath_masked ? " and dislodge the mask tucked underneath." : "."]"
-		body_parts_covered &= ~FACE
+		set_body_parts_covered(body_parts_covered & (~FACE))
 		if(breath_masked)
 			item_flags &= ~AIRTIGHT
 	to_chat(user, span_notice(gaiterstring))
@@ -1633,3 +1635,5 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 /// the radio_connection this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/collar/shock/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection
+
+TRACKED(/obj/item/clothing/accessory, glove_level)

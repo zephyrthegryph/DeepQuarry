@@ -5716,6 +5716,8 @@
 #include "code\engine\io\path.dm"
 #include "code\engine\parts\part.dm"
 #include "code\engine\parts\cond.dm"
+#include "code\engine\parts\acceptance.dm"
+#include "code\engine\parts\menu_dependencies.dm"
 #include "code\engine\parts\plan.dm"
 #include "code\engine\parts\provider.dm"
 #include "code\library\providers\hands.dm"

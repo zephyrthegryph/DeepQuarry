@@ -75,7 +75,7 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 
 	name = lowertext("[fullname] sandwich")
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
-	w_class = n_ceil(CLAMP((length(ingredients)/2),2,4))
+	set_w_class(n_ceil(CLAMP((length(ingredients)/2),2,4)))
 
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)

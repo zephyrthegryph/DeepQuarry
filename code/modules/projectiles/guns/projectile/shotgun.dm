@@ -254,7 +254,7 @@
 			MSG_BLIND("You hear an ominous click."))
 		icon_state = "compshot"
 		item_state = icon_state
-		w_class = ITEMSIZE_LARGE
+		set_w_class(ITEMSIZE_LARGE)
 		one_handed_penalty = 15 //Stock extended to steady it, even with just the one hand.
 		recoil = 1 //As above, stock and foregrip would help with the kick
 	else
@@ -263,7 +263,7 @@
 			MSG_BLIND("You hear a click."))
 		icon_state = "compshotc"
 		item_state = icon_state
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		one_handed_penalty = 30
 		recoil = 5
 

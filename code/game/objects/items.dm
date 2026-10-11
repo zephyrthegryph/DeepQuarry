@@ -1,3 +1,5 @@
+TRACKED(/obj/item, body_parts_covered)
+
 
 /obj/item
 	name = "item"
@@ -1129,3 +1131,14 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return I?.my_augment
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
+
+TRACKED(/obj/item, slot_flags)
+
+SETTER(/obj/item, sprite_sheets)
+/obj/item/proc/set_sprite_sheets(list/value)
+	var/list/replacement = value?.Copy()
+	if(TRACKED_UNCHANGED(sprite_sheets, replacement))
+		return FALSE
+	sprite_sheets = replacement
+	tracked_changed(src, nameof(sprite_sheets))
+	return TRUE

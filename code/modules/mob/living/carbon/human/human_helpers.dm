@@ -417,10 +417,10 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	species?.blood_color = character.species?.blood_color
 
 	dna?.base_species = bodytype
-	species?.base_species = bodytype
+	species?.set_base_species(bodytype)
 	species?.vanity_base_fit = bodytype
 	if(istype(species, /datum/species/shapeshifter))
-		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
+		set_wrapped_bodytype(bodytype)
 
 	custom_species	= character.custom_species
 	custom_say		= character.custom_say

@@ -1178,7 +1178,7 @@ CAPABILITIES(/obj/belly)
 		for(var/obj/item/debris_pack/digested/D in contents)
 			D.add_materials(modified_mats)
 			if(O.w_class > D.w_class)
-				D.w_class = O.w_class
+				D.set_w_class(O.w_class)
 			if(O.possessed_voice && O.possessed_voice.len)
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
