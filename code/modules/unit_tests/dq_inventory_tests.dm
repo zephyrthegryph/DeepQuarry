@@ -383,7 +383,7 @@
 	var/stacks = 0
 	for(var/obj/item/I as anything in tools)
 		TEST_ASSERT(!I.canremove, "every augment tool is nonremovable")
-		TEST_ASSERT_EQUAL(I.toolspeed, M.toolspeed, "every augment tool inherits configured toolspeed")
+		TEST_ASSERT_EQUAL(tooling_of(I).speed, tooling_of(M).speed, "every augment tool inherits configured toolspeed")
 		TEST_ASSERT_EQUAL(item_my_augment(I), M, "each tool points back to its owning augment")
 		TEST_ASSERT_EQUAL(I.loc, M, "each stowed tool remains in the augment")
 		TEST_ASSERT(findtext(I.name, "integrated ") == 1, "setup labels every carried tool")
