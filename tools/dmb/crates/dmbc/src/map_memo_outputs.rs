@@ -64,7 +64,7 @@ fn key(
     paths: &[Arc<str>],
     context: Option<u128>,
 ) -> Arc<[u8]> {
-    let mut key = b"dmbc-map-outputs-resident-v1\0".to_vec();
+    let mut key = b"dmbc-map-outputs-resident-v2-current-nameof\0".to_vec();
     key.extend_from_slice(&policy.to_le_bytes());
     key.push(u8::from(context.is_some()));
     if let Some(context) = context {

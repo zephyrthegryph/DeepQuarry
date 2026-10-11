@@ -17,7 +17,7 @@ impl<R: Resolver> Resolver for Replay<'_, R> {
     }
 }
 
-pub(crate) const PREFIX: &[u8] = b"dmbc-map-unit-resident-v1\0";
+pub(crate) const PREFIX: &[u8] = b"dmbc-map-unit-resident-v2-current-nameof\0";
 #[derive(Clone, Copy)]
 pub(crate) enum Site {
     Entry,
