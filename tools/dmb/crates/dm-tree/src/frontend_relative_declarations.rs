@@ -150,11 +150,6 @@ impl RelativeSyntax {
     }
     pub fn visit_settings_owners(&self, mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>)) {
         for body in &self.bodies {
-            visit(
-                Arc::as_ptr(&body.code) as usize,
-                std::mem::size_of::<BodyCodeIdentity>(),
-                std::mem::size_of::<BodyCodeIdentity>(),
-            );
             if let Some(owner) = &body.settings_owner {
                 visit(owner);
             }
@@ -170,6 +165,12 @@ impl RelativeSyntax {
             self.bodies.capacity() * std::mem::size_of::<RelativeBody>(),
         );
         for body in &self.bodies {
+            visit(
+                Arc::as_ptr(&body.code) as usize,
+                std::mem::size_of::<BodyCodeIdentity>(),
+                std::mem::size_of::<BodyCodeIdentity>(),
+            );
+
             visit(
                 body.path.as_ptr() as usize,
                 std::mem::size_of_val(body.path.as_ref()),
