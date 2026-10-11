@@ -56,6 +56,26 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         Ok(reply)
     })
     .unwrap();
+    let mut truncated = Vec::new();
+    assert!(export_with_limits(
+        &request,
+        &mut truncated,
+        ExportLimits {
+            max_items: 1,
+            max_pages: 1
+        },
+        |page| {
+            Ok(crate::daemon::query::evaluate_snapshot(
+                &page,
+                &frontend.snapshot.tree,
+                &state.lock().unwrap(),
+            )?)
+        }
+    )
+    .is_err());
+    assert!(!std::str::from_utf8(&truncated)
+        .unwrap()
+        .contains("retained_export_finished"));
     let rows: Vec<serde_json::Value> = std::str::from_utf8(&bytes)
         .unwrap()
         .lines()

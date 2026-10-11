@@ -461,6 +461,7 @@ impl SourceSnapshot {
         output: &mut impl std::io::Write,
     ) -> std::io::Result<()> {
         use std::io::{self, Write};
+        crate::daemon::control::checkpoint()?;
         let archive = self
             .body_archive
             .as_ref()
@@ -471,9 +472,11 @@ impl SourceSnapshot {
         let body = archive
             .parse(ordinal as usize)
             .map_err(|error| io::Error::other(error.message))?;
+        crate::daemon::control::checkpoint()?;
         struct Bounded(Vec<u8>);
         impl Write for Bounded {
             fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                crate::daemon::control::checkpoint()?;
                 if self.0.len().saturating_add(bytes.len()) > 192 * 1024 {
                     return Err(io::Error::other("body model query exceeds output budget"));
                 }

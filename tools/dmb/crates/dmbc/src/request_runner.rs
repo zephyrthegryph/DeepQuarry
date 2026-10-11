@@ -73,23 +73,18 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    runner_freshness::run(request, |request| run_build_attempt(request, host, None))
+    runner_freshness::run(request, |request| run_build_attempt(request, host))
 }
 #[path = "runner_analysis.rs"]
 mod runner_analysis;
-#[path = "runner_selected_demand.rs"]
-pub(crate) mod selected_demand;
+#[path = "runner_output_digest.rs"]
+mod output_digest;
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
-    mut demand: Option<&mut selected_demand::Demand>,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
-        if demand.is_some() {
-            Arc::new(std::sync::Mutex::new(Default::default()))
-        } else {
-            host.query_state()
-        },
+        host.query_state(),
         host.retains_artifacts(),
     );
     let _build_profile = dm_profile::stage("build");
@@ -112,7 +107,7 @@ fn run_build_attempt(
         no_daemon: _,
         trace_path,
     } = request;
-    let publishable_artifacts = command == BuildCommand::Compile && demand.is_none();
+    let publishable_artifacts = command == BuildCommand::Compile;
     let project = std::fs::canonicalize(project)?;
     if record_inputs.is_some() && replay_inputs.is_some() {
         return Err("record and replay inputs are mutually exclusive".into());
@@ -309,7 +304,7 @@ fn run_build_attempt(
                         if !outputs_match {
                             let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                             for extension in ["dmb", "rsc", "dmb-pair.json"] {
-                                selected_demand::capture_output_digest(
+                                output_digest::capture_output_digest(
                                     &mut outputs,
                                     &output_project.with_extension(extension),
                                 )?;
@@ -526,12 +521,6 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
-    if let Some(demand) = demand.as_deref_mut() {
-        let engine = engine_capture.as_ref().ok_or("selected query requires pinned engine")?;
-        demand.complete(&frontend, engine, host_facts.as_deref(), executor, procedure_memo.as_ref(), memo_policy)?;
-        runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?;
-        return Ok(BuildOutcome::Analyzed { semantic_rows: 0, occurrence_rows: 0, body_rows: 0, seconds: total.elapsed().as_secs_f64() });
-    }
     query_attempt.capture(&frontend);
     if command == BuildCommand::Compile {
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);

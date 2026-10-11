@@ -26,12 +26,14 @@ impl ResolvedContext {
         archive: &dm_tree::frontend::BodyArchive,
         declaration: u32,
     ) -> io::Result<crate::selected_query::CurrentProcedureReferences> {
+        crate::daemon::control::checkpoint()?;
         let index = archive
             .body_index(dm_tree::OccurrenceId(declaration))
             .ok_or_else(|| io::Error::other("current procedure occurrence unavailable"))?;
         let body = archive
             .parse(index)
             .map_err(|error| io::Error::other(error.message))?;
+        crate::daemon::control::checkpoint()?;
         let occurrence = body.occurrence();
         let slot = archive
             .callables()
@@ -166,6 +168,7 @@ impl ResolvedContext {
                         .join("; ")
                 ))
             })?;
+        crate::daemon::control::checkpoint()?;
         crate::selected_query::bind_current(unit, occurrence, facts.as_ref(), |offset| {
             body.location(offset)
         })
