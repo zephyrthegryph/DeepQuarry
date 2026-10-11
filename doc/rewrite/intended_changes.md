@@ -4385,3 +4385,16 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **A floor light's damage flicker is rolled when it is damaged** (it was rolled by the first draw after the damage).
 * **Lights that were set at init are declared**: the technomancer auras, modifiers, chroma (spell and the light it leaves), flame tongue, radiance and
   reflect, and the slime extract flashlight. The modifiers' colour moved from the base `light_color` to their own `spell_light_color`.
+
+## Pins re-blessed for earlier landings (October 2026, `tooling-fix`)
+
+* **`dq_hit_pin`, escape pod berth** (`obj.machinery.embedded_controller.radio.simple_docking_controller.escape_pod_berth`): every trigger now
+  records `refresh_bits: CHANGE_EXPLICIT -> 0` and `refresh_queued: DEP_ALL -> 0`, which only `emp 1` did. Cause: b0ef320673 (on top of
+  98edeb3500) makes the docking port's airlock program before the docking program that wraps it; before it, creation hit a runtime and left a
+  half-built controller that was never queued for a refresh. The new rows are the complete controller's.
+* **`dq_hit_pin`, `/obj/vehicle`**: the seven `appearance_queued: 1 -> 0` rows are gone. Cause: b744bd7644 declares the idle engine sound
+  loop (`owns_one(..., starts =)`) instead of `rel_set()`-ing it in `Initialize()`; that write was what queued a redraw at creation, so a fresh
+  vehicle no longer has one pending when it is hit. Nothing a player sees changed.
+* **`dq_loot_search_pin`, boxfort piles** (36 rows): the same seeds now find other boxes. Cause: 68e9f5ae83 rolls a pile's look with
+  `rolls()` from the instance's own stream; the old `Initialize()` drew it from the world RNG the pin had seeded, so every search after it
+  read one draw later. The tables and their weights are unchanged; only which seed gives which result moved.
