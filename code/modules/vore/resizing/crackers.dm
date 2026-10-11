@@ -25,7 +25,7 @@
 	var/joke //What joke we have loaded
 
 CAPABILITIES(/obj/item/cracker)
-	rolls(nameof(prize), pick_one(list(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER)))
+	rolls(nameof(prize), PROC_REF(roll_prize))
 	rolls(nameof(joke), pick_one(list("When is a boat just like snow? When it's adrift.",
 		"What happens to naughty elves? Santa gives them the sack.",
 		"What do you call an old snowman? Water.",
@@ -45,6 +45,10 @@ CAPABILITIES(/obj/item/cracker)
 		"What do you call a cow with no legs? Ground Beef.",
 		"Why'd the scarecrow win the Nobel prize? He was outstanding in his field.")))
 	rolls(nameof(icon_state), PROC_REF(roll_look))
+
+/// What it holds (rolled; the cracker kinds are defines local to this file).
+/obj/item/cracker/proc/roll_prize(datum/roller/R)
+	return R.choose(list(SHRINKING_CRACKER,GROWING_CRACKER,DRUGGED_CRACKER,INVISIBLE_CRACKER,FALLING_CRACKER,TELEPORTING_CRACKER,WEALTHY_CRACKER))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/cracker/proc/roll_look(datum/roller/R)
