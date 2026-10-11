@@ -14,10 +14,6 @@
 	throwforce = 5
 	throw_speed = 3
 	throw_range = 5
-	hitsound = SFX_WEAPONS_BLADESLICE
-	usesound = SFX_ITEMS_SCREWDRIVER
-	drop_sound = SFX_ITEMS_DROP_SCREWDRIVER
-	pickup_sound = SFX_ITEMS_PICKUP_SCREWDRIVER
 	material_total = 75
 	attack_verb = list("stabbed")
 	sharp  = TRUE
@@ -25,6 +21,9 @@
 	toolspeed = 1
 	tool_qualities = list(TOOL_SCREWDRIVER)
 	var/random_color = TRUE
+
+CAPABILITIES(/obj/item/tool/screwdriver)
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
 
 /obj/item/tool/screwdriver/Initialize(mapload)
 	. = ..()
@@ -84,9 +83,11 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "screwdriver_a"
 	item_state = "screwdriver_black"
-	usesound = SFX_ITEMS_PSHOOM
 	toolspeed = 0.1
 	random_color = FALSE
+
+CAPABILITIES(/obj/item/tool/screwdriver/alien)
+	configure(item_sounds(use = SFX_ITEMS_PSHOOM))
 
 /obj/item/tool/screwdriver/hybrid
 	name = "strange screwdriver"
@@ -94,16 +95,19 @@
 	icon_state = "hybscrewdriver"
 	item_state = "screwdriver_black"
 	w_class = ITEMSIZE_NORMAL
-	usesound = SFX_EFFECTS_UNCLOAK
 	toolspeed = 0.4
 	random_color = FALSE
 	reach = 2
+
+CAPABILITIES(/obj/item/tool/screwdriver/hybrid)
+	configure(item_sounds(use = SFX_EFFECTS_UNCLOAK))
 
 /obj/item/tool/screwdriver/power
 	name = "power screwdriver"
 	desc = "You shouldn't see this."
 	force = 8
 	attack_verb = list("drilled", "screwed", "jabbed", "whacked")
-	hitsound = SFX_ITEMS_DRILL_HIT
-	usesound = SFX_ITEMS_DRILL_USE_2
 	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/tool/screwdriver/power)
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))

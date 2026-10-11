@@ -5,8 +5,6 @@
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "container"
 
-	drop_sound = SFX_ITEMS_DROP_GASCAN
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	w_class = ITEMSIZE_COST_LARGE
 
@@ -23,6 +21,7 @@
 /obj/item/reagent_containers/chem_canister
 
 CAPABILITIES(/obj/item/reagent_containers/chem_canister)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GASCAN, pickup = SFX_ITEMS_PICKUP_GASCAN))
 	configure(reagents(contents_from = PROC_REF(loaded_contents)))
 
 /// A canister loaded with a reagent starts full of it (reagents(contents_from =)).

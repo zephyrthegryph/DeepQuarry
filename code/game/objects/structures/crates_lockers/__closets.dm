@@ -345,7 +345,7 @@ CAPABILITIES(/obj/structure/closet)
 
 /// An open closet is cut apart into a sheet of steel (what it held is already on its tile).
 /obj/structure/closet/proc/cut_apart(datum/act/op/A)
-	playsound(src, A.held.usesound, 50)
+	playsound(src, sounds_of(A.held).use, 50)
 	replace_with(src, /obj/item/stack/material/steel)
 	return OP_OK
 

@@ -4407,3 +4407,10 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **The Southern Cross omni mixer's map edit `active_power_usage = 7500` is gone** (a type trait cannot be var-edited on a map); the mixer draws
   its type's declared power.
 * **View Variables** edits the three by their old names through `vv_edit_var()`; they no longer show as vars.
+
+## Item sounds as a type trait (rewrite/look-traits, gap 5)
+
+`hitsound`, `usesound`, `mob_throw_hit_sound`, `equip_sound`, `pickup_sound` and `drop_sound` leave `/obj/item` for the `item_sounds()`
+trait (492 types, `tools/dx/codemods/type_trait.py item_sounds`); a subtype that set one to null declares `TRAIT_NONE`. Doors keep their own
+`hitsound` var. No behaviour change intended; pinned by `dq_type_trait/item_sounds_declared`. Run-time writers (the welder's lit sound, a
+borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item its own copy.

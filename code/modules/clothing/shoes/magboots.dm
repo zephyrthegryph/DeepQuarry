@@ -20,8 +20,6 @@
 	var/unremovable_when_enabled = FALSE
 	actions_types = list(/datum/action/item_action/toggle_magboots)
 	step_volume_mod = 1.3
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	resistance_flags = FIRE_PROOF
 
 TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
@@ -32,6 +30,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 		slowdown += 3
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
 /// Old attack_self: toggle the magnetic grip, after the shoes' own self-use (the old ..()).

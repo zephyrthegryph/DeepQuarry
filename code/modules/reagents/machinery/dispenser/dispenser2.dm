@@ -353,5 +353,5 @@ MSG_DEF_SELF(chemical_dispenser/no_fit, "You don't see how %I% could fit into it
 		return OP_OK
 	to_chat(A.actor, span_notice("You remove \the [cartridge] from \the [src]."))
 	cartridge.forceMove(loc)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK

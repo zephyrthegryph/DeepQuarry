@@ -12,13 +12,12 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	volume = 5
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 // A dropper is a sealed container of its volume that draws from open containers and tanks while it is empty and squirts what it holds into open
 // containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it
 // moves is set from 1 to its largest. What it holds is told to two tiles.
 CAPABILITIES(/obj/item/reagent_containers/dropper)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),
 		needle = TRUE,

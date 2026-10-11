@@ -30,8 +30,6 @@
 	var/static/radial_set = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_set")
 	var/static/radial_seton = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_seton")
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	/// What a beacon is called, and what makes them, in the beacon menu's messages (a tome's pages).
 	var/beacon_word = "beacon"
@@ -42,6 +40,7 @@
 TRACKED(/obj/item/perfect_tele, beacons_left)
 
 CAPABILITIES(/obj/item/perfect_tele)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_many(nameof(beacons))
 	// Sending someone, started by afterattack() once the checks passed; the struggle of a resisting target is the wait.
 	op("translocate", ai(), takes("subject", "struggle", "ignore_fail_chance"), wait(PROC_REF(translocate_wait)), then(PROC_REF(teleport_now)))

@@ -40,7 +40,7 @@ CAPABILITIES(/obj/item/assembly/shock_kit)
 	var/obj/item/tool = A.held
 	status = !status
 	to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	add_fingerprint(user)
 	return OP_OK
 

@@ -50,8 +50,8 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		return FALSE
 
 	// 3. Sound.
-	if(tool && volume && tool.usesound)
-		playsound(target, tool.usesound, volume, TRUE)
+	if(tool && volume && sounds_of(tool).use)
+		playsound(target, sounds_of(tool).use, volume, TRUE)
 
 	var/time = tool_delay(actor, tool, delay, quality)
 

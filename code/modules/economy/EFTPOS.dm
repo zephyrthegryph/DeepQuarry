@@ -14,8 +14,6 @@
 	var/transaction_purpose = "Default charge"
 	var/access_code = 0
 	var/tmp/datum/money_account/linked_account
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/eftpos/Initialize(mapload)
 	. = ..()
@@ -79,6 +77,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Eftpos", title = "EFTPOS scanner")
 	without("ui_open")
 	op("change_code", ui_act("change_code"), then(PROC_REF(ui_act_change_code)))

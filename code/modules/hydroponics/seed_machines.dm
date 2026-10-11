@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/botany)
 /obj/machinery/botany/proc/wrench_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
 	return OP_OK

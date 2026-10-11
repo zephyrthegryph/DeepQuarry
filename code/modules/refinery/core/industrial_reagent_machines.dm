@@ -113,7 +113,7 @@ MSG_DEF_SELF(reagent_refinery/nothing_to_drain, "it's empty; there is nothing to
 			if(other != src)
 				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
 				return OP_OK
-	playsound(src, tool.usesound, 75, TRUE)
+	playsound(src, sounds_of(tool).use, 75, TRUE)
 	set_anchored(!anchored)
 	act_message(user, src, MSG_SELF("You [anchored ? "secure" : "unsecure"] the bolts holding %T% to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor."), \

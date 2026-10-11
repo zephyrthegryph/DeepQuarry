@@ -59,7 +59,7 @@ CAPABILITIES(/obj/structure/firedoor_assembly)
 /// A wrench bolts the frame down or frees it.
 /obj/structure/firedoor_assembly/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
-	playsound(src, A.held.usesound, 50, TRUE)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 	act_message(A.actor, src, MSG_SELF("You have [anchored ? "" : "un"]secured %T%!"), MSG_OTHERS(span_warning("%U% has [anchored ? "" : "un"]secured %T%!")))
 	return OP_OK
 

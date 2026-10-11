@@ -209,11 +209,11 @@ CAPABILITIES(/obj/structure/backup_implanter_ch)
 		spent(imp, user)
 
 /obj/structure/backup_implanter_ch/proc/unwrench_done(datum/act/op/A)
-	playsound(src, A.held?.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	set_anchored(FALSE)
 
 /obj/structure/backup_implanter_ch/proc/wrench_done(datum/act/op/A)
-	playsound(src, A.held?.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	set_anchored(TRUE)
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).

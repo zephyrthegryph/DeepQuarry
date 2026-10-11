@@ -44,7 +44,6 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "jaws_pry"
 	item_state = "jawsoflife"
-	usesound = SFX_ITEMS_JAWS_PRY
 	force = 15
 	toolspeed = 0.25
 	sharp = TRUE
@@ -53,12 +52,15 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "pinched", "nipped")
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 
+CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
+	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
+
 /obj/item/tool/transforming/jawsoflife/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's fitted with a prying head."
 			icon_state = "jaws_pry"
-			usesound = SFX_ITEMS_JAWS_PRY
+			set_usesound(SFX_ITEMS_JAWS_PRY)
 			pry = 1
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
@@ -67,7 +69,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's fitted with a cutting head."
 			icon_state = "jaws_cutter"
-			usesound = SFX_ITEMS_JAWS_CUT
+			set_usesound(SFX_ITEMS_JAWS_CUT)
 			pry = 0
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
@@ -81,8 +83,6 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "drill_bolt"
 	item_state = "drill"
-	hitsound = SFX_ITEMS_DRILL_HIT
-	usesound = SFX_ITEMS_DRILL_USE_2
 	force = 8
 	throwforce = 8
 	toolspeed = 0.25
@@ -90,6 +90,9 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	edge = FALSE
 	attack_verb = list("drilled", "screwed", "jabbed", "whacked")
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_SCREWDRIVER)
+
+CAPABILITIES(/obj/item/tool/transforming/powerdrill)
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/tool/transforming/powerdrill/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
@@ -127,16 +130,18 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	sharp = FALSE
 	edge = FALSE
 	attack_verb = list("whacked", "slammed", "bashed", "wrenched", "fixed", "bolted", "clonked", "bonked")
-	hitsound = SFX_WEAPONS_SMASH
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_CROWBAR,TOOL_WIRECUTTER,TOOL_SCREWDRIVER,TOOL_MULTITOOL,TOOL_WELDER)
 	weldertype = /obj/item/weldingtool/dummy/altevian
+
+CAPABILITIES(/obj/item/tool/transforming/altevian)
+	configure(item_sounds(hit = SFX_WEAPONS_SMASH))
 
 /obj/item/tool/transforming/altevian/on_tool_switch(mob/user)
 	switch(LAZYACCESS(possible_tooltypes, current_tooltype))
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's currently in bolting mode."
 			icon_state = "altevian-wrench"
-			usesound = SFX_ITEMS_RATCHET
+			set_usesound(SFX_ITEMS_RATCHET)
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -144,7 +149,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_CROWBAR)
 			desc = initial(desc) + " It's currently in prying mode."
 			icon_state = "altevian-crowbar"
-			usesound = SFX_ITEMS_CROWBAR
+			set_usesound(SFX_ITEMS_CROWBAR)
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -152,7 +157,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_WIRECUTTER)
 			desc = initial(desc) + " It's currently in cutting mode."
 			icon_state = "altevian-wirecutter"
-			usesound = SFX_ITEMS_WIRECUTTER
+			set_usesound(SFX_ITEMS_WIRECUTTER)
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -160,7 +165,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's currently in screwing mode."
 			icon_state = "altevian-screwdriver"
-			usesound = SFX_ITEMS_SCREWDRIVER
+			set_usesound(SFX_ITEMS_SCREWDRIVER)
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -168,7 +173,7 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_MULTITOOL)
 			desc = initial(desc) + " It's currently in pulsing mode."
 			icon_state = "altevian-pulser"
-			usesound = SFX_ITEMS_SCREWDRIVER
+			set_usesound(SFX_ITEMS_SCREWDRIVER)
 			tool_qualities = list(TOOL_MULTITOOL)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)
@@ -176,8 +181,8 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 		if(TOOL_WELDER)
 			desc = initial(desc) + " It's currently in welding mode."
 			icon_state = "altevian-welder-on"
-			welder.usesound = 'sound/items/Welder2.ogg'
-			usesound = SFX_ITEMS_WELDER2
+			welder.set_usesound('sound/items/Welder2.ogg')
+			set_usesound(SFX_ITEMS_WELDER2)
 			tool_qualities = list(TOOL_WELDER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_RATCHET)

@@ -8,6 +8,9 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_melee.dmi',
 			)
 
+CAPABILITIES(/obj/item/melee)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON))
+
 // Attacks mobs (atm only simple ones due to friendly fire issues) that are adjacent to the target and user.
 /obj/item/proc/cleave(mob/living/user, atom/target)
 	if(cleaving)

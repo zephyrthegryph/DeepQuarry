@@ -9,8 +9,6 @@
 	throw_speed = 4
 	throw_range = 10
 	var/datum/data/record/warrant/active
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 //look at it
 /obj/item/holowarrant/examine(mob/user)

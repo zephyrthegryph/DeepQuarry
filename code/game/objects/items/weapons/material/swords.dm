@@ -9,9 +9,9 @@
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = SFX_WEAPONS_BLADESLICE
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/material/sword)
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/material/sword/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(unique_parry_check(user, attacker, damage_source) && prob(50))
@@ -68,9 +68,10 @@
 	slot_flags = SLOT_BACK
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	applies_material_colour = 0
-	drop_sound = SFX_ITEMS_DROP_AXE
-	pickup_sound = SFX_ITEMS_PICKUP_AXE
 	can_cleave = TRUE
+
+CAPABILITIES(/obj/item/material/sword/battleaxe)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/sword/battleaxe/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(unique_parry_check(user, attacker, damage_source) && prob(10))

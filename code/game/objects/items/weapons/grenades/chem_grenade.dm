@@ -122,7 +122,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		else
 			to_chat(user, span_notice("You lock the empty assembly."))
 			name = "fake grenade"
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		icon_state = "[initial(icon_state)]_locked"
 		stage = 2
 		return OP_OK
@@ -135,7 +135,7 @@ TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list
 		to_chat(user, span_warning("This grenade lacks a way to disassemble it."))
 	else
 		to_chat(user, span_notice("You unlock the assembly."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		name = "unsecured grenade with [length(beakers)] containers[detonator ? " and detonator" : ""]"
 		icon_state = initial(icon_state) + (detonator ? "_ass" : "")
 		stage = 1

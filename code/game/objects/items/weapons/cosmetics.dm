@@ -8,8 +8,6 @@
 	slot_flags = SLOT_EARS
 	var/colour = "red"
 	var/open = 0
-	drop_sound = SFX_ITEMS_DROP_GLASS
-	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/lipstick/purple
 	name = "purple lipstick"
@@ -36,6 +34,7 @@ TRACKED(/obj/item/lipstick, open)
 MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 
 CAPABILITIES(/obj/item/lipstick)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
 		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req_bool(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),

@@ -6,9 +6,10 @@
 	item_flags = NOSLIP
 	siemens_coefficient = 0.8
 	step_volume_mod = 0.5
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF | ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 
@@ -25,9 +26,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	siemens_coefficient = 0 //They're thick rubber boots! Of course they won't conduct electricity!
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = ACID_PROOF
+
+CAPABILITIES(/obj/item/clothing/shoes/galoshes)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
 
@@ -146,8 +148,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	icon_state = "slippers"
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
+
+CAPABILITIES(/obj/item/clothing/shoes/slippers)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 
@@ -207,8 +210,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	blocks_footsteps = FALSE
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = SFX_ITEMS_DROP_CLOTHING
-	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
+
+CAPABILITIES(/obj/item/clothing/shoes/footwraps)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 
@@ -435,13 +439,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	siemens_coefficient = 0
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = SFX_ITEMS_DROP_RUBBER
-	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))
 
 /obj/item/clothing/shoes/dry_galoshes/proc/dry_step(datum/act/notice/A)

@@ -8,8 +8,6 @@
 	var/spamcheck = 0
 	var/emagged = 0
 	var/insults = 0
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!"))
 
@@ -58,6 +56,7 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	return OP_OK
 
 CAPABILITIES(/obj/item/megaphone)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("shout", in_hand(), label("Shout"), asks(/datum/prompt/text, fields = list("title" = "Megaphone", "question" = "Shout a message?", "ask_flags" = ASK_CARRIED | ASK_CAPABLE, "timeout" = 0), step = "message"), then(PROC_REF(shout_entered)))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 

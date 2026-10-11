@@ -197,8 +197,9 @@ CAPABILITIES(/obj/item/dice)
 	desc = "It's a small bag with dice inside."
 	icon = 'icons/obj/dice.dmi'
 	icon_state = "dicebag"
-	drop_sound = SFX_ITEMS_DROP_HAT
-	pickup_sound = SFX_ITEMS_PICKUP_HAT
+
+CAPABILITIES(/obj/item/storage/pill_bottle/dice)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 
 /obj/item/storage/pill_bottle/dice
 	starts_with = list(
@@ -210,8 +211,9 @@ CAPABILITIES(/obj/item/dice)
 	desc = "It's a small bag with gaming dice inside."
 	icon = 'icons/obj/dice.dmi'
 	icon_state = "magicdicebag"
-	drop_sound = SFX_ITEMS_DROP_HAT
-	pickup_sound = SFX_ITEMS_PICKUP_HAT
+
+CAPABILITIES(/obj/item/storage/pill_bottle/dice_nerd)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 
 /obj/item/storage/pill_bottle/dice_nerd
 	starts_with = list(

@@ -8,8 +8,6 @@
 	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	preserve_item = 1
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 	var/leaves_residue = 1
 	var/caliber = ""					//Which kind of guns it can be loaded into
@@ -18,6 +16,7 @@
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
 CAPABILITIES(/obj/item/ammo_casing)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -375,10 +374,9 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	throw_range = 12
 	preserve_item = 1
 	caliber = ".357"
-	drop_sound = SFX_ITEMS_DROP_MATCHBOX
-	pickup_sound = SFX_ITEMS_PICKUP_MATCHBOX
 
 CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 
 /// Old click_alt.

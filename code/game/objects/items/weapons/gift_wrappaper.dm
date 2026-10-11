@@ -13,8 +13,6 @@
 	icon = 'icons/obj/gifts.dmi'
 	icon_state = "gift"
 	item_state = "gift1"
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	resistance_flags = FLAMMABLE
 
 /obj/item/a_gift/Initialize(mapload)
@@ -79,6 +77,7 @@ CAPABILITIES(/obj/effect/spresent)
 	return OP_OK
 
 CAPABILITIES(/obj/item/a_gift)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// the old attack_self: open it (an advanced present rolls its own loot table)
 	op("open", in_hand(), label("Open"), then(PROC_REF(interaction_open_gift)))
 
@@ -147,10 +146,9 @@ CAPABILITIES(/obj/item/a_gift)
 	icon = 'icons/obj/items.dmi'
 	icon_state = "wrap_paper"
 	var/amount = 20.0
-	drop_sound = SFX_ITEMS_DROP_WRAPPER
-	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 CAPABILITIES(/obj/item/wrapping_paper)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_WRAPPER, pickup = SFX_ITEMS_PICKUP_WRAPPER))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /// Old attackby.

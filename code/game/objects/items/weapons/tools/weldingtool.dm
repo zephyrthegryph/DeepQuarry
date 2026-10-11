@@ -29,7 +29,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 
 	var/acti_sound = SFX_ITEMS_WELDERACTIVATE
 	var/deac_sound = SFX_ITEMS_WELDERDEACTIVATE
-	usesound = SFX_ITEMS_WELDER2
 	var/change_icons = TRUE
 	var/flame_intensity = 2 //how powerful the emitted light is when used.
 	var/flame_color = "#FF9933" // What color the welder light emits when its on.  Default is an orange-ish color.
@@ -37,8 +36,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	var/burned_fuel_for = 0 // Keeps track of how long the welder's been on, used to gradually empty the welder if left one, without RNG.
 	var/no_passive_burn = FALSE // If true, the welder will not passively burn fuel. Used for things like electric welders.
 	toolspeed = 1
-	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
-	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 	tool_qualities = list(TOOL_WELDER)
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
@@ -175,6 +172,7 @@ TRACKED(/obj/item/weldingtool, always_process)
 		if (istype(location, /turf))
 			location.hotspot_expose(700, 50, 1)
 CAPABILITIES(/obj/item/weldingtool)
+	configure(item_sounds(use = SFX_ITEMS_WELDER2, drop = SFX_ITEMS_DROP_WELDINGTOOL, pickup = SFX_ITEMS_PICKUP_WELDINGTOOL))
 	every(2 SECONDS, then(PROC_REF(weldingtool_step)), when = PROC_REF(burner_active))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -289,7 +287,7 @@ CAPABILITIES(/obj/item/weldingtool)
 			src.force = 15
 			src.injury_kind = INJURY_BURN
 			src.w_class = ITEMSIZE_LARGE
-			src.hitsound = 'sound/items/Welder.ogg'
+			src.set_hitsound('sound/items/Welder.ogg')
 			set_welding(1)
 		else
 			if(M)
@@ -307,7 +305,7 @@ CAPABILITIES(/obj/item/weldingtool)
 		src.injury_kind = initial(src.injury_kind)
 		src.w_class = initial(src.w_class)
 		set_welding(0)
-		src.hitsound = initial(src.hitsound)
+		src.set_hitsound(sounds_of_type(src.type).hit)
 
 //Decides whether or not to damage a player's eyes based on what they're wearing as protection
 //Note: This should probably be moved to mob

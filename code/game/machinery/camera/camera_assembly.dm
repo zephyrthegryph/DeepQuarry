@@ -63,14 +63,14 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(state == 0 && isturf(loc))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		to_chat(user, span_notice("You wrench the assembly into place."))
 		set_anchored(TRUE)
 		set_state(1)
 		auto_turn()
 		return OP_OK
 	if(state == 1)
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
 		set_anchored(FALSE)
 		set_state(0)
@@ -87,8 +87,8 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/item/W = A.held_provider()
 	var/obj/item/weldingtool/welder = W.get_welder()
 	welder.eyecheck(A.actor)
-	if(W.usesound)
-		play_sfx(src, W.usesound, volume = 50, vary = TRUE)
+	if(sounds_of(W).use)
+		play_sfx(src, sounds_of(W).use, volume = 50, vary = TRUE)
 	return OP_OK
 
 /obj/item/camera_assembly/proc/weld_duration(datum/act/op/A)
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	if(state != 3)
 		return OP_DECLINE
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You cut the wires from the circuits."))
 	set_state(2)
 	return OP_OK
@@ -124,7 +124,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/upgrade = locate_in_list(upgrades, /obj)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
 	return OP_OK
@@ -134,7 +134,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/item/tool = A.held
 	if(state != 3)
 		return OP_DECLINE
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	ask_camera_networks(user)
 	return OP_OK
 

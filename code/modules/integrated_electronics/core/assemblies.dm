@@ -508,7 +508,7 @@ CAPABILITIES(/datum/ic_export_view)
 		on_anchored()
 	else
 		on_unanchored()
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /// A crowbar opens or closes the assembly, unless it is locked.
@@ -518,7 +518,7 @@ CAPABILITIES(/datum/ic_export_view)
 	if(locked)
 		to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
 		return OP_OK
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
 	return OP_OK

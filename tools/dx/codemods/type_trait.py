@@ -1,14 +1,17 @@
-"""Moves the machine power vars (idle_power_usage, active_power_usage, power_channel) off /obj/machinery into the uses_power() trait.
+"""Moves a group of base-type vars into a type trait (code/engine/declare/type_traits.dm).
 
-  python tools/dx/codemods/power_trait.py [--apply] [--files ...] [--dirs ...]
+  python tools/dx/codemods/type_trait.py <spec> [--apply] [--files ...] [--dirs ...]
 
-What it does, over code/ (generated files and the /obj/machinery declarations themselves are left to the hand edit):
-  * a type definition block that sets any of the three vars (`\tidle_power_usage = 5`) loses those lines, and the type's CAPABILITIES
-    block (found anywhere in the tree, else made right after the definition) gains `configure(uses_power(idle = 5, ...))`;
-  * a statement that writes one (`active_power_usage = x`, `M.idle_power_usage += y`) becomes its setter;
+<spec> names an entry of SPECS below: the base type, the trait's constructor and readers, and var -> trait value. Over code/ (generated
+files and the spec's hand-edited files are left alone):
+  * a type definition block under the base that sets any of the vars (a tab, `idle_power_usage = 5`) loses those lines, and the type's
+    CAPABILITIES block (found anywhere in the tree, else made right after the definition) gains `configure(ctor(idle = 5, ...))`;
+  * a statement that writes one (`active_power_usage = x`, `M.idle_power_usage += y`) becomes its setter (`set_<var>(...)`);
   * a read becomes the trait read: `active_power_usage` -> `power_of(src).active`, `M.power_channel` -> `power_of(M).channel`,
     `initial(active_power_usage)` -> `power_of_type(type).active`, `initial(M.active_power_usage)` -> `power_of_type(M.type).active`.
-Strings, comments and nameof()/NAMEOF() are left alone (they are change keys and docs). Dry run unless --apply.
+A bare name is rewritten only inside a proc of a type under the base; `X.name` only when X is not declared in the proc as a type outside
+the base (a door's own hitsound stays). Strings, comments and nameof()/NAMEOF() are left alone. Dry run unless --apply.
+The first spec, `power`, moved idle_power_usage, active_power_usage and power_channel off /obj/machinery (uses_power()).
 """
 import _guard  # noqa: F401  (must be first: --help, dry run, write scope)
 import os
@@ -16,10 +19,33 @@ import re
 import sys
 
 ROOT = "code"
-FIELDS = {"idle_power_usage": "idle", "active_power_usage": "active", "power_channel": "channel"}
-SETTER = {"idle_power_usage": "set_idle_power_usage", "active_power_usage": "set_active_power_usage", "power_channel": "set_power_channel"}
-NAME_RE = "|".join(FIELDS)
-SKIP_FILES = {"code/game/machinery/machinery.dm", "code/game/machinery/machinery_power.dm"}
+SPECS = {
+    "power": dict(
+        base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
+        fields={"idle_power_usage": "idle", "active_power_usage": "active", "power_channel": "channel"},
+        skip={"code/game/machinery/machinery.dm", "code/game/machinery/machinery_power.dm"},
+    ),
+    "item_sounds": dict(
+        base="/obj/item", ctor="item_sounds", reader="sounds_of", type_reader="sounds_of_type",
+        fields={"hitsound": "hit", "usesound": "use", "mob_throw_hit_sound": "throw_hit", "equip_sound": "equip",
+                "pickup_sound": "pickup", "drop_sound": "drop"},
+        skip={"code/game/objects/items.dm"},
+    ),
+}
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+_spec_name = next((a for a in _args if a in SPECS), None)
+if _spec_name is None:
+    print("type_trait: name a spec: " + ", ".join(sorted(SPECS)))
+    sys.exit(2)
+SPEC = SPECS[_spec_name]
+BASE = SPEC["base"]
+CTOR = SPEC["ctor"]
+READER = SPEC["reader"]
+TYPE_READER = SPEC["type_reader"]
+FIELDS = SPEC["fields"]
+SETTER = {v: "set_" + v for v in FIELDS}
+NAME_RE = "|".join(sorted(FIELDS, key=len, reverse=True))
+SKIP_FILES = SPEC["skip"]
 
 TYPE_LINE = re.compile(r"^(/[A-Za-z0-9_/]+)\s*(//.*)?$")
 OVERRIDE = re.compile(r"^\t(" + NAME_RE + r")\s*=\s*(.+?)\s*(//.*)?$")
@@ -109,19 +135,49 @@ def mask_strings(code):
 REF = r"(?:[A-Za-z_]\w*(?:\(\))?(?:\??\.[A-Za-z_]\w*(?:\(\))?)*)"
 
 
+OWNER = [None]  # the type whose proc is being read (None outside a proc)
+LOCALS = {}  # name -> declared type path, for the current proc
+
+
+def under_base(path):
+    return path == BASE or path.startswith(BASE + "/")
+
+
+def ref_ok(ref):
+    if not ref:
+        return OWNER[0] is not None and under_base(OWNER[0])
+    if "." in ref or "(" in ref:
+        return True  # a chain (A.held.x): the head's type says nothing about the last link
+    head = ref
+    if head == "src":
+        return OWNER[0] is not None and under_base(OWNER[0])
+    t = LOCALS.get(head)
+    if t is None:
+        return True
+    return under_base(t) or BASE.startswith(t + "/") or t == BASE.rsplit("/", 1)[0]
+
+
+def note_locals(code):
+    for m in re.finditer(r"\bvar/((?:[A-Za-z_]\w*/)*)([A-Za-z_]\w*)", code):
+        path = "/" + m.group(1).rstrip("/") if m.group(1) else None
+        if path and path != "/list":
+            LOCALS[m.group(2)] = path
+
+
 def rewrite_code(code):
+    note_locals(code)
     masked = mask_strings(code)
     if not re.search(r"\b(" + NAME_RE + r")\b", masked):
         return code
     # statement writes: [ref.]name op= value (the whole rest of the statement)
     m = re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)\s*(.+?)\s*$", code)
-    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked):
+    if m and re.match(r"^(\s*)(?:(" + REF + r")\??\.)?(" + NAME_RE + r")\s*([-+*/]?)=(?!=)", masked) and ref_ok(m.group(2)):
         indent, ref, name, op, value = m.groups()
         value = rewrite_reads(value, mask_strings(value))
         target = (ref + ".") if ref else ""
         if op:
             holder = ref or "src"
-            value = "power_of(%s).%s %s (%s)" % (holder, FIELDS[name], op, value)
+            value = "%s(%s).%s %s (%s)" % (READER, holder, FIELDS[name], op, value)
         return "%s%s%s(%s)" % (indent, target, SETTER[name], value)
     return rewrite_reads(code, masked)
 
@@ -138,12 +194,14 @@ def rewrite_reads(code, masked):
         init, ref, name, close = m.groups()
         if ref and ref.startswith("set_"):
             continue
+        if not ref_ok(ref):
+            continue
         if init and close:
             holder = (ref + ".type") if ref else "type"
-            repl = "power_of_type(%s).%s" % (holder, FIELDS[name])
+            repl = "%s(%s).%s" % (TYPE_READER, holder, FIELDS[name])
         else:
             holder = ref or "src"
-            repl = "power_of(%s).%s" % (holder, FIELDS[name])
+            repl = "%s(%s).%s" % (READER, holder, FIELDS[name])
             if init:
                 repl = code[start:m.start(2) if ref else m.start(3)] + repl
             if close:
@@ -153,6 +211,20 @@ def rewrite_reads(code, masked):
         pos = end
     out.append(code[pos:])
     return "".join(out)
+
+
+def continues_def(lines, j):
+    """Whether line j still belongs to the type definition above it: indented, or a blank line or column-0 comment that more
+    indented lines follow (a def interrupted by a // section note)."""
+    line = lines[j].rstrip("\r")
+    if line.startswith("\t") or line.startswith(" "):
+        return True
+    if line == "" or line.startswith("//"):
+        k = j + 1
+        while k < len(lines) and (lines[k].rstrip("\r") == "" or lines[k].startswith("//")):
+            k += 1
+        return k < len(lines) and lines[k].startswith("\t")
+    return False
 
 
 def main():
@@ -175,12 +247,22 @@ def main():
             line = raw.rstrip("\r")
             tm = TYPE_LINE.match(line)
             if tm and "/proc/" not in line and "/verb/" not in line:
-                cur = tm.group(1)
+                cur = tm.group(1).rstrip("/")
+                OWNER[0] = None
             elif line and not line.startswith("\t") and not line.startswith(" "):
                 cur = None
-            om = OVERRIDE.match(line) if cur else None
-            if om and cur.startswith("/obj/machinery"):
-                entries.setdefault(cur, []).append((FIELDS[om.group(1)], om.group(2)))
+                pm = re.match(r"^(/[A-Za-z0-9_/]+?)/(?:proc/|verb/)?([A-Za-z_]\w*)\((.*)$", line)
+                OWNER[0] = pm.group(1) if pm and not pm.group(1).startswith("/proc") else None
+                LOCALS.clear()
+                if pm:
+                    for am in re.finditer(r"((?:[A-Za-z_]\w*/)+)([A-Za-z_]\w*)", pm.group(3)):
+                        LOCALS[am.group(2)] = "/" + am.group(1).rstrip("/")
+            om =OVERRIDE.match(line) if cur else None
+            if om and (cur == BASE or cur.startswith(BASE + "/")):
+                value = om.group(2)
+                if value.strip() == "null":
+                    value = "TRAIT_NONE"
+                entries.setdefault(cur, []).append((FIELDS[om.group(1)], value))
                 continue
             code, comment = split_code_comment(line)
             if cur is None or line.startswith("\t"):
@@ -190,8 +272,11 @@ def main():
     # entries into blocks
     made_blocks = {}
     for t, rows in entries.items():
-        args = ", ".join("%s = %s" % (k, v) for k, v in rows)
-        entry = "\tconfigure(uses_power(%s))" % args
+        last = {}
+        for k, v in rows:
+            last[k] = v  # a var set twice in one type: the later line won
+        args = ", ".join("%s = %s" % (k, v) for k, v in last.items())
+        entry = "\tconfigure(%s(%s))" % (CTOR, args)
         if t in caps_at:
             p, i = caps_at[t]
             made_blocks.setdefault(p, []).append(("after_caps", t, entry))
@@ -211,7 +296,7 @@ def main():
             else:
                 idx = next(i for i, l in enumerate(lines) if TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t)
                 j = idx + 1
-                while j < len(lines) and (lines[j].startswith("\t") or lines[j].startswith(" ") or lines[j].rstrip("\r") == "" and j + 1 < len(lines) and lines[j + 1].startswith("\t")):
+                while j < len(lines) and continues_def(lines, j):
                     j += 1
                 lines[j:j] = [cr, "CAPABILITIES(%s)%s" % (t, cr), entry + cr]
     changed = 0
@@ -220,7 +305,7 @@ def main():
         if text != files[p]:
             changed += 1
             write(p, text)
-    print("power_trait: %d types declared, %d files changed" % (len(entries), changed))
+    print("type_trait %s: %d types declared, %d files changed" % (_spec_name, len(entries), changed))
 
 
 if __name__ == "__main__":

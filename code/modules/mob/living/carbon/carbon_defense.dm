@@ -95,8 +95,8 @@ MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%
 		else
 			act_message(user, src, others = span_danger("%U% cut %T%'s neck with %I%!"), item = W)
 
-		if(W.hitsound)
-			playsound(src, W.hitsound, 50, 1, -1)
+		if(sounds_of(W).hit)
+			playsound(src, sounds_of(W).hit, 50, 1, -1)
 
 	G.note_action()
 	flick(G.hud.icon_state, G.hud)
@@ -115,8 +115,8 @@ MSG_DEF(throat/slit, null, span_danger("%U% begins to slit %T%'s throat with %I%
 	var/damage = shank_armor_helper(W, G, user)
 	receive_weapon_hit(W, user, damage, zone = BP_TORSO, silent = FALSE, armored = FALSE)
 
-	if(W.hitsound)
-		playsound(src, W.hitsound, 50, 1, -1)
+	if(sounds_of(W).hit)
+		playsound(src, sounds_of(W).hit, 50, 1, -1)
 
 	add_attack_logs(user,src,"Knifed (shanked)")
 

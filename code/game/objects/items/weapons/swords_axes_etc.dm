@@ -16,7 +16,6 @@
 	icon_state = "baton"
 	slot_flags = SLOT_BELT
 	force = 10
-	drop_sound = SFX_ITEMS_DROP_METALWEAPON
 
 /obj/item/melee/classic_baton
 	name = "police baton"
@@ -26,8 +25,9 @@
 	item_state = "classic_baton"
 	slot_flags = SLOT_BELT
 	force = 10
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
+
+CAPABILITIES(/obj/item/melee/classic_baton)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
@@ -51,13 +51,12 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	force = 3
-	drop_sound = SFX_ITEMS_DROP_CROWBAR
-	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	var/on = 0
 
 TRACKED(/obj/item/melee/telebaton, on)
 
 CAPABILITIES(/obj/item/melee/telebaton)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))
 
 /// The native held-item activation preserves the complete equipment change.

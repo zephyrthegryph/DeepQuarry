@@ -620,7 +620,7 @@ CAPABILITIES(/datum/cap_data/wires)
 	var/atom/H = owner
 	H.add_hiddenprint(user)
 	var/obj/item/I = tool_of(user)
-	playsound(H, I.usesound, 20, 1)
+	playsound(H, sounds_of(I).use, 20, 1)
 	var/target = wire_of(lowertext(wire))
 	if(is_cut(target))
 		mend_wire(target, user)

@@ -7,8 +7,9 @@
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+CAPABILITIES(/obj/item/halogen_counter)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 /obj/item/halogen_counter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!iscarbon(M))

@@ -243,11 +243,11 @@ MSG_DEF_SELF(nif/wiring_intact, span_notice("There's no damaged wiring that need
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 
 /obj/item/nif/proc/pry_open_done(datum/act/op/A)
-	playsound(src, A.held?.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	set_open(1)
 
 /obj/item/nif/proc/reseal_done(datum/act/op/A)
-	playsound(src, A.held?.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	set_open(FALSE)
 	repair(initial(durability))
 	set_stat(NIF_PREINSTALL)

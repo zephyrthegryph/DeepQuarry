@@ -22,7 +22,7 @@ CAPABILITIES(/obj/structure/bed/chair/e_chair)
 /// A wrench takes the kit out and leaves a plain chair.
 /obj/structure/bed/chair/e_chair/proc/back_to_chair(datum/act/op/A)
 	var/obj/structure/bed/chair/C = new /obj/structure/bed/chair(loc)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	C.set_dir(dir)
 	if(part)
 		part.forceMove(loc)

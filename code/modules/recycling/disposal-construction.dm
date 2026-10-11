@@ -270,7 +270,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 		else
 			set_density(TRUE)
 		to_chat(user, "You attach the [nicetype] to the underfloor.")
-	playsound(src, I.usesound, 100, 1)
+	playsound(src, sounds_of(I).use, 100, 1)
 	update()
 	return OP_OK
 

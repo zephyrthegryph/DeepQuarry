@@ -46,29 +46,33 @@ CAPABILITIES(/obj/item/clothing/head/woodcirclet)
 	desc = "A flower crown weaved with sunflowers."
 	icon_state = "sunflower_crown"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/sunflower_crown)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/lavender_crown
 	name = "lavender crown"
 	desc = "A flower crown weaved with lavender."
 	icon_state = "lavender_crown"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/lavender_crown)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/poppy_crown
 	name = "poppy crown"
 	desc = "A flower crown weaved with poppies."
 	icon_state = "poppy_crown"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/poppy_crown)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/clothing/head/rose_crown
 	name = "rose crown"
 	desc = "A flower crown weaved with roses."
 	icon_state = "poppy_crown"
 	body_parts_covered = 0
-	drop_sound = SFX_ITEMS_DROP_HERB
-	pickup_sound = SFX_ITEMS_PICKUP_HERB
+
+CAPABILITIES(/obj/item/clothing/head/rose_crown)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))

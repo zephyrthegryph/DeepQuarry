@@ -128,5 +128,7 @@ CAPABILITIES(/obj/item/oldtwohanded)
 	edge = 0
 	sharp = 1
 	injury_kind = INJURY_PIERCE
-	hitsound = SFX_WEAPONS_BLADESLICE
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
+
+CAPABILITIES(/obj/item/oldtwohanded/spear)
+	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))

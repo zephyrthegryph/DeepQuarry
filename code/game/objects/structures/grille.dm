@@ -190,7 +190,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	if(!shock(user, 100))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		replace_with(src, /obj/item/stack/rods, destroyed ? 1 : 2)
 	return OP_OK
 
@@ -200,7 +200,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 	if(!istype(loc, /turf/simulated) && !anchored)
 		return OP_OK
 	if(!shock(user, 90))
-		playsound(src, W.usesound, 100, 1)
+		playsound(src, sounds_of(W).use, 100, 1)
 		set_anchored(!anchored)
 		act_message(user, null, MSG_SELF(span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor.")), \
 			MSG_OTHERS(span_notice("%U% [anchored ? "fastens" : "unfastens"] the grille.")))

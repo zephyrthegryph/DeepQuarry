@@ -195,7 +195,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 		return OP_OK
 	to_chat(user, "You fish \the [choice] out of \the [src].")
 	choice.forceMove(get_turf(src))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	if(choice == protean_brain)
 		rel_take(src, nameof(protean_brain))
 	else if(choice == protean_refactory)

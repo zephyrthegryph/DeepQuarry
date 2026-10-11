@@ -7,8 +7,6 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	light_color = "#30B5E6"
 	var/light_color_danger = "#D04E4C"
 	item_state = "egg6"
-	drop_sound = SFX_ITEMS_DROP_METALBOOTS
-	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	//these things are big and heavy, they're awkward to transport, and you can't throw them very far
 	w_class = ITEMSIZE_LARGE
@@ -20,6 +18,9 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	var/coil_charged = TRUE	//have we been discharged into something yet?
 	var/coil_damaged = FALSE	//have we been damaged? one hit is fine, but two direct hits will explode us if we're charged
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
+
+CAPABILITIES(/obj/item/fusion_coil)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_GASCAN))
 TRACKED(/obj/item/fusion_coil, coil_damaged)
 
 /obj/item/fusion_coil/draw(datum/look/look)

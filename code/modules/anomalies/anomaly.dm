@@ -80,13 +80,12 @@ TRACKED(/obj/item/anomaly_releaser, used)
 	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	/// Relation view: the last anomaly scanned (set by the anomaly's scan, _anomalies.dm).
 	var/obj/effect/anomaly/buffered_anomaly
 
 CAPABILITIES(/obj/item/anomaly_scanner)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("AnomalyScanner")
 	without("ui_open")

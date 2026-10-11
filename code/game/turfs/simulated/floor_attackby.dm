@@ -173,19 +173,19 @@
 		if(!(broken || burnt || (flooring.flags & (TURF_IS_FRAGILE | TURF_REMOVE_CROWBAR))))
 			return FALSE
 		pry_covering(user)
-		playsound(src, W.usesound, 80, 1)
+		playsound(src, sounds_of(W).use, 80, 1)
 		return TRUE
 	else if(W.has_tool_quality(TOOL_SCREWDRIVER) && (flooring.flags & TURF_REMOVE_SCREWDRIVER))
 		if(broken || burnt)
 			return FALSE
 		to_chat(user, span_notice("You unscrew and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
-		playsound(src, W.usesound, 80, 1)
+		playsound(src, sounds_of(W).use, 80, 1)
 		return TRUE
 	else if(W.has_tool_quality(TOOL_WRENCH) && (flooring.flags & TURF_REMOVE_WRENCH))
 		to_chat(user, span_notice("You unwrench and remove the [flooring.descriptor]."))
 		make_plating(TRUE)
-		playsound(src, W.usesound, 80, 1)
+		playsound(src, sounds_of(W).use, 80, 1)
 		return TRUE
 	else if(istype(W, /obj/item/shovel) && (flooring.flags & TURF_REMOVE_SHOVEL))
 		to_chat(user, span_notice("You shovel off the [flooring.descriptor]."))
