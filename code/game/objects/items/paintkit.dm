@@ -63,12 +63,12 @@
 	)
 	for(var/kit_last_type in kit_last_types)
 		if(ispath(type, kit_last_type))
-			return TRUE
-	return FALSE
+			return null
+	return /datum/msg/req_failed
 
 /// Requirement: the kit goes ahead of the item's other uses (everything but the suits above).
 /obj/item/proc/kit_goes_first(datum/act/A)
-	return !kit_goes_last(A)
+	return isnull(kit_goes_last(A)) ? /datum/msg/req_failed : null
 
 /// Old attackby: a kit customises the item if it can. Either way nothing else handles the kit.
 /obj/item/proc/interaction_kit_customize(datum/act/op/A)

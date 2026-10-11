@@ -5,59 +5,32 @@
 @obj.item ai|none
 @obj.item ghost|none
 @obj.item.toy human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +3 menu: Recolor
-+5 click: Click: Item
 @obj.item.toy human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 @obj.item.toy human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Item
+-menu: Name Plushie (refused: You can't do that.)
 +3 menu: Recolor
-+5 click: Click: Item
 @obj.item.toy human|/obj/item/kit
 -menu: Use
 +1 menu: Item
@@ -68,10 +41,7 @@
 +1 menu: Item
 +3 menu: Recolor
 +5 click: Click: Item
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Item
+@obj.item.toy human|/obj/item
+-menu: Name Plushie (refused: You can't do that.)
 +2 menu: Recolor
-+4 click: Click: Item
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, toggle, toggle_digestable

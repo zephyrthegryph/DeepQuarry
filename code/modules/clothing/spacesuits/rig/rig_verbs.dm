@@ -216,19 +216,6 @@
 	to_chat(user, span_boldnotice("You attempt to engage the [module.interface_name]."))
 	module.engage(null, FALSE, user)
 
-/// Requirement: the suit has this piece (replaces adding the toggle verbs when the piece was built).
-/obj/item/rig/proc/pred_has_helmet(mob/actor, atom/target, obj/item/held)
-	return !!helmet
-
-/obj/item/rig/proc/pred_has_chest(mob/actor, atom/target, obj/item/held)
-	return !!chest
-
-/obj/item/rig/proc/pred_has_gauntlets(mob/actor, atom/target, obj/item/held)
-	return !!gloves
-
-/obj/item/rig/proc/pred_has_boots(mob/actor, atom/target, obj/item/held)
-	return !!boots
-
 /obj/item/rig/proc/select_module_chosen(datum/act/request/A)
 	if(!A.answer)
 		return

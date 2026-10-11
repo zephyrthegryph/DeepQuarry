@@ -48,7 +48,7 @@ CAPABILITIES(/obj/item/uav)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req_bool(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
 	// packing or unpacking it takes ten seconds beside it (chosen from the handle radial below)
 	op("repack", ai(), wait(10 SECONDS), then(PROC_REF(repacked)))
 	// the old attack_hand: on the floor, a radial of what to do with it (elsewhere the click declines to the ordinary hand)
@@ -58,7 +58,7 @@ CAPABILITIES(/obj/item/uav)
 	// the old attackby: a pairing computer pairs it, a cell goes in
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	// a cell goes into one that has none
-	op("insert_cell", item(/obj/item/cell), label("Insert the cell"), when(cond_not(PROC_REF(has_cell))), priority(OP_PRIORITY_PART), wait(3 SECONDS), then(PROC_REF(cell_inserted)))
+	op("insert_cell", item(/obj/item/cell), label("Insert the cell"), when(cond_not(req(PROC_REF(has_cell)))), priority(OP_PRIORITY_PART), wait(3 SECONDS), then(PROC_REF(cell_inserted)))
 	// a pen writes its nickname
 	op("nickname", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Nickname"), priority(OP_PRIORITY_PART + 1),
 		asks(/datum/prompt/text, fields = list("title" = "Nickname", "question" = computed(PROC_REF(nickname_question)), "default" = computed(PROC_REF(current_nickname)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/uav)
 
 /// Requirement: a cell is in the drone.
 /obj/item/uav/proc/has_cell(datum/act/op/A)
-	return !isnull(cell)
+	return (!isnull(cell)) ? null : /datum/msg/req_silent
 
 /obj/item/uav/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor

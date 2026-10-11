@@ -42,7 +42,7 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	op("z_range", ui_act("z_range", arg("val", num(0, 10))), then(PROC_REF(ui_act_z_range)))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("shield_gen_swipe_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_swipe_id)))
-	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(shield_gen_not_broken_holds), because = PROC_REF(shield_gen_not_broken_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("shield_gen_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(shield_gen_not_broken_holds))), then(PROC_REF(interaction_open_ui_impl)))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(shield_gen_blast_trip)))
 
 /obj/machinery/shield_gen/advanced
@@ -109,13 +109,11 @@ CAPABILITIES(/obj/machinery/shield_gen)
 /// Requirement (was REQ_* shield_gen_not_broken): the legacy check answers TRUE to pass.
 /obj/machinery/shield_gen/proc/shield_gen_not_broken_holds(datum/act/op/A)
 	var/answer = shield_gen_not_broken(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why shield_gen_not_broken_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/shield_gen/proc/shield_gen_not_broken_refusal(datum/act/op/A)
-	var/answer = shield_gen_not_broken(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/shield_gen/proc/shield_gen_not_broken(mob/actor, atom/target, obj/item/held)
 	return !broken_now()
 

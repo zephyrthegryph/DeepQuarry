@@ -58,14 +58,8 @@ human|none click: Click: Ui open
 -click: nothing
 +2 menu: Ui open
 +3 click: Click: Ui open
-human|/obj/item/module/power_control menu: Move To Top
-human|/obj/item/module/power_control menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/module/power_control menu: Ui open
-human|/obj/item/module/power_control click: Click: Ui open
-human|/obj/item/frame/apc menu: Move To Top
-human|/obj/item/frame/apc menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/frame/apc menu: Ui open
-human|/obj/item/frame/apc click: Click: Ui open
+@obj human|/obj/item/module/power_control
+@obj human|/obj/item/frame/apc
 @obj.machinery.power human|/obj/item/pda
 -menu: Climb
 -menu: Rotate Clockwise

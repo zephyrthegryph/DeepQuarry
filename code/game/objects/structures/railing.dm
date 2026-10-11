@@ -42,9 +42,9 @@ CAPABILITIES(/obj/structure/railing)
 	op("slam", item(/obj/item), stance(I_HURT), label("Slam"), then(PROC_REF(interaction_slam)))
 	op("item", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
 	op("flip", menu(), label("Flip Railing"), then(PROC_REF(railing_flip_effect)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req_bool(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(2 SECONDS), needs(req(PROC_REF(loose), silent = TRUE)), then(PROC_REF(wrench_act_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(1 SECOND), begins(PROC_REF(screwdriver_begins)), then(PROC_REF(screwdriver_act_done)))
-	op("use_welder", lit_welder(fuel = 0), needs(req_bool(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
+	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(damaged), silent = TRUE)), starts(PROC_REF(welder_sound)), wait(2 SECONDS), then(PROC_REF(welder_act_timed_done)))
 	param(nameof(constructed), pos = 1)
 
 /// A railing that is not anchored breaks under whoever climbed it.
@@ -199,7 +199,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 
 /// A wrench only takes a loose railing apart.
 /obj/structure/railing/proc/loose(datum/act/op/A)
-	return !anchored
+	return (!anchored) ? null : MSG(req_failed)
 
 /obj/structure/railing/proc/wrench_act_done(datum/act/op/A)
 	var/mob/user = A.actor
@@ -207,7 +207,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/railing/proc/damaged(datum/act/op/A)
-	return get_integrity_damage() > 0
+	return (get_integrity_damage() > 0) ? null : MSG(req_failed)
 
 /obj/structure/railing/proc/welder_sound(datum/act/op/A)
 	var/obj/item/tool = A.held
