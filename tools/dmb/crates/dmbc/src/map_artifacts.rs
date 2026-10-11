@@ -11,6 +11,7 @@ struct Origins<'a> {
     source_length: usize,
     entry: usize,
     collector: RefCell<DebugOriginCollector>,
+    offsets: RefCell<Vec<usize>>,
 }
 struct DiagnosticResolver<'a, R> {
     host: &'a R,
@@ -64,7 +65,12 @@ impl dm_codegen_byond::DebugSourceProvider for Origins<'_> {
         self.ordinal(self.entry)
     }
     fn ordinal(&self, offset: usize) -> Result<u32, String> {
-        self.collector.borrow_mut().record(self, offset)
+        let ordinal = self.collector.borrow_mut().record(self, offset)?;
+        let mut offsets = self.offsets.borrow_mut();
+        if ordinal as usize == offsets.len() {
+            offsets.push(offset);
+        }
+        Ok(ordinal)
     }
 }
 /// Identical semantic document/descriptor identities share an executable after
@@ -78,6 +84,27 @@ pub fn lower<R: Resolver>(
     symbols: &SymbolTable,
     host: &R,
     resource_search_context: Option<u128>,
+) -> Result<Vec<InitializationArtifact>, String> {
+    lower_with_memo(
+        frontend,
+        maps,
+        projection,
+        descriptors,
+        symbols,
+        host,
+        resource_search_context,
+        None,
+    )
+}
+pub(crate) fn lower_with_memo<R: Resolver>(
+    frontend: &ColdFrontend,
+    maps: &[MapPlan],
+    projection: &map_projection::Projection,
+    descriptors: &map_output::DescriptorPlan,
+    symbols: &SymbolTable,
+    host: &R,
+    resource_search_context: Option<u128>,
+    memo: Option<&crate::map_memo::MapMemo>,
 ) -> Result<Vec<InitializationArtifact>, String> {
     let planned = map_initializers::plan(projection, maps, host)
         .map_err(|error| format!("map initializer plan: {error:?}"))?;
@@ -144,9 +171,36 @@ pub fn lower<R: Resolver>(
             source_length: map.captured.source.len(),
             entry,
             collector: RefCell::new(DebugOriginCollector::default()),
+            offsets: RefCell::new(Vec::new()),
         };
+        let unit_key = memo.and_then(|memo| memo.map_unit_key(unit, maps, resource_search_context));
+        if let Some((memo, key)) = memo.zip(unit_key.as_ref()) {
+            if let Some((code, debug_origins)) =
+                memo.map_unit(key, unit, maps, entry, &origins, symbols, host)
+            {
+                let artifact = InitializationArtifact {
+                    encoding: None,
+                    identity,
+                    code,
+                    debug_origins,
+                    coverage: InitializationCoverage::MapAssignments {
+                        count: u32::try_from(unit.assignments.len())
+                            .map_err(|_| "map assignment count overflow")?,
+                        canonical_body: body,
+                    },
+                };
+                artifact.validate()?;
+                artifacts.push(artifact);
+                continue;
+            }
+            // Failed recipe admission is an ordinary miss. Its tentative debug
+            // emission must not affect the common fresh producer's ordinals.
+            *origins.collector.borrow_mut() = DebugOriginCollector::default();
+            origins.offsets.borrow_mut().clear();
+        }
+        let recording = crate::lowering_memo::RecordingResolver::new(host);
         let diagnostics = DiagnosticResolver {
-            host,
+            host: &recording,
             unsupported: std::sync::Mutex::new(Vec::new()),
         };
         let code = map_initializers::lower_unit(
@@ -173,10 +227,22 @@ pub fn lower<R: Resolver>(
             format!("{}:{line}: unsupported map initializer for {owner} (include={}, template={}, atom={}): {error:?}; unresolved queries: {queries}",
                 include.semantic_path, map.captured.include_occurrence, atom.template, atom.atom)
         })?;
+        let code: crate::InitializerCode = code.into();
+        if let Some((memo, key)) = memo.zip(unit_key) {
+            memo.remember_map_unit(
+                key,
+                unit,
+                maps,
+                &code,
+                entry,
+                &origins.offsets.borrow(),
+                &recording,
+            );
+        }
         let artifact = InitializationArtifact {
             encoding: None,
             identity,
-            code: code.into(),
+            code,
             debug_origins: Arc::new(origins.collector.into_inner().finish()),
             coverage: InitializationCoverage::MapAssignments {
                 count: u32::try_from(unit.assignments.len())

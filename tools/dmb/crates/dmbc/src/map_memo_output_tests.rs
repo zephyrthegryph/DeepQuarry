@@ -2,6 +2,8 @@ use super::*;
 use crate::{initialization_artifact::InitializationArtifact, map_output::DescriptorPlan};
 use dm_ir::{ResolveQuery, ResolvedMeaning, SymbolId};
 use std::path::Path;
+#[path = "map_memo_outputs/unit_tests.rs"]
+mod unit_tests;
 struct Source;
 impl dm_preprocess::SourceProvider for Source {
     fn read(&self, path: &Path) -> Result<String, String> {
@@ -71,7 +73,7 @@ fn prepare_context(
         },
         |cached, descriptors, recording| match cached {
             Some(value) => Ok(value.to_vec()),
-            None => crate::map_artifacts::lower(
+            None => crate::map_artifacts::lower_with_memo(
                 frontend,
                 maps,
                 projection,
@@ -79,6 +81,7 @@ fn prepare_context(
                 &maps[0].symbols,
                 recording,
                 context,
+                Some(memo),
             ),
         },
     )
@@ -238,9 +241,10 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
             &Facts { shared: false },
         )
         .unwrap();
+        assert_eq!(memo.counts.output_hits.load(Ordering::Relaxed), 0);
         assert_eq!(
-            memo.counts.output_hits.load(Ordering::Relaxed),
-            u64::from(index == 1)
+            memo.counts.unit_hits.load(Ordering::Relaxed),
+            u64::from(index == 1 || index == 2)
         );
         let (_, fresh) = prepare(
             &MapMemo::new(1, 0),
@@ -263,7 +267,9 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
         assert_eq!(actual.source_span, expected.source_span);
         assert_eq!(actual.field_origins, expected.field_origins);
         if let Some(code) = previous.as_ref() {
-            assert_eq!(Arc::ptr_eq(code, current[0].code.code_owner()), index == 1);
+            // Descriptor sidecars are reissued from the current source even
+            // when the retained symbolic program is admitted.
+            assert!(!Arc::ptr_eq(code, current[0].code.code_owner()));
         }
         previous = Some(Arc::clone(current[0].code.code_owner()));
         let changed = MapMemo::with_resident(1, owner.clone(), None);

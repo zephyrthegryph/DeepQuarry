@@ -30,6 +30,8 @@ pub struct Counts {
     pub parse_hits: AtomicU64,
     pub geometry_hits: AtomicU64,
     pub output_hits: AtomicU64,
+    /// Per-unit symbolic admissions after ordinary current map planning.
+    pub unit_hits: AtomicU64,
     pub outputs_prepared: AtomicU64,
     pub parsed: AtomicU64,
     pub projected: AtomicU64,

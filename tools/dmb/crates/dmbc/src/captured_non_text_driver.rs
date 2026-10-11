@@ -636,7 +636,7 @@ fn capture_with_resource_operation<
              host: &dm_session::RecordingResolver<'_, _>| {
                 timed(observer, CaptureStage::MapInitializers, || match cached {
                     Some(artifacts) => Ok(artifacts.to_vec()),
-                    None => crate::map_artifacts::lower(
+                    None => crate::map_artifacts::lower_with_memo(
                         frontend,
                         &captured.maps,
                         &map,
@@ -644,6 +644,7 @@ fn capture_with_resource_operation<
                         &symbols,
                         host,
                         Some(context),
+                        map_memo,
                     ),
                 })
             };

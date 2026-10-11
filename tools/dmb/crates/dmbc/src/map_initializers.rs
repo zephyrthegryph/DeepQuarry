@@ -302,6 +302,16 @@ pub fn lower_unit<R: Resolver>(
     context: dm_codegen_byond::initializer::InitializerContext<'_>,
     host: &R,
 ) -> Result<dm_codegen_byond::lower_resolver::ResolverProc, LowerError> {
+    let expressions = prepare_unit_expressions(unit, maps)?;
+    dm_codegen_byond::initializer::lower_assignments(&expressions, unit.owner, context, host)
+        .map_err(LowerError::Backend)
+}
+/// Current captured roots used by both ordinary lowering and retained sidecar
+/// reissue. Neither a model expression nor a retained span authorizes this parse.
+pub(crate) fn prepare_unit_expressions(
+    unit: &Unit,
+    maps: &[MapPlan],
+) -> Result<Vec<(InitializerTarget, SymbolId, dm_syntax::Expr)>, LowerError> {
     if unit.assignments.len() != unit.origins.len() {
         return Err(LowerError::InvalidSource);
     }
@@ -347,8 +357,7 @@ pub fn lower_unit<R: Resolver>(
         offset_expression(&mut value, origin.span.value_span.start);
         expressions.push((assignment.target.clone(), assignment.lexical_owner, value));
     }
-    dm_codegen_byond::initializer::lower_assignments(&expressions, unit.owner, context, host)
-        .map_err(LowerError::Backend)
+    Ok(expressions)
 }
 fn offset_expression(expression: &mut dm_syntax::Expr, offset: usize) {
     use dm_syntax::ExprKind;

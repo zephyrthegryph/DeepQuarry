@@ -18,6 +18,7 @@ mod resident_map_outputs;
 mod source_text;
 mod storage_inventory;
 pub(crate) use resident_map_outputs::weight as resident_map_outputs_weight;
+pub(crate) use resident_map_outputs::unit_weight as resident_map_unit_weight;
 mod prepared;
 mod prepared_inputs;
 mod relocation_metrics;

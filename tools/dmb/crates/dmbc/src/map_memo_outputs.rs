@@ -12,12 +12,19 @@ pub struct MapOutputInputs<'a, R> {
     pub resource_search_context: Option<u128>,
 }
 
-pub(super) struct MapOutputs {
+#[path = "map_memo_outputs/units.rs"]
+pub(crate) mod units;
+pub(super) enum MapOutputs {
+    Bundle(MapBundle),
+    Unit(units::RetainedUnit),
+}
+pub(super) struct MapBundle {
     maps: Arc<[MapPlan]>,
     projection: Projection,
     paths: Arc<[Arc<str>]>,
     descriptors: DescriptorPlan,
     artifacts: Arc<[InitializationArtifact]>,
+    unit_keys: Vec<Arc<[u8]>>,
 }
 pub(super) fn current_paths(
     frontend: &ColdFrontend,
@@ -113,6 +120,9 @@ impl MapMemo {
             let (hit, _) = retained
                 .outputs
                 .visit_explained(&key, host, &mut |artifact| {
+                    let MapOutputs::Bundle(artifact) = artifact.as_ref() else {
+                        return false;
+                    };
                     artifact.paths == paths
                         && same_projection(&artifact.projection, projection)
                         && artifact.maps.len() == maps.len()
@@ -126,6 +136,14 @@ impl MapMemo {
                         })
                 });
             if let Some(hit) = hit {
+                let MapOutputs::Bundle(hit) = hit.as_ref() else {
+                    unreachable!()
+                };
+                self.current
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .outputs
+                    .extend(hit.unit_keys.iter().cloned());
                 self.counts.output_hits.fetch_add(1, Ordering::Relaxed);
                 let descriptors = prepare_descriptors(Some(&hit.descriptors))?;
                 let artifacts =
@@ -141,25 +159,45 @@ impl MapMemo {
             let reads = recording.reads();
             let versions = recording.domain_receipts();
             let artifacts: Arc<[InitializationArtifact]> = artifacts.into();
-            if let Some(weight) = crate::heap_census::resident_map_outputs_weight(
-                &maps,
-                projection,
-                &paths,
-                &descriptors,
-                &artifacts,
-                &key,
-                &reads,
-                &versions,
-            ) {
-                retained
-                    .outputs
-                    .insert_with(key, reads, versions, weight, || MapOutputs {
-                        maps,
-                        projection: projection.clone(),
-                        paths,
-                        descriptors: descriptors.clone(),
-                        artifacts: artifacts.clone(),
-                    });
+            let unit_keys: Vec<_> = self
+                .current
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .outputs
+                .iter()
+                .filter(|key| key.starts_with(units::PREFIX))
+                .cloned()
+                .collect();
+            // Current descriptor ASTs never enter bundle history. Their units
+            // are retained only as source-neutral recipes below this same store.
+            if artifacts
+                .iter()
+                .all(|artifact| artifact.code.modified_instances.is_empty())
+            {
+                if let Some(weight) = crate::heap_census::resident_map_outputs_weight(
+                    &maps,
+                    projection,
+                    &paths,
+                    &descriptors,
+                    &artifacts,
+                    &key,
+                    &reads,
+                    &versions,
+                    &unit_keys,
+                ) {
+                    retained
+                        .outputs
+                        .insert_with(key, reads, versions, weight, || {
+                            MapOutputs::Bundle(MapBundle {
+                                maps,
+                                projection: projection.clone(),
+                                paths,
+                                descriptors: descriptors.clone(),
+                                artifacts: artifacts.clone(),
+                                unit_keys,
+                            })
+                        });
+                }
             }
             return Ok((descriptors, artifacts.to_vec()));
         }
