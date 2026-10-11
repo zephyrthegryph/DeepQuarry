@@ -2,7 +2,7 @@ import { ByondCompileFailure, failedCompileOutcome, observedCompileOutcome } fro
 import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
-import { observeDreamMakerIdentity, type PreparedDreamMaker } from './byond';
+import { observeDreamMakerIdentity, type PreparedDreamMaker, type ByondCompilationResult } from './byond';
 import fs from 'node:fs';
 import { captureShadowOutputPair } from './shadow_output';
 import path from 'node:path';
@@ -582,4 +582,32 @@ test('captured native launch, provenance and acquisition use the same caller-res
   } finally {
     fs.rmSync(owned, { recursive: true, force: true });
   }
+});
+
+
+test('shadow preserves native rejection evidence when observed BYOND compilation succeeds', async () => {
+  const root = fs.mkdtempSync('E:/dq-cache/shadow-native-rejection-fixture-');
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_SHADOW_ROOT = path.join(root, 'shadow');
+  process.env.DQ_NATIVE_RUN_ROOT = path.join(root, 'run');
+  const output = 'source.dm:2:error: value: undefined var\n';
+  try {
+    const reference = { outcome: observedCompileOutcome(0, '0 errors, 0 warnings\n') } as ByondCompilationResult;
+    const caught = await selectedCompiler(path.join(root, 'probe.dme'), {}, async () => reference,
+      async () => ({ code: 2, combined: output })).then(() => null, error => error);
+    expect(caught).toBeInstanceOf(Juke.ExitCode);
+    expect(caught.code).toBe(1);
+    const shadow = path.join(root, 'shadow');
+    const directory = fs.readdirSync(shadow).find(name => name.startsWith('shadow-'))!;
+    const report = JSON.parse(fs.readFileSync(path.join(shadow, directory, 'shadow-compile-comparison.json'), 'utf8'));
+    expect(report.native.processExit).toBe(2);
+    expect(report.byond.processExit).toBe(0);
+    expect(report.buildExitAgrees).toBe(false);
+    expect(report.diagnosticsAgree).toBe(false);
+    expect(report.native.diagnostics).toEqual([output.trimEnd()]);
+    expect(report.fallback).toBe(null);
+    expect(report.inputClosure.status).toBe('incomplete');
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });

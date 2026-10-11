@@ -1,4 +1,4 @@
-import { failedCompileOutcome, observedCompileOutcome } from './compile_outcome';
+import { failedCompileOutcome, observedCompileOutcome, type CompileOutcome } from './compile_outcome';
 /** One build entry point for BYOND, native compilation and isolated shadow checks. */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -163,6 +163,21 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     } catch (error) { Juke.logger.warn(`Native result cleanup preserved ${owned}: ${error}`); }
   }
 }
+function recordShadowCompileComparison(artifacts: string, native: CompileOutcome, byond: CompileOutcome, error?: unknown) {
+  try {
+    fs.writeFileSync(path.join(artifacts, 'shadow-compile-comparison.json'), JSON.stringify({
+      schema: 1, requestedBackend: 'shadow', actualBackends: ['native', 'byond'],
+      fallback: null, inputClosure: shadowSnapshotContract(), native, byond,
+      buildExitAgrees: native.buildExit !== null && byond.buildExit !== null
+        ? native.buildExit === byond.buildExit : null,
+      diagnosticsAgree: native.diagnosticsCaptured && byond.diagnosticsCaptured
+        ? JSON.stringify(native.diagnostics) === JSON.stringify(byond.diagnostics) : null,
+      ...(error === undefined ? {} : { error: String(error) }),
+    }, null, 2));
+  } catch (reportError) {
+    Juke.logger.warn(`Shadow compile report unavailable: ${reportError}`);
+  }
+}
 export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker, invocation?: CompilerInvocation) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>, capturedInvocation?: CompilerInvocation): Promise<CompiledOutput> {
   const mode = compilerMode();
   const invocation = bindCompilerInvocation(capturedInvocation, options.defines ?? []);
@@ -218,23 +233,12 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       const candidate = observedCompileOutcome(native.code, native.combined, native.code, native.signal ?? null);
       // This evidence is diagnostic only. Preserve the exact original failure,
       // even if report publication itself is unavailable.
-      try {
-        fs.writeFileSync(path.join(artifacts, 'shadow-compile-comparison.json'), JSON.stringify({
-          schema: 1, requestedBackend: 'shadow', actualBackends: ['native', 'byond'],
-          fallback: null, inputClosure: shadowSnapshotContract(),
-          native: candidate, byond: reference,
-          buildExitAgrees: candidate.buildExit !== null && reference.buildExit !== null
-            ? candidate.buildExit === reference.buildExit : null,
-          diagnosticsAgree: reference.diagnosticsCaptured
-            ? JSON.stringify(candidate.diagnostics) === JSON.stringify(reference.diagnostics) : null,
-          error: String(error),
-        }, null, 2));
-      } catch (reportError) {
-        Juke.logger.warn(`Shadow rejection report unavailable: ${reportError}`);
-      }
+      recordShadowCompileComparison(artifacts, candidate, reference, error);
       throw error;
     }
     if (native.code !== 0) {
+      const reference = byondResult ? byondResult.outcome : failedCompileOutcome(undefined);
+      recordShadowCompileComparison(artifacts, observedCompileOutcome(native.code, native.combined, native.code, native.signal ?? null), reference);
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
     }
