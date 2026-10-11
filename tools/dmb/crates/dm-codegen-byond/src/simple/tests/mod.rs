@@ -9,6 +9,7 @@ mod calls_1;
 mod calls_2;
 mod control_flow_1;
 mod control_flow_2;
+mod loop_local_diagnostics;
 mod expressions;
 mod input_selection;
 mod input_selection_centers;

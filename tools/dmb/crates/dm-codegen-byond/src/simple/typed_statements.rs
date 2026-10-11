@@ -39,18 +39,19 @@ impl Compiler<'_> {
                     _ => &[],
                 };
                 for declaration in declarations {
-                    if declaration.starts_with("var/") {
-                        if let Some(name) = local_name(declaration) {
-                            if self.bindings.parameters.iter().any(|formal| formal == name) {
-                                self.check_local_declaration(
-                                    name,
-                                    &statement.raw_header,
-                                    LowerSpan {
-                                        start: statement.header_span.start,
-                                        end: statement.header_span.end,
-                                    },
-                                )?;
-                            }
+                    let pair_declares = matches!(control, ForControl::Pair { key_binding, .. } if key_binding.starts_with("var/"));
+                    if declaration.starts_with("var/") || pair_declares {
+                        if let Some(name) = local_name(declaration)
+                            .or_else(|| pair_declares.then_some(*declaration))
+                        {
+                            self.check_local_declaration(
+                                name,
+                                &statement.raw_header,
+                                LowerSpan {
+                                    start: statement.header_span.start,
+                                    end: statement.header_span.end,
+                                },
+                            )?;
                         }
                     }
                 }
@@ -232,13 +233,7 @@ impl Compiler<'_> {
                     let slot = self.locals.len() as u32;
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
-                    self.local_declarations.insert(
-                        slot,
-                        LowerSpan {
-                            start: statement.header_span.start,
-                            end: statement.header_span.end,
-                        },
-                    );
+                    self.record_local_header(slot, statement.header_span);
                     if let Some(dimensions) = local_array_dimensions(declaration) {
                         self.local_array_declaration(
                             &dimensions,
@@ -349,6 +344,7 @@ impl Compiler<'_> {
                     let slot = self.locals.len() as u32;
                     self.locals.push(name.into());
                     self.local_slots.insert(name.into(), slot);
+                    self.record_local_header(slot, statement.header_span);
                     self.local_types.insert(name.into(), path.clone());
                     self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                     self.emit(
@@ -439,6 +435,7 @@ impl Compiler<'_> {
                         let slot = self.locals.len() as u32;
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
+                        self.record_local_header(slot, statement.header_span);
                         if let Some((path, _)) = binding
                             .strip_prefix("var/")
                             .and_then(|raw| raw.rsplit_once('/'))
@@ -533,19 +530,23 @@ impl Compiler<'_> {
                     let mut pair = Vec::with_capacity(2);
                     for binding in [key_binding, value_binding] {
                         let name = local_name(binding).unwrap_or(binding);
-                        let variable = if binding.starts_with("var/")
+                        let variable = if key_binding.starts_with("var/")
+                            || binding.starts_with("var/")
                             || (!self.local_slots.contains_key(name)
                                 && !self.bindings.parameters.iter().any(|param| param == name))
                         {
-                            if self.local_slots.contains_key(name) {
-                                return Err(error(
-                                    &statement.raw_header,
-                                    "repeated iterator binding",
-                                ));
-                            }
+                            self.check_local_declaration(
+                                name,
+                                &statement.raw_header,
+                                LowerSpan {
+                                    start: statement.header_span.start,
+                                    end: statement.header_span.end,
+                                },
+                            )?;
                             let slot = self.locals.len() as u32;
                             self.locals.push(name.into());
                             self.local_slots.insert(name.into(), slot);
+                            self.record_local_header(slot, statement.header_span);
                             if let Some((path, _)) = binding
                                 .strip_prefix("var/")
                                 .and_then(|raw| raw.rsplit_once('/'))
@@ -624,6 +625,7 @@ impl Compiler<'_> {
                         let slot = self.locals.len() as u32;
                         self.locals.push(name.into());
                         self.local_slots.insert(name.into(), slot);
+                        self.record_local_header(slot, statement.header_span);
                         self.emit(opcode::PUSH_VAL, vec![Word::Value(ValueWord::Null)]);
                         self.emit(
                             opcode::SET_VAR,
@@ -691,6 +693,7 @@ impl Compiler<'_> {
                                 let slot = self.locals.len() as u32;
                                 self.locals.push(name.into());
                                 self.local_slots.insert(name.into(), slot);
+                                self.record_local_header(slot, statement.header_span);
                                 if let Some(value) = value {
                                     self.expression(value, &statement.raw_header)?;
                                     self.emit(

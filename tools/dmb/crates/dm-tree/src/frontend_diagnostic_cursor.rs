@@ -39,6 +39,9 @@ impl ColdFrontend {
                         return Some((next.semantic_path.clone(), next.line));
                     }
                 }
+                if let Some(line) = cursor.directive_anchor_line() {
+                    return Some((parent.semantic_path.clone(), line));
+                }
                 // A terminal parent include returns again. This test uses the
                 // captured decoded text, never an invented line increment.
                 if dm_syntax::next_significant_token(file.text.as_ref(), offset).is_none() {
@@ -69,9 +72,7 @@ impl ColdFrontend {
                     return None;
                 }
             }
-            let line = file
-                .line_starts
-                .partition_point(|start| *start <= file.text.len());
+            let line = included.eof_cursor_line()?;
             return (line != 0).then(|| (included.semantic_path.clone(), line));
         }
         None
@@ -120,7 +121,7 @@ mod tests {
                 2,
             ),
             ("#include \\\n \"child.dm\"\n", None, 3),
-            ("#include \"child.dm\"", None, 1),
+            ("#include \"child.dm\"", None, 2),
         ] {
             let frontend = fixture(manifest, parent, child);
             let end = frontend.expanded.text.find("/datum/probe").unwrap() + "/datum/probe".len();
@@ -149,7 +150,9 @@ mod tests {
         {
             let cursor = frontend.diagnostic_cursor_after(start + "/datum/probe".len());
             if index == 0 {
-                assert!(cursor.is_none(), "next include progression is not issued");
+                let (path, line) = cursor.unwrap();
+                assert_eq!(path.as_ref(), "cursor.dme");
+                assert_eq!(line, 1);
             } else {
                 let (path, line) = cursor.unwrap();
                 assert_eq!(path.as_ref(), "cursor.dme");
@@ -158,7 +161,7 @@ mod tests {
         }
     }
     #[test]
-    fn skipped_directive_progression_stays_unknown_including_nested_returns() {
+    fn completed_directive_progression_uses_authenticated_include_site() {
         for (manifest, parent) in [
             ("#include \"child.dm\"\n#define X 1\n", None),
             (
@@ -176,8 +179,27 @@ mod tests {
         ] {
             let frontend = fixture(manifest, parent, "/datum/probe\n");
             let end = frontend.expanded.text.find("/datum/probe").unwrap() + "/datum/probe".len();
-            assert!(frontend.diagnostic_cursor_after(end).is_none());
+            let (path, line) = frontend.diagnostic_cursor_after(end).unwrap();
+            assert_eq!(
+                path.as_ref(),
+                if parent.is_some_and(|text| text.contains("#define")) {
+                    "parent.dm"
+                } else {
+                    "cursor.dme"
+                }
+            );
+            assert_eq!(line, 1);
         }
+        let frontend = fixture(
+            "#include \"child.dm\"\n#undef UNKNOWN\n",
+            None,
+            "/datum/probe\n",
+        );
+        let end = frontend.expanded.text.find("/datum/probe").unwrap() + "/datum/probe".len();
+        assert!(
+            frontend.diagnostic_cursor_after(end).is_none(),
+            "unproven directive stays unknown"
+        );
     }
     #[test]
     fn direct_root_eof_requires_checked_trailing_trivia_not_skipped_directives() {

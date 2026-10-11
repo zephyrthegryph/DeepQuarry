@@ -195,13 +195,57 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             diagnostic.kind == dm_syntax::DiagnosticKind::IncompleteExpression
                 && !mask.hides_diagnostic(diagnostic)
         }) {
+            // IncompleteExpression certifies exhaustion of the current parsed
+            // statement expression. Its parser span may precede the operator;
+            // bind the checked statement header end through the common cursor.
+            struct HeaderEnd {
+                diagnostic: dm_syntax::Span,
+                end: Option<usize>,
+            }
+            impl dm_syntax::TypedVisitor for HeaderEnd {
+                fn statement(
+                    &mut self,
+                    statement: &dm_syntax::Statement,
+                    _: &[dm_syntax::NodeStep],
+                ) -> dm_syntax::VisitDecision {
+                    if statement.header_span.start <= self.diagnostic.start
+                        && self.diagnostic.end <= statement.header_span.end
+                    {
+                        self.end = Some(statement.header_span.end);
+                    }
+                    dm_syntax::VisitDecision::Descend
+                }
+            }
+            let mut cursor = HeaderEnd {
+                diagnostic: diagnostic.span,
+                end: None,
+            };
+            dm_syntax::visit_statements(&statements.parsed().statements, &mut cursor);
+            let mut origin = frontend
+                .location(diagnostic.span.start)
+                .unwrap_or_else(|| body.source.clone());
+            // Only the authenticated include-return oracle licenses replacing
+            // this parser anchor. Direct-root recovery keeps its current span.
+            if let Some(end) = cursor.end.filter(|_| {
+                frontend
+                    .plan
+                    .occurrences
+                    .get(origin.include_occurrence)
+                    .is_some_and(|occurrence| occurrence.parent.is_some())
+            }) {
+                if let Ok(bound) = crate::debug_sources::diagnostic_origin(
+                    frontend,
+                    dm_codegen_byond::DiagnosticAnchor::LexerCursorAfterOffset(end),
+                ) {
+                    origin.semantic_path = bound.semantic_path;
+                    origin.line = bound.line as usize;
+                }
+            }
             return Err(vec![LoweringDiagnostic {
                 related: Vec::new(),
                 kind: DiagnosticKind::SourceError,
                 identity: Some(identity),
-                origin: frontend
-                    .location(diagnostic.span.start)
-                    .unwrap_or_else(|| body.source.clone()),
+                origin,
                 message: diagnostic.message.clone(),
             }]);
         }

@@ -273,9 +273,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         lines: prepared_source::PreparedLines<'_>,
         record: &DirectiveRecord,
         pending: &mut Vec<RegionLine>,
+        recoveries: &mut BTreeSet<usize>,
     ) {
         for action in record.actions() {
             match action {
+                directive_memo::Action::RecoveryDirective { input } => {
+                    let line = lines.get(*input).expect("checked recovery directive index");
+                    recoveries.insert(line.source_span.start);
+                }
                 directive_memo::Action::Text(input) => {
                     let line = lines
                         .get(*input)
@@ -432,6 +437,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             directive_span,
             directive_line,
             suppressed: false,
+            eof_cursor_line: None,
             return_cursor: parent.and_then(|parent_occurrence| {
                 let parent = &self.plan.occurrences[parent_occurrence];
                 let text = self.plan.source_texts.get(parent.path.as_ref())?;
@@ -439,7 +445,11 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     && directive_span.end <= text.len()
                     && text.is_char_boundary(directive_span.start)
                     && text.is_char_boundary(directive_span.end))
-                    .then_some(IncludeReturnCursor { parent_occurrence, decoded_offset: directive_span.end })
+                .then_some(IncludeReturnCursor {
+                    parent_occurrence,
+                    decoded_offset: directive_span.end,
+                    directive_anchor_line: None,
+                })
             }),
         });
         index
@@ -561,6 +571,9 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             .source_texts
             .insert(path.as_ref().clone(), prepared.original().clone());
         let mut line_number = 0;
+        let mut returns = Vec::new();
+        let mut recoveries = BTreeSet::new();
+        let diagnostic_start = self.plan.diagnostics.len();
         let mut region = self.begin_region(occurrence, 0);
         let mut pending = Vec::new();
         let lines = prepared.lines();
@@ -603,6 +616,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 lines.slice(cursor..end),
                                 &record,
                                 &mut pending,
+                                &mut recoveries,
                             );
                             line_number += lines
                                 .slice(cursor..end)
@@ -650,6 +664,21 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 continue;
             };
             let (word, rest) = syntax.parts(logical.text);
+            // Record only executed directive decisions in the ordinary pass;
+            // retained directive replay carries the same checked line event.
+            if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif")
+                || active && matches!(word, "define" | "include")
+            {
+                recoveries.insert(span.start);
+                if let Some(recording) = self.recording.as_mut() {
+                    recording
+                        .actions
+                        .push(directive_memo::Action::RecoveryDirective {
+                            input: recording.current,
+                        });
+                }
+            }
+
             if matches!(word, "if" | "ifdef" | "ifndef" | "elif" | "else" | "endif") {
                 self.conditional(occurrence, source_line, word, rest);
                 continue;
@@ -658,7 +687,16 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 self.freeze_lines(region, &mut pending);
                 self.plan.regions[region].source_span.end = start;
                 if active {
+                    let child = self.plan.occurrences.len();
                     self.include(occurrence, span, source_line, rest);
+                    if self
+                        .plan
+                        .occurrences
+                        .get(child)
+                        .is_some_and(|entry| entry.parent == Some(occurrence))
+                    {
+                        returns.push((child, cursor));
+                    }
                 }
                 region = self.begin_region(occurrence, end);
                 continue;
@@ -743,6 +781,29 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 DiagnosticKind::Conditional,
                 "unterminated #if block".into(),
             );
+        }
+        // Issue recovery boundaries from the SAME completed logical-line plan.
+        // An intervening omitted directive leaves BYOND's recovery cursor on
+        // the originating include site (pinned include_return_diagnostics).
+        // Unexpanded ordinary text cannot certify this progression.
+        for (child, after) in returns {
+            let anchor = (after..lines.len())
+                .find_map(|index| {
+                    let line = lines.get(index)?;
+                    (!line.text.trim().is_empty()).then_some(index)
+                })
+                .and_then(|index| {
+                    let line = lines.get(index)?;
+                    (self.plan.diagnostics.len() == diagnostic_start
+                        && recoveries.contains(&line.source_span.start))
+                    .then_some(self.plan.occurrences[child].directive_line)
+                });
+            if let Some(cursor) = &mut self.plan.occurrences[child].return_cursor {
+                cursor.directive_anchor_line = anchor;
+            }
+        }
+        if self.plan.diagnostics.len() == diagnostic_start {
+            self.plan.occurrences[occurrence].eof_cursor_line = line_number.checked_add(1);
         }
     }
 

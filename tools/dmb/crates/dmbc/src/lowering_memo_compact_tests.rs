@@ -56,7 +56,7 @@ fn compact_cursor_recipe_declines_unissued_skipped_directive_progression() {
     impl dm_preprocess::SourceProvider for Included {
         fn read(&self, path: &Path) -> Result<String, String> {
             Ok(if path.extension().is_some_and(|extension| extension == "dme") {
-                "#include \"probe.dm\"\n#define X 1\n"
+                "#include \"probe.dm\"\n#undef X\n"
             } else {
                 "/proc/compact_probe()\n    return input(\"warning fixture\") as text|anything\n"
             }.into())

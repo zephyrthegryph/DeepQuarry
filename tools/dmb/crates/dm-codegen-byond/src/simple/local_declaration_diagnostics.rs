@@ -1,6 +1,16 @@
 //! One declaration collision rule for typed and compatibility statement paths.
 use super::*;
 impl Compiler<'_> {
+    pub(super) fn record_local_header(&mut self, slot: u32, span: dm_syntax::Span) {
+        self.local_declarations.insert(
+            slot,
+            LowerSpan {
+                start: span.start,
+                end: span.end,
+            },
+        );
+    }
+
     pub(super) fn check_local_declaration(
         &self,
         name: &str,

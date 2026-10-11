@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 3;
+pub const DIRECTIVE_VERSION: u32 = 4;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
     Text(usize),
@@ -29,6 +29,9 @@ pub(super) enum Action {
         message: String,
     },
     Multiple,
+    RecoveryDirective {
+        input: usize,
+    },
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 struct Read {
@@ -75,7 +78,10 @@ impl DirectiveRecord {
                 } => name.capacity().saturating_add(macro_heap(definition)),
                 Action::Undef { name, .. } => name.capacity(),
                 Action::Error { message, .. } => message.capacity(),
-                Action::Text(_) | Action::Freeze | Action::Multiple => 0,
+                Action::Text(_)
+                | Action::Freeze
+                | Action::Multiple
+                | Action::RecoveryDirective { .. } => 0,
             }))
     }
 
@@ -99,7 +105,8 @@ impl DirectiveRecord {
                 Action::Text(input)
                 | Action::Define { input, .. }
                 | Action::Undef { input, .. }
-                | Action::Error { input, .. } => *input >= value.inputs,
+                | Action::Error { input, .. }
+                | Action::RecoveryDirective { input } => *input >= value.inputs,
                 Action::Freeze | Action::Multiple => false,
             })
         {
@@ -390,6 +397,59 @@ mod tests {
         );
         assert_eq!(first.diagnostics, second.diagnostics);
     }
+    #[test]
+    fn completed_include_recovery_events_replay_exact_current_occurrences() {
+        for manifest in [
+            "#include \"body.dm\"\n#define AFTER 1\n",
+            "#include \"body.dm\"\n#if 0\n/datum/skipped\n#endif\n",
+            "#include \"body.dm\"\n#include \"body.dm\"\n",
+            "#include \"body.dm\"",
+        ] {
+            let files = source(&[("project.dme", manifest), ("body.dm", "/datum/probe\n")]);
+            let memo = Memo::default();
+            let cold =
+                plan_regions_with_memo(Path::new("project.dme"), &files, &BTreeMap::new(), &memo);
+            let count = memo.inserts.load(Ordering::Relaxed);
+            let reused =
+                plan_regions_with_memo(Path::new("project.dme"), &files, &BTreeMap::new(), &memo);
+            equivalent(&cold, &reused);
+            assert_eq!(memo.inserts.load(Ordering::Relaxed), count);
+            for (a, b) in cold.occurrences.iter().zip(&reused.occurrences) {
+                assert_eq!(a.eof_cursor_line(), b.eof_cursor_line());
+                assert_eq!(
+                    a.return_cursor().map(|c| (
+                        c.parent_occurrence(),
+                        c.decoded_offset(),
+                        c.directive_anchor_line()
+                    )),
+                    b.return_cursor().map(|c| (
+                        c.parent_occurrence(),
+                        c.decoded_offset(),
+                        c.directive_anchor_line()
+                    ))
+                );
+            }
+            assert_eq!(
+                cold.occurrences[0].eof_cursor_line(),
+                Some(manifest.lines().count() + 1)
+            );
+            let record = memo
+                .records
+                .lock()
+                .unwrap()
+                .values()
+                .flatten()
+                .next()
+                .unwrap()
+                .clone();
+            let bytes = record.to_bytes().unwrap();
+            assert!(DirectiveRecord::from_bytes(&bytes).is_ok());
+            // The prior wire domain cannot issue the new processed-line event.
+            let old = dm_wire::encode(3, record.as_ref()).unwrap();
+            assert!(DirectiveRecord::from_bytes(&old).is_err());
+        }
+    }
+
     #[test]
     fn multiple_pragma_branch_toggle_replays_only_exact_current_conditions() {
         let files = source(&[

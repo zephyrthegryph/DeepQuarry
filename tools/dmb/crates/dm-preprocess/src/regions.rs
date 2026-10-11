@@ -48,6 +48,7 @@ pub struct IncludeOccurrence {
     pub directive_line: usize,
     pub suppressed: bool,
     return_cursor: Option<IncludeReturnCursor>,
+    eof_cursor_line: Option<usize>,
 }
 
 /// Current directive planner authority; offsets are decoded physical source bytes.
@@ -55,13 +56,28 @@ pub struct IncludeOccurrence {
 pub struct IncludeReturnCursor {
     parent_occurrence: usize,
     decoded_offset: usize,
+    directive_anchor_line: Option<usize>,
 }
 impl IncludeReturnCursor {
-    pub fn parent_occurrence(self) -> usize { self.parent_occurrence }
-    pub fn decoded_offset(self) -> usize { self.decoded_offset }
+    pub fn parent_occurrence(self) -> usize {
+        self.parent_occurrence
+    }
+    pub fn decoded_offset(self) -> usize {
+        self.decoded_offset
+    }
+    /// Completed parent planning certified a following omitted directive.
+    pub fn directive_anchor_line(self) -> Option<usize> {
+        self.directive_anchor_line
+    }
 }
 impl IncludeOccurrence {
-    pub fn return_cursor(&self) -> Option<IncludeReturnCursor> { self.return_cursor }
+    pub fn return_cursor(&self) -> Option<IncludeReturnCursor> {
+        self.return_cursor
+    }
+    /// Logical reader EOF after completed planning, including unterminated last lines.
+    pub fn eof_cursor_line(&self) -> Option<usize> {
+        self.eof_cursor_line
+    }
 }
 
 /// One logical source line; offsets refer to the original decoded source.

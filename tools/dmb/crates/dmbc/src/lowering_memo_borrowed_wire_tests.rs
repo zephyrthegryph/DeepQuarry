@@ -25,6 +25,15 @@ fn borrowed_failure_is_owned_byte_identical_and_points_inside_frame() {
         },
     ];
     let bytes = encode_failure(key, None, &reads, &[], &errors).unwrap();
+    let current: FailurePayload =
+        dm_wire::decode_borrowed(FAILURE_SCHEMA, &bytes, bytes.len()).unwrap();
+    let legacy = dm_wire::encode(0x0206_0012, &current).unwrap();
+    assert!(validate(&bytes).is_ok());
+    assert!(
+        validate(&legacy).is_err(),
+        "old source cursor provenance must not replay"
+    );
+
     // Current owned field roster, including complete secondary diagnostics.
     let legacy = (
         key.to_vec(),

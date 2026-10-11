@@ -12,7 +12,7 @@ import uuid
 
 HERE = Path(__file__).resolve().parent
 BENCH = HERE.parents[2] / "bench"
-CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range')
+CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range', 'same_pair_name')
 ORIGINAL_CASES = CASES
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
