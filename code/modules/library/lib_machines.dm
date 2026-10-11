@@ -153,9 +153,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
 
-	var/static/list/all_books
-
-	var/static/list/base_genre_books
+	var/list/all_books
 
 	// TGUI: TRUE when the admin ghost view is active. Toggles the
 	// External Archive table to show Delete buttons.
@@ -164,6 +162,7 @@ CAPABILITIES(/obj/machinery/librarypubliccomp)
 	var/list/external_rows
 
 CAPABILITIES(/obj/machinery/librarycomp)
+	per_type(nameof(all_books), PROC_REF(build_all_books))
 	owns_many(nameof(checkouts))
 	op("print_bible", ui_act(), then(PROC_REF(ui_act_print_bible)))
 	op("arccheckout", ui_act(), then(PROC_REF(ui_act_arccheckout)))
@@ -190,36 +189,31 @@ CAPABILITIES(/obj/machinery/librarycomp)
 	op("librarycomp_link_scanner", item(/obj/item/barcodescanner), priority(OP_PRIORITY_DEFAULT - 1), label("Link scanner"), then(PROC_REF(interaction_link_scanner)))
 	op("librarycomp_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
-/obj/machinery/librarycomp/Initialize(mapload)
-	. = ..()
+/// The genre books every custom library book descends from: they are not archived themselves.
+TYPE_TABLE_DECLARE(/obj/machinery/librarycomp, library_base_genres, list(
+	/obj/item/book/custom_library/fiction,
+	/obj/item/book/custom_library/nonfiction,
+	/obj/item/book/custom_library/reference,
+	/obj/item/book/custom_library/religious,
+	/obj/item/book/bundle/custom_library/fiction,
+	/obj/item/book/bundle/custom_library/nonfiction,
+	/obj/item/book/bundle/custom_library/reference,
+	/obj/item/book/bundle/custom_library/religious))
 
-	if(!base_genre_books || !base_genre_books.len)
-		base_genre_books = list(
-			/obj/item/book/custom_library/fiction,
-			/obj/item/book/custom_library/nonfiction,
-			/obj/item/book/custom_library/reference,
-			/obj/item/book/custom_library/religious,
-			/obj/item/book/bundle/custom_library/fiction,
-			/obj/item/book/bundle/custom_library/nonfiction,
-			/obj/item/book/bundle/custom_library/reference,
-			/obj/item/book/bundle/custom_library/religious
-			)
-
-	if(!length(all_books))
-		// A static archive of plain data rows (name -> row), read from the type defaults: no book is
-		// instantiated and no library computer holds book instances.
-		all_books = list()
-		for(var/path in subtypesof(/obj/item/book/codex/lore))
-			var/obj/item/book/C = path
-			all_books[initial(C.name)] = library_archive_row(path)
-
-		for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
-			var/obj/item/book/B = path
-			all_books[initial(B.title)] = library_archive_row(path)
-
-		for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
-			var/obj/item/book/M = path
-			all_books[initial(M.title)] = library_archive_row(path)
+/// The internal archive (per_type()): plain data rows (name -> row) read from the book types' defaults; no book is instantiated and no library
+/// computer holds book instances.
+/obj/machinery/librarycomp/proc/build_all_books()
+	. = list()
+	var/list/base_genre_books = TYPE_TABLE_GET(src, library_base_genres)
+	for(var/path in subtypesof(/obj/item/book/codex/lore))
+		var/obj/item/book/C = path
+		.[initial(C.name)] = library_archive_row(path)
+	for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
+		var/obj/item/book/B = path
+		.[initial(B.title)] = library_archive_row(path)
+	for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
+		var/obj/item/book/M = path
+		.[initial(M.title)] = library_archive_row(path)
 
 /// One internal-archive row for the UI: plain data from the book type's defaults.
 /obj/machinery/librarycomp/proc/library_archive_row(book_path)
