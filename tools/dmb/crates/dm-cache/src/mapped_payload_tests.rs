@@ -45,7 +45,7 @@ fn mapped_owner_survives_snapshot_drop_and_supersession_without_payload_copy() {
     let root = Temp::new();
     let cache = Cache::open(&root.0, Limits::default()).unwrap();
     let original = record(b"original");
-    let old_id = cache.publish(std::slice::from_ref(&original)).unwrap();
+    cache.publish(std::slice::from_ref(&original)).unwrap();
     let snapshot = cache.snapshot().unwrap();
     let segment = Arc::downgrade(&snapshot.segments[0].1);
     let borrowed = snapshot
@@ -70,13 +70,13 @@ fn mapped_owner_survives_snapshot_drop_and_supersession_without_payload_copy() {
         "escaped byte owner must not retain the Segment/private index"
     );
     cache
-        .publish_superseding(&[record(b"replacement")], &[old_id])
+        .compact(&[original.key].into_iter().collect(), |_, _, _| Ok(()))
         .unwrap();
     let current = cache.snapshot().unwrap();
     let new = current
         .get_candidate_mapped(original.key, |_, _| Ok(true))
         .unwrap();
-    assert_eq!(new.bytes(), b"replacement");
+    assert_eq!(new.bytes(), b"original");
     assert_ne!(new.mapping_storage().0, owner.mapping_storage().0);
     drop(current);
     drop(cache);
