@@ -2,7 +2,7 @@
 //! No current syntax, origins, dense table IDs, or independent dependency cache.
 use super::*;
 #[path = "preparation.rs"]
-pub(super) mod preparation;
+pub(in crate::initializer_policy) mod preparation;
 use std::sync::{
     atomic::{AtomicU64, Ordering},
     Mutex,

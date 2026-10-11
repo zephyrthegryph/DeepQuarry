@@ -21,6 +21,81 @@ struct Worker<'a> {
 }
 
 #[test]
+fn prepared_modifier_locators_share_exact_inputs_but_replay_changed_semantics() {
+    let mut symbols = SymbolTable::default();
+    let original = write(&mut symbols);
+    let dependency = Dependency(AtomicU32::new(8));
+    let captures = AtomicU64::new(0);
+    let worker = Worker {
+        resolver: &dependency,
+        captures: &captures,
+    };
+    let factory = ParallelEvaluator {
+        factory: &worker,
+        engine: None,
+    };
+    let store = InitializerArtifacts::default();
+    let reuse = InitializerReuse {
+        store: &store,
+        resolver: &dependency,
+        policy: 1,
+        resource_search_context: None,
+    };
+    let writes = [original.clone()];
+    let preparation = classification::token_roster::preparation::Preparation::new(&writes);
+    let first = keys_in(&writes, factory, reuse, Some(&preparation)).unwrap();
+    modifier_facts_reused(
+        writes.iter(),
+        &symbols,
+        &worker,
+        &[0],
+        factory,
+        reuse,
+        &first,
+    )
+    .unwrap();
+    let second = keys_in(&writes, factory, reuse, Some(&preparation)).unwrap();
+    assert!(Arc::ptr_eq(&first[0].bytes, &second[0].bytes));
+    assert!(Arc::ptr_eq(&first[0].input, &second[0].input));
+    assert!(
+        second[0].admitted.get().is_none(),
+        "admission is always request-local"
+    );
+    let before = captures.load(Ordering::Relaxed);
+    dependency.0.store(16, Ordering::Relaxed);
+    modifier_facts_reused(
+        writes.iter(),
+        &symbols,
+        &worker,
+        &[0],
+        factory,
+        reuse,
+        &second,
+    )
+    .unwrap();
+    assert!(
+        captures.load(Ordering::Relaxed) > before,
+        "locator reuse cannot bypass actual semantic replay"
+    );
+    let mut changed = original;
+    changed.declaration_flags = Some(8);
+    let changed = keys_in(&[changed], factory, reuse, Some(&preparation)).unwrap();
+    assert_eq!(
+        changed[0].bytes, first[0].bytes,
+        "same locator is not full input authority"
+    );
+    assert!(!Arc::ptr_eq(&changed[0].input, &first[0].input));
+    let changed_policy = keys_in(
+        &writes,
+        factory,
+        InitializerReuse { policy: 2, ..reuse },
+        Some(&preparation),
+    )
+    .unwrap();
+    assert_ne!(changed_policy[0].bytes, first[0].bytes);
+}
+
+#[test]
 fn modifier_locator_replays_full_inputs_and_shares_classification_write_owner() {
     let mut symbols = SymbolTable::default();
     let original = write(&mut symbols);

@@ -176,6 +176,23 @@ impl HeapCensus {
                     self.slice("initializer_preparation.ordinals", &bucket.ordinals, true);
                 }
             }
+            preparation.visit_modifier_locations(|locations| {
+                if self.arc_object("initializer_preparation.modifier_locations", locations)
+                    && self.slice(
+                        "initializer_preparation.modifier_rows",
+                        &locations.rows,
+                        true,
+                    )
+                {
+                    for row in locations.rows.iter() {
+                        self.slice("initializer_preparation.modifier_key", &row.bytes, true);
+                        self.shared_initializer_write(
+                            "initializer_preparation.modifier_input",
+                            &row.input,
+                        );
+                    }
+                }
+            });
             preparation.visit_locations(|locations| {
                 if !self.arc_object("initializer_preparation.locations", locations) {
                     return;

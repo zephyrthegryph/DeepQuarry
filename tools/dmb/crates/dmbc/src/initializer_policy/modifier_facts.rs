@@ -146,7 +146,7 @@ pub(crate) struct ModifierArtifact {
     fact: ModifierFact,
 }
 pub(super) struct ModifierKey {
-    bytes: Vec<u8>,
+    bytes: Arc<[u8]>,
     pub(super) input: Arc<InitializerWrite>,
     admitted: std::sync::OnceLock<Arc<InitializerWrite>>,
 }
@@ -206,6 +206,9 @@ impl ModifierArtifacts {
 }
 struct Host<'a>(&'a dyn Resolver);
 impl Resolver for Host<'_> {
+    fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
+        self.0.transparent_receipt_observer()
+    }
     fn observes_reads(&self) -> bool {
         self.0.observes_reads()
     }
@@ -221,48 +224,81 @@ pub(super) fn keys(
     factory: ParallelEvaluator<'_>,
     reuse: InitializerReuse<'_>,
 ) -> Option<Vec<ModifierKey>> {
+    keys_in(writes, factory, reuse, None)
+}
+pub(super) fn keys_in(
+    writes: &[InitializerWrite],
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    preparation: Option<&classification::token_roster::preparation::Preparation>,
+) -> Option<Vec<ModifierKey>> {
     let policy = factory.factory.recording_policy_identity()?;
-    let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
-    let keys = writes
+    let recipe_policy = classification::token_roster::preparation::Policy {
+        classification: reuse.policy,
+        factory: policy,
+        resource: reuse.resource_search_context,
+        engine: factory.engine.map(|engine| engine.identity()),
+    };
+    let produce = || {
+        let mut duplicates = std::collections::HashMap::<Vec<u8>, usize>::new();
+        let keys = writes
+            .iter()
+            .map(|write| {
+                let mut key = b"dmbc-modifier-fact-v2-exact-input\0".to_vec();
+                key.extend_from_slice(&reuse.policy.to_le_bytes());
+                key.extend_from_slice(&policy.to_le_bytes());
+                match reuse.resource_search_context {
+                    Some(context) => {
+                        key.push(1);
+                        key.extend_from_slice(&context.to_le_bytes());
+                    }
+                    None => key.push(0),
+                }
+                match factory.engine {
+                    Some(engine) => {
+                        key.push(1);
+                        key.extend_from_slice(&engine.identity().to_le_bytes());
+                    }
+                    None => key.push(0),
+                }
+                // The existing certified evaluator may inspect any write field. Full exact
+                // inputs avoid inventing a weaker modifier-only policy contract.
+                key.extend_from_slice(&crate::initializer_lowering::receipts::fragment_locator(
+                    write,
+                ));
+                let duplicate = duplicates.entry(key.clone()).or_default();
+                key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
+                *duplicate += 1;
+                classification::token_roster::preparation::ModifierLocator {
+                    bytes: key.into(),
+                    input: Arc::new(write.clone()),
+                }
+            })
+            .collect::<Vec<_>>();
+        keys
+    };
+    let rows = match preparation {
+        Some(preparation) => preparation
+            .modifier_locations(writes, recipe_policy, produce)
+            .rows
+            .clone(),
+        None => produce().into(),
+    };
+    // Admission state is request-local even when immutable locator/input owners
+    // share the existing preparation recipe across requests.
+    let keys: Vec<_> = rows
         .iter()
-        .map(|write| {
-            let mut key = b"dmbc-modifier-fact-v2-exact-input\0".to_vec();
-            key.extend_from_slice(&reuse.policy.to_le_bytes());
-            key.extend_from_slice(&policy.to_le_bytes());
-            match reuse.resource_search_context {
-                Some(context) => {
-                    key.push(1);
-                    key.extend_from_slice(&context.to_le_bytes());
-                }
-                None => key.push(0),
-            }
-            match factory.engine {
-                Some(engine) => {
-                    key.push(1);
-                    key.extend_from_slice(&engine.identity().to_le_bytes());
-                }
-                None => key.push(0),
-            }
-            // The existing certified evaluator may inspect any write field. Full exact
-            // inputs avoid inventing a weaker modifier-only policy contract.
-            key.extend_from_slice(&crate::initializer_lowering::receipts::fragment_locator(
-                write,
-            ));
-            let duplicate = duplicates.entry(key.clone()).or_default();
-            key.extend_from_slice(&(*duplicate as u128).to_le_bytes());
-            *duplicate += 1;
-            ModifierKey {
-                bytes: key,
-                input: Arc::new(write.clone()),
-                admitted: Default::default(),
-            }
+        .map(|row| ModifierKey {
+            bytes: Arc::clone(&row.bytes),
+            input: Arc::clone(&row.input),
+            admitted: Default::default(),
         })
-        .collect::<Vec<_>>();
+        .collect();
     reuse
         .store
         .modifiers
         .values
-        .retain_current_keys(keys.iter().map(|key| key.bytes.as_slice()));
+        .retain_current_keys(keys.iter().map(|key| key.bytes.as_ref()));
     Some(keys)
 }
 pub(super) fn modifier_facts_reused<'a>(

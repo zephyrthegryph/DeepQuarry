@@ -372,4 +372,4 @@ pub(super) mod artifact;
 pub(super) mod parallel;
 
 #[path = "classification/token_roster.rs"]
-mod token_roster;
+pub(in crate::initializer_policy) mod token_roster;

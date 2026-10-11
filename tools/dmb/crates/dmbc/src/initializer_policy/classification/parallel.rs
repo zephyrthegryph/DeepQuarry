@@ -104,7 +104,12 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     };
     let buckets = preparation.buckets.as_ref();
     let modifier_keys = reuse.and_then(|reuse| {
-        crate::initializer_policy::modifier_facts::keys(writes, evaluator, reuse)
+        crate::initializer_policy::modifier_facts::keys_in(
+            writes,
+            evaluator,
+            reuse,
+            Some(&preparation),
+        )
     });
     let facts = map_buckets(buckets, evaluator, executor, |_, bucket, worker| {
         if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {

@@ -8,6 +8,7 @@ pub(crate) struct Preparation {
     pub(crate) owners: Arc<[SymbolId]>,
     pub(crate) buckets: Arc<[Bucket]>,
     locations: std::sync::Mutex<Option<Arc<Locations>>>,
+    modifier_locations: std::sync::Mutex<Option<Arc<ModifierLocations>>>,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(in crate::initializer_policy) struct Policy {
@@ -21,6 +22,14 @@ pub(crate) struct Locations {
     pub(crate) inputs: Arc<[Arc<InitializerWrite>]>,
     pub(crate) facts: Arc<[ModifierFact]>,
     pub(crate) keys: Arc<Vec<Arc<[u8]>>>,
+}
+pub(crate) struct ModifierLocator {
+    pub(crate) bytes: Arc<[u8]>,
+    pub(crate) input: Arc<InitializerWrite>,
+}
+pub(crate) struct ModifierLocations {
+    policy: Policy,
+    pub(crate) rows: Arc<[ModifierLocator]>,
 }
 impl Preparation {
     pub(in crate::initializer_policy) fn new(writes: &[InitializerWrite]) -> Arc<Self> {
@@ -43,6 +52,7 @@ impl Preparation {
                 })
                 .collect(),
             locations: Default::default(),
+            modifier_locations: Default::default(),
         })
     }
     pub(in crate::initializer_policy) fn matches(&self, writes: &[InitializerWrite]) -> bool {
@@ -108,6 +118,48 @@ impl Preparation {
         let locations = self.locations.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(locations) = locations.as_ref() {
             visit(locations);
+        }
+    }
+    pub(in crate::initializer_policy) fn modifier_locations(
+        &self,
+        writes: &[InitializerWrite],
+        policy: Policy,
+        produce: impl FnOnce() -> Vec<ModifierLocator>,
+    ) -> Arc<ModifierLocations> {
+        let previous = self
+            .modifier_locations
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        if let Some(previous) = previous.filter(|old| {
+            old.policy == policy
+                && old.rows.len() == writes.len()
+                && old
+                    .rows
+                    .iter()
+                    .zip(writes)
+                    .all(|(row, write)| row.input.as_ref() == write)
+        }) {
+            return previous;
+        }
+        let current = Arc::new(ModifierLocations {
+            policy,
+            rows: produce().into(),
+        });
+        *self
+            .modifier_locations
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = Some(current.clone());
+        current
+    }
+    pub(crate) fn visit_modifier_locations(&self, visit: impl FnOnce(&Arc<ModifierLocations>)) {
+        let current = self
+            .modifier_locations
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        if let Some(current) = current {
+            visit(&current);
         }
     }
 }
