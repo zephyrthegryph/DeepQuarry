@@ -7,6 +7,10 @@
 //!   line directly above it, CODE one of [`REASON_CODES`]. A bare `ALLOW(init)` (no code) does not keep it.
 //! * `late_initialize`: a `/type/LateInitialize(` override. Banned: `after_init(0, then(PROC_REF(x)))` runs when the
 //!   instance's init is complete (after the whole map load for a map-loaded one), `on_holder_init(A)` for capability setup.
+//! * `init_lines` (October 2026, replaces counting whole overrides): each imperative line in an `Initialize()` override body, kept or not:
+//!   every statement but the bare parent call (`. = ..()`, `..()`, `return ..()`) and a bare `return`. A type converts a line by moving its job
+//!   into a form or a named `setup(PROC_REF(x))` hook; the override goes when its last line does. Switched on with a regenerated baseline
+//!   (`analyze baseline --seed --lint init`), every other rule's totals unchanged; doc/rewrite/framework_gaps.md, "The init ratchet counts lines".
 //! * `world_reads`: a line in an `Initialize()` body that reaches outside the instance (`range(`, `orange(`, `view(`,
 //!   `GetAbove`, `GetBelow`, `GLOB.`, `START_PROCESSING`): move it to `on_holder_init(A)`, `after_init()` or `membership()`;
 //! * `turf_on_materialize`: a `/turf/.../on_materialize(` override (banned);
@@ -57,6 +61,10 @@ static META: Meta = Meta {
             hint: "starting contents are `starts =`, capability setup is on_holder_init(A), timed or after-load work is after_init(); an override that only sets per-instance state carries `// ALLOW(init/CODE): <state it sets>` (CODE: INSTANCE_STATE, CTOR_ARGS, FRAMEWORK) on or above the header",
         },
         RuleMeta { name: "late_initialize", hint: "LateInitialize() is banned: after_init(0, then(PROC_REF(x))) runs when the instance's init is complete (after the map load), on_holder_init(A) does capability setup" },
+        RuleMeta {
+            name: "init_lines",
+            hint: "an imperative line in an Initialize() override: move its job into a form (starts =, keeps_if(), rolls(), param(apply =), spawns_many(), finds(), ...) or a named setup(PROC_REF(x)) hook in CAPABILITIES; the override goes when its last line does",
+        },
         RuleMeta { name: "world_reads", hint: "don't reach outside the instance in Initialize(); do it in on_holder_init(A), after_init() or through membership()" },
         RuleMeta { name: "turf_on_materialize", hint: "turf on_materialize() overrides are skipped by SSatoms; use the type table" },
         RuleMeta { name: "table_init_overrides", hint: "set init_from_table = FALSE on a type that overrides Initialize()" },
@@ -243,11 +251,16 @@ impl Init {
                         number,
                         format!("ALLOW(init{}) needs a reason code: ALLOW(init/CODE), CODE one of {}", if c.is_empty() { String::new() } else { format!("/{c}") }, REASON_CODES.join(", ")),
                     ),
-                    None => out.site("initialize", number),
+                    None => {}
                 }
                 let world_read = crate::pat!(r"(?<![\w.])(?:o?range|view)\s*\(|\bGetAbove\s*\(|\bGetBelow\s*\(|\bGLOB\.|\bSTART_PROCESSING\s*\(");
                 for n in crate::sem::procs::body_lines(lines, number as u32) {
                     let code = before_slashes(lines[n - 1]);
+                    let stmt = code.trim();
+                    let super_call = matches!(stmt.replace(' ', "").as_str(), ".=..()" | "..()" | "return..()" | "return" | "return.");
+                    if !stmt.is_empty() && !super_call {
+                        out.site("init_lines", n);
+                    }
                     if world_read.is_match(code) && !allowed_in(out, f, lines, n, "init") {
                         out.site("world_reads", n);
                     }
