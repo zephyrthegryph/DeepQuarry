@@ -1,5 +1,36 @@
 use super::*;
 
+#[test]
+fn certified_scalar_icon_count_still_reports_an_actual_operand_difference() {
+    let mut report = StructuralReport::new("scalar-count");
+    audit_operand(
+        &NormalOperand::Word(5),
+        "/icon/New:count",
+        0xde,
+        0,
+        &[5],
+        &mut report,
+    );
+    assert!(!report
+        .uncovered
+        .contains_key("unclassified_fixed_word_semantics"));
+    let mut out = Collector {
+        output: vec![],
+        limit: 0,
+        report: Some(report),
+    };
+    out.check(
+        "/icon/New",
+        "bytecode[0].operands",
+        NormalOperand::Word(5),
+        NormalOperand::Word(1),
+    );
+    let report = out.report.unwrap();
+    assert_eq!(report.total_discrepancies, 1);
+    assert_eq!(report.unexplained_discrepancies, 1);
+    assert_eq!(report.categories["bytecode"].discrepancy_count, 1);
+}
+
 fn template() -> Dmb {
     Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap()
 }

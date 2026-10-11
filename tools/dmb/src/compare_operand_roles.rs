@@ -32,6 +32,11 @@ pub(super) fn fixed_word_role(opcode: u32, index: usize) -> FixedWordRole {
         (0x85, 0) => Scalar,
         // Upstream dmasm instructions.rs names Startup's fixed word arg_count.
         (0x5e, 0) => Scalar,
+        // dmasm instructions.rs 6cec0e9a60cb3b3a056daca8c791d36795185154:
+        // IconNew, IconGetPixel and Database use argument counts;
+        // TurnOrFlipIcon uses a numeric filter mode followed by Variable.
+        // Count/filter values remain compared exactly, never normalized away.
+        (0xde | 0xdf | 0x115 | 0x12b, 0) => Scalar,
         // Direct calls carry argument counts, never argument/proc-table IDs.
         (0x29 | 0x2a, 1) => Scalar,
         (0x30, 0) => Scalar,
@@ -163,3 +168,7 @@ mod input_selection_tests {
 #[cfg(test)]
 #[path = "compare_input_coverage_tests.rs"]
 mod native_input_coverage_tests;
+
+#[cfg(test)]
+#[path = "compare_engine_fixed_word_tests.rs"]
+mod native_engine_coverage_tests;
