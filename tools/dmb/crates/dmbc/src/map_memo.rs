@@ -6,7 +6,7 @@ use crate::map_projection::{Projection, WorldDefaults};
 use dm_ir::Resolver;
 use dm_tree::maps::{CapturedMap, MapDiagnostic, MapPlan};
 use std::sync::{
-    atomic::{AtomicU64, Ordering},
+    atomic::{AtomicBool, AtomicU64, Ordering},
     Arc, Mutex,
 };
 #[path = "map_memo_outputs.rs"]
@@ -23,6 +23,8 @@ mod output_tests;
 #[cfg(test)]
 #[path = "map_memo_retained_tests.rs"]
 mod retained_tests;
+#[path = "map_memo_verify.rs"]
+mod verify;
 
 #[derive(Default)]
 pub struct Counts {
@@ -50,6 +52,8 @@ pub struct MapMemo {
     publisher: Option<Arc<CachePublisher>>,
     staging_errors: Mutex<Vec<String>>,
     pub counts: Counts,
+    verification: crate::lowering_memo::VerifyPolicy,
+    verification_failed: AtomicBool,
 }
 impl MapMemo {
     pub(crate) fn validate_cache_payload(version: u32, bytes: &[u8]) -> Result<(), String> {
@@ -81,6 +85,8 @@ impl MapMemo {
             publisher: None,
             staging_errors: Mutex::new(Vec::new()),
             counts: Counts::default(),
+            verification: crate::lowering_memo::VerifyPolicy::from_environment(),
+            verification_failed: AtomicBool::new(false),
         }
     }
     #[cfg(test)]
@@ -230,6 +236,9 @@ impl MapMemo {
         let key = self.parse_locator(&captured);
         let retained_key: Arc<[u8]> = key.clone().into();
         if let Some(plan) = self.retained_parse(&retained_key, &captured) {
+            if self.verification.select() {
+                self.verify_parse(&captured, &plan)?;
+            }
             self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(plan);
         }
@@ -237,6 +246,9 @@ impl MapMemo {
             wire::admit_parse(bytes, &key, captured.clone())
         }) {
             self.admit_retained_parse(retained_key, &plan);
+            if self.verification.select() {
+                self.verify_parse(&captured, &plan)?;
+            }
             self.counts.parse_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(plan);
         }
@@ -262,7 +274,13 @@ impl MapMemo {
         host: &R,
     ) -> Result<Projection, crate::map_projection::Error> {
         let locator = retained::geometry_locator(self.policy, maps, defaults);
-        if let Some(value) = self.retained_geometry(&locator, maps, host) {
+        let verify = self.verification.select();
+        if let Some((value, original)) =
+            self.retained_geometry_receipted(&locator, maps, host, verify)
+        {
+            if let Some(reads) = original {
+                self.verify_geometry(maps, defaults, host, &value, &reads)?;
+            }
             self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value);
         }
@@ -275,6 +293,9 @@ impl MapMemo {
         if let Some(((value, reads), _)) = self.disk(&key, true, |bytes| {
             wire::admit_geometry(bytes, &key, maps, defaults, host)
         }) {
+            if verify {
+                self.verify_geometry(maps, defaults, host, &value, &reads)?;
+            }
             self.admit_retained_geometry(locator, maps, &value, reads.clone(), Vec::new());
             self.counts.geometry_hits.fetch_add(1, Ordering::Relaxed);
             return Ok(value);

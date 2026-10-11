@@ -57,6 +57,7 @@ pub struct Projection {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
+    Verification(String),
     Unsupported(String),
     Invalid { map: usize, message: String },
     Unresolved { path: SymbolId, message: String },

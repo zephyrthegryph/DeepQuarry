@@ -177,6 +177,9 @@ impl MapMemo {
     }
     /// Seal exact pending claims after required request publication succeeds.
     pub fn publish_successful(&self) -> bool {
+        if self.verification_failed.load(Ordering::Relaxed) {
+            return false;
+        }
         let Some(attempt) = &self.pending_maps else {
             return false;
         };
@@ -238,25 +241,47 @@ impl MapMemo {
             }
         });
     }
+    #[cfg(test)]
     pub(super) fn retained_geometry<R: Resolver>(
         &self,
         key: &Arc<[u8]>,
         maps: &[MapPlan],
         host: &R,
     ) -> Option<Projection> {
+        self.retained_geometry_receipted(key, maps, host, false)
+            .map(|(value, _)| value)
+    }
+    pub(super) fn retained_geometry_receipted<R: Resolver>(
+        &self,
+        key: &Arc<[u8]>,
+        maps: &[MapPlan],
+        host: &R,
+        original: bool,
+    ) -> Option<(Projection, Option<Vec<ResolverRead>>)> {
         self.with_pending_maps(|retained| {
-            let (hit, _) = retained
-                .geometry
-                .visit_explained(key, host, &mut |artifact| {
-                    artifact.maps.len() == maps.len()
-                        && artifact.maps.iter().zip(maps).all(|(old, new)| {
-                            old.captured.path == new.captured.path
-                                && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
-                                    || old.captured.source == new.captured.source)
-                                && (Arc::ptr_eq(&old.model, &new.model) || old.model == new.model)
-                        })
-                });
-            hit.map(|artifact| artifact.value.clone())
+            let mut accept = |artifact: &Arc<GeometryArtifact>| {
+                artifact.maps.len() == maps.len()
+                    && artifact.maps.iter().zip(maps).all(|(old, new)| {
+                        old.captured.path == new.captured.path
+                            && (Arc::ptr_eq(&old.captured.source, &new.captured.source)
+                                || old.captured.source == new.captured.source)
+                            && (Arc::ptr_eq(&old.model, &new.model) || old.model == new.model)
+                    })
+            };
+            if original {
+                let (hit, _) = retained
+                    .geometry
+                    .visit_explained_accepted(key, host, &mut accept);
+                hit.map(|artifact| {
+                    (
+                        artifact.value.value.clone(),
+                        Some(artifact.reads.iter().cloned().collect()),
+                    )
+                })
+            } else {
+                let (hit, _) = retained.geometry.visit_explained(key, host, &mut accept);
+                hit.map(|artifact| (artifact.value.clone(), None))
+            }
         })
         .flatten()
     }
