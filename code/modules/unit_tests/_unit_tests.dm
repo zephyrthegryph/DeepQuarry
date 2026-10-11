@@ -1275,6 +1275,7 @@
 #include "j_closet_resident_cost_tests.dm"
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
+#include "dq_nikki_rig_chest_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
