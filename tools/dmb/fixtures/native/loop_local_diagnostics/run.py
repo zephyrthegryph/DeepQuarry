@@ -28,11 +28,19 @@ CASES += ('bodyless_range_eof', 'bodyless_range_semicolon',
           'bodyless_each_global_boundary', 'bodyless_pair_global_boundary',
           'bodyless_each_absolute_global_boundary', 'bodyless_pair_absolute_global_boundary')
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+SCOPE = "compiler-only loop declaration controls; BYOND legality is observed, not assumed"
+DEFAULT_OUTPUT_ROOT = Path("E:/dq-cache/dmb-loop-local-diagnostics")
 
 def diagnostics(text):
     return [{"file": match[1], "line": int(match[2]), "severity": match[3], "message": match[4]}
             for line in text.splitlines()
             if (match := re.match(r"^(.*\.dme?):(\d+):(error|warning|note):\s*(.*)$", line))]
+
+def native_exit_class(exit_code):
+    """The compiler's typed RequestFailure exit contract, not diagnostic text guessing."""
+    return {0: "Accepted", 2: "Source", 70: "Internal", 64: "InvalidRequest",
+            1: "Infrastructure", 75: "Cancelled"}.get(exit_code, "OtherFailure")
+
 
 def bounded_log(directory):
     text = []
@@ -51,7 +59,7 @@ def main():
         parser.add_argument("--" + name, required=name == "dm", type=Path)
         parser.add_argument("--" + name + "-sha256", required=name == "dm")
     parser.add_argument("--output-root", type=Path,
-                        default=Path("E:/dq-cache/dmb-loop-local-diagnostics"))
+                        default=DEFAULT_OUTPUT_ROOT)
     args = parser.parse_args()
     cases = tuple(args.cases)
     backends = ("byond", "native") if args.backend == "both" else ("byond",)
@@ -69,7 +77,7 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 1, "scope": "compiler-only loop declaration controls; BYOND legality is observed, not assumed",
+    receipt = {"schema": 1, "scope": SCOPE,
                "complete": False, "runtime": "not run", "root": str(root),
                "overall_watchdog_seconds": 300, "child_watchdog_seconds": 30,
                "job_memory_bytes": 4 * 1024 ** 3, "pins": {}, "cases": {}}
@@ -112,6 +120,8 @@ def main():
                     cache_directory=root / "cache")
                 text = bounded_log(directory / "child")
                 outcomes[backend] = {"child": evidence, "diagnostics": diagnostics(text)}
+                if backend == "native":
+                    outcomes[backend]["exit_class"] = native_exit_class(evidence.get("exit"))
                 if evidence.get("timeout") or evidence.get("timed_out") or evidence.get("status") == "timeout":
                     raise TimeoutError("compiler child watchdog expired")
                 if backend == "byond" and not re.search(r"\b516\.1687\b", text):
