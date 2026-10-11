@@ -223,6 +223,15 @@ CAPABILITIES(/obj/item/dq_rule_private)
 		dq_rx_flush()
 	return FALSE
 
+/// A due hold may wait behind other deadlines; await delivery, not a guessed tick count.
+/proc/dq_rule_native_wait_fires(obj/item/dq_rule_private/I, count)
+	for(var/attempt in 1 to 300)
+		if(I.fires >= count)
+			return TRUE
+		sleep(world.tick_lag)
+		dq_rx_flush()
+	return FALSE
+
 /datum/unit_test/dq_rule_native_private_wakes/Run()
 	var/datum/property_def/L = new /datum/property_def/dq_rule_left
 	var/datum/property_def/R = new /datum/property_def/dq_rule_right
@@ -302,6 +311,7 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	act_drain_point()
 	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(remaining + 3 TICKS)
+	TEST_ASSERT(dq_rule_native_wait_fires(I, 1), "Scheduled resumed hold actually completes")
 	TEST_ASSERT_EQUAL(I.fires, 1, "Remaining true duration completes first fire")
 	TEST_ASSERT_EQUAL(B.hold_left[1], RULE_HOLD_SPENT, "Repeatable hold is spent for current true spell")
 	I.set_right(3)
@@ -314,6 +324,7 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	act_drain_point()
 	TEST_ASSERT(dq_rule_native_wait_key(I, B, ++key_changes), "Real tracked notification and scheduled key wake were delivered")
 	dq_rx_test_advance(2 SECONDS + 3 TICKS)
+	TEST_ASSERT(dq_rule_native_wait_fires(I, 2), "Scheduled re-armed hold actually completes")
 	TEST_ASSERT_EQUAL(I.fires, 2, "Second true spell fires after full duration")
 	I.set_right(3)
 	act_drain_point()
