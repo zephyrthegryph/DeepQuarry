@@ -498,6 +498,13 @@ impl ReusableProcedureArtifact {
         if helpers.len() != abi.source_helpers.len() {
             return None;
         }
+        // An empty authenticated helper roster has no source origins to issue.
+        // The executable restore and final contribution rebind still perform
+        // their ordinary current body/ABI/reference checks. Do not revisit the
+        // declaration arena solely to construct an unused HelperInputs context.
+        if helpers.is_empty() {
+            return artifact.helpers.is_empty().then_some(());
+        }
         let identity = artifact.identity;
         let parsed = frontend.compact_body(body).ok()?;
         let metadata = frontend
