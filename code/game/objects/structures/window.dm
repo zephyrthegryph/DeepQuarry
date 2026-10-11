@@ -220,7 +220,7 @@
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	return OP_OK
 
-MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tinting."), span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting."), "You hear sparks.")
+MSG_DEF(window/wiring, span_notice("You begin to wire %T% for electrochromic tinting."), span_infoplain(span_bold("%U%") + " begins to wire %T% for electrochromic tinting."))
 
 /// A reinforced pane, not yet fastened in, not tinted already, is wired for tint with a length of cable.
 /obj/structure/window/proc/can_polarize(datum/act/op/A)
