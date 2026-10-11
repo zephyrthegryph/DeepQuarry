@@ -95,6 +95,19 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
             None => self.core.visit_explained(key, host, accept),
         }
     }
+    /// Original accepted receipt; caller may compare it with an independent producer.
+    pub(crate) fn lookup_accepted<H: ObservationHost<Q, A, D>>(
+        &self,
+        key: &[u8],
+        host: &H,
+    ) -> Option<dm_session::ObservedArtifact<T, Q, A, D>> {
+        match &self.attempt {
+            Some(attempt) => attempt
+                .with_pending(|lease| lease.visit_explained_accepted(key, host, &mut |_| true).0)
+                .flatten(),
+            None => self.core.visit_receipted(key, host, &mut |_| true).0,
+        }
+    }
     pub(crate) fn insert_with(
         &self,
         key: Arc<[u8]>,

@@ -454,3 +454,133 @@ fn earlier_unrelated_write_preserves_fragment_locator_and_real_hit() {
     assert_eq!(store.hits.load(Ordering::Relaxed), 1);
     assert_eq!(store.recomputed.load(Ordering::Relaxed), 1);
 }
+
+#[test]
+fn verified_fragment_hit_recomputes_same_producer_and_rejects_missing_reads() {
+    let store = InitializerFragments::default();
+    let policy = crate::lowering_memo::VerifyPolicy::all();
+    let mut symbols = SymbolTable::default();
+    for text in ["/", "value"] {
+        symbols.intern(text).unwrap();
+    }
+    let write = write("7", &mut symbols);
+    let value = dm_syntax::parse_expression("7").expr.unwrap();
+    let runtime = RuntimeValue::Expression(Arc::new(value.clone()));
+    let key = semantic_key(&write, &runtime, 7, None, false);
+    let views = [AssignmentView {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: &write.target,
+        lexical_owner: write.lexical_owner,
+        value: &value,
+        occurrence: dm_syntax::Span::new(0, 0),
+    }];
+    let host = Host { resource: 1 };
+    let prepared = prepare_assignment_group(
+        &views,
+        InitializerContext {
+            symbols: &symbols,
+            resource_search_context: None,
+            debug: None,
+        },
+        &host,
+    )
+    .unwrap();
+    let first = store
+        .fragment_with_verification(&key, &prepared, 0, &write, &host, Some(&policy))
+        .unwrap()
+        .unwrap();
+    let second = store
+        .fragment_with_verification(&key, &prepared, 0, &write, &host, Some(&policy))
+        .unwrap()
+        .unwrap();
+    assert!(crate::lowering_memo_wire::verification_code_equal(
+        first.code.code(),
+        second.code.code()
+    ));
+    assert_eq!(store.verification_checked.load(Ordering::Relaxed), 1);
+    assert_eq!(store.verification_mismatches.load(Ordering::Relaxed), 0);
+    store
+        .fragment_with_verification(&key, &prepared, 0, &write, &host, None)
+        .unwrap()
+        .unwrap();
+    assert_eq!(
+        store.fragment_verification_counts(),
+        (1, 0),
+        "disabled mode performs no verification"
+    );
+
+    let dropped = receipts::reads(&key, Vec::new()).into();
+    let error =
+        verify::fragment(&key, &prepared, 0, &write, &host, &dropped, &second.code).unwrap_err();
+    assert!(
+        matches!(error, InitializerError::Invalid(ref message) if message.contains("read ledger"))
+    );
+    let accepted = store
+        .values
+        .lookup_accepted(
+            &key.key,
+            &receipts::Host {
+                binding: &key,
+                resolver: &host,
+            },
+        )
+        .unwrap();
+    let changed_write = write.clone();
+    let changed = dm_syntax::parse_expression("8").expr.unwrap();
+    // Same current assignment identity, independently produced different executable value.
+    let changed_views = [AssignmentView {
+        source_site: dm_ir::InitializerSite::Declaration,
+        target: &write.target,
+        lexical_owner: write.lexical_owner,
+        value: &changed,
+        occurrence: dm_syntax::Span::new(0, 0),
+    }];
+    let changed_prepared = prepare_assignment_group(
+        &changed_views,
+        InitializerContext {
+            symbols: &symbols,
+            resource_search_context: None,
+            debug: None,
+        },
+        &host,
+    )
+    .unwrap();
+    let error = verify::fragment(
+        &key,
+        &changed_prepared,
+        0,
+        &changed_write,
+        &host,
+        &accepted.reads,
+        &second.code,
+    )
+    .unwrap_err();
+    assert!(
+        matches!(error, InitializerError::Invalid(ref message) if message.contains("semantic fragment output"))
+    );
+    let changed_fragment = changed_prepared
+        .try_lower_fragment(0, &host)
+        .unwrap()
+        .unwrap();
+    let (changed_fragment, _) = changed_fragment.split_modified();
+    store.values.insert_with(
+        Arc::clone(&key.key),
+        accepted.reads.iter().cloned().collect(),
+        Vec::new(),
+        std::mem::size_of::<RetainedFragment>(),
+        || RetainedFragment {
+            code: RetainedCode::Assignment(changed_fragment),
+            recipes: Vec::new(),
+            references: Vec::new(),
+            root_indexes: Vec::new(),
+        },
+    );
+    let error = store
+        .fragment_with_verification(&key, &prepared, 0, &write, &host, Some(&policy))
+        .err()
+        .expect("corrupt admitted hit must fail closed");
+    assert!(
+        matches!(error, InitializerError::Invalid(ref message) if message.contains("semantic fragment output"))
+    );
+    assert_eq!(store.verification_mismatches.load(Ordering::Relaxed), 1);
+}

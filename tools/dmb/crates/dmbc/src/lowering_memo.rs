@@ -70,6 +70,7 @@ mod publication;
 pub use publication::RetainedProcedures;
 #[path = "lowering_memo/verify_policy.rs"]
 mod verify_policy;
+pub(crate) use verify_policy::VerifyPolicy;
 pub struct ProcedureMemo {
     pub(crate) verification: verify_policy::VerifyPolicy,
     pub policy: u128,

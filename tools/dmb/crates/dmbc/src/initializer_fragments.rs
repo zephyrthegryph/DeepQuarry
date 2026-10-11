@@ -14,6 +14,8 @@ use std::{
 };
 #[path = "initializer_fragments_modified.rs"]
 mod modified;
+#[path = "initializer_fragment_verify.rs"]
+mod verify;
 
 pub struct InitializerFragments {
     values: receipts::Store<RetainedFragment>,
@@ -21,6 +23,8 @@ pub struct InitializerFragments {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    verification_checked: AtomicU64,
+    verification_mismatches: AtomicU64,
 }
 pub(super) struct FragmentWithRecipes {
     pub code: AssignmentFragment,
@@ -81,6 +85,8 @@ impl Default for InitializerFragments {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            verification_checked: AtomicU64::new(0),
+            verification_mismatches: AtomicU64::new(0),
         }
     }
 }
@@ -149,7 +155,16 @@ impl InitializerFragments {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            verification_checked: AtomicU64::new(0),
+            verification_mismatches: AtomicU64::new(0),
         })
+    }
+    /// Request-scoped fragment verification only; assemblies are not included.
+    pub fn fragment_verification_counts(&self) -> (u64, u64) {
+        (
+            self.verification_checked.load(Ordering::Relaxed),
+            self.verification_mismatches.load(Ordering::Relaxed),
+        )
     }
     pub(crate) fn publish_successful(&self) -> bool {
         self.values.publish_successful()
@@ -190,6 +205,7 @@ impl InitializerFragments {
         self.fragment_with_recipes(key, prepared, index, write, host)
             .map(|value| value.map(|value| value.code))
     }
+    #[cfg(test)]
     pub(super) fn fragment_with_recipes<R: Resolver>(
         &self,
         key: &receipts::Binding,
@@ -198,16 +214,35 @@ impl InitializerFragments {
         write: &dm_ir::InitializerWrite,
         host: &R,
     ) -> Result<Option<FragmentWithRecipes>, InitializerError> {
+        self.fragment_with_verification(key, prepared, index, write, host, None)
+    }
+    pub(super) fn fragment_with_verification<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        prepared: &PreparedAssignmentGroup<'_>,
+        index: usize,
+        write: &dm_ir::InitializerWrite,
+        host: &R,
+        policy: Option<&crate::lowering_memo::VerifyPolicy>,
+    ) -> Result<Option<FragmentWithRecipes>, InitializerError> {
         let root = prepared.expression(index).ok_or_else(|| {
             InitializerError::Invalid("initializer current expression missing".into())
         })?;
-        if let Some(fragment) = self.values.lookup(
-            &key.key,
-            &receipts::Host {
-                binding: key,
-                resolver: host,
-            },
-        ) {
+        let verify_hit = policy.is_some_and(|policy| policy.select());
+        let admission_host = receipts::Host {
+            binding: key,
+            resolver: host,
+        };
+        // No original receipt allocation or producer work when verification is off.
+        let accepted = verify_hit
+            .then(|| self.values.lookup_accepted(&key.key, &admission_host))
+            .flatten();
+        let candidate = if verify_hit {
+            accepted.as_ref().map(|value| Arc::clone(&value.value))
+        } else {
+            self.values.lookup(&key.key, &admission_host)
+        };
+        if let Some(fragment) = candidate {
             let current = crate::lowering_memo::RecordingResolver::new(host);
             let captured = fragment
                 .recipes
@@ -217,6 +252,21 @@ impl InitializerFragments {
             if let Some(captured) = captured {
                 if let RetainedCode::Assignment(retained) = &fragment.code {
                     if let Ok(code) = retained.clone().bind_modified(captured) {
+                        if let Some(accepted) = &accepted {
+                            self.verification_checked.fetch_add(1, Ordering::Relaxed);
+                            if let Err(error) = verify::fragment(
+                                key,
+                                prepared,
+                                index,
+                                write,
+                                host,
+                                &accepted.reads,
+                                &code,
+                            ) {
+                                self.verification_mismatches.fetch_add(1, Ordering::Relaxed);
+                                return Err(error);
+                            }
+                        }
                         self.hits.fetch_add(1, Ordering::Relaxed);
                         return Ok(Some(FragmentWithRecipes {
                             code,

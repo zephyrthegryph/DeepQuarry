@@ -943,17 +943,18 @@ mod owner_domain_tests;
 #[path = "lowering_memo_warning_wire_tests.rs"]
 mod warning_wire_tests;
 
+pub(crate) fn verification_code_equal(a: &ResolverProc, b: &ResolverProc) -> bool {
+    match (
+        dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(a)),
+        dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(b)),
+    ) {
+        (Ok(a), Ok(b)) => a == b,
+        _ => false,
+    }
+}
+
 /// Verification-only canonical executable comparison; not an admission authority.
 pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool {
-    fn code_equal(a: &ResolverProc, b: &ResolverProc) -> bool {
-        match (
-            dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(a)),
-            dm_wire::encode(EXECUTABLE_SCHEMA, &CodeWire::capture(b)),
-        ) {
-            (Ok(a), Ok(b)) => a == b,
-            _ => false,
-        }
-    }
     a.identity == b.identity
         && a.effective == b.effective
         && a.metadata.canonical_bytes() == b.metadata.canonical_bytes()
@@ -961,7 +962,7 @@ pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool 
             == b.abi.as_ref().map(|v| v.canonical_bytes())
         && a.selected_references == b.selected_references
         && a.debug_origins == b.debug_origins
-        && code_equal(&a.code, &b.code)
+        && verification_code_equal(&a.code, &b.code)
         && a.source_helpers.len() == b.source_helpers.len()
         && a.source_helpers
             .iter()
@@ -970,6 +971,6 @@ pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool 
                 a.owner == b.owner
                     && a.argument == b.argument
                     && a.debug_origins == b.debug_origins
-                    && code_equal(&a.code, &b.code)
+                    && verification_code_equal(&a.code, &b.code)
             })
 }

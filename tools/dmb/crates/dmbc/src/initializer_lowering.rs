@@ -715,7 +715,14 @@ fn lower_group<R: Resolver>(
                 .get(&write.source_ordinal)
                 .ok_or("initializer fragment key missing")?;
             let fragment = store
-                .fragment_with_recipes(key, &prepared, index, &write.write, host)
+                .fragment_with_verification(
+                    key,
+                    &prepared,
+                    index,
+                    &write.write,
+                    host,
+                    memo.map(|memo| &memo.verification),
+                )
                 .map_err(|mut error| {
                     if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) =
                         &mut error
