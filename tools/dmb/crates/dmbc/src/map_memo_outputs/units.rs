@@ -95,7 +95,42 @@ impl MapMemo {
         origins: &(impl DebugOriginProvider + DebugSourceProvider),
         symbols: &SymbolTable,
         host: &R,
-    ) -> Option<(crate::InitializerCode, Arc<DebugOrigins>)> {
+        fresh: impl FnOnce() -> Result<
+            (
+                ResolverProc,
+                Arc<DebugOrigins>,
+                Vec<crate::lowering_memo::ResolverRead>,
+            ),
+            String,
+        >,
+    ) -> Result<Option<(crate::InitializerCode, Arc<DebugOrigins>)>, String> {
+        let verify = self.verification.select();
+        let Some((code, debug, original)) =
+            self.admitted_map_unit(key, unit, maps, entry, origins, symbols, host, verify)
+        else {
+            return Ok(None);
+        };
+        if let Some(original) = original {
+            self.verify_map_unit(&code, &debug, &original, fresh)?;
+        }
+        self.counts.unit_hits.fetch_add(1, Ordering::Relaxed);
+        Ok(Some((code, debug)))
+    }
+    fn admitted_map_unit<R: Resolver>(
+        &self,
+        key: &Arc<[u8]>,
+        unit: &Unit,
+        maps: &[MapPlan],
+        entry: usize,
+        origins: &(impl DebugOriginProvider + DebugSourceProvider),
+        symbols: &SymbolTable,
+        host: &R,
+        verify: bool,
+    ) -> Option<(
+        crate::InitializerCode,
+        Arc<DebugOrigins>,
+        Option<Vec<crate::lowering_memo::ResolverRead>>,
+    )> {
         self.pending_maps.as_ref()?;
         self.current
             .lock()
@@ -104,14 +139,29 @@ impl MapMemo {
             .push(key.clone());
         let hit = self
             .with_pending_maps(|leases| {
-                leases
-                    .outputs
-                    .visit_explained(key, &Replay(host), &mut |value| {
-                        matches!(value.as_ref(), MapOutputs::Unit(_))
-                    })
-                    .0
+                let mut accept =
+                    |value: &Arc<MapOutputs>| matches!(value.as_ref(), MapOutputs::Unit(_));
+                if verify {
+                    leases
+                        .outputs
+                        .visit_explained_accepted(key, &Replay(host), &mut accept)
+                        .0
+                        .map(|hit| {
+                            (
+                                hit.value,
+                                Some(hit.reads.iter().cloned().collect::<Vec<_>>()),
+                            )
+                        })
+                } else {
+                    leases
+                        .outputs
+                        .visit_explained(key, &Replay(host), &mut accept)
+                        .0
+                        .map(|hit| (hit, None))
+                }
             })
             .flatten()?;
+        let (hit, original_reads) = hit;
         let MapOutputs::Unit(value) = hit.as_ref() else {
             return None;
         };
@@ -150,8 +200,7 @@ impl MapMemo {
             code.modified_instances = captured;
             crate::InitializerCode::from_admitted(code, value.code.requests().clone())
         };
-        self.counts.unit_hits.fetch_add(1, Ordering::Relaxed);
-        Some((code, Arc::new(debug)))
+        Some((code, Arc::new(debug), original_reads))
     }
     pub(crate) fn remember_map_unit<R: Resolver>(
         &self,

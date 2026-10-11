@@ -111,7 +111,9 @@ impl MapMemo {
             }
         };
         let key = key(self.policy, maps, projection, &paths, context);
-        if self.retained.is_some() {
+        // A bundle skips unit producer entrypoints entirely. Verification enters
+        // the same ordinary per-unit path so each admitted unit can be sampled.
+        if self.retained.is_some() && !self.verification.enabled() {
             self.current
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())

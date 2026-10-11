@@ -90,7 +90,41 @@ impl MapMemo {
             self.mismatch(detail),
         ))
     }
-    /// Current request only; map outputs/per-unit emission are outside this scope.
+    pub(super) fn verify_map_unit(
+        &self,
+        cached: &crate::InitializerCode,
+        debug: &crate::debug_sources::DebugOrigins,
+        original: &[ResolverRead],
+        fresh: impl FnOnce() -> Result<
+            (
+                dm_codegen_byond::lower_resolver::ResolverProc,
+                Arc<crate::debug_sources::DebugOrigins>,
+                Vec<ResolverRead>,
+            ),
+            String,
+        >,
+    ) -> Result<(), String> {
+        self.verification.checked.fetch_add(1, Ordering::Relaxed);
+        let Ok((code, current_debug, reads)) = fresh() else {
+            return Err(self.mismatch("fresh per-unit initializer producer rejected"));
+        };
+        let old_reads = ledger(original);
+        let detail = if old_reads.is_none() || old_reads != ledger(&reads) {
+            Some("per-unit original query/domain/answer ledger")
+        } else if !crate::lowering_memo_wire::verification_code_equal(cached.as_ref(), &code) {
+            Some("per-unit symbolic initializer output")
+        } else if debug != current_debug.as_ref() {
+            Some("per-unit current debug origins")
+        } else {
+            None
+        };
+        match detail {
+            Some(detail) => Err(self.mismatch(detail)),
+            None => Ok(()),
+        }
+    }
+    /// Current request only: parse, geometry and per-unit initializer hit checks.
+
     pub fn map_verification_counts(&self) -> (u64, u64) {
         (
             self.verification.checked.load(Ordering::Relaxed),

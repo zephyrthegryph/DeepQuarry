@@ -176,7 +176,36 @@ pub(crate) fn lower_with_memo<R: Resolver>(
         let unit_key = memo.and_then(|memo| memo.map_unit_key(unit, maps, resource_search_context));
         if let Some((memo, key)) = memo.zip(unit_key.as_ref()) {
             if let Some((code, debug_origins)) =
-                memo.map_unit(key, unit, maps, entry, &origins, symbols, host)
+                memo.map_unit(key, unit, maps, entry, &origins, symbols, host, || {
+                    // Independent current issuer: cached ordinal visits must not seed
+                    // shadow execution's discovery order or hide an omitted debug edge.
+                    let fresh_origins = Origins {
+                        path: origins.path,
+                        line_starts: origins.line_starts,
+                        source_length: origins.source_length,
+                        entry: origins.entry,
+                        collector: RefCell::new(DebugOriginCollector::default()),
+                        offsets: RefCell::new(Vec::new()),
+                    };
+                    let fresh_recording = crate::lowering_memo::RecordingResolver::new(host);
+                    let diagnostics = DiagnosticResolver {
+                        host: &fresh_recording,
+                        unsupported: std::sync::Mutex::new(Vec::new()),
+                    };
+                    let fresh = map_initializers::lower_unit(
+                        unit,
+                        maps,
+                        dm_codegen_byond::initializer::InitializerContext {
+                            symbols,
+                            resource_search_context,
+                            debug: Some(&fresh_origins),
+                        },
+                        &diagnostics,
+                    )
+                    .map_err(|error| format!("fresh map unit rejected: {error:?}"))?;
+                    let debug = Arc::new(fresh_origins.collector.into_inner().finish());
+                    Ok((fresh, debug, fresh_recording.reads()))
+                })?
             {
                 let artifact = InitializationArtifact {
                     encoding: None,
