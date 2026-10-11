@@ -329,5 +329,27 @@
       "scalar control mock declares opaque typed alias instead of intended scalar metadata"
     ],
     "scope": "focused semantic source features and transport plus native opaque-read authority; not runtime or benchmark"
+  },
+  "coherent_safe_colon_check_0e075": {
+    "source_commit": "0e075b3ad96d56b9e4716757a5299e7bfc97135e",
+    "archive_sha256": "5b42cf664adea17324edb3b0ff906690adad91608b4e44ea50a31cabb6f1e605",
+    "build_receipt": "20261011-102500-f2aa0488-job-cargo.json",
+    "exit_code": 0,
+    "packages": [
+      "dmbc",
+      "dm-codegen-byond",
+      "dm-session",
+      "dm-tree",
+      "dm-syntax",
+      "dm-ir",
+      "dm-analysis"
+    ],
+    "scope": "cargo check including focused fixture source; not executed tests, runtime or benchmark",
+    "open": [
+      "focused execution pending",
+      "folded initializer source features confirmed by BYOND probe, implementation pending",
+      "map fresh-recomputation verification pending",
+      "current real DeepQuarry cohort and full runtime parity pending"
+    ]
   }
 }
