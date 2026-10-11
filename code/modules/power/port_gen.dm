@@ -800,6 +800,7 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 		asplod()
 
 /obj/machinery/power/rtg/reg
+	pixel_x = -32
 	name = "d-type rotary electric generator"
 	desc = "It looks kind of like a large hamster wheel."
 	icon = 'icons/obj/power_vrx96.dmi'
@@ -816,10 +817,6 @@ CAPABILITIES(/obj/machinery/power/rtg/kugelblitz)
 	buckle_dir = EAST
 	interact_offline = TRUE
 	density = FALSE
-
-/obj/machinery/power/rtg/reg/Initialize(mapload)
-	pixel_x = -32
-	. = ..()
 
 /obj/machinery/power/rtg/reg/user_buckle_mob(mob/living/M, mob/user, forced = FALSE, silent = TRUE)
 	. = ..()

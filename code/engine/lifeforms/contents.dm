@@ -3,6 +3,7 @@
 //
 //	CAPABILITIES(/obj/item/storage/box/syringes)
 //		initial_contents(/obj/item/reagent_containers/syringe, count = 7)
+//		initial_contents(pick_one(list(/obj/item/cartridge/engineering, /obj/item/cartridge/security)))   // a rolled one (weights as values)
 //	CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
 //		initial_contents(/obj/item/clothing/accessory/armor, slot = SLOT_ACCESSORIES, when = nameof(starts_armored))
 //	CAPABILITIES(/obj/item/implanter/loyalty)
@@ -21,8 +22,9 @@
 // a make(..., x = OWNER) call it becomes `by =`.
 
 /proc/initial_contents(type, slot = null, count = 1, when = null, args = null)
-	if(!ispath(type))
-		declare_report("initial_contents(): the first argument is a type, got [type]")
+	var/datum/entry/picked = type
+	if(!ispath(type) && !(istype(picked) && picked.kind == "pick_one"))
+		declare_report("initial_contents(): the first argument is a type or pick_one(list), got [type]")
 		return null
 	return entry_make(ENTRY_CONTAINS, null, list("type" = type, "slot" = slot, "count" = count, "when" = when, "args" = args))
 
@@ -56,11 +58,16 @@
 		if((C.whens && !op_whens_hold(holder, C.whens)) || (!isnull(E.args["when"]) && !condition_holds(holder, E.args["when"])))
 			continue
 		var/type = E.args["type"]
+		var/datum/entry/picked = type
 		var/count = E.args["count"]
 		if(istext(count))
 			count = (count in holder.vars) ? holder.vars[count] : call(holder, count)()
 		var/list/ctor = starts_args_resolve(holder, E.args["args"])
 		for(var/i in 1 to max(count, 0))
+			if(istype(picked)) // pick_one(list): each one rolled from the holder's stream
+				var/list/choices = picked.args["weights"]
+				var/datum/roller/R = roller_of(holder)
+				type = roll_list_weighted(choices) ? R.weighted(choices) : R.choose(choices)
 			var/atom/movable/thing = length(ctor) ? new type(arglist(list(null) + ctor)) : new type(null)
 			if(!isatom(holder))
 				continue

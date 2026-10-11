@@ -16,11 +16,7 @@
 	var/obj/item/voice_changer/voice_holder
 
 CAPABILITIES(/obj/item/rig_module/voice)
-	owns_one(nameof(voice_holder), starts = /obj/item/voice_changer)
-
-/obj/item/rig_module/voice/Initialize(mapload)
-	. = ..()
-	voice_holder.active = 0
+	owns_one(nameof(voice_holder), starts = /obj/item/voice_changer, starts_set = list("active" = 0))
 
 /obj/item/rig_module/voice/installed()
 	..()
