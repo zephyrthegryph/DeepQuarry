@@ -419,7 +419,10 @@ fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_outpu
         occurrence: dm_syntax::Span::new(0, 0),
     }];
     let changed_code = Arc::new(lower_assignment_views(&changed_roots, context(), &host).unwrap());
-    store.values.insert_with(
+    // Identical receipts intern the existing value; corruption needs an empty
+    // facade on the SAME observed-store architecture.
+    let corrupt_store = InitializerAssemblies::default();
+    corrupt_store.values.insert_with(
         Arc::clone(&key.key),
         accepted.reads.iter().cloned().collect(),
         Vec::new(),
@@ -433,7 +436,7 @@ fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_outpu
             encoding: Arc::new(crate::symbolic::InitializerEncoding::new(&changed_code)),
         },
     );
-    let error = store
+    let error = corrupt_store
         .lookup_with_current_roots_verified(
             &key,
             1,
@@ -447,6 +450,6 @@ fn verified_assembly_hit_uses_original_receipt_and_fails_closed_on_changed_outpu
     assert!(
         matches!(error, dm_codegen_byond::initializer::InitializerError::Invalid(ref message) if message.contains("semantic fragment output"))
     );
-    assert_eq!(store.assembly_verification_counts(), (2, 1));
+    assert_eq!(corrupt_store.assembly_verification_counts(), (1, 1));
     assert_eq!(store.hits.load(Ordering::Relaxed), 1);
 }

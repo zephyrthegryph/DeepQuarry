@@ -179,10 +179,11 @@ fn actual_anonymous_failure_hit_compares_current_primary_and_related_diagnostics
         fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
             match query {
                 dm_ir::ResolveQuery::GlobalProc(name)
-                    if name == dm_ir::SymbolId::of("missing_call") =>
-                {
-                    dm_ir::ResolvedMeaning::Missing
-                }
+                | dm_ir::ResolveQuery::Proc {
+                    owner: _,
+                    name,
+                    verb: _,
+                } if name == dm_ir::SymbolId::of("missing_call") => dm_ir::ResolvedMeaning::Missing,
                 dm_ir::ResolveQuery::HasMemberProc { owner: _, name }
                     if name == dm_ir::SymbolId::of("missing_call") =>
                 {
@@ -239,7 +240,7 @@ fn actual_anonymous_failure_hit_compares_current_primary_and_related_diagnostics
         .err()
         .expect("actual producer must reject the fixture's certified missing call");
     let InitializerLoweringError::Diagnostics(initial) = initial else {
-        panic!("expected source-bound producer diagnostics");
+        panic!("expected source-bound producer diagnostics, got {initial:?}");
     };
     let records = writer.take_pending();
     assert!(

@@ -563,7 +563,10 @@ fn verified_fragment_hit_recomputes_same_producer_and_rejects_missing_reads() {
         .unwrap()
         .unwrap();
     let (changed_fragment, _) = changed_fragment.split_modified();
-    store.values.insert_with(
+    // Exact receipt interning deliberately preserves the existing payload.
+    // A separate empty facade installs a genuinely corrupt admitted candidate.
+    let corrupt_store = InitializerFragments::default();
+    corrupt_store.values.insert_with(
         Arc::clone(&key.key),
         accepted.reads.iter().cloned().collect(),
         Vec::new(),
@@ -575,12 +578,17 @@ fn verified_fragment_hit_recomputes_same_producer_and_rejects_missing_reads() {
             root_indexes: Vec::new(),
         },
     );
-    let error = store
+    let error = corrupt_store
         .fragment_with_verification(&key, &prepared, 0, &write, &host, Some(&policy))
         .err()
         .expect("corrupt admitted hit must fail closed");
     assert!(
         matches!(error, InitializerError::Invalid(ref message) if message.contains("semantic fragment output"))
     );
-    assert_eq!(store.verification_mismatches.load(Ordering::Relaxed), 1);
+    assert_eq!(
+        corrupt_store
+            .verification_mismatches
+            .load(Ordering::Relaxed),
+        1
+    );
 }

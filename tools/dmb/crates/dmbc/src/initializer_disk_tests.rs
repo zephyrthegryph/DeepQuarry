@@ -36,11 +36,23 @@ impl dm_preprocess::SourceProvider for Source<'_> {
     }
 }
 fn run(source: &str, memo: Option<&crate::lowering_memo::ProcedureMemo>) -> LoweredInitializers {
-    let frontend = dm_tree::frontend::build(
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
         Path::new("shared.dme"),
         &Source(source),
         &Default::default(),
-        1,
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
     )
     .unwrap();
     let declarations = dm_tree::initializers::capture_declaration_plan(
@@ -49,7 +61,9 @@ fn run(source: &str, memo: Option<&crate::lowering_memo::ProcedureMemo>) -> Lowe
     )
     .unwrap();
     let plan = declarations.plan();
-    let host = frontend.snapshot.tree.as_ref();
+    let (pinned_host, _) =
+        crate::request_runner::runner_facts::prepare(&frontend, &engine).unwrap();
+    let host = &pinned_host;
     let evaluator = crate::driver_facts::DriverEvaluator {
         pure_calls: None,
         resource_search_context: None,
