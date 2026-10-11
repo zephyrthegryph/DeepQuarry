@@ -297,3 +297,10 @@ CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
+
+/// The Southern Cross atmospherics mixer: draws 7500 W while mixing (the map edit `active_power_usage = 7500` it carried before the draw
+/// became the uses_power() trait; a compiled map cannot name a var that left the type).
+/obj/machinery/atmospherics/omni/mixer/high_power
+
+CAPABILITIES(/obj/machinery/atmospherics/omni/mixer/high_power)
+	configure(uses_power(active = 7500))

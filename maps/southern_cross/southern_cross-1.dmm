@@ -33758,8 +33758,7 @@
 /turf/simulated/floor/tiled,
 /area/engineering/atmos)
 "bnI" = (
-/obj/machinery/atmospherics/omni/mixer{
-	active_power_usage = 7500;
+/obj/machinery/atmospherics/omni/mixer/high_power{
 	tag_east = 2;
 	tag_east_con = null;
 	tag_north = 1;
