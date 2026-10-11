@@ -13,7 +13,7 @@ CAPABILITIES(/obj/item/spell/modifier)
 	look_glow(PROC_REF(spell_glow))
 
 /// The spell's light while it is held ready.
-/obj/item/spell/modifier/proc/spell_glow()
+/obj/item/spell/modifier/proc/spell_glow(datum/act/A)
 	return GLOW(spell_light_range, spell_light_intensity, spell_light_color)
 
 /obj/item/spell/modifier/on_melee_cast(atom/hit_atom, mob/user)

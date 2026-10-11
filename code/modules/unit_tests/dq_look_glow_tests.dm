@@ -13,7 +13,7 @@ TRACKED(/obj/structure/dq_glow_probe, lit)
 CAPABILITIES(/obj/structure/dq_glow_probe)
 	look_glow(PROC_REF(probe_glow), when = nameof(lit))
 
-/obj/structure/dq_glow_probe/proc/probe_glow()
+/obj/structure/dq_glow_probe/proc/probe_glow(datum/act/A)
 	return GLOW(3, 0.5, shade)
 
 /// A probe whose draw names the light itself.

@@ -20,7 +20,7 @@ CAPABILITIES(/obj/item/spell/chroma)
 	look_glow(PROC_REF(chroma_glow))
 
 /// The spell's light, in the colour picked for it.
-/obj/item/spell/chroma/proc/chroma_glow()
+/obj/item/spell/chroma/proc/chroma_glow(datum/act/A)
 	return GLOW(6, 5, color_to_use)
 
 /obj/effect/temporary_effect/chroma
@@ -37,7 +37,7 @@ CAPABILITIES(/obj/effect/temporary_effect/chroma)
 /obj/effect/temporary_effect/chroma/var/chroma_color = "#FFFFFF"
 
 /// The light the spell left, in its colour.
-/obj/effect/temporary_effect/chroma/proc/chroma_glow()
+/obj/effect/temporary_effect/chroma/proc/chroma_glow(datum/act/A)
 	return GLOW(6, 5, chroma_color)
 
 /obj/item/spell/chroma/on_ranged_cast(atom/hit_atom, mob/user)
