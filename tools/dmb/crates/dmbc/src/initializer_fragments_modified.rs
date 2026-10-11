@@ -71,7 +71,7 @@ impl InitializerFragments {
             verify,
             root_count,
             modified_policy,
-            &mut super::disk::TransportAttempt::default(),
+            &mut crate::initializer_lowering::disk::TransportAttempt::default(),
         )
     }
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
@@ -89,7 +89,7 @@ impl InitializerFragments {
         >,
         root_count: usize,
         modified_policy: Option<&[u8]>,
-        disk_attempt: &mut super::disk::TransportAttempt,
+        disk_attempt: &mut crate::initializer_lowering::disk::TransportAttempt,
     ) -> Result<
         Option<(
             crate::InitializerCode,
@@ -225,7 +225,7 @@ impl InitializerFragments {
             code,
             fields,
             modified_policy,
-            &mut super::disk::TransportAttempt::default(),
+            &mut crate::initializer_lowering::disk::TransportAttempt::default(),
         )
     }
     pub(crate) fn remember_modified_with_attempt(
@@ -235,7 +235,7 @@ impl InitializerFragments {
         code: &Arc<ResolverProc>,
         fields: &[(String, dm_syntax::Expr)],
         modified_policy: Option<&[u8]>,
-        disk_attempt: &mut super::disk::TransportAttempt,
+        disk_attempt: &mut crate::initializer_lowering::disk::TransportAttempt,
     ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
