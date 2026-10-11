@@ -13,8 +13,6 @@
 /obj/structure/flora/tree/bigtree/choose_icon_state(datum/roller/R)
 	return "[base_state][R.number(1, 4)]"
 
-/obj/structure/flora/tree/bigtree/Initialize(mapload)
-	. = ..()
 
 /obj/structure/flora/tree/bigtree/stump()
 	if(is_stump)

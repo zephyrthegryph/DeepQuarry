@@ -63,8 +63,9 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 
-	internal_channels = GLOB.default_internal_channels.Copy()
-
+/// The internal channels it starts with (derives(), at init): frequency text -> the access each needs (a subtype answers its own set).
+/obj/item/radio/proc/starting_channels()
+	return GLOB.default_internal_channels.Copy()
 
 // radio_connection/secure_radio_connections are SSradio's live subscriptions,
 // rebuilt by on_materialize() from frequency/channels (C5). The bluespace
@@ -169,6 +170,7 @@ CAPABILITIES(/obj/item/radio)
 	op("toggleLoudspeaker", ui_act("toggleLoudspeaker"), then(PROC_REF(ui_act_toggleloudspeaker)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(radio_emp)))
+	derives(nameof(internal_channels), PROC_REF(starting_channels))
 
 /// The guard every window button of the family asks first (a subtype overrides it).
 /obj/item/radio/proc/ui_gate(datum/act/op/A)
@@ -850,9 +852,8 @@ CAPABILITIES(/obj/item/radio/borg)
 /obj/item/radio/phone/medbay
 	frequency = MED_I_FREQ
 
-/obj/item/radio/phone/medbay/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+/obj/item/radio/phone/medbay/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
 
 /obj/item/radio/proc/can_broadcast_to()
 	var/list/output = list()
@@ -944,9 +945,8 @@ CAPABILITIES(/obj/item/radio/borg)
 	subspace_transmission = TRUE
 	adhoc_fallback = TRUE
 
-/obj/item/radio/emergency/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+/obj/item/radio/emergency/starting_channels()
+	return GLOB.default_medbay_channels.Copy()
 
 /obj/item/bluespaceradio/tether_prelinked
 	name = "bluespace radio (tether)"

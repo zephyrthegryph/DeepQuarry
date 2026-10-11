@@ -113,11 +113,12 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery)
 	var/base_name = " "
 	var/base_desc = " "
 
+/// The name and description its labels build on (derives(), at init): what it was made or mapped with.
+/obj/item/storage/pill_bottle/proc/name_at_start()
+	return name
 
-/obj/item/storage/pill_bottle/Initialize(mapload)
-	. = ..()
-	base_name = name
-	base_desc = desc
+/obj/item/storage/pill_bottle/proc/desc_at_start()
+	return desc
 
 TRACKED(/obj/item/storage/pill_bottle, wrapper_color)
 
@@ -136,6 +137,8 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 	
 	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+	derives(nameof(base_name), PROC_REF(name_at_start))
+	derives(nameof(base_desc), PROC_REF(desc_at_start))
 
 /// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).
 /obj/item/storage/pill_bottle/proc/label_applied(datum/act/op/A)

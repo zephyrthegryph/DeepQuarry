@@ -9,6 +9,7 @@
 	var/obj/item/nozzle = null //Attached welder, or other spray device.
 	var/nozzle_type = /obj/item/weldingtool/tubefed
 	var/nozzle_attached = 0
+	nozzle_attached = 1
 
 CAPABILITIES(/obj/item/weldpack)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
@@ -16,14 +17,7 @@ CAPABILITIES(/obj/item/weldpack)
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(mousedrop_input))
-
-/obj/item/weldpack/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	nozzle_attached = 1
+	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel))) // lotsa refills
 
 
 /obj/item/weldpack/dropped(mob/user, equipping, slot)

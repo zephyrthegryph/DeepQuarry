@@ -185,11 +185,13 @@ CAPABILITIES(/obj/item/poi/brokenoldreactor)
 	var/fried = FALSE
 	var/has_paper = FALSE
 
-/obj/item/poi/broken_drone_circuit/Initialize(mapload)
-	. = ..()
-	drone_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]]"
-	var/new_canalyzer = "[drone_name] [examine_canalyzer]"	//Only way I could think to dynamically insert drone name here
-	examine_canalyzer = new_canalyzer
+/// Rolled before init (rolls()): the drone's model and serial.
+/obj/item/poi/broken_drone_circuit/proc/roll_drone_name(datum/roller/R)
+	return "[R.choose(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD"))]-[R.number(1000, 9999)]]"
+
+/// Rolled before init (rolls()), after the name: the analyzer readout starts with it.
+/obj/item/poi/broken_drone_circuit/proc/canalyzer_with_name(datum/roller/R)
+	return "[drone_name] [examine_canalyzer]"
 
 /// Requirement: a fried circuit is past working on.
 TRACKED(/obj/item/poi/broken_drone_circuit, fried)
@@ -200,6 +202,8 @@ CAPABILITIES(/obj/item/poi/broken_drone_circuit)
 	op("analyze_fried", in_hand(), label("Analyze"), when(nameof(fried)), then(PROC_REF(analyzed_fried)))
 	// the old attackby: screwdriver, wirecutters, multitool and analyzer on the blackbox (a fried board is past saving)
 	op("work", item(/obj/item), label("Use"), needs(req_is(nameof(fried), FALSE, because = MSG(drone_circuit/fried))), then(PROC_REF(interaction_item)))
+	rolls(nameof(drone_name), PROC_REF(roll_drone_name))
+	rolls(nameof(examine_canalyzer), PROC_REF(canalyzer_with_name), from = list(nameof(drone_name)))
 
 MSG_DEF_SELF(drone_circuit/fried, "It's covered in black marks, you feel there's nothing more you can do.")
 

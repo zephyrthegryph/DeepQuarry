@@ -17,46 +17,44 @@
 	desc = "It's a storage unit for emergency breathmasks and O2 tanks."
 	closet_appearance = /datum/decl/closet_appearance/oxygen
 
-/obj/structure/closet/emcloset/Initialize(mapload)
-	switch (pickweight(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10)))
-	// Block Start - Modified List
-		if ("small")
-			starts_with = list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/tank/emergency/oxygen = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit/emergency = 2)
-		if ("aid")
-			starts_with = list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/storage/firstaid/o2,
-				/obj/item/tank/emergency/oxygen/engi = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit/emergency = 2)
-		if ("tank")
-			starts_with = list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/tank/emergency/oxygen/double = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit = 2)
-		if ("both")
-			starts_with = list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/storage/firstaid/o2,
-				/obj/item/tank/emergency/oxygen/double = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit = 2)
-	// Block End
+CAPABILITIES(/obj/structure/closet/emcloset)
+	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
 
-	return ..()
+/// Rolled before init (rolls()): one of four emergency kits.
+/obj/structure/closet/emcloset/proc/roll_starts_with(datum/roller/R)
+	var/static/list/kits = list(
+		"small" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/tank/emergency/oxygen = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit/emergency = 2),
+		"aid" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/storage/firstaid/o2,
+			/obj/item/tank/emergency/oxygen/engi = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit/emergency = 2),
+		"tank" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/tank/emergency/oxygen/double = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit = 2),
+		"both" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/storage/firstaid/o2,
+			/obj/item/tank/emergency/oxygen/double = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit = 2))
+	var/list/kit = kits[R.weighted(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10))]
+	return kit.Copy() // the closet's own starts_with
 
 /obj/structure/closet/emcloset/legacy
 	starts_with = list(
@@ -245,14 +243,11 @@ CAPABILITIES(/obj/structure/closet/toolcloset)
 	store_mobs = 0
 
 
-/obj/structure/closet/firecloset/Initialize(mapload)
-	if(add_emergency_toolbox)
-		starts_with += /obj/item/storage/toolbox/emergency
-	return ..()
+CAPABILITIES(/obj/structure/closet/firecloset)
+	initial_contents(/obj/item/storage/toolbox/emergency, when = nameof(add_emergency_toolbox))
 
-/obj/structure/closet/hydrant/Initialize(mapload)
-	starts_with += /obj/item/storage/toolbox/emergency
-	return ..()
+CAPABILITIES(/obj/structure/closet/hydrant)
+	initial_contents(/obj/item/storage/toolbox/emergency)
 
 /obj/structure/closet/shuttleemerg //wall mounted fire closet
 	name = "emergency repairs closet"

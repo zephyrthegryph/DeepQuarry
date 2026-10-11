@@ -72,15 +72,6 @@ TRACKED(/obj/structure/bed, base_icon)
 	if(padding)
 		set_padding_material(get_material_by_name(padding))
 
-// ALLOW(init/INSTANCE_STATE): a bed draws its frame and padding, and turns like a chair (or only flips)
-/obj/structure/bed/Initialize(mapload)
-	. = ..()
-	if(flippable) // If we can't change directions, don't bother.
-		// Ugly check for chairs, beds can only be flipped north and south...
-		if(istype(src,/obj/structure/bed/chair))
-			make_rotatable()
-		else
-			make_rotatable(only_flip = TRUE)
 
 /obj/structure/bed/get_material()
 	return material
@@ -134,6 +125,8 @@ CAPABILITIES(/obj/structure/bed)
 		needs(req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
 	param(nameof(material_key), pos = 1)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
+	rotatable(only_flip = TRUE)
+	extend(CAP_ROTATABLE, when(nameof(flippable)))
 
 /// What a bed that is not for lying on does without: the nest, the pillow piles (their own hands and items replace the bed's).
 /proc/bed_hands_off()

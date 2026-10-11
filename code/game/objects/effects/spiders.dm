@@ -297,12 +297,13 @@ TYPE_TABLE(/obj/effect/spider/spiderling/stunted, spiderling_grow_as, list(/mob/
 /obj/effect/spider/spiderling/princess
 	name = "royal spiderling"
 	desc = "There's a special aura about this one."
+	amount_grown = 50
 
 TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/nurse/queen))
 
-/obj/effect/spider/spiderling/princess/Initialize(mapload)
-	. = ..()
-	amount_grown = 50
+/// A royal spiderling starts half grown (its roll keeps it).
+/obj/effect/spider/spiderling/princess/roll_grown(datum/roller/R)
+	return amount_grown
 
 /obj/effect/decal/cleanable/spiderling_remains
 	name = "spiderling remains"
