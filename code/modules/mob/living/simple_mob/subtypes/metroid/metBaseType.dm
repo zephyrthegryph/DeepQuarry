@@ -95,7 +95,7 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/metroid, metroid_initial_sound, null)
 
 /mob/living/simple_mob/metroid/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_brute = 1
 	B.digest_burn = 1
 	B.vore_verb = "swallow"

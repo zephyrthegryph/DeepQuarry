@@ -78,7 +78,7 @@
 
 /mob/living/simple_mob/vore/lamia/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 
 	B.transferchance = vore_upper_transfer_chance
 	B.transferlocation = "tail stomach"

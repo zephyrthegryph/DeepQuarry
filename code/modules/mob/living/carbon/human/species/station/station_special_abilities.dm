@@ -906,7 +906,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
-	if(!(src.vore_selected))
+	if(!(vore_selected_of(src)))
 		to_chat(src, span_notice("No selected belly found."))
 		return
 
@@ -984,10 +984,10 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	if(target?.buckled_to()) //how are you src?.buckled_to() in the water?!
 		var/atom/movable/_tmp_buck_19 = target?.buckled_to()
 		_tmp_buck_19.unbuckle_mob()
-	act_message(target, src, MSG_SELF(span_vdanger("You are dragged below the water and feel yourself slipping directly into %T%'s [vore_selected.get_belly_name()]!")), \
+	act_message(target, src, MSG_SELF(span_vdanger("You are dragged below the water and feel yourself slipping directly into %T%'s [vore_selected_of(src).get_belly_name()]!")), \
 		MSG_OTHERS(span_vwarning("%U% suddenly disappears, being dragged into the water!")))
-	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected.get_belly_name()]."))
-	vore_selected.nom_atom(target)
+	to_chat(src, span_vnotice("You successfully drag \the [target] into the water, slipping them into your [vore_selected_of(src).get_belly_name()]."))
+	vore_selected_of(src).nom_atom(target)
 
 /mob/living/carbon/human/proc/toggle_pain_module()
 	set name = "Toggle pain simulation."

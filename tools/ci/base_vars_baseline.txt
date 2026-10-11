@@ -188,7 +188,6 @@ base_var	code/game/objects/items.dm	var/burning = null
 base_var	code/game/objects/items.dm	var/storage_cost = null
 base_var	code/game/objects/items.dm	var/slot_flags = 0 //This is used to determine on which slots an item can fit.
 base_var	code/game/objects/items.dm	var/no_attack_log = 0 //If it's an item we don't want to log attack_logs with, set this to 1
-base_var	code/game/objects/items.dm	var/obj/item/master = null // the item this one is attached to
 base_var	code/game/objects/items.dm	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 base_var	code/game/objects/items.dm	var/force = 0
 base_var	code/game/objects/items.dm	var/throwforce = 0
@@ -208,7 +207,6 @@ base_var	code/game/objects/items.dm	var/body_parts_covered = 0 //see setup.dm fo
 base_var	code/game/objects/items.dm	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 base_var	code/game/objects/items.dm	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
-base_var	code/game/objects/items.dm	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
 base_var	code/game/objects/items.dm	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 base_var	code/game/objects/items.dm	var/embed_chance = -1 //0 won't embed, and 100 will always embed
@@ -574,7 +572,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/last_glow_range = null
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_intensity = null
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_color = null
 base_var	code/modules/mob/living/living_defines.dm	var/see_invisible_default = SEE_INVISIBLE_LIVING
-base_var	code/modules/mob/living/living_defines.dm	var/nest //Not specific, because a Nest may be the prop nest, or blob factory in this case.
 base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list
 base_var	code/modules/mob/living/living_defines.dm	var/makes_dirt = TRUE //FALSE if the mob shouldn't be making dirt on the ground when it walks
@@ -588,8 +585,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/tiredness = 0 //For vore 
 base_var	code/modules/mob/living/living_defines.dm	var/fear = 0 //For fear effects and phobias
 base_var	code/modules/mob/living/living_defines.dm	COOLDOWN_DECLARE(fear_sound_cooldown) //For making sure the heartbeats don't play over each other
 base_var	code/modules/mob/living/living_defines.dm	var/touch_reaction_flags
-base_var	code/modules/mob/living/living_defines.dm	var/mob/living/tf_form // Shapeshifter shenanigans
-base_var	code/modules/mob/living/living_defines.dm	var/datum/mind/tf_form_mind
 base_var	code/modules/mob/living/living_defines.dm	var/tf_form_holds_key = FALSE
 base_var	code/modules/mob/living/living_defines.dm	var/list/status_effects
 base_var	code/modules/mob/living/living_defines.dm	var/muffled = FALSE // Used by muffling belly
@@ -804,7 +799,6 @@ base_var	code/modules/vore/eating/mob.dm	var/resizable = TRUE // Can other peopl
 base_var	code/modules/vore/eating/mob.dm	var/digest_leave_remains = FALSE // Will this mob leave bones/skull/etc after the melty demise?
 base_var	code/modules/vore/eating/mob.dm	var/allowmobvore = TRUE // Will simplemobs attempt to eat the mob?
 base_var	code/modules/vore/eating/mob.dm	var/allowtemp = TRUE // Can they be affected by belly temperature?
-base_var	code/modules/vore/eating/mob.dm	var/obj/belly/vore_selected // Default to no vore capability.
 base_var	code/modules/vore/eating/mob.dm	var/list/vore_organs // Lazy list of vore containers inside a mob
 base_var	code/modules/vore/eating/mob.dm	var/absorbed = FALSE // If a mob is absorbed into another
 base_var	code/modules/vore/eating/mob.dm	var/vore_taste = null // What the character tastes like

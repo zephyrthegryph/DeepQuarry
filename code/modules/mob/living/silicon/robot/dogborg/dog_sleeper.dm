@@ -215,7 +215,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 /obj/item/dogborg/sleeper/proc/ingest_atom(atom/ingesting)
 	if (!ingesting || ingesting == hound)
 		return
-	var/obj/belly/belly = hound.vore_selected
+	var/obj/belly/belly = vore_selected_of(hound)
 	if (!istype(hound) || !istype(belly) || !(belly in hound.vore_organs))
 		return
 	if (isliving(ingesting))
@@ -262,7 +262,7 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 	rel_set(src, nameof(hound), src.loc)
 	if (!istype(hound) || contents_count(src) <= 0)
 		return
-	if (!hound.vore_selected)
+	if (!vore_selected_of(hound))
 		to_chat(hound, span_warning("You don't have a belly selected to empty the contents into!"))
 		return
 	for (var/C in contents)

@@ -4548,3 +4548,17 @@ autowhisper displays, ...), `plane_holder`, `vis_enabled` and `planes_visible` l
   have raised a runtime error (it was already null without a client). Vision toggles on a client-less mob (`plane_holder?.set_vis()`) do
   nothing until a client logs in, as before for a mob that never had one.
 * Test mobs get an empty hud with `dq_test_hud(M)`.
+
+## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
+
+`/obj/item` `master`, `/mob` `vore_selected`, `/mob/living` `tf_form`, `tf_form_mind` and `nest` are sparse links (LK_ITEM_MASTER,
+LK_VORE_SELECTED, LK_TF_FORM, LK_TF_FORM_MIND, LK_NEST), read through `item_master()`, `vore_selected_of()`, `tf_form_of()`,
+`tf_form_mind_of()`, `nest_of()` and written through their `set_*()` (827 sites, `tools/dx/codemods/var_to_accessor.py`). The hidden uplink
+is the `/obj/item/uplink/hidden` in the item's contents (`item_hidden_uplink()`); the uplink radio, multitool, headset and implant start
+with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
+
+* **A link breaks when either end is deleted**, as the reference vars did through their relation declarations.
+* **The hidden uplink tolerates nullspace** (its keeps_if()), so a slot's starting uplink survives the move into its item.
+* **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
+  hooked to its belly in a setup hook instead of Initialize().
+* `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).

@@ -347,8 +347,8 @@ This device records all warnings given and teleport events for admin review in c
 		real_dest = real_loc
 	if(isliving(real_loc))
 		var/mob/living/L = real_loc
-		if(L.vore_selected)
-			real_dest = L.vore_selected
+		if(vore_selected_of(L))
+			real_dest = vore_selected_of(L)
 		else if(length(L.vore_organs))
 			real_dest = pick(L.vore_organs)
 

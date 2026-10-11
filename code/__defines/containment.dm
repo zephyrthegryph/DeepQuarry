@@ -27,6 +27,8 @@
 #define CONTAINER_SLOT_JAR "jar"
 /// The creature a fishing or butterfly net holds.
 #define CONTAINER_SLOT_NET "net"
+/// The hidden uplink an uplink-carrying item (radio, multitool, headset, implant) holds; item_hidden_uplink() reads it.
+#define SLOT_HIDDEN_UPLINK "hidden_uplink"
 
 // ---- Occupant machines (C8, containment.md §10) ----
 /// The sealed occupant slot of a cryopod-family despawner.

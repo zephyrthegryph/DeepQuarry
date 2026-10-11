@@ -151,7 +151,7 @@
 
 /mob/living/simple_mob/animal/space/carp/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "Stomach"
 	B.desc = "The toothy jaws of the space carp gnash down around your body while its throat opens up to suck you inside. The vicious attack is too swift for you to stop it. You're dragged down its short esophagus, then dumped into its muscular digestive system. Your body curls tight in the cramped confines of its slimy stomach; pushing aside a caustic mixture of other unrecognizable detritus. You realize the soupy chime consists of past explorers who went missing long ago. If you can't push your way back up to freedom, your fate will be the same."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -259,7 +259,7 @@
 
 /mob/living/simple_mob/animal/space/carp/large/huge/vorny/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You've been swallowed whole and alive by a massive white carp! The stomach around you is oppressively tight, squeezing and grinding wrinkled walls across your body, making it hard to make any movement at all. The chamber is flooded with fluids that completely overwhelm you."
 	B.mode_flags = DM_FLAG_THICKBELLY

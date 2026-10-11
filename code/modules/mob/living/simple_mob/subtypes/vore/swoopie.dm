@@ -50,10 +50,6 @@
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
-	if(istype(Vac))
-		rel_set(Vac, nameof(Vac.output_dest), vore_selected)
-		Vac.vac_power = 3
-		rel_set(Vac, nameof(Vac.vac_owner), src)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
@@ -115,7 +111,7 @@
 	B.belly_fullscreen_color4 = "#CCFFFF"
 	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
 
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 
 	B = new /obj/belly/longneck(src)
 	B.affects_vore_sprites = TRUE
@@ -199,8 +195,8 @@
 					src.Vac.forceMove(src)
 		var/atom/movable/vac_output = src.Vac.output_dest
 		if(!vac_output)
-			if(isbelly(src.vore_selected))
-				rel_set(src.Vac, nameof(/obj/item/vac_attachment::output_dest), src.vore_selected)
+			if(isbelly(vore_selected_of(src)))
+				rel_set(src.Vac, nameof(/obj/item/vac_attachment::output_dest), vore_selected_of(src))
 	if(!istype(T) || !istype(src.Vac) || !(src.ai_brain != null) || src.Vac.loc != src || src.stat)
 		return
 	if(istype(T, /turf/simulated))
@@ -263,6 +259,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	setup(PROC_REF(hook_up_vac))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
 	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))
 	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie)
@@ -335,4 +332,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
 
-
+/// Setup: the vacuum feeds the belly the swoopie selected while its vore was loaded (Initialize()).
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/hook_up_vac()
+	if(!istype(Vac))
+		return
+	rel_set(Vac, nameof(Vac.output_dest), vore_selected_of(src))
+	Vac.vac_power = 3
+	rel_set(Vac, nameof(Vac.vac_owner), src)

@@ -302,8 +302,8 @@ CAPABILITIES(/mob/living/silicon/pai)
 	vore_capacity_ex = list("stomach" = vore_capacity)
 
 	// Emergency eject if you change to a smaller belly
-	if(vore_fullness > vore_capacity && vore_selected)
-		vore_selected.release_all_contents(TRUE)
+	if(vore_fullness > vore_capacity && vore_selected_of(src))
+		vore_selected_of(src).release_all_contents(TRUE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Click interactions

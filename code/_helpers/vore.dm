@@ -16,7 +16,7 @@
 	if(prey.is_incorporeal() || pred.is_incorporeal())
 		if(!allow_incorporeal)
 			return FALSE
-	if(!pred.vore_selected)
+	if(!vore_selected_of(pred))
 		return FALSE
 	if(!pred.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
 		return FALSE

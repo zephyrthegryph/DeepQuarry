@@ -38,11 +38,11 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 		var/obj/item/assembly/shock_kit/K = new /obj/item/assembly/shock_kit( user )
 		K.icon = 'icons/obj/assemblies.dmi'
 
-		rel_set(W, nameof(W.master), K)
+		set_item_master(W, K)
 		if(!move_into(K, nameof(K.part1), W, user))
 			return OP_OK
 
-		rel_set(src, nameof(src.master), K)
+		set_item_master(src, K)
 		if(!move_into(K, nameof(K.part2), src, user))
 			return OP_OK
 
@@ -58,7 +58,7 @@ MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 250
 		return FALSE
 	if(ishuman(user) && (!SSticker || ticker_mode() != "monkey") && user.contents.Find(src))
 		return TRUE
-	if(user.contents.Find(master))
+	if(user.contents.Find(item_master(src)))
 		return TRUE
 	if(in_range(src, user) && isturf(loc))
 		return TRUE

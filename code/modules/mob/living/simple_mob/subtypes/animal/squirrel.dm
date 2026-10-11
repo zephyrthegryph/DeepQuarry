@@ -68,7 +68,7 @@
 
 /mob/living/simple_mob/vore/squirrel/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.digest_mode = DM_SELECT
 	B.mode_flags = DM_FLAG_THICKBELLY

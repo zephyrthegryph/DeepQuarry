@@ -165,7 +165,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 
 /mob/living/simple_mob/vore/alienanimals/teppi/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The heat of the roiling flesh around you bakes into you immediately as you're cast into the gloom of a Teppi's primary gastric chamber. The undulations are practically smothering, clinging to you and grinding you all over as the Teppi continues about its day. The walls are heavy against you, so it's really difficult to move at all, while the heart of this creature pulses rhythmically somewhere nearby, and you can feel the throb of its pulse in the doughy squish pressing up against you. Your figure sinks a ways into the flesh as it presses in, wrapping limbs up between countless slick folds and kneading waves. It's not long before you're positively soaked in a thin layer of slime as you're rocked and squeezed and jostled in the stomach of your captor."
 	B.mode_flags = 40
@@ -602,8 +602,8 @@ MSG_DEF(teppi/slaughter_begins, span_attack("You approach %T%'s neck with %I%.")
 				if(prob(25))
 					act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 					play_sfx(src, SFX_VOICE_TEPPI_RUMBLE)
-				if(vore_selected)
-					vore_selected.digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
+				if(vore_selected_of(src))
+					vore_selected_of(src).digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
 			else if(prob(25))
 				act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 				play_sfx(src, SFX_VOICE_TEPPI_CUTE_RUMBLE)
@@ -787,16 +787,16 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	..()
 	if(client || !teppi_adult)
 		return
-	if(vore_selected == friend_zone)
+	if(vore_selected_of(src) == friend_zone)
 		return
 	if(resting)
-		vore_selected.digestchance = 60
-		vore_selected.digest_brute = 6
-		vore_selected.digest_burn = 6
+		vore_selected_of(src).digestchance = 60
+		vore_selected_of(src).digest_brute = 6
+		vore_selected_of(src).digest_burn = 6
 	else
-		vore_selected.digestchance = 5
-		vore_selected.digest_brute = 0.05
-		vore_selected.digest_burn = 0.05
+		vore_selected_of(src).digestchance = 5
+		vore_selected_of(src).digest_brute = 0.05
+		vore_selected_of(src).digest_burn = 0.05
 
 /mob/living/simple_mob/vore/alienanimals/teppi/animal_nom(mob/living/T in living_mobs(1))
 	if(vore_active && !voremob_loaded)
@@ -807,16 +807,16 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	ai_busy_begin()
 	T.stop_pulling()
 	if(current_affinity >= 50)
-		var/tumby = vore_selected
-		rel_set(src, nameof(vore_selected), friend_zone)
+		var/tumby = vore_selected_of(src)
+		set_vore_selected(src, friend_zone)
 		ai_busy_end()
 		..()
-		rel_set(src, nameof(vore_selected), tumby)
+		set_vore_selected(src, tumby)
 		return
 	else if(current_affinity <= -50)
-		vore_selected.digest_mode = DM_DIGEST
+		vore_selected_of(src).digest_mode = DM_DIGEST
 	else
-		vore_selected.digest_mode = DM_DRAIN
+		vore_selected_of(src).digest_mode = DM_DRAIN
 	..()
 	ai_busy_end()
 
@@ -850,9 +850,9 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 	if(current_affinity >= 50)
 		return friend_zone
 	if(current_affinity <= -50)
-		vore_selected.digest_mode = DM_DIGEST
+		vore_selected_of(src).digest_mode = DM_DIGEST
 	else
-		vore_selected.digest_mode = DM_DRAIN
+		vore_selected_of(src).digest_mode = DM_DRAIN
 
 //Instead of copying this everywhere let's just make a proc
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/lets_eat(person)
