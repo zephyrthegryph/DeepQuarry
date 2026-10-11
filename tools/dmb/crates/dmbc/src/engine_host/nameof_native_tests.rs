@@ -17,7 +17,9 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
     .with_bootstrap_catalog()
     .unwrap();
     let seed = engine.frontend_seed();
-    let frontend = dm_tree::frontend::build_with_config(
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut semantic = dm_tree::frontend::RetainedSemanticTree::default();
+    let frontend = dm_tree::frontend::build_with_executor_and_semantic_state(
         Path::new("project.dme"),
         &Source,
         &Default::default(),
@@ -26,6 +28,9 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
             engine: Some(&seed),
             observer: None,
         },
+        None,
+        &executor,
+        Some(&mut semantic),
     )
     .unwrap();
     let mut symbols = frontend.snapshot.tree.symbols().clone();
@@ -44,6 +49,11 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
         Completeness::Partial,
     )
     .unwrap();
+    let unpinned = EngineResolverHost::new(
+        frontend.snapshot.tree.clone(),
+        constants.clone(),
+        runtime.clone(),
+    );
     let host = EngineResolverHost::new(frontend.snapshot.tree.clone(), constants, runtime)
         .with_pinned_variables(&engine, &frontend)
         .unwrap();
@@ -106,4 +116,55 @@ fn native_computed_nameof_receivers_use_semantic_selection() {
             "{source}"
         );
     }
+    let root_bindings = dm_codegen_byond::LowerBindings {
+        current_type_path: Some("/".into()),
+        ..Default::default()
+    };
+    for source in [
+        "/datum/actually_absent",
+        "/datum/base/proc/actually_absent",
+        "/datum/base::actually_absent",
+        "actually_absent",
+    ] {
+        let expression = dm_syntax::parse_expression(source).expr.unwrap();
+        let error = dm_codegen_byond::observe_reference_source_features(
+            &expression,
+            &root_bindings,
+            &symbols,
+            &host,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.kind,
+            dm_codegen_byond::LowerErrorKind::SourceError,
+            "{source}: {error:?}"
+        );
+        let error = dm_codegen_byond::observe_reference_source_features(
+            &expression,
+            &root_bindings,
+            &symbols,
+            &unpinned,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.kind,
+            dm_codegen_byond::LowerErrorKind::UnsupportedModel,
+            "{source}: {error:?}"
+        );
+    }
+    assert_eq!(
+        host.resolve(Q::Type(SymbolId::of("/list"))),
+        M::Symbol(SymbolId::of("/list"))
+    );
+    assert!(
+        matches!(
+            host.resolve(Q::MethodProcedureValue {
+                owner: SymbolId::of("/list"),
+                name: SymbolId::of("Copy"),
+                verb: false,
+            }),
+            M::Unsupported(_)
+        ),
+        "catalog-excluded native methods cannot become false absence"
+    );
 }

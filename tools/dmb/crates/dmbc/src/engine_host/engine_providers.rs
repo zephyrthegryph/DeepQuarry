@@ -46,6 +46,8 @@ impl OrdinaryGlobalNames {
     }
 }
 pub(super) struct VariableProviders {
+    pub native_types: Arc<BTreeSet<SymbolId>>,
+    pub native_callable_names: Arc<BTreeSet<SymbolId>>,
     pub issuer: Option<u64>,
     pub spellings: SymbolTable,
     pub intrinsic: BTreeSet<SymbolId>,
@@ -186,10 +188,57 @@ impl VariableProviders {
             }
         }
         let ordinary_globals = Arc::new(OrdinaryGlobalNames { excluded });
+        // Conservative bootstrap namespace interpretation, qualified by the
+        // exact pinned template/schema above. Catalog-only native names remain
+        // exclusions, never fabricated positive definitions or runtime slots.
+        let seed = engine.frontend_seed();
+        let mut native_types: BTreeSet<_> = seed
+            .hierarchy
+            .parents
+            .iter()
+            .map(|(path, _)| *path)
+            .collect();
+        for ty in catalog["Types"]
+            .as_array()
+            .ok_or("native type catalog absent")?
+        {
+            native_types.insert(SymbolId::of(
+                ty["Path"].as_str().ok_or("native type path malformed")?,
+            ));
+        }
+        let mut native_callable_names: BTreeSet<_> = seed
+            .intrinsics
+            .iter()
+            .filter(|member| {
+                matches!(
+                    member.kind,
+                    dm_tree::MemberKind::Proc | dm_tree::MemberKind::Verb
+                )
+            })
+            .map(|member| member.name)
+            .collect();
+        for procedure in catalog["Procs"]
+            .as_array()
+            .ok_or("native procedure catalog absent")?
+        {
+            native_callable_names.insert(SymbolId::of(
+                procedure["Name"]
+                    .as_str()
+                    .ok_or("native procedure name malformed")?,
+            ));
+        }
         // Versioned source policy is bound to the exact template/schema already
         // checked by NamedEngineCoverage::pinned above, never an ambient version.
         let mut bytes = b"pinned-authored-variable-absence-v7;lexical-implied-type-storage-exclusion;ordinary-root-global-and-predefined-absence;native-ABI-5161687-schema1;OD1362abc5accbc2037df9b45efa1de13fb1bb677f;dispatcher-SHA256=33cd1daf2c2090b6de58ea5ccecdc28918fb9b71deff84c51cbc693795b5bd38;objecttree-SHA256=2c19b1ea64495e67516b972d57aed171a4044eb0ae7835b4eb84ed2ee80a3440;vars-SHA256=ce372f294699c7c3d39c3a52e306d269800c033edb9f82620faf5fe4d3fc66ce".to_vec();
         bytes.extend_from_slice(&engine.interpretation_schema().to_le_bytes());
+        bytes.extend_from_slice(b";pinned-semantic-namespace-v1;seeded-type-roster;ordinary-owner-variable-and-callable-exclusions");
+        for path in &native_types {
+            bytes.extend_from_slice(&path.bits().to_le_bytes());
+        }
+        bytes.push(0);
+        for name in &native_callable_names {
+            bytes.extend_from_slice(&name.bits().to_le_bytes());
+        }
         for name in &ordinary_globals.excluded {
             bytes.extend_from_slice(&name.bits().to_le_bytes());
         }
@@ -209,6 +258,8 @@ impl VariableProviders {
             )
             .ok();
         Ok(Self {
+            native_types: Arc::new(native_types),
+            native_callable_names: Arc::new(native_callable_names),
             issuer,
             spellings: catalog_symbols,
             intrinsic,
@@ -236,6 +287,21 @@ impl PinnedEngineProviders {
         }
         self.callables.closed.census(census);
         self.variables.ordinary_globals.census(census);
+        for (label, names) in [
+            (
+                "host.variable_coverage.native_types",
+                &self.variables.native_types,
+            ),
+            (
+                "host.variable_coverage.native_callable_names",
+                &self.variables.native_callable_names,
+            ),
+        ] {
+            if census.arc_object(label, names) {
+                census.observe_items(label, names.len());
+                census.unknown(label, "private BTreeSet node backing excluded");
+            }
+        }
         if census.arc_object("host.intrinsic_methods", &self.callables.methods) {
             census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
                 "host.intrinsic_methods",

@@ -4,6 +4,9 @@ use super::*;
 pub(crate) struct VariableCoverage {
     pub(super) names: HashSet<SymbolId>,
     ordinary_globals: Arc<engine_providers::OrdinaryGlobalNames>,
+    pub(super) native_types: Arc<BTreeSet<SymbolId>>,
+    pub(super) native_callable_names: Arc<BTreeSet<SymbolId>>,
+    pub(super) namespace_seeded: bool,
     pub(super) positive_constants: BTreeMap<SymbolId, SemanticValue>,
 }
 impl VariableCoverage {
@@ -33,6 +36,13 @@ impl VariableCoverage {
             .map(|(name, value)| (*name, value.clone()))
             .collect();
         Arc::new(Self {
+            namespace_seeded: frontend.snapshot.tree.intrinsic_hierarchy_certified()
+                && providers
+                    .native_types
+                    .iter()
+                    .all(|path| frontend.snapshot.tree.lookup_type(*path).is_some()),
+            native_types: Arc::clone(&providers.native_types),
+            native_callable_names: Arc::clone(&providers.native_callable_names),
             names,
             ordinary_globals: Arc::clone(&providers.ordinary_globals),
             positive_constants,
@@ -52,13 +62,28 @@ impl VariableCoverage {
             | Q::DeclaredVarType { name, .. }
             | Q::VarStorage { name, .. }
             | Q::StaticVar { name, .. }
-            | Q::Constant { name, .. } => self.names.contains(&name),
+            | Q::Constant { name, .. } => {
+                self.names.contains(&name)
+                    || (self.namespace_seeded && self.ordinary_globals.covers(name))
+            }
             _ => false,
         }
     }
     pub(crate) fn census(self: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
         if census.arc_object("host.variable_coverage", self) {
             self.ordinary_globals.census(census);
+            for (label, names) in [
+                ("host.variable_coverage.native_types", &self.native_types),
+                (
+                    "host.variable_coverage.native_callable_names",
+                    &self.native_callable_names,
+                ),
+            ] {
+                if census.arc_object(label, names) {
+                    census.observe_items(label, names.len());
+                    census.unknown(label, "private BTreeSet node backing excluded");
+                }
+            }
             census.observe_items("host.variable_coverage.names", self.names.len());
             census.observe_items(
                 "host.variable_coverage.constants",

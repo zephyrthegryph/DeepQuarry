@@ -5,6 +5,7 @@ mod constants;
 mod engine_providers;
 mod variable_coverage;
 mod variable_negative;
+mod namespace_absence;
 pub(crate) use variable_coverage::VariableCoverage;
 #[path = "intrinsic_methods.rs"]
 mod intrinsic_methods;
@@ -578,6 +579,9 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                     }
                 }
                 if !matches!(answer, M::Unsupported(_)) {
+                    return answer;
+                }
+                if let Some(answer) = self.pinned_namespace_absence(query) {
                     return answer;
                 }
                 if let Q::UniqueStaticVar(name) = query {
