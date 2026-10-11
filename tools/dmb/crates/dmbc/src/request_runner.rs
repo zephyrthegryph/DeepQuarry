@@ -951,7 +951,7 @@ fn run_build_attempt(
         });
         let map_stats = map_memo.as_ref().map(|memo| {
             use std::sync::atomic::Ordering::Relaxed;
-            serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"output_hits":memo.counts.output_hits.load(Relaxed),"outputs_prepared":memo.counts.outputs_prepared.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"staged_records":memo.counts.staged_records.load(Relaxed),"staging_failed":memo.counts.staging_failed.load(Relaxed),"staging_errors":memo.staging_errors()})
+            serde_json::json!({"parse_hits":memo.counts.parse_hits.load(Relaxed),"geometry_hits":memo.counts.geometry_hits.load(Relaxed),"output_hits":memo.counts.output_hits.load(Relaxed),"unit_hits":memo.counts.unit_hits.load(Relaxed),"outputs_prepared":memo.counts.outputs_prepared.load(Relaxed),"parsed":memo.counts.parsed.load(Relaxed),"projected":memo.counts.projected.load(Relaxed),"disk_admitted":memo.counts.disk_admitted.load(Relaxed),"skipped_disk_budget":memo.counts.skipped_disk_budget.load(Relaxed),"staged_records":memo.counts.staged_records.load(Relaxed),"staging_failed":memo.counts.staging_failed.load(Relaxed),"staging_errors":memo.staging_errors()})
         });
         let declaration_stats = frontend_report.declaration_reuse;
         dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
