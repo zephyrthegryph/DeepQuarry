@@ -1184,5 +1184,14 @@
     "passed": 19,
     "failed": 0,
     "scope": "Nine complete retained projection fixtures and ten compact disk fixtures passed. First build caught branch return mismatch, fixed f5. Corrected177.703s build reaped under4GB. Source fixes include rejected local default refresh and mandatory own declaration receipt checks. No runtime/performance/mapped-word migration gate claim."
+  },
+  "incremental_runtime_f5": {
+    "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-f5/da1ac835275c4d6a928ad114b7ea52b7/receipt.json",
+    "complete": true,
+    "matches": true,
+    "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-173049-1a245fca-job-cargo.json",
+    "scope": "Sixteen standalone retained/fresh revisions and all eleven declared trusted BYOND/native runtime markers passed, including type addition/deletion. Daemon reaped. Counted prototype only; later mapped-word migration and full DeepQuarry runtime baseline not validated."
   }
 }

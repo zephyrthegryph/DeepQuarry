@@ -11,7 +11,7 @@ The sixteen revisions are initial, unchanged, body edit, inherited default edit,
 argument default edit, procedure-static initializer edit, global initializer
 edit, parent change and restoration, field/procedure addition, runtime field
 initializer replacement, removal of that initializer/field/procedure, resource replacement and an unchanged
-resource build, followed by adding and deleting a new subtype. The added subtype is instantiated through a typed local and must report inherited value 9 and own value 31; deletion restores the zero-valued observer without retaining a reference to the removed type. These new revisions are source-only and await an actual paired run; existing fourteen-revision receipts remain historical evidence for their original nine markers. Edits are cumulative and identify
+resource build, followed by adding and deleting a new subtype. The added subtype is instantiated through a typed local and must report inherited value 9 and own value 31; deletion restores the zero-valued observer without retaining a reference to the removed type. All sixteen revisions passed the paired run recorded in `phase0/publication_integration_20261011.json` for compiler commit `f5a9e36195`; existing fourteen-revision receipts remain historical evidence for their original nine markers. Edits are cumulative and identify
 one exact source site. `scenarios.json` contains the expected values for each
 revision. Both compilers returning the same wrong result is a failure.
 
