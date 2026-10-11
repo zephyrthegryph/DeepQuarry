@@ -75,7 +75,7 @@ the type owns (not the library's) and for each row of the table above that appli
 (`code/modules/unit_tests/snapshots/<name>/`). Each is a native pin capture (`dq_conversion_pin`'s rows: menus, refusals,
 clicks, wires, op keys); the legacy resolver they once recorded is retired (ix-r2). Re-record after an
 intended change with `bash tools/dq_focused_test.sh --bless 'dq_interaction_domain_snapshot/*'`; add a type by
-adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`.
+adding an empty file for it. On a mismatch the current rows are written to `data/test-snapshots/<name>/`. A type's file there is removed when the type matches again, is blessed or is recorded, so the directory only ever holds rows that differ now (the loot pins do the same for `data/test-snapshots/loot/<pin>.txt`).
 
 ## Factored op pins
 
