@@ -598,5 +598,21 @@
     "source_commit": "92175106d40f744f93037be2f32855e4f3897fc2",
     "admitted_output": false,
     "proven_fix": "22361423f2: absent variant removal no longer scans prior subscription rosters"
+  },
+  "latest_846_validation": {
+    "compiler_commit": "84677b2f6f054283e58888c549389a18cf97f0d3",
+    "compiler_sha256": "2d04fa2da0948f101c7b425215b03f0049d1d9a1c2592339ebb21276134c55f7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124237-3275e24e-job-cargo.json",
+    "five_package_check_passed": true,
+    "check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124106-ed447e56-job-cargo.json",
+    "shared_index_focused_passed": 9,
+    "shared_index_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-124223-5578edf9-focused.json",
+    "disk_replay_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/1e2f1d6f4f6a4e9aa55cbc94b4a844ac/receipt.json",
+    "disk_replay_result": "Four accepted revisions byte-identical to fresh; exact modified procedure disk hits after unrelated edits and source relocation. Removed nested type still exits internal error 70, gate incomplete.",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-124933-47c90f92/receipt.json",
+    "cohort_status": "running; no complete timing admitted",
+    "cleanup_bytes": 595621314,
+    "cleanup_manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-obsolete-symbols-and-timeout-leaves-20261011.json",
+    "scope": "Prototype functional checks; no completed new benchmark, full runtime, or six-worktree acceptance"
   }
 }
