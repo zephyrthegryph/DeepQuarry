@@ -1,5 +1,7 @@
 //! Exact procedure memo replay and source-ordered cold fallback.
 use super::*;
+#[path = "rich_sidecars.rs"]
+mod rich_sidecars;
 #[allow(clippy::too_many_arguments)]
 pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
     frontend: &ColdFrontend,
@@ -202,13 +204,7 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
                 return false;
             }
             let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-            let absolute =
-                !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
-            rebased.as_ref().is_some_and(|origins| {
-                !absolute
-                    || (previous.origin.expanded_span == body.expanded_span
-                        && *origins == previous.debug_origins)
-            })
+            rebased.is_some()
         })
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
@@ -222,22 +218,19 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         };
         let value = accepted.value;
         let _profile = dm_profile::item("lowering.resident_replay");
-        // AST-bearing private sidecars still contain expanded spans. Ordinary
-        // code contains only symbolic operands/debug ordinals and can move.
+        // Rich sidecars are replaced only by current authenticated recipe
+        // captures; incomplete mappings take the ordinary lowering fallback.
         let previous = &value.unit;
         let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-        let absolute_sidecars =
-            !previous.code.modified_instances.is_empty() || !previous.source_helpers.is_empty();
-        if rebased.as_ref().is_some_and(|origins| {
-            !absolute_sidecars
-                || (previous.origin.expanded_span == body.expanded_span
-                    && *origins == previous.debug_origins)
-        }) {
+        let rebound = rebased.and_then(|origins| {
+            rich_sidecars::rebind(
+                previous, frontend, body, bodies, &recording, &prepared, origins,
+            )
+        });
+        if let Some(mut unit) = rebound {
             memo.counts
                 .resident_hits
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            let mut unit = previous.clone();
-            unit.debug_origins = rebased.expect("checked relative origins");
             unit.origin = body.clone();
             unit.abi = prepared.abi.clone();
             if let Some(member) = frontend.snapshot.tree.member(body.member) {

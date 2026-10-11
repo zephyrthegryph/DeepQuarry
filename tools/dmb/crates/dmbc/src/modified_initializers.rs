@@ -33,6 +33,10 @@ pub struct PreparedSeed {
     origins: DebugOrigins,
 }
 impl PreparedSeed {
+    /// Consume a seed already authenticated by the existing current recipe issuer.
+    pub(crate) fn into_current_capture(self) -> (SymRef, CapturedModifiedInstance) {
+        (self.reference, self.captured)
+    }
     pub(crate) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         census.prepared_modified(&self.captured, &self.origins);
     }
