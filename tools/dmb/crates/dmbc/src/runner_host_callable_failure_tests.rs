@@ -32,7 +32,7 @@ fn frontend(
 #[test]
 fn post_frontend_pruning_keeps_current_callable_owner_and_releases_detached_predecessor() {
     let mut host = BuildHost::default();
-    let memo = host.procedure_memo(3, None).unwrap();
+    let memo = host.procedure_memo(3, None, true).unwrap();
     let store = Arc::clone(memo.startup.as_ref().unwrap());
     let pool = dm_exec::BuildExecutor::new(1).unwrap();
     let old = frontend(&mut host, &pool, "/proc/p()\n    return 1\n");

@@ -37,6 +37,7 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
             Ok(CommandOutcome::Completed)
         }
         Command::Gc { project } => {
+            let publishable_artifacts = command == BuildCommand::Compile && demand.is_none();
             let project = std::fs::canonicalize(project)?;
             dmbc::daemon_println!(
                 "{}",
@@ -371,7 +372,7 @@ fn run_build_attempt(
                 as Arc<dmbc::lowering_memo::CachePublisher>
         });
     let procedure_memo = host
-        .procedure_memo(memo_policy, cache_snapshot.clone())
+        .procedure_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| {
             let memo = memo.with_explanation_limit(131072);
             match &cache_publisher {
@@ -388,7 +389,7 @@ fn run_build_attempt(
         }
     });
     let map_memo = host
-        .map_memo(memo_policy, cache_snapshot.clone(), command == BuildCommand::Compile && demand.is_none())
+        .map_memo(memo_policy, cache_snapshot.clone(), publishable_artifacts)
         .map(|memo| match &cache_publisher {
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
             None => memo,
@@ -928,6 +929,9 @@ fn run_build_attempt(
         // Required compile, freshness, pair installation and session operations
         // succeeded. The sole cache segment is published only at this boundary.
         dmbc::daemon::control::checkpoint()?;
+        if let Some(memo) = &procedure_memo {
+            memo.publish_successful();
+        }
         if let Some(memo) = &map_memo {
             memo.publish_successful();
         }

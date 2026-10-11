@@ -9,7 +9,7 @@ impl dm_preprocess::SourceProvider for Source {
 #[test]
 fn clear_regions_releases_callable_tree_without_replacing_static_artifact_owner() {
     let mut host = BuildHost::default();
-    let memo = host.procedure_memo(3, None).unwrap();
+    let memo = host.procedure_memo(3, None, true).unwrap();
     let store = Arc::clone(memo.startup.as_ref().unwrap());
     let revision = dm_tree::frontend::FrontendRevision::new(
         dm_tree::frontend::build(Path::new("callable.dme"), &Source, &Default::default(), 1)

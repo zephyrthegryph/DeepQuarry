@@ -22,8 +22,7 @@ pub(crate) use engine_payload::{EnginePayload, EnginePayloads};
 mod executor_pool;
 pub(crate) use executor_pool::ExecutorPools;
 
-type ProcedureValues =
-    Arc<crate::lowering_memo::LoweringMemo<crate::lowering_memo::CachedProcedure>>;
+type ProcedureValues = Arc<crate::lowering_memo::RetainedProcedures>;
 type HostParts<'a> = (
     Option<memo::MemoView<'a>>,
     HostExecution<'a>,
@@ -356,6 +355,7 @@ impl BuildHost {
         &mut self,
         policy: u128,
         disk: Option<Arc<disk::LazyDisk>>,
+        publishable: bool,
     ) -> Option<crate::lowering_memo::ProcedureMemo> {
         if self.memo.is_none() {
             return disk.map(|snapshot| {
@@ -387,7 +387,7 @@ impl BuildHost {
             }
             self.procedures = Some((
                 policy,
-                Arc::new(crate::lowering_memo::LoweringMemo::default()),
+                Arc::new(crate::lowering_memo::RetainedProcedures::default()),
             ));
         }
         if self
@@ -395,14 +395,12 @@ impl BuildHost {
             .as_ref()
             .is_none_or(|(previous, _)| *previous != policy)
         {
-            let symbolic =
-                self.shared_procedure_code
-                    .as_ref()
-                    .map_or_else(Default::default, |owner| {
-                        crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(
-                            owner,
-                        )
-                    });
+            let symbolic = self.shared_procedure_code.as_ref().map_or_else(
+                crate::lowering::symbolic_input::SessionSymbolicMemo::current_revision,
+                |owner| {
+                    crate::lowering::symbolic_input::SessionSymbolicMemo::with_shared_code(owner)
+                },
+            );
             self.symbolic = Some((policy, Arc::new(symbolic)));
         }
         if self
@@ -412,13 +410,20 @@ impl BuildHost {
         {
             self.initializers = Some((policy, Arc::new(Default::default())));
         }
-        let mut memo = crate::lowering_memo::ProcedureMemo::with_resident(
+        let mut memo = crate::lowering_memo::ProcedureMemo::with_resident_for_request(
             policy,
             Arc::clone(&self.procedures.as_ref().unwrap().1),
             disk,
+            publishable,
         );
-        memo.symbolic = Some(Arc::clone(&self.symbolic.as_ref().unwrap().1));
-        memo.initializers = Some(Arc::clone(&self.initializers.as_ref().unwrap().1));
+        memo.symbolic = Some(self.symbolic.as_ref().unwrap().1.for_request(publishable));
+        memo.initializers = Some(
+            self.initializers
+                .as_ref()
+                .unwrap()
+                .1
+                .for_request(publishable),
+        );
         if self
             .startup
             .as_ref()
@@ -426,7 +431,7 @@ impl BuildHost {
         {
             self.startup = Some((policy, Arc::new(Default::default())));
         }
-        memo.startup = Some(Arc::clone(&self.startup.as_ref().unwrap().1));
+        memo.startup = Some(self.startup.as_ref().unwrap().1.for_request(publishable));
         if self
             .abi
             .as_ref()
@@ -448,8 +453,13 @@ impl BuildHost {
         {
             self.initializer_fragments = Some((policy, Arc::new(Default::default())));
         }
-        memo.initializer_fragments =
-            Some(Arc::clone(&self.initializer_fragments.as_ref().unwrap().1));
+        memo.initializer_fragments = Some(
+            self.initializer_fragments
+                .as_ref()
+                .unwrap()
+                .1
+                .for_request(publishable),
+        );
         if self
             .initializer_assemblies
             .as_ref()
@@ -457,8 +467,13 @@ impl BuildHost {
         {
             self.initializer_assemblies = Some((policy, Arc::new(Default::default())));
         }
-        memo.initializer_assemblies =
-            Some(Arc::clone(&self.initializer_assemblies.as_ref().unwrap().1));
+        memo.initializer_assemblies = Some(
+            self.initializer_assemblies
+                .as_ref()
+                .unwrap()
+                .1
+                .for_request(publishable),
+        );
         if self
             .class_projections
             .as_ref()
@@ -466,7 +481,13 @@ impl BuildHost {
         {
             self.class_projections = Some((policy, Arc::new(Default::default())));
         }
-        memo.class_projections = Some(Arc::clone(&self.class_projections.as_ref().unwrap().1));
+        memo.class_projections = Some(Arc::new(
+            self.class_projections
+                .as_ref()
+                .unwrap()
+                .1
+                .with_request(publishable),
+        ));
         if self
             .required_types
             .as_ref()
@@ -474,7 +495,13 @@ impl BuildHost {
         {
             self.required_types = Some((policy, Arc::new(Default::default())));
         }
-        memo.required_types = Some(Arc::clone(&self.required_types.as_ref().unwrap().1));
+        memo.required_types = Some(
+            self.required_types
+                .as_ref()
+                .unwrap()
+                .1
+                .for_request(publishable),
+        );
         if self
             .link_bindings
             .as_ref()
@@ -482,7 +509,7 @@ impl BuildHost {
         {
             self.link_bindings = Some((policy, Arc::new(Default::default())));
         }
-        memo.link_bindings = Some(Arc::clone(&self.link_bindings.as_ref().unwrap().1));
+        memo.link_bindings = Some(self.link_bindings.as_ref().unwrap().1.for_request(publishable));
         Some(memo)
     }
 
@@ -682,8 +709,8 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &second));
         assert!(Arc::ptr_eq(&first.payload, &second.payload));
         assert_ne!(first.configuration.project, second.configuration.project);
-        let a_memo = a.procedure_memo(1, None).unwrap();
-        let b_memo = b.procedure_memo(1, None).unwrap();
+        let a_memo = a.procedure_memo(1, None, true).unwrap();
+        let b_memo = b.procedure_memo(1, None, true).unwrap();
         assert!(!Arc::ptr_eq(&a_memo.values, &b_memo.values));
     }
     fn worker_ids(
@@ -733,12 +760,12 @@ mod tests {
     #[test]
     fn procedure_facades_share_only_values_and_policy_change_replaces_store() {
         let mut host = BuildHost::default();
-        let first = host.procedure_memo(1, None).unwrap();
+        let first = host.procedure_memo(1, None, true).unwrap();
         first
             .counts
             .resident_hits
             .store(7, std::sync::atomic::Ordering::Relaxed);
-        let second = host.procedure_memo(1, None).unwrap();
+        let second = host.procedure_memo(1, None, true).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
         assert_eq!(
             second
@@ -747,9 +774,11 @@ mod tests {
                 .load(std::sync::atomic::Ordering::Relaxed),
             0
         );
-        let changed = host.procedure_memo(2, None).unwrap();
+        let changed = host.procedure_memo(2, None, true).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &changed.values));
-        assert!(BuildHost::one_shot().procedure_memo(1, None).is_none());
+        assert!(BuildHost::one_shot()
+            .procedure_memo(1, None, true)
+            .is_none());
     }
     #[test]
     fn retained_requests_reuse_physical_workers_and_count_switch_replaces_them() {
