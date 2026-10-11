@@ -90,7 +90,7 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
     )
     .unwrap();
     dm_analysis::tree_export::write_queries_jsonl(
-        frontend.snapshot.tree.symbols(),
+        startup.plan().symbols.as_ref(),
         &ordinary,
         [dm_analysis::tree_export::AnalysisQuery {
             subject: question.subject.as_deref(),
@@ -99,6 +99,9 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         &mut expected_host,
     )
     .unwrap();
+    let expected_host_row: serde_json::Value = serde_json::from_slice(&expected_host).unwrap();
+    assert_eq!(expected_host_row["answer"]["name"]["text"], "shared");
+    assert_eq!(expected_host_row["answer"]["kind"], "procedure_static");
     drop(ordinary);
     let tree = Arc::clone(&frontend.snapshot.tree);
     let source_revision = dm_analysis::tree_export::source_revision(&frontend);
