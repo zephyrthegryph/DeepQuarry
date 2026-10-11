@@ -86,6 +86,10 @@ fn distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline() {
     };
     let tail = PreparedKey::Parsed(vec![1, 2, 3]);
     let bytes = input.materialize(&tail);
+    assert_eq!(
+        crate::lowering_memo::ProcedureMemo::record_key(&bytes).version,
+        23
+    );
     for previous_prefix in [
         b"dmbc-procedure-memo-v7-diagnostic-anchors\0".as_slice(),
         b"dmbc-procedure-memo-v8-certified-missing-calls\0".as_slice(),
@@ -94,6 +98,7 @@ fn distinct_equal_metadata_falls_back_to_exact_equality_and_changes_decline() {
         b"dmbc-procedure-memo-v11-member-call-namespace\0".as_slice(),
         b"dmbc-procedure-memo-v12-safe-member-catch-provenance\0".as_slice(),
         b"dmbc-procedure-memo-v13-local-member-call-proof\0".as_slice(),
+        b"dmbc-procedure-memo-v15-pending-loop-body-context\0".as_slice(),
     ] {
         let mut previous = previous_prefix.to_vec();
         previous.extend_from_slice(&bytes[PREFIX.len()..]);

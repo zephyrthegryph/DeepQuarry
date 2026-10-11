@@ -487,7 +487,7 @@ impl Compiler<'_> {
                             && binding
                                 .strip_prefix("var/")
                                 .and_then(|raw| raw.rsplit_once('/'))
-                                .is_some_and(|(path, _)| path.contains('/')))
+                                .is_some_and(|(path, _)| path == "obj" || path.contains('/')))
                     {
                         if let Some((type_name, _)) = binding
                             .strip_prefix("var/")
