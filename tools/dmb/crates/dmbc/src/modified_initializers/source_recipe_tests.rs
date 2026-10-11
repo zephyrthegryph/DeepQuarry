@@ -235,3 +235,45 @@ fn unparenthesized_return_modifier_remains_an_unsupported_frontend_form() {
         .message
         .contains("a block following a return expression has unsupported semantics")));
 }
+
+#[test]
+fn resource_free_disk_recipe_allows_current_project_context_but_resource_proof_is_exact() {
+    let current = frontend("/obj/base\n/proc/p()\n    return (/obj/base{amount=1})\n");
+    let previous = seed(&current, &Host(7));
+    let recipe = previous
+        .source_recipe(current.bodies[0].expanded_span)
+        .unwrap();
+    let debug = DebugOrigins {
+        entries: vec![DebugOrigin {
+            semantic_path: "project.dme".into(),
+            line: 3,
+        }],
+    };
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        &current,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    arena
+        .with_parsed(&current.bodies[0], |parsed| {
+            let mut wire = recipe.disk_evidence();
+            assert_eq!(wire.resource_context, None);
+            let reissue = |wire: &RecipeWire<'_>, context| {
+                wire.reissue(
+                    parsed,
+                    &current,
+                    &Host(7),
+                    current.snapshot.tree.symbols(),
+                    &debug,
+                    context,
+                    SymbolId::of("/"),
+                )
+            };
+            assert!(reissue(&wire, Some(41)).is_some());
+            // A transported positive resource authority is never substituted by
+            // another current project context (even before canonical recapture).
+            wire.resource_context = Some(41);
+            assert!(reissue(&wire, Some(42)).is_none());
+            assert!(reissue(&wire, None).is_none());
+        })
+        .unwrap();
+}

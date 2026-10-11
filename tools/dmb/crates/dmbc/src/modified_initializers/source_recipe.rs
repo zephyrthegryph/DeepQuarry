@@ -179,7 +179,9 @@ impl RecipeWire<'_> {
                         .expanded_span
                         .end
                         .checked_sub(parsed.occurrence().expanded_span.start)?)
-            || self.resource_context != context
+            // Resource-free descriptors intentionally omit FILE_DIR authority.
+            // The current ABI may still carry a project resource context.
+            || self.resource_context.is_some_and(|expected| Some(expected) != context)
             || self.lexical_owner != owner
             || match self.location {
                 RecipeLocation::Body => self
