@@ -38,3 +38,5 @@ production insertion/removal needs use them. They remain a framework gap rather
 than receiving a fabricated metadata provider. Display-name-only direct renames
 also require their actual publication contract; administrative edits already
 invalidate through the existing edit dispatcher.
+
+Before the later compiler retirement, this landing also records real old-consent ordering and folder/closet admission boundaries. These tests run against unchanged consent and custom-slot production policies; no passing result is claimed until the combined focused gate completes.
