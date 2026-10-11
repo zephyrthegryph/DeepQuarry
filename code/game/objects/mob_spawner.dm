@@ -65,7 +65,7 @@ CAPABILITIES(/obj/structure/mob_spawner)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
@@ -158,7 +158,7 @@ CAPABILITIES(/obj/structure/mob_spawner/scanner)
 	//and then we spawn them
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
-		L.nest = src
+		set_nest(L, src)
 		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction

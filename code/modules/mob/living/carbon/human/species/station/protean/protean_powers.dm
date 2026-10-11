@@ -212,7 +212,7 @@ CAPABILITIES(/datum/protean_power/blobform)
 		to_chat(H, span_warning("You can't hide while resting."))
 		return
 	B.set_hiding(H, !B.hiding)
-	if(B.hiding || !H.vore_prefs.can_be_drop_pred || !H.vore_selected)
+	if(B.hiding || !H.can_be_drop_pred || !vore_selected_of(H))
 		return
 	// Springing the trap: engulf something standing on us.
 	var/list/potentials = H.living_mobs(0)
@@ -225,8 +225,8 @@ CAPABILITIES(/datum/protean_power/blobform)
 	if(target?.buckled_to())
 		var/atom/movable/_tmp_buck_18 = target?.buckled_to()
 		_tmp_buck_18.unbuckle_mob(target, force = TRUE)
-	H.vore_selected.nom_atom(target)
-	to_chat(target, span_warning("\The [H] quickly engulfs you, [H.vore_selected.vore_verb]ing you into their [H.vore_selected.get_belly_name()]!"))
+	vore_selected_of(H).nom_atom(target)
+	to_chat(target, span_warning("\The [H] quickly engulfs you, [vore_selected_of(H).vore_verb]ing you into their [vore_selected_of(H).get_belly_name()]!"))
 
 /mob/living/carbon/human/proc/prot_hide()
 	set name = "Hide Self"

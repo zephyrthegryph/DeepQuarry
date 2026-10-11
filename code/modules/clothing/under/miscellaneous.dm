@@ -1866,12 +1866,8 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace)
 /obj/item/clothing/gloves/bluespace/emagged
 	emagged = TRUE
 
-// ALLOW(init/INSTANCE_STATE): rolls the size these gloves set
-/obj/item/clothing/gloves/bluespace/emagged/Initialize(mapload)
-	. = ..()
-	target_size = (rand(25,200)) /100 // set to our rule cap
-	if(target_size < 0.25) // set to our rule cap
-		target_size = 0.25 // set to our rule cap
+CAPABILITIES(/obj/item/clothing/gloves/bluespace/emagged)
+	rolls(nameof(target_size), range_of(0.25, 2, 0.01)) // an emagged pair sets a random size, within the rule cap
 
 /obj/item/clothing/gloves/bluespace/deluxe
 	name = "deluxe size standardization bracelet"

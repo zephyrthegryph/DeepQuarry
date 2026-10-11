@@ -31,7 +31,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr)
 
 /mob/living/simple_mob/animal/tyr/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING
 	B.digest_brute = 1

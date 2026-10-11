@@ -22,7 +22,7 @@
 	if(contained)
 		host = allocate(/mob/living/simple_mob/animal/passive/cat, T)
 		host.init_vore(TRUE)
-		belly = host.vore_selected
+		belly = vore_selected_of(host)
 		TEST_ASSERT(belly && !QDELETED(belly) && belly.owner == host, "The actual host initializes its real owned selected belly")
 	var/mob/living/simple_mob/source = allocate(source_type, T)
 	TEST_ASSERT(source && !QDELETED(source) && source.stat == CONSCIOUS, "The actual canonical small-animal constructor creates a conscious original source")

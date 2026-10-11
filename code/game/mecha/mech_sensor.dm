@@ -17,6 +17,7 @@
 	COOLDOWN_DECLARE(feedback_cooldown)
 
 CAPABILITIES(/obj/machinery/mech_sensor)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = EQUIP))
 
 /obj/machinery/mech_sensor/CanPass(atom/movable/mover, turf/target)
@@ -62,10 +63,6 @@ CAPABILITIES(/obj/machinery/mech_sensor)
 /obj/machinery/mech_sensor/draw(datum/look/look)
 	..()
 	look.state("airlock_sensor_[enabled() ? "standby" : "off"]")
-
-/obj/machinery/mech_sensor/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
 
 /obj/machinery/mech_sensor/proc/set_frequency(new_frequency)
 	if(radio_connection())

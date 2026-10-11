@@ -80,6 +80,7 @@ CAPABILITY_DEF(shadekin_dark, CAP_SHADEKIN_DARK, key = NONE)
 /obj/effect/abstract/dark_maw/var/armed = FALSE
 TRACKED(/obj/effect/abstract/dark_maw, armed)
 CAPABILITIES(/obj/effect/abstract/dark_maw)
+	setup(PROC_REF(aim_at_owner_belly))
 	every(2 SECONDS, then(PROC_REF(dark_maw_step)), when = nameof(armed))
 	param(nameof(maw_user), pos = 1, keep = FALSE)
 	param(nameof(trigger_now), pos = 2)
@@ -97,8 +98,6 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 	var/datum/shadekin/SK
 	if(user && isliving(user))
 		rel_set(src, nameof(owner), user)
-		if(owner().vore_selected)
-			rel_set(src, nameof(target), owner().vore_selected)
 		observe(owner(), /datum/notice/qdeleting, src, then(PROC_REF(drop_everything_and_delete)))
 		has_signal = TRUE
 		SK = owner().get_shadekin_state()
@@ -226,4 +225,10 @@ CAPABILITIES(/obj/effect/abstract/dark_maw)
 
 /// The belly the maw feeds (a relation view).
 /obj/effect/abstract/dark_maw/proc/target() as /obj/belly
-	return target
+	return target || vore_selected_of(owner())
+
+/// Setup: the maw keeps the belly its shadekin had selected when it opened (target() falls back to the current one until then).
+/obj/effect/abstract/dark_maw/proc/aim_at_owner_belly()
+	var/obj/belly/B = vore_selected_of(owner())
+	if(B)
+		rel_set(src, nameof(target), B)

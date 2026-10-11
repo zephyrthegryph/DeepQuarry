@@ -33,7 +33,7 @@
 	if(!isturf(target.loc) || !isturf(source.loc)) //No slipping into things that aren't even on a valid turf.
 		return
 	//Prevents eating ourselves with our own stomach.
-	if(source.vore_selected == target.vore_selected)
+	if(vore_selected_of(source) == vore_selected_of(target))
 		return
 
 	//We are able to eat the person stumbling into us.
@@ -133,8 +133,8 @@
 				return
 			act_message(source, thrown_mob, others = span_vwarning("%U% suddenly slips inside of %T%'s [lowertext(destination_belly.name)] as %T% flies into them!"))
 			destination_belly.nom_atom(source) //Eat them!!!
-			if(source.loc != thrown_mob.vore_selected)
-				thrown_mob.vore_selected.belly_insert(source) //Double check. Should never happen but...Weirder things have happened!
+			if(source.loc != vore_selected_of(thrown_mob))
+				vore_selected_of(thrown_mob).belly_insert(source) //Double check. Should never happen but...Weirder things have happened!
 			if(thrower)
 				add_attack_logs(thrower,source,"Was Devoured by [thrown_mob.name] via throw vore.")
 			else

@@ -1,5 +1,12 @@
+/// The mob's selected belly (where its vore goes), or null: a sparse link (LK_VORE_SELECTED), not a var on /mob.
+/proc/vore_selected_of(mob/M) as /obj/belly
+	return link_get(M, LK_VORE_SELECTED)
+
+/// Selects belly B (one of M's vore_organs), or clears the selection with null.
+/proc/set_vore_selected(mob/M, obj/belly/B)
+	return link_set_one(M, LK_VORE_SELECTED, B)
+
 /mob
-	var/obj/belly/vore_selected			// Default to no vore capability.
 	var/list/vore_organs		// Lazy list of vore containers inside a mob
 	var/absorbed = FALSE				// If a mob is absorbed into another
 	var/obj/belly/spont_belly_front = null

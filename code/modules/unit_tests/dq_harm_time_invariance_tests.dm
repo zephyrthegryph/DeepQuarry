@@ -64,7 +64,7 @@
 	prey.forceMove(lolli)
 	rel_set(lolli, nameof(lolli.victims), list(prey))
 	lolli.spitout(0)
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	TEST_ASSERT_EQUAL(prey.loc, B, "the lollipop's captive should end up in the belly")
 	var/datum/relation_definition/slot/prey_slot = dq_path_slot_of(B, prey)
 	TEST_ASSERT_EQUAL(prey_slot?.slot_id, BELLY_SLOT_INTERIOR, "the captive should hold a belly interior slot entry")

@@ -211,12 +211,8 @@ TYPE_TABLE(/obj/structure/candybowl/security, candy_choices, ..() + list( \
 	var/list/ckeys_that_took
 	var/list/costumes
 
-/obj/structure/boxpile/Initialize(mapload)
-	. = ..()
-
-	costumes = typesof(/obj/item/storage/box/halloween/)
-
 CAPABILITIES(/obj/structure/boxpile)
+	per_type(nameof(costumes), PROC_REF(build_costumes))
 	op("hand", hand(), ungated(), label("Use"), claims(), wait(5 SECONDS), then(PROC_REF(rummage_done)))
 
 /obj/structure/boxpile/proc/rummage_done(datum/act/op/A)
@@ -247,3 +243,7 @@ CAPABILITIES(/obj/structure/boxpile)
 	return bowl.has_candy ? null : CANDYBOWL_EMPTY
 
 #undef CANDYBOWL_EMPTY
+
+/// The costume boxes a pile can hand out (per_type()).
+/obj/structure/boxpile/proc/build_costumes()
+	return typesof(/obj/item/storage/box/halloween/)

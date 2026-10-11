@@ -483,7 +483,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 		"The vast tongue quivers, inching you up close to it's gaping gullet. The slick hatch squeezes on a limb of yours, giving it a plush, sloppy, inviting tug...",
 		"Nestled atop the muscle, an array of deep, dull muffled glrrrgles echo up the beast's gullet, a gastric siren-song calling out for you.")
 	gut1 = B
-	rel_set(src, nameof(vore_selected), B)
+	set_vore_selected(src, B)
 	B = new /obj/belly/dragon/throat(src)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
@@ -841,7 +841,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
-	rel_set(src, nameof(vore_selected), gut2) //Just incase it eats someone right after being tamed
+	set_vore_selected(src, gut2) //Just incase it eats someone right after being tamed
 	ai_brain?.set_hostile(FALSE)
 	ai_brain?.lose_target()
 
@@ -857,7 +857,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 	say("HAVE IT YOUR WAY THEN")
 	// Legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
-	rel_set(src, nameof(vore_selected), gut1)
+	set_vore_selected(src, gut1)
 	if(attacker)
 		ai_brain?.give_target(attacker, TRUE)
 

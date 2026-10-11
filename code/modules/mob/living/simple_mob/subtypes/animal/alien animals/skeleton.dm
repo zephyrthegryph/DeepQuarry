@@ -88,7 +88,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You're not sure quite how, but you've found your way inside of the skeleton's stomach! It's cramped and cold and sounds heavily of xylophones!"
 	B.mode_flags = 40

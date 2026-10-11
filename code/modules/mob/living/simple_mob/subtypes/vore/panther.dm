@@ -64,7 +64,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
 
 /mob/living/simple_mob/vore/aggressive/panther/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "All it takes is a few more rasps of the panther's rough, barbed tongue to shovel the rest of you down its tightly rippling gullet... and with a final couple ravenous swallows, you spill out into the predatory feline's stomach! Right away, that gut's muscular walls knead and contract around you, forcing you into a curled-up ball as the panther's noisy purring rumbles into you from every direction."
 

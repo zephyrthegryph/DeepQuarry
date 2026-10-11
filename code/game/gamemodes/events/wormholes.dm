@@ -22,8 +22,8 @@
 		if(mob.vore_prefs.can_be_drop_pred && isfloor(mob.loc))
 			var/turf/simulated/floor/T = get_turf(mob.loc)
 			if(!T.block_tele)
-				if(mob.vore_selected)
-					exits += mob.vore_selected
+				if(vore_selected_of(mob))
+					exits += vore_selected_of(mob)
 				else if(length(mob.vore_organs))
 					exits += pick(mob.vore_organs)
 

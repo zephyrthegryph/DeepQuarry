@@ -70,7 +70,7 @@
 
 /mob/living/simple_mob/vore/alienanimals/succlet/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stummy"
 	B.desc = "It's a star shaped stomach. A stummy, if you will. It's warm and soft, not unlike plush, but it's tight!"
 	B.mode_flags = DM_FLAG_THICKBELLY | DM_FLAG_NUMBING

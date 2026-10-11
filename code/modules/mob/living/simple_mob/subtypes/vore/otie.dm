@@ -269,11 +269,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie)
 
 /mob/living/simple_mob/vore/otie/security/feed_grabbed_to_self(mob/living/user, mob/living/prey) // Make the gut start out safe for bellybrigging.
 	if(ishuman(prey))
-		vore_selected.digest_mode = DM_HOLD
+		vore_selected_of(src).digest_mode = DM_HOLD
 		if(check_threat(prey) >= 4)
 			GLOB.global_announcer.autosay("[src] is detaining suspect <b>[target_name(prey)]</b> in <b>[get_area(src)]</b>.", "SmartCollar oversight", "Security")
 	if(istype(prey,/mob/living/simple_mob/animal/passive/mouse))
-		vore_selected.digest_mode = DM_DIGEST
+		vore_selected_of(src).digest_mode = DM_DIGEST
 	. = ..()
 
 /mob/living/simple_mob/vore/otie/security/proc/check_threat(mob/living/M)

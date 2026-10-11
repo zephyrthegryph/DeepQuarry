@@ -65,7 +65,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.desc	= "You leaned a little too close to the pitcher plant, stumbling over the lip and splashing into a puddle of liquid filling the bottom of the cramped pitcher. You squirm madly, righting yourself and scrabbling at the walls in vain as the slick surface offers no purchase. The dim light grows dark as the pitcher's cap lowers, silently sealing the exit. With a sinking feeling, you realize you won't be able to push the exit open even if you could somehow climb that high, leaving you helplessly trapped in the slick, tingling fluid. The ONLY POSSIBLE WAY OUT is if someone either kills this thing or lowers a lifeline down to help. Maybe some string, a wire, or a good rope would do the trick..."
 	B.digest_burn = 0.1 // Sloowwwwww churns
 	B.digest_brute = 0.1 // Okay so I know there's no physical churning because it's a plant just trust me on this you want both of these
@@ -201,7 +201,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 
 /// The victim a wire loop can snag: the first human in the belly (only carbons, RIP mice).
 /mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_victim()
-	return locate_within(vore_selected, /mob/living/carbon/human)
+	return locate_within(vore_selected_of(src), /mob/living/carbon/human)
 
 /// You can just spam click to stack attempts if you feel like abusing it.
 /mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_started(datum/act/op/A)
@@ -221,7 +221,7 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 	if(prob(15))
 		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
 		rel_add(src, nameof(prey_excludes), H)
-		vore_selected.release_specific_contents(H)
+		vore_selected_of(src).release_specific_contents(H)
 		after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(H))
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
@@ -246,28 +246,28 @@ MSG_DEF_SELF(pitcher/empty, "The pitcher is empty.")
 /mob/living/simple_mob/vore/pitcher_plant/proc/vore_checks()
 	if(ckey) //This isn't intended to be a playable mob but skip all of this if it's player-controlled.
 		return
-	if(vore_selected && contents_count(vore_selected)) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
+	if(vore_selected_of(src) && contents_count(vore_selected_of(src))) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
 		var/mob/living/L
 		var/N = 0
 		var/hasdigestable = 0
 		var/hasindigestable = 0
-		FOR_CONTENTS(L, vore_selected)
+		FOR_CONTENTS(L, vore_selected_of(src))
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.set_nutrition(0) //No stuffing monkeys with protein shakes for massive nutrition.
-			if(!L.vore_prefs.digestable)
-				vore_selected.digest_mode = DM_DRAIN
+			if(!L.digestable)
+				vore_selected_of(src).digest_mode = DM_DRAIN
 				N = 1
 				hasindigestable = 1
 				continue
 			else
-				vore_selected.digest_mode = DM_DIGEST
+				vore_selected_of(src).digest_mode = DM_DIGEST
 				N = 1
 				hasdigestable = 1
 				continue
 		if(hasdigestable && hasindigestable)
-			vore_selected.digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
+			vore_selected_of(src).digest_mode = DM_DIGEST //Let's digest until we digest all the digestable prey, then move onto draining indigestable prey.
 		if(!N)
-			vore_selected.release_all_contents() //If there's no prey, spit out everything.
+			vore_selected_of(src).release_all_contents() //If there's no prey, spit out everything.
 
 /mob/living/simple_mob/vore/pitcher_plant/proc/handle_hungry() //Let's run this check every 30 seconds. This is how a hungry pitcher tries to lure prey.
 	if(nutrition <= PITCHER_HUNGRY) //Is sanity check another way to say redundancy?

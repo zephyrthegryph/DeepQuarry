@@ -22,7 +22,7 @@
 
 	var/info		//What's actually written on the paper.
 	var/tmp/info_links	//A different version of the paper which includes html links at fields and EOF
-	var/stamps		//The (text for the) stamps on the paper.
+	var/stamps = ""		//The (text for the) stamps on the paper.
 	var/fields		//Amount of user created fields
 	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
@@ -146,7 +146,6 @@ CAPABILITIES(/obj/item/paper)
 	if(mapload) // Jank, but we do this to prevent maploaded papers from somehow stacking across rounds if re-added to the board by a player.
 		was_maploaded = TRUE
 
-	stamps = ""
 
 	if(name != "paper")
 		desc = "This is a paper titled '" + name + "'."

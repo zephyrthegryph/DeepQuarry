@@ -23,16 +23,13 @@
 TRACKED(/obj/machinery/power/emitter/gyrotron, id_tag)
 
 CAPABILITIES(/obj/machinery/power/emitter/gyrotron)
+	default_parts()
 	configure(uses_power(active = 50000))
 	registry(REGISTRY_GYROTRONS, key = nameof(id_tag))
 	part_replacement()
 	op("set_ident", tool(TOOL_MULTITOOL), label("Set ident tag"), wait(0), when(cond_not(nameof(anomalous))),
 		asks(/datum/prompt/text, fields = list("title" = "Gyrotron", "question" = "Enter a new ident tag.", "default" = nameof(id_tag), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(ident_entered)))
-
-/obj/machinery/power/emitter/gyrotron/Initialize(mapload)
-	default_apply_parts()
-	return ..()
 
 /obj/machinery/power/emitter/gyrotron/proc/ident_entered(datum/act/op/A)
 	var/datum/prompt/text/answer = A.answer

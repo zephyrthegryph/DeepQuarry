@@ -42,7 +42,7 @@ CAPABILITIES(/obj/structure/bed/chair)
 	if(!move_into(E, nameof(E.part), SK, user, ledger_slot = SLOT_ECHAIR_KIT)) // out of the hand, into the chair's kit slot (its default is the buckle seat)
 		spent(E)
 		return OP_REFUSED
-	rel_set(SK, nameof(SK.master), E)
+	set_item_master(SK, E)
 	replace_with(src, E)
 	return OP_OK
 

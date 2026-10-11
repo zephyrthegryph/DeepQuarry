@@ -46,7 +46,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 /mob/living/simple_mob/proc/dq_vore_check(mob/living/L)
 	if(!voremob_loaded)
 		init_vore(TRUE)
-	if(!vore_selected)
+	if(!vore_selected_of(src))
 		return FALSE
 	if(!isliving(L))
 		return FALSE

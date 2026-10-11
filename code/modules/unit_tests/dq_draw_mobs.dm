@@ -34,7 +34,7 @@
 	TEST_ASSERT_EQUAL(pred.vore_fullness, 0, "an empty belly shows nothing")
 	TEST_ASSERT_EQUAL(pred.icon_state, "mouse_gray", "and the plain living state")
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human, T)
-	var/obj/belly/belly = pred.vore_selected
+	var/obj/belly/belly = vore_selected_of(pred)
 	TEST_ASSERT(belly.belly_insert(prey, pred), "prey goes into the belly")
 	refresh_flush()
 	TEST_ASSERT_EQUAL(pred.vore_fullness, 1, "the belly's content is the mob's tracked fullness without a hand call")

@@ -34,8 +34,8 @@
 		var/list/owned = B.belly_owned_lists()
 		TEST_ASSERT_EQUAL(length(owned), 0, "empty [B] owns lists: [jointext(owned, ", ")]")
 		TEST_ASSERT_NULL(B.sleep_violation(), "empty [B] breaks its sleep rule")
-	var/obj/belly/mine = pred.vore_selected
-	var/obj/belly/theirs = other.vore_selected
+	var/obj/belly/mine = vore_selected_of(pred)
+	var/obj/belly/theirs = vore_selected_of(other)
 	TEST_ASSERT(mine.digest_messages_prey == theirs.digest_messages_prey, "two default bellies should share one digest message list")
 	TEST_ASSERT(mine.emote_lists == theirs.emote_lists, "two default bellies should share one emote table")
 	TEST_ASSERT(mine.generated_reagents == theirs.generated_reagents, "two default bellies should share one liquid table")
@@ -59,7 +59,7 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	var/obj/belly/B2 = new /obj/belly(pred)
 	B2.name = "Second"
 
@@ -100,7 +100,7 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "a willing prey should be devourable")
 	prey.vore_prefs.devourable = FALSE
@@ -175,7 +175,7 @@
 /datum/unit_test/proc/vore_rate_belly(list/pair, mode)
 	var/mob/living/pred = pair[1]
 	var/mob/living/prey = pair[2]
-	var/obj/belly/B = pred.vore_selected
+	var/obj/belly/B = vore_selected_of(pred)
 	B.digest_mode = mode
 	B.nom_atom(prey, pred)
 	TEST_ASSERT_EQUAL(prey.loc, B, "prey should be inside for the rate test")

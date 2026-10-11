@@ -92,7 +92,7 @@
 					do_nom = TRUE
 
 			if(do_nom)
-				eater.vore_selected.nom_atom(micro)
+				vore_selected_of(eater).nom_atom(micro)
 				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume)
@@ -101,7 +101,7 @@
 		eater.drop_from_inventory(src) // Drop food from inventory so it doesn't end up staying on the hud after qdel, and so inhands go away
 
 		// Consume item TF mobs as raw nutrition if prefs align
-		if(possessed_voice && possessed_voice.len && eater.vore_prefs.can_be_drop_pred && eater.vore_prefs.food_vore && eater.vore_selected)
+		if(possessed_voice && possessed_voice.len && eater.can_be_drop_pred && eater.food_vore && vore_selected_of(eater))
 			var/obj/item/reagent_containers/food/rawnutrition/NR = new /obj/item/reagent_containers/food/rawnutrition(eater)
 			NR.name = "piece of food"
 			NR.stored_nutrition = 1
@@ -109,7 +109,7 @@
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 				own_take_member(src, nameof(possessed_voice), V)
 				consumed(V, eater)
-			if(!move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, NR, eater))
+			if(!move_into(vore_selected_of(eater), BELLY_SLOT_INTERIOR, NR, eater))
 				NR.forceMove(get_turf(eater))
 		if(trash)
 			var/obj/item/TrashItem = new trash(eater)
@@ -1830,8 +1830,8 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 		return
 
 	var/mob/living/Pred = M
-	if(Pred.vore_prefs.can_be_drop_pred && Pred.vore_prefs.food_vore && Pred.vore_selected)
-		Pred.vore_selected.nom_atom(Prey)
+	if(Pred.can_be_drop_pred && Pred.food_vore && vore_selected_of(Pred))
+		vore_selected_of(Pred).nom_atom(Prey)
 
 /obj/item/reagent_containers/food/snacks/monkeycube/on_reagent_change()
 	if(reagents.has_reagent(REAGENT_ID_WATER))

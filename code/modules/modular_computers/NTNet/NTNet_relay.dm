@@ -23,7 +23,7 @@
 CAPABILITIES(/obj/machinery/ntnet_relay)
 	configure(uses_power(active = 20000, idle = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	interface("NTNetRelay")
 	without("ui_open")
 	op("restart", ui_act("restart"), then(PROC_REF(ui_act_restart)))
@@ -111,16 +111,6 @@ TRACKED(/obj/machinery/ntnet_relay, dos_failure)
 		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
 // NTNet (a registered singleton) lists us in its relays relation list; attacking DoS programs

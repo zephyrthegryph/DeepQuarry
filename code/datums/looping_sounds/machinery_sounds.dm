@@ -137,6 +137,19 @@
 	falloff = 0.1 // Harsh
 	volume_chan = VOLUME_CHANNEL_MACHINERY_IDLE
 
+// The other three midloops a telecomms machine may hum (a machine picks one with owns_one(starts = pick_one(...))).
+/datum/looping_sound/tcomms/two
+	mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
+	mid_length = 40
+
+/datum/looping_sound/tcomms/three
+	mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
+	mid_length = 10
+
+/datum/looping_sound/tcomms/four
+	mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
+	mid_length = 30
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /datum/looping_sound/shield_generator

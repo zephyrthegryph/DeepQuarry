@@ -3,18 +3,16 @@
 	var/spawning_id
 
 CAPABILITIES(/obj/item/reagent_containers/glass/replenishing)
+	rolls(nameof(spawning_id), PROC_REF(roll_spawning_id))
 	every(2 SECONDS, then(PROC_REF(replenishing_step)))
 
-// ALLOW(init/INSTANCE_STATE): rolls which reagent it replenishes
-/obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
-	. = ..()
-	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
-		var/new_chem = pick(SSchemistry.ready().chemical_reagents)
-		if(new_chem in GLOB.obtainable_chemical_blacklist)
-			continue
-		else
-			spawning_id = new_chem
-			break
+/// The reagent it replenishes: any reagent not on the obtainable blacklist (ten tries, as before).
+/obj/item/reagent_containers/glass/replenishing/proc/roll_spawning_id(datum/roller/R)
+	var/list/chems = SSchemistry.ready().chemical_reagents
+	for(var/x in 1 to 10)
+		var/new_chem = R.choose(chems)
+		if(!(new_chem in GLOB.obtainable_chemical_blacklist))
+			return new_chem
 
 /obj/item/reagent_containers/glass/replenishing/proc/replenishing_step(datum/act/timer/A)
 	reagents.add_reagent(spawning_id, 0.3)
