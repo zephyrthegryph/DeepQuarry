@@ -43,7 +43,10 @@ mod tests {
         let changed = owner.for_request(true);
         let (_, replacement) = changed.defaults(b"/obj", &[b"name".to_vec()], &[b"name".to_vec()]);
         assert!(!Arc::ptr_eq(&original, &replacement));
-        assert!(replacement.is_empty());
+        assert_eq!(replacement.len(), 1);
+        assert!(!replacement[0].from_parent);
+        assert_eq!(replacement[0].ordinal, 0);
+        assert_eq!(replacement[0].name, b"name");
         assert!(changed.publish_successful());
     }
 }
