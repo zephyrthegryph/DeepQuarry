@@ -7,15 +7,14 @@
 	var/list/levels_for_distress
 	var/obj/item/gps/gps = null
 
-/obj/item/emergency_beacon/Initialize(mapload)
-	for(var/i in 1 to length(levels_for_distress))
-		var/current = levels_for_distress[i]
-		if(isnum(current))
-			continue
-		levels_for_distress[i] = GLOB.map_templates_loaded[current]
+/// The z-levels it calls for (derives(), at init): a map template's name stands for its loaded level; none means the station's.
+/obj/item/emergency_beacon/proc/distress_levels()
+	. = list()
 	if(!levels_for_distress)
-		levels_for_distress = list(1)
-	return ..()
+		. += 1
+		return
+	for(var/current in levels_for_distress)
+		. += isnum(current) ? current : GLOB.map_templates_loaded[current]
 
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
@@ -33,6 +32,7 @@ CAPABILITIES(/obj/item/emergency_beacon)
 	// an active beacon is spiked in: it can't be picked up, and a wrench takes it apart
 	op("spiked", hand(), when(nameof(beacon_active)), then(PROC_REF(interaction_hand)))
 	op("disassemble", tool(TOOL_WRENCH), wait(0), label("Disassemble"), when(nameof(beacon_active)), then(PROC_REF(interaction_item)))
+	derives(nameof(levels_for_distress), PROC_REF(distress_levels))
 
 MSG_DEF_SELF(emergency_beacon/active, "It is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
 

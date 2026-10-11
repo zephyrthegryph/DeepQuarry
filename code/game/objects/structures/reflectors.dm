@@ -36,7 +36,6 @@ TRACKED(/obj/structure/reflector, admin)
 
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()
-	allowed_projectile_typecache = typecacheof(allowed_projectile_typecache)
 	if(deflector_icon_state)
 		deflector_overlay = image(icon, deflector_icon_state)
 		add_overlay(deflector_overlay)
@@ -45,10 +44,6 @@ TRACKED(/obj/structure/reflector, admin)
 		setAngle(dir2angle(dir))
 	else
 		setAngle(rotation_angle)
-
-	if(admin)
-		can_rotate = FALSE
-		resistance_flags |= BOMB_PROOF
 
 /obj/structure/reflector/examine(mob/user)
 	. = ..()
@@ -121,6 +116,18 @@ TRACKED(/obj/structure/reflector, admin)
 	P.ignore_source_check = TRUE
 	return 2
 
+/// The projectiles it reflects, as a typecache (derives(), at init).
+/obj/structure/reflector/proc/projectile_typecache()
+	return typecacheof(allowed_projectile_typecache)
+
+/// An admin reflector cannot be turned (derives(), at init).
+/obj/structure/reflector/proc/turns_unless_admin()
+	return admin ? FALSE : can_rotate
+
+/// Nor blown up (derives(), at init).
+/obj/structure/reflector/proc/admin_resistance()
+	return admin ? (resistance_flags | BOMB_PROOF) : resistance_flags
+
 CAPABILITIES(/obj/structure/reflector)
 	every(0.5 SECONDS, then(PROC_REF(reflector_step)), when = nameof(refiring))
 	op("item", item(/obj/item), label("Use"), needs(req(PROC_REF(reflector_not_admin))), then(PROC_REF(interaction_item)))
@@ -129,6 +136,9 @@ CAPABILITIES(/obj/structure/reflector)
 	op("weld_down", lit_welder(fuel = 1), label("Weld to the floor"), when(req(PROC_REF(not_anchored))), begins(MSG(reflector/welding_down), blind = span_hear("You hear welding.")), wait(2 SECONDS), then(PROC_REF(welded_down)))
 	op("cut_free", lit_welder(fuel = 1), label("Cut free"), when(nameof(anchored)), priority(OP_PRIORITY_PART + 1), then(PROC_REF(cut_free)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Rotate"), when(req(PROC_REF(reflector_finished_holds))), then(PROC_REF(interaction_alt)))
+	derives(nameof(allowed_projectile_typecache), PROC_REF(projectile_typecache))
+	derives(nameof(can_rotate), PROC_REF(turns_unless_admin))
+	derives(nameof(resistance_flags), PROC_REF(admin_resistance))
 
 /obj/structure/reflector/proc/reflector_not_admin(datum/act/op/A)
 	return admin ? /datum/msg/req_failed : null
