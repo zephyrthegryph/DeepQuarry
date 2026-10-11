@@ -3,6 +3,12 @@ var/global/index_order = ""
 var/global/receiver_calls = 0
 var/global/index_calls = 0
 
+// Keep the default runtime reporting while independently observing the exact
+// engine-issued debug origin. No catch handler hides or resumes the callee.
+/world/Error(exception/E)
+    world.log << "DQ_INDEX_ORIGIN [E.file]|[E.line]|[E.name]"
+    return ..()
+
 /proc/index_receiver(list/values, label)
     receiver_calls++
     index_order += "R"
