@@ -20,6 +20,9 @@
 
 CAPABILITIES(/mob/living)
 	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
+	links(LINK_END(/mob/living, LK_TF_FORM), LINK_END(/mob/living, LK_TF_ORIGIN), sparse = TRUE, b_many = TRUE)
+	links(LINK_END(/mob/living, LK_TF_FORM_MIND), LINK_END(/datum/mind, LK_TF_FORM_MIND_OF), sparse = TRUE, b_many = TRUE)
+	links(LINK_END(/mob/living, LK_NEST), LINK_END(/atom, LK_NEST_SPAWNS), sparse = TRUE, b_many = TRUE)
 	attack_variants()
 	op("touch_help", hand(), when(req_empty_hand()), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Help"), then(PROC_REF(touch_help)))
 	op("touch_disarm", hand(), when(req_empty_hand()), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove"), then(PROC_REF(touch_disarm)))

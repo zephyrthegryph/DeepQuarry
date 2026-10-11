@@ -51,7 +51,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/peasant)
 
 /mob/living/simple_mob/vore/peasant/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You've somehow managed to get yourself eaten by one of the local peasants. After jamming you down into their stomach, you find yourself cramped up tight in a space that clearly shouldn't be able to accept you. They let out a relieved sigh as they heft around their new found weight, giving it a hearty pat, clearly content to get a good meal for once. The world around you groans and grumbles, but the gut is far from harmful to you right now, even as the walls clench down on your body."
 	B.mode_flags = DM_FLAG_THICKBELLY

@@ -77,7 +77,7 @@
 
 /mob/living/simple_mob/ysbryd/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "The horrifying beast yawns it's skull maw wide before your face, unveiling a dark but surprisingly fleshy interior. Not that you have much time to appreciate it before your head is engulfed in the void, and dragged roughly into the depths beyond it. Before long, you're trapped in pitch darkness. Intense pressure binding you from every possible direction, fleshy walls grinding over your form. Despite this, it's quiet in here, uncomfortably so. No bodily functions can be heard, no groaning guts, merely the sound of your own body pressing against the stomach lining."
 	B.digest_brute = 3

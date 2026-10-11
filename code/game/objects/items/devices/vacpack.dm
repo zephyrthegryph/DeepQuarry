@@ -102,8 +102,8 @@ CAPABILITIES(/obj/item/vac_attachment)
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
-			if(user.vore_selected)
-				rel_set(src, nameof(output_dest), user.vore_selected)
+			if(vore_selected_of(user))
+				rel_set(src, nameof(output_dest), vore_selected_of(user))
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)

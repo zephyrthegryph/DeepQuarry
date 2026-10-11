@@ -11,7 +11,7 @@
 		to_chat(src, span_notice("You cannot do that while in your current state."))
 		return
 
-	if(!(src.vore_selected))
+	if(!(vore_selected_of(src)))
 		to_chat(src, span_notice("No selected belly found."))
 		return
 
@@ -43,10 +43,10 @@
 	if(target?.buckled_to())
 		var/atom/movable/_tmp_buck_47 = target?.buckled_to()
 		_tmp_buck_47.unbuckle_mob()
-	act_message(target, src, MSG_SELF(span_vdanger("You are dragged above and feel yourself slipping directly into %T%'s [vore_selected.get_belly_name()]!")), \
+	act_message(target, src, MSG_SELF(span_vdanger("You are dragged above and feel yourself slipping directly into %T%'s [vore_selected_of(src).get_belly_name()]!")), \
 		MSG_OTHERS(span_vwarning("%U% suddenly disappears somewhere above!")))
-	to_chat(src, span_vnotice("You successfully snatch \the [target], slipping them into your [vore_selected.get_belly_name()]."))
-	vore_selected.nom_atom(target)
+	to_chat(src, span_vnotice("You successfully snatch \the [target], slipping them into your [vore_selected_of(src).get_belly_name()]."))
+	vore_selected_of(src).nom_atom(target)
 
 /mob/living/proc/vertical_nom_answered(datum/act/request/context)
 	if(!context.answer)
@@ -78,7 +78,7 @@
 			return "gone"
 	if(user.stat == DEAD || user.has_status(STAT_PARALYZED) || user.has_status(STAT_WEAKENED) || user.has_status(STAT_STUNNED) || user.is_incorporeal())
 		return VERTICAL_NOM_STATE
-	if(!user.vore_selected)
+	if(!vore_selected_of(user))
 		return VERTICAL_NOM_BELLY
 	for(var/turf/T in range(1, user))
 		if(isopenspace(T))

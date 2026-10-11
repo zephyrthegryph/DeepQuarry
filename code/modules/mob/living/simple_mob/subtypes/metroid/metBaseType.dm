@@ -94,7 +94,7 @@ CAPABILITIES(/mob/living/simple_mob/metroid)
 
 /mob/living/simple_mob/metroid/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.digest_brute = 1
 	B.digest_burn = 1
 	B.vore_verb = "swallow"

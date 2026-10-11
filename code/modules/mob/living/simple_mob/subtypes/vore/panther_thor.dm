@@ -107,7 +107,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther/thor)
 
 /mob/living/simple_mob/vore/aggressive/panther/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.vore_sound = "Tauric Swallow"
 	B.release_sound = "Pred Escape"
 	B.fancy_vore = 1
