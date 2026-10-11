@@ -276,7 +276,7 @@ TRACKED(/obj/item/capture_crystal, recharging)
 	if(bound_mob)
 		if(!bound_mob.devourable)	//Don't eat if prefs are bad
 			return ITEM_INTERACT_FAILURE
-		if(user.zone_sel.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
+		if(hud_of(user)?.zone_sel?.selecting == "mouth")	//Click while targetting the mouth and you eat/feed the stored mob to whoever you clicked on
 			if(bound_mob in contents)
 				act_message(user, src, others = "%U% moves %T% to [M]'s [M.vore_selected]...")
 				M.perform_the_nom(M, bound_mob, M, M.vore_selected)
@@ -998,11 +998,12 @@ CAPABILITIES(/datum/prompt/choice/crystal_capture)
 		list(/mob/living/simple_mob/vore/devil)
 		)
 
-/obj/item/capture_crystal/random/Initialize(mapload)
-	var/subchoice = pickweight(possible_mob_types)		//Some of the lists have nested lists, so let's pick one of them
-	var/choice = pickweight(subchoice)					//And then we'll pick something from whatever's left
-	set_spawn_mob_type(choice)								//Now when someone uses this, we'll spawn whatever we picked!
-	return ..()
+CAPABILITIES(/obj/item/capture_crystal/random)
+	rolls(nameof(spawn_mob_type), PROC_REF(roll_mob_type))
+
+/// Rolled before init (rolls()): one of the nested lists, then a mob from it; using the crystal spawns it.
+/obj/item/capture_crystal/random/proc/roll_mob_type(datum/roller/R)
+	return R.weighted(R.weighted(possible_mob_types))
 
 /mob/living
 	var/capture_crystal = TRUE		//If TRUE, the mob is capturable. Otherwise it isn't.

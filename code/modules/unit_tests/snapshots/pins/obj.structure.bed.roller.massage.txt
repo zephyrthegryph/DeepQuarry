@@ -5,57 +5,67 @@ robot|none click: nothing
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 click: nothing
 @obj.structure.bed human|/obj/item/tool/crowbar
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 click: nothing
 @obj.structure.bed human|/obj/item/tool/wrench
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +1 menu: Dismantle (refused: You cannot dismantle that.)
 +5 click: Click: Dismantle
 @obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +3 menu: Remove padding (refused: It has no padding to remove.)
 +5 click: Click: Remove padding
 @obj.structure.bed human|/obj/item/multitool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 click: nothing
 @obj.structure.bed human|/obj/item/weldingtool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 click: nothing
 @obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 menu: Pad (refused: You cannot pad that.)
 +6 click: Click: Pad
 @obj.structure.bed human|/obj/item/stack/material/steel
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +3 menu: Pad (refused: You cannot pad that.)
 +5 click: Click: Pad
 @obj.structure.bed human|/obj/item/card/id
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +5 click: nothing
 @obj.structure.bed human|/obj/item
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Alternate use
 +4 click: nothing
 @obj.structure human|/obj/item/stack
@@ -65,23 +75,16 @@ robot|none click: nothing
 +0 menu: Alternate use
 +3 menu: Pad (refused: You cannot pad that.)
 +5 click: Click: Pad
-human|/obj/item/disk menu: Alternate use
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Alternate use
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie click: Click: Tuck plushie
+@obj.structure human|/obj/item/disk
+-menu: Turn Around (refused: It is fastened to the floor!)
++0 menu: Alternate use
+@obj human|/obj/item/toy/plushie
+-menu: Turn Around (refused: It is fastened to the floor!)
++0 menu: Alternate use
 human|/obj/item/roller_holder menu: Alternate use
 human|/obj/item/roller_holder menu: Collapse
 human|/obj/item/roller_holder menu: Hit
 human|/obj/item/roller_holder menu: Move To Top
 human|/obj/item/roller_holder menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/roller_holder click: Click: Collapse
-keys: alt, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, collapse, dismantle, drag_buckle, melee_hit, pad, tuck_disk, tuck_plushie, unpad
+keys: alt, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, collapse, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tuck_disk, tuck_plushie, unpad

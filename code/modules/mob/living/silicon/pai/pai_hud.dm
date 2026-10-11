@@ -120,29 +120,28 @@
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	pullin.icon = ui_style
-	pullin.icon_state = "pull0"
-	pullin.name = "pull"
-	pullin.screen_loc = ui_movi
-	rel_add(HUD, nameof(HUD.hud_elements), pullin)
+	rel_set(hud_used, nameof(/datum/hud::pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.pullin?.icon = ui_style
+	hud_used?.pullin?.icon_state = "pull0"
+	hud_used?.pullin?.name = "pull"
+	hud_used?.pullin?.screen_loc = ui_movi
+	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.pullin)
 
 	//Health status
-	rel_set(src, nameof(healths), new /atom/movable/screen())
-	healths.icon = ui_style
-	healths.icon_state = "health0"
-	healths.name = "health"
-	healths.screen_loc = ui_health
-	rel_add(HUD, nameof(HUD.hud_elements), healths)
+	rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+	hud_used?.healths?.icon = ui_style
+	hud_used?.healths?.icon_state = "health0"
+	hud_used?.healths?.name = "health"
+	hud_used?.healths?.screen_loc = ui_health
+	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.healths)
 
-	rel_set(src, nameof(pain), new /atom/movable/screen( null ))
+	rel_set(hud_used, nameof(/datum/hud::pain), new /atom/movable/screen( null ))
 
-	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
-	zone_sel.icon = ui_style
-	zone_sel.color = ui_color
-	zone_sel.alpha = ui_alpha
-	zone_sel.cut_overlays()
-	rel_add(HUD, nameof(HUD.hud_elements), zone_sel)
+	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel( null ))
+	hud_used?.zone_sel?.icon = ui_style
+	hud_used?.zone_sel?.color = ui_color
+	hud_used?.zone_sel?.alpha = ui_alpha
+	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.zone_sel)
 
 	rel_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
@@ -298,12 +297,12 @@
 	using.alpha = ui_alpha
 	rel_add(HUD, nameof(HUD.other), using)
 
-	rel_set(src, nameof(autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
-	autowhisper_display.icon_state = "autowhisper"
-	autowhisper_display.name = "autowhisper"
-	autowhisper_display.screen_loc = "EAST-1:28,CENTER-2:13"
-	rel_add(HUD, nameof(HUD.hud_elements), autowhisper_display)
+	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.autowhisper_display?.icon = 'icons/mob/screen/minimalist.dmi'
+	hud_used?.autowhisper_display?.icon_state = "autowhisper"
+	hud_used?.autowhisper_display?.name = "autowhisper"
+	hud_used?.autowhisper_display?.screen_loc = "EAST-1:28,CENTER-2:13"
+	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.autowhisper_display)
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -373,10 +372,10 @@
 
 /mob/living/silicon/pai/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
-	src.healths.icon_state = vitality_health_band(src)
+	hud_used?.healths?.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/pai/toggle_hud_vis(full)
 	if(!client)
@@ -405,16 +404,16 @@
 			client.screen += hud_used.other_important
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client.screen += hud_used.hotkeybuttons
-		if(healths)
-			client.screen |= healths
-		if(internals)
-			client.screen |= internals
-		if(gun_setting_icon)
-			client.screen |= gun_setting_icon
+		if(hud_used?.healths)
+			client.screen |= hud_used?.healths
+		if(hud_used?.internals)
+			client.screen |= hud_used?.internals
+		if(hud_used?.gun_setting_icon)
+			client.screen |= hud_used?.gun_setting_icon
 		if(hud_used.hud_elements)
 			if(length(hud_used.hud_elements)) client.screen |= hud_used.hud_elements
 
-		client.screen += zone_sel				//This one is a special snowflake
+		client.screen += hud_used?.zone_sel				//This one is a special snowflake
 
 	hud_used.hidden_inventory_update()
 	hud_used.persistant_inventory_update()

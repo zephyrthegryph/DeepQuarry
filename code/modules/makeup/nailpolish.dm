@@ -80,7 +80,7 @@ MSG_DEF_SELF(nailpolish/no_nails, "You can't find any nails on that limb to pain
 /obj/item/nailpolish/proc/paint_started(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/mob/living/target = A.target
-	var/obj/item/organ/external/body_part = target.get_organ(user.zone_sel.selecting)
+	var/obj/item/organ/external/body_part = target.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!body_part)
 		return MSG(nailpolish/missing_limb)
 	if(body_part.nail_polish)
@@ -155,7 +155,7 @@ MSG_DEF_SELF(nailpolish/nothing_to_remove, "%T% has no nail polish to remove on 
 /obj/item/nailpolish_remover/proc/remove_started(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/mob/living/target = A.target
-	var/obj/item/organ/external/body_part = target.get_organ(user.zone_sel.selecting)
+	var/obj/item/organ/external/body_part = target.get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!body_part)
 		return MSG(nailpolish/remover_missing_limb)
 	if(!body_part.nail_polish)

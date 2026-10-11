@@ -26,11 +26,11 @@ CAPABILITIES(/obj/item/analyzer)
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	op("analyze", in_hand(), when(cond_not(nameof(special_handling))), needs(req_conscious(), req_bool(PROC_REF(can_analyze), because = MSG(analyzer/clumsy))), then(PROC_REF(interaction_self)))
+	op("analyze", in_hand(), when(cond_not(nameof(special_handling))), needs(req_conscious(), req(PROC_REF(can_analyze), because = MSG(analyzer/clumsy))), then(PROC_REF(interaction_self)))
 
 /// Requirement: only a dexterous user can work the analyzer.
 /obj/item/analyzer/proc/can_analyze(datum/act/op/A)
-	return advanced_tool_user(A.actor)
+	return (advanced_tool_user(A.actor)) ? null : MSG(analyzer/clumsy)
 
 /// Can `user` work a dexterous tool (hands, a species that can)?
 /proc/advanced_tool_user(mob/user)

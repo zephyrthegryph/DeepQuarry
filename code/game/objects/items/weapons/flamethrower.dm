@@ -36,7 +36,7 @@ CAPABILITIES(/obj/item/flamethrower)
 	configure(item_combat(force = 3.0))
 	owns_one(nameof(igniter), /obj/item/assembly/igniter)
 	owns_one(nameof(ptank), /obj/item/tank/phoron)
-	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool)
+	owns_one(nameof(weldtool), /obj/item/weldingtool, starts = /obj/item/weldingtool, starts_set = list("status" = 0)) // for disassembly
 	every(2 SECONDS, then(PROC_REF(flamethrower_step)), when = nameof(lit))
 	interface("Flamethrower")
 	without("ui_open")
@@ -48,16 +48,11 @@ CAPABILITIES(/obj/item/flamethrower)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
-/obj/item/flamethrower/Initialize(mapload)
-	. = ..()
-	weldtool.status = 0 // for disassembly
-
 CAPABILITIES(/obj/item/flamethrower/full)
-	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter)
+	owns_one(nameof(igniter), /obj/item/assembly/igniter, starts = /obj/item/assembly/igniter, starts_set = list("secured" = FALSE)) // for disassembly
 
 /obj/item/flamethrower/full/Initialize(mapload)
 	. = ..()
-	igniter.set_secured(FALSE) // for disassembly
 	set_status(TRUE)
 
 /// On or off: while lit it heats its turf every 2 s.

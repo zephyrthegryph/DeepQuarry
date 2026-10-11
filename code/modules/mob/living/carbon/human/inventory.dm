@@ -75,8 +75,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 				update_inv_ears(0)
 			// If this is how the internals are connected, disable them
 			if(!inserted && internal && !(worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
-				if(internals)
-					internals.icon_state = "internal0"
+				if(hud_used?.internals)
+					hud_used?.internals?.icon_state = "internal0"
 				rel_clear(src, nameof(internal))
 		if(SLOT_ID_ID)
 			flag_hud_update(ID_HUD)

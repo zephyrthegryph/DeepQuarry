@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	op("power", ui_act(), then(PROC_REF(ui_act_power)))
 	owns_one(nameof(inserted_id), on_destroy = ON_DESTROY_SPILL)
 	op("insert_id", item(/obj/item/card/id), priority(OP_PRIORITY_DEFAULT - 1), label("Insert ID"), then(PROC_REF(interaction_insert_id)))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req_bool(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(datum/act/op/A)
 	var/mob/user = A.actor
@@ -59,17 +59,11 @@ CAPABILITIES(/obj/machinery/mineral/processing_unit_console)
 	return TRUE
 
 /obj/machinery/mineral/processing_unit_console/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+	return allowed(actor) ? null : "access denied"
 
-/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/// Requirement: lets_in returns null to allow, or a refusal reason.
 /obj/machinery/mineral/processing_unit_console/proc/lets_in_holds(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/mineral/processing_unit_console/proc/lets_in_refusal(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return istext(answer) ? answer : "access denied"
+	return lets_in(A.actor, src, A.held)
 
 /obj/machinery/mineral/processing_unit_console/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor

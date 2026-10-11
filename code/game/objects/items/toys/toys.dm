@@ -35,12 +35,6 @@ CAPABILITIES(/obj/item/toy)
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "waterballoon-e"
 
-/obj/item/toy/balloon/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(10)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-
 /obj/item/toy/balloon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
@@ -53,6 +47,7 @@ CAPABILITIES(/obj/item/toy)
 	return
 
 CAPABILITIES(/obj/item/toy/balloon)
+	reagents(10)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -322,13 +317,14 @@ CAPABILITIES(/obj/item/toy/bosunwhistle)
 	var/cooldown = 0
 	var/toysay = "What the fuck did you do?"
 
-/obj/item/toy/figure/Initialize(mapload)
-	. = ..()
-	desc = "A \"Space Life\" brand [name]"
+/// Every figure is described by its name (derives(), at init).
+/obj/item/toy/figure/proc/space_life_desc()
+	return "A \"Space Life\" brand [name]"
 
 CAPABILITIES(/obj/item/toy/figure)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	derives(nameof(desc), PROC_REF(space_life_desc))
 
 /// Old attack_self.
 /obj/item/toy/figure/proc/interaction_self(datum/act/op/A)
@@ -873,9 +869,6 @@ CAPABILITIES(/obj/structure/plushie)
 	///How long our cooldown timer is. Default 15 seconds
 	var/cooldown_length = 15 SECONDS
 
-/obj/item/toy/plushie/Initialize(mapload)
-	. = ..()
-	adjusted_name = name
 
 /obj/item/toy/plushie/examine(mob/user)
 	. = ..()
@@ -938,9 +931,10 @@ CAPABILITIES(/obj/structure/plushie)
 		return
 
 	//If we do prevent impersonation, change the name to original, speak, then bring it back.
+	var/shown_name = name
 	name = initial(name) //No namestealing.
 	atom_say("[pokephrase]")
-	name = adjusted_name
+	name = adjusted_name || shown_name // adjusted_name is set once it is renamed
 
 
 /// The old Name Plushie verb: the plushie takes the name given (and so do the voices in it).
@@ -970,7 +964,7 @@ CAPABILITIES(/obj/item/toy/plushie)
 	// A squeeze of an opened plushie takes a second to find what is stitched inside; the plushie is claimed meanwhile.
 	op("find_inside", ai(), claims(CLAIM_TARGET), wait(1 SECOND), then(PROC_REF(found_inside)))
 	// the old Name Plushie verb, carried, by someone with a mind (a unique plushie refuses)
-	op("rename", menu(), label("Name Plushie"), needs(carried(), req_bool(PROC_REF(can_rename), because = PROC_REF(rename_refusal))),
+	op("rename", menu(), label("Name Plushie"), needs(carried(), req(PROC_REF(can_rename))),
 		asks(/datum/prompt/text, fields = list("question" = "What do you want to name the plushie?", "default" = "", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)),
 		then(PROC_REF(plushie_named)))
 
@@ -2965,10 +2959,6 @@ CAPABILITIES(/obj/item/toy/acorn_branch)
 	COOLDOWN_DECLARE(cooldown)
 	special_handling = TRUE
 
-/obj/item/toy/plushie/dragon/Initialize(mapload)
-	. = ..()
-	if (pokephrase != "Rawr~!")
-		pokephrase = pick("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")
 
 CAPABILITIES(/obj/item/toy/plushie/dragon)
 	without("hug")
@@ -2976,6 +2966,7 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 	without("strangle")
 	without("punch")
 	op("dragon_squeeze", in_hand(), label("Squeeze"), then(PROC_REF(interaction_dragon_squeeze)))
+	rolls(nameof(pokephrase), pick_one(list("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")))
 
 /// Old attack_self: the dragon noise. The plushie's squeeze does nothing for it (special_handling).
 /obj/item/toy/plushie/dragon/proc/interaction_dragon_squeeze(datum/act/op/A)
@@ -3030,10 +3021,8 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
-CAPABILITIES(/obj/item/toy/plushie/teshari/strix)
 	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
-
-/obj/item/toy/plushie/teshari/strix/rename_refusal(datum/act/op/A)
+/obj/item/toy/plushie/teshari/strix/can_rename(datum/act/op/A)
 	return "You cannot rename Strix Hades, you hug him anyway."
 
 /obj/item/toy/plushie/teshari/eili
@@ -3049,10 +3038,8 @@ CAPABILITIES(/obj/item/toy/plushie/teshari/strix)
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
-CAPABILITIES(/obj/item/toy/plushie/teshari/eili)
 	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
-
-/obj/item/toy/plushie/teshari/eili/rename_refusal(datum/act/op/A)
+/obj/item/toy/plushie/teshari/eili/can_rename(datum/act/op/A)
 	return "You cannot rename Eili, you hug her anyway."
 
 /obj/item/toy/plushie/teshari/_yw
@@ -3129,9 +3116,6 @@ CAPABILITIES(/obj/item/toy/plushie/teshari/y_yw)
 
 /// Requirement for renaming: someone with a mind, and a plushie that takes a name (a unique one says why it doesn't).
 /obj/item/toy/plushie/proc/can_rename(datum/act/op/A)
-	return isnull(rename_refusal(A))
-
-/obj/item/toy/plushie/proc/rename_refusal(datum/act/op/A)
 	if(!has_a_mind(A.actor))
 		return MSG(plushie/no_mind)
 	return null

@@ -161,7 +161,7 @@
 /datum/species/shapeshifter/promethean/hug(mob/living/carbon/human/H, mob/living/target)
 	var/static/list/parent_handles = list("head", "r_hand", "l_hand", "mouth")
 
-	if(H.zone_sel.selecting in parent_handles)
+	if(hud_of(H)?.zone_sel?.selecting in parent_handles)
 		return ..()
 
 	var/t_him = "them"

@@ -21,16 +21,16 @@
 CAPABILITIES(/obj/item/reagent_containers/glass/paint)
 	op("paint", at_target(/turf/simulated), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), priority(above("reagent_container.splash")), when(req_reagents(5, more = TRUE)),
 		label("Paint"), then(PROC_REF(painted)))
+	configure(reagents(contents_from = PROC_REF(paint_contents), data = list(REAGENT_ID_PAINT = nameof(paint_type))))
 
 /obj/item/reagent_containers/glass/paint/proc/painted(datum/act/op/A)
 	act_message(A.actor, A.target, others = span_warning("%T% has been splashed with something by %U%!"))
 	reagents.trans_to_turf(A.target, 5)
 	return OP_OK
 
-/obj/item/reagent_containers/glass/paint/Initialize(mapload)
-	.=..()
-	if(paint_type)
-		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): the reagent's data argument (the paint type) differs per instance, which a declaration cannot carry
+/// A coloured bucket starts full of its paint (reagents(contents_from =); the paint type is the reagent's data).
+/obj/item/reagent_containers/glass/paint/proc/paint_contents()
+	return paint_type ? list(REAGENT_ID_PAINT = volume) : null
 
 /obj/item/reagent_containers/glass/paint/red
 	icon_state = "paint_red"

@@ -20,11 +20,7 @@
 +0 menu: Knock down
 +4 menu: Use
 @obj.item.stack human|/obj/item/weldingtool
--menu: Use welder
--click: Click: Use welder
 +0 menu: Knock down
-+4 menu: Use
-+5 click: Click: Split
 @obj.item.stack human|/obj/item/stack/cable_coil
 +1 menu: Knock down
 +6 menu: Use
@@ -44,9 +40,6 @@
 @obj human|/obj/item/stack
 +1 menu: Knock down
 +5 menu: Use
-@obj.item human|/obj/item
--click: Click: Use
+@obj.item.stack human|/obj/item
 +0 menu: Knock down
-+2 menu: Split
-+5 click: Click: Split
 keys: build, collect_item, combine, consolidate, drag_buckle, flag_hand, flag_interaction_item, flag_self, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable

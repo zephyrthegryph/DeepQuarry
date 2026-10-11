@@ -32,16 +32,23 @@ CAPABILITIES(/obj/item/stack/sandbags)
 	configure(item_combat(force = 10.0, attack_verbs = list("hit", "bludgeoned", "pillowed")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 	param(nameof(bag_material), pos = 2)
+	keeps_if(PROC_REF(has_material))
+	derives(nameof(color), PROC_REF(material_colour))
 
-// ALLOW(init/INSTANCE_STATE): sandbags take their recipes, slowdown and their bags' colour
+/// A bag of a material that does not exist is discarded (keeps_if()).
+/obj/item/stack/sandbags/proc/has_material()
+	return !!get_material_by_name("[bag_material]")
+
+/// It takes its material's colour (derives(), at init).
+/obj/item/stack/sandbags/proc/material_colour()
+	var/datum/material/M = get_material_by_name("[bag_material]")
+	return M ? M.icon_colour : color
+
+// ALLOW(init/INSTANCE_STATE): sandbags take their recipes and slowdown
 /obj/item/stack/sandbags/Initialize(mapload)
 	. = ..()
 	recipes = GLOB.sandbag_recipes
 	update_slowdown()
-	var/datum/material/M = get_material_by_name("[bag_material]")
-	if(!M)
-		return INITIALIZE_HINT_QDEL
-	color = M.icon_colour
 
 /// A bigger pile slows its carrier more.
 /obj/item/stack/sandbags/proc/update_slowdown()
@@ -133,15 +140,18 @@ CAPABILITIES(/obj/item/stack/sandbags)
 
 	var/bag_material = MAT_CLOTH
 
-// ALLOW(init/INSTANCE_STATE): empty bags take their material's colour
-/obj/item/stack/emptysandbag/Initialize(mapload)
-	. = ..()
+/// A bag of a material that does not exist is discarded (keeps_if()).
+/obj/item/stack/emptysandbag/proc/has_material()
+	return !!get_material_by_name("[bag_material]")
+
+/// It takes its material's colour (derives(), at init).
+/obj/item/stack/emptysandbag/proc/material_colour()
 	var/datum/material/M = get_material_by_name("[bag_material]")
-	if(!M)
-		return INITIALIZE_HINT_QDEL
-	color = M.icon_colour
+	return M ? M.icon_colour : color
 
 CAPABILITIES(/obj/item/stack/emptysandbag)
+	keeps_if(PROC_REF(has_material))
+	derives(nameof(color), PROC_REF(material_colour))
 	without("ui_open")
 	// A bag is filled each second while the user stays put; the series stops when the pile is gone or the ground is no longer outdoors.
 	op("emptysandbag_self", in_hand(), label("Fill"), wait(1 SECOND, repeats = PROC_REF(fill_more), after_step = PROC_REF(fill_bag_done)))

@@ -40,10 +40,10 @@ CAPABILITIES(/obj/item/tape_roll)
 		begins(MSG(tape/mouth_begin)), wait(3 SECONDS), then(PROC_REF(tape_mouth_done)))
 
 /obj/item/tape_roll/proc/aimed_at_eyes(datum/act/op/A)
-	return read_once(A.actor.zone_sel?.selecting) == O_EYES
+	return read_once(hud_of(A.actor)?.zone_sel?.selecting) == O_EYES
 
 /obj/item/tape_roll/proc/aimed_at_mouth(datum/act/op/A)
-	var/zone = read_once(A.actor.zone_sel?.selecting)
+	var/zone = read_once(hud_of(A.actor)?.zone_sel?.selecting)
 	return zone == O_MOUTH || zone == BP_HEAD
 
 /obj/item/tape_roll/proc/firm_grip(datum/act/op/A)
@@ -112,7 +112,7 @@ CAPABILITIES(/obj/item/tape_roll)
 			to_chat(user, span_danger("You need to have a firm grip on [H] before you can use \the [src]!"))
 			return ITEM_INTERACT_FAILURE
 		else
-			if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+			if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 				if(!can_place(H, user))
 					return ITEM_INTERACT_FAILURE
 

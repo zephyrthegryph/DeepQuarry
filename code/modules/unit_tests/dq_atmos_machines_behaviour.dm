@@ -96,7 +96,7 @@
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
-	R.next_click = 0
+	cooldown_set_end(R, next_click, 0)
 	test_click(R, C, J)
 
 /// The number of entries in the canister's release log.
@@ -130,7 +130,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/op_result/result = test_click(actor, target, held, gesture)
 	. = result
 	if(held && gesture == GESTURE_CLICK && !QDELETED(target) && (isnull(result) || istype(target, /obj/machinery/portable_atmospherics) && (result.outcome & ACT_REFUSED) && result.reason == /datum/msg/op/not_available))

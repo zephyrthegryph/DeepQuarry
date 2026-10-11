@@ -172,7 +172,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 /// A snack that is still wrapped or sealed takes nobody.
 /obj/item/reagent_containers/food/snacks/stuffing_free(datum/act/op/A)
 	if(package || canned)
-		return FALSE
+		return MSG(food/closed_to_micros)
 	return ..()
 
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()

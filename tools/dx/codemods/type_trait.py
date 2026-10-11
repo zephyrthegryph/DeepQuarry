@@ -59,7 +59,7 @@ SPECS = {
         base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",
                 "melee_windup": "windup", "melee_recovery": "recovery", "melee_sweep": "sweep", "can_cleave": "can_cleave",
-                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "verbs"},
+                "attackspeed": "attack_speed", "reach": "reach", "attack_verb": "attack_verbs"},
         skip={"code/game/objects/items/item_combat.dm"},  # items.dm is rewritten too: its base declarations are deleted by hand
     ),
 }

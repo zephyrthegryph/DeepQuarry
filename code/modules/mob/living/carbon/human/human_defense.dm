@@ -316,7 +316,7 @@ emp_act
 /// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
 /mob/living/carbon/human/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/organ/external/affecting = get_organ(user?.zone_sel?.selecting)
+	var/obj/item/organ/external/affecting = get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
 		return OP_DECLINE
@@ -357,7 +357,7 @@ emp_act
 		var/zone
 		if (isliving(thrower))
 			var/mob/living/L = thrower
-			zone = check_zone(L.zone_sel.selecting)
+			zone = check_zone(hud_of(L)?.zone_sel?.selecting)
 		else
 			zone = ran_zone(BP_TORSO,75)	//Hits a random part of the body, geared towards the chest
 
@@ -560,7 +560,7 @@ emp_act
 	if(!..())
 		return 0
 
-	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
+	cooldown_start(user, next_move, 20)
 	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 

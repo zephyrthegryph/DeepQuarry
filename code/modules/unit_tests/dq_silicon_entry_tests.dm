@@ -5,7 +5,7 @@
 
 /// A player's click of `params` (the client's modifier string) by `actor` on `target`, through the input inbox.
 /proc/dq_silicon_click(mob/actor, atom/target, params = "left=1")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/input_event/click/E = new(actor, target, null, "mapwindow.map", params)
 	input_submit(E)
 	return E.result

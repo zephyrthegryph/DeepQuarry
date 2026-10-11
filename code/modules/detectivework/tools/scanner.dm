@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/detective_scanner)
 			to_chat(user, span_notice("No fingerprints found on [target]"))
 			flick("[icon_state]0",src)
 			return ITEM_INTERACT_FAILURE
-		else if(user.zone_sel.selecting == BP_R_HAND || user.zone_sel.selecting == BP_L_HAND)
+		else if(hud_of(user)?.zone_sel?.selecting == BP_R_HAND || hud_of(user)?.zone_sel?.selecting == BP_L_HAND)
 			var/obj/item/sample/print/P = new /obj/item/sample/print(user.loc)
 			P.attack(target, user)
 			to_chat(user, span_notice("Done printing."))

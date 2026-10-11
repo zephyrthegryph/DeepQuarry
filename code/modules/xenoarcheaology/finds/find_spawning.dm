@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			"You wonder what it sounds like",\
 			"You wonder what kind of music was made with it")]."
 		if(ARCHAEO_KNIFE)
-			item_type = "[pick("bladed knife","serrated blade","sharp cutting implement")]"
+			item_type = "[pick("bladed knife","serrated blade","combat_of(src).sharp cutting implement")]"
 			var/possible_object_paths = list(/obj/item/material/knife) //As far as I can tell, this is more 'random' than using typesof, as it just picks a random one vs going down the list with a prob (as seen below)
 			possible_object_paths += subtypesof(/obj/item/material/knife)
 			possible_object_paths -= list(/obj/item/material/knife/cyborg, /obj/item/material/knife/machete/hatchet/cyborg)

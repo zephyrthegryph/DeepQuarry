@@ -40,18 +40,15 @@
 	var/obj/effect/alien/weeds/node/linked_node
 	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
-// ALLOW(init/INSTANCE_STATE): weeds do not grow in space, nor where a node already marked them for removal
-/obj/effect/alien/weeds/Initialize(mapload)
-	. = ..()
-	if(isspace(loc) || delete_me)
-		return INITIALIZE_HINT_QDEL
-//	if(newcolor)
-// color = newcolor // No coloration.
+/// Weeds do not grow in space, nor where a node already marked them for removal (keeps_if()).
+/obj/effect/alien/weeds/proc/may_grow()
+	return !isspace(loc) && !delete_me
 
-	if(icon_state == "weeds")
-		icon_state = pick("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15") // More icons variants.
-
-	fullUpdateWeedOverlays()
+/// Rolled before init (rolls()): the plain weed sprite takes one of its variants; a node keeps its own.
+/obj/effect/alien/weeds/proc/roll_variant(datum/roller/R)
+	if(icon_state != "weeds")
+		return icon_state
+	return R.choose(list("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15"))
 
 // neighbouring weeds redraw their overlays without it.
 /obj/effect/alien/weeds/on_destroy(force)
@@ -178,6 +175,9 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	param(nameof(linked_node), pos = 1)
 	op("tear_up", hand(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 2), label("Tear up"), then(PROC_REF(interaction_tear_weeds)))
 	op("touch_weeds", hand(), priority(OP_PRIORITY_DEFAULT - 3), then(PROC_REF(interaction_touch_weeds)))
+	keeps_if(PROC_REF(may_grow))
+	rolls(nameof(icon_state), PROC_REF(roll_variant)) // more icon variants
+	setup(PROC_REF(fullUpdateWeedOverlays))
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
 	every(2 SECONDS, then(PROC_REF(node_step)))

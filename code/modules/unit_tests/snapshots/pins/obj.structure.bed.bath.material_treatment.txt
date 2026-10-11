@@ -1,81 +1,96 @@
+human|none menu: Turn Around (refused: It is fastened to the floor!)
 human|none click: nothing
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none click: nothing
 @obj.structure ai|none
 @obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+4 click: Click: Bath interaction item
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Bath interaction item
 @obj.structure.bed human|/obj/item/tool/crowbar
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+4 click: Click: Bath interaction item
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Bath interaction item
 @obj.structure.bed human|/obj/item/tool/wrench
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
 +1 menu: Dismantle
-+5 click: Click: Dismantle
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Dismantle
 @obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
 +3 menu: Remove padding (refused: It has no padding to remove.)
-+5 click: Click: Remove padding
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Remove padding
 @obj.structure.bed human|/obj/item/multitool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+4 click: Click: Bath interaction item
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Bath interaction item
 @obj.structure.bed human|/obj/item/weldingtool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+4 click: Click: Bath interaction item
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Bath interaction item
 @obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
 +4 menu: Pad (refused: You cannot pad that with that.)
-+6 click: Click: Pad
++6 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Pad
 @obj.structure.bed human|/obj/item/stack/material/steel
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
 +3 menu: Pad (refused: You cannot pad that with that.)
-+5 click: Click: Pad
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Pad
 @obj.structure.bed human|/obj/item/card/id
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+5 click: Click: Bath interaction item
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Bath interaction item
 @obj.structure.bed human|/obj/item
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-menu: Use
+-click: Click: Use
 +0 menu: Bath interaction item
-+4 click: Click: Bath interaction item
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Bath interaction item
 @obj.structure human|/obj/item/stack
 -menu: Repair (refused: )
 -menu: Use
 -click: Click: Repair
 +0 menu: Bath interaction item
 +3 menu: Pad (refused: You cannot pad that with that.)
-+5 click: Click: Pad
-human|/obj/item/disk menu: Bath interaction item
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Bath interaction item
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie click: Click: Tuck plushie
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Pad
+@obj.structure human|/obj/item/disk
++0 menu: Bath interaction item
+@obj human|/obj/item/toy/plushie
++0 menu: Bath interaction item
 @obj human|/obj/item/stack/material/processed_alloy
 -menu: Load material cradle
 -click: Click: Load material cradle
@@ -83,5 +98,6 @@ human|/obj/item/toy/plushie click: Click: Tuck plushie
 +1 menu: Hit
 +3 menu: Pad (refused: You cannot pad that with that.)
 +5 menu: Treat alloy
-+6 click: Click: Pad
-keys: bath_buckle, bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, melee_hit, pad, tuck_disk, tuck_plushie, unpad
++6 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Pad
+keys: bath_buckle, bath_interaction_item, buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, material_treatment_interaction_item, melee_hit, pad, rotatable.turn_around, tuck_disk, tuck_plushie, unpad

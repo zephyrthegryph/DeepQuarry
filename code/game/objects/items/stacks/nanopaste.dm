@@ -19,7 +19,7 @@
 
 	if(ishuman(M))		//Repairing robolimbs
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/S = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/S = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 		if(!S)
 			balloon_alert(user, "no body part there to work on!")
 			return ITEM_INTERACT_FAILURE

@@ -132,23 +132,21 @@
 	airlock_type = "/multi_tile/glass"
 	glass = -1 //To prevent bugs in deconstruction process.
 
-/obj/structure/door_assembly/multi_tile/Initialize(mapload)
+CAPABILITIES(/obj/structure/door_assembly/multi_tile)
+	setup(PROC_REF(fit_bounds))
+
+/// Its bounds span its width along its facing: at setup (setup()) and whenever it moves.
+/obj/structure/door_assembly/multi_tile/proc/fit_bounds()
 	if(dir in list(EAST, WEST))
 		bound_width = width * world.icon_size
 		bound_height = world.icon_size
 	else
 		bound_width = world.icon_size
 		bound_height = width * world.icon_size
-	. = ..()
 
 /obj/structure/door_assembly/multi_tile/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(dir in list(EAST, WEST))
-		bound_width = width * world.icon_size
-		bound_height = world.icon_size
-	else
-		bound_width = world.icon_size
-		bound_height = width * world.icon_size
+	fit_bounds()
 
 TRACKED(/obj/structure/door_assembly, glass)
 
@@ -186,7 +184,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	owns_one(nameof(electronics), /obj/item/airlock_electronics)
 	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))
-	op("rename_robot", hand(), label("Rename"), when(req_bool(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))
 	op("plate_glass", stack(/obj/item/stack/material/glass/reinforced, 1), label("Install windows"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(glass_in)))
 	op("plate", inputs(stack(/obj/item/stack/material/gold, 2), stack(/obj/item/stack/material/silver, 2), stack(/obj/item/stack/material/diamond, 2), stack(/obj/item/stack/material/uranium, 2), stack(/obj/item/stack/material/phoron, 2), stack(/obj/item/stack/material/sandstone, 2)), label("Install plating"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(plated_in)))
 	op("plate_bad", item(/obj/item/stack/material), label("Install plating"), when(PROC_REF(unplated)), when(cond_not(req(/obj/item/stack/material/glass/reinforced))), when(cond_not(req(/obj/item/stack/material/gold))), when(cond_not(req(/obj/item/stack/material/silver))), when(cond_not(req(/obj/item/stack/material/diamond))), when(cond_not(req(/obj/item/stack/material/uranium))), when(cond_not(req(/obj/item/stack/material/phoron))), when(cond_not(req(/obj/item/stack/material/sandstone))), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(plating_refused)))
@@ -217,7 +215,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 /// Drones and engineering borgs next to it rename it.
 /obj/structure/door_assembly/proc/robot_may_rename(datum/act/op/A)
 	var/mob/living/silicon/robot/user = A.actor
-	return istype(user) && user.module?.names_assemblies
+	return (istype(user) && user.module?.names_assemblies) ? null : MSG(req_failed)
 
 /obj/structure/door_assembly/proc/secured_down(datum/act/op/A)
 	to_chat(A.actor, span_notice("You secured the airlock assembly!"))

@@ -171,7 +171,7 @@
 
 /mob/living/carbon/human/recalculate_vis()
 	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight and HUD reactions re-read it
-	if(!vis_enabled || !plane_holder)
+	if(!hud_used?.vis_enabled || !hud_used?.plane_holder)
 		return
 
 	//These things are allowed to add vision flags.
@@ -207,22 +207,22 @@
 	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
 		compiled_vis += VIS_SOULCATCHER
 
-	if(!compiled_vis.len && !vis_enabled.len)
+	if(!compiled_vis.len && !hud_used?.vis_enabled?.len)
 		return //Nothin' doin'.
 
-	var/list/oddities = vis_enabled ^ compiled_vis
+	var/list/oddities = hud_used?.vis_enabled ^ compiled_vis
 	if(!oddities.len)
 		return //Same thing in both lists!
 
-	var/list/to_enable = oddities - vis_enabled
+	var/list/to_enable = oddities - hud_used?.vis_enabled
 	var/list/to_disable = oddities - compiled_vis
 
 	for(var/vis in to_enable)
-		plane_holder.set_vis(vis,TRUE)
-		vis_enabled += vis
+		hud_used?.plane_holder?.set_vis(vis,TRUE)
+		hud_used?.vis_enabled += vis
 	for(var/vis in to_disable)
-		plane_holder.set_vis(vis,FALSE)
-		vis_enabled -= vis
+		hud_used?.plane_holder?.set_vis(vis,FALSE)
+		hud_used?.vis_enabled -= vis
 
 /mob/living/carbon/human/get_restraining_bolt()
 	var/obj/item/implant/restrainingbolt/RB

@@ -29,7 +29,7 @@ CAPABILITIES(/obj/machinery/pipedispenser)
 	interface("PipeDispenser")
 	op("p_layer", ui_act("p_layer", arg("p_layer", num())), then(PROC_REF(ui_act_p_layer)))
 	op("dispense_pipe", ui_act("dispense_pipe", arg("bent"), arg("ref")), then(PROC_REF(ui_act_dispense_pipe)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
+	extend(TAG_UI, needs(req(PROC_REF(dispenser_usable), because = MSG(pipedispenser/cannot_use))))
 	op("put_back", item(/obj/item/pipe), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("put_back_meter", item(/obj/item/pipe_meter), label("Put back"), wait(0), says(MSG(pipedispenser/put_back)), then(PROC_REF(put_back)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(PROC_REF(anchor_wait)), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
@@ -43,7 +43,7 @@ MSG_DEF_SELF(pipedispenser/cannot_use, "You can't work the dispenser.")
 /// The dispenser answers someone next to it who can move and act, and only while it is bolted down.
 /obj/machinery/pipedispenser/proc/dispenser_usable(datum/act/op/A)
 	var/mob/user = A.actor
-	return !unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1 // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
+	return (!unwrenched && user.canmove && !user.stat && !user.restrained() && get_dist(loc, user) <= 1) ? null : MSG(pipedispenser/cannot_use) // ALLOW(reads): the bolts and the person are read when a button is pressed, never from a cached menu
 
 /obj/machinery/pipedispenser/ui_data(datum/act/eval/A)
 	var/list/data = list(
@@ -153,13 +153,13 @@ MSG_DEF(pipedispenser/shoved_back, "You shove %I% back in %T%.", "%U% shoves %I%
 /// Disposal pipes are dragged back into it.
 CAPABILITIES(/obj/machinery/pipedispenser/disposal)
 	op("shove_back", item(/obj/structure/disposalconstruct), gesture(GESTURE_DRAG), label("Put back"), wait(0),
-		needs(req_bool(PROC_REF(loose_and_near), because = MSG(op/not_available))), says(MSG(pipedispenser/shoved_back)), then(PROC_REF(shoved_back)))
+		needs(req(PROC_REF(loose_and_near), because = MSG(op/not_available))), says(MSG(pipedispenser/shoved_back)), then(PROC_REF(shoved_back)))
 
 /// The dragger can act, and the loose pipe and the dragger are both beside it.
 /obj/machinery/pipedispenser/disposal/proc/loose_and_near(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/structure/disposalconstruct/pipe = A.held
-	return istype(pipe) && !pipe.anchored && user.canmove && !user.stat && !user.restrained() && get_dist(user, src) <= 1 && get_dist(src, pipe) <= 1 // ALLOW(reads): read when the pipe is dragged, never from a cached menu
+	return (istype(pipe) && !pipe.anchored && user.canmove && !user.stat && !user.restrained() && get_dist(user, src) <= 1 && get_dist(src, pipe) <= 1) ? null : MSG(op/not_available) // ALLOW(reads): read when the pipe is dragged, never from a cached menu
 
 /obj/machinery/pipedispenser/disposal/proc/shoved_back(datum/act/op/A)
 	consume(A.held, A.actor)

@@ -21,24 +21,25 @@ CAPABILITIES(/obj/item/tool/wirecutters)
 	configure(item_tooling(speed = 1))
 	configure(item_worn(slots = SLOT_BELT))
 	configure(item_combat(force = 6, attack_verbs = list("pinched", "nipped"), sharp = TRUE, edge = TRUE))
+	rolls(nameof(icon_state), PROC_REF(roll_colour), when = nameof(random_color))
+	rolls(nameof(item_state), PROC_REF(item_state_for_colour), when = nameof(random_color), from = list(nameof(icon_state)))
+	rolls(nameof(pixel_y), PROC_REF(roll_drop_y))
 	configure(item_sounds(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
 
-/obj/item/tool/wirecutters/Initialize(mapload)
-	. = ..()
-	if(random_color)
-		switch(pick("red","blue","yellow"))
-			if ("red")
-				icon_state = "cutters" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "cutters"
-			if ("blue")
-				icon_state = "cutters-b" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "cutters_blue"
-			if ("yellow")
-				icon_state = "cutters-y" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "cutters_yellow"
+/// A random handle colour (rolls()): icon_state -> the matching in-hand item_state.
+GLOBAL_LIST_INIT(wirecutter_colours, list(
+		"cutters" = "cutters",
+		"cutters-b" = "cutters_blue",
+		"cutters-y" = "cutters_yellow"))
 
-	if (prob(75))
-		pixel_y = rand(0, 16)
+/// Rolled before init (rolls()): one of the handle colours.
+/obj/item/tool/wirecutters/proc/roll_colour(datum/roller/R)
+	return R.choose(GLOB.wirecutter_colours)
+
+/// Rolled before init (rolls()), after the colour: the in-hand sprite of the colour it rolled.
+/obj/item/tool/wirecutters/proc/item_state_for_colour(datum/roller/R)
+	return GLOB.wirecutter_colours[icon_state] || item_state
+
 
 /obj/item/tool/wirecutters/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!iscarbon(M))

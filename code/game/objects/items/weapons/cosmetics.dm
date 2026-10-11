@@ -23,10 +23,13 @@
 /obj/item/lipstick/random
 	name = "lipstick"
 
-/obj/item/lipstick/random/Initialize(mapload)
-	. = ..()
-	colour = pick("red","purple","jade","black")
-	name = "[colour] lipstick"
+CAPABILITIES(/obj/item/lipstick/random)
+	rolls(nameof(colour), pick_one(list("red", "purple", "jade", "black")))
+	rolls(nameof(name), PROC_REF(name_for_colour), from = list(nameof(colour)))
+
+/// Rolled before init (rolls()), after the colour: named for it.
+/obj/item/lipstick/random/proc/name_for_colour(datum/roller/R)
+	return "[colour] lipstick"
 
 TRACKED(/obj/item/lipstick, open)
 
@@ -37,7 +40,7 @@ CAPABILITIES(/obj/item/lipstick)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
-		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req_bool(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),
+		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req(PROC_REF(clean_lips))),
 		then(PROC_REF(application_started), early = TRUE), wait(PROC_REF(application_delay)), then(PROC_REF(lipstick_applied)))
 
 /obj/item/lipstick/proc/twisted(datum/act/op/A)
@@ -48,12 +51,9 @@ CAPABILITIES(/obj/item/lipstick)
 
 /obj/item/lipstick/proc/clean_lips(datum/act/op/A)
 	if(!ishuman(A.target))
-		return FALSE
+		return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 	var/mob/living/carbon/human/H = A.target
-	return !H.lip_style
-
-/obj/item/lipstick/proc/lip_refusal(datum/act/op/A)
-	return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
+	return (!H.lip_style) ? null : span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 
 /obj/item/lipstick/proc/application_delay(datum/act/op/A)
 	return A.target == A.actor ? 0 : 2 SECONDS

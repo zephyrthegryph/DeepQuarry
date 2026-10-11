@@ -10,14 +10,14 @@
 	name = "desert rock"
 
 CAPABILITIES(/obj/structure/prop/desert_rock/rock)
-	op("push", hand(), label("Push"), needs(req_bool(PROC_REF(can_push), silent = TRUE)), begins(MSG(desert_rock/push)), wait(3 SECONDS), then(PROC_REF(pushed)))
+	op("push", hand(), label("Push"), needs(req(PROC_REF(can_push), silent = TRUE)), begins(MSG(desert_rock/push)), wait(3 SECONDS), then(PROC_REF(pushed)))
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 
 MSG_DEF_SELF(desert_rock/push, "You push on %T%.")
 
 /obj/structure/prop/desert_rock/rock/proc/can_push(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && !user.is_incorporeal()
+	return (istype(user) && !user.is_incorporeal()) ? null : MSG(req_failed)
 
 /obj/structure/prop/desert_rock/rock/proc/pushed(datum/act/op/A)
 	var/mob/user = A.actor

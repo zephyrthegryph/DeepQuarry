@@ -26,9 +26,13 @@
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
 @obj.item.assembly human|/obj/item/tool/wrench
+-menu: Threaten to push the button! (refused: You can't do that.)
+-menu: Transfer
+-click: Click: Transfer
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
++6 click: Click: Use
 @obj.item.assembly human|/obj/item/tool/wirecutters
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise

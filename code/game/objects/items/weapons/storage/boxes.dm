@@ -161,14 +161,15 @@ CAPABILITIES(/obj/item/storage/box)
 	icon_state = "syringe"
 	starts_with = list(/obj/item/reagent_containers/syringe/old = 2) // Old syringes guaranteed in each box!
 
-/obj/item/storage/box/old_syringes/Initialize(mapload)
-	var/syringe
+CAPABILITIES(/obj/item/storage/box/old_syringes)
+	initial_contents(PROC_REF(roll_syringes))
+
+/// Rolled contents (initial_contents()): eight tries at a random syringe, each kept three times in four.
+/obj/item/storage/box/old_syringes/proc/roll_syringes(datum/roller/R)
+	. = list()
 	for(var/i in 1 to 8)
-		if(prob(25))
-			continue
-		syringe = pick(subtypesof(/obj/item/reagent_containers/syringe))
-		new syringe(src)
-	. = ..()
+		if(R.chance(75))
+			. += R.choose(subtypesof(/obj/item/reagent_containers/syringe))
 
 /obj/item/storage/box/syringegun
 	name = "box of syringe gun cartridges"

@@ -16,7 +16,11 @@
 @obj.item.assembly human|/obj/item/tool/crowbar
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/tool/wrench
+-menu: Threaten to push the button! (refused: You can't do that.)
+-menu: Transfer
+-click: Click: Transfer
 +0 menu: Hide
++4 click: Click: Use
 @obj.item.assembly human|/obj/item/tool/wirecutters
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/multitool

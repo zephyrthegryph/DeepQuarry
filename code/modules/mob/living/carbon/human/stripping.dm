@@ -232,8 +232,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, S
 	if(internal)
 		internal.add_fingerprint(user)
 		rel_clear(src, nameof(internal))
-		if(internals)
-			internals.icon_state = "internal0"
+		if(hud_used?.internals)
+			hud_used?.internals?.icon_state = "internal0"
 	else
 		// Check for airtight mask/helmet.
 		if(!(istype(get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask) || istype(get_equipped_item(SLOT_ID_HEAD), /obj/item/clothing/head/helmet/space)))
@@ -249,7 +249,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, S
 	if(internal)
 		act_message(src, null, others = span_warning("%U% is now running on internals!"))
 		internal.add_fingerprint(user)
-		if (internals)
-			internals.icon_state = "internal1"
+		if (hud_used?.internals)
+			hud_used?.internals?.icon_state = "internal1"
 	else
 		act_message(user, src, others = span_danger("%U% disables %T%'s internals!"))

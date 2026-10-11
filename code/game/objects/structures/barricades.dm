@@ -12,7 +12,7 @@
 
 CAPABILITIES(/obj/structure/barricade)
 	param(nameof(barricade_material), pos = 1, apply = PROC_REF(build_of))
-	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req_bool(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
+	op("repair", stack(/obj/item/stack, 1), label("Repair"), needs(req(PROC_REF(repairs_it), silent = TRUE)), priority(OP_PRIORITY_PART), starts(PROC_REF(repair_started)), begins(MSG(barricade/repairing)), wait(2 SECONDS), then(PROC_REF(repaired)))
 	op("repair_or_hit", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 TRACKED(/obj/structure/barricade, material)
@@ -49,7 +49,7 @@ MSG_DEF(barricade/repairing, null, span_notice("%U% begins to repair %T%."))
 /// A sheet of its own material, held to a barricade that is hurt, repairs it.
 /obj/structure/barricade/proc/repairs_it(datum/act/op/A)
 	var/obj/item/stack/D = A.held
-	return get_integrity_damage() > 0 && read_once(D.get_material_name()) == read_once(material.name)
+	return (get_integrity_damage() > 0 && read_once(D.get_material_name()) == read_once(material.name)) ? null : MSG(req_failed)
 
 /obj/structure/barricade/proc/repair_started(datum/act/op/A)
 	A.actor.setClickCooldown(A.actor.get_attack_speed(A.held))

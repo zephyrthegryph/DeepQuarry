@@ -82,7 +82,7 @@
 	// where 30 rounds sometimes ran out just before the swing (also seen on
 	// unsharded merge runs), so it's 60.
 	for(var/i in 1 to 60)
-		hunter.next_click = 0
+		cooldown_set_end(hunter, next_click, 0)
 		B.strategic_tick()
 		B.tactical_tick()
 		closest = min(closest, get_dist(hunter, target))
@@ -112,7 +112,7 @@
 	TEST_ASSERT_EQUAL(target.stat, UNCONSCIOUS, "the target should be unconscious")
 	var/datum/ai_brain/B = hunter.ai_brain
 	B.give_target(target, TRUE)
-	hunter.next_click = 0
+	cooldown_set_end(hunter, next_click, 0)
 	B.strategic_tick()
 	B.tactical_tick()
 	TEST_ASSERT(!hunter.checkClickCooldown(), "the brain did not attack its downed target")

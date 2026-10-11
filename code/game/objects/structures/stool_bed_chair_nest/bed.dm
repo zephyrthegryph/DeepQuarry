@@ -72,15 +72,6 @@ TRACKED(/obj/structure/bed, base_icon)
 	if(padding)
 		set_padding_material(get_material_by_name(padding))
 
-// ALLOW(init/INSTANCE_STATE): a bed draws its frame and padding, and turns like a chair (or only flips)
-/obj/structure/bed/Initialize(mapload)
-	. = ..()
-	if(flippable) // If we can't change directions, don't bother.
-		// Ugly check for chairs, beds can only be flipped north and south...
-		if(istype(src,/obj/structure/bed/chair))
-			make_rotatable()
-		else
-			make_rotatable(only_flip = TRUE)
 
 /obj/structure/bed/get_material()
 	return material
@@ -124,16 +115,18 @@ MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the paddi
 CAPABILITIES(/obj/structure/bed)
 	buckle()
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
-		needs(req_bool(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+		needs(req(PROC_REF(can_be_padded))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
 	op("tuck_disk", item(/obj/item/disk), then(PROC_REF(tucked_in)))
 	op("tuck_plushie", item(/obj/item/toy/plushie), then(PROC_REF(tucked_in)))
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
-		needs(req_bool(PROC_REF(has_padding), because = MSG(bed/no_padding)), req_bool(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))),
+		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding)), req(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))),
 		then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
 	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"),
-		needs(req_bool(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
+		needs(req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
 	param(nameof(material_key), pos = 1)
 	param(nameof(padding_key), pos = 2, apply = PROC_REF(make_of))
+	rotatable(only_flip = TRUE)
+	extend(CAP_ROTATABLE, when(nameof(flippable)))
 
 /// What a bed that is not for lying on does without: the nest, the pillow piles (their own hands and items replace the bed's).
 /proc/bed_hands_off()
@@ -153,12 +146,11 @@ CAPABILITIES(/obj/structure/bed)
 	return null
 
 /obj/structure/bed/proc/can_be_padded(datum/act/op/A)
-	return can_pad && !padding_material && !isnull(padding_type_of(A.held)) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
-
-/obj/structure/bed/proc/padding_refusal(datum/act/op/A)
+	if(can_pad && !padding_material && !isnull(padding_type_of(A.held))) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+		return null
 	if(!can_pad)
 		return /datum/msg/bed/cant_pad
-	if(padding_material)
+	if(read_once(padding_material))
 		return /datum/msg/bed/already_padded
 	return /datum/msg/bed/not_padding
 
@@ -181,10 +173,10 @@ CAPABILITIES(/obj/structure/bed)
 	return OP_OK
 
 /obj/structure/bed/proc/has_padding(datum/act/A)
-	return !!padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
 /obj/structure/bed/proc/unpad_allowed(datum/act/A)
-	return can_unpad
+	return (can_unpad) ? null : MSG(bed/cant_unpad)
 
 /obj/structure/bed/proc/unpadded(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 100, 1)
@@ -192,7 +184,7 @@ CAPABILITIES(/obj/structure/bed)
 	return OP_OK
 
 /obj/structure/bed/proc/dismantle_allowed(datum/act/A)
-	return can_dismantle
+	return (can_dismantle) ? null : MSG(bed/cant_dismantle)
 
 /obj/structure/bed/proc/taken_apart(datum/act/op/A)
 	playsound(src, sounds_of(A.held).use, 50, 1)
@@ -309,7 +301,7 @@ CAPABILITIES(/obj/item/roller)
 	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
-	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req_bool(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
+	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
 
 /// The folded bed is set up where its carrier stands, and is used up.
 /obj/item/roller/proc/unfolded(datum/act/op/A)
@@ -322,7 +314,7 @@ CAPABILITIES(/obj/item/roller)
 /// The rack held in hand has nothing in it.
 /obj/item/roller/proc/rack_is_empty(datum/act/op/A)
 	var/obj/item/roller_holder/RH = A.held
-	return istype(RH) && !RH.held
+	return (istype(RH) && !RH.held) ? null : MSG(req_failed)
 
 /// The rack takes the folded bed.
 /obj/item/roller/proc/racked(datum/act/op/A)
@@ -443,11 +435,11 @@ CAPABILITIES(/obj/structure/dirtybed)
 	buckle()
 	anchor()
 	extend("anchor.toggle", wait(2 SECONDS))
-	op("loose", item(/obj/item), label("Use"), when(req_bool(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
+	op("loose", item(/obj/item), label("Use"), when(req(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
 
 /// The mattress is not bolted down.
 /obj/structure/dirtybed/proc/is_loose(datum/act/A)
-	return !anchored
+	return (!anchored) ? null : MSG(req_failed)
 
 /// Anything clicked on a loose mattress only says it is not secured.
 /obj/structure/dirtybed/proc/note_loose(datum/act/op/A)

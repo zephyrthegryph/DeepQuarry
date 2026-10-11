@@ -1,0 +1,82 @@
+human|none menu: Climb
+human|none menu: Interaction hand (refused: It's empty.)
+human|none click: Click: Interaction hand
+robot|none menu: Climb
+robot|none menu: Interaction hand (refused: It's empty.)
+robot|none click: Click: Interaction hand
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 menu: Use screwdriver
++7 click: Click: Use screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 menu: Use wrench
++7 click: Click: Use wrench
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++7 click: Click: Interaction item
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++7 click: Click: Interaction item
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++0 menu: Climb
++2 menu: Interaction hand (refused: It's empty.)
++3 menu: Interaction item
++6 click: Click: Interaction item
+keys: climb.climb, climb.climb_menu, drag_buckle, interaction_hand, interaction_item, interaction_tk, melee_hit, remove_object, use_screwdriver, use_wrench

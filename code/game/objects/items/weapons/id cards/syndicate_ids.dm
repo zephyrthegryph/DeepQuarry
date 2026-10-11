@@ -12,13 +12,12 @@
 /obj/item/card/id/syndicate/state_exclude()
 	return ..() + list("agentcard_module", "registered_user")
 
-/obj/item/card/id/syndicate/Initialize(mapload)
-	. = ..()
-	access = GLOB.syndicate_access.Copy()
+/obj/item/card/id/syndicate/starting_access()
+	return GLOB.syndicate_access.Copy()
 
-/obj/item/card/id/syndicate/station_access/Initialize(mapload)
-	. = ..() // Same as the normal Syndicate id, only already has all station access
-	access |= SSaccess.get_all_station_access()
+/// Same as the normal Syndicate id, only already has all station access.
+/obj/item/card/id/syndicate/station_access/starting_access()
+	return ..() | SSaccess.get_all_station_access()
 
 CAPABILITIES(/obj/item/card/id/syndicate)
 	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)

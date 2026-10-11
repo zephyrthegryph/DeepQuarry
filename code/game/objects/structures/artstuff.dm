@@ -65,10 +65,13 @@ CAPABILITIES(/obj/structure/easel)
 	pixel_x = 10
 	pixel_y = 9
 
+/// The description gives the canvas size (derives(), at init).
+/obj/item/canvas/proc/sized_desc()
+	return "[desc] (Canvas size is [width]x[height].)"
+
 /obj/item/canvas/Initialize(mapload)
 	. = ..()
 	reset_grid()
-	desc += " (Canvas size is [width]x[height].)"
 
 /obj/item/canvas/proc/reset_grid()
 	grid = new/list(width,height)
@@ -96,19 +99,20 @@ CAPABILITIES(/obj/item/canvas)
 	interface("Canvas")
 	op("paint", ui_act("paint", arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_paint)))
 	op("finalize", ui_act("finalize"), then(PROC_REF(ui_act_finalize)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(canvas_open), because = MSG(canvas/finished))))
+	extend(TAG_UI, needs(req(PROC_REF(canvas_open), because = MSG(canvas/finished))))
 	op("view", in_hand(), then(PROC_REF(interaction_self)))
 	op("base_color", item(/obj/item/paint_palette), label("Fill"),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Confirm Color Fill", "question" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "timeout" = 0), step = "sure"),
 		asks(/datum/prompt/color, fields = list("title" = "Base Color", "question" = "Select a base color for the canvas:", "default" = "canvas_color", "timeout" = 0), step = "colour", when = PROC_REF(fill_confirmed)),
 		then(PROC_REF(base_color_chosen)))
 	op("paint_open", item(/obj/item), stance(I_HELP), label("Paint"), then(PROC_REF(interaction_paint)))
+	derives(nameof(desc), PROC_REF(sized_desc))
 
 MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 
 /// A finished painting takes no more strokes.
 /obj/item/canvas/proc/canvas_open(datum/act/op/A)
-	return !finalized // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
+	return (!finalized) ? null : MSG(canvas/finished) // ALLOW(reads): a finished painting is read when a stroke is made, never from a cached menu
 
 /// Old attackby outside combat mode: open the canvas to paint on it (the click goes on).
 /obj/item/canvas/proc/interaction_paint(datum/act/op/A)
@@ -419,9 +423,6 @@ CAPABILITIES(/obj/item/paint_palette)
 	. = ..()
 	if(persistence_id)
 		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
-	if(building)
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
-		pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
 
 /// Phase 2: leaves the persistent painting frames.
 /obj/structure/sign/painting/lifecycle_dematerialize()
@@ -434,6 +435,7 @@ CAPABILITIES(/obj/structure/sign/painting)
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
 	op("vv_removepainting", topic_in(VV_TOPIC, "removepainting"), then(PROC_REF(vv_topic_remove_painting)))
+	rolls(ROLL_PIXEL, WALL_OFFSET(30, 30), when = nameof(building))
 
 /obj/structure/sign/painting/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

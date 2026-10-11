@@ -1,66 +1,19 @@
-/obj/item/storage/box/syndicate/Initialize(mapload)
-	switch (pickweight(list("bloodyspai" = 1, "stealth" = 1, "screwed" = 1, "guns" = 1, "murder" = 1, "freedom" = 1, "hacker" = 1, "lordsingulo" = 1, "smoothoperator" = 1)))
-		if("bloodyspai")
-			new /obj/item/clothing/under/chameleon(src)
-			new /obj/item/clothing/mask/gas/voice(src)
-			new /obj/item/card/id/syndicate(src)
-			new /obj/item/clothing/shoes/syndigaloshes(src)
+CAPABILITIES(/obj/item/storage/box/syndicate)
+	initial_contents(PROC_REF(roll_bundle))
 
-		if("stealth")
-			new /obj/item/gun/energy/crossbow(src)
-			new /obj/item/pen/reagent/paralysis(src)
-			new /obj/item/chameleon(src)
-
-		if("screwed")
-			new /obj/effect/spawner/newbomb/timer/syndicate(src)
-			new /obj/effect/spawner/newbomb/timer/syndicate(src)
-			new /obj/item/powersink(src)
-			new /obj/item/clothing/suit/space/syndicate(src)
-			new /obj/item/clothing/head/helmet/space/syndicate(src)
-			new /obj/item/clothing/mask/gas/syndicate(src)
-			new /obj/item/tank/emergency/oxygen/double(src)
-
-		if("guns")
-			new /obj/item/gun/projectile/revolver(src)
-			new /obj/item/ammo_magazine/s357(src)
-			new /obj/item/card/emag(src)
-			new /obj/item/plastique(src)
-			new /obj/item/plastique(src)
-
-		if("murder")
-			new /obj/item/melee/energy/sword(src)
-			new /obj/item/clothing/glasses/thermal/syndi(src)
-			new /obj/item/card/emag(src)
-			new /obj/item/clothing/shoes/syndigaloshes(src)
-
-		if("freedom")
-			var/obj/item/implanter/O = new /obj/item/implanter(src)
-			rel_set(O, nameof(O.imp), new /obj/item/implant/freedom(O))
-			var/obj/item/implanter/U = new /obj/item/implanter(src)
-			rel_set(U, nameof(U.imp), new /obj/item/implant/uplink(U))
-
-		if("hacker")
-			new /obj/item/encryptionkey/syndicate(src)
-			new /obj/item/aiModule/syndicate(src)
-			new /obj/item/card/emag(src)
-			new /obj/item/encryptionkey/binary(src)
-
-		if("lordsingulo")
-			new /obj/item/radio/beacon/syndicate(src)
-			new /obj/item/clothing/suit/space/syndicate(src)
-			new /obj/item/clothing/head/helmet/space/syndicate(src)
-			new /obj/item/clothing/mask/gas/syndicate(src)
-			new /obj/item/tank/emergency/oxygen/double(src)
-			new /obj/item/card/emag(src)
-
-		if("smoothoperator")
-			new /obj/item/storage/box/syndie_kit/g9mm(src)
-			new /obj/item/storage/bag/trash(src)
-			new /obj/item/soap/syndie(src)
-			new /obj/item/bodybag(src)
-			new /obj/item/clothing/under/suit_jacket(src)
-			new /obj/item/clothing/shoes/laceup(src)
-	. = ..()
+/// Rolled contents (initial_contents()): one of nine equally likely bundles.
+/obj/item/storage/box/syndicate/proc/roll_bundle(datum/roller/R)
+	var/static/list/bundles = list(
+		"bloodyspai" = list(/obj/item/clothing/under/chameleon, /obj/item/clothing/mask/gas/voice, /obj/item/card/id/syndicate, /obj/item/clothing/shoes/syndigaloshes),
+		"stealth" = list(/obj/item/gun/energy/crossbow, /obj/item/pen/reagent/paralysis, /obj/item/chameleon),
+		"screwed" = list(/obj/effect/spawner/newbomb/timer/syndicate, /obj/effect/spawner/newbomb/timer/syndicate, /obj/item/powersink, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double),
+		"guns" = list(/obj/item/gun/projectile/revolver, /obj/item/ammo_magazine/s357, /obj/item/card/emag, /obj/item/plastique, /obj/item/plastique),
+		"murder" = list(/obj/item/melee/energy/sword, /obj/item/clothing/glasses/thermal/syndi, /obj/item/card/emag, /obj/item/clothing/shoes/syndigaloshes),
+		"freedom" = list(/obj/item/implanter/freedom, /obj/item/implanter/uplink),
+		"hacker" = list(/obj/item/encryptionkey/syndicate, /obj/item/aiModule/syndicate, /obj/item/card/emag, /obj/item/encryptionkey/binary),
+		"lordsingulo" = list(/obj/item/radio/beacon/syndicate, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double, /obj/item/card/emag),
+		"smoothoperator" = list(/obj/item/storage/box/syndie_kit/g9mm, /obj/item/storage/bag/trash, /obj/item/soap/syndie, /obj/item/bodybag, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/shoes/laceup))
+	return bundles[R.choose(bundles)]
 
 /obj/item/storage/box/syndie_kit
 	name = "box"
@@ -70,11 +23,8 @@
 /obj/item/storage/box/syndie_kit/imp_freedom
 	name = "boxed freedom implant (with injector)"
 
-/obj/item/storage/box/syndie_kit/imp_freedom/Initialize(mapload)
-	var/obj/item/implanter/O = new(src)
-	rel_set(O, nameof(O.imp), new /obj/item/implant/freedom(O))
-	O.update()
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/syndie_kit/imp_freedom)
+	initial_contents(/obj/item/implanter/freedom)
 
 /obj/item/storage/box/syndie_kit/imp_compress
 	name = "box (C)"
@@ -87,20 +37,16 @@
 /obj/item/storage/box/syndie_kit/imp_uplink
 	name = "boxed uplink implant (with injector)"
 
-/obj/item/storage/box/syndie_kit/imp_uplink/Initialize(mapload)
-	var/obj/item/implanter/O = new(src)
-	rel_set(O, nameof(O.imp), new /obj/item/implant/uplink(O))
-	O.update()
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/syndie_kit/imp_uplink)
+	initial_contents(/obj/item/implanter/uplink)
 
 /obj/item/storage/box/syndie_kit/imp_aug
 	name = "boxed augment implant (with injector)"
 	var/case_type = /obj/item/implantcase/shades
 
-/obj/item/storage/box/syndie_kit/imp_aug/Initialize(mapload)
-	new /obj/item/implanter(src)
-	new case_type(src)
-	. = ..()
+CAPABILITIES(/obj/item/storage/box/syndie_kit/imp_aug)
+	initial_contents(/obj/item/implanter)
+	initial_contents(nameof(case_type))
 
 /obj/item/storage/box/syndie_kit/imp_aug/taser
 	case_type = /obj/item/implantcase/taser
@@ -194,45 +140,38 @@
 	name = "\improper Tricky smokes"
 	desc = "Comes with the following brands of cigarettes, in this order: 2xFlash, 2xSmoke, 1xMindBreaker, 1xTricordrazine. Avoid mixing them up."
 
-/obj/item/storage/box/syndie_kit/cigarette/Initialize(mapload)
-	. = ..()
-	var/obj/item/storage/fancy/cigarettes/pack
+CAPABILITIES(/obj/item/storage/box/syndie_kit/cigarette)
+	initial_contents(/obj/item/storage/fancy/cigarettes/tricky/flash, count = 2)
+	initial_contents(/obj/item/storage/fancy/cigarettes/tricky/smoke, count = 2)
+	initial_contents(/obj/item/storage/fancy/cigarettes/tricky/mindbreaker)
+	initial_contents(/obj/item/storage/fancy/cigarettes/tricky/tricordrazine)
+	initial_contents(/obj/item/flame/lighter/zippo)
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	fill_cigarre_package(pack, list(REAGENT_ID_ALUMINIUM = 5, REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SULFUR = 5))
-	pack.desc += " 'F' has been scribbled on it."
+/// The Tricky smokes' packs: plain packs laced through the packet (the reagents are 15 units a cigarette, shared on removal).
+/obj/item/storage/fancy/cigarettes/tricky/flash
+	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets. 'F' has been scribbled on it."
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	fill_cigarre_package(pack, list(REAGENT_ID_ALUMINIUM = 5, REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SULFUR = 5))
-	pack.desc += " 'F' has been scribbled on it."
+CAPABILITIES(/obj/item/storage/fancy/cigarettes/tricky/flash)
+	configure(reagents(starts = list(REAGENT_ID_ALUMINIUM = 30, REAGENT_ID_POTASSIUM = 30, REAGENT_ID_SULFUR = 30)))
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5))
-	pack.desc += " 'S' has been scribbled on it."
+/obj/item/storage/fancy/cigarettes/tricky/smoke
+	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets. 'S' has been scribbled on it."
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5))
-	pack.desc += " 'S' has been scribbled on it."
+CAPABILITIES(/obj/item/storage/fancy/cigarettes/tricky/smoke)
+	configure(reagents(starts = list(REAGENT_ID_POTASSIUM = 30, REAGENT_ID_SUGAR = 30, REAGENT_ID_PHOSPHORUS = 30)))
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	// Dylovene. Going with 1.5 rather than 1.6666666...
-	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 1.5, REAGENT_ID_NITROGEN = 1.5, REAGENT_ID_SILICON = 1.5))
-	// Mindbreaker
-	fill_cigarre_package(pack, list(REAGENT_ID_SILICON = 4.5, REAGENT_ID_HYDROGEN = 4.5))
+/obj/item/storage/fancy/cigarettes/tricky/mindbreaker
+	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets. 'MB' has been scribbled on it."
 
-	pack.desc += " 'MB' has been scribbled on it."
+// Dylovene (1.5 of each a cigarette, rather than 1.6666...) and mindbreaker (4.5 of silicon and hydrogen).
+CAPABILITIES(/obj/item/storage/fancy/cigarettes/tricky/mindbreaker)
+	configure(reagents(starts = list(REAGENT_ID_POTASSIUM = 9, REAGENT_ID_NITROGEN = 9, REAGENT_ID_SILICON = 36, REAGENT_ID_HYDROGEN = 27)))
 
-	pack = new /obj/item/storage/fancy/cigarettes(src)
-	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots) // ALLOW(decl): fills a child pack, amount from its slots
-	pack.desc += " 'T' has been scribbled on it."
+/obj/item/storage/fancy/cigarettes/tricky/tricordrazine
+	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets. 'T' has been scribbled on it."
 
-	new /obj/item/flame/lighter/zippo(src)
-
-	calibrate_size()
-
-/proc/fill_cigarre_package(obj/item/storage/fancy/cigarettes/C, list/reagents)
-	for(var/reagent in reagents)
-		C.reagents.add_reagent(reagent, reagents[reagent] * C.storage_slots)
+CAPABILITIES(/obj/item/storage/fancy/cigarettes/tricky/tricordrazine)
+	configure(reagents(starts = list(REAGENT_ID_TRICORDRAZINE = 90)))
 
 /obj/item/storage/box/syndie_kit/ewar_voice
 	name = "Electrowarfare and Voice Synthesiser kit"

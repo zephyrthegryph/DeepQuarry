@@ -26,11 +26,12 @@
 
 TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 
+/// The material it is made of (derives(), at init, before its Initialize() reads it): the type's forced one, else its default.
+/obj/item/material/proc/forced_material()
+	return TYPE_TABLE_GET(src, weapon_forced_material) || default_material
+
 // ALLOW(init/INSTANCE_STATE): a material weapon is made of its material (or the type's forced one), scaled by its force divisor
 /obj/item/material/Initialize(mapload)
-	var/forced_material = TYPE_TABLE_GET(src, weapon_forced_material)
-	if(forced_material)
-		default_material = forced_material
 	. = ..()
 	set_material(default_material)
 	if(!material)
@@ -100,6 +101,7 @@ CAPABILITIES(/obj/item/material)
 	op("repair", ai(), takes("repair_amount", "repair_time"), wait(PROC_REF(repair_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(repair_timed_done)))
 	op("sharpen", ai(), takes("material", "sharpen_time"), wait(PROC_REF(sharpen_wait), keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(sharpen_timed_done)))
 	param(nameof(default_material), pos = 1)
+	derives(nameof(default_material), PROC_REF(forced_material))
 
 /// Old attackby: repairs with a whetstone or sharpening kit, then falls through as its ..() did.
 /obj/item/material/proc/material_interaction_item(datum/act/op/A)

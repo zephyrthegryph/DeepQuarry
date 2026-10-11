@@ -20,6 +20,9 @@
 // A found vial is sealed.
 CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random)
 	configure(reagent_container(starts_open = FALSE))
+	rolls(nameof(vial_recipe), PROC_REF(roll_recipe))
+	configure(reagents(contents_from = nameof(vial_recipe)))
+	derives(nameof(desc), PROC_REF(contents_desc))
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/glass/beaker/vial/random, random_vial_reagents, list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1))
 
@@ -31,17 +34,19 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 		list(REAGENT_ID_IMPEDREZENE = 15)						= 2, \
 		list(REAGENT_ID_ZOMBIEPOWDER = 10)						= 1))
 
-/obj/item/reagent_containers/glass/beaker/vial/random/Initialize(mapload)
-	. = ..()
-	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
-	for(var/reagent in picked_reagents)
-		reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick
+/// The rolled recipe it is filled with (reagents(contents_from =)).
+/obj/item/reagent_containers/glass/beaker/vial/random/var/tmp/list/vial_recipe
 
+/// Rolled before init (rolls()): one of the type's weighted recipes.
+/obj/item/reagent_containers/glass/beaker/vial/random/proc/roll_recipe(datum/roller/R)
+	return R.weighted(TYPE_TABLE_GET(src, random_vial_reagents))
+
+/// The label names what it holds (derives(), at init, after it is filled).
+/obj/item/reagent_containers/glass/beaker/vial/random/proc/contents_desc()
 	var/list/names = list()
 	for(var/datum/reagent/R in reagents.reagent_list)
 		names += R.name
-
-	desc = "Contains [english_list(names)]."
+	return "Contains [english_list(names)]."
 
 //
 // Drug Powder

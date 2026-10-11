@@ -93,10 +93,8 @@
 	name = "holowarrant devices"
 	desc = "A box of holowarrant displays for security use."
 
-/obj/item/storage/box/holowarrants/Initialize(mapload)
-	. = ..()
-	for(var/i = 0 to 3)
-		new /obj/item/holowarrant(src) // addition ends
+CAPABILITIES(/obj/item/storage/box/holowarrants)
+	initial_contents(/obj/item/holowarrant, count = 4)
 
 /// Relation view: active (reads null once it is gone).
 /obj/item/holowarrant/proc/active() as /datum/data/record/warrant

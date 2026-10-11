@@ -32,11 +32,17 @@ CAPABILITIES(/obj/dq_combat_probe)
 	LAZYADD(done, "dq_combat_needs_peace")
 	return OP_OK
 
+/// A test mob's client HUD: test mobs have no client, so none was built at login. Makes an empty one (the mob owns it as hud_used).
+/proc/dq_test_hud(mob/M) as /datum/hud
+	if(!M.hud_used)
+		new /datum/hud(M)
+	return M.hud_used
+
 /// Test mobs have no HUD; unarmed attacks read the targeted zone from one.
 /datum/unit_test/proc/dq_give_zone_sel(mob/M)
-	if(!M.zone_sel)
-		rel_set(M, nameof(/mob::zone_sel), new /atom/movable/screen/zone_sel())
-		M.zone_sel.set_selecting(BP_TORSO)
+	if(!hud_of(M)?.zone_sel)
+		rel_set(dq_test_hud(M), nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel())
+		hud_of(M)?.zone_sel.set_selecting(BP_TORSO)
 
 /// An attacker and a target on adjacent open tiles, the attacker facing it.
 /datum/unit_test/proc/dq_combat_pair(target_type)
@@ -46,7 +52,7 @@ CAPABILITIES(/obj/dq_combat_probe)
 	dq_give_zone_sel(attacker)
 	dq_give_zone_sel(target)
 	attacker.set_dir(NORTH)
-	attacker.next_click = 0
+	cooldown_set_end(attacker, next_click, 0)
 	return list(attacker, target)
 
 // ---- The toggle ----
@@ -103,7 +109,7 @@ CAPABILITIES(/obj/dq_combat_probe)
 	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_friendly", "with combat mode off the neutral op wins Use")
 
 	H.set_combat_mode(TRUE)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	result = test_click(H, probe, null)
 	TEST_ASSERT_EQUAL(result?.outcome, ACT_COMMITTED, "Use runs an op")
 	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_hostile", "with combat mode on the hostile op wins Use, though the other has the higher priority")
@@ -237,7 +243,7 @@ CAPABILITIES(/obj/dq_combat_probe)
 		var/before = target.injury_load(INJURY_CATEGORY_PHYSICAL)
 		// Unarmed blows can be blocked; a few tries make a hit certain.
 		for(var/i in 1 to 10)
-			attacker.next_click = 0
+			cooldown_set_end(attacker, next_click, 0)
 			GLOB.input_router.route_click(attacker, target, "left=1")
 			if(target.injury_load(INJURY_CATEGORY_PHYSICAL) > before)
 				break
@@ -279,9 +285,9 @@ CAPABILITIES(/obj/dq_combat_probe)
 	TEST_ASSERT(victim.put_in_active_hand(held), "the victim holds something")
 	// Each disarm knocks the item loose 60% of the time.
 	for(var/i in 1 to 20)
-		attacker.next_click = 0
-		COOLDOWN_RESET(victim, push_lying_cooldown)
-		COOLDOWN_RESET(victim, disarm_cooldown)
+		cooldown_set_end(attacker, next_click, 0)
+		cooldown_reset(victim, push_lying_cooldown)
+		cooldown_reset(victim, disarm_cooldown)
 		attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
 		GLOB.input_router.route_click(attacker, victim, "left=1")
 		attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)
@@ -316,14 +322,14 @@ CAPABILITIES(/obj/dq_combat_probe)
 	cow.melee_damage_upper = 5
 	dq_give_zone_sel(cow)
 	cow.set_dir(NORTH)
-	cow.next_click = 0
+	cooldown_set_end(cow, next_click, 0)
 	var/before = mouse.injury_load(INJURY_CATEGORY_PHYSICAL)
 	GLOB.input_router.route_click(cow, mouse, "left=1")
 	sleep(cow.melee_attack_delay + 2)
 	TEST_ASSERT_EQUAL(mouse.injury_load(INJURY_CATEGORY_PHYSICAL), before, "a simple mob out of combat mode doesn't attack")
 	cow.set_combat_mode(TRUE)
 	for(var/i in 1 to 10)
-		cow.next_click = 0
+		cooldown_set_end(cow, next_click, 0)
 		GLOB.input_router.route_click(cow, mouse, "left=1")
 		sleep(cow.melee_attack_delay + 2) // attack_target winds up asynchronously
 		if(mouse.injury_load(INJURY_CATEGORY_PHYSICAL) > before)

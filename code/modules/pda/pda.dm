@@ -85,7 +85,7 @@ CAPABILITIES(/obj/item/pda)
 	op("pda_verb_reset", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Reset PDA"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_reset)))
 	op("pda_verb_remove_id", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove id"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_id)))
 	op("pda_verb_remove_pen", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove pen"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried()), then(PROC_REF(pda_verb_remove_pen)))
-	op("pda_verb_remove_cartridge", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cartridge"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried(), req_bool(PROC_REF(can_remove_cartridge_holds), because = PROC_REF(can_remove_cartridge_refusal))), then(PROC_REF(pda_verb_remove_cartridge)))
+	op("pda_verb_remove_cartridge", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Remove cartridge"), when(req_actor_kind(/mob/living/silicon, not = TRUE)), needs(carried(), req(PROC_REF(can_remove_cartridge_holds))), then(PROC_REF(pda_verb_remove_cartridge)))
 
 /obj/item/pda/examine(mob/user)
 	. = ..()
@@ -403,13 +403,9 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 /// Requirement: the cartridge can be ejected.
 /obj/item/pda/proc/can_remove_cartridge_holds(datum/act/op/A)
-	return isnull(can_remove_cartridge_reason(A.actor))
-
-/// Why can_remove_cartridge_holds refuses.
-/obj/item/pda/proc/can_remove_cartridge_refusal(datum/act/op/A)
 	return can_remove_cartridge_reason(A.actor)
 
-
+/// Why can_remove_cartridge_holds refuses.
 /obj/item/pda/proc/pda_verb_remove_cartridge(datum/act/op/A)
 	var/mob/user = A.actor
 	cartridge.forceMove(get_turf(src))

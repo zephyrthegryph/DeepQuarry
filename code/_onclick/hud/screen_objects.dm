@@ -346,8 +346,8 @@ CAPABILITIES(/atom/movable/screen)
 					if(C.internal)
 						rel_clear(C, nameof(C.internal)) // a relation: the tank stays in its inventory slot
 						to_chat(C, span_notice("No longer running on internals."))
-						if(C.internals)
-							C.internals.icon_state = "internal0"
+						if(hud_of(C)?.internals)
+							hud_of(C)?.internals?.icon_state = "internal0"
 					else
 
 						var/no_mask
@@ -453,8 +453,8 @@ CAPABILITIES(/atom/movable/screen)
 								rel_set(C, nameof(C.internal), tankcheck[best])
 
 							if(C.internal)
-								if(C.internals)
-									C.internals.icon_state = "internal1"
+								if(hud_of(C)?.internals)
+									hud_of(C)?.internals?.icon_state = "internal1"
 							else
 								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
 

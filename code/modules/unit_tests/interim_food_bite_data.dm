@@ -1,6 +1,6 @@
 /// The eater clicks themselves with the food in hand and a moment goes by (the bite's aftermath runs a tick later).
 /proc/interim_bite(mob/living/carbon/human/eater, obj/item/food)
-	eater.next_click = 0
+	cooldown_set_end(eater, next_click, 0)
 	test_click(eater, eater, food)
 	test_time(3)
 	return TRUE

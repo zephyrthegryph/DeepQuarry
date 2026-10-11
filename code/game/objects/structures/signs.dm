@@ -147,9 +147,12 @@ CAPABILITIES(/obj/item/sign)
 	name = "\improper WARNING"
 	icon_state = "securearea"
 
-/obj/structure/sign/warning/Initialize(mapload)
-	. = ..()
-	desc = "A warning sign which reads '[name]'."
+CAPABILITIES(/obj/structure/sign/warning)
+	derives(nameof(desc), PROC_REF(warning_desc))
+
+/// A warning sign reads its name (derives(), at init).
+/obj/structure/sign/warning/proc/warning_desc()
+	return "A warning sign which reads '[name]'."
 
 /obj/structure/sign/warning/airlock
 	name = "\improper EXTERNAL AIRLOCK"
@@ -204,9 +207,8 @@ CAPABILITIES(/obj/item/sign)
 	name = "\improper LETHAL TURRETS"
 	icon_state = "turrets"
 
-/obj/structure/sign/warning/lethal_turrets/Initialize(mapload)
-	. = ..()
-	desc += " Enter at own risk!."
+/obj/structure/sign/warning/lethal_turrets/warning_desc()
+	return ..() + " Enter at own risk!."
 
 /obj/structure/sign/warning/mail_delivery
 	name = "\improper MAIL DELIVERY"

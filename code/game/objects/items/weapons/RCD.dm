@@ -167,12 +167,7 @@ TYPE_TABLE(/obj/item/rcd/advanced/loaded, rcd_start_loaded, TRUE)
 	var/electric_cost_coefficent = 83.33 // Higher numbers make it less efficent. 86.3... means it should matche the standard RCD capacity on a 10k cell.
 
 CAPABILITIES(/obj/item/rcd/electric)
-	owns_one(nameof(cell), /obj/item/cell)
-
-/obj/item/rcd/electric/Initialize(mapload)
-	if(make_cell)
-		rel_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): the cell is made only when make_cell is set, which a declaration cannot condition
-	return ..()
+	owns_one(nameof(cell), /obj/item/cell, starts = when(nameof(make_cell), /obj/item/cell/high))
 
 
 /obj/item/rcd/electric/get_cell()
@@ -333,6 +328,7 @@ CAPABILITIES(/obj/item/rcd)
 	op("rcd_self", in_hand(), label("Select mode"), then(PROC_REF(rcd_self)))
 	op("close", topic("close"), then(PROC_REF(topic_close)))
 	op("access", topic("access", arg("access", schema_text(16), optional = TRUE)), then(PROC_REF(topic_access)))
+	derives(nameof(stored_matter), PROC_REF(starting_matter))
 
 // Ammo for the (non-electric) RCDs.
 /obj/item/rcd_ammo
@@ -348,10 +344,9 @@ CAPABILITIES(/obj/item/rcd)
 
 TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_start_loaded, FALSE)
 
-/obj/item/rcd/Initialize(mapload)
-	. = ..()
-	if(TYPE_TABLE_GET(src, rcd_start_loaded))
-		set_stored_matter(max_stored_matter)
+/// A loaded RCD starts full (derives(), at init).
+/obj/item/rcd/proc/starting_matter()
+	return TYPE_TABLE_GET(src, rcd_start_loaded) ? max_stored_matter : stored_matter
 
 TRACKED(/obj/item/rcd, stored_matter)
 TRACKED(/obj/item/rcd, max_stored_matter)

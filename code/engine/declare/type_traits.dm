@@ -170,14 +170,16 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 
 /// Every trait kind's engine.
 /proc/type_trait_engines()
-	var/static/list/engines
-	if(!engines)
-		engines = list()
+	var/list/engines = GLOB.type_trait_engine_list
+	if(!engines.len)
 		for(var/datum/entry_engine/type_trait/engine_type as anything in subtypesof(/datum/entry_engine/type_trait))
 			var/datum/entry_engine/type_trait/E = entry_engine_for(engine_type::kind)
 			if(E)
 				engines += E
 	return engines
+
+/// Every trait kind's engine (type_trait_engines(), filled on first use).
+GLOBAL_LIST_EMPTY(type_trait_engine_list)
 
 /// The trait field an old base-type var name now lives in, for `holder`: list(kind, field), or null. What the map loader and VV use to route a
 /// write of a var that left the base type (a map's `active_power_usage = 7500` on a mixer) through set_trait().
@@ -222,10 +224,12 @@ GLOBAL_LIST_EMPTY(type_trait_defaults)
 
 /// The vars every trait datum has (type, kind, ...): not trait fields.
 /proc/type_trait_plain_vars()
-	var/static/list/out
-	if(!out)
-		out = list()
+	var/list/out = GLOB.type_trait_plain_var_names
+	if(!out.len)
 		var/datum/type_trait/plain = new
 		for(var/name in plain.vars)
 			out[name] = TRUE
 	return out
+
+/// The vars of a bare /datum/type_trait (type_trait_plain_vars(), filled on first use).
+GLOBAL_LIST_EMPTY(type_trait_plain_var_names)

@@ -418,7 +418,7 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 
 /// The wipe aims at the mouth, and at somebody else (what is aimed at is fixed while the click is decided).
 /obj/item/paper/proc/wipes_other_mouth(datum/act/op/A)
-	return (A.target != A.actor && read_once(A.actor.zone_sel?.selecting) == O_MOUTH) ? null : /datum/msg/req_failed
+	return (A.target != A.actor && read_once(hud_of(A.actor)?.zone_sel?.selecting) == O_MOUTH) ? null : /datum/msg/req_failed
 
 /obj/item/paper/proc/wipe_lipstick_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
@@ -428,12 +428,12 @@ MSG_DEF(paper/wiping, span_notice("You begin to wipe off %T%'s lipstick."), span
 	return OP_OK
 
 /obj/item/paper/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.zone_sel.selecting == O_EYES)
+	if(hud_of(user)?.zone_sel?.selecting == O_EYES)
 		act_message(user, M, MSG_SELF(span_notice(" %U% holds up a paper and shows it to %T%. ")), MSG_OTHERS(span_notice("You show the paper to %T%. ")))
 		M.examinate(src)
 		return ITEM_INTERACT_SUCCESS
 
-	else if(user.zone_sel.selecting == O_MOUTH) // lipstick wiping
+	else if(hud_of(user)?.zone_sel?.selecting == O_MOUTH) // lipstick wiping
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(H == user)

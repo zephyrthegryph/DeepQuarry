@@ -82,12 +82,12 @@
 		if (!(get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).flags & AIRTIGHT)))
 			rel_clear(src, nameof(internal))
 		if(internal)
-			if (internals)
-				internals.icon_state = "internal1"
+			if (hud_used?.internals)
+				hud_used?.internals?.icon_state = "internal1"
 			return internal.remove_air_volume(volume_needed)
 		else
-			if (internals)
-				internals.icon_state = "internal0"
+			if (hud_used?.internals)
+				hud_used?.internals?.icon_state = "internal0"
 	return null
 
 /mob/living/carbon/proc/life_breathing_breath_from_environment(volume_needed=BREATH_VOLUME)

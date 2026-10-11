@@ -132,7 +132,7 @@ MSG_DEF_SELF(glamour_face/no_targets, span_warning("There are no appropriate tar
 
 /// Old attack_self, as two ops by whether a homunculus exists: none yet, ask whose likeness; one summoned, ask what to do with it (and, to speak, what it says).
 CAPABILITIES(/obj/item/glamour_face)
-	op("self", in_hand(), label("Use"), when(req_is(nameof(homunculus), FALSE)), needs(req_bool(PROC_REF(has_homunculus_targets), because = MSG(glamour_face/no_targets))), asks(/datum/prompt/choice, fields = list("title" = "homunculus", "question" = "Which target do you wish to create a homunculus of?", "choices" = computed(PROC_REF(homunculus_targets_now)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "target"), then(PROC_REF(homunculus_target_chosen)))
+	op("self", in_hand(), label("Use"), when(req_is(nameof(homunculus), FALSE)), needs(req(PROC_REF(has_homunculus_targets), because = MSG(glamour_face/no_targets))), asks(/datum/prompt/choice, fields = list("title" = "homunculus", "question" = "Which target do you wish to create a homunculus of?", "choices" = computed(PROC_REF(homunculus_targets_now)), "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "target"), then(PROC_REF(homunculus_target_chosen)))
 	op("homunculus", in_hand(), label("Use"), when(req_is(nameof(homunculus), TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Actions", "question" = "What would you like to do with your homunculus?", "choices" = list("Recall", "Speak Through", "Cancel"), "buttons" = TRUE, "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "action"), asks(/datum/prompt/text, fields = list("title" = "Speak Through", "question" = "What should the homunculus say:", "ask_flags" = ASK_HELD | ASK_CAPABLE, "timeout" = 0), step = "words", when = PROC_REF(speaking_through)), then(PROC_REF(homunculus_action_chosen)))
 
 /// The humans near the user who allow mimicry.
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/item/glamour_face)
 	return targets
 
 /obj/item/glamour_face/proc/has_homunculus_targets(datum/act/op/A)
-	return read_once(length(homunculus_targets(A.actor)) > 0) // who stands in range is asked when the question opens
+	return (read_once(length(homunculus_targets(A.actor)) > 0)) ? null : MSG(glamour_face/no_targets) // who stands in range is asked when the question opens
 
 /obj/item/glamour_face/proc/homunculus_targets_now(datum/act/op/A)
 	return homunculus_targets(A.actor)
@@ -268,10 +268,10 @@ MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines o
 
 /// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.
 CAPABILITIES(/obj/structure/glamour_ring)
-	op("ring_hand", hand(), ungated(), label("Use"), needs(req_bool(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), begins(PROC_REF(ring_begins)), wait(PROC_REF(ring_wait)), on_interrupt(PROC_REF(ring_interrupted)), then(PROC_REF(ring_action_chosen)))
+	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), begins(PROC_REF(ring_begins)), wait(PROC_REF(ring_wait)), on_interrupt(PROC_REF(ring_interrupted)), then(PROC_REF(ring_action_chosen)))
 
 /obj/structure/glamour_ring/proc/ring_connected(datum/act/op/A)
-	return read_once(istype(connected_mob, /mob/living/carbon/human))
+	return (read_once(istype(connected_mob, /mob/living/carbon/human))) ? null : /datum/msg/req_silent
 
 /obj/structure/glamour_ring/proc/ring_question(datum/act/op/A)
 	if(A.actor == connected_mob)

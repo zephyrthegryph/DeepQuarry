@@ -1,92 +1,75 @@
 human|none menu: Tear down
+human|none menu: Turn Around (refused: It is fastened to the floor!)
 human|none click: nothing
 robot|none menu: Tear down
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none click: nothing
 @obj.structure ai|none
 @obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +2 menu: Tear down
-+4 menu: Use
-+5 click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/tool/crowbar
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +2 menu: Tear down
-+4 menu: Use
-+5 click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/tool/wrench
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-click: Click: Use
 +0 menu: Dismantle
 +3 menu: Tear down
-+5 menu: Use
-+6 click: Click: Dismantle
++5 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Dismantle
 @obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-click: Click: Use
 +2 menu: Remove padding (refused: It has no padding to remove.)
 +3 menu: Tear down
-+5 menu: Use
-+6 click: Click: Remove padding
++5 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Remove padding
 @obj.structure.bed human|/obj/item/multitool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +2 menu: Tear down
-+4 menu: Use
-+5 click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/weldingtool
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +2 menu: Tear down
-+4 menu: Use
-+5 click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-click: Click: Use
 +3 menu: Pad (refused: You cannot pad that with that.)
 +4 menu: Tear down
-+6 menu: Use
-+7 click: Click: Pad
++6 menu: Turn Around (refused: It is fastened to the floor!)
++8 click: Click: Pad
 @obj.structure.bed human|/obj/item/stack/material/steel
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
+-click: Click: Use
 +2 menu: Pad (refused: You cannot pad that with that.)
 +3 menu: Tear down
-+5 menu: Use
-+6 click: Click: Pad
++5 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Pad
 @obj.structure.bed human|/obj/item/card/id
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +3 menu: Tear down
-+5 menu: Use
-+6 click: Click: Use
++5 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure.bed human|/obj/item
--menu: Disassemble
--click: Click: Disassemble
+-menu: Melt
 +2 menu: Tear down
-+4 menu: Use
-+5 click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure human|/obj/item/stack
 -menu: Repair (refused: )
 -click: Click: Repair
 +2 menu: Pad (refused: You cannot pad that with that.)
 +3 menu: Tear down
-+6 click: Click: Pad
-human|/obj/item/disk menu: Hit
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Tear down
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Tuck disk
-human|/obj/item/disk menu: Use
-human|/obj/item/disk click: Click: Tuck disk
-human|/obj/item/toy/plushie menu: Hit
-human|/obj/item/toy/plushie menu: Move To Top
-human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tear down
-human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy/plushie menu: Tuck plushie
-human|/obj/item/toy/plushie menu: Use
-human|/obj/item/toy/plushie click: Click: Tuck plushie
-keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, tear_down, tuck_disk, tuck_plushie, unpad, weaversilk_nest_interaction_item
++5 menu: Turn Around (refused: It is fastened to the floor!)
++7 click: Click: Pad
+@obj.structure human|/obj/item/disk
++2 menu: Tear down
++6 menu: Use
+@obj human|/obj/item/toy/plushie
++3 menu: Tear down
++7 menu: Use
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tear_down, tuck_disk, tuck_plushie, unpad, weaversilk_nest_interaction_item

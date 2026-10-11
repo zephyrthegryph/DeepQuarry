@@ -98,7 +98,7 @@ TRACKED(/obj/structure/medical_stand, valve_opened)
 	..()
 	if(breather())
 		breather().internal = null
-		breather().internals?.icon_state = "internal0"
+		hud_of(breather())?.internals?.icon_state = "internal0"
 		breather().remove_from_mob(contained)
 		src.visible_message(span_notice("The mask rapidly retracts just before /the [src] is destroyed!"))
 
@@ -259,14 +259,14 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 				if (valve_opened)
 					act_message(user, src, others = span_infoplain(span_bold("%U%") + " closes valve on %T%!"), blind = span_notice("You close valve on %T%."))
 					if(breather())
-						breather().internals?.icon_state = "internal0"
+						hud_of(breather())?.internals?.icon_state = "internal0"
 						breather().internal = null
 					set_valve_opened(FALSE)
 				else
 					act_message(user, src, others = span_infoplain(span_bold("%U%") + " opens valve on %T%!"), blind = span_notice("You open valve on %T%."))
 					if(breather())
 						breather().internal = tank
-						breather().internals?.icon_state = "internal1"
+						hud_of(breather())?.internals?.icon_state = "internal1"
 					set_valve_opened(TRUE)
 		if ("Remove vessel")
 			if(beaker)
@@ -421,9 +421,9 @@ CAPABILITIES(/datum/prompt/choice/medical_stand_attach)
 		if(valve_opened)
 			if (tank)
 				breather().internal = tank
-				breather().internals?.icon_state = "internal1"
+				hud_of(breather())?.internals?.icon_state = "internal1"
 		else
-			breather().internals?.icon_state = "internal0"
+			hud_of(breather())?.internals?.icon_state = "internal0"
 			breather().internal = null
 	else if (valve_opened)
 		var/datum/gas_mixture/removed = tank.remove_air(0.01)

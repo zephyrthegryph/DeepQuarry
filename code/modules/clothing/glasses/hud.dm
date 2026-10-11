@@ -354,7 +354,7 @@ TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch, eye)
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/security/eyepatch/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"
@@ -364,7 +364,7 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 
 /obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && user.stat == CONSCIOUS
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
 
 /obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)
@@ -388,7 +388,7 @@ TRACKED(/obj/item/clothing/glasses/hud/security/eyepatch2, eye)
 CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"
@@ -398,7 +398,7 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switch_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && user.stat == CONSCIOUS
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
 
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)
@@ -422,7 +422,7 @@ TRACKED(/obj/item/clothing/glasses/hud/health/eyepatch, eye)
 CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 	configure(item_worn(covers = 0))
 	held_verb(/obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch, SLOT_ANY_CARRIED)
-	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req_bool(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
+	op("switch_eye", menu(), label("Switch Eyepatch"), needs(carried(), req(PROC_REF(eye_switch_allowed), because = MSG(op/not_available))), then(PROC_REF(eye_switched)))
 
 /obj/item/clothing/glasses/hud/health/eyepatch/proc/switch_eyepatch()
 	set name = "Switch Eyepatch"
@@ -432,7 +432,7 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 
 /obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switch_allowed(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return istype(user) && user.stat == CONSCIOUS
+	return (istype(user) && user.stat == CONSCIOUS) ? null : MSG(op/not_available)
 
 /obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)

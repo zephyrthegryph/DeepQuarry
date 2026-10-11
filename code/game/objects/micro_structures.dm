@@ -34,7 +34,7 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 		asks(/datum/prompt/choice, fields = list("title" = "Pick a tunnel", "question" = "Where would you like to go?", "choices" = computed(PROC_REF(move_choices)), "timeout" = 0), step = "move_to", keeps = TARGET_PRESENT, when = PROC_REF(picks_destination)),
 		asks(/datum/prompt/choice, fields = list("title" = "Pick a target to eat", "question" = "Who would you like to eat?", "choices" = computed(PROC_REF(eat_choices)), "timeout" = 0), step = "eat", keeps = TARGET_PRESENT, when = PROC_REF(picks_meal)),
 		then(PROC_REF(tunnel_action_chosen)))
-	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req_bool(PROC_REF(self_drag), silent = TRUE)),
+	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), label("Climb in"), needs(req(PROC_REF(self_drag), silent = TRUE)),
 		asks(/datum/prompt/choice, fields = list("title" = "Enter or reach", "question" = "Would you like to enter the tunnel, or reach inside it?", "choices" = list("Enter", "Reach"), "buttons" = TRUE, "timeout" = 0), step = "enter_or_reach", when = PROC_REF(asks_enter_or_reach)),
 		then(PROC_REF(interaction_drag)))
 	// The waits the choices above end in: reaching in, climbing in (by hand or by dragging oneself onto the hole), and moving to another tunnel.
@@ -45,12 +45,17 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	op("micro_reach_wait", ai(), takes("contained_mobs"), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(micro_reach_done)))
 	op("micro_move_wait", ai(), takes("contained_mobs", "choice"), wait(10 SECONDS), then(PROC_REF(micro_interact_timed_done)))
 	op("micro_climb_wait", ai(), takes("contained_mobs"), wait(10 SECONDS), on_interrupt(PROC_REF(micro_interact_timed_failed2)), then(PROC_REF(micro_interact_timed_done2)))
+	derives(nameof(name), PROC_REF(area_name))
+
+/// An unnamed tunnel is named for its area (derives(), at init).
+/obj/structure/micro_tunnel/proc/area_name()
+	if(name != initial(name))
+		return name
+	var/area/our_area = get_area(src)
+	return "[our_area?.name] [name]"
 
 /obj/structure/micro_tunnel/Initialize(mapload)
 	. = ..()
-	if(name == initial(name))
-		var/area/our_area = get_area(src)
-		name = "[our_area.name] [name]"
 	if(pixel_x || pixel_y)
 		return
 	offset_tunnel()
@@ -151,7 +156,7 @@ DESTROY_EFFECTS(/obj/structure/micro_tunnel, new /datum/destroy_effects_data(mes
 
 /// The creature drags itself onto the hole.
 /obj/structure/micro_tunnel/proc/self_drag(datum/act/op/A)
-	return A.held == A.actor
+	return (A.held == A.actor) ? null : MSG(req_failed)
 
 /obj/structure/micro_tunnel/proc/actor_outside(datum/act/op/A)
 	return !micro_tunnel_holds(src, A.actor)

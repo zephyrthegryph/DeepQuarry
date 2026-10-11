@@ -49,9 +49,9 @@ CAPABILITIES(/obj/machinery/dq_grid_load)
 	A.terminal?.disconnect_from_network()
 	A.set_operating(TRUE)
 	A.set_chargemode(FALSE)
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	native_write(A, NATIVE_APC_CHANNELS, A.equipment, 0)
 	native_write(A, NATIVE_APC_CHANNELS, A.lighting, 1)
 	native_write(A, NATIVE_APC_CHANNELS, A.environ, 2)

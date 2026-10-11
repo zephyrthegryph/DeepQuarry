@@ -258,7 +258,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		attacker.begin_melee_swing(src, I)
 		return ITEM_INTERACT_SUCCESS // suppress afterattack; the swing resolves through I.attack() itself
 
-	return I.attack(src, user, user.zone_sel?.selecting || BP_TORSO, attack_modifier, stance)
+	return I.attack(src, user, hud_of(user)?.zone_sel?.selecting || BP_TORSO, attack_modifier, stance)
 
 // Used to get how fast a mob should attack, and influences click delay.
 // This is just for inheritence.

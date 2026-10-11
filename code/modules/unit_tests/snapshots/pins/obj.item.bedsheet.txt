@@ -1,0 +1,41 @@
+@obj human|none
++3 menu: Turn Around
+@obj robot|none
++4 menu: Turn Around
+@obj.item ai|none
+@obj.item ghost|none
++2 menu: Turn Around
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++2 menu: Turn Around
++3 menu: Use item
++4 click: Click: Use item
+@obj human|/obj/item/tool/crowbar
++2 menu: Turn Around
+@obj human|/obj/item/tool/wrench
++2 menu: Turn Around
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++2 menu: Turn Around
++3 menu: Use item
++4 click: Click: Use item
+@obj human|/obj/item/multitool
++2 menu: Turn Around
+@obj human|/obj/item/weldingtool
++2 menu: Turn Around
+@obj human|/obj/item/stack/cable_coil
++3 menu: Turn Around
+@obj human|/obj/item/stack/material/steel
++2 menu: Turn Around
+@obj human|/obj/item/card/id
++3 menu: Turn Around
+@obj human|/obj/item/kit
++3 menu: Turn Around
+@obj human|/obj/item/storage
++3 menu: Turn Around
+@obj.item human|/obj/item
+-menu: Use
+-click: Click: Use
++2 menu: Turn Around
++3 click: nothing
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, lay_out, move_to_top, pick_up_item, rotatable.turn_around, toggle_digestable, use_item

@@ -23,10 +23,6 @@ TRACKED(/obj/item/inducer, opened)
 	cell_type = null
 	opened = TRUE
 
-/obj/item/inducer/Initialize(mapload)
-	. = ..()
-	if(!cell && cell_type)
-		rel_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
@@ -299,7 +295,7 @@ CAPABILITIES(/obj/item/cell/standin)
 
 /obj/item/inducer/ownership()
 	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED, starts = nameof(cell_type))
 
 /// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

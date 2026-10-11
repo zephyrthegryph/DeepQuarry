@@ -252,22 +252,22 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 	return "Job: '[job]' Reason: '[jobban_isbanned(M, job)]' Un-jobban?"
 
 /datum/admins/proc/jobban3_has_rights(datum/act/op/A)
-	return actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_ADMIN)
+	return (actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_ADMIN)) ? null : MSG(admin_topic/jobban_no_rights)
 
 /datum/admins/proc/jobban3_mod_allowed(datum/act/op/A)
-	return !(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())
+	return (!(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())) ? null : MSG(admin_topic/mod_jobban_disabled)
 
 /datum/admins/proc/jobban3_has_target(datum/act/op/A)
-	return !!A.args["jobban4"]
+	return (!!A.args["jobban4"]) ? null : MSG(admin_topic/jobban_no_target)
 
 /datum/admins/proc/jobban3_target_not_higher(datum/act/op/A)
 	var/mob/M = A.args["jobban4"]
 	if(!M || M == A.actor || (A.authority & AUTH_ADMIN)) //we can jobban ourselves
-		return TRUE
-	return !admin_can(M.client, R_BAN) //they can ban too. So we can't ban them
+		return null
+	return (!admin_can(M.client, R_BAN)) ? null : MSG(admin_topic/ban_target_outranks) //they can ban too. So we can't ban them
 
 /datum/admins/proc/jobban3_ready(datum/act/op/A)
-	return !!SSjob
+	return (!!SSjob) ? null : MSG(admin_topic/jobban_not_ready)
 
 /// Writes a job ban for each of `jobs` and tells the player. `mins` is -1 for a permanent ban.
 /datum/admins/proc/jobban_apply(mob/user, mob/M, list/jobs, mins, reason)
@@ -399,7 +399,7 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 
 /// A kick needs a target who does not hold more rights than the actor.
 /datum/admins/proc/boot_target_ok(datum/act/op/A)
-	return actor_outranks(A.actor, A.authority, A.args["boot2"])
+	return (actor_outranks(A.actor, A.authority, A.args["boot2"])) ? null : MSG(admin_topic/boot_outranked)
 
 /datum/admins/proc/topic_boot2(datum/act/op/A, href_boot2)
 	var/mob/user = A.actor
@@ -417,16 +417,16 @@ MSG_DEF_SELF(admin_topic/boot_outranked, "You cannot kick someone who holds more
 // ---- ban ----
 
 /datum/admins/proc/newban_has_rights(datum/act/op/A)
-	return actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_BAN)
+	return (actor_admin_can(A.actor, A.authority, R_MOD) || actor_admin_can(A.actor, A.authority, R_BAN)) ? null : MSG(admin_topic/ban_no_rights)
 
 /datum/admins/proc/newban_mod_allowed(datum/act/op/A)
-	return !(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())
+	return (!(actor_admin_can(A.actor, A.authority, R_MOD) && !actor_admin_can(A.actor, A.authority, R_ADMIN) && !ban_mods_may_jobban())) ? null : MSG(admin_topic/mod_jobban_disabled)
 
 /datum/admins/proc/newban_target_ok(datum/act/op/A)
 	var/mob/M = A.args["newban"]
 	if(!M)
-		return FALSE
-	return !(M.client && admin_can(M.client, R_HOLDER)) //admins cannot be banned. Even if they could, the ban doesn't affect them anyway
+		return MSG(admin_topic/ban_target_admin)
+	return (!(M.client && admin_can(M.client, R_HOLDER))) ? null : MSG(admin_topic/ban_target_admin) //admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
 /// Writes a temporary ban of `M` for `mins` minutes and tells the player and the admins.
 /datum/admins/proc/ban_commit_temp(mob/user, mob/M, mins, reason)

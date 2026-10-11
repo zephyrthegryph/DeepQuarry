@@ -170,5 +170,5 @@
 	attacker.begin_melee_swing(victim, weapon)
 	TEST_ASSERT(attacker.is_swinging, "the swing is committed while the windup runs")
 	test_time(weapon.get_melee_windup() + 1 SECOND)
-	TEST_ASSERT(attacker.next_click > world.time, "a recovery cooldown should be active immediately after the swing")
+	TEST_ASSERT(cooldown_end(attacker, next_click) > world.time, "a recovery cooldown should be active immediately after the swing")
 	TEST_ASSERT(!attacker.is_swinging, "is_swinging should be cleared after the swing resolves")

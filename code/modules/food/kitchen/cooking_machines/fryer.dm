@@ -218,9 +218,9 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 	var/obj/item/organ/external/E
 	var/nopain
-	if(ishuman(victim) && user.zone_sel.selecting != BP_GROIN && user.zone_sel.selecting != BP_TORSO)
+	if(ishuman(victim) && hud_of(user)?.zone_sel?.selecting != BP_GROIN && hud_of(user)?.zone_sel?.selecting != BP_TORSO)
 		var/mob/living/carbon/human/H = victim
-		E = H.get_organ(user.zone_sel.selecting)
+		E = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 		if(!E)
 			nopain = 2
 		else if(E.is_robotic())
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 					damage -= (damage*0.5)//IF someone's arm is plunged in, the hand should take most of it
 			victim.injure(INJURY_BURN, damage, E.organ_tag, source = src)
 		else
-			victim.injure(INJURY_BURN, damage, user.zone_sel.selecting, source = src)
+			victim.injure(INJURY_BURN, damage, hud_of(user)?.zone_sel?.selecting, source = src)
 
 		if(!nopain)
 			to_chat(victim, span_danger("Agony consumes you as searing hot oil scorches your [E ? E.name : "flesh"] horribly!"))

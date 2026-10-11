@@ -94,17 +94,18 @@ READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 	else
 		return ..()
 
-/obj/item/storage/wallet/random/Initialize(mapload)
-	. = ..()
-	var/amount = rand(50, 100) + rand(50, 100) // Triangular distribution from 100 to 200
-	var/obj/item/spacecash/SC = null
-	SC = new(src)
+CAPABILITIES(/obj/item/storage/wallet/random)
+	initial_contents(PROC_REF(roll_cash))
+
+/// Rolled contents (initial_contents()): one bundle of cash worth 100 to 200 (a triangular distribution).
+/obj/item/storage/wallet/random/proc/roll_cash(datum/roller/R)
+	var/amount = R.number(50, 100) + R.number(50, 100)
+	var/obj/item/spacecash/SC = new
 	for(var/i in list(100, 50, 20, 10, 5, 1))
-		if(amount < i)
-			continue
 		while(amount >= i)
 			amount -= i
 			SC.adjust_worth(i)
+	return SC
 
 /obj/item/storage/wallet/poly
 	name = "polychromic wallet"
@@ -118,10 +119,11 @@ CAPABILITIES(/obj/item/storage/wallet/poly)
 		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))),
 		then(PROC_REF(recolored)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(poly_wallet_emp)))
+	rolls(nameof(color), PROC_REF(roll_colour))
 
-/obj/item/storage/wallet/poly/Initialize(mapload)
-	. = ..()
-	color = get_random_colour()
+/// Rolled before init (rolls()): any colour (get_random_colour()'s distribution).
+/obj/item/storage/wallet/poly/proc/roll_colour(datum/roller/R)
+	return R.hex_colour()
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"

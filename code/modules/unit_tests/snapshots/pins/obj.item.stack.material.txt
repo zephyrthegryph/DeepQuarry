@@ -13,10 +13,6 @@
 @obj.item.stack human|/obj/item/multitool
 +3 menu: Use
 @obj.item.stack human|/obj/item/weldingtool
--menu: Use welder
--click: Click: Use welder
-+3 menu: Use
-+4 click: Click: Split
 @obj.item.stack human|/obj/item/stack/cable_coil
 +5 menu: Use
 @obj.item.stack human|/obj/item/stack/material/steel
@@ -30,8 +26,5 @@
 @obj human|/obj/item/gripper
 @obj human|/obj/item/stack
 +4 menu: Use
-@obj.item human|/obj/item
--click: Click: Use
-+1 menu: Split
-+4 click: Click: Split
+@obj.item.stack human|/obj/item
 keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, material_interaction_item, material_self, move_to_top, pick_up_item, split, toggle_digestable

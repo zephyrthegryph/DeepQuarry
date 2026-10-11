@@ -160,7 +160,7 @@
 	// Swing: lunge + whoosh, then resolve against whoever is in the tiles NOW.
 	do_attack_animation(target)
 	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 1.6)
-	var/zone = zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
+	var/zone = hud_used?.zone_sel?.selecting || BP_TORSO // fall back to chest (clientless mobs have no HUD doll)
 	// Resolve THROUGH the weapon's attack() so per-weapon overrides (stunbaton
 	// deductcharge, energy-blade cell use), is_incorporeal, lastattacker and
 	// add_attack_logs all run exactly once per victim. melee_swing_resolving makes

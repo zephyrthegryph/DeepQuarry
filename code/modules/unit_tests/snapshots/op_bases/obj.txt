@@ -20,6 +20,10 @@ human|/obj/item/aicard menu: Use
 human|/obj/item/aicard menu: Use AI card
 human|/obj/item/aicard menu: Use item
 human|/obj/item/aicard click: Click: Use item
+human|/obj/item/airlock_electronics menu: Hit
+human|/obj/item/airlock_electronics menu: Move To Top
+human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/airlock_electronics click: nothing
 human|/obj/item/analyzer menu: Eject Particle Focus Contents
 human|/obj/item/analyzer menu: Move To Top
 human|/obj/item/analyzer menu: Store
@@ -204,6 +208,12 @@ human|/obj/item/clothing/suit/storage/vest menu: Adjust Badge (refused: You can'
 human|/obj/item/clothing/suit/storage/vest menu: Move To Top
 human|/obj/item/clothing/suit/storage/vest menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/clothing/suit/storage/vest click: nothing
+human|/obj/item/coin menu: Move To Top
+human|/obj/item/coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/coin menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/coin menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/coin click: nothing
 human|/obj/item/disk menu: Climb
 human|/obj/item/disk menu: Insert disk
 human|/obj/item/disk menu: Move To Top
@@ -226,6 +236,12 @@ human|/obj/item/encryptionkey menu: Insert key
 human|/obj/item/encryptionkey menu: Move To Top
 human|/obj/item/encryptionkey menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/encryptionkey click: Click: Insert key
+human|/obj/item/fake_coin menu: Move To Top
+human|/obj/item/fake_coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/fake_coin menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/fake_coin click: nothing
 human|/obj/item/firework_star menu: Eject Firework Star
 human|/obj/item/firework_star menu: Insert firework star
 human|/obj/item/firework_star menu: Launch (refused: there is no firework star loaded in the firework launcher)
@@ -238,10 +254,21 @@ human|/obj/item/flame/lighter menu: Move To Top
 human|/obj/item/flame/lighter menu: Rip down
 human|/obj/item/flame/lighter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/flame/lighter click: Click: Burn
+human|/obj/item/flashlight/pen menu: Dip into it
+human|/obj/item/flashlight/pen menu: Label it
+human|/obj/item/flashlight/pen menu: Move To Top
+human|/obj/item/flashlight/pen menu: Open or close the lid
+human|/obj/item/flashlight/pen menu: Set transfer amount
+human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/flashlight/pen click: Click: Label it
 human|/obj/item/fossil/plant menu: Move To Top
 human|/obj/item/fossil/plant menu: Pulverize
 human|/obj/item/fossil/plant menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/fossil/plant click: Click: Pulverize
+human|/obj/item/frame/apc menu: Move To Top
+human|/obj/item/frame/apc menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/frame/apc menu: Ui open
+human|/obj/item/frame/apc click: Click: Ui open
 human|/obj/item/fuel_assembly menu: Insert fuel rod
 human|/obj/item/fuel_assembly menu: Move To Top
 human|/obj/item/fuel_assembly menu: Rotate Clockwise
@@ -280,6 +307,13 @@ human|/obj/item/gun/energy/taser/xeno menu: Remove DNA (refused: You can't do th
 human|/obj/item/gun/energy/taser/xeno menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/gun/energy/taser/xeno menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item/gun/energy/taser/xeno click: nothing
+human|/obj/item/healthanalyzer menu: Hit
+human|/obj/item/healthanalyzer menu: Move To Top
+human|/obj/item/healthanalyzer menu: Scan
+human|/obj/item/healthanalyzer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/healthanalyzer menu: Toggle Guidance (refused: You can't do that.)
+human|/obj/item/healthanalyzer menu: Toggle Open
+human|/obj/item/healthanalyzer click: Click: Scan
 human|/obj/item/honey_frame menu: Climb
 human|/obj/item/honey_frame menu: Harvest honeycombs
 human|/obj/item/honey_frame menu: Load frame
@@ -297,6 +331,11 @@ human|/obj/item/light menu: Insert bulb (refused: There is a bulb in it already.
 human|/obj/item/light menu: Move To Top
 human|/obj/item/light menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/light click: Click: Insert bulb
+human|/obj/item/lightreplacer menu: Move To Top
+human|/obj/item/lightreplacer menu: Open
+human|/obj/item/lightreplacer menu: Put in
+human|/obj/item/lightreplacer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/lightreplacer click: Click: Put in
 human|/obj/item/material/kitchen/utensil menu: Move To Top
 human|/obj/item/material/kitchen/utensil menu: Rename food
 human|/obj/item/material/kitchen/utensil menu: Scoop up
@@ -312,6 +351,10 @@ human|/obj/item/mining_voucher menu: Move To Top
 human|/obj/item/mining_voucher menu: Redeem voucher
 human|/obj/item/mining_voucher menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mining_voucher click: Click: Redeem voucher
+human|/obj/item/module/power_control menu: Move To Top
+human|/obj/item/module/power_control menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/module/power_control menu: Ui open
+human|/obj/item/module/power_control click: Click: Ui open
 human|/obj/item/mop_deploy menu: Insert a mop
 human|/obj/item/mop_deploy menu: Move To Top
 human|/obj/item/mop_deploy menu: Toggle Digestable (refused: You can't do that.)
@@ -521,6 +564,19 @@ human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Move To To
 human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/hypospray/autoinjector/empty menu: Use
 human|/obj/item/reagent_containers/hypospray/autoinjector/empty click: Click: Add injector
+human|/obj/item/reagent_containers/syringe menu: Hit
+human|/obj/item/reagent_containers/syringe menu: Insert injector
+human|/obj/item/reagent_containers/syringe menu: Move To Top
+human|/obj/item/reagent_containers/syringe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers/syringe menu: Toggle Open
+human|/obj/item/reagent_containers/syringe click: Click: Insert injector
+human|/obj/item/refill_cartridge menu: Move To Top
+human|/obj/item/refill_cartridge menu: Refill (refused: That cartridge does not fit it.)
+human|/obj/item/refill_cartridge menu: Rotate Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/refill_cartridge menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/refill_cartridge click: Click: Refill
 human|/obj/item/robot_parts/l_leg menu: Build frame one leg
 human|/obj/item/robot_parts/l_leg menu: Move To Top
 human|/obj/item/robot_parts/l_leg menu: Toggle Digestable (refused: You can't do that.)
@@ -596,6 +652,11 @@ human|/obj/item/stack/material/cyborg/glass menu: Toggle Digestable (refused: Yo
 human|/obj/item/stack/material/cyborg/glass menu: Use
 human|/obj/item/stack/material/cyborg/glass menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 human|/obj/item/stack/material/cyborg/glass click: Click: Use
+human|/obj/item/stack/material/diamond menu: Hit
+human|/obj/item/stack/material/diamond menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/diamond menu: Move To Top
+human|/obj/item/stack/material/diamond menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/diamond click: Click: Install plating
 human|/obj/item/stack/material/glass menu: Climb
 human|/obj/item/stack/material/glass menu: Hit
 human|/obj/item/stack/material/glass menu: Move To Top
@@ -604,6 +665,21 @@ human|/obj/item/stack/material/glass menu: Toggle Digestable (refused: You can't
 human|/obj/item/stack/material/glass menu: Use
 human|/obj/item/stack/material/glass menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 human|/obj/item/stack/material/glass click: Click: Use
+human|/obj/item/stack/material/glass/reinforced menu: Hit
+human|/obj/item/stack/material/glass/reinforced menu: Install windows
+human|/obj/item/stack/material/glass/reinforced menu: Move To Top
+human|/obj/item/stack/material/glass/reinforced menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/glass/reinforced click: Click: Install windows
+human|/obj/item/stack/material/gold menu: Hit
+human|/obj/item/stack/material/gold menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/gold menu: Move To Top
+human|/obj/item/stack/material/gold menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/gold click: Click: Install plating
+human|/obj/item/stack/material/phoron menu: Hit
+human|/obj/item/stack/material/phoron menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/phoron menu: Move To Top
+human|/obj/item/stack/material/phoron menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/phoron click: Click: Install plating
 human|/obj/item/stack/material/plasteel menu: Move To Top
 human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plasteel click: nothing
@@ -616,9 +692,24 @@ human|/obj/item/stack/material/processed_alloy menu: Load material cradle
 human|/obj/item/stack/material/processed_alloy menu: Move To Top
 human|/obj/item/stack/material/processed_alloy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/processed_alloy click: Click: Load material cradle
+human|/obj/item/stack/material/sandstone menu: Hit
+human|/obj/item/stack/material/sandstone menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/sandstone menu: Move To Top
+human|/obj/item/stack/material/sandstone menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/sandstone click: Click: Install plating
+human|/obj/item/stack/material/silver menu: Hit
+human|/obj/item/stack/material/silver menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/silver menu: Move To Top
+human|/obj/item/stack/material/silver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/silver click: Click: Install plating
 human|/obj/item/stack/material/steel menu: Move To Top
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/stack/material/uranium menu: Hit
+human|/obj/item/stack/material/uranium menu: Install plating (refused: You don't have enough for that.)
+human|/obj/item/stack/material/uranium menu: Move To Top
+human|/obj/item/stack/material/uranium menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/uranium click: Click: Install plating
 human|/obj/item/stack/nanopaste menu: Move To Top
 human|/obj/item/stack/nanopaste menu: Repair (refused: This machine is already in perfect condition.)
 human|/obj/item/stack/nanopaste menu: Toggle Digestable (refused: You can't do that.)
@@ -764,6 +855,13 @@ human|/obj/item/toy menu: Remove item
 human|/obj/item/toy menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/toy menu: Ui open
 human|/obj/item/toy click: Click: Ui open
+human|/obj/item/toy/plushie menu: Hit
+human|/obj/item/toy/plushie menu: Move To Top
+human|/obj/item/toy/plushie menu: Name Plushie (refused: You can't do that.)
+human|/obj/item/toy/plushie menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/toy/plushie menu: Tuck plushie
+human|/obj/item/toy/plushie menu: Turn Around (refused: It is fastened to the floor!)
+human|/obj/item/toy/plushie click: Click: Tuck plushie
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool click: nothing

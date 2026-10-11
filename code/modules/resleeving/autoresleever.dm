@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 
 	var/obj/item/implant/backup/imp = new(src)
 
-	if(imp.handle_implant(new_character,new_character.zone_sel.selecting))
+	if(imp.handle_implant(new_character,hud_of(new_character)?.zone_sel?.selecting))
 		imp.post_implant(new_character)
 
 	var/datum/transcore_db/db = SStranscore.db_by_mind_name(new_character.mind.name)

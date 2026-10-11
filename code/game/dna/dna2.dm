@@ -179,8 +179,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	src.custom_ask = character.custom_ask
 	src.custom_whisper = character.custom_whisper
 	src.custom_exclaim = character.custom_exclaim
-	src.custom_heat = character.custom_heat
-	src.custom_cold = character.custom_cold
+	src.custom_heat = sparse_get(character, custom_heat)
+	src.custom_cold = sparse_get(character, custom_cold)
 	src.digitigrade = character.digitigrade
 	src.custom_footstep = character.custom_footstep
 
@@ -423,8 +423,8 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	H.custom_whisper = custom_whisper
 	H.custom_exclaim = custom_exclaim
 	H.custom_speech_bubble = custom_speech_bubble
-	H.custom_heat = custom_heat
-	H.custom_cold = custom_cold
+	sparse_set(H, custom_heat, custom_heat)
+	sparse_set(H, custom_cold, custom_cold)
 	H.custom_footstep = custom_footstep
 	H.digitigrade = digitigrade
 

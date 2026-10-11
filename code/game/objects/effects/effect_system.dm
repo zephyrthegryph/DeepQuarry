@@ -114,6 +114,7 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/amount = 6.0
 	anchored = TRUE
 	mouse_opacity = 0
+	lifecycle_lifetime = 5 SECONDS
 
 // the pool counts a spark from when it exists until on_destroy().
 /obj/effect/effect/sparks/on_materialize()
@@ -126,7 +127,6 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
-	expire(5 SECONDS)
 
 // a dying spark can still light its tile.
 /obj/effect/effect/sparks/on_destroy(force)
@@ -165,10 +165,8 @@ GLOBAL_VAR_INIT(fx_live_sparks, 0)
 	pixel_x = -32
 	pixel_y = -32
 
-/obj/effect/effect/smoke/Initialize(mapload)
-	. = ..()
-	if(time_to_live)
-		expire(time_to_live)
+CAPABILITIES(/obj/effect/effect/smoke)
+	lives_for(nameof(time_to_live))
 
 /obj/effect/effect/smoke/Crossed(mob/living/carbon/M as mob )
 	if(M.is_incorporeal())
@@ -614,11 +612,8 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	var/amount = 6.0
 	var/time_to_live = 500
 
-/obj/effect/effect/confetti/Initialize(mapload)
-	. = ..()
-	if(time_to_live)
-		expire(time_to_live)
-				//make confetti on ground cleanable decal to spawn
+CAPABILITIES(/obj/effect/effect/confetti)
+	lives_for(nameof(time_to_live))
 
 /datum/effect/effect/system/confetti_spread
 	var/total_confetti = 0 // To stop it being spammed and lagging!

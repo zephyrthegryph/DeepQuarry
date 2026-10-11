@@ -25,12 +25,14 @@
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
-	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
-		var/delayshift_clamp = spawn_delay / 10
-		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
-		spawn_delay += delayshift
+
+/// Rolled before init (rolls()): not the biggest shift in spawn time, up to a tenth either way.
+/obj/structure/prop/nest/proc/roll_spawn_delay(datum/roller/R)
+	var/shift = spawn_delay / 10
+	return spawn_delay + R.number(-shift, shift)
 
 CAPABILITIES(/obj/structure/prop/nest)
+	rolls(nameof(spawn_delay), PROC_REF(roll_spawn_delay), when = nameof(randomize_spawning))
 	every(2 SECONDS, then(PROC_REF(nest_step)), when = STAT_RELEVANCE)
 	without("message")   // the disturbance shows the message itself
 	op("disturb", hand(), label("Use"), then(PROC_REF(interaction_disturb)))

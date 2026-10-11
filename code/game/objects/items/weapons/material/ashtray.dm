@@ -48,11 +48,11 @@ TRACKED(/obj/item/material/ashtray, max_butts)
 SETTER(/obj/item/material/ashtray, butts)
 
 CAPABILITIES(/obj/item/material/ashtray)
-	op("add_butt", item(/obj/item), priority(above("material_interaction_item")), when(req_bool(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
+	op("add_butt", item(/obj/item), priority(above("material_interaction_item")), when(req(PROC_REF(held_is_another))), then(PROC_REF(butt_added)))
 
 /// A click with the held item on itself is the in-hand use, not an item put in it.
 /obj/item/material/ashtray/proc/held_is_another(datum/act/op/A)
-	return A.held != src
+	return (A.held != src) ? null : /datum/msg/req_failed
 
 /// The count follows what it holds (everything that puts butts in or spills them out ends here).
 /obj/item/material/ashtray/proc/sync_butts()

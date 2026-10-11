@@ -8,9 +8,7 @@
 @obj.item.stack human|/obj/item/tool/wirecutters
 @obj.item.stack human|/obj/item/multitool
 @obj.item.stack human|/obj/item/weldingtool
--menu: Use welder
--click: Click: Use welder
-+3 click: Click: Split
+-menu: Use
 @obj.item.stack human|/obj/item/stack/cable_coil
 @obj.item.stack human|/obj/item/stack/material/steel
 @obj.item.stack human|/obj/item/card/id

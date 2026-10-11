@@ -1033,9 +1033,9 @@
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
 	A.operating = TRUE
 	A.chargemode = TRUE
-	A.equipment = POWERCHAN_ON_AUTO
-	A.lighting = POWERCHAN_ON_AUTO
-	A.environ = POWERCHAN_ON_AUTO
+	A.set_equipment(POWERCHAN_ON_AUTO)
+	A.set_lighting(POWERCHAN_ON_AUTO)
+	A.set_environ(POWERCHAN_ON_AUTO)
 	p2_apc_load(A, 2000)
 	A.cell.charge = A.cell.maxcharge * 0.001
 	p2_apc_resync(A)

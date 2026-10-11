@@ -542,7 +542,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 		return ITEM_INTERACT_FAILURE
 
 	//this should absolutely trigger even if not aim-impaired in some way
-	var/hit_zone = get_zone_with_miss_chance(U.zone_sel.selecting, M, U.get_accuracy_penalty(U))
+	var/hit_zone = get_zone_with_miss_chance(hud_of(U)?.zone_sel?.selecting, M, U.get_accuracy_penalty(U))
 	if(!hit_zone)
 		U.do_attack_animation(M)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)

@@ -1,0 +1,71 @@
+@obj.structure human|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure robot|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++3 menu: Turn Around (refused: It is fastened to the floor!)
++4 click: nothing
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++3 menu: Turn Around (refused: It is fastened to the floor!)
++4 click: nothing
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Dismantle
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Dismantle
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++2 menu: Remove padding (refused: It has no padding to remove.)
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Remove padding
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++3 menu: Turn Around (refused: It is fastened to the floor!)
++4 click: nothing
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++3 menu: Turn Around (refused: It is fastened to the floor!)
++4 click: nothing
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++3 menu: Pad (refused: You cannot pad that with that.)
++5 menu: Turn Around (refused: It is fastened to the floor!)
++6 click: Click: Pad
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++2 menu: Pad (refused: You cannot pad that with that.)
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: nothing
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++3 menu: Turn Around (refused: It is fastened to the floor!)
++4 click: nothing
+@obj.structure human|/obj/item/stack
+-menu: Repair (refused: )
+-menu: Use
+-click: Click: Repair
++2 menu: Pad (refused: You cannot pad that with that.)
++4 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/disk
+@obj human|/obj/item/toy/plushie
+keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tuck_disk, tuck_plushie, unpad

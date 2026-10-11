@@ -33,21 +33,26 @@
 	var/wins = 0 // This mech's win count in combat
 	var/losses = 0 // ...And their loss count in combat
 
-/obj/item/toy/mecha/Initialize(mapload)
-	. = ..()
-	desc = "Mini-Mecha action figure! Collect them all! Attack your friends or another mech with one to initiate epic mech combat! [desc]."
-	combat_health = max_combat_health
+/// The box art's blurb around the toy's own description (derives(), at init).
+/obj/item/toy/mecha/proc/boxed_desc()
+	return "Mini-Mecha action figure! Collect them all! Attack your friends or another mech with one to initiate epic mech combat! [desc]."
+
+/// A toy starts a battle at full health (derives(), at init).
+/obj/item/toy/mecha/proc/full_combat_health()
+	return max_combat_health
+
+/// What examining says its special move does: its kind, or for a special kind the toy's own message.
+/obj/item/toy/mecha/proc/special_attack_description()
 	switch(special_attack_type)
 		if(SPECIAL_ATTACK_DAMAGE)
-			special_attack_type_message = "an aggressive move, which deals bonus damage."
+			return "an aggressive move, which deals bonus damage."
 		if(SPECIAL_ATTACK_HEAL)
-			special_attack_type_message = "a defensive move, which grants bonus healing."
+			return "a defensive move, which grants bonus healing."
 		if(SPECIAL_ATTACK_UTILITY)
-			special_attack_type_message = "a utility move, which heals the user and damages the opponent."
+			return "a utility move, which heals the user and damages the opponent."
 		if(SPECIAL_ATTACK_OTHER)
-			special_attack_type_message = "a special move, which [special_attack_type_message]"
-		else
-			special_attack_type_message = "a mystery move, even I don't know."
+			return "a special move, which [special_attack_type_message]"
+	return "a mystery move, even I don't know."
 
 /obj/item/toy/mecha/proc/in_range(source, user) // Modify our in_range proc specifically for mech battles!
 	if(get_dist(source, user) <= 2)
@@ -121,6 +126,8 @@ CAPABILITIES(/obj/item/toy/mecha)
 	op("battle", item(/obj/item/toy/mecha), label("Battle"), then(PROC_REF(interaction_item)))
 	// picking it up plays with it once it's in hand
 	op("pick_up", hand(), label("Pick up"), then(PROC_REF(mecha_toy_pick_up)))
+	derives(nameof(desc), PROC_REF(boxed_desc))
+	derives(nameof(combat_health), PROC_REF(full_combat_health))
 
 /// Old attack_self.
 /obj/item/toy/mecha/proc/interaction_self(datum/act/op/A)
@@ -210,7 +217,7 @@ CAPABILITIES(/obj/item/toy/mecha)
 
 /obj/item/toy/mecha/examine()
 	. = ..()
-	. += span_notice("This toy's special attack is [special_attack_cry], [special_attack_type_message] ")
+	. += span_notice("This toy's special attack is [special_attack_cry], [special_attack_description()] ")
 	if(in_combat)
 		. += span_notice("This toy has a maximum health of [max_combat_health]. Currently, it's [combat_health].")
 		. += span_notice("Its special move light is [special_attack_cooldown? "flashing red." : "green and is ready!"]")

@@ -259,8 +259,8 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment)
 // Equipment hrefs come from the exosuit's control panel: only its conscious pilot uses them.
 /obj/item/mecha_parts/mecha_equipment/topic_usable(datum/act/op/A)
 	if(!chassis || !A.actor || A.actor.stat)
-		return FALSE
-	return A.actor == chassis.slot_item(MECHA_SLOT_PILOT)
+		return MSG(op/topic_gate)
+	return (A.actor == chassis.slot_item(MECHA_SLOT_PILOT)) ? null : MSG(op/topic_gate)
 
 /obj/item/mecha_parts/mecha_equipment/proc/topic_detach(datum/act/op/A)
 	detach()

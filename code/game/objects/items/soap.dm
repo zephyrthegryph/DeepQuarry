@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/soap)
 
 /// The click aims at a human's mouth.
 /obj/item/soap/proc/mouth_aimed(datum/act/op/A)
-	return ishuman(A.target) && read_once(A.actor.zone_sel?.selecting) == O_MOUTH
+	return ishuman(A.target) && read_once(hud_of(A.actor)?.zone_sel?.selecting) == O_MOUTH
 
 /// Null-or-reason requirement callback: null allows, a reason refuses.
 /obj/item/soap/proc/bites_own_mouth(datum/act/op/A)
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/soap)
 
 /obj/item/soap/afterattack(atom/target, mob/user as mob, proximity)
 	. = ..()
-	if(ishuman(target) && user.zone_sel.selecting == O_MOUTH)
+	if(ishuman(target) && hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		if(target != user)
 			act_message(user, src, others = span_danger("%U% washes 	he [target]'s mouth out with %T%!"))
 			//Add pieface cleaning here if that ever gets ported.

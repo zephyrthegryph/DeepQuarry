@@ -281,20 +281,24 @@ CAPABILITIES(/obj/item/bug_monitor)
 
 /obj/machinery/camera/bug
 	network = list(NETWORK_SECURITY)
+	var/name_series = "Camera"
 
-/obj/machinery/camera/bug/Initialize(mapload)
-	. = ..()
-	name = "Camera #[rand(1000,9999)]"
-	c_tag = name
+CAPABILITIES(/obj/machinery/camera/bug)
+	rolls(nameof(name), PROC_REF(roll_name))
+	rolls(nameof(c_tag), PROC_REF(tag_as_name), from = list(nameof(name)))
+
+/// Rolled before init (rolls()): the bug's series and a serial number.
+/obj/machinery/camera/bug/proc/roll_name(datum/roller/R)
+	return "[name_series] #[R.number(1000, 9999)]"
+
+/// Rolled before init (rolls()), after the name: the camera's tag is its name.
+/obj/machinery/camera/bug/proc/tag_as_name(datum/roller/R)
+	return name
 
 /obj/machinery/camera/bug/spy
 	// These cheap toys are accessible from the mercenary camera console as well - only the antag ones though!
 	network = list(NETWORK_MERCENARY)
-
-/obj/machinery/camera/bug/spy/Initialize(mapload)
-	. = ..()
-	name = "DV-136ZB #[rand(1000,9999)]"
-	c_tag = name
+	name_series = "DV-136ZB"
 
 /// Relation view: linkedmonitor (reads null once it is gone).
 /obj/item/camerabug/proc/linkedmonitor() as /obj/item/bug_monitor

@@ -292,7 +292,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 */
 
 /obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if (A == user && user.zone_sel.selecting == O_MOUTH && !mouthshoot)
+	if (A == user && hud_of(user)?.zone_sel?.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
 		return ITEM_INTERACT_SUCCESS
 	else if(stance == I_HURT) //point blank shooting
@@ -458,7 +458,7 @@ MSG_DEF_SELF(gun/no_dna_lock, "it has no DNA lock")
 			if(pointblank)
 				process_point_blank(projectile, user, target)
 
-			if(process_projectile(projectile, user, target, user.zone_sel.selecting, clickparams))
+			if(process_projectile(projectile, user, target, hud_of(user)?.zone_sel?.selecting, clickparams))
 				handle_post_fire(user, target, pointblank, reflex)
 
 			// We do this down here, so we don't get the message if we fire an empty gun.

@@ -10,7 +10,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(board), "the real board enters the actor's hand")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), board, "the board is actually active-held")
 	var/original_name = board.heldname
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, board, board)
 	test_drain()
 	var/datum/request/request = SSrequests.open_for(actor)
@@ -26,7 +26,7 @@
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the accepted request closes")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), board, "answering does not move the board")
 
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, board, board)
 	test_drain()
 	request = SSrequests.open_for(actor)
@@ -37,7 +37,7 @@
 	TEST_ASSERT_EQUAL(board.heldname, "Surveyor", "actual cancellation preserves the existing name")
 	TEST_ASSERT_NULL(SSrequests.open_for(actor), "cancellation closes the request")
 
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, board, board)
 	test_drain()
 	TEST_ASSERT_NOTNULL(SSrequests.open_for(actor), "a third real use opens the recheck control")
