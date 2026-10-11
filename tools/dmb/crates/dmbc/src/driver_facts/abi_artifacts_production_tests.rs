@@ -114,6 +114,7 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
         1,
         "only independent owner skips worker preparation"
     );
+    assert_eq!(store.qualified_reused(), 1, "independent issued owner must avoid inherited factory validation");
     let (_, old) = before.prepared.units().last().unwrap();
     let (_, current) = retained.prepared.units().last().unwrap();
     assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
@@ -706,4 +707,24 @@ fn disk_roundtrip(signature: &str, changed_signature: &str) {
         0,
         "changed signature must prepare currently"
     );
+}
+
+#[test]
+fn issued_abi_local_structure_tracks_parent_and_definition_without_sibling_churn() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(), 1, true, 0,
+    ).unwrap();
+    let engine = &owner.snapshot;
+    let facts = |text: &str| {
+        let current = frontend(text, engine);
+        let member = current.bodies.last().unwrap().member;
+        abi_artifacts::observations::structural_inputs(&current, member).unwrap()
+    };
+    let original = facts("/datum/base\n/datum/a\n    parent_type = /datum/base\n/datum/a/proc/p()\n    return 1\n");
+    let sibling = facts("/datum/other\n    var/extra = 2\n/datum/base\n/datum/a\n    parent_type = /datum/base\n/datum/a/proc/p()\n    return 1\n");
+    assert_eq!(original, sibling, "unrelated owner cannot change local structural meaning");
+    let reparented = facts("/datum/base\n/datum/a\n/datum/a/proc/p()\n    return 1\n");
+    assert_ne!(original.1, reparented.1, "parent mutation must reject the local licence");
+    let overriding = facts("/datum/base\n/datum/base/proc/p()\n    return 0\n/datum/a\n    parent_type = /datum/base\n/datum/a/p()\n    return 1\n");
+    assert_ne!(original.0, overriding.0, "declaration/override mode is a mandatory local fact");
 }

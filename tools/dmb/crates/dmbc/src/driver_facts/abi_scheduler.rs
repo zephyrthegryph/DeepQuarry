@@ -7,6 +7,7 @@ use abi_artifacts::{
 use dm_session::{ObservedArtifactStorageView, Receipt};
 use std::{collections::BTreeSet, sync::Mutex};
 
+#[derive(Clone)]
 struct Candidate {
     unit: Arc<abi_artifacts::UnitArtifact>,
     reads: Receipt<Query, Answer, Domain>,
@@ -145,6 +146,12 @@ pub(super) fn admitted(
         boundaries,
         unit_members: index,
     };
+    let mut qualified = admission.map(|request| {
+        store
+            .store
+            .unchanged_local_candidate_roster(request, Domain::Inputs)
+    });
+    let mut qualified_ordinals = BTreeSet::new();
     let mut accepted = BTreeMap::new();
     let mut dirty = BTreeSet::new();
     // Incidence prioritizes possibly changed receipts; it never establishes
@@ -171,9 +178,11 @@ pub(super) fn admitted(
                 origin: &frontend.bodies[ordinal].source,
                 resolver: evaluator.resolver,
             };
-            inherited.inherited(&context).ok()?;
+            let structural = abi_artifacts::observations::structural_inputs(frontend, entry.member);
             let current = Current {
                 inputs: Arc::new(Inputs {
+                    definition: structural.as_ref().map(|(definition, _)| *definition),
+                    ancestry: structural.map(|(_, ancestry)| ancestry),
                     metadata: entry.metadata.clone(),
                     predecessor: predecessor.and_then(|id| layouts.get(&id).cloned()),
                     engine: batch.engine.clone(),
@@ -187,6 +196,30 @@ pub(super) fn admitted(
                 }),
                 resolver: evaluator.resolver,
             };
+            // Only the independently issued local Inputs gap can be licensed.
+            // Every semantic/negative edge must have an unchanged qualified version.
+            if current.inputs.ancestry.is_some() && current.inputs.definition.is_some() {
+                for token in qualified
+                    .as_mut()
+                    .into_iter()
+                    .flat_map(|roster| roster.take(&key))
+                {
+                    if let Some((_, artifact)) = token.admit_local_current(
+                        |read| matches!((&read.query, &read.answer),
+                            (Query::Inputs, Answer::Inputs(old)) if old.as_ref() == current.inputs.as_ref()),
+                        |actual, value| actual == key.as_ref() && matches!(value.as_ref(), Artifact::Unit(unit)
+                            if Arc::ptr_eq(unit, &candidate.unit)),
+                        |_| {},
+                    ) {
+                        if let Artifact::Unit(unit) = artifact.value.as_ref() {
+                            qualified_ordinals.insert(ordinal);
+                            return Some(Candidate { unit: unit.clone(), reads: artifact.reads, versions: artifact.versions });
+                        }
+                    }
+                }
+            }
+            // Unissued, observing or uncovered candidates retain full validation.
+            inherited.inherited(&context).ok()?;
             if abi_artifacts::admission::changed(
                 &candidate.reads,
                 &candidate.versions,
@@ -197,7 +230,7 @@ pub(super) fn admitted(
             {
                 return None;
             }
-            Some(candidate)
+            Some(candidate.clone())
         })();
         if let Some(candidate) = valid {
             accepted.insert(ordinal, candidate);
@@ -229,6 +262,11 @@ pub(super) fn admitted(
     accepted
         .into_iter()
         .map(|(ordinal, candidate)| {
+            if qualified_ordinals.contains(&ordinal) {
+                store
+                    .qualified_reused
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            }
             let unit = &candidate.unit;
             let identity = identity(entries[ordinal].identity);
             keys.lock()

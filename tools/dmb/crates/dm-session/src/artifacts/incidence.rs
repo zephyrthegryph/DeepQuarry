@@ -17,7 +17,8 @@ pub(super) struct Incidence<Q, A, D> {
     variants: BTreeMap<u64, (u128, BTreeSet<LeafId>)>,
     domains: Vec<(D, BTreeSet<LeafId>)>,
     certificates: Vec<(D, u128, BTreeSet<u64>)>,
-    uncovered: BTreeSet<u64>,
+    uncovered: Vec<(D, BTreeSet<u64>)>,
+    conflicting: BTreeSet<u64>,
 }
 impl<Q, A, D> Default for Incidence<Q, A, D> {
     fn default() -> Self {
@@ -26,7 +27,8 @@ impl<Q, A, D> Default for Incidence<Q, A, D> {
             variants: BTreeMap::new(),
             domains: Vec::new(),
             certificates: Vec::new(),
-            uncovered: BTreeSet::new(),
+            uncovered: Vec::new(),
+            conflicting: BTreeSet::new(),
         }
     }
 }
@@ -52,6 +54,14 @@ impl<Q, A, D> Incidence<Q, A, D> {
             self.certificates.capacity() * size,
         )
     }
+    pub(super) fn uncovered_buffer(&self) -> (usize, usize, usize) {
+        let size = std::mem::size_of::<(D, BTreeSet<u64>)>();
+        (
+            self.uncovered.as_ptr() as usize,
+            self.uncovered.len() * size,
+            self.uncovered.capacity() * size,
+        )
+    }
     pub(super) fn counts(&self) -> (usize, usize, usize, usize) {
         (
             self.leaves.len(),
@@ -64,7 +74,11 @@ impl<Q, A, D> Incidence<Q, A, D> {
         )
     }
     pub(super) fn remove(&mut self, variant: u64) {
-        self.uncovered.remove(&variant);
+        self.conflicting.remove(&variant);
+        self.uncovered.retain_mut(|(_, members)| {
+            members.remove(&variant);
+            !members.is_empty()
+        });
         self.certificates.retain_mut(|(_, _, members)| {
             members.remove(&variant);
             !members.is_empty()
@@ -140,11 +154,21 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
                 .filter(|(d, _)| d == &domain)
                 .map(|(_, v)| *v);
             let Some(version) = supplied.next() else {
-                self.uncovered.insert(variant);
+                match self
+                    .uncovered
+                    .binary_search_by(|(current, _)| current.cmp(&domain))
+                {
+                    Ok(position) => {
+                        self.uncovered[position].1.insert(variant);
+                    }
+                    Err(position) => self
+                        .uncovered
+                        .insert(position, (domain, BTreeSet::from([variant]))),
+                }
                 continue;
             };
             if supplied.any(|other| other != version) {
-                self.uncovered.insert(variant);
+                self.conflicting.insert(variant);
                 continue;
             }
             match self
@@ -170,8 +194,24 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
     }
     // Current versions are supplied by the existing immutable request admission.
     pub(super) fn certified(&self, current: &[(D, Option<u128>)]) -> BTreeSet<u64> {
-        let mut rejected = self.uncovered.clone();
+        self.certified_with_local(current, None)
+    }
+    pub(super) fn certified_with_local(
+        &self,
+        current: &[(D, Option<u128>)],
+        local: Option<&D>,
+    ) -> BTreeSet<u64> {
+        let mut rejected = self.conflicting.clone();
+        for (domain, members) in &self.uncovered {
+            if local != Some(domain) {
+                rejected.extend(members);
+            }
+        }
+
         for (domain, version, members) in &self.certificates {
+            if local == Some(domain) {
+                continue;
+            }
             if current
                 .iter()
                 .find(|(d, _)| d == domain)

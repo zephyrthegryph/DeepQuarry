@@ -43,6 +43,8 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
         evaluation_resource: None,
         lexical: true,
         pure_policy: None,
+        ancestry: None,
+        definition: None,
     });
     let identity = UnitIdentity {
         owner: SymbolId::of("/datum/a"),
@@ -83,6 +85,12 @@ fn typed_inputs_seal_exact_owner_boundary_predecessor_and_policy() {
         )
         .is_some());
     let mut variants = Vec::new();
+    let mut changed = (*inputs).clone();
+    changed.ancestry = Some(Arc::from([SymbolId::of("/datum/other")]));
+    variants.push(changed);
+    let mut changed = (*inputs).clone();
+    changed.definition = Some(dm_tree::DefinitionMode::Declare);
+    variants.push(changed);
     let mut changed = (*inputs).clone();
     changed.engine = engine();
     variants.push(changed);
@@ -192,6 +200,8 @@ fn typed_abi_negative_semantic_reads_replay_and_current_keys_replace_history() {
         evaluation_resource: None,
         lexical: true,
         pure_policy: None,
+        ancestry: None,
+        definition: None,
     });
     let store = AbiArtifacts::with_engine_owner(owner);
     let identity = UnitIdentity {
@@ -289,6 +299,8 @@ fn shared_abi_semantic_leaf_keeps_current_inputs_and_invalidates_negative_next_r
         evaluation_resource: None,
         lexical: true,
         pure_policy: None,
+        ancestry: None,
+        definition: None,
     });
     let query = ResolveQuery::GlobalVar(SymbolId::of("optional"));
     let versions = [(Domain::Semantic(query.domain()), 9)];

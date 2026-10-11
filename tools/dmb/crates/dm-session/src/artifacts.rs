@@ -161,6 +161,8 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             visit(address, len, capacity);
             let (address, len, capacity) = index.certificate_buffer();
             visit(address, len, capacity);
+            let (address, len, capacity) = index.uncovered_buffer();
+            visit(address, len, capacity);
         }
     }
     pub fn with_limit(limit: usize) -> Self {

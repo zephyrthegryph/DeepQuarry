@@ -34,6 +34,8 @@ impl PartialEq for Answer {
 impl Eq for Answer {}
 #[derive(Clone)]
 pub(crate) struct Inputs {
+    pub(crate) ancestry: Option<Arc<[SymbolId]>>,
+    pub(crate) definition: Option<dm_tree::DefinitionMode>,
     pub(crate) metadata: Arc<dm_ir::ProcedureMetadata>,
     pub(crate) predecessor: Option<Arc<PreparedAbi>>,
     pub(crate) engine: Arc<crate::runner_host::EnginePayload>,
@@ -89,6 +91,8 @@ impl PartialEq for Inputs {
                 (Some(a), Some(b)) => Arc::ptr_eq(a, b) || a == b,
                 _ => false,
             }
+            && self.ancestry == b.ancestry
+            && self.definition == b.definition
             && self.boundary == b.boundary
             && self.resource == b.resource
             && self.evaluation_resource == b.evaluation_resource
@@ -151,4 +155,30 @@ pub(in crate::driver_facts) fn locator(identity: UnitIdentity) -> Arc<[u8]> {
     out.push(u8::from(identity.namespace == Namespace::Verb));
     out.extend_from_slice(&identity.occurrence.to_le_bytes());
     out.into()
+}
+
+/// Borrow the complete current producer graph; no history or second ancestry map.
+pub(crate) fn structural_inputs(
+    frontend: &ColdFrontend,
+    member: MemberId,
+) -> Option<(dm_tree::DefinitionMode, Arc<[SymbolId]>)> {
+    let roster = frontend.callable_roster().ok()?;
+    let ordinal = roster.ordinal(member)?;
+    let abi = frontend.callable_abi_roster().ok()??;
+    let bound = abi.entries().get(ordinal)?;
+    if bound.member != member {
+        return None;
+    }
+    let meaning = abi.graph().entries().get(ordinal)?;
+    if meaning.identity != bound.identity {
+        return None;
+    }
+    let mut ancestry = None;
+    abi.graph().visit_storage(|_, owners| {
+        if let Ok(index) = owners.binary_search_by_key(&meaning.identity.owner, |(owner, _)| *owner)
+        {
+            ancestry = Some(owners[index].1.clone());
+        }
+    });
+    Some((meaning.definition, ancestry?))
 }

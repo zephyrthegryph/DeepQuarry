@@ -85,6 +85,7 @@ impl HeapCensus {
                             crate::driver_facts::abi_artifacts::observations::Answer::Inputs(inputs) => {
                                 if self.arc_object("prepared_abi.observed_inputs", inputs) {
                                     self.procedure_metadata("prepared_abi.metadata", &inputs.metadata);
+                                    if let Some(ancestry) = &inputs.ancestry { self.slice("prepared_abi.ancestry", ancestry, true); }
                                     if let Some(abi) = &inputs.predecessor { self.abi(abi); }
                                     self.abi_engine_owner(&inputs.engine);
                                     if let crate::driver_facts::abi_artifacts::observations::Boundary::Intrinsic{layout,..} = &inputs.boundary {

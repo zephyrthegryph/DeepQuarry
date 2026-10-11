@@ -17,6 +17,9 @@ impl ObservationHost<Query, Answer, Domain> for SemanticHost<'_> {
             Domain::Semantic(domain) => self.0.domain_version(*domain),
         }
     }
+    fn observes_answers(&self) -> bool {
+        self.0.observes_reads()
+    }
     fn equivalent(&self, a: &Answer, b: &Answer) -> bool {
         a == b
             || match (a, b) {

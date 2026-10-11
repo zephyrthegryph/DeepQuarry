@@ -35,6 +35,7 @@ pub struct AbiArtifacts {
     recomputed: AtomicUsize,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
+    pub(super) qualified_reused: AtomicUsize,
     pub(super) batch_rows_selected: AtomicUsize,
     pub(super) candidate_rows_collected: AtomicUsize,
 }
@@ -49,6 +50,7 @@ impl Default for AbiArtifacts {
             recomputed: AtomicUsize::new(0),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
+            qualified_reused: AtomicUsize::new(0),
             batch_rows_selected: AtomicUsize::new(0),
             candidate_rows_collected: AtomicUsize::new(0),
         }
@@ -95,6 +97,9 @@ impl AbiArtifacts {
             self.batch_rows_selected.load(Ordering::Relaxed),
             self.candidate_rows_collected.load(Ordering::Relaxed),
         )
+    }
+    pub fn qualified_reused(&self) -> usize {
+        self.qualified_reused.load(Ordering::Relaxed)
     }
     pub fn scheduled_reused(&self) -> usize {
         self.scheduled_reused.load(Ordering::Relaxed)
@@ -189,8 +194,11 @@ pub(super) fn prepare(
                     "ABI metadata differs from current declaration",
                 ));
             }
+            let structural = observations::structural_inputs(inherited.frontend, *member);
             Ok(observations::Current {
                 inputs: Arc::new(observations::Inputs {
+                    definition: structural.as_ref().map(|(definition, _)| *definition),
+                    ancestry: structural.map(|(_, ancestry)| ancestry),
                     metadata: Arc::clone(current_metadata),
                     predecessor: predecessor.cloned(),
                     engine: Arc::clone(engine),

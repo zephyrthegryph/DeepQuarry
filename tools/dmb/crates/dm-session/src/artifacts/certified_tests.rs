@@ -170,3 +170,100 @@ fn prefix_dispatch_never_substitutes_for_complete_local_inputs() {
     assert_eq!(delivered, 1);
     assert_eq!(roster.take_prefix(&[2]).len(), 1);
 }
+
+#[test]
+fn local_unversioned_gap_requires_every_exact_local_edge_and_no_other_gap() {
+    let store = Store::current_revision();
+    store.enable_incidence();
+    let receipt: Receipt<_, _, _> = vec![
+        Observation {
+            query: 0,
+            answer: true,
+            domain: 0,
+        },
+        Observation {
+            query: 1,
+            answer: false,
+            domain: 2,
+        },
+    ]
+    .into();
+    store.insert_with_receipt(
+        Arc::from([1]),
+        receipt.clone(),
+        Arc::from([(2, 7)]),
+        1,
+        || 11,
+    );
+    let host = Host {
+        version: Some(7),
+        observing: false,
+        calls: AtomicUsize::new(0),
+    };
+    let request = crate::ReceiptAdmission::new(&host);
+    assert!(store.unchanged_candidates(&request).is_empty());
+    let token = store
+        .unchanged_candidates_with_local_inputs(&request, 0)
+        .pop()
+        .unwrap();
+    assert!(token.admit_current(|_, _| true, |_| {}).is_none());
+    let token = store
+        .unchanged_candidates_with_local_inputs(&request, 0)
+        .pop()
+        .unwrap();
+    assert!(token
+        .admit_local_current(|_| false, |_, _| true, |_| panic!("rejected edges"))
+        .is_none());
+    let mut edges = 0;
+    let token = store
+        .unchanged_candidates_with_local_inputs(&request, 0)
+        .pop()
+        .unwrap();
+    assert!(token
+        .admit_local_current(
+            |read| read.query == 0 && read.answer,
+            |key, value| key == [1] && **value == 11,
+            |leaf| edges += leaf.len()
+        )
+        .is_some());
+    assert_eq!(edges, 2);
+    assert_eq!(host.calls.load(Ordering::Relaxed), 0);
+    // An unrelated missing semantic version is never licensed by local input.
+    store.insert_with_receipt(Arc::from([2]), receipt, Arc::from([]), 1, || 22);
+    assert_eq!(
+        store
+            .unchanged_candidates_with_local_inputs(&request, 0)
+            .len(),
+        1
+    );
+    // Conflicting supplied versions never become authority, including local inputs.
+    store.insert_with_receipt(
+        Arc::from([4]),
+        vec![Observation {
+            query: 0,
+            answer: true,
+            domain: 0,
+        }]
+        .into(),
+        Arc::from([(0, 1), (0, 2)]),
+        1,
+        || 44,
+    );
+    let mut conflicting = store.unchanged_local_candidate_roster(&request, 0);
+    assert!(conflicting.take(&[4]).is_empty());
+    // No local observation means there is nothing the producer can license.
+    store.insert_with_receipt(Arc::from([3]), reads(), Arc::from([(2, 7)]), 1, || 33);
+    let mut roster = store.unchanged_local_candidate_roster(&request, 0);
+    let token = roster.take(&[3]).pop().unwrap();
+    assert!(token
+        .admit_local_current(|_| true, |_, _| true, |_| {})
+        .is_none());
+    let observing = Host {
+        version: Some(7),
+        observing: true,
+        calls: AtomicUsize::new(0),
+    };
+    assert!(store
+        .unchanged_candidates_with_local_inputs(&crate::ReceiptAdmission::new(&observing), 0)
+        .is_empty());
+}
