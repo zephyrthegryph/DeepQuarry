@@ -172,6 +172,31 @@ mod tests {
         checkpoint_at(now + std::time::Duration::from_secs(301)).unwrap();
     }
     #[test]
+    fn one_request_publication_does_not_block_other_request_workers() {
+        let publishing = Cancellation::default();
+        let _binding = bind(publishing.clone());
+        begin_publication().unwrap();
+        std::thread::scope(|scope| {
+            scope.spawn(|| {
+                let independent = Cancellation::default();
+                let _binding = bind(independent.clone());
+                let context =
+                    WorkerContext::capture().expect("independent request is not publishing");
+                std::thread::scope(|workers| {
+                    workers.spawn(|| {
+                        let _worker = context.enter();
+                        checkpoint().unwrap();
+                    });
+                });
+                independent.cancel();
+                assert!(checkpoint().is_err());
+            });
+        });
+        assert!(!publishing.is_cancelled());
+        checkpoint().unwrap();
+    }
+
+    #[test]
     fn cancellation_stops_before_publication_but_never_during() {
         let token = Cancellation::default();
         let binding = bind(token.clone());

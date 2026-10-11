@@ -136,6 +136,13 @@ fn compare_revision(shared: &Arc<Shared>, roots: &Roots) -> Vec<crate::publish::
                             &retained_destination,
                         );
                         drop(host);
+                        // The fresh oracle is a distinct compiler request. A
+                        // completed retained publication seals its original
+                        // token permanently; it must not govern oracle workers.
+                        drop(_binding);
+                        drop(_latest);
+                        drop(_serial);
+                        let _oracle_binding = control::bind(control::Cancellation::default());
                         let fresh_destination = fresh.artifact_directory.as_ref().unwrap().clone();
                         let b = published(
                             crate::request_runner::run_build(fresh).unwrap(),
