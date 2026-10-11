@@ -3740,8 +3740,6 @@ init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/da
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	var/datum/shadekin/SK
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	if(user && isliving(user))
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	rel_set(src, nameof(owner), user)
-init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	if(owner().vore_selected)
-init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	rel_set(src, nameof(target), owner().vore_selected)
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	observe(owner(), /datum/notice/qdeleting, src, then(PROC_REF(drop_everything_and_delete)))
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	has_signal = TRUE
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	SK = owner().get_shadekin_state()

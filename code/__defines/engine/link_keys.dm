@@ -14,3 +14,19 @@
 /// orbiter's saved transform rides on the link (link_data_set(orbiter, LK_ORBITING, "transform", ...)).
 #define LK_ORBITING "orbiting"
 #define LK_ORBITERS "orbiters"
+/// An item attached to another (an assembly's valve, a chair's kit, a gun's attachment): LK_ITEM_MASTER on the attached item, LK_ITEM_ATTACHED on
+/// its master (many). Read item_master(I).
+#define LK_ITEM_MASTER "item_master"
+#define LK_ITEM_ATTACHED "item_attached"
+/// A mob's selected belly (where its vore goes): LK_VORE_SELECTED on the mob, LK_VORE_SELECTED_BY on the belly (many). Read vore_selected_of(M).
+#define LK_VORE_SELECTED "vore_selected"
+#define LK_VORE_SELECTED_BY "vore_selected_by"
+/// A shapeshifter and the form it took: LK_TF_FORM on the original, LK_TF_ORIGIN on the form (many). Read tf_form_of(L).
+#define LK_TF_FORM "tf_form"
+#define LK_TF_ORIGIN "tf_origin"
+/// The mind a shapeshifted form carries back: LK_TF_FORM_MIND on the mob, LK_TF_FORM_MIND_OF on the mind (many). Read tf_form_mind_of(L).
+#define LK_TF_FORM_MIND "tf_form_mind"
+#define LK_TF_FORM_MIND_OF "tf_form_mind_of"
+/// The nest or spawner a mob came from: LK_NEST on the mob, LK_NEST_SPAWNS on the nest (any atom, many). Read nest_of(L).
+#define LK_NEST "nest"
+#define LK_NEST_SPAWNS "nest_spawns"

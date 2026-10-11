@@ -159,8 +159,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 			if ((freq % 2) == 0)
 				freq += 1
 		freq = freqlist[rand(1, freqlist.len)]
-		var/obj/item/uplink/hidden/T = new(R)
-		rel_set(target_radio, nameof(target_radio.hidden_uplink), T) // the uplink sits in the radio's contents
+		new /obj/item/uplink/hidden(R) // the uplink sits in the radio's contents (item_hidden_uplink() finds it there)
 		target_radio.traitor_frequency = freq
 		to_chat(traitor_mob, "A portable object teleportation relay has been installed in your [R.name] [loc]. Simply dial the frequency [format_frequency(freq)] to unlock its hidden features.")
 		traitor_mob.mind.store_memory(span_bold("Radio Freq:") + " [format_frequency(freq)] ([R.name] [loc]).")
@@ -168,8 +167,7 @@ CAPABILITIES(/datum/antagonist/traitor)
 	else if (istype(R, /obj/item/pda))
 		// generate a passcode if the uplink is hidden in a PDA
 		var/pda_pass = "[rand(100,999)] [pick("Alpha","Bravo","Delta","Omega")]"
-		var/obj/item/uplink/hidden/T = new(R)
-		rel_set(R, nameof(R.hidden_uplink), T) // the uplink sits in the PDA's contents
+		new /obj/item/uplink/hidden(R) // the uplink sits in the PDA's contents (item_hidden_uplink() finds it there)
 		var/obj/item/pda/P = R
 		P.lock_code = pda_pass
 		to_chat(traitor_mob, "A portable object teleportation relay has been installed in your [R.name] [loc]. Simply enter the code \"[pda_pass]\" into the ringtone select to unlock its hidden features.")

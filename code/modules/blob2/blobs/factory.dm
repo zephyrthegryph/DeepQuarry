@@ -37,7 +37,7 @@
 				S.projectile_accuracy = overmind.blob_type.spore_accuracy
 				S.projectile_dispersion = overmind.blob_type.spore_dispersion
 		else //Other mobs don't add themselves in New. Ew.
-			S.nest = src
+			set_nest(S, src)
 			// spores is a pair list with /mob/living/simple_mob/blob.factory (blob.dm); a mob
 			// without that var is not counted.
 			if(istype(S, /mob/living/simple_mob/blob))

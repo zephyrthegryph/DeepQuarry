@@ -18,7 +18,7 @@
 		)
 		if(full_data)
 			belly_data += list(
-				"selected" = (B == owner.vore_selected),
+				"selected" = (B == vore_selected_of(owner)),
 				"digest_mode" = B.digest_mode,
 				"contents" = LAZYLEN(B.contents),
 				"prevent_saving" = B.prevent_saving
@@ -125,8 +125,8 @@
 
 /datum/vore_look/proc/get_selected_data(mob/owner)
 	var/list/selected_list = null
-	if(owner.vore_selected)
-		var/obj/belly/selected = owner.vore_selected
+	if(vore_selected_of(owner))
+		var/obj/belly/selected = vore_selected_of(owner)
 		selected_list = list(
 							"belly_name" = selected.name,
 							"display_name" = selected.display_name
@@ -269,7 +269,7 @@
 				for(var/flag_name in selected.vore_sprite_flag_list)
 					UNTYPED_LIST_ADD(vs_flags, list("label" = flag_name, "selection" = selected.vore_sprite_flags & selected.vore_sprite_flag_list[flag_name]))
 
-				var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[host().vore_selected.undergarment_chosen]
+				var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[vore_selected_of(host()).undergarment_chosen]
 				var/list/undergarments
 				if(UWC)
 					undergarments = UWC.items

@@ -34,7 +34,7 @@ CAPABILITIES(/obj/item/uplink)
 // HIDDEN UPLINK - Can be stored in anything but the host item has to have a trigger for it.
 /** How to create an uplink in 3 easy steps!
  *
- * 1. All obj/item 's have a hidden_uplink var. By default it's null. Give the item one with "new(src)", it must be in it's contents. Feel free to add "uses".
+ * 1. An item's hidden uplink is the /obj/item/uplink/hidden in its contents (item_hidden_uplink()). Give the item one with "new(src)" or a slot(SLOT_HIDDEN_UPLINK, starts =). Feel free to add "uses".
  *
  * 2. Code in the triggers. Use check_trigger for this, I recommend closing the item's menu if it returns true.
  * The var/value is the value that will be compared with the var/target. If they are equal it will activate the menu.
@@ -50,9 +50,10 @@ CAPABILITIES(/obj/item/uplink)
 	var/exploit_id								// Id of the current exploit record we are viewing
 	var/selected_cat
 
-/// The hidden uplink MUST be inside an obj/item's contents (keeps_if()): a condition.
+/// The hidden uplink MUST be inside an obj/item's contents (keeps_if()): a condition. Nullspace passes: a slot's starting uplink is made
+/// there and then moved into its item (slot(SLOT_HIDDEN_UPLINK, starts =)).
 /obj/item/uplink/hidden/proc/inside_an_item()
-	return isitem(loc)
+	return !loc || isitem(loc)
 
 /// The deciseconds to the next discount.
 /obj/item/uplink/hidden/proc/offer_delay(datum/act/A)
@@ -238,9 +239,8 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	uplink = TRUE
 
 /// It carries a hidden uplink from the start.
-/obj/item/radio/uplink/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
+CAPABILITIES(/obj/item/radio/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/uplink/interaction_self(mob/user, obj/item/held)
 	. = ..()
@@ -253,17 +253,15 @@ CAPABILITIES(/obj/item/uplink/hidden)
 	uplink = TRUE
 
 /// It carries a hidden uplink from the start.
-/obj/item/multitool/uplink/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
+CAPABILITIES(/obj/item/multitool/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ
 
 /// It carries a hidden uplink from the start.
-/obj/item/radio/headset/uplink/ownership()
-	. = ..()
-	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED, starts = /obj/item/uplink/hidden)
+CAPABILITIES(/obj/item/radio/headset/uplink)
+	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
 
 /// A shared definition (registered: never owned or cleared).
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item

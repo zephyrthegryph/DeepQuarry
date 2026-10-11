@@ -145,8 +145,8 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 				var/vore_happened = FALSE
 				if(can_dropnom && living_user.can_be_drop_pred)
 					var/obj/belly/belly_dest
-					if(living_user.vore_selected)
-						belly_dest = living_user.vore_selected
+					if(vore_selected_of(living_user))
+						belly_dest = vore_selected_of(living_user)
 					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
@@ -163,8 +163,8 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 							pred = potential_pred
 					if(pred)
 						var/obj/belly/belly_dest
-						if(pred.vore_selected)
-							belly_dest = pred.vore_selected
+						if(vore_selected_of(pred))
+							belly_dest = vore_selected_of(pred)
 						else if(length(pred.vore_organs))
 							belly_dest = pick(pred.vore_organs)
 						if(belly_dest)
@@ -189,8 +189,8 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 				M.forceMove(ToTurf)
 				if(can_dropnom && living_user.can_be_drop_pred && M.can_be_drop_prey)
 					var/obj/belly/belly_dest
-					if(living_user.vore_selected)
-						belly_dest = living_user.vore_selected
+					if(vore_selected_of(living_user))
+						belly_dest = vore_selected_of(living_user)
 					else if(length(living_user.vore_organs))
 						belly_dest = pick(living_user.vore_organs)
 					if(belly_dest)
@@ -199,8 +199,8 @@ CAPABILITIES(/obj/item/bluespace_harpoon)
 						to_chat(M, span_vdanger("You materialize inside [living_user] as you end up in their [belly_dest]!"))
 				else if(can_dropnom && living_user.can_be_drop_prey && M.can_be_drop_pred && !user_vored)
 					var/obj/belly/belly_dest
-					if(M.vore_selected)
-						belly_dest = M.vore_selected
+					if(vore_selected_of(M))
+						belly_dest = vore_selected_of(M)
 					else if(length(M.vore_organs))
 						belly_dest = pick(M.vore_organs)
 					if(belly_dest)

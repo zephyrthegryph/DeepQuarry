@@ -73,7 +73,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/succubus)
 
 /mob/living/simple_mob/vore/succubus/load_default_bellies()
 	. = ..()
-	var/obj/belly/B = vore_selected
+	var/obj/belly/B = vore_selected_of(src)
 	B.name = "stomach"
 	B.desc = "You find yourself tightly compressed into the stomach of the succubus, with immense pressure squeezing down on you from every direction. The wrinkled walls of the gut knead over you, like a swelteringly hot, wet massage. You can feel movement from the outside, as though the demoness is running her hands over your form with delight. The world around you groans and gurgles, but the fluids that ooze into this place don't seem harmful, yet. Instead, you feel your very energy being steadily depleted, much to the joy of the woman who's claiming it all for herself."
 	B.mode_flags = DM_FLAG_THICKBELLY
@@ -151,7 +151,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/succubus)
 	var/string = multilingual_to_message(message_pieces)
 
 	if(findtext(lowertext(string), safeword))
-		vore_selected?.digest_mode = DM_DRAIN
+		vore_selected_of(src)?.digest_mode = DM_DRAIN
 		release_vore_contents()
 		status_set(STAT_STUNNED, 10)
 		say("I'm sorry sweetie, are you okay?")
