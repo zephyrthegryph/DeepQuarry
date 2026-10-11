@@ -1180,11 +1180,11 @@
 			nutrition_reduction *= comp.get_nutrition_multiplier()
 		src.adjust_nutrition(-nutrition_reduction)
 
-	if(src.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
+	if(src.vore_prefs.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
 		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (nutrition_of(src) / 250 * 100)
 		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-	if(nutrition_of(src) > 500 && src.noisy_full == TRUE)
+	if(nutrition_of(src) > 500 && src.vore_prefs.noisy_full == TRUE)
 		var/belch_prob = 5 //Maximum belch prob.
 		if(nutrition_of(src) < 4075)
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
@@ -1214,7 +1214,7 @@
 		return TRUE
 	if(!src.factor(BF_DARKSIGHT) != !src.chemical_darksight)
 		return TRUE
-	if((src.noisy && nutrition_of(src) < 250) || (src.noisy_full && nutrition_of(src) > 500))
+	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
 	return FALSE
 

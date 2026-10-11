@@ -84,7 +84,7 @@ CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal)
 	icon = 'icons/mob/human_races/r_vulpkanin.dmi'
 
 CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "vulpkanin, dual-color"))
+	profile(nameof(looks), /datum/record/appearance, fields = list())
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	species_at_make = SPECIES_VULPKANIN
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin

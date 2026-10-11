@@ -128,7 +128,7 @@ CAPABILITIES(/datum/belly_overlay_tgui)
 				if(B.mush_overlay && (nutrition_of(B.owner) > 0 || B.max_mush == 0 || B.min_mush > 0 \
 						|| (LAZYLEN(B.contents) * B.item_mush_val) > 0))
 					var/mush_content = B.owner ? (nutrition_of(B.owner) + LAZYLEN(B.contents) * B.item_mush_val) : 0
-					var/mush_alpha = min(B.mush_alpha, prey.max_voreoverlay_alpha)
+					var/mush_alpha = min(B.mush_alpha, prey.vore_prefs.max_voreoverlay_alpha)
 					var/pixel_y = -450 + (450 / max(B.max_mush, 1) * max(min(B.max_mush, mush_content), 1))
 					if(pixel_y < -450 + (450 / 100 * B.min_mush))
 						pixel_y = -450 + (450 / 100 * B.min_mush)

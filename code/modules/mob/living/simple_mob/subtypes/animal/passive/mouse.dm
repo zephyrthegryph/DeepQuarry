@@ -50,6 +50,7 @@
 	pain_emote_3p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "cheese"))
 	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
@@ -241,7 +242,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
-	vore_taste = "cheese"
 
 	restrict_vore_ventcrawl = TRUE
 
