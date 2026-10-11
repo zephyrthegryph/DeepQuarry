@@ -23,6 +23,7 @@ struct StringWire<'a> {
 }
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Encoded<'a> {
+    source_features: dm_codegen_byond::SourceFeatures,
     warnings: crate::lowering_memo_compact::BoundedVec<dm_codegen_byond::ProcedureWarning>,
     #[serde(borrow)]
     words: Cow<'a, [u8]>,
@@ -52,6 +53,7 @@ impl ReusableProcedureArtifact {
     }
     pub(crate) fn disk_encoded(&self) -> Option<Encoded<'_>> {
         Encoded::capture(
+            self.features.source_features,
             &self.warnings,
             &self.frozen,
             &self.frame,
@@ -133,6 +135,7 @@ impl<'a> Encoded<'a> {
             return None;
         }
         Self::capture_fields(
+            helper.features.source_features,
             &helper.warnings,
             &helper.frozen,
             helper.local_names.len().try_into().ok()?,
@@ -145,6 +148,7 @@ impl<'a> Encoded<'a> {
         )
     }
     fn capture(
+        source_features: dm_codegen_byond::SourceFeatures,
         warnings: &[dm_codegen_byond::ProcedureWarning],
         frozen: &'a FrozenProc,
         frame: &'a FrozenFrame,
@@ -153,6 +157,7 @@ impl<'a> Encoded<'a> {
         content: &'a dm_link::EntryContent,
     ) -> Option<Self> {
         Self::capture_fields(
+            source_features,
             warnings,
             frozen,
             frame.local_count,
@@ -166,6 +171,7 @@ impl<'a> Encoded<'a> {
     }
     #[allow(clippy::too_many_arguments)]
     fn capture_fields(
+        source_features: dm_codegen_byond::SourceFeatures,
         warnings: &[dm_codegen_byond::ProcedureWarning],
         frozen: &'a FrozenProc,
         local_count: u32,
@@ -190,6 +196,7 @@ impl<'a> Encoded<'a> {
             labels.extend_from_slice(&label.unwrap_or(0).to_le_bytes());
         }
         Some(Encoded {
+            source_features,
             warnings: crate::lowering_memo_compact::BoundedVec(warnings.to_vec()),
             words: Cow::Owned(words),
             labels: Cow::Owned(labels),
@@ -438,6 +445,7 @@ impl Encoded<'_> {
         }
         let linked = frozen.code().link(|_| Some(0)).ok()?;
         let mut features = BytecodeFeatures::default();
+        features.source_features = self.source_features;
         byond_dmb::bytecode::visit_instructions(
             &linked,
             |instruction| {

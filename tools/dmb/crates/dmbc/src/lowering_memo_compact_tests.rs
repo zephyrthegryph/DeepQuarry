@@ -118,6 +118,28 @@ impl<R: Resolver> Resolver for InstanceHost<'_, R> {
     }
 }
 fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain: bool) {
+    check_replay_features(source, helpers, modifiers, plain, Default::default());
+}
+#[test]
+fn compact_disk_roundtrips_issued_source_features_without_opcode_inference() {
+    check_replay_features(
+        "/proc/compact_probe(x in list(1,2))\n    return \"hello\"\n",
+        true,
+        false,
+        false,
+        dm_codegen_byond::SourceFeatures {
+            world_cpu: true,
+            native_graphics: true,
+        },
+    );
+}
+fn check_replay_features(
+    source: &'static str,
+    helpers: bool,
+    modifiers: bool,
+    plain: bool,
+    source_features: dm_codegen_byond::SourceFeatures,
+) {
     let original_source = source;
     let engine = crate::engine::EngineSnapshot::from_bytes(
         include_bytes!("../../../fixtures/native_template.bin"),
@@ -174,7 +196,13 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
     );
     assert!(batch.diagnostics.is_empty());
     assert_eq!(batch.units.len(), 1);
-    let unit = batch.units.pop().unwrap();
+    let mut unit = batch.units.pop().unwrap();
+    // Transport contract: source-issued facts must survive even when no
+    // corresponding opcode exists in this deliberately ordinary body/helper.
+    unit.code.procedure.source_features = source_features;
+    for helper in &mut unit.source_helpers {
+        helper.code.procedure.source_features = source_features;
+    }
     let body = &front.bodies[0];
     let bodies = dm_tree::frontend::BodyArena::new_typed(
         &front,
@@ -378,6 +406,11 @@ fn check_replay_mode(source: &'static str, helpers: bool, modifiers: bool, plain
         );
     }
     let identity = payload.identity;
+    let featureless_schema = dm_wire::encode_bounded(0x0206_0010, &payload, MAX_RECORD).unwrap();
+    assert!(
+        decode(&featureless_schema).is_err(),
+        "old compact schema cannot admit missing source-feature authority"
+    );
     let framed = dm_cache::encode_variants(std::slice::from_ref(&bytes)).unwrap();
     let selected = crate::lowering_memo_wire::candidates(&framed)
         .unwrap()
