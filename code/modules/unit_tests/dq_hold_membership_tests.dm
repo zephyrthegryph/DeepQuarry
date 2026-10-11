@@ -89,6 +89,8 @@ CAPABILITIES(/obj/machinery/dq_hold_membership_fixture)
 /obj/machinery/dq_hold_membership_fixture/proc/commit_membership(datum/act/A)
 	membership_commits++
 
+/datum/unit_test/dq_e2/hold_membership_menu
+
 /datum/unit_test/dq_e2/hold_membership_menu/run_gate()
 	var/mob/living/simple_mob/e0_fixture/user = actor()
 	var/obj/machinery/dq_hold_membership_fixture/M = allocate(/obj/machinery/dq_hold_membership_fixture, test_floor())
@@ -110,7 +112,8 @@ CAPABILITIES(/obj/machinery/dq_hold_membership_fixture)
 			TEST_ASSERT(!row["enabled"], "EMP membership invalidates the previously allowed menu despite a masked stat")
 			TEST_ASSERT_EQUAL(row["reason"], "The machine is disabled by an EMP.", "The real requirement supplies the refusal")
 	TEST_ASSERT(found, "The refused menu row stays discoverable")
-	TEST_ASSERT_EQUAL(test_menu(user, M, "membership_gate")?.outcome, ACT_REFUSED, "Real execution refuses while EMP holds")
+	var/datum/op_result/blocked_result = test_menu(user, M, "membership_gate")
+	TEST_ASSERT_EQUAL(blocked_result?.outcome, ACT_REFUSED, "Real execution refuses while EMP holds")
 	TEST_ASSERT_EQUAL(M.membership_commits, 0, "Refusal prevents the effect")
 	release(M, STAT_OPERABLE, SRC_EMP)
 	TEST_ASSERT(!stat_value(M, STAT_OPERABLE), "Other veto still masks recovery")
@@ -121,7 +124,8 @@ CAPABILITIES(/obj/machinery/dq_hold_membership_fixture)
 			found = TRUE
 			TEST_ASSERT(row["enabled"], "Source exit invalidates the refused cached menu while OPERABLE stays false")
 	TEST_ASSERT(found, "The recovered menu row still exists")
-	TEST_ASSERT_EQUAL(test_menu(user, M, "membership_gate")?.outcome, ACT_COMMITTED, "Real execution recovers on membership exit")
+	var/datum/op_result/recovered_result = test_menu(user, M, "membership_gate")
+	TEST_ASSERT_EQUAL(recovered_result?.outcome, ACT_COMMITTED, "Real execution recovers on membership exit")
 	TEST_ASSERT_EQUAL(M.membership_commits, 1, "Recovered effect really runs once")
 	var/list/reads = stat_generated_reads(M, TYPE_PROC_REF(/obj/machinery/dq_hold_membership_fixture, no_emp))
 	TEST_ASSERT(HOLD_MEMBERS_KEY in reads, "Generated dependency follows real source membership through the EMP wrapper")
