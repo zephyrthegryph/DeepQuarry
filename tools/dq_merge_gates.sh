@@ -233,14 +233,38 @@ if [ "$run_tests" -eq 1 ]; then
 		read -r passed nfailed < <(node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(r.counts.passed, r.counts.failed);' "$tests_json")
 	fi
 fi
+# The failures tools/ci/known_failures.txt does not list (the gates passed, so a failure here is a KNOWN one; 0 without a check line).
+new_failed=0
+known_line="$(grep -h '^KNOWN FAILURES CHECK:' "data/merge-gates/$short.tests.log" 2>/dev/null | tail -n 1)"
+if [ -n "$known_line" ]; then
+	new_failed="$(sed -n 's/^KNOWN FAILURES CHECK: \([0-9]*\) NEW.*/\1/p' <<<"$known_line")"
+fi
 {
 	echo "sha=$sha"
 	echo "tests=${tests[*]-}"
 	echo "tests_json=$tests_json"
 	echo "passed=${passed:-0}"
 	echo "failed=${nfailed:-0}"
+	echo "new_failed=${new_failed:-0}"
 	echo "tgui=$tgui"
 	echo "dm=$dm_ok"
 	echo "lanes=$lanes"
 } >"data/merge-gates/$short.ok"
+# The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
+# that tools/ci/known_failures.txt does not list. A lane-ready run gets its own note from dq_lane_ready.sh; a merge batch pushes on this one.
+if [ "$run_tests" -eq 1 ] && [ "${new_failed:-0}" = "0" ] && [ "${passed:-0}" -gt 0 ]; then
+	gate_note="$(printf '{"version":1,"kind":"merge-gates","commit":"%s","ok":true,"passed":%s,"failed":%s,"new_failed":0,"lanes":"%s","tests_json":"%s","created":"%s"}' \
+		"$sha" "$passed" "${nfailed:-0}" "$lanes" "$tests_json" "$(date -u +%Y-%m-%dT%H:%M:%SZ)")"
+	if git notes --ref=merge-gates add -f -m "$gate_note" "$sha"; then
+		echo "dq_merge_gates: stamped ${short} (git notes --ref=merge-gates show $short)"
+		if [ "${DQ_LANE_NOTES_PUSH:-1}" != "0" ]; then
+			for attempt in 1 2 3; do
+				git push -q origin refs/notes/merge-gates:refs/notes/merge-gates 2>/dev/null && break
+				git fetch -q origin +refs/notes/merge-gates:refs/notes/merge-gates-remote 2>/dev/null && git notes --ref=merge-gates merge -s cat_sort_uniq refs/notes/merge-gates-remote >/dev/null 2>&1
+			done
+		fi
+	else
+		echo "dq_merge_gates: could not write the merge-gates note; dq_push_master.sh will refuse this HEAD" >&2
+	fi
+fi
 echo "dq_merge_gates: all gates passed on $short (timings: $timings)"
