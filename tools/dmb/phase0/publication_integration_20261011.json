@@ -858,6 +858,33 @@
         "20261011-150022-b5afc6fa-focused.json"
       ],
       "scope": "Focused compact-census/promotion/report/frame checks passed; two stale facade identity checks require published-owner assertions; actual query static resolver failure fixed in05ec496691 but rerun pending. Not full suite or real benchmark."
+    },
+    "latest_real_attempt": {
+      "receipt": "E:/dq-cache/dmb-native-iterations/20261011-150434-8414fe9e/receipt.json",
+      "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+      "compiler_sha256": "1a94ef15de083ee8bde13859bc30a9c8fe249ab57c85488c796ca4bea579c080",
+      "status": "failed",
+      "admitted_rows": 0,
+      "unadmitted_retained_child_wall_s": 108.172,
+      "timing_admitted": false,
+      "reason": "Fresh oracle failed allocation during TreeResolution while resident daemon still held its graph inside same6GiB Job",
+      "owned_daemon_reaped": true,
+      "harness_scheduling_fix": "59589e885f",
+      "scope": "Retained initial request completed; fresh equality not established; no speed/memory claim"
+    },
+    "followup_commits": {
+      "final_locked_reconciliation": "2f8ad99311",
+      "published_owner_fixtures": "600aab43e5",
+      "current_static_query_resolver": "05ec496691",
+      "resolved_query_api": "b97c6ee272"
     }
+  },
+  "focused_pair_policy": {
+    "source_commits": [
+      "eb31e39631",
+      "cc58bc5ac6"
+    ],
+    "focused_tests_passed": 5,
+    "scope": "Synthetic exact runtime parity vs passing acceptance; no real DeepQuarry runtime claim"
   }
 }
