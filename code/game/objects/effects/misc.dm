@@ -55,8 +55,14 @@ CAPABILITIES(/obj/effect/temporary_effect)
 	time_to_die = 1 SECOND
 	pixel_x = -32
 
+/// Rolled before init (rolls()): one of the two lightning sprites.
+/obj/effect/temporary_effect/lightning_strike/proc/roll_variant(datum/roller/R)
+	return "[icon_state][R.number(1, 2)]"
+
+CAPABILITIES(/obj/effect/temporary_effect/lightning_strike)
+	rolls(nameof(icon_state), PROC_REF(roll_variant))
+
 /obj/effect/temporary_effect/lightning_strike/Initialize(mapload)
-	icon_state += "[rand(1,2)]" // To have two variants of lightning sprites.
 	animate(src, alpha = 0, time = time_to_die - 1)
 	. = ..()
 

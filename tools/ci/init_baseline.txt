@@ -1095,7 +1095,6 @@ init_lines	code/game/objects/effects/chem/coating.dm	if(C.reagents && C.reagents
 init_lines	code/game/objects/effects/chem/coating.dm	C.reagents.trans_to_obj(src,C.reagents.total_volume)
 init_lines	code/game/objects/effects/chem/coating.dm	spent(O)
 init_lines	code/game/objects/effects/chem/foam.dm	play_sfx(src, SFX_EFFECTS_BUBBLES2)
-init_lines	code/game/objects/effects/chem/foam.dm	spread_delay = 3 + metal * 3 // metal foam spreads slower (after_init())
 init_lines	code/game/objects/effects/chem/foam.dm	update_nearby_tiles(1)
 init_lines	code/game/objects/effects/countdown.dm	attach(loc)
 init_lines	code/game/objects/effects/dark_growth.dm	if(check_glow && prob(5))
@@ -1184,8 +1183,6 @@ init_lines	code/game/objects/effects/effect_system.dm	play_sfx(src, SFX_SPARKS, 
 init_lines	code/game/objects/effects/effect_system.dm	var/turf/T = src.loc
 init_lines	code/game/objects/effects/effect_system.dm	if (istype(T, /turf))
 init_lines	code/game/objects/effects/effect_system.dm	T.hotspot_expose(1000,100)
-init_lines	code/game/objects/effects/landmarks.dm	tag = text("landmark*[]", name)
-init_lines	code/game/objects/effects/landmarks.dm	invisibility = INVISIBILITY_ABSTRACT
 init_lines	code/game/objects/effects/landmarks.dm	var/list/registry = landmark_coordinate_registry(name)
 init_lines	code/game/objects/effects/landmarks.dm	if(registry)
 init_lines	code/game/objects/effects/landmarks.dm	registry += loc
@@ -1203,11 +1200,6 @@ init_lines	code/game/objects/effects/landmarks.dm	if("tdomeadmin")
 init_lines	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 init_lines	code/game/objects/effects/landmarks.dm	if("tdomeobserve")
 init_lines	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
-init_lines	code/game/objects/effects/landmarks.dm	switch(TYPE_TABLE_GET(src, landmark_tag_setup))
-init_lines	code/game/objects/effects/landmarks.dm	if(/obj/effect/landmark/start)
-init_lines	code/game/objects/effects/landmarks.dm	tag = "start*[name]"
-init_lines	code/game/objects/effects/landmarks.dm	if(/obj/effect/landmark/virtual_reality)
-init_lines	code/game/objects/effects/landmarks.dm	tag = "virtual_reality*[name]"
 init_lines	code/game/objects/effects/landmarks_events.dm	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
 init_lines	code/game/objects/effects/landmarks_events.dm	message_range = world.view
 init_lines	code/game/objects/effects/landmarks_poi.dm	SSpois.enqueue(src)
@@ -1222,7 +1214,6 @@ init_lines	code/game/objects/effects/mines.dm	register_dangerous_to_step()
 init_lines	code/game/objects/effects/mines.dm	if(camo_net)
 init_lines	code/game/objects/effects/mines.dm	alpha = 50
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
-init_lines	code/game/objects/effects/misc.dm	icon_state += "[rand(1,2)]" // To have two variants of lightning sprites.
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
 init_lines	code/game/objects/effects/misc.dm	vis_contents += light_spot
 init_lines	code/game/objects/effects/overlays.dm	apply_standard_transform()
@@ -1247,7 +1238,6 @@ init_lines	code/game/objects/effects/prop/columnblast.dm	eruption_delay = time_t
 init_lines	code/game/objects/effects/prop/columnblast.dm	flick("[icon_state]_create",src)
 init_lines	code/game/objects/effects/shared_particle_holder.dm	moveToNullspace()
 init_lines	code/game/objects/effects/shared_particle_holder.dm	particles = new particle_path()
-init_lines	code/game/objects/effects/spiders.dm	amount_grown = 50
 init_lines	code/game/objects/effects/step_triggers.dm	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 init_lines	code/game/objects/effects/step_triggers.dm	if(mark.landmark_id == landmark_id)
 init_lines	code/game/objects/effects/step_triggers.dm	rel_set(src, nameof(the_landmark), mark)
@@ -1608,7 +1598,6 @@ init_lines	code/game/objects/micro_structures.dm	offset_tunnel()
 init_lines	code/game/objects/micro_structures.dm	obj_instance_setup()
 init_lines	code/game/objects/mob_spawner.dm	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 init_lines	code/game/objects/structures/artstuff.dm	reset_grid()
-init_lines	code/game/objects/structures/artstuff.dm	desc += " (Canvas size is [width]x[height].)"
 init_lines	code/game/objects/structures/artstuff.dm	color_drop = image(icon, null, "brush_color")
 init_lines	code/game/objects/structures/artstuff.dm	color_drop.color = selected_color
 init_lines	code/game/objects/structures/artstuff.dm	if(persistence_id)
@@ -1636,9 +1625,7 @@ init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_clo
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	owner_picture = image(I, pixel_x = (32 - I.Width()))
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	spent(I)
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	var/mob/living/L = statue_of
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	var/found_target = FALSE
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	found_target = TRUE
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(L?.buckled_to())
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	var/atom/movable/_tmp_buck_9 = L?.buckled_to()
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	_tmp_buck_9.unbuckle_mob(L, TRUE)
@@ -1660,11 +1647,8 @@ init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	else if
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	name = "statue of a corgi"
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	statue_shape = "corgi"
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	desc = "If it takes forever, I will wait for you..."
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(!found_target) //meaning if the statue didn't find a valid target
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(statue_shape)
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	changed(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	release_delay = timer * 2 SECONDS // the old countdown: one per 2 s step (after_init())
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	for(var/obj/I in src.loc)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	if(I.density || I.anchored || I == src || !I.simulated)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	continue

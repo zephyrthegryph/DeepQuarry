@@ -65,10 +65,13 @@ CAPABILITIES(/obj/structure/easel)
 	pixel_x = 10
 	pixel_y = 9
 
+/// The description gives the canvas size (derives(), at init).
+/obj/item/canvas/proc/sized_desc()
+	return "[desc] (Canvas size is [width]x[height].)"
+
 /obj/item/canvas/Initialize(mapload)
 	. = ..()
 	reset_grid()
-	desc += " (Canvas size is [width]x[height].)"
 
 /obj/item/canvas/proc/reset_grid()
 	grid = new/list(width,height)
@@ -103,6 +106,7 @@ CAPABILITIES(/obj/item/canvas)
 		asks(/datum/prompt/color, fields = list("title" = "Base Color", "question" = "Select a base color for the canvas:", "default" = "canvas_color", "timeout" = 0), step = "colour", when = PROC_REF(fill_confirmed)),
 		then(PROC_REF(base_color_chosen)))
 	op("paint_open", item(/obj/item), stance(I_HELP), label("Paint"), then(PROC_REF(interaction_paint)))
+	derives(nameof(desc), PROC_REF(sized_desc))
 
 MSG_DEF_SELF(canvas/finished, "The painting is finished.")
 

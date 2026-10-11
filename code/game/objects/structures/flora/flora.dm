@@ -43,6 +43,10 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 /obj/structure/flora/proc/roll_scale_y(datum/roller/R)
 	return randomize_size ? R.number(min_y_scale * 100, max_y_scale * 100) / 100 : icon_scale_y
 
+/// Its own setup (setup()): it takes the scale it rolled.
+/obj/structure/flora/proc/apply_rolled_scale()
+	update_transform()
+
 /// Rolled before init (rolls()): how many harvests it gives. A negative min_harvests weighs it toward none.
 /obj/structure/flora/proc/roll_harvests(datum/roller/R)
 	return max(0, R.number(min_harvests, max_harvests))
@@ -67,7 +71,7 @@ CAPABILITIES(/obj/structure/flora)
 	rolls(nameof(icon_scale_x), PROC_REF(roll_scale_x))
 	rolls(nameof(icon_scale_y), PROC_REF(roll_scale_y))
 	rolls(nameof(max_harvests), PROC_REF(roll_harvests), when = nameof(randomize_harvest_count))
-	setup(PROC_REF(update_transform)) // its rolled scale
+	setup(PROC_REF(apply_rolled_scale))
 
 MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 
