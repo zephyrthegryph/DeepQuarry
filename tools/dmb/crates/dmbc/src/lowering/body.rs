@@ -388,7 +388,16 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             ),
         }
     };
-    let code = super::grammar::append(code, statements.as_deref()).map_err(|errors| {
+    let code = super::grammar::append(code, statements.as_deref()).map_err(|mut errors| {
+        for error in &mut errors {
+            if let Some(anchor) = error.primary_anchor {
+                error.primary_anchor = Some(super::error_anchor::parser_current(
+                    anchor,
+                    statements.as_deref(),
+                    error.span,
+                ));
+            }
+        }
         if let Some(capture) = capture {
             let relative = errors
                 .iter()

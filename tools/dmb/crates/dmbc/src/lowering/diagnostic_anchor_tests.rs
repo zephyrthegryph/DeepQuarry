@@ -172,3 +172,72 @@ fn pair_failure_cursor_receipts_rebind_current_source_and_reject_out_of_body() {
         .is_none());
     }
 }
+
+#[test]
+fn inline_pair_cursor_uses_current_parser_body_instead_of_include_return() {
+    let source =
+        include_str!("../../../../fixtures/native/loop_local_diagnostics/pair_value_inline.dm");
+    let mut previous = None;
+    for shift in [0, 3] {
+        let frontend = dm_tree::frontend::build(
+            std::path::Path::new("cursor.dme"),
+            &Source("\n".repeat(shift) + source),
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let body = &frontend.bodies[0];
+        let arena = dm_tree::frontend::BodyArena::new_typed(
+            &frontend,
+            dm_codegen_byond::typed_statements_supported,
+        );
+        let (error, statement_body) = arena
+            .with_parsed(body, |parsed| {
+                let statements = parsed.shared_statement_body().unwrap();
+                let error = dm_codegen_byond::compile_statement_view_with_resolver(
+                    statements.view(),
+                    &Default::default(),
+                    frontend.snapshot.tree.symbols(),
+                    frontend.snapshot.tree.as_ref(),
+                    None,
+                )
+                .err()
+                .expect("the issued inline loop must reject the duplicate binding")
+                .remove(0);
+                (error, statements)
+            })
+            .unwrap();
+        let issued = error.primary_anchor.unwrap();
+        let corrected = error_anchor::parser_current(issued, Some(&statement_body), error.span);
+        assert!(matches!(
+            corrected,
+            dm_codegen_byond::DiagnosticAnchor::AtOffset(_)
+        ));
+        let current = error_anchor::bind(&frontend, body, corrected, false).unwrap();
+        assert_eq!(current.line, 3 + shift);
+        assert_eq!(current.semantic_path.as_ref(), "probe.dm");
+        assert_eq!(current.include_occurrence, body.source.include_occurrence);
+        let relative = error_anchor::relative(corrected, body).unwrap();
+        if let Some(previous) = previous {
+            let replay = error_anchor::bind(&frontend, body, previous, true).unwrap();
+            assert_eq!(replay.span, current.span);
+            assert_eq!(replay.semantic_path, current.semantic_path);
+            assert_eq!(replay.line, current.line);
+            assert_eq!(replay.include_occurrence, current.include_occurrence);
+            assert_eq!(replay.include_chain, current.include_chain);
+        }
+        let wire = dm_wire::encode(0x0300_0001, &relative).unwrap();
+        let restored = dm_wire::decode(0x0300_0001, &wire, wire.len()).unwrap();
+        let restored = error_anchor::bind(&frontend, body, restored, true).unwrap();
+        assert_eq!(restored.span, current.span);
+        assert_eq!(restored.semantic_path, current.semantic_path);
+        assert_eq!(restored.line, current.line);
+        assert_eq!(restored.include_occurrence, current.include_occurrence);
+        assert_eq!(restored.include_chain, current.include_chain);
+        assert_eq!(
+            error_anchor::parser_current(issued, Some(&statement_body), None),
+            issued
+        );
+        previous = Some(relative);
+    }
+}

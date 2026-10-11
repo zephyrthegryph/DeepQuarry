@@ -79,7 +79,7 @@ pub fn termination_after_with_context(
         crate::LexerLookahead::Token(token) => {
             if matches!(
                 context(token.span.start),
-                Some(ItemKind::Proc | ItemKind::Verb | ItemKind::Type)
+                Some(ItemKind::Proc | ItemKind::Verb | ItemKind::Type | ItemKind::Var)
             ) {
                 BodyTermination::DeclarationBoundary
             } else {
@@ -111,6 +111,14 @@ mod tests {
             (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_pair_semicolon.dm"), BodyTermination::ExplicitEmpty),
             (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_pair_dedented_return.dm"), BodyTermination::FollowingStatement),
             (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_pair_next_proc.dm"), BodyTermination::DeclarationBoundary),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_range_eof.dm"), BodyTermination::ExhaustedInput),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_range_semicolon.dm"), BodyTermination::ExplicitEmpty),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_cstyle_eof.dm"), BodyTermination::ExhaustedInput),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_cstyle_semicolon.dm"), BodyTermination::ExplicitEmpty),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_each_global_boundary.dm"), BodyTermination::DeclarationBoundary),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_pair_global_boundary.dm"), BodyTermination::DeclarationBoundary),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_each_absolute_global_boundary.dm"), BodyTermination::DeclarationBoundary),
+            (include_str!("../../../fixtures/native/loop_local_diagnostics/bodyless_pair_absolute_global_boundary.dm"), BodyTermination::DeclarationBoundary),
         ] {
             let parsed = crate::parse(source);
             let context = |offset| parsed.items.iter().find(|item| item.header_span.start == offset).map(|item| item.kind);

@@ -271,6 +271,8 @@ fn identical_body_bytes_cannot_replay_across_pending_body_context_change() {
     for suffix in [
         "\n/datum/proc/after()\n    return 1",
         "\n/datum/after\n    var/value = 1",
+        "\nvar/global/after = 7",
+        "\n/var/global/after = 7",
     ] {
         let declaration = make(suffix);
         let key = CurrentKey::new(&declaration, &declaration.bodies[0], 73, false, false).unwrap();
@@ -291,5 +293,44 @@ fn identical_body_bytes_cannot_replay_across_pending_body_context_change() {
                 );
             })
             .unwrap();
+    }
+}
+
+#[test]
+fn observed_range_cstyle_and_global_boundaries_share_current_key_and_grammar_receipt() {
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, path: &std::path::Path) -> Result<String, String> {
+            if path.extension().is_some_and(|extension| extension == "dme") {
+                Ok("#include \"probe.dm\"\n".into())
+            } else {
+                Ok(self.0.into())
+            }
+        }
+    }
+    use dm_syntax::BodyTermination::{DeclarationBoundary, ExhaustedInput, ExplicitEmpty};
+    for (source, expected) in [
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_range_eof.dm"), ExhaustedInput),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_range_semicolon.dm"), ExplicitEmpty),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_cstyle_eof.dm"), ExhaustedInput),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_cstyle_semicolon.dm"), ExplicitEmpty),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_each_global_boundary.dm"), DeclarationBoundary),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_pair_global_boundary.dm"), DeclarationBoundary),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_each_absolute_global_boundary.dm"), DeclarationBoundary),
+        (include_str!("../../../../fixtures/native/loop_local_diagnostics/bodyless_pair_absolute_global_boundary.dm"), DeclarationBoundary),
+    ] {
+        let frontend = dm_tree::frontend::build(std::path::Path::new("project.dme"),
+            &Source(source), &Default::default(), 1).unwrap();
+        let body = &frontend.bodies[0];
+        let key = CurrentKey::new(&frontend, body, 73, false, false).unwrap();
+        assert_eq!(key.termination, expected.canonical_tag());
+        let arena = dm_tree::frontend::BodyArena::new_typed(&frontend,
+            dm_codegen_byond::typed_statements_supported);
+        arena.with_parsed(body, |parsed| {
+            let statements = parsed.shared_statement_body().unwrap();
+            let receipt = &statements.parsed().pending_bodies[0];
+            assert_eq!(receipt.termination, expected);
+            assert_eq!(receipt.missing_body(), expected != ExplicitEmpty);
+        }).unwrap();
     }
 }

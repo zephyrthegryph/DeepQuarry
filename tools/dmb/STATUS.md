@@ -1121,3 +1121,68 @@ New symbol-only semantic owner reuse, common binary EOF wording, and filtered it
 - Full suite completion, new-generation paired diagnostics, fresh-vs-incremental
   real-game output gates, six-worktree acceptance and formal runtime baseline
   remain open. No new accepted end-to-end performance measurements this cohort.
+
+
+## 2026-10-11 continued correctness and retained-pipeline work
+
+Immutable compiler d105b4c75a built successfully in 286.60 seconds under a
+300-second watchdog, Cargo -j1 and a 4 GB owned Job. Peak aggregate Job commit
+was 1.367 GB; all owned children were reaped. This was the prototype build
+profile (dmbc O0, dm-tree O1), not an accepted performance measurement. Binary:
+E:/dq-cache/dmb-native-v2/frozen-build/20261010-223153-aab13a06.exe
+SHA256: 6cdc14ecd339ad81baa53be83fc775a42ab652d70e5ca92d4c232a884c6777d8.
+
+The all-tier native completed prefix is 21/63 batches, 692 PASS and one shared
+ID-card lifecycle failure; no runtimes in the completed prefix. All 693 result
+rows (including framework rows) match the corresponding BYOND prefix in
+status, message and runtime fields. Interrupted batches are excluded. This
+is diagnostic prefix evidence, not completed full-suite acceptance. Checkpoint
+21 preserves the exact old cf9552 compiler/output pair for safe continuation.
+
+The bodyless-loop runtime corpus matched pinned BYOND in all 16 controls with
+no runtimes using the old cf9552 compiler. New d105b4 source changes still
+require their own paired output/runtime evidence. The loop compile-only roster
+now includes eight further range/C-style and global-variable boundary controls;
+the default roster remains unchanged. New variable-boundary cache checks and
+a 14-revision retained runtime contract are undergoing focused validation.
+
+A read-only linker audit confirmed assignment reuse retains current content
+and runs current spelling/content/slot collision checks. Whole-inventory map
+construction and cross-contribution validation still remain global work. A
+separate audit found unknown identifiers still have conservative unsupported
+classification when exhaustive intrinsic-name coverage cannot be proven; the
+current catalog is explicitly an exclusion inventory, not a complete BYOND
+namespace. No blanket source-error reclassification was introduced.
+
+
+Focused retained/runtime capture d6efec759d8142f7ac48cbec55707aee completed
+all 14 revisions with immutable d105b4c75a and pinned BYOND516.1687: independent
+BYOND, retained native and fresh native runtime markers match declared values,
+no runtime errors, and every retained DMB/RSC equals the fresh bytes. This adds
+parent change/restore and runtime list initializer replacement/removal evidence
+to body/default/proc/var/resource coverage. Sampled registered private peak
+79.6 MB, owned daemon reaped. The prior attempt rejected invalid fixture
+text2num declaration on BYOND; it is preserved as an invalid-source attempt,
+not a native bug or a passed revision. Source/runtime fixture commit7004910a83.
+
+Eight include-return/EOF diagnostics now exactly match BYOND with d105b4c75a
+(receipt a1900eea62fe4ef5b754d0934a3f1113). The 38-loop corpus matches acceptance
+and rejection classification in all cases, with 37 exact diagnostic matches
+(receipt66321f275d0948189958b50788a134e7). Inline pair duplicate location remains
+one diagnostic gap; parser-issued inline cursor correction is in validation,
+with failure schema16 and ProcedureVersion22 preventing old coordinate replay.
+
+Six-root asymmetric edit assignment now uses the existing runner and daemon;
+seven pure policy tests pass, commit ec918de64d. Partial body/proc edits with
+other roots unchanged are isolation probes only, not completed six-worktree
+acceptance. Actual six-worktree runtime/byte acceptance remains open.
+
+An initial bounded Rust build timed out at300s and was reaped. Reducing only
+dmbc test debug info and using256 codegen units let the next -j1 build pass
+in188.58s, peak aggregate Job commit2.392GB. Pending-body and five current-key
+checks pass. The new inline cursor test needed its typed-statement route fixed;
+final validation is pending. These are build/check times, not DM compilation
+benchmarks. Undefined ordinary globals remain a confirmed classification gap:
+seven of eight finite name controls agree; unknown_global still native70 vs
+BYOND source error (receipt498a4e535a0a4a92b3805eefebbf504b). A qualified ordinary
+global absence policy through the existing issuer is being implemented.
