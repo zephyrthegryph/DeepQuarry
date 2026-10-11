@@ -258,7 +258,7 @@ GLOBAL_REAL_VAR(list/lifeform_watch_keys)
 /// `key` of E was written: each form that follows it reacts now (a re-key, a retune, a recompute, a scope check). Synchronous: the reaction is
 /// part of the write, so a registry lookup on the next line sees the new key.
 /proc/lifeform_published(datum/E, key)
-	if(!lifeform_watch_keys?[key] || QDELING(E))
+	if(!lifeform_watch_keys?[key] || QDELING(E) || param_writing)
 		return
 	var/datum/type_table/T = type_table_cache()[E.type]
 	if(!T || !(T.hook_flags & ENGINE_HOOK_LIFEFORMS))

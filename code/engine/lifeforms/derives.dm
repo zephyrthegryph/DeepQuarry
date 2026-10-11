@@ -14,7 +14,8 @@
 //
 // derives(target, PROC_REF(x), from = list(nameof(a), ...)) keeps `target` equal to x() of the holder: computed at init, recomputed when a var
 // in `from` is written (each must publish its writes: TRACKED or a setter calling tracked_changed()), and published itself, so another derives
-// or an on_change can read it. x() is pure: it reads the holder and answers the value.
+// or an on_change can read it. x() is pure: it reads the holder and answers the value. It is called x(target), so one proc may serve several
+// targets. With no `from`, it is computed once, at init, after the declared children exist: a starting value that depends on one.
 
 /proc/starts_as(state)
 	return entry_make(ENTRY_STARTS_AS, "starts_as:[state]", list("state" = state))
@@ -100,7 +101,7 @@ GLOBAL_LIST_EMPTY(derives_running)
 	LAZYSET(GLOB.derives_running, holder, TRUE)
 	var/value
 	try
-		value = call(holder, E.args["proc"])()
+		value = call(holder, E.args["proc"])(target) // x(target): one proc may compute several targets
 	catch(var/exception/e)
 		stack_trace("derives([target]) on [holder.type]: [e] ([e.file]:[e.line])")
 		LAZYREMOVE(GLOB.derives_running, holder)

@@ -112,16 +112,6 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	remove_language(LANGUAGE_ROBOT_TALK)
 	add_language(LANGUAGE_ROBOT_TALK, 0)
 	add_language(LANGUAGE_DRONE_TALK, 1)
-	serial_number = rand(0,999)
-
-	grant(src, drone_shell(), src)
-	grant(src, drone_mail(), src)
-
-	if(can_pick_shell)
-		var/random = pick(shell_types)
-		icon_state = shell_types[random] // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-		set_shell_accessories(list("[icon_state]-eyes-blue"))
-
 	updatename()
 
 /mob/living/silicon/robot/drone/setup_camera()
@@ -239,10 +229,23 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	rolls(nameof(serial_number), range_of(0, 999))
+	// a drone that may pick its shell starts in a random one, its eyes to match
+	rolls(nameof(icon_state), PROC_REF(roll_shell), when = nameof(can_pick_shell))
+	rolls(nameof(shell_accessories), PROC_REF(roll_shell), from = list(nameof(icon_state)), when = nameof(can_pick_shell))
+	drone_shell()
+	drone_mail()
 	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_PART + 1), wait(0), needs(req(PROC_REF(sealed_refusal)))) // ahead of the chassis pry: a drone is sealed
+
+/// Its shell and the eyes that go with it (rolls()).
+/mob/living/silicon/robot/drone/proc/roll_shell(datum/roller/R, target)
+	if(target == "shell_accessories")
+		return list("[icon_state]-eyes-blue")
+	var/list/shells = shell_types
+	return shells[R.choose(shells)]
 
 /// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
 /mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)

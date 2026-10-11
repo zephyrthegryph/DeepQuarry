@@ -29,12 +29,9 @@
 	. = ..()
 	updateVisibility(src)
 
-/obj/structure/Initialize(mapload)
+/// Freelook nets see the structure come, when it is placed in the world (either init path).
+/obj/structure/on_materialize()
 	. = ..()
-	updateVisibility(src)
-
-/obj/structure/table_initialize()
-	..()
 	updateVisibility(src)
 
 // EFFECTS
@@ -48,12 +45,9 @@
 		log_world("LIFECYCLE_TRACE: [type] /obj/effect dematerialize: parent returned, updating visibility")
 	updateVisibility(src)
 
-/obj/effect/Initialize(mapload)
+/// Freelook nets see the effect come, when it is placed in the world (either init path).
+/obj/effect/on_materialize()
 	. = ..()
-	updateVisibility(src)
-
-/obj/effect/table_initialize()
-	..()
 	updateVisibility(src)
 
 // DOORS
