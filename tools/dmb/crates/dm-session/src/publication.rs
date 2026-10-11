@@ -34,6 +34,16 @@ impl<L> ArtifactPublication<L> {
     pub fn begin(self: &Arc<Self>, pending: L) -> ArtifactAttempt<L> {
         let generation = ArtifactGeneration(Arc::new(()));
         self.state.lock().unwrap_or_else(|e| e.into_inner()).latest = Some(generation.clone());
+        self.attempt(pending, generation)
+    }
+
+    /// Analysis may claim reusable values without superseding a build or
+    /// publishing a partial program roster.
+    pub fn begin_ephemeral(self: &Arc<Self>, pending: L) -> ArtifactAttempt<L> {
+        self.attempt(pending, ArtifactGeneration(Arc::new(())))
+    }
+
+    fn attempt(self: &Arc<Self>, pending: L, generation: ArtifactGeneration) -> ArtifactAttempt<L> {
         ArtifactAttempt {
             owner: Arc::clone(self),
             generation,
@@ -173,5 +183,17 @@ mod tests {
         drop(first);
         drop(owner);
         assert_eq!(drops.load(Ordering::Relaxed), 4);
+    }
+
+    #[test]
+    fn analysis_cannot_supersede_or_publish_a_build_roster() {
+        let owner = Arc::new(ArtifactPublication::default());
+        let build = owner.begin(17);
+        let analysis = owner.begin_ephemeral(29);
+        assert_eq!(analysis.with_pending(|value| *value), Some(29));
+        assert!(build.is_latest());
+        assert!(!analysis.publish_successful());
+        assert!(build.publish_successful());
+        assert_eq!(owner.with_published(|value| *value), Some(17));
     }
 }
