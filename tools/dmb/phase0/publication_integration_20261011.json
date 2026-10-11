@@ -617,6 +617,8 @@
     "cohort_failure": "code/modules/reagents/machinery/grinder.dm:138 .proc/puny_protons undefined type path; current source defines global /proc/puny_protons, relative reflection lacks global fallback",
     "folded_paired_receipt": "E:/dq-cache/dmb-folded-source-features/20261011-84677b/e379f65e0ae14ed887ef56d9f322b2e2/receipt.json",
     "modified_paired_receipt": "E:/dq-cache/dmb-modified-source-features/20261011-84677b/6dbf611c24404b0cbae8bb1ef7be10a9/receipt.json",
-    "paired_exact_diagnostic_cases": 22
+    "paired_exact_diagnostic_cases": 22,
+    "compile_error_paired_receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-84677b/a9972ed633b64010819dbb788b1a7511/receipt.json",
+    "compile_error_exact_cases": 18
   }
 }
