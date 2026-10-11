@@ -4645,3 +4645,7 @@ mapper can notice:
 * **The macrophage's** disease bonus to endurance and damage is computed once its disease exists (`derives()`).
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
+
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).

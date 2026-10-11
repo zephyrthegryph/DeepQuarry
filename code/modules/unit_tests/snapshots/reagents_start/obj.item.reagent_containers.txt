@@ -104,6 +104,8 @@
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_a vol=120 holder=/datum/reagents condensedcapsaicin=40,phosphorus=40,potassium=40
 /obj/item/reagent_containers/glass/beaker/large/grenade_fill_teargas_b vol=120 holder=/datum/reagents condensedcapsaicin=80,sugar=40
 /obj/item/reagent_containers/glass/beaker/large/borg vol=120 holder=/datum/reagents 
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_a vol=60 holder=/datum/reagents miasma=30,potassium=5
+/obj/item/reagent_containers/glass/beaker/grenade_fill_miasma_b vol=60 holder=/datum/reagents phosphorus=5,sugar=5
 /obj/item/reagent_containers/glass/beaker/noreact vol=60 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/bluespace vol=300 holder=/datum/reagents 
 /obj/item/reagent_containers/glass/beaker/bluespace/grenade_fill_frost_a vol=300 holder=/datum/reagents cryoslurry=150,potassium=150
