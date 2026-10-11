@@ -82,3 +82,68 @@ fn unbound_pool_refuses_jobs_outside_a_bracket() {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| executor.scope(|_| ()))).is_err()
     );
 }
+
+thread_local! { static CUSTOM_CONTEXT: std::cell::Cell<u32> = const { std::cell::Cell::new(0) }; }
+struct CustomGuard;
+impl Drop for CustomGuard {
+    fn drop(&mut self) {
+        CUSTOM_CONTEXT.with(|value| value.set(0));
+    }
+}
+#[test]
+fn custom_worker_context_rebinds_after_panic_and_entry_failure() {
+    let mut executor = BuildExecutor::new_unbound(2).unwrap();
+    for (value, panics) in [(1, false), (2, true), (3, false)] {
+        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            executor
+                .with_request_context(
+                    None,
+                    || {
+                        CUSTOM_CONTEXT.with(|current| {
+                            assert_eq!(current.get(), 0);
+                            current.set(value);
+                        });
+                        Ok(CustomGuard)
+                    },
+                    |executor| {
+                        assert_eq!(CUSTOM_CONTEXT.with(|current| current.get()), 0);
+                        executor.scope(|scope| {
+                            scope.spawn(|_| {
+                                assert_eq!(CUSTOM_CONTEXT.with(|current| current.get()), value);
+                                if panics {
+                                    panic!("owned worker context unwind");
+                                }
+                            })
+                        });
+                    },
+                )
+                .unwrap();
+        }));
+        assert_eq!(outcome.is_err(), panics);
+    }
+    assert!(executor
+        .with_request_context(
+            None,
+            || -> Result<CustomGuard, String> { Err("entry declined".into()) },
+            |_| panic!("must not run")
+        )
+        .is_err());
+    assert!(executor
+        .with_request_context(
+            None,
+            || -> Result<CustomGuard, String> { panic!("entry panic") },
+            |_| panic!("must not run")
+        )
+        .is_err());
+    executor
+        .with_request(None, |executor| {
+            assert!(executor
+                .pool
+                .as_ref()
+                .unwrap()
+                .broadcast(|_| CUSTOM_CONTEXT.with(|current| current.get()) == 0)
+                .into_iter()
+                .all(|clean| clean));
+        })
+        .unwrap();
+}

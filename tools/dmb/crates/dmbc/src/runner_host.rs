@@ -632,15 +632,19 @@ impl HostExecution<'_> {
         self,
         operation: impl FnOnce(&dm_exec::BuildExecutor) -> R,
     ) -> Result<R, dm_exec::RequestError> {
+        let control = crate::daemon::control::WorkerContext::capture();
+        let enter = || -> Result<_, String> { Ok(control.as_ref().map(|context| context.enter())) };
         match self {
             Self::Leased(mut lease) => {
                 let request = dm_profile::RequestContext::capture();
-                lease.executor().with_request(request.as_ref(), operation)
+                lease
+                    .executor()
+                    .with_request_context(request.as_ref(), enter, operation)
             }
-            Self::OneShot(executor) => Ok(operation(&executor)),
+            Self::OneShot(mut executor) => executor.with_request_context(None, enter, operation),
             Self::Retained(executor) => {
                 let request = dm_profile::RequestContext::capture();
-                executor.with_request(request.as_ref(), operation)
+                executor.with_request_context(request.as_ref(), enter, operation)
             }
         }
     }

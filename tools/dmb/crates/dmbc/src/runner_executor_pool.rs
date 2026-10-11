@@ -58,7 +58,10 @@ impl ExecutorPools {
         self: &Arc<Self>,
         workers: usize,
     ) -> Result<ExecutorLease, Box<dyn std::error::Error>> {
-        self.checkout_until(workers, Instant::now() + Duration::from_secs(600))
+        let normal = Instant::now() + Duration::from_secs(600);
+        let deadline = crate::daemon::control::current_deadline()
+            .map_or(normal, |deadline| deadline.min(normal));
+        self.checkout_until(workers, deadline)
     }
     fn checkout_until(
         self: &Arc<Self>,

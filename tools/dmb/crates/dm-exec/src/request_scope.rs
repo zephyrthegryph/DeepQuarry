@@ -2,6 +2,7 @@
 use super::BuildExecutor;
 use dm_profile::{RequestContext, RequestContextGuard, WorkerLifetime};
 use std::{
+    any::Any,
     cell::RefCell,
     sync::atomic::{AtomicU64, Ordering},
 };
@@ -10,11 +11,13 @@ pub(super) fn identity() -> u64 {
     NEXT_ID.fetch_add(1, Ordering::Relaxed)
 }
 struct WorkerBinding {
+    external: Option<Box<dyn Any>>,
     lifetime: Option<WorkerLifetime>,
     context: Option<RequestContextGuard>,
 }
 impl Drop for WorkerBinding {
     fn drop(&mut self) {
+        self.external.take();
         self.lifetime.take();
         self.context.take();
     }
@@ -65,13 +68,35 @@ impl BuildExecutor {
                 "request brackets require an unbound executor".into(),
             ));
         }
+        self.with_request_context(request, || Ok(()), operation)
+    }
+
+    /// Installs a caller-owned context on each physical worker for this bracket.
+    /// Guards are constructed and destroyed on their worker, including on unwind.
+    /// Entry failures or panics decline the entire bracket and release admitted guards.
+    pub fn with_request_context<F, R, E, G>(
+        &mut self,
+        request: Option<&RequestContext>,
+        enter: E,
+        operation: F,
+    ) -> Result<R, RequestError>
+    where
+        F: FnOnce(&BuildExecutor) -> R,
+        E: Fn() -> Result<G, String> + Sync,
+        G: 'static,
+    {
+        if !self.unbound && request.is_some() {
+            return Err(RequestError(
+                "bound executor already owns its profiling context".into(),
+            ));
+        }
         let pool = self.pool.as_ref().expect("live executor");
         if pool.current_thread_index().is_some() {
             return Err(RequestError(
                 "request bracket cannot start on its own worker".into(),
             ));
         }
-        if request.is_none() && RequestContext::capture().is_some() {
+        if self.unbound && request.is_none() && RequestContext::capture().is_some() {
             return Err(RequestError(
                 "active profiling request requires an explicit request token".into(),
             ));
@@ -86,12 +111,20 @@ impl BuildExecutor {
                 if !bindings.borrow().is_empty() {
                     return Err("worker already belongs to a request bracket".into());
                 }
+                let guard = std::panic::catch_unwind(std::panic::AssertUnwindSafe(&enter))
+                    .map_err(|_| "worker request context entry panicked".to_owned())??;
+                let external = Some(Box::new(guard) as Box<dyn Any>);
                 let context = request.map(RequestContext::enter).transpose()?;
                 let lifetime =
                     request.map(|_| dm_profile::worker_lifetime("compiler.worker_lifetime"));
-                bindings
-                    .borrow_mut()
-                    .push((id, WorkerBinding { lifetime, context }));
+                bindings.borrow_mut().push((
+                    id,
+                    WorkerBinding {
+                        external,
+                        lifetime,
+                        context,
+                    },
+                ));
                 Ok(())
             })
         });

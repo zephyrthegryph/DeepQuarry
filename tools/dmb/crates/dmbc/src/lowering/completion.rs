@@ -165,6 +165,16 @@ pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T:
                                 slice
                                     .iter()
                                     .map(|(body, prepared_body)| {
+                                        if let Err(error) = crate::daemon::control::checkpoint() {
+                                            return Err(vec![LoweringDiagnostic {
+                                                related: Vec::new(),
+                                                kind: DiagnosticKind::Internal,
+                                                identity: None,
+                                                origin: body.source.clone(),
+                                                message: error.to_string(),
+                                            }]);
+                                        }
+
                                         memo::lower_one_input(
                                             frontend,
                                             body,

@@ -150,6 +150,7 @@ pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
         Ok(diagnostics) => diagnostics,
         Err(crate::selected_query::VisitFailure::Visitor(error)) => return Err(error),
         Err(crate::selected_query::VisitFailure::Admission(diagnostics)) => {
+            crate::daemon::control::checkpoint()?;
             write_diagnostics(&diagnostics, writer)?;
             writer.flush()?;
             return Err(crate::request_failure::RequestFailure::internal(

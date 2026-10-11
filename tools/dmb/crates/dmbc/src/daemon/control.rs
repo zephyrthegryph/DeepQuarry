@@ -23,7 +23,7 @@ impl Cancellation {
     }
 }
 thread_local! {static ACTIVE:RefCell<Option<(Cancellation,bool,Option<Instant>)>>=const{RefCell::new(None)};}
-pub(super) struct Binding;
+pub(crate) struct Binding;
 pub(super) fn bind(token: Cancellation) -> Binding {
     bind_inner(token, None)
 }
@@ -36,6 +36,38 @@ fn bind_inner(token: Cancellation, deadline: Option<Instant>) -> Binding {
         *active.borrow_mut() = Some((token, false, deadline));
     });
     Binding
+}
+#[derive(Clone)]
+pub(crate) struct WorkerContext {
+    token: Cancellation,
+    deadline: Option<Instant>,
+}
+impl WorkerContext {
+    pub(crate) fn capture() -> Option<Self> {
+        ACTIVE.with(|active| {
+            active
+                .borrow()
+                .as_ref()
+                .map(|(token, publishing, deadline)| {
+                    assert!(!publishing, "workers cannot start during publication");
+                    Self {
+                        token: token.clone(),
+                        deadline: *deadline,
+                    }
+                })
+        })
+    }
+    pub(crate) fn enter(&self) -> Binding {
+        bind_inner(self.token.clone(), self.deadline)
+    }
+}
+pub(crate) fn current_deadline() -> Option<Instant> {
+    ACTIVE.with(|active| {
+        active
+            .borrow()
+            .as_ref()
+            .and_then(|(_, _, deadline)| *deadline)
+    })
 }
 impl Drop for Binding {
     fn drop(&mut self) {
@@ -91,6 +123,31 @@ pub fn begin_publication() -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn worker_context_shares_cancellation_and_restores_worker_tls() {
+        let token = Cancellation::default();
+        let deadline = Instant::now() + std::time::Duration::from_secs(300);
+        let binding = bind_with_deadline(token.clone(), deadline);
+        let context = WorkerContext::capture().unwrap();
+        std::thread::scope(|scope| {
+            scope.spawn(|| {
+                let worker = context.enter();
+                assert_eq!(current_deadline(), Some(deadline));
+                checkpoint().unwrap();
+                token.cancel();
+                assert_eq!(
+                    checkpoint().unwrap_err().kind(),
+                    std::io::ErrorKind::Interrupted
+                );
+                drop(worker);
+                assert!(current_deadline().is_none());
+                checkpoint().unwrap();
+            });
+        });
+        assert!(checkpoint().is_err());
+        drop(binding);
+        checkpoint().unwrap();
+    }
     #[test]
     fn query_deadline_is_cooperative_and_binding_is_request_local() {
         let now = Instant::now();
