@@ -14,7 +14,8 @@ EXPECTED = [
     "DQ_CALL safe_known 11", "DQ_CALL safe_null 1", "DQ_CALL colon_verb 23",
     "DQ_CALL typed_verb 23", "DQ_CALL self_verb 23", "DQ_CALL catch_number 42",
     "DQ_CALL catch_exception 1", "DQ_CALL explicit_array_methods 18",
-    "DQ_CALL implicit_array_methods 16", "DQ_CALL finished",
+    "DQ_CALL implicit_array_methods 16", "DQ_CALL field_array_methods 10",
+    "DQ_CALL finished",
 ]
 
 

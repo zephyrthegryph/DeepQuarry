@@ -34,6 +34,12 @@
     value.Add(13)
     var/list/copied = value.Copy()
     return length(copied) + copied[3]
+/datum/callable_field_array
+    var/items[2]
+/datum/callable_field_array/proc/field_array_methods()
+    items.Add(7)
+    var/list/copied = items.Copy()
+    return length(copied) + copied[3]
 /world/New()
     ..()
     world.log << file2text(callable_fixture_resource)
@@ -54,5 +60,7 @@
     world.log << "DQ_CALL catch_exception [catch_exception()]"
     world.log << "DQ_CALL explicit_array_methods [explicit_array_methods()]"
     world.log << "DQ_CALL implicit_array_methods [implicit_array_methods()]"
+    var/datum/callable_field_array/field_receiver = new
+    world.log << "DQ_CALL field_array_methods [field_receiver.field_array_methods()]"
     world.log << "DQ_CALL finished"
     shutdown()
