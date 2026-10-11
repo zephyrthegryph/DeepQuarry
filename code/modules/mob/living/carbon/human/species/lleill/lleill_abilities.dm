@@ -75,7 +75,7 @@
 
 	cooldown_start(src, last_special, 5 SECONDS)
 
-	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	open_request(src, /datum/prompt/color, PROC_REF(lleill_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/lleill_colour_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -84,12 +84,8 @@
 
 /mob/living/carbon/human/proc/lleill_set_colour(new_skin)
 
-	r_skin =   hex2num(copytext(new_skin, 2, 4))
-	g_skin =   hex2num(copytext(new_skin, 4, 6))
-	b_skin =   hex2num(copytext(new_skin, 6, 8))
-	r_synth = r_skin
-	g_synth = g_skin
-	b_synth = b_skin
+	looks.set_skin_color(new_skin)
+	looks.set_synth_color_rgb(looks.skin_color)
 
 	for(var/obj/item/organ/external/E in organs)
 		E.sync_colour_to_human(src)
@@ -343,11 +339,11 @@ CAPABILITIES(/datum/prompt/choice/lleill_transmute)
 	anim(S,src,'icons/mob/mob.dmi',,"phasein",,src.dir)
 
 	//Would be fun to eat people standing on your ring...
-	if(can_be_drop_pred && vore_selected_of(src))
+	if(vore_prefs.can_be_drop_pred && vore_selected_of(src))
 		var/list/target_list = src.living_mobs(0)
 		if(target_list.len)
 			for(var/mob/living/M in target_list)
-				if(M.devourable && M.can_be_drop_prey)
+				if(M.vore_prefs.devourable && M.vore_prefs.can_be_drop_prey)
 					vore_selected_of(src).nom_atom(M)
 					to_chat(M,span_vwarning("In a bright flash of white light, you suddenly find yourself trapped in \the [src]'s [vore_selected_of(src).get_belly_name()]!"))
 	species.update_lleill_hud(src)

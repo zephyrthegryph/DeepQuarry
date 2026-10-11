@@ -19,7 +19,7 @@
 				continue
 	// Chance to end up in a belly. Fun (:
 	for(var/mob/living/mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(mob.can_be_drop_pred && isfloor(mob.loc))
+		if(mob.vore_prefs.can_be_drop_pred && isfloor(mob.loc))
 			var/turf/simulated/floor/T = get_turf(mob.loc)
 			if(!T.block_tele)
 				if(vore_selected_of(mob))

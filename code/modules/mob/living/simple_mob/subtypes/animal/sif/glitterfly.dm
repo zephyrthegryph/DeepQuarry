@@ -38,7 +38,6 @@
 	endurance = 10
 
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 1
 	melee_damage_upper = 2
@@ -62,6 +61,7 @@
 	say_list_type = /datum/say_list/glitterfly
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/glitterfly)
+	configure(mob_movement(hovering = TRUE))
 	rolls(nameof(color), PROC_REF(roll_colour))
 	rolls(nameof(default_pixel_y), range_of(5, 12))
 	rolls(nameof(pixel_y), PROC_REF(roll_pixel_y), from = list(nameof(default_pixel_y)))

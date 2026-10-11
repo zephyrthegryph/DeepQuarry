@@ -39,6 +39,7 @@ CAPABILITIES(/mob/living/simple_mob/animal)
 	ic_revivable = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ANIMAL))
 	configure(mob_movement(bump = 0))
 //The stuff that would be revivable but that we don't want to be revivable

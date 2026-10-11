@@ -170,7 +170,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		pdachoice = H.pdachoice
+		pdachoice = H.bio.pdachoice
 	else
 		pdachoice = 1
 

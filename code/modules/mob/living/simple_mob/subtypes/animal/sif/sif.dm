@@ -3,11 +3,12 @@
 	minbodytemp = 175
 	cold_resist = 0.75
 	heat_resist = -0.5
-	allow_mind_transfer = TRUE
 
 	tame_items = list(
 	/obj/item/reagent_containers/food/snacks/crabmeat = 20,
 	/obj/item/reagent_containers/food/snacks/meat = 10
 	)
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/sif)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+

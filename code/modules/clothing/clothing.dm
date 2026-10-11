@@ -722,7 +722,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(COOLDOWN_FINISHED(src, recent_squish) && istype(pred))
 		COOLDOWN_START(src, recent_squish, 4 SECONDS)
 		for(var/mob/living/M in contents)
-			if(pred.step_mechanics_pref && M.step_mechanics_pref)
+			if(pred.vore_prefs.step_mechanics_pref && M.vore_prefs.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)
 			else if (prob(1)) // Same old inshoe mechanics
 				var/emote = DEFAULTPICK(inside_emotes, null)
@@ -1410,7 +1410,7 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		var/mob/living/carbon/human/H = user
 
 		// if digitigrade-use flag is set
-		if(H.digitigrade)
+		if(H.looks.digitigrade)
 
 			// Don't reset if already set
 			if(!fit_for_digi)

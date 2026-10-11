@@ -203,7 +203,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 	//Potential phase-in vore
 
-	if(can_be_drop_pred || can_be_drop_prey) //Toggleable in vore panel
+	if(vore_prefs.can_be_drop_pred || vore_prefs.can_be_drop_prey) //Toggleable in vore panel
 		var/list/potentials = living_mobs(0)
 		var/mob/living/our_prey
 		if(potentials.len)

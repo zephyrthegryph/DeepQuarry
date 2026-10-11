@@ -321,7 +321,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	if(istype(W, /obj/item/holder/micro)) //Are you putting a micro in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
-		if(!inserted_mob.allow_spontaneous_tf) //Do they allow TF?
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf) //Do they allow TF?
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD) //Hey medical...
@@ -358,7 +358,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
 		var/mob/living/inserted_mob = the_grab?.grab_target() //Get the mob that is grabbed.
-		if(!inserted_mob.allow_spontaneous_tf)
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD)
@@ -542,7 +542,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	if(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)) //Are you putting a micro/mouse in it?
 		var/obj/item/holder/micro/micro_holder = W
 		var/mob/living/inserted_mob = micro_holder.held_mob //Get the actual mob.
-		if(!inserted_mob.allow_spontaneous_tf) //Do they allow TF?
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf) //Do they allow TF?
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD) //Hey medical...
@@ -579,7 +579,7 @@ CAPABILITIES(/obj/machinery/replicator)
 	else if(istype(W,/obj/item/grab)) //Is someone being shoved into the machine?
 		var/obj/item/grab/the_grab = W
 		var/mob/living/inserted_mob = the_grab?.grab_target() //Get the mob that is grabbed.
-		if(!inserted_mob.allow_spontaneous_tf)
+		if(!inserted_mob.vore_prefs.allow_spontaneous_tf)
 			to_chat(user, span_notice("You cannot put \the [W] into the machine. ((The prefs of the micro forbid this action.))"))
 			return TRUE
 		if(inserted_mob.stat == DEAD)

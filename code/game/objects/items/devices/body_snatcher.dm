@@ -55,7 +55,7 @@
 			to_chat(user,span_warning("A warning pops up on the device, informing you that [M] appears braindead."))
 			return ITEM_INTERACT_FAILURE
 
-		if(!M.allow_mind_transfer)
+		if(!M.vore_prefs.allow_mind_transfer)
 			to_chat(user,span_danger("The target's mind is too complex to be affected!"))
 			return ITEM_INTERACT_FAILURE
 

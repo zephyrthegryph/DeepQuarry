@@ -19,9 +19,9 @@
 	poison_resist = 1.0
 	shock_resist = -0.5
 
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/mechanical)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SYNTHETIC))
 
 /mob/living/simple_mob/mechanical/speech_bubble_appearance()

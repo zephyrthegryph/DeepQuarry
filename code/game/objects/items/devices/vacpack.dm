@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 				I.singularity_pull(target, STAGE_THREE)
 				suckables += I
 			for(var/mob/living/L in oview(pull_range, target))
-				if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey || L == attachment_holder)
 					continue
 				L.singularity_pull(target, STAGE_THREE)
 				suckables += L
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 					continue
 				suckables += I
 			for(var/mob/living/L in target)
-				if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey || L == attachment_holder)
+				if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey || L == attachment_holder)
 					continue
 				if(L.size_multiplier < 0.5 || vac_power >= 6)
 					suckables += L
@@ -275,7 +275,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 	if(isliving(target))
 		var/mob/living/L = target
 		var/valid_to_suck = FALSE
-		if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey)
+		if(L.anchored || !L.vore_prefs.devourable || L == user || L?.buckled_to() || !L.vore_prefs.can_be_drop_prey)
 			return
 		if(vac_power >= 3)
 			if(L.size_multiplier > 0.5 || has_trait(L, TRAIT_AMBIENT_PEST_MOB))
@@ -351,7 +351,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 					return TRUE
 	if(isliving(target)) //quick prefs test. Better safe than sorry
 		var/mob/living/caneat = target
-		if(caneat.devourable && caneat.can_be_drop_prey)
+		if(caneat.vore_prefs.devourable && caneat.vore_prefs.can_be_drop_prey)
 			if(istype(output_atom, /obj/item/storage))//check if a mob holder's gonna fit there!
 				var/obj/item/storage/target_storage = output_atom
 				var/total_storage_space = ITEMSIZE_COST_SMALL

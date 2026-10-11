@@ -411,7 +411,7 @@ CAPABILITIES(/obj/belly)
 		if(living_mob.ai_brain)
 			living_mob.ai_brain.go_sleep()
 		if(reagents.total_volume >= 5)
-			if(digest_mode == DM_DIGEST && living_mob.digestable)
+			if(digest_mode == DM_DIGEST && living_mob.vore_prefs.digestable)
 				reagents.splash_mob(living_mob, reagents.total_volume * 0.1, FALSE)
 			to_chat(living_mob, span_vwarning(span_bold("You splash into a pool of [reagent_name]!")))
 	if(!isliving(thing) && count_items_for_sprite) // If this is enabled also update fullness for non-living things
@@ -505,7 +505,7 @@ CAPABILITIES(/obj/belly)
 	var/privacy_range = world.view
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
-			if(owner.eating_privacy_global)
+			if(owner.vore_prefs.eating_privacy_global)
 				privacy_range = 1
 		if("subtle")
 			privacy_range = 1
@@ -586,7 +586,7 @@ CAPABILITIES(/obj/belly)
 	var/privacy_range = world.view
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
-			if(owner.eating_privacy_global)
+			if(owner.vore_prefs.eating_privacy_global)
 				privacy_range = 1
 		if("subtle")
 			privacy_range = 1
@@ -740,7 +740,7 @@ CAPABILITIES(/obj/belly)
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		if(R.mmi && R.mind && get_mind_host(R.mmi))
-			if((R.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
+			if((R.vore_prefs.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && owner.soulgem && owner.soulgem.flag_check(SOULGEM_ACTIVE | NIF_SC_CATCHING_OTHERS, TRUE))
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.forceMove(src)
@@ -780,8 +780,8 @@ CAPABILITIES(/obj/belly)
 
 	to_chat(M, span_vnotice("[belly_format_string(absorb_messages_prey, M, use_absorbed_count = TRUE)]"))
 	to_chat(owner, span_vnotice("[belly_format_string(absorb_messages_owner, M, use_absorbed_count = TRUE)]"))
-	if(M.noisy) //Mute drained absorbee hunger if enabled.
-		M.noisy = FALSE
+	if(M.vore_prefs.noisy) //Mute drained absorbee hunger if enabled.
+		M.vore_prefs.noisy = FALSE
 
 	if(ishuman(M) && ishuman(owner))
 		var/mob/living/carbon/human/Prey = M
@@ -1022,11 +1022,11 @@ CAPABILITIES(/obj/belly)
 			if(blacklist & autotransfer_flags_list["Digestable Creatures"])
 				if(isliving(prey))
 					var/mob/living/L = prey
-					if(L.digestable) return FALSE
+					if(L.vore_prefs.digestable) return FALSE
 			if(blacklist & autotransfer_flags_list["Absorbable Creatures"])
 				if(isliving(prey))
 					var/mob/living/L = prey
-					if(L.absorbable) return FALSE
+					if(L.vore_prefs.absorbable) return FALSE
 			if(blacklist & autotransfer_flags_list["Full Health"])
 				if(isliving(prey))
 					var/mob/living/L = prey
@@ -1055,11 +1055,11 @@ CAPABILITIES(/obj/belly)
 		if(whitelist & autotransfer_flags_list["Digestable Creatures"])
 			if(isliving(prey))
 				var/mob/living/L = prey
-				if(L.digestable) return TRUE
+				if(L.vore_prefs.digestable) return TRUE
 		if(whitelist & autotransfer_flags_list["Absorbable Creatures"])
 			if(isliving(prey))
 				var/mob/living/L = prey
-				if(L.absorbable) return TRUE
+				if(L.vore_prefs.absorbable) return TRUE
 		if(whitelist & autotransfer_flags_list["Full Health"])
 			if(isliving(prey))
 				var/mob/living/L = prey
@@ -1272,4 +1272,4 @@ CAPABILITIES(/obj/belly)
 
 /// A digesting belly numbs prey who opted out of digestion pain.
 /obj/belly/numbs_pain_of(mob/living/occupant)
-	return !occupant.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)
+	return !occupant.vore_prefs.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)

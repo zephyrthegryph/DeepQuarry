@@ -25,7 +25,9 @@
 
 	say_list_type = /datum/say_list/fennix
 
-	allow_mind_transfer = TRUE
+CAPABILITIES(/mob/living/simple_mob/vore/fennix)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+
 
 /datum/say_list/fennix
 	speak = list("SQUEL!","SQEL?","Skree.")

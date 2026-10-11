@@ -122,8 +122,8 @@ MSG_DEF_SELF(straw/too_little, span_warning("There's not enough of %T% left to s
 	var/reagent_type = sip_reagent_of(victim) || REAGENT_ID_NUTRIMENT
 	act_message(user, victim, MSG_SELF(span_info("You take a sip of %T% with [src]. Yum!")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " sips some of %T% with [src]!")))
-	if(victim.vore_taste)
-		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_taste]!"))
+	if(victim.vore_prefs.vore_taste)
+		to_chat(user, span_infoplain(span_bold("[victim]") + " tastes like... [victim.vore_prefs.vore_taste]!"))
 
 	victim.injure(INJURY_BLUNT, 5, source = src)
 

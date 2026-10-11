@@ -24,7 +24,6 @@
 	endurance = 20
 	movement_cooldown = 2
 	melee_attack_delay = 2 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
 
@@ -33,6 +32,7 @@
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
@@ -43,7 +43,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy)
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = null
 
-	can_be_drop_prey = TRUE
 
 //bluenom
 CAPABILITIES(/mob/living/simple_mob/vore/candy/bluecabold)
@@ -441,7 +440,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=20;bio=100;rad=100" //armor cause boss
 	movement_cooldown = 0
 	melee_attack_delay = 1 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 
 	melee_damage_lower = 25
@@ -454,6 +452,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 

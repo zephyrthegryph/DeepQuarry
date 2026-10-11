@@ -92,7 +92,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 /// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return (read_once(istype(user) && user.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
+	return (read_once(istype(user) && user.vore_prefs.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
 
 /// The players standing in the fur who may be picked up.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
@@ -102,7 +102,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			continue
 		if(!(isliving(player) && istype(player.loc,/turf/simulated/floor/outdoors/fur) && player.client))
 			continue
-		if(player.resizable && player.pickup_pref)
+		if(player.vore_prefs.resizable && player.vore_prefs.pickup_pref)
 			possible_targets |= player
 	return possible_targets
 
@@ -133,9 +133,9 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(src.admin_override)
 		src.affinity = 9999
 		src.set_nutrition(9999)
-	if(src.devourable)	//This will cause problems probably so please do not eat the dog
-		src.devourable = FALSE
-		src.digestable = FALSE
+	if(src.vore_prefs.devourable)	//This will cause problems probably so please do not eat the dog
+		src.vore_prefs.devourable = FALSE
+		src.vore_prefs.digestable = FALSE
 	if(src.ckey && src.control_node)
 		if(nutrition_of(src) <= 200)
 			src.adjust_affinity(-10)
@@ -1120,7 +1120,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	var/mob/living/L = null
 	if(isliving(AM))
 		L = AM
-		if(check_prefs && (!L.devourable || !L.allowmobvore))
+		if(check_prefs && (!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore))
 			return
 		if(check_keys && !L.ckey)
 			return
@@ -1301,7 +1301,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		return TRUE
 	if(isliving(digest_target))
 		var/mob/living/L = digest_target
-		if(L.unacidable || !L.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
+		if(L.unacidable || !L.vore_prefs.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
 			return FALSE
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -1539,5 +1539,5 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
-	return !occupant.digest_pain
+	return !occupant.vore_prefs.digest_pain
 

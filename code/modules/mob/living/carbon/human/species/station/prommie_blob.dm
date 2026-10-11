@@ -38,7 +38,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	var/slime_icon = 'icons/mob/slime2.dmi'
 	. = list()
 	var/image/body = image(slime_icon, "slime [is_wide ? "adult" : "baby"]")
-	body.color = rgb(H.r_skin, H.g_skin, H.b_skin)
+	body.color = H.looks.skin_color
 	body.appearance_flags |= (RESET_COLOR | PIXEL_SCALE)
 	. += body
 	if(H.stat == DEAD)
@@ -129,7 +129,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !cooldown_ready(src, last_special))
 		return
 	cooldown_start(src, last_special, 2.5 SECONDS)
-	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS, timeout = 0)
+	open_request(src, /datum/prompt/color, PROC_REF(prommie_colour_chosen), answerer = src, title = "Shapeshifter Colour", question = "Please select a new body color.", default = looks.skin_color, ask_flags = ASK_CONSCIOUS, timeout = 0)
 
 /mob/living/carbon/human/proc/prommie_colour_chosen(datum/act/request/A)
 	if(!A.answer)

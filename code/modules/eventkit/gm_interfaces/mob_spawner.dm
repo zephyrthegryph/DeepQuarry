@@ -63,7 +63,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 			if(M)
 				data["path_name"] = M.name
 				data["desc"] = M.desc
-				data["flavor_text"] = M.flavor_text
+				data["flavor_text"] = M.bio.flavor_text
 				if(isliving(M))
 					var/mob/living/L = M
 
@@ -166,7 +166,7 @@ CAPABILITIES(/datum/eventkit/mob_spawner)
 
 			M.name = sanitize(name)
 			M.desc = sanitize(spawn_desc)
-			M.flavor_text = sanitize(spawn_flavor_text)
+			M.bio.flavor_text = sanitize(spawn_flavor_text)
 			if(isliving(M))
 				var/mob/living/L = M
 				if(isnum(spawn_max_health) && spawn_max_health > 0)

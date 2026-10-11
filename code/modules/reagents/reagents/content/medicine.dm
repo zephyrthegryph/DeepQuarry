@@ -1484,27 +1484,22 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 /datum/reagent/rezadone/affect_blood(mob/living/carbon/M, alien, removed)
 	var/mob/living/carbon/human/H = M
 	if(alien == IS_SLIME && istype(H))
-		if(prob(50))
-			if(H.r_skin)
-				H.r_skin = round((H.r_skin + 50)/2)
-			if(H.r_hair)
-				H.r_hair = round((H.r_hair + 50)/2)
-			if(H.r_facial)
-				H.r_facial = round((H.r_facial + 50)/2)
-		if(prob(50))
-			if(H.g_skin)
-				H.g_skin = round((H.g_skin + 50)/2)
-			if(H.g_hair)
-				H.g_hair = round((H.g_hair + 50)/2)
-			if(H.g_facial)
-				H.g_facial = round((H.g_facial + 50)/2)
-		if(prob(50))
-			if(H.b_skin)
-				H.b_skin = round((H.b_skin + 50)/2)
-			if(H.b_hair)
-				H.b_hair = round((H.b_hair + 50)/2)
-			if(H.b_facial)
-				H.b_facial = round((H.b_facial + 50)/2)
+		// each channel (red, green, blue) of skin, hair and beard moves halfway to 50 at a coin flip; a zero channel stays
+		for(var/channel in 1 to 3)
+			if(!prob(50))
+				continue
+			var/list/channels = hex2rgb(H.looks.skin_color)
+			var/value = channels[channel]
+			if(value)
+				H.looks.set_skin_color(colour_set_channel(H.looks.skin_color, channel, (value + 50) / 2))
+			channels = hex2rgb(H.looks.hair_color)
+			value = channels[channel]
+			if(value)
+				H.looks.set_hair_color(colour_set_channel(H.looks.hair_color, channel, (value + 50) / 2))
+			channels = hex2rgb(H.looks.facial_color)
+			value = channels[channel]
+			if(value)
+				H.looks.set_facial_color(colour_set_channel(H.looks.facial_color, channel, (value + 50) / 2))
 	// Rezadone's regeneration is its treatment_tags profile.
 	if(dose > 3)
 		M.set_status_flags(M.status_flags & ~DISFIGURED)
@@ -2113,7 +2108,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	var/mob/living/M = target
 	if(!istype(M))
 		return
-	if(!M.allow_spontaneous_tf)
+	if(!M.vore_prefs.allow_spontaneous_tf)
 		return
 	if(M.tf_mob_holder)
 		M.revert_mob_tf()
@@ -2210,7 +2205,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/change_drug/affect_blood(mob/living/carbon/human/M, alien, removed)
-	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.allow_spontaneous_tf)
+	if (!(M.gender == gender_change || M.gender_change_cooldown == 1) && M.vore_prefs.allow_spontaneous_tf)
 		//set not to bug them because the chem is activating
 		M.gender_change_cooldown = 1
 		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \

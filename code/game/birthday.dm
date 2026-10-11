@@ -52,12 +52,12 @@
 	var/lastyear = ask.lastyear
 	if(ask.value == BIRTHDAY_AGE_YES)
 		if(lastyear == 0)	//We've never been asked, so let's just assume you were keeping track before now and only add 1
-			age += 1
+			bio.age = bio.age + (1)
 		else
 			var/howmuch = GLOB.world_time_year - lastyear
-			age += howmuch
-		to_chat(src, span_notice("You are now [age]! Happy birthday!"))
-		write_preference_directly(/datum/preference/numeric/human/age, age, WRITE_PREF_MANUAL)	//Set the age on the character sheet
+			bio.age = bio.age + (howmuch)
+		to_chat(src, span_notice("You are now [bio.age]! Happy birthday!"))
+		write_preference_directly(/datum/preference/numeric/human/age, bio.age, WRITE_PREF_MANUAL)	//Set the age on the character sheet
 
 	SScharacter_setup.queue_preferences_save(client?.prefs)
 

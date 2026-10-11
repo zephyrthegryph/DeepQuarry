@@ -32,7 +32,7 @@
 		var/colortemp = color //save original color var to a temp var
 		//convert numerical RGB to Hex #000000 format - is this necessary?
 		//then 'inject' changed color (from skin color) into original proc call
-		color = addtext("#", num2hex(H.r_skin, 2), num2hex(H.g_skin, 2), num2hex(H.b_skin, 2))
+		color = H.looks.skin_color
 		. = ..()
 		color = colortemp //reset color var to it's old value after original proc call before proceeding - otherwise we change hand-slot icon color too!
 	else

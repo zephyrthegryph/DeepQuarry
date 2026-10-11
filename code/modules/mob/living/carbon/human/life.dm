@@ -445,10 +445,10 @@
 		to_chat(src, span_warning("You feel exhausted."))
 		src.status_adjust(STAT_WEAKENED, 3)
 	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && src.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
-		if((src.h_style != "Bald" || src.f_style != "Shaved" ))
+		if((src.looks.hair_style != "Bald" || src.looks.facial_style != "Shaved" ))
 			to_chat(src, span_warning("Your hair falls out."))
-			src.h_style = "Bald"
-			src.f_style = "Shaved"
+			src.looks.set_hair_style("Bald")
+			src.looks.set_facial_style("Shaved")
 			src.update_hair()
 	if(prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //Rare chance of vomiting.
 		life_radiation_vomit()
@@ -870,7 +870,7 @@
 		src.set_surroundings(0, 0, life_environment_sky_area(TCMB))
 	else
 		var/loc_temp = life_environment_location_temperature(environment)
-		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.allowtemp))
+		if(adjusted_pressure < src.species.warning_high_pressure && adjusted_pressure > src.species.warning_low_pressure && abs(loc_temp - src.body_temperature()) < 20 && src.body_temperature() < src.species.heat_level_1 && src.body_temperature() > src.species.cold_level_1 && (!isbelly(src.loc) || !src.vore_prefs.allowtemp))
 			src.clear_alert("pressure")
 			src.environment_steady = TRUE
 			src.set_surroundings(0, 0) // inside its comfort range the body trades no heat with the room (intended_changes.md)
@@ -878,7 +878,7 @@
 		life_environment_convect(loc_temp, environment)
 
 	var/godmode = in_godmode(src)
-	if(isbelly(src.loc) && src.allowtemp)
+	if(isbelly(src.loc) && src.vore_prefs.allowtemp)
 		life_environment_belly_temperature_harm()
 	else if(!godmode) // Cancelled by a component
 		life_environment_body_temperature_harm()
@@ -900,7 +900,7 @@
 		return cc.air_contents.return_temperature()
 	if(isbelly(src.loc))
 		var/obj/belly/b = src.loc
-		if(src.allowtemp)
+		if(src.vore_prefs.allowtemp)
 			return b.bellytemperature
 		// The predator's body temperature, kept within this prey's comfort: harmless unless they opted into temperature play.
 		return clamp(b.get_interior_temperature(), src.species.cold_discomfort_level, src.species.heat_discomfort_level)
@@ -955,7 +955,7 @@
 			src.throw_alert("temp", /atom/movable/screen/alert/hot, HOT_ALERT_SEVERITY_LOW)
 		else
 			src.throw_alert("temp", /atom/movable/screen/alert/warm, HOT_ALERT_SEVERITY_LOW)
-		if(src.digestable && b.temperature_damage)
+		if(src.vore_prefs.digestable && b.temperature_damage)
 			src.injure(INJURY_BURN, heat_dam, flags = INJURE_CONTINUOUS) // High body temperature
 	else if(belly_temp <= S.cold_discomfort_level)
 		var/cold_dam = 0
@@ -970,7 +970,7 @@
 			src.throw_alert("temp", /atom/movable/screen/alert/cold, COLD_ALERT_SEVERITY_LOW)
 		else
 			src.throw_alert("temp", /atom/movable/screen/alert/chilly, COLD_ALERT_SEVERITY_LOW)
-		if(src.digestable && b.temperature_damage)
+		if(src.vore_prefs.digestable && b.temperature_damage)
 			src.injure(INJURY_FROSTBITE, cold_dam, flags = INJURE_CONTINUOUS) // Low body temperature
 	else
 		src.clear_alert("temp")
@@ -1180,11 +1180,11 @@
 			nutrition_reduction *= comp.get_nutrition_multiplier()
 		src.adjust_nutrition(-nutrition_reduction)
 
-	if(src.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
+	if(src.vore_prefs.noisy == TRUE && nutrition_of(src) < 250 && prob(10))
 		var/sound/growlsound = sound(get_sfx(SFX_HUNGER_SOUNDS))
 		var/growlmultiplier = 100 - (nutrition_of(src) / 250 * 100)
 		playsound(src, growlsound, vol = growlmultiplier, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
-	if(nutrition_of(src) > 500 && src.noisy_full == TRUE)
+	if(nutrition_of(src) > 500 && src.vore_prefs.noisy_full == TRUE)
 		var/belch_prob = 5 //Maximum belch prob.
 		if(nutrition_of(src) < 4075)
 			belch_prob = ((nutrition_of(src)-500)/3575)*5 //Scale belch prob with fullness if not already at max. If editing make sure the multiplier matches the max prob above.
@@ -1214,7 +1214,7 @@
 		return TRUE
 	if(!src.factor(BF_DARKSIGHT) != !src.chemical_darksight)
 		return TRUE
-	if((src.noisy && nutrition_of(src) < 250) || (src.noisy_full && nutrition_of(src) > 500))
+	if((src.vore_prefs.noisy && nutrition_of(src) < 250) || (src.vore_prefs.noisy_full && nutrition_of(src) > 500))
 		return TRUE
 	return FALSE
 

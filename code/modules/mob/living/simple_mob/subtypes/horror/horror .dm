@@ -6,6 +6,9 @@
 
 	can_pain_emote = FALSE
 
+CAPABILITIES(/mob/living/simple_mob/horror)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 /mob/living/simple_mob/horror
 	min_oxy = 0
 	max_oxy = 0
@@ -18,4 +21,3 @@
 	minbodytemp = 0
 	maxbodytemp = 700
 
-	can_be_drop_prey = FALSE

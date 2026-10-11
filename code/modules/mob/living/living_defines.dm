@@ -86,11 +86,6 @@
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
 	var/private_notes = null
-//custom say verbs
-	var/custom_say = null
-	var/custom_ask = null
-	var/custom_exclaim = null
-	var/custom_whisper = null
 
 /mob
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed

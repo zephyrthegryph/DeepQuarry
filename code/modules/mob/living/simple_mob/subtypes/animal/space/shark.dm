@@ -22,7 +22,6 @@
 	faction = FACTION_SPACESHARK
 	endurance = 125
 	movement_cooldown = 0
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	response_help = "strokes the"
 	response_disarm = "casually rotates the"
@@ -43,6 +42,7 @@
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 22))
 
 /mob/living/simple_mob/animal/space/shark/apply_melee_effects(atom/A)

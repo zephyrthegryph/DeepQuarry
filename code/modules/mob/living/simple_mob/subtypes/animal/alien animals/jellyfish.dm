@@ -22,7 +22,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	icon_living = "space_jellyfish"
 	icon_dead = "space_jellyfish_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	faction = FACTION_JELLYFISH
@@ -70,7 +69,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-	can_be_drop_prey = FALSE
 
 	/// world.time before which it can't reproduce again.
 	var/reproduce_after = 0
@@ -107,6 +105,8 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
 
 /// The jellyfish this one budded from (its constructor param).

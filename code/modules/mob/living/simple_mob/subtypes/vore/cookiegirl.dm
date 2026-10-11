@@ -22,6 +22,9 @@
 	faction = FACTION_COOKIEGIRL
 
 	// Activate Noms!
+
+CAPABILITIES(/mob/living/simple_mob/vore/cookiegirl)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 /mob/living/simple_mob/vore/cookiegirl
 	vore_active = 1
 	vore_bump_chance = 2
@@ -31,7 +34,6 @@
 	vore_default_mode = DM_HOLD // They're cookiepeople, what do you expect?
 	vore_digest_chance = 10 // Gonna become as sweet as sugar, soon.
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
-	can_be_drop_prey = FALSE
 
 /datum/say_list/cookiegirl
 	speak = list("Hi!","Are you hungry?","Got milk~?","What to do, what to do...")

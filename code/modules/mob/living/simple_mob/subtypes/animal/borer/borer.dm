@@ -41,7 +41,6 @@
 	var/has_reproduced = FALSE
 	EXPIRY_DECLARE(used_dominate) // world.time when the dominate power was last used.
 
-	can_be_drop_prey = FALSE
 	vent_crawl_time = 30 						// faster vent crawler
 
 	var/static/borer_chem_list = list(

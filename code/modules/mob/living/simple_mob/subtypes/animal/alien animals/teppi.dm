@@ -151,7 +151,6 @@ GLOBAL_VAR_CONST(max_teppi, 50)	// How many teppi CAN we have?
 	vore_pounce_chance = 35
 	vore_pounce_falloff = 0
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
 
 TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types, list( \
 		/obj/item/organ/internal/brain, \
@@ -420,6 +419,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/teppi, butchery_organ_types,
 	/////HIGHEST LAYER/////
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	op("teppi_item_help", item(/obj/item), stance(I_HELP), label("Tend"), then(PROC_REF(teppi_interaction_item_help)))
 	op("teppi_item_hurt", item(/obj/item), stance(I_HURT), label("Hit"), then(PROC_REF(teppi_interaction_item_hurt)))
 	op("teppi_item_disarm", item(/obj/item), stance(I_DISARM), label("Hit"), then(PROC_REF(teppi_interaction_item_disarm)))
@@ -903,14 +903,15 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	vore_active = FALSE		//it's a tiny baby :O
-	devourable = FALSE
-	digestable = FALSE
 	vore_bump_chance = 0
 	vore_pounce_chance = 0
 	vis_height = 32
 	meat_amount = 2
 	loot_list = list()
 	say_list_type = /datum/say_list/teppibaby
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/teppi/baby)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE, "digestable" = FALSE))
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/init_vore(force) //shouldn't need all the vore bidness if they aren't using it as babbies. They get their tummies when they grow up.
 	return

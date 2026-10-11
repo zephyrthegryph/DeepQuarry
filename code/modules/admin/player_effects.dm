@@ -249,7 +249,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 	shadekin.real_name = shadekin.name
 	shadekin.init_vore(TRUE)
-	shadekin.can_be_drop_pred = TRUE
+	shadekin.vore_prefs.can_be_drop_pred = TRUE
 	shadekin.set_dir(SOUTH)
 	shadekin.ability_flags |= 0x1
 	shadekin.phase_out(get_turf(shadekin)) //Homf

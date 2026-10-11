@@ -120,6 +120,9 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/vore/aggressive/mimic
 	tt_desc = "Mimus vorare"
@@ -129,7 +132,6 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 	swallowTime = 3 SECONDS
 	vore_capacity = 1
 	vore_default_mode = DM_DIGEST
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/vore/aggressive/mimic/apply_melee_effects(atom/A)
 	if(isliving(A))

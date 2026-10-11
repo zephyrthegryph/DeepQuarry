@@ -335,7 +335,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 			if(nutrition_of(T) < 100)//Did they somehow not get drained below 100 nutrition_of(src) yet? If not, go back to stage 3 and repeat until they get drained.
 				stage = 3 //Otherwise, advance to stage 50 (Lethal draining.)
 		if(50)
-			if(!T.digestable)
+			if(!T.vore_prefs.digestable)
 				to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
 				to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
 				set_nutrition((nutrition_of(src) + nutrition_of(T)))
@@ -929,7 +929,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 			for(var/mob/living/L in contents_of(T))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.can_be_drop_prey)
+				if(L.vore_prefs.devourable && L.vore_prefs.can_be_drop_prey)
 					targets += L
 	return targets
 
@@ -1035,7 +1035,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 			for(var/mob/living/L in range(5, src))
 				if(L == src) //no eating yourself. 1984.
 					continue
-				if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+				if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 					targets += L
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
@@ -1248,7 +1248,7 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 				continue
 			if(L == src) //no eating yourself. 1984.
 				continue
-			if(L.devourable && L.throw_vore && (L.can_be_drop_pred || L.can_be_drop_prey))
+			if(L.vore_prefs.devourable && L.vore_prefs.throw_vore && (L.vore_prefs.can_be_drop_pred || L.vore_prefs.can_be_drop_prey))
 				targets += L
 
 		if(!(targets.len))
@@ -1413,9 +1413,9 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 			continue
 		if(L == src) //no getting high off your own supply, get a nif or something, nerd.
 			continue
-		if(!L.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.resizable && (trait_injection_selected == REAGENT_ID_MACROCILLIN || trait_injection_selected == REAGENT_ID_MICROCILLIN || trait_injection_selected == REAGENT_ID_NORMALCILLIN)) // If you're using a size reagent, ignore those with pref conflicts.
 			continue
-		if(!L.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
+		if(!L.vore_prefs.allow_spontaneous_tf && (trait_injection_selected == REAGENT_ID_ANDROROVIR || trait_injection_selected == REAGENT_ID_GYNOROVIR || trait_injection_selected == REAGENT_ID_ANDROGYNOROVIR)) // If you're using a TF reagent, ignore those with pref conflicts.
 			continue
 		targets += L
 	return targets
@@ -1731,7 +1731,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 			continue
 		if(potentialtarget == pred)
 			continue
-		if(potentialtarget.devourable)
+		if(potentialtarget.vore_prefs.devourable)
 			targets += potentialtarget
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))

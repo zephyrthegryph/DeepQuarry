@@ -19,7 +19,7 @@
 			continue
 
 		for(var/mob/living/P in B)
-			if(P.absorbed || !P.absorbable)
+			if(P.absorbed || !P.vore_prefs.absorbable)
 				continue
 
 			else if(prob(10))

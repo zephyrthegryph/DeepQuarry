@@ -38,7 +38,6 @@
 	faction = FACTION_CARP
 	endurance = 25
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	vore_active = TRUE
@@ -83,9 +82,10 @@
 	var/static/list/carp_colors_rare = list(\
 	"silver" = "#fdfbf3", \
 	)
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 15))
 	swarming()
 

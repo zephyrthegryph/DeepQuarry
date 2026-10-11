@@ -76,7 +76,6 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	var/injection_amount = 5 // This determines how much.
 	var/mood = ":3" // Icon to use to display 'mood', as an overlay.
 
-	can_be_drop_prey = FALSE
 
 	species_sounds = "Slime"
 	pain_emote_1p = list("squish", "squelch")
@@ -91,6 +90,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
 	configure(mob_movement(makes_dirt = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)

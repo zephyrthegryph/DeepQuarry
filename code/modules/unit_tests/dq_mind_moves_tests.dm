@@ -185,7 +185,7 @@
 /datum/unit_test/dq_mind_sleeve_character_from_mind/Run()
 	var/mob/living/carbon/human/donor = allocate(/mob/living/carbon/human)
 	dq_test_give_mind(src, donor, "Body Donor")
-	LAZYSET(donor.flavor_texts, "general", "donor flavour")
+	LAZYSET(donor.bio.flavor_texts, "general", "donor flavour")
 
 	var/mob/living/carbon/human/traveller = allocate(/mob/living/carbon/human)
 	var/datum/mind/M = dq_test_give_mind(src, traveller, "Traveller")
@@ -198,13 +198,13 @@
 
 	var/datum/transhuman/body_record/BR = new(donor)
 	var/mob/living/carbon/human/sleeve = BR.produce_human_mob(run_loc_floor_bottom_left, FALSE, TRUE, "sleeve")
-	TEST_ASSERT_NOTEQUAL(LAZYACCESS(sleeve.flavor_texts, "general"), "donor flavour", "the body record carries no flavour text")
+	TEST_ASSERT_NOTEQUAL(LAZYACCESS(sleeve.bio.flavor_texts, "general"), "donor flavour", "the body record carries no flavour text")
 	TEST_ASSERT(!sleeve.has_body_effect(/datum/body_effect/no_borg), "an empty sleeve has no persistent traits")
 
 	TEST_ASSERT(transfer_mind(M, sleeve, "unit test resleeve"), "the mind should move into the sleeve")
 	TEST_ASSERT_EQUAL(sleeve.identity(), I, "the sleeve reads the mind's identity")
-	TEST_ASSERT_EQUAL(sleeve.flavor_texts, I.flavor_texts, "the sleeve shows the character's flavour text list")
-	TEST_ASSERT_EQUAL(LAZYACCESS(sleeve.flavor_texts, "general"), "traveller flavour", "the flavour text is the mind's")
+	TEST_ASSERT_EQUAL(sleeve.bio.flavor_texts, I.flavor_texts, "the sleeve shows the character's flavour text list")
+	TEST_ASSERT_EQUAL(LAZYACCESS(sleeve.bio.flavor_texts, "general"), "traveller flavour", "the flavour text is the mind's")
 	TEST_ASSERT_EQUAL(sleeve.languages, I.languages, "the sleeve speaks the character's language list")
 	TEST_ASSERT(GLOB.all_languages[LANGUAGE_SIGN] in sleeve.languages, "the sleeve speaks the mind's languages")
 	TEST_ASSERT(sleeve.has_body_effect(/datum/body_effect/no_borg), "the mind's persistent trait reaches the sleeve")

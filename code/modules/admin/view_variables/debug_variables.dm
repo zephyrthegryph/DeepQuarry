@@ -60,6 +60,14 @@
 	if(isfile(value))
 		return span_value("'[value]'")
 
+	if(istype(value, /datum/record) && level < 2)
+		// a profile record shows its fields in place; each edits through the record (its TRACKED_DATA setter)
+		var/datum/record/record_value = value
+		var/list/fields = list()
+		for(var/field in record_fields(record_value))
+			fields += debug_variable(field, record_value.vars[field], level + 1, record_value, sanitize)
+		return "<a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(record_value)]'>[record_value.type] [REF(record_value)]</a><ul>[fields.Join()]</ul>"
+
 	if(isdatum(value))
 		var/datum/datum_value = value
 		return datum_value.debug_variable_value(name, level, owner, sanitize, display_flags)

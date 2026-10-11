@@ -160,7 +160,7 @@
 	if(!pred.is_slipping && !prey.is_slipping) //We only care about privacy preference if it's NOT a spontaneous vore.
 		switch(belly.eating_privacy_local) //if("loud") case not added, as it would not modify message_range
 			if("default")
-				if(pred.eating_privacy_global)
+				if(pred.vore_prefs.eating_privacy_global)
 					message_range = 1
 			if("subtle")
 				message_range = 1
@@ -196,19 +196,19 @@
 	// Consent as requirements (vore_consent.dm): the first failing clause gives the reason.
 	var/refusal = vore_consent_refusal(/datum/predicate/vore_devour, pred, prey)
 	if(refusal)
-		if(!prey.devourable)
+		if(!prey.vore_prefs.devourable)
 			to_chat(user, span_vnotice(refusal))
 			log_and_message_admins("attempted to devour [key_name_admin(prey)] against their prefs ([prey ? ADMIN_JMP(prey) : "null"])", user)
 		else
 			to_chat(user, span_vwarning(refusal))
 		return FALSE
-	if(!pred.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
+	if(!pred.vore_prefs.can_be_afk_pred && (!pred.client || pred.away_from_keyboard))
 		if(user == pred)
 			to_chat(user, span_vwarning("You aren't set as being able to pred while AFK"))
 			return FALSE
 		to_chat(user, span_vnotice("The predator prefers not to be fed while AFK"))
 		return FALSE
-	if(!prey.is_dead() && !prey.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
+	if(!prey.is_dead() && !prey.vore_prefs.can_be_afk_prey && (!prey.client || prey.away_from_keyboard))
 		if(user == prey)
 			to_chat(user, span_vwarning("You aren't set as being able to prey while AFK"))
 			return FALSE

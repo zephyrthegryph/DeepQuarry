@@ -83,11 +83,11 @@
 
 	say_list_type = /datum/say_list/sect_queen
 
-	allow_mind_transfer = TRUE
 
 TRACKED(/mob/living/simple_mob/vore/sect_queen, custom_eye_color)
 
 CAPABILITIES(/mob/living/simple_mob/vore/sect_queen)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, login = TRUE)
 
 /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color()

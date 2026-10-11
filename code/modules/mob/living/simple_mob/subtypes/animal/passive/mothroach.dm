@@ -42,9 +42,9 @@
 
 	say_list_type = /datum/say_list/mothroach
 
-	allow_mind_transfer = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 	configure(mob_movement(can_climb = TRUE))
 	after_init(0, then(PROC_REF(mothroach_name_ready)))
 	verb_entry(/mob/living/proc/ventcrawl)

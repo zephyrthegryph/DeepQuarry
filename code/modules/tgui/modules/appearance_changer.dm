@@ -255,7 +255,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/skin_tone_default(datum/act/op/A)
-	return -owner().s_tone + 35
+	return -owner().looks.skin_tone + 35
 
 /datum/tgui_module/appearance_changer/proc/ui_act_skin_tone(datum/act/op/A)
 	var/mob/user = A.actor
@@ -270,7 +270,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_skin_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change_skin_color(owner()))
-		ask_color(user, "skin_color", "Skin Color", "Choose your character's skin colour: ", rgb(owner().r_skin, owner().g_skin, owner().b_skin))
+		ask_color(user, "skin_color", "Skin Color", "Choose your character's skin colour: ", owner().looks.skin_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_hair(datum/act/op/A, name)
@@ -286,7 +286,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/mob/user = A.actor
 	var/picked = picked_arg
 	if(picked && can_change(owner(), APPEARANCE_HAIR_COLOR))
-		owner().grad_style = picked[1] // returned as a list
+		owner().looks.set_grad_style(picked[1])// returned as a list
 		update_dna(owner())
 		owner().regenerate_icons()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
@@ -296,13 +296,13 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_hair_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "hair_color", "Hair Color", "Please select hair color.", rgb(owner().r_hair, owner().g_hair, owner().b_hair))
+		ask_color(user, "hair_color", "Hair Color", "Please select hair color.", owner().looks.hair_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_hair_color_grad(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "hair_color_grad", "Hair Color", "Please select hair gradiant color.", rgb(owner().r_grad, owner().g_grad, owner().b_grad))
+		ask_color(user, "hair_color_grad", "Hair Color", "Please select hair gradiant color.", owner().looks.grad_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_facial_hair(datum/act/op/A, name)
@@ -317,13 +317,13 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_facial_hair_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_FACIAL_HAIR_COLOR))
-		ask_color(user, "facial_hair_color", "Facial Hair Color", "Please select facial hair color.", rgb(owner().r_facial, owner().g_facial, owner().b_facial))
+		ask_color(user, "facial_hair_color", "Facial Hair Color", "Please select facial hair color.", owner().looks.facial_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_eye_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_EYE_COLOR))
-		ask_color(user, "eye_color", "Eye Color", "Please select eye color.", rgb(owner().r_eyes, owner().g_eyes, owner().b_eyes))
+		ask_color(user, "eye_color", "Eye Color", "Please select eye color.", owner().looks.eyes_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_ear(datum/act/op/A, clear, ref)
@@ -674,7 +674,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_MISC))
 		owner().dna.digitigrade = !owner().dna.digitigrade
-		owner().digitigrade = owner().dna.digitigrade
+		owner().looks.set_digitigrade(owner().dna.digitigrade)
 		owner().regenerate_icons()
 		generate_data(user, owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
@@ -700,12 +700,12 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_flavor_text(datum/act/op/A, target)
 	var/mob/user = A.actor
 	var/select_key = target
-	if(select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().flavor_texts))
+	if(select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().bio.flavor_texts))
 		pending_flavor_key = select_key
 		var/question = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank."
 		if(select_key == "general")
 			question = "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank."
-		open_request(src, /datum/prompt/text, PROC_REF(flavor_text_written), valid = PROC_REF(request_usable), answerer = user, question = question, title = "Flavor Text", default = html_decode(owner().flavor_texts[select_key]), multiline = TRUE, max_len = MAX_TGUI_INPUT, timeout = 0)
+		open_request(src, /datum/prompt/text, PROC_REF(flavor_text_written), valid = PROC_REF(request_usable), answerer = user, question = question, title = "Flavor Text", default = html_decode(owner().bio.flavor_texts[select_key]), multiline = TRUE, max_len = MAX_TGUI_INPUT, timeout = 0)
 		return
 	return FALSE
 
@@ -720,7 +720,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(msg == "!clear") // allows empty to wipe flavor
 		msg = ""
 	var/mob/living/carbon/human/flavor_owner = owner()
-	LAZYSET(flavor_owner.flavor_texts, select_key, msg)
+	LAZYSET(flavor_owner.bio.flavor_texts, select_key, msg)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_load_saveslot(datum/act/op/A)
 	if(can_change(owner(), APPEARANCE_ALL_COSMETIC))
@@ -982,7 +982,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["scale_appearance"] = owner().dna.scale_appearance ? "Fuzzy" : "Sharp"
 	data["offset_override"] = owner().dna.offset_override ? "Odd" : "Even"
 	data["weight"] = owner().weight
-	data["digitigrade"] = owner().digitigrade
+	data["digitigrade"] = owner().looks.digitigrade
 	data["blood_reagent"] = owner().dna.blood_reagents
 	data["blood_color"] = owner().dna.blood_color
 	data["species_sound"] = owner().species.species_sounds
@@ -992,17 +992,17 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["species_sounds_male"] = owner().species.species_sounds_male
 	// flavor
 	var/mob/living/carbon/human/flavor_owner = owner()
-	if(!LAZYLEN(flavor_owner.flavor_texts))
-		LAZYSET(flavor_owner.flavor_texts, "general", "")
-		LAZYSET(flavor_owner.flavor_texts, "head", "")
-		LAZYSET(flavor_owner.flavor_texts, "face", "")
-		LAZYSET(flavor_owner.flavor_texts, "eyes", "")
-		LAZYSET(flavor_owner.flavor_texts, "torso", "")
-		LAZYSET(flavor_owner.flavor_texts, "arms", "")
-		LAZYSET(flavor_owner.flavor_texts, "hands", "")
-		LAZYSET(flavor_owner.flavor_texts, "legs", "")
-		LAZYSET(flavor_owner.flavor_texts, "feet", "")
-	data["flavor_text"] = owner().flavor_texts.Copy()
+	if(!LAZYLEN(flavor_owner.bio.flavor_texts))
+		LAZYSET(flavor_owner.bio.flavor_texts, "general", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "head", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "face", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "eyes", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "torso", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "arms", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "hands", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "legs", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "feet", "")
+	data["flavor_text"] = owner().bio.flavor_texts.Copy()
 
 	data["name"] = owner().name
 	data["specimen"] = owner().species.name
@@ -1025,7 +1025,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 	data["change_hair"] = can_change(owner(), APPEARANCE_HAIR)
 	if(data["change_hair"])
-		data["hair_style"] = owner().h_style
+		data["hair_style"] = owner().looks.hair_style
 
 		data["ear_style"] = owner().ear_style
 		data["ear_secondary_style"] = owner().ear_secondary_style?.name
@@ -1039,26 +1039,26 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 	data["change_facial_hair"] = can_change(owner(), APPEARANCE_FACIAL_HAIR)
 	if(data["change_facial_hair"])
-		data["facial_hair_style"] = owner().f_style
+		data["facial_hair_style"] = owner().looks.facial_style
 
 	data["change_skin_tone"] = can_change_skin_tone(owner())
 	data["change_skin_color"] = can_change_skin_color(owner())
 	if(data["change_skin_color"])
-		data["skin_color"] = rgb(owner().r_skin, owner().g_skin, owner().b_skin)
+		data["skin_color"] = owner().looks.skin_color
 
 	data["change_eye_color"] = can_change(owner(), APPEARANCE_EYE_COLOR)
 	if(data["change_eye_color"])
-		data["eye_color"] = rgb(owner().r_eyes, owner().g_eyes, owner().b_eyes)
+		data["eye_color"] = owner().looks.eyes_color
 
 	data["change_hair_color"] = can_change(owner(), APPEARANCE_HAIR_COLOR)
 	if(data["change_hair_color"])
-		data["hair_color"] = rgb(owner().r_hair, owner().g_hair, owner().b_hair)
-		data["hair_color_grad"] = rgb(owner().r_grad, owner().g_grad, owner().b_grad)
+		data["hair_color"] = owner().looks.hair_color
+		data["hair_color_grad"] = owner().looks.grad_color
 		data["ears_color"] = rgb(owner().r_ears, owner().g_ears, owner().b_ears)
 		data["ears2_color"] = rgb(owner().r_ears2, owner().g_ears2, owner().b_ears2)
 
 		// not a color, but it basically is
-		data["hair_grad"] = owner().grad_style
+		data["hair_grad"] = owner().looks.grad_style
 
 		// secondary ear colors
 		var/list/ear_secondary_color_channels = owner().ear_secondary_colors || list()
@@ -1078,7 +1078,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 
 	data["change_facial_hair_color"] = can_change(owner(), APPEARANCE_FACIAL_HAIR_COLOR)
 	if(data["change_facial_hair_color"])
-		data["facial_hair_color"] = rgb(owner().r_facial, owner().g_facial, owner().b_facial)
+		data["facial_hair_color"] = owner().looks.facial_color
 	return data
 
 /datum/tgui_module/appearance_changer/proc/update_active_camera_screen(datum/act/notice/N)
@@ -1401,42 +1401,27 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 	var/name_marking = ask.marking_name
 	switch(ask.field)
 		if("skin_color")
-			var/r_skin = hex2num(copytext(ask.value, 2, 4))
-			var/g_skin = hex2num(copytext(ask.value, 4, 6))
-			var/b_skin = hex2num(copytext(ask.value, 6, 8))
-			if(owner().change_skin_color(r_skin, g_skin, b_skin))
+			if(owner().change_skin_color(ask.value))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_SKINCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color")
-			var/r_hair = hex2num(copytext(ask.value, 2, 4))
-			var/g_hair = hex2num(copytext(ask.value, 4, 6))
-			var/b_hair = hex2num(copytext(ask.value, 6, 8))
-			if(owner().change_hair_color(r_hair, g_hair, b_hair))
+			if(owner().change_hair_color(ask.value))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color_grad")
-			var/r_grad = hex2num(copytext(ask.value, 2, 4))
-			var/g_grad = hex2num(copytext(ask.value, 4, 6))
-			var/b_grad = hex2num(copytext(ask.value, 6, 8))
-			if(owner().change_grad_color(r_grad, g_grad, b_grad))
+			if(owner().change_grad_color(ask.value))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("facial_hair_color")
-			var/r_facial = hex2num(copytext(ask.value, 2, 4))
-			var/g_facial = hex2num(copytext(ask.value, 4, 6))
-			var/b_facial = hex2num(copytext(ask.value, 6, 8))
-			if(owner().change_facial_hair_color(r_facial, g_facial, b_facial))
+			if(owner().change_facial_hair_color(ask.value))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("eye_color")
-			var/r_eyes = hex2num(copytext(ask.value, 2, 4))
-			var/g_eyes = hex2num(copytext(ask.value, 4, 6))
-			var/b_eyes = hex2num(copytext(ask.value, 6, 8))
-			if(owner().change_eye_color(r_eyes, g_eyes, b_eyes))
+			if(owner().change_eye_color(ask.value))
 				update_dna(owner())
 				changed_hook(APPEARANCECHANGER_CHANGED_EYES, ask.answerer)
 				return TRUE

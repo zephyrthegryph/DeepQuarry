@@ -225,7 +225,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		to_chat(prey, span_warning("You cannot do that in your current state."))
 		return
 
-	if(!pred.allow_mind_transfer)
+	if(!pred.vore_prefs.allow_mind_transfer)
 		to_chat(prey, span_warning("[pred] is unable to be dominated."))
 		return
 
@@ -355,7 +355,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 /mob/proc/dominate_predator_agreed(datum/control_transfer_review/dominate_predator/seq)
 	var/mob/living/prey = src
 	var/mob/living/pred = seq.pred
-	if(prey.stat == DEAD || prey.prey_controlled || pred.prey_controlled || !pred.allow_mind_transfer)
+	if(prey.stat == DEAD || prey.prey_controlled || pred.prey_controlled || !pred.vore_prefs.allow_mind_transfer)
 		return
 	if(!pred.client && ("original_player" in pred.vars)) //check if the body belonged to a player and give proper log about it while preparing it
 		log_and_message_admins("[key_name_admin(prey)] is taking control over [pred] while they are out of their body.")
@@ -409,14 +409,14 @@ CAPABILITIES(/datum/control_transfer_review/dominate_predator)
 	var/list/possible_mobs = list()
 	for(var/obj/belly/B in src.vore_organs)
 		for(var/mob/living/L in B)
-			if(isliving(L) && L.ckey && L.allow_mind_transfer)
+			if(isliving(L) && L.ckey && L.vore_prefs.allow_mind_transfer)
 				possible_mobs |= L
 			else
 				continue
 	var/obj/item/grab/G = src.get_active_hand()
 	if(istype(G))
 		var/mob/living/L = G?.grab_target()
-		if(istype(L) && L.allow_mind_transfer)
+		if(istype(L) && L.vore_prefs.allow_mind_transfer)
 			if(G.state != GRAB_NECK)
 				possible_mobs |= "~~[L.name]~~ (reinforce grab first)"
 			else
@@ -484,7 +484,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 	if(QDELETED(prey))
 		retire()
 		return
-	if(!prey.allow_mind_transfer)
+	if(!prey.vore_prefs.allow_mind_transfer)
 		to_chat(actor, span_warning("[prey] is unable to be dominated."))
 		retire()
 		return
@@ -515,7 +515,7 @@ CAPABILITIES(/datum/control_transfer_review/dominate_prey)
 /mob/living/proc/dominate_prey_agreed(datum/control_transfer_review/dominate_prey/seq)
 	var/mob/living/M = seq.prey
 	var/obj/item/grab/G = seq.grab
-	if(!M.allow_mind_transfer)
+	if(!M.vore_prefs.allow_mind_transfer)
 		return
 	to_chat(M, span_warning("You can feel the will of another pulling you away from your body..."))
 	to_chat(src, span_warning("You can feel the will of your prey diminishing as you gather them!"))

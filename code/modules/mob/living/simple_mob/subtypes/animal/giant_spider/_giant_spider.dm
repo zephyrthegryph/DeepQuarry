@@ -116,8 +116,6 @@
 		/obj/item/stack/material/chitin = 1\
 		)
 
-	allow_mind_transfer = TRUE
-	can_be_drop_prey = FALSE
 	species_sounds = "Spider"
 	pain_emote_1p = list("chitter", "click")
 	pain_emote_3p = list("chitters", "clicks")
@@ -128,6 +126,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	configure(mob_movement(no_pull_when_living = TRUE))
 	swarming()
 

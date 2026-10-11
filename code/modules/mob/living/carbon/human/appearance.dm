@@ -43,13 +43,13 @@
 	if(!hair_style)
 		return
 
-	if(h_style == hair_style)
+	if(looks.hair_style == hair_style)
 		return
 
 	if(!(hair_style in GLOB.hair_styles_list))
 		return
 
-	h_style = hair_style
+	looks.set_hair_style(hair_style)
 
 	update_hair()
 	return 1
@@ -58,13 +58,13 @@
 	if(!hair_gradient)
 		return
 
-	if(grad_style == hair_gradient)
+	if(looks.grad_style == hair_gradient)
 		return
 
 	if(!(hair_gradient in GLOB.hair_gradients))
 		return
 
-	grad_style = hair_gradient
+	looks.set_grad_style(hair_gradient)
 
 	update_hair()
 	return 1
@@ -73,13 +73,13 @@
 	if(!facial_hair_style)
 		return
 
-	if(f_style == facial_hair_style)
+	if(looks.facial_style == facial_hair_style)
 		return
 
 	if(!(facial_hair_style in GLOB.facial_hair_styles_list))
 		return
 
-	f_style = facial_hair_style
+	looks.set_facial_style(facial_hair_style)
 
 	update_hair()
 	return 1
@@ -89,81 +89,61 @@
 	var/list/valid_facial_hairstyles = generate_valid_facial_hairstyles()
 
 	if(valid_hairstyles.len)
-		h_style = pick(valid_hairstyles)
+		looks.set_hair_style(pick(valid_hairstyles))
 	else
 		//this shouldn't happen
-		h_style = "Bald"
+		looks.set_hair_style("Bald")
 
 	if(valid_facial_hairstyles.len)
-		f_style = pick(valid_facial_hairstyles)
+		looks.set_facial_style(pick(valid_facial_hairstyles))
 	else
 		//this shouldn't happen
-		f_style = "Shaved"
+		looks.set_facial_style("Shaved")
 
 	update_hair()
 
-/mob/living/carbon/human/proc/change_eye_color(red, green, blue)
-	if(red == r_eyes && green == g_eyes && blue == b_eyes)
+/mob/living/carbon/human/proc/change_eye_color(colour)
+	if(!looks.set_eyes_color(colour))
 		return
-
-	r_eyes = red
-	g_eyes = green
-	b_eyes = blue
 
 	update_eyes()
 	update_icons_body()
 	return 1
 
-/mob/living/carbon/human/proc/change_hair_color(red, green, blue)
-	if(red == r_hair && green == g_hair && blue == b_hair)
+/mob/living/carbon/human/proc/change_hair_color(colour)
+	if(!looks.set_hair_color(colour))
 		return
-
-	r_hair = red
-	g_hair = green
-	b_hair = blue
 
 	update_hair()
 	return 1
 
-/mob/living/carbon/human/proc/change_grad_color(red, green, blue)
-	if(red == r_grad && green == g_grad && blue == b_grad)
+/mob/living/carbon/human/proc/change_grad_color(colour)
+	if(!looks.set_grad_color(colour))
 		return
-
-	r_grad = red
-	g_grad = green
-	b_grad = blue
 
 	update_hair()
 	return 1
 
-/mob/living/carbon/human/proc/change_facial_hair_color(red, green, blue)
-	if(red == r_facial && green == g_facial && blue == b_facial)
+/mob/living/carbon/human/proc/change_facial_hair_color(colour)
+	if(!looks.set_facial_color(colour))
 		return
-
-	r_facial = red
-	g_facial = green
-	b_facial = blue
 
 	update_hair()
 	return 1
 
-/mob/living/carbon/human/proc/change_skin_color(red, green, blue)
-	if(red == r_skin && green == g_skin && blue == b_skin || !(species.appearance_flags & HAS_SKIN_COLOR))
+/mob/living/carbon/human/proc/change_skin_color(colour)
+	if(!(species.appearance_flags & HAS_SKIN_COLOR) || !looks.set_skin_color(colour))
 		return
-
-	r_skin = red
-	g_skin = green
-	b_skin = blue
 
 	force_update_limbs()
 	update_icons_body()
 	return 1
 
 /mob/living/carbon/human/proc/change_skin_tone(tone)
-	if(s_tone == tone || !(species.appearance_flags & HAS_SKIN_TONE))
+	if(looks.skin_tone == tone || !(species.appearance_flags & HAS_SKIN_TONE))
 		return
 
-	s_tone = tone
+	looks.set_skin_tone(tone)
 
 	force_update_limbs()
 	update_icons_body()

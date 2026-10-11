@@ -29,7 +29,6 @@
 	icon = 'icons/mob/vore.dmi'
 
 	movement_cooldown = 0.5 //fast as fucc boie.
-	can_be_drop_pred = 1 //They can tongue vore.
 
 	meat_amount = 4
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
@@ -43,10 +42,9 @@
 	special_attack_max_range = 5
 	special_attack_cooldown = 100
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/frog)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	rolls(nameof(rare), PROC_REF(roll_rare))
 	rolls(nameof(name), PROC_REF(roll_rare_name), from = list(nameof(rare)))
 	rolls(nameof(desc), PROC_REF(roll_rare_desc), from = list(nameof(rare)))

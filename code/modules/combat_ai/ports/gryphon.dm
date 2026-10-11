@@ -50,7 +50,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/gryphon, get_ai_behaviors, list( \
 		return FALSE
 	if(!isliving(L))
 		return FALSE
-	if(!L.devourable || !L.allowmobvore)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore)
 		return FALSE
 	return TRUE
 

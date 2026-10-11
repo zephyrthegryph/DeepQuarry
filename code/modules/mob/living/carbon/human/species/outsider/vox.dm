@@ -99,7 +99,7 @@
 	. = ..()
 
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), SLOT_ID_MASK)
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), SLOT_ID_BACK)
 		rel_set(H, nameof(H.internal), H.get_equipped_item(SLOT_ID_BACK))
 	else

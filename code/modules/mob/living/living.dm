@@ -1252,13 +1252,13 @@ READS_AS(/proc/nutrition_of, MOB_KEY_NUTRITION)
 	var/custom_verb = lowertext(ask.value)
 	switch(ask.say_var)
 		if("custom_say")
-			custom_say = custom_verb
+			bio.custom_say = custom_verb
 		if("custom_whisper")
-			custom_whisper = custom_verb
+			bio.custom_whisper = custom_verb
 		if("custom_ask")
-			custom_ask = custom_verb
+			bio.custom_ask = custom_verb
 		if("custom_exclaim")
-			custom_exclaim = custom_verb
+			bio.custom_exclaim = custom_verb
 
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"

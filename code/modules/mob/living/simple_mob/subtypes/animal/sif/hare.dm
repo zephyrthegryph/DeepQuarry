@@ -46,7 +46,9 @@
 
 	say_list_type = /datum/say_list/hare
 
-	can_be_drop_prey = TRUE
+CAPABILITIES(/mob/living/simple_mob/animal/passive/hare)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+
 
 /datum/say_list/hare
 	speak = list("Snrf...","Crk!")

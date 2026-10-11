@@ -29,14 +29,14 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	rel_set(src, nameof(stored_mind), M.mind)
 	stored_mind().get_identity() // make sure the identity rides the stored mind
 	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
-	soulcatcher_pref_flags = M.soulcatcher_pref_flags
+	soulcatcher_pref_flags = M.vore_prefs.soulcatcher_pref_flags
 	M.ghostize()
 	stored_mind().current = null
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
 	stored_mind().active = TRUE
 	transfer_mind(stored_mind(), M, "sleevemate upload")
-	M.soulcatcher_pref_flags = soulcatcher_pref_flags
+	M.vore_prefs.soulcatcher_pref_flags = soulcatcher_pref_flags
 	clear_mind()
 
 

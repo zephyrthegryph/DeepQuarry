@@ -2714,7 +2714,7 @@ init_lines	code/modules/pda/pda.dm	cartridge?.update_programs(src) // declared c
 init_lines	code/modules/pda/pda.dm	new /obj/item/pen(src)
 init_lines	code/modules/pda/pda.dm	if(ishuman(loc))
 init_lines	code/modules/pda/pda.dm	var/mob/living/carbon/human/H = loc
-init_lines	code/modules/pda/pda.dm	pdachoice = H.pdachoice
+init_lines	code/modules/pda/pda.dm	pdachoice = H.bio.pdachoice
 init_lines	code/modules/pda/pda.dm	else
 init_lines	code/modules/pda/pda.dm	pdachoice = 1
 init_lines	code/modules/pda/pda.dm	switch(pdachoice)
