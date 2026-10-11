@@ -10,6 +10,11 @@ impl dm_preprocess::SourceProvider for Source {
     }
 }
 #[test]
+fn compact_typed_sidecars_check_duplicate_answers_current_tokens_and_rebind_before_observing() {
+    check_replay("/proc/compact_probe()\n    return 1\n", false, false);
+}
+
+#[test]
 fn compact_disk_replays_checked_frozen_code_and_declines_changed_receipts_and_abi() {
     check_replay(
         "/proc/compact_probe(x)\n    return \"hello\"\n",
@@ -476,6 +481,153 @@ fn check_replay_features(
         verify: false,
         modified: Some(&issuer),
     };
+    if !modifiers && !helpers {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        struct Versioned<'a> {
+            base: &'a dyn Resolver,
+            query: ResolveQuery,
+            answer: dm_ir::ResolvedMeaning,
+            token: u128,
+            calls: AtomicUsize,
+        }
+        impl Resolver for Versioned<'_> {
+            fn observes_reads(&self) -> bool {
+                false
+            }
+            fn resolve(&self, query: ResolveQuery) -> dm_ir::ResolvedMeaning {
+                if query == self.query {
+                    self.calls.fetch_add(1, Ordering::Relaxed);
+                    self.answer.clone()
+                } else {
+                    self.base.resolve(query)
+                }
+            }
+            fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
+                if domain == self.query.domain() {
+                    Some(self.token)
+                } else {
+                    self.base.domain_version(domain)
+                }
+            }
+        }
+        let query = ResolveQuery::GlobalVar(SymbolId::of("sidecar_negative_control"));
+        let missing = dm_ir::ResolvedMeaning::Missing;
+        let make_payload = || {
+            let mut payload = decode(&bytes).unwrap();
+            payload
+                .reads
+                .0
+                .push(crate::lowering_memo_wire::read_wire::ReadWire {
+                    query,
+                    answer: Cow::Owned(missing.canonical_bytes()),
+                });
+            payload
+                .typed_answers
+                .0
+                .push(Some(dm_ir::PortableResolvedAnswer::Missing));
+            payload
+        };
+        // A well-formed differing duplicate remains a separate exact replay
+        // obligation. Canonical sidecar agreement cannot erase that obligation.
+        let provider = Versioned {
+            base: &quiet,
+            query,
+            answer: missing.clone(),
+            token: 9,
+            calls: AtomicUsize::new(0),
+        };
+        let observing = crate::lowering_memo::RecordingResolver::new(&provider);
+        let mut duplicate = make_payload();
+        duplicate
+            .reads
+            .0
+            .push(crate::lowering_memo_wire::read_wire::ReadWire {
+                query,
+                answer: Cow::Owned(dm_ir::ResolvedMeaning::Presence(false).canonical_bytes()),
+            });
+        duplicate
+            .typed_answers
+            .0
+            .push(Some(dm_ir::PortableResolvedAnswer::Presence(false)));
+        let encoded = dm_wire::encode_bounded(SCHEMA, &duplicate, MAX_RECORD).unwrap();
+        let variants = dm_cache::encode_variants(&[encoded]).unwrap();
+        let result = crate::lowering_memo_wire::candidates(&variants)
+            .unwrap()
+            .procedure(
+                b"exact-source-and-policy",
+                duplicate.identity,
+                context(),
+                &observing,
+                ready,
+            );
+        assert!(result.prepared.is_none());
+        assert_eq!(result.changed_query, Some(query));
+        assert!(
+            observing.reads().is_empty(),
+            "failed duplicate cannot leak earlier pending edges"
+        );
+        assert!(provider.calls.load(Ordering::Relaxed) > 0);
+
+        let mut certified = make_payload();
+        certified.versions.0 = vec![(query.domain(), 9)];
+        let encoded = dm_wire::encode_bounded(SCHEMA, &certified, MAX_RECORD).unwrap();
+        let variants = dm_cache::encode_variants(&[encoded]).unwrap();
+        let changed = Versioned {
+            base: &quiet,
+            query,
+            answer: dm_ir::ResolvedMeaning::Presence(true),
+            token: 10,
+            calls: AtomicUsize::new(0),
+        };
+        let observing_changed = crate::lowering_memo::RecordingResolver::new(&changed);
+        let result = crate::lowering_memo_wire::candidates(&variants)
+            .unwrap()
+            .procedure(
+                b"exact-source-and-policy",
+                certified.identity,
+                context(),
+                &observing_changed,
+                ready,
+            );
+        assert!(result.prepared.is_none());
+        assert_eq!(result.changed_query, Some(query));
+        assert!(
+            changed.calls.load(Ordering::Relaxed) > 0,
+            "foreign token forces current hydration"
+        );
+        assert!(observing_changed.reads().is_empty());
+
+        // Matching typed evidence can pass byte admission, but an invalid current
+        // ABI must still reject before the real production caller publishes reads.
+        certified.abi = Cow::Owned(b"not current prepared ABI".to_vec());
+        let encoded = dm_wire::encode_bounded(SCHEMA, &certified, MAX_RECORD).unwrap();
+        let variants = dm_cache::encode_variants(&[encoded]).unwrap();
+        let observing_rebind = crate::lowering_memo::RecordingResolver::new(&provider);
+        let certified_calls = provider.calls.load(Ordering::Relaxed);
+        let result = crate::lowering_memo_wire::candidates(&variants)
+            .unwrap()
+            .procedure(
+                b"exact-source-and-policy",
+                certified.identity,
+                context(),
+                &observing_rebind,
+                ready,
+            );
+        assert!(result.prepared.is_none());
+        assert!(
+            result.changed_query.is_none(),
+            "semantic byte admission succeeded before ABI rejection"
+        );
+        assert!(
+            observing_rebind.reads().is_empty(),
+            "failed current rebind cannot publish pending typed reads"
+        );
+        assert_eq!(
+            provider.calls.load(Ordering::Relaxed),
+            certified_calls,
+            "matching certificate must restore typed negative without provider hydration"
+        );
+    }
     if plain && !helpers {
         let mut bad = decode(&bytes).unwrap();
         bad.instances.0.push(bad.instances.0[0]);
