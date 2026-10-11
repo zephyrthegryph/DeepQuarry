@@ -83,16 +83,15 @@ fn unit(c: &mut HeapCensus, value: &Arc<UnitArtifact>) -> Option<usize> {
     }
     c.shared_procedure_inputs(&value.inputs);
     c.abi(&value.abi);
-    let mut private = super::super::resident_abi::input_index_charge(&value.inputs);
+    let mut private = super::input_indexes::charge(&value.inputs);
     if let Some(canonical) = &value.canonical {
         c.prepared_canonical(canonical);
         canonical.visit_storage(|inputs, _, _| {
             // A checked compatibility rebind can retain a distinct canonical
             // input owner with equal meaning but different backing capacity.
             if !Arc::ptr_eq(inputs, &value.inputs) {
-                private = private.and_then(|charge| {
-                    charge.checked_add(super::super::resident_abi::input_index_charge(inputs)?)
-                });
+                private = private
+                    .and_then(|charge| charge.checked_add(super::input_indexes::charge(inputs)?));
             }
         });
     }

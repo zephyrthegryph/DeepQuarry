@@ -4,27 +4,6 @@ use crate::{lowering_memo::ResolverRead, procedure_policy::PreparedAbi};
 use dm_codegen_byond::lower_resolver::ProcedureInputs;
 use dm_ir::ReadDomain;
 
-/// Exposed usable HashMap capacity plus modeled scalar hash/set backing.
-/// This is a logical admission envelope, not a physical allocator measurement.
-pub(crate) fn input_index_charge(inputs: &ProcedureInputs) -> Option<usize> {
-    let capacity = inputs.parameter_types.capacity();
-    let map = if capacity == 0 {
-        0
-    } else {
-        capacity
-            .checked_mul(2)?
-            .checked_add(1)?
-            .checked_mul(size_of::<(String, String)>().checked_add(1)?)?
-            .checked_add(64)?
-    };
-    map.checked_add(
-        inputs
-            .readonly_parameters
-            .len()
-            .checked_mul(16 * size_of::<u32>() + 512)?,
-    )
-}
-
 pub(crate) fn weight(
     inputs: &Arc<ProcedureInputs>,
     abi: &Arc<PreparedAbi>,
@@ -37,7 +16,7 @@ pub(crate) fn weight(
     // std exposes usable HashMap capacity, not its private bucket allocation.
     // The bucket upper bound and deliberately loose BTree node allowance are
     // admission charges, never presented as exact census payload measurements.
-    let indexes = input_index_charge(inputs)?;
+    let indexes = super::abi_certificates::input_indexes::charge(inputs)?;
     census.abi(abi);
     census.vec_payload("resident_abi.reads", reads);
     census.vec_payload("resident_abi.versions", versions);

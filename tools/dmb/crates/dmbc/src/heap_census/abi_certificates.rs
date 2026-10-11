@@ -2,6 +2,8 @@
 use super::*;
 #[path = "abi_compact.rs"]
 pub(crate) mod compact;
+#[path = "abi_input_indexes.rs"]
+pub(crate) mod input_indexes;
 impl HeapCensus {
     pub(crate) fn prepared_canonical(
         &mut self,
