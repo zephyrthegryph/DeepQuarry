@@ -144,18 +144,27 @@ impl RetainedGeneration {
         &self,
         mut raw: procedure_plan::CompositionPlan,
         batch: &FrozenBatch,
+        assignment_floor: Option<usize>,
     ) -> procedure_plan::BoundCompositionPlan {
         let mut cached = self.plan.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(hit) = cached
             .as_ref()
             .and_then(|previous| previous.admit(&raw, batch))
         {
+            if let (Some(previous), Some(floor)) = (cached.as_mut(), assignment_floor) {
+                if !previous.has_assignment_floor(floor) {
+                    Arc::make_mut(previous).issue_assignment_floor(floor);
+                }
+            }
             return hit;
         }
         let captured = raw.clone();
         raw.canonicalize();
         let bound = raw.bind(batch);
         let mut replacement = procedure_plan::CachedPlan::capture(captured, batch, &bound);
+        if let (Some(next), Some(floor)) = (replacement.as_mut(), assignment_floor) {
+            next.issue_assignment_floor(floor);
+        }
         if let (Some(next), Some(previous)) = (replacement.as_mut(), cached.as_mut()) {
             next.inherit_metadata(Arc::make_mut(previous));
         }

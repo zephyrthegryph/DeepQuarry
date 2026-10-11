@@ -111,6 +111,40 @@ impl RetainedGeneration {
                 Ok(encoded)
             })
     }
+    /// Only composition's validated assignment traversal issues this witness.
+    pub(in crate::composition) fn admit_assignment_plan(
+        &self,
+        batch: &FrozenBatch,
+        floor: usize,
+    ) -> Option<procedure_plan::BoundCompositionPlan> {
+        self.attempt
+            .with_pending(|_| {
+                self.plan
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .as_ref()
+                    .and_then(|plan| plan.admit_assignments(batch, floor))
+            })
+            .flatten()
+    }
+    pub(in crate::composition) fn bind_assignment_plan(
+        &self,
+        raw: procedure_plan::CompositionPlan,
+        batch: &FrozenBatch,
+        floor: usize,
+    ) -> procedure_plan::BoundCompositionPlan {
+        let mut raw = Some(raw);
+        self.attempt
+            .with_pending(|_| {
+                self.bind_plan_pending(raw.take().expect("one assignment plan"), batch, Some(floor))
+            })
+            .unwrap_or_else(|| {
+                let mut raw = raw.take().expect("sealed assignment plan");
+                raw.canonicalize();
+                raw.bind(batch)
+            })
+    }
+    #[cfg(test)]
     pub(in crate::composition) fn bind_plan(
         &self,
         raw: procedure_plan::CompositionPlan,
@@ -118,7 +152,9 @@ impl RetainedGeneration {
     ) -> procedure_plan::BoundCompositionPlan {
         let mut raw = Some(raw);
         self.attempt
-            .with_pending(|_| self.bind_plan_pending(raw.take().expect("one pending plan"), batch))
+            .with_pending(|_| {
+                self.bind_plan_pending(raw.take().expect("one pending plan"), batch, None)
+            })
             .unwrap_or_else(|| {
                 let mut raw = raw.take().expect("sealed plan");
                 raw.canonicalize();

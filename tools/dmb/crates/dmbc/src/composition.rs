@@ -394,6 +394,10 @@ fn compose_records_access(
     let engine_strings = dmb.strings.len();
     let engine_procs = dmb.procs.len();
     let mut strings = BTreeMap::new();
+    // The existing binding owner proves exact assignment contents. The floor is
+    // the only engine input selecting these three raw emission rosters. Current
+    // artifact order is independently checked before admitting the bound plan.
+    let admitted_plan = generation.and_then(|owner| owner.admit_assignment_plan(&batch, engine_procs));
     let mut plan = procedure_plan::CompositionPlan::default();
     let mut stage_keys = BTreeSet::new();
     let mut builtin_global_vars = None;
@@ -433,20 +437,19 @@ fn compose_records_access(
                         "only fresh global procedures are supported by the bounded entry",
                     ));
                 }
-                plan.procedures.push((
-                    index,
-                    crate::lowering::UnitIdentity {
-                        owner,
-                        name,
-                        namespace,
-                        occurrence,
-                    },
-                ));
+                if admitted_plan.is_none() {
+                    plan.procedures.push((
+                        index,
+                        crate::lowering::UnitIdentity { owner, name, namespace, occurrence },
+                    ));
+                }
             }
             Key::Type(_) if (index as usize) >= dmb.classes.len() && projection.is_some() => {}
             Key::Variable { .. } | Key::ProcedureStatic(_) if projection.is_some() => {}
             Key::ArgumentSource { .. } if (index as usize) >= engine_procs => {
-                plan.helpers.push((index, key));
+                if admitted_plan.is_none() {
+                    plan.helpers.push((index, key));
+                }
             }
             Key::Initializer(identity) if (index as usize) >= engine_procs => {
                 if matches!(
@@ -459,7 +462,9 @@ fn compose_records_access(
                     }
                     stage_keys.insert(key);
                 }
-                plan.initializers.push((index, identity));
+                if admitted_plan.is_none() {
+                    plan.initializers.push((index, identity));
+                }
             }
             Key::Instance(_) if stage.is_some() && (index as usize) >= dmb.instances.len() => {
                 stage_keys.insert(key);
@@ -472,9 +477,10 @@ fn compose_records_access(
             _ => validate_binding(&dmb, key, index, symbols, batch.tables.content(key))?,
         }
     }
-    let plan = match generation {
-        Some(generation) => generation.bind_plan(plan, &batch),
-        None => {
+    let plan = match (admitted_plan, generation) {
+        (Some(plan), _) => plan,
+        (None, Some(generation)) => generation.bind_assignment_plan(plan, &batch, engine_procs),
+        (None, None) => {
             plan.canonicalize();
             plan.bind(&batch)
         }

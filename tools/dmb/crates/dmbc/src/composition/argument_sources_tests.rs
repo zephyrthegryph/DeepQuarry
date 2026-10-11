@@ -32,6 +32,7 @@ fn references_reuse_only_current_binding_start_and_exact_helper_order() {
     let tables = dm_link::LinkTables::build(inventory.clone()).unwrap();
     let mut plan = CachedPlan {
         bindings: tables.binding_tables(),
+        assignment_floor: None,
         raw: CompositionPlan::default(),
         units: Vec::new(),
         helpers: keys.clone(),

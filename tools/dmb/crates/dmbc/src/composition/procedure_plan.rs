@@ -105,6 +105,8 @@ fn bind<K: Ord + Copy>(
 #[derive(Clone)]
 pub(super) struct CachedPlan {
     bindings: dm_link::BindingTables,
+    // Issued only by the assignment traversal in composition.
+    assignment_floor: Option<usize>,
     raw: CompositionPlan,
     units: Vec<UnitIdentity>,
     helpers: Vec<Key>,
@@ -138,13 +140,34 @@ impl CachedPlan {
         }
         Ok(owner)
     }
+    pub(super) fn admit_assignments(
+        &self,
+        batch: &FrozenBatch,
+        engine_procedures: usize,
+    ) -> Option<BoundCompositionPlan> {
+        if self.assignment_floor != Some(engine_procedures) {
+            return None;
+        }
+        self.admit_current_order(batch)
+    }
+    pub(super) fn has_assignment_floor(&self, floor: usize) -> bool {
+        self.assignment_floor == Some(floor)
+    }
+    pub(super) fn issue_assignment_floor(&mut self, floor: usize) {
+        self.assignment_floor = Some(floor);
+    }
     pub fn admit(
         &self,
         raw: &CompositionPlan,
         batch: &FrozenBatch,
     ) -> Option<BoundCompositionPlan> {
+        if self.raw != *raw {
+            return None;
+        }
+        self.admit_current_order(batch)
+    }
+    fn admit_current_order(&self, batch: &FrozenBatch) -> Option<BoundCompositionPlan> {
         if !self.bindings.same_owner(&batch.tables.binding_tables())
-            || self.raw != *raw
             || !self
                 .units
                 .iter()
@@ -180,6 +203,7 @@ impl CachedPlan {
     ) -> Option<Self> {
         Some(Self {
             bindings: batch.tables.binding_tables(),
+            assignment_floor: None,
             raw,
             units: batch
                 .units

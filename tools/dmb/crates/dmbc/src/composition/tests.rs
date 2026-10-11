@@ -981,3 +981,6 @@ fn frame_contribution_requires_current_resolved_argument_source_numbers() {
 
 #[path = "frame_contribution_tests.rs"]
 mod frame_retention;
+
+#[path = "assignment_plan_tests.rs"]
+mod assignment_plan_tests;
