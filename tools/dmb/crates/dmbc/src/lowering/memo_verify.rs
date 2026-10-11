@@ -151,13 +151,40 @@ mod tests {
     }
     struct Local;
     impl AbiPolicy for Local {
-        fn prepare(
+        fn inputs(
             &self,
-            _: &dm_ir::ProcedureMetadata,
-            parsed: &dm_syntax::Item,
-            _: &AbiContext<'_>,
-        ) -> Result<PreparedUnit, String> {
-            Ok(PreparedUnit::local_only(Default::default(), parsed))
+            identity: UnitIdentity,
+            metadata: &ProcedureMetadata,
+            symbols: &SymbolTable,
+            _: &SourceLocation,
+        ) -> Result<ProcedureInputs, String> {
+            // This fixture owns no formals/settings. Do not fabricate inputs for
+            // a changed signature or silently turn a production ABI into local ABI.
+            if !metadata.signature.parameters.is_empty()
+                || metadata.signature.variadic
+                || !metadata.settings.is_empty()
+            {
+                return Err(
+                    "verification fixture requires the issued no-argument signature".into(),
+                );
+            }
+            let owner = symbols
+                .text(identity.owner)
+                .ok_or("current owner spelling missing")?;
+            let name = symbols
+                .text(identity.name)
+                .ok_or("current procedure spelling missing")?;
+            Ok(ProcedureInputs {
+                procedure_identity: Some(dm_ir::ProcedureIdentity {
+                    owner: identity.owner,
+                    name: identity.name,
+                    verb: identity.namespace == Namespace::Verb,
+                    occurrence: identity.occurrence,
+                }),
+                current_type_path: Some(owner.into()),
+                current_proc_path: Some(format!("{}/proc/{name}", owner.trim_end_matches('/'))),
+                ..Default::default()
+            })
         }
     }
     #[test]
