@@ -8211,7 +8211,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 										"trans" = 3,
 										"ace" = 3)
 	var/randomize_bowl_color = TRUE
-	CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratpackramen)
+	/// The bowl colour it rolled (when randomize_bowl_color): its package states and trash follow it.
+	var/bowl_color
+
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratpackramen)
 	rolls(nameof(bowl_color), PROC_REF(roll_bowl_color), when = nameof(randomize_bowl_color))
 	rolls(nameof(package_open_state), PROC_REF(bowl_open_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
 	rolls(nameof(package_opening_state), PROC_REF(bowl_opening_state), when = nameof(bowl_color), from = list(nameof(bowl_color)))
@@ -8228,9 +8231,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/ratsteak)
 
 /obj/item/reagent_containers/food/snacks/ratpackramen/proc/bowl_trash(datum/roller/R)
 	return text2path("/obj/item/trash/ratpackramen/[bowl_color]")
-
-/// The bowl colour it rolled (when randomize_bowl_color): its package states and trash follow it.
-	var/bowl_color
 
 /obj/item/reagent_containers/food/snacks/ratpacktaco
 	name = "Triple Taco Tuck"
