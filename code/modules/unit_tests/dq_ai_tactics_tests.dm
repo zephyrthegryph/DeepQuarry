@@ -43,7 +43,7 @@
 /datum/unit_test/proc/ai_pair(turf/subject_loc, turf/target_loc, subject_type = /mob/living/simple_mob/combat_ai_tactics_subject)
 	var/mob/living/simple_mob/S = allocate(subject_type, subject_loc)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, target_loc)
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	S.ai_brain.give_target(H, TRUE)
 	return list(S, H)
 
@@ -69,14 +69,14 @@
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/melee_attack), "melee_attack scored a target three tiles away")
 	H.forceMove(ai_floor(1))
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/melee_attack)), 40, "melee_attack did not score 40 against an adjacent threat")
-	S.next_click = world.time + 50
+	cooldown_set_end(S, next_click, world.time + 50)
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/melee_attack), "melee_attack scored while the mob was on attack cooldown")
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	var/datum/ai_behavior/melee_attack/M = dq_get_behavior(/datum/ai_behavior/melee_attack)
 	// A swing can miss or be dodged: a handful of swings must land at least once.
 	for(var/i in 1 to 12)
-		S.next_click = 0
+		cooldown_set_end(S, next_click, 0)
 		TEST_ASSERT_EQUAL(M.start(B, H, null), DQ_BEHAVIOR_DONE, "melee_attack is a single-tick action")
 		dq_test_ticks(3)
 		if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > before)
@@ -94,15 +94,15 @@
 	var/datum/op_result/far = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT(far?.outcome != ACT_COMMITTED, "a melee op committed against a target three tiles away")
 	H.forceMove(ai_floor(1))
-	S.next_click = world.time + 50
+	cooldown_set_end(S, next_click, world.time + 50)
 	var/datum/op_result/cooling = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(cooling?.outcome, ACT_REFUSED, "the melee op ran while the mob was on attack cooldown")
 	TEST_ASSERT_EQUAL(cooling?.reason, /datum/msg/mob_attacks/cooling, "the refusal does not say why")
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	var/datum/op_result/swing = perform_op(S, H, "mob_attacks.melee", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(swing?.outcome, ACT_COMMITTED, "the melee op was refused: [reason_text(swing?.reason)]")
 	TEST_ASSERT(!S.checkClickCooldown(), "the swing did not start the attack cooldown")
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	var/datum/op_result/no_shot = perform_op(S, H, "mob_attacks.shoot", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(no_shot?.reason, /datum/msg/mob_attacks/no_shot, "a mob with no projectile was allowed to shoot")
 	// A brain's refusal is traced and fails the tactic (the target slipped out of reach).
@@ -118,7 +118,7 @@
 	var/mob/living/simple_mob/S = pair[1]
 	var/mob/living/carbon/human/H = pair[2]
 	var/turf/dest = ai_floor(0, 1)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	var/datum/op_result/stepped = perform_op(S, dest, "mob_attacks.step", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(stepped?.outcome, ACT_COMMITTED, "the step op was refused: [reason_text(stepped?.reason)]")
 	TEST_ASSERT_EQUAL(get_turf(S), dest, "the step op did not move the mob")
@@ -128,10 +128,10 @@
 	TEST_ASSERT_EQUAL(picked?.outcome, ACT_COMMITTED, "the pickup op was refused: [reason_text(picked?.reason)]")
 	TEST_ASSERT_EQUAL(G.loc, S, "the pickup op did not take the item")
 	// throw wants the grenade held; with nothing held it is refused
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	var/datum/op_result/bare = perform_op(S, get_turf(H), "mob_attacks.throw", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(bare?.reason, /datum/msg/mob_attacks/no_item, "a throw with nothing held was allowed")
-	S.next_click = 0
+	cooldown_set_end(S, next_click, 0)
 	var/datum/op_result/thrown = perform_op(S, get_turf(H), "mob_attacks.throw", G, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(thrown?.outcome, ACT_COMMITTED, "the throw op was refused: [reason_text(thrown?.reason)]")
 	TEST_ASSERT(G.active, "the thrown grenade was not primed")
@@ -166,7 +166,7 @@
 	TEST_ASSERT_EQUAL(A.start(B, H, null), DQ_BEHAVIOR_CONTINUE, "approach_threat is tick-driven")
 	var/start_dist = get_dist(S, H)
 	for(var/i in 1 to 6)
-		S.next_move = 0
+		cooldown_set_end(S, next_move, 0)
 		if(A.tick(B, H, null) != DQ_BEHAVIOR_CONTINUE)
 			break
 		dq_test_ticks(3)
@@ -227,7 +227,7 @@
 	TEST_ASSERT(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/flee_low_hp)) > 0, "flee did not score at low health")
 	var/datum/ai_behavior/flee_low_hp/F = dq_get_behavior(/datum/ai_behavior/flee_low_hp)
 	var/start_dist = get_dist(S, H)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	TEST_ASSERT_EQUAL(F.tick(B, H, null), DQ_BEHAVIOR_CONTINUE, "flee stopped while the threat was close")
 	TEST_ASSERT(get_dist(S, H) >= start_dist, "flee stepped toward its threat")
 	H.forceMove(ai_floor(14))
@@ -247,7 +247,7 @@
 	S.test_vitality = 0.1
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/pack_retreat)), 120, "pack_retreat did not score 120 when dying")
 	var/datum/ai_behavior/pack_retreat/P = dq_get_behavior(/datum/ai_behavior/pack_retreat)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	TEST_ASSERT_EQUAL(P.tick(B, H, null), DQ_BEHAVIOR_CONTINUE, "pack_retreat stopped close to its threat")
 	H.forceMove(ai_floor(14))
 	S.forceMove(ai_floor(0))
@@ -351,7 +351,7 @@
 	H.forceMove(ai_floor(1))
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/ranged_attack), "ranged_attack scored inside its minimum range")
 	H.forceMove(ai_floor(4))
-	S.next_click = world.time + 50
+	cooldown_set_end(S, next_click, world.time + 50)
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/ranged_attack), "ranged_attack scored on cooldown")
 
 /datum/unit_test/dq_ai_tactic_kite_away
@@ -366,7 +366,7 @@
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/kite_away)), 65, "kite_away did not score 65 inside its distance")
 	var/datum/ai_behavior/kite_away/K = dq_get_behavior(/datum/ai_behavior/kite_away)
 	var/start_dist = get_dist(S, H)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	TEST_ASSERT_EQUAL(K.start(B, H, null), DQ_BEHAVIOR_DONE, "kite_away is a single-tick action")
 	TEST_ASSERT(get_dist(S, H) >= start_dist, "kite_away stepped toward its target")
 	H.forceMove(ai_floor(12, 2))
@@ -384,7 +384,7 @@
 	EXPIRY_STAMP(B, last_attack_at, CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/evasive_juke)), 70, "juke did not score 70 right after an attack")
 	var/datum/ai_behavior/evasive_juke/J = dq_get_behavior(/datum/ai_behavior/evasive_juke)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	TEST_ASSERT_EQUAL(J.start(B, pair[2], null), DQ_BEHAVIOR_DONE, "juke is a single-tick action")
 	TEST_ASSERT_NULL(dq_ai_test_eval(B, /datum/ai_behavior/evasive_juke), "juke fired twice for one attack")
 
@@ -399,7 +399,7 @@
 	EXPIRY_STAMP(B, last_attack_at, CLOCK_WORLD)
 	TEST_ASSERT_EQUAL(dq_ai_test_score(dq_ai_test_eval(B, /datum/ai_behavior/hit_and_run)), 75, "hit and run did not score 75 right after an attack")
 	var/datum/ai_behavior/hit_and_run/R = dq_get_behavior(/datum/ai_behavior/hit_and_run)
-	S.next_move = 0
+	cooldown_set_end(S, next_move, 0)
 	TEST_ASSERT_EQUAL(R.start(B, H, null), DQ_BEHAVIOR_CONTINUE, "hit and run is tick-driven")
 	H.forceMove(ai_floor(12, 2))
 	TEST_ASSERT_EQUAL(R.tick(B, H, null), DQ_BEHAVIOR_DONE, "hit and run did not finish at distance")
@@ -451,7 +451,7 @@
 	var/datum/ai_behavior/walk_to_destination/W = dq_get_behavior(/datum/ai_behavior/walk_to_destination)
 	var/start_dist = get_dist(S, goal)
 	for(var/i in 1 to 8)
-		S.next_move = 0
+		cooldown_set_end(S, next_move, 0)
 		if(W.tick(B, goal, null) == DQ_BEHAVIOR_DONE)
 			break
 		dq_test_ticks(3)

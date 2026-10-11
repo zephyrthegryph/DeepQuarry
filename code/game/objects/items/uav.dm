@@ -319,7 +319,7 @@ TRACKED(/obj/item/uav, state)
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in masters))
-		if(COOLDOWN_FINISHED(src, next_move))
+		if(cooldown_ready(src, next_move))
 			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move

@@ -22,7 +22,6 @@
 	var/datum/mind/mind
 
 	var/stat = CONSCIOUS //Whether a mob is alive or dead.
-	COOLDOWN_DECLARE(next_move) // world.time when mob is next allowed to self-move.
 
 	/**
 	 * Whether and how a mob is incapacitated
@@ -99,7 +98,6 @@
 	EXPIRY_DECLARE(timeofdeath) //Living
 	/// What onlookers see when this mob dies ("\The [src] <death_message>"). See /mob/proc/get_death_message().
 	var/death_message = "seizes up and falls limp..."
-	COOLDOWN_DECLARE(cpr_time) //Carbon
 
 	var/bodytemperature = BODYTEMP_NORMAL
 	var/charges = 0.0
@@ -238,9 +236,10 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
-	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
+	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
+	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
 	ref_one(nameof(control_object)) // the object an admin possesses
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):

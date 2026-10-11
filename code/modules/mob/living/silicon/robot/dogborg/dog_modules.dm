@@ -377,7 +377,7 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 	return TRUE
 
 /mob/living/silicon/robot/proc/leap(bluespace = FALSE)
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_filter_notice("Your leap actuators are still recharging."))
 		return
 
@@ -427,14 +427,14 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 		to_chat(src, span_warning("Warning, low power detected. Aborting action."))
 		return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(src.incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, span_filter_notice("You cannot leap in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 1 SECOND)
+	cooldown_start(src, last_special, 1 SECOND)
 	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 

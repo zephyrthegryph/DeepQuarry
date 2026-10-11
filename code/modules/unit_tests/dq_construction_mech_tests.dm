@@ -32,7 +32,7 @@
 		if(actor.get_active_hand())
 			actor.drop_item()
 		actor.put_in_active_hand(held)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 
 /// The actor uses `held` on `target` and the time it takes passes.
 /datum/unit_test/proc/mech_use(mob/living/carbon/human/actor, atom/target, obj/item/held)

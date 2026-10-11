@@ -133,7 +133,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, "You cannot suck blood so quickly in a row!")
 		return FALSE
 	if(!B || stat || !Adjacent(B))
@@ -147,7 +147,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 	return TRUE
 
 /mob/living/carbon/human/proc/bloodsuck_begin(mob/living/carbon/human/B, noise, bleed)
-	COOLDOWN_START(src, last_special, 60 SECONDS)
+	cooldown_start(src, last_special, 60 SECONDS)
 	if(noise)
 		act_message(src, B, others = span_infoplain(span_red(span_bold("%U% moves their head next to %T%'s neck, seemingly looking for something!"))))
 	else
@@ -467,7 +467,7 @@ CAPABILITIES(/datum/prompt/choice/bloodsuck)
 		to_chat(src,span_warning("You must be next to your target."))
 		return FALSE
 	//Cooldown on abilities
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src,span_warning("You can't perform an ability again so soon!"))
 		return FALSE
 
@@ -684,7 +684,7 @@ CAPABILITIES(/datum/shred_limb_review)
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
 
-	COOLDOWN_START(src, last_special, vore_shred_time)
+	cooldown_start(src, last_special, vore_shred_time)
 	act_message(src, T, others = span_danger("%U% appears to be preparing to do something to %T%!")) //Let everyone know that bad times are ahead
 
 	perform_op(src, src, "shred_limb", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("victim" = T, "external" = T_ext, "internal" = T_int, "belly" = B))
@@ -845,7 +845,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 
 /// Requirement: awake, loose and rested (no tongue flicking while stunned).
 /mob/living/carbon/human/proc/cocoon_fit(datum/act/op/A)
-	return (!(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once(COOLDOWN_FINISHED(src, last_special)))) ? null : /datum/msg/req_failed
+	return (!(src?.buckled_to() || stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !read_once(cooldown_ready(src, last_special)))) ? null : /datum/msg/req_failed
 
 /mob/living/carbon/human/proc/enter_cocoon_human_done(datum/act/op/A)
 	var/obj/item/storage/vore_egg/bugcocoon/C = new(loc)
@@ -866,9 +866,9 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set desc = "Dive under water, allowing for you to be stealthy and move faster."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 5 SECONDS) //No spamming!
+	cooldown_start(src, last_special, 5 SECONDS) //No spamming!
 
 	if(has_body_effect(/datum/body_effect/underwater_stealth))
 		to_chat(src, "You resurface!")
@@ -898,9 +898,9 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set desc = "Grab something in the water with you and devour them with your selected stomach."
 	set category = VERB_CAT_ABILITIES_VORE
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
-	COOLDOWN_START(src, last_special, 5 SECONDS) //No spamming!
+	cooldown_start(src, last_special, 5 SECONDS) //No spamming!
 
 	if(stat == DEAD || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED))
 		to_chat(src, span_notice("You cannot do that while in your current state."))
@@ -1010,11 +1010,11 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Grab a target with any of your appendages!"
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special) || is_incorporeal()) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -1074,7 +1074,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.launch_projectile(target, BP_TORSO, src) //Send it.
-	COOLDOWN_START(src, last_special, 10 SECONDS) //Cooldown for successful strike.
+	cooldown_start(src, last_special, 10 SECONDS) //Cooldown for successful strike.
 
 /obj/item/projectile/beam/appendage //The tongue projecitle.
 	name = "appendage"
@@ -1226,11 +1226,11 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	var/leap_warmup = 1 SECOND //Easy to modify
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special)) //No tongue flicking while status_units(STAT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	if (!isliving(src))
 		to_chat(src, span_warning("It doesn't work that way."))
@@ -1306,11 +1306,11 @@ CAPABILITIES(/obj/item/projectile/bullet/BFGtaser/tongue)
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Inject another being with something!"
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //Epic copypasta from tongue grabbing.
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special)) //Epic copypasta from tongue grabbing.
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
-	COOLDOWN_START(src, last_special, 1 SECONDS) //Anti-spam.
+	cooldown_start(src, last_special, 1 SECONDS) //Anti-spam.
 
 	var/list/choices = list("Inject")
 
@@ -1475,7 +1475,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	set desc = "Bite prey and inject them with various toxins."
 	set category = VERB_CAT_ABILITIES_SUCCUBUS
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	if(!ishuman(src))
@@ -1499,7 +1499,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 		to_chat(C, span_warning("You must have a tighter grip to bite this creature."))
 		return
 
-	COOLDOWN_START(src, last_special, 60 SECONDS)
+	cooldown_start(src, last_special, 60 SECONDS)
 	open_request(src, /datum/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), answerer = src, grab = G, target = T)
 
 /// Re-checked on the answer: conscious, and still holding the target by the neck.
@@ -1634,10 +1634,10 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	set desc = "you can lay Eggs"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, 60 SECONDS)
+	cooldown_start(src, last_special, 60 SECONDS)
 	// The op asks what to do, then takes thirty seconds over it (code/library/mob/living_abilities.dm).
 	perform_op(src, src, "egg_laying", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 
@@ -1671,7 +1671,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	set desc = "Sting a target and inject a small amount of toxin"
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	var/list/victims = list()
@@ -1694,7 +1694,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	if(isdatum(selected) && QDELETED(selected))
 		return "gone"
 	var/mob/living/L = answerer
-	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(value))
+	if(!cooldown_ready(L, last_special) || !L.Adjacent(value))
 		return "can't reach"
 	return null
 
@@ -1712,7 +1712,7 @@ CAPABILITIES(/datum/prompt/choice/succubus_bite)
 	to_chat(T, span_danger("You feel a stabbing pain as you are stung!"))
 	act_message(src, T, others = span_infoplain(span_red("%U% sinks their stinger into %T%!")))
 	T.bloodstr.add_reagent(REAGENT_ID_CONDENSEDCAPSAICINV,3)
-	COOLDOWN_START(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
+	cooldown_start(src, last_special, (5 SECONDS)) // Many little jabs instead of one big one
 
 /mob/living/proc/absorb_devour()
 	if(!absorbed || !isbelly(loc))
@@ -1806,7 +1806,7 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	set desc = "Change your name. Notifies admins."
 	set category = VERB_CAT_ABILITIES_SUPERPOWER
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		return
 
 	open_request(src, /datum/prompt/text, PROC_REF(name_change_entered), answerer = src, title = "Name change", question = "What would you like your name to become?", default = name, max_len = MAX_NAME_LEN, name_text = TRUE, timeout = 0)
@@ -1815,10 +1815,10 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	if(!A.answer)
 		return
 	var/chosen_name = A.answer.value
-	if(!length(chosen_name) || !COOLDOWN_FINISHED(src, last_special))
+	if(!length(chosen_name) || !cooldown_ready(src, last_special))
 		return
 
-	COOLDOWN_START(src, last_special, (5 SECONDS)) //don't spam check the global list pls
+	cooldown_start(src, last_special, (5 SECONDS)) //don't spam check the global list pls
 	for(var/mob/checkplayer in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(checkplayer == src)
 			continue
