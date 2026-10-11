@@ -1186,3 +1186,14 @@ benchmarks. Undefined ordinary globals remain a confirmed classification gap:
 seven of eight finite name controls agree; unknown_global still native70 vs
 BYOND source error (receipt498a4e535a0a4a92b3805eefebbf504b). A qualified ordinary
 global absence policy through the existing issuer is being implemented.
+
+
+## 2026-10-10 current correctness and migration follow-up
+
+- Immutable 4f08394f8b compiler: all 46 paired loop diagnostic controls now match pinned BYOND acceptance, rejection category and exact diagnostics; receipt E:/dq-cache/dmb-loop-local-diagnostics/e72d7eb7bff1458b90a6bcd8b60253c9/receipt.json.
+- Retained runtime contract at d105b4c75a: all 14 revisions match BYOND runtime values and independent fresh native DMB/RSC bytes, including parent changes, initializer replacement/deletion and resources. Receipt E:/dq-cache/dmb-incremental-runtime-contract/d6efec759d8142f7ac48cbec55707aee/receipt.json. This is a tiny semantic fixture, not full game or concurrency acceptance.
+- Daemon pressure policy and housekeeping: five focused Rust checks pass, alongside eight Python session-policy checks. Configured soft allowance reserves half the bounded cohort budget; active builds may exceed the soft allowance, so it is not a strict memory-peak claim.
+- Six-root preparation now uses the runner's same edit-assignment policy; five focused preparation checks pass. Actual six matching authenticated worktree execution remains outstanding.
+- Ordinary global absence work remains unadmitted: latest focused build passed but its fixture bypassed the production static overlay, and existing lexical storage fallback regressed. Both have been repaired in source; repeated Rust and pinned compiler checks are pending. No global diagnostic parity claimed.
+- Full all-tier DM evidence remains a partial prefix (21/63 native batches), with the shared BYOND ID-card lifecycle failure. A new bounded continuation is running against the preserved immutable compiled generation. Formal full baseline/source closure remains open.
+- No new accepted DeepQuarry speed benchmark. Rust build durations are correctness-build costs and are not DM compilation timings.
