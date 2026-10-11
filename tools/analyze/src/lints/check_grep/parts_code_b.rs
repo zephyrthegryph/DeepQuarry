@@ -59,7 +59,7 @@ pub fn parts() -> Vec<Part> {
             "admin rights: shrink-only baseline (one mechanism: admin_can)",
             "raw .holder reads outside modules/admin/holder* over the ratchet. Use admin_can(client, rights).",
             Files::Code,
-            line(r"\.holder\b"),
+            Find::Tree,
         )
         .flt(vec![
             Flt::DropLit("code/modules/admin/holder"),
@@ -433,7 +433,7 @@ pub fn parts() -> Vec<Part> {
             "legacy equip restriction vars",
             "new raw slot_flags check. Use dq_item_fits_slot_flags() / the wearable constraints.",
             Files::Code,
-            line(r"slot_flags\s*&[^=]"),
+            Find::Tree,
         )
         .allow(Allow::Strict)
         .flt(vec![Flt::DropPaths("slot_flags_allow"), drop(r":\s*//")]),

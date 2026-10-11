@@ -866,7 +866,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 	victim.calculate_composition()
 
 	var/obj/item/reagent_containers/food/snacks/variable/mob/result = new /obj/item/reagent_containers/food/snacks/variable/mob(CI.container())
-	result.w_class = victim.mob_size
+	result.set_w_class(victim.mob_size)
 	result.reagents.add_reagent(victim.composition_reagent, victim.composition_reagent_quantity)
 
 	if (victim.reagents)

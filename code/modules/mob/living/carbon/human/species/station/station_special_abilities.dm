@@ -852,7 +852,7 @@ MSG_DEF_SELF(human/cocoon_state, span_warning("You can't do that in your current
 	forceMove(C)
 
 	var/mob_holder_type = src.holder_type || /obj/item/holder
-	C.w_class = src.size_multiplier * 4 //Egg size and weight scaled to match occupant.
+	C.set_w_class(src.size_multiplier * 4) //Egg size and weight scaled to match occupant.
 	var/obj/item/holder/H = new mob_holder_type(C, src)
 	C.max_storage_space = H.w_class
 	C.icon_scale_x = 0.25 * C.w_class

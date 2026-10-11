@@ -150,7 +150,7 @@ MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%
 	switch(part_count)
 		if(1)
 			name = initial(name)
-			w_class = ITEMSIZE_NORMAL
+			set_w_class(ITEMSIZE_NORMAL)
 			icon_state = initial(icon_state)
 		if(2)
 			if(barrel() && trigger_group())
@@ -162,7 +162,7 @@ MSG_DEF_SELF(sniper_part/disassembling, span_notice("You start disassembling %T%
 			else if(stock() && barrel())
 				name = "AM rifle stock-barrel assembly"
 				icon_state = "heavysniper-barstock"
-			w_class = ITEMSIZE_LARGE
+			set_w_class(ITEMSIZE_LARGE)
 
 		if(3)
 			var/obj/item/gun/projectile/heavysniper/collapsible/gun = new (get_turf(src), 0)

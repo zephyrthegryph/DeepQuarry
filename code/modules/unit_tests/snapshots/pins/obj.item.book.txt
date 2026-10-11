@@ -16,10 +16,9 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+2 click: nothing
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: nothing
 @obj human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename

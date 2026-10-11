@@ -59,6 +59,19 @@ CAPABILITIES(/obj/item/dq_derives_probe)
 	D.set_volume(3)
 	TEST_ASSERT_EQUAL(D.computes, before, "an unchanged write recomputes nothing")
 
+// Computation releases the lazy recursion guard before teardown.
+// Deletion must accept that empty guard, and later holders still recompute.
+/datum/unit_test/dq_lifeform_derives/recreate/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_derives_probe/first = allocate(/obj/item/dq_derives_probe, T)
+	TEST_ASSERT_EQUAL(first.summary, "1000", "The first real holder computes its initial value")
+	TEST_ASSERT_NULL(GLOB.derives_running, "Completed computation releases the lazy recursion guard before deletion")
+	qdel(first)
+	var/obj/item/dq_derives_probe/second = allocate(/obj/item/dq_derives_probe, T)
+	TEST_ASSERT_EQUAL(second.summary, "1000", "A new holder computes after the previous holder was deleted")
+	second.set_pressure(7)
+	TEST_ASSERT_EQUAL(second.summary, "70", "The new holder continues to recompute after input changes")
+
 /// derives() from a relation a constructor param fills: the param is written from /atom/New(), before the instance's lifeform plan has
 /// run, and the write must not recompute (it crashed with "bad index"); init computes it.
 /obj/item/dq_derives_param_probe

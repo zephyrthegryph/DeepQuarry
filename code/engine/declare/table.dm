@@ -175,6 +175,7 @@ GLOBAL_VAR(declare_report_capture)
 	if(T.has_cond_scoped)
 		table_cond_gates(T) // a condition-scoped entry is re-applied when its conditions or the vars it reads change (cond_scope.dm)
 	T.hook_flags = table_hook_flags(T)
+	acceptance_compile_table(T)
 	return T
 
 /// ENGINE_HOOK_* bits of a compiled table: what the lifecycle must call on an instance of the type.

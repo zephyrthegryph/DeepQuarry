@@ -467,12 +467,16 @@
 		return TRUE
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
 	var/ok = TRUE
-	for(var/cond in C.oplan.conds)
-		if(!op_cond(A, cond))
-			C.dropped_by = GATE_MATCH
-			C.dropped_cond = cond
-			ok = FALSE
-			break
+	try
+		for(var/cond in C.oplan.conds)
+			if(!op_cond(A, cond))
+				C.dropped_by = GATE_MATCH
+				C.dropped_cond = cond
+				ok = FALSE
+				break
+	catch(var/exception/fault)
+		A.release()
+		throw fault
 	A.release()
 	return ok
 
@@ -725,7 +729,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
 /proc/op_menu(mob/actor, atom/target, obj/held)
 	var/list/previous = GLOB.op_menu_read_frame
-	var/list/frame = list(previous, FALSE)
+	var/list/frame = list(previous, FALSE, null)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	GLOB.op_menu_read_frame = frame
 	try
@@ -746,8 +750,19 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/rx_state/held_state = held ? rx_of(held) : null
 	var/cache_key = "[actor ? SHARED_CACHE_UID(actor) : "-"]|[target ? SHARED_CACHE_UID(target) : "-"]|[held ? SHARED_CACHE_UID(held) : "-"]|[actor_state?.act_gen]|[target_state?.act_gen]|[held_state?.act_gen]|[actor_state?.provider_gen]"
 	var/list/cached = GLOB.op_menu_cache[cache_key]
-	if(cached && (isnull(cached[2]) || cached[2] == stamp))
+	if(cached && (isnull(cached[2]) || cached[2] == stamp) && op_menu_dependencies_valid(cached[3]))
 		var/list/cached_rows = cached[1]
+		var/list/parent_frame = frame[1]
+		while(parent_frame)
+			if(length(parent_frame) < 3)
+				parent_frame.len = 3
+			if(!parent_frame[3])
+				parent_frame[3] = list()
+			var/list/parent_deps = parent_frame[3]
+			var/list/cached_deps = cached[3]
+			for(var/id in cached_deps)
+				parent_deps[id] = cached_deps[id]
+			parent_frame = parent_frame[1]
 		return cached_rows.Copy()
 	GLOB.op_menu_builds++
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
@@ -774,13 +789,18 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		GLOB.op_menu_cache.Cut()
 	if(!frame[2])
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null)
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3])
 	return rows.Copy()
 
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.
 /proc/op_cand_require_reason(datum/op_resolution/R, datum/op_cand/C)
 	var/datum/act/op/A = op_act_for(C, R.actor, R.target, R.held, R.origin, R.authority)
-	var/why = op_require_reason(A, C.oplan, C.binding)
+	var/why
+	try
+		why = op_require_reason(A, C.oplan, C.binding)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
 	A.release()
 	return why
 

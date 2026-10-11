@@ -89,7 +89,7 @@ human|none click: Click: Use
 +4 menu: Put on the register
 +6 menu: Use
 +7 click: Click: Pay / scan
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +1 menu: Open Cash Box

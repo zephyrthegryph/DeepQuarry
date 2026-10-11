@@ -97,15 +97,17 @@
 +2 menu: Forced Shutdown
 +3 menu: Interaction hand
 +4 menu: Interaction item
-@obj.item human|/obj/item/card/emag
-+0 menu: Alternate use
-+1 menu: Forced Shutdown
-+2 menu: Interaction hand
-+3 menu: Interaction item
+human|/obj/item/card/emag menu: Alternate use
+human|/obj/item/card/emag menu: Forced Shutdown
+human|/obj/item/card/emag menu: Interaction hand
+human|/obj/item/card/emag menu: Interaction item
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 @obj.item human|/obj/item
 -menu: Use
 -click: Click: Use
-+0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
 +3 menu: Interaction item

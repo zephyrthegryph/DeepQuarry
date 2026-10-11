@@ -344,14 +344,14 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS, "missing"), ITEMSIZE_SMALL, "an unknown variant keeps the type value")
 	var/obj/item/dq_property_test/variant_item = allocate(path)
 	variant_item.variant = "big"
-	variant_item.w_class = ITEMSIZE_HUGE
+	variant_item.set_w_class(ITEMSIZE_HUGE)
 	TEST_ASSERT_EQUAL(PROPERTY(variant_item, PROP_SIZE_CLASS), ITEMSIZE_HUGE, "an instance of the variant reads its state")
 	GLOB.dq_variant_tables -= path
 
 	// Instances read saved state, and per-type values don't change.
 	var/obj/item/dq_property_test/item = allocate(path)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "an unchanged instance matches its type")
-	item.w_class = ITEMSIZE_LARGE
+	item.set_w_class(ITEMSIZE_LARGE)
 	item.set_sharp(FALSE)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_LARGE, "instance state overrides the type value")
 	TEST_ASSERT(!HAS_TAG(item, TAG_SHARP), "a blunted instance is not sharp")

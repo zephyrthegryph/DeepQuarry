@@ -76,7 +76,6 @@
 +6 click: Click: Load
 @obj.item human|/obj/item
 -click: Click: Use
-+0 menu: Alternate use
 +1 menu: Load
 +5 click: Click: Load
 keys: alt, collect_item, collect_shells, drag_buckle, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, toggle_digestable

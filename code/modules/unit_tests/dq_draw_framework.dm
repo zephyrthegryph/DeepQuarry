@@ -372,7 +372,7 @@ TRACKED(/obj/dq_draw_watched, shown)
 /datum/unit_test/dq_draw_helmet_lamp_worn_by_sprite_sheet_species/Run()
 	var/turf/T = test_floor()
 	var/obj/item/clothing/head/helmet/H = allocate(/obj/item/clothing/head/helmet, T)
-	H.sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi')
+	H.set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi'))
 	refresh_flush()
 	var/before = H.rx?.look_key
 	H.set_light_on(TRUE)

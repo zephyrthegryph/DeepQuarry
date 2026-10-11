@@ -11,12 +11,10 @@
 @obj.item.storage human|/obj/item/stack/cable_coil
 @obj.item.storage human|/obj/item/stack/material/steel
 @obj.item.storage human|/obj/item/card/id
-@obj human|/obj/item/kit
-+2 menu: Open
-+3 menu: Put in
-@obj human|/obj/item/storage
-+2 menu: Open
-+3 menu: Put in
+@obj.item.storage human|/obj/item/kit
+@obj.item.storage human|/obj/item/storage
+-click: Click: Put in
++5 click: Click: Collect
 @obj.item.storage human|/obj/item
 @obj human|/obj/item/lightreplacer
 human|/obj/item/robot_parts/l_arm menu: Add robot arm

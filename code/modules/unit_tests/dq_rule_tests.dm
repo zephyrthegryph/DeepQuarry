@@ -10,7 +10,6 @@
 /datum/rule/dq_test_hold
 	name = "test hold"
 	test_only = TRUE
-	condition = list(REQ_AT_LEAST(PRED_TARGET, PROP_TEMPERATURE, KELVIN(400)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SET_STATE("w_class", ITEMSIZE_HUGE))
 	hold_for = 2 SECONDS
@@ -18,21 +17,18 @@
 /datum/rule/dq_test_band
 	name = "test band"
 	test_only = TRUE
-	condition = list(REQ_BETWEEN(PRED_TARGET, PROP_TEMPERATURE, KELVIN(300), KELVIN(350)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_SET_STATE("w_class", ITEMSIZE_TINY))
 
 /datum/rule/dq_test_static_only
 	name = "test static only"
 	test_only = TRUE
-	condition = list(REQ_ABOVE(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(1)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
 /datum/rule/dq_test_actor
 	name = "test actor"
 	test_only = TRUE
-	condition = list(REQ_ABOVE(PRED_ACTOR, PROP_TEMPERATURE, KELVIN(300)))
 	effect_kind = RULE_EFFECT_DATA
 	transform = list(RULE_REMOVE)
 
@@ -487,3 +483,17 @@
 	. = 0
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		. += R.get_amount()
+
+// Native simulation condition factories.
+
+/datum/rule/dq_test_hold/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GTE, KELVIN(400))
+
+/datum/rule/dq_test_band/rule_condition()
+	return cond_band(PROP_TEMPERATURE, KELVIN(300), KELVIN(350))
+
+/datum/rule/dq_test_static_only/rule_condition()
+	return cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GT, SIZE_CLASS(1))
+
+/datum/rule/dq_test_actor/rule_condition()
+	return cond_measure(PROP_TEMPERATURE, SIM_COMPARE_GT, KELVIN(300), subject = "actor")

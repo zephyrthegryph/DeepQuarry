@@ -1,3 +1,8 @@
+human|/obj/item/assembly/signaler menu: Move To Top
+human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/assembly/signaler menu: Ui open
+human|/obj/item/assembly/signaler click: Click: Ui open
 human|/obj/item/card/emag menu: Climb
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Rotate Clockwise

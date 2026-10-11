@@ -483,7 +483,7 @@ CAPABILITIES(/obj/item/clothing/head/fedora)
 	desc = "A brown fedora. Perfect for detectives or those trying to pilfer artifacts."
 	icon_state = "fedora_brown"
 
-TYPE_TABLE(/obj/item/clothing/head/fedora/brown, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
+
 
 /obj/item/clothing/head/fedora/white
 	desc = "A white fedora, really cool hat if you're a mobster. A really lame hat if you're not."
@@ -966,3 +966,6 @@ CAPABILITIES(/obj/item/clothing/head/halo/alt)
 	name = "sleek side cap"
 	desc = "A simple wedge cap with red accents, popular with biosynthetic personnel."
 	icon_state = "eulrhat"
+
+CAPABILITIES(/obj/item/clothing/head/fedora/brown)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

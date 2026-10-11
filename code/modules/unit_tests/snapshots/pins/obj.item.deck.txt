@@ -143,6 +143,7 @@
 +8 menu: Shuffle
 +10 menu: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +0 menu: Alt
 +1 menu: Deal
 +2 menu: Deal Multiple Cards

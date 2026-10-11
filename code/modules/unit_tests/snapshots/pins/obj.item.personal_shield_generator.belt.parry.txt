@@ -11,17 +11,7 @@
 @obj.item.personal_shield_generator human|/obj/item/stack/cable_coil
 @obj.item.personal_shield_generator human|/obj/item/stack/material/steel
 @obj.item.personal_shield_generator human|/obj/item/card/id
-@obj human|/obj/item/kit
-+0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-@obj human|/obj/item/storage
--click: Click: Collect
-+0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
+@obj.item.personal_shield_generator human|/obj/item/kit
+@obj.item.personal_shield_generator human|/obj/item/storage
 @obj.item.personal_shield_generator human|/obj/item
 keys: alt, collect_item, destroy_cell, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, weapon_toggle_effect

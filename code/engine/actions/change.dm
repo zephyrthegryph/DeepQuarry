@@ -296,6 +296,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	var/datum/rx_state/rx = rx_of(A.holder)
 	H.reads = change_read_keys(A.holder, E.args["cond"])
 	LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
+	rx.set_hooks_generation(rx.hooks_generation + 1)
 	for(var/key in H.reads)
 		rx_watch_adjust(A.holder, key, 1)
 	change_hop_register(E.args["cond"])
@@ -310,6 +311,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 		if(H.activation != A || H.source_entry != E)
 			continue
 		holder.rx.hooks -= H
+		holder.rx.set_hooks_generation(holder.rx.hooks_generation + 1)
 		for(var/key in H.reads)
 			rx_watch_adjust(holder, key, -1)
 		change_hop_register(E.args["cond"], -1)

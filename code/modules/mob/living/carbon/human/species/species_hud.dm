@@ -42,7 +42,7 @@
 	var/static/list/shared_slots = list()
 	if(shared_gear[type])
 		gear = shared_gear[type]
-		equip_slots = shared_slots[type]
+		set_equip_slots(shared_slots[type], shared_initial = TRUE)
 		return
 
 	var/list/slots = list()
@@ -61,7 +61,7 @@
 		slots |= SLOT_ID_TIE
 
 	slots |= SLOT_ID_LEGCUFFED
-	equip_slots = slots
+	set_equip_slots(slots, shared_initial = TRUE)
 	shared_gear[type] = gear
 	shared_slots[type] = slots
 
@@ -90,3 +90,13 @@
 		"head" =         list("loc" = ui_head,      "name" = "Hat",          "slot" = SLOT_ID_HEAD,      "state" = "hair",   "toggle" = 1),
 		"id" =           list("loc" = ui_id,        "name" = "ID",           "slot" = SLOT_ID_ID,   "state" = "id")
 		)
+
+// Constructor sharing remains read-only; setter edits detach the list.
+SETTER(/datum/hud_data, equip_slots)
+/datum/hud_data/proc/set_equip_slots(list/value, shared_initial = FALSE)
+	var/list/replacement = shared_initial ? value : value?.Copy()
+	if(TRACKED_UNCHANGED(equip_slots, replacement))
+		return FALSE
+	equip_slots = replacement
+	tracked_changed(src, nameof(equip_slots))
+	return TRUE

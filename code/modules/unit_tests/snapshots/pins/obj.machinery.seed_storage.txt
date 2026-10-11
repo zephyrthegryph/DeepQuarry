@@ -69,7 +69,7 @@ human|none click: Click: Use
 +3 menu: Ui open
 +5 click: Click: Insert seeds
 @obj human|/obj/item/storage/bag/plants
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +2 menu: Ui open

@@ -118,7 +118,7 @@ CAPABILITIES(/obj/structure/closet)
 			if(dq_latent_eligible(path))
 				content_size += storage_cost_of_type(path) * dq_latent_spawn_count(generator[path])
 		if(content_size > storage_capacity-5)
-			storage_capacity = content_size + 5
+			set_storage_capacity(content_size + 5)
 		for(var/obj/item/I as anything in loose)
 			move_into(src, null, I)
 
@@ -624,3 +624,40 @@ CAPABILITIES(/obj/structure/closet/bluespace)
 /// The icon is derived from closet_appearance by the look (C5 parity).
 /obj/structure/closet/state_exclude()
 	return ..() + list("icon")
+
+
+TRACKED(/obj/structure/closet, storage_capacity)
+/obj/structure/closet/proc/set_storage_cost(value)
+	if(storage_cost == value)
+		return FALSE
+	storage_cost = value
+	ledger_refresh_contribution()
+	tracked_changed(src, nameof(storage_cost))
+	return TRUE
+SETTER(/obj/structure/closet, storage_cost)
+
+/datum/relation_definition/slot/closet_interior/admission_read_keys(obj/structure/closet/holder, atom/movable/thing, mob/actor)
+	. = ..()
+	. += list(list(holder, nameof(holder.storage_capacity)), list(thing, nameof(thing.anchored)))
+	if(istype(thing, /obj/item))
+		var/obj/item/I = thing
+		. += list(list(I, nameof(I.w_class)))
+	else if(istype(thing, /mob/living))
+		var/mob/living/L = thing
+		. += list(list(L, nameof(L.mob_size)), list(L, nameof(L.pinned)), list(L, LK_BUCKLED_TO))
+	else if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		. += list(list(C, nameof(C.storage_cost)))
+
+// Finite live-budget queries follow current resident costs as well as candidate admission.
+/datum/relation_definition/slot/closet_interior/cost_read_keys(atom/holder, atom/movable/thing)
+	. = list()
+	if(isitem(thing))
+		var/obj/item/I = thing
+		. += list(list(I, nameof(I.w_class)))
+	else if(isliving(thing))
+		var/mob/living/L = thing
+		. += list(list(L, nameof(L.mob_size)))
+	else if(istype(thing, /obj/structure/closet))
+		var/obj/structure/closet/C = thing
+		. += list(list(C, nameof(C.storage_cost)))

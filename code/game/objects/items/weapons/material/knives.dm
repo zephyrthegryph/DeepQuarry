@@ -17,7 +17,7 @@
 		set_throwforce(max(3,combat_of(src).force-3))
 		set_hitsound(SFX_WEAPONS_BLADESLICE)
 		icon_state += "_open"
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 	else
 		set_force(3)
@@ -25,7 +25,7 @@
 		set_sharp(FALSE)
 		set_hitsound(sounds_of_type(type).hit)
 		icon_state = initial(icon_state)
-		w_class = initial(w_class)
+		set_w_class(initial(w_class))
 		set_attack_verb(combat_of_type(type).attack_verbs)
 
 /obj/item/material/butterfly/switchblade

@@ -46,7 +46,7 @@
 @obj.machinery.door human|/obj/item/card/emag
 @obj.machinery.door human|/obj/item/stack/material/plasteel
 @obj human|/obj/item/taperoll
-@obj human|/obj/item/assembly/signaler
+@obj.machinery human|/obj/item/assembly/signaler
 @obj human|/obj/item/pai_cable
 wires: AI Control, Bolt Lights, Door Bolts, Door State, Door Timing, Electrification, ID Scan, Primary Backup Power, Primary Power, Safety, Secondary Backup Power, Secondary Power
 keys: bolt_toggle, break_in, deice, deice_tool, disrupt_backup, disrupt_main, doorbell, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, emergency_toggle, hammer, hold_open, idscan_toggle, light_toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_close, pai_cable, panel.open, pry, pry_weapon, reinforce, remote_lights, remote_shock, remove_electronics, repair, robot_remote_blocked, safe_toggle, shock_perm, shock_restore, shock_temp, signaler, speed_toggle, strike, tape, tear, ui_open, unreinforce, weld_plasteel, weld_shut.toggle, wires.cut, wires.pulse, wires_window

@@ -18,11 +18,7 @@
 +1 menu: Open or close the lid
 +2 menu: Set transfer amount
 @obj.item.reagent_containers.glass human|/obj/item/card/id
-@obj.item.reagent_containers human|/obj/item/kit
--menu: Rename food
-+1 menu: Dip into it
-+3 menu: Open or close the lid
-+4 menu: Set transfer amount
+@obj.item.reagent_containers.glass human|/obj/item/kit
 @obj.item.reagent_containers human|/obj/item/storage
 -menu: Rename food
 +2 menu: Open or close the lid

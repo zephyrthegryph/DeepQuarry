@@ -21,12 +21,10 @@
 +2 menu: Pick up
 @obj.item.stack.material human|/obj/item/card/id
 +1 menu: Pick up
-@obj.item.stack human|/obj/item/kit
+@obj.item.stack.material human|/obj/item/kit
 +2 menu: Pick up
-+5 menu: Use
-@obj.item.stack human|/obj/item/storage
+@obj.item.stack.material human|/obj/item/storage
 +2 menu: Pick up
-+5 menu: Use
 @obj human|/obj/item/gripper
 @obj.item.stack.material human|/obj/item/stack
 +2 menu: Pick up

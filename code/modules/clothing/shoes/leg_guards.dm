@@ -8,22 +8,25 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+	acceptance("equip", req_acceptance_leg_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = LEGS|FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
-TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, fit_spec, null)
 
-TYPE_TABLE(/obj/item/clothing/shoes/leg_guard, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/leg_guard/proc/suit_clearance, null))))
 
-/obj/item/clothing/shoes/leg_guard/proc/suit_clearance(mob/living/carbon/human/H)
+
+
+/obj/item/clothing/shoes/leg_guard/proc/suit_clearance(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
-		return TRUE
+		return null
 	if(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & LEGS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
-	for(var/obj/item/clothing/accessory/A in H.get_equipped_item(SLOT_ID_SUIT))
-		if(worn_of(A).covers & LEGS)
-			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [A] is in the way"
-	return TRUE
+	for(var/obj/item/clothing/accessory/W in H.get_equipped_item(SLOT_ID_SUIT))
+		if(worn_of(W).covers & LEGS)
+			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [W] is in the way"
+	return null
 
 /obj/item/clothing/shoes/leg_guard/laserproof
 	name = "ablative leg guards"
@@ -81,3 +84,15 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard/flexitac)
 	name = "imperial leg guards"
 	desc = "Good for Roman around."
 	icon_state = "ge_boots"
+
+/proc/req_acceptance_leg_clearance()
+	return part_make(/datum/entry/part/req/acceptance_leaf/leg_clearance, list())
+
+
+/datum/entry/part/req/acceptance_leaf/leg_clearance/acceptance_reason(datum/act/op/A)
+	var/obj/item/clothing/shoes/leg_guard/I = A.target
+	return I.suit_clearance(A)
+
+
+/datum/entry/part/req/acceptance_leaf/leg_clearance/read_keys(datum/act/op/A)
+	return suit_clearance_reads(A)

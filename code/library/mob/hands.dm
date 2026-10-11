@@ -7,6 +7,7 @@
 CAPABILITIES(/mob/living/carbon/human)
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
 	profile(nameof(looks), /datum/record/appearance)
+	wrapped_species_form()
 	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human))
 	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
 	cooldowns(push_lying_cooldown, disarm_cooldown, breath_sound_cooldown, chew_cooldown, xylophone)

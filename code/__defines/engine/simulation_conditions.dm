@@ -1,0 +1,12 @@
+// Unit-aware simulation condition vocabulary, available before consumers.
+#define SIM_COMPARE_GT ">"
+#define SIM_COMPARE_GTE ">="
+#define SIM_COMPARE_LT "<"
+#define SIM_COMPARE_LTE "<="
+#define SIM_COMPARE_EQ "=="
+#define SIM_COMPARE_NE "!="
+#define SIM_CONDITION_MEASURE "measure"
+#define SIM_CONDITION_COMPARE "compare"
+#define SIM_CONDITION_BAND "band"
+#define SIM_CONDITION_GROUP "group"
+#define SIM_ENTRY_KIND "simulation_property_condition"

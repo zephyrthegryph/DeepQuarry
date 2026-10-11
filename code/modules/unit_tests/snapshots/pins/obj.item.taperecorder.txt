@@ -134,14 +134,17 @@
 +7 menu: Stop (refused: You can't do that.)
 +9 menu: Wipe Tape (refused: You can't do that.)
 +10 click: Click: Eject tape
-@obj.item human|/obj/item/card/emag
-+0 menu: Eject tape
-+1 menu: Eject Tape (refused: You can't do that.)
-+3 menu: Playback Tape (refused: You can't do that.)
-+4 menu: Print Transcript (refused: You can't do that.)
-+5 menu: Start Recording (refused: You can't do that.)
-+6 menu: Stop (refused: You can't do that.)
-+9 menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Eject tape
+human|/obj/item/card/emag menu: Eject Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Playback Tape (refused: You can't do that.)
+human|/obj/item/card/emag menu: Print Transcript (refused: You can't do that.)
+human|/obj/item/card/emag menu: Start Recording (refused: You can't do that.)
+human|/obj/item/card/emag menu: Stop (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Wipe Tape (refused: You can't do that.)
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/rectape menu: Eject tape
 human|/obj/item/rectape menu: Eject Tape (refused: You can't do that.)
 human|/obj/item/rectape menu: Insert tape (refused: There's already a tape inside.)

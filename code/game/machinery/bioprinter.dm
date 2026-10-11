@@ -275,7 +275,7 @@ CAPABILITIES(/obj/machinery/organ_printer)
 
 	if(O.data)
 		// This is a very hacky way of doing of what organ/New() does if it has an owner
-		O.w_class = max(O.w_class + mob_size_difference(O.data.get_species_mob_size(), MOB_MEDIUM), 1)
+		O.set_w_class(max(O.w_class + mob_size_difference(O.data.get_species_mob_size(), MOB_MEDIUM), 1))
 
 	return O
 // END GENERIC PRINTER

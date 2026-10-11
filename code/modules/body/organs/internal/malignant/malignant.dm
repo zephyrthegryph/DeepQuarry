@@ -9,7 +9,10 @@
 	var/cooldownmin = 0
 	var/cooldownmax = 0
 
+CAPABILITY_TYPE(malignant_identity, CAP_MALIGNANT_IDENTITY, /datum/capability/malignant_identity, key = NONE)
+
 CAPABILITIES(/obj/item/organ/internal/malignant)
+	malignant_identity()
 	param(nameof(force_location), pos = 2)
 	param(nameof(forcetag), pos = 3)
 
@@ -17,36 +20,39 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 /obj/item/organ/internal/malignant/var/force_location
 /obj/item/organ/internal/malignant/var/forcetag
 
-// ALLOW(init/INSTANCE_STATE): a growth is tagged and picks an organic limb to grow in (or the one it is forced to) before its parents' init
-/obj/item/organ/internal/malignant/Initialize(mapload)
-	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
-	if(forcetag)
-		organ_tag = forcetag
-	if(!istype(src,/obj/item/organ/internal/malignant/engineered))
-		// choose a random site for us to grow in before calling parent
+/datum/capability/malignant_identity
+	holder_hooks = HOLDER_HOOK_PREINIT
+
+/datum/capability/malignant_identity/on_holder_preinit(datum/act/eval/A)
+	var/obj/item/organ/internal/malignant/growth = A.holder
+	growth.set_organ_tag("[initial(growth.organ_tag)]_[rand(1,9999)]")
+	if(growth.forcetag)
+		growth.set_organ_tag(growth.forcetag)
+	if(!istype(growth,/obj/item/organ/internal/malignant/engineered))
+		// Choose the same random site before organ.Initialize places the growth.
 		var/i = 0
-		if(!force_location)
+		if(!growth.force_location)
 			while(++i < 10)
-				// done here, because New() does all the setup for placing the organ...
+				// Preinit runs before the organ body chooses its containing part.
 				// attempt to select a valid exterior organ that isn't synthetic!
-				if(isliving(loc))
-					parent_organ = pick(validBPspawns)
-					var/mob/living/L = loc
-					var/obj/item/organ/checklimb = L.organs_by_name[parent_organ]
+				if(isliving(growth.loc))
+					growth.set_parent_organ(pick(growth.validBPspawns))
+					var/mob/living/L = growth.loc
+					var/obj/item/organ/checklimb = L.organs_by_name[growth.parent_organ]
 					if(checklimb)
 						// valid limb, check if organic!
 						if(checklimb.status == 0 && !checklimb.is_robotic())
-							return ..()
+							return
 		else
-			parent_organ = force_location
-			return ..()
+			growth.set_parent_organ(growth.force_location)
+			return
 		// invalid, spawn as dead...
-		set_status(ORGAN_DEAD)
+		growth.set_status(ORGAN_DEAD)
 	else
 		// engineered ones don't do all of the above
-		if(force_location)
-			parent_organ = force_location
-	return ..()
+		if(growth.force_location)
+			growth.set_parent_organ(growth.force_location)
+	return
 
 /mob/living/carbon/human/proc/random_malignant_organ( allowtumors = TRUE, allowparasites = TRUE, allowengineered = TRUE)
 	// get a list of valid malignant organs and spawn one
@@ -323,7 +329,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/potato)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
-	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(punctured_by))), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(PROC_REF(punctured_by)), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/pinata/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)
@@ -498,7 +504,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant/tumor/pinata)
 
 // Anything that punctures pops it.
 CAPABILITIES(/obj/item/organ/internal/malignant/tumor/moneyorgan)
-	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(punctured_by))), then(PROC_REF(popped)))
+	op("pop", item(/obj/item), label("Pop"), priority(OP_PRIORITY_PART), when(PROC_REF(punctured_by)), then(PROC_REF(popped)))
 
 /obj/item/organ/internal/malignant/tumor/moneyorgan/proc/punctured_by(datum/act/op/A)
 	return can_puncture(A.held)

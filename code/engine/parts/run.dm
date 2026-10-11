@@ -303,8 +303,15 @@
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
-	. = op_require_reason_inner(A, P, B)
+	try
+		if(GLOB.op_menu_read_frame)
+			op_menu_record_reads(op_watch_reads(A, P))
+		. = op_require_reason_inner(A, P, B)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
 	op_pure_end()
 
 /// What a hand() op on this atom must pass first, as a refusal reason (a /datum/msg type), or null. The base asks nothing; a machine asks its hand gate.
@@ -883,7 +890,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	for(var/cond in oplan.conds)
 		if(!op_cond(A, cond))
 			return /datum/msg/op/not_available
-	return op_require_reason(A, oplan, binding)
+	why = op_require_reason(A, oplan, binding)
+	if(isnull(why) && watch_ready)
+		watch_reconcile(A)
+	return why
 
 /// The reason a keep broke, or null: HELD, ADJACENT, TARGET_PRESENT and ALIVE.
 /datum/pending_op/proc/keeps_reason(datum/act/op/A)
@@ -958,71 +968,116 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 // one now refuses. Nothing polls. The subscription is the dynamic-reader count of rx_watch_adjust() plus the shared watch index of op_reads_changed().
 
 /datum/pending_op
-	/// The (entity, key) reads the op watches, as list(datum, key) rows, while it waits.
 	var/list/watching
-	/// TRUE while a re-check runs, so a read published by the re-check itself does not start another.
 	var/rechecking = FALSE
+	var/watch_ready = FALSE
+	var/list/watch_extra
+	var/list/watch_index
 
-/// Subscribes to everything the op plan and keeps read. Called once, when the wait begins and the act still holds its entities.
-/datum/pending_op/proc/watch_begin(datum/act/op/A)
-	if(watching)
-		return
-	watching = op_watch_reads(A)
-	for(var/list/pair as anything in watching)
-		var/datum/watched = pair[1]
-		rx_watch_adjust(watched, pair[2], 1)
-		var/index = "[REF(watched)]|[pair[2]]"
-		var/list/on = GLOB.op_watchers[index]
-		if(!on)
-			on = list()
-			GLOB.op_watchers[index] = on
-		on |= src
-
-/// A question was put to a third party: where they are and their stat are watched like the actor's, so moving away or falling ends the op now.
-/datum/pending_op/proc/watch_answerer(mob/M)
-	if(!watching)
-		watching = list()
-	for(var/key_name in list(OP_KEEP_MOVED, "stat"))
-		var/index = "[REF(M)]|[key_name]"
-		var/list/on = GLOB.op_watchers[index]
-		if(on && (src in on))
+// Every published read has one registration, regardless of how many conditions read it.
+/datum/pending_op/proc/watch_reconcile(datum/act/op/A)
+	var/list/next = list()
+	var/list/reads
+	var/previous_pure_depth = GLOB.op_pure_depth
+	op_pure_begin()
+	try
+		reads = op_watch_reads(A, oplan)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
+	op_pure_end()
+	// Collection is pure; bookkeeping below changes subscriptions only after success.
+	for(var/list/pair as anything in reads)
+		watch_collect(next, pair)
+	for(var/index in watch_extra?.Copy())
+		var/list/extra = watch_extra[index]
+		var/datum/extra_owner = length(extra) == 2 && isdatum(extra[1]) ? extra[1] : null
+		if(length(extra) != 2 || !extra_owner || QDELETED(extra_owner))
+			watch_extra -= index
 			continue
-		rx_watch_adjust(M, key_name, 1)
-		watching += list(list(M, key_name))
+		watch_collect(next, extra)
+	if(!length(watch_extra))
+		watch_extra = null
+	for(var/index in watch_index)
+		if(index in next)
+			continue
+		var/list/pair = watch_index[index]
+		var/datum/D = pair[1]
+		if(!QDELETED(D))
+			rx_watch_adjust(D, pair[2], -1)
+		var/list/on = GLOB.op_watchers[index]
+		if(on)
+			on -= src
+		if(!length(on))
+			GLOB.op_watchers -= index
+	for(var/index in next)
+		if(watch_index && (index in watch_index))
+			continue
+		var/list/pair = next[index]
+		var/datum/D = pair[1]
+		rx_watch_adjust(D, pair[2], 1)
+		var/list/on = GLOB.op_watchers[index]
 		if(!on)
 			on = list()
 			GLOB.op_watchers[index] = on
 		on |= src
+	watch_index = length(next) ? next : null
+	watching = null
+	for(var/index in watch_index)
+		LAZYADD(watching, list(watch_index[index]))
 
-/// The answer an op keeps (asks(keeps_answer = TRUE)): where it is is watched like the target's, so it moving away ends the op now.
-/datum/pending_op/proc/watch_kept(atom/chosen)
-	if(!watching)
-		watching = list()
-	var/index = "[REF(chosen)]|[OP_KEEP_MOVED]"
-	var/list/on = GLOB.op_watchers[index]
-	if(on && (src in on))
+/datum/pending_op/proc/watch_collect(list/rows, list/pair)
+	var/datum/read_owner = length(pair) == 2 && isdatum(pair[1]) ? pair[1] : null
+	if(length(pair) != 2 || !read_owner || QDELETED(read_owner))
 		return
-	rx_watch_adjust(chosen, OP_KEEP_MOVED, 1)
-	watching += list(list(chosen, OP_KEEP_MOVED))
+	rows["[REF(pair[1])]|[pair[2]]"] = pair.Copy()
+
+/datum/pending_op/proc/watch_begin(datum/act/op/A)
+	if(watch_ready)
+		return
+	watch_ready = TRUE
+	watch_reconcile(A)
+
+// Supplementary rows survive dependency recomputation and collapse shared keys.
+/datum/pending_op/proc/watch_extra_add(datum/D, key_name)
+	if(!D || QDELETED(D))
+		return
+	var/index = "[REF(D)]|[key_name]"
+	LAZYSET(watch_extra, index, list(D, key_name))
+	if(watch_index && (index in watch_index))
+		return
+	LAZYSET(watch_index, index, list(D, key_name))
+	LAZYADD(watching, list(list(D, key_name)))
+	rx_watch_adjust(D, key_name, 1)
+	var/list/on = GLOB.op_watchers[index]
 	if(!on)
 		on = list()
 		GLOB.op_watchers[index] = on
 	on |= src
 
-/// Drops the subscription.
+/datum/pending_op/proc/watch_answerer(mob/M)
+	watch_extra_add(M, OP_KEEP_MOVED)
+	watch_extra_add(M, "stat")
+
+/datum/pending_op/proc/watch_kept(atom/chosen)
+	watch_extra_add(chosen, OP_KEEP_MOVED)
+
 /datum/pending_op/proc/watch_end()
-	for(var/list/pair as anything in watching)
-		var/datum/watched = pair[1]
-		if(!QDELETED(watched))
-			rx_watch_adjust(watched, pair[2], -1)
-		var/index = "[REF(watched)]|[pair[2]]"
+	for(var/index in watch_index)
+		var/list/pair = watch_index[index]
+		var/datum/D = pair[1]
+		if(!QDELETED(D))
+			rx_watch_adjust(D, pair[2], -1)
 		var/list/on = GLOB.op_watchers[index]
-		if(!on)
-			continue
-		on -= src
+		if(on)
+			on -= src
 		if(!length(on))
 			GLOB.op_watchers -= index
 	watching = null
+	watch_index = null
+	watch_extra = null
+	watch_ready = FALSE
+
 
 /// A read the op watches was published: the keeps and requirements are asked again now.
 /datum/pending_op/proc/reads_changed()
@@ -1033,8 +1088,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	rechecking = FALSE
 
 /// The (entity, key) rows an op wait watches: the reads of its conditions, requirements and resource costs, and the keeps.
-/proc/op_watch_reads(datum/act/op/A)
-	var/datum/op_plan/P = A.oplan
+/proc/op_watch_reads(datum/act/op/A, datum/op_plan/P = null)
+	if(!P)
+		P = A.oplan
 	var/list/pairs = list()
 	for(var/cond in P.conds)
 		op_reads_of(A, cond, pairs)
@@ -1068,6 +1124,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			pairs += list(pair)
 		return
 	if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
+		if(istext(cond) && istype(A, /datum/act/admission_query))
+			for(var/list/pair as anything in op_query_read_pairs(A, cond))
+				pairs += list(pair)
+			return
 		for(var/key in change_read_keys(A.holder, cond))
 			pairs += list(list(A.holder, key))
 
@@ -1601,25 +1661,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 /// The pre-check of the insert action (E4): the needs hooks of the holder's table and activations asked about this insert, nothing started.
 /// A reason, or null. Allocates only when something hooks the action.
-/proc/op_insert_precheck(atom/holder, atom/movable/thing, slot_id)
-	if(!holder || !act_wanted(holder, /datum/act/insert))
-		return null
-	var/datum/act/insert/F = act_begin(/datum/act/insert, holder)
-	if(!F)
-		return null
-	F.item = thing // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	F.slot_id = slot_id
-	var/datum/act_plan/plan = act_plan_for(holder, /datum/act/insert)
-	var/reason = null
-	for(var/datum/hook/H as anything in plan.needs)
-		if(!hook_conditions_hold(H, holder))
-			continue
-		reason = act_needs_refusal(F, H)
-		if(reason)
-			break
-	F.release()
-	return reason
-
+/proc/op_insert_precheck(atom/holder, atom/movable/thing, slot_id, mob/actor = null)
+	return op_transfer_precheck(holder, /datum/act/insert, thing, slot_id, actor)
 
 /// Interfaces to presentation and actor policy used by an operation.
 /datum/progress_view

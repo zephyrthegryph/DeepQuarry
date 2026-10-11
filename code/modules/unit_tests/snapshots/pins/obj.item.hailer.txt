@@ -27,6 +27,9 @@
 +2 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/storage
 +2 menu: Set Hailer Message (refused: You can't do that.)
-@obj.item human|/obj/item/card/emag
-+1 menu: Set Hailer Message (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Set Hailer Message (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, hail, kit_customize, kit_customize_last, move_to_top, pick_up_item, set_message, toggle_digestable

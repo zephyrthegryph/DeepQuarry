@@ -1,6 +1,5 @@
 @obj.item.clothing human|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -8,8 +7,7 @@
 +8 menu: Under worn hand
 +10 click: Click: Under worn hand
 @obj.item.clothing robot|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+-click: Click: Use
 +2 menu: Holster (refused: You can't do that.)
 +5 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +6 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -23,9 +21,7 @@
 +3 menu: Roll Up Sleeves (refused: You can't do that.)
 +5 menu: Toggle Suit Sensors (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/tool/screwdriver
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -33,9 +29,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/tool/crowbar
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -43,9 +37,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/tool/wrench
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -53,9 +45,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/tool/wirecutters
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -63,9 +53,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/multitool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -73,9 +61,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/weldingtool
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -83,9 +69,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/stack/cable_coil
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -93,9 +77,7 @@
 +8 menu: Under worn hand
 +10 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/stack/material/steel
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -103,9 +85,7 @@
 +7 menu: Under worn hand
 +9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/card/id
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
@@ -113,27 +93,19 @@
 +8 menu: Under worn hand
 +10 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/kit
--menu: Accessory attached hand
--menu: Collar tag item
 +2 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
 +7 menu: Toggle Suit Sensors (refused: You can't do that.)
 +8 menu: Under worn hand
 @obj.item.clothing human|/obj/item/storage
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
 +2 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
 +7 menu: Toggle Suit Sensors (refused: You can't do that.)
 +8 menu: Under worn hand
-+10 click: Click: Collect
-@obj.item.clothing human|/obj/item
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+@obj.item human|/obj/item
+-click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)
 +4 menu: Roll Up Sleeves (refused: You can't do that.)

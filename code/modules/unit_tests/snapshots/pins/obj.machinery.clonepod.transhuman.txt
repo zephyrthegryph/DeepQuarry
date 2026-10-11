@@ -100,7 +100,7 @@ human|none click: Click: Clonepod interaction hand
 +4 menu: Load container
 +8 menu: Splash (refused: There is nothing in it to pour.)
 +10 click: Click: Load container
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +0 menu: Clonepod interaction hand

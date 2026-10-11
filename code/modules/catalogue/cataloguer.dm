@@ -334,11 +334,11 @@ CAPABILITIES(/obj/item/cataloguer/compact/pathfinder)
 /obj/item/cataloguer/compact/proc/compact_toggle_effect(mob/user, obj/item/held)
 	deployed = !(deployed)
 	if(deployed)
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, span_notice("You flick open \the [src]."))
 	else
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 		icon_state = "[initial(icon_state)]_closed"
 		to_chat(user, span_notice("You close \the [src]."))
 

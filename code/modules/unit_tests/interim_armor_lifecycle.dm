@@ -7,7 +7,7 @@
 	TEST_ASSERT(user.put_in_active_hand(plate), "the actor holds the original insert")
 	var/datum/dq_containment_listener/refusal = allocate(/datum/dq_containment_listener)
 	refusal.watch(user)
-	refusal.block_remove = TRUE
+	refusal.set_block_remove(TRUE)
 	TEST_ASSERT(dq_ledger_removal_refusal(plate, user), "ordinary removal actually refuses the original insert")
 	var/datum/material/material = plate.material
 	var/handle = entity_handle(plate)
