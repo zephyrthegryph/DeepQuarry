@@ -165,7 +165,17 @@ impl DriverEvaluator<'_> {
                 ResolvedMeaning::Symbol(actual) if actual == id => (),
                 _ => return Err("modified default runtime type is not positively captured".into()),
             }
-            let descriptor = dm_ir::ModifiedInstance::capture_with_resources(
+            let feature_failure = RefCell::new(None);
+            let observe_nameof = |expression: &dm_syntax::Expr| {
+                if let Some(features) = source_features {
+                    match self.nameof_source_features(owner, procedure, expression) {
+                        Ok(current) => features.borrow_mut().union(current),
+                        Err(error) => *feature_failure.borrow_mut() = Some(error),
+                    }
+                }
+            };
+            let observer = source_features.map(|_| &observe_nameof as &dyn Fn(&dm_syntax::Expr));
+            let descriptor = dm_ir::ModifiedInstance::capture_with_resources_and_nameof_observer(
                 id,
                 owner,
                 self.resource_search_context,
@@ -194,7 +204,11 @@ impl DriverEvaluator<'_> {
                         ),
                     }
                 },
+                observer,
             )?;
+            if let Some(error) = feature_failure.into_inner() {
+                return Err(error);
+            }
             return Ok(Some(SemanticValue::ModifiedInstance(Arc::new(descriptor))));
         }
         let failure = RefCell::new(None);
@@ -565,7 +579,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
-        let mut bytes = b"dmbc-driver-initializer-policy-v3;folded-source-features\0".to_vec();
+        let mut bytes = b"dmbc-driver-initializer-policy-v4;modified-folded-source-features\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -583,7 +597,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a907)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a908)
     }
     fn with_recording_evaluator(
         &self,

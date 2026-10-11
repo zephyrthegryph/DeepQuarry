@@ -35,6 +35,28 @@ impl ModifiedInstance {
         calls: Option<&dyn crate::constants::PureCalls>,
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
     ) -> Result<Self, String> {
+        Self::capture_with_resources_and_nameof_observer(
+            runtime_type,
+            lexical_owner,
+            resource_context,
+            fields,
+            decode,
+            calls,
+            resource,
+            None,
+        )
+    }
+
+    pub fn capture_with_resources_and_nameof_observer(
+        runtime_type: SymbolId,
+        lexical_owner: SymbolId,
+        resource_context: Option<u128>,
+        fields: &[(String, Expr)],
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        calls: Option<&dyn crate::constants::PureCalls>,
+        resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
+        observer: Option<&dyn Fn(&Expr)>,
+    ) -> Result<Self, String> {
         let proofs = std::cell::RefCell::new(BTreeMap::new());
         let capture = |raw: &str| {
             let path = raw
@@ -56,7 +78,7 @@ impl ModifiedInstance {
             .map(|(name, value)| {
                 Ok((
                     name.clone(),
-                    normalize_with_resources(value, &decode, calls, &capture)?,
+                    normalize_with_resources(value, &decode, calls, &capture, observer)?,
                 ))
             })
             .collect::<Result<Vec<_>, String>>()?;
@@ -320,6 +342,7 @@ fn normalize_with_resources(
     decode: &impl Fn(&str) -> Option<Vec<u8>>,
     calls: Option<&dyn crate::constants::PureCalls>,
     capture: &impl Fn(&str) -> Result<(), String>,
+    observer: Option<&dyn Fn(&Expr)>,
 ) -> Result<Expr, String> {
     use crate::constants::{self, Constant};
     if let ExprKind::Literal(raw) = &value.kind {
@@ -336,13 +359,14 @@ fn normalize_with_resources(
     {
         return Err("modified resource operator has no certified constant meaning".into());
     }
-    if let Some(scalar) = constants::evaluate_expr_with_resources_and_calls(
+    if let Some(scalar) = constants::evaluate_expr_with_resources_and_calls_and_nameof_observer(
         value,
         |_| None,
         decode,
         |_| None,
         |_| None,
         calls,
+        observer,
     )
     .map_err(|error| error.reason)?
     {
@@ -368,40 +392,43 @@ fn normalize_with_resources(
     }
     let mut result = value.clone();
     match &mut result.kind {
-        ExprKind::Group(inner) => return normalize_with_resources(inner, decode, calls, capture),
+        ExprKind::Group(inner) => {
+            return normalize_with_resources(inner, decode, calls, capture, observer)
+        }
         ExprKind::Unary { value, .. } => {
-            **value = normalize_with_resources(value, decode, calls, capture)?
+            **value = normalize_with_resources(value, decode, calls, capture, observer)?
         }
         ExprKind::Binary { lhs, rhs, .. } => {
-            **lhs = normalize_with_resources(lhs, decode, calls, capture)?;
-            **rhs = normalize_with_resources(rhs, decode, calls, capture)?;
+            **lhs = normalize_with_resources(lhs, decode, calls, capture, observer)?;
+            **rhs = normalize_with_resources(rhs, decode, calls, capture, observer)?;
         }
         ExprKind::Conditional {
             condition,
             then_value,
             else_value,
         } => {
-            **condition = normalize_with_resources(condition, decode, calls, capture)?;
-            **then_value = normalize_with_resources(then_value, decode, calls, capture)?;
-            **else_value = normalize_with_resources(else_value, decode, calls, capture)?;
+            **condition = normalize_with_resources(condition, decode, calls, capture, observer)?;
+            **then_value = normalize_with_resources(then_value, decode, calls, capture, observer)?;
+            **else_value = normalize_with_resources(else_value, decode, calls, capture, observer)?;
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind,ExprKind::Ident(name) if name=="list" || name=="newlist") => {
             for value in args {
                 if let ExprKind::Binary { op, lhs, rhs } = &mut value.kind {
                     if op == "=" {
                         if !matches!(&lhs.kind, ExprKind::Ident(_)) {
-                            **lhs = normalize_with_resources(lhs, decode, calls, capture)?;
+                            **lhs =
+                                normalize_with_resources(lhs, decode, calls, capture, observer)?;
                         }
-                        **rhs = normalize_with_resources(rhs, decode, calls, capture)?;
+                        **rhs = normalize_with_resources(rhs, decode, calls, capture, observer)?;
                         continue;
                     }
                 }
-                *value = normalize_with_resources(value, decode, calls, capture)?;
+                *value = normalize_with_resources(value, decode, calls, capture, observer)?;
             }
         }
         ExprKind::ObjectInitializer { fields, .. } => {
             for (_, value) in fields {
-                *value = normalize_with_resources(value, decode, calls, capture)?;
+                *value = normalize_with_resources(value, decode, calls, capture, observer)?;
             }
         }
         ExprKind::Ident(name) if name == "null" || name == "TRUE" || name == "FALSE" => (),
@@ -421,6 +448,63 @@ mod tests {
         };
         ModifiedInstance::capture(SymbolId::of("/obj"), SymbolId::of("/datum"), None, &fields)
     }
+    #[test]
+    fn skipped_nameof_observation_preserves_modified_value_and_canonical_recipe() {
+        let value = dm_syntax::parse_expression("/obj{a=0 && nameof(world.cpu)}")
+            .expr
+            .unwrap();
+        let ExprKind::ObjectInitializer { fields, .. } = value.kind else {
+            panic!("descriptor")
+        };
+        let count = std::cell::Cell::new(0);
+        let observe = |reference: &Expr| {
+            assert!(
+                matches!(&reference.kind, ExprKind::Member { selector, .. } if selector == "cpu")
+            );
+            count.set(count.get() + 1);
+        };
+        let observed = ModifiedInstance::capture_with_resources_and_nameof_observer(
+            SymbolId::of("/obj"),
+            SymbolId::of("/datum"),
+            None,
+            &fields,
+            |_| None,
+            None,
+            |_| panic!("no resource access"),
+            Some(&observe),
+        )
+        .unwrap();
+        let plain = ModifiedInstance::capture_with_resources(
+            SymbolId::of("/obj"),
+            SymbolId::of("/datum"),
+            None,
+            &fields,
+            |_| None,
+            None,
+            |_| panic!("no resource access"),
+        )
+        .unwrap();
+        assert_eq!(count.get(), 1);
+        assert_eq!(observed, plain);
+        assert_eq!(observed.canonical_bytes(), plain.canonical_bytes());
+        let direct = dm_syntax::parse_expression("nameof(world.cpu)")
+            .expr
+            .unwrap();
+        assert!(
+            ModifiedInstance::capture_with_resources_and_nameof_observer(
+                SymbolId::of("/obj"),
+                SymbolId::of("/datum"),
+                None,
+                &[("a".into(), direct)],
+                |_| None,
+                None,
+                |_| panic!("no resource access"),
+                Some(&observe),
+            )
+            .is_err()
+        );
+    }
+
     #[test]
     fn modified_recipe_distinguishes_safe_dot_from_safe_colon() {
         let dot = capture("/obj{a=W?.cpu}");
