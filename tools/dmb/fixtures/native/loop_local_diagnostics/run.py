@@ -12,7 +12,7 @@ import uuid
 
 HERE = Path(__file__).resolve().parent
 BENCH = HERE.parents[2] / "bench"
-CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range', 'same_pair_name')
+CASES = ('enclosing_each', 'enclosing_pair_key', 'enclosing_pair_value', 'enclosing_range', 'sibling_each', 'sibling_range', 'existing_each', 'existing_range', 'same_pair_name', 'filtered_each')
 ORIGINAL_CASES = CASES
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
@@ -145,7 +145,11 @@ def main():
         h._owned_job = previous_job
         (root / "receipt.json").write_text(json.dumps(receipt, indent=2), encoding="utf-8")
         print(root / "receipt.json")
-    return 0 if receipt["complete"] and (args.backend == "byond-only" or (receipt.get("acceptance_agrees") and receipt.get("rejection_class_agrees"))) else 1
+    # A successful paired probe certifies every reported comparison, including
+    # source coordinates. Legality alone must not close the diagnostic gate.
+    return 0 if receipt["complete"] and (args.backend == "byond-only" or (
+        receipt.get("acceptance_agrees") and receipt.get("rejection_class_agrees")
+        and receipt.get("diagnostics_agree"))) else 1
 
 if __name__ == "__main__":
     raise SystemExit(main())

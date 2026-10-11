@@ -15,4 +15,7 @@ python tools/dmb/fixtures/native/loop_local_diagnostics/run.py --native NATIVE -
 
 Receipts retain both compiler diagnostics, source hashes, acceptance and source
 error classification comparisons. Differing diagnostics are evidence, not
-normalized away. No runtime or full source-closure claim is made.
+normalized away. A paired run exits successfully only when acceptance, source
+error classification and exact diagnostics all agree. A complete receipt can
+therefore accompany a nonzero exit when a diagnostic gap remains. No runtime
+or full source-closure claim is made.
