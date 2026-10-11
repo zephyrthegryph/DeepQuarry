@@ -750,8 +750,8 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 
 ## B5. Appearance → `draw(look)`
 
-```dm
-// BEFORE: canister.dm:173-190
+```dm before
+// BEFORE: canister.dm:173-190 (the provider form, retired)
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/canister/appearance_overlays()
 	. = list()
@@ -772,7 +772,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 		. += "can-o2"
 	else if(flag & 32)
 		. += "can-o3"
+```
 
+```dm
 // AFTER: no flag word, no manual state bookkeeping
 /obj/machinery/portable_atmospherics/canister/draw(datum/look/look)
 	..()

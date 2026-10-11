@@ -195,7 +195,7 @@ CAPABILITIES(/obj/item/spaceflare)
 	..()
 	if(active)
 		look.state("bluflare_on")
-		look.light(0.3, 0.1, 6)
+		look.glow(0.3, 0.1, 6)
 
 /// Accessor for the docking_controller var.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking

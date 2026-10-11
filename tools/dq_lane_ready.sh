@@ -79,6 +79,7 @@ if [ -n "$changed" ]; then
 	[ -z "$other" ] || die "the gates changed tracked files that are not look snapshots (not stamping):
 $other"
 	git add -u code/modules/unit_tests/snapshots
+	git add -- code/modules/unit_tests/snapshots/op_bases 2>/dev/null || true
 	git commit -q -m "Record look keys after the lane-ready run
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commit the recorded look keys"

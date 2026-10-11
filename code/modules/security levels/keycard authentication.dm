@@ -54,8 +54,7 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 			continue
 		C.forceMove(loc)
 	rel_move(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
-	A.state = FRAME_WIRED
-	changed(A)
+	A.set_state(FRAME_WIRED)
 	destroyed(src, user, "deconstructed")
 	return ITEM_INTERACT_SUCCESS
 

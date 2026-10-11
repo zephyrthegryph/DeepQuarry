@@ -26,10 +26,10 @@
 	..()
 	if(!lit)
 		look.state(off_icon)
-		look.light_off()
+		look.glow(GLOW_OFF)
 	else
 		look.state(on_icon)
-		look.light(2, 0.25, signlight)
+		look.glow(2, 0.25, signlight)
 
 /obj/machinery/neonsign/power_change()
 	. = ..()

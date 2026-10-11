@@ -102,7 +102,7 @@
 			look.overlay(icon_state_screensaver, icon = overlay_icon)
 			look.overlay(emissive_appearance(overlay_icon, icon_state_screensaver))
 		return
-	look.light(light_strength)
+	look.glow(light_strength)
 	var/datum/computer_file/program/running = active_program // the relation var itself, so rel_set/rel_clear redraw
 	if(running && !QDELETED(running))
 		look.watch(running)

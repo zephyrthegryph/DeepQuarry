@@ -55,9 +55,9 @@
 
 	// Update bioluminescence.
 	if(seed?.get_trait(TRAIT_BIOLUM))
-		look.light(round(seed.get_trait(TRAIT_POTENCY) / 10), color = seed.get_trait(TRAIT_BIOLUM_COLOUR) || null)
+		look.glow(round(seed.get_trait(TRAIT_POTENCY) / 10), color = seed.get_trait(TRAIT_BIOLUM_COLOUR) || null)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /// An alert light of the tray, above the lighting.
 /obj/machinery/portable_atmospherics/hydroponics/proc/tray_alert(state)

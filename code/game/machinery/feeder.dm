@@ -12,33 +12,44 @@
 	channel = CHANGE_MACHINE_OCCUPANT
 /obj/machinery/feeder/var/obj/item/reagent_containers/beaker
 /// Feeds while a patient and a container are attached.
-DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/feeder/appearance_overlays()
-	. = list()
-	if(attached())
-		icon_state = "feeding"
-	else
-		icon_state = ""
+TRACKED(/obj/machinery/feeder, fill_state)
+TRACKED(/obj/machinery/feeder, fill_color)
+/// The fill overlay of the container (a "reagentN" state) and its reagent colour, or null for none: refresh_fill() writes them as the level moves.
+/obj/machinery/feeder/var/fill_state
+/obj/machinery/feeder/var/fill_color
 
+/// Writes the fill overlay the container's level and colour show.
+/obj/machinery/feeder/proc/refresh_fill()
+	var/datum/reagents/reagents = beaker?.reagents
+	if(!reagents?.total_volume)
+		set_fill_state(null)
+		return
+	var/percent = round((reagents.total_volume / beaker.volume) * 100)
+	switch(percent)
+		if(0 to 9)
+			set_fill_state("reagent0")
+		if(10 to 19)
+			set_fill_state("reagent10")
+		if(20 to 44)
+			set_fill_state("reagent20")
+		if(45 to 59)
+			set_fill_state("reagent45")
+		if(60 to 74)
+			set_fill_state("reagent60")
+		if(75 to 89)
+			set_fill_state("reagent75")
+		if(90 to 94)
+			set_fill_state("reagent90")
+		if(95 to INFINITY)
+			set_fill_state("reagent100")
+	set_fill_color(reagents.get_color())
 
-	if(beaker)
-		var/datum/reagents/reagents = beaker.reagents
-		if(reagents.total_volume)
-			var/image/filling = image('icons/obj/feeder.dmi', src, "reagent")
-
-			var/percent = round((reagents.total_volume / beaker.volume) * 100)
-			switch(percent)
-				if(0 to 9)		filling.icon_state = "reagent0"
-				if(10 to 19) 	filling.icon_state = "reagent10"
-				if(20 to 44)	filling.icon_state = "reagent20"
-				if(45 to 59)	filling.icon_state = "reagent45"
-				if(60 to 74)	filling.icon_state = "reagent60"
-				if(75 to 89)	filling.icon_state = "reagent75"
-				if(90 to 94)	filling.icon_state = "reagent90"
-				if(95 to INFINITY)	filling.icon_state = "reagent100"
-
-			filling.icon += reagents.get_color()
-			. += filling
+/// What it shows: hooked up while attached to a patient, and its container's fill in the reagent's colour.
+/obj/machinery/feeder/draw(datum/look/look)
+	..()
+	look.state(attached() ? "feeding" : "")
+	if(fill_state)
+		look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 
 CAPABILITIES(/obj/machinery/feeder)
 	ref_one(nameof(attached), /mob/living/carbon/human)
@@ -62,13 +73,13 @@ CAPABILITIES(/obj/machinery/feeder)
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
 		rel_clear(src, nameof(attached))
-		update_icon()
+		refresh_fill()
 		return
 
 	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(user, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
-		update_icon()
+		refresh_fill()
 
 
 MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
@@ -79,7 +90,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	if(!move_into(src, nameof(src.beaker), W, user))
 		return TRUE
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
-	update_icon()
+	refresh_fill()
 	return TRUE
 
 /obj/machinery/feeder/proc/interaction_reject(datum/act/op/A)
@@ -91,7 +102,7 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
-	update_icon()
+	refresh_fill()
 	return OP_OK
 
 /obj/machinery/feeder/proc/screwdriver_act_timed_done(datum/act/op/A)
@@ -109,20 +120,20 @@ MSG_DEF_SELF(feeder/beaker, "There is already a reagent container inserted.")
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
 			rel_clear(src, nameof(attached))
-			update_icon()
+			refresh_fill()
 			return
 	// Give food
 	if(beaker && beaker.volume > 0)
 		var/transfer_amount = 2
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
-		update_icon()
+		refresh_fill()
 
 /obj/machinery/feeder/proc/interaction_take_beaker(datum/act/op/A)
 	if(!beaker)
 		return OP_DECLINE
 	beaker.forceMove(get_turf(src))
 	rel_take(src, nameof(beaker))
-	update_icon()
+	refresh_fill()
 	return TRUE
 
 /obj/machinery/feeder/examine(mob/user)

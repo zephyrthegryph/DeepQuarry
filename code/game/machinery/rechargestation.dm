@@ -38,7 +38,7 @@
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
-	update_icon()
+	refresh_gauge()
 
 /// Sealed occupant slot (C8a, containment.md §10).
 /datum/relation_definition/slot/occupant/recharge_station
@@ -55,7 +55,7 @@
 	if((power_lost()) && !has_cell_power()) // No power and cell is dead.
 		if(icon_update_tick)
 			icon_update_tick = 0 //just rebuild the overlay once more only
-			update_icon()
+			refresh_gauge()
 		return PROCESS_KILL
 
 	// With no occupant and a full buffer there is no time-dependent work. Power
@@ -85,7 +85,7 @@
 		icon_update_tick++
 
 	if((occupant || recharge_amount) && !icon_update_tick) // redraw the gauge once every 10 steps
-		update_icon()
+		refresh_gauge()
 
 //Processes the occupant, drawing from the internal power cell if needed.
 /obj/machinery/recharge_station/proc/process_occupant()
@@ -258,24 +258,29 @@
 		if(99 to 110)
 			return "statn_c100"
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/recharge_station/appearance_overlays()
-	. = list()
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	. += ..()
+TRACKED(/obj/machinery/recharge_station, gauge_state)
+TRACKED(/obj/machinery/recharge_station, cell_dead)
+/// The charge gauge the station shows (build_overlays()), refreshed by refresh_gauge() as the buffer charges.
+/obj/machinery/recharge_station/var/gauge_state
+/// TRUE while it has no external power and its buffer cell is empty.
+/obj/machinery/recharge_station/var/cell_dead = FALSE
+
+/// Writes what the display shows of the buffer: the gauge step and whether the station runs dry.
+/obj/machinery/recharge_station/proc/refresh_gauge()
+	set_gauge_state(build_overlays())
+	set_cell_dead(power_lost() && !has_cell_power())
+
+/// What the station shows: idle when broken or empty, charging with an occupant (dim when it runs dry), and its charge gauge.
+/obj/machinery/recharge_station/draw(datum/look/look)
+	..()
 	if(broken_now())
-		icon_state = "borgcharger0"
-		return .
-
-	if(occupant)
-		if((power_lost()) && !has_cell_power())
-			icon_state = "borgcharger2"
-		else
-			icon_state = "borgcharger1"
+		look.state("borgcharger0")
+		return
+	if(length(look.contents_of(src, OCCUPANT_SLOT_RECHARGE_STATION)))
+		look.state(cell_dead ? "borgcharger2" : "borgcharger1")
 	else
-		icon_state = "borgcharger0"
-
-	. += build_overlays()
+		look.state("borgcharger0")
+	look.overlay(gauge_state)
 
 MSG_DEF_SELF(recharge_station/needs_parts, "needs a rapid part exchange device")
 MSG_DEF_SELF(recharge_station/needs_grab, "needs a grab")
@@ -325,7 +330,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, R))
 			return
 		work_start(src)
-		update_icon()
+		refresh_gauge()
 		return 1
 
 	else if(ispAI(L))
@@ -338,7 +343,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 		if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, P))
 			return
 		work_start(src)
-		update_icon()
+		refresh_gauge()
 		return 1
 
 	else if(istype(L,  /mob/living/carbon/human))
@@ -348,7 +353,7 @@ CAPABILITIES(/obj/machinery/recharge_station)
 			if(!move_into(src, OCCUPANT_SLOT_RECHARGE_STATION, H))
 				return
 			work_start(src)
-			update_icon()
+			refresh_gauge()
 			return 1
 	else
 		return
@@ -358,10 +363,11 @@ CAPABILITIES(/obj/machinery/recharge_station)
 	if(!occupant)
 		return
 	slot_remove(occupant, get_turf(src))
-	update_icon()
+	refresh_gauge()
 
 /obj/machinery/recharge_station/power_change()
 	. = ..()
+	refresh_gauge()
 	if(.)
 		work_start(src)
 
@@ -370,26 +376,20 @@ CAPABILITIES(/obj/machinery/recharge_station)
 	desc = "This is a pod which used to contain a drone... Or maybe it still does?"
 	icon = 'icons/obj/structures.dmi'
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/recharge_station/ghost_pod_recharger/appearance_overlays()
-	. = list()
-	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_RECHARGE_STATION)
-	. += ..()
-	if(broken_now())
-		icon_state = "borg_pod_closed"
-		desc = "It appears broken..."
-		return .
-
-	if(occupant)
-		if((power_lost()) && !has_cell_power())
-			icon_state = "borg_pod_closed"
-			desc = "It appears to be unpowered..."
-		else
-			icon_state = "borg_pod_closed"
+/// The drone pod: closed when broken or occupied, open when empty, with the charge gauge.
+/obj/machinery/recharge_station/ghost_pod_recharger/draw(datum/look/look)
+	..()
+	if(broken_now() || length(look.contents_of(src, OCCUPANT_SLOT_RECHARGE_STATION)))
+		look.state("borg_pod_closed")
 	else
-		icon_state = "borg_pod_opened"
+		look.state("borg_pod_opened")
 
-	. += build_overlays()
+/obj/machinery/recharge_station/ghost_pod_recharger/examine(mob/user)
+	. = ..()
+	if(broken_now())
+		. += "It appears broken..."
+	else if(cell_dead && length(slot_kinds(OCCUPANT_SLOT_RECHARGE_STATION, /mob)))
+		. += "It appears to be unpowered..."
 
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/recharge_station/step_start_condition()

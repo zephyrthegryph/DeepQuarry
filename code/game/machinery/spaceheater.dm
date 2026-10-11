@@ -15,11 +15,6 @@
 	name = "space heater"
 	desc = "Made by Space Amish using traditional space techniques, this heater is guaranteed not to set the station on fire."
 
-	light_system = STATIC_LIGHT // runtime cleanup
-	light_range = 3
-	light_power = 1
-	light_on = FALSE
-
 	var/obj/item/cell/cell
 	var/cell_type = /obj/item/cell/high
 	var/state = 0
@@ -39,11 +34,7 @@
 	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater
 
-// The cell comes from cell_type (null: none); icon_state follows state, the open-hatch overlay
-// panel_open (doc/rewrite/declarative_lifecycle.md).
-// Rows by state: SHEATER_OFF, SHEATER_STANDBY, SHEATER_HEAT, SHEATER_COOL.
-DECLARE_APPEARANCE(/obj/machinery/space_heater, "state", list( 	"0" = list(APPEARANCE_ICON_STATE = "sheater0"), 	"1" = list(APPEARANCE_ICON_STATE = "sheater1"), 	"2" = list(APPEARANCE_ICON_STATE = "sheater2"), 	"3" = list(APPEARANCE_ICON_STATE = "sheater3") ))
-DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sheater-open"))))
+// The cell comes from cell_type (null: none).
 TRACKED(/obj/machinery/space_heater, pumping)
 
 MSG_DEF(space_heater/cell_in, span_notice("You insert the power cell into %T%."), span_notice("%U% inserts a power cell into %T%."))
@@ -70,11 +61,6 @@ CAPABILITIES(/obj/machinery/space_heater)
 	op("cellremove", ui_act("cellremove"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellremove)))
 	op("cellinstall", ui_act("cellinstall"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cellinstall)))
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and redraws for them
-/obj/machinery/space_heater/Initialize(mapload)
-	. = ..()
-	update_icon()
-
 /obj/machinery/space_heater/RefreshParts(limited = 0)
 	min_temperature = DEFAULT_MIN_TEMP
 	max_temperature = DEFAULT_MAX_TEMP
@@ -88,27 +74,16 @@ CAPABILITIES(/obj/machinery/space_heater)
 	var/cap_over = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 	power_efficiency -= cap_over * 0.06 //Four T2 parts = 24% more efficient. Four T5 parts = 96% more efficient
 	min_temperature = max(1, min_temperature)
-DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/space_heater/appearance_overlays()
-	. = list()
-	. += ..()
+/// What the heater shows: its state (off, standby, heating, cooling) and the open hatch, lit warm while it heats and cold while it cools.
+/obj/machinery/space_heater/draw(datum/look/look)
+	..()
+	look.state("sheater[state]")
+	look.overlay("sheater-open", panel_open)
 	switch(state)
-		// start, fixing runtimes
-		if(SHEATER_OFF)
-			set_light(0)
-			set_light_on(FALSE)
-		if(SHEATER_STANDBY)
-			set_light(0)
-			set_light_on(FALSE)
 		if(SHEATER_HEAT)
-			set_light_color("#FFCC00")
-			set_light(3)
-			set_light_on(TRUE)
+			look.glow(GLOW(3, 1, "#FFCC00"))
 		if(SHEATER_COOL)
-			set_light_color("#00ccff")
-			set_light(3)
-			set_light_on(TRUE)
-		// end
+			look.glow(GLOW(3, 1, "#00ccff"))
 
 /obj/machinery/space_heater/examine(mob/user)
 	. = ..()
@@ -151,7 +126,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 	playsound(src, tool.usesound, 50, TRUE)
 	act_message(user, src, MSG_SELF(span_notice("You [panel_open ? "open" : "close"] the hatch on %T%.")), \
 		MSG_OTHERS(span_notice("%U% [panel_open ? "opens" : "closes"] the hatch on %T%.")))
-	update_icon()
 	if(!panel_open && user.check_current_machine(src))
 		SStgui.close_uis(src)
 		user.unset_machine()
@@ -236,7 +210,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		set_pumping(FALSE)
 		set_state(SHEATER_OFF)
 		power_change()
-		update_icon()
 		return PROCESS_KILL
 	var/drawn = heat_entries_bill(src)
 	if(drawn > 0)

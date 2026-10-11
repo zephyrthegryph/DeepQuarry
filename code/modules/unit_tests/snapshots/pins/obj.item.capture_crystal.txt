@@ -1,109 +1,72 @@
-human|none menu: Destroy Crystal (refused: You can't do that.)
-human|none menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|none menu: Move To Top
-human|none menu: Pick up
-human|none menu: Release Ownership (refused: You can't do that.)
-human|none menu: Toggle Digestable (refused: You can't do that.)
-human|none menu: Toggle Follow (refused: You can't do that.)
-human|none click: Click: Pick up
-robot|none menu: Destroy Crystal (refused: You can't do that.)
-robot|none menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-robot|none menu: Equip (refused: not possible right now)
-robot|none menu: Move To Top
-robot|none menu: Pick up
-robot|none menu: Release Ownership (refused: You can't do that.)
-robot|none menu: Toggle Digestable (refused: You can't do that.)
-robot|none menu: Toggle Follow (refused: You can't do that.)
-robot|none click: Click: Pick up
-ai|none menu: Equip (refused: not possible right now)
-ai|none click: nothing
-ghost|none menu: Destroy Crystal (refused: You can't do that.)
-ghost|none menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-ghost|none menu: Move To Top (refused: You can't reach that.)
-ghost|none menu: Release Ownership (refused: You can't do that.)
-ghost|none menu: Toggle Digestable (refused: You can't reach that.)
-ghost|none menu: Toggle Follow (refused: You can't do that.)
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/multitool menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/card/id menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
-human|/obj/item/kit menu: Customise
-human|/obj/item/kit menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/kit menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/kit menu: Move To Top
-human|/obj/item/kit menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/kit menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/kit click: Click: Customise
-human|/obj/item/storage menu: Collect
-human|/obj/item/storage menu: Destroy Crystal (refused: You can't do that.)
-human|/obj/item/storage menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-human|/obj/item/storage menu: Move To Top
-human|/obj/item/storage menu: Release Ownership (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage menu: Toggle Follow (refused: You can't do that.)
-human|/obj/item/storage click: Click: Collect
+@obj human|none
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++4 menu: Release Ownership (refused: You can't do that.)
++6 menu: Toggle Follow (refused: You can't do that.)
+@obj robot|none
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++5 menu: Release Ownership (refused: You can't do that.)
++7 menu: Toggle Follow (refused: You can't do that.)
+@obj.item ai|none
+@obj.item ghost|none
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/tool/screwdriver
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/tool/crowbar
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/tool/wrench
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/tool/wirecutters
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/multitool
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/weldingtool
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/stack/cable_coil
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++4 menu: Release Ownership (refused: You can't do that.)
++6 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/stack/material/steel
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/card/id
++0 menu: Destroy Crystal (refused: You can't do that.)
++1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++4 menu: Release Ownership (refused: You can't do that.)
++6 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/kit
++1 menu: Destroy Crystal (refused: You can't do that.)
++2 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++4 menu: Release Ownership (refused: You can't do that.)
++6 menu: Toggle Follow (refused: You can't do that.)
+@obj human|/obj/item/storage
++1 menu: Destroy Crystal (refused: You can't do that.)
++2 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
++4 menu: Release Ownership (refused: You can't do that.)
++6 menu: Toggle Follow (refused: You can't do that.)
 keys: collect_item, destroy, drag_buckle, follow, gen_silicon_item_silicon_equip_module, invite_ghosts, kit_customize, kit_customize_last, move_to_top, pick_up_item, release, toggle_digestable, use
-

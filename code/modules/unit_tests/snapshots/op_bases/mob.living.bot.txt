@@ -1,0 +1,7 @@
+ai|none menu: Ui open
+ai|none menu: Use
+ai|none click: Click: Ui open
+ghost|none menu: Disarm
+ghost|none menu: Grab
+ghost|none menu: Ui open
+ghost|none click: nothing

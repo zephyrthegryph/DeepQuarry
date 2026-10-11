@@ -11,6 +11,18 @@
 		return null
 	return entry_make(ENTRY_LOOK_LAYER, null, list("layer" = layer_name, "when" = when, "under" = under, "reads" = reads))
 
+/**
+ * look_glow(glow, when = condition): the holder casts a light while the condition holds (no condition: always). `glow` is a GLOW(range, power, color)
+ * value, or a handler (PROC_REF / CAP_PROC) that returns one, read when the look is drawn; its reads are the handler's declared reads, so a light
+ * that follows a tracked var (a lamp's colour) redraws when the var changes. A type that starts lit declares it here instead of setting
+ * light_range on the type: `look_glow(GLOW(2, 1, "#ff0000"))`. A draw() that also calls look.glow() wins (the type's own draw runs after its entries).
+ */
+/proc/look_glow(glow, when = null, list/reads = null)
+	if(!islist(glow) && !istext(glow))
+		declare_report("look_glow(): the first argument is a GLOW(range, power, color) or a PROC_REF returning one, got [isnull(glow) ? "null" : "[glow]"]")
+		return null
+	return entry_make(ENTRY_LOOK_LAYER, null, list("glow" = glow, "when" = when, "under" = FALSE, "reads" = reads))
+
 /datum/type_table
 	/// 1 when the table has a look_layer entry, 0 when not, null before anybody asked (see look_table_has_layers).
 	var/look_layers_known
@@ -28,8 +40,10 @@
 	if(!holder || QDELETED(holder))
 		return
 	for(var/datum/present_row/R as anything in present_rows(holder, ENTRY_LOOK_LAYER))
-		var/datum/act/op/A = present_context(holder, R, null)
 		var/source = R.entry.args["layer"]
+		if(isnull(source))
+			continue // a look_glow() row: look_glow_of()
+		var/datum/act/op/A = present_context(holder, R, null)
 		if(present_row_holds(holder, R, A))
 			var/list/names = list()
 			examine_row_text(A, source, names) // a layer name is text, or a handler's answer (CAP_PROC / PROC_REF) in the same forms an examine line takes
@@ -43,6 +57,25 @@
 		return
 	for(var/layer_name in look_layers_of(holder))
 		look.part(layer_name)
+	var/list/glow = look_glow_of(holder)
+	if(glow)
+		look.glow(glow)
+
+/// The GLOW(range, power, color) the holder's look_glow() rows give now (the last row that holds wins), or null when none holds.
+/proc/look_glow_of(datum/holder)
+	if(!holder || QDELETED(holder))
+		return null
+	for(var/datum/present_row/R as anything in present_rows(holder, ENTRY_LOOK_LAYER))
+		var/glow = R.entry.args["glow"]
+		if(isnull(glow))
+			continue
+		var/datum/act/op/A = present_context(holder, R, null)
+		if(present_row_holds(holder, R, A))
+			if(istext(glow))
+				glow = op_call(A, glow)
+			if(islist(glow))
+				. = glow
+		A.release()
 
 /// A capability key of `holder` changed: when its look reads keys, the look is redrawn. Called from capability_key_changed().
 /proc/look_key_changed(datum/holder)

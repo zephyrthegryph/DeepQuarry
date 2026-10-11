@@ -1,94 +1,81 @@
 human|none menu: Climb
 human|none menu: Toggle
 human|none click: Click: Toggle
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Climb
-robot|none menu: Toggle
-robot|none menu: Use
-robot|none click: Click: Toggle
-ai|none menu: Use
-ai|none click: Click: Use
-ghost|none menu: Climb (refused: You can't climb right now.)
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Climb
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Use screwdriver
-human|/obj/item/tool/screwdriver click: Click: Use screwdriver
-human|/obj/item/tool/crowbar menu: Climb
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Toggle
-human|/obj/item/tool/wrench menu: Climb
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use wrench
-human|/obj/item/tool/wrench click: Click: Use wrench
-human|/obj/item/tool/wirecutters menu: Climb
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Toggle
-human|/obj/item/multitool menu: Climb
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Toggle
-human|/obj/item/weldingtool menu: Climb
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Toggle
-human|/obj/item/stack/cable_coil menu: Climb
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: Click: Toggle
-human|/obj/item/stack/material/steel menu: Climb
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: Click: Toggle
-human|/obj/item/card/id menu: Climb
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle lock
-human|/obj/item/card/id click: Click: Toggle lock
-human|/obj/item menu: Climb
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: Click: Toggle
-human|/obj/item/pda menu: Climb
-human|/obj/item/pda menu: Move To Top
-human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
-human|/obj/item/pda menu: Remove id (refused: You can't do that.)
-human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
-human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
-human|/obj/item/pda menu: Toggle
-human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/pda menu: Toggle lock
-human|/obj/item/pda click: Click: Toggle lock
-human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
-human|/obj/item/cell menu: Climb
-human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
-human|/obj/item/cell menu: Insert cell
-human|/obj/item/cell menu: Move To Top
-human|/obj/item/cell menu: Toggle
-human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/cell menu: Use
-human|/obj/item/cell click: Click: Insert cell
-human|/obj/item/card/emag menu: Climb
-human|/obj/item/card/emag menu: Move To Top
-human|/obj/item/card/emag menu: Toggle
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag click: Click: Use
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj ai|none
+@obj ghost|none
++0 menu: Climb (refused: You can't climb right now.)
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 menu: Use screwdriver
++5 click: Click: Use screwdriver
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 menu: Use wrench
++5 click: Click: Use wrench
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Climb
++3 menu: Toggle
++5 click: Click: Toggle
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Climb
++3 menu: Toggle
++5 menu: Toggle lock
++6 click: Click: Toggle lock
+@obj human|/obj/item
+-click: nothing
++0 menu: Climb
++2 menu: Toggle
++4 click: Click: Toggle
+@obj human|/obj/item/pda
+-menu: Toggle (refused: Access denied.)
+-menu: Ui open
+-click: Click: Toggle
++0 menu: Climb
++6 menu: Toggle
++8 menu: Toggle lock
++9 click: Click: Toggle lock
+@obj.machinery human|/obj/item/cell
+-click: Click: Use
++3 menu: Insert cell
++5 menu: Toggle
++8 click: Click: Insert cell
+@obj human|/obj/item/card/emag
+-menu: Use item
++2 menu: Toggle
 keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, silicon_hand, use_screwdriver, use_wrench
-

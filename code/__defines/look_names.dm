@@ -30,3 +30,9 @@
 #define LOOK_ON "on"
 #define LOOK_OFF "off"
 #define LOOK_OCCUPIED "occupied"
+
+// Light as a look part (doc/rewrite/final_api.html section 13, "Light"). A light is a glow with a range: look.glow(range, power, color)
+// in draw(), or look_glow(GLOW(...), when =) on a type. GLOW(range, power, color) is the value; GLOW_OFF is a look that is dark even
+// where its type starts lit.
+#define GLOW(RANGE, POWER, COLOR) list(RANGE, POWER, COLOR)
+#define GLOW_OFF list(0, 0, null)

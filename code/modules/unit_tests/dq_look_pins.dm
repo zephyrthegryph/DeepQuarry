@@ -1,6 +1,6 @@
 /**
  * Look pins: a generated snapshot of how a type looks once it exists, recorded before an appearance conversion
- * (update_icon(), APPEARANCE_TEMPLATE, DECLARE_APPEARANCE, DECLARE_APPEARANCE_PROC -> draw(look)) and checked after it.
+ * (update_icon(), APPEARANCE_TEMPLATE, DECLARE_APPEARANCE, the retired provider form -> draw(look)) and checked after it.
  * Guide: doc/rewrite/snapshot_pins.md ("Look pins").
  *
  *   bash tools/dq_pin.sh --look /obj/machinery/foo [/obj/item/bar ...]   # before converting: record the pins

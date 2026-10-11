@@ -15,7 +15,7 @@
 	icon_state = "mend_synthetic"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_BIOMED // sorta??
-	light_color = "#FF5C5C"
+	spell_light_color = "#FF5C5C"
 	modifier_type = /datum/body_effect/technomancer/mend_synthetic
 	modifier_duration = 10 SECONDS
 

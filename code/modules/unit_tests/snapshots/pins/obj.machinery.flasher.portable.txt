@@ -1,45 +1,27 @@
-human|none click: nothing
-robot|none menu: Blocked (refused: not possible right now)
-robot|none menu: Flash
-robot|none menu: Use
-robot|none click: Click: Flash
-ai|none menu: Flash
-ai|none menu: Use
-ai|none click: Click: Flash
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use wrench
-human|/obj/item/tool/wrench click: Click: Use wrench
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Use wirecutter
-human|/obj/item/tool/wirecutters click: Click: Use wirecutter
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item click: nothing
+@obj.machinery human|none
+@obj.machinery robot|none
+-click: Click: Use
++1 menu: Flash
++3 click: Click: Flash
+@obj ai|none
+-click: Click: Use
++0 menu: Flash
++2 click: Click: Flash
+@obj ghost|none
+@obj human|/obj/item/tool/screwdriver
+@obj human|/obj/item/tool/crowbar
+@obj human|/obj/item/tool/wrench
+-click: nothing
++2 menu: Use wrench
++3 click: Click: Use wrench
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++2 menu: Use wirecutter
++3 click: Click: Use wirecutter
+@obj human|/obj/item/multitool
+@obj human|/obj/item/weldingtool
+@obj human|/obj/item/stack/cable_coil
+@obj human|/obj/item/stack/material/steel
+@obj human|/obj/item/card/id
+@obj human|/obj/item
 keys: drag_buckle, flasher_silicon_trigger, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_wirecutter, use_wrench
-

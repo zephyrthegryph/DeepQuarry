@@ -146,8 +146,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
 				continue
 			if(Console.newmessagepriority < priority)
-				Console.newmessagepriority = priority
-				Console.update_icon()
+				Console.set_newmessagepriority(priority)
 			switch(priority)
 				if(2)
 					if(!Console.silent)
