@@ -736,9 +736,9 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	catch(var/exception/fault)
 		GLOB.op_menu_read_frame = previous
 		GLOB.lookup_read_scope_frame = previous_scope
-		END_SCOPE(scope)
 		// An aborted condition may not have reached its matching op_pure_end().
 		GLOB.op_pure_depth = previous_pure_depth
+		END_SCOPE(scope)
 		throw fault
 	GLOB.op_menu_read_frame = previous
 	GLOB.lookup_read_scope_frame = previous_scope
