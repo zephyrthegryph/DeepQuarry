@@ -608,6 +608,8 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[path = "six_session_contract_tests.rs"]
+    mod six_session_contract;
     #[path = "panic_reset_tests.rs"]
     mod panic_reset;
     #[path = "pressure_tests.rs"]
