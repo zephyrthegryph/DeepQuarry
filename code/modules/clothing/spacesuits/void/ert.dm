@@ -20,50 +20,35 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
 
 
 /obj/item/clothing/suit/space/void/responseteam/command
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/command // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-C Emergency Response Team Commander Suit"
 
-/obj/item/clothing/suit/space/void/responseteam/command/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/command) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/medical
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/medical // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-M Emergency Medical Response Suit"
 	icon_state = "ertsuit_m"
 	item_state = "ertsuit_m"
 
-/obj/item/clothing/suit/space/void/responseteam/medical/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/medical) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/engineer
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/engineer // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-E Emergency Engineering Response Suit"
 	icon_state = "ertsuit_e"
 	item_state = "ertsuit_e"
 
-/obj/item/clothing/suit/space/void/responseteam/engineer/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/engineer) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/security
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/security // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-S Emergency Security Response Suit"
 	icon_state = "ertsuit_s"
 	item_state = "ertsuit_s"
 
-/obj/item/clothing/suit/space/void/responseteam/security/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/security) //autoinstall the helmet
-
 /obj/item/clothing/suit/space/void/responseteam/janitor
+	hood = /obj/item/clothing/head/helmet/space/void/responseteam/janitor // made in the suit (owns_one(nameof(hood), starts = nameof(hood)))
 	name = "Mark VII-J Emergency Cleanup Response Suit"
 	icon_state = "ertsuit_j"
 	item_state = "ertsuit_j"
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=100;rad=100;cold=60" //awful armor
 	slowdown = 0 //light armor means no slowdown
 	item_flags = NOSLIP //INBUILT NANOGALOSHES
-
-/obj/item/clothing/suit/space/void/responseteam/janitor/Initialize(mapload)
-	. = ..()
-	attach_helmet(new /obj/item/clothing/head/helmet/space/void/responseteam/janitor) //autoinstall the helmet
 
 
 // Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.

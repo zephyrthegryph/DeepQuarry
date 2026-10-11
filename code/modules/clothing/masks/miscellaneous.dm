@@ -342,9 +342,9 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 	var/list/papermask_designs
 	special_handling = TRUE
 
-/obj/item/clothing/mask/paper/Initialize(mapload)
-	. = ..()
-	papermask_designs = list(
+/// The papermask_designs table, one per type (per_type()).
+/obj/item/clothing/mask/paper/proc/build_papermask_designs()
+	. = list(
 		"Blank" = image(icon = src.icon, icon_state = "papermask"),
 		"Neutral" = image(icon = src.icon, icon_state = "neutralmask"),
 		"Eyes" = image(icon = src.icon, icon_state = "eyemask"),
@@ -373,6 +373,7 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/paper)
+	per_type(nameof(papermask_designs), PROC_REF(build_papermask_designs))
 	op("paper_mask_design_self", in_hand(), label("Change design"), then(PROC_REF(paper_mask_design_self)))
 
 /// Old attack_self.
@@ -411,13 +412,13 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	body_parts_covered = FACE
 	icon_state = "joy"
 	actions_types = list(/datum/action/item_action/hands_free/redraw_design)
-	var/static/list/joymask_designs = list()
+	var/list/joymask_designs
 	special_handling = TRUE
 
 
-/obj/item/clothing/mask/emotions/Initialize(mapload)
-	. = ..()
-	joymask_designs = list(
+/// The joymask_designs table, one per type (per_type()).
+/obj/item/clothing/mask/emotions/proc/build_joymask_designs()
+	. = list(
 		"Joy" = image(icon = src.icon, icon_state = "joy"),
 		"Flushed" = image(icon = src.icon, icon_state = "flushed"),
 		"Pensive" = image(icon = src.icon, icon_state = "pensive"),
@@ -425,6 +426,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 		)
 
 CAPABILITIES(/obj/item/clothing/mask/emotions)
+	per_type(nameof(joymask_designs), PROC_REF(build_joymask_designs))
 	op("emotion_mask_design_self", in_hand(), label("Change emotion"), then(PROC_REF(emotion_mask_design_self)))
 
 /// Old attack_self.

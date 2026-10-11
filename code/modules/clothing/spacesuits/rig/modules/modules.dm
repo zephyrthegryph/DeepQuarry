@@ -263,7 +263,6 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	name = module.activate_string
 	if(module.active_power_cost)
 		name += " ([module.active_power_cost*10]A)"
-	module_mode = "activate"
 
 /atom/movable/stat_rig_module/activate/CanUse()
 	return module.toggleable && !module.active
@@ -278,7 +277,6 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	if(module.active_power_cost || module.passive_power_cost)
 		name += " ([module.passive_power_cost*10]P)"
 
-	module_mode = "deactivate"
 
 /atom/movable/stat_rig_module/deactivate/CanUse()
 	return module.toggleable && module.active
@@ -291,7 +289,6 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 	name = module.engage_string
 	if(module.use_power_cost)
 		name += " ([module.use_power_cost*10]E)"
-	module_mode = "engage"
 
 /atom/movable/stat_rig_module/engage/CanUse()
 	return module.usable
@@ -332,4 +329,13 @@ CAPABILITIES(/atom/movable/stat_rig_module)
 		set_suit_overlay(suit_overlay_active)
 	else
 		set_suit_overlay(suit_overlay_inactive)
+
+/atom/movable/stat_rig_module/activate
+	module_mode = "activate"
+
+/atom/movable/stat_rig_module/deactivate
+	module_mode = "deactivate"
+
+/atom/movable/stat_rig_module/engage
+	module_mode = "engage"
 
