@@ -1,4 +1,4 @@
-// An obj the clicker's ID cannot use says "Access Denied" once per check, whether the check is a direct CanUseTopic() or a topic link's topic_usable().
+// Access feedback runs once for a direct UI check or an actual rejected topic; requirement evaluation is pure.
 
 /mob/living/simple_mob/e0_fixture/denied_counter
 	var/denials = 0

@@ -1,2 +1,2 @@
-runtime while making it: OWN: /datum/newscaster_panel.holder is declared /datum/admins, refused a /turf/simulated/floor/tiled/steel%//%["code/engine/refs/lifecycle_links.dm",54]%//%
+runtime while making it: OWN: /datum/newscaster_panel.holder is declared /datum/admins, refused a /turf/simulated/floor/tiled/steel
 
