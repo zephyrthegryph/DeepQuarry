@@ -288,11 +288,14 @@ impl HeaderRecipes {
                     }),
             )
             .collect::<Vec<_>>();
-        self.defaults
-            .insert_with(key.clone().into(), Vec::new(), Vec::new(), 0, || {
-                value.clone()
-            });
-        (key, Arc::new(value))
+        let mut value = Some(value);
+        let owner = self
+            .defaults
+            .insert_with_owned(key.clone().into(), Vec::new(), Vec::new(), 0, || {
+                value.take().expect("one admitted selector producer")
+            })
+            .unwrap_or_else(|| Arc::new(value.expect("declined selector retains input")));
+        (key, owner)
     }
     pub(crate) fn retain_default_keys(&self, keys: &[Vec<u8>]) {
         self.defaults
