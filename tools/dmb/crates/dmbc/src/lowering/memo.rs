@@ -289,16 +289,23 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         MemoMissReason::ReadMeaningChanged
     });
     if let Some(accepted) = value {
-        let admission = if symbolic {
-            symbolic_input::accepted_admission(memo, current_bytes().clone(), &accepted)
-        } else {
-            None
-        };
         accepted.reads.visit_storage(|view| {
             if let dm_session::ReceiptStorageView::Flat(leaf) = view {
                 recording.record_admitted(leaf);
             }
         });
+        // Reissued current sidecars may observe dependencies absent from the
+        // stored executable ledger. Publish their complete current receipt.
+        let admission = if symbolic {
+            symbolic_input::accepted_admission(
+                memo,
+                current_bytes().clone(),
+                &accepted,
+                &recording,
+            )
+        } else {
+            None
+        };
         if let Some(mut unit) = rebound_current {
             unit.origin = body.clone();
             unit.abi = prepared.abi.clone();

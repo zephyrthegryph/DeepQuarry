@@ -835,16 +835,14 @@ pub(super) fn remember_selections<R: Resolver>(
         store.admitted.fetch_add(1, Ordering::Relaxed);
     }
 }
-pub(super) fn accepted_admission(
+pub(super) fn accepted_admission<R: Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Vec<u8>,
     accepted: &dm_session::AcceptedArtifact<crate::lowering_memo::CachedProcedure>,
+    current: &crate::lowering_memo::RecordingResolver<'_, R>,
 ) -> Option<Admission> {
     let store = Arc::clone(memo.symbolic.as_ref()?);
-    let reads = receipt_groups::grouped(
-        &store.receipt_groups,
-        accepted.reads.iter().cloned().collect(),
-    );
+    let reads = receipt_groups::grouped(&store.receipt_groups, current.reads());
     Some(Admission {
         previous: None,
         local: None,
@@ -853,7 +851,11 @@ pub(super) fn accepted_admission(
         disk: None,
         key: key.into(),
         reads,
-        versions: Arc::clone(&accepted.versions),
+        versions: current.domain_receipts().into(),
         relative_debug: accepted.value.relative_debug.clone(),
     })
 }
+
+#[cfg(test)]
+#[path = "rich_promotion_tests.rs"]
+mod rich_promotion_tests;
