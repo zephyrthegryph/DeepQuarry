@@ -1,0 +1,5 @@
+"a" = (/obj/parent{child = /obj/item{amount = 7}; scalar = 11},/turf/probe,/area/probe)
+
+(1,1,1) = {"
+a
+"}

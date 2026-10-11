@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "steps": [
+    {
+      "name": "initial",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        13
+      ]
+    },
+    {
+      "name": "unchanged",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        13
+      ]
+    },
+    {
+      "name": "body",
+      "before": "    return 13\n",
+      "after": "    return 17\n",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        17
+      ]
+    },
+    {
+      "name": "structural",
+      "before": "    var/scalar = 0\n",
+      "after": "    var/scalar = 0\n    var/unrelated = 23\n",
+      "expected": [
+        1,
+        1,
+        7,
+        11,
+        17
+      ]
+    }
+  ]
+}

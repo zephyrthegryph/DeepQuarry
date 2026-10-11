@@ -119,7 +119,7 @@ def owned_daemon_route(h, cache):
     return namespace, h.Endpoint(namespace), environment
 
 
-def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="nine explicit standalone semantic observations including embedded resource replacement"):
+def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_files=("contract-resource.txt",), scope="nine explicit standalone semantic observations including embedded resource replacement"):
     fixture_directory = Path(fixture_directory).resolve(strict=True)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):
@@ -139,7 +139,13 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="
     receipt = {"schema": 1, "scope": scope,
                "acceptance_profile": False, "complete": False, "matches": False,
                "root": str(root), "steps": [], "executions": {}}
-    receipt["fixture_sources"] = {name: h.sha(fixture_directory / name) for name in ("probe.dm", "probe.dme", "scenarios.json", "contract-resource.txt")}
+    fixture_names = retirement.fixture_files(asset_files)
+    if "contract-resource.txt" not in fixture_names:
+        raise ValueError("retained contract requires its explicit resource asset")
+    immutable_assets = tuple(name for name in fixture_names if name not in ("probe.dm", "contract-resource.txt"))
+    for name in (*fixture_names, "scenarios.json"):
+        retirement.fixture_file(fixture_directory, name)
+    receipt["fixture_sources"] = {name: h.sha(fixture_directory / name) for name in (*fixture_names, "scenarios.json")}
     daemon = None
     memory = None
     previous_memory = h._owned_memory
@@ -161,7 +167,7 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="
         native_source, byond_source = root / "native-source", root / "byond-source"
         for directory in (native_source, byond_source):
             directory.mkdir()
-            shutil.copyfile(fixture_directory / "probe.dme", directory / "probe.dme")
+            retirement.copy_fixture_files(fixture_directory, directory, fixture_names, receipt["fixture_sources"], h.sha)
         cache = root / "cache"
         namespace, endpoint, environment = owned_daemon_route(h, cache)
         receipt["daemon_namespace"] = namespace
@@ -209,6 +215,14 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="
                 temporary.write_text(source, encoding="utf-8", newline="\n")
                 os.replace(temporary, target)
                 (directory / "contract-resource.txt").write_text(resource, encoding="utf-8", newline="\n")
+            for directory in (native_source, byond_source):
+                for name in immutable_assets:
+                    retirement.fixture_file(directory, name)
+                    retirement.fixture_file(fixture_directory, name)
+                    expected_hash = receipt["fixture_sources"][name]
+                    if h.sha(directory / name) != expected_hash or h.sha(fixture_directory / name) != expected_hash:
+                        raise ValueError("immutable fixture asset changed before revision: " + name)
+            row["immutable_asset_sha256"] = {name: receipt["fixture_sources"][name] for name in immutable_assets}
             row["source_sha256"] = h.sha(native_source / "probe.dm")
             row["resource_sha256"] = h.sha(native_source / "contract-resource.txt")
             if h.sha(byond_source / "probe.dm") != row["source_sha256"]:
@@ -279,6 +293,11 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="
             for directory in (native_source, byond_source):
                 if h.sha(directory / "probe.dm") != row["source_sha256"] or h.sha(directory / "probe.dme") != receipt["fixture_sources"]["probe.dme"]:
                     raise ValueError("current fixture input changed during a request")
+                for name in immutable_assets:
+                    retirement.fixture_file(directory, name)
+                    retirement.fixture_file(fixture_directory, name)
+                    if h.sha(directory / name) != receipt["fixture_sources"][name] or h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:
+                        raise ValueError("immutable fixture asset changed during request: " + name)
                 if h.sha(directory / "contract-resource.txt") != row["resource_sha256"]:
                     raise ValueError("current resource input changed during a request")
             row["status"] = "passed"
