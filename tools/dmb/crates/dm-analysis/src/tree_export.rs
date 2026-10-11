@@ -172,8 +172,12 @@ fn modified_expression(value: &dm_syntax::Expr) -> Value {
         ExprKind::StaticMember { object, selector } => {
             json!({"kind":"static_member","object":modified_expression(object),"selector":selector})
         }
-        ExprKind::SafeMember { object, selector } => {
-            json!({"kind":"safe_member","object":modified_expression(object),"selector":selector})
+        ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } => {
+            json!({"kind":"safe_member","object":modified_expression(object),"selector":selector,"via_colon":via_colon})
         }
         ExprKind::Index { object, index } => {
             json!({"kind":"index","object":modified_expression(object),"index":modified_expression(index)})

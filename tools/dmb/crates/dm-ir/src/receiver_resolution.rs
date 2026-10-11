@@ -116,7 +116,11 @@ pub fn infer_receiver_type<C: ReceiverTypeContext>(
                 None => None,
             }
         }
-        ExprKind::SafeMember { object, selector } => match infer_receiver_type(context, object)? {
+        ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon: false,
+        } => match infer_receiver_type(context, object)? {
             Some(owner) => context.member_type(&owner, selector)?,
             None => None,
         },
@@ -142,16 +146,18 @@ pub fn infer_receiver_type<C: ReceiverTypeContext>(
                 selector,
                 via_colon: false,
             }
-            | ExprKind::SafeMember { object, selector } => {
-                match infer_receiver_type(context, object)? {
-                    Some(owner) => context.procedure_return_type(ResolveQuery::Proc {
-                        owner: SymbolId::of(&owner),
-                        name: SymbolId::of(selector),
-                        verb: false,
-                    })?,
-                    None => None,
-                }
-            }
+            | ExprKind::SafeMember {
+                object,
+                selector,
+                via_colon: false,
+            } => match infer_receiver_type(context, object)? {
+                Some(owner) => context.procedure_return_type(ResolveQuery::Proc {
+                    owner: SymbolId::of(&owner),
+                    name: SymbolId::of(selector),
+                    verb: false,
+                })?,
+                None => None,
+            },
             _ => None,
         },
         _ => None,

@@ -127,7 +127,11 @@ fn expression_syntax(kind: &ExprKind) -> Value {
         ExprKind::ObjectInitializer { fields, .. } => {
             json!({"kind":"object_initializer","fields":fields.iter().map(|(name,_)|name).collect::<Vec<_>>()})
         }
-        ExprKind::SafeMember { selector, .. } => json!({"kind":"safe_member","selector":selector}),
+        ExprKind::SafeMember {
+            selector,
+            via_colon,
+            ..
+        } => json!({"kind":"safe_member","selector":selector,"via_colon":via_colon}),
         ExprKind::Index { .. } => json!({"kind":"index"}),
         ExprKind::SafeIndex { .. } => json!({"kind":"safe_index"}),
         ExprKind::Group(_) => json!({"kind":"group"}),

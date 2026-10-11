@@ -28,6 +28,7 @@ pub enum CallTarget<'a> {
     SafeMember {
         object: &'a Expr,
         selector: &'a str,
+        via_colon: bool,
     },
     Dynamic {
         dispatcher: &'a str,
@@ -41,7 +42,15 @@ pub fn call_target(callee: &Expr) -> CallTarget<'_> {
         ExprKind::Member {
             object, selector, ..
         } => CallTarget::Member { object, selector },
-        ExprKind::SafeMember { object, selector } => CallTarget::SafeMember { object, selector },
+        ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } => CallTarget::SafeMember {
+            object,
+            selector,
+            via_colon: *via_colon,
+        },
         ExprKind::Call { callee, args } => match &callee.kind {
             ExprKind::Ident(name) if name == "call" || name == "call_ext" => CallTarget::Dynamic {
                 dispatcher: name,

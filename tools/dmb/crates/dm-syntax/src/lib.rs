@@ -206,6 +206,7 @@ pub enum ExprKind {
     SafeMember {
         object: Box<Expr>,
         selector: String,
+        via_colon: bool,
     },
     Index {
         object: Box<Expr>,

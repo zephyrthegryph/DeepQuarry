@@ -143,13 +143,13 @@ impl ExprParser {
                 }
                 if self.peek().is_some_and(|token| token.text == "?")
                     && self.tokens.get(self.index + 1).is_some_and(|token| {
-                        (token.text == "." || token.text == "[")
+                        matches!(token.text.as_str(), "." | ":" | "[")
                             && self.tokens[self.index].span.end == token.span.start
                     })
                 {
                     self.take();
                     let separator = self.take().unwrap();
-                    if separator.text == "." {
+                    if matches!(separator.text.as_str(), "." | ":") {
                         let Some(selector) = self.take() else {
                             self.error(separator.span, "expected safe member name");
                             break;
@@ -163,6 +163,7 @@ impl ExprParser {
                             kind: ExprKind::SafeMember {
                                 object: Box::new(lhs),
                                 selector: selector.text,
+                                via_colon: separator.text == ":",
                             },
                         };
                     } else {

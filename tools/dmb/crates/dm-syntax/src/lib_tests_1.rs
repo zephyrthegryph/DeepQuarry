@@ -642,3 +642,42 @@ fn proc_ref_nameof_nested_constructor_parses() {
     assert!(parsed.diagnostics.is_empty(), "{:?}", parsed.diagnostics);
     assert!(parsed.expr.is_some());
 }
+
+#[test]
+fn safe_member_separators_preserve_syntax_and_call_role() {
+    for (source, colon) in [("W?.cpu", false), ("W?:cpu", true)] {
+        let parsed = parse_expression(source);
+        assert!(
+            parsed.diagnostics.is_empty(),
+            "{source}: {:?}",
+            parsed.diagnostics
+        );
+        let expr = parsed.expr.unwrap();
+        let ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } = &expr.kind
+        else {
+            panic!("expected safe member");
+        };
+        assert_eq!(*via_colon, colon);
+        let ExprKind::Ident(owner) = &object.kind else {
+            panic!("expected owner");
+        };
+        let rendered = format!("{owner}?{}{selector}", if *via_colon { ":" } else { "." });
+        assert_eq!(rendered, source);
+        assert_eq!(parse_expression(&rendered).expr.unwrap(), expr);
+        match call_target(&expr) {
+            CallTarget::SafeMember { via_colon, .. } => assert_eq!(via_colon, colon),
+            _ => panic!("safe call role lost"),
+        }
+    }
+    for source in ["W? :cpu", "W? .cpu", "W ? : cpu", "W? [1]"] {
+        let parsed = parse_expression(source);
+        assert!(
+            !parsed.diagnostics.is_empty(),
+            "spaced tokens must not become safe access: {source}"
+        );
+    }
+}

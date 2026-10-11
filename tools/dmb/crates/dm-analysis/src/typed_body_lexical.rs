@@ -443,7 +443,9 @@ impl TypedVisitor for Binder {
             ExprKind::Member {
                 object, selector, ..
             }
-            | ExprKind::SafeMember { object, selector }
+            | ExprKind::SafeMember {
+                object, selector, ..
+            }
             | ExprKind::StaticMember { object, selector } => {
                 let procedure = parent.member_call && child == Some(0);
                 let global = matches!(&node.kind, ExprKind::Member { .. })

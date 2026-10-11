@@ -289,10 +289,15 @@ fn expression(
             expression(object, bytes, resources);
             fields_bytes(fields, bytes, resources);
         }
-        ExprKind::SafeMember { object, selector } => {
+        ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } => {
             bytes.push(11);
             expression(object, bytes, resources);
             text(selector, bytes);
+            bytes.push(u8::from(*via_colon));
         }
         ExprKind::Index { object, index } => {
             bytes.push(12);
@@ -416,6 +421,17 @@ mod tests {
         };
         ModifiedInstance::capture(SymbolId::of("/obj"), SymbolId::of("/datum"), None, &fields)
     }
+    #[test]
+    fn modified_recipe_distinguishes_safe_dot_from_safe_colon() {
+        let dot = capture("/obj{a=W?.cpu}");
+        let colon = capture("/obj{a=W?:cpu}");
+        assert_ne!(dot.canonical_bytes(), colon.canonical_bytes());
+        assert_eq!(
+            colon.canonical_bytes(),
+            capture(" /obj { a = W?:cpu }").canonical_bytes()
+        );
+    }
+
     #[test]
     fn identity_excludes_positions_but_preserves_order_values_and_empty_blocks() {
         let one = capture("/obj{a=1;b=2}");
