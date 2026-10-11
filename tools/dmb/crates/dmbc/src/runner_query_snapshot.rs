@@ -31,6 +31,24 @@ pub(crate) struct SourceSnapshot {
     occurrences: Arc<dm_tree::OccurrenceTable>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
+    replay_proof: Option<ReplayProof>,
+}
+struct ReplayProof {
+    inputs: crate::input_snapshot::InputSnapshot,
+    configuration: crate::session::Configuration,
+    engine_bytes: Arc<[u8]>,
+}
+impl ReplayProof {
+    fn admits(
+        &self,
+        inputs: &crate::input_snapshot::InputSnapshot,
+        configuration: &crate::session::Configuration,
+        engine_bytes: &[u8],
+    ) -> bool {
+        self.configuration == *configuration
+            && self.engine_bytes.as_ref() == engine_bytes
+            && self.inputs.same_recorded_facts(inputs)
+    }
 }
 impl SourceSnapshot {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
@@ -41,6 +59,69 @@ impl SourceSnapshot {
             occurrences: Arc::clone(&self.occurrences),
         });
         self.selected.census(census);
+        if let Some(proof) = &self.replay_proof {
+            proof
+                .inputs
+                .visit_recorded_storage(|files, folders, negative, generated| {
+                    census.collection_entries::<(PathBuf, crate::input_snapshot::FileInput)>(
+                        "query_snapshot.replay_inputs.files",
+                        files as *const _ as usize,
+                        files.len(),
+                    );
+                    for (path, file) in files {
+                        census.path("query_snapshot.replay_inputs.files", path);
+                        census.path("query_snapshot.replay_inputs.files", &file.path);
+                    }
+                    census.collection_entries::<(PathBuf, crate::input_snapshot::FolderListing)>(
+                        "query_snapshot.replay_inputs.folders",
+                        folders as *const _ as usize,
+                        folders.len(),
+                    );
+                    for (path, listing) in folders {
+                        census.path("query_snapshot.replay_inputs.folders", path);
+                        if let crate::input_snapshot::FolderListing::Present(names) = listing {
+                            census.vec_payload("query_snapshot.replay_inputs.folders", names);
+                            for name in names {
+                                census.string("query_snapshot.replay_inputs.folders", name);
+                            }
+                        }
+                    }
+                    for (name, paths) in [
+                        ("query_snapshot.replay_inputs.negative", negative),
+                        ("query_snapshot.replay_inputs.generated", generated),
+                    ] {
+                        census.collection_entries::<PathBuf>(
+                            name,
+                            paths as *const _ as usize,
+                            paths.len(),
+                        );
+                        for path in paths {
+                            census.path(name, path);
+                        }
+                    }
+                });
+            census.slice("query_snapshot.replay_engine", &proof.engine_bytes, true);
+            census.path(
+                "query_snapshot.replay_config",
+                &proof.configuration.worktree,
+            );
+            census.path(
+                "query_snapshot.replay_config",
+                &proof.configuration.manifest,
+            );
+            census.observe_items(
+                "query_snapshot.replay_config.defines",
+                proof.configuration.defines.len(),
+            );
+            census.unknown(
+                "query_snapshot.replay_config.defines",
+                "BTreeMap node backing is not exposed",
+            );
+            for (name, value) in &proof.configuration.defines {
+                census.string("query_snapshot.replay_config.defines", name);
+                census.string("query_snapshot.replay_config.defines", value);
+            }
+        }
         census.observe_items("query_snapshot.paths", self.paths.len());
         census.unknown("query_snapshot.paths", "BTreeMap node capacity and allocator overhead are not exposed; logical path roster count is not allocated bytes");
         for path in self.paths.values() {
@@ -56,6 +137,7 @@ impl SourceSnapshot {
             source_revision: dm_analysis::tree_export::source_revision(frontend),
             outcome: "frontend_analyzed",
             selected: Default::default(),
+            replay_proof: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
             paths: frontend
                 .files
@@ -134,6 +216,7 @@ pub(crate) struct QueryAttempt {
     captured: bool,
     enabled: bool,
     finished: bool,
+    configuration: Option<crate::session::Configuration>,
 }
 impl QueryAttempt {
     pub(crate) fn new(state: Arc<Mutex<QueryState>>, enabled: bool) -> Self {
@@ -146,6 +229,7 @@ impl QueryAttempt {
             state,
             captured: false,
             finished: false,
+            configuration: None,
             enabled,
         }
     }
@@ -184,6 +268,56 @@ impl QueryAttempt {
         }
         snapshot.selected.capture(current);
         Ok(())
+    }
+    /// Issued only after this captured frontend's successful publication inputs
+    /// passed the same post-publication restat used for the session record.
+    pub(crate) fn configure(&mut self, configuration: crate::session::Configuration) {
+        self.configuration = Some(configuration);
+    }
+    pub(crate) fn bind_publication_proof(
+        &mut self,
+        inputs: &crate::input_snapshot::InputSnapshot,
+        engine_bytes: &Arc<[u8]>,
+    ) {
+        if !self.enabled || !self.captured {
+            return;
+        }
+        let Some(configuration) = &self.configuration else {
+            return;
+        };
+        let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(snapshot) = &mut state.snapshot {
+            snapshot.replay_proof = Some(ReplayProof {
+                inputs: inputs.clone(),
+                configuration: configuration.clone(),
+                engine_bytes: Arc::clone(engine_bytes),
+            });
+        }
+    }
+    /// The caller has already authenticated these current session inputs and
+    /// engine bytes. Neither pair identity nor a source revision hash is proof.
+    pub(crate) fn admit_published_replay(
+        &mut self,
+        inputs: &crate::input_snapshot::InputSnapshot,
+        engine_bytes: &[u8],
+        current_tree: Option<&Arc<dm_tree::SemanticTree>>,
+    ) -> bool {
+        if !self.enabled {
+            return false;
+        }
+        let Some(configuration) = &self.configuration else {
+            return false;
+        };
+        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        let admitted = state.snapshot.as_ref().is_some_and(|snapshot| {
+            current_tree.is_some_and(|tree| Arc::ptr_eq(tree, &snapshot.tree))
+                && snapshot
+                    .replay_proof
+                    .as_ref()
+                    .is_some_and(|proof| proof.admits(inputs, configuration, engine_bytes))
+        });
+        self.captured = admitted;
+        admitted
     }
     pub(crate) fn finish_published(&mut self, pair: &crate::publish::OutputPair) {
         self.finish(Some(pair.name()));

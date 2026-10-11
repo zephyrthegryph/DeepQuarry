@@ -49,6 +49,7 @@ pub(super) struct FrontendReport {
     pub frontend_seconds: f64,
     pub declaration_reuse: serde_json::Value,
     pub frontend_stage_wall_seconds: serde_json::Value,
+    pub metadata_resolution: serde_json::Value,
 }
 impl FrontendReport {
     pub fn capture(frontend: &dm_tree::frontend::ColdFrontend) -> Self {
@@ -56,8 +57,21 @@ impl FrontendReport {
         Self {
             frontend_seconds: frontend.timings.total.as_secs_f64(),
             frontend_stage_wall_seconds: frontend_stage_wall_seconds(&frontend.timings),
+            metadata_resolution: serde_json::Value::Null,
             declaration_reuse: serde_json::json!({"duration_scope":"stage_wall_and_summed_worker_wall","worker_duration_scope":"sum_of_worker_elapsed_not_cpu_or_critical_wall","chunks":d.chunks,"region_hits":d.region_hits,"independent_hits":d.independent_hits,"facts_hits":d.facts_hits,"parsed_chunks":d.parsed_chunks,"descriptor_scan_seconds":d.descriptor_scan.as_secs_f64(),"worker_lookup_decode_and_parse_seconds":d.worker_lookup_decode_and_parse.as_secs_f64(),"worker_fresh_facts_seconds":d.worker_fresh_facts.as_secs_f64(),"ordered_merge_seconds":d.ordered_merge.as_secs_f64()}),
         }
+    }
+    pub fn capture_metadata(&mut self, state: Option<&dm_tree::frontend::RetainedSemanticTree>) {
+        self.metadata_resolution = state.map_or(serde_json::Value::Null, |state| {
+            let counts = state.metadata_resolution_stats();
+            serde_json::json!({
+                "scope": "retained_metadata_owner_cumulative_artifact_stage",
+                "excludes": "separate_unchanged_roster_updates",
+                "common_resolved_members": counts.common_resolved_members,
+                "structurally_reused_members": counts.structurally_reused_members,
+                "structurally_dirty_members": counts.structurally_dirty_members,
+            })
+        });
     }
 }
 /// Existing stage timers only; these values are elapsed wall durations.

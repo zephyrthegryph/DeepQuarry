@@ -353,6 +353,31 @@ impl Validation {
 }
 
 impl InputSnapshot {
+    /// Exact captured facts, independent of validation's refreshed scan time.
+    /// Stamps and issued generated-output policy remain part of this proof.
+    pub(crate) fn same_recorded_facts(&self, other: &Self) -> bool {
+        self.files == other.files
+            && self.folders == other.folders
+            && self.negative_files == other.negative_files
+            && self.generated_outputs == other.generated_outputs
+    }
+    /// Diagnostic-only borrowed owned collections; no proof is minted here.
+    pub(crate) fn visit_recorded_storage(
+        &self,
+        visitor: impl FnOnce(
+            &BTreeMap<PathBuf, FileInput>,
+            &BTreeMap<PathBuf, FolderListing>,
+            &BTreeSet<PathBuf>,
+            &BTreeSet<PathBuf>,
+        ),
+    ) {
+        visitor(
+            &self.files,
+            &self.folders,
+            &self.negative_files,
+            &self.generated_outputs,
+        );
+    }
     pub fn generated_outputs(&self) -> &BTreeSet<PathBuf> {
         &self.generated_outputs
     }

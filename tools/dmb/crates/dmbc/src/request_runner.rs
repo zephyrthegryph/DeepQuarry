@@ -15,6 +15,8 @@ mod runner_cache_records;
 mod runner_freshness;
 #[path = "runner_generated_paths.rs"]
 mod runner_generated_paths;
+#[path = "runner_configuration.rs"]
+mod runner_configuration;
 use runner_cache_records::publish_cache_records;
 pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
     match request {
@@ -212,18 +214,8 @@ fn run_build_attempt(
     };
     if command == BuildCommand::Compile && !no_cache {
         let compiler = compiler.expect("configured compiler identity");
-        let configuration = dmbc::session::Configuration::new(
-            project.parent().ok_or("manifest parent missing")?,
-            &project,
-            defines.clone(),
-            compiler,
-            engine_identity,
-            xxhash_rust::xxh3::xxh3_128(if bootstrap_catalog {
-                b"native-session-v1-bootstrap"
-            } else {
-                b"native-session-v1-template"
-            }),
-        )?;
+        let configuration = runner_configuration::session(&project, &defines, compiler, engine_identity, bootstrap_catalog)?;
+        query_attempt.configure(configuration.clone());
         let configured = dmbc::session::Session::from_locked(
             configuration,
             build_lock.take().expect("compile lock held"),
@@ -283,6 +275,7 @@ fn run_build_attempt(
                         let timing = &validated.timings;
                         dmbc::daemon_eprintln!("native session validation: record={:.3}s bulk_capture={:.3}s input_validate={:.3}s pair={:.3}s outputs={:.3}s proofs={:?}", timing.record_decode.as_secs_f64(), timing.bulk_capture.as_secs_f64(), timing.input_validate.as_secs_f64(), pair_verification_seconds, output_validation_started.elapsed().as_secs_f64(), timing.proofs);
                     }
+                    query_attempt.admit_published_replay(&validated.record().inputs, engine_bytes.as_deref().unwrap_or_default(), host.query_tree());
                     let rehashed = validated.validation.rehashed;
                     if validated.validation.rehashed > 0 || output_rehashes > 0 || !outputs_match {
                         let mut record = validated.into_record();
@@ -488,7 +481,8 @@ fn run_build_attempt(
     });
     query_attempt.capture(&frontend);
     if command == BuildCommand::Compile {
-        let frontend_report = runner_report::FrontendReport::capture(&frontend);
+        let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
+        frontend_report.capture_metadata(semantic_state.as_deref());
         let retained_engine = engine_capture
             .as_ref()
             .ok_or("compile requires captured engine")?;
@@ -872,6 +866,7 @@ fn run_build_attempt(
                         pair: pair.id, manifest: std::sync::Arc::clone(&resource_manifest), outputs: std::sync::Arc::new(outputs.clone()),
                     });
                 }
+                if let Some(engine) = &engine_capture { query_attempt.bind_publication_proof(&inputs, &engine.bytes); }
                 if let Some(session) = &session {
                     session.store(dmbc::session::Record { inputs, pair: pair.id,
                         outputs: Some(outputs), warnings: dmbc::initializer_policy::warnings::render(&output.warnings)?, resource_manifest: Some((*resource_manifest).clone()) })?;
@@ -915,6 +910,8 @@ fn run_build_attempt(
         let declaration_stats = frontend_report.declaration_reuse;
         dmbc::daemon_eprintln!("native declaration reuse: {declaration_stats}");
         let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
+        let mut stats = stats;
+        stats["metadata_resolution"] = frontend_report.metadata_resolution;
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) {
             dmbc::daemon_eprintln!("native telemetry skipped: {error}");
         }

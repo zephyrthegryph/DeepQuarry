@@ -121,3 +121,103 @@ fn paging_rejects_bad_pins_ranges_overflow_and_tampered_or_unrequested_rows() {
     let unexpected = [SourceQuery::OccurrencesPage { start: 1, limit: 2 }];
     assert!(occurrence_pages::validate_requested(&reply, &unexpected).is_err());
 }
+
+fn replay_configuration() -> crate::session::Configuration {
+    crate::session::Configuration {
+        worktree: "E:/fixture".into(),
+        manifest: "E:/fixture/pages.dme".into(),
+        defines: Default::default(),
+        compiler: 1,
+        engine: 2,
+        policy: 3,
+    }
+}
+fn replay_inputs(scan: u128, content: u128) -> crate::input_snapshot::InputSnapshot {
+    let mut inputs = crate::input_snapshot::InputSnapshot::new(scan);
+    inputs
+        .record_verified_digest(
+            std::path::Path::new("E:/fixture/pages.dme"),
+            crate::input_snapshot::Stamp {
+                size: 10,
+                modified_ns: 20,
+                file_id: Some(30),
+            },
+            content,
+        )
+        .unwrap();
+    inputs
+}
+fn published_query_state(front: &dm_tree::frontend::ColdFrontend) -> Arc<Mutex<QueryState>> {
+    let state = Arc::new(Mutex::new(QueryState::default()));
+    let mut attempt = QueryAttempt::new(Arc::clone(&state), true);
+    attempt.configure(replay_configuration());
+    attempt.capture(front);
+    attempt.bind_publication_proof(&replay_inputs(1, 100), &Arc::from(&b"engine"[..]));
+    attempt.finish_published(&crate::publish::OutputPair::from_bytes(b"dmb", b"rsc"));
+    state
+}
+#[test]
+fn authenticated_unchanged_session_replay_preserves_source_queries() {
+    let front = frontend("/datum/base\n    var/a=1\n");
+    let state = published_query_state(&front);
+    let mut attempt = QueryAttempt::new(Arc::clone(&state), true);
+    attempt.configure(replay_configuration());
+    assert!(
+        attempt.admit_published_replay(
+            &replay_inputs(999, 100),
+            b"engine",
+            Some(&front.snapshot.tree)
+        ),
+        "scan time is refreshed, exact recorded facts and current tree remain issued"
+    );
+    attempt.finish_published(&crate::publish::OutputPair::from_bytes(b"dmb", b"rsc"));
+    let state = state.lock().unwrap();
+    assert!(state.snapshot.is_some());
+    assert!(evaluate_snapshot(&request(&front, 0, 2), &front.snapshot.tree, &state).is_ok());
+}
+#[test]
+fn same_output_pair_with_changed_inputs_cannot_preserve_source_queries() {
+    let front = frontend("/datum/base\n    var/a=1\n");
+    let state = published_query_state(&front);
+    let pair = crate::publish::OutputPair::from_bytes(b"dmb", b"rsc");
+    let mut attempt = QueryAttempt::new(Arc::clone(&state), true);
+    attempt.configure(replay_configuration());
+    assert!(!attempt.admit_published_replay(
+        &replay_inputs(999, 101),
+        b"engine",
+        Some(&front.snapshot.tree)
+    ));
+    attempt.finish_published(&pair);
+    assert!(state.lock().unwrap().snapshot.is_none());
+}
+#[test]
+fn source_replay_declines_cold_config_engine_and_foreign_tree_owners() {
+    let front = frontend("/datum/base\n    var/a=1\n");
+    let foreign = frontend("/datum/base\n    var/a=1\n");
+    for reason in 0..4 {
+        let state = if reason == 0 {
+            Arc::new(Mutex::new(QueryState::default()))
+        } else {
+            published_query_state(&front)
+        };
+        let mut attempt = QueryAttempt::new(Arc::clone(&state), true);
+        let mut config = replay_configuration();
+        if reason == 1 {
+            config.defines.insert("MODE".into(), "other".into());
+        }
+        attempt.configure(config);
+        let engine: &[u8] = if reason == 2 {
+            b"different-engine"
+        } else {
+            b"engine"
+        };
+        let tree = if reason == 3 {
+            &foreign.snapshot.tree
+        } else {
+            &front.snapshot.tree
+        };
+        assert!(!attempt.admit_published_replay(&replay_inputs(999, 100), engine, Some(tree)));
+        attempt.finish_published(&crate::publish::OutputPair::from_bytes(b"dmb", b"rsc"));
+        assert!(state.lock().unwrap().snapshot.is_none());
+    }
+}
