@@ -4868,3 +4868,18 @@ production paper behavior changed. No other paper rows are refreshed here.
 rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
 rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.
 acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combination with rf-toolact4's grenade stages (the locked manhack grenade and chem grenade rows come back unfactored, the camera assembly loses its Alternate use row, the sechailer's wirecutter click) and the protoblob holder row without source lines.
+
+### Hygiene look pins: reviewed master migration causes (2026-10-11)
+
+Only the exact listed semantic rows are refreshed; shared-root files retain unrelated unknown rows.
+
+- Synx transformed palettes/styles: master `d863720479258144cda7572de7b280fa37b32deb` moves random modular appearance into native per-field rolls. Native rolls in the snapshot fixture now receive a scoped type seed, eliminating prior boot/order sampling drift.
+- Random bike/quad/snowmobile paint: master `a4992b57c456de986375497270ed4504f368b71f` replaces Initialize random paint with `roll_paint_color`. Snapshot samples now use the native type-seeded stream. This records deterministic sampling, not a change to available paint colors.
+- Random reagent vials: master `0c7a99c29bdce88ca74eaa35e1aafa4862bf7c6c` moves recipe choice to `roll_recipe`; the fixture now samples the native stream. Reagent choices/amounts are unchanged.
+- Minor virus cultures: master `fe425c048e6ad7925a409bbe27d9b42c8504c3c9` explicitly removes the inherited parent disease/fill, reducing blood from 20 to 10. Obsolete duplicate vial20/vial60 overlays disappear. Earlier audit wording 30->10 was incorrect: both former Initialize paths added 10 each.
+- Ranger gloves and boots, mug subtype overlays: master `a78576a440112415dd65fe60cb4a763103a5d2a4` moves Initialize icon-state writes into native draw. Rangers draw their color-specific sprite. Glass2 no longer overwrites each mug's declared subtype icon_state with base_icon during initialization; the native base remains base_icon while subtype overlays retain their declared sprite.
+- Cargo engine overlay: master `68e9f5ae83f58bfdd17f9ab9d748caff4a7bd7ae` removes duplicate Initialize cargo_engine_overlay at plane-32767. The native draw overlay at plane-25 remains.
+- Frost grenade starting-fill subtypes: master `577ee310c52c242fc0b9dd51ab4dd1a5ca0a687b` introduces internal beaker subtypes preserving old recipes: 150 cryoslurry + 150 potassium; 150 phosphorus + 150 sugar,300-unit bluespace beakers. New subtype tree/probe rows are coverage of existing starting recipes. The existing inclusive100% fill bucket yields initial beakerbluespace-80; lower probe volume yields-100.
+- Miasma grenade starting-fill subtypes: master `d863720479258144cda7572de7b280fa37b32deb` preserves 30 miasma + 5 potassium and 5 sugar + 5 phosphorus in 60-unit beakers. Their initial fill bands 40 and 10 match the existing draw thresholds.
+
+Rifle-cabinet content counts, slime shiny coverage, status overlays and other unproved random appearance rows are excluded. STATE LEAK is a separate fixture failure and is not excused by pin refreshes.
