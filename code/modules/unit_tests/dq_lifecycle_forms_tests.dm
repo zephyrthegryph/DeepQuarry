@@ -437,3 +437,43 @@ CAPABILITIES(/obj/item/dq_forms_order_holder)
 	TEST_ASSERT_EQUAL(order.Find(nameof(H.first)), 1, "the dependency builds first")
 	TEST_ASSERT_EQUAL(order.Find(nameof(H.second)), 2, "then the occupant that names it")
 	TEST_ASSERT_NOTNULL(H.second, "both are built")
+
+/// spawns_many(): one child per offset, owned, naming its parent, configured by each(); finds(): the adjacent thing after init.
+/obj/item/dq_forms_spawn_child
+	var/obj/item/dq_forms_spawner/parent
+	var/size = 0
+
+CAPABILITIES(/obj/item/dq_forms_spawn_child)
+	ref_one(nameof(parent), /obj/item/dq_forms_spawner)
+
+/obj/item/dq_forms_spawner
+	var/list/children
+	var/obj/item/dq_forms_spawn_child/neighbour
+
+/obj/item/dq_forms_spawner/proc/child_placed(obj/item/dq_forms_spawn_child/C, list/offset)
+	C.size = offset[3]
+
+CAPABILITIES(/obj/item/dq_forms_spawner)
+	owns_many(nameof(children))
+	spawns_many(nameof(children), /obj/item/dq_forms_spawn_child, at = list(list(0, 0, 1), list(1, 0, 3)), back = nameof(/obj/item/dq_forms_spawn_child::parent), each = PROC_REF(child_placed))
+
+/obj/item/dq_forms_finder
+	var/obj/item/dq_forms_spawn_child/neighbour
+
+CAPABILITIES(/obj/item/dq_forms_finder)
+	ref_one(nameof(neighbour), /obj/item/dq_forms_spawn_child)
+	finds(nameof(neighbour), /obj/item/dq_forms_spawn_child, near = NEAR_CARDINAL)
+
+/datum/unit_test/dq_forms_spawns_and_finds/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_forms_spawner/S = allocate(/obj/item/dq_forms_spawner, T)
+	TEST_ASSERT_EQUAL(length(S.children), 2, "one child per offset")
+	var/obj/item/dq_forms_spawn_child/far = S.children[2]
+	TEST_ASSERT_EQUAL(far.size, 3, "each() configures it from its offset")
+	TEST_ASSERT_EQUAL(far.parent, S, "back = names the parent")
+	TEST_ASSERT_EQUAL(get_turf(far), locate(T.x + 1, T.y, T.z), "placed at its offset")
+	var/turf/west = locate(T.x - 1, T.y, T.z)
+	var/obj/item/dq_forms_finder/F = allocate(/obj/item/dq_forms_finder, west)
+	TEST_ASSERT(istype(F.neighbour, /obj/item/dq_forms_spawn_child), "finds() links the adjacent child")
+	for(var/obj/item/dq_forms_spawn_child/C as anything in S.children.Copy())
+		qdel(C)
