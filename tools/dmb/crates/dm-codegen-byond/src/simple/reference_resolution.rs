@@ -145,14 +145,26 @@ impl Compiler<'_> {
             return Ok(());
         };
         let path = self.semantic(lookup.text(query, path))?;
-        let result = lookup.runtime_type(&path).map_err(|mut failure| {
-            if failure.kind == LowerErrorKind::SourceError {
+        let query = Q::RuntimeType(SymbolId::of(&path));
+        // A value read needs declaration validity, not an output class/instance
+        // operand. Native value types can have an opaque runtime mapping.
+        // Keep this optional observation in the ordinary recording ledger;
+        // receiver/constructor operations still require runtime_type authority.
+        match lookup.resolver.resolve(query) {
+            dm_ir::ResolvedMeaning::Symbol(_) => Ok(()),
+            dm_ir::ResolvedMeaning::Unsupported(opaque) if opaque == query => Ok(()),
+            dm_ir::ResolvedMeaning::Missing => {
+                let mut failure = lookup.error(query, "declared type is absent");
+                failure.kind = LowerErrorKind::SourceError;
                 failure.reason =
                     crate::lower_diagnostics::undefined_type_message(statement, name, &path);
+                self.semantic(Err(failure))
             }
-            failure
-        });
-        self.semantic(result).map(|_| ())
+            other => self.semantic(Err(lookup.error(
+                query,
+                &format!("invalid selected declaration runtime type answer: {other:?}"),
+            ))),
+        }
     }
     pub(super) fn variable_operand(
         &mut self,

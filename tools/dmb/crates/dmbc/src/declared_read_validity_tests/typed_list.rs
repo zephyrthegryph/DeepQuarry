@@ -26,7 +26,10 @@ fn real_typed_list_global_read_licenses_projected_runtime_list_type() {
         };
         assert_eq!(data.declared_type, Some(list));
         assert_eq!(data.list_element_type, Some(SymbolId::of("/datum/probe")));
-        assert_eq!(host.resolve(Q::RuntimeType(list)), M::Symbol(list));
+        assert_eq!(
+            host.resolve(Q::RuntimeType(list)),
+            M::Unsupported(Q::RuntimeType(list))
+        );
         let recorder = crate::lowering_memo::RecordingResolver::new(&host);
         let parsed = dm_syntax::parse(&source);
         assert!(parsed.diagnostics.is_empty());
@@ -46,8 +49,7 @@ fn real_typed_list_global_read_licenses_projected_runtime_list_type() {
         assert!(reads
             .iter()
             .any(|read| read.query == declared && read.answer == M::DeclaredType(Some(list))));
-        assert!(reads
-            .iter()
-            .any(|read| read.query == Q::RuntimeType(list) && read.answer == M::Symbol(list)));
+        assert!(reads.iter().any(|read| read.query == Q::RuntimeType(list)
+            && read.answer == M::Unsupported(Q::RuntimeType(list))));
     }
 }

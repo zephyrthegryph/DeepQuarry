@@ -7,10 +7,8 @@ impl dm_ir::Resolver for TypedGlobal {
         let owner = SymbolId::of("/");
         let path = SymbolId::of("/datum/declared_alias");
         match query {
-            Q::GlobalVar(n) if n == name && self.0 == 3 => {
-                R::Value(dm_ir::SemanticValue::NumberBits(7.0f32.to_bits()))
-            }
-            Q::Constant { owner: o, name: n } if o == owner && n == name && self.0 == 3 => {
+            Q::GlobalVar(n) if n == name && self.0 == 3 => R::Missing,
+            Q::PredefinedConstant(n) if n == name && self.0 == 3 => {
                 R::Value(dm_ir::SemanticValue::NumberBits(7.0f32.to_bits()))
             }
             Q::GlobalVar(n) if n == name => R::Member {
@@ -37,6 +35,8 @@ impl dm_ir::Resolver for TypedGlobal {
             Q::RuntimeType(p) if p == path => match self.0 {
                 0 => R::Missing,
                 1 => R::Symbol(SymbolId::of("/datum/current_runtime")),
+                6 => R::Presence(true),
+                7 => R::Unsupported(Q::RuntimeType(SymbolId::of("/different/query"))),
                 _ => R::Unsupported(query),
             },
             _ => R::Missing,
@@ -75,15 +75,24 @@ fn body_read_validates_selected_declared_type_with_current_span_and_alias_author
         compile(&TypedGlobal(1)).is_ok(),
         "current alias mapping stays valid"
     );
-    let opaque = compile(&TypedGlobal(2))
-        .err()
-        .expect("opaque type declines");
-    assert!(opaque
-        .iter()
-        .all(|e| e.kind == LowerErrorKind::UnsupportedModel));
     assert!(
-        compile(&TypedGlobal(3)).is_ok(),
-        "scalar globals keep their ordinary constant producer"
+        compile(&TypedGlobal(2)).is_ok(),
+        "opaque runtime mapping does not invalidate a value-only read"
+    );
+    for malformed in [6, 7] {
+        assert!(
+            compile(&TypedGlobal(malformed)).is_err(),
+            "malformed optional runtime answer must decline"
+        );
+    }
+    let scalar = compile(&TypedGlobal(3))
+        .ok()
+        .expect("scalar globals keep their ordinary constant producer");
+    assert!(scalar.procedure.code.items.iter().any(|item| matches!(item,
+        CodeItem::Instruction(instruction) if instruction.opcode == opcode::PUSH_INT)));
+    assert!(
+        !scalar.procedure.code.items.iter().any(|item| matches!(item,
+        CodeItem::Instruction(instruction) if instruction.opcode == opcode::GET_VAR))
     );
     assert!(
         compile(&TypedGlobal(4)).is_ok(),
@@ -103,6 +112,16 @@ fn body_read_validates_selected_declared_type_with_current_span_and_alias_author
     assert!(
         receiver.is_err(),
         "receiver type operations still require their own authority"
+    );
+    let receiver = crate::compile_simple_proc_with_resolver(
+        &dm_syntax::parse("/proc/read()\n    return value.member\n").items[0].children,
+        &inputs,
+        &symbols,
+        &TypedGlobal(2),
+    );
+    assert!(
+        receiver.is_err(),
+        "known typed opaque receiver still needs runtime mapping authority"
     );
 }
 struct Answers(bool);
