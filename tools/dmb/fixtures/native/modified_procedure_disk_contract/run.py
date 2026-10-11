@@ -105,7 +105,7 @@ def main():
                 output = root / name / mode
                 arguments = ["compile", str(project), "--workers", "1", "--no-daemon",
                     "--exact-inputs", "--bootstrap-catalog", "--engine-template", str(args.template),
-                    "--cache-root", str(cache), "--artifact-directory", str(output / "artifacts"),
+                    "--artifact-directory", str(output / "artifacts"),
                     "--output-store", str(output / "store"), "--compile-result-file", str(output / "result.json")]
                 if mode == "fresh":
                     arguments.append("--no-cache")
