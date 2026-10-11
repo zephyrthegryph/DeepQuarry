@@ -3,7 +3,6 @@
 	name = "Synth Face"
 	desc = "A round dark muzzle made of LEDs."
 	flags = PHORONGUARD //Since it cant easily be removed...
-	item_flags = AIRTIGHT | FLEXIBLEMATERIAL | BLOCK_GAS_SMOKE_EFFECT //This should make it properly work as a mask... and allow you to eat stuff through it!
 	icon = 'icons/mob/species/teshari/synth_facemask.dmi'
 	icon_override = 'icons/mob/species/teshari/synth_facemask.dmi'
 	icon_state = "synth_facemask"
@@ -17,6 +16,7 @@ TRACKED(/obj/item/clothing/mask/synthfacemask, visor_state)
 /obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster
 
 CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
+	configure(item_worn(flags = AIRTIGHT | FLEXIBLEMATERIAL | BLOCK_GAS_SMOKE_EFFECT))
 	ref_one(nameof(maskmaster))
 	every(1 SECOND, then(PROC_REF(synthfacemask_step)), when = nameof(maskmaster))
 

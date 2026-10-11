@@ -40,7 +40,6 @@
 	adminbus_trash = TRUE //You know what, sure whatever. It's not like anyone's gonna be taking this bird on unga trips to be their gamer backpack, which kinda was the main reason for the trash eater restrictions in the first place anyway.
 	faction = "neutral"
 	say_list_type = /datum/say_list/swoopie
-	mob_bump_flag = 0
 	player_msg = "You are a SWOOPIE XL cleaning bot! Use DISARM intent on yourself to change your integrated Vac-Pack settings, or GRAB intent to swoop stuff up! Turning off the Vac-Pack will make your grab clicks function as normal grab intent clicks."
 
 	var/obj/item/vac_attachment/swoopie/Vac
@@ -261,6 +260,7 @@
 	return FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie)
+	configure(mob_movement(bump = 0))
 	op("swoopie_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Toggle Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_disarm)))
 	op("swoopie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take Vac-Pack"), then(PROC_REF(swoopie_interaction_hand_grab)))
 	owns_one(nameof(Vac), starts = /obj/item/vac_attachment/swoopie, starts_set = list("vac_power" = 3))

@@ -6,7 +6,6 @@
 	universal_speak = 1
 	density = FALSE
 
-	makes_dirt = FALSE	// No more dirt from Beepsky
 
 	var/obj/item/card/id/botcard = null
 	var/list/botcard_access = list() // ALLOW(instance_list): d: per-mob botcard_access, filled at runtime; mobs are few
@@ -695,7 +694,11 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	no_vore = TRUE
 
 CAPABILITIES(/mob/living/bot)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "devourable" = FALSE, "feeding" = FALSE, "can_be_drop_pred" = FALSE))
+=======
+	configure(mob_movement(makes_dirt = FALSE))
+>>>>>>> origin/master
 	silicon_hand()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
 	ref_many(nameof(ignore_list))

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "retail_idle"
 	flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
 	req_access = list(ACCESS_HEADS)
 	w_class = ITEMSIZE_SMALL
 
@@ -60,6 +59,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	src.pixel_y = 0
 
 CAPABILITIES(/obj/item/retail_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	after_init(0, then(PROC_REF(set_up_scanner)))
 	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
 	interface("RetailScanner")

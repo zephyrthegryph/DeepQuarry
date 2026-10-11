@@ -1,4 +1,5 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
 	setup(PROC_REF(go_inactive))
 	platform_cargo()
 	ref_one(nameof(recharging))

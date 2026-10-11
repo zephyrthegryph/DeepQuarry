@@ -8,7 +8,6 @@ TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(l
 	name = "small grey smock"
 	desc = "It looks fitted to nonhuman proportions."
 	icon_state = "seromi_grey"
-	body_parts_covered = 0 // It's a thin piece of cloth with a neck hole.
 
 /obj/item/clothing/under/teshari/smock/dress
 	name = "small command dress"
@@ -26,7 +25,9 @@ TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(l
 	name = "Undercoat"
 	desc =  "A Teshari traditional garb, with a modern twist! Made of micro and nanofibres to make it light and billowy, perfect for going fast and stylishly!"
 	icon_state = "tesh_uniform_bo"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/teshari/undercoat)
+	configure(item_worn(covers = CHEST))
 
 /obj/item/clothing/under/teshari/undercoat/standard/black_orange
 	name = "black and orange undercoat"
@@ -141,9 +142,9 @@ TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(l
 	desc = "A traditional Teshari garb made for the " + JOB_HEAD_OF_SECURITY + ". Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_hos"
 	armor_spec = "melee=10" // start
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
 
 CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/hos)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/teshari/undercoat/jobs/rd
@@ -221,9 +222,9 @@ CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/hos)
 	desc = "A traditional Teshari garb made for the Security department. Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_sec"
 	armor_spec = "melee=10" // start
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
 
 CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/sec)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/teshari/undercoat/jobs/service

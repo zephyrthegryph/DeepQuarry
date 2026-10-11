@@ -15,6 +15,7 @@ GLOBAL_LIST_INIT(dq_variants_under_turtlebaggy, list(
 ))
 
 CAPABILITIES(/obj/item/clothing/under/turtlebaggy)
+	configure(item_worn(covers = CHEST|ARMS))
 	variants(nameof(variant), PROC_REF(variant_table))
 
 /// The variant rows (variants(), code/engine/lifeforms/variants.dm).

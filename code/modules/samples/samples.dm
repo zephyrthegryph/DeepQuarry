@@ -91,7 +91,7 @@ CAPABILITIES(/obj/item/research_sample)
 		var/suit_permeability = 1
 		if(istype(G))
 			gloves_permeability = protection_of(G).permeability
-		if(istype(S) && S.body_parts_covered & HANDS)	//if it's a suit *and* it covers our hands
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
 			suit_permeability = protection_of(S).permeability
 		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
 			burn_user = FALSE
@@ -156,7 +156,7 @@ CAPABILITIES(/obj/item/research_sample)
 		var/suit_permeability = 1
 		if(istype(G))
 			gloves_permeability = protection_of(G).permeability
-		if(istype(S) && S.body_parts_covered & HANDS)	//if it's a suit *and* it covers our hands
+		if(istype(S) && worn_of(S).covers & HANDS)	//if it's a suit *and* it covers our hands
 			suit_permeability = protection_of(S).permeability
 		if((min(gloves_permeability,suit_permeability) < 0.25) || !prob(handle_risk))
 			burn_user = FALSE

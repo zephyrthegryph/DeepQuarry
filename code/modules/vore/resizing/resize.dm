@@ -6,7 +6,7 @@
 	if(istype(target) && src.lying && target.loc && target?.buckled_to() != src)
 		// src.lying being true means that in theory this code shouldn't run at the same time as the existing code for this in Bump. Probably.
 		// And optionally, this could be gated behind another preference, to prevent stunlock being abused.
-		if((mob_always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
+		if((movement_of(src).always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
 			return
 		if(!(stance == I_HELP || target.restrained()))
 			if(src.vore_prefs.step_mechanics_pref && target.vore_prefs.step_mechanics_pref)

@@ -406,7 +406,9 @@ CAPABILITIES(/obj/effect/floormimic)
 
 	melee_damage_lower = 5
 	melee_damage_upper = 5
-	base_attack_cooldown = 5
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor)
+	configure(mob_kind(attack_cooldown = 5))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/vore/aggressive/mimic/floor/replace_death(gibbed)
@@ -450,7 +452,9 @@ CAPABILITIES(/obj/effect/floormimic)
 
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	base_attack_cooldown = 10
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/tile)
+	configure(mob_kind(attack_cooldown = 10))
 
 /obj/effect/floormimic/plating
 	name = "loose plating"
@@ -489,6 +493,8 @@ CAPABILITIES(/obj/effect/floormimic)
 
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	base_attack_cooldown = 10
 	attack_armor_pen = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/mimic/floor/plating)
+	configure(mob_kind(attack_cooldown = 10))
 

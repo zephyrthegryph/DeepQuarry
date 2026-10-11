@@ -5,7 +5,6 @@
 	icon_state = "voice0"
 	item_state = "flashbang"	//looks exactly like a flash (and nothing like a flashbang)
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 
 	var/use_message = "Halt! Security!"
 	var/insults
@@ -15,6 +14,7 @@ TRACKED(/obj/item/hailer, use_message)
 TRACKED(/obj/item/hailer, insults)
 
 CAPABILITIES(/obj/item/hailer)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))

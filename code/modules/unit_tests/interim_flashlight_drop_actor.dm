@@ -16,7 +16,7 @@
 	var/obj/item/cell/cell = tool.get_cell()
 	TEST_ASSERT_NOTNULL(cell, "the actual flashlight contains its real power cell")
 	var/initial_charge = cell.charge
-	var/initial_force = tool.force
+	var/initial_force = combat_of(tool).force
 	TEST_ASSERT_EQUAL(tool.on, FALSE, "the actual flashlight begins inactive")
 	TEST_ASSERT(actor.put_in_r_hand(tool), "the real tool begins held by its actual actor")
 	TEST_ASSERT_EQUAL(tool.loc, actor, "actual tool location satisfies the original owner guard")
@@ -50,6 +50,6 @@
 	TEST_ASSERT_EQUAL(tool.get_cell(), cell, "inventory routing preserves the exact flashlight power cell")
 	TEST_ASSERT_EQUAL(cell.loc, tool, "the actual flashlight cell remains physically contained")
 	TEST_ASSERT_EQUAL(cell.charge, initial_charge, "inventory routing never spends actual flashlight charge")
-	TEST_ASSERT_EQUAL(tool.force, initial_force, "inventory routing preserves flashlight force")
+	TEST_ASSERT_EQUAL(combat_of(tool).force, initial_force, "inventory routing preserves flashlight force")
 
 	TEST_ASSERT_EQUAL(tool.on, FALSE, "hand routing does not activate the real flashlight")

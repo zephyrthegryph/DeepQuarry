@@ -2,14 +2,14 @@
 	name = "salvage"
 	desc = "A tonne of salvage from bad mapping practices. Who spawned the base type? Report this on GitHub"
 	icon = 'icons/obj/salvage/sellable.dmi'
-	force = 5
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 4
 	w_class = ITEMSIZE_NORMAL
 	var/worth = 100
 
 CAPABILITIES(/obj/item/salvage)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 5))
 	configure(item_sounds(hit = SFX_ITEMS_SALVAGE_SALVAGEPICKUP, drop = SFX_ITEMS_SALVAGE_SALVAGEDROP))
 	after_init(0, then(PROC_REF(become_sellable)))
 

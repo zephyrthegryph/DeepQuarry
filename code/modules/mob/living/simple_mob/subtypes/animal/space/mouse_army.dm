@@ -122,9 +122,11 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	armor_spec = "melee=20;bullet=20;laser=20;energy=20;bomb=90;bio=100;rad=100"
 
 	projectiletype = /obj/item/projectile/bullet/incendiary/flamethrower
-	base_attack_cooldown = 10
 
 	var/ruptured = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
+	configure(mob_kind(attack_cooldown = 10))
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank groans!")))
@@ -292,7 +294,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/pistol/medium
 
 	movement_cooldown = 2
-	base_attack_cooldown = 8
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank)
+	configure(mob_kind(attack_cooldown = 8))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/manned
@@ -322,7 +326,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/incendiary/dragonflame
 
 	movement_cooldown = 3
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/livewire/manned
@@ -351,7 +357,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/stealth)
 	projectiletype = /obj/item/projectile/bullet/gyro
 
 	movement_cooldown = 5
-	base_attack_cooldown = 15
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator)
+	configure(mob_kind(attack_cooldown = 15))
 
 
 /mob/living/simple_mob/mechanical/mecha/mouse_tank/eraticator/manned

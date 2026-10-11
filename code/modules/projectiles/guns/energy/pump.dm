@@ -4,9 +4,7 @@
 	desc = "An elegant weapon developed by the Imperium Auream. Their weaponsmiths have cleverly found a way to make a gun that is only about the size of an average energy pistol, yet with the fire power of a laser carbine."
 	icon_state = "ge_pistol"
 	item_state = "ge_pistol"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	fire_sound = SFX_WEAPONS_MANDALORIAN
 	projectile_type = /obj/item/projectile/beam/imperial

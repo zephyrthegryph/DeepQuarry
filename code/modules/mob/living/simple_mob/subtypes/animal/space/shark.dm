@@ -30,7 +30,6 @@
 
 	melee_damage_lower = 15
 	melee_damage_upper = 30 //don't mess with these critters!
-	base_attack_cooldown = 22 // Quite slow, given their power
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("lanced","bitten","impaled","gored")
@@ -42,6 +41,9 @@
 
 
 	var/knockdown_chance = 10	//slightly reduced their knockdown prob compared to carp given their greater power
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/shark)
+	configure(mob_kind(attack_cooldown = 22))
 
 /mob/living/simple_mob/animal/space/shark/apply_melee_effects(atom/A)
 	if(isliving(A))

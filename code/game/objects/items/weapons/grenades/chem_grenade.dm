@@ -4,7 +4,6 @@
 	item_state = "grenade"
 	desc = "A hand made chemical grenade."
 	w_class = ITEMSIZE_SMALL
-	force = 2.0
 	det_time = null
 	unacidable = TRUE
 
@@ -19,6 +18,7 @@
 	special_handling = TRUE
 
 CAPABILITIES(/obj/item/grenade/chem_grenade)
+	configure(item_combat(force = 2.0))
 	reagents(1000)
 	owns_many(nameof(beakers))
 	owns_one(nameof(detonator), /obj/item/assembly_holder)

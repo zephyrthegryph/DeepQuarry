@@ -2,11 +2,11 @@
 	desc = "A pair of brown shoes. They seem to have extra grip."
 	name = "brown shoes"
 	icon_state = "brown"
-	item_flags = NOSLIP
 	step_volume_mod = 0.5
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/syndigaloshes)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0.8))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
@@ -21,11 +21,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	desc = "Rubber boots"
 	name = "galoshes"
 	icon_state = "galoshes"
-	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 	resistance_flags = ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/shoes/galoshes)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
@@ -45,9 +45,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
 	desc = "A pair of rather plain, wooden sandals."
 	name = "sandals"
 	icon_state = "wizard"
-	body_parts_covered = 0
 
 	wizard_garb = 1
+
+CAPABILITIES(/obj/item/clothing/shoes/sandal)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/shoes/sandal, fit_spec, null)
 
@@ -66,7 +68,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/sandal, fit_spec, null)
 	name = "grilling sandals"
 	desc = "All this talk of antags, greytiding, and griefing... I just wanna grill for god's sake!"
 	icon_state = "cookflops"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/shoes/cookflop)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/shoes/cookflop, fit_spec, null)
 
@@ -74,7 +78,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/cookflop, fit_spec, null)
 	name = "tourist sandals"
 	desc = "Black sandals usually worn by tourists. Need I say more?"
 	icon_state = "tourist_1"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/shoes/tourist_1)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/shoes/tourist_1, fit_spec, null)
 
@@ -82,7 +88,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_1, fit_spec, null)
 	name = "tourist sandals"
 	desc = "Green sandals usually worn by tourists. Need I say more?"
 	icon_state = "tourist_2"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/shoes/tourist_2)
+	configure(item_worn(covers = 0))
 
 TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 
@@ -95,15 +103,19 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 	desc = "A pair of magic, black shoes."
 	name = "magic shoes"
 	icon_state = "black"
-	body_parts_covered = FEET
+
+CAPABILITIES(/obj/item/clothing/shoes/sandal/marisa)
+	configure(item_worn(covers = FEET))
 
 /obj/item/clothing/shoes/clown_shoes
 	desc = "The prankster's standard-issue clowning shoes. Damn they're huge!"
 	name = "clown shoes"
 	icon_state = "clown"
 	slowdown = SHOES_SLOWDOWN+0.5
-	force = 0
 	//removed built in squeak sounds
+
+CAPABILITIES(/obj/item/clothing/shoes/clown_shoes)
+	configure(item_combat(force = 0))
 
 /* Replaced with squeak component
 /obj/item/clothing/shoes/clown_shoes/handle_movement(turf/walking, running)
@@ -124,9 +136,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
 	desc = "A pair of boots worn by the followers of Nar-Sie."
 	icon_state = "cult"
 	item_state_slots = list(slot_r_hand_str = "cult", slot_l_hand_str = "cult")
-	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/cult)
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -144,10 +156,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	name = "bunny slippers"
 	desc = "Fluffy!"
 	icon_state = "slippers"
-	force = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/slippers)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
@@ -175,8 +187,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 	name = "swimming fins"
 	icon_state = "flippers"
 	item_state_slots = list(slot_r_hand_str = "galoshes", slot_l_hand_str = "galoshes")
-	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
+
+CAPABILITIES(/obj/item/clothing/shoes/swimmingfins)
+	configure(item_worn(flags = NOSLIP))
 
 TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 
@@ -206,10 +220,10 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	icon_state = "clothwrap"
 	item_state = "clothwrap"
 	blocks_footsteps = FALSE
-	force = 0
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/shoes/footwraps)
+	configure(item_combat(force = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTHING, pickup = SFX_ITEMS_PICKUP_CLOTHING))
 
 TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
@@ -320,7 +334,6 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	desc = "Advanced magnetic boots for a trained user. They have a lower magnetic force, allowing the user to move more quickly."
 
 	icon_state = "advmag0"
-	item_flags = PHORONGUARD
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
 	icon_base = "advmag"
 
@@ -386,9 +399,9 @@ CAPABILITIES(/obj/item/clothing/shoes/bhop)
 	icon_state = "nothing" // Horribly illegal and shouldn't be a thing, but whatever.
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20" // Same as loadout jackboots.
 	can_hold_knife = 1
-	force = 2
 
 CAPABILITIES(/obj/item/clothing/shoes/mech_shoes)
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.7))
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
@@ -437,13 +450,13 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	name = "absorbent galoshes"
 	icon = 'icons/inventory/feet/item.dmi'
 	icon_state = "galoshes_dry"
-	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
 
 TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 
 /// Dries the floor (and blood) under the wearer at every step: a notice the shoes hear (was the om behaviour dry).
 CAPABILITIES(/obj/item/clothing/shoes/dry_galoshes)
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(permeability = 0.05, siemens = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 	on_notice(/datum/notice/shoes_step, then(PROC_REF(dry_step)))

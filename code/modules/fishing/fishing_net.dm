@@ -16,7 +16,6 @@
 
 	slowdown = 0.5
 
-	reach = 2
 
 	default_material = MAT_CLOTH
 
@@ -26,7 +25,7 @@
 TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/passive/fish))
 
 /obj/item/material/fishing_net/afterattack(atom/A, mob/user, proximity)
-	if(get_dist(get_turf(src), A) > reach)
+	if(get_dist(get_turf(src), A) > combat_of(src).reach)
 		return
 
 	if(istype(A, /turf))
@@ -57,6 +56,7 @@ TYPE_TABLE_DECLARE(/obj/item/material/fishing_net, fishing_net_accepted_mobs, li
 	return ..()
 
 CAPABILITIES(/obj/item/material/fishing_net)
+	configure(item_combat(reach = 2))
 	slot(CONTAINER_SLOT_NET)
 	op("fishing_net_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Empty"), then(PROC_REF(fishing_net_self)))
 	op("fishing_net_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Fishing net item"), then(PROC_REF(fishing_net_item)))
@@ -109,10 +109,10 @@ CAPABILITIES(/obj/item/material/fishing_net)
 /obj/item/material/fishing_net/proc/update_weight()
 	if(holds_creature())
 		slowdown = initial(slowdown) * 2
-		reach = 1
+		set_reach(1)
 	else
 		slowdown = initial(slowdown)
-		reach = initial(reach)
+		set_reach(combat_of_type(type).reach)
 
 /obj/item/material/fishing_net/butterfly_net
 	name = "butterfly net"
@@ -127,7 +127,6 @@ CAPABILITIES(/obj/item/material/fishing_net)
 	w_class = ITEMSIZE_SMALL
 	flags = NOBLUDGEON
 
-	reach = 1
 
 	default_material = MAT_CLOTH
 
@@ -136,7 +135,7 @@ CAPABILITIES(/obj/item/material/fishing_net)
 TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mobs, list(/mob/living/simple_mob/animal/sif/glitterfly, /mob/living/carbon/human))
 
 /obj/item/material/fishing_net/butterfly_net/afterattack(atom/A, mob/user, proximity)
-	if(get_dist(get_turf(src), A) > reach)
+	if(get_dist(get_turf(src), A) > combat_of(src).reach)
 		return
 
 	if(istype(A, /turf))
@@ -174,6 +173,7 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 	return ..()
 
 CAPABILITIES(/obj/item/material/fishing_net/butterfly_net)
+	configure(item_combat(reach = 1))
 	op("butterfly_net_self", in_hand(), label("Empty"), then(PROC_REF(butterfly_net_self)))
 
 /// Old attack_self.

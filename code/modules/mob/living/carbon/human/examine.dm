@@ -51,55 +51,55 @@
 	//exosuits and helmets obscure our view and stuff.
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(suit)
-		if(suit.flags_inv & HIDESUITSTORAGE)
+		if(worn_of(suit).hides & HIDESUITSTORAGE)
 			skip_gear |= EXAMINE_SKIPSUITSTORAGE
-		if(suit.flags_inv & HIDEJUMPSUIT)
+		if(worn_of(suit).hides & HIDEJUMPSUIT)
 			skip_body |= EXAMINE_SKIPARMS | EXAMINE_SKIPLEGS | EXAMINE_SKIPBODY | EXAMINE_SKIPGROIN
 			skip_gear |= EXAMINE_SKIPJUMPSUIT | EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
-		else if(suit.flags_inv & HIDETIE)
+		else if(worn_of(suit).hides & HIDETIE)
 			skip_gear |= EXAMINE_SKIPTIE | EXAMINE_SKIPHOLSTER
-		else if(suit.flags_inv & HIDEHOLSTER)
+		else if(worn_of(suit).hides & HIDEHOLSTER)
 			skip_gear |= EXAMINE_SKIPHOLSTER
-		if(suit.flags_inv & HIDESHOES)
+		if(worn_of(suit).hides & HIDESHOES)
 			skip_gear |= EXAMINE_SKIPSHOES
 			skip_body |= EXAMINE_SKIPFEET
-		if(suit.flags_inv & HIDEGLOVES)
+		if(worn_of(suit).hides & HIDEGLOVES)
 			skip_gear |= EXAMINE_SKIPGLOVES
 			skip_body |= EXAMINE_SKIPHANDS
 
 	var/obj/item/uniform = get_equipped_item(SLOT_ID_UNIFORM)
 	if(uniform)
-		if(uniform.body_parts_covered & LEGS)
+		if(worn_of(uniform).covers & LEGS)
 			skip_body |= EXAMINE_SKIPLEGS
-		if(uniform.body_parts_covered & ARMS)
+		if(worn_of(uniform).covers & ARMS)
 			skip_body |= EXAMINE_SKIPARMS
-		if(uniform.body_parts_covered & UPPER_TORSO)
+		if(worn_of(uniform).covers & UPPER_TORSO)
 			skip_body |= EXAMINE_SKIPBODY
-		if(uniform.body_parts_covered & LOWER_TORSO)
+		if(worn_of(uniform).covers & LOWER_TORSO)
 			skip_body |= EXAMINE_SKIPGROIN
 
 	var/obj/item/gloves = get_equipped_item(SLOT_ID_GLOVES)
-	if(gloves && (gloves.body_parts_covered & HANDS))
+	if(gloves && (worn_of(gloves).covers & HANDS))
 		skip_body |= EXAMINE_SKIPHANDS
 
 	var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
-	if(shoes && (shoes.body_parts_covered & FEET))
+	if(shoes && (worn_of(shoes).covers & FEET))
 		skip_body |= EXAMINE_SKIPFEET
 
 	var/obj/item/head = get_equipped_item(SLOT_ID_HEAD)
 	if(head)
-		if(head.flags_inv & HIDEMASK)
+		if(worn_of(head).hides & HIDEMASK)
 			skip_gear |= EXAMINE_SKIPMASK
-		if(head.flags_inv & HIDEEYES)
+		if(worn_of(head).hides & HIDEEYES)
 			skip_gear |= EXAMINE_SKIPEYEWEAR
 			skip_body |= EXAMINE_SKIPEYES
-		if(head.flags_inv & HIDEEARS)
+		if(worn_of(head).hides & HIDEEARS)
 			skip_gear |= EXAMINE_SKIPEARS
-		if(head.flags_inv & HIDEFACE)
+		if(worn_of(head).hides & HIDEFACE)
 			skip_body |= EXAMINE_SKIPFACE
 
 	var/obj/item/mask = get_equipped_item(SLOT_ID_MASK)
-	if(mask && (mask.flags_inv & HIDEFACE))
+	if(mask && (worn_of(mask).hides & HIDEFACE))
 		skip_body |= EXAMINE_SKIPFACE
 	return list(skip_gear, skip_body)
 

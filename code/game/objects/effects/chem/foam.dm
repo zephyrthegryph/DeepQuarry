@@ -199,7 +199,7 @@ CAPABILITIES(/obj/structure/foamedmetal)
 		consume(src, user)
 		return OP_PASS
 
-	if(prob(I.force * 20 - metal * 25))
+	if(prob(combat_of(I).force * 20 - metal * 25))
 		act_message(user, null, MSG_SELF(span_notice("You smash through the foamed metal with %I%.")), \
 			MSG_OTHERS(span_warning("%U% smashes through the foamed metal.")), \
 			item = I)

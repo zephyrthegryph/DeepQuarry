@@ -86,8 +86,6 @@ CAPABILITIES(/obj/item/stack/tile)
 	desc = "A patch of grass like they often use on golf courses."
 	icon_state = "tile_grass"
 	default_type = MAT_GRASS
-	force = 1.0
-	throwforce = 1.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
@@ -96,6 +94,8 @@ CAPABILITIES(/obj/item/stack/tile)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/grass)
+	configure(item_thrown(force = 1.0))
+	configure(item_combat(force = 1.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HERB, pickup = SFX_ITEMS_PICKUP_HERB))
 
 /obj/item/stack/tile/grass/sif
@@ -121,8 +121,6 @@ CAPABILITIES(/obj/item/stack/tile/grass)
 	singular_name = "wood floor tile"
 	desc = "An easy to fit wooden floor tile."
 	icon_state = "tile-wood"
-	force = 1.0
-	throwforce = 1.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
@@ -130,6 +128,8 @@ CAPABILITIES(/obj/item/stack/tile/grass)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/wood)
+	configure(item_thrown(force = 1.0))
+	configure(item_combat(force = 1.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_WOODEN, pickup = SFX_ITEMS_PICKUP_WOODEN))
 
 /obj/item/stack/tile/wood/alt
@@ -412,8 +412,6 @@ CAPABILITIES(/obj/item/stack/tile/wood)
 	singular_name = "carpet"
 	desc = "A piece of carpet. It is the same size as a normal floor tile!"
 	icon_state = "tile-carpet"
-	force = 1.0
-	throwforce = 1.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
@@ -421,6 +419,8 @@ CAPABILITIES(/obj/item/stack/tile/wood)
 	resistance_flags = FLAMMABLE
 
 CAPABILITIES(/obj/item/stack/tile/carpet)
+	configure(item_thrown(force = 1.0))
+	configure(item_combat(force = 1.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 
 /obj/item/stack/tile/carpet/teal
@@ -492,13 +492,15 @@ CAPABILITIES(/obj/item/stack/tile/carpet)
 	singular_name = "floor tile"
 	desc = "A metal tile fit for covering a section of floor."
 	icon_state = "tile"
-	force = 6.0
 	MATERIAL_BULK(DEFAULT_WALL_MATERIAL, SHEET_MATERIAL_AMOUNT / 4)
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	no_variants = FALSE
 	can_weld = TRUE
+
+CAPABILITIES(/obj/item/stack/tile/floor)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 6.0))
 
 /obj/item/stack/tile/floor/red
 	name = "red floor tile"
@@ -600,21 +602,21 @@ CAPABILITIES(/obj/item/stack/tile/carpet)
 	singular_name = "linoleum"
 	desc = "A piece of linoleum. It is the same size as a normal floor tile!"
 	icon_state = "tile-linoleum"
-	force = 1.0
-	throwforce = 1.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
 	can_weld = FALSE
 
+CAPABILITIES(/obj/item/stack/tile/linoleum)
+	configure(item_thrown(force = 1.0))
+	configure(item_combat(force = 1.0))
+
 /obj/item/stack/tile/wmarble
 	name = "light marble tile"
 	singular_name = "light marble tile"
 	desc = "Some white marble tiles used for flooring."
 	icon_state = "tile-wmarble"
-	force = 6.0
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
@@ -622,19 +624,25 @@ CAPABILITIES(/obj/item/stack/tile/carpet)
 	can_weld = TRUE
 	welds_into = /obj/item/stack/material/marble
 
+CAPABILITIES(/obj/item/stack/tile/wmarble)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 6.0))
+
 /obj/item/stack/tile/bmarble
 	name = "dark marble tile"
 	singular_name = "dark marble tile"
 	desc = "Some black marble tiles used for flooring."
 	icon_state = "tile-bmarble"
-	force = 6.0
-	throwforce = 15.0
 	throw_speed = 5
 	throw_range = 20
 	flags = NONE
 	no_variants = FALSE
 	can_weld = TRUE
 	welds_into = /obj/item/stack/material/marble
+
+CAPABILITIES(/obj/item/stack/tile/bmarble)
+	configure(item_thrown(force = 15.0))
+	configure(item_combat(force = 6.0))
 
 /obj/item/stack/tile/roofing
 	name = "roofing"

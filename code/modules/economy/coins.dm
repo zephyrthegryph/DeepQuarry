@@ -6,10 +6,7 @@
 	desc = "A simple coin you can flip."
 	icon_state = "coin"
 	randpixel = 8
-	force = 0.0
-	throwforce = 0.0
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/string_attached
 	var/sides = 2
 
@@ -173,6 +170,9 @@ CAPABILITIES(/obj/item/coin/uranium)
 	return OP_OK
 
 CAPABILITIES(/obj/item/coin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.0))
+	configure(item_combat(force = 0.0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
@@ -200,10 +200,7 @@ CAPABILITIES(/obj/item/coin)
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. "
 	icon_state = "triangle"
 	randpixel = 8
-	force = 0.5
-	throwforce = 0.5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/sides = 2
 	var/value = 1
 
@@ -228,6 +225,9 @@ CAPABILITIES(/obj/item/coin)
 	value = 20
 
 CAPABILITIES(/obj/item/aliencoin)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 0.5))
+	configure(item_combat(force = 0.5))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))

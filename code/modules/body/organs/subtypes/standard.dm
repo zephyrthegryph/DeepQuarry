@@ -95,8 +95,10 @@
 	joint = "left elbow"
 	amputation_point = "left shoulder"
 	can_grasp = 1
-	force = 7
-	throwforce = 10
+
+CAPABILITIES(/obj/item/organ/external/arm)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 7))
 
 /obj/item/organ/external/arm/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
@@ -135,8 +137,10 @@
 	joint = "left knee"
 	amputation_point = "left hip"
 	can_stand = 1
-	force = 10
-	throwforce = 12
+
+CAPABILITIES(/obj/item/organ/external/leg)
+	configure(item_thrown(force = 12))
+	configure(item_combat(force = 10))
 
 /obj/item/organ/external/leg/handle_germ_effects(cycles)
 	. = ..() //Should return an infection level
@@ -183,8 +187,10 @@
 	joint = "left ankle"
 	amputation_point = "left ankle"
 	can_stand = 1
-	force = 3
-	throwforce = 6
+
+CAPABILITIES(/obj/item/organ/external/foot)
+	configure(item_thrown(force = 6))
+	configure(item_combat(force = 3))
 
 /obj/item/organ/external/foot/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_SHOES))
@@ -231,8 +237,10 @@
 	can_grasp = 1
 	organ_rel_size = 10
 	base_miss_chance = 50
-	force = 3
-	throwforce = 5
+
+CAPABILITIES(/obj/item/organ/external/hand)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 3))
 
 /obj/item/organ/external/hand/drop_worn(mob/living/carbon/human/victim)
 	victim.drop_from_inventory(victim.get_equipped_item(SLOT_ID_GLOVES))
@@ -266,7 +274,6 @@
 	organ_tag = BP_HEAD
 	icon_name = "head"
 	name = "head"
-	slot_flags = SLOT_BELT
 	max_damage = 75
 	min_broken_damage = 50 // Increase all min_broken_damage
 	w_class = ITEMSIZE_NORMAL
@@ -284,8 +291,6 @@
 	var/eye_icon = "eyes_s"
 	var/eye_icon_location = 'icons/mob/human_face.dmi'
 	var/eye_icon_override = FALSE		// if true, we dont reset our icon back to default
-	force = 3
-	throwforce = 7
 	var/eyes_over_markings = FALSE
 
 /obj/item/organ/external/head/Initialize(mapload)
@@ -342,6 +347,9 @@
 
 // A plushie or another head held to a head kisses it.
 CAPABILITIES(/obj/item/organ/external/head)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 7))
+	configure(item_combat(force = 3))
 	op("kiss_plushie", item(/obj/item/toy/plushie), label("Kiss"), then(PROC_REF(head_kissed)))
 	op("kiss_head", item(/obj/item/organ/external/head), label("Kiss"), then(PROC_REF(head_kissed)))
 

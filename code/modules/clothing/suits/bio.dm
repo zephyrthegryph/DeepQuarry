@@ -7,13 +7,11 @@
 	center_of_mass_x = 0
 	center_of_mass_y = 0
 	armor_spec = "bio=100;rad=20;acid=60"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL | ALLOW_SURVIVALFOOD
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/head/bio_hood)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|BLOCKHAIR, covers = HEAD|FACE|EYES, flags = THICKMATERIAL | ALLOW_SURVIVALFOOD))
 	configure(item_protection(permeability = 0.01, siemens = 0.9))
 
 /obj/item/clothing/suit/bio_suit
@@ -21,15 +19,13 @@ CAPABILITIES(/obj/item/clothing/head/bio_hood)
 	desc = "A suit that protects against biological contamination."
 	icon_state = "bio"
 	w_class = ITEMSIZE_LARGE//bulky item
-	body_parts_covered = CHEST|LEGS|ARMS|HANDS|FEET
 	slowdown = 1.0
 	armor_spec = "bio=100;rad=20;acid=60"
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	resistance_flags = UNACIDABLE
 
 CAPABILITIES(/obj/item/clothing/suit/bio_suit)
+	configure(item_worn(covers = CHEST|LEGS|ARMS|HANDS|FEET, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER, flags = THICKMATERIAL))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 
 //Standard biosuit, orange stripe
@@ -38,12 +34,16 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 /obj/item/clothing/head/bio_hood/general
 	icon_state = "bio_general"
 	item_state_slots = list(slot_r_hand_str = "bio", slot_l_hand_str = "bio")
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/bio_hood/general)
+	configure(item_worn(covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/suit/bio_suit/general
 	icon_state = "bio_general"
 	item_state_slots = list(slot_r_hand_str = "bio", slot_l_hand_str = "bio")
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/general)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 //Virology biosuit, green stripe
 /obj/item/clothing/head/bio_hood/virology
@@ -51,7 +51,9 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 
 /obj/item/clothing/suit/bio_suit/virology
 	icon_state = "bio_virology"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/virology)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 //Security biosuit, grey with red stripe across the chest
 /obj/item/clothing/head/bio_hood/security
@@ -59,7 +61,9 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 
 /obj/item/clothing/suit/bio_suit/security
 	icon_state = "bio_security"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/security)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 //Janitor's biosuit, grey with purple arms
 /obj/item/clothing/head/bio_hood/janitor
@@ -67,7 +71,9 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 
 /obj/item/clothing/suit/bio_suit/janitor
 	icon_state = "bio_janitor"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/janitor)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 //Scientist's biosuit, white with a pink-ish hue
 /obj/item/clothing/head/bio_hood/scientist
@@ -75,12 +81,16 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 
 /obj/item/clothing/suit/bio_suit/scientist
 	icon_state = "bio_scientist"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/scientist)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 //CMO's biosuit, blue stripe
 /obj/item/clothing/suit/bio_suit/cmo
 	icon_state = "bio_cmo"
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/cmo)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/head/bio_hood/cmo
 	icon_state = "bio_cmo"
@@ -91,4 +101,6 @@ TYPE_TABLE(/obj/item/clothing/suit/bio_suit, suit_storage_spec, list(HOLD_ONLY(l
 	desc = "It protected doctors from the Black Death, back then. You bet your arse it's gonna help you against viruses."
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "bio", slot_l_hand_str = "bio")
-	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/plaguedoctorsuit)
+	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))

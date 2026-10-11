@@ -195,10 +195,10 @@
 /datum/unit_test/dq_armor_worn_cache_combines/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
-	vest.body_parts_covered = UPPER_TORSO
+	vest.set_body_parts_covered(UPPER_TORSO)
 	vest.set_armor(dq_armor(list(MELEE = 30, BULLET = 20)))
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
-	uniform.body_parts_covered = UPPER_TORSO | LOWER_TORSO
+	uniform.set_body_parts_covered(UPPER_TORSO | LOWER_TORSO)
 	uniform.set_armor(dq_armor(list(MELEE = 5, BIO = 10)))
 	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform should equip")
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")

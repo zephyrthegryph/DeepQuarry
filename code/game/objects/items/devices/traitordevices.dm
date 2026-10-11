@@ -19,7 +19,6 @@ effective or pretty fucking useless.
 	desc = "A strange device with twin antennas."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "batterer"
-	throwforce = 5
 	w_class = ITEMSIZE_TINY
 	throw_speed = 4
 	throw_range = 10
@@ -35,6 +34,7 @@ TRACKED(/obj/item/batterer, max_uses)
 MSG_DEF_SELF(batterer/burnt, "the mind batterer has been burnt out")
 
 CAPABILITIES(/obj/item/batterer)
+	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("batter", in_hand(), label("Trigger mind batterer"), needs(req(PROC_REF(batter_available))), then(PROC_REF(batter_triggered)))
 

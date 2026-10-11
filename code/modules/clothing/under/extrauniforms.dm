@@ -218,7 +218,9 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
 	desc = "A victorian style dress, fancy!"
 	icon_state = "victorianblackdress"
 	item_state = "victorianblackdress"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/yw/victsuit/victdress)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO))
 
 /obj/item/clothing/under/yw/victsuit/victdress/red
 	name = "red victorian dress"
@@ -232,7 +234,9 @@ CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
 	icon_state = "victorianvest"
 	item_state = "victorianvest"
 	icon_override = 'icons/mob/uniform_yw.dmi'
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+
+CAPABILITIES(/obj/item/clothing/under/yw/victsuit)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO))
 
 /obj/item/clothing/under/yw/victsuit/redblk
 	name = "red and black victorian suit"

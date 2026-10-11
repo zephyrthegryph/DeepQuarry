@@ -1,5 +1,4 @@
 /mob/living/silicon/pai
-	death_message = "fizzles out and clatters to the floor..."
 
 // Let's make it so that pAIs don't just always cease to be when they die! It would be cool if we could fix them.
 /mob/living/silicon/pai/on_death(gibbed)

@@ -202,9 +202,9 @@
 		reached += probe.damage_taken[i] - before[i]
 	var/expected = 0
 	var/datum/damage_packet/model = damage_packet(knife)
-	model.add_split(knife.injury_kind, knife.injury_kinds, knife.force)
+	model.add_split(knife.injury_kind, knife.injury_kinds, combat_of(knife).force)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
-		expected += model.amounts[i] * dq_path_share(probe, closet, PATH_EFFECT_DAMAGE, i, knife.armor_penetration)
+		expected += model.amounts[i] * dq_path_share(probe, closet, PATH_EFFECT_DAMAGE, i, combat_of(knife).armor_penetration)
 	model.release()
 	TEST_ASSERT(DQ_PATH_CLOSE(reached, expected), "a [knife] hit reaches [reached], expected [expected] (kind [knife.injury_kind])")
 

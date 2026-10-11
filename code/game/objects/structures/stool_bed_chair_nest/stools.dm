@@ -8,8 +8,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	force = 10
-	throwforce = 10
 	w_class = ITEMSIZE_HUGE
 	var/base_icon = "stool_base"
 	var/datum/material/material
@@ -61,7 +59,7 @@ TRACKED(/obj/item/stool, base_icon)
 		return
 	if(padding)
 		set_padding_material(get_material_by_name(padding))
-	force = round(material.blunt_damage()*0.4)
+	set_force(round(material.blunt_damage()*0.4))
 
 /obj/item/stool/padded
 	material_key = MAT_STEEL
@@ -121,6 +119,8 @@ TRACKED(/obj/item/stool, base_icon)
 	return TRUE
 
 CAPABILITIES(/obj/item/stool)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
 	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
 		needs(req(PROC_REF(can_be_padded))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
 	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
@@ -162,11 +162,13 @@ CAPABILITIES(/obj/item/stool)
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	force = 10
-	throwforce = 10
 	w_class = ITEMSIZE_HUGE
 	base_icon = "bar_stool_base"
 	anchored = TRUE
+
+CAPABILITIES(/obj/item/stool/baystool)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
 
 /obj/item/stool/baystool/padded
 	icon_state = "bar_stool_padded_preview" //set for the map

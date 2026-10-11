@@ -124,7 +124,6 @@
 	src.succlet_last_health = src.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet
-	death_message = "shrieks in agony as it is eradicated from reality."
 
 /mob/living/simple_mob/vore/alienanimals/succlet/on_death(gibbed)
 	. = ..()
@@ -134,7 +133,11 @@
 	expire(25)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/succlet)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("vore_taste" = "some kind of snack from a distant unseen universe", "vore_smell" = "some kind of snack from a distant unseen universe"))
+=======
+	configure(mob_kind(death_message = "shrieks in agony as it is eradicated from reality."))
+>>>>>>> origin/master
 	op("succlet_item", item(/obj/item), then(PROC_REF(succlet_interaction_item)))
 
 /// Old attackby: newspaper swat.

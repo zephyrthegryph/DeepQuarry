@@ -4,9 +4,7 @@
 	desc = "Goo extracted from a slime, which can do different things depending on its color and what it is injected with."
 	icon = 'icons/mob/slimes.dmi'
 	icon_state = "grey slime extract"
-	force = 1
 	w_class = ITEMSIZE_TINY
-	throwforce = 0
 	throw_speed = 3
 	throw_range = 6
 	var/uses = 1 // uses before it goes inert
@@ -15,6 +13,8 @@
 	flags = OPENCONTAINER
 
 CAPABILITIES(/obj/item/slime_extract)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 1))
 	reagents(60)
 	every(2 SECONDS, then(PROC_REF(emit_step)), when = nameof(emitting))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -1316,7 +1316,7 @@ TRACKED(/obj/item/slime_extract, emitting)
 
 /obj/item/slime_extract/ruby/get_mechanics_info(list/additional_information)
 	return ..(list("When injected with phoron, this extract grants extra strength for a time. When injected with blood, this extract causes a wave of pulling force. When injected with water, \
-	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing force.") + additional_information)
+	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing combat_of(src).force.") + additional_information)
 
 /obj/item/slime_extract/ruby
 	name = "ruby slime extract"

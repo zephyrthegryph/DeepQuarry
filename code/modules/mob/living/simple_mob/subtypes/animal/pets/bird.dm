@@ -102,7 +102,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/bird, mob_organ_hit_zones, list("head", "
 /mob/living/simple_mob/animal/passive/bird/azure_tit/tweeter
 	name = "Tweeter"
 	desc = "A beautiful little blue and white bird, if only excessively loud for no reason sometimes."
-	makes_dirt = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/azure_tit/tweeter)
+	configure(mob_movement(makes_dirt = FALSE))
 
 /mob/living/simple_mob/animal/passive/bird/azure_tit/great
 	name = "Great Tit"

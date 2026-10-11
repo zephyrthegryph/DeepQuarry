@@ -19,10 +19,7 @@
 	local_transmit = 0
 	can_pick_shell = FALSE
 
-	can_pull_size = ITEMSIZE_NO_CONTAINER
-	can_pull_mobs = MOB_PULL_SMALLER
 
-	mob_always_swap = 1
 
 	speed = 3
 
@@ -41,7 +38,6 @@
 
 	holder_type = /obj/item/holder/drone
 
-	can_be_antagged = TRUE
 
 	var/spell_setup = list(
 		/datum/spell/aoe_turf/conjure/swarmer,
@@ -55,6 +51,8 @@
 
 // It speaks the swarm's language.
 CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	configure(mob_kind(can_be_antagged = TRUE))
+	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, always_swap = 1))
 	knows(LANGUAGE_SWARMBOT)
 
 /mob/living/silicon/robot/drone/swarm/Initialize(mapload)

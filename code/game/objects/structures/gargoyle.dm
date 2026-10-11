@@ -305,7 +305,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			playsound(src, sounds_of(W).hit, 50, 1)
-			damage(W.force)
+			damage(combat_of(W).force)
 	return OP_OK
 
 /obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)

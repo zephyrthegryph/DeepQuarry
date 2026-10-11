@@ -61,14 +61,14 @@
 		if(MATERIAL_APPLICATION_TOOL)
 			var/datum/material/working = material_for_role(MATERIAL_ROLE_WORKING) || primary
 			var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || primary
-			force = max(initial(force), round((working.hardness + working.density) / 18))
-			throwforce = max(initial(throwforce), round((working.integrity + working.density) / 28))
-			toolspeed = clamp(1.25 - (working.hardness + working.elasticity + grip.elasticity * 0.25) / 245, 0.35, 1.25)
+			set_force(max(combat_of_type(type).force, round((working.hardness + working.density) / 18)))
+			set_throwforce(max(thrown_of_type(type).force, round((working.integrity + working.density) / 28)))
+			set_toolspeed(clamp(1.25 - (working.hardness + working.elasticity + grip.elasticity * 0.25) / 245, 0.35, 1.25))
 		if(MATERIAL_APPLICATION_SURGICAL)
 			var/datum/material/working = material_for_role(MATERIAL_ROLE_WORKING) || primary
 			var/datum/material/grip = material_for_role(MATERIAL_ROLE_GRIP) || primary
-			force = max(initial(force), round(working.hardness / 8))
-			toolspeed = clamp(1.15 - (working.hardness + working.elasticity + working.corrosion_resistance + grip.elasticity * 0.4 + grip.dielectric_strength * 0.2) / 390, 0.3, 1.15)
+			set_force(max(combat_of_type(type).force, round(working.hardness / 8)))
+			set_toolspeed(clamp(1.15 - (working.hardness + working.elasticity + working.corrosion_resistance + grip.elasticity * 0.4 + grip.dielectric_strength * 0.2) / 390, 0.3, 1.15))
 			build.surgery_cleanliness_bonus = clamp(round((working.corrosion_resistance + working.heat_resistance + working.reactivity * -0.5) / 3), 0, 35)
 			build.tool_quality_bonus = clamp(round((working.hardness + working.elasticity + working.purity_equivalent()) / 20), 0, 15)
 		if(MATERIAL_APPLICATION_CELL)

@@ -21,7 +21,6 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 	icon = 'icons/obj/device.dmi'
 	icon_state = "communicator"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	show_messages = 1
 
 
@@ -413,7 +412,9 @@ TRACKED(/obj/item/communicator, alert_called)
 	communications across different stations, planets, or even star systems. You can wear this one on your wrist!"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "commwatch"
-	slot_flags = SLOT_GLOVES | SLOT_ID | SLOT_BELT // Commwatches and Wrtist PDAs can go on ID and belt slots
+
+CAPABILITIES(/obj/item/communicator/watch)
+	configure(item_worn(slots = SLOT_GLOVES | SLOT_ID | SLOT_BELT))
 
 
 #undef HOMETAB

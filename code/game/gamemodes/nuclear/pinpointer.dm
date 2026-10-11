@@ -2,7 +2,6 @@
 	name = "pinpointer"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pinoff"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	item_state = "electronic"
 	throw_speed = 4
@@ -19,6 +18,7 @@
 /obj/item/pinpointer/var/active = FALSE
 TRACKED(/obj/item/pinpointer, active)
 CAPABILITIES(/obj/item/pinpointer)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
 	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(pinpointer_toggle_op)))

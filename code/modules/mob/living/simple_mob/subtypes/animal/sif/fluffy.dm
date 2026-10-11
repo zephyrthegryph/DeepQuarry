@@ -13,12 +13,9 @@
 	endurance = 20 //don't want Fluff to die on a missclick
 
 	movement_cooldown = 1.5
-	makes_dirt = 0
 
 	see_in_dark = 5
 	mob_size = MOB_TINY
-	makes_dirt = FALSE	// No more dirt
-	mob_bump_flag = 0
 
 	response_help  = "scritches"
 	response_disarm = "bops"
@@ -32,6 +29,9 @@
 	meat_type = /obj/item/reagent_containers/food/snacks/meat
 
 	say_list_type = /datum/say_list/fluffy_vr
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/fluffy)
+	configure(mob_movement(makes_dirt = FALSE, bump = 0))
 
 /datum/say_list/fluffy_vr
 	speak = list("Squee","Arf arf","Awoo","Squeak")

@@ -4,7 +4,6 @@
 	icon_state = "pai"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	show_messages = 0
 	preserve_item = 1
 
@@ -50,6 +49,7 @@ TRACKED(/obj/item/paicard, emitter)
 TRACKED(/obj/item/paicard, speech_synthesizer)
 
 CAPABILITIES(/obj/item/paicard)
+	configure(item_worn(slots = SLOT_BELT | SLOT_HOLSTER))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(paicard_after_init)))
 	ref_one(nameof(pai), /mob/living/silicon/pai)

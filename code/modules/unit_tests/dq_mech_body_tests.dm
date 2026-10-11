@@ -26,7 +26,7 @@
 	var/chassis_before = mech.get_integrity()
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
 	P.damage = 40
-	P.armor_penetration = 100
+	P.set_armor_penetration(100)
 	P.nodamage = FALSE
 	P.penetrating = 0
 	plan.receive_projectile(mech, P)

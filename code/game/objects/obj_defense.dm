@@ -117,7 +117,7 @@
 		dq_lifecycle_resolve_contents()
 
 	for(var/obj/item/item in contents)
-		if(item.item_flags & ABSTRACT)
+		if(worn_of(item).flags & ABSTRACT)
 			continue
 		item.forceMove(get_turf(src))
 

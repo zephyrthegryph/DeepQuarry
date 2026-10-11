@@ -1,9 +1,13 @@
 /mob/living/simple_mob/vore
+<<<<<<< HEAD
 	mob_class = MOB_CLASS_ANIMAL
 	mob_bump_flag = 0
 
 CAPABILITIES(/mob/living/simple_mob/vore)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = TRUE))
+=======
+	can_be_drop_pred = TRUE
+>>>>>>> origin/master
 
 /mob/living/simple_mob
 	var/nameset
@@ -133,5 +137,7 @@ CAPABILITIES(/mob/living/simple_mob/vore)
 	gender = newgender
 
 /mob/living/simple_mob/vore/aggressive
-	mob_bump_flag = HEAVY
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive)
+	configure(mob_movement(bump = HEAVY))
 

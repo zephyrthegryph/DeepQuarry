@@ -36,7 +36,6 @@
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha
-	death_message = "explodes!"
 
 /mob/living/simple_mob/mechanical/mecha/on_death(gibbed)
 	..() // Do everything else first.
@@ -98,7 +97,11 @@
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
+=======
+	configure(mob_kind(death_message = "explodes!"))
+>>>>>>> origin/master
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 	rolls(nameof(name), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))
 	rolls(nameof(desc), PROC_REF(crewed_as), when = cond_not(nameof(pilot_type)))

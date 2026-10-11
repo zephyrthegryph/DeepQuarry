@@ -32,7 +32,7 @@
 				step_towards(hand, S)
 				to_chat(src, span_warning("The [S] pulls \the [hand] from your grip!"))
 
-	if(!lying && (!get_equipped_item(SLOT_ID_SHOES) || !(get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP)) && (!species || !(species.flags & NOSLIP)) && prob(current_size*5))
+	if(!lying && (!get_equipped_item(SLOT_ID_SHOES) || !(worn_of(get_equipped_item(SLOT_ID_SHOES)).flags & NOSLIP)) && (!species || !(species.flags & NOSLIP)) && prob(current_size*5))
 		to_chat(src, span_danger("A strong gravitational force slams you to the ground!"))
 		status_at_least(STAT_WEAKENED, current_size)
 	..()

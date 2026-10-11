@@ -7,9 +7,6 @@
 		slot_l_hand_str = 'icons/mob/items/lefthand_spells.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_spells.dmi',
 		)
-	item_flags = DROPDEL | NOSTRIP
-	throwforce = 0
-	force = 0
 	show_examine = FALSE
 	var/mob/living/owner
 	var/obj/item/technomancer_core/core = null
@@ -108,6 +105,9 @@
 	return null
 
 CAPABILITIES(/obj/item/spell)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 	param(nameof(coreless), pos = 1)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

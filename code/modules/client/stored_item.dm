@@ -278,6 +278,9 @@ CAPABILITIES(/obj/machinery/item_bank)
 	persist_storable = FALSE
 /obj/item/clothing/shoes/magboots/adv
 	persist_storable = FALSE
+
+CAPABILITIES(/obj/item/clothing/shoes/magboots/adv)
+	configure(item_worn(flags = PHORONGUARD))
 /obj/item/rig
 	persist_storable = FALSE
 /obj/item/clothing/head/helmet/space/void

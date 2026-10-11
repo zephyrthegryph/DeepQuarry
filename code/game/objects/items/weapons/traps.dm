@@ -15,7 +15,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	MATERIAL_BULK(MAT_STEEL, 18750)
 	var/deployed = FALSE
@@ -36,6 +35,8 @@ MSG_DEF(beartrap/disarming, "You begin disarming %T%!", "%U% starts to disarm %T
 MSG_DEF(beartrap/disarmed, "You have disarmed %T%!", "%U% has disarmed %T%.")
 
 CAPABILITIES(/obj/item/beartrap)
+	configure(item_worn(slots = SLOT_MASK))
+	configure(item_thrown(force = 0))
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(beartrap/deploying), blind = "You hear the slow creaking of a spring."), wait(6 SECONDS),
 		then(PROC_REF(deploy_trap)), says(MSG(beartrap/deployed), blind = "You hear a latch click loudly."))
@@ -174,7 +175,6 @@ CAPABILITIES(/obj/item/beartrap)
 	force_divisor = 0.20
 	thrown_force_divisor = 0.25
 
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
 
 /obj/item/material/barbedwire/set_material(new_material)
@@ -194,6 +194,7 @@ MSG_DEF(barbedwire/collecting, "You begin collecting %T%!", "%U% starts to colle
 MSG_DEF(barbedwire/collected, "You have collected %T%!", "%U% has collected %T%.")
 
 CAPABILITIES(/obj/item/material/barbedwire)
+	configure(item_combat(sharp = TRUE))
 	op("deploy", in_hand(), label("Deploy trap"), needs(req(PROC_REF(can_deploy), silent = TRUE)),
 		begins(MSG(barbedwire/deploying), blind = "You hear the rustling of wire."), wait(6 SECONDS),
 		then(PROC_REF(deploy_wire)), says(MSG(barbedwire/deployed), blind = "You hear the rustling of wire."))
@@ -237,7 +238,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		user.do_attack_animation(src)
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
-		var/inc_damage = W.force
+		var/inc_damage = combat_of(W).force
 
 		if(W.obj_damage_type() != BRUTE)
 			inc_damage *= 0.3
@@ -257,7 +258,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		user.do_attack_animation(src)
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
-		var/inc_damage = tool.force
+		var/inc_damage = combat_of(tool).force
 
 		if(!shock(user, 100, pick(BP_L_HAND, BP_R_HAND)))
 			playsound(src, sounds_of(tool).use, 100, 1)
@@ -350,7 +351,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 	L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS)
 
-	if(!L.injure(injury_kind, force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
+	if(!L.injure(injury_kind, combat_of(src).force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return
 
 	play_sfx(src, SFX_EFFECTS_GLASS_STEP) // not sure how to handle metal shards with sounds
@@ -360,7 +361,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		if(H.species.siemens_coefficient<0.5) //Thick skin.
 			return
 
-		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET) ) )
+		if( H.get_equipped_item(SLOT_ID_SHOES) || ( H.get_equipped_item(SLOT_ID_SUIT) && (worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & FEET) ) )
 			return
 
 		if(H.species.flags & NO_MINOR_CUT)
@@ -375,7 +376,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 			if(affecting)
 				if(affecting.is_robotic())
 					return
-				H.injure(INJURY_BLUNT, force, affecting, src)
+				H.injure(INJURY_BLUNT, combat_of(src).force, affecting, src)
 				if(affecting.organ_can_feel_pain())
 					H.status_at_least(STAT_WEAKENED, 3)
 				return
@@ -395,7 +396,6 @@ CAPABILITIES(/obj/item/material/barbedwire)
 
 // === merged from traps_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/beartrap
-	slot_flags = SLOT_MASK
 	item_icons = list(
 		slot_wear_mask_str = 'icons/inventory/face/mob.dmi'
 		)

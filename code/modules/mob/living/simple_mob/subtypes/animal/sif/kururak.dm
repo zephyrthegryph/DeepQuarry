@@ -43,7 +43,6 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 20
 	attack_armor_pen = 40
-	base_attack_cooldown = 2 SECONDS
 	attacktext = list("gouged", "bit", "cut", "clawed", "whipped")
 
 	organ_names = /datum/decl/mob_organ_names/kururak
@@ -94,6 +93,7 @@
 	instinct = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	rolls(nameof(instinct), PROC_REF(roll_instinct))
 	// Digging into a mech's hatch (its melee strike): a second of clawing, beside the mech, then the pilot is dragged out.
 	op("rend_hatch", ai(), takes("mech"), wait(1 SECOND), then(PROC_REF(rending_strike_kururak_done)))
@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/kururak)
 			var/mob/living/carbon/human/H = L
 			if(H.get_active_hand())
 				var/obj/item/I = H.get_active_hand()
-				if(I.force <= 1.25 * melee_damage_upper)
+				if(combat_of(I).force <= 1.25 * melee_damage_upper)
 					return TRUE
 		else if(isanimal(L))
 			var/mob/living/simple_mob/S = L

@@ -120,9 +120,11 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 	name = "ice winds"
 	icon_state = "ice_wind"
 	damage = 15
-	armor_penetration = 70
 	modifier_type_to_apply = /datum/body_effect/cryogelled
 	modifier_duration = 0.25 MINUTE
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/chillingwind)
+	configure(item_combat(armor_penetration = 70))
 
 /obj/item/projectile/energy/eclipse_boss/metalsphere
 	name = "metal sphere"
@@ -130,7 +132,9 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 	injury_kind = INJURY_BLUNT
 	damage = 20
 	agony = 10
-	armor_penetration = 50
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/metalsphere)
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/energy/eclipse_boss/energyjavelin
 	name = "searing javelin"
@@ -138,7 +142,9 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 	injury_kind = INJURY_BLUNT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	damage = 40
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/energy/eclipse_boss/energyjavelin)
+	configure(item_combat(armor_penetration = 30))
 
 //projectiles
 /obj/item/projectile/energy/astral_collective
@@ -155,7 +161,9 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 /obj/item/projectile/energy/astral_collective/spear
 	icon_state = "spear"
 	damage = 20
-	armor_penetration = 30
+
+CAPABILITIES(/obj/item/projectile/energy/astral_collective/spear)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/energy/astral_collective/fire
 	icon_state = "fire"
@@ -165,5 +173,7 @@ CAPABILITIES(/obj/item/grenade/chem_grenade/frost)
 
 /obj/item/projectile/energy/astral_collective/dagger
 	damage = 8
-	armor_penetration = 60
 	icon_state = "dagger"
+
+CAPABILITIES(/obj/item/projectile/energy/astral_collective/dagger)
+	configure(item_combat(armor_penetration = 60))

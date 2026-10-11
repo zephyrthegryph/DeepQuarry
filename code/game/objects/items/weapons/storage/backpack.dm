@@ -12,7 +12,6 @@
 		SPECIES_WEREBEAST = 'icons/inventory/back/mob_werebeast.dmi'
 		)
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	max_storage_space = INVENTORY_STANDARD_SPACE
 	var/flippable = 0
 	var/side = 0 //0 = right, 1 = left
@@ -20,6 +19,7 @@
 
 
 CAPABILITIES(/obj/item/storage/backpack)
+	configure(item_worn(slots = SLOT_BACK))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 	configure(storage(max_size = ITEMSIZE_LARGE))
 

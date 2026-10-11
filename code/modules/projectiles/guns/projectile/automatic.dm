@@ -29,7 +29,6 @@
 	w_class = ITEMSIZE_NORMAL
 	load_method = MAGAZINE
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	magazine_type = null // R&D builds this. Starts unloaded.
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced, /obj/item/ammo_magazine/m9mm)
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
@@ -38,6 +37,9 @@
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-10,-10), dispersion=list(0.0, 0.3, 0.6))
 	)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/advanced_smg)
+	configure(item_worn(slots = SLOT_BELT))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/advanced_smg/draw(datum/look/look)
@@ -66,9 +68,7 @@
 	wielded_item_state = "arifle-wielded"
 	item_state = null
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "5.45mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m545
 	allowed_magazines = list(/obj/item/ammo_magazine/m545)
@@ -82,6 +82,10 @@
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/sts35)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
+
 /*
  * X-9mm (PDW)
  */
@@ -93,7 +97,6 @@
 	item_state = "c20r"
 	w_class = ITEMSIZE_NORMAL
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmAdvanced
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mmAdvanced)
@@ -103,6 +106,9 @@
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/pdw)
+	configure(item_worn(slots = SLOT_BELT))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/pdw/draw(datum/look/look)
@@ -121,7 +127,6 @@
 	item_state = "wt550"
 	w_class = ITEMSIZE_NORMAL
 	caliber = "9mm"
-	slot_flags = SLOT_BELT
 	ammo_type = /obj/item/ammo_casing/a9mm/rubber
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m9mmt/rubber
@@ -129,6 +134,9 @@
 	projectile_type = /obj/item/projectile/bullet/pistol/medium
 	move_delay = 0 // Pistols have move_delay of 0
 	fire_sound = "sound/weapons/gunshot_pathetic.ogg"
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/wt550)
+	configure(item_worn(slots = SLOT_BELT))
 
 /// Declared icon_state suffix: rounded magazine count, or nothing when empty.
 /obj/item/gun/projectile/automatic/wt550/proc/appearance_mag_state()
@@ -150,9 +158,7 @@
 	item_state = "z8carbine"
 	wielded_item_state = "z8bulldog-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762)
@@ -174,6 +180,8 @@
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
 CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung, starts = /obj/item/gun/launcher/grenade/underslung)
 
 /// Old attackby.
@@ -224,11 +232,8 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 	item_state = "l6closed"
 	wielded_item_state = "genericLMG-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
-	slot_flags = 0
 	max_shells = 50
 	caliber = "5.45mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m545saw
 	allowed_magazines = list(/obj/item/ammo_magazine/m545saw, /obj/item/ammo_magazine/m545)
@@ -246,6 +251,10 @@ CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
 		)
 
 	special_weapon_handling = TRUE
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/l6_saw)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 
@@ -312,9 +321,7 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	item_state = "ashot"
 	wielded_item_state = "ashot-wielded"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 	caliber = "12g"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m12gdrum
 	allowed_magazines = list(/obj/item/ammo_magazine/m12gdrum)
@@ -326,6 +333,10 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, move_delay=6, burst_accuracy = list(0,-15,-15,-30,-30), dispersion = list(0.0, 0.6, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/as24)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/as24/draw(datum/look/look)
@@ -399,7 +410,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	item_state = "stg44"
 	w_class = ITEMSIZE_NORMAL
 	caliber = ".45"
-	slot_flags = SLOT_BELT // ToDo: Belt sprite.
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m45tommy
 	allowed_magazines = list(/obj/item/ammo_magazine/m45tommy, /obj/item/ammo_magazine/m45tommydrum)
@@ -409,6 +419,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto", burst=1, fire_delay=0.1),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/tommygun)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/projectile/automatic/tommygun/draw(datum/look/look)
 	..()
@@ -430,9 +443,7 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	item_state = "bullpup"
 	wielded_item_state = "sexyrifle-wielded" //Placeholder, this is a bullpup at least
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762
 	allowed_magazines = list(/obj/item/ammo_magazine/m762, /obj/item/ammo_magazine/m762/ext)
@@ -445,6 +456,10 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/bullpup)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /obj/item/gun/projectile/automatic/bullpup/draw(datum/look/look)
 	..()
@@ -508,7 +523,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "p90smgnew" // Defines the name for the icon (inventory) state.
 	item_state = "p90new" // Defines the name for the item (visibly held) state.
 	wielded_item_state = "p90new-wielded" // Defines the name for the wielded (two-handed) state.
-	slot_flags = SLOT_BELT|SLOT_BACK // The inventory slots this weapon can occupy. Most weapons can go on the suit slot by default, so long as you're wearing a vest.
 
 	w_class = ITEMSIZE_LARGE // Takes up more space in inventories than a pistol.
 
@@ -528,6 +542,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semi-automatic", burst=1, fire_delay=0, move_delay=0),
 		list(mode_name="three-round burst", burst=3, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(0,-15,-20), dispersion=list(0.0, 1.0, 1.5))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/p90)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /// Declared icon_state suffix: rounded magazine count, or "empty".
 /obj/item/gun/projectile/automatic/p90/proc/appearance_mag_state()
@@ -553,7 +570,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "c20r"
 	item_state = "c20rnew"
 	wielded_item_state = "c20rnew-wielded"
-	slot_flags = SLOT_BELT|SLOT_BACK
 
 	w_class = ITEMSIZE_LARGE
 
@@ -574,6 +590,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="two-shot rapidfire", burst=2, fire_delay=null, burst_delay=1, move_delay=0, burst_accuracy=list(-5,-10), dispersion=list(0.5, 1.0)),
 		)
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/c20r)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
+
 /obj/item/gun/projectile/automatic/c20r/rubber
 	magazine_type = /obj/item/ammo_magazine/m10mm/rubber
 
@@ -590,9 +609,7 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "fal"
 	item_state = "fal"
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	caliber = "7.62mm"
-	slot_flags = SLOT_BACK
 	load_method = MAGAZINE
 	magazine_type = /obj/item/ammo_magazine/m762/ext
 	allowed_magazines = list(/obj/item/ammo_magazine/m762, /obj/item/ammo_magazine/m762/ext)
@@ -603,6 +620,10 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto",       burst=1, fire_delay=0,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(60,35), dispersion=list(0.0, 0.6))
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/fal)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10))
 
 /// The look (the draw sweep: from its template).
 /obj/item/gun/projectile/automatic/fal/draw(datum/look/look)
@@ -631,8 +652,10 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	allowed_magazines = list(/obj/item/ammo_magazine/m95)
 	fire_sound = SFX_WEAPONS_BATTLERIFLE
 	load_method = MAGAZINE
-	slot_flags = SLOT_BACK
 	one_handed_penalty = 60 // The weapon itself is heavy
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/battlerifle)
+	configure(item_worn(slots = SLOT_BACK))
 
 // For general use
 /obj/item/gun/projectile/automatic/stg
@@ -661,7 +684,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "SMG-IS"
 	item_state = "wt550"
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BELT
 	caliber = "9mm"
 	magazine_type = /obj/item/ammo_magazine/m9mm
 	allowed_magazines = list(/obj/item/ammo_magazine/m9mm)
@@ -672,6 +694,9 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15),       dispersion=list(0.0, 0.6, 1.0)),
 		)
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/sol)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/gun/projectile/automatic/sol/draw(datum/look/look)
 	..()
@@ -756,8 +781,6 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 	icon_state = "mg42closed"
 	item_state = "mg42"
 	w_class = ITEMSIZE_HUGE
-	force = 10
-	slot_flags = 0
 	max_shells = 75
 	caliber = "mauser"
 	ammo_type = "/obj/item/ammo_casing/a792x57m/lmg" // Is this really needed anymore?
@@ -777,6 +800,10 @@ TRACKED(/obj/item/gun/projectile/automatic/l6_saw, cover_open)
 		)
 
 	var/cover_open = 0
+
+CAPABILITIES(/obj/item/gun/projectile/automatic/mg42)
+	configure(item_worn(slots = 0))
+	configure(item_combat(force = 10))
 
 TRACKED(/obj/item/gun/projectile/automatic/mg42, cover_open)
 

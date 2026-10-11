@@ -50,21 +50,27 @@
 	name = "energy bolt"
 	icon_state = "bluelaser"
 	damage = 12
-	armor_penetration = 40
 	range = 16
 	penetrating = 7
 
+CAPABILITIES(/obj/item/projectile/energy/wallbreaker)
+	configure(item_combat(armor_penetration = 40))
+
 /obj/item/projectile/energy/wallbreaker/boss
 	damage = 25
-	armor_penetration = 60
 	speed = 10
 	crawl_destroy = TRUE
 
+CAPABILITIES(/obj/item/projectile/energy/wallbreaker/boss)
+	configure(item_combat(armor_penetration = 60))
+
 /obj/item/projectile/bullet/alterhivebot
 	damage = 25
-	armor_penetration = 40
 	icon_state = "bullet_alt"
 	speed = 2
+
+CAPABILITIES(/obj/item/projectile/bullet/alterhivebot)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/alterhivebot/boss
 	damage = 35
@@ -82,12 +88,14 @@
 
 /obj/item/projectile/energy/lightingspark/nanoweave
 	damage = 15
-	armor_penetration = 40
 	nodamage = 0
 	penetrating = 10
 	icon_state = "tesla_projectile"
 	speed = 15
 	crawl_destroy = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/lightingspark/nanoweave)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/knockback
 	name = "sonic blast"

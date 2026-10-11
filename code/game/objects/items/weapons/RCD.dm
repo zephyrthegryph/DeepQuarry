@@ -6,8 +6,6 @@
 	icon_state = "rcd"
 	item_state = "rcd"
 	flags = NOBLUDGEON
-	force = 10
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_NORMAL
@@ -78,7 +76,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	play_sfx(src, SFX_MACHINES_CLICK)
 
 	var/output_envelope = power_output_envelope(rcd_results[RCD_VALUE_COST])
-	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed / output_envelope
+	var/true_delay = rcd_results[RCD_VALUE_DELAY] * tooling_of(src).speed / output_envelope
 
 	var/datum/beam/rcd_beam = null
 	if(ranged)
@@ -149,8 +147,10 @@ TYPE_TABLE(/obj/item/rcd/shipwright/loaded, rcd_start_loaded, TRUE)
 	Reload with compressed matter cartridges."
 	icon_state = "adv_rcd"
 	ranged = TRUE
-	toolspeed = 0.5 // Twice as fast.
 	max_stored_matter = RCD_MAX_CAPACITY * 3 // Three times capacity.
+
+CAPABILITIES(/obj/item/rcd/advanced)
+	configure(item_tooling(speed = 0.5))
 
 TYPE_TABLE(/obj/item/rcd/advanced/loaded, rcd_start_loaded, TRUE)
 
@@ -227,14 +227,18 @@ CAPABILITIES(/obj/item/rcd/electric)
 	can_remove_rwalls = TRUE
 	desc = "A device used to rapidly build and deconstruct. It runs directly off of electricity, drawing directly from your cell."
 	electric_cost_coefficent = 41.66 // Twice as efficent, out of pity.
-	toolspeed = 0.5 // Twice as fast, since borg versions typically have this.
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/borg)
+	configure(item_tooling(speed = 0.5))
 
 /obj/item/rcd/electric/mounted/borg/swarm
 	can_remove_rwalls = FALSE
 	name = "Rapid Assimilation Device"
 	ranged = TRUE
-	toolspeed = 0.7
 	material_to_use = MAT_STEELHULL
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/borg/swarm)
+	configure(item_tooling(speed = 0.7))
 
 /obj/item/rcd/electric/mounted/borg/lesser
 	can_remove_rwalls = FALSE
@@ -245,7 +249,9 @@ CAPABILITIES(/obj/item/rcd/electric)
 // RCDs for Mechs.
 /obj/item/rcd/electric/mounted/mecha
 	ranged = TRUE
-	toolspeed = 0.5
+
+CAPABILITIES(/obj/item/rcd/electric/mounted/mecha)
+	configure(item_tooling(speed = 0.5))
 
 // Infinite use RCD for debugging/adminbuse.
 /obj/item/rcd/debug
@@ -256,7 +262,6 @@ CAPABILITIES(/obj/item/rcd/electric)
 	ranged = TRUE
 	can_remove_rwalls = TRUE
 	allow_concurrent_building = TRUE
-	toolspeed = 0.25 // Four times as fast.
 
 /obj/item/rcd/debug/can_afford(amount)
 	return TRUE
@@ -265,6 +270,7 @@ CAPABILITIES(/obj/item/rcd/electric)
 	return TRUE
 
 CAPABILITIES(/obj/item/rcd/debug)
+	configure(item_tooling(speed = 0.25))
 	op("debug_rcd_refuse_ammo", item(/obj/item/rcd_ammo), label("Load"), then(PROC_REF(debug_rcd_refuse_ammo)))
 
 /// Old attackby: refuses cartridges; anything else falls through to the RCD's loading.
@@ -310,6 +316,8 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	var/static/image/radial_image_floorwall = image(icon = 'icons/mob/radial.dmi', icon_state = "wallfloor")
 
 CAPABILITIES(/obj/item/rcd)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	emag(then(PROC_REF(on_emag)), powered = FALSE)
 	owns_many(nameof(effects))

@@ -4,8 +4,6 @@
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "s-casing"
 	randpixel = 10
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	preserve_item = 1
 
@@ -16,6 +14,8 @@
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
 CAPABILITIES(/obj/item/ammo_casing)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	owns_one(nameof(BB), /obj/item/projectile, starts = nameof(projectile_type))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
@@ -138,10 +138,8 @@ CAPABILITIES(/obj/item/ammo_casing)
 	desc = "A magazine for some kind of gun."
 	icon_state = ".357"
 	icon = 'icons/obj/ammo.dmi'
-	slot_flags = SLOT_BELT
 	item_state = "syringe_kit"
 	MATERIAL_BULK(MAT_STEEL, 500)
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
@@ -170,6 +168,8 @@ TRACKED(/obj/item/ammo_magazine, latent_rounds)
 TRACKED(/obj/item/ammo_magazine, max_ammo)
 
 CAPABILITIES(/obj/item/ammo_magazine)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
 	owns_many(nameof(stored_ammo), starts = PROC_REF(make_stored_ammo))
 	param(nameof(forge_material), pos = 1)
 	rolls(ROLL_PIXEL, PIXEL_JITTER(5))
@@ -366,16 +366,16 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	desc = "A box that holds some kind of ammo."
 	icon = 'icons/obj/ammo_boxes.dmi'
 	icon_state = "pistol"
-	slot_flags = null //You can't fit a box on your belt
 	item_state = "paper"
 	MATERIAL_NONE
-	throwforce = 3
 	throw_speed = 5
 	throw_range = 12
 	preserve_item = 1
 	caliber = ".357"
 
 CAPABILITIES(/obj/item/ammo_magazine/ammo_box)
+	configure(item_worn(slots = TRAIT_NONE))
+	configure(item_thrown(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_MATCHBOX, pickup = SFX_ITEMS_PICKUP_MATCHBOX))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), label("Alternate use"), then(PROC_REF(interaction_alt)))
 

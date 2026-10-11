@@ -4,7 +4,6 @@
 	desc = "A subtly vibrating box made out of brass. It has some buttons and switches on one side, and what looks like vents on another."
 	icon = 'icons/obj/rig_modules_ch.dmi'
 	icon_state = "clockwork_rig"
-	slot_flags = SLOT_BELT
 	armor_spec = "melee=70;bullet=55;laser=65;energy=65;bomb=65;rad=100"
 	slowdown = 2
 	offline_slowdown = 4
@@ -29,6 +28,7 @@
 	req_one_access = list()
 
 CAPABILITIES(/obj/item/rig/ch/clockwork)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear \

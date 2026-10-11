@@ -1,7 +1,14 @@
 // Passive mobs can't attack things, and will run away instead.
 // They can also be displaced by all mobs.
 /mob/living/simple_mob/animal/passive
+<<<<<<< HEAD
 	mob_bump_flag = 0
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
+=======
+	allow_mind_transfer = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive)
+	configure(mob_movement(bump = 0))
+>>>>>>> origin/master

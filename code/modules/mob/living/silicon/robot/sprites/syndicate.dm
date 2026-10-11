@@ -248,7 +248,7 @@
 		SP.desc = "Zappy paws. For fixing cardiac arrest."
 		SP.icon = 'icons/mob/dogborg_vr.dmi'
 		SP.icon_state = "defibpaddles0"
-		SP.attack_verb = list("batted", "pawed", "bopped", "whapped")
+		SP.set_attack_verb(list("batted", "pawed", "bopped", "whapped"))
 
 /datum/robot_sprite/dogborg/combat_medic/vale
 	name = "Hound V2"

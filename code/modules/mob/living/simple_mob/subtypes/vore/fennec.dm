@@ -97,9 +97,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	harm_intent_damage = 40
 	melee_damage_lower = 20
 	melee_damage_upper = 60
-	mob_bump_flag = HEAVY
 	grab_resist = 100
-	mob_class = MOB_CLASS_HUMANOID
 	movement_cooldown = -1
 	melee_miss_chance = 10
 
@@ -127,7 +125,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec)
 	var/autodoom = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/vore/fennec/huge)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
+=======
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID))
+	configure(mob_movement(bump = HEAVY))
+>>>>>>> origin/master
 
 /// The huge fennec's shadow under its body.
 /mob/living/simple_mob/vore/fennec/huge/draw(datum/look/look)

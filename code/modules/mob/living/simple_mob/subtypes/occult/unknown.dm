@@ -24,7 +24,6 @@
 	melee_damage_upper = 40
 	attack_armor_pen = 20
 
-	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb
 	projectilesound = SFX_EFFECTS_UNCLOAK
@@ -51,14 +50,15 @@ CAPABILITIES(/mob/living/simple_mob/glitch_boss)
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 15
-	armor_penetration = 40
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
 
+CAPABILITIES(/obj/item/projectile/energy/slow_orb)
+	configure(item_combat(armor_penetration = 40))
+
 /mob/living/simple_mob/glitch_boss
 	delete_on_death = TRUE
-	death_message = "suddenly %runtime error in unknown.dm, line 56%"
 
 /mob/living/simple_mob/glitch_boss/on_death(gibbed)
 	. = ..()
@@ -230,8 +230,8 @@ CAPABILITIES(/mob/living/simple_mob/glitch_boss)
 		after(src, 2 SECONDS, PROC_REF(bullethell_wave), with = list(sd, wave + 1))
 
 /mob/living/simple_mob/glitch_boss/proc/speed_up_boost(atom/A)
-	if(base_attack_cooldown == initial(base_attack_cooldown))
-		base_attack_cooldown = 1 SECOND
+	if(kind_of(src).attack_cooldown == kind_of_type(type).attack_cooldown)
+		set_base_attack_cooldown(1 SECOND)
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
 		after(src, duration, PROC_REF(end_speed_boost))
 
@@ -276,7 +276,6 @@ CAPABILITIES(/mob/living/simple_mob/glitch_boss)
 	melee_damage_upper = 0
 	attack_armor_pen = 0
 
-	base_attack_cooldown = 2.5 SECONDS
 
 	projectiletype = /obj/item/projectile/energy/slow_orb_fake
 	projectilesound = SFX_EFFECTS_UNCLOAK
@@ -307,10 +306,12 @@ CAPABILITIES(/mob/living/simple_mob/glitch_boss)
 	speed = 6
 	injury_kind = INJURY_ELECTRIC
 	agony = 0
-	armor_penetration = 0
 
 	fire_sound = SFX_EFFECTS_UNCLOAK
 	combustion = TRUE
+
+CAPABILITIES(/obj/item/projectile/energy/slow_orb_fake)
+	configure(item_combat(armor_penetration = 0))
 
 #undef GA_ADS
 #undef GA_CALLDOWN
@@ -328,4 +329,4 @@ CAPABILITIES(/mob/living/simple_mob/glitch_boss)
 	new /obj/effect/temp_visual/confuse(get_turf(src))
 
 /mob/living/simple_mob/glitch_boss/proc/end_speed_boost()
-	base_attack_cooldown = initial(base_attack_cooldown)
+	set_base_attack_cooldown(kind_of_type(type).attack_cooldown)

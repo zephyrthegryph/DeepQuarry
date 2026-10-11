@@ -20,9 +20,9 @@ CAPABILITIES(/obj/item/clothing/under/solgov)
 	icon_state = "miami"
 	worn_state = "miami"
 	armor_spec = ""
-	body_parts_covered = CHEST
 
 CAPABILITIES(/obj/item/clothing/under/solgov/pt)
+	configure(item_worn(covers = CHEST))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/solgov/pt/sifguard

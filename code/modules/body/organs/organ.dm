@@ -601,7 +601,7 @@ CAPABILITIES(/obj/item/organ)
 /// Ten seconds, by the tool's speed.
 /obj/item/organ/proc/butcher_wait(datum/act/op/A)
 	var/obj/item/O = A.held
-	return 10 SECONDS * (O?.toolspeed || 1)
+	return 10 SECONDS * (tooling_of(O).speed || 1)
 
 /obj/item/organ/proc/butcher_failed(datum/act/op/A)
 	var/mob/living/user = A.actor

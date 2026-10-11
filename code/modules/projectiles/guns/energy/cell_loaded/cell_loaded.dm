@@ -176,8 +176,6 @@ CAPABILITIES(/obj/item/ammo_magazine/cell_mag)
 	desc = "A miniature battery for an energy weapon."
 	icon = 'icons/obj/ammo_vr.dmi'
 	icon_state = "nsfw_batt"
-	slot_flags = SLOT_BELT | SLOT_EARS
-	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	var/shots_left = 4
 
@@ -191,6 +189,8 @@ TRACKED(/obj/item/ammo_casing/microbattery, shots_left)
 TRACKED(/obj/item/ammo_casing/microbattery, type_color)
 
 CAPABILITIES(/obj/item/ammo_casing/microbattery)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 1))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(10))
 
 /obj/item/ammo_casing/microbattery/look_parts(datum/look/look)

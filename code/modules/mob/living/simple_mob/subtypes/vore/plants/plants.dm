@@ -121,9 +121,11 @@ CAPABILITIES(/mob/living/simple_mob/vore/mantrap)
 	vore_bump_emote = "encloses on"
 
 	appendage_color = "#03a319"
-	base_attack_cooldown = 5 SECONDS
 	projectiletype = /obj/item/projectile/beam/appendage
 	projectilesound = SFX_EFFECTS_SLIME_SQUISH
+
+CAPABILITIES(/mob/living/simple_mob/vore/pitcher)
+	configure(mob_kind(attack_cooldown = 5 SECONDS))
 
 /mob/living/simple_mob/vore/pitcher/load_default_bellies()
 	. = ..()

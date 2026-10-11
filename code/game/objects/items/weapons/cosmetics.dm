@@ -5,7 +5,6 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "lipstick"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/colour = "red"
 	var/open = 0
 
@@ -37,6 +36,7 @@ TRACKED(/obj/item/lipstick, open)
 MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 
 CAPABILITIES(/obj/item/lipstick)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
@@ -82,11 +82,11 @@ CAPABILITIES(/obj/item/lipstick)
 	name = "purple comb"
 	desc = "A pristine purple comb made from flexible plastic."
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	icon = 'icons/obj/items.dmi'
 	icon_state = "purplecomb"
 
 CAPABILITIES(/obj/item/haircomb)
+	configure(item_worn(slots = SLOT_EARS))
 	op("comb", in_hand(), label("Comb hair"), then(PROC_REF(hair_combed)))
 
 /obj/item/haircomb/proc/hair_combed(datum/act/op/A)

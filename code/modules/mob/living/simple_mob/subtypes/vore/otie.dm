@@ -236,7 +236,11 @@
 	icon_rest = "hotiesc_rest"
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
+=======
+	configure(mob_kind(death_message = "dies!"))
+>>>>>>> origin/master
 	op("otie_feed", item(/obj/item/reagent_containers/food), label("Feed"), then(PROC_REF(otie_interaction_feed)))
 	op("otie_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(otie_interaction_hand_help)))
 	op("otie_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(otie_interaction_hand_grab)))
@@ -325,7 +329,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie)
 	return OP_DECLINE
 
 /mob/living/simple_mob/vore/otie
-	death_message = "dies!"
 
 /mob/living/simple_mob/vore/otie/on_death(gibbed)
 	.=..()

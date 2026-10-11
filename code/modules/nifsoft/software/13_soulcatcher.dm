@@ -297,7 +297,6 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 /mob/living/carbon/brain/caught_soul
 	name = "recorded mind"
 	desc = "A mind recorded and being played on digital hardware."
-	use_me = 1
 	var/ext_deaf = FALSE		//Forbidden from 'ear' access on host
 	var/ext_blind = FALSE		//Forbidden from 'eye' access on host
 	var/parent_mob = FALSE		//If we've captured our owner
@@ -308,6 +307,9 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	var/tmp/obj/item/nif/nif
 	var/tmp/datum/nifsoft/soulcatcher/soulcatcher
 	var/identifying_gender
+
+CAPABILITIES(/mob/living/carbon/brain/caught_soul)
+	configure(mob_kind(use_me = 1))
 
 /mob/living/carbon/brain/caught_soul/Login()
 	..()

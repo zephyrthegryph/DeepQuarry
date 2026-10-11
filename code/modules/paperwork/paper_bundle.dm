@@ -4,14 +4,12 @@
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "paper"
 	item_state = "paper"
-	throwforce = 0
 	w_class = ITEMSIZE_SMALL
 	throw_range = 2
 	throw_speed = 1
 	plane = MOB_PLANE
 	layer = MOB_LAYER
 	pressure_resistance = 1
-	attack_verb = list("bapped")
 	var/page = 1    // current page
 	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list()  // Ordered list of pages as they are to be displayed. Can be different order than src.contents.
@@ -122,6 +120,8 @@
 	return OP_OK
 
 CAPABILITIES(/obj/item/paper_bundle)
+	configure(item_thrown(force = 0))
+	configure(item_combat(attack_verbs = list("bapped")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	op("bundle_self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("bundle_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))

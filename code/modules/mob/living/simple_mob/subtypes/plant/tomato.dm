@@ -6,7 +6,6 @@
 	icon_living = "tomato"
 	icon_dead = "tomato_dead"
 
-	mob_class = MOB_CLASS_PLANT
 
 	faction = FACTION_PLANTS
 	endurance = 15
@@ -30,7 +29,11 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/tomato)
+<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+=======
+	configure(mob_kind(mob_class = MOB_CLASS_PLANT))
+>>>>>>> origin/master
 
 /datum/decl/mob_organ_names/tomato
 TYPE_TABLE(/datum/decl/mob_organ_names/tomato, mob_organ_hit_zones, list("flesh", "leaf", "mouth"))
