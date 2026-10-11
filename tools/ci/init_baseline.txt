@@ -1310,13 +1310,11 @@ init_lines	code/game/objects/items/devices/personal_shield_generator.dm	rel_set(
 init_lines	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
 init_lines	code/game/objects/items/devices/pipe_painter.dm	LAZYADD(modes, "[C]")
 init_lines	code/game/objects/items/devices/pipe_painter.dm	set_mode(pick(modes))
-init_lines	code/game/objects/items/devices/radio/headset.dm	internal_channels.Cut()
 init_lines	code/game/objects/items/devices/radio/headset.dm	recalculateChannels(TRUE, register = FALSE)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	var/area/A = get_area(src)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	if(A)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
 init_lines	code/game/objects/items/devices/radio/intercom.dm	set_on(A?.powered(EQUIP))
-init_lines	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 init_lines	code/game/objects/items/devices/radio/radio.dm	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 init_lines	code/game/objects/items/devices/radio/radio.dm	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 init_lines	code/game/objects/items/devices/radio/radio.dm	update_broadcast_tiles()
@@ -1394,10 +1392,6 @@ init_lines	code/game/objects/items/trash_material.dm	add_materials(added)
 init_lines	code/game/objects/items/uav.dm	ion_trail.set_up(src)
 init_lines	code/game/objects/items/uav.dm	ion_trail.stop()
 init_lines	code/game/objects/items/weapons/AI_modules.dm	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
-init_lines	code/game/objects/items/weapons/RCD.dm	if(make_cell)
-init_lines	code/game/objects/items/weapons/RCD.dm	rel_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): the cell is made only when make_cell is set, which a declaration cannot condition
-init_lines	code/game/objects/items/weapons/RCD.dm	if(TYPE_TABLE_GET(src, rcd_start_loaded))
-init_lines	code/game/objects/items/weapons/RCD.dm	set_stored_matter(max_stored_matter)
 init_lines	code/game/objects/items/weapons/candle.dm	light(span_notice("\The [src] mysteriously lights itself!."))
 init_lines	code/game/objects/items/weapons/candle.dm	light(span_notice("\The [src] mysteriously lights itself!."))
 init_lines	code/game/objects/items/weapons/chewables.dm	make_exact_fit()
@@ -1624,12 +1618,6 @@ init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	for(var/ob
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	continue
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	load_vehicle(I)
-init_lines	code/game/objects/structures/door_assembly.dm	if(dir in list(EAST, WEST))
-init_lines	code/game/objects/structures/door_assembly.dm	bound_width = width * world.icon_size
-init_lines	code/game/objects/structures/door_assembly.dm	bound_height = world.icon_size
-init_lines	code/game/objects/structures/door_assembly.dm	else
-init_lines	code/game/objects/structures/door_assembly.dm	bound_width = world.icon_size
-init_lines	code/game/objects/structures/door_assembly.dm	bound_height = width * world.icon_size
 init_lines	code/game/objects/structures/droppod.dm	if(cargo_at_make)
 init_lines	code/game/objects/structures/droppod.dm	cargo_at_make.forceMove(src) // helo
 init_lines	code/game/objects/structures/droppod.dm	podfall(auto_open)
@@ -6870,7 +6858,6 @@ world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 world_reads	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
 world_reads	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
-world_reads	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
