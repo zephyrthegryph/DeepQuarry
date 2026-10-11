@@ -320,6 +320,10 @@
 	// a later null dereference must not replace it merely because a previous
 	// probe already reported the same ownership message this round.
 	var/diagnostic = length(reports) ? reports[1] : fault?.name
+	// A runtime's text carries its source locations after "%//%"; those move with every unrelated edit to the files, so a row keeps the message only.
+	var/location_at = istext(diagnostic) ? findtext(diagnostic, "%//%") : 0
+	if(location_at)
+		diagnostic = copytext(diagnostic, 1, location_at)
 	return list("target" = target, "diagnostic" = diagnostic, "fault" = fault?.name)
 
 // Test-only invalid constructor: exercises the ownership engine rather than
