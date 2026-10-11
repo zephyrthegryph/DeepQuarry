@@ -167,11 +167,18 @@ CAPABILITIES(/mob/living/simple_mob/vr/alchemistbee)
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MOLD))
 
-/obj/item/projectile/arc/vial/Initialize(mapload)
-	. = ..()
-	if(splatter)
-		create_reagents(splatter_volume) // ALLOW(decl): conditional on splatter
-		ready_chemicals()
+// A splattering vial carries its chemicals in equal shares (reagents(), filled as it is made); a plain one carries nothing.
+CAPABILITIES(/obj/item/projectile/arc/vial)
+	reagents(nameof(splatter_volume), contents_from = PROC_REF(splatter_contents))
+
+/obj/item/projectile/arc/vial/proc/splatter_contents()
+	. = list()
+	if(!splatter)
+		return
+	var/list/chems = TYPE_TABLE_GET(src, vial_chems)
+	var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
+	for(var/reagent in chems)
+		.[reagent] = reagent_vol
 
 /obj/item/projectile/arc/vial/on_impact(atom/A)
 	if(splatter)
@@ -182,13 +189,6 @@ TYPE_TABLE_DECLARE(/obj/item/projectile/arc/vial, vial_chems, list(REAGENT_ID_MO
 		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
 		S.start()
 	..()
-
-/obj/item/projectile/arc/vial/proc/ready_chemicals()
-	if(reagents)
-		var/list/chems = TYPE_TABLE_GET(src, vial_chems)
-		var/reagent_vol = (round((splatter_volume / chems.len) * 100) / 100) //Cut it at the hundreds place, please.
-		for(var/reagent in chems)
-			reagents.add_reagent(reagent, reagent_vol)
 
 /obj/item/projectile/arc/vial/frostvial
 	icon_state = "blue_vial"

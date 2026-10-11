@@ -23,6 +23,13 @@
 	var/bench_depth = benchmark_init_frame_begin()
 	#endif
 
+	// Phase 0 of the init contract: the starting occupants a type's code before `..()` reads (owns_*(early = TRUE)), before the chain runs.
+	var/datum/own_table/early_table = own_table_of(A)
+	if(early_table.early_vars)
+		own_init_starts(A, early_table, length(arguments) ? arguments[1] : FALSE, TRUE)
+		if(QDELETED(A))
+			return TRUE
+
 	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
 	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.
 	var/result

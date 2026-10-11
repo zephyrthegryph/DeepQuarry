@@ -21,8 +21,5 @@
 	name = "faux"
 	desc = "Domesticated fennec. Seems to like screaming just as much though."
 
-/mob/living/simple_mob/animal/passive/fennec/Initialize(mapload)
-	set_icon_living("[initial(icon_state)]")
-	set_icon_dead("[initial(icon_state)]_dead")
-	set_icon_rest("[initial(icon_state)]_rest")
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fennec)
+	look_from(nameof(icon_state), living = "*", dead = "*_dead", rest = "*_rest")

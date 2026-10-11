@@ -1,4 +1,6 @@
 CAPABILITIES(/mob/living/silicon/robot/platform)
+	setup(PROC_REF(go_inactive))
+	platform_cargo()
 	ref_one(nameof(recharging))
 	ref_many(nameof(stored_atoms))
 	op("platform_item", item(/obj/item), priority(OP_PRIORITY_PART + 1), then(PROC_REF(platform_interaction_item)))

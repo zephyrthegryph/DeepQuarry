@@ -7,12 +7,11 @@
 	var/mob/living/silicon/ai/mainframe = null
 	var/first_transfer = TRUE
 
-// Premade AI shell, for roundstart shells.
-/mob/living/silicon/robot/ai_shell/Initialize(mapload)
-	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
-	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
+// Premade AI shell, for roundstart shells: its brain is the AI remote interface (the robot's setup_brain() step, before its parents' init);
+// post_mmi_setup() makes it a shell and grants the transfer verb.
+/mob/living/silicon/robot/ai_shell/setup_brain()
+	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src))
 	post_mmi_setup()
-	return ..()
 
 // Call after inserting or instantiating an MMI.
 /mob/living/silicon/robot/proc/post_mmi_setup()
