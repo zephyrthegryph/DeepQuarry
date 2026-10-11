@@ -324,7 +324,7 @@ impl ProcedureMemo {
     pub fn resident_retention(&self) -> ResidentRetention {
         self.resident_retention
     }
-    fn record_key(key: &[u8]) -> dm_cache::RecordKey {
+    pub(crate) fn record_key(key: &[u8]) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: 2,
             version: PROCEDURE_VERSION,

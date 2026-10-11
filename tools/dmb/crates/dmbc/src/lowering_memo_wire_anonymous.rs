@@ -7,6 +7,15 @@ pub(crate) struct AnonymousLookup {
     pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
 }
 impl Candidates<'_> {
+    #[cfg(test)]
+    pub(crate) fn anonymous<R: Resolver>(
+        self,
+        key: &[u8],
+        host: &R,
+        debug_count: usize,
+    ) -> AnonymousLookup {
+        self.anonymous_verified(key, host, debug_count, false)
+    }
     pub(crate) fn anonymous_verified<R: Resolver>(
         self,
         key: &[u8],
