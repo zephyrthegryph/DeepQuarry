@@ -94,6 +94,17 @@ impl<L> ArtifactAttempt<L> {
         pending.as_deref().map(operation)
     }
 
+    /// Explicitly release request claims while preserving successful ownership.
+    /// Long-lived facades use this when their request guard is dropped.
+    pub fn abort(&self) {
+        let detached = self
+            .pending
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+        drop(detached);
+    }
+
     /// Call only after required request publication succeeds. A superseded
     /// attempt releases its claims and cannot overwrite newer ownership.
     pub fn publish_successful(&self) -> bool {
