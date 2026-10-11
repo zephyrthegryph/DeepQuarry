@@ -84,6 +84,7 @@ pub struct CapturedResources {
     pub unsupported: Vec<UnsupportedResource>,
 }
 /// Current grammar demands and terminal search policy, without resource reads.
+#[derive(Clone)]
 pub struct ResourceDemand {
     pub context: CapturedSearchContext,
     pub literals: Vec<LiteralRequest>,
@@ -91,6 +92,31 @@ pub struct ResourceDemand {
     pub additional: Vec<ResourceRequest>,
     root: PathBuf,
     directories: Vec<PathBuf>,
+}
+impl ResourceDemand {
+    /// Issued search order shared with capture. Visiting candidates performs no
+    /// filesystem access and does not certify a BYOND implicit search profile.
+    pub fn search_roots(&self) -> impl Iterator<Item = &Path> {
+        search_roots(&self.root, &self.directories)
+    }
+    pub fn project_root(&self) -> &Path { &self.root }
+    pub fn visit_candidates(
+        &self, literal: &LiteralRequest, mut visit: impl FnMut(&Path) -> bool,
+    ) -> Result<(), CaptureError> {
+        if !self.literals.contains(literal) {
+            return Err(CaptureError::Invalid("resource literal is not in the issued demand".into()));
+        }
+        let alias = literal.path.replace('\\', "/");
+        crate::validate_archive_name(&alias)
+            .map_err(|error| CaptureError::Invalid(error.to_string()))?;
+        for directory in self.search_roots() {
+            if !visit(&normalize(&directory.join(&alias))) { break; }
+        }
+        Ok(())
+    }
+}
+fn search_roots<'a>(root: &'a Path, directories: &'a [PathBuf]) -> impl Iterator<Item = &'a Path> {
+    std::iter::once(root).chain(directories.iter().rev().map(PathBuf::as_path))
 }
 pub fn discover_demand(
     plan: &DirectivePlan,
@@ -282,7 +308,7 @@ fn capture_seeded<P: CaptureProvider>(
         crate::validate_archive_name(&alias)
             .map_err(|error| CaptureError::Invalid(error.to_string()))?;
         let mut selected = None;
-        for directory in std::iter::once(&root).chain(directories.iter().rev()) {
+        for directory in search_roots(&root, &directories) {
             let path = normalize(&directory.join(&alias));
             if let Some(bytes) = capture.read(&path)? {
                 selected = Some((path, bytes));
@@ -655,3 +681,7 @@ fn collect_string(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "capture/candidate_view_tests.rs"]
+mod candidate_view_tests;

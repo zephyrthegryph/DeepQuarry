@@ -26,6 +26,7 @@ pub mod request;
 pub mod request_failure;
 pub mod request_runner;
 pub mod resource_manifest;
+pub mod resource_journal_coverage;
 pub mod runner_host;
 mod runner_retained_census;
 pub mod session;

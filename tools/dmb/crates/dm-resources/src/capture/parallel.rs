@@ -30,7 +30,7 @@ pub fn capture_discovered_on_executor<P: CaptureProvider + Sync>(
     let mut files = HashMap::new();
     let mut failures = HashMap::new();
     let mut unresolved = vec![true; aliases.len()];
-    for directory in std::iter::once(&demand.root).chain(demand.directories.iter().rev()) {
+    for directory in demand.search_roots() {
         let paths = aliases
             .iter()
             .zip(&unresolved)
