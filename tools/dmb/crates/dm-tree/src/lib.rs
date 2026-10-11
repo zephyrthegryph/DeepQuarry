@@ -421,6 +421,29 @@ pub(crate) fn build_with_intrinsic_members_indexed(
     )
 }
 pub(crate) fn build_with_intrinsic_members_indexed_publication(
+    symbols: SymbolTable,
+    skeletons: skeleton_roster::SkeletonView<'_>,
+    fields: &[dm_ir::OpaqueFieldBase],
+    intrinsics: &[IntrinsicMember],
+    rebuild_inventory: bool,
+    normalization: Option<(
+        &declaration_contributions::KeyedDeclarations,
+        &owner_normalization::RetainedNormalization,
+    )>,
+    selection_publication_deferred: bool,
+) -> Result<SemanticTree, TreeError> {
+    build_with_intrinsic_members_structural(
+        symbols,
+        skeletons,
+        fields,
+        intrinsics,
+        rebuild_inventory,
+        normalization,
+        selection_publication_deferred,
+        None,
+    )
+}
+pub(crate) fn build_with_intrinsic_members_structural(
     mut symbols: SymbolTable,
     skeletons: skeleton_roster::SkeletonView<'_>,
     fields: &[dm_ir::OpaqueFieldBase],
@@ -431,6 +454,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
         &owner_normalization::RetainedNormalization,
     )>,
     selection_publication_deferred: bool,
+    structural: Option<metadata_update::StructuralMetadata<'_>>,
 ) -> Result<SemanticTree, TreeError> {
     let mut paths = Vec::new();
     let mut by_path = HashMap::new();
@@ -775,6 +799,7 @@ pub(crate) fn build_with_intrinsic_members_indexed_publication(
                 member_projection
                     .as_ref()
                     .expect("normalized rows have current projection"),
+                structural.map(|prior| (prior, normalization.unwrap().0)),
             )
         } else {
             metadata_update::resolve_metadata(&tree, &mut members, &order);

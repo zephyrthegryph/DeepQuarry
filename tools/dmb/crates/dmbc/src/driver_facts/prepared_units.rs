@@ -63,6 +63,45 @@ impl PreparedAbiUnits {
             members,
         }))
     }
+    /// Rebind an admitted symbolic batch to the exact current issued member map.
+    /// Semantic receipt admission precedes this call; no old arena ID is copied.
+    pub(super) fn rebind(
+        frontend: &ColdFrontend,
+        members: Arc<BTreeMap<UnitIdentity, MemberId>>,
+        graph: &Arc<dm_tree::frontend::CallableAbiGraph>,
+        units: &[(
+            dm_ir::ProcedureIdentity,
+            Arc<super::abi_artifacts::UnitArtifact>,
+        )],
+    ) -> Result<Arc<Self>, AbiError> {
+        let callable = frontend.callable_roster().map_err(AbiError::unsupported)?;
+        let current = callable
+            .abi()
+            .ok_or_else(|| AbiError::unsupported("current ABI graph missing"))?;
+        if !(Arc::ptr_eq(current.graph(), graph) || current.graph() == graph)
+            || units.len() != current.entries().len()
+        {
+            return Err(AbiError::unsupported(
+                "symbolic ABI graph differs from current binding",
+            ));
+        }
+        let mut entries = Vec::with_capacity(units.len());
+        for (entry, (identity, unit)) in current.entries().iter().zip(units) {
+            if entry.identity != *identity {
+                return Err(AbiError::unsupported("symbolic ABI unit order differs"));
+            }
+            entries.push((
+                entry.member,
+                crate::procedure_policy::PreparedUnit {
+                    canonical: unit.canonical.clone(),
+                    inputs: unit.inputs.clone(),
+                    abi: Some(unit.abi.clone()),
+                    executable_body: Vec::new(),
+                },
+            ));
+        }
+        Self::issue(frontend, members, entries, true)
+    }
     pub(super) fn members(&self) -> &Arc<BTreeMap<UnitIdentity, MemberId>> {
         &self.members
     }

@@ -8,7 +8,7 @@ use dm_session::{ObservedArtifactStorageView, Receipt};
 use std::{collections::BTreeSet, sync::Mutex};
 
 struct Candidate {
-    value: Arc<Artifact>,
+    unit: Arc<abi_artifacts::UnitArtifact>,
     reads: Receipt<Query, Answer, Domain>,
     versions: Arc<[(Domain, u128)]>,
 }
@@ -39,27 +39,77 @@ pub(super) fn admitted(
     store.store.enable_incidence();
     let mut candidates = BTreeMap::new();
     let mut changed_domains = BTreeSet::new();
-    store.store.visit_storage(|view| {
-        if let ObservedArtifactStorageView::Entry {
-            key,
-            reads,
-            versions,
-            value,
-        } = view
-        {
-            if !matches!(value.as_ref(), Artifact::Unit(_)) {
-                return;
+    let Ok(Some(current_roster)) = frontend.callable_abi_roster() else {
+        return BTreeMap::new();
+    };
+    let entries = current_roster.entries();
+    // The existing batch is a source of candidates, never an admission verdict.
+    // Structural roster changes retain exact per-unit receipts on that same owner.
+    let current_keys: BTreeSet<_> = entries
+        .iter()
+        .map(|entry| abi_artifacts::observations::locator(identity(entry.identity)))
+        .collect();
+    store
+        .store
+        .visit_key_storage(std::iter::once(abi_artifacts::batch::KEY), |view| {
+            if let ObservedArtifactStorageView::Entry { value, .. } = view {
+                if let Artifact::Batch(recipe) = value.as_ref() {
+                    for row in recipe.rows.iter() {
+                        let key = abi_artifacts::observations::locator(identity(row.identity));
+                        if current_keys.contains(&key) {
+                            candidates.insert(
+                                key,
+                                Candidate {
+                                    unit: row.unit.clone(),
+                                    reads: row.reads.clone(),
+                                    versions: row.versions.clone(),
+                                },
+                            );
+                            store
+                                .batch_rows_selected
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
+                    }
+                }
             }
-            candidates.insert(
-                key.clone(),
-                Candidate {
-                    value: value.clone(),
-                    reads: reads.clone(),
-                    versions: versions.clone(),
-                },
-            );
-        }
-    });
+        });
+    let missing: Vec<_> = current_keys
+        .iter()
+        .filter(|key| !candidates.contains_key(*key))
+        .cloned()
+        .collect();
+    // Snapshot only actual current callable candidates, using the existing exact
+    // key bucket index. No other artifact/batch/output owner is cloned or scanned.
+    store
+        .store
+        .visit_key_storage(missing.iter().map(|key| key.as_ref()), |view| {
+            if let ObservedArtifactStorageView::Entry {
+                key,
+                reads,
+                versions,
+                value,
+            } = view
+            {
+                let Artifact::Unit(unit) = value.as_ref() else {
+                    return;
+                };
+                store
+                    .candidate_rows_collected
+                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                // AbiArtifacts uses current_revision: one variant per exact key.
+                // If history is enabled later, this selection is only a hint:
+                // current Inputs and the complete semantic receipt below still
+                // authorize reuse; a nonmatching selected variant merely misses.
+                candidates.insert(
+                    key.clone(),
+                    Candidate {
+                        unit: unit.clone(),
+                        reads: reads.clone(),
+                        versions: versions.clone(),
+                    },
+                );
+            }
+        });
     for candidate in candidates.values() {
         let versions = &candidate.versions;
         for (domain, previous) in versions.iter() {
@@ -80,18 +130,14 @@ pub(super) fn admitted(
             dirty_keys.insert(key.clone());
         },
     );
-    let entries = batch.roster.entries();
     let mut layouts = HashMap::new();
     for entry in entries {
         let identity = identity(entry.identity);
-        if let Some(Candidate { value, .. }) =
-            candidates.get(&abi_artifacts::observations::locator(identity))
-        {
-            if let Artifact::Unit(unit) = value.as_ref() {
-                layouts.insert(entry.member, unit.abi.clone());
-            }
+        if let Some(candidate) = candidates.get(&abi_artifacts::observations::locator(identity)) {
+            layouts.insert(entry.member, candidate.unit.abi.clone());
         }
     }
+
     let inherited = DriverInheritedFacts {
         frontend,
         engine,
@@ -183,9 +229,7 @@ pub(super) fn admitted(
     accepted
         .into_iter()
         .map(|(ordinal, candidate)| {
-            let Artifact::Unit(unit) = candidate.value.as_ref() else {
-                unreachable!()
-            };
+            let unit = &candidate.unit;
             let identity = identity(entries[ordinal].identity);
             keys.lock()
                 .unwrap_or_else(|e| e.into_inner())

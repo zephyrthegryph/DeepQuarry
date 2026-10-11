@@ -1,7 +1,10 @@
 //! Exact immutable declaration contributions, separated from the global authored
 //! roster. Keys describe source families, never resolved member/output IDs.
 pub(crate) mod authored;
+#[path = "declaration_delta.rs"]
+mod delta;
 use crate::{MemberKind, Skeleton};
+pub use delta::{DeclarationChange, DeclarationDelta};
 use dm_ir::SymbolId;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;

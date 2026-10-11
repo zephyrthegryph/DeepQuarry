@@ -5,10 +5,10 @@ use super::{
 };
 use dm_session::{Observation, ObservationHost, Receipt};
 use std::collections::BTreeMap;
-const KEY: &[u8] = b"dm-process-abi-batch-v1\0";
+pub(in crate::driver_facts) const KEY: &[u8] = b"dm-process-abi-batch-v2-symbolic-graph\0";
 #[derive(Clone)]
 pub(crate) struct Inputs {
-    pub(crate) roster: Arc<dm_tree::frontend::CallableAbiRoster>,
+    pub(crate) graph: Arc<dm_tree::frontend::CallableAbiGraph>,
     pub(crate) engine: Arc<crate::runner_host::EnginePayload>,
     pub(crate) boundaries: BTreeMap<UnitIdentity, Boundary>,
     pub(crate) resource: Option<u128>,
@@ -19,7 +19,7 @@ pub(crate) struct Inputs {
 impl PartialEq for Inputs {
     fn eq(&self, b: &Self) -> bool {
         Arc::ptr_eq(&self.engine, &b.engine)
-            && (Arc::ptr_eq(&self.roster, &b.roster) || self.roster == b.roster)
+            && (Arc::ptr_eq(&self.graph, &b.graph) || self.graph == b.graph)
             && self.boundaries == b.boundaries
             && self.resource == b.resource
             && self.evaluation_resource == b.evaluation_resource
@@ -43,8 +43,18 @@ pub(in crate::driver_facts) fn record(
             .insert(identity, (unit.clone(), reads.clone()));
     }
 }
+pub(crate) struct Row {
+    pub(crate) identity: dm_ir::ProcedureIdentity,
+    pub(crate) unit: Arc<UnitArtifact>,
+    pub(crate) reads: Receipt<Query, Answer, Domain>,
+    pub(crate) versions: Arc<[(Domain, u128)]>,
+}
 pub(crate) struct Recipe {
-    pub(crate) prepared: Arc<crate::driver_facts::PreparedAbiUnits>,
+    pub(crate) rows: Arc<[Row]>,
+    pub(crate) units: Arc<[(dm_ir::ProcedureIdentity, Arc<UnitArtifact>)]>,
+    // Binding ownership is request-local. A weak hint preserves same-binding
+    // replay without retaining a previous tree/index after structural replacement.
+    pub(crate) binding: Mutex<std::sync::Weak<crate::driver_facts::PreparedAbiUnits>>,
     pub(crate) keys: Vec<Arc<[u8]>>,
 }
 struct Current<'a> {
@@ -102,7 +112,7 @@ pub(in crate::driver_facts) fn inputs(
         return None;
     }
     Some(Arc::new(Inputs {
-        roster: roster.clone(),
+        graph: roster.graph().clone(),
         engine: engine.clone(),
         boundaries: boundaries
             .iter()
@@ -118,6 +128,8 @@ pub(in crate::driver_facts) fn replay(
     store: &AbiArtifacts,
     inputs: &Arc<Inputs>,
     resolver: &dyn Resolver,
+    frontend: &ColdFrontend,
+    current_members: Option<&Arc<BTreeMap<UnitIdentity, MemberId>>>,
 ) -> Option<PreparedSourceAbi> {
     let current = Current {
         inputs: inputs.clone(),
@@ -133,8 +145,26 @@ pub(in crate::driver_facts) fn replay(
     let Artifact::Batch(recipe) = artifact.as_ref() else {
         return None;
     };
-    // The same immutable producer owner carries complete coverage. No current
-    // origin or body contexts are cached, and replay allocates no unit facade roster.
+    let members = match current_members {
+        Some(members) => members.clone(),
+        None => Arc::new(super::super::unit_members(frontend).ok()?),
+    };
+    let mut binding = recipe.binding.lock().unwrap_or_else(|e| e.into_inner());
+    let units = match binding
+        .upgrade()
+        .filter(|old| old.admit(frontend, &members).is_ok())
+    {
+        Some(current) => current,
+        None => crate::driver_facts::PreparedAbiUnits::rebind(
+            frontend,
+            members,
+            &inputs.graph,
+            &recipe.units,
+        )
+        .ok()?,
+    };
+    *binding = Arc::downgrade(&units);
+    drop(binding);
     let keys = Mutex::new(
         recipe
             .keys
@@ -146,10 +176,10 @@ pub(in crate::driver_facts) fn replay(
     store.prune(&keys);
     store
         .reused
-        .fetch_add(recipe.prepared.entries().len(), Ordering::Relaxed);
+        .fetch_add(units.entries().len(), Ordering::Relaxed);
     store.batch_reused.fetch_add(1, Ordering::Relaxed);
     Some(PreparedSourceAbi {
-        units: recipe.prepared.clone(),
+        units,
         diagnostics: Vec::new(),
     })
 }
@@ -163,13 +193,15 @@ pub(in crate::driver_facts) fn remember(
     // Consume only actual chosen artifact owners/receipts from this producer.
     // Multiple historical variants of the same locator cannot substitute here.
     let mut admitted = std::mem::take(&mut *capture.lock().unwrap_or_else(|e| e.into_inner()));
-    let mut keys = Vec::with_capacity(inputs.roster.entries().len());
-    if prepared.entries().len() != inputs.roster.entries().len() {
+    let mut keys = Vec::with_capacity(inputs.graph.entries().len());
+    let mut units = Vec::with_capacity(inputs.graph.entries().len());
+    let mut rows = Vec::with_capacity(inputs.graph.entries().len());
+    if prepared.entries().len() != inputs.graph.entries().len() {
         return;
     }
     let mut observations: BTreeMap<Query, Vec<Observation<Query, Answer, Domain>>> =
         BTreeMap::new();
-    for (entry, (member, selected)) in inputs.roster.entries().iter().zip(prepared.entries()) {
+    for (entry, (member, selected)) in inputs.graph.entries().iter().zip(prepared.entries()) {
         let identity = UnitIdentity {
             owner: entry.identity.owner,
             name: entry.identity.name,
@@ -185,7 +217,7 @@ pub(in crate::driver_facts) fn remember(
             return;
         };
         // Capture must be the actual selected payload represented by this owner.
-        if *member != entry.member
+        if prepared.members().get(&identity) != Some(member)
             || !Arc::ptr_eq(&selected.inputs, &unit.inputs)
             || !selected
                 .abi
@@ -195,6 +227,24 @@ pub(in crate::driver_facts) fn remember(
             return;
         }
         keys.push(key);
+        units.push((entry.identity, unit.clone()));
+        let versions = reads
+            .iter()
+            .filter_map(|read| match &read.domain {
+                Domain::Semantic(domain) => resolver
+                    .domain_version(*domain)
+                    .map(|v| (read.domain.clone(), v)),
+                _ => None,
+            })
+            .collect::<BTreeMap<_, _>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        rows.push(Row {
+            identity: entry.identity,
+            unit: unit.clone(),
+            reads: reads.clone(),
+            versions: versions.into(),
+        });
         for read in reads
             .iter()
             .filter(|read| matches!(read.query, Query::Semantic(_)))
@@ -237,7 +287,9 @@ pub(in crate::driver_facts) fn remember(
         std::mem::size_of::<Recipe>(),
         || {
             Artifact::Batch(Arc::new(Recipe {
-                prepared: prepared.clone(),
+                units: units.into(),
+                rows: rows.into(),
+                binding: Mutex::new(Arc::downgrade(prepared)),
                 keys,
             }))
         },

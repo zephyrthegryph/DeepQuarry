@@ -616,3 +616,97 @@ fn admitted_reused_tree_restores_demand_issuer_after_abandoned_candidate() {
         dm_ir::Resolver::domain_version(reused.snapshot.tree.as_ref(), query.domain()).is_some()
     );
 }
+
+#[test]
+fn structural_declaration_delta_remaps_current_graph_and_matches_fresh() {
+    let sources = [
+        "/datum/base\n    var/value=1\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n",
+        "/datum/base\n    var/new_value=7\n    var/value=1\n    proc/new_run()\n        return 7\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n",
+        "/datum/base\n    var/new_value=9\n    var/value=5\n    proc/new_run()\n        return 7\n    proc/run()\n        return 1\n/datum/child\n    parent_type=/datum/base\n    value=2\n",
+        "/datum/base\n    var/value=1\n    proc/run()\n        return 1\n/datum/alternate\n    var/value=3\n/datum/child\n    parent_type=/datum/alternate\n    value=2\n",
+    ];
+    let mut retained = RetainedSemanticTree::new();
+    let mut previous_index = None;
+    for source in sources {
+        let actual = build(&mut retained, source);
+        let fresh = build(&mut RetainedSemanticTree::new(), source);
+        assert_eq!(
+            actual.snapshot.tree.types().len(),
+            fresh.snapshot.tree.types().len()
+        );
+        for (actual, fresh) in actual
+            .snapshot
+            .tree
+            .types()
+            .iter()
+            .zip(fresh.snapshot.tree.types())
+        {
+            assert_eq!(
+                (
+                    actual.path,
+                    actual.parent,
+                    actual.explicit_parent,
+                    actual.synthetic,
+                    &actual.members
+                ),
+                (
+                    fresh.path,
+                    fresh.parent,
+                    fresh.explicit_parent,
+                    fresh.synthetic,
+                    &fresh.members
+                )
+            );
+        }
+        assert_eq!(
+            actual.snapshot.tree.members.len(),
+            fresh.snapshot.tree.members.len()
+        );
+        for (actual, fresh) in actual
+            .snapshot
+            .tree
+            .members
+            .iter()
+            .zip(fresh.snapshot.tree.members.iter())
+        {
+            assert_eq!(actual, fresh);
+        }
+        let entry = retained.entry.as_ref().unwrap();
+        let graph = entry.metadata_dependencies.as_ref().unwrap();
+        let fresh_graph = crate::metadata_update::MetadataDependencies::capture(
+            &fresh.snapshot.tree,
+            &entry.index,
+        )
+        .unwrap();
+        // Compare current mappings through the public diagnostic traversal as
+        // well as canonical answers; graph reissue never imports old dense IDs.
+        let mut actual_sizes = Vec::new();
+        let mut fresh_sizes = Vec::new();
+        graph.visit_storage(|_, len, _| actual_sizes.push(len));
+        fresh_graph.visit_storage(|_, len, _| fresh_sizes.push(len));
+        assert_eq!(actual_sizes, fresh_sizes);
+        for query in [
+            dm_ir::ResolveQuery::Var {
+                owner: dm_ir::SymbolId::of("/datum/child"),
+                name: dm_ir::SymbolId::of("value"),
+            },
+            dm_ir::ResolveQuery::Proc {
+                owner: dm_ir::SymbolId::of("/datum/base"),
+                name: dm_ir::SymbolId::of("run"),
+                verb: false,
+            },
+        ] {
+            assert_eq!(
+                dm_ir::Resolver::resolve(actual.snapshot.tree.as_ref(), query.clone()),
+                dm_ir::Resolver::resolve(fresh.snapshot.tree.as_ref(), query)
+            );
+        }
+        if let Some(prior) = &previous_index {
+            let delta = entry.index.delta_since(prior);
+            assert!(!delta.changes.is_empty());
+            // A default-only edit keeps order; additions/removals/parent rows
+            // are independently compared through the exact delta above.
+        }
+        previous_index = Some(entry.index.clone());
+    }
+}

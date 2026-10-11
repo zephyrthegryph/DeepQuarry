@@ -110,6 +110,33 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
             }
         }
     }
+    /// Borrow unadmitted live candidates for the requested exact key roster.
+    /// Existing bucket routing is lookup only: every key is compared in full.
+    /// This exposes storage, not a reuse certificate. Consumers must still check
+    /// current local inputs and replay the complete semantic receipt. The callback
+    /// runs under the store lock, must not resolve or reenter this store, and sees
+    /// keys in caller order with variants in their existing bucket order.
+    pub fn visit_key_storage<K: AsRef<[u8]>>(
+        &self,
+        keys: impl IntoIterator<Item = K>,
+        mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),
+    ) {
+        let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
+        for key in keys {
+            let key = key.as_ref();
+            let hash = xxhash_rust::xxh3::xxh3_128(key);
+            if let Some(bucket) = state.buckets.get(&hash) {
+                for entry in bucket.iter().filter(|entry| entry.key.as_ref() == key) {
+                    visit(ObservedArtifactStorageView::Entry {
+                        key: &entry.key,
+                        reads: &entry.reads,
+                        versions: &entry.versions,
+                        value: &entry.value,
+                    });
+                }
+            }
+        }
+    }
     /// Optional incidence census shares the caller's leaf allocation ledger.
     /// Counts expose logical private BTree entries, not invented node bytes.
     pub fn visit_incidence_storage(

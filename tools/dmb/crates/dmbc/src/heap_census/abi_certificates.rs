@@ -70,7 +70,7 @@ impl HeapCensus {
                                 super::resident_weight::answer(self, answer),
                             crate::driver_facts::abi_artifacts::observations::Answer::BatchInputs(inputs) => {
                                 if self.arc_object("prepared_abi.batch_inputs", inputs) {
-                                    self.callable_abi_roster(&inputs.roster);
+                                    self.callable_abi_graph(&inputs.graph);
                                     self.abi_engine_owner(&inputs.engine);
                                     self.observe_items("prepared_abi.batch_boundaries", inputs.boundaries.len());
                                     self.unknown("prepared_abi.batch_boundaries", "private BTree backing excluded");
@@ -106,7 +106,17 @@ impl HeapCensus {
                         crate::driver_facts::abi_artifacts::Artifact::Unit(unit) => self.abi_unit_artifact(unit),
                         crate::driver_facts::abi_artifacts::Artifact::Batch(recipe) => {
                             if self.arc_object("prepared_abi.batch_recipe", recipe) {
-                                self.prepared_abi_units(&recipe.prepared);
+                                if self.slice("prepared_abi.batch_units", &recipe.units, true) {
+                                    for (_, unit) in recipe.units.iter() { self.abi_unit_artifact(unit); }
+                                }
+                                if self.slice("prepared_abi.batch_rows", &recipe.rows, true) {
+                                    for row in recipe.rows.iter() {
+                                        self.abi_unit_artifact(&row.unit);
+                                        self.receipt("prepared_abi.batch_row_reads", &row.reads);
+                                        self.slice("prepared_abi.batch_row_versions", &row.versions, true);
+                                    }
+                                }
+                                self.unknown("prepared_abi.batch_binding", "Weak current-binding hint has no strong old roster ownership; weak Arc control storage is private");
                                 if self.vec_payload("prepared_abi.batch_keys", &recipe.keys) {
                                     for key in &recipe.keys {self.slice("prepared_abi.artifact_keys",key,true);}
                                 }
@@ -142,11 +152,28 @@ impl HeapCensus {
             }
         }
     }
+    pub(crate) fn callable_abi_graph(&mut self, graph: &Arc<dm_tree::frontend::CallableAbiGraph>) {
+        if self.arc_object("frontend.callable_abi_graph", graph) {
+            graph.visit_storage(|entries, ancestry| {
+                if self.vec_payload("frontend.callable_abi_meanings", entries) {
+                    for entry in entries {
+                        self.procedure_metadata("prepared_abi.metadata", &entry.metadata);
+                    }
+                }
+                if self.vec_payload("frontend.callable_abi_ancestry_descriptors", ancestry) {
+                    for (_, paths) in ancestry {
+                        self.slice("frontend.callable_abi_ancestry", paths, true);
+                    }
+                }
+            });
+        }
+    }
     pub(crate) fn callable_abi_roster(
         &mut self,
         roster: &Arc<dm_tree::frontend::CallableAbiRoster>,
     ) {
         if self.arc_object("frontend.callable_abi_roster", roster) {
+            self.callable_abi_graph(roster.graph());
             roster.visit_storage(|entries, types| {
                 if self.vec_payload("frontend.callable_abi_entries", entries) {
                     for entry in entries {

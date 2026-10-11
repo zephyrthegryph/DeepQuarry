@@ -153,6 +153,9 @@ impl RetainedSemanticTree {
     ) {
         self.normalization.local.visit_storage(visit);
     }
+    pub fn metadata_resolution_stats(&self) -> crate::owner_metadata::MetadataResolutionStats {
+        self.normalization.metadata.resolution_stats()
+    }
     pub fn metadata_owner_hits(&self) -> usize {
         self.normalization.metadata.hits()
     }
@@ -170,6 +173,18 @@ impl RetainedSemanticTree {
             .and_then(|entry| entry.metadata_dependencies.as_ref())
         {
             graph.visit_storage(visit);
+        }
+    }
+    pub fn visit_metadata_dependency_edges(
+        &self,
+        visit: impl FnMut(&Arc<Vec<crate::declaration_contributions::DeclarationKey>>),
+    ) {
+        if let Some(graph) = self
+            .entry
+            .as_ref()
+            .and_then(|entry| entry.metadata_dependencies.as_ref())
+        {
+            graph.visit_edges(visit);
         }
     }
     /// Explicit census; callback must not mutate/reenter this retained store.
@@ -372,11 +387,33 @@ impl RetainedSemanticTree {
             on_error,
             executor,
             index.as_ref().map(|index| (index, &self.normalization)),
+            self.entry
+                .as_ref()
+                .filter(|entry| same_engine(entry.engine.as_ref(), engine))
+                .and_then(|entry| {
+                    entry.metadata_dependencies.as_ref().map(|graph| {
+                        crate::metadata_update::StructuralMetadata {
+                            tree: &entry.tree,
+                            declarations: &entry.index,
+                            graph,
+                        }
+                    })
+                }),
         )?;
         self.discard_foreign_callable_roster(&snapshot.tree);
-        self.entry = index.map(|index| {
+        let next_entry = index.map(|index| {
+            let previous = self.entry.as_ref().and_then(|entry| {
+                entry
+                    .metadata_dependencies
+                    .as_ref()
+                    .map(|graph| (graph, &entry.index))
+            });
             let metadata_dependencies =
-                crate::metadata_update::MetadataDependencies::capture(&snapshot.tree, &index);
+                crate::metadata_update::MetadataDependencies::capture_rebased(
+                    &snapshot.tree,
+                    &index,
+                    previous,
+                );
             Entry {
                 index,
                 symbols: symbol_owner,
@@ -387,6 +424,7 @@ impl RetainedSemanticTree {
                 metadata_dependencies,
             }
         });
+        self.entry = next_entry;
         self.rebuilds += 1;
         Ok(snapshot)
     }

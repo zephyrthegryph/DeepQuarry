@@ -618,6 +618,7 @@ impl AdaptedDeclarations {
             on_error,
             executor,
             normalization,
+            None,
         )
     }
 }
@@ -628,7 +629,7 @@ impl SharedAdaptedDeclarations {
         on_error: impl FnMut(&SnapshotError, &[Skeleton], &[Provenance]),
         executor: &dm_exec::BuildExecutor,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), None)
+        self.finish_execution(seed, on_error, Some(executor), None, None)
     }
     pub(crate) fn finish_with_engine_normalization(
         self,
@@ -639,8 +640,9 @@ impl SharedAdaptedDeclarations {
             &crate::declaration_contributions::KeyedDeclarations,
             &crate::owner_normalization::RetainedNormalization,
         )>,
+        structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
-        self.finish_execution(seed, on_error, Some(executor), normalization)
+        self.finish_execution(seed, on_error, Some(executor), normalization, structural)
     }
     fn finish_execution(
         self,
@@ -651,6 +653,7 @@ impl SharedAdaptedDeclarations {
             &crate::declaration_contributions::KeyedDeclarations,
             &crate::owner_normalization::RetainedNormalization,
         )>,
+        structural: Option<crate::metadata_update::StructuralMetadata<'_>>,
     ) -> Result<TreeSnapshot, SnapshotError> {
         let origins = self.origins.into_owned();
         let mut skeletons = crate::skeleton_roster::SkeletonRoster::default();
@@ -675,7 +678,7 @@ impl SharedAdaptedDeclarations {
         skeletons.append(self.skeletons);
         let fields = seed.map_or(&[][..], |seed| seed.fields.as_ref());
         let intrinsics = seed.map_or(&[][..], |seed| seed.intrinsics.as_ref());
-        let mut tree = crate::build_with_intrinsic_members_indexed_publication(
+        let mut tree = crate::build_with_intrinsic_members_structural(
             self.symbols,
             skeletons.view(),
             fields,
@@ -683,6 +686,7 @@ impl SharedAdaptedDeclarations {
             seed.is_none(),
             normalization,
             normalization.is_some(),
+            structural,
         )
         .map_err(|error| {
             let error = SnapshotError::Tree(error);

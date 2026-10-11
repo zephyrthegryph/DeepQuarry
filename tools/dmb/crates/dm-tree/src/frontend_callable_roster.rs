@@ -9,7 +9,7 @@ use std::{
 
 #[path = "frontend_callable_abi_roster.rs"]
 mod abi;
-pub use abi::{CallableAbiEntry, CallableAbiRoster};
+pub use abi::{CallableAbiEntry, CallableAbiGraph, CallableAbiMeaning, CallableAbiRoster};
 #[derive(Debug)]
 pub struct CallableRoster {
     tree: Arc<SemanticTree>,

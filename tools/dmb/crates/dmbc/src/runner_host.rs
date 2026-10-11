@@ -281,6 +281,16 @@ impl BuildHost {
             .map(|state| state.declaration_retention_stats())
     }
 
+    /// Constant-time diagnostic counters for structural metadata resolution.
+    /// These exclude the separate unchanged-roster path and admit no artifacts.
+    pub fn metadata_resolution_stats(
+        &self,
+    ) -> Option<dm_tree::owner_metadata::MetadataResolutionStats> {
+        self.semantic
+            .as_ref()
+            .map(|state| state.metadata_resolution_stats())
+    }
+
     /// Explicit diagnostic traversal; never performed during artifact lookup.
     pub fn declaration_retention_census(&self) -> Option<crate::heap_census::HeapCensusReport> {
         self.semantic

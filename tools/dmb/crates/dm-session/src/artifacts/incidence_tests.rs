@@ -91,3 +91,60 @@ fn routed_dirty_candidates_preserve_store_order_and_exclude_unrelated_roster() {
     assert_eq!(buckets.len(), 5);
     assert!(buckets.len() < state.buckets.len());
 }
+
+fn selected(store: &Store, keys: &[&[u8]]) -> Vec<(Vec<u8>, u8)> {
+    let mut values = Vec::new();
+    store.visit_key_storage(keys.iter().copied(), |view| {
+        if let ObservedArtifactStorageView::Entry { key, value, .. } = view {
+            values.push((key.to_vec(), **value));
+        }
+    });
+    values
+}
+#[test]
+fn direct_current_candidates_preserve_selection_order_and_live_lifecycle() {
+    let store = Store::current_revision();
+    store.enable_incidence();
+    for key in 0..100u8 {
+        store.insert_with_receipt(Arc::from([key]), reads(3), Arc::from([]), 1, || key);
+    }
+    assert_eq!(
+        selected(&store, &[&[9], &[3], &[255]]),
+        vec![(vec![9], 9), (vec![3], 3)]
+    );
+    store.insert_with_receipt(Arc::from([9]), reads(4), Arc::from([]), 1, || 29);
+    assert_eq!(selected(&store, &[&[9]]), vec![(vec![9], 29)]);
+    store.retain_current_keys([&[3][..]]);
+    assert_eq!(selected(&store, &[&[9], &[3]]), vec![(vec![3], 3)]);
+    let budget = Store::with_limit(1);
+    budget.insert_with_receipt(Arc::from([1]), reads(3), Arc::from([]), 1, || 1);
+    budget.insert_with_receipt(Arc::from([2]), reads(4), Arc::from([]), 1, || 2);
+    assert_eq!(selected(&budget, &[&[1], &[2]]), vec![(vec![2], 2)]);
+    let shared = Store::shared_current_rosters();
+    let lease = shared.lease();
+    let external = lease
+        .insert_with_receipt(Arc::from([1]), reads(3), 1, || 1)
+        .unwrap();
+    assert_eq!(selected(&shared, &[&[1]]), vec![(vec![1], 1)]);
+    drop(lease);
+    assert!(selected(&shared, &[&[1]]).is_empty());
+    assert_eq!(*external, 1);
+}
+#[test]
+fn direct_candidate_routing_still_checks_full_key_inside_collision_bucket() {
+    let store = Store::current_revision();
+    store.insert_with_receipt(Arc::from([1]), reads(3), Arc::from([]), 1, || 1);
+    store.insert_with_receipt(Arc::from([2]), reads(4), Arc::from([]), 1, || 2);
+    let target = xxhash_rust::xxh3::xxh3_128(&[1]);
+    let other = xxhash_rust::xxh3::xxh3_128(&[2]);
+    {
+        let mut state = store.state.lock().unwrap();
+        let collision = state.buckets.remove(&other).unwrap();
+        state.buckets.get_mut(&target).unwrap().extend(collision);
+    }
+    assert_eq!(selected(&store, &[&[1]]), vec![(vec![1], 1)]);
+    assert!(
+        selected(&store, &[&[2]]).is_empty(),
+        "misrouted hash is not authority"
+    );
+}

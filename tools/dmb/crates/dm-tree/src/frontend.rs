@@ -7,7 +7,8 @@ mod callable_roster;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
 pub use callable_roster::{
-    CallableAbiEntry, CallableAbiRoster, CallableRoster, CallableRosterStorage,
+    CallableAbiEntry, CallableAbiGraph, CallableAbiMeaning, CallableAbiRoster, CallableRoster,
+    CallableRosterStorage,
 };
 #[path = "frontend_diagnostic_cursor.rs"]
 mod diagnostic_cursor;

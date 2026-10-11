@@ -6,6 +6,9 @@ use crate::{DefinitionMode, MemberId, MemberKind, SemanticTree, Skeleton, Target
 use dm_ir::SymbolId;
 use std::collections::HashMap;
 use std::sync::Arc;
+#[path = "metadata_structural.rs"]
+mod structural;
+pub(crate) use structural::StructuralMetadata;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Shape {
@@ -72,7 +75,7 @@ struct DependencyNode {
     key: DeclarationKey,
     member: MemberId,
     // Stable source keys, never historical dense output/member coordinates.
-    dependants: Vec<DeclarationKey>,
+    dependants: Option<Arc<Vec<DeclarationKey>>>,
 }
 impl MetadataDependencies {
     pub(crate) fn visit_storage(&self, mut visit: impl FnMut(usize, usize, usize)) {
@@ -99,9 +102,6 @@ impl MetadataDependencies {
         vector(&self.members_at_declaration, &mut visit);
         vector(&self.nodes, &mut visit);
         vector(&self.projection, &mut visit);
-        for node in &self.nodes {
-            vector(&node.dependants, &mut visit);
-        }
         vector(&self.order, &mut visit);
     }
     pub(crate) fn capture(tree: &SemanticTree, declarations: &KeyedDeclarations) -> Option<Self> {
@@ -122,7 +122,7 @@ impl MetadataDependencies {
                     nodes.push(DependencyNode {
                         key: row.key,
                         member: *id,
-                        dependants: Vec::new(),
+                        dependants: None,
                     });
                 }
                 _ => return None,
@@ -139,9 +139,10 @@ impl MetadataDependencies {
         }
         for (index, member) in tree.members.iter().enumerate() {
             if let Some(previous) = member.previous {
-                nodes[*projection.get(&keys[previous.index()])?]
+                let edges = nodes[*projection.get(&keys[previous.index()])?]
                     .dependants
-                    .push(keys[index]);
+                    .get_or_insert_with(|| Arc::new(Vec::new()));
+                Arc::make_mut(edges).push(keys[index]);
             }
         }
         let mut stable_projection: Vec<_> = (0..nodes.len()).collect();
@@ -157,6 +158,43 @@ impl MetadataDependencies {
             projection: stable_projection,
             order,
         })
+    }
+    pub(crate) fn visit_edges(&self, mut visit: impl FnMut(&Arc<Vec<DeclarationKey>>)) {
+        for node in &self.nodes {
+            if let Some(edges) = &node.dependants {
+                visit(edges);
+            }
+        }
+    }
+    /// Reissue every dense member mapping from the current validated tree. Only
+    /// exact CURRENT stable-key adjacency permits sharing a predecessor owner.
+    /// Structural semantic resolution remains the common full constructor.
+    pub(crate) fn capture_rebased(
+        tree: &SemanticTree,
+        declarations: &KeyedDeclarations,
+        previous: Option<(&Self, &KeyedDeclarations)>,
+    ) -> Option<Self> {
+        let mut current = Self::capture(tree, declarations)?;
+        if let Some((old, old_declarations)) = previous {
+            let delta = declarations.delta_since(old_declarations);
+            let changed: std::collections::BTreeSet<_> =
+                delta.changes.iter().map(|change| change.key).collect();
+            for node in &mut current.nodes {
+                if changed.contains(&node.key) {
+                    continue;
+                }
+                let Some(slot) = old.slot(node.key) else {
+                    continue;
+                };
+                let prior = &old.nodes[slot];
+                // Unchanged declaration rows alone do not prove adjacency: a
+                // new override or changed parent can alter the dependency cone.
+                if node.dependants == prior.dependants {
+                    node.dependants = prior.dependants.clone();
+                }
+            }
+        }
+        Some(current)
     }
     fn slot(&self, key: DeclarationKey) -> Option<usize> {
         let order = key_order(key);
@@ -194,7 +232,7 @@ impl MetadataDependencies {
         let mut next = 0;
         while let Some(&id) = queue.get(next) {
             next += 1;
-            for child in &self.nodes[id].dependants {
+            for child in self.nodes[id].dependants.as_deref().into_iter().flatten() {
                 let child = self.slot(*child)?;
                 if !dirty[child] {
                     dirty[child] = true;

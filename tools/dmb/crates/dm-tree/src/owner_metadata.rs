@@ -8,7 +8,11 @@ pub use demanded_selections::CallableDemands;
 #[cfg(test)]
 mod sparse_tests;
 mod variables;
-use crate::{declaration_contributions::DeclarationKey, owner_normalization::ResolvedMember, *};
+use crate::{
+    declaration_contributions::{DeclarationKey, KeyedDeclarations},
+    owner_normalization::ResolvedMember,
+    *,
+};
 pub use callables::{CallableFact, CallableInputs};
 use dm_session::{
     observations::{ObservationHost, ObservationLedger},
@@ -100,10 +104,21 @@ impl EffectiveOwner {
     }
 }
 type Store = ObservedArtifactStore<EffectiveOwner, MetadataQuery, MetadataAnswer, MetadataDomain>;
+/// Cumulative diagnostic counts for the effective metadata artifact stage.
+/// Stable-roster updates outside this stage are not included.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MetadataResolutionStats {
+    pub common_resolved_members: usize,
+    pub structurally_reused_members: usize,
+    pub structurally_dirty_members: usize,
+}
 pub struct RetainedMetadata {
     store: Store,
     current_demands: demanded_selections::CurrentDemands,
     hits: AtomicUsize,
+    common_resolved_members: AtomicUsize,
+    structurally_reused_members: AtomicUsize,
+    structurally_dirty_members: AtomicUsize,
 }
 impl Default for RetainedMetadata {
     fn default() -> Self {
@@ -111,6 +126,9 @@ impl Default for RetainedMetadata {
             store: Store::current_revision(),
             current_demands: Default::default(),
             hits: AtomicUsize::new(0),
+            common_resolved_members: AtomicUsize::new(0),
+            structurally_reused_members: AtomicUsize::new(0),
+            structurally_dirty_members: AtomicUsize::new(0),
         }
     }
 }
@@ -176,6 +194,18 @@ pub enum MetadataStorageView<'a> {
     VariableLocal(&'a Arc<VariableInputs>),
 }
 impl RetainedMetadata {
+    pub fn resolution_stats(&self) -> MetadataResolutionStats {
+        MetadataResolutionStats {
+            common_resolved_members: self.common_resolved_members.load(Ordering::Relaxed),
+            structurally_reused_members: self.structurally_reused_members.load(Ordering::Relaxed),
+            structurally_dirty_members: self.structurally_dirty_members.load(Ordering::Relaxed),
+        }
+    }
+    fn count(counter: &AtomicUsize, amount: usize) {
+        let _ = counter.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |previous| {
+            Some(previous.saturating_add(amount))
+        });
+    }
     pub(crate) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }
@@ -232,6 +262,10 @@ impl RetainedMetadata {
         normalized: &OwnerContributions,
         order: &[MemberId],
         current_projection: &crate::member_binding::CurrentProjection,
+        structural: Option<(
+            crate::metadata_update::StructuralMetadata<'_>,
+            &KeyedDeclarations,
+        )>,
     ) -> crate::host_declaration_selection::Selections {
         let mut selections = crate::host_declaration_selection::Selections::new();
         let projection = &current_projection.ids;
@@ -244,11 +278,22 @@ impl RetainedMetadata {
                 .push(id);
         }
         if current_projection.keys.len() != order.len() {
+            Self::count(&self.common_resolved_members, order.len());
             crate::metadata_update::resolve_metadata(tree, members, order);
             return crate::host_declaration_selection::collect(
                 tree,
                 members,
                 order.iter().copied(),
+            );
+        }
+        let structural_dirty = structural.and_then(|(prior, declarations)| {
+            prior.apply(tree, declarations, members, current_projection, order)
+        });
+        if let Some(dirty) = &structural_dirty {
+            Self::count(&self.structurally_dirty_members, dirty.len());
+            Self::count(
+                &self.structurally_reused_members,
+                order.len().saturating_sub(dirty.len()),
             );
         }
         let keys: Vec<_> = normalized.keys().map(|&owner| key(owner)).collect();
@@ -318,7 +363,19 @@ impl RetainedMetadata {
                     members.set_metadata(projection[key].index(), Arc::clone(metadata));
                 }
             } else {
-                crate::metadata_update::resolve_metadata(tree, members, ids);
+                let dirty_ids;
+                let resolve_ids = if let Some(dirty) = &structural_dirty {
+                    dirty_ids = ids
+                        .iter()
+                        .copied()
+                        .filter(|id| dirty.contains(&keys_by_id[id.index()]))
+                        .collect::<Vec<_>>();
+                    dirty_ids.as_slice()
+                } else {
+                    ids.as_slice()
+                };
+                Self::count(&self.common_resolved_members, resolve_ids.len());
+                crate::metadata_update::resolve_metadata(tree, members, resolve_ids);
                 let values: Arc<[_]> = normalized[&owner]
                     .iter()
                     .filter_map(|input| {

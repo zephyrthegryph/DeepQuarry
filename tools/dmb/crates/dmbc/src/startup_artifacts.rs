@@ -175,6 +175,7 @@ impl StartupArtifacts {
         }
     }
     /// Called only after current source capture and initializer assembly succeed.
+    #[cfg(test)]
     pub(super) fn inventory(
         &self,
         plans: &[&dm_tree::procedure_statics::StaticPlan],

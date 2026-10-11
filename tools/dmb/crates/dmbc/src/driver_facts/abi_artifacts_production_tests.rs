@@ -452,3 +452,113 @@ fn abi_batch_signature_away_and_back_keeps_actual_chosen_unit_and_receipt() {
     ));
     FrozenPreparedPolicy::new(&moved, &reused.prepared).unwrap();
 }
+
+#[test]
+fn symbolic_abi_batch_rebinds_variable_insert_remove_and_unrelated_type() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let engine = &owner.snapshot;
+    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let original = frontend(
+        "/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n",
+        engine,
+    );
+    let before = prepared(&original, engine, Some(&store));
+    let inserted = frontend("/var/unrelated = 1\n/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n", engine);
+    assert_ne!(original.bodies[0].member, inserted.bodies[0].member);
+    let current = prepared(&inserted, engine, Some(&store));
+    same(&current, &prepared(&inserted, engine, None));
+    assert_eq!(
+        store.batch_reused(),
+        1,
+        "symbolic batch must survive unrelated arena shift"
+    );
+    assert!(!Arc::ptr_eq(
+        before.prepared.units_owner(),
+        current.prepared.units_owner()
+    ));
+    for ((old_member, old), (member, unit)) in
+        before.prepared.units().iter().zip(current.prepared.units())
+    {
+        assert_ne!(old_member, member);
+        assert!(Arc::ptr_eq(&old.inputs, &unit.inputs));
+        assert!(Arc::ptr_eq(
+            old.abi.as_ref().unwrap(),
+            unit.abi.as_ref().unwrap()
+        ));
+    }
+    let removed = prepared(&original, engine, Some(&store));
+    same(&removed, &prepared(&original, engine, None));
+    assert_eq!(store.batch_reused(), 2);
+    let unrelated = frontend("/datum/unrelated\n/datum/a/proc/p(x=1)\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n", engine);
+    let current = prepared(&unrelated, engine, Some(&store));
+    same(&current, &prepared(&unrelated, engine, None));
+    assert_eq!(
+        store.batch_reused(),
+        3,
+        "unrelated type must not change demanded callable ancestry"
+    );
+    let formal = frontend("/datum/unrelated\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/child/p(x=2)\n    return ..()\n", engine);
+    let changed = prepared(&formal, engine, Some(&store));
+    same(&changed, &prepared(&formal, engine, None));
+    assert_eq!(
+        store.batch_reused(),
+        3,
+        "changed formal metadata must decline symbolic batch"
+    );
+    assert_eq!(
+        changed.prepared.units()[1]
+            .1
+            .abi
+            .as_ref()
+            .unwrap()
+            .layout
+            .invisibility,
+        Some(9)
+    );
+}
+
+#[test]
+fn structural_batch_rows_splice_new_proc_and_removal_with_fresh_parity() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
+    let store = AbiArtifacts::with_engine_owner(owner.clone());
+    let initial = frontend(
+        "/datum/a/proc/p(x=1)\n    return x\n/datum/b/proc/q(x=2)\n    return x\n",
+        &owner.snapshot,
+    );
+    let before = prepared(&initial, &owner.snapshot, Some(&store));
+    let added = frontend("/datum/new_owner/proc/new_proc(x=3)\n    return x\n/datum/a/proc/p(x=1)\n    return x\n/datum/b/proc/q(x=2)\n    return x\n", &owner.snapshot);
+    let retained = prepared(&added, &owner.snapshot, Some(&store));
+    same(&retained, &prepared(&added, &owner.snapshot, None));
+    assert_eq!(store.structural_selection_counts(), (2, 0));
+    assert_eq!(store.scheduled_reused(), 2);
+    assert_eq!(store.totals().1, 3, "only added unit prepares");
+    for (old, current) in before
+        .prepared
+        .units()
+        .iter()
+        .zip(retained.prepared.units().iter().skip(1))
+    {
+        assert!(Arc::ptr_eq(&old.1.inputs, &current.1.inputs));
+    }
+    let removed = frontend(
+        "/datum/a/proc/p(x=1)\n    return x\n/datum/b/proc/q(x=2)\n    return x\n",
+        &owner.snapshot,
+    );
+    let retained = prepared(&removed, &owner.snapshot, Some(&store));
+    same(&retained, &prepared(&removed, &owner.snapshot, None));
+    assert_eq!(store.structural_selection_counts(), (4, 0));
+    assert_eq!(store.scheduled_reused(), 4);
+    assert_eq!(store.totals().1, 3, "removal prepares no surviving units");
+}

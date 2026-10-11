@@ -31,6 +31,8 @@ pub struct AbiArtifacts {
     recomputed: AtomicUsize,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
+    pub(super) batch_rows_selected: AtomicUsize,
+    pub(super) candidate_rows_collected: AtomicUsize,
 }
 impl Default for AbiArtifacts {
     fn default() -> Self {
@@ -42,6 +44,8 @@ impl Default for AbiArtifacts {
             recomputed: AtomicUsize::new(0),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
+            batch_rows_selected: AtomicUsize::new(0),
+            candidate_rows_collected: AtomicUsize::new(0),
         }
     }
 }
@@ -69,6 +73,12 @@ impl AbiArtifacts {
     }
     pub(crate) fn visit_incidence_buffer(&self, visit: impl FnMut(usize, usize, usize)) {
         self.store.visit_incidence_buffer(visit);
+    }
+    pub fn structural_selection_counts(&self) -> (usize, usize) {
+        (
+            self.batch_rows_selected.load(Ordering::Relaxed),
+            self.candidate_rows_collected.load(Ordering::Relaxed),
+        )
     }
     pub fn scheduled_reused(&self) -> usize {
         self.scheduled_reused.load(Ordering::Relaxed)

@@ -481,7 +481,9 @@ fn prepare_source_abi_mode_on_executor(
         )
     });
     if let (Some(store), Some(inputs)) = (artifacts, batch_inputs.as_ref()) {
-        if let Some(prepared) = abi_artifacts::batch::replay(store, inputs, evaluator.resolver) {
+        if let Some(prepared) =
+            abi_artifacts::batch::replay(store, inputs, evaluator.resolver, frontend, issued_units)
+        {
             return Ok(prepared);
         }
     }
