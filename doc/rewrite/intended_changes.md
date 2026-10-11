@@ -3,6 +3,12 @@
 A conversion keeps behaviour. Where it could not, or where keeping it would have kept a bug, the change is listed here with its reason, and the
 test that pinned the old behaviour was edited in the same commit. (conversion_guide.md section 2.)
 
+**base_vars tooling (lane bv-traits, `doc/rewrite/proposals/base_vars.md`).** `set_trait(holder, kind, field, value)` is the one trait writer;
+the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV route a write of a var that moved into a trait block (or
+`@kind.field`, which VV now lists) through it; a map edit of any other unknown var is a stack trace instead of a runtime. A compiled map
+cannot name such a var, so the Southern Cross atmospherics omni mixer is `/obj/machinery/atmospherics/omni/mixer/high_power`, restoring
+its 7500 W active draw lost when `uses_power()` landed. `smoothing_junction` (write-only) and `original_atom` (never filled) are deleted.
+
 ## Chargers (cell charger, recharger, wall recharger)
 
 Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
