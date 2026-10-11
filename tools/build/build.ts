@@ -70,6 +70,7 @@ import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance 
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
 import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
+import { copyWritableRuntimePair } from './lib/runtime_pair_copy';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -754,17 +755,6 @@ function acquireRunSlot(): RunSlot {
   throw new Juke.ExitCode(1);
 }
 
-/** Hard-links `from` to `to` (replacing `to`), falling back to a copy where
- * links aren't possible (another volume, a filesystem without them). */
-function linkOrCopy(from: string, to: string): void {
-  fs.rmSync(to, { force: true });
-  try {
-    fs.linkSync(from, to);
-  } catch {
-    fs.copyFileSync(from, to);
-  }
-}
-
 /** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
@@ -813,13 +803,10 @@ async function runIsolatedTestWorld(
       // DreamDaemon acquires this exact generation and owns independent writable
       // copies until the hosted child closes; conventional paths are not read.
     } else if (options.linkFrom) {
-      // A sharded run's private copy (see runSharded()): hard links, so N
-      // shards don't each copy the ~270 MB .dmb/.rsc again.
-      linkOrCopy(`${options.linkFrom}.dmb`, `${runBase}.dmb`);
-      linkOrCopy(`${options.linkFrom}.rsc`, `${runBase}.rsc`);
+      // Each world owns a writable archive; DD can mutate it during hosting.
+      copyWritableRuntimePair({ dmb: `${options.linkFrom}.dmb`, rsc: `${options.linkFrom}.rsc` }, runBase);
     } else {
-      fs.copyFileSync(compiled.dmb, `${runBase}.dmb`);
-      fs.copyFileSync(compiled.rsc, `${runBase}.rsc`);
+      copyWritableRuntimePair(compiled, runBase);
     }
     // Generated spritesheets and the asset caches go to a directory per run
     // slot (SPRITESHEET_DIR): worlds in one worktree -- a sharded run, or two
@@ -1578,13 +1565,11 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
   const started = Date.now();
   // One private copy of the build for this run (a concurrent recompile in this
-  // worktree must not swap the binary under running worlds), which every
-  // shard's run slot hard-links. Copying it once per shard was over 1 GB of
-  // synchronous writes before any world started: minutes on a busy disk.
+  // worktree must not swap the binary under running worlds). Each shard then
+  // stages independent writable files so runtime archive changes stay private.
   const privateBase = `${DME_NAME}.test.shards-${process.pid}`;
   if (compiledOutput.kind === 'conventional') {
-    await fs.promises.copyFile(`${DME_NAME}.test.dmb`, `${privateBase}.dmb`);
-    await fs.promises.copyFile(`${DME_NAME}.test.rsc`, `${privateBase}.rsc`);
+    copyWritableRuntimePair(compiledOutput, privateBase);
   }
   let runs: ShardRun[];
   try {
