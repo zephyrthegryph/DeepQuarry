@@ -258,6 +258,7 @@ fn initializer_bucket_rejects_missing_mandatory_and_corrupt_later_row_before_rep
         bytes: b"exact-current-test-recipe".to_vec(),
         mandatory: vec![query],
         assembly: true,
+        modified_only: false,
         roots: 1,
     };
     let reads = vec![dm_session::ResolverRead {
@@ -486,3 +487,6 @@ fn modified_initializer_bucket_requires_complete_unique_reference_roster() {
         assert!(crate::lowering_memo_wire::initializer::decode_bucket(&bucket).is_err());
     }
 }
+
+#[path = "initializer_disk_modified_tests.rs"]
+mod modified_only;

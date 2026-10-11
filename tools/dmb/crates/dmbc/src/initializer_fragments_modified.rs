@@ -25,8 +25,8 @@ impl InitializerFragments {
         key: &receipts::Binding,
         symbols: &dm_ir::SymbolTable,
         host: &R,
-        mut root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
-        mut verify: Option<
+        root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
+        verify: Option<
             &mut dyn FnMut(
                 &verify::Receipt,
                 &crate::InitializerCode,
@@ -39,20 +39,81 @@ impl InitializerFragments {
         )>,
         InitializerError,
     > {
+        self.modified_verified_with_disk(key, symbols, host, root, verify, 0, None)
+    }
+    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
+    pub(crate) fn modified_verified_with_disk<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        symbols: &dm_ir::SymbolTable,
+        host: &R,
+        mut root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
+        mut verify: Option<
+            &mut dyn FnMut(
+                &verify::Receipt,
+                &crate::InitializerCode,
+            ) -> Result<(), InitializerError>,
+        >,
+        root_count: usize,
+        modified_policy: Option<&[u8]>,
+    ) -> Result<
+        Option<(
+            crate::InitializerCode,
+            Arc<crate::symbolic::InitializerEncoding>,
+        )>,
+        InitializerError,
+    > {
         let admission_host = receipts::Host {
             binding: key,
             resolver: host,
         };
-        let accepted = verify
+        let mut accepted = verify
             .as_ref()
             .and_then(|_| self.values.lookup_accepted(&key.key, &admission_host));
-        let value = match if verify.is_some() {
+        let mut candidate = if verify.is_some() {
             accepted.as_ref().map(|value| Arc::clone(&value.value))
         } else {
             self.values.lookup(&key.key, &admission_host)
-        } {
-            Some(value) => value,
-            None => return Ok(None),
+        };
+        if candidate.is_none() && modified_policy.is_some() {
+            if let Some(disk) = &self.disk {
+                let roots = (0..root_count).map(&mut root).collect::<Option<Vec<_>>>();
+                if let Some(roots) = roots {
+                    let refs = roots.iter().map(|r| r.as_ref()).collect::<Vec<_>>();
+                    if let Some((code, reads, modified)) =
+                        disk.lookup_with_modified_policy(key, &refs, host, symbols, modified_policy)
+                    {
+                        let (root_indexes, recipes): (Vec<_>, Vec<_>) =
+                            modified.into_iter().unzip();
+                        let references = recipes.iter().map(|r| r.reference()).collect();
+                        let code = Arc::new(code);
+                        let encoding = Arc::new(crate::symbolic::InitializerEncoding::new(&code));
+                        self.values.insert_with(
+                            Arc::clone(&key.key),
+                            receipts::reads(key, reads),
+                            Vec::new(),
+                            std::mem::size_of::<RetainedFragment>(),
+                            || RetainedFragment {
+                                code: RetainedCode::Modified { code, encoding },
+                                recipes,
+                                references,
+                                root_indexes,
+                            },
+                        );
+                        // Transport never returns directly: current Input and all
+                        // canonical semantic reads enter the SAME admission path.
+                        if verify.is_some() {
+                            accepted = self.values.lookup_accepted(&key.key, &admission_host);
+                            candidate = accepted.as_ref().map(|a| Arc::clone(&a.value));
+                        } else {
+                            candidate = self.values.lookup(&key.key, &admission_host);
+                        }
+                    }
+                }
+            }
+        }
+        let Some(value) = candidate else {
+            return Ok(None);
         };
         let RetainedCode::Modified { code, encoding } = &value.code else {
             return Ok(None);
@@ -109,6 +170,16 @@ impl InitializerFragments {
         code: &Arc<ResolverProc>,
         fields: &[(String, dm_syntax::Expr)],
     ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
+        self.remember_modified_with_disk(key, recorder, code, fields, None)
+    }
+    pub(crate) fn remember_modified_with_disk(
+        &self,
+        key: &receipts::Binding,
+        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
+        code: &Arc<ResolverProc>,
+        fields: &[(String, dm_syntax::Expr)],
+        modified_policy: Option<&[u8]>,
+    ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
         let mut recipes = Vec::new();
         let mut root_indexes = Vec::new();
         for (reference, captured) in &code.modified_instances {
@@ -126,6 +197,18 @@ impl InitializerFragments {
             }
             root_indexes.push(index);
             recipes.push(recipe);
+        }
+        if modified_policy.is_some() {
+            if let Some(disk) = &self.disk {
+                let roots = fields.iter().map(|(_, root)| root).collect::<Vec<_>>();
+                disk.stage_with_modified_policy(
+                    key,
+                    &roots,
+                    &recorder.reads(),
+                    code,
+                    modified_policy,
+                );
+            }
         }
         let references = code.modified_instances.keys().copied().collect();
         let stripped = if code.modified_instances.is_empty() {

@@ -6,6 +6,7 @@ pub(super) struct Recipe {
     pub bytes: Vec<u8>,
     pub mandatory: Vec<ResolveQuery>,
     pub assembly: bool,
+    pub modified_only: bool,
     pub roots: usize,
 }
 fn part(out: &mut Vec<u8>, bytes: &[u8]) {
@@ -58,6 +59,15 @@ pub(super) fn capture(
     engine: Option<(u128, bool, u128)>,
     roots: &[&dm_syntax::Expr],
 ) -> Option<Recipe> {
+    capture_with_modified_policy(binding, policy, engine, roots, None)
+}
+pub(super) fn capture_with_modified_policy(
+    binding: &Binding,
+    policy: &[u8],
+    engine: Option<(u128, bool, u128)>,
+    roots: &[&dm_syntax::Expr],
+    modified_policy: Option<&[u8]>,
+) -> Option<Recipe> {
     let mut bytes = b"initializer-current-portable-recipe-v1\0".to_vec();
     bytes.extend_from_slice(&crate::lowering_memo::PROCEDURE_VERSION.to_le_bytes());
     part(&mut bytes, policy);
@@ -108,6 +118,28 @@ pub(super) fn capture(
             }
             true
         }
+        Inputs::Modified {
+            canonical,
+            lexical_owner,
+            runtime_type,
+            field_count,
+            resource_context,
+            ..
+        } if resource_context.is_none() && !roots.is_empty() && roots.len() == *field_count => {
+            // The standalone modified producer may use a different PureCalls
+            // provider from the ordinary initializer factory. Exact bytes are
+            // mandatory; resident identity alone cannot license disk reuse.
+            let pure = modified_policy?;
+            bytes.push(2);
+            part(&mut bytes, canonical);
+            part(&mut bytes, pure);
+            bytes.extend_from_slice(&lexical_owner.bits().to_le_bytes());
+            bytes.extend_from_slice(&runtime_type.bits().to_le_bytes());
+            bytes.extend_from_slice(&(roots.len() as u64).to_le_bytes());
+            required.push(ResolveQuery::Ancestry(*lexical_owner));
+            required.push(ResolveQuery::RuntimeType(*runtime_type));
+            true
+        }
         _ => return None,
     };
     for root in roots {
@@ -119,6 +151,7 @@ pub(super) fn capture(
         bytes,
         mandatory: required,
         assembly,
+        modified_only: matches!(binding.inputs.as_ref(), Inputs::Modified { .. }),
         roots: roots.len(),
     })
 }

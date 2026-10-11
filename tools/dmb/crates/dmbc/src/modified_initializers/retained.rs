@@ -56,6 +56,12 @@ pub(super) fn lower<R: Resolver>(
     let binding = policy.map(|policy| {
         crate::initializer_lowering::receipts::Binding::modified(symbol, descriptor, policy)
     });
+    // Exact provider evidence is independent of resident policy identity.
+    // Unknown custom PureCalls still use the common fresh/resident producer.
+    let portable_policy = match calls {
+        None => Some(&b"modified-no-pure-calls-v1"[..]),
+        Some(calls) => calls.immutable_policy_bytes(),
+    };
     let proof_host = ResourceProofHost { host, descriptor };
     if let (Some(store), Some(binding)) = (fragments, &binding) {
         current_keys.push(Arc::clone(&binding.key));
@@ -72,6 +78,7 @@ pub(super) fn lower<R: Resolver>(
                 .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
                 .collect::<Result<Vec<_>, String>>()?;
             let recorder = crate::lowering_memo::RecordingResolver::new(&proof_host);
+            record_current_modified(&recorder, descriptor);
             let fresh = dm_codegen_byond::initializer::lower_modified_assignments(
                 &fields,
                 descriptor.runtime_type(),
@@ -97,12 +104,14 @@ pub(super) fn lower<R: Resolver>(
             verify(reads, code).map_err(dm_codegen_byond::initializer::InitializerError::Invalid)
         };
         if let Some((code, encoding)) = store
-            .modified_verified(
+            .modified_verified_with_disk(
                 binding,
                 symbols,
                 &proof_host,
                 |index| roots.root(index),
                 if selected { Some(&mut verifier) } else { None },
+                descriptor.fields().len(),
+                portable_policy,
             )
             .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?
         {
@@ -118,6 +127,7 @@ pub(super) fn lower<R: Resolver>(
         .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
         .collect::<Result<Vec<_>, String>>()?;
     let recorder = crate::lowering_memo::RecordingResolver::new(&proof_host);
+    record_current_modified(&recorder, descriptor);
     let code = Arc::new(
         dm_codegen_byond::initializer::lower_modified_assignments(
             &fields,
@@ -132,7 +142,7 @@ pub(super) fn lower<R: Resolver>(
         .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?,
     );
     let encoding = if let (Some(store), Some(binding)) = (fragments, &binding) {
-        store.remember_modified(binding, &recorder, &code, &fields)
+        store.remember_modified_with_disk(binding, &recorder, &code, &fields, portable_policy)
     } else {
         None
     };
@@ -143,4 +153,12 @@ pub(super) fn lower<R: Resolver>(
         None => code.into(),
     };
     Ok(Lowered { code, encoding })
+}
+
+fn record_current_modified<R: Resolver>(
+    recorder: &crate::lowering_memo::RecordingResolver<'_, R>,
+    descriptor: &dm_ir::ModifiedInstance,
+) {
+    recorder.resolve(dm_ir::ResolveQuery::Ancestry(descriptor.lexical_owner()));
+    recorder.resolve(dm_ir::ResolveQuery::RuntimeType(descriptor.runtime_type()));
 }

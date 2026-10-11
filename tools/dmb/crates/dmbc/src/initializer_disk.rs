@@ -1,6 +1,6 @@
 //! Optional transport into the SAME observed fragment/assembly stores.
 //! Current classification/source inputs are reissued before this adapter runs.
-//! Modified AST-bearing recipes and failures currently execute the shared producer.
+//! Uncovered recipes and failures execute the same shared producer.
 use super::{disk_recipe, receipts};
 use crate::runner_disk::LazyDisk;
 use dm_ir::Resolver;
@@ -73,9 +73,16 @@ impl Transport {
         &self,
         key: &receipts::Binding,
         roots: &[&dm_syntax::Expr],
+        modified_policy: Option<&[u8]>,
     ) -> Option<disk_recipe::Recipe> {
         let policy = self.policy.get()?.as_ref()?;
-        disk_recipe::capture(key, &policy.bytes, policy.engine, roots)
+        disk_recipe::capture_with_modified_policy(
+            key,
+            &policy.bytes,
+            policy.engine,
+            roots,
+            modified_policy,
+        )
     }
     fn engine_matches(&self) -> bool {
         *self.engine_admitted.get_or_init(|| {
@@ -101,7 +108,7 @@ impl Transport {
     fn key(recipe: &disk_recipe::Recipe) -> dm_cache::RecordKey {
         dm_cache::RecordKey {
             stage: if recipe.assembly { 12 } else { 11 },
-            version: 2,
+            version: 3,
             content: xxhash_rust::xxh3::xxh3_128(&recipe.bytes),
         }
     }
@@ -116,7 +123,21 @@ impl Transport {
         Vec<dm_session::ResolverRead>,
         Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
     )> {
-        let recipe = self.recipe(key, roots)?;
+        self.lookup_with_modified_policy(key, roots, host, symbols, None)
+    }
+    pub(super) fn lookup_with_modified_policy<R: Resolver>(
+        &self,
+        key: &receipts::Binding,
+        roots: &[&dm_syntax::Expr],
+        host: &R,
+        symbols: &dm_ir::SymbolTable,
+        modified_policy: Option<&[u8]>,
+    ) -> Option<(
+        dm_codegen_byond::lower_resolver::ResolverProc,
+        Vec<dm_session::ResolverRead>,
+        Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
+    )> {
+        let recipe = self.recipe(key, roots, modified_policy)?;
         if !self.engine_matches() {
             return None;
         }
@@ -179,6 +200,7 @@ impl Transport {
             if candidate.recipe == recipe.bytes
                 && (candidate.mandatory != recipe.mandatory
                     || candidate.assembly != recipe.assembly
+                    || candidate.modified_only != recipe.modified_only
                     || candidate.roots != recipe.roots)
             {
                 return Err("initializer mandatory current receipt/placement missing".into());
@@ -193,10 +215,20 @@ impl Transport {
         reads: &[dm_session::ResolverRead],
         code: &dm_codegen_byond::lower_resolver::ResolverProc,
     ) {
+        self.stage_with_modified_policy(key, roots, reads, code, None);
+    }
+    pub(super) fn stage_with_modified_policy(
+        &self,
+        key: &receipts::Binding,
+        roots: &[&dm_syntax::Expr],
+        reads: &[dm_session::ResolverRead],
+        code: &dm_codegen_byond::lower_resolver::ResolverProc,
+        modified_policy: Option<&[u8]>,
+    ) {
         if !self.writable {
             return;
         }
-        let Some(recipe) = self.recipe(key, roots) else {
+        let Some(recipe) = self.recipe(key, roots, modified_policy) else {
             return;
         };
         let mut modified = Vec::new();
@@ -209,7 +241,10 @@ impl Transport {
             let Some(origin) = captured.origin else {
                 return;
             };
-            let index = origin as usize;
+            let Some(index) = (origin as usize).checked_sub(usize::from(recipe.modified_only))
+            else {
+                return;
+            };
             let Some(root) = roots.get(index) else {
                 return;
             };
@@ -223,7 +258,7 @@ impl Transport {
         }
         let mut stripped = code.clone();
         stripped.modified_instances.clear();
-        let Some(bytes) = crate::lowering_memo_wire::initializer::encode_with_modified(
+        let Some(bytes) = crate::lowering_memo_wire::initializer::encode_current_program(
             recipe.bytes.clone(),
             recipe.assembly,
             recipe.roots,
@@ -231,6 +266,7 @@ impl Transport {
             reads,
             &stripped,
             modified,
+            recipe.modified_only,
         ) else {
             return;
         };

@@ -43,6 +43,8 @@ pub(crate) enum Inputs {
         canonical: Arc<[u8]>,
         policy: Option<u128>,
         lexical_owner: dm_ir::SymbolId,
+        runtime_type: dm_ir::SymbolId,
+        field_count: usize,
         resource_context: Option<u128>,
     },
     Assembly {
@@ -73,6 +75,8 @@ impl Binding {
                 canonical: Arc::from(descriptor.canonical_bytes()),
                 policy,
                 lexical_owner: descriptor.lexical_owner(),
+                runtime_type: descriptor.runtime_type(),
+                field_count: descriptor.fields().len(),
                 resource_context: descriptor.resource_context(),
             },
         )

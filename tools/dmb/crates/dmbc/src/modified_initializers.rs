@@ -760,6 +760,8 @@ mod resource_tests {
             canonical: Arc::from(defaults[0].1.descriptor.canonical_bytes()),
             policy: Some(17),
             lexical_owner: SymbolId::of("/"),
+            runtime_type: defaults[0].1.descriptor.runtime_type(),
+            field_count: defaults[0].1.descriptor.fields().len(),
             resource_context: Some(7),
         });
         assert!(retained

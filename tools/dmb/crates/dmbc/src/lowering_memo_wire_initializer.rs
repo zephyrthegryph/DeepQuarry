@@ -4,12 +4,13 @@ use super::{CodeWire, ResolverProc};
 use dm_codegen_byond::initializer::AssignmentFragment;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 use serde::{Deserialize, Serialize};
-const SCHEMA: u32 = 0x0206_0019;
+const SCHEMA: u32 = 0x0206_001a;
 pub(crate) const LIMIT: usize = 8 * 1024 * 1024;
 #[derive(Serialize, Deserialize)]
 struct Payload {
     recipe: Vec<u8>,
     assembly: bool,
+    modified_only: bool,
     roots: usize,
     mandatory: Vec<ResolveQuery>,
     reads: Vec<(ResolveQuery, Vec<u8>)>,
@@ -19,6 +20,7 @@ struct Payload {
 pub(crate) struct Candidate {
     pub recipe: Vec<u8>,
     pub assembly: bool,
+    pub modified_only: bool,
     pub roots: usize,
     pub mandatory: Vec<ResolveQuery>,
     pub reads: Vec<(ResolveQuery, Vec<u8>)>,
@@ -50,9 +52,18 @@ fn valid_reads(reads: &[(ResolveQuery, Vec<u8>)], required: &[ResolveQuery]) -> 
                 ResolveQuery::Resource(_) | ResolveQuery::ResourceIn { .. }
             )
         })
-        && required
-            .iter()
-            .all(|q| reads.iter().any(|(old, a)| old == q && !a.is_empty()))
+        && required.iter().all(|q| {
+            reads.iter().any(|(old, a)| {
+                old == q
+                    && !a.is_empty()
+                    && match q {
+                        ResolveQuery::RuntimeType(path) => {
+                            *a == ResolvedMeaning::Symbol(*path).canonical_bytes()
+                        }
+                        _ => true,
+                    }
+            })
+        })
 }
 #[cfg(test)]
 pub(crate) fn encode(
@@ -74,6 +85,24 @@ pub(crate) fn encode_with_modified(
     code: &ResolverProc,
     modified: Vec<(usize, crate::modified_initializers::ExpressionEvidence)>,
 ) -> Option<Vec<u8>> {
+    encode_current_program(
+        recipe, assembly, roots, mandatory, reads, code, modified, false,
+    )
+}
+pub(crate) fn encode_current_program(
+    recipe: Vec<u8>,
+    assembly: bool,
+    roots: usize,
+    mandatory: Vec<ResolveQuery>,
+    reads: &[dm_session::ResolverRead],
+    code: &ResolverProc,
+    modified: Vec<(usize, crate::modified_initializers::ExpressionEvidence)>,
+    modified_only: bool,
+) -> Option<Vec<u8>> {
+    if modified_only && (!assembly || roots == 0) {
+        return None;
+    }
+    let debug_count = roots.checked_add(usize::from(modified_only))?;
     if reads.iter().any(|r| {
         !portable(&r.answer)
             || matches!(
@@ -88,7 +117,9 @@ pub(crate) fn encode_with_modified(
         .map(|(_, r)| r.reference())
         .collect::<Vec<_>>();
     if modified.iter().any(|(index, r)| {
-        *index >= roots || r.origin() as usize != *index || r.resident_recipe().is_none()
+        *index >= roots
+            || r.origin() as usize != index.saturating_add(usize::from(modified_only))
+            || r.resident_recipe().is_none()
     }) {
         return None;
     }
@@ -101,8 +132,12 @@ pub(crate) fn encode_with_modified(
         return None;
     }
     if assembly {
-        AssignmentFragment::validate_assembly_transport_with_references(code, roots, references)
-            .ok()?;
+        AssignmentFragment::validate_assembly_transport_with_references(
+            code,
+            debug_count,
+            references,
+        )
+        .ok()?;
     } else {
         AssignmentFragment::from_transport_with_references(code.clone(), references).ok()?;
     }
@@ -122,6 +157,7 @@ pub(crate) fn encode_with_modified(
         &Payload {
             recipe,
             assembly,
+            modified_only,
             roots,
             mandatory,
             reads,
@@ -158,16 +194,21 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
     payloads
         .into_iter()
         .map(|p| {
-            if p.recipe.is_empty()
+            if (p.modified_only && (!p.assembly || p.roots == 0))
+                || p.recipe.is_empty()
                 || !valid_reads(&p.reads, &p.mandatory)
                 || !p.code.source_neutral_initializer()
                 || (!p.assembly && p.roots != 1)
             {
                 return Err("invalid initializer payload/receipt".into());
             }
+            let debug_count = p
+                .roots
+                .checked_add(usize::from(p.modified_only))
+                .ok_or("initializer debug count overflow")?;
             let code = p
                 .code
-                .rehydrate(&NoReads, p.roots)
+                .rehydrate(&NoReads, debug_count)
                 .ok_or("invalid initializer code descriptors")?;
             if code.instances.iter().any(|(alias, instance)| {
                 !p.modified.iter().any(|(_, r)| {
@@ -181,7 +222,10 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
                 .modified
                 .into_iter()
                 .map(|(index, evidence)| {
-                    if index >= p.roots || evidence.origin() as usize != index {
+                    if index >= p.roots
+                        || evidence.origin() as usize
+                            != index.saturating_add(usize::from(p.modified_only))
+                    {
                         return Err("invalid modified assignment origin".to_string());
                     }
                     evidence
@@ -196,7 +240,9 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
                 .collect::<Vec<_>>();
             if p.assembly {
                 AssignmentFragment::validate_assembly_transport_with_references(
-                    &code, p.roots, references,
+                    &code,
+                    debug_count,
+                    references,
                 )
                 .map_err(|e| format!("invalid initializer assembly: {e:?}"))?;
             } else {
@@ -206,6 +252,7 @@ pub(crate) fn decode_bucket(bytes: &[u8]) -> Result<Vec<Candidate>, String> {
             Ok(Candidate {
                 recipe: p.recipe,
                 assembly: p.assembly,
+                modified_only: p.modified_only,
                 roots: p.roots,
                 mandatory: p.mandatory,
                 reads: p.reads,
