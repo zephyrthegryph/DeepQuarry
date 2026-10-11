@@ -24,7 +24,7 @@ CAPABILITIES(/obj/item/ghost_trap)
 	ref_one(nameof(captured_entity))
 	// Watches its catch every 2 s while it holds one; empty, it sleeps.
 	every(2 SECONDS, then(PROC_REF(ghost_trap_step)), when = nameof(captured_entity))
-	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
+	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science, starts = /obj/item/radio/intercom/science, starts_args = NO_LOC) // made in nullspace
 	op("free_occupant", hand(), priority(OP_PRIORITY_PART + 1), label("Free the occupant"), when(req(PROC_REF(can_free_occupant))), begins(MSG(ghost_trap/freeing)), wait(6 SECONDS), then(PROC_REF(occupant_freed)))
 	op("deactivate", hand(), priority(OP_PRIORITY_PART), label("Deactivate"), when(req(PROC_REF(can_deactivate))), begins(MSG(ghost_trap/deactivating)), plays(SFX_MACHINES_CLICK, at_start = TRUE), wait(6 SECONDS), then(PROC_REF(trap_deactivated)))
 	op("deploy", in_hand(), priority(OP_PRIORITY_PART), label("Deploy"), when(req(PROC_REF(can_deploy))), begins(MSG(ghost_trap/deploying)), wait(6 SECONDS), then(PROC_REF(trap_deployed)))
@@ -37,7 +37,6 @@ CAPABILITIES(/obj/item/ghost_trap)
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
 		/datum/notice/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),

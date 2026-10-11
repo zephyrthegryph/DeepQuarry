@@ -1276,14 +1276,6 @@ init_lines	code/game/objects/items.dm	if(sharp)
 init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/w_class))
 init_lines	code/game/objects/items.dm	else
 init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/(w_class*3)))
-init_lines	code/game/objects/items/bodybag.dm	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
-init_lines	code/game/objects/items/contraband.dm	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
-init_lines	code/game/objects/items/contraband.dm	for(var/reagent in picked_reagents)
-init_lines	code/game/objects/items/contraband.dm	reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick
-init_lines	code/game/objects/items/contraband.dm	var/list/names = list()
-init_lines	code/game/objects/items/contraband.dm	for(var/datum/reagent/R in reagents.reagent_list)
-init_lines	code/game/objects/items/contraband.dm	names += R.name
-init_lines	code/game/objects/items/contraband.dm	desc = "Contains [english_list(names)]."
 init_lines	code/game/objects/items/contraband.dm	get_appearance()
 init_lines	code/game/objects/items/devices/ai_detector.dm	range_alert = world.view
 init_lines	code/game/objects/items/devices/ai_detector.dm	range_warning = world.view * 2
@@ -1321,10 +1313,6 @@ init_lines	code/game/objects/items/devices/flipper.dm	emag_target(src)
 init_lines	code/game/objects/items/devices/flipper.dm	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
 init_lines	code/game/objects/items/devices/flipper.dm	desc = "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 init_lines	code/game/objects/items/devices/flipper.dm	setEmotion(4)
-init_lines	code/game/objects/items/devices/geiger.dm	observe(src, /datum/notice/in_range_of_irradiation, src, then(PROC_REF(on_pre_potential_irradiation)))
-init_lines	code/game/objects/items/devices/geiger.dm	if(scanning)
-init_lines	code/game/objects/items/devices/geiger.dm	if(!geiger_sound)
-init_lines	code/game/objects/items/devices/geiger.dm	rel_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): the sound is made only while the geiger is scanning, which a declaration cannot condition
 init_lines	code/game/objects/items/devices/gps.dm	name = "global positioning system ([gps_tag])"
 init_lines	code/game/objects/items/devices/gps.dm	update_holder()
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	if(has_weapon)
@@ -1354,9 +1342,6 @@ init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	if(ismob(l
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	var/mob/M = loc
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	M.motiontracker_subscribe()
 init_lines	code/game/objects/items/devices/spy_bug.dm	radio = new(src)
-init_lines	code/game/objects/items/devices/translocator.dm	flags |= NOBLUDGEON
-init_lines	code/game/objects/items/devices/translocator.dm	if(!power_source) // no cell_type
-init_lines	code/game/objects/items/devices/translocator.dm	rel_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 init_lines	code/game/objects/items/devices/translocator.dm	rebuild_radial_images()
 init_lines	code/game/objects/items/devices/tvcamera.dm	camera.c_tag = channel
 init_lines	code/game/objects/items/devices/tvcamera.dm	camera.status = FALSE
@@ -1372,7 +1357,6 @@ init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.icon = src.icon
 init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.icon_state = src.icon_state
 init_lines	code/game/objects/items/ghost_hunting/goggles.dm	if(static_vision)
 init_lines	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
-init_lines	code/game/objects/items/ghost_hunting/trap.dm	rel_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 init_lines	code/game/objects/items/ghost_hunting/trap.dm	var/static/list/ghost_events = list(
 init_lines	code/game/objects/items/ghost_hunting/trap.dm	/datum/notice/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
 init_lines	code/game/objects/items/ghost_hunting/trap.dm	/datum/notice/world_wight_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
@@ -1423,8 +1407,6 @@ init_lines	code/game/objects/items/trash_material.dm	if(prob(L[2]))
 init_lines	code/game/objects/items/trash_material.dm	var/list/added = list()
 init_lines	code/game/objects/items/trash_material.dm	added[L[1]] = max(0, L[3] + rand(-2,2))
 init_lines	code/game/objects/items/trash_material.dm	add_materials(added)
-init_lines	code/game/objects/items/uav.dm	if(!cell && cell_type)
-init_lines	code/game/objects/items/uav.dm	rel_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
 init_lines	code/game/objects/items/uav.dm	ion_trail.set_up(src)
 init_lines	code/game/objects/items/uav.dm	ion_trail.stop()
 init_lines	code/game/objects/items/weapons/AI_modules.dm	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
@@ -1439,44 +1421,6 @@ init_lines	code/game/objects/items/weapons/cigs_lighters.dm	var/image/I = image(
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	I.color = pick(available_colors)
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
-init_lines	code/game/objects/items/weapons/dna_injector.dm	var/selector = TYPE_TABLE_GET(src, injector_random_selector)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	switch(selector)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_good)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_good_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_bad)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_bad_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_verygood)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_verygood_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_verybad)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_verybad_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_neutral)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random_neutral_labeled)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(datatype && block)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	rel_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
-init_lines	code/game/objects/items/weapons/dna_injector.dm	rel_set(buf, nameof(buf.dna), new /datum/dna)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	buf.types = datatype
-init_lines	code/game/objects/items/weapons/dna_injector.dm	buf.dna.ResetSE()
-init_lines	code/game/objects/items/weapons/dna_injector.dm	SetValue(src.value)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	var/G = get_gene_from_trait(trait_path)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	if(trait_path && G)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	pick_block( G, TRUE, FALSE, disabling)
-init_lines	code/game/objects/items/weapons/dna_injector.dm	else
-init_lines	code/game/objects/items/weapons/dna_injector.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/weapons/dna_injector.dm	disabling = TRUE
 init_lines	code/game/objects/items/weapons/ecigs.dm	sync_item_state()
 init_lines	code/game/objects/items/weapons/extinguisher.dm	if(rand_overlays)
 init_lines	code/game/objects/items/weapons/extinguisher.dm	var/choice = rand(1,rand_overlays)
@@ -1513,8 +1457,6 @@ init_lines	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access = GL
 init_lines	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access |= SSaccess.get_all_station_access()
 init_lines	code/game/objects/items/weapons/implants/implantchair.dm	add_implants()
 init_lines	code/game/objects/items/weapons/implants/implantcircuits.dm	rel_set(IC, nameof(IC.implant), src)
-init_lines	code/game/objects/items/weapons/inducer.dm	if(!cell && cell_type)
-init_lines	code/game/objects/items/weapons/inducer.dm	rel_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 init_lines	code/game/objects/items/weapons/inducer.dm	if(!istype(hume))
 init_lines	code/game/objects/items/weapons/inducer.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/inducer.dm	set_charge(hume.nutrition)
@@ -1575,8 +1517,6 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	if(bcell)
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	bcell.set_charge(0)
 init_lines	code/game/objects/items/weapons/melee/energy.dm	set_light(lrange, lpower, lcolor)
 init_lines	code/game/objects/items/weapons/melee/shock_maul.dm	update_held_icon()
-init_lines	code/game/objects/items/weapons/paint.dm	if(paint_type)
-init_lines	code/game/objects/items/weapons/paint.dm	reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): the reagent's data argument (the paint type) differs per instance, which a declaration cannot carry
 init_lines	code/game/objects/items/weapons/picnic_blankets.dm	unfold()
 init_lines	code/game/objects/items/weapons/policetape.dm	if(apply_tape)
 init_lines	code/game/objects/items/weapons/policetape.dm	var/turf/T = get_turf(src)
@@ -1748,17 +1688,6 @@ init_lines	code/game/objects/structures/extinguisher.dm	pixel_x = (dir & 3)? 0 :
 init_lines	code/game/objects/structures/extinguisher.dm	pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 init_lines	code/game/objects/structures/fence.dm	update_cut_status()
 init_lines	code/game/objects/structures/fence.dm	update_door_status()
-init_lines	code/game/objects/structures/flora/flora.dm	if(randomize_size)
-init_lines	code/game/objects/structures/flora/flora.dm	icon_scale_x = rand(min_x_scale * 100, max_x_scale * 100) / 100
-init_lines	code/game/objects/structures/flora/flora.dm	icon_scale_y = rand(min_y_scale * 100, max_y_scale * 100) / 100
-init_lines	code/game/objects/structures/flora/flora.dm	if(prob(50))
-init_lines	code/game/objects/structures/flora/flora.dm	icon_scale_x *= -1
-init_lines	code/game/objects/structures/flora/flora.dm	update_transform()
-init_lines	code/game/objects/structures/flora/flora.dm	if(randomize_harvest_count)
-init_lines	code/game/objects/structures/flora/flora.dm	max_harvests = max(0, rand(min_harvests, max_harvests)) // Incase you want to weight it more toward 'not harvestable', set min_harvests to a negative value.
-init_lines	code/game/objects/structures/flora/flora.dm	if(prob(50))
-init_lines	code/game/objects/structures/flora/flora.dm	adjust_scale(-1, 1)
-init_lines	code/game/objects/structures/flora/flora.dm	pixel_x = rand(-4, 4)
 init_lines	code/game/objects/structures/gargoyle.dm	var/mob/living/carbon/human/H = petrified
 init_lines	code/game/objects/structures/gargoyle.dm	if(isspace(loc) || isopenspace(loc))
 init_lines	code/game/objects/structures/gargoyle.dm	set_anchored(FALSE)
@@ -1899,10 +1828,6 @@ init_lines	code/game/objects/structures/props/machines.dm	if(mapload)
 init_lines	code/game/objects/structures/props/machines.dm	var/atom/movable/AM = locate_within(loc, /atom/movable)
 init_lines	code/game/objects/structures/props/machines.dm	AM?.forceMove(src)
 init_lines	code/game/objects/structures/props/nest.dm	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
-init_lines	code/game/objects/structures/props/nest.dm	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
-init_lines	code/game/objects/structures/props/nest.dm	var/delayshift_clamp = spawn_delay / 10
-init_lines	code/game/objects/structures/props/nest.dm	var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
-init_lines	code/game/objects/structures/props/nest.dm	spawn_delay += delayshift
 init_lines	code/game/objects/structures/props/puzzledoor.dm	implicit_material = get_material_by_name(MAT_ALIEN_DUNGEON)
 init_lines	code/game/objects/structures/props/puzzledoor.dm	if(length(locks))
 init_lines	code/game/objects/structures/props/puzzledoor.dm	var/check_range = world.view * checkrange_mult
@@ -1934,11 +1859,6 @@ init_lines	code/game/objects/structures/salvageable.dm	new /obj/structure/table/
 init_lines	code/game/objects/structures/stasis_cage.dm	var/mob/living/simple_mob/A = locate_within(loc, /mob/living/simple_mob)
 init_lines	code/game/objects/structures/stasis_cage.dm	if(A)
 init_lines	code/game/objects/structures/stasis_cage.dm	contain(A)
-init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(flippable) // If we can't change directions, don't bother.
-init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(istype(src,/obj/structure/bed/chair))
-init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	make_rotatable()
-init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	else
-init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	make_rotatable(only_flip = TRUE)
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if((dir & NORTH) && !corner_piece)
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	plane = MOB_PLANE
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	layer = ABOVE_MOB_LAYER
@@ -7008,18 +6928,6 @@ world_reads	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pi
 world_reads	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
-world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
 world_reads	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access = GLOB.syndicate_access.Copy()
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/objects/structures/props/puzzledoor.dm	for(var/obj/structure/prop/lock/L in orange(src, check_range))

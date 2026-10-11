@@ -32,19 +32,21 @@ TYPE_TABLE_DECLARE(/obj/structure/flora, initial_icon_variant_count, null)
 		return "[initial(icon_state)][R.number(1, variants)]"
 	return icon_state
 
-/obj/structure/flora/Initialize(mapload)
-	. = ..()
+/// Rolled before init (rolls()): a randomly sized plant is a little wider or narrower, and mirrored half the time.
+/obj/structure/flora/proc/roll_scale_x(datum/roller/R)
+	if(!randomize_size)
+		return icon_scale_x
+	var/scale = R.number(min_x_scale * 100, max_x_scale * 100) / 100
+	return R.chance(50) ? -scale : scale
 
-	if(randomize_size)
-		icon_scale_x = rand(min_x_scale * 100, max_x_scale * 100) / 100
-		icon_scale_y = rand(min_y_scale * 100, max_y_scale * 100) / 100
+/// Rolled before init (rolls()): a randomly sized plant's height.
+/obj/structure/flora/proc/roll_scale_y(datum/roller/R)
+	return randomize_size ? R.number(min_y_scale * 100, max_y_scale * 100) / 100 : icon_scale_y
 
-		if(prob(50))
-			icon_scale_x *= -1
-		update_transform()
+/// Rolled before init (rolls()): how many harvests it gives. A negative min_harvests weighs it toward none.
+/obj/structure/flora/proc/roll_harvests(datum/roller/R)
+	return max(0, R.number(min_harvests, max_harvests))
 
-	if(randomize_harvest_count)
-		max_harvests = max(0, rand(min_harvests, max_harvests)) // Incase you want to weight it more toward 'not harvestable', set min_harvests to a negative value.
 
 /obj/structure/flora/examine(mob/user)
 	. = ..()
@@ -62,6 +64,10 @@ CAPABILITIES(/obj/structure/flora)
 	rolls(nameof(icon_state), PROC_REF(roll_icon_state))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("uproot", item(/obj/item/shovel), label("Uproot"), when(PROC_REF(removable)), priority(OP_PRIORITY_PART), begins(MSG(flora/uprooting)), wait(3 SECONDS), then(PROC_REF(uprooted)))
+	rolls(nameof(icon_scale_x), PROC_REF(roll_scale_x))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_scale_y))
+	rolls(nameof(max_harvests), PROC_REF(roll_harvests), when = nameof(randomize_harvest_count))
+	setup(PROC_REF(update_transform)) // its rolled scale
 
 MSG_DEF(flora/uprooting, span_warning("You start uprooting %T%..."), null)
 
@@ -484,11 +490,12 @@ MSG_DEF_SELF(pottedplant/nothing, span_filter_notice(span_bold("You see nothing 
 /obj/structure/flora/mushroom/roll_icon_state(datum/roller/R)
 	return "mush[R.number(1, 4)]"
 
-/obj/structure/flora/mushroom/Initialize(mapload)
-	. = ..()
-	if(prob(50))
-		adjust_scale(-1, 1)
-	pixel_x = rand(-4, 4)
+CAPABILITIES(/obj/structure/flora/mushroom)
+	rolls(nameof(pixel_x), range_of(-4, 4))
+
+/// Rolled before init (rolls()): a mushroom is mirrored half the time.
+/obj/structure/flora/mushroom/roll_scale_x(datum/roller/R)
+	return R.chance(50) ? -1 : icon_scale_x
 
 /obj/random/pottedplant
 	name = "random potted plant"
