@@ -15,6 +15,7 @@ dm-profile = { path = "../dm-profile" }
 dm-exec = { path = "../dm-exec" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 fs2 = "0.4"
 dm-tree = { path = "../dm-tree" }
@@ -32,5 +33,3 @@ dm-link = { path = "../dm-link" }
 
 dm-resources = { path = "../dm-resources" }
 
-[dev-dependencies]
-sha2 = "0.10"
