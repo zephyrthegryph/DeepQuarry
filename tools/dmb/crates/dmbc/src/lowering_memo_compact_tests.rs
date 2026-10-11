@@ -374,24 +374,31 @@ fn check_replay_features(
         },
     ] {
         let mut corrupt = decode(&bytes).unwrap();
-        corrupt.reads.0.retain(|read| read.query != missing);
+        for index in (0..corrupt.reads.0.len()).rev() {
+            if corrupt.reads.0[index].query == missing {
+                corrupt.reads.0.remove(index);
+                corrupt.typed_answers.0.remove(index);
+            }
+        }
         let corrupt_bytes = dm_wire::encode_bounded(SCHEMA, &corrupt, MAX_RECORD).unwrap();
         assert!(
             decode(&corrupt_bytes).is_err(),
             "missing mandatory receipt must fail preflight"
         );
         let mut duplicate = decode(&bytes).unwrap();
-        let original = duplicate
+        let original_index = duplicate
             .reads
             .0
             .iter()
-            .find(|read| read.query == missing)
+            .position(|read| read.query == missing)
             .unwrap();
-        let answer = original.answer.to_vec();
+        let answer = duplicate.reads.0[original_index].answer.to_vec();
+        let typed = duplicate.typed_answers.0[original_index].clone();
         duplicate.reads.0.push(ReadWire {
             query: missing,
             answer: Cow::Owned(answer),
         });
+        duplicate.typed_answers.0.push(typed);
         let duplicate_bytes = dm_wire::encode_bounded(SCHEMA, &duplicate, MAX_RECORD).unwrap();
         assert!(
             decode(&duplicate_bytes).is_ok(),
