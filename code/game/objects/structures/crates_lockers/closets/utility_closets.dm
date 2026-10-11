@@ -22,41 +22,39 @@ CAPABILITIES(/obj/structure/closet/emcloset)
 
 /// Rolled before init (rolls()): one of four emergency kits.
 /obj/structure/closet/emcloset/proc/roll_starts_with(datum/roller/R)
-	switch(R.weighted(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10)))
-		if("small")
-			return list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/tank/emergency/oxygen = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit/emergency = 2)
-		if("aid")
-			return list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/storage/firstaid/o2,
-				/obj/item/tank/emergency/oxygen/engi = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit/emergency = 2)
-		if("tank")
-			return list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/tank/emergency/oxygen/double = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit = 2)
-		if("both")
-			return list(
-				/obj/item/storage/toolbox/emergency,
-				/obj/item/storage/firstaid/o2,
-				/obj/item/tank/emergency/oxygen/double = 2,
-				/obj/item/clothing/mask/breath = 2,
-				/obj/item/clothing/suit/space/emergency = 2,
-				/obj/item/clothing/head/helmet/space/emergency = 2,
-				/obj/item/suit_cooling_unit = 2)
+	var/static/list/kits = list(
+		"small" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/tank/emergency/oxygen = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit/emergency = 2),
+		"aid" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/storage/firstaid/o2,
+			/obj/item/tank/emergency/oxygen/engi = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit/emergency = 2),
+		"tank" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/tank/emergency/oxygen/double = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit = 2),
+		"both" = list(
+			/obj/item/storage/toolbox/emergency,
+			/obj/item/storage/firstaid/o2,
+			/obj/item/tank/emergency/oxygen/double = 2,
+			/obj/item/clothing/mask/breath = 2,
+			/obj/item/clothing/suit/space/emergency = 2,
+			/obj/item/clothing/head/helmet/space/emergency = 2,
+			/obj/item/suit_cooling_unit = 2))
+	var/list/kit = kits[R.weighted(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10))]
+	return kit.Copy() // the closet's own starts_with
 
 /obj/structure/closet/emcloset/legacy
 	starts_with = list(

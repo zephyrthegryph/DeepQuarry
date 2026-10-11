@@ -3,25 +3,17 @@ CAPABILITIES(/obj/item/storage/box/syndicate)
 
 /// Rolled contents (initial_contents()): one of nine equally likely bundles.
 /obj/item/storage/box/syndicate/proc/roll_bundle(datum/roller/R)
-	switch(R.choose(list("bloodyspai", "stealth", "screwed", "guns", "murder", "freedom", "hacker", "lordsingulo", "smoothoperator")))
-		if("bloodyspai")
-			return list(/obj/item/clothing/under/chameleon, /obj/item/clothing/mask/gas/voice, /obj/item/card/id/syndicate, /obj/item/clothing/shoes/syndigaloshes)
-		if("stealth")
-			return list(/obj/item/gun/energy/crossbow, /obj/item/pen/reagent/paralysis, /obj/item/chameleon)
-		if("screwed")
-			return list(/obj/effect/spawner/newbomb/timer/syndicate, /obj/effect/spawner/newbomb/timer/syndicate, /obj/item/powersink, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double)
-		if("guns")
-			return list(/obj/item/gun/projectile/revolver, /obj/item/ammo_magazine/s357, /obj/item/card/emag, /obj/item/plastique, /obj/item/plastique)
-		if("murder")
-			return list(/obj/item/melee/energy/sword, /obj/item/clothing/glasses/thermal/syndi, /obj/item/card/emag, /obj/item/clothing/shoes/syndigaloshes)
-		if("freedom")
-			return list(/obj/item/implanter/freedom, /obj/item/implanter/uplink)
-		if("hacker")
-			return list(/obj/item/encryptionkey/syndicate, /obj/item/aiModule/syndicate, /obj/item/card/emag, /obj/item/encryptionkey/binary)
-		if("lordsingulo")
-			return list(/obj/item/radio/beacon/syndicate, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double, /obj/item/card/emag)
-		if("smoothoperator")
-			return list(/obj/item/storage/box/syndie_kit/g9mm, /obj/item/storage/bag/trash, /obj/item/soap/syndie, /obj/item/bodybag, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/shoes/laceup)
+	var/static/list/bundles = list(
+		"bloodyspai" = list(/obj/item/clothing/under/chameleon, /obj/item/clothing/mask/gas/voice, /obj/item/card/id/syndicate, /obj/item/clothing/shoes/syndigaloshes),
+		"stealth" = list(/obj/item/gun/energy/crossbow, /obj/item/pen/reagent/paralysis, /obj/item/chameleon),
+		"screwed" = list(/obj/effect/spawner/newbomb/timer/syndicate, /obj/effect/spawner/newbomb/timer/syndicate, /obj/item/powersink, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double),
+		"guns" = list(/obj/item/gun/projectile/revolver, /obj/item/ammo_magazine/s357, /obj/item/card/emag, /obj/item/plastique, /obj/item/plastique),
+		"murder" = list(/obj/item/melee/energy/sword, /obj/item/clothing/glasses/thermal/syndi, /obj/item/card/emag, /obj/item/clothing/shoes/syndigaloshes),
+		"freedom" = list(/obj/item/implanter/freedom, /obj/item/implanter/uplink),
+		"hacker" = list(/obj/item/encryptionkey/syndicate, /obj/item/aiModule/syndicate, /obj/item/card/emag, /obj/item/encryptionkey/binary),
+		"lordsingulo" = list(/obj/item/radio/beacon/syndicate, /obj/item/clothing/suit/space/syndicate, /obj/item/clothing/head/helmet/space/syndicate, /obj/item/clothing/mask/gas/syndicate, /obj/item/tank/emergency/oxygen/double, /obj/item/card/emag),
+		"smoothoperator" = list(/obj/item/storage/box/syndie_kit/g9mm, /obj/item/storage/bag/trash, /obj/item/soap/syndie, /obj/item/bodybag, /obj/item/clothing/under/suit_jacket, /obj/item/clothing/shoes/laceup))
+	return bundles[R.choose(bundles)]
 
 /obj/item/storage/box/syndie_kit
 	name = "box"

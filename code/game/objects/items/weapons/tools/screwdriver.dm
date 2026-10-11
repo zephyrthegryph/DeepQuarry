@@ -33,24 +33,22 @@ CAPABILITIES(/obj/item/tool/screwdriver)
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
 
 /// A random handle colour (rolls()): icon_state -> the matching in-hand item_state.
-/obj/item/tool/screwdriver/proc/colour_table()
-	var/static/list/colours = list(
+GLOBAL_LIST_INIT(screwdriver_colours, list(
 		"screwdriver2" = "screwdriver",
 		"screwdriver" = "screwdriver_blue",
 		"screwdriver3" = "screwdriver_purple",
 		"screwdriver4" = "screwdriver_brown",
 		"screwdriver5" = "screwdriver_green",
 		"screwdriver6" = "screwdriver_cyan",
-		"screwdriver7" = "screwdriver_yellow")
-	return colours
+		"screwdriver7" = "screwdriver_yellow"))
 
 /// Rolled before init (rolls()): one of the handle colours.
 /obj/item/tool/screwdriver/proc/roll_colour(datum/roller/R)
-	return R.choose(colour_table())
+	return R.choose(GLOB.screwdriver_colours)
 
 /// Rolled before init (rolls()), after the colour: the in-hand sprite of the colour it rolled.
 /obj/item/tool/screwdriver/proc/item_state_for_colour(datum/roller/R)
-	return colour_table()[icon_state] || item_state
+	return GLOB.screwdriver_colours[icon_state] || item_state
 
 
 /obj/item/tool/screwdriver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)

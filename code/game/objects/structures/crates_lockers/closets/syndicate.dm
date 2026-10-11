@@ -47,14 +47,13 @@
 	desc = "An old, dusty locker."
 
 CAPABILITIES(/obj/structure/closet/syndicate/resources)
-	initial_contents(PROC_REF(roll_stash), when = PROC_REF(stash_unclaimed))
+	initial_contents(PROC_REF(roll_stash))
 
-/// A mapper who filled the locker keeps their contents.
-/obj/structure/closet/syndicate/resources/proc/stash_unclaimed()
-	return !length(starts_with)
-
-/// Rolled contents (initial_contents()): one roll of 1-50 decides how deep into the stash list it goes.
+/// Rolled contents (initial_contents()): one roll of 1-50 decides how deep into the stash list it goes. A mapper who filled the locker
+/// keeps their contents alone.
 /obj/structure/closet/syndicate/resources/proc/roll_stash(datum/roller/R)
+	if(length(starts_with))
+		return null
 	var/pickednum = R.number(1, 50)
 	if(pickednum == 1) // Sad trombone
 		return list(make(/obj/item/paper, name = "IOU", info = "Sorry man, we needed the money so we sold your stash. It's ok, we'll double our money for sure this time!"))

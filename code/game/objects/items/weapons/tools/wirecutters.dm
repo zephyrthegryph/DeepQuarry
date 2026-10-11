@@ -30,20 +30,18 @@ CAPABILITIES(/obj/item/tool/wirecutters)
 	configure(item_sounds(hit = SFX_ITEMS_WIRECUTTER, use = SFX_ITEMS_WIRECUTTER, drop = SFX_ITEMS_DROP_WIRECUTTER, pickup = SFX_ITEMS_PICKUP_WIRECUTTER))
 
 /// A random handle colour (rolls()): icon_state -> the matching in-hand item_state.
-/obj/item/tool/wirecutters/proc/colour_table()
-	var/static/list/colours = list(
+GLOBAL_LIST_INIT(wirecutter_colours, list(
 		"cutters" = "cutters",
 		"cutters-b" = "cutters_blue",
-		"cutters-y" = "cutters_yellow")
-	return colours
+		"cutters-y" = "cutters_yellow"))
 
 /// Rolled before init (rolls()): one of the handle colours.
 /obj/item/tool/wirecutters/proc/roll_colour(datum/roller/R)
-	return R.choose(colour_table())
+	return R.choose(GLOB.wirecutter_colours)
 
 /// Rolled before init (rolls()), after the colour: the in-hand sprite of the colour it rolled.
 /obj/item/tool/wirecutters/proc/item_state_for_colour(datum/roller/R)
-	return colour_table()[icon_state] || item_state
+	return GLOB.wirecutter_colours[icon_state] || item_state
 
 
 /obj/item/tool/wirecutters/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
