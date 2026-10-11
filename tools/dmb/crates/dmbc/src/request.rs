@@ -49,6 +49,10 @@ pub struct BuildRequest {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Command {
     Query { request: PathBuf, jsonl: bool },
+    /// Export only facts already present in an explicitly pinned retained session.
+    QueryExport {
+        request: PathBuf,
+    },
     Help,
     Gc { project: PathBuf },
     Stats { project: PathBuf },

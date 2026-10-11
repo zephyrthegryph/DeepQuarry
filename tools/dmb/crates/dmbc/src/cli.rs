@@ -17,7 +17,17 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
         let jsonl = match args.next().as_deref() {
             None => false,
             Some("--jsonl") => true,
-            Some(_) => return Err("query accepts only REQUEST.json and optional --jsonl".into()),
+            Some("--export-jsonl") => {
+                if args.next().is_some() {
+                    return Err("unexpected retained export argument".into());
+                }
+                return Ok(Command::QueryExport { request });
+            }
+            Some(_) => {
+                return Err(
+                    "query accepts only REQUEST.json and optional --jsonl or --export-jsonl".into(),
+                )
+            }
         };
         if args.next().is_some() {
             return Err("unexpected query argument".into());

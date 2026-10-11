@@ -28,10 +28,14 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
         Command::Query { request, jsonl } => {
             dmbc::daemon::query::run_file(&request, jsonl).map(|()| CommandOutcome::Completed)
         }
+        Command::QueryExport { request } => {
+            dmbc::daemon::query::semantic_client::run_export_file(&request)
+                .map(|()| CommandOutcome::Completed)
+        }
         Command::Help => {
             dmbc::daemon_println!("dmbc analyze|compile [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
             dmbc::daemon_println!(
-                "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl]"
+                "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl|--export-jsonl]"
             );
             dmbc::daemon_println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
             Ok(CommandOutcome::Completed)

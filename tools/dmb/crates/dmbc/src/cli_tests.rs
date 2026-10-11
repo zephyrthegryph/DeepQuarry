@@ -249,3 +249,14 @@ fn query_command_is_read_only_and_rejects_build_options() {
     ])
     .is_err());
 }
+
+#[test]
+fn retained_export_cli_is_a_pinned_query_route_not_a_build() {
+    assert!(matches!(
+        parse(&["query", "request.json", "--export-jsonl"].map(str::to_owned)).unwrap(),
+        Command::QueryExport { .. }
+    ));
+    assert!(
+        parse(&["query", "request.json", "--export-jsonl", "--bodies"].map(str::to_owned)).is_err()
+    );
+}

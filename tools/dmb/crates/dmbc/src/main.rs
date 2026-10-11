@@ -38,6 +38,9 @@ fn main_inner() {
             dmbc::request::Command::Query { request, jsonl } => {
                 dmbc::daemon::query::run_file(&request, jsonl)
             }
+            dmbc::request::Command::QueryExport { request } => {
+                dmbc::daemon::query::semantic_client::run_export_file(&request)
+            }
             _ => Err("invalid query command".into()),
         });
         if let Err(error) = result {

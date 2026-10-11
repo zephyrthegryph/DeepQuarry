@@ -17,7 +17,10 @@
 //! a stale pin fails instead of silently restarting enumeration on another tree.
 //! `visit_occurrences` additionally requires the current source revision pin and
 //! streams only parser-issued occurrence facts. It does not parse or lower bodies.
+#[path = "retained_export.rs"]
+mod retained_export;
 use super::{QueryRequest, SourceQuery};
+pub use retained_export::run_export_file;
 use std::{
     io,
     time::{Duration, Instant},
