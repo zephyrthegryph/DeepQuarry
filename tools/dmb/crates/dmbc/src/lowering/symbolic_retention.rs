@@ -67,13 +67,32 @@ impl SessionSymbolicMemo {
         if let Some(owner) = &self.shared_code_pool {
             crate::symbolic::shared_procedure_code::census(owner, census);
         }
-        let records = self
-            .records
-            .lock()
-            .unwrap_or_else(|error| error.into_inner());
-        for record in records.values() {
+        if let Some(owner) = &self.publication {
+            census.arc_object("session_symbolic.observed_owner", owner);
+            census.arc_object("session_symbolic.observed_core", &owner.values);
+            owner.values.visit_storage(|view| match view {
+                dm_session::ArtifactStorageView::Bucket {
+                    address,
+                    len,
+                    capacity,
+                    element_size,
+                } => {
+                    census.exposed_buffer(
+                        "session_symbolic.observed_buckets",
+                        address,
+                        len.saturating_mul(element_size),
+                        capacity.saturating_mul(element_size),
+                    );
+                }
+                dm_session::ArtifactStorageView::Entry { key, .. } => {
+                    census.slice("session_symbolic.observed_keys", key, true);
+                }
+                _ => {}
+            });
+        }
+        let count = self.visit_records(|record| {
             if !census.arc_object("session_symbolic.records", record) {
-                continue;
+                return;
             }
             census.slice("session_symbolic.keys", &record.key, true);
             if let Some(recipe) = &record.recipe {
@@ -114,7 +133,8 @@ impl SessionSymbolicMemo {
                     recipe.retained_census(&mut census);
                 }
             }
-        }
+        });
+        census.arc_object("session_symbolic.receipt_pool", &self.receipt_groups);
         self.receipt_groups
             .visit_storage(|pointer, payload, capacity| {
                 census.exposed_buffer("session_symbolic.receipt_pool", pointer, payload, capacity);
@@ -124,7 +144,7 @@ impl SessionSymbolicMemo {
             "weak leaf locators retain no read payload; private BTree node layout is not exposed",
         );
         census.unknown("session_symbolic.records", "BTreeMap index node capacity, Arc control blocks, allocator overhead and freed pages are not exposed; this is not private-memory measurement");
-        records.len()
+        count
     }
 }
 

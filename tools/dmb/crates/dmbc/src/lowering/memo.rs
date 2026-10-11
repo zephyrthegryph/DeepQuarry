@@ -196,15 +196,21 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         }
     }
     let key = current_key.materialize(&prepared_tail);
+    let mut rebound_current = None;
     let (value, changed_query) = {
         let _profile = dm_profile::item("lowering.resident_validate");
-        memo.values.visit_receipted(&key, host, &mut |value| {
+        memo.visit_resident(&key, host, &mut |value| {
             let previous = &value.unit;
             if capture_references && previous.selected_references.is_none() {
                 return false;
             }
             let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-            rebased.is_some()
+            rebound_current = rebased.and_then(|origins| {
+                rich_sidecars::rebind(
+                    previous, frontend, body, bodies, &recording, &prepared, origins,
+                )
+            });
+            rebound_current.is_some()
         })
     };
     let mut miss = changed_query.map_or(MemoMissReason::NoExactVariant, |_| {
@@ -216,18 +222,12 @@ pub(super) fn lower_one_input<R: Resolver, P: AbiPolicy>(
         } else {
             None
         };
-        let value = accepted.value;
-        let _profile = dm_profile::item("lowering.resident_replay");
-        // Rich sidecars are replaced only by current authenticated recipe
-        // captures; incomplete mappings take the ordinary lowering fallback.
-        let previous = &value.unit;
-        let rebased = crate::lowering_memo::rebase_debug(frontend, body, &value.relative_debug);
-        let rebound = rebased.and_then(|origins| {
-            rich_sidecars::rebind(
-                previous, frontend, body, bodies, &recording, &prepared, origins,
-            )
+        accepted.reads.visit_storage(|view| {
+            if let dm_session::ReceiptStorageView::Flat(leaf) = view {
+                recording.record_admitted(leaf);
+            }
         });
-        if let Some(mut unit) = rebound {
+        if let Some(mut unit) = rebound_current {
             memo.counts
                 .resident_hits
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);

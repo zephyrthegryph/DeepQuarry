@@ -65,9 +65,24 @@ pub enum ResidentRetention {
     DiskOnly,
 }
 /// Caller-issued compiler/ABI/emission policy identity, never whole-tree identity.
+#[path = "lowering_memo/publication.rs"]
+mod publication;
+pub use publication::RetainedProcedures;
 pub struct ProcedureMemo {
     pub policy: u128,
     resident_retention: ResidentRetention,
+    rich_attempt: Option<
+        dm_session::ArtifactAttempt<
+            dm_session::ObservedArtifactLease<
+                CachedProcedure,
+                ResolveQuery,
+                dm_ir::ResolvedMeaning,
+                ReadDomain,
+            >,
+        >,
+    >,
+    pub(crate) publishable: bool,
+    rich_owner: Option<Arc<RetainedProcedures>>,
     pub values: Arc<LoweringMemo<CachedProcedure>>,
     pub(crate) symbolic: Option<Arc<crate::lowering::symbolic_input::SessionSymbolicMemo>>,
     pub(crate) initializers: Option<Arc<crate::initializer_policy::InitializerArtifacts>>,
@@ -95,6 +110,7 @@ pub type CachePublisher = dyn Fn(Vec<dm_cache::Record>) -> Result<(), String> + 
 pub struct CachedProcedure {
     pub unit: crate::lowering::LoweredUnit,
     pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
+    retained_weight: usize,
 }
 pub(crate) fn rebase_debug(
     frontend: &dm_tree::frontend::ColdFrontend,
@@ -218,6 +234,9 @@ impl ProcedureMemo {
         Self {
             policy,
             resident_retention: ResidentRetention::Enabled,
+            rich_attempt: None,
+            publishable: true,
+            rich_owner: None,
             values: Arc::new(LoweringMemo::default()),
             symbolic: None,
             initializers: None,
@@ -269,6 +288,9 @@ impl ProcedureMemo {
         Self {
             policy,
             resident_retention: ResidentRetention::Enabled,
+            rich_attempt: None,
+            publishable: true,
+            rich_owner: None,
             values: Arc::new(LoweringMemo::with_limit(limits.resident_bytes)),
             symbolic: None,
             initializers: None,
@@ -601,14 +623,41 @@ impl ProcedureMemo {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
             return;
         };
+        // Serialize rich insertion/charge across concurrent attempts. Published
+        // and pending physical values are counted once by the shared core.
+        let _charge_guard = self.rich_owner.as_ref().map(|owner| {
+            owner
+                .insertion
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+        });
         if self
-            .values
-            .insert_with_shared(key, reads, versions, weight, || CachedProcedure {
-                unit: unit.clone(),
-                relative_debug,
-            })
-            .is_none()
+            .rich_owner
+            .as_ref()
+            .is_some_and(|owner| !owner.can_insert(weight))
         {
+            self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
+            return;
+        }
+        let accepted = if let Some(attempt) = &self.rich_attempt {
+            attempt
+                .with_pending(|lease| {
+                    lease.insert_with_receipt(key, reads.into(), weight, || CachedProcedure {
+                        unit: unit.clone(),
+                        relative_debug,
+                        retained_weight: weight,
+                    })
+                })
+                .flatten()
+        } else {
+            self.values
+                .insert_with_shared(key, reads, versions, weight, || CachedProcedure {
+                    unit: unit.clone(),
+                    relative_debug,
+                    retained_weight: weight,
+                })
+        };
+        if accepted.is_none() {
             self.counts.resident_dropped.fetch_add(1, Ordering::Relaxed);
         }
     }

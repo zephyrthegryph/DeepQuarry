@@ -11,17 +11,21 @@ mod receipt_groups;
 mod retained;
 pub(super) use receipt_groups::RequestAdmission;
 pub use retained::SymbolicRetentionStats;
+#[path = "symbolic_publication.rs"]
+mod symbolic_publication;
 
 #[derive(Default)]
 pub(crate) struct SessionSymbolicMemo {
     records: Mutex<BTreeMap<UnitIdentity, Arc<Record>>>,
+    publication: Option<Arc<symbolic_publication::Owner>>,
+    attempt: Option<dm_session::ArtifactAttempt<symbolic_publication::Leases>>,
     shared_code: Option<crate::symbolic::shared_procedure_code::Lease>,
     shared_code_pool: Option<Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>>,
     admitted: AtomicU64,
     reused: AtomicU64,
     pruned: AtomicU64,
     declines: DeclineCounters,
-    receipt_groups: receipt_groups::ProcedureGroups,
+    receipt_groups: Arc<receipt_groups::ProcedureGroups>,
 }
 #[derive(Default)]
 struct DeclineCounters {
@@ -194,14 +198,13 @@ impl CompletedInput {
                     .map_err(crate::cold::ColdError::Linking)?
             }
         };
-        if let Some(lease) = self
+        if let Some(store) = self
             .admission
             .as_ref()
             .and_then(|admission| admission.store.as_ref())
-            .and_then(|store| store.shared_code.as_ref())
         {
             if value.is_reusable() {
-                value.share_code(lease);
+                store.share_current_code(&mut value);
             }
         }
         if let Some(admission) = self.admission {
@@ -235,11 +238,7 @@ impl CompletedInput {
                                 .expect("reusable contribution has source recipes"),
                         ),
                     };
-                    store
-                        .records
-                        .lock()
-                        .unwrap_or_else(|e| e.into_inner())
-                        .insert(value.identity(), Arc::new(record));
+                    store.insert_record(value.identity(), record);
                     store.admitted.fetch_add(1, Ordering::Relaxed);
                 } else {
                     store
@@ -257,6 +256,7 @@ impl SessionSymbolicMemo {
         owner: &Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>,
     ) -> Self {
         Self {
+            publication: Some(Arc::new(symbolic_publication::Owner::default())),
             shared_code: Some(owner.lease()),
             shared_code_pool: Some(Arc::clone(owner)),
             ..Self::default()
@@ -265,13 +265,13 @@ impl SessionSymbolicMemo {
     /// Idle pressure release preserves code, observation ledgers and rebind
     /// recipes. Numeric link/wire answers are recreated on the next request.
     pub(crate) fn release_bound_images(&self) -> usize {
-        let records = self.records.lock().unwrap_or_else(|e| e.into_inner());
-        records.values().fold(0usize, |released, record| {
-            released.saturating_add(match &record.value {
-                RecordValue::Executable(artifact) => artifact.release_bound_images(),
-                RecordValue::Selections { .. } => 0,
-            })
-        })
+        let mut released = 0usize;
+        self.visit_records(|record| {
+            if let RecordValue::Executable(artifact) = &record.value {
+                released = released.saturating_add(artifact.release_bound_images());
+            }
+        });
+        released
     }
     pub(super) fn capture_excluded(&self) {
         self.declines
@@ -283,6 +283,12 @@ impl SessionSymbolicMemo {
         frontend: &ColdFrontend,
         prepared: Option<&PreparedBodyRoster<'_>>,
     ) {
+        if self.attempt.is_some() {
+            // Pending begins empty. Only fully admitted current units claim it;
+            // failed/analysis attempts cannot prune the published roster.
+            self.receipt_groups.prune();
+            return;
+        }
         let identities: std::collections::BTreeSet<_> = if let Some(prepared) = prepared {
             prepared
                 .ordered()
@@ -335,6 +341,57 @@ impl SessionSymbolicMemo {
         current: &PreparedBody<'_>,
     ) -> Option<CompletedInput> {
         let identity = current.source().identity;
+        if let Some(attempt) = &self.attempt {
+            let mut completed = None;
+            let mut accept = |record: &Arc<Record>| {
+                completed = self.lookup_record(
+                    record,
+                    key,
+                    prepared_tail,
+                    host,
+                    request_admission,
+                    observer,
+                    frontend,
+                    body,
+                    prepared,
+                    bodies,
+                    selections_only,
+                    current,
+                    true,
+                );
+                completed.is_some()
+            };
+            let accepted = attempt
+                .with_pending(|leases| {
+                    leases
+                        .records
+                        .visit_receipted_with(
+                            &symbolic_publication::locator(
+                                identity,
+                                &key.materialize(prepared_tail),
+                            ),
+                            &mut |reads, _| {
+                                if let Some(admission) = request_admission {
+                                    admission
+                                        .first_changed(reads, |leaf| observer.record_admitted(leaf))
+                                } else {
+                                    reads.iter().find_map(|read| {
+                                        (!same_meaning(&observer.resolve(read.query), &read.answer))
+                                            .then_some(read.query)
+                                    })
+                                }
+                            },
+                            &mut accept,
+                        )
+                        .0
+                })
+                .flatten();
+            let mut completed = accepted.and(completed)?;
+            if let Input::Reused(value) = &mut completed.inner {
+                self.share_current_code(value);
+            }
+            return Some(completed);
+        }
         let record = self
             .records
             .lock()
@@ -345,6 +402,39 @@ impl SessionSymbolicMemo {
                 self.declines.record_absent.fetch_add(1, Ordering::Relaxed);
                 None
             })?;
+        self.lookup_record(
+            &record,
+            key,
+            prepared_tail,
+            host,
+            request_admission,
+            observer,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            current,
+            false,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn lookup_record<R: Resolver>(
+        &self,
+        record: &Arc<Record>,
+        key: &crate::lowering_memo::key_recipe::CurrentKey<'_>,
+        prepared_tail: &crate::lowering_memo::key_recipe::PreparedKey,
+        host: &R,
+        request_admission: Option<&RequestAdmission<'_, R>>,
+        observer: &crate::lowering_memo::RecordingResolver<'_, R>,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        current: &PreparedBody<'_>,
+        reads_validated: bool,
+    ) -> Option<CompletedInput> {
         if !key.matches(&record.key, record.recipe.as_ref(), prepared_tail) {
             self.declines.key_changed.fetch_add(1, Ordering::Relaxed);
             return None;
@@ -355,7 +445,9 @@ impl SessionSymbolicMemo {
                 .reads
                 .iter()
                 .all(|read| read.domain == read.query.domain() && matching.contains(&read.domain));
-        let changed = if fully_certified {
+        let changed = if reads_validated {
+            false
+        } else if fully_certified {
             // Candidate-specific complete certificates do not populate a shared
             // leaf verdict. Each accepted leaf still reaches the observer.
             record.reads.visit_storage(|view| {
@@ -550,11 +642,7 @@ pub(super) fn remember_selections<R: Resolver>(
         required_types: Arc::from([]),
         modified_recipes: Arc::from([]),
     };
-    store
-        .records
-        .lock()
-        .unwrap_or_else(|error| error.into_inner())
-        .insert(identity, Arc::new(record));
+    store.insert_record(identity, record);
     store.admitted.fetch_add(1, Ordering::Relaxed);
 }
 pub(super) fn accepted_admission(

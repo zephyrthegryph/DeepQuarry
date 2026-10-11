@@ -220,6 +220,30 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         });
         (accepted, changed)
     }
+    /// SAME exact-key candidate loop with caller-supplied current receipt proof.
+    /// `validate` must authenticate every observation against this immutable
+    /// request before returning None. Claims follow full consumer admission.
+    pub fn visit_receipted_with(
+        &self,
+        key: &[u8],
+        validate: &mut dyn FnMut(&crate::Receipt<Q, A, D>, &[(D, u128)]) -> Option<Q>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        let (receipt, changed) = self.store.visit_receipted_with(key, validate, accept);
+        let accepted = receipt.map(|receipt| {
+            self.claim(
+                key,
+                ObservedArtifact {
+                    value: Arc::clone(&receipt.value),
+                    reads: receipt.reads.clone(),
+                    versions: Arc::clone(&receipt.versions),
+                    weight: receipt.weight,
+                },
+            );
+            receipt
+        });
+        (accepted, changed)
+    }
     pub fn insert_with(
         &self,
         key: Arc<[u8]>,

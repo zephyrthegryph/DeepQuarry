@@ -150,3 +150,36 @@ fn accepted_receipt_shares_exact_ledger_and_claims_only_after_admission() {
     assert_eq!(store.admitted_bytes(), 0);
     assert_eq!(*accepted.value, 11);
 }
+
+#[test]
+fn custom_current_receipt_proof_claims_only_after_complete_consumer_admission() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters();
+    let published = store.lease();
+    let key: Arc<[u8]> = Arc::from(b"recipe".as_slice());
+    let value = published
+        .insert_with_owned(Arc::clone(&key), reads(7), vec![], 1, || 19)
+        .unwrap();
+    let weak = Arc::downgrade(&value);
+    drop(value);
+    let pending = store.lease();
+    let mut consumer_called = false;
+    let rejected = pending.visit_receipted_with(
+        &key,
+        &mut |receipt, _| {
+            assert_eq!(receipt.iter().next().unwrap().answer, 7);
+            Some(0)
+        },
+        &mut |_| {
+            consumer_called = true;
+            true
+        },
+    );
+    assert!(rejected.0.is_none());
+    assert_eq!(rejected.1, Some(0));
+    assert!(!consumer_called);
+    let declined = pending.visit_receipted_with(&key, &mut |_, _| None, &mut |_| false);
+    assert!(declined.0.is_none());
+    drop(published);
+    assert!(weak.upgrade().is_none());
+    assert_eq!(store.admitted_bytes(), 0);
+}
