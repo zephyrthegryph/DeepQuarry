@@ -839,6 +839,25 @@
     "bounded_compact_census_commit": "400ae2720a",
     "early_facade_release_commit": "4b0444bae0",
     "store_entry_logs_commit": "c547f3ff31",
-    "scope": "Source fixes for observed pressure allocation failure; current boundedcheckrunning, no claimed memory/speed improvement untilrealrerun"
+    "scope": "Source fixes for observed pressure allocation failure; current boundedcheckrunning, no claimed memory/speed improvement untilrealrerun",
+    "six_package_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145256-8b08c932-job-cargo.json",
+    "six_package_check_passed": true,
+    "shared_core_focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145501-a0f1fa50-focused.json",
+    "shared_core_focused_passed": 11,
+    "shared_core_focused_failed": 0,
+    "compiler_focused_validation": {
+      "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+      "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-145502-f9d7139c-job-cargo.json",
+      "passed": 16,
+      "failed": 3,
+      "receipts": [
+        "20261011-145920-b81ba832-focused.json",
+        "20261011-145930-613adc4e-focused.json",
+        "20261011-145951-acda3ad9-focused.json",
+        "20261011-145957-8f0fd1b1-focused.json",
+        "20261011-150022-b5afc6fa-focused.json"
+      ],
+      "scope": "Focused compact-census/promotion/report/frame checks passed; two stale facade identity checks require published-owner assertions; actual query static resolver failure fixed in05ec496691 but rerun pending. Not full suite or real benchmark."
+    }
   }
 }
