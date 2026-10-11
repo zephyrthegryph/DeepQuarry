@@ -6,7 +6,7 @@
 use super::*;
 use std::collections::BTreeSet;
 
-pub(super) const POLICY: &[u8] = concat!(
+pub(crate) const POLICY: &[u8] = concat!(
     "ordinary-call-dispatch-5161687-v1\0",
     ". .. ASSERT CRASH abs addtext alert arccos arcsin arglist arguments ascii2text block break browse browse_rsc call ckey ckeyEx cmptext cmptextEx continue copytext cos del do fcopy fcopy_rsc fdel fexists file file2text findtext findtextEx flick flist for ftp get_dir get_dist get_step get_step_away get_step_rand get_step_to get_step_towards goto hascall hearers html_decode html_encode icon icon_states if image initial input isarea isfile isicon isloc ismob isnull isnum isobj ispath issaved istext isturf istype length lentext link list list2params locate log lowertext max md5 min missile new newlist num2text ohearers orange output oview oviewers params2list pick prob rand rand_seed range return rgb roll round run set shell shutdown sin sleep sorttext sorttextEx sound spawn sqrt startup stat statpanel step step_away step_rand step_to step_towards switch text text2ascii text2file text2num text2path time2text turn typesof uppertext url_decode url_encode var view viewers walk walk_away walk_rand walk_to walk_towards while winclone winexists winget winset winshow",
     // Additional 516 compiler forms and lexical pseudo-functions: these stay
@@ -15,7 +15,7 @@ pub(super) const POLICY: &[u8] = concat!(
 ).as_bytes();
 // Documented primitive/compiler-created paths remain opaque; this does not
 // infer runtime aliases or their executable representation.
-pub(super) const TYPE_POLICY: &str = "ordinary-type-namespace-5161687-v1\0/icon /image /mutable_appearance /matrix /regex /filter /generator /sound /savefile /database /database/query /world /client /list /alist /pixloc /vector /callee /exception";
+pub(crate) const TYPE_POLICY: &str = "ordinary-type-namespace-5161687-v1\0/icon /image /mutable_appearance /matrix /regex /filter /generator /sound /savefile /database /database/query /world /client /list /alist /pixloc /vector /callee /exception";
 
 pub(super) fn exclusions(catalog: &serde_json::Value) -> Result<BTreeSet<SymbolId>, String> {
     let mut names: BTreeSet<_> = std::str::from_utf8(POLICY)
