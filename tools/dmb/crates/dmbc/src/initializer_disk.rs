@@ -122,8 +122,8 @@ impl Transport {
         }
         let snapshot = self.disk.snapshot()?;
         let accepted = RefCell::new(None);
-        snapshot.get_candidate(Self::key(&recipe), |bytes, symbols| {
-            if !symbols.is_empty() {
+        snapshot.get_candidate(Self::key(&recipe), |bytes, spelling_sidecar| {
+            if !spelling_sidecar.is_empty() {
                 return Err("initializer unexpected spelling sidecar".into());
             }
             let candidates = Self::current_candidates(bytes, &recipe)?;
