@@ -141,6 +141,7 @@ pub enum VariableWord {
     StaticProc(SymRef),
     StaticVerb(SymRef),
     SetCache(Box<VariableWord>, Box<VariableWord>),
+    DynamicVerb(SymbolId),
 }
 
 impl Word {
@@ -172,9 +173,10 @@ impl Word {
 impl VariableWord {
     fn for_each_reference(&self, visit: &mut impl FnMut(SymRef)) {
         match self {
-            Self::Field(id) | Self::StaticField(id) | Self::DynamicProc(id) => {
-                visit(SymRef::String(*id))
-            }
+            Self::Field(id)
+            | Self::StaticField(id)
+            | Self::DynamicProc(id)
+            | Self::DynamicVerb(id) => visit(SymRef::String(*id)),
             Self::Global(reference) | Self::StaticProc(reference) | Self::StaticVerb(reference) => {
                 visit(*reference)
             }
@@ -193,6 +195,7 @@ impl VariableWord {
             | Self::Local(_)
             | Self::Global(_)
             | Self::DynamicProc(_)
+            | Self::DynamicVerb(_)
             | Self::StaticProc(_)
             | Self::StaticVerb(_)
             | Self::StaticField(_) => 2,

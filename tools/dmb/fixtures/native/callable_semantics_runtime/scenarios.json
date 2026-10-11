@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "steps": [
+    {
+      "name": "initial",
+      "expected": [
+        2,
+        99,
+        7,
+        11,
+        1,
+        23,
+        23,
+        23,
+        42,
+        1,
+        18,
+        16
+      ]
+    },
+    {
+      "name": "unchanged",
+      "expected": [
+        2,
+        99,
+        7,
+        11,
+        1,
+        23,
+        23,
+        23,
+        42,
+        1,
+        18,
+        16
+      ]
+    },
+    {
+      "name": "body",
+      "before": "    return marker\n",
+      "after": "    return marker + 5\n",
+      "expected": [
+        2,
+        99,
+        7,
+        11,
+        1,
+        28,
+        28,
+        28,
+        42,
+        1,
+        18,
+        16
+      ]
+    },
+    {
+      "name": "structural",
+      "before": "    var/marker = 23\n",
+      "after": "    var/marker = 31\n    var/added = 7\n",
+      "expected": [
+        2,
+        99,
+        7,
+        11,
+        1,
+        36,
+        36,
+        36,
+        42,
+        1,
+        18,
+        16
+      ]
+    }
+  ]
+}

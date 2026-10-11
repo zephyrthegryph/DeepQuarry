@@ -501,9 +501,15 @@ fn compose_records_access(
             long_chunks: chunks,
         });
     }
-    let mut string_index = {
+    let (mut string_index, string_seed) = {
         let _profile = dm_profile::stage("composition.string_index_build");
-        StringIndex::build(&dmb)?
+        match generation {
+            Some(owner) => {
+                let (index, seed) = owner.string_index(&dmb)?;
+                (index, Some(seed))
+            }
+            None => (StringIndex::build(&dmb)?, None),
+        }
     };
     let class_roster = if let Some((plan, _)) = projection {
         let _profile = dm_profile::stage("composition.materialize_types");
@@ -782,7 +788,8 @@ fn compose_records_access(
         .map_err(CompositionError::Decode)?;
     let bytes = match generation {
         Some(generation) => generation.encode(
-            generation::CertifiedGenerationInputs::after_validation(dmb),
+            generation::CertifiedGenerationInputs::after_validation(dmb)
+                .with_string_seed(string_seed),
             executor,
         )?,
         None => {

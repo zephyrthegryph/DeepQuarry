@@ -23,6 +23,16 @@
         throw new /exception("caught")
     catch(var/exception/caught)
         return istype(caught, /exception)
+/proc/explicit_array_methods()
+    var/list/value[2] = list(7)
+    value.Add(11)
+    var/list/copied = value.Copy()
+    return copied[1] + copied[2]
+/proc/implicit_array_methods()
+    var/value[2]
+    value.Add(13)
+    var/list/copied = value.Copy()
+    return length(copied) + copied[3]
 /world/New()
     ..()
     var/list/original = list(7, 11)
@@ -40,5 +50,7 @@
     world.log << "DQ_CALL self_verb [receiver.self_verb()]"
     world.log << "DQ_CALL catch_number [catch_number()]"
     world.log << "DQ_CALL catch_exception [catch_exception()]"
+    world.log << "DQ_CALL explicit_array_methods [explicit_array_methods()]"
+    world.log << "DQ_CALL implicit_array_methods [implicit_array_methods()]"
     world.log << "DQ_CALL finished"
     shutdown()

@@ -145,6 +145,26 @@ impl ClosedNamespace {
             false => Some(ResolvedMeaning::Presence(false)),
         }
     }
+    pub(super) fn verb_selector(
+        &self,
+        source: &dm_tree::SemanticTree,
+        name: SymbolId,
+    ) -> Option<ResolvedMeaning> {
+        let flags = source
+            .member_callable_name_storage()
+            .get(&name)
+            .copied()
+            .unwrap_or(0);
+        if flags & 1 != 0 || self.documented_names.contains(&name) {
+            Some(ResolvedMeaning::Presence(false))
+        } else if self.ambiguous_names.contains(&name) {
+            None
+        } else if flags & 2 != 0 {
+            Some(ResolvedMeaning::Presence(true))
+        } else {
+            None
+        }
+    }
     pub(super) fn excludes(
         &self,
         source: &dm_tree::SemanticTree,

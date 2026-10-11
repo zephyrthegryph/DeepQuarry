@@ -169,10 +169,12 @@ impl Compiler<'_> {
                     safe,
                 }
             }
-            VariableWord::DynamicProc(selector) => M::DynamicProcedure {
-                selector: *selector,
-                safe,
-            },
+            VariableWord::DynamicProc(selector) | VariableWord::DynamicVerb(selector) => {
+                M::DynamicProcedure {
+                    selector: *selector,
+                    safe,
+                }
+            }
             _ => return,
         };
         self.record_selection(callee, name, meaning);

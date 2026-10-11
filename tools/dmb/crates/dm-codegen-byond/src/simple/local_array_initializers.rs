@@ -27,6 +27,15 @@ impl Compiler<'_> {
         statement: &str,
         initializer: Option<impl FnOnce(&mut Self) -> Result<(), LowerError>>,
     ) -> Result<(), LowerError> {
+        // Sized declarations issue an actual list receiver, whether or not the
+        // authored spelling includes /list. Both typed and compatibility paths
+        // share this producer; later member validation still checks the resolver.
+        let name = self
+            .locals
+            .get(slot as usize)
+            .ok_or_else(|| error(statement, "local array slot is unavailable"))?
+            .clone();
+        self.local_types.insert(name, "/list".into());
         let explicit = initializer.is_some();
         let source_ordinal = self.debug_current;
         if let Some(initializer) = initializer {

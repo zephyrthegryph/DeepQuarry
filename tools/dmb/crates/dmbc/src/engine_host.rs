@@ -435,6 +435,18 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
+            if matches!(query, Q::MemberCallableName(_)) {
+                // Exact per-name source availability is qualified by the same
+                // immutable provider that supplies documented native positives
+                // and complete reviewed member-name exclusion. Ambiguous names
+                // remain unissued, even if source absence itself is certified.
+                if !matches!(self.resolve(query), M::Presence(_))
+                    || self.intrinsic_methods.is_none()
+                {
+                    return None;
+                }
+                return Some((u128::from(base) << 64) | u128::from(self.callable_issuer?));
+            }
             // Global authored-name exclusion can change fallback answers even
             // when this owner's source declarations are unchanged. Such reads
             // are not certified by a local owner token.
@@ -500,6 +512,11 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
 
     fn resolve(&self, query: Q) -> M {
         match query {
+            Q::MemberCallableVerbName(_) => self
+                .intrinsic_methods
+                .as_ref()
+                .and_then(|catalog| catalog.resolve(query))
+                .unwrap_or(M::Unsupported(query)),
             Q::PredefinedConstant(name) => self
                 .constants
                 .values

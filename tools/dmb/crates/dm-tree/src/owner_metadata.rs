@@ -29,6 +29,7 @@ pub enum MetadataQuery {
     CallableSelection(SymbolId, SymbolId, bool),
     CallablePresence(SymbolId, SymbolId),
     VariableLocal(SymbolId, SymbolId),
+    MemberName(SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
@@ -37,6 +38,7 @@ pub enum MetadataAnswer {
     Hierarchy(Arc<[SymbolId]>),
     CallableLocal(Arc<CallableInputs>),
     VariableLocal(Arc<VariableInputs>),
+    MemberName(bool),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataDomain {
@@ -52,11 +54,15 @@ impl MetadataQuery {
             | Self::CallableLocal(_)
             | Self::CallableSelection(..)
             | Self::CallablePresence(..)
-            | Self::VariableLocal(..) => MetadataDomain::Namespace,
+            | Self::VariableLocal(..)
+            | Self::MemberName(_) => MetadataDomain::Namespace,
         }
     }
 }
 enum EffectiveOwner {
+    MemberName {
+        version: u128,
+    },
     Members {
         selection: Arc<crate::HostDeclarationSelection>,
         // Only fields changed by the ordinary inheritance resolver. The exact
@@ -127,7 +133,8 @@ impl<M: crate::member_binding::MemberRead + ?Sized>
             MetadataQuery::CallableLocal(_)
             | MetadataQuery::CallableSelection(..)
             | MetadataQuery::CallablePresence(..)
-            | MetadataQuery::VariableLocal(..) => {
+            | MetadataQuery::VariableLocal(..)
+            | MetadataQuery::MemberName(_) => {
                 unreachable!("effective metadata records no callable certificate inputs")
             }
             MetadataQuery::Hierarchy(owner) => {
@@ -203,6 +210,7 @@ impl RetainedMetadata {
                     EffectiveOwner::Callable { inputs, .. } => {
                         visit(MetadataStorageView::CallableLocal(inputs))
                     }
+                    EffectiveOwner::MemberName { .. } => (),
                     EffectiveOwner::Variable { inputs, .. } => {
                         visit(MetadataStorageView::VariableLocal(inputs))
                     }

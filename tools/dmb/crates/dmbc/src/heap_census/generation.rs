@@ -5,6 +5,7 @@ use super::*;
 impl HeapCensus {
     pub fn composition_generation(&mut self, generation: &crate::composition::RetainedGeneration) {
         generation.census_plan(self);
+        generation.census_string_index(self);
         generation.census_headers(self);
         generation.visit_retained(|model, encoded| {
             self.dmb_image(model);

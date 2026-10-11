@@ -460,3 +460,31 @@ fn safe_receiver_and_catch_controls_match_authenticated_native_diagnostics() {
         }
     }
 }
+
+#[test]
+fn sized_local_array_receivers_use_issued_list_type_and_validate_methods() {
+    for source in [
+        "/proc/probe()\n    var/list/trx[0]\n    trx.Add(1)\n    return trx.Copy()\n",
+        "/proc/probe()\n    var/trx[0]\n    trx.Add(1)\n    return trx.Copy()\n",
+        "/proc/probe()\n    var/datum/trx[2]\n    trx.Add(null)\n    return trx.Copy()\n",
+        "/proc/probe()\n    var/list/trx[1][2]\n    trx.Add(1)\n    return trx.Copy()\n",
+    ] {
+        let batch = production_lower(source);
+        assert!(
+            batch.diagnostics.is_empty(),
+            "{source}: {:?}",
+            batch.diagnostics
+        );
+        assert_eq!(batch.units.len(), 1);
+    }
+    let batch = production_lower(
+        "/proc/probe()\n    var/list/trx[0]\n    return trx.no_such_array_method()\n",
+    );
+    assert!(batch.units.is_empty());
+    assert_eq!(batch.diagnostics.len(), 1);
+    // The pinned list catalog supplies positives, but its complete negative
+    // namespace is not yet issued. Missing list methods must still fail closed;
+    // exact BYOND diagnostic classification remains a separate open gate.
+    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::UnsupportedModel);
+    assert_eq!(batch.diagnostics[0].origin.line, 3);
+}

@@ -88,3 +88,90 @@ fn source_verbs_issue_member_name_availability_without_admitting_globals() {
         None
     );
 }
+
+#[test]
+fn demanded_member_name_receipt_survives_unrelated_edits_and_tracks_absence() {
+    use dm_ir::{ResolveQuery, Resolver};
+    let mut state = RetainedSemanticTree::default();
+    let build_admitted = |state: &mut RetainedSemanticTree, source| {
+        // Exercise production engine attachment before final issuer publication.
+        // Post-hoc with_complete_intrinsics would publish two distinct revisions
+        // and intentionally prune demands not read in the intermediate revision.
+        let mut symbols = dm_ir::SymbolTable::default();
+        let root = symbols.intern("/").unwrap();
+        let datum = symbols.intern("/datum").unwrap();
+        let seed = crate::frontend::EngineSeed {
+            identity: 19,
+            symbols,
+            hierarchy: crate::EngineHierarchy {
+                schema: 19,
+                parents: vec![(root, None), (datum, Some(root))],
+            },
+            intrinsics: Vec::new().into(),
+            fields: Vec::new().into(),
+        };
+        let executor = dm_exec::BuildExecutor::new(1).unwrap();
+        build_with_executor_and_semantic_state(
+            Path::new("member_names.dme"),
+            &Source(source),
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 1,
+                engine: Some(&seed),
+                observer: None,
+            },
+            None,
+            &executor,
+            Some(state),
+        )
+        .unwrap()
+    };
+    let first = build_admitted(&mut state, "/datum/a/proc/member()\n    return 1\n");
+    let first_admitted = &first.snapshot.tree;
+    let absent = ResolveQuery::MemberCallableName(SymbolId::of("future"));
+    let present = ResolveQuery::MemberCallableName(SymbolId::of("member"));
+    let version = first_admitted.domain_version(absent.domain()).unwrap();
+    let member_version = first_admitted.domain_version(present.domain()).unwrap();
+    assert_eq!(
+        build(
+            &mut RetainedSemanticTree::default(),
+            "/datum/a/proc/member()\n    return 1\n"
+        )
+        .snapshot
+        .tree
+        .domain_version(absent.domain()),
+        None,
+        "incomplete source cannot borrow admitted negative"
+    );
+    let unrelated = build_admitted(
+        &mut state,
+        "/datum/a/proc/member()\n    return 1\n/datum/b/proc/other()\n    return 2\n",
+    );
+    let unrelated = &unrelated.snapshot.tree;
+    assert_eq!(unrelated.domain_version(absent.domain()), Some(version));
+    assert_eq!(
+        unrelated.domain_version(present.domain()),
+        Some(member_version)
+    );
+    let changed = build_admitted(
+        &mut state,
+        "// shifted\n/datum/a/proc/member()\n    return 3\n/datum/b/verb/future()\n    return 4\n",
+    );
+    let changed = &changed.snapshot.tree;
+    assert_ne!(changed.domain_version(absent.domain()), Some(version));
+    assert_eq!(
+        Resolver::resolve(changed.as_ref(), absent),
+        dm_ir::ResolvedMeaning::Presence(true)
+    );
+    assert_eq!(
+        first_admitted.domain_version(absent.domain()),
+        Some(version),
+        "old issued snapshot remains immutable"
+    );
+    let unqueried = ResolveQuery::MemberCallableName(SymbolId::of("never_queried"));
+    assert_eq!(
+        first_admitted.domain_version(unqueried.domain()),
+        None,
+        "old unqueried cannot mint current authority"
+    );
+}

@@ -35,15 +35,17 @@ def read_text(file):
     return raw.decode("utf-16" if raw.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig")
 
 
-def expected_markers(values):
-    if not isinstance(values, list) or len(values) != len(LABELS) or any(type(value) is not int for value in values):
-        raise ValueError("scenario must declare all nine integer expectations")
-    return [f"DQ_CONTRACT {name} {value}" for name, value in zip(LABELS, values)] + ["DQ_CONTRACT finished"]
+def expected_markers(values, labels=LABELS, prefix="DQ_CONTRACT"):
+    if not isinstance(prefix, str) or not re.fullmatch(r"DQ_[A-Z_]+", prefix):
+        raise ValueError("invalid declared marker prefix")
+    if not isinstance(values, list) or len(values) != len(labels) or any(type(value) is not int for value in values):
+        raise ValueError("scenario must declare all declared integer expectations")
+    return [f"{prefix} {name} {value}" for name, value in zip(labels, values)] + [f"{prefix} finished"]
 
 
-def observations(file, expected):
+def observations(file, expected, prefix="DQ_CONTRACT"):
     text = read_text(file)
-    markers = [line[line.index("DQ_CONTRACT "):] for line in text.splitlines() if "DQ_CONTRACT " in line]
+    markers = [line[line.index(prefix + " "):] for line in text.splitlines() if prefix + " " in line]
     errors = [line for line in text.splitlines()
               if re.search(r"runtime error:|Runtime in .+?\.dm,\d+:", line, re.IGNORECASE)]
     result = {"markers": markers, "runtime_errors": errors, "expected": expected,
@@ -81,7 +83,7 @@ def apply_step(source, step):
     return source.replace(before, after, 1)
 
 
-def read_steps(file):
+def read_steps(file, labels=LABELS, prefix="DQ_CONTRACT"):
     if file.stat().st_size > 64 * 1024:
         raise ValueError("scenario descriptor exceeds 64KiB")
     descriptor = json.loads(file.read_text(encoding="utf-8"))
@@ -94,7 +96,7 @@ def read_steps(file):
         if not isinstance(name, str) or not re.fullmatch(r"[a-z_]+", name) or name in names:
             raise ValueError("scenario names must be unique safe path components")
         names.add(name)
-        expected_markers(step.get("expected"))
+        expected_markers(step.get("expected"), labels, prefix)
     return steps
 
 
@@ -117,7 +119,8 @@ def owned_daemon_route(h, cache):
     return namespace, h.Endpoint(namespace), environment
 
 
-def main():
+def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", scope="nine explicit standalone semantic observations including embedded resource replacement"):
+    fixture_directory = Path(fixture_directory).resolve(strict=True)
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("native", "template", "dm", "dd"):
         parser.add_argument("--" + name, type=Path, required=True)
@@ -133,10 +136,10 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 1, "scope": "nine explicit standalone semantic observations including embedded resource replacement",
+    receipt = {"schema": 1, "scope": scope,
                "acceptance_profile": False, "complete": False, "matches": False,
                "root": str(root), "steps": [], "executions": {}}
-    receipt["fixture_sources"] = {name: h.sha(HERE / name) for name in ("probe.dm", "probe.dme", "scenarios.json", "contract-resource.txt")}
+    receipt["fixture_sources"] = {name: h.sha(fixture_directory / name) for name in ("probe.dm", "probe.dme", "scenarios.json", "contract-resource.txt")}
     daemon = None
     memory = None
     previous_memory = h._owned_memory
@@ -152,13 +155,13 @@ def main():
                 raise ValueError("pinned input SHA mismatch: " + name)
             setattr(args, name, file)
             retirement.record_pin(receipt, name, file, expected)
-        steps = read_steps(HERE / "scenarios.json")
-        source = (HERE / "probe.dm").read_text(encoding="utf-8")
-        resource = (HERE / "contract-resource.txt").read_text(encoding="utf-8")
+        steps = read_steps(fixture_directory / "scenarios.json", labels, prefix)
+        source = (fixture_directory / "probe.dm").read_text(encoding="utf-8")
+        resource = (fixture_directory / "contract-resource.txt").read_text(encoding="utf-8")
         native_source, byond_source = root / "native-source", root / "byond-source"
         for directory in (native_source, byond_source):
             directory.mkdir()
-            shutil.copyfile(HERE / "probe.dme", directory / "probe.dme")
+            shutil.copyfile(fixture_directory / "probe.dme", directory / "probe.dme")
         cache = root / "cache"
         namespace, endpoint, environment = owned_daemon_route(h, cache)
         receipt["daemon_namespace"] = namespace
@@ -196,7 +199,7 @@ def main():
             source = apply_step(source, step)
             if "resource_before" in step or "resource_after" in step:
                 resource = apply_step(resource, {"before": step.get("resource_before"), "after": step.get("resource_after")})
-            expected = expected_markers(step["expected"])
+            expected = expected_markers(step["expected"], labels, prefix)
             label = f"{index:02d}-{step['name']}"
             row = {"name": step["name"], "status": "pending", "expected": expected}
             receipt["steps"].append(row)
@@ -228,7 +231,7 @@ def main():
                 row["byond_outputs"][extension] = {"present": True, "sha256": h.sha(original), "bytes": original.stat().st_size}
             run(label + "/byond-runtime", args.dd,
                 [str(byond_runtime / "probe.dmb"), "-close", "-trusted", "-invisible", "-logself"], 30, runtime=True)
-            row["byond"] = observations(byond_runtime / "probe.log", expected)
+            row["byond"] = observations(byond_runtime / "probe.log", expected, prefix)
             if not row["byond"]["matches_expected"]:
                 raise ValueError("BYOND does not match the declared runtime expectation: " + step["name"])
 
@@ -256,7 +259,7 @@ def main():
                 row[mode + "_pair"]["runtime_copies"] = runtime_evidence
                 run(label + "/" + mode + "-runtime", args.dd,
                     [str(dmb), "-close", "-trusted", "-invisible", "-logself"], 30, runtime=True)
-                row[mode] = observations(dmb.with_suffix(".log"), expected)
+                row[mode] = observations(dmb.with_suffix(".log"), expected, prefix)
                 if not row[mode]["matches_expected"]:
                     raise ValueError(mode + " does not match declared expectations: " + step["name"])
                 for extension in ("dmb", "rsc"):
@@ -280,7 +283,7 @@ def main():
                     raise ValueError("current resource input changed during a request")
             row["status"] = "passed"
         for name in receipt["fixture_sources"]:
-            if h.sha(HERE / name) != receipt["fixture_sources"][name]:
+            if h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:
                 raise ValueError("committed fixture changed during the cohort")
         for name in ("native", "template", "dm", "dd"):
             if h.sha(getattr(args, name)) != getattr(args, name + "_sha256"):

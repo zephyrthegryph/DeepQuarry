@@ -12,7 +12,8 @@ import uuid
 
 HERE = Path(__file__).resolve().parent
 BENCH = HERE.parents[2] / "bench"
-CASES = ('local_known_dot', 'local_missing_dot', 'local_known_colon', 'local_typed_list')
+ORIGINAL_CASES = ('local_known_dot', 'local_missing_dot', 'local_known_colon', 'local_typed_list')
+CASES = ORIGINAL_CASES + ('array_explicit', 'array_implicit', 'array_element', 'array_multi', 'array_missing')
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
 def diagnostics(text):
@@ -31,6 +32,7 @@ def bounded_log(directory):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cases", nargs="+", choices=CASES, default=ORIGINAL_CASES)
     parser.add_argument("--backend", choices=("both", "byond-only"), default="both")
     for name in ("native", "template", "dm"):
         parser.add_argument("--" + name, required=name == "dm", type=Path)
@@ -38,6 +40,7 @@ def main():
     parser.add_argument("--output-root", type=Path,
                         default=Path("E:/dq-cache/dmb-local-receiver-diagnostics"))
     args = parser.parse_args()
+    cases = tuple(args.cases)
     backends = ("byond", "native") if args.backend == "both" else ("byond",)
     pins = ("native", "template", "dm") if args.backend == "both" else ("dm",)
     if any(getattr(args, name) is None or getattr(args, name + "_sha256") is None for name in pins):
@@ -53,7 +56,7 @@ def main():
     args.output_root.mkdir(parents=True, exist_ok=True)
     root = args.output_root / uuid.uuid4().hex
     root.mkdir()
-    receipt = {"schema": 1, "scope": "four compiler-only local receiver controls",
+    receipt = {"schema": 1, "scope": "compiler-only local receiver controls",
                "complete": False, "runtime": "not run", "root": str(root),
                "overall_watchdog_seconds": 90, "child_watchdog_seconds": 30,
                "job_memory_bytes": 4 * 1024 ** 3, "pins": {}, "cases": {}}
@@ -71,12 +74,12 @@ def main():
                 raise ValueError("DreamMaker must be pinned 516.1687 capture compiler")
             setattr(args, name, file)
             receipt["pins"][name] = {"path": str(file), "sha256": expected}
-        source_hashes = {path.name: h.sha(path) for case in CASES
+        source_hashes = {path.name: h.sha(path) for case in cases
                          for path in (HERE / (case + ".dm"), HERE / (case + ".dme"))}
         receipt["source_sha256"] = source_hashes
         job = OwnedJob(4 * 1024 ** 3)
         h._owned_job = job
-        for case in CASES:
+        for case in cases:
             outcomes = {}
             receipt["cases"][case] = outcomes
             for backend in backends:
@@ -104,7 +107,10 @@ def main():
                     name = case + suffix
                     if h.sha(directory / name) != source_hashes[name] or h.sha(HERE / name) != source_hashes[name]:
                         raise ValueError("source changed during probe")
-            pinned = json.loads((HERE / "byond_observations.json").read_text(encoding="utf-8"))["byond"][case]
+            pinned = json.loads((HERE / "byond_observations.json").read_text(encoding="utf-8"))["byond"].get(case)
+            if pinned is None:
+                expected = [] if case != "array_missing" else [{"file": "array_missing.dm", "line": 3, "severity": "error", "message": "trx.no_such_array_method: undefined proc"}]
+                pinned = {"child": {"exit": 0 if case != "array_missing" else 1}, "diagnostics": expected}
             outcomes["byond_contract_agrees"] = ((outcomes["byond"]["child"]["exit"] == 0) == (pinned["child"]["exit"] == 0) and outcomes["byond"]["diagnostics"] == pinned["diagnostics"])
             if not outcomes["byond_contract_agrees"]:
                 raise ValueError("authenticated BYOND contract changed: " + case)
@@ -132,9 +138,9 @@ def main():
             receipt["paired_parity"] = "not measured"
         else:
             receipt["backend"] = "both"
-        receipt["acceptance_agrees"] = all(receipt["cases"][case].get("acceptance_agrees", False) for case in CASES)
-        receipt["rejection_class_agrees"] = all(receipt["cases"][case].get("rejection_class_agrees", False) for case in CASES)
-        receipt["diagnostics_agree"] = all(receipt["cases"][case].get("diagnostics_agree", False) for case in CASES)
+        receipt["acceptance_agrees"] = all(receipt["cases"][case].get("acceptance_agrees", False) for case in cases)
+        receipt["rejection_class_agrees"] = all(receipt["cases"][case].get("rejection_class_agrees", False) for case in cases)
+        receipt["diagnostics_agree"] = all(receipt["cases"][case].get("diagnostics_agree", False) for case in cases)
     except Exception as error:
         receipt["error"] = str(error)
     finally:

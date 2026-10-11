@@ -65,6 +65,19 @@ impl HeapCensus {
                 }
             }
         }
+        dmb.lists.visit_encoding(|address,size,words,image,ranges,len,capacity| {
+            if self.buffer("dmb_list_encoding",address,size,size) {
+                self.vec_payload("dmb_list_encoding_words",words);
+                for words in words {
+                    if self.arc_object("dmb_list_word_owners",words) {self.vec_payload("dmb_other_list_words",words);}
+                }
+                self.output_encoded("dmb_list_encoding_bytes",image);
+                self.vec_payload("dmb_list_encoding_ranges",ranges);
+                self.observe_items("dmb_list_encoding_owner_index",len);
+                self.unknown("dmb_list_encoding_owner_index","HashMap private backing/control layout excluded; logical capacity is not byte size");
+                let _=capacity;
+            }
+        });
         self.vec_payload("dmb_world", &dmb.world.client_script_files);
         self.vec_payload("dmb_header", &dmb.header.version_line);
         self.vec_payload("dmb_header", &dmb.header.compatibility_line);

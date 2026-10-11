@@ -285,10 +285,14 @@ impl Emission {
                 RelocationKind::String,
                 OperandEncoding::Direct,
             )?,
-            VariableWord::StaticField(id) | VariableWord::DynamicProc(id) => {
+            VariableWord::StaticField(id)
+            | VariableWord::DynamicProc(id)
+            | VariableWord::DynamicVerb(id) => {
                 self.words
                     .push(if matches!(variable, VariableWord::StaticField(_)) {
                         0xffe7
+                    } else if matches!(variable, VariableWord::DynamicVerb(_)) {
+                        0xffde
                     } else {
                         0xffdd
                     });

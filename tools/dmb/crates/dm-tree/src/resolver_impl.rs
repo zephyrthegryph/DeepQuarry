@@ -14,6 +14,12 @@ impl dm_ir::Resolver for SemanticTree {
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let selection = match query {
+                dm_ir::ResolveQuery::MemberCallableName(name) => {
+                    return self
+                        .owner_certificate_issuer
+                        .as_ref()?
+                        .demanded_member_name(self, name)
+                }
                 dm_ir::ResolveQuery::Signature(path) => {
                     if matches!(
                         dm_ir::Resolver::resolve(self, query),
@@ -251,6 +257,18 @@ impl dm_ir::Resolver for SemanticTree {
                         )))
                     })
                     .unwrap_or(M::Missing)
+            }
+            Q::MemberCallableVerbName(name) => {
+                let flags = self
+                    .member_callable_name_storage()
+                    .get(&name)
+                    .copied()
+                    .unwrap_or(0);
+                return match flags {
+                    flags if flags & 1 != 0 => M::Presence(false),
+                    flags if flags & 2 != 0 => M::Presence(true),
+                    _ => M::Unsupported(query),
+                };
             }
             Q::MemberCallableName(name) => {
                 return if self.source_member_callable_name(name) == Some(true) {

@@ -425,6 +425,7 @@ impl ProjectResolver<'_> {
             }
             Q::GlobalVar(name)
             | Q::GlobalProc(name)
+            | Q::MemberCallableVerbName(name)
             | Q::MemberCallableName(name)
             | Q::UniqueStaticVar(name)
             | Q::PredefinedConstant(name) => self

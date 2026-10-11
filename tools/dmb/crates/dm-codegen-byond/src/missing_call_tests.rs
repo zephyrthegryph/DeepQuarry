@@ -137,6 +137,7 @@ fn untyped_dot_rejects_but_colon_records_exact_name_availability() {
         fn resolve(&self, query: Q) -> M {
             self.0.lock().unwrap().push(query);
             match query {
+                Q::MemberCallableVerbName(_) => M::Presence(false),
                 Q::MemberCallableName(_) => {
                     self.1.map(M::Presence).unwrap_or(M::Unsupported(query))
                 }
@@ -302,4 +303,50 @@ fn untyped_local_dot_rejects_even_known_member_name() {
     .expect("untyped local dot rejects");
     assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
     assert_eq!(errors[0].reason, "value.Copy: undefined proc");
+}
+
+#[test]
+fn dynamic_colon_verb_uses_native_verb_namespace_operand() {
+    struct Host(bool);
+    impl Resolver for Host {
+        fn resolve(&self, query: Q) -> M {
+            match query {
+                Q::MemberCallableName(_) => M::Presence(true),
+                Q::MemberCallableVerbName(_) => M::Presence(self.0),
+                _ => M::Unsupported(query),
+            }
+        }
+    }
+    let ast = dm_syntax::parse("/proc/probe(value)\n    return value:member_only()\n");
+    let inputs = ProcedureInputs {
+        parameters: vec!["value".into()],
+        ..Default::default()
+    };
+    let mut symbols = SymbolTable::default();
+    symbols.intern("member_only").unwrap();
+    // Authenticated callable runtime: BYOND DynamicVerb 0xffde; mixed
+    // proc/verb compiler control selects DynamicProc 0xffdd instead.
+    for verb in [false, true] {
+        let compiled = crate::compile_simple_proc_with_resolver(
+            &ast.items[0].children,
+            &inputs,
+            &symbols,
+            &Host(verb),
+        )
+        .ok()
+        .expect("certified dynamic call");
+        let mut ledger = crate::Ledger::default();
+        ledger
+            .assign(
+                crate::Table::String,
+                compiled.procedure
+                    .strings
+                    .iter()
+                    .map(|value| dm_ir::SymRef::String(value.id)),
+            )
+            .unwrap();
+        let linked = crate::link_proc(&compiled.procedure.code, &ledger).unwrap();
+        assert!(linked.words.contains(&if verb { 0xffde } else { 0xffdd }));
+        assert!(!linked.words.contains(&if verb { 0xffdd } else { 0xffde }));
+    }
 }

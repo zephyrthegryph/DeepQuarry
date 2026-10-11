@@ -10,10 +10,18 @@ use std::sync::Mutex;
 /// replace those checks with an output fingerprint.
 pub(super) struct CertifiedGenerationInputs {
     model: Dmb,
+    string_seed: Option<strings::StringSeed>,
 }
 impl CertifiedGenerationInputs {
+    pub(super) fn with_string_seed(mut self, seed: Option<strings::StringSeed>) -> Self {
+        self.string_seed = seed;
+        self
+    }
     pub(super) fn after_validation(model: Dmb) -> Self {
-        Self { model }
+        Self {
+            model,
+            string_seed: None,
+        }
     }
 }
 
@@ -31,6 +39,36 @@ struct Generation {
     encoded: byond_dmb::dmb::EncodedDmb,
 }
 impl RetainedGeneration {
+    pub(super) fn string_index(
+        &self,
+        model: &Dmb,
+    ) -> Result<(StringIndex, strings::StringSeed), CompositionError> {
+        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+        let mut index = current
+            .as_ref()
+            .and_then(|old| {
+                old.inputs
+                    .string_seed
+                    .as_ref()
+                    .and_then(|seed| seed.admit(model, &old.inputs.model))
+            })
+            .map(Ok)
+            .unwrap_or_else(|| StringIndex::build(model))?;
+        let seed = index.seed(model.strings.len());
+        Ok((index, seed))
+    }
+    pub(crate) fn census_string_index(&self, census: &mut crate::heap_census::HeapCensus) {
+        if let Some(seed) = self
+            .current
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .and_then(|generation| generation.inputs.string_seed.as_ref())
+        {
+            seed.census(census);
+        }
+    }
+
     pub(crate) fn census_headers(&self, census: &mut crate::heap_census::HeapCensus) {
         census.header_recipes(&self.header_recipes);
     }
@@ -53,11 +91,30 @@ impl RetainedGeneration {
         {
             return Ok(hit.encoded.clone());
         }
-        // Equality is complete. Release the previous model/encoded owner before
-        // encoding its replacement; errors leave an empty performance memo.
+        // Equality is complete. Reuse only the previous successful generation
+        // during canonical row encoding; errors leave an empty performance memo.
+        let encoded_result = {
+            let _profile = dm_profile::stage("composition.encode");
+            inputs
+                .model
+                .encode_reusing_list_rows(
+                    current
+                        .as_ref()
+                        .map(|previous| &previous.inputs.model.lists),
+                    executor,
+                )
+                .map_err(CompositionError::Decode)
+        };
+        // The previous generation is only a source of immutable row encodings.
+        // Release it before decoder validation and publication of its replacement.
         *current = None;
-        let encoded = encode_model(&inputs.model, executor)?;
+        let (encoded, certificate) = encoded_result?;
         validate_encoded(&encoded)?;
+        if !inputs.model.lists.retain_encoded_rows(certificate) {
+            return Err(unsupported(
+                "canonical row certificate differs from current words",
+            ));
+        }
         *current = Some(Generation {
             inputs,
             encoded: encoded.clone(),
@@ -182,6 +239,46 @@ mod tests {
     use super::*;
     fn model() -> Dmb {
         Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap()
+    }
+    #[test]
+    fn successful_generation_reuses_initial_string_seed_with_fresh_output_parity() {
+        let owner = RetainedGeneration::default();
+        let initial = model();
+        let (mut index, seed) = owner.string_index(&initial).unwrap();
+        let mut first_model = initial.clone();
+        index
+            .intern(&mut first_model, b"late generation metadata")
+            .unwrap();
+        owner
+            .encode(
+                CertifiedGenerationInputs::after_validation(first_model)
+                    .with_string_seed(Some(seed)),
+                None,
+            )
+            .unwrap();
+        let (mut retained, next_seed) = owner.string_index(&initial).unwrap();
+        let mut next = initial.clone();
+        let mut fresh = initial.clone();
+        let mut fresh_index = StringIndex::build(&fresh).unwrap();
+        for bytes in [
+            b"replacement metadata".as_slice(),
+            b"late generation metadata",
+        ] {
+            assert_eq!(
+                retained.intern(&mut next, bytes).unwrap(),
+                fresh_index.intern(&mut fresh, bytes).unwrap()
+            );
+        }
+        let result = owner
+            .encode(
+                CertifiedGenerationInputs::after_validation(next).with_string_seed(Some(next_seed)),
+                None,
+            )
+            .unwrap();
+        assert_eq!(result.bytes(), fresh.encode().unwrap().bytes());
+        owner.clear();
+        let (_, seed_after_clear) = owner.string_index(&initial).unwrap();
+        assert!(seed_after_clear.admit(&initial, &initial).is_some());
     }
     #[test]
     fn complete_model_equality_reuses_and_ordered_payload_change_invalidates() {

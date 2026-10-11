@@ -23,7 +23,7 @@ pub use records::{
 pub use writing::EncodedDmb;
 #[path = "dmb_lists.rs"]
 mod word_lists;
-pub use word_lists::WordLists;
+pub use word_lists::{EncodedListRows, WordLists};
 #[path = "dmb_resources.rs"]
 mod resource_attachment;
 pub use resource_attachment::{attach_resource_refs, ResourceAttachment, ResourceLookup};
@@ -816,6 +816,24 @@ impl Dmb {
     }
     pub fn encode_on_executor(&self, executor: &dm_exec::BuildExecutor) -> io::Result<EncodedDmb> {
         writing::write(self, Some(executor)).map(|(owner, _)| owner)
+    }
+    /// Canonical encoder with optional row serialization from an admitted previous
+    /// generation. All current model validation, ordering and final hashing remain.
+    /// Retain the opaque row certificate only after independent output validation.
+    pub fn encode_reusing_list_rows(
+        &self,
+        previous: Option<&WordLists>,
+        executor: Option<&dm_exec::BuildExecutor>,
+    ) -> io::Result<(EncodedDmb, EncodedListRows)> {
+        let previous = previous.and_then(WordLists::encoding);
+        let (image, ranges) = writing::write_reusing_lists(self, executor, previous.as_deref())?;
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
+        };
+        let certificate = self.lists.issue_encoding(&image, ranges, width)?;
+        Ok((image, certificate))
     }
     /// Encodes canonical table chunks on the existing build executor. No global
     /// pool or additional OS workers are created.

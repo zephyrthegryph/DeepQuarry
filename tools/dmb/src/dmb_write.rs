@@ -296,6 +296,13 @@ pub(super) fn write(
     dmb: &Dmb,
     executor: Option<&BuildExecutor>,
 ) -> io::Result<(EncodedDmb, Vec<Range<usize>>)> {
+    write_reusing_lists(dmb, executor, None)
+}
+pub(super) fn write_reusing_lists(
+    dmb: &Dmb,
+    executor: Option<&BuildExecutor>,
+    previous: Option<&super::word_lists::ListEncoding>,
+) -> io::Result<(EncodedDmb, Vec<Range<usize>>)> {
     if dmb.header.version_line != b"world bin v516\n"
         || !dmb
             .header
@@ -478,14 +485,21 @@ pub(super) fn write(
                 .ok_or_else(|| invalid("list serialization size overflow"))
         })
         .collect::<io::Result<Vec<_>>>()?;
+    let rows: Vec<_> = dmb.lists.storage().iter().enumerate().collect();
     let list_spans = table(
         &mut w,
         &mut hash,
-        dmb.lists.storage(),
+        &rows,
         executor,
         Some(&list_sizes),
         true,
-        |w, list, _| {
+        |w, &(ordinal, list), _| {
+            if let Some(bytes) =
+                previous.and_then(|previous| previous.row(list, ordinal, w.object_size))
+            {
+                w.raw(bytes);
+                return Ok(());
+            }
             w.u16(list.len() as u16);
             for &value in list.iter() {
                 w.object(value);

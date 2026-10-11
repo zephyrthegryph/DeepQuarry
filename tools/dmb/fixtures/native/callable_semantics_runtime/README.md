@@ -16,3 +16,17 @@ missing/extra markers or runtime errors fail. The launcher measures fresh paired
 execution only; it does not claim retained revision coverage. The source can be
 used with the existing incremental_runtime_contract orchestration when a retained
 scenario is explicitly added there; this fixture does not invent another daemon.
+
+## Retained revisions
+
+`python run_retained.py` accepts the SAME eight executable/template pin flags as
+incremental_runtime_contract/run.py and delegates to that one orchestration core.
+The four revisions are initial, unchanged, verb body edit (+5), and a structural
+field addition plus changed receiver default (23 to31). Each revision authenticates
+source copies, checks eleven independent runtime markers against BYOND and both
+native modes, and requires exact fresh/retained DMB and RSC hashes. The unchanged
+4GiB sampled ownership limit and 300 second overall lifetime remain in force.
+The unused resource sidecar satisfies the shared harness's authenticated source
+closure; it is not a resource-change test. No execution has been performed.
+
+The contract also checks sized local array methods: explicit `var/list/value[2] = list(7)` then `Add(11)` and `Copy()` yields 18; implicit `var/value[2]` then `Add(13)` and `Copy()` yields length 3 plus final element 13, or 16. These two markers remain unchanged across body and structural revisions.

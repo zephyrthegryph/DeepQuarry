@@ -141,6 +141,9 @@ impl IntrinsicMethods {
         Ok((Arc::new(methods), spellings))
     }
     pub(super) fn resolve(&self, query: ResolveQuery) -> Option<ResolvedMeaning> {
+        if let ResolveQuery::MemberCallableVerbName(name) = query {
+            return self.closed.as_ref()?.verb_selector(&self.source, name);
+        }
         if let ResolveQuery::MemberCallableName(name) = query {
             return self.closed.as_ref()?.member_name(&self.source, name);
         }

@@ -103,6 +103,63 @@ impl ObservationHost<MetadataQuery, MetadataAnswer, MetadataDomain> for Host {
     }
 }
 impl RetainedMetadata {
+    pub(crate) fn demanded_member_name(&self, tree: &SemanticTree, name: SymbolId) -> Option<u128> {
+        // An incomplete snapshot sharing this demand owner cannot borrow a
+        // negative token issued only after a complete hierarchy admission.
+        let answer = tree.source_member_callable_name(name)?;
+        let selection = (SymbolId::of("/"), name, 4);
+        if let Some(token) = tree
+            .owner_callable_demands
+            .tokens
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(&selection)
+            .copied()
+        {
+            return Some(token);
+        }
+        let current = self
+            .current_demands
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if !current
+            .upgrade()
+            .is_some_and(|owner| Arc::ptr_eq(&owner, &tree.owner_callable_demands))
+        {
+            return None;
+        }
+        let query = MetadataQuery::MemberName(name);
+        let host = Host(MetadataAnswer::MemberName(answer));
+        let token_of = |value: &EffectiveOwner| match value {
+            EffectiveOwner::MemberName { version } => Some(*version),
+            _ => None,
+        };
+        let token = if let Some(token) = self
+            .store
+            .lookup(&key(selection), &host)
+            .and_then(|v| token_of(&v))
+        {
+            token
+        } else {
+            let token = u128::from(callables::issue_token()?);
+            let ledger = ObservationLedger::default();
+            ledger.record(query, host.answer(&query), query.domain(), None);
+            let owner = self.store.insert_with_owned(
+                key(selection),
+                ledger.reads(),
+                ledger.domain_receipts(),
+                0,
+                || EffectiveOwner::MemberName { version: token },
+            )?;
+            token_of(&owner)?
+        };
+        tree.owner_callable_demands
+            .tokens
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(selection, token);
+        Some(token)
+    }
     pub(super) fn demanded_keys(&self, tree: &SemanticTree) -> Vec<Arc<[u8]>> {
         let current = self
             .current_demands

@@ -17,9 +17,19 @@ impl Compiler<'_> {
                     return Err(self.undefined_member_call(object, selector, ":", statement));
                 }
             }
-            return Ok(VariableWord::DynamicProc(
-                self.intern_string(&selector.replace('_', " ")),
-            ));
+            let verb = if let Some(lookup) = self.lookup {
+                self.semantic(lookup.presence(dm_ir::ResolveQuery::MemberCallableVerbName(
+                    SymbolId::of(selector),
+                )))?
+            } else {
+                false
+            };
+            let name = self.intern_string(&selector.replace('_', " "));
+            return Ok(if verb {
+                VariableWord::DynamicVerb(name)
+            } else {
+                VariableWord::DynamicProc(name)
+            });
         }
         // The actual current formal frame certifies untyped ordinary-dot calls
         // as invalid, independent of other owners declaring the same name.
