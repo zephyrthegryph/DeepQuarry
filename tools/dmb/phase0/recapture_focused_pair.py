@@ -14,7 +14,7 @@ from recapture_iteration_baseline import (verify_source, file_version, write, sh
 from recover_iteration_source import absolute_nonreparse, regular
 import semantic_configuration
 from iteration_structural import authenticate_source_snapshot
-from focused_pair_results import memory_bytes, observed_record, compare
+from focused_pair_results import memory_bytes, observed_record, compare, passing_acceptance
 
 
 def capture(root, output, byond, native, template, pins, defines, launch, deadline):
@@ -230,8 +230,7 @@ def main():
                        getattr(args, backend + '_sha256'), args.focus, deadline) for backend in ('byond', 'native')}
             runtime['comparison'] = compare(records['byond'], records['native'])
             runtime['parity'] = runtime['comparison']['parity']
-            runtime['all_tests_passed'] = (runtime['comparison']['all_tests_passed']
-                and all(row['exit_code'] == 0 for row in runtime['executions'].values()))
+            runtime['all_tests_passed'] = passing_acceptance(runtime['comparison'], runtime['executions'])
             runtime['status'] = 'passed' if runtime['parity'] and runtime['all_tests_passed'] else 'failed'
             if not runtime['parity']:
                 runtime['error'] = 'observed focused test records or boot cleanliness differ'

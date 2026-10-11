@@ -60,3 +60,12 @@ def compare(reference, native):
             'differences': differences, 'byondClean': left.get('clean'), 'nativeClean': right.get('clean'),
             'observedRecords': {'byond': reference, 'native': native},
             'scope': 'exact observed focused rows and boot clean flags; timing excluded; implicit closure unissued'}
+
+
+def passing_acceptance(comparison, executions):
+    """Observed parity remains separate from successful owned child completion."""
+    if set(executions) != {'byond', 'native'}:
+        raise ValueError('both observed runtime child exits are required')
+    return comparison['all_tests_passed'] and all(
+        row.get('exit_code') == 0 and row.get('timeout') is False and row.get('reaped') is True
+        for row in executions.values())

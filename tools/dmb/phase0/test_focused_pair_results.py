@@ -1,5 +1,5 @@
 import unittest
-from focused_pair_results import memory_bytes, compare
+from focused_pair_results import memory_bytes, compare, passing_acceptance
 
 
 class FocusedPairPolicy(unittest.TestCase):
@@ -43,6 +43,17 @@ class FocusedPairPolicy(unittest.TestCase):
         result = compare(left, right)
         self.assertTrue(result['parity'])
         self.assertFalse(result['all_tests_passed'])
+
+    def test_nonzero_child_exit_cannot_count_as_passing_acceptance(self):
+        executions = {'byond': {'exit_code': 2, 'timeout': False, 'reaped': True},
+                      'native': {'exit_code': 2, 'timeout': False, 'reaped': True}}
+        comparison = {'parity': True, 'all_tests_passed': True}
+        self.assertFalse(passing_acceptance(comparison, executions))
+        self.assertEqual(executions['native']['exit_code'], 2)
+        executions['byond']['exit_code'] = executions['native']['exit_code'] = 0
+        self.assertTrue(passing_acceptance(comparison, executions))
+        executions['native']['reaped'] = False
+        self.assertFalse(passing_acceptance(comparison, executions))
 
 
 if __name__ == '__main__':
