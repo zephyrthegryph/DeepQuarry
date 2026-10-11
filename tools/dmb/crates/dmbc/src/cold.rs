@@ -10,6 +10,7 @@ use dm_ir::Resolver;
 use dm_link::LinkInventory;
 use dm_tree::frontend::ColdFrontend;
 use std::time::{Duration, Instant};
+mod diagnostic_continuation;
 mod initializer_factory;
 mod prepared;
 pub use prepared::{PreparedCold, PreparedComposition};
@@ -587,7 +588,21 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         },
         Some(&startup_allocation),
     )
-    .map_err(initializer_lowering_error)?;
+    .map_err(|error| {
+        diagnostic_continuation::collect(error, || {
+            // This is the ordinary current body producer with no memo,
+            // contribution preparation, linker, or publication callbacks.
+            let execution = crate::lowering::LoweringExecution::new(executor, &bodies);
+            let execution = match prepared_roster {
+                Some(roster) => execution.with_prepared_roster(roster),
+                None => execution,
+            };
+            crate::lowering::lower_frontend_with_statics_on_executor_and_bodies(
+                frontend, resolver, policy, config, startup, execution,
+            )
+            .diagnostics
+        })
+    })?;
     let mut projection = crate::class_projection::project_classified_with_artifacts(
         &frontend.snapshot,
         &frontend.emission_order,
