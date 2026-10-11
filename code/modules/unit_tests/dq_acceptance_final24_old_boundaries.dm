@@ -1,4 +1,7 @@
 // Old-code boundary proof for the three unconverted final24 acceptance clauses.
+/datum/unit_test/dq_acceptance_final24_boundary
+	abstract_type = /datum/unit_test/dq_acceptance_final24_boundary
+
 /datum/unit_test/dq_acceptance_final24_boundary/limb_order/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
