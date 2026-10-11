@@ -254,6 +254,7 @@ mod global_record_tests {
             name: SymbolId::of("local_static"),
         };
         let plan = ClassProjection {
+            type_construction: Default::default(),
             variable_records: Default::default(),
             field_placements: Default::default(),
             types: Arc::from([]),

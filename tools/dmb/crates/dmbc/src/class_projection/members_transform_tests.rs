@@ -91,6 +91,7 @@ fn captured_matrix_headers_and_null_reset_match_full_projection_writer() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
         shared_slot_order: Arc::from([]),

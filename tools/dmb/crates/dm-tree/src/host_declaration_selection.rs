@@ -81,7 +81,6 @@ impl SemanticTree {
         if owners.is_empty() {
             return;
         }
-        self.refresh_member_callable_names();
         let selections = Arc::make_mut(&mut self.host_selections);
         for owner in owners {
             let node = &self.types[owner.index()];

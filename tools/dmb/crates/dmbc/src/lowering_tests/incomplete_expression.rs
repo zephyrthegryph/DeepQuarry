@@ -482,9 +482,8 @@ fn sized_local_array_receivers_use_issued_list_type_and_validate_methods() {
     );
     assert!(batch.units.is_empty());
     assert_eq!(batch.diagnostics.len(), 1);
-    // The pinned list catalog supplies positives, but its complete negative
-    // namespace is not yet issued. Missing list methods must still fail closed;
-    // exact BYOND diagnostic classification remains a separate open gate.
-    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::UnsupportedModel);
+    // Complete source and reviewed native member-union absence certify this
+    // negative without pretending the list namespace itself is closed.
+    assert_eq!(batch.diagnostics[0].kind, DiagnosticKind::SourceError);
     assert_eq!(batch.diagnostics[0].origin.line, 3);
 }

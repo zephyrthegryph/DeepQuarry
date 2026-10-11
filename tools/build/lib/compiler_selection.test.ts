@@ -1,3 +1,4 @@
+import { ByondCompileFailure, failedCompileOutcome, observedCompileOutcome } from './compile_outcome';
 import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
 import Juke from '../juke/index.js';
@@ -440,4 +441,45 @@ test('shadow output capture freezes stable bytes without invocation authority an
     }
     fs.rmSync(directory, { recursive: true, force: true });
   }
+});
+
+
+test('shadow records both rejected compiler outputs and rethrows original reference failure', async () => {
+  const root = fs.mkdtempSync('E:/dq-cache/shadow-rejection-fixture-');
+  process.env.DQ_COMPILER = 'shadow';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_SHADOW_ROOT = path.join(root, 'shadow');
+  process.env.DQ_NATIVE_RUN_ROOT = path.join(root, 'run');
+  const output = 'source.dm:2:error: value: duplicate definition\n';
+  const failure = new ByondCompileFailure(2, observedCompileOutcome(2, output));
+  try {
+    const caught = await selectedCompiler(path.join(root, 'probe.dme'), {}, async () => { throw failure; },
+      async () => ({ code: 2, combined: output })).then(() => null, error => error);
+    expect(caught).toBe(failure);
+    const shadow = path.join(root, 'shadow');
+    const directory = fs.readdirSync(shadow).find(name => name.startsWith('shadow-'))!;
+    const report = JSON.parse(fs.readFileSync(path.join(shadow, directory, 'shadow-compile-comparison.json'), 'utf8'));
+    expect(report.native.processExit).toBe(2);
+    expect(report.byond.processExit).toBe(2);
+    expect(report.buildExitAgrees).toBe(true);
+    expect(report.diagnosticsAgree).toBe(true);
+    expect(report.byond.diagnostics).toEqual([output.trimEnd()]);
+    expect(report.inputClosure.status).toBe('incomplete');
+    expect(report.fallback).toBe(null);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('compiler outcomes preserve warning policy and signal exits without invented diagnostics', () => {
+  const warning = 'source.dm:1:warning (list_double_init): value\n';
+  const rejected = new ByondCompileFailure(2, observedCompileOutcome(0, warning, 2));
+  expect(rejected.outcome.processExit).toBe(0);
+  expect(rejected.outcome.buildExit).toBe(2);
+  const signalled = new ByondCompileFailure(null, observedCompileOutcome(null, '', null, 'SIGTERM'), 'SIGTERM');
+  expect(signalled.code).toBe(null);
+  expect(signalled.signal).toBe('SIGTERM');
+  const setup = failedCompileOutcome(new Error('executable unavailable'));
+  expect(setup.diagnosticsCaptured).toBe(false);
+  expect(setup.processExit).toBe(null);
+  expect(setup.diagnostics).toEqual([]);
 });

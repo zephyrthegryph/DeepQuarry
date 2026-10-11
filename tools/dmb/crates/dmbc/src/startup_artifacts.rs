@@ -10,6 +10,9 @@ use std::sync::{
 
 #[path = "startup_callable_index.rs"]
 mod callable_index;
+#[path = "startup_inventory_receipt.rs"]
+mod inventory_receipt;
+const INVENTORY_KEY: &[u8] = b"dmbc-startup-inventory-v1\0";
 
 pub struct StartupArtifacts {
     callables: callable_index::CallableIndex,
@@ -22,6 +25,8 @@ pub struct StartupArtifacts {
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
+    pub inventory_hits: AtomicU64,
+    pub inventory_recomputed: AtomicU64,
 }
 impl Default for StartupArtifacts {
     fn default() -> Self {
@@ -31,12 +36,15 @@ impl Default for StartupArtifacts {
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
             declined: AtomicU64::new(0),
+            inventory_hits: AtomicU64::new(0),
+            inventory_recomputed: AtomicU64::new(0),
         }
     }
 }
 pub(crate) enum Artifact {
     Syntax(Arc<RelativeStaticPlan>),
     Layout(Arc<dm_tree::procedure_statics::StaticLayout>),
+    Inventory(inventory_receipt::InventoryReceipt),
 }
 struct StaticInputs(Arc<[Arc<ProcedureStaticDeclaration>]>);
 impl ObservationHost<ProcedureIdentity, Arc<[Arc<ProcedureStaticDeclaration>]>, ()>
@@ -105,6 +113,7 @@ impl StartupArtifacts {
     ) {
         let mut roster: Vec<Arc<[u8]>> = keys.into_iter().map(Arc::from).collect();
         roster.extend(procedures.into_iter().map(layout_key));
+        roster.push(Arc::from(INVENTORY_KEY));
         self.values
             .retain_current_keys(roster.iter().map(AsRef::as_ref));
     }
@@ -162,8 +171,77 @@ impl StartupArtifacts {
         )?;
         match owner.as_ref() {
             Artifact::Layout(layout) => Some(Arc::clone(layout)),
-            Artifact::Syntax(_) => None,
+            Artifact::Syntax(_) | Artifact::Inventory(_) => None,
         }
+    }
+    /// Called only after current source capture and initializer assembly succeed.
+    pub(super) fn inventory(
+        &self,
+        plans: &[&dm_tree::procedure_statics::StaticPlan],
+    ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
+        self.inventory_with_rosters(plans, &[])
+    }
+    pub(super) fn inventory_with_rosters(
+        &self,
+        plans: &[&dm_tree::procedure_statics::StaticPlan],
+        rosters: &[Option<Arc<[Arc<ProcedureStaticDeclaration>]>>],
+    ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
+        let mut rows = Vec::with_capacity(plans.len());
+        for (index, plan) in plans.iter().enumerate() {
+            let declarations = match rosters.get(index).and_then(Option::as_ref) {
+                Some(owner) => {
+                    let mut current: Vec<_> = plan.declarations.iter().collect();
+                    current.sort_by_key(|declaration| declaration.identity);
+                    if !owner.iter().map(AsRef::as_ref).eq(current) {
+                        return self.fresh_inventory(plans);
+                    }
+                    Arc::clone(owner)
+                }
+                None => {
+                    let mut declarations: Vec<_> =
+                        plan.declarations.iter().cloned().map(Arc::new).collect();
+                    declarations.sort_by_key(|declaration| declaration.identity);
+                    declarations.into()
+                }
+            };
+            let Some(layout) = self.admit_layout(plan.procedure, declarations) else {
+                return self.fresh_inventory(plans);
+            };
+            rows.push((plan.procedure, layout));
+        }
+        let mut admitted = None;
+        self.values
+            .visit_explained(INVENTORY_KEY, &StaticInputs(Arc::from([])), &mut |owner| {
+                if let Artifact::Inventory(receipt) = owner.as_ref() {
+                    admitted = receipt.admit(&rows);
+                }
+                admitted.is_some()
+            });
+        if let Some(inventory) = admitted {
+            self.inventory_hits.fetch_add(1, Ordering::Relaxed);
+            return Ok(inventory);
+        }
+        let Some(receipt) = inventory_receipt::InventoryReceipt::capture(rows, plans) else {
+            return self.fresh_inventory(plans);
+        };
+        let inventory = Arc::clone(receipt.storage().1);
+        self.values
+            .insert_with_owned(Arc::from(INVENTORY_KEY), Vec::new(), Vec::new(), 0, || {
+                Artifact::Inventory(receipt)
+            });
+        self.inventory_recomputed.fetch_add(1, Ordering::Relaxed);
+        Ok(inventory)
+    }
+    fn fresh_inventory(
+        &self,
+        plans: &[&dm_tree::procedure_statics::StaticPlan],
+    ) -> Result<Arc<dm_tree::procedure_statics::StaticInventory>, String> {
+        let mut inventory = dm_tree::procedure_statics::StaticInventory::from_plans(
+            plans.iter().map(|plan| (plan.procedure, *plan)),
+        )?;
+        inventory.certify(|procedure, declarations| self.admit_layout(procedure, declarations));
+        self.inventory_recomputed.fetch_add(1, Ordering::Relaxed);
+        Ok(Arc::new(inventory))
     }
     pub(crate) fn visit_storage(
         &self,

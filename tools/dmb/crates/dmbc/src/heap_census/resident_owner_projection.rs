@@ -100,6 +100,7 @@ pub(super) fn inspect_into(
     mut census: &mut HeapCensus,
     store: &crate::class_projection::ClassProjections,
 ) {
+    store.census_methods(census);
     store.visit_storage(|view| match view {
         dm_session::ArtifactStorageView::Store { buckets, entries } => {
             census.owner("owner_projection.index").observed_items += entries as u64;
@@ -182,7 +183,13 @@ pub(super) fn inspect_into(
             }
             census.slice("owner_projection.types_versions", versions, true);
             if census.arc_object("owner_projection.projected_types_owner", value) {
-                census.slice("owner_projection.projected_types", value.as_ref(), true);
+                census.slice("owner_projection.projected_types", &value.types, true);
+                if census.arc_object(
+                    "owner_projection.type_construction_owner",
+                    &value.construction,
+                ) {
+                    value.construction.census(census);
+                }
             }
         }
     });

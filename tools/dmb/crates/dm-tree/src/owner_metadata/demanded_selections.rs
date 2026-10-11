@@ -106,8 +106,45 @@ impl RetainedMetadata {
     pub(crate) fn demanded_member_name(&self, tree: &SemanticTree, name: SymbolId) -> Option<u128> {
         // An incomplete snapshot sharing this demand owner cannot borrow a
         // negative token issued only after a complete hierarchy admission.
-        let answer = tree.source_member_callable_name(name)?;
-        let selection = (SymbolId::of("/"), name, 4);
+        self.demanded_member_namespace(tree, name, false)
+    }
+    pub(crate) fn demanded_member_selector(
+        &self,
+        tree: &SemanticTree,
+        name: SymbolId,
+    ) -> Option<u128> {
+        self.demanded_member_namespace(tree, name, true)
+    }
+    fn demanded_member_namespace(
+        &self,
+        tree: &SemanticTree,
+        name: SymbolId,
+        selector: bool,
+    ) -> Option<u128> {
+        let (query, answer, namespace) = if selector {
+            // Verb selection includes absence of a same-name source procedure.
+            // Incomplete snapshots cannot borrow a previously issued proof.
+            if !tree.inventory.hierarchy_certified {
+                return None;
+            }
+            let flags = tree
+                .member_callable_name_storage()
+                .get(&name)
+                .copied()
+                .unwrap_or(0);
+            (
+                MetadataQuery::MemberSelector(name),
+                MetadataAnswer::MemberSelector(flags),
+                5,
+            )
+        } else {
+            (
+                MetadataQuery::MemberName(name),
+                MetadataAnswer::MemberName(tree.source_member_callable_name(name)?),
+                4,
+            )
+        };
+        let selection = (SymbolId::of("/"), name, namespace);
         if let Some(token) = tree
             .owner_callable_demands
             .tokens
@@ -128,8 +165,7 @@ impl RetainedMetadata {
         {
             return None;
         }
-        let query = MetadataQuery::MemberName(name);
-        let host = Host(MetadataAnswer::MemberName(answer));
+        let host = Host(answer);
         let token_of = |value: &EffectiveOwner| match value {
             EffectiveOwner::MemberName { version } => Some(*version),
             _ => None,

@@ -152,8 +152,9 @@ pub enum ProcedureDefinition {
 impl ResolveQuery {
     pub const fn domain(self) -> ReadDomain {
         match self {
-            Self::MemberCallableVerbName(_) => ReadDomain::Tree,
-            Self::MemberCallableName(_) => ReadDomain::OwnerCallable(self),
+            Self::MemberCallableVerbName(_) | Self::MemberCallableName(_) => {
+                ReadDomain::OwnerCallable(self)
+            }
             Self::ProcedureStatic { procedure, .. } => ReadDomain::OwnerProcedureStatic(procedure),
             Self::Resource(_) | Self::ResourceIn { .. } => ReadDomain::ResourceSearch,
             Self::Type(owner) | Self::Parent(owner) | Self::Ancestry(owner) => {

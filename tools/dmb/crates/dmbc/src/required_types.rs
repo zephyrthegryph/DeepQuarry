@@ -245,6 +245,7 @@ mod tests {
     use super::*;
     fn projection() -> ClassProjection {
         ClassProjection {
+            type_construction: Default::default(),
             variable_records: Default::default(),
             field_placements: Default::default(),
             procedure_declarations: Default::default(),

@@ -214,6 +214,12 @@ impl HeapCensus {
             }
         }
         self.slice("current_projection.types", &projection.types, true);
+        if self.arc_object(
+            "current_projection.type_construction",
+            &projection.type_construction,
+        ) {
+            projection.type_construction.census(self);
+        }
         if self.slice("current_projection.fields", &projection.fields, true) {
             for field in projection.fields.iter() {
                 super::resident_owner_projection::inspect_field(self, field);
@@ -327,6 +333,7 @@ mod tests {
             ))),
         });
         let projection = ClassProjection {
+            type_construction: Default::default(),
             variable_records: Default::default(),
             field_placements: FieldPlacements::default(),
             procedure_declarations: Arc::new(Default::default()),

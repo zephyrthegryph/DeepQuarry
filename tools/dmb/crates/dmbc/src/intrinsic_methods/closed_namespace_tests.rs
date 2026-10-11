@@ -5,7 +5,7 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
     struct Source;
     impl dm_preprocess::SourceProvider for Source {
         fn read(&self, _: &Path) -> Result<String, String> {
-            Ok("/datum/probe/proc/present()\n    return 1\n/datum/open\n    parent_type = /client\n".into())
+            Ok("/datum/probe/proc/present()\n    return 1\n/datum/open\n    parent_type = /client\n/datum/probe/verb/Copy()\n    return 2\n/datum/probe/verb/verb_only()\n    return 3\n".into())
         }
     }
     let engine = crate::engine::EngineSnapshot::from_bytes(
@@ -96,7 +96,15 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
         }),
         ResolvedMeaning::Member { .. }
     ));
-    for owner in ["/client", "/datum/open", "/not_current"] {
+    for owner in ["/client", "/datum/open"] {
+        let query = ResolveQuery::Proc {
+            owner: SymbolId::of(owner),
+            name: SymbolId::of("arbitrary_missing_one"),
+            verb: false,
+        };
+        assert_eq!(host.resolve(query), ResolvedMeaning::Missing);
+    }
+    for owner in ["/not_current"] {
         let query = ResolveQuery::Proc {
             owner: SymbolId::of(owner),
             name: SymbolId::of("arbitrary_missing_one"),
@@ -116,6 +124,21 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
             ResolvedMeaning::Presence(false)
         );
     }
+    // Source verbs cannot displace an independently documented native proc
+    // name in dynamic namespace selection. Ambiguous native entries decline.
+    for (name, verb) in [("Copy", false), ("present", false), ("verb_only", true)] {
+        assert_eq!(
+            host.resolve(ResolveQuery::MemberCallableVerbName(SymbolId::of(name))),
+            ResolvedMeaning::Presence(verb)
+        );
+    }
+    let opaque_selector =
+        ResolveQuery::MemberCallableVerbName(SymbolId::of("ODHotReloadInterface"));
+    assert_eq!(
+        host.resolve(opaque_selector),
+        ResolvedMeaning::Unsupported(opaque_selector)
+    );
+    assert_eq!(host.domain_version(opaque_selector.domain()), None);
     let opaque = ResolveQuery::MemberCallableName(SymbolId::of("ODHotReloadInterface"));
     assert_eq!(host.resolve(opaque), ResolvedMeaning::Unsupported(opaque));
     let query = ResolveQuery::GlobalProc(SymbolId::of("arbitrary_missing_one"));

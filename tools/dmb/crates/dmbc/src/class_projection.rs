@@ -11,9 +11,11 @@ mod headers;
 pub use header_recipes::HeaderRecipes;
 pub(crate) mod member_contribution;
 pub(crate) mod retained;
+mod type_construction;
 pub(crate) mod type_roster;
 pub(crate) use class_roster::MaterializedClassRoster;
 pub use retained::ClassProjections;
+mod method_roster;
 mod methods;
 mod variable_records;
 pub(crate) use variable_records::{VariableRecord, VariableRecordRoster};
@@ -70,6 +72,7 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    pub(crate) type_construction: Arc<type_construction::TypeConstruction>,
     pub(crate) variable_records: std::sync::OnceLock<Arc<VariableRecordRoster>>,
     /// Current source binding is excluded from retained semantic field payloads.
     pub field_placements: FieldPlacements,
@@ -229,6 +232,7 @@ fn project_inner(
     defaults: Option<&[crate::class_initialization::BorrowedDefault<'_>]>,
     artifacts: Option<&ClassProjections>,
 ) -> Result<ClassProjection, ProjectionError> {
+    let mut method_request = artifacts.map(ClassProjections::begin_methods);
     if source.tree.identity() != source.occurrences.tree_identity() {
         return Err(ProjectionError::IdentityMismatch);
     }
@@ -237,9 +241,12 @@ fn project_inner(
         return Err(ProjectionError::IncompleteOrder);
     }
     let tree = &source.tree;
-    let types = match artifacts {
-        Some(artifacts) => artifacts.types.obtain(tree),
-        None => type_roster::produce(tree.types()),
+    let (types, type_construction) = match artifacts {
+        Some(artifacts) => {
+            let issued = artifacts.types.obtain(tree);
+            (issued.types.clone(), issued.construction.clone())
+        }
+        None => (type_roster::produce(tree.types()), Default::default()),
     };
     let mut seen = HashSet::new();
     let mut fields = Vec::new();
@@ -258,10 +265,7 @@ fn project_inner(
     let mut retention = artifacts
         .filter(|_| defaults.is_some())
         .and_then(|store| store.begin(source, order, &default_index));
-    let mut procedure_declarations = BTreeMap::new();
-    let mut procedure_encounters = Vec::new();
-    let mut group_order = Vec::new();
-    let mut procs: BTreeMap<(SymbolId, SymbolId, bool), Vec<(bool, Key)>> = BTreeMap::new();
+    let mut method_inputs = Vec::new();
     for &id in order {
         if !seen.insert(id) {
             return Err(ProjectionError::IncompleteOrder);
@@ -298,68 +302,32 @@ fn project_inner(
                 key,
                 declared,
             } => {
-                procedure_declarations.insert(key, declared);
-                procedure_encounters.push((declared, key));
-                if !procs.contains_key(&(owner, name, verb)) {
-                    group_order.push((owner, name, verb));
+                let input = method_roster::MethodInput {
+                    owner,
+                    name,
+                    verb,
+                    key,
+                    declared,
+                };
+                match method_request.as_mut() {
+                    Some(request) => request.push(input),
+                    None => method_inputs.push(input),
                 }
-                procs
-                    .entry((owner, name, verb))
-                    .or_default()
-                    .push((declared, key));
             }
         }
     }
     if let Some(request) = retention {
         request.finish();
     }
-    // BYOND allocates formal methods before implicit overrides and prepends
-    // each allocated member. Preserve the exact cross-name encounter roster;
-    // reversing name groups would incorrectly make override chains contiguous.
-    let procedure_membership = procedure_encounters
-        .iter()
-        .rev()
-        .filter(|(declared, _)| !declared)
-        .chain(
-            procedure_encounters
-                .iter()
-                .rev()
-                .filter(|(declared, _)| *declared),
-        )
-        .map(|(_, key)| *key)
-        .collect::<Vec<_>>();
-    let chains = group_order
-        .into_iter()
-        .map(|(owner, name, verb)| {
-            let entries = procs
-                .remove(&(owner, name, verb))
-                .expect("encounter group recorded once");
-            // BYOND evidence: formal base is below implicit overrides regardless of
-            // its encounter position; implicit overrides retain encounter precedence.
-            let mut formal = Vec::new();
-            let mut implicit = Vec::new();
-            for (declared, key) in entries {
-                if declared {
-                    formal.push(key)
-                } else {
-                    implicit.push(key)
-                }
-            }
-            implicit.reverse();
-            formal.reverse();
-            implicit.extend(formal);
-            ProcedureChain {
-                owner,
-                name,
-                verb,
-                entries: implicit.into(),
-            }
-        })
-        .collect::<Vec<_>>();
+    let methods = match method_request {
+        Some(request) => request.finish(),
+        None => Arc::new(method_roster::MethodRoster::produce(method_inputs)),
+    };
     Ok(ClassProjection {
+        type_construction,
         variable_records: Default::default(),
         field_placements,
-        procedure_declarations: Arc::new(procedure_declarations),
+        procedure_declarations: Arc::clone(&methods.declarations),
         shared_slot_order: fields
             .iter()
             .filter(|field| field.role == FieldRole::Declaration && field.shared)
@@ -381,8 +349,8 @@ fn project_inner(
         occurrence_count: occurrences.len(),
         types,
         fields: fields.into(),
-        chains: chains.into(),
-        procedure_membership: procedure_membership.into(),
+        chains: Arc::clone(&methods.chains),
+        procedure_membership: Arc::clone(&methods.membership),
     })
 }
 
@@ -514,7 +482,10 @@ pub(crate) fn materialize_types_with_roster(
                 })?;
         Ok((index, parent))
     }).collect::<Result<BTreeMap<_, _>, ProjectionError>>()?;
-    for wave in class_construction_waves(&parents, dmb.classes.len())? {
+    for wave in projection
+        .type_construction
+        .waves(&planned, &parents, dmb.classes.len())?
+    {
         for index in wave {
             let ty = planned[&index];
             let parent = parents[&index];
@@ -707,12 +678,10 @@ mod construction_order_tests {
         let parents = (1..=4096).map(|index| (index, index - 1)).collect();
         let waves = class_construction_waves(&parents, 1).unwrap();
         assert_eq!(waves.len(), 4096);
-        assert!(
-            waves
-                .iter()
-                .enumerate()
-                .all(|(i, wave)| wave == &vec![i as u32 + 1])
-        );
+        assert!(waves
+            .iter()
+            .enumerate()
+            .all(|(i, wave)| wave == &vec![i as u32 + 1]));
         assert!(class_construction_waves(&BTreeMap::from([(1, 2), (2, 1)]), 1).is_err());
         assert!(class_construction_waves(&BTreeMap::from([(1, 8)]), 1).is_err());
     }

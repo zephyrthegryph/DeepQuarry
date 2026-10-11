@@ -12,6 +12,16 @@ runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(runner)
 
 
 class Contracts(unittest.TestCase):
+    def test_strict_environment_removes_manifest_and_abi_bypasses_without_mutating_caller(self):
+        bypasses = ['DQ_PREBUILT_VERDIGRIS', 'DQ_SKIP_VERDIGRIS_ABI_CHECK', 'DQ_WIP_TREE',
+                    'DQ_ALLOW_UNREACHABLE_DM', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE']
+        inherited = {name: '1' for name in bypasses}
+        inherited['PATH'] = 'caller-path'
+        env = runner.strict_environment(inherited)
+        self.assertEqual(env, {'PATH': 'caller-path'})
+        self.assertTrue(all(name in inherited for name in bypasses))
+        self.assertEqual(runner.strict_environment({}), {})
+
     def test_owned_paths_resolve_dotdot_and_reject_reparse_ancestors(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = Path(directory) / 'cache'; cache.mkdir()

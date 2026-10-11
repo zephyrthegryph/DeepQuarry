@@ -3,6 +3,94 @@ use std::{
     path::Path,
     sync::{atomic::Ordering, Arc},
 };
+
+#[test]
+fn issued_static_roster_is_shared_after_exact_current_source_bind() {
+    let store = StartupArtifacts::default();
+    let pool = dm_exec::BuildExecutor::new(1).unwrap();
+    let original = revision("/proc/p()\n    var/static/cache = 3\n    return cache\n");
+    let arena = dm_tree::frontend::BodyArena::new(&original);
+    let first = capture(&original, &pool, &arena, Some(&store));
+    let shifted = revision("// shifted\n/proc/p()\n    var/static/cache = 3\n    return cache\n");
+    let arena = dm_tree::frontend::BodyArena::new(&shifted);
+    let second = capture(&shifted, &pool, &arena, Some(&store));
+    let roster = |facts: &StartupFacts| match &facts.procedures[0].1 {
+        ProcedureCapture::Issued(receipt) => receipt.canonical_declarations().unwrap(),
+        ProcedureCapture::Empty(_) => panic!("expected issued static declaration"),
+    };
+    assert!(Arc::ptr_eq(&roster(&first), &roster(&second)));
+    assert_ne!(first.plan.origins, second.plan.origins);
+    assert!(Arc::ptr_eq(
+        &first.static_inventory,
+        &second.static_inventory
+    ));
+}
+
+#[test]
+fn whole_inventory_reuses_after_current_body_rebind_and_releases_on_change() {
+    let store = StartupArtifacts::default();
+    let pool = dm_exec::BuildExecutor::new(1).unwrap();
+    let old = revision(
+        "/proc/p()\n    var/static/cache = 3\n    return cache\n/proc/empty()\n    return 1\n",
+    );
+    let arena = dm_tree::frontend::BodyArena::new(&old);
+    let first = capture(&old, &pool, &arena, Some(&store));
+    let weak = Arc::downgrade(&first.static_inventory);
+    let shifted = revision("// moved\n/proc/p()\n    var/static/cache = 3\n    return cache + 1\n/proc/empty()\n    return 2\n");
+    let arena = dm_tree::frontend::BodyArena::new(&shifted);
+    let reused = capture(&shifted, &pool, &arena, Some(&store));
+    let fresh_arena = dm_tree::frontend::BodyArena::new(&shifted);
+    let fresh = capture(&shifted, &pool, &fresh_arena, None);
+    assert!(Arc::ptr_eq(
+        &first.static_inventory,
+        &reused.static_inventory
+    ));
+    assert_eq!(reused.plan.writes, fresh.plan.writes);
+    assert_eq!(reused.plan.origins, fresh.plan.origins);
+    assert_ne!(first.plan.origins, reused.plan.origins);
+    assert_eq!(store.inventory_hits.load(Ordering::Relaxed), 1);
+    drop(first);
+    drop(reused);
+    let changed = revision(
+        "/proc/p()\n    var/static/cache = 4\n    return cache\n/proc/empty()\n    return 2\n",
+    );
+    let arena = dm_tree::frontend::BodyArena::new(&changed);
+    let changed = capture(&changed, &pool, &arena, Some(&store));
+    assert!(
+        weak.upgrade().is_none(),
+        "latest-only inventory must release replaced backing"
+    );
+    assert_eq!(store.inventory_recomputed.load(Ordering::Relaxed), 2);
+    let stats = store.retention_census();
+    assert!(stats
+        .owners
+        .iter()
+        .any(|owner| owner.owner == "startup.inventory_roster"));
+    drop(changed);
+}
+
+#[test]
+fn failed_inventory_does_not_publish_or_hide_ordinary_error_and_recovers() {
+    let store = StartupArtifacts::default();
+    let id = dm_ir::ProcedureIdentity {
+        owner: dm_ir::SymbolId::of("/"),
+        name: dm_ir::SymbolId::of("p"),
+        verb: false,
+        occurrence: 0,
+    };
+    let plan = dm_tree::procedure_statics::capture_declarations(id, &[]).unwrap();
+    let first = store.inventory(&[&plan]).unwrap();
+    let error = match store.inventory(&[&plan, &plan]) {
+        Ok(_) => panic!("duplicate inventory must fail"),
+        Err(error) => error,
+    };
+    assert_eq!(error, "duplicate procedure static inventory");
+    assert!(Arc::ptr_eq(&first, &store.inventory(&[&plan]).unwrap()));
+    let weak = Arc::downgrade(&first);
+    drop(first);
+    store.inventory(&[]).unwrap();
+    assert!(weak.upgrade().is_none());
+}
 struct Text(&'static str);
 impl dm_preprocess::SourceProvider for Text {
     fn read(&self, _: &Path) -> Result<String, String> {

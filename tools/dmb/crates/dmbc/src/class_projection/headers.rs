@@ -681,6 +681,7 @@ mod routing_tests {
         let savefile = symbols.intern("/savefile").unwrap();
         let version = symbols.intern("byond_version").unwrap();
         let projection = ClassProjection {
+            type_construction: Default::default(),
             variable_records: Default::default(),
             field_placements: Default::default(),
             shared_slot_order: Arc::from([]),

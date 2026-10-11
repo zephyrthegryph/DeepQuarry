@@ -18,8 +18,12 @@ pub struct IssuedStaticPlan {
 pub struct RelativeStaticPlan {
     plan: StaticPlan,
     source: Arc<str>,
+    declarations: Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>,
 }
 impl RelativeStaticPlan {
+    pub fn canonical_declarations(&self) -> &Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]> {
+        &self.declarations
+    }
     pub fn plan(&self) -> &StaticPlan {
         &self.plan
     }
@@ -62,6 +66,14 @@ impl RelativeStaticPlan {
     }
 }
 impl IssuedStaticPlan {
+    /// The current issued source is already validated before this owner is used.
+    pub fn canonical_declarations(
+        &self,
+    ) -> Result<Arc<[Arc<dm_ir::ProcedureStaticDeclaration>]>, String> {
+        Ok(Arc::clone(
+            self.relative_payload()?.canonical_declarations(),
+        ))
+    }
     pub fn plan(&self) -> &StaticPlan {
         &self.plan
     }
@@ -80,9 +92,12 @@ impl IssuedStaticPlan {
             origin.span = relative(origin.span, self.body_span)?;
             origin.header_span = relative(origin.header_span, self.body_span)?;
         }
+        let mut declarations: Vec<_> = plan.declarations.iter().cloned().map(Arc::new).collect();
+        declarations.sort_by_key(|declaration| declaration.identity);
         let payload = Arc::new(RelativeStaticPlan {
             plan,
             source: Arc::clone(&self.source),
+            declarations: declarations.into(),
         });
         let _ = self.reusable.set(payload);
         Ok(Arc::clone(

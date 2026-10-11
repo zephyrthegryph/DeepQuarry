@@ -1,4 +1,5 @@
 // Minimal compiler semantics controls; no game or FFI dependency.
+/var/const/callable_fixture_resource = 'contract-resource.txt'
 /datum/callable_receiver
     var/marker = 23
 /datum/callable_receiver/verb/member_only()
@@ -35,6 +36,7 @@
     return length(copied) + copied[3]
 /world/New()
     ..()
+    world.log << file2text(callable_fixture_resource)
     var/list/original = list(7, 11)
     var/list/copied = typed_copy(original)
     copied[1] = 99

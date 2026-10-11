@@ -177,6 +177,13 @@ impl ClosedNamespace {
         let Some(mut current) = source.lookup_type(owner) else {
             return false;
         };
+        // Complete source coverage plus the reviewed native member union can
+        // prove a name absent everywhere, including otherwise open owners.
+        // Reuse that authority; do not assume an individual native namespace
+        // is closed merely because its positive catalog omits the name.
+        if self.member_name(source, name) == Some(ResolvedMeaning::Presence(false)) {
+            return true;
+        }
         let mut seen = BTreeSet::new();
         let mut saw_datum = false;
         loop {

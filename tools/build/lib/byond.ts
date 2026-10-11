@@ -1,3 +1,4 @@
+import { ByondCompileFailure, observedCompileOutcome, type CompileOutcome } from './compile_outcome';
 import { CompilerProvenanceError } from './compiler_provenance';
 import { bindCompilerInvocation, type CompilerInvocation } from './compiler_invocation';
 import { spawn, spawnSync } from 'node:child_process';
@@ -210,6 +211,7 @@ async function testDmVersion(dmPath: string) {
 }
 
 export type ByondCompilationResult = {
+  readonly outcome?: CompileOutcome;
   readonly invocation: { readonly command: readonly string[]; readonly version: number; readonly build: number; readonly compilerIdentity?: DreamMakerIdentity; readonly orderedDefines?: readonly string[]; readonly workingDirectory?: string };
   readonly snapshot?: AuthenticatedByondSnapshot;
 };
@@ -271,7 +273,10 @@ async function compileByond(
   testOutputFile(`${dmeBaseName}.rsc`);
 
   const runWithWarningChecks = async (dmPath: string, args: string[]) => {
-    const execReturn = await Juke.exec(dmPath, args, bound ? { cwd: bound.root } : undefined);
+    const execReturn = await Juke.exec(dmPath, args, { throw: false, ...(bound ? { cwd: bound.root } : {}) });
+    if (execReturn.code !== 0) {
+      throw new ByondCompileFailure(execReturn.code, observedCompileOutcome(execReturn.code, execReturn.combined, execReturn.code, execReturn.signal), execReturn.signal);
+    }
     if (options.warningsAsErrors) {
       const ignoredWarningCodes = options.ignoreWarningCodes ?? [];
       if (ignoredWarningCodes.length > 0) {
@@ -290,7 +295,7 @@ async function compileByond(
           : new RegExp(base_regex, 'm');
       if (options.warningsAsErrors && execReturn.combined.match(reg)) {
         Juke.logger.error(`Compile warnings treated as errors`);
-        throw new Juke.ExitCode(2);
+        throw new ByondCompileFailure(2, observedCompileOutcome(execReturn.code, execReturn.combined, 2));
       }
     }
     return execReturn;
@@ -301,12 +306,12 @@ async function compileByond(
     Juke.logger.info('Using defines:', defines.join(', '));
   }
 
-  await runWithWarningChecks(dmPath, [
+  const observed = await runWithWarningChecks(dmPath, [
     ...defines.map((def) => `-D${def}`),
     dmeFile,
   ]);
   checkDreamMakerIdentity(compiler);
-  return { invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], version: compiler.version, build: compiler.build,
+  return { outcome: observedCompileOutcome(observed.code, observed.combined), invocation: { command: [dmPath, ...defines.map(def => `-D${def}`), dmeFile], version: compiler.version, build: compiler.build,
     compilerIdentity: compiler.identity, orderedDefines: compiler.defines, ...(bound ? { workingDirectory: bound.root } : {}) } };
 }
 

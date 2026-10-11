@@ -257,14 +257,24 @@ fn capture_impl_with_bodies_and_artifacts(
         .enumerate()
         .map(|(index, (occurrence, _))| (*occurrence, index))
         .collect();
-    let mut static_inventory = dm_tree::procedure_statics::StaticInventory::from_plans(
-        procedures.iter().map(|(_, plan)| (plan.procedure, &**plan)),
-    )?;
-    if let Some(artifacts) = artifacts {
-        static_inventory
-            .certify(|procedure, declarations| artifacts.admit_layout(procedure, declarations));
-    }
-    let static_inventory = std::sync::Arc::new(static_inventory);
+    let static_inventory = match artifacts {
+        Some(artifacts) => artifacts.inventory_with_rosters(
+            &procedures
+                .iter()
+                .map(|(_, plan)| &**plan)
+                .collect::<Vec<_>>(),
+            &procedures
+                .iter()
+                .map(|(_, plan)| match plan {
+                    ProcedureCapture::Issued(receipt) => receipt.canonical_declarations().map(Some),
+                    ProcedureCapture::Empty(_) => Ok(None),
+                })
+                .collect::<Result<Vec<_>, String>>()?,
+        )?,
+        None => std::sync::Arc::new(dm_tree::procedure_statics::StaticInventory::from_plans(
+            procedures.iter().map(|(_, plan)| (plan.procedure, &**plan)),
+        )?),
+    };
 
     Ok(StartupFacts {
         issuance: None,

@@ -10,6 +10,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 pub struct ClassProjections {
     pub(crate) types: super::type_roster::TypeRoster,
     values: dm_session::ArtifactStore<OwnerProjection>,
+    methods: std::sync::Mutex<Option<Arc<super::method_roster::MethodRoster>>>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
     pub declined: AtomicU64,
@@ -30,6 +31,7 @@ impl Default for ClassProjections {
     fn default() -> Self {
         Self {
             types: Default::default(),
+            methods: Default::default(),
             values: dm_session::ArtifactStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
@@ -58,7 +60,70 @@ fn source_bearing(value: &SemanticValue) -> bool {
         _ => false,
     }
 }
+pub(super) struct MethodRequest<'a> {
+    store: &'a ClassProjections,
+    previous: Option<Arc<super::method_roster::MethodRoster>>,
+    replacement: Option<Vec<super::method_roster::MethodInput>>,
+    next: usize,
+}
+impl MethodRequest<'_> {
+    pub(super) fn push(&mut self, input: super::method_roster::MethodInput) {
+        if self.replacement.is_none()
+            && self.previous.as_ref().and_then(|old| old.input(self.next)) != Some(&input)
+        {
+            self.replacement = Some(
+                self.previous
+                    .as_ref()
+                    .map(|old| old.input_prefix(self.next))
+                    .unwrap_or_default(),
+            );
+        }
+        if let Some(inputs) = self.replacement.as_mut() {
+            inputs.push(input);
+        }
+        self.next += 1;
+    }
+    pub(super) fn finish(self) -> Arc<super::method_roster::MethodRoster> {
+        let roster = match (self.previous, self.replacement) {
+            (Some(previous), None) if previous.len() == self.next => previous,
+            (Some(previous), None) => Arc::new(super::method_roster::MethodRoster::produce(
+                previous.input_prefix(self.next),
+            )),
+            (_, Some(inputs)) => Arc::new(super::method_roster::MethodRoster::produce(inputs)),
+            (None, None) => Arc::new(super::method_roster::MethodRoster::produce(Vec::new())),
+        };
+        *self.store.methods.lock().unwrap_or_else(|e| e.into_inner()) = Some(roster.clone());
+        roster
+    }
+}
 impl ClassProjections {
+    pub(super) fn begin_methods(&self) -> MethodRequest<'_> {
+        // Take the candidate before validation. Failure drops it without retaining
+        // stale keys; concurrent requests may decline reuse but cannot admit it.
+        MethodRequest {
+            store: self,
+            replacement: None,
+            next: 0,
+            previous: self
+                .methods
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .take(),
+        }
+    }
+    pub(crate) fn census_methods(&self, census: &mut crate::heap_census::HeapCensus) {
+        if let Some(roster) = self
+            .methods
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+        {
+            if census.arc_object("retained.class_projection.method_roster", roster) {
+                roster.census(census);
+            }
+        }
+    }
+
     pub(super) fn begin<'a>(
         &'a self,
         source: &'a TreeSnapshot,

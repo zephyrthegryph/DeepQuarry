@@ -14,6 +14,12 @@ impl dm_ir::Resolver for SemanticTree {
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let selection = match query {
+                dm_ir::ResolveQuery::MemberCallableVerbName(name) => {
+                    return self
+                        .owner_certificate_issuer
+                        .as_ref()?
+                        .demanded_member_selector(self, name)
+                }
                 dm_ir::ResolveQuery::MemberCallableName(name) => {
                     return self
                         .owner_certificate_issuer

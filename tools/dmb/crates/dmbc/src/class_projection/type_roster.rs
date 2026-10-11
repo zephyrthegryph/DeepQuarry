@@ -2,6 +2,10 @@
 use super::TypeProjection;
 use dm_session::{Observation, ObservationHost, ObservedArtifactStore};
 use std::sync::Arc;
+pub(crate) struct ProjectedTypes {
+    pub(crate) types: Arc<[TypeProjection]>,
+    pub(crate) construction: Arc<super::type_construction::TypeConstruction>,
+}
 const KEY: &[u8] = b"dmbc-projected-type-roster-v1\0";
 #[derive(Clone)]
 pub(crate) struct TypesObservation(pub(crate) Arc<[dm_tree::TypeNode]>);
@@ -24,7 +28,7 @@ impl ObservationHost<(), TypesObservation, ()> for Current {
     }
 }
 pub(crate) struct TypeRoster {
-    values: ObservedArtifactStore<Arc<[TypeProjection]>, (), TypesObservation, ()>,
+    values: ObservedArtifactStore<ProjectedTypes, (), TypesObservation, ()>,
 }
 impl Default for TypeRoster {
     fn default() -> Self {
@@ -47,15 +51,19 @@ pub(super) fn produce(types: &[dm_tree::TypeNode]) -> Arc<[TypeProjection]> {
         .into()
 }
 impl TypeRoster {
-    pub(super) fn obtain(&self, tree: &dm_tree::SemanticTree) -> Arc<[TypeProjection]> {
-        self.obtain_types(tree.shared_types())
+    pub(super) fn obtain(&self, tree: &dm_tree::SemanticTree) -> Arc<ProjectedTypes> {
+        self.obtain_payload(tree.shared_types())
     }
+    #[cfg(test)]
     fn obtain_types(&self, types: Arc<[dm_tree::TypeNode]>) -> Arc<[TypeProjection]> {
+        self.obtain_payload(types).types.clone()
+    }
+    fn obtain_payload(&self, types: Arc<[dm_tree::TypeNode]>) -> Arc<ProjectedTypes> {
         let current = Current(TypesObservation(types));
         if let Some(value) = self.values.lookup(KEY, &current) {
             return Arc::clone(&value);
         }
-        let projected = produce(&current.0.0);
+        let projected = produce(&current.0 .0);
         let value = self
             .values
             .insert_with_owned(
@@ -67,7 +75,10 @@ impl TypeRoster {
                 }],
                 Vec::new(),
                 0,
-                || projected,
+                || ProjectedTypes {
+                    types: projected,
+                    construction: Default::default(),
+                },
             )
             .expect("current-revision type roster admits the current semantic owner");
         Arc::clone(&value)
@@ -75,13 +86,7 @@ impl TypeRoster {
     pub(crate) fn visit_storage(
         &self,
         visitor: impl FnMut(
-            dm_session::ObservedArtifactStorageView<
-                '_,
-                Arc<[TypeProjection]>,
-                (),
-                TypesObservation,
-                (),
-            >,
+            dm_session::ObservedArtifactStorageView<'_, ProjectedTypes, (), TypesObservation, ()>,
         ),
     ) {
         self.values.visit_storage(visitor);

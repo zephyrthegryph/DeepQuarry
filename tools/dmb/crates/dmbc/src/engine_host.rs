@@ -435,7 +435,10 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
         }
         if let dm_ir::ReadDomain::OwnerCallable(query) = domain {
             let base = u64::try_from(self.tree.domain_version(domain)?).ok()?;
-            if matches!(query, Q::MemberCallableName(_)) {
+            if matches!(
+                query,
+                Q::MemberCallableName(_) | Q::MemberCallableVerbName(_)
+            ) {
                 // Exact per-name source availability is qualified by the same
                 // immutable provider that supplies documented native positives
                 // and complete reviewed member-name exclusion. Ambiguous names

@@ -41,6 +41,8 @@ class ContractTests(unittest.TestCase):
         source = Path(__file__).with_name("probe.dm").read_text(encoding="utf-8")
         for step in steps:
             source = retained.contract.apply_step(source, step)
+            self.assertIn("/var/const/callable_fixture_resource = 'contract-resource.txt'", source)
+            self.assertIn("file2text(callable_fixture_resource)", source)
             markers = retained.contract.expected_markers(step["expected"], retained.LABELS, "DQ_CALL")
             self.assertEqual(len(markers), 13)
         self.assertIn("return marker + 5", source)

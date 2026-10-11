@@ -362,7 +362,21 @@ impl MetadataDependencies {
         resolve_metadata(&tree, &mut members, &dirty);
         let names: std::collections::HashSet<_> =
             dirty.iter().map(|id| members[id.index()].name).collect();
+        // changed() proved exact owner/name/kind/mode and parent structure.
+        // Only procedure-metadata presence can change a source name's index
+        // contribution here; defaults/settings/signatures cannot. Inspect the
+        // dirty cone, preserving the authenticated immutable global index owner
+        // without rebuilding all names for an unrelated value edit.
+        let changed_callable_presence = dirty.iter().any(|id| {
+            let before = &previous_tree.members[id.index()];
+            let after = &members[id.index()];
+            matches!(after.kind, MemberKind::Proc | MemberKind::Verb)
+                && before.metadata.procedure.is_some() != after.metadata.procedure.is_some()
+        });
         tree.members = members;
+        if changed_callable_presence {
+            tree.refresh_member_callable_names();
+        }
         tree.refresh_host_selections(&dirty);
         tree.rebuild_inventory_selectors(&names, executor);
         Some(tree)

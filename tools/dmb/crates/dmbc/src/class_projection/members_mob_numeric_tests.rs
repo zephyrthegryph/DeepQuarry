@@ -75,6 +75,7 @@ fn fractional_mob_settings_and_bounds_match_captured_byond_records() {
         }));
     }
     let projection = ClassProjection {
+        type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
         shared_slot_order: Arc::from([]),

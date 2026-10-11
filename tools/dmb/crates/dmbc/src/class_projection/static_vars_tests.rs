@@ -63,6 +63,7 @@ fn captured_static_vars_keeps_slot_but_omits_global_declaration() {
     }
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
         procedure_declarations: Default::default(),

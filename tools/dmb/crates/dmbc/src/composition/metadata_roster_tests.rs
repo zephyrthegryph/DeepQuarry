@@ -39,6 +39,7 @@ fn ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority()
     };
     assert!(Arc::ptr_eq(a, b));
     let mut projection = crate::class_projection::ClassProjection {
+        type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
         procedure_declarations: Arc::new(std::collections::BTreeMap::from([
@@ -72,12 +73,10 @@ fn ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority()
     ));
     Arc::make_mut(&mut projection.procedure_declarations)
         .insert(crate::symbolic::unit_key(identity), false);
-    assert!(
-        roster
-            .admit(&slots, &batch, Some(&projection), &symbols, &references)
-            .unwrap()[0]
-            .is_none()
-    );
+    assert!(roster
+        .admit(&slots, &batch, Some(&projection), &symbols, &references)
+        .unwrap()[0]
+        .is_none());
     let other_references =
         Arc::new(dm_link::ArgumentSourceReferences::assign(&batch.tables, 0, &[]).unwrap());
     assert!(Arc::ptr_eq(
@@ -88,12 +87,10 @@ fn ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority()
             .unwrap(),
         a
     ));
-    assert!(
-        roster
-            .admit(&slots, &batch, None, &SymbolTable::default(), &references)
-            .unwrap()[0]
-            .is_none()
-    );
+    assert!(roster
+        .admit(&slots, &batch, None, &SymbolTable::default(), &references)
+        .unwrap()[0]
+        .is_none());
     let changed_slot = [Slot {
         table_index: 1,
         ..slots[0]
@@ -108,27 +105,21 @@ fn ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority()
     ));
     let original = Arc::clone(&batch.units[0].lowered.abi.as_ref().unwrap());
     batch.units[0].lowered.abi = Some(Arc::new(original.as_ref().clone()));
-    assert!(
-        roster
-            .admit(&slots, &batch, None, &symbols, &references)
-            .unwrap()[0]
-            .is_none()
-    );
+    assert!(roster
+        .admit(&slots, &batch, None, &symbols, &references)
+        .unwrap()[0]
+        .is_none());
     batch.units[0].lowered.abi = Some(original);
     let original = Arc::clone(&batch.units[0].lowered.frame);
     batch.units[0].lowered.frame = Arc::new(original.as_ref().clone());
-    assert!(
-        roster
-            .admit(&slots, &batch, None, &symbols, &references)
-            .unwrap()[0]
-            .is_none()
-    );
+    assert!(roster
+        .admit(&slots, &batch, None, &symbols, &references)
+        .unwrap()[0]
+        .is_none());
     batch.units[0].lowered.frame = original;
-    assert!(
-        roster
-            .admit(&slots, &batch, None, &symbols, &references)
-            .is_some()
-    );
+    assert!(roster
+        .admit(&slots, &batch, None, &symbols, &references)
+        .is_some());
     let fresh = prepare_metadata(&slots, &batch, None, &symbols, &references, None, false);
     assert!(MetadataRoster::capture(&slots, &batch, None, &references, &fresh).is_none());
     let errors = vec![Err(crate::composition::unsupported("current failure"))];
@@ -232,10 +223,7 @@ fn changed_row_reuses_sibling_and_prunes_deleted_or_failed_rows() {
     assert!(Arc::ptr_eq(rebound[0].as_ref().unwrap(), sibling));
     assert!(Arc::ptr_eq(rebound[1].as_ref().unwrap(), first));
     batch.units.swap(0, 1);
-    assert_eq!(
-        batch.units[0].lowered.identity,
-        original_first
-    );
+    assert_eq!(batch.units[0].lowered.identity, original_first);
     // A distinct equal ABI is deliberately not the exact admitted owner.
     let abi = batch.units[0].lowered.abi.as_ref().unwrap();
     batch.units[0].lowered.abi = Some(Arc::new(abi.as_ref().clone()));

@@ -1,3 +1,4 @@
+import { failedCompileOutcome, observedCompileOutcome } from './compile_outcome';
 /** One build entry point for BYOND, native compilation and isolated shadow checks. */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -51,7 +52,7 @@ export function classifyShadowReport(value: unknown, snapshot: string): ShadowAd
   if (total !== 0 || value.unexplained_discrepancies !== 0) return { status: 'differences', reason: `${total} structural discrepancies (${value.unexplained_discrepancies} unexplained)` };
   return { status: 'parity', reason: 'complete named structural comparison with zero discrepancies' };
 }
-export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean; cwd?: string }) => Promise<{ code: number | null; combined: string }>;
+export type CompilerExecutor = (executable: string, args: string[], options?: { throw?: boolean; cwd?: string }) => Promise<{ code: number | null; combined: string; signal?: string | null }>;
 export function compilerMode(): CompilerMode {
   const mode = process.env.DQ_COMPILER ?? 'byond';
   if (mode !== 'byond' && mode !== 'native' && mode !== 'shadow') {
@@ -112,7 +113,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   return [executable, args];
 }
 class NativeResultError extends Error {}
-async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string, invocation?: CompilerInvocation): Promise<{ code: number | null; combined: string; output?: NativePairOutput }> {
+async function nativeCompile(dme: string, options: DreamMakerOptions, execute: CompilerExecutor, artifacts?: string, invocation?: CompilerInvocation): Promise<{ code: number | null; combined: string; signal?: string | null; output?: NativePairOutput }> {
   const [executable, args] = nativeCommand(dme, options, artifacts, invocation);
   const compilerIdentity = observedExecutable(executable);
   const owned = createNativeRequestDirectory('compile-result');
@@ -174,7 +175,30 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
     // Cancellation ends the request before any comparison compiler or inspector.
     if (native.code === 75) throw new Juke.ExitCode(75);
-    const byondResult = await byond(undefined, preparedByond);
+    let byondResult: ByondCompilationResult | void;
+    try {
+      byondResult = await byond(undefined, preparedByond);
+    } catch (error) {
+      const reference = failedCompileOutcome(error);
+      const candidate = observedCompileOutcome(native.code, native.combined, native.code, native.signal ?? null);
+      // This evidence is diagnostic only. Preserve the exact original failure,
+      // even if report publication itself is unavailable.
+      try {
+        fs.writeFileSync(path.join(artifacts, 'shadow-compile-comparison.json'), JSON.stringify({
+          schema: 1, requestedBackend: 'shadow', actualBackends: ['native', 'byond'],
+          fallback: null, inputClosure: shadowSnapshotContract(),
+          native: candidate, byond: reference,
+          buildExitAgrees: candidate.buildExit !== null && reference.buildExit !== null
+            ? candidate.buildExit === reference.buildExit : null,
+          diagnosticsAgree: reference.diagnosticsCaptured
+            ? JSON.stringify(candidate.diagnostics) === JSON.stringify(reference.diagnostics) : null,
+          error: String(error),
+        }, null, 2));
+      } catch (reportError) {
+        Juke.logger.warn(`Shadow rejection report unavailable: ${reportError}`);
+      }
+      throw error;
+    }
     if (native.code !== 0) {
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);

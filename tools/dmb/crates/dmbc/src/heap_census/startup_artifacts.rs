@@ -65,12 +65,23 @@ pub(crate) fn inspect(census: &mut HeapCensus, store: &StartupArtifacts) {
                     if census.arc_object("startup.syntax", receipt) {
                         census.arc_text("startup.syntax_source", receipt.source());
                         census.static_plan(receipt.plan());
+                        declarations(census, receipt.canonical_declarations());
                     }
                 }
                 StartupArtifact::Layout(layout) => {
                     if census.arc_object("startup.layout", layout) {
                         declarations(census, layout.declarations());
                     }
+                }
+                StartupArtifact::Inventory(receipt) => {
+                    let (rows, owner) = receipt.storage();
+                    census.vec_payload("startup.inventory_roster", rows);
+                    for (_, layout) in rows {
+                        if census.arc_object("startup.layout", layout) {
+                            declarations(census, layout.declarations());
+                        }
+                    }
+                    inventory(census, owner);
                 }
             }
         }

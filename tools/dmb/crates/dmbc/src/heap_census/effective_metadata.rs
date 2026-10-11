@@ -49,7 +49,7 @@ fn answer(census: &mut HeapCensus, value: &MetadataAnswer) {
         MetadataAnswer::Effective(Some(value)) => metadata(census, value),
         MetadataAnswer::CallableLocal(inputs) => callable(census, inputs),
         MetadataAnswer::VariableLocal(inputs) => variable(census, inputs),
-        MetadataAnswer::MemberName(_) => (),
+        MetadataAnswer::MemberName(_) | MetadataAnswer::MemberSelector(_) => (),
         MetadataAnswer::Hierarchy(paths) => {
             census.slice("retained_effective_metadata.hierarchy", paths, true);
         }
@@ -74,7 +74,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             census.buffer("retained_effective_metadata.values", address, size, size);
             for read in reads.iter() {
                 match read.query {
-                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) | MetadataQuery::CallableSelection(..) | MetadataQuery::CallablePresence(..) | MetadataQuery::VariableLocal(..) | MetadataQuery::MemberName(_) => (),
+                    MetadataQuery::NormalizedOwner(_) | MetadataQuery::Effective(_) | MetadataQuery::Hierarchy(_) | MetadataQuery::CallableLocal(_) | MetadataQuery::CallableSelection(..) | MetadataQuery::CallablePresence(..) | MetadataQuery::VariableLocal(..) | MetadataQuery::MemberName(_) | MetadataQuery::MemberSelector(_) => (),
                 }
                 match read.domain {
                     MetadataDomain::Namespace | MetadataDomain::EffectiveMembers => (),

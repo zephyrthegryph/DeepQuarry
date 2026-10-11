@@ -30,6 +30,7 @@ pub enum MetadataQuery {
     CallablePresence(SymbolId, SymbolId),
     VariableLocal(SymbolId, SymbolId),
     MemberName(SymbolId),
+    MemberSelector(SymbolId),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MetadataAnswer {
@@ -39,6 +40,7 @@ pub enum MetadataAnswer {
     CallableLocal(Arc<CallableInputs>),
     VariableLocal(Arc<VariableInputs>),
     MemberName(bool),
+    MemberSelector(u8),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MetadataDomain {
@@ -55,7 +57,8 @@ impl MetadataQuery {
             | Self::CallableSelection(..)
             | Self::CallablePresence(..)
             | Self::VariableLocal(..)
-            | Self::MemberName(_) => MetadataDomain::Namespace,
+            | Self::MemberName(_)
+            | Self::MemberSelector(_) => MetadataDomain::Namespace,
         }
     }
 }
@@ -134,7 +137,8 @@ impl<M: crate::member_binding::MemberRead + ?Sized>
             | MetadataQuery::CallableSelection(..)
             | MetadataQuery::CallablePresence(..)
             | MetadataQuery::VariableLocal(..)
-            | MetadataQuery::MemberName(_) => {
+            | MetadataQuery::MemberName(_)
+            | MetadataQuery::MemberSelector(_) => {
                 unreachable!("effective metadata records no callable certificate inputs")
             }
             MetadataQuery::Hierarchy(owner) => {

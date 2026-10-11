@@ -159,3 +159,111 @@ fn compact_owner_locator_keeps_exact_metadata_and_order_authority() {
         "ordered input mismatch must recompute the owner"
     );
 }
+
+#[test]
+fn admitted_method_roster_shares_body_shift_and_replaces_changed_membership() {
+    let store = ClassProjections::default();
+    let first = project_source(
+        &store,
+        "/datum/a/proc/p()\n    return 1\n/datum/b/proc/q()\n    return 2\n",
+        false,
+    );
+    let shifted = project_source(
+        &store,
+        "// current source\n/datum/a/proc/p()\n    return 9\n/datum/b/proc/q()\n    return 8\n",
+        false,
+    );
+    assert!(Arc::ptr_eq(
+        &first.type_construction,
+        &shifted.type_construction
+    ));
+    assert!(Arc::ptr_eq(&first.chains, &shifted.chains));
+    assert!(Arc::ptr_eq(
+        &first.procedure_membership,
+        &shifted.procedure_membership
+    ));
+    assert!(Arc::ptr_eq(
+        &first.procedure_declarations,
+        &shifted.procedure_declarations
+    ));
+    let changed = project_source(
+        &store,
+        "/datum/a/proc/p()\n    return 1\n/datum/b/proc/added()\n    return 2\n",
+        false,
+    );
+    assert!(!Arc::ptr_eq(&first.chains, &changed.chains));
+    assert_ne!(first.procedure_membership, changed.procedure_membership);
+    let weak = Arc::downgrade(store.methods.lock().unwrap().as_ref().unwrap());
+    // A current request that fails before completing projection drops its
+    // candidate; old returned projections own outputs, not the recipe facade.
+    drop(store.begin_methods());
+    assert!(store.methods.lock().unwrap().is_none());
+    assert!(weak.upgrade().is_none());
+    let rebuilt = project_source(
+        &store,
+        "/datum/a/proc/p()\n    return 1\n/datum/b/proc/added()\n    return 2\n",
+        false,
+    );
+    assert_eq!(rebuilt.chains, changed.chains);
+    assert!(!Arc::ptr_eq(&rebuilt.chains, &changed.chains));
+}
+
+#[test]
+fn streaming_method_admission_allocates_replacement_only_on_actual_difference() {
+    use crate::class_projection::method_roster::{MethodInput, MethodRoster};
+    let store = ClassProjections::default();
+    let owner = SymbolId::of("/datum/a");
+    let input = |name: &str, occurrence| {
+        let name = SymbolId::of(name);
+        MethodInput {
+            owner,
+            name,
+            verb: false,
+            key: Key::Proc {
+                owner,
+                name,
+                occurrence,
+            },
+            declared: occurrence == 0,
+        }
+    };
+    let original = [input("p", 0), input("q", 0), input("p", 1)];
+    let mut request = store.begin_methods();
+    for value in original {
+        request.push(value);
+    }
+    let first = request.finish();
+    let mut current = store.begin_methods();
+    for value in original {
+        current.push(value);
+        assert!(
+            current.replacement.is_none(),
+            "exact admitted roster must not recreate ordered inputs"
+        );
+    }
+    let second = current.finish();
+    assert!(Arc::ptr_eq(&first, &second));
+    let changed = [original[0], original[1], input("added", 0)];
+    let mut current = store.begin_methods();
+    current.push(changed[0]);
+    current.push(changed[1]);
+    assert!(current.replacement.is_none());
+    current.push(changed[2]);
+    assert_eq!(current.replacement.as_deref(), Some(changed.as_slice()));
+    let replaced = current.finish();
+    let fresh = MethodRoster::produce(changed.to_vec());
+    assert_eq!(replaced.chains, fresh.chains);
+    assert_eq!(replaced.membership, fresh.membership);
+    assert!(!Arc::ptr_eq(&first, &replaced));
+    let mut current = store.begin_methods();
+    current.push(changed[0]);
+    let shortened = current.finish();
+    let fresh = MethodRoster::produce(vec![changed[0]]);
+    assert_eq!(shortened.chains, fresh.chains);
+    assert_eq!(shortened.membership, fresh.membership);
+    let mut current = store.begin_methods();
+    for value in original {
+        current.push(value);
+    }
+    assert_eq!(current.finish().membership, first.membership);
+}

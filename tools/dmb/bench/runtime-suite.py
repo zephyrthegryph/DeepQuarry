@@ -169,6 +169,15 @@ def finalize_code(code, cleanup):
     return 70 if code == 0 and (not cleanup or not cleanup.get('reaped')) else code
 
 
+def strict_environment(inherited):
+    """Copy caller configuration while removing build/admission bypasses."""
+    env = dict(inherited)
+    for name in ['DQ_PREBUILT_VERDIGRIS', 'DQ_SKIP_VERDIGRIS_ABI_CHECK', 'DQ_WIP_TREE',
+                 'DQ_ALLOW_UNREACHABLE_DM', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE']:
+        env.pop(name, None)
+    return env
+
+
 def main(argv=None):
     args = parser().parse_args(argv)
     suite = validate(args)
@@ -209,9 +218,7 @@ def main(argv=None):
             admitted_compile(checkpoint, args)
             captured_tier = 'normal' if checkpoint.get('schema') == 1 and checkpoint.get('kind') == 'historical_normal_suite_resume' else checkpoint.get('tier')
             if captured_tier != args.tier: raise ValueError('checkpoint tier differs from requested tier')
-        env = dict(os.environ)
-        for name in ['DQ_PREBUILT_VERDIGRIS', 'DQ_SKIP_VERDIGRIS_ABI_CHECK', 'DQ_WIP_TREE', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE']:
-            env.pop(name, None)
+        env = strict_environment(os.environ)
         cargo_target = owned_cache_path(args.cargo_target or args.output / 'cargo-target')
         cargo_home = owned_cache_path(args.cargo_home or args.output / 'cargo-home')
         env.update(DQ_COMPILER=args.backend, DM_EXE=str(args.byond_exe), DQ_DD_SECURITY=args.security,
