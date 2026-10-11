@@ -41,6 +41,17 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(module.session_edit_coverage(edits, 6)["classification"],
                          "six-worktree-byte-acceptance")
 
+    def test_legitimate_closure_size_and_per_field_bounds(self):
+        module.admit_preparation_size("input_closure", 4_784_668)
+        module.admit_preparation_size("input_closure", 8 * 1024 * 1024)
+        for field in ("edits", "scenarios", "source_snapshot", "byond_pin", "build_receipt"):
+            module.admit_preparation_size(field, 4 * 1024 * 1024)
+            with self.assertRaises(ValueError):
+                module.admit_preparation_size(field, 4 * 1024 * 1024 + 1)
+        for size in (8 * 1024 * 1024 + 1, -1, True):
+            with self.assertRaises(ValueError):
+                module.admit_preparation_size("input_closure", size)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -15,6 +15,18 @@ from session_acceptance import session_edit_coverage
 from worktree_authority import _registrations
 
 
+def preparation_json_limit(field):
+    # No shared closure JSON bound exists in iteration authentication. Closures
+    # include path, size, tree and digest per file; the authenticated 24,218-file
+    # capture is 4,784,668 bytes. Only this field receives the bounded 8 MiB cap.
+    return (8 if field == "input_closure" else 4) * 1024 * 1024
+
+
+def admit_preparation_size(field, size):
+    if type(size) is not int or size < 0 or size > preparation_json_limit(field):
+        raise ValueError(f"bounded preparation JSON exceeded: {field}")
+
+
 def prepare(roots, registrations, options):
     roots = [Path(root).resolve() for root in roots]
     if len(roots) != 6 or len({str(root).casefold() for root in roots}) != 6:
@@ -32,9 +44,10 @@ def prepare(roots, registrations, options):
     pins = {}
     for name in ('edits', 'scenarios', 'source_snapshot', 'input_closure', 'byond_pin', 'build_receipt'):
         file = Path(getattr(options, name)).resolve()
-        if file.stat().st_size > 4 * 1024 * 1024:
-            raise ValueError(f"bounded preparation JSON exceeded: {name}")
-        data = file.read_bytes()
+        admit_preparation_size(name, file.stat().st_size)
+        with file.open('rb') as source:
+            data = source.read(preparation_json_limit(name) + 1)
+        admit_preparation_size(name, len(data))
         pins[name] = {'path': str(file), 'sha256': hashlib.sha256(data).hexdigest()}
         json.loads(data)
     coverage = session_edit_coverage(json.loads(Path(options.edits).read_text(encoding='utf8')), len(roots))
