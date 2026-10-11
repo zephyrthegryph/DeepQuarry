@@ -23,7 +23,7 @@ impl Resolver for MissingCall<'_> {
             {
                 ResolvedMeaning::Presence(false)
             }
-            _ => self.0.resolve(query),
+            _ => Resolver::resolve(self.0, query),
         }
     }
 }
