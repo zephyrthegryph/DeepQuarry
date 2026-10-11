@@ -136,7 +136,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
 }
 
 #[cfg(test)]
-#[path = "initializer_publication_store_tests.rs"]
+#[path = "artifact_publication_store_tests.rs"]
 mod tests;
 
 pub(crate) type Store<T, Q, A, D> = PublicationStore<T, Q, A, D>;

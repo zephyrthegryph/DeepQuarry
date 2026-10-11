@@ -181,8 +181,7 @@ pub(crate) enum Domain {
     Input,
     Semantic(ReadDomain),
 }
-#[path = "initializer_publication_store.rs"]
-pub(crate) mod publication_store;
+pub(crate) use crate::artifact_publication_store as publication_store;
 pub(crate) type Store<T> = publication_store::Store<T, Query, Answer, Domain>;
 pub(crate) type Storage<'a, T> =
     dm_session::ObservedArtifactStorageView<'a, T, Query, Answer, Domain>;

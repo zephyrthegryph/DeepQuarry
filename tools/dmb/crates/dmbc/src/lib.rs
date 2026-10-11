@@ -4,6 +4,7 @@
 //! generation/proof machinery. The cold pipeline and command-line driver will
 //! consume this library once their declaration/lowering contracts are complete.
 
+pub(crate) mod artifact_publication_store;
 pub mod cache_maintenance;
 pub mod cli;
 pub mod debug_sources;
