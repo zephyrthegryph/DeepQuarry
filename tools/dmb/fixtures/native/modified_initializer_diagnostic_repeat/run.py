@@ -92,7 +92,11 @@ def main():
                 logs.append(path.read_text(encoding="utf-8-sig", errors="replace"))
             row["acceptance"] = row["child"].get("exit") == 0
             row["diagnostics"] = diagnostics("\n".join(logs))
-            if row["child"].get("status") != "completed":
+            # run_child returns a compact exit/timing DTO; its persisted child
+            # receipt carries lifecycle status. Negative compiler exits are
+            # normal completed observations, never a timeout classification.
+            child_status = json.loads((directory / "child" / "child.json").read_text(encoding="utf-8"))
+            if child_status.get("status") != "completed":
                 raise ValueError("compiler child did not complete")
             if "DM compiler version 516.1687" not in logs[0]:
                 raise ValueError("compiler banner does not match admitted pin")
