@@ -1,22 +1,21 @@
-// Per-atom list of images to update when the atom changes z-level: a lazy tmp
-// list on /atom (derived state, never saved). Global helpers to avoid proc-table bloat.
+// Per-atom list of images to update when the atom changes z-level: a sparse slot (derived state, never saved).
+// Global helpers to avoid proc-table bloat.
 
-/atom
-	/// Images re-planed when this atom changes z-level. Null when none. Owned:
-	/// deleted with the atom (was the update_on_z component's owned list).
-	var/tmp/list/image/z_update_images
-
+/// Images re-planed when this atom changes z-level. Unset when none.
+sparse(/atom, z_update_images, type = list)
 
 /proc/dq_add_z_update_image(atom/a, image/img)
 	if(!img)
 		return
-	if(!a.z_update_images)
-		a.z_update_images = list()
-	a.z_update_images |= img
+	var/list/images = sparse_get(a, z_update_images)
+	if(!images)
+		images = sparse_set(a, z_update_images, list())
+	images |= img
 
 /proc/dq_remove_z_update_image(atom/a, image/img)
-	if(!img || !a.z_update_images)
+	var/list/images = sparse_get(a, z_update_images)
+	if(!img || !images)
 		return
-	a.z_update_images -= img
-	if(!length(a.z_update_images))
-		a.z_update_images = null
+	images -= img
+	if(!length(images))
+		sparse_set(a, z_update_images, null)

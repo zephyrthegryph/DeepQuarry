@@ -47,7 +47,7 @@
 		rel_clear(src, nameof(hud_used)) // remove the owned HUD objects
 	new /datum/hud(src)
 
-	next_move = 1
+	cooldown_set_end(src, next_move, 1)
 	disconnect_time = null // ition: clear the disconnect time
 	sight |= SEE_SELF
 	..()

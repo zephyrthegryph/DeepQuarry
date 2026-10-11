@@ -60,8 +60,8 @@
 		test_menu(user, target, menu_key)
 		return
 	if(legacy_click)
-		user.next_click = -1
-		user.next_move = -1
+		cooldown_set_end(user, next_click, -1)
+		cooldown_set_end(user, next_move, -1)
 		user.ClickOn(target, list2params(list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK)))
 		return
 	test_click(user, target, held)

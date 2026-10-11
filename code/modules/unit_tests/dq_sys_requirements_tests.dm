@@ -128,7 +128,7 @@ CAPABILITIES(/obj/dq_req_probe)
 	TEST_ASSERT_EQUAL(probe.uses, 0, "the effect didn't run")
 
 	probe.locked = FALSE
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	test_click(H, probe, null)
 	TEST_ASSERT_EQUAL(probe.uses, 1, "unlocked, the effect runs")
 	test_driver_end()

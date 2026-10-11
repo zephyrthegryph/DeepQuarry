@@ -9,7 +9,7 @@
 	TEST_ASSERT_EQUAL(coffee.amount_per_transfer_from_this, 5, "actual coffee retains its inherited sip amount")
 	TEST_ASSERT(user.put_in_active_hand(coffee), "actual actor holds its real infinite coffee")
 	var/ingested_before = user.ingested.get_reagent_amount(REAGENT_ID_COFFEE)
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, user, coffee)
 	test_time(3)
 	TEST_ASSERT(abs(user.ingested.get_reagent_amount(REAGENT_ID_COFFEE) - ingested_before - 5) < 0.001, "actual self-drinking transfers the exact inherited five-unit sip")

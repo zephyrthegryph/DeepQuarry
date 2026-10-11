@@ -16,11 +16,11 @@
 	TEST_ASSERT(GLOB.basic_robolimb && GLOB.all_robolimbs[GLOB.basic_robolimb.company], "Real startup robolimb registry supplies its basic manufacturer")
 	arm.robotize(GLOB.basic_robolimb.company)
 	var/atom/original_location = arm.loc
-	COOLDOWN_START(user, last_special, -1 SECONDS)
+	cooldown_start(user, last_special, -1 SECONDS)
 	TEST_ASSERT(arm.is_robotic(), "Public robotize makes the actual attached arm robotic")
 	TEST_ASSERT(original_location && !QDELETED(original_location), "The real body tree supplies the attached limb's location")
 	TEST_ASSERT(arm in user.get_modular_limbs(return_first_found = FALSE, validate_proc = TYPE_PROC_REF(/obj/item/organ/external, can_remove_modular_limb)), "Real manufacturer/body rules offer this exact arm")
-	TEST_ASSERT(COOLDOWN_FINISHED(user, last_special), "The real actor's configured cooldown is already expired")
+	TEST_ASSERT(cooldown_ready(user, last_special), "The real actor's configured cooldown is already expired")
 	TEST_ASSERT(!user.incapacitated() && !user.restrained(), "The actual actor is capable before the question opens")
 	user.detach_limb_verb()
 	var/datum/prompt/choice/detach_limb/first = SSrequests.open_for(user)

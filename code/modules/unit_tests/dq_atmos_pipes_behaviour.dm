@@ -67,7 +67,7 @@
 		actor.put_in_active_hand(held)
 	else if(!held && actor.get_active_hand())
 		actor.drop_item()
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	var/datum/op_result/R = test_click(actor, target, held, gesture)
 	. = R
 	if(!QDELETED(target) && (isnull(R) || (R.outcome & ACT_REFUSED) && R.reason == /datum/msg/op/not_available))

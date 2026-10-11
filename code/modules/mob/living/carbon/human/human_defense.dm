@@ -560,7 +560,7 @@ emp_act
 	if(!..())
 		return 0
 
-	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD)
+	cooldown_start(user, next_move, 20)
 	perform_op(user, src, "shank_twist", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 

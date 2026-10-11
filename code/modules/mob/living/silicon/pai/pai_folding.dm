@@ -29,11 +29,11 @@
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
 		to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't unfold yet."))
 		return
 
-	COOLDOWN_START(src, last_special, 10 SECONDS)
+	cooldown_start(src, last_special, 10 SECONDS)
 
 	if(istype(card.loc, /obj/machinery)) // this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
@@ -82,7 +82,7 @@
 	if(src.loc == card)
 		return
 
-	if(!COOLDOWN_FINISHED(src, last_special))
+	if(!cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
 
@@ -94,7 +94,7 @@
 	if(!card)
 		return
 
-	COOLDOWN_START(src, last_special, 10 SECONDS)
+	cooldown_start(src, last_special, 10 SECONDS)
 
 	if(loc == card)
 		return

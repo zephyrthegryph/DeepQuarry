@@ -1,8 +1,8 @@
 /mob/proc/setMoveCooldown(timeout)
-	next_move = max(world.time + timeout, next_move)
+	cooldown_set_end(src, next_move, max(world.time + timeout, cooldown_end(src, next_move)))
 
 /mob/proc/checkMoveCooldown()
-	if(COOLDOWN_TIMELEFT(src, next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
+	if(cooldown_left(src, next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
 		return FALSE // Need to wait more.
 	return TRUE
 
@@ -254,18 +254,18 @@
 		to_chat(src, span_blue("You're pinned to a wall by [my_mob.pinned[1]]!"))
 		return 0
 
-	var/old_delay = mob.next_move
+	var/old_delay = cooldown_end(mob, next_move)
 
 	if(istype(my_mob?.buckled_to(), /obj/vehicle) || ismob(my_mob?.buckled_to()))
 		//manually set move_delay for vehicles so we don't inherit any mob movement penalties
 		//specific vehicle move delays are set in code\modules\vehicles\vehicle.dm
-		EXPIRY_STAMP(my_mob, next_move, CLOCK_WORLD)
+		cooldown_set_end(my_mob, next_move, world.time)
 		//drunk driving
 		if(my_mob.has_status(STAT_CONFUSED) && prob(20)) //vehicles tend to keep moving in the same direction
 			direct = turn(direct, pick(90, -90))
 		if(ismob(my_mob?.buckled_to()))
 			var/mob/M = my_mob?.buckled_to()
-			if(M.next_move > my_mob.next_move) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
+			if(cooldown_end(M, next_move) > cooldown_end(my_mob, next_move)) // Don't let piggyback riders move their mob IN ADDITION TO the mob moving
 				return
 		var/atom/movable/_tmp_buck_30 = my_mob?.buckled_to()
 		return _tmp_buck_30.relaymove(my_mob,direct)
@@ -327,9 +327,9 @@
 
 	//total_delay = DS2NEARESTTICK(total_delay) //Rounded to the next tick in equivalent ds
 	if(ELAPSED_SINCE(src, mob.last_move_time, CLOCK_WORLD) < total_delay * 1.25)
-		mob.next_move = DS2NEARESTTICK(old_delay + total_delay)
+		cooldown_set_end(mob, next_move, DS2NEARESTTICK(old_delay + total_delay))
 	else
-		mob.next_move = DS2NEARESTTICK(world.time + total_delay)
+		cooldown_set_end(mob, next_move, DS2NEARESTTICK(world.time + total_delay))
 
 	if(!isliving(my_mob))
 		moving = 0

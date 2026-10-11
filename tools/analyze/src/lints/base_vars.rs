@@ -60,7 +60,7 @@ static META: Meta = Meta {
     rules: &[
         RuleMeta {
             name: "base_var",
-            hint: "don't add a var to a base type: make it a capability's state bit / cap_data, a system's private state or a flyweight (or `// ALLOW(base_vars): <reason>`)",
+            hint: "don't add a var to a base type: a per-type constant is a trait block, client state a hud_element(), live state its domain or TRACKED, rare per-instance state a sparse() slot, a cooldown a cooldowns() name (COOLDOWN_DECLARE on a base type is banned), a reference owns_one/links()/slot() (or `// ALLOW(base_vars): <reason>`)",
         },
         RuleMeta { name: "list_init", hint: "use `var/list/x` + LAZYADD/LAZYLEN, or `var/static/list/x` for a shared table" },
     ],

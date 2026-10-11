@@ -855,8 +855,8 @@ GLOBAL_VAR(dq_test_select_names)
  * * passed_params: A list of parameters to pass to the click
  */
 /datum/unit_test/proc/click_wrapper(mob/living/clicker, atom/clicked_on, list/passed_params = list(LEFT_CLICK = 1, BUTTON = LEFT_CLICK))
-	clicker.next_click = -1
-	clicker.next_move = -1
+	cooldown_set_end(clicker, next_click, -1)
+	cooldown_set_end(clicker, next_move, -1)
 	clicker.ClickOn(clicked_on, list2params(passed_params))
 
 /// Tick usage while a test ran: how many MC ticks it spanned, how many overran
