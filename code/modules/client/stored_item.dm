@@ -287,6 +287,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots/adv)
 	persist_storable = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void)
+	acceptance("fit", fits(list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 /obj/item/clothing/suit/space/void
 	persist_storable = FALSE

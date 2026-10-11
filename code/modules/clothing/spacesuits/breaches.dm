@@ -23,6 +23,8 @@
 
 CAPABILITIES(/obj/item/clothing/suit/space)
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
+	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(gas_transfer = 0.01, permeability = 0, cold_parts = CHEST|LEGS|FEET|ARMS|HANDS, heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 2 * ONE_ATMOSPHERE, siemens = 0.9))
 	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))

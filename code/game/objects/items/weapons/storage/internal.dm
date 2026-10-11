@@ -5,6 +5,7 @@
 	var/obj/item/master_item
 
 CAPABILITIES(/obj/item/storage/internal)
+	acceptance("equip", req_acceptance_type(list(), because = "it can't be worn"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = ABSTRACT))
 
 /obj/item/storage/internal/Initialize(mapload)
@@ -15,7 +16,7 @@ CAPABILITIES(/obj/item/storage/internal)
 	name = master_item().name
 
 /// Internal storage is part of its owner and is never worn on its own.
-TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
+
 
 //Helper procs to cleanly implement internal storages - storage items that provide inventory slots for other items.
 //These procs are completely optional, it is up to the master item to decide when it's storage get's opened by calling open()

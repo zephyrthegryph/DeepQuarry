@@ -623,6 +623,7 @@ CAPABILITIES(/obj/item/surgical/bioregen/cyborg)
 /// held item of the cyborg's ops (/mob/living/silicon/robot/held_for_ops()), so it puts a cell into an APC through the APC's own insert op and takes
 /// one out through its take op (into a free pocket: carry()). What it may hold is its CONSTRAINT_HOLD.
 CAPABILITIES(/obj/item/gripper)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(current_pocket))
 	ref_one(nameof(our_robot))
@@ -843,39 +844,90 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 // What each gripper can pick up: its hold constraint (P3), checked through
 // dq_constraint_refusal() like any other holder.
 
-TYPE_TABLE(/obj/item/gripper, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/engineering, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/drone, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SHEET_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/omni, hold_spec, list(HOLD_ONLY(list(OMNI_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/miner, hold_spec, list(HOLD_ONLY(list(MINER_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/security, hold_spec, list(HOLD_ONLY(list(SECURITY_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/paperwork, hold_spec, list(HOLD_ONLY(list(PAPERWORK_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/medical, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/research, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/circuit, hold_spec, list(HOLD_ONLY(list(CIRCUIT_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/service, hold_spec, list(HOLD_ONLY(list(SERVICE_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/gravekeeper, hold_spec, list(HOLD_ONLY(list(GRAVEYARD_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/scene, hold_spec, list(HOLD_ONLY(list(SCENE_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/no_use/organ, hold_spec, list(HOLD_ONLY(list(ORGAN_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/no_use/organ/robotics, hold_spec, list(HOLD_ONLY(list(ROBOTICS_ORGAN_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/no_use/mech, hold_spec, list(HOLD_ONLY(list(EXOSUIT_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/no_use/loader, hold_spec, list(HOLD_ONLY(list(SHEET_GRIPPER))))
 
-TYPE_TABLE(/obj/item/gripper/syndicate, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER))))
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CAPABILITIES(/obj/item/gripper/engineering)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/drone)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/omni)
+	acceptance("hold", req_acceptance_type(list(OMNI_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/miner)
+	acceptance("hold", req_acceptance_type(list(MINER_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/security)
+	acceptance("hold", req_acceptance_type(list(SECURITY_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/paperwork)
+	acceptance("hold", req_acceptance_type(list(PAPERWORK_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/medical)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER, ORGAN_GRIPPER, MEDICAL_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/research)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER, CIRCUIT_GRIPPER, SHEET_GRIPPER, EXOSUIT_GRIPPER, ROBOTICS_ORGAN_GRIPPER, RESEARCH_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/circuit)
+	acceptance("hold", req_acceptance_type(list(CIRCUIT_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/service)
+	acceptance("hold", req_acceptance_type(list(SERVICE_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/gravekeeper)
+	acceptance("hold", req_acceptance_type(list(GRAVEYARD_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/scene)
+	acceptance("hold", req_acceptance_type(list(SCENE_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/no_use/organ)
+	acceptance("hold", req_acceptance_type(list(ORGAN_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/no_use/organ/robotics)
+	acceptance("hold", req_acceptance_type(list(ROBOTICS_ORGAN_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/no_use/mech)
+	acceptance("hold", req_acceptance_type(list(EXOSUIT_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/no_use/loader)
+	acceptance("hold", req_acceptance_type(list(SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/gripper/syndicate)
+	acceptance("hold", req_acceptance_type(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

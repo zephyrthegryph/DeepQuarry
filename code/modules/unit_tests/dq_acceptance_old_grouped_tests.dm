@@ -148,10 +148,9 @@
 	var/obj/item/clothing/glasses/aerogelgoggles/native_target = allocate(/obj/item/clothing/glasses/aerogelgoggles, T)
 	var/obj/item/clothing/suit/radiation/teshari/legacy_source = allocate(/obj/item/clothing/suit/radiation/teshari, T)
 	TEST_ASSERT(acceptance_declared(native_target, CONSTRAINT_FIT), "Closed cohort really migrated goggles")
-	TEST_ASSERT_NULL(acceptance_plan_for(legacy_source, CONSTRAINT_FIT), "Radiation suit remains genuinely legacy in this cohort")
+	TEST_ASSERT(acceptance_declared(legacy_source, CONSTRAINT_FIT), "Radiation suit now has its native fit declaration")
 	TEST_ASSERT_EQUAL(dq_constraint_refusal(legacy_source, CONSTRAINT_FIT, legacy_source, H), "it only fits Teshari", "Legacy source still refuses human exactly")
-	// Build a real legacy explicit snapshot using its existing old declaration.
-	legacy_source.set_constraint(CONSTRAINT_FIT, legacy_source.constraint_spec(CONSTRAINT_FIT), "dq-mixed-legacy-radiation")
+	// Adoption now snapshots the actual native declaration of the converted suit.
 	native_target.restrict_fit(null)
 	TEST_ASSERT(!dq_constraint_present(native_target, CONSTRAINT_FIT), "Native explicit empty has no fit requirement")
 	native_target.adopt_constraint(CONSTRAINT_FIT, legacy_source)

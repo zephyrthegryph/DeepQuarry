@@ -5,7 +5,7 @@
 	worn_state = "punpun"
 	has_sensor = 0
 
-TYPE_TABLE(/obj/item/clothing/under/punpun, fit_spec, list(REQ_FITS_BODYTYPES(list("Monkey"))))
+
 
 /mob/living/carbon/human/monkey/punpun
 
@@ -18,3 +18,6 @@ CAPABILITIES(/mob/living/carbon/human/monkey/punpun)
 
 /mob/living/carbon/human/monkey/punpun/proc/pun_pun(target)
 	return "Pun Pun"
+
+CAPABILITIES(/obj/item/clothing/under/punpun)
+	acceptance("fit", fits(list("Monkey")), mode = ACCEPTANCE_REPLACE)

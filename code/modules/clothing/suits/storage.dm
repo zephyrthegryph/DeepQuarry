@@ -101,6 +101,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/toggle)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 	op("vest_toggle_verb", menu(), label("Adjust Badge"), needs(carried()), then(PROC_REF(vest_toggle_verb)))
 
@@ -137,4 +138,3 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy)
 	owns_one(nameof(pockets), starts = /obj/item/storage/internal, starts_set = list("max_storage_space" = ITEMSIZE_COST_SMALL * 4)) // four pockets
-

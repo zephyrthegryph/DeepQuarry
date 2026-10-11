@@ -6,9 +6,10 @@
 
 CAPABILITIES(/obj/item/clothing/suit/technomancer)
 	configure(item_worn(covers = CHEST|ARMS|LEGS|FEET|HANDS))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.75))
 
-TYPE_TABLE(/obj/item/clothing/suit/technomancer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_ALL_TANKS))))
+
 
 /obj/item/clothing/under/technomancer
 	name = "initiate's jumpsuit"

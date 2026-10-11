@@ -77,9 +77,10 @@ CAPABILITIES(/obj/item/clothing/head/culthood/magus)
 
 CAPABILITIES(/obj/item/clothing/suit/cultrobes)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, hides = HIDEJUMPSUIT))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0))
 
-TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))))
+
 
 /obj/item/clothing/suit/cultrobes/cultify()
 	return
@@ -117,9 +118,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
 
 CAPABILITIES(/obj/item/clothing/suit/space/cult)
 	configure(item_worn(hides = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/cult, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))))
+
 
 /obj/item/clothing/suit/space/cult/cultify()
 	return

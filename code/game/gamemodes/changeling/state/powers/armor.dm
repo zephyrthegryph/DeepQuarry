@@ -42,9 +42,10 @@
 	canremove = FALSE
 
 CAPABILITIES(/obj/item/clothing/suit/space/changeling)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = THICKMATERIAL | DROPDEL | NOSTRIP))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/changeling, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS))))
+
 
 /obj/item/clothing/suit/space/changeling/Initialize(mapload)
 	. = ..()

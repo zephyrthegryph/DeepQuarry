@@ -26,7 +26,7 @@
 	///If we're emagged or not.
 	var/emagged
 
-TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag))))
+
 
 
 /obj/item/clothing/suit/lasertag/proc/on_emag(datum/act/op/A)
@@ -43,6 +43,7 @@ TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(l
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag)
 	configure(item_worn(covers = UPPER_TORSO))
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/gun/energy/lasertag), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 3.0))
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
 	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
@@ -224,7 +225,7 @@ TRACKED(/obj/item/clothing/suit/lasertag, tag_worn)
 	icon_state = "bluetag"
 	item_state_slots = list(slot_r_hand_str = "tdblue", slot_l_hand_str = "tdblue")
 
-TYPE_TABLE(/obj/item/clothing/suit/lasertag/bluetag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/blue))))
+
 
 /obj/item/clothing/suit/lasertag/redtag
 	name = "red laser tag armor"
@@ -232,7 +233,7 @@ TYPE_TABLE(/obj/item/clothing/suit/lasertag/bluetag, suit_storage_spec, list(HOL
 	icon_state = "redtag"
 	item_state_slots = list(slot_r_hand_str = "tdred", slot_l_hand_str = "tdred")
 
-TYPE_TABLE(/obj/item/clothing/suit/lasertag/redtag, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/red))))
+
 
 /obj/item/clothing/suit/lasertag/bluetag/sub
 	name = "Brigader Armor"
@@ -248,4 +249,13 @@ TYPE_TABLE(/obj/item/clothing/suit/lasertag/redtag, suit_storage_spec, list(HOLD
 	name = "universal laser tag armour"
 	desc = "Laser tag armor with no allegiance. For the true renegade, or a free for all."
 
-TYPE_TABLE(/obj/item/clothing/suit/lasertag/omni, suit_storage_spec, list(HOLD_ONLY(list (/obj/item/gun/energy/lasertag/omni))))
+
+
+CAPABILITIES(/obj/item/clothing/suit/lasertag/bluetag)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/gun/energy/lasertag/blue), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/lasertag/redtag)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/gun/energy/lasertag/red), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/lasertag/omni)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/gun/energy/lasertag/omni), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

@@ -9,9 +9,11 @@
 	icon_state = "tesh_cloak_bn"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/suit/storage/teshari/cloak/standard/black_red
 	name = "black and red cloak"
@@ -208,9 +210,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FIT
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/sec
 	name = "security cloak"
@@ -220,9 +223,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/storage/teshari/cloak/jobs/iaa
 	name = "internal affairs cloak"
@@ -249,7 +253,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec, suit_storage_
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "labcoat"
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/suit/storage/toggle/tesharicoat
 	name = "small black coat"
@@ -258,9 +262,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat/teshari, fit_spec, lis
 	icon_state = "tesharicoat"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoat)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/suit/storage/toggle/tesharicoatwhite
 	name = "small coat"
@@ -269,11 +275,13 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoat, fit_spec, list(RE
 	icon_state = "tesharicoatwhite"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 //Hooded teshari cloaks
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 /obj/item/clothing/suit/storage/hooded/teshari
 	name = "Hooded Teshari Cloak"
 	desc = "A soft teshari cloak with an added hood."
@@ -284,11 +292,14 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite, fit_spec, li
 	hoodtype = /obj/item/clothing/head/tesh_hood
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER|HIDETIE))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
+
+
 
 /obj/item/clothing/head/tesh_hood
 	name = "Cloak Hood"
@@ -299,9 +310,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, suit_storage_spec, li
 	item_state_slots = list(slot_r_hand_str = "tesh_hood_bo", slot_l_hand_str = "tesh_hood_bo")
 
 CAPABILITIES(/obj/item/clothing/head/tesh_hood)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_teshari.dmi', hides = BLOCKHAIR, covers = HEAD))
 
-TYPE_TABLE(/obj/item/clothing/head/tesh_hood, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/suit/storage/hooded/teshari/standard/black_orange
 	name = "black and orange hooded cloak"
@@ -434,11 +447,12 @@ TYPE_TABLE(/obj/item/clothing/head/tesh_hood, fit_spec, list(REQ_FITS_BODYTYPES(
 	icon_state = "tesh_beltcloak_bo"
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //Belted job cloaks
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/cargo
 	name = "cargo belted cloak"
 	desc = "A soft Teshari cloak made for the Cargo department"
@@ -512,9 +526,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak, fit_spec, list(REQ
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/qm
 	name = "quartermaster belted cloak"
@@ -544,11 +559,15 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_stor
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
 	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/storage/teshari/beltcloak/jobs/jani
 	name = "janitor belted cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_JANITOR
 	icon_state = "tesh_beltcloak_jani"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/teshari)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)

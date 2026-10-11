@@ -429,6 +429,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedblue
@@ -723,6 +724,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -746,6 +748,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/sc
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -823,6 +826,7 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -838,6 +842,7 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -986,6 +991,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
@@ -1101,6 +1107,7 @@ CAPABILITIES(/obj/item/clothing/head/fluff/hairflowerpin)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
@@ -1256,6 +1263,7 @@ CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
 
 CAPABILITIES(/obj/item/clothing/suit/chococoat)
 	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
@@ -1456,7 +1464,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec,
 
 //samanthafyre:Kateryna Petrovitch
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/kate, fit_spec, null)
 
 /obj/item/clothing/head/helmet/space/fluff/kate
 	name = "Kat's Navy Engineer Helmet"
@@ -1467,11 +1474,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/kate, fit_spec, null)
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, fit_spec, null)
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/kate/proc/owner_fit, "it doesn't fit"))))
 
@@ -1689,7 +1698,6 @@ CAPABILITIES(/obj/item/storage/belt/security/fluff/kilano)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
-TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
 
 /obj/item/clothing/gloves/fluff/kilano/netra
 	name = "black and gold dress gloves"
@@ -1698,11 +1706,12 @@ TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
 	icon_state = "kilanogloves" //TODO: White sprite.
 
 CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
 
-TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano/netra, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/fluff/kilano
 	name = "black and gold winter boots"
@@ -1713,11 +1722,11 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano/netra, fit_spec, null)
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_protection(cold_parts = FEET|LEGS, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET|LEGS, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //BeyondMyLife: Ne'tra Ky'ram
 
-TYPE_TABLE(/obj/item/clothing/shoes/boots/fluff/kilano, fit_spec, null)
 
 /obj/item/clothing/accessory/storage/black_vest/fluff/kilano
 	name = "black and gold webbing vest"
@@ -1737,11 +1746,14 @@ CAPABILITIES(/obj/item/clothing/accessory/storage/black_vest/fluff/kilano)
 	icon_state = "kilanodress"
 
 CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 
 
 //BeyondMyLife:Kilano Soryu
+
 
 /obj/item/clothing/gloves/fluff/kilano
 	name = "Bleached Gloves"
@@ -1751,12 +1763,13 @@ CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
 	icon_state = "kilanogloves"
 
 CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 //BeyondMyLife: Cassandra Selones
 
-TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 
 /obj/item/clothing/shoes/boots/fluff/kilano/purple
 	name = "purple and silver winter boots"
@@ -1845,12 +1858,14 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/siren)
 	icon_state = "hasd_helm"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, fit_spec, null)
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit, "the faceplate is not made for your anatomy"))))
 
@@ -1867,7 +1882,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, 
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, fit_spec, null)
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit, "this suit is not designed for you"))))
 
@@ -1984,13 +1998,15 @@ CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff)
 	icon_state = "melanie_skeleton"
 
 CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
+	acceptance("fit", fits(list(SPECIES_TESHARI), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
 
 
 
 
 
-TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_TESHARI))))
+
 
 TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit, "only slimes can wear this"))))
 
@@ -2088,13 +2104,15 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/azura)
 	icon_state = "zenahelmet"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/zena)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/zena, fit_spec, null)
+
 
 /obj/item/clothing/suit/space/void/engineering/zena
 	name = "custom shroud suit"
@@ -2103,12 +2121,13 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/zena, fit_spec,
 	icon_state = "zenasuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/zena)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
+
 
 /obj/item/clothing/suit/storage/flintlock
 	name = "green jacket"
@@ -2450,11 +2469,12 @@ CAPABILITIES(/obj/item/clothing/head/fluff/memory_crown)
 	COOLDOWN_DECLARE(toggle_cooldown)
 
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/purple_robes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
-	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi', covers = CHEST|ARMS|LEGS))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	op("purple_robes_toggle_verb", menu(), label("Toggle Eyes"), needs(carried()), then(PROC_REF(purple_robes_toggle_verb)))
+
+	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi', covers = CHEST|ARMS|LEGS))
 
 /// Old verb "Toggle Eyes".
 /obj/item/clothing/suit/storage/hooded/purple_robes/proc/purple_robes_toggle_verb(datum/act/op/A)
@@ -2497,3 +2517,8 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 
 CAPABILITIES(/obj/item/clothing/head/hood/purple_robes)
 	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi'))
+CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/kate)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/security/hasd)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)

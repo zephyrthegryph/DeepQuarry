@@ -5,9 +5,10 @@
 
 CAPABILITIES(/obj/item/clothing/suit/armor)
 	configure(item_worn(covers = CHEST, flags = THICKMATERIAL))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 
 /// Suits can't go on over gloves or shoes that cover the same limbs.
 TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null))))
@@ -141,9 +142,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/swat)
 	configure(item_worn(flags = THICKMATERIAL, covers = CHEST|LEGS|FEET|ARMS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.6))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/armor/swat/officer
 	name = "officer jacket"
@@ -250,7 +252,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/vest/ert)
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/vest, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/storage/vest/officer
 	name = "officer armor vest"
@@ -375,7 +377,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
 	desc = "A simple kevlar plate carrier. This one has the word 'Press' embroidered on patches on the back and front."
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet))))
+
 
 /obj/item/clothing/suit/storage/vest/heavy
 	name = "heavy armor vest"
@@ -437,9 +439,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(H
 
 CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
 	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
+
 
 /obj/item/clothing/suit/armor/heavy
 	name = "heavy armor"
@@ -628,7 +631,7 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 	icon_state = "wolf_item"
 	item_state = "heavy_wolf_armor"
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, fit_spec, null)
+
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this"))))
 
@@ -770,9 +773,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume/bedevere)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))))
+
 
 /obj/item/clothing/suit/armor/combat/crusader_explo/FM
 	name = "field medic low tech suit"
@@ -896,3 +900,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
 	icon_override = 'icons/mob/suit_yw.dmi'
 	item_state = "paramedic-vest_s"
 	armor_spec = "bomb=15;bio=50;rad=50"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/press)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)

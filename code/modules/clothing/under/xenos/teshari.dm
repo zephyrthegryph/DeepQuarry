@@ -2,7 +2,7 @@
 	icon = 'icons/inventory/uniform/item_teshari.dmi'
 	icon_state = "seromi_grey"
 
-TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
+
 
 /obj/item/clothing/under/teshari/smock
 	name = "small grey smock"
@@ -236,3 +236,6 @@ CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/sec)
 	name = "internal affairs undercoat"
 	desc = "A traditional Teshari garb made for the " + JOB_INTERNAL_AFFAIRS_AGENT
 	icon_state = "tesh_uniform_iaa"
+
+CAPABILITIES(/obj/item/clothing/under/teshari)
+	acceptance("fit", fits(list(SPECIES_TESHARI)), mode = ACCEPTANCE_REPLACE)

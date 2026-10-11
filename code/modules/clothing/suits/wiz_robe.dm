@@ -80,9 +80,10 @@ CAPABILITIES(/obj/item/clothing/head/wizard/cap)
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe)
 	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.8))
 
-TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))))
+
 
 /obj/item/clothing/suit/wizrobe/red
 	name = "red wizard robe"

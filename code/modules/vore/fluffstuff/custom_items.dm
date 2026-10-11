@@ -481,9 +481,11 @@ CAPABILITIES(/obj/item/card/id/centcom/station/fluff/aronai)
 	item_state = "serdy_armor"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur/serdy)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
 	configure(item_worn(covers = CHEST|LEGS|ARMS))
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
+
 
 /obj/item/clothing/head/serdyhelmet //SilencedMP5A5's specialty helmet.
 	name = "custom security helmet"
@@ -1163,11 +1165,12 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 	injury_kind = INJURY_PAIN
 
 CAPABILITIES(/obj/item/melee/fluffstuff/wolfgirlsword)
+	acceptance("suit_storage", req_acceptance_type(list(/obj/item/shield/fluff/wolfgirlshield), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(slots = SLOT_BACK | SLOT_OCLOTHING))
 	configure(item_thrown(force = 1))
 	configure(item_combat(force = 1))
 
-TYPE_TABLE(/obj/item/melee/fluffstuff/wolfgirlsword, suit_storage_spec, list(HOLD_ONLY(list(/obj/item/shield/fluff/wolfgirlshield))))
+
 
 /obj/item/melee/fluffstuff/wolfgirlsword/dropped(mob/user, equipping, slot)
 	..()
@@ -1290,10 +1293,11 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 	glove_type = null
 	boot_type = null
 
-TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
+
 
 CAPABILITIES(/obj/item/rig/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))
 

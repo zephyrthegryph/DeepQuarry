@@ -8,9 +8,10 @@
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/zaddat)
 	configure(item_worn(covers = HEAD|FACE|EYES))
+	acceptance("fit", fits(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 1))
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN))))
+
 
 
 /obj/item/clothing/suit/space/void/zaddat
@@ -24,13 +25,15 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/zaddat, fit_spec, list(REQ_
 
 	breach_threshold = 12
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN))))
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/zaddat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS))))
+
+
 
 MSG_DEF_SELF(zaddat/has_been_customized, "This shroud has already been customized.")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/zaddat)
+	acceptance("fit", fits(list(SPECIES_ZADDAT, SPECIES_PROMETHEAN)), mode = ACCEPTANCE_REPLACE)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 1))
 	op("zaddat_custom_suit_verb", menu(), label("Customize Shroud"), needs(carried(), req_is(nameof(has_been_customized), FALSE, because = MSG(zaddat/has_been_customized))), then(PROC_REF(zaddat_custom_suit_verb)))
 
