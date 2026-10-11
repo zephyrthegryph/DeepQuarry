@@ -8,6 +8,7 @@ impl HeapCensus {
             "retained.generation.wire_memo_evictions",
             generation.wire_memo_evictions() as usize,
         );
+        generation.census_wire_memo_counter(self);
         generation.census_plan(self);
         generation.census_string_index(self);
         generation.census_headers(self);

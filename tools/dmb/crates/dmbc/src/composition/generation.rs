@@ -30,7 +30,7 @@ pub struct RetainedGeneration {
     plan: Arc<Mutex<Option<Arc<procedure_plan::CachedPlan>>>>,
     publication: Arc<dm_session::ArtifactPublication<Pending>>,
     attempt: dm_session::ArtifactAttempt<Pending>,
-    wire_evictions: std::sync::atomic::AtomicU64,
+    wire_evictions: Arc<std::sync::atomic::AtomicU64>,
     /// Symbolic header decisions share the session generation's policy and lifetime.
     /// Values and dense table IDs are always bound from the current model.
     pub(super) header_recipes: Arc<crate::class_projection::HeaderRecipes>,
@@ -334,6 +334,7 @@ mod tests {
             .unwrap();
         assert_eq!(result.bytes(), new_model.encode().unwrap().bytes());
         assert_eq!(changed.wire_memo_evictions(), 1);
+        assert_eq!(owner.wire_memo_evictions(), 1);
         assert!(previous_weak.upgrade().is_none());
         assert!(changed.attempt.generation().same_as(&token));
         assert!(owner

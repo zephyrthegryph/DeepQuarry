@@ -23,7 +23,7 @@ impl Default for RetainedGeneration {
             header_recipes,
             publication,
             attempt,
-            wire_evictions: AtomicU64::new(0),
+            wire_evictions: Arc::new(AtomicU64::new(0)),
         }
     }
 }
@@ -61,7 +61,7 @@ impl RetainedGeneration {
             header_recipes,
             publication: Arc::clone(&self.publication),
             attempt,
-            wire_evictions: AtomicU64::new(0),
+            wire_evictions: Arc::clone(&self.wire_evictions),
         })
     }
     pub(crate) fn publish_successful(&self) -> bool {
@@ -78,6 +78,12 @@ impl RetainedGeneration {
             }
             drop(detached);
         });
+    }
+    pub(crate) fn census_wire_memo_counter(&self, census: &mut crate::heap_census::HeapCensus) {
+        census.arc_object(
+            "retained.generation.wire_memo_eviction_counter",
+            &self.wire_evictions,
+        );
     }
     pub(crate) fn wire_memo_evictions(&self) -> u64 {
         self.wire_evictions.load(Ordering::Relaxed)
