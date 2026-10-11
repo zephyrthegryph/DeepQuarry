@@ -22,12 +22,6 @@ impl HeapCensus {
     }
 }
 
-fn nodes<K, V>(map: &BTreeMap<K, V>) -> usize {
-    // Private BTree node layout is not an exact census capacity. Admission
-    // deliberately charges a full maximum-fanout node for every live entry.
-    map.len()
-        .saturating_mul(size_of::<(K, V)>().saturating_mul(16).saturating_add(512))
-}
 pub(crate) fn weight(
     code: &ResolverProc,
     key: &[u8],
@@ -36,17 +30,9 @@ pub(crate) fn weight(
     recipes: &Vec<ExpressionRecipe>,
     references: &Vec<dm_ir::SymRef>,
 ) -> Option<usize> {
-    // Private modifier AST/resource owners require current-source recipes and
-    // a complete ownership walker. Do not admit them with a codec-size guess.
-    if !code.modified_instances.is_empty() {
-        return None;
-    }
     let mut census = HeapCensus::new("resident_initializer_fragment_admission");
-    census.resolver_code(code);
+    let private = super::resident_weight::resolver_code_charge(&mut census, code);
     census.initializer_fragment_recipes(recipes, references);
-    census.owner("lowered_code").unknown.remove(
-        "resolver BTreeMap nodes and modified-instance nested expression buffers not exposed",
-    );
     census.vec_payload("resident_initializer_fragment.reads", reads);
     census.vec_payload("resident_initializer_fragment.versions", versions);
     for read in reads {
@@ -66,11 +52,7 @@ pub(crate) fn weight(
             .saturating_add(size_of::<ResolverProc>())
             .saturating_add(key.len())
             .saturating_add(4096)
-            .saturating_add(nodes(&code.procedure_values))
-            .saturating_add(nodes(&code.procedure_statics))
-            .saturating_add(nodes(&code.slots))
-            .saturating_add(nodes(&code.resources))
-            .saturating_add(nodes(&code.instances)),
+            .saturating_add(private),
     )
 }
 
@@ -131,7 +113,7 @@ mod tests {
                 source_span: None,
             },
         );
-        assert!(weight(&code, b"key", &reads, &versions, &recipes, &references).is_none());
+        assert!(weight(&code, b"key", &reads, &versions, &recipes, &references).unwrap() > after);
         code.modified_instances.clear();
         references.reserve_exact(1000);
         assert!(

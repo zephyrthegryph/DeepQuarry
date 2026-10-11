@@ -29,6 +29,8 @@ impl Resolver for Facts {
             },
             ResolveQuery::HasMemberVar { .. } => ResolvedMeaning::Presence(true),
             ResolveQuery::DeclaredVarType { .. } => ResolvedMeaning::DeclaredType(None),
+            ResolveQuery::RuntimeType(path) => ResolvedMeaning::Symbol(path),
+            ResolveQuery::Ancestry(owner) => ResolvedMeaning::Symbols(vec![owner].into()),
             _ => ResolvedMeaning::Missing,
         }
     }
@@ -132,7 +134,10 @@ fn retained_map_outputs_share_code_match_fresh_and_invalidate_storage_reads() {
     assert_eq!(second.counts.output_hits.load(Ordering::Relaxed), 1);
     assert!(Arc::ptr_eq(&descriptors.entries, &hit_descriptors.entries));
     assert_eq!(code.len(), 1);
-    assert!(Arc::ptr_eq(code[0].code.code_owner(), hit[0].code.code_owner()));
+    assert!(Arc::ptr_eq(
+        code[0].code.code_owner(),
+        hit[0].code.code_owner()
+    ));
     assert!(Arc::ptr_eq(&code[0].debug_origins, &hit[0].debug_origins));
     let (_, fresh) = prepare(
         &MapMemo::new(1, 0),
@@ -180,4 +185,96 @@ fn current_semantic_path_binding_checks_include_authority() {
     let mut shifted = captured.maps[0].clone();
     shifted.captured.include_occurrence = u32::MAX;
     assert!(outputs::current_paths(&frontend, &[shifted]).is_err());
+}
+
+#[test]
+fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_changes() {
+    struct ModifiedSource(&'static str);
+    impl dm_preprocess::SourceProvider for ModifiedSource {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            match path.extension().and_then(|s| s.to_str()) {
+                Some("dme") => Ok("#include \"probe.dmm\"\n".into()),
+                Some("dmm") => Ok(self.0.into()),
+                _ => Err("missing".into()),
+            }
+        }
+    }
+    let owner = Arc::new(RetainedMaps::current_revision());
+    let mut previous = None;
+    for (index, source) in [
+        "\"a\"=(/obj{x=(/obj/item{amount=1})},/turf,/area)\n(1,1,1)={\"a\"}",
+        "\"a\"=(/obj{x=(/obj/item{amount=1})},/turf,/area)\n(1,1,1)={\"a\"}",
+        "// shifted map source\n\"a\"=(/obj{x=(/obj/item{amount=1})},/turf,/area)\n(1,1,1)={\"a\"}",
+        "// shifted map source\n\"a\"=(/obj{x=(/obj/item{amount=2})},/turf,/area)\n(1,1,1)={\"a\"}",
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let source = ModifiedSource(source);
+        let frontend = dm_tree::frontend::build(
+            Path::new("game/project.dme"),
+            &source,
+            &Default::default(),
+            1,
+        )
+        .unwrap();
+        let captured = crate::non_text::capture(&frontend, &source).unwrap();
+        let projection = crate::map_projection::project(
+            &captured.maps,
+            WorldDefaults {
+                turf: SymbolId::of("/turf"),
+                area: SymbolId::of("/area"),
+                minimum_dimensions: [1; 3],
+            },
+            &Kinds,
+        )
+        .unwrap();
+        let memo = MapMemo::with_resident(1, owner.clone(), None);
+        let (_, current) = prepare(
+            &memo,
+            &frontend,
+            &captured.maps,
+            &projection,
+            &Facts { shared: false },
+        )
+        .unwrap();
+        assert_eq!(
+            memo.counts.output_hits.load(Ordering::Relaxed),
+            u64::from(index == 1)
+        );
+        let (_, fresh) = prepare(
+            &MapMemo::new(1, 0),
+            &frontend,
+            &captured.maps,
+            &projection,
+            &Facts { shared: false },
+        )
+        .unwrap();
+        assert_eq!(current.len(), 1);
+        assert_eq!(current[0].code.procedure, fresh[0].code.procedure);
+        assert_eq!(current[0].debug_origins, fresh[0].debug_origins);
+        let actual = current[0].code.modified_instances.values().next().unwrap();
+        let expected = fresh[0].code.modified_instances.values().next().unwrap();
+        assert_eq!(
+            actual.descriptor.canonical_bytes(),
+            expected.descriptor.canonical_bytes()
+        );
+        assert_eq!(actual.descriptor.fields(), expected.descriptor.fields());
+        assert_eq!(actual.source_span, expected.source_span);
+        assert_eq!(actual.field_origins, expected.field_origins);
+        if let Some(code) = previous.as_ref() {
+            assert_eq!(Arc::ptr_eq(code, current[0].code.code_owner()), index == 1);
+        }
+        previous = Some(Arc::clone(current[0].code.code_owner()));
+        let changed = MapMemo::with_resident(1, owner.clone(), None);
+        assert!(prepare(
+            &changed,
+            &frontend,
+            &captured.maps,
+            &projection,
+            &Facts { shared: true }
+        )
+        .is_err());
+        assert_eq!(changed.counts.output_hits.load(Ordering::Relaxed), 0);
+    }
 }

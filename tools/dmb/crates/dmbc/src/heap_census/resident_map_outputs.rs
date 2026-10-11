@@ -1,4 +1,4 @@
-//! Actual immutable map-output owners; opaque modifier payloads decline admission.
+//! Actual immutable map-output owners; unexposed payloads decline admission.
 use super::*;
 use crate::{
     initialization_artifact::{InitializationArtifact, InitializationCoverage},
@@ -62,8 +62,8 @@ pub(crate) fn weight(
                 census.initializer_encoding(encoding);
             }
             if census.arc_object("retained_maps.code", code.code_owner()) {
-                // Reuse the complete resolver owner walker and its conservative
-                // private-index bounds. Separate traversal may overcharge aliases
+                // Reuse the same complete resolver/modified-expression owner
+                // walker as procedure admission, with conservative index bounds. Separate traversal may overcharge aliases
                 // across procedures, but never labels them exact census bytes.
                 private = private.saturating_add(super::resident_initializer_fragment::weight(
                     code,

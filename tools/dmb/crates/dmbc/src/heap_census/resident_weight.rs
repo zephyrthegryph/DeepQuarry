@@ -65,7 +65,10 @@ fn nodes<K, V>(map: &BTreeMap<K, V>) -> usize {
     map.len()
         .saturating_mul(size_of::<(K, V)>().saturating_mul(16).saturating_add(512))
 }
-fn code(c: &mut HeapCensus, code: &dm_codegen_byond::lower_resolver::ResolverProc) -> usize {
+pub(super) fn resolver_code_charge(
+    c: &mut HeapCensus,
+    code: &dm_codegen_byond::lower_resolver::ResolverProc,
+) -> usize {
     c.resolver_code(code);
     let owner = "resident_modified";
     let mut overhead = nodes(&code.procedure_values)
@@ -92,6 +95,11 @@ fn code(c: &mut HeapCensus, code: &dm_codegen_byond::lower_resolver::ResolverPro
             c.string(owner, name);
         }
     }
+    // The common walker has exposed every nested modified payload; private map
+    // layouts are conservatively charged above, rather than reported as exact.
+    c.owner("lowered_code").unknown.remove(
+        "resolver BTreeMap nodes and modified-instance nested expression buffers not exposed",
+    );
     overhead
 }
 #[cfg(test)]
@@ -127,7 +135,7 @@ fn procedure_core(
     ledger: impl FnOnce(&mut HeapCensus),
 ) -> Option<usize> {
     let mut c = HeapCensus::new("resident_admission");
-    let mut map_overhead = code(&mut c, &unit.code);
+    let mut map_overhead = resolver_code_charge(&mut c, &unit.code);
     if let Some(references) = &unit.selected_references {
         if c.arc_object("resident_reference_selections", references)
             && c.vec_payload("resident_reference_selections", &references.references)
@@ -139,7 +147,7 @@ fn procedure_core(
     }
     c.vec_payload("resident_helpers", &unit.source_helpers);
     for helper in &unit.source_helpers {
-        map_overhead = map_overhead.saturating_add(code(&mut c, &helper.code));
+        map_overhead = map_overhead.saturating_add(resolver_code_charge(&mut c, &helper.code));
         c.debug("resident_helper_debug", &helper.debug_origins);
     }
     // Every resolver map has a conservative node charge above; modified
