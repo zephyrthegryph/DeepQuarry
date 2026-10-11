@@ -373,5 +373,32 @@
     ],
     "no_test_filter_receipt": "20261011-103106-10f177be-focused.json (incorrect prefix; rerun with actual listed prefix; not a test failure)",
     "scope": "focused shared grammar, source metadata, pinned headers, semantic transport, current-host read validity and retained error recovery; not full suite or DeepQuarry benchmark"
+  },
+  "focused_validation_523197": {
+    "source_commit": "52319758b98d27cbedfa44d9977973cf01231110",
+    "archive_sha256": "93350558447d68d468bf1406a6ae04b5a78dd84253b80c4b2d7155158cd64ec2",
+    "build_receipt": "20261011-103815-abe9b876-job-cargo.json",
+    "passed": 7,
+    "failed": 0,
+    "receipts": [
+      "20261011-104115-eff8623d-focused.json",
+      "20261011-104115-d6bd7167-focused.json"
+    ],
+    "scope": "real pinned host list and opaque-read authority, scalar controls, map parse/geometry/unit original-receipt verification; not full suite or benchmark",
+    "resolved_prior_failures": [
+      "scalar constant fixture now uses actual predefined constant namespace",
+      "typed list value read preserves opaque runtime mapping; concrete receiver checks remain strict"
+    ],
+    "remaining": [
+      "graphics declaration fixture correction and folded-source-features implementation gate pending",
+      "full DM runtime parity and current DeepQuarry timings remain open"
+    ]
+  },
+  "map_verify_compile_check_e512": {
+    "source_commit": "e51244191e7e979cee218aa5e2ee73065663925c",
+    "archive_sha256": "6c8c75105e6e812bb2f16ebfa365fb0859efde24b966345bf1211b52a68e2c68",
+    "receipt": "20261011-103540-d067b295-job-cargo.json",
+    "exit_code": 0,
+    "scope": "cargo check --tests; not compiler performance"
   }
 }
