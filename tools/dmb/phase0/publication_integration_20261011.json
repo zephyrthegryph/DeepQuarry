@@ -477,5 +477,58 @@
     "passed": 3,
     "failed": 0,
     "scope": "Decoded-header parser controls only; paired compiler feature flag comparison not yet run"
+  },
+  "actual_cli_284539": {
+    "source_commit": "284539f4f959771dcd67d425f39207612fecbdd9",
+    "archive_sha256": "0a54bceaee0a8e6c19ceba2736e56fd48030c3b418d1384e552738326e34a5a6",
+    "binary": "E:/dq-cache/dmb-native-v2/frozen-build/20261011-284539f4f9-dmbc.exe",
+    "binary_sha256": "af289ee065ff7e0e3fea520881961b45afdd775d5d7d335af35c2536244e20b8",
+    "build_receipt": "20261011-114251-b854976c-job-cargo.json",
+    "profile": {
+      "dmbc_opt_level": 0,
+      "dm_tree_opt_level": 2,
+      "dm_codegen_beyond_opt_level": 2,
+      "codegen_units": 256,
+      "lto": false,
+      "acceptance_profile": false
+    },
+    "compile_error_contract": {
+      "receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-284539/ffdc29532c0f46ca91f7ba85f09e14c6/receipt.json",
+      "cases": 18,
+      "acceptance_and_rejection_class_agree": 18,
+      "exact_diagnostics_agree": 18
+    },
+    "folded_feature_contract": {
+      "receipt": "E:/dq-cache/dmb-folded-source-features/20261011-284539/6d100525fa4a41229f49fcdaeab866d4/receipt.json",
+      "cases": 14,
+      "acceptance_agrees": 14,
+      "accepted_header_bits_match": true,
+      "remaining": "Four missing-name rejections remain unsupported instead of source errors; current intrinsic namespace authority is incomplete"
+    },
+    "modified_feature_contract": {
+      "receipt": "E:/dq-cache/dmb-modified-source-features/20261011-284539/fe2afb2950914a1aacffb3a9b8e159aa/receipt.json",
+      "cases": 8,
+      "acceptance_agrees": 8,
+      "accepted_header_bits_match": true,
+      "remaining": "Two direct modified nameof rejections lose typed source-error class; absent static local also remains unsupported"
+    },
+    "runtime": "not run on this binary"
+  },
+  "real_deepquarry_cohort_284539": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-114642-3ab2bf20/receipt.json",
+    "status": "failed",
+    "rows_admitted": 0,
+    "initial_compile_exit": 70,
+    "compiler_failed_stage_total_seconds": 43.624,
+    "compiler_failed_stage_time_is_complete_compile": false,
+    "failure": "holographic_nature.dm:11 PROC_REF(on_entered) relative nameof(.proc/on_entered) incorrectly queried as Type",
+    "cleanup_reaped": true,
+    "scope": "Captured real DeepQuarry source with current prototype compiler; no successful output, oracle or end-to-end timings admitted; not latest HEAD/full suite/six-worktree acceptance"
+  },
+  "owned_cleanup_followup": {
+    "manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-reaped-debug-objects-20261011.json",
+    "files": 14,
+    "logical_bytes": 560474342,
+    "scope": "Exact old debug codegen objects from authenticated reaped timeout; binaries, receipts, rlibs and current release objects preserved"
   }
 }
