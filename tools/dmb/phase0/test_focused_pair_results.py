@@ -21,6 +21,29 @@ class FocusedPairPolicy(unittest.TestCase):
         with self.assertRaises(ValueError):
             compare(left, right)
 
+    def test_matching_failures_preserve_parity_without_acceptance(self):
+        row = dict(status=1, name='probe', message='expected failure', runtimes=1,
+                   runtime_errors=[{'description': 'caught runtime'}], runtime_errors_truncated=False)
+        left = {'record': {'clean': True, 'tests': {'probe': dict(row)}}}
+        right = {'record': {'clean': True, 'tests': {'probe': dict(row)}}}
+        result = compare(left, right)
+        self.assertTrue(result['parity'])
+        self.assertFalse(result['all_tests_passed'])
+        self.assertEqual(result['observedRecords']['native']['record']['tests']['probe']['runtime_errors'], row['runtime_errors'])
+        left['record']['clean'] = right['record']['clean'] = False
+        result = compare(left, right)
+        self.assertTrue(result['parity'])
+        self.assertFalse(result['all_tests_passed'])
+        self.assertFalse(result['nativeClean'])
+
+    def test_matching_skips_are_not_all_tests_passed(self):
+        row = dict(status=2, name='probe', runtimes=0, runtime_errors=[], runtime_errors_truncated=False)
+        left = {'record': {'clean': True, 'tests': {'probe': dict(row)}}}
+        right = {'record': {'clean': True, 'tests': {'probe': dict(row)}}}
+        result = compare(left, right)
+        self.assertTrue(result['parity'])
+        self.assertFalse(result['all_tests_passed'])
+
 
 if __name__ == '__main__':
     unittest.main()

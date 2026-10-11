@@ -33,8 +33,6 @@ def observed_record(log, checkout, backend, compiler_sha, focuses, deadline):
         raise ValueError('focused record does not belong to pinned backend')
     if not set(focuses).issubset(value.get('tests', {})):
         raise ValueError('focused record omitted requested tests')
-    if any(value['tests'][name].get('status') != 0 for name in focuses):
-        raise ValueError('requested focused tests did not all pass; skips are not acceptance')
     return {'path': str(file), 'sha256': before, 'record': value}
 
 
@@ -53,7 +51,12 @@ def compare(reference, native):
         a, b = meaning(left['tests'][name]), meaning(right['tests'][name])
         if a != b:
             differences.append({'name': name, 'byond': a, 'native': b})
-    return {'matches': not differences and left.get('clean') is True and right.get('clean') is True,
+    if type(left.get('clean')) is not bool or type(right.get('clean')) is not bool:
+        raise ValueError('observed boot cleanliness must be explicit')
+    parity = not differences and left['clean'] == right['clean']
+    all_passed = (left['clean'] and right['clean']
+                  and all(row['status'] == 0 for record in (left, right) for row in record['tests'].values()))
+    return {'matches': parity, 'parity': parity, 'all_tests_passed': all_passed,
             'differences': differences, 'byondClean': left.get('clean'), 'nativeClean': right.get('clean'),
             'observedRecords': {'byond': reference, 'native': native},
             'scope': 'exact observed focused rows and boot clean flags; timing excluded; implicit closure unissued'}

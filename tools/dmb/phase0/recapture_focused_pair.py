@@ -225,15 +225,18 @@ def main():
                     command += ['--focus', value]
                 result = launch(command, Path(args.checkout).resolve(strict=True), args.output / (backend + '-runtime.log'), deadline)
                 runtime['executions'][backend] = result
-                if result['exit_code'] != 0:
-                    raise ValueError(backend + ' focused runtime failed')
             verify_source(args.prepared_root / 'source', json.loads((args.prepared_root / 'source-snapshot.json').read_text())['files'], deadline)
             records = {backend: observed_record(args.output / (backend + '-runtime/build.log'), args.checkout, backend,
                        getattr(args, backend + '_sha256'), args.focus, deadline) for backend in ('byond', 'native')}
             runtime['comparison'] = compare(records['byond'], records['native'])
-            if not runtime['comparison']['matches']:
-                raise ValueError('observed focused test records or boot cleanliness differ')
-            runtime['status'] = 'passed'
+            runtime['parity'] = runtime['comparison']['parity']
+            runtime['all_tests_passed'] = (runtime['comparison']['all_tests_passed']
+                and all(row['exit_code'] == 0 for row in runtime['executions'].values()))
+            runtime['status'] = 'passed' if runtime['parity'] and runtime['all_tests_passed'] else 'failed'
+            if not runtime['parity']:
+                runtime['error'] = 'observed focused test records or boot cleanliness differ'
+            elif not runtime['all_tests_passed']:
+                runtime['error'] = 'matching observations do not establish all-tests-pass acceptance'
         except Exception as error:
             runtime.update(status='failed', error=str(error))
         finally:
