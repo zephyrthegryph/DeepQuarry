@@ -1,3 +1,21 @@
+/// A manual that shows a wiki page in a frame: the page under the configured wiki URL (wiki_frame(), derived into dat at init).
+/obj/item/book/manual/var/wiki_frame_page
+
+/// The framed wiki page (derives(), at init).
+/obj/item/book/manual/proc/wiki_frame()
+	return {"
+
+		<html><head>
+		</head>
+
+		<body>
+		<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)][wiki_frame_page]&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
+		</body>
+
+		</html>
+
+		"}
+
 /*********************MANUALS (BOOKS)***********************/
 
 /obj/item/book/manual
@@ -2529,21 +2547,3 @@ wiki_frame_page = "Chain_of_Command"
 </body>
 </html>
 "}
-
-/// A manual that shows a wiki page in a frame: the page under the configured wiki URL (wiki_frame(), derived into dat at init).
-/obj/item/book/manual/var/wiki_frame_page
-
-/// The framed wiki page (derives(), at init).
-/obj/item/book/manual/proc/wiki_frame()
-	return {"
-
-		<html><head>
-		</head>
-
-		<body>
-		<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)][wiki_frame_page]&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
-		</body>
-
-		</html>
-
-		"}
