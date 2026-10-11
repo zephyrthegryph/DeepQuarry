@@ -69,9 +69,9 @@ TRACKED(/obj/item/clothing/suit/armor/tesla, ready)
 	look.state(lit ? ready_icon_state : normal_icon_state)
 	look.held_state(lit ? ready_icon_state : normal_icon_state)
 	if(lit)
-		look.light(2, 1, "#006AFF")
+		look.glow(2, 1, "#006AFF")
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 	look.effect(PROC_REF(look_effect_wearer_buttons))
 
 /obj/item/clothing/suit/armor/tesla/proc/look_effect_wearer_buttons()

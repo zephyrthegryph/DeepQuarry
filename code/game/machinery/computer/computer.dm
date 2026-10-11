@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/computer)
 		return
 	look.overlay(icon_keyboard)
 	look.glow(broken_now() ? "[initial(icon_state)]_broken" : screen_state())
-	look.light(light_range_on, light_power_on)
+	look.glow(light_range_on, light_power_on)
 
 /// The screen the console shows now (a type with screens of its own overrides it).
 /obj/machinery/computer/proc/screen_state()

@@ -13,7 +13,7 @@
 	icon_state = "haste"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_FORCE
-	light_color = "#FF5C5C"
+	spell_light_color = "#FF5C5C"
 	modifier_type = /datum/body_effect/technomancer/haste
 	modifier_duration = 5 SECONDS
 

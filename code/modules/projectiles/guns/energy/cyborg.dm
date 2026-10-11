@@ -341,9 +341,9 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 	..()
 	look.overlay(look_appearance(icon, "[initial(icon_state)]_blade", color = lcolor), active)
 	if(active)
-		look.light(2, 2, lcolor)
+		look.glow(2, 2, lcolor)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/robotic/blade/refresh_light(clear)
 	if(active)
@@ -455,9 +455,9 @@ TRACKED(/obj/item/melee/robotic/blade, lcolor)
 	..()
 	look.state(status ? "[initial(name)]_active" : initial(name))
 	if(status)
-		look.light(2, 1, lightcolor)
+		look.glow(2, 1, lightcolor)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/robotic/baton/refresh_light(clear)
 	if(status)

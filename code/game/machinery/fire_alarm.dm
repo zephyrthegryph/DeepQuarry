@@ -92,47 +92,49 @@ CAPABILITIES(/obj/machinery/firealarm)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/firealarm/appearance_overlays()
-	. = list()
+TRACKED(/obj/machinery/firealarm, detecting)
+TRACKED(/obj/machinery/firealarm, seclevel)
 
+/// What the alarm shows: dark with its panel open, broken or unpowered; else its detector state and the security level, lit red while the
+/// detector is off and in the level's colour while it detects.
+/obj/machinery/firealarm/draw(datum/look/look)
+	..()
 	if(panel_open)
-		set_light(0)
-		return .
-
+		look.state("fire")
+		return
 	if(broken_now())
-		icon_state = "firex"
-		set_light(0)
-		return .
-	else if(power_lost())
-		icon_state = "firep"
-		set_light(0)
-		return .
-
-	var/fire_state
-
-	. = list()
-	icon_state = "fire"
-	if(!detecting)
-		fire_state = "fire1"
-		set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-	else
-		fire_state = "fire0"
-		switch(seclevel)
-			if("blue")	set_light(l_range = 2, l_power = 0.25, l_color = "#1024A9")
-			if("delta")	set_light(l_range = 4, l_power = 0.9, l_color = "#FF6633")
-			if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
-			if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
-			if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
-			if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
-			if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
-
-	. += mutable_appearance(icon, fire_state)
-	. += emissive_appearance(icon, fire_state)
-
+		look.state("firex")
+		return
+	if(power_lost())
+		look.state("firep")
+		return
+	look.state("fire")
+	look.glow(detecting ? "fire0" : "fire1")
 	if(seclevel)
-		. += mutable_appearance(icon, "overlay_[seclevel]")
-		. += emissive_appearance(icon, "overlay_[seclevel]")
+		look.glow("overlay_[seclevel]")
+	if(!detecting)
+		look.glow(GLOW(4, 0.9, "#ff0000"))
+	else if(seclevel)
+		look.glow(level_glow(seclevel))
+
+/// The light of a security level on a detecting alarm.
+/obj/machinery/firealarm/proc/level_glow(level)
+	switch(level)
+		if("blue")
+			return GLOW(2, 0.25, "#1024A9")
+		if("delta")
+			return GLOW(4, 0.9, "#FF6633")
+		if("green")
+			return GLOW(2, 0.25, "#00ff00")
+		if("orange")
+			return GLOW(2, 0.25, "#ff9900")
+		if("red")
+			return GLOW(4, 0.9, "#ff0000")
+		if("violet")
+			return GLOW(2, 0.25, "#9933ff")
+		if("yellow")
+			return GLOW(2, 0.25, "#ffff00")
+	return null
 
 /// Heat behaviour rule: the detector trips above 200 C.
 /obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)
@@ -162,7 +164,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	playsound(src, tool.usesound, 50, TRUE)
 	set_panel_open(!panel_open)
 	to_chat(user, "The wires have been [panel_open ? "exposed" : "unexposed"]")
-	update_icon()
 	return OP_OK
 
 /// The wirecutters behind the open panel: the wires come out and the alarm comes off the wall.
@@ -177,7 +178,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 	var/mob/user = A.actor
 	if(!panel_open)
 		return OP_OK
-	detecting = !detecting
+	set_detecting(!detecting)
 	act_message(user, src, MSG_SELF(span_notice("You have [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit.")), \
 		MSG_OTHERS(span_notice("%U% has [detecting ? "reconnected" : "disconnected"] %T%'s detecting unit!")))
 	return OP_OK
@@ -226,7 +227,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		GLOB.fire_alarm.clearAlarm(src.loc, FA)
 		FA.soundloop?.stop() // Mapped alarms may be destroyed before Initialize creates this.
 		FA.firewarn = FALSE // Soundloop Fix
-	update_icon()
 	if(user)
 		log_game("[user] reset a fire alarm at [COORD(src)]")
 
@@ -240,15 +240,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, TYPE_PROC_REF(/atom, appearanc
 		GLOB.fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
 		FA.soundloop?.start() // Mapped alarms may be triggered before Initialize creates this.
 		FA.firewarn = TRUE // Soundloop Fix
-	update_icon()
 	// playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS) // Disable as per soundloop
 	if(user)
 		log_game("[user] triggered a fire alarm at [COORD(src)]")
 
 /obj/machinery/firealarm/proc/set_security_level(newlevel)
-	if(seclevel != newlevel)
-		seclevel = newlevel
-		update_icon()
+	set_seclevel(newlevel)
 
 /obj/machinery/partyalarm
 	name = "\improper PARTY BUTTON"
@@ -337,7 +334,6 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 	return TRUE
 
 /obj/machinery/firealarm/proc/power_change_settle()
-	update_icon()
 	// Looping Red/Violet/Orange Alarms
 	if(!soundloop)
 		return

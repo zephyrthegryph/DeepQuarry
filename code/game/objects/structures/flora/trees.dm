@@ -356,6 +356,6 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	..()
 	var/bulbs = (5 - light_shift)
 	if(bulbs > 0)
-		look.light(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
+		look.glow(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
 		look.overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
 		look.overlay(emissive_appearance(icon, "[base_state][bulbs]_glow"))

@@ -143,9 +143,9 @@
 		look.held_state(drawn_state)
 
 	if(drawn_state == "[initial(icon_state)]_active[wielded]")
-		look.light(2, 1, lightcolor)
+		look.glow(2, 1, lightcolor)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/shock_maul/dropped(mob/user, equipping, slot)
 	..()

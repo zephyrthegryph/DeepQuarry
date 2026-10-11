@@ -382,10 +382,13 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 	return
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
-DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/media/jukebox/ghost/appearance_overlays()
-	. = list()
-	if(playing)
+/// The ghost jukebox draws nothing of its own: while it plays it pulses (the animation is an effect of the look, run after it is applied).
+/obj/machinery/media/jukebox/ghost/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(ghost_pulse), playing)
+
+/obj/machinery/media/jukebox/ghost/proc/ghost_pulse(now_playing)
+	if(now_playing)
 		animate(src, alpha = 200, time = 5, loop = -1)
 	else
 		animate(src, alpha = initial(alpha), time = 10)

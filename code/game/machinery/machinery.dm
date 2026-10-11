@@ -621,14 +621,14 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 		A.check_components()
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
-		A.state = FRAME_FASTENED
+		A.set_state(FRAME_FASTENED)
 	else if(A.frame_type.frame_class == FRAME_CLASS_COMPUTER || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
 		if(broken_now())
-			A.state = FRAME_WIRED
+			A.set_state(FRAME_WIRED)
 		else
-			A.state = FRAME_PANELED
+			A.set_state(FRAME_PANELED)
 	else
-		A.state = FRAME_WIRED
+		A.set_state(FRAME_WIRED)
 
 	A.seed_native_frame_graph()
 	A.set_dir(dir)

@@ -455,8 +455,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
-		F.state = 3
-		F.icon_state = "computer_3"
+		F.set_state(3)
 		F.set_anchored(TRUE)
 		spent(src, user)
 	else
@@ -467,8 +466,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
-		F.state = 4
-		F.icon_state = "computer_4"
+		F.set_state(4)
 		F.set_anchored(TRUE)
 		spent(src, user)
 

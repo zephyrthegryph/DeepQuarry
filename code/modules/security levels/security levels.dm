@@ -76,7 +76,7 @@ GLOBAL_DATUM_INIT(security_announcement_down, /datum/announcement/priority/secur
 			if(FA.z in using_map.contact_levels)
 				FA.on_alert_changed(newlevel)
 		for(var/obj/machinery/holoposter/HP as anything in REGISTRY_MEMBERS(REGISTRY_HOLOPOSTERS))
-			HP.update_icon()
+			HP.security_changed()
 
 		// SSnightshift.check_nightshift(TRUE) // disabling this for now as we do not use the nightshift currently.
 

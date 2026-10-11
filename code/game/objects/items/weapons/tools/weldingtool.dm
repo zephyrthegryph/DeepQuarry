@@ -218,9 +218,9 @@ CAPABILITIES(/obj/item/weldingtool)
 	..()
 	welder_overlays(look)
 	if(welding && flame_intensity)
-		look.light(flame_intensity, flame_intensity, flame_color)
+		look.glow(flame_intensity, flame_intensity, flame_color)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /// The flame overlay, the fuel counter and the in-hand state (a subtype with a body of its own draws none of them).
 /obj/item/weldingtool/proc/welder_overlays(datum/look/look)

@@ -9,8 +9,10 @@
 	power_channel = ENVIRON
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	var/icon_forced = FALSE
-	var/examine_addon = "It appears to be powered off."
+	/// TRUE while a station alert overrides the advert (security_changed()).
 	var/alerting = FALSE
+	/// The advert shown (a key of postertypes), or null before the first pick.
+	var/poster
 
 	var/static/list/postertypes = list(
 		"hephaestus" = list(LIGHT_COLOR_CYAN, "Hephaestus Aeronautics, a subsidiary of Hephaestus Industries. Known to make the best - if pricy - atmospheric to orbit shuttles and gliders for the consumer market."),
@@ -27,6 +29,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/Initialize(mapload)
 	. = ..()
+	if(icon_forced && (icon_state in postertypes))
+		set_poster(icon_state) // a mapped poster keeps its advert
+	security_changed()
 	set_rand_sprite()
 	schedule_rotation()
 
@@ -42,45 +47,55 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /obj/machinery/holoposter/examine(mob/user, infix, suffix)
 	. = ..()
-	. += examine_addon
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/holoposter/appearance_overlays()
-	. = list()
 	if(power_lost())
-		icon_state = "off"
-		examine_addon = "It appears to be powered off."
-		set_light(0)
-		return .
+		. += "It appears to be powered off."
+	else if(broken_now())
+		. += "It appears to be malfunctioning."
+	else if(alerting)
+		. += "It warns you to remain calm and contact your supervisor as soon as possible."
+	else if(poster in postertypes)
+		var/list/settings = postertypes[poster]
+		. += settings[2]
+
+TRACKED(/obj/machinery/holoposter, alerting)
+TRACKED(/obj/machinery/holoposter, poster)
+
+/// What the poster shows: dark without power, a glitch when broken, the alert while the station is on alert, else its advert, lit in the
+/// advert's colour.
+/obj/machinery/holoposter/draw(datum/look/look)
+	..()
+	if(power_lost())
+		look.state("off")
+		return
 	var/new_color = LIGHT_COLOR_HALOGEN
 	if(broken_now())
-		icon_state = "glitch"
-		examine_addon = "It appears to be malfunctioning."
+		look.state("glitch")
 		new_color = "#6A6C71"
+	else if(alerting)
+		look.state("attention")
+		new_color = "#AA7039"
 	else
-		if((z in using_map.station_levels) && GLOB.security_level) // 0 is fine, everything higher is alert levels
-			icon_state = "attention"
-			examine_addon = "It warns you to remain calm and contact your supervisor as soon as possible."
-			new_color =  "#AA7039"
-			alerting = TRUE
-		else if(alerting && !GLOB.security_level) // coming out of alert
-			alerting = FALSE
-			set_rand_sprite()
-			return .
-		else if(icon_state in postertypes)
-			var/list/settings = postertypes[icon_state]
+		look.state(poster || "off")
+		if(poster in postertypes)
+			var/list/settings = postertypes[poster]
 			new_color = settings[1]
-			examine_addon = settings[2]
+	look.glow(GLOW(2, 2, new_color))
 
-	set_light(l_range = 2, l_power = 2, l_color = new_color)
+/// The station's security level changed: an alert above green on a station level shows the warning; coming out of it, a fresh advert.
+/obj/machinery/holoposter/proc/security_changed()
+	var/now = (z in using_map.station_levels) && GLOB.security_level // 0 is fine, everything higher is alert levels
+	if(alerting && !now)
+		set_alerting(FALSE)
+		set_rand_sprite()
+		return
+	set_alerting(!!now)
 
 /obj/machinery/holoposter/proc/set_rand_sprite()
 	if(alerting)
 		return
 	if(icon_forced)
 		return
-	icon_state = pick(postertypes)
-	update_icon()
+	set_poster(pick(postertypes))
 
 /// The multitool works a powered poster (an unpowered one takes the click and does nothing).
 /obj/machinery/holoposter/proc/is_powered(datum/act/op/A)
@@ -97,17 +112,16 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 	var/choice = A.answer?.value
 	if(!choice || power_lost())
 		return OP_OK
-	icon_state = choice
-	if(icon_state == "random")
+	if(choice == "random")
 		atom_fix()
 		icon_forced = FALSE
 		schedule_rotation()
 		set_rand_sprite()
 		return OP_OK
 	icon_forced = TRUE
+	set_poster(choice)
 	cancel_after(src, "holoposter_rotation")
 	atom_fix()
-	update_icon()
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/holoposter)

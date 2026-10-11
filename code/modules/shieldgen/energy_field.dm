@@ -145,10 +145,10 @@ CAPABILITIES(/obj/effect/energy_field)
 	// Icon_state and Glow
 	if(density)
 		look.state("shield")
-		look.light(3, 3, "#66FFFF")
+		look.glow(3, 3, "#66FFFF")
 	else
 		look.state("shield_broken")
-		look.light(3, 5, "#FF9900")
+		look.glow(3, 5, "#FF9900")
 
 	// Edge overlays
 	for(var/direction in GLOB.cardinal)

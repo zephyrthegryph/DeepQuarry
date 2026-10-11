@@ -14,9 +14,14 @@
 	aspect = ASPECT_LIGHT
 	var/color_to_use = "#FFFFFF"
 
-/obj/item/spell/chroma/Initialize(mapload, coreless)
-	. = ..()
-	set_light(6, 5, l_color = color_to_use)
+TRACKED(/obj/item/spell/chroma, color_to_use)
+
+CAPABILITIES(/obj/item/spell/chroma)
+	look_glow(PROC_REF(chroma_glow))
+
+/// The spell's light, in the colour picked for it.
+/obj/item/spell/chroma/proc/chroma_glow(datum/act/A)
+	return GLOW(6, 5, color_to_use)
 
 /obj/effect/temporary_effect/chroma
 	name = "chroma"
@@ -25,14 +30,15 @@
 	time_to_die = 2 MINUTES //Despawn after this time, if set.
 
 CAPABILITIES(/obj/effect/temporary_effect/chroma)
-	param(nameof(chroma_color), pos = 1, apply = PROC_REF(glow))
+	param(nameof(chroma_color), pos = 1)
+	look_glow(PROC_REF(chroma_glow))
 
 /// The glow's colour (its constructor param).
 /obj/effect/temporary_effect/chroma/var/chroma_color = "#FFFFFF"
 
-/// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
-/obj/effect/temporary_effect/chroma/proc/glow(colour)
-	set_light(6, 5, l_color = colour)
+/// The light the spell left, in its colour.
+/obj/effect/temporary_effect/chroma/proc/chroma_glow(datum/act/A)
+	return GLOW(6, 5, chroma_color)
 
 /obj/item/spell/chroma/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)
@@ -49,5 +55,4 @@ CAPABILITIES(/obj/effect/temporary_effect/chroma)
 		return
 	var/new_color = A.answer.value
 	if(new_color)
-		color_to_use = new_color
-		set_light(6, 5, l_color = new_color)
+		set_color_to_use(new_color)

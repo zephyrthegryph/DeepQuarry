@@ -342,13 +342,15 @@ CAPABILITIES(/obj/structure/frame)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/structure/frame/appearance_overlays()
-	. = list()
-	. += ..()
+TRACKED(/obj/structure/frame, state)
+
+/// What the frame shows: its frame type's sprite (from the type's own icon when it has one) at the build state it has reached.
+/obj/structure/frame/draw(datum/look/look)
+	..()
+	look.watch(frame_type)
 	if(frame_type.icon_override)
-		icon = frame_type.icon_override
-	icon_state = frame_type.get_icon_state(state)
+		look.set_icon(frame_type.icon_override)
+	look.state(frame_type.get_icon_state(state))
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
 	rel_take_all(src, nameof(components))
@@ -369,7 +371,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	. = ..()
 	if(building)
 		rel_set(src, nameof(frame_type), frame_type_copy(type_at_make))
-		state = FRAME_PLACED
+		set_state(FRAME_PLACED)
 
 		if(frame_type.x_offset)
 			pixel_x = (dir & 3)? 0 : (dir == EAST ? -frame_type.x_offset : frame_type.x_offset)
