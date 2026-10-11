@@ -4779,3 +4779,19 @@ behaviour change intended (a subtype inherits its ancestor's value as the table 
   tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
 rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
 rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.
+# Numeric power-grid dependency contract (Codex, 2026-10-11)
+
+Power-grid fields move from indexed rows to domain-owned tracked records with
+the same Rust numeric IDs. The registry publishes exact identity changes; each
+field setter publishes its real field once. Declared lookup dependencies follow
+the argument, registry identity and selected grid rather than an arbitrary
+machine or the entire backing list. This repairs stale cached requirements,
+menus and outputs after retargeting, deletion, recreation or native field changes.
+
+Bindings are prepared outside pure providers and scoped to their actual holder,
+menu, pending operation or window lifetime. Uncached positive regions are adopted
+at the system write boundary only when a real Rust ledger exists. Pure reads
+retain their native nonzero fallback; absent negative test regions stay absent.
+Unsupported virtual argument aliases are rejected explicitly. No snapshot rows
+have been blessed for this change; runtime verification is still pending.
+
