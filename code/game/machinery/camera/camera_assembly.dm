@@ -23,32 +23,34 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 				4 = Screwdriver panel closed and is fully built (you cannot attach upgrades)
 	*/
 
+MSG_DEF_SELF(camera_assembly/not_on_floor, "it has to be on the floor to be wrenched into place")
+MSG_DEF_SELF(camera_assembly/wrenched, "You wrench the assembly into place.")
+MSG_DEF_SELF(camera_assembly/unwrenched, "You unattach the assembly from its place.")
+MSG_DEF_SELF(camera_assembly/welded, "You weld the assembly securely into place.")
+MSG_DEF_SELF(camera_assembly/unwelded, "You unweld the assembly from its place.")
+MSG_DEF_SELF(camera_assembly/wired, "You add wires to the assembly.")
+MSG_DEF_SELF(camera_assembly/unwired, "You cut the wires from the circuits.")
+
 CAPABILITIES(/obj/item/camera_assembly)
-	op("use_welder", lit_welder(fuel = 0), when(PROC_REF(weld_available)), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), then(PROC_REF(welded)))
+	// 0 loose, 1 wrenched down, 2 welded, 3 wired (upgrades go in, the screwdriver configures it), 4 built into a camera
+	stages(nameof(state),
+		stage_step(0, 1, tool(TOOL_WRENCH), label("Wrench into place"), wait(0), needs(req(PROC_REF(floor_refusal))), says(MSG(camera_assembly/wrenched)), then(PROC_REF(fastened))),
+		stage_step(1, 0, tool(TOOL_WRENCH), label("Unfasten"), wait(0), says(MSG(camera_assembly/unwrenched)), then(PROC_REF(unfastened))),
+		stage_step(1, 2, lit_welder(fuel = 0), label("Weld into place"), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), says(MSG(camera_assembly/welded))),
+		stage_step(2, 1, lit_welder(fuel = 0), label("Unweld"), claims(), begins(PROC_REF(weld_start_message)), starts(PROC_REF(weld_started)), wait(PROC_REF(weld_duration)), says(MSG(camera_assembly/unwelded))),
+		stage_step(2, 3, stack(/obj/item/stack/cable_coil, 2), label("Wire"), wait(0), says(MSG(camera_assembly/wired))),
+		stage_step(3, 2, tool(TOOL_WIRECUTTER), label("Cut the wires"), wait(0), says(MSG(camera_assembly/unwired)), then(PROC_REF(wires_cut))))
 	owns_many(nameof(upgrades))
 	op("hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_item)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), when(req_is(nameof(state), 3)), then(PROC_REF(screwdriver_used)))
 
 
 /// Old attackby.
 /obj/item/camera_assembly/proc/interaction_item(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/W = A.held
-	switch(state)
-		if(2)
-			if(istype(W, /obj/item/stack/cable_coil))
-				var/obj/item/stack/cable_coil/C = W
-				if(C.use(2))
-					to_chat(user, span_notice("You add wires to the assembly."))
-					set_state(3)
-				else
-					to_chat(user, span_warning("You need 2 coils of wire to wire the assembly."))
-				return OP_PASS
-
 	// Upgrades!
 	if(is_type_in_list(W, possible_upgrades) && !is_type_in_list(W, upgrades)) // Is a possible upgrade and isn't in the camera already.
 		if(!move_into(src, nameof(upgrades), W, user))
@@ -59,26 +61,23 @@ CAPABILITIES(/obj/item/camera_assembly)
 	// Taking out upgrades
 	return OP_DECLINE
 
-/obj/item/camera_assembly/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(state == 0 && isturf(loc))
-		playsound(src, sounds_of(tool).use, 50, TRUE)
-		to_chat(user, span_notice("You wrench the assembly into place."))
-		set_anchored(TRUE)
-		set_state(1)
-		auto_turn()
-		return OP_OK
-	if(state == 1)
-		playsound(src, sounds_of(tool).use, 50, TRUE)
-		to_chat(user, span_notice("You unattach the assembly from its place."))
-		set_anchored(FALSE)
-		set_state(0)
-		return OP_OK
-	return OP_DECLINE
+/// Only an assembly lying on the floor is wrenched down.
+/obj/item/camera_assembly/proc/floor_refusal(datum/act/op/A)
+	return read_once(isturf(loc)) ? null : MSG(camera_assembly/not_on_floor)
 
-/obj/item/camera_assembly/proc/weld_available(datum/act/op/A)
-	return state == 1 || state == 2
+/// Wrenched down: it is fastened and faces away from the wall.
+/obj/item/camera_assembly/proc/fastened(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	set_anchored(TRUE)
+	auto_turn()
+	return OP_OK
+
+/obj/item/camera_assembly/proc/unfastened(datum/act/op/A)
+	var/obj/item/tool = A.held
+	playsound(src, sounds_of(tool).use, 50, TRUE)
+	set_anchored(FALSE)
+	return OP_OK
 
 /obj/item/camera_assembly/proc/weld_start_message(datum/act/op/A)
 	return msg_text("You start to weld the [src]..")
@@ -95,25 +94,11 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/item/W = A.held_provider()
 	return 2 SECONDS * W.toolspeed * tool_skill_factor(A.actor, TOOL_WELDER)
 
-/obj/item/camera_assembly/proc/welded(datum/act/op/A)
-	if(state == 1)
-		to_chat(A.actor, span_notice("You weld the assembly securely into place."))
-		set_state(2)
-	else
-		to_chat(A.actor, span_notice("You unweld the assembly from its place."))
-		set_state(1)
-	set_anchored(TRUE)
-	return OP_OK
-
-/obj/item/camera_assembly/proc/wirecutter_used(datum/act/op/A)
-	var/mob/user = A.actor
+/// The cut wires drop as two lengths of cable.
+/obj/item/camera_assembly/proc/wires_cut(datum/act/op/A)
 	var/obj/item/tool = A.held
-	if(state != 3)
-		return OP_DECLINE
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
-	to_chat(user, span_notice("You cut the wires from the circuits."))
-	set_state(2)
 	return OP_OK
 
 /obj/item/camera_assembly/proc/crowbar_used(datum/act/op/A)
@@ -132,8 +117,6 @@ CAPABILITIES(/obj/item/camera_assembly)
 /obj/item/camera_assembly/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	if(state != 3)
-		return OP_DECLINE
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	ask_camera_networks(user)
 	return OP_OK

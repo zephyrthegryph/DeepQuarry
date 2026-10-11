@@ -34,7 +34,7 @@
 CAPABILITIES(/obj/structure/disposaloutlet)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 	op("use_multitool", tool(TOOL_MULTITOOL), wait(0), needs(req(PROC_REF(config_refusal))), then(PROC_REF(multitool_used)))
 
 /// Old attackby.
@@ -56,17 +56,20 @@ CAPABILITIES(/obj/structure/disposaloutlet)
 	playsound(src, sounds_of(I).use, 50, 1)
 	return OP_OK
 
-/obj/structure/disposaloutlet/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/I = A.held
-	if(mode != OUTLET_UNSCREWED)
-		return OP_OK
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal outlet.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the welder does nothing (the click is used up, nothing is said).
+/obj/structure/disposaloutlet/proc/welder_refusal(datum/act/op/A)
+	return read_once(mode != OUTLET_UNSCREWED) ? "no" : null
 
-/obj/structure/disposaloutlet/proc/welder_act_tool_done(mob/user)
+/obj/structure/disposaloutlet/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 100, TRUE)
+
+/obj/structure/disposaloutlet/proc/welder_begins(datum/act/op/A)
+	return msg_text("You start slicing the floorweld off the disposal outlet.", null)
+
+/obj/structure/disposaloutlet/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!src)
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	to_chat(user, "You sliced the floorweld off the disposal outlet.")
 	PUBLISH_LEGACY(src, /datum/notice/disposal_unlink)
 	var/obj/structure/disposalconstruct/C = new(src.loc)
