@@ -59,3 +59,58 @@ fn successful_current_roster_releases_deleted_claim_and_seals_old_attempt() {
     assert!(next.publish_successful());
     assert!(weak.upgrade().is_none());
 }
+
+#[test]
+fn bounded_failed_and_ephemeral_claims_preserve_published_variant_and_budget() {
+    let owner = Store::with_limit(2);
+    let first = owner.for_request(true);
+    let original = insert(&first, b"same", 1);
+    assert!(first.publish_successful());
+    let analysis = owner.for_request(false);
+    let temporary = insert(&analysis, b"same", 2);
+    let weak = Arc::downgrade(&temporary);
+    drop(temporary);
+    assert!(!analysis.publish_successful());
+    drop(analysis);
+    assert!(weak.upgrade().is_none());
+    let failed = owner.for_request(true);
+    let temporary = insert(&failed, b"partial", 3);
+    let weak = Arc::downgrade(&temporary);
+    drop(temporary);
+    drop(failed);
+    assert!(weak.upgrade().is_none());
+    let current = owner.for_request(true);
+    assert!(Arc::ptr_eq(
+        &original,
+        &current.lookup(b"same", &Host(1)).unwrap()
+    ));
+    assert!(current.lookup(b"same", &Host(2)).is_none());
+    // The successful lease still consumes one byte. Budget rejection must not
+    // run a fresh producer or evict that lease to make room for a failed row.
+    assert!(current
+        .insert_with_owned(
+            Arc::from(&b"oversized"[..]),
+            vec![Observation {
+                query: 1,
+                answer: 4,
+                domain: 1
+            }],
+            vec![],
+            2,
+            || panic!("over-budget producer"),
+        )
+        .is_none());
+    assert!(Arc::ptr_eq(
+        &original,
+        &current.lookup(b"same", &Host(1)).unwrap()
+    ));
+    let accepted = insert(&current, b"new", 4);
+    assert_eq!(accepted.as_slice(), &[4]);
+    current.retain_current_keys([b"same".as_slice(), b"new".as_slice()]);
+    assert!(current.publish_successful());
+    let replay = owner.for_request(true);
+    assert!(Arc::ptr_eq(
+        &accepted,
+        &replay.lookup(b"new", &Host(4)).unwrap()
+    ));
+}

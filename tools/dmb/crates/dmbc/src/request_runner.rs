@@ -413,6 +413,7 @@ fn run_build_attempt(
     // lowering and linking. Its Drop joins workers before the CLI profiler ends.
     let generation = if executable {
         host.generation(memo_policy)
+            .map(|owner| owner.for_request(publishable_artifacts))
     } else {
         None
     };
@@ -931,6 +932,9 @@ fn run_build_attempt(
         // succeeded. The sole cache segment is published only at this boundary.
         dmbc::daemon::control::checkpoint()?;
         declaration_request.publish_successful();
+        if let Some(generation) = &generation {
+            generation.publish_successful();
+        }
         if let Some(memo) = &procedure_memo {
             memo.publish_successful();
         }

@@ -102,6 +102,7 @@ fn bind<K: Ord + Copy>(
 
 /// Private numeric projection, admitted against current shared assignments and
 /// complete ordered artifact identities. No body, ABI or source proof is retained.
+#[derive(Clone)]
 pub(super) struct CachedPlan {
     bindings: dm_link::BindingTables,
     raw: CompositionPlan,

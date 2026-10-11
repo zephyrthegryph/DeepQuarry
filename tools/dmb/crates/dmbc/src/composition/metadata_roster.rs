@@ -1,6 +1,7 @@
 //! Ordered successful frame preparation on the existing composition plan.
 use super::*;
 use std::sync::Arc;
+#[derive(Clone)]
 struct Row {
     identity: UnitIdentity,
     frame: Arc<crate::symbolic::FrozenFrame>,
@@ -8,6 +9,7 @@ struct Row {
     recipe: Arc<crate::composition::ProcedureMetadataRecipe>,
     prepared: Arc<super::super::frame_contribution::FrameContribution>,
 }
+#[derive(Clone)]
 pub(super) struct MetadataRoster {
     rows: Vec<Option<Row>>,
     identities: Vec<(UnitIdentity, usize)>,

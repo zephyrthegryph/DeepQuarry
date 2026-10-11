@@ -117,17 +117,20 @@ struct NoReads;
 impl ObservationHost<(), (), ()> for NoReads {
     fn answer(&self, _: &()) {}
 }
+#[path = "header_recipes_publication.rs"]
+mod publication;
+
 pub struct HeaderRecipes {
-    values: dm_session::ObservedArtifactStore<HeaderRecipe, (), Arc<HeaderRecipe>, ()>,
-    defaults: dm_session::ObservedArtifactStore<Vec<DefaultSelector>, (), (), ()>,
+    values: crate::initializer_lowering::receipts::publication_store::PublicationStore<HeaderRecipe, (), Arc<HeaderRecipe>, ()>,
+    defaults: crate::initializer_lowering::receipts::publication_store::PublicationStore<Vec<DefaultSelector>, (), (), ()>,
     pub hits: AtomicU64,
     pub recomputed: AtomicU64,
 }
 impl Default for HeaderRecipes {
     fn default() -> Self {
         Self {
-            values: dm_session::ObservedArtifactStore::current_revision(),
-            defaults: dm_session::ObservedArtifactStore::current_revision(),
+            values: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
+            defaults: crate::initializer_lowering::receipts::publication_store::PublicationStore::current_revision(),
             hits: AtomicU64::new(0),
             recomputed: AtomicU64::new(0),
         }

@@ -24,10 +24,13 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
         }
     }
     pub(crate) fn with_limit(bytes: usize) -> Self {
+        let core = ObservedArtifactStore::shared_current_rosters_with_limit(bytes);
+        let publication = Arc::new(ArtifactPublication::default());
+        let attempt = Some(publication.begin(core.lease()));
         Self {
-            core: Arc::new(ObservedArtifactStore::with_limit(bytes)),
-            publication: None,
-            attempt: None,
+            core,
+            publication: Some(publication),
+            attempt,
         }
     }
     pub(crate) fn for_request(&self, publishable: bool) -> Self {
@@ -55,6 +58,13 @@ impl<T, Q, A, D> PublicationStore<T, Q, A, D> {
                 attempt.with_pending(|lease| lease.retain_current_keys(keys));
             }
             None => self.core.retain_current_keys(keys),
+        }
+    }
+    /// Explicit performance-cache eviction; does not alter publication generation identity.
+    pub(crate) fn evict_all_claims(&self) {
+        self.retain_current_keys(std::iter::empty::<&[u8]>());
+        if let Some(owner) = &self.publication {
+            owner.with_published(|lease| lease.retain_current_keys(std::iter::empty::<&[u8]>()));
         }
     }
     pub(crate) fn visit_storage(

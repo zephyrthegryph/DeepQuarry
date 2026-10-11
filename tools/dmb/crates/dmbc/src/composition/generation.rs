@@ -1,7 +1,6 @@
 //! One canonical generation retained at the existing validated model boundary.
 //! Exact model equality is authoritative; no hash admits a generation.
 use super::*;
-#[cfg(test)]
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -26,18 +25,23 @@ impl CertifiedGenerationInputs {
 }
 
 /// A single latest successful generation; no history or source authority retained.
-#[derive(Default)]
 pub struct RetainedGeneration {
-    current: Mutex<Option<Generation>>,
-    plan: Mutex<Option<procedure_plan::CachedPlan>>,
+    current: Arc<Mutex<Option<Arc<Generation>>>>,
+    plan: Arc<Mutex<Option<Arc<procedure_plan::CachedPlan>>>>,
+    publication: Arc<dm_session::ArtifactPublication<Pending>>,
+    attempt: dm_session::ArtifactAttempt<Pending>,
+    wire_evictions: std::sync::atomic::AtomicU64,
     /// Symbolic header decisions share the session generation's policy and lifetime.
     /// Values and dense table IDs are always bound from the current model.
-    pub(super) header_recipes: crate::class_projection::HeaderRecipes,
+    pub(super) header_recipes: Arc<crate::class_projection::HeaderRecipes>,
 }
 struct Generation {
     inputs: CertifiedGenerationInputs,
     encoded: byond_dmb::dmb::EncodedDmb,
 }
+#[path = "generation_publication.rs"]
+mod publication;
+use publication::Pending;
 impl RetainedGeneration {
     pub(super) fn string_index(
         &self,
@@ -58,6 +62,17 @@ impl RetainedGeneration {
         Ok((index, seed))
     }
     pub(crate) fn census_string_index(&self, census: &mut crate::heap_census::HeapCensus) {
+        self.visit_published(|old| {
+            if let Some(seed) = old
+                .current
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .as_ref()
+                .and_then(|generation| generation.inputs.string_seed.as_ref())
+            {
+                seed.census(census);
+            }
+        });
         if let Some(seed) = self
             .current
             .lock()
@@ -71,12 +86,13 @@ impl RetainedGeneration {
 
     pub(crate) fn census_headers(&self, census: &mut crate::heap_census::HeapCensus) {
         census.header_recipes(&self.header_recipes);
+        self.visit_published(|old| census.header_recipes(&old.headers));
     }
 
     /// All current composition checks must finish before this entry is called.
     /// Equality includes every ordered output table, raw string byte and header.
     /// A mismatch follows the ordinary canonical encoder and independent decoder.
-    pub(super) fn encode(
+    pub(super) fn encode_pending(
         &self,
         inputs: CertifiedGenerationInputs,
         executor: Option<&dm_exec::BuildExecutor>,
@@ -107,7 +123,10 @@ impl RetainedGeneration {
         };
         // The previous generation is only a source of immutable row encodings.
         // Release it before decoder validation and publication of its replacement.
+        // Explicit bounded performance-cache eviction, not publication of a
+        // replacement. The conventional output pair and attempt token are intact.
         *current = None;
+        self.evict_published_wire_memo();
         let (encoded, certificate) = encoded_result?;
         validate_encoded(&encoded)?;
         if !inputs.model.lists.retain_encoded_rows(certificate) {
@@ -115,13 +134,13 @@ impl RetainedGeneration {
                 "canonical row certificate differs from current words",
             ));
         }
-        *current = Some(Generation {
+        *current = Some(Arc::new(Generation {
             inputs,
             encoded: encoded.clone(),
-        });
+        }));
         Ok(encoded)
     }
-    pub(super) fn bind_plan(
+    pub(super) fn bind_plan_pending(
         &self,
         mut raw: procedure_plan::CompositionPlan,
         batch: &FrozenBatch,
@@ -138,12 +157,12 @@ impl RetainedGeneration {
         let bound = raw.bind(batch);
         let mut replacement = procedure_plan::CachedPlan::capture(captured, batch, &bound);
         if let (Some(next), Some(previous)) = (replacement.as_mut(), cached.as_mut()) {
-            next.inherit_metadata(previous);
+            next.inherit_metadata(Arc::make_mut(previous));
         }
-        *cached = replacement;
+        *cached = replacement.map(Arc::new);
         bound
     }
-    pub(super) fn argument_sources(
+    pub(super) fn argument_sources_pending(
         &self,
         tables: &dm_link::LinkTables,
         start: usize,
@@ -151,12 +170,12 @@ impl RetainedGeneration {
     ) -> Result<std::sync::Arc<dm_link::ArgumentSourceReferences>, dm_link::LinkError> {
         let mut plan = self.plan.lock().unwrap_or_else(|error| error.into_inner());
         match plan.as_mut() {
-            Some(plan) => plan.argument_sources(tables, start, order),
+            Some(plan) => Arc::make_mut(plan).argument_sources(tables, start, order),
             None => dm_link::ArgumentSourceReferences::assign(tables, start, order)
                 .map(std::sync::Arc::new),
         }
     }
-    pub(super) fn prepare_metadata(
+    pub(super) fn prepare_metadata_pending(
         &self,
         slots: &[procedure_plan::Slot<crate::lowering::UnitIdentity>],
         batch: &FrozenBatch,
@@ -167,15 +186,19 @@ impl RetainedGeneration {
     ) -> Vec<Result<procedure_plan::PreparedMetadata, CompositionError>> {
         let mut plan = self.plan.lock().unwrap_or_else(|e| e.into_inner());
         match plan.as_mut() {
-            Some(plan) => {
-                plan.prepare_metadata(slots, batch, projection, symbols, references, executor)
-            }
+            Some(plan) => Arc::make_mut(plan)
+                .prepare_metadata(slots, batch, projection, symbols, references, executor),
             None => procedure_plan::prepare_metadata(
                 slots, batch, projection, symbols, references, executor, true,
             ),
         }
     }
     pub(crate) fn census_plan(&self, census: &mut crate::heap_census::HeapCensus) {
+        self.visit_published(|old| {
+            if let Some(plan) = old.plan.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
+                plan.census(census);
+            }
+        });
         if let Some(plan) = self
             .plan
             .lock()
@@ -186,11 +209,15 @@ impl RetainedGeneration {
         }
     }
     pub fn clear(&self) {
-        self.header_recipes.clear();
+        self.header_recipes.evict_cached_claims();
         self.release_wire_images();
     }
     /// Release physical generation buffers without discarding symbolic header recipes.
     pub(crate) fn release_wire_images(&self) {
+        self.evict_published_wire_memo();
+        self.visit_published(|old| {
+            *old.plan.lock().unwrap_or_else(|error| error.into_inner()) = None;
+        });
         *self.plan.lock().unwrap_or_else(|error| error.into_inner()) = None;
         *self
             .current
@@ -209,6 +236,17 @@ impl RetainedGeneration {
         if let Some(generation) = current.as_ref() {
             visitor(&generation.inputs.model, &generation.encoded);
         }
+
+        drop(current);
+        self.visit_published(|old| {
+            let current = old
+                .current
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            if let Some(generation) = current.as_ref() {
+                visitor(&generation.inputs.model, &generation.encoded);
+            }
+        });
     }
 }
 pub(super) fn encode_model(
@@ -240,6 +278,81 @@ mod tests {
     fn model() -> Dmb {
         Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap()
     }
+    #[test]
+    fn pending_generation_and_explicit_wire_eviction_preserve_publication_boundary() {
+        let owner = RetainedGeneration::default();
+        let original = model();
+        let first = owner.for_request(true);
+        let encoded = first
+            .encode(
+                CertifiedGenerationInputs::after_validation(original.clone()),
+                None,
+            )
+            .unwrap();
+        assert!(first.publish_successful());
+        let published = owner
+            .publication
+            .with_published(|old| old.current.lock().unwrap().as_ref().unwrap().clone())
+            .unwrap();
+        let failed = owner.for_request(true);
+        assert!(Arc::ptr_eq(
+            encoded.shared_bytes(),
+            failed
+                .encode(
+                    CertifiedGenerationInputs::after_validation(original.clone()),
+                    None
+                )
+                .unwrap()
+                .shared_bytes()
+        ));
+        drop(failed);
+        let next = owner.for_request(true);
+        let analysis = owner.for_request(false);
+        assert!(!analysis.publish_successful());
+        assert!(next.publish_successful());
+        assert!(owner
+            .publication
+            .with_published(|old| Arc::ptr_eq(
+                &published,
+                old.current.lock().unwrap().as_ref().unwrap()
+            ))
+            .unwrap());
+        let previous_weak = Arc::downgrade(&published);
+        drop(published);
+        drop(first);
+        drop(next);
+        drop(analysis);
+        let changed = owner.for_request(true);
+        let token = changed.attempt.generation().clone();
+        let mut new_model = original.clone();
+        new_model.lists.push(vec![7, 9]);
+        let result = changed
+            .encode(
+                CertifiedGenerationInputs::after_validation(new_model.clone()),
+                None,
+            )
+            .unwrap();
+        assert_eq!(result.bytes(), new_model.encode().unwrap().bytes());
+        assert_eq!(changed.wire_memo_evictions(), 1);
+        assert!(previous_weak.upgrade().is_none());
+        assert!(changed.attempt.generation().same_as(&token));
+        assert!(owner
+            .publication
+            .with_published(|old| old.current.lock().unwrap().is_none())
+            .unwrap());
+        // Dropping a completed but unpublished encode does not install that generation.
+        drop(changed);
+        let fallback = owner.for_request(true);
+        let result = fallback
+            .encode(
+                CertifiedGenerationInputs::after_validation(original.clone()),
+                None,
+            )
+            .unwrap();
+        assert_eq!(result.bytes(), original.encode().unwrap().bytes());
+        assert!(fallback.publish_successful());
+    }
+
     #[test]
     fn successful_generation_reuses_initial_string_seed_with_fresh_output_parity() {
         let owner = RetainedGeneration::default();

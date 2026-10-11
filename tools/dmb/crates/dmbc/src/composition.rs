@@ -729,7 +729,7 @@ fn compose_records_access(
             symbols,
             &mut string_index,
             class_roster.as_ref(),
-            generation.map(|owner| &owner.header_recipes),
+            generation.map(|owner| owner.header_recipes.as_ref()),
         )
         .map_err(|e| unsupported(format!("class headers {e:?}")))?;
         drop(headers_profile);
