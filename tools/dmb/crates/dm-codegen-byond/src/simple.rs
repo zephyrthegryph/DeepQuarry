@@ -911,6 +911,8 @@ struct Compiler<'a> {
 
 #[path = "simple/compiler_context.rs"]
 mod compiler_context;
+#[path = "simple/nameof_admission.rs"]
+mod nameof_admission;
 #[path = "simple/source_features.rs"]
 mod source_features;
 pub use source_features::{observe_reference_source_features, SourceFeatures};

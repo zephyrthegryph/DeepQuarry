@@ -1,7 +1,7 @@
 import importlib.util
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
-CASES = ('absent_type', 'absent_proc', 'absent_identifier', 'present_local')
+CASES = ('absent_type', 'absent_proc', 'absent_identifier', 'present_local', 'native_list', 'native_icon', 'native_list_proc', 'native_datum_proc')
 def main():
     path = HERE.parent / 'loop_local_diagnostics' / 'run.py'
     spec = importlib.util.spec_from_file_location('nameof_reference_probe', path)

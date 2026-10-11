@@ -7,16 +7,6 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         expression: &dm_syntax::Expr,
     ) -> Result<dm_codegen_byond::SourceFeatures, String> {
-        // Unrelated nameof spellings issue no feature queries. Groups retain the
-        // same selected reference and do not trigger another expression walk.
-        let mut reference = expression;
-        while let dm_syntax::ExprKind::Group(inner) = &reference.kind {
-            reference = inner;
-        }
-        let name = dm_codegen_byond::nameof_reference(reference);
-        if !matches!(name, Some("cpu" | "icon" | "overlays" | "underlays")) {
-            return Ok(Default::default());
-        }
         let mut bindings = dm_codegen_byond::LowerBindings {
             procedure_identity: procedure,
             current_type_path: Some(

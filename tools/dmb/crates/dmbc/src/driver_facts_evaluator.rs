@@ -579,7 +579,8 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
-        let mut bytes = b"dmbc-driver-initializer-policy-v4;modified-folded-source-features\0".to_vec();
+        let mut bytes =
+            b"dmbc-driver-initializer-policy-v5;nameof-current-reference-admission\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -597,7 +598,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a908)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a909)
     }
     fn with_recording_evaluator(
         &self,

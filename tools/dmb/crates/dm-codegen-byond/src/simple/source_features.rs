@@ -14,7 +14,7 @@ impl SourceFeatures {
         self.native_graphics |= other.native_graphics;
     }
 }
-/// Observe one reference already selected by the constant evaluator. This uses
+/// Admit and observe one reference selected by the constant evaluator. This uses
 /// the same typed selection context as executable expressions; it neither walks
 /// the enclosing expression nor emits a synthetic procedure.
 pub fn observe_reference_source_features(
@@ -36,7 +36,7 @@ pub fn observe_reference_source_features(
         resource_search_context: None,
     };
     let mut compiler = super::compiler_context::compiler_context(bindings, Some(&lookup));
-    compiler.source_feature_reference(expression, true, "nameof reference")?;
+    compiler.admit_nameof_reference(expression, "nameof reference")?;
     if let Some(error) = compiler.resolver_failure.take() {
         return Err(error);
     }
