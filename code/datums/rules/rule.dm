@@ -115,7 +115,7 @@ CAPABILITIES(/datum/rule)
 		if(length(errors) || !compiled_condition)
 			rel_clear(src, nameof(compiled_condition))
 		else
-			rel_set(src, nameof(trigger_compiler), new /datum/rule_compiler(src, property_registry))
+			rel_set(src, nameof(trigger_compiler), new /datum/rule_compiler(property_registry))
 			trigger_compiler.visit(compiled_condition)
 			// Transfer each trigger before deleting its temporary compiler owner.
 			for(var/datum/rule_trigger/trigger as anything in trigger_compiler.triggers?.Copy())
@@ -205,7 +205,6 @@ CAPABILITIES(/datum/rule)
 // ---- Compiler ----
 
 /datum/rule_compiler
-	var/rule_handle
 	var/datum/property_registry/registry_static
 	var/list/triggers = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
 	var/list/errors = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
@@ -214,9 +213,8 @@ CAPABILITIES(/datum/rule_compiler)
 	owns_many(nameof(triggers))
 	ref_one(nameof(registry_static), /datum/property_registry)
 
-/datum/rule_compiler/New(datum/rule/rule, datum/property_registry/property_registry = null)
+/datum/rule_compiler/New(datum/property_registry/property_registry = null)
 	..()
-	rule_handle = entity_handle(rule)
 	rel_set(src, nameof(registry_static), property_registry ? property_registry : dq_property_registry())
 
 /datum/rule_compiler/proc/error(text)
@@ -456,10 +454,6 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /// The second domain provider (a relation view).
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
 	return provider_b
-
-/// Borrowed handle: safe even while the rule registry is still being compiled.
-/datum/rule_compiler/proc/rule() as /datum/rule
-	return resolve_handle(rule_handle)
 
 /// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry

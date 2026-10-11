@@ -34,17 +34,6 @@
 	qdel(C)
 
 /datum/unit_test/dq_simulation_condition_native/Run()
-	// Compiler borrowing must not query a registry which may still be building.
-	var/datum/rule/dq_compiler_registry_trap/borrowed_rule = new
-	var/datum/rule_compiler/borrower = new(borrowed_rule)
-	TEST_ASSERT_EQUAL(borrower.rule(), borrowed_rule, "Compiler resolves its live borrowed rule")
-	TEST_ASSERT_EQUAL(borrowed_rule.registry_queries, 0, "Construction and access never enter rule registry")
-	qdel(borrower)
-	TEST_ASSERT_EQUAL(borrowed_rule.registry_queries, 0, "Compiler cleanup never enters rule registry")
-	borrower = new(borrowed_rule)
-	qdel(borrowed_rule)
-	TEST_ASSERT_NULL(borrower.rule(), "Deleted borrowed rule cannot resolve through compiler handle")
-	qdel(borrower)
 	var/obj/item/dq_rule_test/I = allocate(/obj/item/dq_rule_test)
 	var/datum/simulation_condition/N = compiled(cond_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(ITEMSIZE_SMALL)))
 	TEST_ASSERT(N.holds(I), "Inclusive equal-size boundary allows")
@@ -241,8 +230,9 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	var/datum/property_provider/RP = new /datum/property_provider/dq_rule_right
 	var/datum/property_registry/registry = new(list(L, R), list(LP, RP))
 	TEST_ASSERT(!length(registry.errors), "Private registry is genuinely valid")
-	var/datum/rule/rule = new /datum/rule/dq_private_difference
+	var/datum/rule/dq_private_difference/registry_trap/rule = new /datum/rule/dq_private_difference/registry_trap
 	TEST_ASSERT(rule.compile(registry), "Native dynamic comparison compiles with private registry")
+	TEST_ASSERT_EQUAL(rule.registry_queries, 0, "Temporary trigger compiler never queries the unfinished rule registry")
 	TEST_ASSERT_EQUAL(length(rule.triggers), 2, "Both dynamic dependencies receive real key subscriptions")
 	var/datum/rule_trigger/first = rule.triggers[1]
 	var/datum/rule_trigger/second = rule.triggers[2]
@@ -346,9 +336,9 @@ CAPABILITIES(/obj/item/dq_rule_private)
 	qdel(LP)
 	qdel(RP)
 
-/datum/rule/dq_compiler_registry_trap
+/datum/rule/dq_private_difference/registry_trap
 	test_only = TRUE
 	var/registry_queries = 0
-/datum/rule/dq_compiler_registry_trap/registry_getter()
+/datum/rule/dq_private_difference/registry_trap/registry_getter()
 	registry_queries++
 	return null
