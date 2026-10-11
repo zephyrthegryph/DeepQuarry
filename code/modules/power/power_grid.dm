@@ -83,7 +83,7 @@ CAPABILITIES(/datum/power_grid_registry)
 	by_id -= id
 	tracked_changed(src, power_grid_identity_key(id))
 	rel_take(src, nameof(owned_grids), grid)
-	END_SCOPE(grid)
+	lifeform_end(grid, END_SCOPE)
 
 /// A grid ended externally: remove its actual identity while it still has an owner.
 /datum/power_grid_registry/proc/forget(datum/power_grid/grid)

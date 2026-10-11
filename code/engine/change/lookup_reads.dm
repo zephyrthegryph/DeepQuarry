@@ -60,7 +60,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 		if("target")
 			return istype(action) ? action.target : (istype(notice) ? notice.target : null)
 		if("held")
-			return istype(action) ? action.held : null
+			return istype(action) ? action.held_provider() : null
 		if("authority")
 			var/datum/authority = istype(action) ? action.authority : (istype(eval) ? eval.authority : null)
 			return istype(authority) ? authority : null
@@ -218,7 +218,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 		var/list/entry = GLOB.op_menu_cache[key]
 		var/datum/lookup_read_scope/scope = length(entry) >= 4 ? entry[4] : null
 		if(scope && !QDELETED(scope))
-			END_SCOPE(scope)
+			lifeform_end(scope, END_SCOPE)
 	GLOB.op_menu_cache.Cut()
 
 /proc/lookup_read_declared(datum/holder, key)

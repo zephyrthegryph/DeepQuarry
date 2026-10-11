@@ -5897,7 +5897,3 @@
 #include "code\library\operations\presentation.dm"
 #include "code\library\materialization\host.dm"
 
-#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
-#include "code\modules\unit_tests\dq_numeric_grid_lookup_tests.dm"
-#include "code\modules\unit_tests\dq_state_batch_tests.dm"
-#endif

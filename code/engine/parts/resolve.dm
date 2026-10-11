@@ -742,12 +742,12 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		GLOB.lookup_read_scope_frame = previous_scope
 		// An aborted condition may not have reached its matching op_pure_end().
 		GLOB.op_pure_depth = previous_pure_depth
-		END_SCOPE(scope)
+		lifeform_end(scope, END_SCOPE)
 		throw fault
 	GLOB.op_menu_read_frame = previous
 	GLOB.lookup_read_scope_frame = previous_scope
 	if(!frame[5])
-		END_SCOPE(scope)
+		lifeform_end(scope, END_SCOPE)
 
 /// Builds or reuses rows within the caller's synchronous admission read.
 /proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame)
@@ -800,7 +800,7 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		var/list/replaced = GLOB.op_menu_cache[cache_key]
 		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
 		if(old_scope && !QDELETED(old_scope))
-			END_SCOPE(old_scope)
+			lifeform_end(old_scope, END_SCOPE)
 		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4])
 		frame[5] = TRUE
 	return rows.Copy()

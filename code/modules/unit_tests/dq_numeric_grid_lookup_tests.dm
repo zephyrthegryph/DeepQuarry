@@ -61,7 +61,7 @@
 	power_grid_move_node(source, id, id)
 	source.set_power_supply(0)
 	for(var/obj/structure/cable/cable as anything in cables)
-		END_SCOPE(cable)
+		lifeform_end(cable, END_SCOPE)
 
 #endif
 
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture)
 	var/datum/power_grid/grid = power_grid_lookup(id)
 	lookup_reads_prepare(holder)
 	TEST_ASSERT(grid.rx?.observed?[nameof(grid.avail)] > 0, "holder lifecycle did not bind its actual selected grid field")
-	END_SCOPE(holder)
+	lifeform_end(holder, END_SCOPE)
 	TEST_ASSERT(!(grid.rx?.observed?[nameof(grid.avail)]), "ending the holder leaked its selected grid-field watcher")
 	power_test_drop_grid(id)
 
@@ -282,8 +282,8 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture/contextual)
 		if(row["key"] == "actor_grid")
 			repaired_row = row
 	TEST_ASSERT(repaired_row && repaired_row["enabled"], "the actual contextual producer did not refresh its actor's menu")
-	END_SCOPE(first)
-	END_SCOPE(second)
+	lifeform_end(first, END_SCOPE)
+	lifeform_end(second, END_SCOPE)
 	TEST_ASSERT(!(second_grid.rx?.observed?[nameof(second_grid.avail)]), "deleted actors left contextual cache bindings alive")
 	op_menu_cache_clear()
 	power_test_drop_grid(first_id)
@@ -444,7 +444,7 @@ CAPABILITIES(/obj/item/dq_lookup_probe)
 	source.set_power_supply(0)
 	op_menu_cache_clear()
 	for(var/obj/structure/cable/cable as anything in cables)
-		END_SCOPE(cable)
+		lifeform_end(cable, END_SCOPE)
 	test_driver_end()
 
 /// Adopting a native-only grid must not expose zero defaults to a real pending requirement.
@@ -487,8 +487,8 @@ CAPABILITIES(/obj/item/dq_lookup_probe)
 	source.set_power_supply(0)
 	op_menu_cache_clear()
 	for(var/obj/structure/cable/cable as anything in cables)
-		END_SCOPE(cable)
-	END_SCOPE(source)
+		lifeform_end(cable, END_SCOPE)
+	lifeform_end(source, END_SCOPE)
 	power_grid_registry().drop(id)
 	test_driver_end()
 
