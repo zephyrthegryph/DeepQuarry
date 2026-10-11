@@ -5,7 +5,7 @@ mod authored;
 #[path = "frontend_declaration_state/shared.rs"]
 pub(crate) mod shared;
 use crate::allocation_ledger::{AllocationKind, AllocationLedger, EventBuilder};
-use dm_session::{ArtifactStorageView, ArtifactStore};
+
 pub use shared::ChunkSourceAnswer;
 use shared::DeclarationValues;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -20,32 +20,30 @@ pub struct DeclarationRetentionStats {
     pub hits: usize,
     pub grammar_roster_hits: usize,
 }
-pub(super) struct RetainedDeclarations {
+#[path = "frontend_declaration_state/publication.rs"]
+mod publication;
+pub use publication::DeclarationRequest;
+pub(super) use publication::RetainedDeclarations;
+struct DeclarationClaims {
     pub(super) grammar: super::grammar_roster::RetainedGrammar,
     values: DeclarationValues,
     authored: Option<crate::declaration_contributions::authored::AuthoredLease>,
-    authored_current: std::sync::Mutex<Option<authored::AdmittedAuthored>>,
+    authored_current: Arc<std::sync::Mutex<Option<Arc<authored::AdmittedAuthored>>>>,
     keys: AtomicUsize,
     hits: AtomicUsize,
-    symbols: std::sync::Mutex<ActiveSymbols>,
+    symbols: std::sync::Mutex<Arc<ActiveSymbols>>,
 }
-impl Default for RetainedDeclarations {
+impl Default for DeclarationClaims {
     fn default() -> Self {
         Self {
             grammar: super::grammar_roster::RetainedGrammar::default(),
             values: DeclarationValues::default(),
             authored: None,
-            authored_current: std::sync::Mutex::new(None),
+            authored_current: Arc::new(std::sync::Mutex::new(None)),
             keys: AtomicUsize::new(0),
             hits: AtomicUsize::new(0),
-            symbols: std::sync::Mutex::new(ActiveSymbols::default()),
+            symbols: std::sync::Mutex::new(Arc::new(ActiveSymbols::default())),
         }
-    }
-}
-struct NoReads;
-impl dm_ir::Resolver for NoReads {
-    fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
-        dm_ir::ResolvedMeaning::Unsupported(query)
     }
 }
 #[derive(Clone)]
@@ -110,8 +108,8 @@ pub enum DeclarationStorageView<'a> {
         contribution: DeclarationContributionView<'a>,
     },
 }
-impl RetainedDeclarations {
-    pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
+impl DeclarationClaims {
+    pub(super) fn visit_bookkeeping(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
         {
             let authored = self
                 .authored_current
@@ -146,7 +144,6 @@ impl RetainedDeclarations {
                 });
             }
         }
-        self.values.visit_storage(visit);
     }
 
     pub(super) fn key(text: &str) -> Vec<u8> {
@@ -159,21 +156,6 @@ impl RetainedDeclarations {
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
         self.values.retain(keys);
         self.keys.store(keys.len(), Ordering::Relaxed);
-    }
-    pub(super) fn clear(&self) {
-        self.retain(&[]);
-        if let Some(authored) = &self.authored {
-            authored.clear();
-        }
-        *self
-            .authored_current
-            .lock()
-            .unwrap_or_else(|error| error.into_inner()) = None;
-        self.grammar.clear();
-        *self
-            .symbols
-            .lock()
-            .unwrap_or_else(|error| error.into_inner()) = ActiveSymbols::default();
     }
     pub(super) fn get_shared(
         &self,
@@ -239,10 +221,20 @@ impl RetainedDeclarations {
             .symbols
             .lock()
             .unwrap_or_else(|error| error.into_inner());
-        let source = active.update(current)?;
+        let source = if active.matches(current) {
+            Arc::clone(&active.symbols)
+        } else {
+            Arc::make_mut(&mut active).update(current)?
+        };
         let catalog =
             super::symbol_catalog::SymbolCatalog::capture(active.catalog.as_ref(), source, engine)?;
-        active.catalog = Some(Arc::clone(&catalog));
+        if !active
+            .catalog
+            .as_ref()
+            .is_some_and(|old| Arc::ptr_eq(old, &catalog))
+        {
+            Arc::make_mut(&mut active).catalog = Some(Arc::clone(&catalog));
+        }
         Ok(catalog)
     }
     #[cfg(test)]
@@ -250,9 +242,11 @@ impl RetainedDeclarations {
         &self,
         current: &[Arc<Contribution>],
     ) -> Result<SymbolTable, dm_ir::SymbolCollision> {
-        self.symbols
+        let mut active = self
+            .symbols
             .lock()
-            .unwrap_or_else(|error| error.into_inner())
+            .unwrap_or_else(|error| error.into_inner());
+        Arc::make_mut(&mut active)
             .update(current)
             .map(|symbols| symbols.as_ref().clone())
     }
@@ -621,7 +615,7 @@ impl Contribution {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct ActiveSymbols {
     contributions: std::collections::BTreeMap<usize, Arc<Contribution>>,
     counts: std::collections::BTreeMap<dm_ir::SymbolId, usize>,
@@ -629,6 +623,14 @@ struct ActiveSymbols {
     catalog: Option<Arc<super::symbol_catalog::SymbolCatalog>>,
 }
 impl ActiveSymbols {
+    fn matches(&self, current: &[Arc<Contribution>]) -> bool {
+        current.len() == self.contributions.len()
+            && current.iter().all(|value| {
+                self.contributions
+                    .get(&(Arc::as_ptr(value) as usize))
+                    .is_some_and(|old| Arc::ptr_eq(old, value))
+            })
+    }
     fn update(
         &mut self,
         current: &[Arc<Contribution>],

@@ -14,11 +14,13 @@ impl SharedAuthored {
     }
     pub(crate) fn lease(self: &Arc<Self>) -> AuthoredLease {
         AuthoredLease {
+            store: Arc::clone(&self.store),
             lease: self.store.lease(),
         }
     }
 }
 pub(crate) struct AuthoredLease {
+    store: Arc<Store>,
     lease: ObservedArtifactLease<TypeContribution, SymbolId, Answer, ()>,
 }
 struct Host<'a>(&'a KeyedDeclarations);
@@ -33,6 +35,12 @@ fn key(owner: SymbolId) -> Arc<[u8]> {
     key.into()
 }
 impl AuthoredLease {
+    pub(crate) fn fork(&self) -> Self {
+        Self {
+            store: Arc::clone(&self.store),
+            lease: self.store.lease(),
+        }
+    }
     pub(crate) fn visit_storage(
         &self,
         visit: impl FnMut(

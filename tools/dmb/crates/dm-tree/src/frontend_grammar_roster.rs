@@ -78,18 +78,28 @@ impl GrammarDescriptors {
     }
 }
 pub(super) struct RetainedGrammar {
-    values: ObservedArtifactStore<GrammarDescriptors, GrammarQuery, GrammarAnswer, ()>,
+    values: Arc<ObservedArtifactStore<GrammarDescriptors, GrammarQuery, GrammarAnswer, ()>>,
+    lease: dm_session::ObservedArtifactLease<GrammarDescriptors, GrammarQuery, GrammarAnswer, ()>,
     hits: AtomicUsize,
 }
 impl Default for RetainedGrammar {
     fn default() -> Self {
+        let values = ObservedArtifactStore::shared_current_rosters();
         Self {
-            values: ObservedArtifactStore::current_revision(),
+            lease: values.lease(),
+            values,
             hits: AtomicUsize::new(0),
         }
     }
 }
 impl RetainedGrammar {
+    pub(super) fn fork(&self) -> Self {
+        Self {
+            values: Arc::clone(&self.values),
+            lease: self.values.lease(),
+            hits: AtomicUsize::new(0),
+        }
+    }
     fn key() -> Vec<u8> {
         let mut key = b"joined-grammar-descriptors-v2".to_vec();
         key.extend_from_slice(&super::parserwire::VERSION.to_le_bytes());
@@ -99,7 +109,10 @@ impl RetainedGrammar {
     #[cfg(test)]
     pub(super) fn lookup(&self, expanded: &ExpandedRegions) -> Option<Arc<GrammarDescriptors>> {
         let host = CurrentPieces::capture(expanded)?;
-        let descriptors = self.values.lookup(&Self::key(), &host)?;
+        let descriptors = self
+            .lease
+            .visit_explained(&Self::key(), &host, &mut |_| true)
+            .0?;
         if descriptors.source_len != host.length
             || descriptors.spans.iter().any(|&(offset, len)| {
                 offset.checked_add(len).is_none_or(|end| end > host.length)
@@ -119,7 +132,7 @@ impl RetainedGrammar {
         let host = CurrentPieces::capture(expanded);
         let key = Self::key();
         if let Some(host) = &host {
-            if let Some(value) = self.values.lookup(&key, host) {
+            if let Some(value) = self.lease.visit_explained(&key, host, &mut |_| true).0 {
                 if value.source_len == host.length {
                     self.hits.fetch_add(1, Ordering::Relaxed);
                     return Ok(value);
@@ -164,16 +177,17 @@ impl RetainedGrammar {
                 (),
                 None,
             );
-            self.values.retain_current_keys([key.as_slice()]);
-            self.values.insert_with(
+            self.lease.retain_current_keys([key.as_slice()]);
+            self.lease.insert_with(
                 key.clone().into(),
                 ledger.reads(),
                 ledger.domain_receipts(),
                 0,
                 || descriptors,
             );
-            self.values
-                .lookup(&key, &host)
+            self.lease
+                .visit_explained(&key, &host, &mut |_| true)
+                .0
                 .ok_or("new grammar descriptor admission failed")
         } else {
             // Missing exact piece coverage cannot authorize history reuse.
@@ -186,7 +200,7 @@ impl RetainedGrammar {
         assert_eq!(value.spans, spans);
     }
     pub(super) fn clear(&self) {
-        self.values.retain_current_keys(std::iter::empty::<&[u8]>());
+        self.lease.retain_current_keys(std::iter::empty::<&[u8]>());
     }
     pub(super) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)

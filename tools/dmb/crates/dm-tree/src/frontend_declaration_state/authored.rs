@@ -54,7 +54,7 @@ mod tests {
             "/obj/base\n    var/count=1\n/proc/probe()\n    return 1\n",
         );
         let previous = state
-            .authored_current
+            .authored_current()
             .lock()
             .unwrap()
             .as_ref()
@@ -66,7 +66,7 @@ mod tests {
             "/obj/base\n    var/count=1\n/proc/probe()\n    return 2\n",
         );
         let current = state
-            .authored_current
+            .authored_current()
             .lock()
             .unwrap()
             .as_ref()
@@ -85,7 +85,7 @@ mod tests {
             "/obj/base\n    var/count=2\n/proc/probe()\n    return 2\n",
         );
         let changed = state
-            .authored_current
+            .authored_current()
             .lock()
             .unwrap()
             .as_ref()
@@ -94,7 +94,7 @@ mod tests {
             .clone();
         assert!(!previous.skeletons().eq(changed.skeletons()));
         let expected = state
-            .authored_current
+            .authored_current()
             .lock()
             .unwrap()
             .as_ref()
@@ -142,7 +142,7 @@ fn same_leaves(
             .zip(current)
             .all(|(a, b)| Arc::ptr_eq(a, b) || a == b)
 }
-impl RetainedDeclarations {
+impl DeclarationClaims {
     pub(crate) fn with_shared_authored(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
         Self {
             values: DeclarationValues::shared(&owner),
@@ -207,6 +207,9 @@ impl RetainedDeclarations {
                     current.value = Arc::new(replacement);
                 }
             }
+            // Sharing the previous leaf backing does not transfer its lease.
+            // Replay and claim the exact rows for this pending request as well.
+            let index = authored.adopt(index);
             return self.publish_authored(currents, index);
         }
         let mut roster = crate::skeleton_roster::SkeletonRoster::default();
@@ -271,14 +274,15 @@ impl RetainedDeclarations {
     ) -> Option<()> {
         let mut leaves = Vec::with_capacity(currents.len());
         for current in currents {
-            let key = Self::key(&current.value.source);
+            let key = RetainedDeclarations::key(&current.value.source);
             self.values.publish(&key, current)?;
             leaves.push(current.skeletons());
         }
         *self
             .authored_current
             .lock()
-            .unwrap_or_else(|error| error.into_inner()) = Some(AdmittedAuthored { index, leaves });
+            .unwrap_or_else(|error| error.into_inner()) =
+            Some(Arc::new(AdmittedAuthored { index, leaves }));
         Some(())
     }
 }

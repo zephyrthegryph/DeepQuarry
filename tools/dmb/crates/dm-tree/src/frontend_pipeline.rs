@@ -70,6 +70,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     executor: &dm_exec::BuildExecutor,
     mut semantic_state: Option<&mut RetainedSemanticTree>,
 ) -> Result<ColdFrontend, Vec<Diagnostic>> {
+    let declaration_request = semantic_state
+        .as_ref()
+        .and_then(|state| state.declarations.compatibility_request());
     let total_start = Instant::now();
     let mut timings = FrontendTimings::default();
     let captured = Captured {
@@ -435,6 +438,9 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
     drop(profile_stage);
     timings.total = total_start.elapsed();
     let bodies: Arc<[BodyOccurrence]> = bodies.into();
+    if let Some(request) = &declaration_request {
+        request.publish_successful();
+    }
     Ok(ColdFrontend {
         callable_roster,
         abi_settings_complete,

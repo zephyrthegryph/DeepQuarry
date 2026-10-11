@@ -15,8 +15,8 @@ pub(crate) type SharedContributionStore =
     ObservedArtifactStore<Contribution, (), ChunkSourceAnswer, ()>;
 type Lease = ObservedArtifactLease<Contribution, (), ChunkSourceAnswer, ()>;
 pub(super) enum DeclarationValues {
-    Local(ArtifactStore<Contribution>),
-    Shared(Lease),
+    Local(Arc<SharedContributionStore>, Lease),
+    Shared(Arc<SharedContributionStore>, Lease),
 }
 struct Host<'a>(&'a str);
 impl ObservationHost<(), ChunkSourceAnswer, ()> for Host<'_> {
@@ -30,28 +30,35 @@ impl ObservationHost<(), ChunkSourceAnswer, ()> for Host<'_> {
 }
 impl Default for DeclarationValues {
     fn default() -> Self {
-        Self::Local(ArtifactStore::current_revision())
+        let store = SharedContributionStore::shared_current_rosters();
+        Self::Local(Arc::clone(&store), store.lease())
     }
 }
 impl DeclarationValues {
+    pub(super) fn fork(&self) -> Self {
+        match self {
+            Self::Local(store, _) => Self::Local(Arc::clone(store), store.lease()),
+            Self::Shared(store, _) => Self::Shared(Arc::clone(store), store.lease()),
+        }
+    }
     pub(super) fn shared(owner: &crate::SharedNormalizedDeclarations) -> Self {
-        Self::Shared(owner.contributions.lease())
+        Self::Shared(
+            Arc::clone(&owner.contributions),
+            owner.contributions.lease(),
+        )
     }
     pub(super) fn is_shared(&self) -> bool {
-        matches!(self, Self::Shared(_))
+        matches!(self, Self::Shared(..))
     }
     pub(super) fn retain(&self, keys: &[Vec<u8>]) {
         match self {
-            Self::Local(store) => store.retain_current_keys(keys.iter().map(Vec::as_slice)),
-            Self::Shared(lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
+            Self::Local(_, lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
+            Self::Shared(_, lease) => lease.retain_current_keys(keys.iter().map(Vec::as_slice)),
         }
     }
     pub(super) fn get(&self, key: &[u8], text: &str, offset: usize) -> Option<CurrentContribution> {
         match self {
-            Self::Local(store) => {
-                CurrentContribution::bind(store.lookup(key, &NoReads)?, text, offset)
-            }
-            Self::Shared(lease) => {
+            Self::Local(_, lease) | Self::Shared(_, lease) => {
                 let mut bound = None;
                 let admitted = lease
                     .visit_explained(key, &Host(text), &mut |value| {
@@ -67,12 +74,7 @@ impl DeclarationValues {
     }
     pub(super) fn publish(&self, key: &[u8], current: &mut CurrentContribution) -> Option<()> {
         let value = match self {
-            Self::Local(store) => {
-                store.insert_with_owned(Arc::from(key), vec![], vec![], 0, || {
-                    current.value.as_ref().clone()
-                })?
-            }
-            Self::Shared(lease) => lease.insert_with_owned(
+            Self::Local(_, lease) | Self::Shared(_, lease) => lease.insert_with_owned(
                 Arc::from(key),
                 vec![Observation {
                     query: (),
@@ -94,60 +96,35 @@ impl DeclarationValues {
     }
     pub(super) fn visit_storage(&self, mut visit: impl FnMut(DeclarationStorageView<'_>)) {
         match self {
-            Self::Local(store) => store.visit_storage(|view| match view {
-                ArtifactStorageView::Store { buckets, entries } => {
-                    visit(DeclarationStorageView::Store { buckets, entries })
-                }
-                ArtifactStorageView::Bucket {
-                    address,
-                    len,
-                    capacity,
-                    element_size,
-                } => visit(DeclarationStorageView::Bucket {
-                    address,
-                    len,
-                    capacity,
-                    element_size,
-                }),
-                ArtifactStorageView::Entry {
-                    key,
-                    reads,
-                    versions,
-                    value,
-                } => visit(DeclarationStorageView::Entry {
-                    key,
-                    reads,
-                    versions,
-                    contribution: value.view(),
-                }),
-            }),
-            Self::Shared(lease) => lease.visit_storage(|view| match view {
-                ObservedArtifactStorageView::Store { buckets, entries } => {
-                    visit(DeclarationStorageView::Store { buckets, entries })
-                }
-                ObservedArtifactStorageView::Bucket {
-                    address,
-                    len,
-                    capacity,
-                    element_size,
-                } => visit(DeclarationStorageView::Bucket {
-                    address,
-                    len,
-                    capacity,
-                    element_size,
-                }),
-                ObservedArtifactStorageView::Entry {
-                    key,
-                    reads,
-                    versions,
-                    value,
-                } => visit(DeclarationStorageView::SharedEntry {
-                    key,
-                    reads,
-                    versions,
-                    contribution: value.view(),
-                }),
-            }),
+            Self::Local(_, lease) | Self::Shared(_, lease) => {
+                lease.visit_storage(|view| match view {
+                    ObservedArtifactStorageView::Store { buckets, entries } => {
+                        visit(DeclarationStorageView::Store { buckets, entries })
+                    }
+                    ObservedArtifactStorageView::Bucket {
+                        address,
+                        len,
+                        capacity,
+                        element_size,
+                    } => visit(DeclarationStorageView::Bucket {
+                        address,
+                        len,
+                        capacity,
+                        element_size,
+                    }),
+                    ObservedArtifactStorageView::Entry {
+                        key,
+                        reads,
+                        versions,
+                        value,
+                    } => visit(DeclarationStorageView::SharedEntry {
+                        key,
+                        reads,
+                        versions,
+                        contribution: value.view(),
+                    }),
+                })
+            }
         }
     }
 }

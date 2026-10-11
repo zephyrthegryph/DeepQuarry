@@ -652,7 +652,7 @@ pub use grammar_roster::{GrammarAnswer, GrammarDescriptors, GrammarQuery};
 mod declaration_state;
 pub(crate) use declaration_state::Contribution;
 pub use declaration_state::{
-    ChunkSourceAnswer, DeclarationContributionView, DeclarationRetentionStats,
+    ChunkSourceAnswer, DeclarationContributionView, DeclarationRequest, DeclarationRetentionStats,
     DeclarationStorageView,
 };
 #[path = "frontend_parse.rs"]

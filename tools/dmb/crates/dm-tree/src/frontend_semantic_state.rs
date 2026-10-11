@@ -24,6 +24,11 @@ struct Entry {
     metadata_dependencies: Option<crate::metadata_update::MetadataDependencies>,
 }
 impl RetainedSemanticTree {
+    /// Stage source-neutral declaration claims for this request, independently
+    /// of the current semantic/query tree. Dropping the guard aborts claims.
+    pub fn begin_declaration_request(&mut self, publishable: bool) -> super::DeclarationRequest {
+        self.declarations.begin_request(publishable)
+    }
     fn discard_foreign_callable_roster(&mut self, tree: &Arc<SemanticTree>) {
         if let Some(roster) = &self.callable_roster {
             if !roster.authenticates_tree(tree) {
