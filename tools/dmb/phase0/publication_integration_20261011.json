@@ -272,5 +272,23 @@
     ],
     "failure": "nested implicit constructor fixture rejected by parser before evaluator; agent correction pending",
     "scope": "focused shared initializer, all map memo fixtures, constructor diagnostics and shared callable index; not full suite"
+  },
+  "focused_validation_ed1b67": {
+    "source_commit": "ed1b67e3866162cc1021bafc1551c9ca04f81eb6",
+    "archive_sha256": "db62a9557d4e3a2389ee56886dce7bbe6f6faf7b1ac98aafb42ff5ba122693fe",
+    "build_receipt": "20261011-094428-a85f7b9a-job-cargo.json",
+    "passed": 10,
+    "failed": 2,
+    "receipts": [
+      "20261011-094810-94232495-focused.json",
+      "20261011-094810-2bdda847-focused.json",
+      "20261011-094810-51967c13-focused.json",
+      "20261011-094912-605aca33-focused.json"
+    ],
+    "failures": [
+      "callback header pinned client child MouseEntered flags missing",
+      "body missing declared type wording retains space in return value"
+    ],
+    "scope": "focused actual constructor and continuation producers, compact frontend diagnostic spans, callback header facts; not full suite"
   }
 }
