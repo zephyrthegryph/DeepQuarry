@@ -74,9 +74,8 @@ impl SessionSymbolicMemo {
         if let Some(owner) = &self.publication {
             census.arc_object("session_symbolic.observed_owner", owner);
             census.arc_object("session_symbolic.observed_core", &owner.values);
-            owner.values.visit_incidence_storage(|leaf| {
-                census.slice("session_symbolic.incidence_reads", leaf, true);
-            });
+            // Receipt leaf payloads are visited through the actual records below,
+            // including nested answers, before any shared allocation is deduplicated.
             owner
                 .values
                 .visit_incidence_buffer(|address, payload, capacity| {
