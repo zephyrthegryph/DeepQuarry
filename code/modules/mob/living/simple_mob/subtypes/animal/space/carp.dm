@@ -85,11 +85,8 @@
 	)
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(attack_cooldown = 15))
->>>>>>> origin/master
 	swarming()
 
 // A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet

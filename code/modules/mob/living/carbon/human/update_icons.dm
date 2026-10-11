@@ -447,15 +447,9 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 			face_standing.Blend(facial_s, ICON_OVERLAY)
 
-<<<<<<< HEAD
 	if(looks.hair_style)
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[looks.hair_style]
-		if(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHEADHAIR))
-=======
-	if(h_style)
-		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
 		if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & BLOCKHEADHAIR))
->>>>>>> origin/master
 			if(hair_style && !(hair_style.flags & HAIR_VERY_SHORT))
 				hair_style = GLOB.hair_styles_list["Short Hair"]
 

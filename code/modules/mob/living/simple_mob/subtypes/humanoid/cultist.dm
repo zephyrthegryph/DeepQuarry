@@ -841,11 +841,8 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
->>>>>>> origin/master
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -885,11 +882,8 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
->>>>>>> origin/master
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel

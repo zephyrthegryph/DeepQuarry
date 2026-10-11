@@ -93,11 +93,8 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
->>>>>>> origin/master
 	rolls(nameof(name), PROC_REF(roll_numbered_name))
 	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
 

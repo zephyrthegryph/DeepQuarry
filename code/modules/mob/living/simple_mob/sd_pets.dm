@@ -116,8 +116,5 @@ CAPABILITIES(/mob/living/simple_mob/vore/fennec/bridgette)
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
-=======
 	configure(mob_movement(bump = 32))
->>>>>>> origin/master

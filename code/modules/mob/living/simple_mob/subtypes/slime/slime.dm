@@ -90,12 +90,9 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 CAPABILITIES(/mob/living/simple_mob/slime)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 2 SECONDS))
 	configure(mob_movement(makes_dirt = FALSE))
->>>>>>> origin/master
 	verb_entry(/mob/living/proc/ventcrawl)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	op("slime_item", item(/obj/item), then(PROC_REF(slime_interaction_item)))

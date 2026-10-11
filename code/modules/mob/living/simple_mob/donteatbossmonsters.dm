@@ -31,6 +31,3 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/alien/queen)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))
 
 /mob/living/simple_mob/animal/giant_spider/broodmother
-
-CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodmother)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0))

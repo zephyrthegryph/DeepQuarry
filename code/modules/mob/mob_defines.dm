@@ -209,15 +209,12 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
-<<<<<<< HEAD
 	// Who the character says they are (profile_records.dm).
 	profile(nameof(bio), /datum/record/identity)
 	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
 	profile(nameof(vore_prefs), /datum/record/vore_prefs)
-=======
 	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
 	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
->>>>>>> origin/master
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
 	cooldowns(next_click, next_move, cpr_time, slip_protect, next_play_vent)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby

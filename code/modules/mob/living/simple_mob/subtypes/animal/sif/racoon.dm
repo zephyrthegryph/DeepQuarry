@@ -116,11 +116,8 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
-=======
 	configure(mob_kind(attack_cooldown = 1 SECOND))
->>>>>>> origin/master
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

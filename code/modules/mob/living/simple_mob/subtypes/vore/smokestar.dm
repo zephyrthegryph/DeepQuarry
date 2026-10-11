@@ -23,11 +23,8 @@
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
-=======
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
->>>>>>> origin/master
 
 /*
 /mob/living/simple_mob/vore/smokestar/wendigo

@@ -33,11 +33,8 @@
 	can_pain_emote = FALSE // Can't feel pain and shouldn't take damage anyways, but, sanity
 
 CAPABILITIES(/mob/living/simple_mob/animal/space/tree)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(mob_class = MOB_CLASS_PLANT, death_message = "is hacked into pieces!"))
->>>>>>> origin/master
 
 /mob/living/simple_mob/animal/space/tree/apply_melee_effects(atom/A)
 	if(isliving(A))

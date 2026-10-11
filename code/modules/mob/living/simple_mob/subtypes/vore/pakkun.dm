@@ -89,11 +89,8 @@
 		ai_brain.go_wake()
 
 CAPABILITIES(/mob/living/simple_mob/vore/pakkun)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_pred" = 1, "allow_mind_transfer" = TRUE))
-=======
 	configure(mob_kind(attack_cooldown = 5 SECONDS))
->>>>>>> origin/master
 	op("pakkun_interaction_hand", hand(), ungated(), stance(I_HELP), label("Shake awake"), then(PROC_REF(pakkun_interaction_hand)))
 	op("pakkun_interaction_item", item(/obj/item), then(PROC_REF(pakkun_interaction_item)))
 

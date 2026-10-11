@@ -177,12 +177,9 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))
-=======
 	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
 	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
->>>>>>> origin/master
 	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()

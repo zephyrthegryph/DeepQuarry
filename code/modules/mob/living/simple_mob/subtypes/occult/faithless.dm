@@ -42,11 +42,8 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/faithless)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-=======
 	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
->>>>>>> origin/master
 
 /mob/living/simple_mob/faithless/Process_Spacemove(check_drift = 0)
 	return 1

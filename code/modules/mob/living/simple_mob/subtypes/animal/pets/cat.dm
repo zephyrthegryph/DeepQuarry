@@ -356,11 +356,8 @@ CAPABILITIES(/obj/item/cat_box)
 	endurance = 50
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
-=======
 	configure(mob_kind(death_message = "teleports away!"))
->>>>>>> origin/master
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/life_special_due()
 	return TRUE

@@ -75,8 +75,6 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-
-CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
 	configure(mob_kind(death_message = "falls down and stops moving..."))
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt

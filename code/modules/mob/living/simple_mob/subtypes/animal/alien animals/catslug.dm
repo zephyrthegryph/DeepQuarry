@@ -105,11 +105,8 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		))
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
-=======
 	configure(mob_movement(can_climb = TRUE))
->>>>>>> origin/master
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
@@ -286,21 +283,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom
 	desc = "A noodley bodied creature with thin arms and legs, and gloomy dark eyes. You shouldn't ever see this."
-<<<<<<< HEAD
-	makes_dirt = 0
-=======
-	digestable = 0
->>>>>>> origin/master
 	humanoid_hands = 1	//These should all be ones requiring admin-intervention to play as, so they can get decent tool-usage, as a treat.
 	var/siemens_coefficient = 1 		//Referenced later by others.
 	can_wear_hat = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
-=======
 	configure(mob_movement(makes_dirt = 0))
->>>>>>> origin/master
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, hidden = TRUE) //Most of these have custom sprites with colour already, so we'll not let them have this.

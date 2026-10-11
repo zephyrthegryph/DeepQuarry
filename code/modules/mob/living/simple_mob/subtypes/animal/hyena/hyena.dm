@@ -146,11 +146,8 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
-=======
 	configure(mob_kind(attack_cooldown = 2))
->>>>>>> origin/master
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 /// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).

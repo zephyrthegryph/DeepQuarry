@@ -161,11 +161,8 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
-<<<<<<< HEAD
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
-=======
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
->>>>>>> origin/master
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()

@@ -5,13 +5,10 @@
 // refuses a target out of arm's reach.
 
 CAPABILITIES(/mob/living/carbon/human)
-<<<<<<< HEAD
 	// The character's chosen look (code/modules/mob/living/carbon/human/profile_records.dm).
 	profile(nameof(looks), /datum/record/appearance)
-=======
 	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human))
 	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
->>>>>>> origin/master
 	cooldowns(push_lying_cooldown, disarm_cooldown, breath_sound_cooldown, chew_cooldown, xylophone)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
