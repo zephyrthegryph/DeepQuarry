@@ -1094,6 +1094,17 @@
 	set_area_switch(0)
 	set_area_switch(1)
 	TEST_ASSERT(QDELETED(L), "the fixture exploded")
+	// The blast resolves on the explosion system's own step, which the injected clock does not reach: drive it to the end here and take
+	// what it left (floor and wall debris) as this test's. Before, it resolved between later tests and dropped steel on whatever test
+	// held the block then (dq_p2_lights/wrench_takes_a_bare_frame_apart_into_sheets reported it as its own leak).
+	for(var/i in 1 to 50)
+		if(!SSexplosions.has_work())
+			break
+		SSexplosions.explosion_step(0)
+	var/list/mine = block_turfs(test_block)
+	for(var/turf/T in range(3, tile(4, 4)))
+		if(T in mine)
+			own_turf_contents(T)
 
 /// A tube that has been switched very many times burns out sooner or later.
 /datum/unit_test/dq_p2_lights/an_overused_tube_burns_out
