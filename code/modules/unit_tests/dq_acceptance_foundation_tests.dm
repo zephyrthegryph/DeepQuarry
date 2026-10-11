@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/dq_acceptance_native/empty)
 /obj/item/dq_acceptance_pure
 CAPABILITIES(/obj/item/dq_acceptance_pure)
 	acceptance(DQ_ACCEPTANCE_PURE, req(PROC_REF(context_reason)))
-	acceptance(DQ_ACCEPTANCE_NESTED, req(PROC_REF(nested_reason)))
+	acceptance(DQ_ACCEPTANCE_NESTED, part_make(/datum/entry/part/req/dq_nested_acceptance))
 /obj/item/dq_acceptance_pure/proc/context_reason(datum/act/op/A)
 	var/datum/acceptance_context/C = A.acceptance
 	if(C.options?["fault"])
@@ -75,8 +75,15 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	if(C.options?["refuse"])
 		return "exact refusal"
 	return null
-/obj/item/dq_acceptance_pure/proc/nested_reason(datum/act/op/A)
-	return acceptance_reason(src, DQ_ACCEPTANCE_PURE, A.acceptance.holder, A.acceptance.candidate)
+// The nested requirement supplies the actual inner plan's dynamic dependencies.
+/datum/entry/part/req/dq_nested_acceptance/check(datum/act/op/A)
+	return acceptance_reason(A.holder, DQ_ACCEPTANCE_PURE, A.acceptance.holder, A.acceptance.candidate)
+/datum/entry/part/req/dq_nested_acceptance/holds(datum/act/op/A)
+	return isnull(check(A))
+/datum/entry/part/req/dq_nested_acceptance/refusal(datum/act/op/A)
+	return check(A)
+/datum/entry/part/req/dq_nested_acceptance/read_keys(datum/act/op/A)
+	return acceptance_read_keys(A.holder, DQ_ACCEPTANCE_PURE, A.acceptance.holder, A.acceptance.candidate)
 
 // Unique pooled subtypes prove genuinely cold allocation independent of other tests.
 /datum/act/op/acceptance/dq_acceptance_cold
