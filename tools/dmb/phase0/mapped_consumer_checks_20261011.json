@@ -1,0 +1,17 @@
+{
+  "scope": "Focused dmbc correctness checks; no full runtime or benchmark claim",
+  "commit": "bf32440119c13bfb30e7385064827062d8f5edd4",
+  "archive_sha256": "dc332c1ac51d6c9685cf3cfedd4d045cac3717a88a091f91f518e0b93147b267",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181321-ccfd64a7-job-cargo.json",
+  "build_exit": 0,
+  "build_seconds": 299.093,
+  "owned_children_reaped": true,
+  "focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-181833-5d73da26-focused.json",
+  "focused_passed": 13,
+  "focused_failed": 0,
+  "limitations": [
+    "Later modifier recipe, compact observer and typed-sidecar commits are excluded",
+    "Actual DeepQuarry end-to-end speed benefit unmeasured",
+    "Full BYOND structural and runtime parity gates remain open"
+  ]
+}
