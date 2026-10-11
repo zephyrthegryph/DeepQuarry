@@ -131,6 +131,11 @@ def main():
         raise ValueError('pins require lowercase SHA256')
     if args.output.exists():
         raise ValueError('focused output must be new; preexisting paths are never owned')
+    for name in ('byond', 'native', 'template'):
+        setattr(args, name, absolute_nonreparse(getattr(args, name)))
+    args.checkout = absolute_nonreparse(args.checkout)
+    args.prepared_root = absolute_nonreparse(args.prepared_root)
+    args.output = absolute_nonreparse(args.output)
     deadline = time.monotonic() + args.seconds
     job = OwnedJob(memory_bytes=4_000_000_000)
     child = None

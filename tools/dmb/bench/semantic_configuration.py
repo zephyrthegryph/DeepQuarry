@@ -47,6 +47,8 @@ def command_configuration(project, arguments, sha):
             value = next(args, None)
             if value is None:
                 raise ValueError(option + " requires a value")
+            if option == "--compile-result-file" and (not value or value.startswith("--")):
+                raise ValueError("--compile-result-file requires a path value")
             if option == "--workers" and (not value.isascii() or not value.isdecimal() or not 0 < int(value) < 2**64):
                 raise ValueError("--workers requires a positive usize")
             if option in {"--output-store", "--compile-result-file"} and option in seen:
