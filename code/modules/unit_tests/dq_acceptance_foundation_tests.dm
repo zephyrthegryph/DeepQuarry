@@ -669,7 +669,7 @@ CAPABILITIES(/obj/item/dq_acceptance_role_destination)
 	TEST_ASSERT(candy.wrapped, "Concrete lollipop starts wrapped")
 	TEST_ASSERT_NULL(worn_of(candy).slots, "Actual wrapped setup clears wearable slots")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
-	H.pdachoice = 6
+	H.bio.pdachoice = 6
 	var/obj/item/pda/P = allocate(/obj/item/pda, H)
 	TEST_ASSERT_EQUAL(P.pdachoice, 6, "Real PDA constructor reads its human holder's wrist choice")
 	TEST_ASSERT_EQUAL(worn_of(P).slots, SLOT_ID | SLOT_BELT | SLOT_GLOVES, "Actual wrist setup preserves all three wearable slots")

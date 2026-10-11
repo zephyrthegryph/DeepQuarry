@@ -3,27 +3,27 @@
 	var/list/pair = vore_test_pair()
 	var/mob/living/carbon/human/pred = pair[1]
 	var/mob/living/carbon/human/prey = pair[2]
-	prey.devourable = FALSE
+	prey.vore_prefs.devourable = FALSE
 	prey.set_absorbed(TRUE)
 	pred.set_absorbed(TRUE)
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't able to be devoured.", "Preference wins over both absorbed refusals")
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't in a state to be devoured.", "Prey absorbed refusal")
 	prey.set_absorbed(FALSE)
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't in a state to be devoured.", "Predator absorbed refusal remains after prey recovers")
 	pred.set_absorbed(FALSE)
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "Both recovered permit devour")
-	prey.digestable = FALSE
+	prey.vore_prefs.digestable = FALSE
 	prey.set_absorbed(TRUE)
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "they don't allow digestion", "Digest preference wins over absorbed")
-	prey.digestable = TRUE
+	prey.vore_prefs.digestable = TRUE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "they are already absorbed", "Digest absorbed refusal after preference recovers")
 	prey.set_absorbed(FALSE)
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "Digest recovery")
-	prey.contaminate_pref = FALSE
+	prey.vore_prefs.contaminate_pref = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_affect_worn, pred, prey), "they don't allow their worn items to be affected", "Worn addon refusal")
 	TEST_ASSERT(!vore_consents(/datum/predicate/vore_affect_worn, pred, prey), "Effect-domain boolean derives refusal")
-	prey.contaminate_pref = TRUE
+	prey.vore_prefs.contaminate_pref = TRUE
 	TEST_ASSERT(vore_consents(/datum/predicate/vore_affect_worn, pred, prey), "Worn addon recovery")
 
 

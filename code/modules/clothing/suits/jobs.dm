@@ -212,8 +212,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest)
 
 	configure(item_worn(covers = UPPER_TORSO))
 
-	/obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tank/emergency, \
-	/obj/item/clothing/mask/gas, /obj/item/taperoll/engineering, /obj/item/taperoll/atmos, /obj/item/analyzer, /obj/item/extinguisher/mini) /* . Few more tools that can be put on vests */)))
 
 
 /obj/item/clothing/suit/storage/hazardvest/blue
