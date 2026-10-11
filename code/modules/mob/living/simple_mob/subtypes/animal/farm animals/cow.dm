@@ -25,19 +25,13 @@
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cow)
 	hose_sockets(list(/datum/hose_connector/output/cow))
-	owns_one(nameof(udder), /datum/reagents)
+	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the cow
 	op("cow_item", item(/obj/item), then(PROC_REF(cow_interaction_item)))
 	op("cow_hand_disarm", hand(), ungated(), stance(I_DISARM), label("Tip over"), then(PROC_REF(cow_interaction_hand_disarm)))
 
 /// The disarm-stance input of cow_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand_disarm(datum/act/op/A)
 	return cow_interaction_hand(A, I_DISARM)
-
-/mob/living/simple_mob/animal/passive/cow/Initialize(mapload)
-	. = ..()
-
-	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-	rel_set(udder, nameof(udder.my_atom), src)
 
 /// Old attackby: milking.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(datum/act/op/A)

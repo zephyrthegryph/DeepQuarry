@@ -3,8 +3,20 @@
 /// singleton on the moved event: whoever moves leaves the swarmers of its old turf and
 /// joins those of its new one, so both sides of every pair stay in step. State lives on
 /// the movable. A capability hooked on the moved notice: AM.enable_swarming() grants it.
+//
+/// A type that always swarms declares it (CAPABILITIES(T) swarming()): its offset is rolled and it pairs with its turf's swarmers at init.
+/// enable_swarming() grants it to one instance.
 CAPABILITY_TYPE(swarming, CAP_SWARMING, /datum/capability/swarming, key = NONE)
 /datum/capability/swarming
+	holder_hooks = HOLDER_HOOK_INIT
+
+/datum/capability/swarming/on_holder_init(datum/act/eval/A)
+	var/atom/movable/AM = A.holder
+	if(!istype(AM))
+		return
+	AM.swarm_offset_x = rand(-24, 24)
+	AM.swarm_offset_y = rand(-24, 24)
+	join_turf(AM)
 
 /datum/capability/swarming/entries()
 	return list(on_notice(/datum/notice/moved, then(CAP_PROC(swarm_moved))))

@@ -166,6 +166,8 @@
 					if(condition_holds(holder, L[i]))
 						return TRUE
 				return FALSE
+			if("config")
+				return !!global.config?.Get(L[2])
 		return FALSE
 	if(isnum(cond))
 		return condition_id_holds(holder, cond)
@@ -193,6 +195,10 @@
 
 /proc/cond_any(...)
 	return list("any") + args
+
+/// cond_config(/datum/config_entry/flag/x): the server's config flag (read when the condition is asked; config does not change in a round).
+/proc/cond_config(entry_type)
+	return list("config", entry_type)
 
 // ---- link: a pair declared once for both types ----
 

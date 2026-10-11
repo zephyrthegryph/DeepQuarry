@@ -14,7 +14,8 @@
 //
 // finds() writes into the holder's `var` the first `type` found next to it (NEAR_CARDINAL: the four cardinal neighbour turfs, in
 // GLOB.cardinal order; NEAR_AROUND: the eight around it) when its init is complete (after_init timing: every map-loaded neighbour exists and has
-// initialized), and, with `back =`, writes the holder into the found thing's `back` var. Nothing found leaves the var as it was.
+// initialized), and, with `back =`, writes the holder into the found thing's `back` var. Nothing found leaves the var as it was. NEAR_LOC
+// looks at what the holder is made inside instead (a voice in its communicator).
 
 
 CAPABILITY_TYPE(spawns_many, CAP_SPAWNS_MANY, /datum/capability/lib/spawns_many, key = NONE, var_name = null, kind = null, at = null, back = null, each = null, only_if = null)
@@ -50,6 +51,12 @@ CAPABILITY_TYPE(finds, CAP_FINDS, /datum/capability/lib/finds, key = NONE, var_n
 
 /datum/capability/lib/finds/proc/look_around(datum/act/timer/A)
 	var/atom/holder = A.holder
+	if(near == NEAR_LOC)
+		if(istype(holder.loc, kind))
+			rel_set(holder, var_name, holder.loc)
+			if(back)
+				rel_set(holder.loc, back, holder)
+		return
 	var/turf/origin = get_turf(holder)
 	if(!origin)
 		return
