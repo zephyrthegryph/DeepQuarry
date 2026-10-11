@@ -39,6 +39,17 @@ class Contracts(unittest.TestCase):
             '--bash-exe', 'C:/bash.exe', '--bash-sha256', 'a' * 64, '--byond-exe', 'D:/dm.exe', '--byond-sha256', 'b' * 64,
             '--dd-exe', 'D:/dreamdaemon.exe', '--dd-sha256', 'c' * 64, '--security', 'trusted', *extra])
 
+    def test_owned_memory_cap_remains_explicit_and_bounded(self):
+        flags = ('--focus', '/datum/unit_test/a')
+        self.assertEqual(self.args(*flags).job_memory_bytes, 4_000_000_000)
+        for cap in (512 * 1024 * 1024, 6_000_000_000, 8 * 1024 * 1024 * 1024):
+            args = self.args(*flags, '--job-memory-bytes', str(cap))
+            self.assertFalse(runner.validate(args))
+            self.assertEqual(args.job_memory_bytes, cap)
+        for cap in (0, 512 * 1024 * 1024 - 1, 8 * 1024 * 1024 * 1024 + 1):
+            with self.assertRaisesRegex(ValueError, 'memory cap'):
+                runner.validate(self.args(*flags, '--job-memory-bytes', str(cap)))
+
     def test_all_tier_resume_uses_same_suite_core(self):
         args = self.args('--tier', 'all', '--batch-size', '32', '--resume', 'E:/checkpoint.json', '--resume-sha256', 'd' * 64)
         command = runner.command(args, runner.validate(args))

@@ -57,6 +57,8 @@ def parser():
         value.add_argument('--' + name + '-exe' if name == 'native' else '--template', type=Path)
         value.add_argument('--' + name + '-sha256')
     value.add_argument('--workers', type=int, default=2)
+    value.add_argument('--job-memory-bytes', type=int, default=JOB_BYTES,
+                       help='owned Job cap, 512 MiB..8 GiB; default 4,000,000,000 bytes')
     value.add_argument('--seconds', type=int,
                        help='owned cohort watchdog, 1..1800 seconds; interrupted worlds are excluded')
     value.add_argument('--security', choices=['trusted', 'safe', 'ultrasafe'], required=True)
@@ -78,6 +80,8 @@ def parser():
 
 
 def validate(args):
+    if not 512 * 1024 * 1024 <= args.job_memory_bytes <= 8 * 1024 * 1024 * 1024:
+        raise ValueError('owned Job memory cap must be 512 MiB..8 GiB')
     if args.seconds is None:
         args.seconds = COMPILE_SECONDS if args.suite_compiled_output or args.focused_compiled_output else COHORT_SECONDS
     if not 1 <= args.seconds <= COHORT_SECONDS:
@@ -257,7 +261,7 @@ def main(argv=None):
         'historical_same_generation': bool(args.focused_compiled_output or args.suite_compiled_output),
         'compile_watchdog_seconds': None if args.focused_compiled_output or args.suite_compiled_output else min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
         'inputClosureAuthenticated': False, 'acceptedRuntimeBaseline': False,
-        'runner_sha256': hash_file(Path(__file__)), 'log': str(log), 'pins': {}, 'owned_child_cleanup': None}
+        'job_memory_bytes': args.job_memory_bytes, 'runner_sha256': hash_file(Path(__file__)), 'log': str(log), 'pins': {}, 'owned_child_cleanup': None}
     write_receipt(receipt_file, receipt)
     child = None
     job = None
@@ -306,7 +310,7 @@ def main(argv=None):
                 DQ_NATIVE_OUTPUT_STORE=str(args.output / 'store'), DMB_CACHE_DIR=str(args.output / 'cache'))
         spec = importlib.util.spec_from_file_location('suite_error_mode', checkout / 'tools/dmb/fixtures/native/power_retirement_runtime/run.py')
         mode = importlib.util.module_from_spec(spec); spec.loader.exec_module(mode)
-        job = OwnedJob(memory_bytes=JOB_BYTES)
+        job = OwnedJob(memory_bytes=args.job_memory_bytes)
         with log.open('xb') as output, mode.hidden_error_mode():
             child = subprocess.Popen(receipt['command'], cwd=checkout, env=env, stdout=output, stderr=subprocess.STDOUT,
                 creationflags=subprocess.CREATE_NO_WINDOW | 0x00000004)  # CREATE_SUSPENDED
