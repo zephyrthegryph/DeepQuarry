@@ -65,7 +65,8 @@ Run, from your worktree:
 bash tools/dq_merge_master.sh
 ```
 
-It fetches, merges `origin/master`, resolves the modify/delete conflicts on the generated files as
+It fetches, merges `origin/master` (`--no-commit`, so the regenerated `look_keys.txt` goes into the merge commit itself instead of a
+separate "Regenerate look_keys.txt" commit after it), resolves the modify/delete conflicts on the generated files as
 "untracked" (`git rm --cached`; the files stay on disk), untracks any generated file your branch still
 tracks, commits the merge and regenerates. Any other conflict is listed for you to resolve as usual.
 It never runs checkout, reset, restore, stash or cherry-pick.
@@ -304,8 +305,16 @@ run. On a merge conflict in a pin file, take master's file (`git show origin/mas
 - it carries a lane-ready note (`refs/notes/lane-ready`, written by `dq_lane_ready.sh`) or a merge-gates note (`refs/notes/merge-gates`,
   written by `dq_merge_gates.sh` when its test world ran) on exactly that commit, with `"ok":true`;
 - it is already in `origin/master`;
-- it is a merge and every parent passes: the push script's own merge of `origin/master` into a stamped lane, or a merge batch of
-  stamped lanes (`dq_merge_gates.sh` also stamps the batch's merge commit itself);
+- it is a merge of master into one stamped parent and **the stamp carries across the re-merge**: (a) the merge is clean (`git merge-tree`
+  of the two parents has no conflict and the merge commit's tree is that result, regenerated files aside); (b) what master changed since
+  the stamp's master base is disjoint from what the stamp depends on, judged by `tools/dq_lane_check.js --master <master parent>`: the
+  lane's files and their directories, the files defining its tests, the snapshot directories those read
+  (`code/modules/unit_tests/snapshots/<dir>/`), its `--covers` globs and `tools/ci/lane_ready_global.txt`; `look_keys.txt` and
+  `snapshots/op_bases/` are regenerated, so an overlap there does not count (a merge-batch stamp needs master's changes disjoint from the
+  batch's files, directories and the global paths); (c) the compile, DreamChecker and the ratchets pass on the merged tree, which
+  `dq_push_master.sh` runs on exactly that commit before pushing. A lane whose push races other pushes no longer re-gates: it re-merges
+  and pushes on its old stamp while master's changes stay out of its way. Otherwise the message says what overlapped; run
+  `dq_lane_ready.sh` again;
 - it has one parent that passes and changes only docs, changelogs, `*.md`, `tools/ci/known_failures.txt` or the look keys (what
   `dq_lane_ready.sh` allows after a stamp, and the data-only commits the push script adds).
 
