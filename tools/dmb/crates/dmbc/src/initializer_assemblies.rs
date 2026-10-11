@@ -220,6 +220,7 @@ impl InitializerAssemblies {
             .ok()
             .flatten()
     }
+    #[cfg(test)]
     #[allow(clippy::type_complexity)]
     pub(super) fn lookup_with_current_roots_verified<'expr, R: Resolver>(
         &self,
@@ -390,6 +391,7 @@ impl InitializerAssemblies {
             admitted,
         )
     }
+    #[cfg(test)]
     pub(super) fn remember_shared_with_recipes(
         &self,
         key: &receipts::Binding,

@@ -15,64 +15,18 @@ impl InitializerFragments {
         crate::InitializerCode,
         Arc<crate::symbolic::InitializerEncoding>,
     )> {
-        self.modified_verified(key, symbols, host, root, None)
-            .ok()
-            .flatten()
-    }
-    #[allow(clippy::type_complexity)]
-    pub(crate) fn modified_verified<R: Resolver>(
-        &self,
-        key: &receipts::Binding,
-        symbols: &dm_ir::SymbolTable,
-        host: &R,
-        root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
-        verify: Option<
-            &mut dyn FnMut(
-                &verify::Receipt,
-                &crate::InitializerCode,
-            ) -> Result<(), InitializerError>,
-        >,
-    ) -> Result<
-        Option<(
-            crate::InitializerCode,
-            Arc<crate::symbolic::InitializerEncoding>,
-        )>,
-        InitializerError,
-    > {
-        self.modified_verified_with_disk(key, symbols, host, root, verify, 0, None)
-    }
-    #[allow(clippy::too_many_arguments, clippy::type_complexity)]
-    pub(crate) fn modified_verified_with_disk<R: Resolver>(
-        &self,
-        key: &receipts::Binding,
-        symbols: &dm_ir::SymbolTable,
-        host: &R,
-        root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
-        verify: Option<
-            &mut dyn FnMut(
-                &verify::Receipt,
-                &crate::InitializerCode,
-            ) -> Result<(), InitializerError>,
-        >,
-        root_count: usize,
-        modified_policy: Option<&[u8]>,
-    ) -> Result<
-        Option<(
-            crate::InitializerCode,
-            Arc<crate::symbolic::InitializerEncoding>,
-        )>,
-        InitializerError,
-    > {
         self.modified_verified_with_attempt(
             key,
             symbols,
             host,
             root,
-            verify,
-            root_count,
-            modified_policy,
+            None,
+            0,
+            None,
             &mut crate::initializer_lowering::disk::TransportAttempt::default(),
         )
+        .ok()
+        .flatten()
     }
     #[allow(clippy::too_many_arguments, clippy::type_complexity)]
     pub(crate) fn modified_verified_with_attempt<R: Resolver>(
@@ -202,32 +156,6 @@ impl InitializerFragments {
         Ok(Some((current, Arc::clone(encoding))))
     }
 
-    pub(crate) fn remember_modified(
-        &self,
-        key: &receipts::Binding,
-        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
-        code: &Arc<ResolverProc>,
-        fields: &[(String, dm_syntax::Expr)],
-    ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
-        self.remember_modified_with_disk(key, recorder, code, fields, None)
-    }
-    pub(crate) fn remember_modified_with_disk(
-        &self,
-        key: &receipts::Binding,
-        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
-        code: &Arc<ResolverProc>,
-        fields: &[(String, dm_syntax::Expr)],
-        modified_policy: Option<&[u8]>,
-    ) -> Option<Arc<crate::symbolic::InitializerEncoding>> {
-        self.remember_modified_with_attempt(
-            key,
-            recorder,
-            code,
-            fields,
-            modified_policy,
-            &mut crate::initializer_lowering::disk::TransportAttempt::default(),
-        )
-    }
     pub(crate) fn remember_modified_with_attempt(
         &self,
         key: &receipts::Binding,

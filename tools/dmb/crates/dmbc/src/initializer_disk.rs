@@ -148,19 +148,7 @@ impl Transport {
             content: xxhash_rust::xxh3::xxh3_128(&recipe.bytes),
         }
     }
-    pub(super) fn lookup<R: Resolver>(
-        &self,
-        key: &receipts::Binding,
-        roots: &[&dm_syntax::Expr],
-        host: &R,
-        symbols: &dm_ir::SymbolTable,
-    ) -> Option<(
-        dm_codegen_byond::lower_resolver::ResolverProc,
-        Vec<dm_session::ResolverRead>,
-        Vec<(usize, crate::modified_initializers::ExpressionRecipe)>,
-    )> {
-        self.lookup_with_modified_policy(key, roots, host, symbols, None)
-    }
+    #[cfg(test)]
     pub(super) fn lookup_with_modified_policy<R: Resolver>(
         &self,
         key: &receipts::Binding,
@@ -265,32 +253,6 @@ impl Transport {
             }
         }
         Ok(candidates)
-    }
-    pub(super) fn stage(
-        &self,
-        key: &receipts::Binding,
-        roots: &[&dm_syntax::Expr],
-        reads: &[dm_session::ResolverRead],
-        code: &dm_codegen_byond::lower_resolver::ResolverProc,
-    ) {
-        self.stage_with_modified_policy(key, roots, reads, code, None);
-    }
-    pub(super) fn stage_with_modified_policy(
-        &self,
-        key: &receipts::Binding,
-        roots: &[&dm_syntax::Expr],
-        reads: &[dm_session::ResolverRead],
-        code: &dm_codegen_byond::lower_resolver::ResolverProc,
-        modified_policy: Option<&[u8]>,
-    ) {
-        self.stage_attempt(
-            key,
-            roots,
-            reads,
-            code,
-            modified_policy,
-            &mut TransportAttempt::default(),
-        );
     }
     pub(super) fn stage_attempt(
         &self,
