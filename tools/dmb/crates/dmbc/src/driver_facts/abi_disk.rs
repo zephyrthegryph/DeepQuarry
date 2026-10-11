@@ -15,10 +15,10 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     sync::{Arc, OnceLock},
 };
-const SCHEMA: u32 = 0x0204_0012;
+const SCHEMA: u32 = 0x0204_0013;
 const ENGINE_SCHEMA: u32 = 0x0204_0011;
 const LIMIT: usize = 1024 * 1024;
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 #[derive(Serialize, Deserialize, PartialEq)]
 struct EngineProof {
     bytes: Vec<u8>,
@@ -62,6 +62,7 @@ struct AbiWire {
     flags: u32,
     invisibility: Option<u8>,
     arguments: Vec<(u8, u8)>,
+    helpers: Vec<(usize, Vec<u8>)>,
 }
 #[derive(Serialize, Deserialize)]
 struct UnitWire {
@@ -174,7 +175,9 @@ impl Transport {
                 }) {
                     continue;
                 }
-                let unit = wire.hydrate();
+                let Some(unit) = wire.hydrate_current(&current.inputs.metadata) else {
+                    continue;
+                };
                 *accepted.borrow_mut() = Some(unit);
                 return Ok(true);
             }
@@ -197,6 +200,14 @@ impl Transport {
         let Some(abi) = AbiWire::capture(&artifact.abi) else {
             return;
         };
+        if artifact
+            .abi
+            .source_helpers
+            .iter()
+            .any(|helper| helper.frame_parameters != artifact.inputs.parameters)
+        {
+            return;
+        }
         if reads.iter().any(|read| !portable(&read.answer)) {
             return;
         }
@@ -337,17 +348,12 @@ impl InputWire {
 }
 impl AbiWire {
     fn capture(abi: &PreparedAbi) -> Option<Self> {
-        // Helper expressions require their current source-binding recipe. This
-        // initial transport declines them instead of persisting historical ASTs.
-        if !abi.source_helpers.is_empty() {
-            return None;
-        }
         let arguments = abi
             .argument_sources
             .iter()
             .map(|source| match source {
                 ArgumentSource::Builtin { kind, parameter } => Some((*kind, *parameter)),
-                ArgumentSource::Helper { .. } => None,
+                ArgumentSource::Helper { argument } => Some((0, u8::try_from(*argument).ok()?)),
             })
             .collect::<Option<Vec<_>>>()?;
         let (category, text) = match &abi.layout.category {
@@ -365,6 +371,11 @@ impl AbiWire {
             flags: abi.layout.flags,
             invisibility: abi.layout.invisibility,
             arguments,
+            helpers: abi
+                .source_helpers
+                .iter()
+                .map(|helper| (helper.argument, helper.expression.canonical_bytes()))
+                .collect(),
         })
     }
     fn hydrate(self) -> PreparedAbi {
@@ -385,7 +396,15 @@ impl AbiWire {
             argument_sources: self
                 .arguments
                 .into_iter()
-                .map(|(kind, parameter)| ArgumentSource::Builtin { kind, parameter })
+                .map(|(kind, parameter)| {
+                    if kind == 0 {
+                        ArgumentSource::Helper {
+                            argument: usize::from(parameter),
+                        }
+                    } else {
+                        ArgumentSource::Builtin { kind, parameter }
+                    }
+                })
                 .collect(),
             source_helpers: Vec::new(),
         }
@@ -440,19 +459,50 @@ impl UnitWire {
         // formal, including absent defaults. The helper-free transport must also
         // carry exactly one encoded builtin source for each formal.
         let vectors = input.flags.len() == count
-            && input.sources.len() == count
+            && (if self.abi.helpers.is_empty() {
+                input.sources.len() == count
+            } else {
+                input.sources.is_empty()
+            })
             && input.defaults.len() == count
             && self.abi.arguments.len() == count;
         let sources =
-            self.abi
-                .arguments
-                .iter()
-                .zip(&input.sources)
-                .all(|((kind, parameter), encoded)| {
-                    matches!(*kind, 1 | 2 | 5 | 8 | 16)
-                        && *encoded == ((u32::from(*parameter) << 8) | u32::from(*kind))
-                        && (*kind != 8 && *kind != 16 || *parameter == 127)
-                });
+            if self.abi.helpers.is_empty() {
+                self.abi
+                    .arguments
+                    .iter()
+                    .zip(&input.sources)
+                    .all(|((kind, parameter), encoded)| {
+                        matches!(*kind, 1 | 2 | 5 | 8 | 16)
+                            && *encoded == ((u32::from(*parameter) << 8) | u32::from(*kind))
+                            && (*kind != 8 && *kind != 16 || *parameter == 127)
+                    })
+            } else {
+                self.abi
+                    .arguments
+                    .iter()
+                    .enumerate()
+                    .all(|(index, (kind, parameter))| {
+                        if *kind == 0 {
+                            usize::from(*parameter) == index
+                                && self.abi.helpers.iter().any(|(argument, bytes)| {
+                                    *argument == index && !bytes.is_empty()
+                                })
+                        } else {
+                            matches!(*kind, 1 | 2 | 5 | 8 | 16)
+                                && (*kind != 8 && *kind != 16 || *parameter == 127)
+                        }
+                    })
+                    && self
+                        .abi
+                        .helpers
+                        .windows(2)
+                        .all(|pair| pair[0].0 < pair[1].0)
+                    && self.abi.helpers.iter().all(|(argument, bytes)| {
+                        !bytes.is_empty()
+                            && self.abi.arguments.get(*argument) == Some(&(0, *argument as u8))
+                    })
+            };
         let paths = match (&input.identity, &input.procedure, &input.owner) {
             // This is the actual unbound preparation producer's representation.
             (None, None, None) => true,
@@ -507,6 +557,34 @@ impl UnitWire {
         };
         unit.issue_canonical();
         unit
+    }
+    fn hydrate_current(self, metadata: &dm_ir::ProcedureMetadata) -> Option<PreparedUnit> {
+        let helpers = self
+            .abi
+            .helpers
+            .iter()
+            .map(|(argument, bytes)| {
+                let expression = metadata
+                    .signature
+                    .parameters
+                    .get(*argument)?
+                    .source_expression
+                    .as_ref()?;
+                if expression.canonical_bytes() != *bytes {
+                    return None;
+                }
+                Some(dm_codegen_byond::procedure_abi::ArgumentSourceHelper {
+                    argument: *argument,
+                    expression: expression.clone(),
+                    frame_parameters: self.inputs.parameters.clone(),
+                })
+            })
+            .collect::<Option<Vec<_>>>()?;
+        let mut unit = self.hydrate();
+        unit.canonical = None;
+        Arc::get_mut(unit.abi.as_mut()?)?.source_helpers = helpers;
+        unit.issue_canonical();
+        Some(unit)
     }
 }
 
@@ -648,6 +726,47 @@ mod tests {
         }
         let decoded: UnitWire = dm_wire::decode(SCHEMA, &bytes, LIMIT).unwrap();
         decoded.validate().unwrap();
+        let helper_front = super::super::production_tests::frontend(
+            "/proc/probe(value in list(1,2))\n    return value\n",
+            &engine.snapshot,
+        );
+        let helper_metadata = helper_front
+            .snapshot
+            .tree
+            .member(helper_front.bodies[0].member)
+            .unwrap()
+            .metadata
+            .procedure
+            .as_ref()
+            .unwrap()
+            .clone();
+        let mut helper_wire: UnitWire = dm_wire::decode(SCHEMA, &bytes, LIMIT).unwrap();
+        helper_wire.inputs.sources.clear();
+        helper_wire.abi.arguments = vec![(0, 0)];
+        helper_wire.abi.helpers = vec![(
+            0,
+            helper_metadata.signature.parameters[0]
+                .source_expression
+                .as_ref()
+                .unwrap()
+                .canonical_bytes(),
+        )];
+        helper_wire.validate().unwrap();
+        let helper_bytes = dm_wire::encode(SCHEMA, &helper_wire).unwrap();
+        let current: UnitWire = dm_wire::decode(SCHEMA, &helper_bytes, LIMIT).unwrap();
+        let rebound = current.hydrate_current(&helper_metadata).unwrap();
+        assert_eq!(
+            rebound.abi.as_ref().unwrap().source_helpers[0].expression,
+            *helper_metadata.signature.parameters[0]
+                .source_expression
+                .as_ref()
+                .unwrap()
+        );
+        helper_wire.abi.helpers[0].1[0] ^= 1;
+        assert!(helper_wire.hydrate_current(&helper_metadata).is_none());
+        let mut malformed: UnitWire = dm_wire::decode(SCHEMA, &helper_bytes, LIMIT).unwrap();
+        malformed.abi.helpers.push((0, vec![1]));
+        assert!(malformed.validate().is_err());
         let unit = decoded.hydrate();
         assert_eq!(unit.abi.as_ref().unwrap().as_ref(), &abi);
         assert_eq!(unit.inputs.parameter_types, inputs.parameter_types);

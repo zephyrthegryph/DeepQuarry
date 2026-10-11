@@ -619,6 +619,13 @@ fn batch_binding_survives_request_drop_and_replacement_releases_old_binding() {
 
 #[test]
 fn abi_disk_transport_rebinds_current_body_and_rejects_signature_change() {
+    disk_roundtrip("value=7", "value=9,other=2");
+}
+#[test]
+fn abi_disk_helper_transport_reissues_current_expression_and_rejects_change() {
+    disk_roundtrip("value in list(1,2)", "value in list(1,3)");
+}
+fn disk_roundtrip(signature: &str, changed_signature: &str) {
     let root = std::path::PathBuf::from("E:/dq-cache/dmb-abi-disk-tests").join(format!(
         "{}-{}",
         std::process::id(),
@@ -644,7 +651,10 @@ fn abi_disk_transport_rebinds_current_body_and_rejects_signature_change() {
     let engine = &owner.snapshot;
     let first_disk = Arc::new(crate::runner_host::disk::LazyDisk::new(root.clone()));
     let first_store = AbiArtifacts::with_disk(owner.clone(), first_disk.clone(), 17);
-    let first = frontend("/proc/probe(value=7)\n    return value\n", engine);
+    let first = frontend(
+        &format!("/proc/probe({signature})\n    return value\n"),
+        engine,
+    );
     same(
         &prepared(&first, engine, Some(&first_store)),
         &prepared(&first, engine, None),
@@ -656,7 +666,7 @@ fn abi_disk_transport_rebinds_current_body_and_rejects_signature_change() {
     let second_disk = Arc::new(crate::runner_host::disk::LazyDisk::new(root.clone()));
     let second_store = AbiArtifacts::with_disk(owner.clone(), second_disk.clone(), 17);
     let shifted = frontend(
-        "// shifted current source\n/proc/probe(value=7)\n    return value+1\n",
+        &format!("// shifted current source\n/proc/probe({signature})\n    return value+1\n"),
         engine,
     );
     same(
@@ -675,7 +685,7 @@ fn abi_disk_transport_rebinds_current_body_and_rejects_signature_change() {
         17,
     );
     let changed = frontend(
-        "/proc/probe(value=9,other=2)\n    return value+other\n",
+        &format!("/proc/probe({changed_signature})\n    return value\n"),
         engine,
     );
     same(
