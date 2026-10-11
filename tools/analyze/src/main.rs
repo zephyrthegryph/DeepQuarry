@@ -33,6 +33,8 @@ USAGE
   analyze look-keys [--out FILE] [--explain TYPE] [--no-cache]
       Write the look plan (default data/look-plan.tsv): per concrete /obj, /mob and /turf type,
       `type TAB key TAB probes` (see src/look_keys.rs). --explain prints one type's closure and probes.
+  analyze base-vars-dead [--tsv] [--few]
+      Base-type vars nothing reads (dead or write-only), by name over code/ and maps/.
   analyze sem reads /type proc | oracle [--all]
                                         Semantic queries: a handler's reads; the reads spike oracle.
 
@@ -298,6 +300,7 @@ fn main() -> ExitCode {
         }
         "sem" => dq_analyze::sem::cli::run(&args.flags, &root),
         "look-keys" => dq_analyze::look_keys::run(&args.flags, &root),
+        "base-vars-dead" => dq_analyze::base_vars_dead::run(&args.flags, &root),
         "gen" => dq_analyze::sem::cli::gen(&args.flags, &root),
         "codemod" => dq_analyze::codemod::cli(&args.flags, &root),
         "fixture" => dq_analyze::sem::cli::fixture(&args.flags, &root),

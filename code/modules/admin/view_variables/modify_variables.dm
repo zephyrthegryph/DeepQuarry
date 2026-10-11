@@ -316,6 +316,8 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 	if(param_var_name)
 		if(!(param_var_name in O.vars))
+			if(type_trait_field_named(O, param_var_name))
+				return modify_trait_field(O, param_var_name)
 			to_chat(src, "A variable with this name ([param_var_name]) doesn't exist in this datum ([O])", confidential = TRUE)
 			return
 		variable = param_var_name
@@ -405,6 +407,29 @@ GLOBAL_PROTECT(VVpixelmovement)
 	log_world("### VarEdit by [key_name(src)]: [O.type] [variable]=[var_value] => [var_new]")
 	log_admin("[key_name(src)] modified [original_name]'s [variable] from [html_encode("[var_value]")] to [html_encode("[var_new]")]")
 	var/msg = "[key_name_admin(src)] modified [original_name]'s [variable] from [var_value] to [var_new]"
+	message_admins(msg)
+	admin_ticket_log(O, msg)
+	return TRUE
+
+/// VV edit of a trait field (`@kind.field`): asks the new value and writes the holder's own copy with set_trait(), so the trait's key is
+/// published and its readers follow.
+/client/proc/modify_trait_field(datum/O, field_name)
+	var/list/trait_field = type_trait_field_named(O, field_name)
+	if(!trait_field)
+		return
+	var/old_value = type_trait_of(O, trait_field[1]).vars[trait_field[2]]
+	var/default = vv_get_class(field_name, old_value)
+	var/list/value = vv_get_value(default_class = default, current_value = old_value, var_name = field_name, key = "edit:trait")
+	if(!value["class"])
+		return
+	var/new_value = value["value"]
+	if(!O.vv_edit_var(field_name, new_value))
+		to_chat(src, "Your edit was rejected by the object.", confidential = TRUE)
+		return
+	vv_update_display(O, "varedited", VV_MSG_EDITED)
+	log_world("### VarEdit by [key_name(src)]: [O.type] [field_name]=[old_value] => [new_value]")
+	log_admin("[key_name(src)] modified [O]'s [field_name] from [html_encode("[old_value]")] to [html_encode("[new_value]")]")
+	var/msg = "[key_name_admin(src)] modified [O]'s [field_name] from [old_value] to [new_value]"
 	message_admins(msg)
 	admin_ticket_log(O, msg)
 	return TRUE
