@@ -2,36 +2,25 @@
 @obj.item.stack robot|none
 @obj.item ai|none
 @obj.item ghost|none
-@obj.item.stack human|/obj/item/tool/screwdriver
+@obj.item.stack.material human|/obj/item/tool/screwdriver
 +1 menu: Pick up
-+4 menu: Use
-@obj.item.stack human|/obj/item/tool/crowbar
+@obj.item.stack.material human|/obj/item/tool/crowbar
 +1 menu: Pick up
-+4 menu: Use
-@obj.item.stack human|/obj/item/tool/wrench
+@obj.item.stack.material human|/obj/item/tool/wrench
 +1 menu: Pick up
-+4 menu: Use
 @obj.item.stack human|/obj/item/tool/wirecutters
 +1 menu: Pick up
 +4 menu: Use
-@obj.item.stack human|/obj/item/multitool
+@obj.item.stack.material human|/obj/item/multitool
 +1 menu: Pick up
-+4 menu: Use
 @obj.item.stack human|/obj/item/weldingtool
--menu: Use welder
--click: Click: Use welder
 +1 menu: Pick up
-+4 menu: Use
-+5 click: Click: Split
-@obj.item.stack human|/obj/item/stack/cable_coil
+@obj.item.stack.material human|/obj/item/stack/cable_coil
 +3 menu: Pick up
-+6 menu: Use
-@obj.item.stack human|/obj/item/stack/material/steel
+@obj.item.stack.material human|/obj/item/stack/material/steel
 +2 menu: Pick up
-+5 menu: Use
-@obj.item.stack human|/obj/item/card/id
+@obj.item.stack.material human|/obj/item/card/id
 +1 menu: Pick up
-+5 menu: Use
 @obj.item.stack human|/obj/item/kit
 +2 menu: Pick up
 +5 menu: Use
@@ -39,12 +28,8 @@
 +2 menu: Pick up
 +5 menu: Use
 @obj human|/obj/item/gripper
-@obj human|/obj/item/stack
+@obj.item.stack.material human|/obj/item/stack
 +2 menu: Pick up
-+5 menu: Use
-@obj.item human|/obj/item
--click: Click: Use
+@obj.item.stack human|/obj/item
 +1 menu: Pick up
-+2 menu: Split
-+5 click: Click: Split
 keys: build, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, material_interaction_item, material_self, move_to_top, pick_up, pick_up_item, split, toggle_digestable

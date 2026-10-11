@@ -1,35 +1,14 @@
-human|none click: nothing
-robot|none click: nothing
+@datum human|none
+@datum robot|none
 ai|none click: nothing
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: nothing
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: nothing
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench click: nothing
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: nothing
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool click: nothing
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: nothing
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil click: nothing
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel click: nothing
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id click: nothing
+@datum ghost|none
+@datum human|/obj/item/tool/screwdriver
+@datum human|/obj/item/tool/crowbar
+@datum human|/obj/item/tool/wrench
+@datum human|/obj/item/tool/wirecutters
+@datum human|/obj/item/multitool
+@datum human|/obj/item/weldingtool
+@datum human|/obj/item/stack/cable_coil
+@datum human|/obj/item/stack/material/steel
+@datum human|/obj/item/card/id
 keys: access, account, assign, mode, modify, pc_exit, pc_minimize, pc_shutdown, print, reg, terminate, ui_open
-

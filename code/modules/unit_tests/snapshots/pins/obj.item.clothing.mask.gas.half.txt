@@ -1,11 +1,5 @@
-@obj.item.clothing human|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
-+5 click: Click: Use
-@obj.item.clothing robot|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
-+6 click: Click: Use
+@obj.item.clothing.mask human|none
+@obj.item.clothing.mask robot|none
 @obj.item ai|none
 @obj.item ghost|none
 @obj.item.clothing human|/obj/item/tool/screwdriver
