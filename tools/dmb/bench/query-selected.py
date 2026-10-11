@@ -69,11 +69,12 @@ def main():
         report["executions"][label] = result
         if (result["exit"] == 0) != (expected == 0): raise ValueError(label + " unexpected client status")
         return result
-    def query(label, questions, pins_reply=None, expected=0):
+    def query(label, questions, pins_reply=None, expected=0, timeout_seconds=None):
         request = {"project": str(project), "defines": {}, "engine_template": str(pins["template"]), "bootstrap_catalog": True,
                    "expected_revision": pins_reply["revision"] if pins_reply else None,
                    "expected_source_revision": pins_reply["source_revision"] if pins_reply else None,
                    "queries": [], "source_queries": questions}
+        if timeout_seconds is not None: request["timeout_seconds"] = timeout_seconds
         file = root / (label + ".json"); file.write_text(json.dumps(request), encoding="utf-8")
         run(label, ["query", str(file)], expected)
         if expected: return None
@@ -120,6 +121,13 @@ def main():
                 query("stale-source", [{"SelectedReferences": {"ordinal": ordinal}}], discovery, expected=1)
             retained = compile_source("retained-" + str(revision))
             discovery = query("discover-" + str(revision), [])
+            if not revision:
+                for invalid in (0, 301):
+                    label = "invalid-budget-" + str(invalid)
+                    query(label, [], discovery, expected=1, timeout_seconds=invalid)
+                    if "query timeout_seconds must be 1..300" not in (root / label / "stderr.log").read_text(encoding="utf-8-sig"):
+                        raise ValueError("query budget rejection omitted exact diagnostic")
+                query("explicit-budget", [], discovery, timeout_seconds=30)
             before = store_roster(root / ("retained-" + str(revision)) / "store")
             reply, ordinal, rows = demand("demand-" + str(revision), discovery)
             if discovery["publication_pair"] != retained["pair_id"]: raise ValueError("compiled generation association differs")

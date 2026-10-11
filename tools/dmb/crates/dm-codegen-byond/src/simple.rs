@@ -624,6 +624,13 @@ fn compile_with_lookup_mode(
         }) {
             return Err(vec![LowerError {
                 kind: LowerErrorKind::SourceError,
+                related: vec![LowerRelated {
+                    span: LowerSpan {
+                        start: diagnostic.span.start,
+                        end: diagnostic.span.end,
+                    },
+                    message: "location of top-most unmatched {".into(),
+                }],
                 ..error(",", &diagnostic.message).at(Some(LowerSpan {
                     start: diagnostic.span.start,
                     end: diagnostic.span.end,

@@ -201,13 +201,17 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             diagnostic.kind == dm_syntax::DiagnosticKind::InvalidDeclarationGroup
                 && !mask.hides_diagnostic(diagnostic)
         }) {
+            let origin = frontend
+                .location(diagnostic.span.start)
+                .unwrap_or_else(|| body.source.clone());
             return Err(vec![LoweringDiagnostic {
-                related: Vec::new(),
+                related: vec![RelatedDiagnostic {
+                    origin: origin.clone(),
+                    message: "location of top-most unmatched {".into(),
+                }],
                 kind: DiagnosticKind::SourceError,
                 identity: Some(identity),
-                origin: frontend
-                    .location(diagnostic.span.start)
-                    .unwrap_or_else(|| body.source.clone()),
+                origin,
                 message: diagnostic.message.clone(),
             }]);
         }

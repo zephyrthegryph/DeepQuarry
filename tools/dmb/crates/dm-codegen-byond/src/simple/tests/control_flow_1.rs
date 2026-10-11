@@ -906,5 +906,8 @@ fn authenticated_var_block_commas_reject_at_current_comma() {
         assert_eq!(errors[0].reason, ",: expected }");
         let span = errors[0].span.unwrap();
         assert_eq!(&source[span.start..span.end], ",");
+        assert_eq!(errors[0].related.len(), 1);
+        assert_eq!(errors[0].related[0].span, span);
+        assert_eq!(errors[0].related[0].message, "location of top-most unmatched {");
     }
 }
