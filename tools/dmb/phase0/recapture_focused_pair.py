@@ -35,7 +35,10 @@ def capture(root, output, byond, native, template, pins, defines, launch, deadli
     for value in defines:
         if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*(?:=.*)?', value):
             raise ValueError('invalid ordered define')
-    tools = {'byond': regular(Path(byond)), 'native': regular(Path(native)), 'template': regular(Path(template))}
+    tools = {'byond': Path(byond), 'native': Path(native), 'template': Path(template)}
+    for tool in tools.values():
+        absolute_nonreparse(tool)
+        regular(tool)
     if any(sha(tool, deadline) != pins.get(name) for name, tool in tools.items()):
         raise ValueError('focused compiler/template pin mismatch')
     version = file_version(byond)
