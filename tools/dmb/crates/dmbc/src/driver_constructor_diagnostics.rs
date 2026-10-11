@@ -224,7 +224,9 @@ mod tests {
             resolver: &host,
             symbols: &symbols,
         };
-        let parsed = dm_syntax::parse_expression("list(new)");
+        // Explicit empty arguments terminate the nested implied constructor;
+        // bare `new` is only recognized at the expression input's end.
+        let parsed = dm_syntax::parse_expression("list(new())");
         assert!(parsed.diagnostics.is_empty());
         assert_eq!(
             evaluator.constructor_reference_error(&write(), parsed.expr.as_ref().unwrap()),
