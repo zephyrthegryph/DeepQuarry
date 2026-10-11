@@ -26,24 +26,17 @@
 
 	var/body_color			// Green, red, orange, yellow or cyan. Keep blank for random (including rare redblue)
 
-/mob/living/simple_mob/animal/passive/lizard/Initialize(mapload)
-	.=..()
+CAPABILITIES(/mob/living/simple_mob/animal/passive/lizard)
+	rolls(nameof(body_color), pick_one(list("redblue" = 1, "green" = 200, "red" = 200, "orange" = 200, "yellow" = 200, "cyan" = 200)), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "lizard_*", item = "lizard_*", living = "lizard_*", dead = "lizard_*_dead")
+	rolls(nameof(desc), PROC_REF(roll_desc), from = list(nameof(body_color)))
+	trait(TRAIT_AMBIENT_PEST_MOB)
 
-	if(!body_color)
-		if(rand(1,1000) == 1)
-			body_color = "redblue"
-		else
-			body_color = pick(list("green","red","orange","yellow","cyan"))
-	icon_state = "lizard_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	item_state = "lizard_[body_color]"
-	set_icon_living("lizard_[body_color]")
-	set_icon_dead("lizard_[body_color]_dead")
+/// Its description names its colour (rolls()).
+/mob/living/simple_mob/animal/passive/lizard/proc/roll_desc(datum/roller/R)
 	if(body_color == "redblue")
-		desc = "A cute, tiny, red lizard with distinctive blueish markings on its tiny limbs. Seems rare!"
-	else
-		desc = "A cute, tiny, [body_color] lizard."
-
-	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
+		return "A cute, tiny, red lizard with distinctive blueish markings on its tiny limbs. Seems rare!"
+	return "A cute, tiny, [body_color] lizard."
 
 /mob/living/simple_mob/animal/passive/lizard/large
 	desc = "A cute, big lizard."
@@ -54,9 +47,9 @@
 
 	attack_injury_kind = INJURY_PIERCE
 
-// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
-/mob/living/simple_mob/animal/passive/lizard/large/Initialize(mapload)
-	. = ..()
-	adjust_scale(rand(12, 20) / 10)
+CAPABILITIES(/mob/living/simple_mob/animal/passive/lizard/large)
+	rolls(nameof(icon_scale_x), range_of(1.2, 2, 0.1))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)))
+
 /mob/living/simple_mob/animal/passive/lizard/large/defensive
 	endurance = 30

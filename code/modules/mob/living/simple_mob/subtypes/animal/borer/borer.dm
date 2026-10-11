@@ -77,13 +77,9 @@
 	if(antag && mind)
 		GLOB.borers.add_antagonist(mind)
 
-/mob/living/simple_mob/animal/borer/Initialize(mapload)
-	add_language("Cortical Link")
-	motiontracker_subscribe()
-
-	true_name = "[pick("Primary","Secondary","Tertiary","Quaternary")] [rand(1000,9999)]"
-
-	. = ..()
+/// Its true name: a rank and a number (rolls()).
+/mob/living/simple_mob/animal/borer/proc/roll_true_name(datum/roller/R)
+	return "[R.choose(list("Primary", "Secondary", "Tertiary", "Quaternary"))] [R.number(1000, 9999)]"
 
 /// An antag borer spawned during the round asks for a player.
 /mob/living/simple_mob/animal/borer/proc/find_player(datum/act/timer/A)

@@ -214,11 +214,6 @@
 	say_list_type = /datum/say_list/merc
 
 	armor_spec = "melee=40;bullet=30;laser=20;energy=5;bomb=50;bio=100;rad=100" // Values read by injury_armor()
-// ALLOW(init/INSTANCE_STATE): rolls the size of each creature
-/mob/living/simple_mob/vore/wolftaur/Initialize(mapload)
-	. = ..()
-	var/oursize = rand(90, 200) / 100
-	resize(oursize)
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
 	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))

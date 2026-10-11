@@ -3679,20 +3679,8 @@ init_lines	code/modules/mob/dead/observer/observer.dm	animate(pixel_y = default_
 init_lines	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(visualnet), GLOB.ghostnet)
 init_lines	code/modules/mob/freelook/ai/eye.dm	rel_set(src, nameof(visualnet), GLOB.cameranet)
 init_lines	code/modules/mob/freelook/mask/eye.dm	rel_set(src, nameof(visualnet), GLOB.cultnet)
-init_lines	code/modules/mob/freelook/mask/update_triggers.dm	GLOB.cultnet.updateVisibility(src, 0)
-init_lines	code/modules/mob/freelook/update_triggers.dm	updateVisibility(src)
-init_lines	code/modules/mob/freelook/update_triggers.dm	updateVisibility(src)
 init_lines	code/modules/mob/freelook/update_triggers.dm	updateVisibility(src)
 init_lines	code/modules/mob/holder.dm	held_mob?.lay_down()
-init_lines	code/modules/mob/living/bot/bot.dm	botcard.access = botcard_access.Copy()
-init_lines	code/modules/mob/living/bot/bot.dm	access_scanner.req_access = req_access.Copy()
-init_lines	code/modules/mob/living/bot/bot.dm	access_scanner.req_one_access = req_one_access.Copy()
-init_lines	code/modules/mob/living/bot/bot.dm	if(!using_map.bot_patrolling)
-init_lines	code/modules/mob/living/bot/bot.dm	will_patrol = FALSE
-init_lines	code/modules/mob/living/bot/bot.dm	if(on)
-init_lines	code/modules/mob/living/bot/bot.dm	turn_on() // Update lights and other stuff
-init_lines	code/modules/mob/living/bot/bot.dm	update_icons()
-init_lines	code/modules/mob/living/bot/bot.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 init_lines	code/modules/mob/living/bot/mulebot.dm	var/turf/T = get_turf(loc)
 init_lines	code/modules/mob/living/bot/mulebot.dm	var/obj/machinery/navbeacon/N = locate_on(T, /obj/machinery/navbeacon)
 init_lines	code/modules/mob/living/bot/mulebot.dm	if(N)
@@ -3702,20 +3690,7 @@ init_lines	code/modules/mob/living/bot/mulebot.dm	else
 init_lines	code/modules/mob/living/bot/mulebot.dm	homeName = "Unset"
 init_lines	code/modules/mob/living/bot/mulebot.dm	suffix = num2text(++amount) // Starts from 1
 init_lines	code/modules/mob/living/bot/mulebot.dm	name = "Mulebot #[suffix]"
-init_lines	code/modules/mob/living/bot/secbot.dm	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	instance_num = rand(1, 1000)
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	name = "[initial(name)] ([instance_num])"
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	real_name = name
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	regenerate_icons()
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	if(language)
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	add_language(language)
-init_lines	code/modules/mob/living/carbon/alien/alien.dm	gender = NEUTER
 init_lines	code/modules/mob/living/carbon/alien/diona/diona.dm	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
-init_lines	code/modules/mob/living/carbon/alien/diona/diona.dm	add_language(LANGUAGE_ROOTGLOBAL)
-init_lines	code/modules/mob/living/carbon/alien/diona/diona.dm	add_language(LANGUAGE_GALCOM)
-init_lines	code/modules/mob/living/carbon/alien/diona/diona.dm	grant(src, granted_verb(/mob/living/carbon/alien/diona/proc/merge), src)
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	make_mind_host()
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	var/datum/mind_host/host = get_mind_host(src)
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	var/mob/living/carbon/brain/view = host.receive_mind(null, "[src] booted")
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	view.add_language(LANGUAGE_GALCOM)
@@ -3730,100 +3705,16 @@ init_lines	code/modules/mob/living/carbon/brain/MMI.dm	var/mob/living/carbon/bra
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	view.real_name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	view.name = view.real_name
 init_lines	code/modules/mob/living/carbon/brain/MMI.dm	view.identity().real_name = view.real_name
-init_lines	code/modules/mob/living/carbon/brain/MMI.dm	rel_clear(src, nameof(mind_host))
-init_lines	code/modules/mob/living/carbon/brain/brain.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
-init_lines	code/modules/mob/living/carbon/carbon.dm	rel_set(src, nameof(reagents), new/datum/reagents/metabolism/bloodstream(500, src)) // ALLOW(decl): holder takes constructor args
 init_lines	code/modules/mob/living/carbon/carbon.dm	rel_set(src, nameof(bloodstr), reagents)
-init_lines	code/modules/mob/living/carbon/carbon.dm	rel_set(src, nameof(ingested), new/datum/reagents/metabolism/ingested(500, src)) // ALLOW(decl): holder takes constructor args
-init_lines	code/modules/mob/living/carbon/carbon.dm	rel_set(src, nameof(touching), new/datum/reagents/metabolism/touch(500, src)) // ALLOW(decl): holder takes constructor args
-init_lines	code/modules/mob/living/carbon/carbon.dm	if (!default_language && species_language)
-init_lines	code/modules/mob/living/carbon/carbon.dm	default_language = GLOB.all_languages[species_language]
-init_lines	code/modules/mob/living/carbon/carbon.dm	enable_footsteps(custom_footstep, 1, -6)
-init_lines	code/modules/mob/living/carbon/carbon.dm	rel_set(src, nameof(cozyloop), new /datum/looping_sound/mob/cozyloop(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(generate_gender)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(generate_id_gender)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	identifying_gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	. = ..(mapload, generate_species)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	species.produceCopy(species.traits.Copy(),src,null,FALSE)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	h_style = to_wear_hair
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_uniform)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_uniform(src), SLOT_ID_UNIFORM)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_suit)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_suit(src), SLOT_ID_SUIT)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_shoes)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_shoes(src), SLOT_ID_SHOES)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_gloves)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_gloves(src), SLOT_ID_GLOVES)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_l_radio)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_l_radio(src), SLOT_ID_EAR_L)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_r_radio)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_r_radio(src), SLOT_ID_EAR_R)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_glasses)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_glasses(src), SLOT_ID_EYES)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_mask)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_mask(src), SLOT_ID_MASK)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_helmet)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_helmet(src), SLOT_ID_HEAD)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_belt)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_belt(src), SLOT_ID_BELT)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_r_pocket)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_r_pocket(src), SLOT_ID_POCKET_R)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_l_pocket)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_l_pocket(src), SLOT_ID_POCKET_L)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_back)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_back(src), SLOT_ID_BACK)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_l_hand)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_l_hand(src), SLOT_ID_HAND_L)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_r_hand)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_r_hand(src), SLOT_ID_HAND_R)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_id_type)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	var/obj/item/card/id/W = new to_wear_id_type(src)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	W.name = "[real_name]'s ID Card"
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	var/datum/job/jobdatum
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	for(var/jobtype in typesof(/datum/job))
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	var/datum/job/J = new jobtype
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(J.title == to_wear_id_job)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	jobdatum = J
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	break
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(jobdatum)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	W.access = jobdatum.get_access()
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	else
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	W.access = list()
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_id_job)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	W.assignment = to_wear_id_job
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	W.registered_name = real_name
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(W, SLOT_ID_ID)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	name = species.get_random_name(gender)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	apply_body_effect(/datum/body_effect/homeothermic, 0, null)
-init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_species)
-init_lines	code/modules/mob/living/carbon/human/human.dm	species_at_make = forced_species
-init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_hair)
-init_lines	code/modules/mob/living/carbon/human/human.dm	h_style = forced_hair
-init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_faction)
-init_lines	code/modules/mob/living/carbon/human/human.dm	faction = forced_faction
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(!dna)
-init_lines	code/modules/mob/living/carbon/human/human.dm	rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 init_lines	code/modules/mob/living/carbon/human/human.dm	if(!species)
 init_lines	code/modules/mob/living/carbon/human/human.dm	if(species_at_make)
 init_lines	code/modules/mob/living/carbon/human/human.dm	set_species(species_at_make)
 init_lines	code/modules/mob/living/carbon/human/human.dm	else
 init_lines	code/modules/mob/living/carbon/human/human.dm	set_species()
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(species)
-init_lines	code/modules/mob/living/carbon/human/human.dm	real_name = species.get_random_name(gender)
-init_lines	code/modules/mob/living/carbon/human/human.dm	name = real_name
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(mind)
-init_lines	code/modules/mob/living/carbon/human/human.dm	mind.name = real_name
-init_lines	code/modules/mob/living/carbon/human/human.dm	set_nutrition(rand(200,400))
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_species)
-init_lines	code/modules/mob/living/carbon/human/human.dm	. = ..(mapload, forced_species)
-init_lines	code/modules/mob/living/carbon/human/human.dm	else
-init_lines	code/modules/mob/living/carbon/human/human.dm	hide_underwear.Cut()
-init_lines	code/modules/mob/living/carbon/human/human.dm	for(var/category in GLOB.global_underwear.categories_by_name)
-init_lines	code/modules/mob/living/carbon/human/human.dm	hide_underwear[category] = FALSE
 init_lines	code/modules/mob/living/carbon/human/human.dm	if(dna)
 init_lines	code/modules/mob/living/carbon/human/human.dm	dna.ready_dna(src)
 init_lines	code/modules/mob/living/carbon/human/human.dm	dna.real_name = real_name
@@ -3831,7 +3722,6 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	sync_dna_traits(FALSE) 
 init_lines	code/modules/mob/living/carbon/human/human.dm	sync_organ_dna()
 init_lines	code/modules/mob/living/carbon/human/human.dm	initialize_vessel()
 init_lines	code/modules/mob/living/carbon/human/human.dm	regenerate_icons()
-init_lines	code/modules/mob/living/carbon/human/human.dm	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/image/img = image('icons/mob/animal.dmi', src, animal)
 init_lines	code/modules/mob/living/carbon/human/human.dm	img.override = TRUE
@@ -3844,14 +3734,6 @@ init_lines	code/modules/mob/living/carbon/human/human_species.dm	icon_state = ""
 init_lines	code/modules/mob/living/carbon/human/human_species.dm	dress_up()
 init_lines	code/modules/mob/living/carbon/human/human_species.dm	if(autorotate)
 init_lines	code/modules/mob/living/carbon/human/human_species.dm	turntable()
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	name = "Pun Pun"
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	real_name = name
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), SLOT_ID_UNIFORM)
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	regenerate_icons()
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	can_be_drop_prey = TRUE
-init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	var/area/A = get_area(src)
-init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	area_name = A.name
-init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	name = "[area_name] glamour ring"
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	var/mob/user = maw_user
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	if(!isturf(loc))
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	return INITIALIZE_HINT_QDEL
@@ -3885,87 +3767,12 @@ init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/da
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	rel_add(SK, nameof(SK.active_dark_maws), src)
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	flick("dark_maw", src)
 init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_maw.dm	set_armed(TRUE)
-init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunnel_structures.dm	locked = src
-init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunnel_structures.dm	locked_name = src.name
-init_lines	code/modules/mob/living/carbon/human/species/shadekin/state/powers/dark_tunnel/dark_tunnel_structures.dm	set_light(2, 3, "#ffffff")
-init_lines	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	set_charge(maxcharge)
-init_lines	code/modules/mob/living/living.dm	life_update_relevance()
 init_lines	code/modules/mob/living/living.dm	if(has_huds)
 init_lines	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
 init_lines	code/modules/mob/living/living.dm	rel_clear(src, nameof(hud_list))
 init_lines	code/modules/mob/living/living.dm	hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 init_lines	code/modules/mob/living/living.dm	make_hud_overlays()
-init_lines	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-init_lines	code/modules/mob/living/living.dm	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
-init_lines	code/modules/mob/living/living.dm	dsma.alpha = 0
-init_lines	code/modules/mob/living/living.dm	dsma.plane = PLANE_LIGHTING
-init_lines	code/modules/mob/living/living.dm	dsma.blend_mode = BLEND_ADD
-init_lines	code/modules/mob/living/living.dm	dsoverlay.appearance = dsma
-init_lines	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
-init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-init_lines	code/modules/mob/living/living.dm	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-init_lines	code/modules/mob/living/living.dm	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
-init_lines	code/modules/mob/living/living.dm	if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
-init_lines	code/modules/mob/living/living.dm	if(prob(30))
-init_lines	code/modules/mob/living/living.dm	firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish2.ogg'
-init_lines	code/modules/mob/living/living.dm	else if(prob(20))
-init_lines	code/modules/mob/living/living.dm	firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish3.ogg'
-init_lines	code/modules/mob/living/living.dm	else
-init_lines	code/modules/mob/living/living.dm	firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	var/mob/observer/eye/eyeobj = src?.active_eye()
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	announcement.title = "A.I. Announcement"
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	announcement.announcement_type = "A.I. Announcement"
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	announcement.newscast = 1
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	var/list/possibleNames = GLOB.ai_names
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	var/pickedName = null
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	while(!pickedName)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_names)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	for (var/mob/living/silicon/ai/A in REGISTRY_MEMBERS(REGISTRY_MOBS))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if (A.real_name == pickedName && possibleNames.len > 1) //fixing the theoretically possible infinite loop
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	possibleNames -= pickedName
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	pickedName = null
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(!is_dummy)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	SetName(pickedName)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	set_anchored(TRUE)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	canmove = 0
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	set_density(TRUE)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(!is_dummy)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(!laws)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(aiRadio, nameof(aiRadio.myAi), src)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	additional_law_channels["Binary"] = "#b"
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	additional_law_channels["Holopad"] = ":h"
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if (istype(loc, /turf))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_ai_verbs(src)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_ROBOT_TALK, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_GALCOM, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SOL_COMMON, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_UNATHI, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SIIK, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_AKHANI, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SKRELLIAN, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_TRADEBAND, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_GUTTER, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_EAL, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SCHECHI, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SIGN, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_ROOTLOCAL, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_TERMINUS, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_ZADDAT, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_BIRDSONG, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_SAGARU, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_CANILUNZT, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_ECUREUILIAN, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_DAEMON, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_ENOCHIAN, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_DRUDAKAR, 1)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	add_language(LANGUAGE_TAVAN, 1)
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(!spawn_safety)//Only used by AIize() to successfully spawn an AI.
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	if (!brain_at_make)//If there is no player/brain inside.
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
@@ -3973,28 +3780,9 @@ init_lines	code/modules/mob/living/silicon/ai/ai.dm	return INITIALIZE_HINT_QDEL 
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	var/datum/mind_host/host = get_mind_host(brain_at_make)
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	host?.release_mind(src, "AI core activated")
 init_lines	code/modules/mob/living/silicon/ai/ai.dm	on_mob_init()
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	init_id(idcard_type)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	new /obj/machinery/ai_powersupply(src)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(CONFIG_GET(flag/allow_ai_shells))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	grant(src, granted_verb(/mob/living/silicon/ai/proc/deploy_to_shell_act), verb_source(VERB_SOURCE_CONFIG))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	create_eyeobj()
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(eyeobj)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	eyeobj.forceMove(src.loc)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(src, nameof(powered_ai), loc)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(!istype(powered_ai))
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	rel_set(powered_ai, nameof(powered_ai.psupply), src)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	if(istype(powered_ai,/mob/living/silicon/ai/announcer)) //Don't try to get a loc for a nullspace announcer mob, just put it into it
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	forceMove(powered_ai)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	else
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	forceMove(powered_ai.loc)
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	use_power(1) // Just incase we need to wake up the power system.
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	var/mob/observer/eye/eyeobj = src?.active_eye()
-init_lines	code/modules/mob/living/silicon/ai/ai.dm	QDEL_NULL(eyeobj)
 init_lines	code/modules/mob/living/silicon/ai/multicam.dm	rel_set(aiEye, nameof(aiEye.screen), src)
 init_lines	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)
 init_lines	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	if(istype(loc, /obj/item/paicard))
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	rel_set(src, nameof(card), loc)
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	else
@@ -4005,23 +3793,8 @@ init_lines	code/modules/mob/living/silicon/pai/pai.dm	if(card)
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	if(!card.radio)
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	rel_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	rel_set(src, nameof(radio), card.radio)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_SOL_COMMON, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_TRADEBAND, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_GUTTER, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_EAL, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_TERMINUS, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	add_language(LANGUAGE_SIGN, 1)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	pda.ownjob = "Personal Assistant"
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	pda.owner = text("[]", src)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	pda.name = pda.owner + " (" + pda.ownjob + ")"
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	if(M)
-init_lines	code/modules/mob/living/silicon/pai/pai.dm	M.toff = FALSE
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	if(chassis_name != PAI_DEFAULT_CHASSIS) // For subtypes that override base chassis( like the syndi pet pai )
 init_lines	code/modules/mob/living/silicon/pai/pai.dm	internal_set_chassis( SSpai.chassis_data(chassis_name))
-init_lines	code/modules/mob/living/silicon/pai/software.dm	software = list()
-init_lines	code/modules/mob/living/silicon/pai/software.dm	for(var/id in GLOB.default_pai_software)
-init_lines	code/modules/mob/living/silicon/pai/software.dm	software[id] = TRUE
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	rel_set(src, nameof(R), loc.loc)
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	if(analyzer) //Destructive analysis
@@ -4034,32 +3807,13 @@ init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	allowed_
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	experiment_events = destructive_events, \
 init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	)
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	if(ore_storage)
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	rel_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
-init_lines	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	. = ..(mapload, FALSE)
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	remove_language(LANGUAGE_ROBOT_TALK)
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	add_language(LANGUAGE_ROBOT_TALK, 0)
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	add_language(LANGUAGE_DRONE_TALK, 1)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	serial_number = rand(0,999)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	grant(src, drone_shell(), src)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	grant(src, drone_mail(), src)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	if(can_pick_shell)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	var/random = pick(shell_types)
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	icon_state = shell_types[random] // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	set_shell_accessories(list("[icon_state]-eyes-blue"))
 init_lines	code/modules/mob/living/silicon/robot/drone/drone.dm	updatename()
-init_lines	code/modules/mob/living/silicon/robot/drone/swarm.dm	add_language(LANGUAGE_SWARMBOT, 1)
 init_lines	code/modules/mob/living/silicon/robot/drone/swarm.dm	for(var/spell in spell_setup)
 init_lines	code/modules/mob/living/silicon/robot/drone/swarm.dm	src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	if(islist(req_access))
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	req_access = shared_type_list(type, "req_access", req_access)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	global.observe(src, /datum/notice/living_shield_injury, src, then(PROC_REF(absorb_injury_with_shield)))
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_language(LANGUAGE_ROBOT_TALK, 1)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_language(LANGUAGE_GALCOM, 1)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_language(LANGUAGE_EAL, 1)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	rel_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	robot_modules_background.icon_state = "block"
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	ident = rand(1, 999)
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	updatename(modtype)
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	setup_radio()
@@ -4069,7 +3823,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	setup_laws()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	setup_module()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	initialize_components()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	setup_cell()
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	grant(src, robot_utility(), src)
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	if(may_pick_name())
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	grant(src, robot_naming(), src)
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_robot_verbs()
@@ -4077,8 +3830,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	setup_hud_images()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	resolve_sprite_datum()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	recompute_power_demand()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	update_senses()
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_hose_connector(/datum/hose_connector/input/borg)
-init_lines	code/modules/mob/living/silicon/robot/robot.dm	add_hose_connector(/datum/hose_connector/output/borg)
 init_lines	code/modules/mob/living/silicon/robot/robot_items.dm	access |= ACCESS_ROBOTICS
 init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(!isrobot(loc))
 init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/mob/living/silicon/robot/R = loc
@@ -4099,9 +3850,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	create
 init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	for(var/obj/item/I in modules)
 init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	I.canremove = FALSE
 init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	on_robot_equip(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	grant(src, granted_verb(/mob/living/silicon/robot/proc/transfer_shell_act), src) // TGPanel // add sideloader
-init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
-init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	post_mmi_setup()
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	if(CONFIG_GET(flag/allow_ai_shells) && CONFIG_GET(flag/give_free_ai_shell))
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	new /mob/living/silicon/robot/ai_shell(get_turf(src))
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	generate_tools()
@@ -4123,250 +3871,14 @@ init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	rel_set(s
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	if(platform_type)
 init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	new platform_type(get_turf(src))
-init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	SetName("inactive [initial(name)]")
-init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	grant(src, platform_cargo(), src)
 init_lines	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_subtypes.dm	rel_set(src, nameof(laws), new /datum/ai_laws/explorer) // ALLOW(decl): replaces the laws the base set up
-init_lines	code/modules/mob/living/silicon/silicon.dm	if(silicon_subsystems)
-init_lines	code/modules/mob/living/silicon/silicon.dm	silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
-init_lines	code/modules/mob/living/silicon/silicon.dm	if(!decoy)
-init_lines	code/modules/mob/living/silicon/silicon.dm	init_id(idcard_type)
-init_lines	code/modules/mob/living/silicon/silicon.dm	add_language(LANGUAGE_GALCOM)
-init_lines	code/modules/mob/living/silicon/silicon.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-init_lines	code/modules/mob/living/silicon/silicon.dm	init_subsystems()
-init_lines	code/modules/mob/living/silicon/silicon.dm	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(islist(attacktext))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	attacktext = shared_type_list(type, "attacktext", attacktext)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(islist(friendly))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	friendly = shared_type_list(type, "friendly", friendly)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(islist(loot_list))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	loot_list = shared_type_list(type, "loot_list", loot_list)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(islist(myid_access))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	myid_access = shared_type_list(type, "myid_access", myid_access)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(ID_provided)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	rel_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	myid.access = myid_access ? myid_access.Copy() : list()
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	for(var/L in has_langs)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	languages |= GLOB.all_languages[L]
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(languages.len)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	default_language = languages[1]
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(!icon_living) // Prevent the mob from turning invisible if icon_living is null.
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	set_icon_living(initial(icon_state))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(organ_names)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	organ_names = GET_DECL(organ_names)
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	grant(src, granted_verb(/mob/living/simple_mob/proc/ColorMate), verb_source(VERB_SOURCE_CONFIG))
-init_lines	code/modules/mob/living/simple_mob/simple_mob.dm	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.set_frequency(PUB_FREQ)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain //Might not be able to speak, but the catslug can listen.
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.recalculateChannels(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.set_frequency(DTH_FREQ) //Can't tell if bugged, deathsquad freq in general seems broken
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	myid.access |= SSaccess.get_all_station_access()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.set_frequency(SYND_FREQ)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.syndie = TRUE
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.recalculateChannels(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	myid.access |= SSaccess.get_all_station_access()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.set_frequency(ERT_FREQ)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.centComm = 1
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.ks2type = /obj/item/encryptionkey/ert
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio.recalculateChannels(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	myid.access |= SSaccess.get_all_station_access()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	if(prob(25))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	var/list/possible_targets = list()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	for(var/obj/machinery/computer/ship/helm/h in world)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	if(h.z in using_map.player_levels)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	possible_targets |= h
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	if(!length(possible_targets))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	var/final = pick(possible_targets)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	forceMove(get_turf(final))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	set_ghostjoin(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	nutriment_amt += inherited_nutriment
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	set_icon_living("spookyghost-[rand(1,2)]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	icon_state = icon_living // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	if(tree_chance && prob(tree_chance) && !check_density())
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/obj/structure/flora/tree/tree = new tree_type(src)
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	if(tree_color)
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	tree.color = tree_color
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	else
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	tree.color = color
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/area/a = get_area(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	name = a.name
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	var/area/redgate/stardog/eyes/e = get_area(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	if(istype(e,/area/redgate/stardog/eyes))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	rel_add(e, nameof(e.our_eyes), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	rel_add(src, nameof(dog_teleporters), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	do_setup()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	if(icon_state == "exit_b") //♪♫Blinded by the light♪♫
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	set_light(5, 1, "#ffffff")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	src.adjust_nutrition(src.max_nutrition)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	roll_look()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	if(!voremob_loaded)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	voremob_loaded = TRUE
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	init_vore()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	if(is_pet)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	for(var/granted_path in list(
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/proc/ventcrawl,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/animal/synx/proc/distend_stomach,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/proc/contort,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/animal/synx/proc/sonar_ping,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/proc/shred_limb,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/animal/synx/proc/disguise,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/animal/synx/proc/randomspeech,
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	/mob/living/simple_mob/animal/synx/proc/set_style))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	grant(src, granted_verb(granted_path, hidden = TRUE), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	realname = name
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	voices += "Garbled voice"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	voices += "Unidentifiable Voice"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	speak += "Who is there?"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	speak += "What is that thing?!"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm	. = ..(mapload, TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	GLOB.teppi_count ++
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	if(name == initial(name))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	name = "[name] ([rand(1, 1000)])"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	real_name = name
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	if(!teppi_adult)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	set_nutrition(0)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	grant(src, granted_verb(/mob/living/proc/ventcrawl), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	grant(src, granted_verb(/mob/living/proc/hide), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	grant(src, granted_verb(/mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	teppi_setup()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	add_language("Cortical Link")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	motiontracker_subscribe()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/borer/borer.dm	true_name = "[pick("Primary","Secondary","Tertiary","Quaternary")] [rand(1000,9999)]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	if(!body_color)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	body_color = pick( list("brown","black","white") )
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	icon_state = "chicken_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	set_icon_living("chicken_[body_color]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	set_icon_dead("chicken_[body_color]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	pixel_x = rand(-6, 6)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	pixel_y = rand(0, 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	GLOB.chicken_count += 1
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm	rel_set(udder, nameof(udder.my_atom), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm	rel_set(udder, nameof(udder.my_atom), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	var/initial_scale = TYPE_TABLE_GET(src, spider_preparent_scale)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	if(!isnull(initial_scale))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	adjust_scale(initial_scale)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	enable_swarming()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	var/broodling_scale = TYPE_TABLE_GET(src, broodling_initial_scale)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	if(!isnull(broodling_scale))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/_giant_spider.dm	adjust_scale(broodling_scale)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/carrier.dm	spiderling_count = rand(5, 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/carrier.dm	adjust_scale(1.2)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/crab.dm	adjust_scale(rand(5,12) / 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	if(!default_pixel_x && randomize_location)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	default_pixel_x = rand(-12, 12)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	if(!default_pixel_y && randomize_location)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	default_pixel_y = rand(-6, 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	set_dorsal_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	set_belly_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	set_head_color(rgb(rand(min_red,max_red), rand(min_green,max_green), rand(min_blue,max_blue)))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	if(!body_color)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	if(rand(1,1000) == 1)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	body_color = "redblue"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	body_color = pick(list("green","red","orange","yellow","cyan"))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	icon_state = "lizard_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	item_state = "lizard_[body_color]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	set_icon_living("lizard_[body_color]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	set_icon_dead("lizard_[body_color]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	if(body_color == "redblue")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	desc = "A cute, tiny, red lizard with distinctive blueish markings on its tiny limbs. Seems rare!"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	desc = "A cute, tiny, [body_color] lizard."
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	adjust_scale(rand(12, 20) / 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if(TYPE_TABLE_GET(src, preserve_mouse_identity))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	keep_parent_data = TRUE
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_ghostjoin(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if(!keep_parent_data && name == initial(name))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	name = "[name] ([rand(1, 1000)])"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	real_name = name
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if(!body_color)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	body_color = pick( list("brown","gray","white","black") )
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	item_state = "mouse_[body_color]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_living("mouse_[body_color]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_dead("mouse_[body_color]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_rest("mouse_[body_color]_sleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (!keep_parent_data && body_color != "rat")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	desc = "A small [body_color] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/rat
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (body_color == "operative")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/operative
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (body_color == "brown")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/brown
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (body_color == "gray")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/gray
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (body_color == "white")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/white
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if (body_color == "black")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	holder_type = /obj/item/holder/mouse/black
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	if(prob(40))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	name = initial(name)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	desc = initial(desc)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	rel_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	item_state = "mouse_miner"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_living("mouse_miner")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_dead("mouse_miner_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	set_icon_rest("mouse_miner_sleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	desc = "A lonely miner's best friend."
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm	set_icon_living("[initial(icon_state)]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm	set_icon_dead("[initial(icon_state)]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/cat.dm	set_icon_rest("[initial(icon_state)]_rest")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/fennec.dm	set_icon_living("[initial(icon_state)]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/fennec.dm	set_icon_dead("[initial(icon_state)]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/pets/fennec.dm	set_icon_rest("[initial(icon_state)]_rest")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	var/colorlist = list(rgb(rand(100,255), rand(100,255), rand(100,255)) = 10, rgb(rand(5,100), rand(5,100), rand(5,100)) = 2, "#222222" = 1)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	color = pickweight(colorlist)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	default_pixel_y = rand(5,12)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	pixel_y = default_pixel_y
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	adjust_scale(round(rand(90, 105) / 100))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/glitterfly.dm	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/kururak.dm	lay_down()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/kururak.dm	instinct = 0
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	if(randomize_size)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/racoon.dm	adjust_scale(rand(8, 11) / 10)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/sif/shantak.dm	rally_pack()
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	carp_randomify(rarechance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	update_icons()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	enable_swarming()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	body_color = pick(list("green","red","orange","yellow","blue"))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	if(body_color == "green")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	color = "#660066"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	if(body_color == "red")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	color = "#FF0000"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	if(body_color == "orange")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	color = "#FF6600"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	if(body_color == "yellow")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	color = "#FFFF00"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	if(body_color == "blue")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/carp.dm	color = "#0099CC"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	if(name == initial(name))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	name = "[name] ([rand(1, 1000)])"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	real_name = name
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	if(!rank)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	rank = pick( list("operative","pyro", "ammo", "stealth") )
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	icon_state = "mouse_[rank]" // ALLOW(decl): Initialize picks the mouse's icon from a random rank; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	item_state = "mouse_[rank]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	set_icon_living("mouse_[rank]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	set_icon_dead("mouse_[rank]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	set_icon_rest("mouse_[rank]_sleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	if(!snack_colour)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	snack_colour = pick( list("yellow","green","pink","blue") )
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	icon_state = "snack_[snack_colour]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/living/simple_mob/animal/space/space_worm/current = src
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(segment_count && !severed)
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	for(var/i = 1 to segment_count)
@@ -4374,208 +3886,11 @@ init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	current.Attach(newSegment)
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	current = newSegment
 init_lines	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	current.faction = faction
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if(do_seasons)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	switch(GLOB.world_time_season)
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if("spring")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if(prob(1))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	winterize()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if("summer")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	pass()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if("autumn")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	vore_bump_chance = 20
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if(prob(50))
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	winterize()
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	vore_bump_chance = 20
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	if("winter")
-init_lines	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	winterize()
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["name"] = name
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["desc"] = desc
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["icon_living"] = icon_living
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["icon_dead"] = icon_dead
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["pixel_x"] = pixel_x
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["pixel_y"] = pixel_y //record our default y pixel offset for later reversion
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["melee_damage_lower"] = melee_damage_lower
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["melee_damage_upper"] = melee_damage_upper
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["endurance"] = endurance
-init_lines	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	base_values["armor"] = get_armor()
-init_lines	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	if(splatter)
-init_lines	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	create_reagents(splatter_volume) // ALLOW(decl): conditional on splatter
-init_lines	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	ready_chemicals()
-init_lines	code/modules/mob/living/simple_mob/subtypes/gateway/imperion.dm	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/eclipse/astral_collective.dm	expirmental = rand(1,4)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/eclipse/astral_collective.dm	expirmentresult()
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm	loot_list = loot_list ? loot_list.Copy() : list()
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm	loot_list += list(/obj/item/salvage/loot/pirate = 35)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30) // ALLOW(decl): fills the grenade's own beakers
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5) // ALLOW(decl): fills the grenade's own beakers
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5) // ALLOW(decl): fills the grenade's own beakers
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5) // ALLOW(decl): fills the grenade's own beakers
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	rel_add(src, nameof(beakers), B1)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	rel_add(src, nameof(beakers), B2)
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	icon_state = null // ALLOW(decl): hidden just before it detonates
-init_lines	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	detonate()
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	ion_trail.set_up(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	ion_trail.start()
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	ion_trail.set_up(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	ion_trail.start()
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	for(var/mob/living/L in hearers(7, src))
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	if(!L.ai_brain)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	continue
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	if(L.faction != src.faction)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	continue
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	var/datum/ai_brain/AI = L.ai_brain
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/support.dm	AI.set_follow(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/durand.dm	set_defense_mode(TRUE)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow()) // ALLOW(decl): configured and started before parent init
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm	ion_trail.set_up(src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm	ion_trail.start()
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	if(!pilot_type)
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	name = "autonomous [initial(name)]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	desc = "[initial(desc)] It appears to be piloted by a drone intelligence."
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	say_list_type = /datum/say_list/merc
-init_lines	code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm	set_nutrition(100) //Have them start off pretty hungry still.
-init_lines	code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm	var/initial_sound = TYPE_TABLE_GET(src, metroid_initial_sound)
-init_lines	code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm	if(initial_sound)
-init_lines	code/modules/mob/living/simple_mob/subtypes/metroid/metBaseType.dm	play_sfx(src, initial_sound)
-init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	name = text("[initial(name)] ([rand(1, 1000)])")
-init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	real_name = name
 init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	for(var/spell in construct_spells)
 init_lines	code/modules/mob/living/simple_mob/subtypes/occult/constructs/_construct.dm	src.add_spell(new spell, "const_spell_ready")
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	update_mood()
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	set_glow_color(color)
 init_lines	code/modules/mob/living/simple_mob/subtypes/slime/slime.dm	refresh_glow()
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	unify()
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	pacify() // So the physical mob also gets made harmless.
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/subtypes.dm	pacify() // So the physical mob also gets made harmless.
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	if(slime_mutation)
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	slime_mutation = shared_type_list(type, "slime_mutation", slime_mutation)
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	number = rand(1, 1000)
-init_lines	code/modules/mob/living/simple_mob/subtypes/slime/xenobio/xenobio.dm	update_name()
-init_lines	code/modules/mob/living/simple_mob/subtypes/slimess/feral.dm	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	src.adjust_nutrition(src.max_nutrition)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	randomize_style()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_language(LANGUAGE_DRUDAKAR)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	add_language(LANGUAGE_UNATHI)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	obelisk_lure_messages = GLOB.obelisk_lure_messages
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	loopy.start()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	var/oursize = rand(90, 150) / 100
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	resize(oursize)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	var/oursize = rand(100, 180) / 100
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	resize(oursize)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	var/oursize = rand(100, 180) / 100
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	resize(oursize)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/catgirl.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/catgirl.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/catgirl.dm	set_icon_rest("[icon_living]asleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/catgirl.dm	set_icon_dead("[icon_living]-dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MICROCILLIN) // get small
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MACROCILLIN) // get BIG
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NORMALCILLIN) // normal
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NUMBENZYME) // no feelings
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROROVIR) // -> MALE
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_GYNOROVIR) // -> FEMALE
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROGYNOROVIR) // -> PLURAL
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_STOXIN) // night night chem
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_RAINBOWTOXIN) // Funny flashing lights.
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PARALYSISTOXIN) // Paralysis!
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PAINENZYME) // Pain INCREASER
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	var/list/goia_colors = list("#1a00ff", "#6c5bff", "#ff00fe", "#ff0000", "#00d3ff", "#00ff7c", "#00ff35", "#e1ff00", "#ff9f00", "#393939")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	var/bodycolor = pick(goia_colors)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	var/spines = pick(goia_colors)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("main", "zorgoia_main")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_main", bodycolor)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("ears", pick(ear_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_ears", bodycolor)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("spots", pick(spots_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_spots", pick(goia_colors))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("claws", pick(claws_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_claws", spines)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("spines", pick(spines_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_spines", spines)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("fluff", pick(fluff_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_fluff", bodycolor)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("underbelly", pick(underbelly_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_underbelly", bodycolor)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("eyes", pick(eyes_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_eyes", "#[get_random_colour(1)]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("spike", pick(spiky_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_spike", "#[get_random_colour(0,0,255)]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("belly", pick(belly_styles))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	goia_set("zorgoia_belly", bodycolor)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	var/mob/living/simple_mob/vore/lamia/new_attrs = pick(GLOB.valid_random_lamias)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	name = initial(new_attrs.name)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	desc = initial(new_attrs.desc)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	icon_state = initial(new_attrs.icon_state) // ALLOW(decl): Initialize picks a random lamia look per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	set_icon_living(initial(new_attrs.icon_living))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	set_icon_rest(initial(new_attrs.icon_rest))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	set_icon_dead(initial(new_attrs.icon_dead))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_default_mode = initial(new_attrs.vore_default_mode)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_digest_chance = initial(new_attrs.vore_digest_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_pounce_chance = initial(new_attrs.vore_pounce_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_bump_chance = initial(new_attrs.vore_bump_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_standing_too = initial(new_attrs.vore_standing_too)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_escape_chance = initial(new_attrs.vore_escape_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_upper_transfer_chance = initial(new_attrs.vore_upper_transfer_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_tail_digest_chance = initial(new_attrs.vore_tail_digest_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_tail_absorb_chance = initial(new_attrs.vore_tail_absorb_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	vore_tail_transfer_chance = initial(new_attrs.vore_tail_transfer_chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/leopardmander.dm	src.adjust_nutrition(src.max_nutrition)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm	var/datum/affliction/contagion/engineered/random/macrophage/D = new
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm	endurance += D.resistance
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm	melee_damage_lower += max(0, D.resistance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm	melee_damage_upper += max(0, D.resistance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm	rel_set(src, nameof(base_disease), D)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/mobs_monsters/clowns/bus.dm	add_shadekin(shadekin_type)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/peasant.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/peasant.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/peasant.dm	set_icon_rest("[icon_living]asleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/peasant.dm	set_icon_dead("[icon_living]-dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	pitcher_plant_lure_messages = GLOB.pitcher_plant_lure_messages
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	bitesize = 1
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	seed = pit.seed()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	if(!body_color)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	body_color = pick( list("brown","black","white") )
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	icon_state = "rabbit_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	item_state = "rabbit_[body_color]"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	set_icon_living("rabbit_[body_color]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	set_icon_dead("rabbit_[body_color]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	set_icon_rest("rabbit_[body_color]_rest")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	initial_icon = icon_living
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	set_icon_rest("[icon_living]")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/raptor.dm	set_icon_dead("[icon_living]_dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	var/chance = rand(1,101)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	switch(chance)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	if(1 to 50)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	name = "Ratthew"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	desc = "When this oversized rodent and its sibling were officially adopted by Nanotrasen, a poll for a name was held. \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	When said poll elected the name of one of station's altevian crewmembers twice in a row, ethics commitee stepped in. \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	Then the name of ethics officer was elected. Ultimately, after a dozen or so names involving people with ratlike qualities, \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	mental or physical, were removed from options as names, he was named Ratthew. Even though some still remember him as mouse number one."
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	if(51 to 100)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	name = ";help maint"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	desc = "While the other of the two trash rat siblings was named based on the poll, this one had misfortune of having official announcement \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	of her poll results be interrupted by someone yelling on radio over an encounter with this rodent, earning her the name. Perhaps if not for \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	this cruel twist of fate, she really would be named Julius Cheesar, after the name Jeremy was eliminated from the poll, considering nine hundred \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	and eighty four rodent pets were named that already."
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	if(101)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	name = "Brick"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	desc = "Despite some conspiracy theories, this rat is not younger sibling of the other two rats commonly found in local trashpits, nor is it a \
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	younger sibling of any ratlike crew. Truth be told, it's just some random rat that barely ever shows up, yet people demanded it be given a name as well."
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	endurance = 1750
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	melee_damage_lower = 1
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/rat.dm	melee_damage_upper = 2
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	set_icon_rest("[icon_living]-rest")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	set_icon_dead("[icon_living]-dead")
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(type == /mob/living/simple_mob/shadekin)
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	var/list/sk_types = list(
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	/mob/living/simple_mob/shadekin/red = 20, //Actively seek people out to nom, so fairly common to see (relatively speaking),
@@ -4588,82 +3903,13 @@ init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	new new_type(loc)
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	flags |= ATOM_INITIALIZED
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	add_shadekin(shadekin_type)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	set_eye_energy()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(icon_state == "map_example")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	icon_state = pick("white","dark","brown") // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	set_icon_living(icon_state)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	switch(eye_state)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(BLUE_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_blue"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(RED_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_red"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(PURPLE_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_purple"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(YELLOW_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_yellow"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(GREEN_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_green"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(ORANGE_EYES)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_orange"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	else
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	eye_icon_state = "e_red"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	if(eye_desc)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	desc += " This one has [eye_desc]!"
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/types.dm	if(shadekin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/types.dm	shadekin.dark_energy_infinite = TRUE
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	if(!persist_time)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	rel_set(src, nameof(my_turf), get_turf(src))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/slug.dm	expire(persist_time)
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	var/thismany = (rand(25,500)) / 100
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	resize(thismany, animate = FALSE, uncapped = TRUE, ignore_prefs = TRUE)
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	if(!GLOB.woof_current) //all our previous brothers have gone to valhallah
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_maximum = 0 //Let's start duplicating again
 init_lines	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_current++
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	shuffle_power_usages()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	rel_set(src, nameof(grub), loc)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	safeword = pick(GLOB.succubus_safewords)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	set_icon_rest("[icon_living]asleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	set_icon_dead("[icon_living]-dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	if(!voremob_loaded)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	voremob_loaded = TRUE
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	init_vore()
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	if(istype(Vac))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	rel_set(Vac, nameof(Vac.output_dest), vore_selected)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	Vac.vac_power = 3
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	rel_set(Vac, nameof(Vac.vac_owner), src)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/syndimobs.dm	var/oursize = rand(90, 200) / 100
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/syndimobs.dm	resize(oursize)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/vampire.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/vampire.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/vampire.dm	set_icon_rest("[icon_living]asleep")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/vampire.dm	set_icon_dead("[icon_living]-dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/vampire.dm	resize(2)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	if(random_skin)
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	set_icon_living(pick(skins))
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	set_icon_rest("[icon_living]_rest")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	set_icon_dead("[icon_living]-dead")
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	var/oursize = rand(100, 140) / 100
-init_lines	code/modules/mob/living/simple_mob/subtypes/vore/wolftaur.dm	resize(oursize)
-init_lines	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	src.adjust_nutrition(src.max_nutrition)
-init_lines	code/modules/mob/living/simple_mob/subtypes/xenomorph.dm	sight |= SEE_MOBS
-init_lines	code/modules/mob/living/voice/voice.dm	add_language(LANGUAGE_GALCOM)
-init_lines	code/modules/mob/living/voice/voice.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-init_lines	code/modules/mob/living/voice/voice.dm	if(istype(loc, /obj/item/communicator))
-init_lines	code/modules/mob/living/voice/voice.dm	rel_set(src, nameof(comm), loc) // the communicator carrying us
 init_lines	code/modules/mob/mob.dm	PUBLISH_LEGACY(OM_WORLD, /datum/notice/world_mob_created, src)
 init_lines	code/modules/mob/mob.dm	lastarea = get_area(src)
-init_lines	code/modules/mob/mob.dm	if(speak_emote)
-init_lines	code/modules/mob/mob.dm	speak_emote = shared_type_list(type, "speak_emote", speak_emote)
-init_lines	code/modules/mob/mob.dm	if(shouldnt_see)
-init_lines	code/modules/mob/mob.dm	shouldnt_see = shared_type_list(type, "shouldnt_see", shouldnt_see)
 init_lines	code/modules/mob/mob.dm	set_focus(src) // Key Handling
 init_lines	code/modules/mob/mob.dm	update_transform() // Some mobs may start bigger or smaller than normal.
 init_lines	code/modules/mob/mob.dm	publish_mob_chunk(src, TRUE)
@@ -6903,33 +6149,13 @@ world_reads	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GL
 world_reads	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(visualnet), GLOB.ghostnet)
 world_reads	code/modules/mob/freelook/ai/eye.dm	rel_set(src, nameof(visualnet), GLOB.cameranet)
 world_reads	code/modules/mob/freelook/mask/eye.dm	rel_set(src, nameof(visualnet), GLOB.cultnet)
-world_reads	code/modules/mob/freelook/mask/update_triggers.dm	GLOB.cultnet.updateVisibility(src, 0)
-world_reads	code/modules/mob/living/bot/bot.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 world_reads	code/modules/mob/living/carbon/alien/diona/diona.dm	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
-world_reads	code/modules/mob/living/carbon/brain/brain.dm	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
-world_reads	code/modules/mob/living/carbon/carbon.dm	default_language = GLOB.all_languages[species_language]
-world_reads	code/modules/mob/living/carbon/human/human.dm	for(var/category in GLOB.global_underwear.categories_by_name)
 world_reads	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-world_reads	code/modules/mob/living/living.dm	dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
-world_reads	code/modules/mob/living/living.dm	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
-world_reads	code/modules/mob/living/silicon/ai/ai.dm	var/list/possibleNames = GLOB.ai_names
-world_reads	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_names)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	spent(GLOB.ai_camera_room_landmark)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
-world_reads	code/modules/mob/living/silicon/pai/software.dm	for(var/id in GLOB.default_pai_software)
-world_reads	code/modules/mob/living/silicon/silicon.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
-world_reads	code/modules/mob/living/simple_mob/simple_mob.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/teppi.dm	GLOB.teppi_count ++
-world_reads	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	GLOB.chicken_count += 1
-world_reads	code/modules/mob/living/simple_mob/subtypes/animal/squirrel.dm	switch(GLOB.world_time_season)
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	obelisk_lure_messages = GLOB.obelisk_lure_messages
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	var/mob/living/simple_mob/vore/lamia/new_attrs = pick(GLOB.valid_random_lamias)
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	pitcher_plant_lure_messages = GLOB.pitcher_plant_lure_messages
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	if(!GLOB.woof_current) //all our previous brothers have gone to valhallah
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_maximum = 0 //Let's start duplicating again
 world_reads	code/modules/mob/living/simple_mob/subtypes/vore/softdog.dm	GLOB.woof_current++
-world_reads	code/modules/mob/living/simple_mob/subtypes/vore/succubi.dm	safeword = pick(GLOB.succubus_safewords)
-world_reads	code/modules/mob/living/voice/voice.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 world_reads	code/modules/mob/mob_planes.dm	add_filter("em_block_masking", 1, color_matrix_filter(GLOB.em_mask_matrix))
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	if(GLOB.ntnet_global)
 world_reads	code/modules/modular_computers/NTNet/NTNet_relay.dm	rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
