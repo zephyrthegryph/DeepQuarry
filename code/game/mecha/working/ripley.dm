@@ -85,6 +85,8 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 	desc = "An old, dusty mining ripley."
 	name = "APLU \"Miner\""
 
+TYPE_TABLE(/obj/mecha/working/ripley/mining, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp))
+
 // ALLOW(init/INSTANCE_STATE): rolls a diamond drill one time in four and drops the tracking beacon
 /obj/mecha/working/ripley/mining/Initialize(mapload)
 	. = ..()
@@ -96,9 +98,6 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 		var/obj/item/mecha_parts/mecha_equipment/tool/drill/D = new /obj/item/mecha_parts/mecha_equipment/tool/drill
 		D.attach(src)
 
-	//Attach hydrolic clamp
-	var/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/HC = new /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp
-	HC.attach(src)
 	for(var/obj/item/mecha_parts/mecha_tracking/B in slot_contents())//Deletes the beacon so it can't be found easily
 		spent(B)
 
@@ -116,9 +115,6 @@ TYPE_TABLE(/obj/mecha/working/ripley/deathripley, mecha_starting_equipment, list
 
 	icon_scale_x = 1
 	icon_scale_y = 1
-
-/obj/mecha/working/ripley/Initialize(mapload)
-	. = ..()
 
 /// Old verb "Detect Ores".
 /obj/mecha/working/ripley/proc/ripley_detect_ore(datum/act/op/A)
