@@ -52,10 +52,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 /mob/living/carbon/human/Initialize(mapload)
 	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
-		// a canonical subtype (skrell, xdrone, monkey) compiles its own species and keeps it whatever the caller passed
-		var/canonical = initial(species_at_make)
-		if(canonical || species_at_make)
-			set_species(canonical || species_at_make)
+		if(species_at_make)
+			set_species(species_at_make)
 		else
 			set_species()
 
@@ -1388,6 +1386,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /// `keep_organs`: change the species' facts (languages, verbs, components, factors, HUD) but
 /// keep the body and organs it has, e.g. a nymph taking over a synthetic body (D21).
 /mob/living/carbon/human/proc/set_species(new_species, keep_organs = FALSE)
+	// the first species of a canonical subtype (skrell, xdrone, monkey) is its compiled one, whatever species its maker passed (was forced_initial_species)
+	if(!species && initial(species_at_make))
+		new_species = initial(species_at_make)
 
 	if(!dna)
 		if(!new_species)
