@@ -64,7 +64,7 @@ impl DriverEvaluator<'_> {
             }
         }
         dm_codegen_byond::observe_reference_source_features(
-            reference,
+            expression,
             &bindings,
             self.symbols,
             self.resolver,
