@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/lockpick)
 		return
 	if(ishuman(A))
 		var/mob/living/carbon/human/H = A
-		if(user.zone_sel.selecting == BP_HEAD)
+		if(hud_of(user)?.zone_sel?.selecting == BP_HEAD)
 			if(H == user)
 				to_chat(user, span_notice("Your nose isn't locked. If you're feeling stuffy, maybe you should talk to a doctor..?"))
 			else

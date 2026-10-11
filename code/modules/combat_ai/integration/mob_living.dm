@@ -19,6 +19,7 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	cooldowns(last_special, resist_cooldown, fear_sound_cooldown, spit_cooldown, next_sonar_ping)
 	attack_variants()
 	op("touch_help", hand(), when(req_empty_hand()), stance(I_HELP), priority(OP_PRIORITY_DEFAULT - 10), label("Help"), then(PROC_REF(touch_help)))
 	op("touch_disarm", hand(), when(req_empty_hand()), stance(I_DISARM), priority(OP_PRIORITY_DEFAULT - 10), label("Shove"), then(PROC_REF(touch_disarm)))
@@ -42,8 +43,8 @@ CAPABILITIES(/mob/living)
 	owns_one(nameof(body), /datum/body)
 	owns_one(nameof(changeling_state), /datum/changeling)
 	owns_one(nameof(character_setup_button), /datum/character_setup_button)
-	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened)
-	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire)
+	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened, starts = /datum/looping_sound/mob/deafened, starts_args = list(FALSE))
+	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire, starts = PROC_REF(start_fire_loop))
 	owns_one(nameof(inventory_panel), /datum/inventory_panel)
 	owns_one(nameof(say_list), /datum/say_list, starts = PROC_REF(make_say_list))
 	owns_one(nameof(shadekin), /datum/shadekin)

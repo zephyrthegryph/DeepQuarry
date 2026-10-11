@@ -251,7 +251,7 @@
 		if(character.client.prefs.read_preference(/datum/preference/toggle/human/auto_backup_implant)) // migrated pref
 			var/obj/item/implant/backup/imp = new(src)
 
-			if(imp.handle_implant(character,character.zone_sel.selecting))
+			if(imp.handle_implant(character,hud_of(character)?.zone_sel?.selecting))
 				imp.post_implant(character)
 	var/gut = join_props["voreny"]
 	var/start_absorbed = join_props["absorb"]

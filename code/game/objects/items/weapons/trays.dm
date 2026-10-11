@@ -39,7 +39,7 @@
 
 	var/face_hit = FALSE
 
-	if(!(user.zone_sel.selecting == O_EYES) && !(user.zone_sel.selecting == BP_HEAD) && !(user.zone_sel.selecting == O_MOUTH))
+	if(!(hud_of(user)?.zone_sel?.selecting == O_EYES) && !(hud_of(user)?.zone_sel?.selecting == BP_HEAD) && !(hud_of(user)?.zone_sel?.selecting == O_MOUTH))
 		add_attack_logs(user,M,"Hit with [src]")
 		if(prob(15))
 			M.status_at_least(STAT_WEAKENED, 3)

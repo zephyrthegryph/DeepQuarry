@@ -19,13 +19,6 @@
 	oxygentanks = 0
 
 
-/obj/structure/dispenser/Initialize(mapload)
-	. = ..()
-	for(var/i in 1 to oxygentanks)
-		new /obj/item/tank/oxygen(src)
-	for(var/i in 1 to phorontanks)
-		new /obj/item/tank/phoron(src)
-
 /obj/structure/dispenser/proc/appearance_oxygen()
 	return oxygentanks >= 1 ? min(oxygentanks, 4) : 0
 
@@ -64,6 +57,8 @@ CAPABILITIES(/obj/structure/dispenser)
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 	op("store", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), label("Use"), then(PROC_REF(interaction_item)))
 	op("store_harm", item(/obj/item), stance(I_HURT), label("Use"), then(PROC_REF(interaction_item_harm)))
+	initial_contents(/obj/item/tank/oxygen, count = nameof(oxygentanks))
+	initial_contents(/obj/item/tank/phoron, count = nameof(phorontanks))
 
 /obj/structure/dispenser/ui_data(datum/act/eval/A)
 	return list("oxygen" = oxygentanks, "phoron" = phorontanks)

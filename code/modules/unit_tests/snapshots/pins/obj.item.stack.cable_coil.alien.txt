@@ -64,7 +64,7 @@ human|/obj/item/weldingtool click: nothing
 +1 menu: Make Cable Restraints (refused: You can't do that.)
 +4 click: Click: Collect
 @obj human|/obj/item/gripper
-@obj.item human|/obj/item/stack
+@obj human|/obj/item/stack
 -menu: Split
 +1 menu: Make Cable Restraints (refused: You can't do that.)
 keys: build, cable_coil_make_restraint, collect_item, combine, consolidate, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, make, move_to_top, pick_up_item, split, toggle_digestable, ui_open, use_multitool

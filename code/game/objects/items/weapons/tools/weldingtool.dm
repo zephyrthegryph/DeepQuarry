@@ -49,12 +49,6 @@ TRACKED(/obj/item/weldingtool, always_process)
 /obj/item/weldingtool/proc/burner_active(datum/act/A)
 	return welding || always_process
 
-/obj/item/weldingtool/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -67,7 +61,7 @@ TRACKED(/obj/item/weldingtool, always_process)
 /obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M) && stance == I_HELP)
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
+		var/obj/item/organ/external/S = H.organs_by_name[hud_of(user)?.zone_sel?.selecting]
 
 		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()
@@ -177,6 +171,7 @@ CAPABILITIES(/obj/item/weldingtool)
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	drag_onto(PROC_REF(mousedrop_input))
+	reagents(nameof(max_fuel), starts = list(REAGENT_ID_FUEL = nameof(max_fuel)))
 
 /// Old attack_self.
 /obj/item/weldingtool/proc/interaction_self(datum/act/op/A)

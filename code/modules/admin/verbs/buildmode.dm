@@ -19,7 +19,7 @@
 			log_admin("[key_name(M)] exited build mode.")
 			M.client.buildmode = 0
 			M.client.show_popup_menus = 1
-			M.plane_holder.set_vis(VIS_BUILDMODE, FALSE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, FALSE)
 			for(var/obj/effect/bmode/buildholder/H in REGISTRY_MEMBERS(REGISTRY_BUILDMODE_HOLDERS))
 				if(H.cl() == M.client)
 					spent(H, M)
@@ -27,7 +27,7 @@
 			log_admin("[key_name(M)] entered build mode.")
 			M.client.buildmode = 1
 			M.client.show_popup_menus = 0
-			M.plane_holder.set_vis(VIS_BUILDMODE, TRUE)
+			hud_of(M)?.plane_holder?.set_vis(VIS_BUILDMODE, TRUE)
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)
@@ -260,13 +260,19 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	T.ChangeTurf(get_base_turf_by_area(T)) //Defaults to Z if area does not have a special base turf.
 	T.flags |= ADMIN_SPAWNED
 
+/// The selection marker a mob shows the admins who picked it in buildmode, made the first time one does.
+sparse(/mob/living, buildmode_selected_image, type = /image)
+
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
 	rel_add(src, nameof(selected_mobs), unit)
-	C.images += unit.selected_image
+	var/image/selected = sparse_get(unit, buildmode_selected_image)
+	if(!selected)
+		selected = sparse_set(unit, buildmode_selected_image, image(icon = GLOB.buildmode_hud, loc = unit, icon_state = "ai_sel"))
+	C.images += selected
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
 	rel_remove(src, nameof(selected_mobs), unit)
-	C.images -= unit.selected_image
+	C.images -= sparse_get(unit, buildmode_selected_image)
 
 /obj/effect/bmode/buildmode
 	icon_state = "buildmode1"

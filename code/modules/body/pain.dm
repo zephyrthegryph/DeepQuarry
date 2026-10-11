@@ -1,5 +1,5 @@
 /mob/proc/flash_pain()
-	flick("pain",pain)
+	flick("hud_used?.pain",hud_used?.pain)
 
 /datum/body
 	/// The last pain message the person was shown (a repeat waits for its cooldown).

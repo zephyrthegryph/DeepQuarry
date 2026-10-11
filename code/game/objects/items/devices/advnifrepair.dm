@@ -16,13 +16,8 @@ MATERIAL_MIX(/obj/item/nifrepairer, list(MAT_STEEL = 4000, MAT_GLASS = 6000))
 
 CAPABILITIES(/obj/item/nifrepairer)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
-	owns_one(nameof(supply), /datum/reagents)
+	owns_one(nameof(supply), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 60, OWNER)) // new /datum/reagents(60, src)
 	op("item", item(/obj/item), label("Load"), then(PROC_REF(interaction_item)))
-
-/obj/item/nifrepairer/Initialize(mapload)
-	. = ..()
-
-	rel_set(src, nameof(supply), new /datum/reagents(max = 60, A = src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 
 /obj/item/nifrepairer/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor

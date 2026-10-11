@@ -712,7 +712,7 @@
 /datum/unit_test/dq_timed_pin_w6/airway_kit_clear/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_MOUTH
+	hud_of(user)?.zone_sel.selecting = O_MOUTH
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
 	hold(user, K)
@@ -727,7 +727,7 @@
 /datum/unit_test/dq_timed_pin_w6/airway_kit_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = O_MOUTH
+	hud_of(user)?.zone_sel.selecting = O_MOUTH
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
 	hold(user, K)
@@ -742,7 +742,7 @@
 /datum/unit_test/dq_timed_pin_w6/airway_kit_wrong_zone/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/airway_kit/K = allocate(/obj/item/airway_kit, run_loc_floor_bottom_left)
 	hold(user, K)
@@ -756,7 +756,7 @@
 /datum/unit_test/dq_timed_pin_w6/decompression_needle/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
 	hold(user, N)
@@ -776,7 +776,7 @@
 /datum/unit_test/dq_timed_pin_w6/decompression_needle_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_TORSO
+	hud_of(user)?.zone_sel.selecting = BP_TORSO
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
 	hold(user, N)
@@ -791,7 +791,7 @@
 /datum/unit_test/dq_timed_pin_w6/decompression_needle_wrong_zone/run_pin()
 	var/mob/living/carbon/human/user = person()
 	dq_give_zone_sel(user)
-	user.zone_sel.selecting = BP_HEAD
+	hud_of(user)?.zone_sel.selecting = BP_HEAD
 	var/mob/living/carbon/human/patient = patient_beside(user)
 	var/obj/item/decompression_needle/N = allocate(/obj/item/decompression_needle, run_loc_floor_bottom_left)
 	hold(user, N)

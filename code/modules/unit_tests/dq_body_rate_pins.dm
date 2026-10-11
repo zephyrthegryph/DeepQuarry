@@ -291,7 +291,7 @@
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
 	dq_give_zone_sel(surgeon)
-	surgeon.next_click = 0
+	cooldown_set_end(surgeon, next_click, 0)
 	// A clientless test human counts as SSD and is put to sleep; a teleoperated one is awake, as a surgeon must be.
 	surgeon.teleop = surgeon
 	surgeon.status_end(STAT_SLEEPING)

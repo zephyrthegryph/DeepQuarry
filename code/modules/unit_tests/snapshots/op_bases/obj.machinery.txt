@@ -5,13 +5,6 @@ human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Use
 human|/obj/item/cell click: Click: Use
-human|/obj/item/disk menu: Climb
-human|/obj/item/disk menu: Insert disk
-human|/obj/item/disk menu: Move To Top
-human|/obj/item/disk menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk menu: Use
-human|/obj/item/disk menu: Use item
-human|/obj/item/disk click: Click: Use item
 human|/obj/item/melee/energy/blade menu: Move To Top
 human|/obj/item/melee/energy/blade menu: Open
 human|/obj/item/melee/energy/blade menu: Slice open

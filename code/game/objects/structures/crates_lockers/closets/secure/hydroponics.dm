@@ -24,11 +24,11 @@
 		/obj/item/material/fishing_net/butterfly_net)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/hydroponics)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/hydroponics/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/clothing/suit/storage/apron
 	else
@@ -39,12 +39,9 @@ CAPABILITIES(/obj/structure/closet/secure_closet/hydroponics)
 	req_access = list(ACCESS_XENOBIOLOGY)
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/hydroponics/xenoflora
 
-CAPABILITIES(/obj/structure/closet/secure_closet/hydroponics/sci)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
-
-/// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
+/// Rolled contents (initial_contents()): the botanist's apron, and the xenoflorist's biosuit.
 /obj/structure/closet/secure_closet/hydroponics/sci/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = ..()
 	. += /obj/item/clothing/head/bio_hood/scientist
 	. += /obj/item/clothing/suit/bio_suit/scientist
 	. += /obj/item/clothing/mask/gas/clear

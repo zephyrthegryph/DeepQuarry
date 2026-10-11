@@ -502,12 +502,15 @@
 /// Adapts the darkness overlay to the light level and the mob's darksight.
 /mob/living/proc/life_hud_darksight()
 	PUBLISH(src, mob_handle_hud_darksight)
+	var/image/dsoverlay = hud_of(src)?.dsoverlay
+	if(!dsoverlay) // no client, nothing to adapt
+		return
 	if(!src.seedarkness) //Cheap 'always darksight' var
-		src.dsoverlay.alpha = 255
+		dsoverlay.alpha = 255
 		return
 
 	var/darksightedness = min(src.see_in_dark/world.view,1.0)	//A ratio of how good your darksight is, from 'nada' to 'really darn good'
-	var/current = src.dsoverlay.alpha/255						//Our current adjustedness
+	var/current = dsoverlay.alpha/255						//Our current adjustedness
 
 	var/brightness = 0.0 //We'll assume it's superdark if we can't find something else.
 
@@ -527,7 +530,7 @@
 	var/distance = abs(current-adjust_to)		//Used for how long to animate for
 	if(distance < 0.01) return					//We're already all set
 
-	animate(src.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
+	animate(dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
 
 /// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Only the sight reaction runs it (life_vision_pass()).
 

@@ -26,13 +26,8 @@
 	var/datum/reagents/udder = null
 
 CAPABILITIES(/mob/living/simple_mob/animal/goat)
-	owns_one(nameof(udder), /datum/reagents)
+	owns_one(nameof(udder), /datum/reagents, starts = /datum/reagents, starts_args = list(NO_LOC, 50, OWNER)) // 50 units, held by the goat
 	op("goat_item", item(/obj/item), then(PROC_REF(goat_interaction_item)))
-
-/mob/living/simple_mob/animal/goat/Initialize(mapload)
-	. = ..()
-	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
-	rel_set(udder, nameof(udder.my_atom), src)
 
 /mob/living/simple_mob/animal/goat/life_type_post_due()
 	return TRUE

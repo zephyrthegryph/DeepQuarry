@@ -12,8 +12,9 @@
 //		rolls(nameof(glows), chance(50), when = nameof(radioactive))
 //
 // Generators: pick_one(list) (uniform, or weighted by the values of an associative list), pick_weighted(list) (weighted by the values),
+// nameof(list var) (one element of the holder's own list, uniform: a type's `skins`),
 // range_of(lo, hi, step = 1) (a number in [lo, hi] on the step; a step of 0 is a real number), PIXEL_JITTER(n) (with ROLL_PIXEL: each pixel
-// offset in -n..n), chance(p) (TRUE with p percent), and PROC_REF(x), a holder proc x(datum/roller/R) that answers the value from R's
+// offset in -n..n), chance(p) (TRUE with p percent), and PROC_REF(x), a holder proc x(datum/roller/R, target) that answers the value from R's
 // draws (R.number(lo, hi), R.choose(list), R.chance(p), R.weighted(list), R.unit(), R.hex_colour(), R.saturated_colour()).
 //
 // The seed. Every instance rolls from its own deterministic stream: the round seed with the map position of a map-loaded instance (its turf
@@ -230,7 +231,13 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 		return A.pixel_x == initial(A.pixel_x) && A.pixel_y == initial(A.pixel_y)
 	if(!(target in holder.vars))
 		return FALSE
-	return holder.vars[target] == initial(holder.vars[target])
+	var/current = holder.vars[target]
+	var/compiled = initial(holder.vars[target])
+	if(islist(current))
+		// A list default (var/list/x = list(...)) is made per instance at runtime and initial() cannot be compared with it: a list var counts
+		// as untouched (a list map edit or list param on a rolled var is not supported).
+		return TRUE
+	return current == compiled
 
 /proc/roll_one(datum/holder, datum/roller/R, datum/centry/C)
 	var/datum/entry/E = C.item
@@ -257,8 +264,11 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 /proc/roll_generate(datum/holder, datum/roller/R, gen, datum/centry/C)
 	if(istext(gen))
 		if(hascall(holder, gen))
-			return call(holder, gen)(R)
-		declare_report("[C?.origin]: rolls(): [holder.type] has no proc [gen] to roll with")
+			var/datum/entry/E = C?.item
+			return call(holder, gen)(R, E?.args?["target"]) // x(R, target): one proc may roll several targets
+		if((gen in holder.vars) && islist(holder.vars[gen]))
+			return R.choose(holder.vars[gen]) // nameof(list var): one of the holder's own list (a type's `skins`)
+		declare_report("[C?.origin]: rolls(): [holder.type] has no proc or list var [gen] to roll with")
 		return null
 	if(islist(gen))
 		return R.choose(gen)
@@ -284,12 +294,16 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 					var/step = gen_args[3]
 					if(!step)
 						return lo + R.unit() * (hi - lo)
-					return lo + step * R.number(0, floor((hi - lo) / step))
+					return lo + step * R.number(0, floor((hi - lo) / step + 0.0001)) // the slack keeps hi on a fractional step (0.8 / 0.1 is 7.99...)
 				if("jitter")
 					var/n = gen_args[1]
 					if(istext(n))
 						n = (n in holder.vars) ? holder.vars[n] : 0 // PIXEL_JITTER(nameof(randpixel)): the holder's own range
 					return list(R.number(-n, n), R.number(-n, n))
+				if("wall_offset")
+					var/atom/A = holder
+					var/dir = A.dir
+					return list((dir & 3) ? 0 : (dir == EAST ? -gen_args[1] : gen_args[1]), (dir & 3) ? (dir == NORTH ? -gen_args[2] : gen_args[2]) : 0)
 	declare_report("[C?.origin]: rolls(): [G.kind] is not a generator (pick_one, pick_weighted, range_of, PIXEL_JITTER, chance, PROC_REF)")
 	return null
 

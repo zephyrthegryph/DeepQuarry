@@ -10,7 +10,7 @@
 	TEST_ASSERT(cube.wrapped, "The actual constructor creates a genuinely wrapped original cube")
 	TEST_ASSERT(box.release_to(cube, T, null, actor), "The actual original box releases its real cube onto the floor")
 	TEST_ASSERT(actor.put_in_active_hand(cube), "The actual actor holds the exact original pet cube")
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	test_click(actor, cube, cube)
 	test_time(10 SECONDS)
 	TEST_ASSERT(!cube.wrapped, "Actual self-use leaves the original cube genuinely unwrapped")

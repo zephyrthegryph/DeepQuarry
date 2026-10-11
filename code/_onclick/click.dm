@@ -4,17 +4,16 @@
 */
 
 // 1 decisecond click delay (above and beyond mob/next_move)
-/mob/COOLDOWN_DECLARE(next_click)
 
 // /atom/Click, DblClick, MouseWheel, MouseDrop and /mob/proc/ClickOn live with the
 // input router (code/modules/keybindings/router.dm); per-actor click handling is in
 // the capability adapters (code/modules/keybindings/adapters.dm).
 
 /mob/proc/setClickCooldown(timeout)
-	COOLDOWN_START(src, next_click, max(timeout, COOLDOWN_TIMELEFT(src, next_click)))
+	cooldown_start(src, next_click, max(timeout, cooldown_left(src, next_click)))
 
 /mob/proc/checkClickCooldown()
-	if(COOLDOWN_TIMELEFT(src, next_click) && !CONFIG_GET(flag/no_click_cooldown))
+	if(cooldown_left(src, next_click) && !CONFIG_GET(flag/no_click_cooldown))
 		return FALSE
 	return TRUE
 

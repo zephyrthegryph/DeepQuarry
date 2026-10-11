@@ -184,8 +184,34 @@ CAPABILITIES(/datum/global_hud)
 	var/hotkey_ui_hidden = 0	//This is to hide the buttons that can be used via hotkeys. (hotkeybuttons list of buttons)
 
 	var/atom/movable/screen/lingchemdisplay
-	var/atom/movable/screen/wiz_instability_display
-	var/atom/movable/screen/wiz_energy_display
+	var/atom/movable/screen/wizard/instability/wiz_instability_display
+	var/atom/movable/screen/wizard/energy/wiz_energy_display
+	// The mob's own screen elements (moved off /mob, base_vars lane B): built by the mob's create_mob_hud(), gone with the hud.
+	var/atom/movable/screen/hands
+	var/atom/movable/screen/pullin
+	var/atom/movable/screen/internals
+	var/atom/movable/screen/healths
+	var/atom/movable/screen/throw_icon
+	var/atom/movable/screen/pain
+	var/atom/movable/screen/gun/item/item_use_icon
+	var/atom/movable/screen/gun/radio/radio_use_icon
+	var/atom/movable/screen/gun/move/gun_move_icon
+	var/atom/movable/screen/gun/mode/gun_setting_icon
+	var/atom/movable/screen/ling/chems/ling_chem_display
+	var/atom/movable/screen/borer/chems/borer_chem_display
+	var/atom/movable/screen/autowhisper_display
+	var/atom/movable/screen/zone_sel/zone_sel
+	var/atom/movable/screen/shadekin/shadekin_display
+	var/atom/movable/screen/lleill/lleill_display
+	var/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display
+	/// The client's plane masters and what the mob sees through them; rebuilt by recalculate_vis() on login.
+	var/datum/plane_holder/plane_holder
+	/// Vision planes that should be graphically visible (their VIS_ indexes).
+	var/list/vis_enabled
+	/// Atom planes that are logically visible/interactable (actual plane numbers).
+	var/list/planes_visible
+	/// The darksight overlay (a client image) that eases the mob's eyes into the dark; made by /mob/living/Login().
+	var/image/dsoverlay
 	var/atom/movable/screen/blobpwrdisplay
 	var/atom/movable/screen/blobhealthdisplay
 	var/atom/movable/screen/r_hand_hud_object
@@ -224,6 +250,26 @@ CAPABILITIES(/datum/global_hud)
 	var/list/minihuds
 
 CAPABILITIES(/datum/hud)
+	hud_element(nameof(hands), /atom/movable/screen)
+	hud_element(nameof(pullin), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(internals), /atom/movable/screen)
+	hud_element(nameof(healths), /atom/movable/screen)
+	hud_element(nameof(throw_icon), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(pain), /atom/movable/screen)
+	hud_element(nameof(item_use_icon), /atom/movable/screen/gun/item)
+	hud_element(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
+	hud_element(nameof(gun_move_icon), /atom/movable/screen/gun/move)
+	hud_element(nameof(gun_setting_icon), /atom/movable/screen/gun/mode)
+	hud_element(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
+	hud_element(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
+	hud_element(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
+	hud_element(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
+	hud_element(nameof(autowhisper_display), /atom/movable/screen, owned = FALSE) // also in a hud screen list, which owns it
+	hud_element(nameof(zone_sel), /atom/movable/screen/zone_sel)
+	hud_element(nameof(shadekin_display), /atom/movable/screen/shadekin)
+	hud_element(nameof(lleill_display), /atom/movable/screen/lleill)
+	hud_element(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
+	hud_element(nameof(plane_holder), /datum/plane_holder)
 	owns_one(nameof(control_vtec), /atom/movable/screen)
 	owns_one(nameof(listed_actions), /datum/action_group/listed)
 	owns_one(nameof(palette_actions), /datum/action_group/palette)
@@ -362,6 +408,12 @@ CAPABILITIES(/datum/hud)
 	HUD.ui_alpha = read_preference(/datum/preference/numeric/ui_style_alpha)
 	set_hud_used(HUD)
 
+/// The client HUD of a mob, or null: a mob has one only while a client is logged in (built by Login(), dropped by Logout()).
+/// Read its elements with hud_of(M)?.x.
+/proc/hud_of(mob/M) as /datum/hud
+	READS_FROM(M)
+	return ismob(M) ? M.hud_used : null
+
 /mob/proc/set_hud_used(datum/hud/new_hud)
 	rel_set(src, nameof(hud_used), new_hud)
 	new_hud.build_action_groups()
@@ -378,11 +430,11 @@ CAPABILITIES(/datum/hud)
 	hud_used.ui_color = UI_style_color_new
 
 	var/list/icons = hud_used.adding + hud_used.other + hud_used.hotkeybuttons + hud_used.other_important
-	icons.Add(zone_sel)
-	icons.Add(gun_setting_icon)
-	icons.Add(item_use_icon)
-	icons.Add(gun_move_icon)
-	icons.Add(radio_use_icon)
+	icons.Add(hud_used?.zone_sel)
+	icons.Add(hud_used?.gun_setting_icon)
+	icons.Add(hud_used?.item_use_icon)
+	icons.Add(hud_used?.gun_move_icon)
+	icons.Add(hud_used?.radio_use_icon)
 
 	var/icon/ic
 
@@ -460,16 +512,16 @@ CAPABILITIES(/datum/hud)
 			client.screen += hud_used.other_important
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client.screen += hud_used.hotkeybuttons
-		if(healths)
-			client.screen |= healths
-		if(internals)
-			client.screen |= internals
-		if(gun_setting_icon)
-			client.screen |= gun_setting_icon
+		if(hud_used?.healths)
+			client.screen |= hud_used?.healths
+		if(hud_used?.internals)
+			client.screen |= hud_used?.internals
+		if(hud_used?.gun_setting_icon)
+			client.screen |= hud_used?.gun_setting_icon
 
 		if(hud_used?.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
-		client.screen += zone_sel				//This one is a special snowflake
+		client.screen += hud_used?.zone_sel				//This one is a special snowflake
 		client.screen += hud_used.toggle_palette
 
 	hud_used.hidden_inventory_update()
@@ -493,12 +545,12 @@ CAPABILITIES(/datum/hud)
 				client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 				hud_used.combat_mode_button.screen_loc = ui_acti_alt	//move this to the alternative position, where zone_select usually is.
 		else
-			client.screen -= healths
-			client.screen -= internals
-			client.screen -= gun_setting_icon
+			client.screen -= hud_used?.healths
+			client.screen -= hud_used?.internals
+			client.screen -= hud_used?.gun_setting_icon
 
 		//These ones are not a part of 'adding', 'other' or 'hotkeybuttons' but we want them gone.
-		client.screen -= zone_sel	//zone_sel is a mob variable for some reason.
+		client.screen -= hud_used?.zone_sel	//zone_sel is a mob variable for some reason.
 
 //Similar to button_pressed_F12() but keeps zone_sel, gun_setting_icon, and healths.
 /mob/proc/toggle_zoom_hud()
@@ -519,7 +571,7 @@ CAPABILITIES(/datum/hud)
 			client.screen -= hud_used.other
 		if(hud_used.hotkeybuttons)
 			client.screen -= hud_used.hotkeybuttons
-		client.screen -= internals
+		client.screen -= hud_used?.internals
 		if(hud_used.combat_mode_button)
 			client.screen += hud_used.combat_mode_button		//we want the combat mode button visible
 	else
@@ -530,8 +582,8 @@ CAPABILITIES(/datum/hud)
 			client.screen += hud_used.other
 		if(hud_used.hotkeybuttons && !hud_used.hotkey_ui_hidden)
 			client.screen += hud_used.hotkeybuttons
-		if(internals)
-			client.screen |= internals
+		if(hud_used?.internals)
+			client.screen |= hud_used?.internals
 		if(hud_used.combat_mode_button)
 			hud_used.combat_mode_button.screen_loc = ui_acti //Restore the combat mode button to its original position
 
@@ -549,20 +601,20 @@ CAPABILITIES(/datum/hud)
 	..()
 
 	var/list/hud_elements = list()
-	rel_set(src, nameof(shadekin_display), new /atom/movable/screen/shadekin())
-	shadekin_display.screen_loc = ui_shadekin_display
-	shadekin_display.icon_state = "shadekin"
-	hud_elements |= shadekin_display
+	rel_set(hud_used, nameof(/datum/hud::shadekin_display), new /atom/movable/screen/shadekin())
+	hud_used?.shadekin_display?.screen_loc = ui_shadekin_display
+	hud_used?.shadekin_display?.icon_state = "shadekin"
+	hud_elements |= hud_used?.shadekin_display
 
-	rel_set(src, nameof(xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
-	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
-	xenochimera_danger_display.icon_state = "danger00"
-	hud_elements |= xenochimera_danger_display
+	rel_set(hud_used, nameof(/datum/hud::xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
+	hud_used?.xenochimera_danger_display?.screen_loc = ui_xenochimera_danger_display
+	hud_used?.xenochimera_danger_display?.icon_state = "danger00"
+	hud_elements |= hud_used?.xenochimera_danger_display
 
-	rel_set(src, nameof(lleill_display), new /atom/movable/screen/lleill())
-	lleill_display.screen_loc = ui_lleill_display
-	lleill_display.icon_state = "lleill"
-	hud_elements |= lleill_display
+	rel_set(hud_used, nameof(/datum/hud::lleill_display), new /atom/movable/screen/lleill())
+	hud_used?.lleill_display?.screen_loc = ui_lleill_display
+	hud_used?.lleill_display?.icon_state = "lleill"
+	hud_elements |= hud_used?.lleill_display
 
 	if(client)
 		client.screen = list()

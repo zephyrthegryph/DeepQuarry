@@ -104,6 +104,7 @@ CAPABILITIES(/obj/item/flame/match)
 	var/ignitermes = "USER lights NAME with FLAME"
 	var/brand
 	blood_sprite_state = null //Can't bloody these
+	flags = NOREACT // so it doesn't react until you light it
 
 
 /// Smokes (smokable_step) every 2 s while lit.
@@ -137,6 +138,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
 	op("item_applied", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
+	derives(nameof(max_smoketime), PROC_REF(full_smoketime))
 
 /// A click with the held item on itself is the in-hand use, not an item applied to it.
 /obj/item/clothing/mask/smokable/proc/held_is_another(datum/act/op/A)
@@ -162,11 +164,9 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 		M.update_inv_l_hand(0)
 		M.update_inv_r_hand(1)
 
-/obj/item/clothing/mask/smokable/Initialize(mapload)
-	. = ..()
-	flags |= NOREACT // so it doesn't react until you light it
-	if(smoketime && !max_smoketime)
-		set_max_smoketime(smoketime)
+/// What it starts smoking down from (derives(), at init): a type that sets none starts full.
+/obj/item/clothing/mask/smokable/proc/full_smoketime()
+	return max_smoketime || smoketime
 
 /obj/item/clothing/mask/smokable/proc/smoke(amount)
 	if(smoketime > max_smoketime)
@@ -503,13 +503,11 @@ CAPABILITIES(/obj/item/trash/cigbutt)
 	ignitermes = span_notice("USER fiddles with FLAME, and manages to light their NAME with the power of science.")
 	is_pipe = 1
 
-/obj/item/clothing/mask/smokable/pipe/Initialize(mapload)
-	. = ..()
-	name = "empty [initial(name)]"
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/pipe)
 	op("put_out", in_hand(), stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(put_out)))
 	op("empty_out", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), then(PROC_REF(empty_out)))
+	name_prefix("empty")
 
 /// Using a lit pipe in the hand puts it out. The clothing's own self-use still follows, as the old ..() did.
 /obj/item/clothing/mask/smokable/pipe/proc/put_out(datum/act/op/A)
@@ -762,7 +760,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -969,7 +967,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1033,7 +1031,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1196,7 +1194,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		M.ignite_mob()
 		add_attack_logs(user, M, "Lit on fire with [src]")
 
-	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if (M == user)
 			cig.attackby(src, user)

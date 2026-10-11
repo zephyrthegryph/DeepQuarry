@@ -221,11 +221,23 @@ GLOBAL_REAL_VAR(list/param_given)
 
 /// Writes a param before init: a declared relation var through rel_set() (its back-reference and teardown are the relation layer's), any
 /// other var directly, as a map edit would.
+/// The relation write publishes, but nothing the forms joined exists yet (the plan's init has not run): param_writing tells
+/// lifeform_published() to stay out, and lifeform_init() computes and joins from the written value (a derives() recomputed here crashed).
 /proc/param_write(datum/D, var_name, value)
 	if(own_table_of(D).entries?[var_name])
-		rel_set(D, var_name, value)
+		param_writing++
+		try
+			rel_set(D, var_name, value)
+		catch(var/exception/e)
+			param_writing--
+			throw e
+		param_writing--
 		return
 	D.vars[var_name] = value // ALLOW(api): a param is written before init, as a map edit would be
+
+/// Above 0 while param_write() writes a relation before init (lifeform_published() ignores the write). A real global: atoms take
+/// positional params while the globals are still being made.
+GLOBAL_REAL_VAR(param_writing) = 0
 
 /// At init: each param declared with apply = is put into effect through its setter, with its value (given, defaulted or the compiled one).
 /// The keep = FALSE params are marked to drop when Initialize() returns (params_drop()).

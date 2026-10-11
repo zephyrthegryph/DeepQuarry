@@ -31,21 +31,7 @@
 	silicon_subsystems = list(/mob/living/silicon/proc/subsystem_law_manager)
 	idcard_type = /obj/item/card/id/syndicate
 
-/mob/living/silicon/proc/init_subsystems()
-	rel_set(src, nameof(alarm_monitor), new /datum/tgui_module/alarm_monitor/all/robot(src))
-	rel_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control/robot(src))
-	rel_set(src, nameof(crew_manifest), new /datum/tgui_module/crew_manifest/robot(src))
-	rel_set(src, nameof(crew_monitor), new /datum/tgui_module/crew_monitor/robot(src))
-	rel_set(src, nameof(law_manager), new /datum/tgui_module/law_manager/robot(src))
-	rel_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor/robot(src))
-	rel_set(src, nameof(rcon), new /datum/tgui_module/rcon/robot(src))
-
-	if(!register_alarms)
-		return
-
-	for(var/datum/alarm_handler/AH in all_alarm_handlers())
-		AH.register_alarm(src, /mob/living/silicon/proc/receive_alarm)
-		rel_add(src, nameof(queued_alarms), new /datum/silicon_alarm_queue(AH.category), "[AH.type]")	// Makes sure alarms remain listed in consistent order
+// A silicon's subsystems are declared (owns_one(starts =) in its CAPABILITIES, silicon.dm): a decoy has none.
 
 /********************
 *	Alarm Monitor	*
@@ -117,7 +103,4 @@
 /mob/living/silicon/robot
 	var/datum/tgui_module/robot_ui_decals/decal_control
 
-/mob/living/silicon/robot/init_subsystems()
-	..()
-	rel_set(src, nameof(decal_control), new /datum/tgui_module/robot_ui_decals(src))
 

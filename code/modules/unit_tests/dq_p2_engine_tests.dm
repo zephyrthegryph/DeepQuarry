@@ -188,7 +188,7 @@
 	var/obj/p2_dragtarget/T = allocate(/obj/p2_dragtarget, get_step(H, NORTH))
 	var/obj/item/pen = allocate(/obj/item/pen, get_turf(H))
 	H.put_in_active_hand(pen)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, T, null, "mapwindow.map", "icon-x=5;icon-y=7;left=1"))
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(T.used, 1, "the click ran the use op")
@@ -274,13 +274,13 @@
 		H.drop_item()
 		H.put_in_active_hand(plain)
 		H.set_use_stance(stance)
-		H.next_click = 0
+		cooldown_set_end(H, next_click, 0)
 		input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
 		TEST_ASSERT_EQUAL(plain.reached - before, 1, "in the [stance] stance a click on a person reaches the harmless item's afterattack")
 	H.set_use_stance(I_HELP)
 	H.drop_item()
 	H.put_in_active_hand(using)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
 	TEST_ASSERT_EQUAL(using.reached, 0, "an item whose attack() used the click does not reach afterattack")
 	H.set_use_stance(I_HELP)

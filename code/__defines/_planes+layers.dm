@@ -224,7 +224,7 @@ What is the naming convention for planes or layers?
 	layer = initial(layer)
 
 // Check if a mob can "logically" see an atom plane
-#define MOB_CAN_SEE_PLANE(M, P) (P <= PLANE_WORLD || (P in M.planes_visible))
+#define MOB_CAN_SEE_PLANE(M, P) (P <= PLANE_WORLD || (P in hud_of(M)?.planes_visible))
 
 
 #define BALLOON_CHAT_PLANE 251

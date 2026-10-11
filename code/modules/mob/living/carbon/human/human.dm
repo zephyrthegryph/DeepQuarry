@@ -16,70 +16,48 @@
 
 	var/embedded_flag					//To check if we've need to roll for damage on movement while an item is imbedded in us.
 	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-	COOLDOWN_DECLARE(push_lying_cooldown) //For human_attackhand.dm: lying-struggle antispam
-	COOLDOWN_DECLARE(disarm_cooldown) //For human_attackhand.dm: repeat-disarm window
 
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
-	COOLDOWN_DECLARE(spit_cooldown) 					//Timestamp.
 
 	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
-	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
 	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
 	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
-	COOLDOWN_DECLARE(chew_cooldown)
 
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-/// The species a human is made as (its constructor param), or null for the default.
+/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
+	if(target == "name")
+		return real_name
+	return species ? species.get_random_name(gender) : real_name
+
+/// Every underwear category starts shown (derives(), once at init).
+/mob/living/carbon/human/proc/underwear_all_shown(target)
+	. = list()
+	for(var/category in GLOB.global_underwear.categories_by_name)
+		.[category] = FALSE
+
+/// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
 
 // ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
 /mob/living/carbon/human/Initialize(mapload)
-	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
-	if(forced_species)
-		species_at_make = forced_species
-	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
-	if(forced_hair)
-		h_style = forced_hair
-	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
-	if(forced_faction)
-		faction = forced_faction
-	if(!dna)
-		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
-		// Species name is handled by set_species()
-
+	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
 		if(species_at_make)
 			set_species(species_at_make)
 		else
 			set_species()
 
-	if(species)
-		real_name = species.get_random_name(gender)
-		name = real_name
-		if(mind)
-			mind.name = real_name
-
-	set_nutrition(rand(200,400))
-	if(forced_species)
-		. = ..(mapload, forced_species)
-	else
-		. = ..()
-
-	hide_underwear.Cut()
-	for(var/category in GLOB.global_underwear.categories_by_name)
-		hide_underwear[category] = FALSE
+	. = ..()
 
 	if(dna)
 		dna.ready_dna(src)
@@ -88,8 +66,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		sync_organ_dna()
 	initialize_vessel()
 	regenerate_icons()
-
-	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
@@ -857,13 +833,13 @@ CAPABILITIES(/datum/prompt/text/hud_comment)
 	return species.name
 
 /mob/living/carbon/human/proc/play_xylophone()
-	if(COOLDOWN_FINISHED(src, xylophone))
+	if(cooldown_ready(src, xylophone))
 		act_message(src, null, MSG_SELF(span_notice("You begin to play a spooky refrain on your ribcage.")), \
 			MSG_OTHERS(span_filter_notice("[span_red("%U% begins playing %THEIR% ribcage like a xylophone. It's quite spooky.")]")), \
 			MSG_BLIND(span_filter_notice("[span_red("You hear a spooky xylophone melody.")]")))
 		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
-		COOLDOWN_START(src, xylophone, 2 MINUTES)
+		cooldown_start(src, xylophone, 2 MINUTES)
 	return
 
 /mob/living/proc/check_has_mouth()
@@ -1644,7 +1620,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
 		else
-			target_zone = user.zone_sel.selecting
+			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
 	var/fail_msg
@@ -2146,7 +2122,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Switch your horizontal direction while prone."
 
-	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || has_status(STAT_PARALYZED) || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -2270,11 +2246,11 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set desc = "Create an area in a enclosed space, making it able to be powered by an APC."
 	set category = VERB_CAT_IC_GAME
 
-	if(stat || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || !cooldown_ready(src, last_special))
 		to_chat(usr, span_warning("You recently tried to create an area. Wait a while before using it again."))
 		return
 
-	COOLDOWN_START(src, last_special, 2 SECONDS) // Antispam.
+	cooldown_start(src, last_special, 2 SECONDS) // Antispam.
 	create_new_area(usr)
 	return
 

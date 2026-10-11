@@ -503,7 +503,7 @@ CAPABILITIES(/obj/structure/cable)
 /obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(A) && stance == I_HELP)
 		var/mob/living/carbon/human/H = A
-		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
+		var/obj/item/organ/external/S = H.organs_by_name[hud_of(user)?.zone_sel?.selecting]
 
 		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()

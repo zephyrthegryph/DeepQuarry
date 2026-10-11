@@ -360,10 +360,10 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
 			rel_clear(location, nameof(location.internal))
-			location.internals.icon_state = "internal0"
+			hud_of(location)?.internals?.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
-			if (location.internals)
-				location.internals.icon_state = "internal0"
+			if (hud_of(location)?.internals)
+				hud_of(location)?.internals?.icon_state = "internal0"
 		else
 			var/can_open_valve
 			if(location.get_equipped_item(SLOT_ID_MASK) && (location.get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT))
@@ -376,8 +376,8 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 			if(can_open_valve)
 				rel_set(location, nameof(location.internal), src)
 				to_chat(user, span_notice("You open \the [src] valve."))
-				if (location.internals)
-					location.internals.icon_state = "internal1"
+				if (hud_of(location)?.internals)
+					hud_of(location)?.internals?.icon_state = "internal1"
 			else
 				to_chat(user, span_warning("You need something to connect to \the [src]."))
 
@@ -631,45 +631,39 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 
 	add_overlay("bomb_assembly")
 
-TYPE_TABLE_DECLARE(/obj/item/tank/phoron/onetankbomb, phoron_bomb_forced_fill, null)
-
 CAPABILITIES(/obj/item/tank/phoron/onetankbomb)
 	param(nameof(bomb_fill), pos = 1)
 
-/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/phoron/onetankbomb/var/bomb_fill = 1
 
 // ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
 /obj/item/tank/phoron/onetankbomb/Initialize(mapload)
-	var/forced_fill = TYPE_TABLE_GET(src, phoron_bomb_forced_fill)
-	if(!isnull(forced_fill))
-		bomb_fill = forced_fill
 	. = ..()
 	onetankbomb(bomb_fill)
-
-TYPE_TABLE_DECLARE(/obj/item/tank/oxygen/onetankbomb, oxygen_bomb_forced_fill, null)
 
 CAPABILITIES(/obj/item/tank/oxygen/onetankbomb)
 	param(nameof(bomb_fill), pos = 1)
 
-/// How full the bomb's tank is filled (its constructor param, or the type's forced fill).
+/// How full the bomb's tank is filled (its constructor param; a full or small bomb's own default).
 /obj/item/tank/oxygen/onetankbomb/var/bomb_fill = 1
 
 // ALLOW(init/INSTANCE_STATE): a single-tank bomb is assembled and filled once its parents made its tank
 /obj/item/tank/oxygen/onetankbomb/Initialize(mapload)
-	var/forced_fill = TYPE_TABLE_GET(src, oxygen_bomb_forced_fill)
-	if(!isnull(forced_fill))
-		bomb_fill = forced_fill
 	. = ..()
 	onetankbomb(bomb_fill)
 
-TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/full, phoron_bomb_forced_fill, 2)
+/obj/item/tank/phoron/onetankbomb/full
+	bomb_fill = 2
 
-TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/full, oxygen_bomb_forced_fill, 2)
+/obj/item/tank/phoron/onetankbomb/small
+	bomb_fill = 0
 
-TYPE_TABLE(/obj/item/tank/phoron/onetankbomb/small, phoron_bomb_forced_fill, 0)
+/obj/item/tank/oxygen/onetankbomb/full
+	bomb_fill = 2
 
-TYPE_TABLE(/obj/item/tank/oxygen/onetankbomb/small, oxygen_bomb_forced_fill, 0)
+/obj/item/tank/oxygen/onetankbomb/small
+	bomb_fill = 0
 
 /////////////////////////////////
 ///Pulled from rewritten bomb.dm

@@ -178,7 +178,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on the head.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
@@ -186,7 +186,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -194,7 +194,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused nibbles at %T%'s hand experimentally.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You boop %T% on the nose.")), \
 			MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
@@ -202,7 +202,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub their prodded snoot.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -354,7 +354,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -362,7 +362,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -370,7 +370,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -378,7 +378,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy, accidently pressing a few of the buttons on their chestpiece in the process... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -455,7 +455,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -463,7 +463,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -471,7 +471,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -479,7 +479,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -685,13 +685,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 /obj/item/holder/catslug/custom/capslug
 	item_state = "capslug"
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug/Initialize(mapload) 		//This is such an awful proc, but if someone wants it better they're welcome to have a go at it.
-	. = ..()
-	mob_radio.set_frequency(PUB_FREQ)
-	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-
 //=============================================================================
 //Admin-spawn only catslugs below - Expect overpowered things & silliness below
 //=============================================================================
@@ -719,11 +712,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	player_msg = "You work in the service of corporate Asset Protection, answering directly to the Board of Directors and Asset Protection Commandos."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(DTH_FREQ) 			//Can't tell if bugged, deathsquad freq in general seems broken
-	myid.access |= SSaccess.get_all_station_access()
-
 //Syndicate catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug
 	name = "Mercenyary"
@@ -750,15 +738,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	player_msg = "You are in the employ of a criminal syndicate hostile to corporate interests. Follow the Mercenary or Commando's orders and assist them in their goals by any means available."
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(SYND_FREQ)
-	mob_radio.syndie = TRUE
-	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
-
 //ERT catslug
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug
 	name = "Emeowgency Responder"
@@ -784,15 +763,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 	If you are status_units(STAT_CONFUSED) or at a loss, always adminhelp, and before taking extreme actions, please try to also contact the administration! \
 	Think through your actions and make the roleplay immersive! <b>Please remember all rules aside from those without explicit exceptions apply to the ERT.</b>"
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/Initialize(mapload)
-	. = ..()
-	mob_radio.set_frequency(ERT_FREQ)
-	mob_radio.centComm = 1
-	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
-	mob_radio.recalculateChannels(TRUE)
-	myid.access |= SSaccess.get_all_station_access()
-
 //Pilot Catslug
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug
@@ -805,18 +775,25 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 
 	can_wear_hat = TRUE
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/Initialize(mapload)
-	. = ..()
-	if(prob(25))
-		var/list/possible_targets = list()
-		for(var/obj/machinery/computer/ship/helm/h in world)
-			if(h.z in using_map.player_levels)
-				possible_targets |= h
-		if(!length(possible_targets))
-			return
-		var/final = pick(possible_targets)
-		forceMove(get_turf(final))
-		set_ghostjoin(TRUE)
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
+	rolls(nameof(takes_a_helm), chance(25))
+	after_init(0, then(PROC_REF(take_a_helm))) // once the map has loaded: the helms are placed
+
+/// One in four Purrvericks start at a ship's helm (rolls()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/var/takes_a_helm = FALSE
+
+/// Sits at a random helm on a player level, open to ghosts (after_init()).
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/proc/take_a_helm(datum/act/timer/A)
+	if(!takes_a_helm)
+		return
+	var/list/possible_targets = list()
+	for(var/obj/machinery/computer/ship/helm/h in world)
+		if(h.z in using_map.player_levels)
+			possible_targets |= h
+	if(!length(possible_targets))
+		return
+	forceMove(get_turf(pick(possible_targets)))
+	set_ghostjoin(TRUE)
 
 /datum/category_item/catalogue/fauna/catslug/custom/pilotslug
 	name = "Alien Wildlife - Catslug - Navigator Purrverick"
@@ -1121,14 +1098,42 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/suslug)
 */
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/capslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/capslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/deathslug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/syndislug)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug)
-	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset)
+	owns_one(nameof(mob_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset/mob_headset/responseslug)
+
+// The special catslugs' headsets: their channel and key.
+/obj/item/radio/headset/mob_headset/capslug
+	frequency = PUB_FREQ
+	ks2type = /obj/item/encryptionkey/heads/captain // might not be able to speak, but the catslug can listen
+
+/obj/item/radio/headset/mob_headset/deathslug
+	frequency = DTH_FREQ
+
+/obj/item/radio/headset/mob_headset/syndislug
+	frequency = SYND_FREQ
+	syndie = TRUE
+	ks2type = /obj/item/encryptionkey/syndicate
+
+/obj/item/radio/headset/mob_headset/responseslug
+	frequency = ERT_FREQ
+	centComm = 1
+	ks2type = /obj/item/encryptionkey/ert
+
+/// The space slugs' cards open every station door as well.
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/deathslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/syndislug/id_access()
+	return ..() | SSaccess.get_all_station_access()
+
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/responseslug/id_access()
+	return ..() | SSaccess.get_all_station_access()
 

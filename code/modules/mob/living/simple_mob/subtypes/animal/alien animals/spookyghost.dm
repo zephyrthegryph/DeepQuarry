@@ -147,12 +147,6 @@
 	vore_active = 0
 
 
-// ALLOW(init/INSTANCE_STATE): rolls which ghost sprite it wears
-/mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
-	. = ..()
-	set_icon_living("spookyghost-[rand(1,2)]")
-	icon_state = icon_living // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
 	delete_on_death = TRUE
 	death_message = "fades away!"
@@ -179,6 +173,8 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/spooky_ghost)
 	after_init(35 SECONDS, then(PROC_REF(fade_out)))
+	rolls(nameof(icon_living), pick_one(list("spookyghost-1", "spookyghost-2")))
+	look_from(nameof(icon_living), state = "*")
 
 /// A summoned ghost lasts 35 seconds.
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/proc/fade_out(datum/act/A)
