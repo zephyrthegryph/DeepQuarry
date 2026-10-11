@@ -1075,6 +1075,19 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "current_engine_decode_inventory": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/reinspect-9e56b442ffdf4a658575c9cf3fa4e5a5/receipt.json",
+    "inspector_sha256": "a7425cadf4dbd4e1cdea9bdbb64500b131f8d8852042826940ff3d14039b3a66",
+    "inspector_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170602-efae8a58-job-cargo.json",
+    "optimized_inspector_failed_build": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-170322-9ceb2670-job-cargo.json",
+    "observed_operand_coverage": "complete",
+    "scope": "Reinterpretation of preserved initial BYOND/native images with corrected icon grammar and count roles. Diagnostic opt0 inspector after optimized LLVM allocation failure; same4GB cap. All observed roles decoded, but1,628,231 unexplained positional differences remain, not semantic bug counts or opcode equivalence. Does not reauthenticate implicit source closure or close BYOND runtime parity."
+  },
+  "captured_runtime_library_focused": {
+    "tests_passed": 6,
+    "files": ["tools/build/lib/captured_runtime_library.test.ts", "tools/build/lib/focused_compiled_run.test.ts"],
+    "scope": "Focused Bun contract fixtures passed, including source/build/pair-independent ABI evidence and retained output checks. Actual coherent snapshot library build and DeepQuarry runtime comparison pending."
+  },
   "qualified_wave_e423_focused": {
     "source_commit": "e423001c5838cb1e069d27de4fb50cff20b57189",
     "source_archive_sha256": "5ce3da8dbd179653a7228f2573501b78c6d72a9ca131a064a1aa5c672d32834a",
