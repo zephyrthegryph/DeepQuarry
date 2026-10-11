@@ -171,7 +171,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS), arg("trackname", schema_text(MAX_NAME_LEN * 2), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_track)))
 	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
 	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), label("Bolt or unbolt"), needs(req(PROC_REF(shell_refusal))), starts(PROC_REF(bolting_started)), begins(PROC_REF(bolting_begins)), wait(4 SECONDS), then(PROC_REF(wrench_act_tool_done)), on_interrupt(PROC_REF(wrench_act_tool_failed)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
@@ -562,7 +562,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 /mob/living/silicon/ai/reset_perspective(atom/new_eye)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(camera)
-		camera.set_light(0)
+		set_glow(camera, GLOW(0, null, null))
 	if(istype(new_eye,/obj/machinery/camera))
 		rel_set(src, nameof(camera), new_eye)
 	if(new_eye != GLOB.ai_camera_room_landmark)
@@ -574,9 +574,9 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 			reset_perspective(eyeobj)
 	if(istype(new_eye,/obj/machinery/camera))
 		if(camera_light_on)
-			new_eye.set_light(AI_CAMERA_LUMINOSITY)
+			set_glow(new_eye, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		else
-			new_eye.set_light(0)
+			set_glow(new_eye, GLOW(0, null, null))
 
 /mob/living/silicon/ai/proc/switchCamera(obj/machinery/camera/C)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -812,7 +812,7 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	to_chat(src, span_filter_notice("Camera lights [camera_light_on ? "activated" : "deactivated"]."))
 	if(!camera_light_on)
 		if(camera)
-			camera.set_light(0)
+			set_glow(camera, GLOW(0, null, null))
 			rel_clear(src, nameof(camera))
 	else
 		lightNearbyCamera()
@@ -826,20 +826,20 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 		if(src.camera)
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && src.camera != camera)
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				if(!camera.light_disabled)
 					rel_set(src, nameof(camera), camera)
-					src.camera.set_light(AI_CAMERA_LUMINOSITY)
+					set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 				else
 					rel_clear(src, nameof(camera))
 			else if(isnull(camera))
-				src.camera.set_light(0)
+				set_glow(src.camera, GLOW(0, null, null))
 				rel_clear(src, nameof(camera))
 		else
 			var/obj/machinery/camera/camera = near_range_camera(eyeobj)
 			if(camera && !camera.light_disabled)
 				rel_set(src, nameof(camera), camera)
-				src.camera.set_light(AI_CAMERA_LUMINOSITY)
+				set_glow(src.camera, GLOW(AI_CAMERA_LUMINOSITY, null, null))
 		camera_light_on = world.timeofday + 1 * 20 // Update the light every 2 seconds.
 
 /// Old attackby: an intelliCard pulls the AI in.
@@ -849,23 +849,24 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	card.grab_ai(src, user)
 	return TRUE
 
-/mob/living/silicon/ai/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(user == deployed_shell)
-		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
-		return OP_OK
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, start_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
-	return OP_OK
+/// Its own deployed shell cannot unbolt the core.
+/mob/living/silicon/ai/proc/shell_refusal(datum/act/op/A)
+	return A.actor == read_once(deployed_shell) ? "the shell's subsystems resist your efforts to tamper with your bolts" : null
 
-/mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
+/mob/living/silicon/ai/proc/bolting_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/mob/living/silicon/ai/proc/bolting_begins(datum/act/op/A)
+	return msg_text(null, "\The [A.actor] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...")
+
+/mob/living/silicon/ai/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	set_anchored(!anchored)
 	act_message(user, src, others = span_notice("%U% finishes [anchored ? "fastening down" : "unfastening"] %T%!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/mob/living/silicon/ai/proc/wrench_act_tool_failed(mob/user)
-	act_message(user, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
-	return ITEM_INTERACT_BLOCKING
+/mob/living/silicon/ai/proc/wrench_act_tool_failed(datum/act/op/A)
+	act_message(A.actor, src, others = span_notice("%U% decides not to [anchored ? "unbolt" : "bolt"] %T%."))
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"

@@ -773,7 +773,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 			var/mob/M = loc
 			M.update_inv_back()
 		ambulance_state = FALSE
-		set_light(2, 1, "#FF0000")
+		set_glow(src, GLOW(2, 1, "#FF0000"))
 		soundloop.start()
 	else
 		item_state = "tempestsaddlebag"
@@ -781,7 +781,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.update_inv_back()
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		soundloop.stop()
 
 /obj/item/storage/backpack/saddlebag/tempest/proc/tempest_step(datum/act/timer/A)
@@ -793,7 +793,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.update_inv_back()
-		set_light(2, 1, newlight)
+		set_glow(src, GLOW(2, 1, newlight))
 		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 

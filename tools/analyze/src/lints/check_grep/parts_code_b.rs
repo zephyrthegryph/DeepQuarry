@@ -139,6 +139,13 @@ pub fn parts() -> Vec<Part> {
             line(r"^/[A-Za-z0-9_/]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act\("),
         ),
         Part::new(
+            "tools_use_tool_banned",
+            "tools: the legacy use_tool() timer",
+            "use_tool() and its tool jobs are gone. A tool used on something is an op: tool(TOOL_X) or lit_welder(fuel =), begins(), starts(), wait(t), then(), on_interrupt() (python tools/codemods/use_tool_wait.py).",
+            Files::Code,
+            line(r"\buse_tool\("),
+        ),
+        Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTION",
             "DAMAGE_REACTION in code/game/objects or code/game/turfs over the ratchet. extend(/datum/act/hit/x, instead(...)) or on_notice(/datum/notice/hit/x, ...) (python tools/codemods/damage_reaction.py).",

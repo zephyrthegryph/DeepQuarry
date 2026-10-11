@@ -117,7 +117,7 @@ CAPABILITIES(/datum/system/antag)
 		to_chat(user, span_danger("You cannot Recall while incapacitated!"))
 		return
 	if(time_left > 0)
-		set_light(light_intensity, light_intensity, l_color = "#006AFF")
+		set_glow(src, GLOW(light_intensity, light_intensity, "#006AFF"))
 		after(src, 1 SECOND, PROC_REF(recall_glow), with = list(user, marker, time_left - 1, light_intensity + 1))
 		return
 	var/turf/target_turf = marker.T() // Multiple technomancer support

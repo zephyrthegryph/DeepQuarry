@@ -340,10 +340,10 @@ TRACKED(/obj/item/shield/riot/explorer, on)
 
 /obj/item/shield/riot/explorer/proc/update_flashlight(mob/user = null)
 	if(on && !light_applied)
-		set_light(brightness_on)
+		set_glow(src, GLOW(brightness_on, null, null))
 		light_applied = 1
 	else if(!on && light_applied)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		light_applied = 0
 	user.update_mob_action_buttons()
 	play_sfx(src, SFX_WEAPONS_EMPTY, 0.3, extrarange = -3)

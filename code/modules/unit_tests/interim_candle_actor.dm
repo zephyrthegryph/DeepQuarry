@@ -24,7 +24,7 @@
 		hci_click(user, candle, source)
 		test_time(10 SECONDS)
 		TEST_ASSERT(candle.lit, "a lit source ignites the actual candle")
-		TEST_ASSERT_EQUAL(candle.light_range, CANDLE_LUM, "ignition enables the candle's actual light")
+		TEST_ASSERT_EQUAL(glow_of(candle).range, CANDLE_LUM, "ignition enables the candle's actual light")
 		TEST_ASSERT_EQUAL(candle.light_actor_ref, REF(user), "the ignition helper receives the explicit actor")
 		// A lit candle burns a unit of wax per flame step (every 2 s) during the 10 s wait: ignition keeps the wax it had, less that burn.
 		var/max_burn = (10 SECONDS) / (2 SECONDS) + 1
@@ -36,6 +36,6 @@
 		hci_click(user, candle, candle)
 		test_time(10 SECONDS)
 		TEST_ASSERT(!candle.lit, "self interaction extinguishes the actual candle")
-		TEST_ASSERT_EQUAL(candle.light_range, 0, "extinguishing clears the candle's actual light")
+		TEST_ASSERT_EQUAL(glow_of(candle).range, 0, "extinguishing clears the candle's actual light")
 		source.set_lit(FALSE)
 	test_driver_end()

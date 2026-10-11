@@ -16,7 +16,6 @@
 	dir = NORTH
 	icon_state = "ship_nosprite"
 	appearance_flags = TILE_BOUND|KEEP_TOGETHER|LONG_GLIDE
-	light_power = 4
 	layer = OBJ_LAYER + 0.1 // make movables a little higher than regular sectors
 
 	unknown_name = "unknown ship"
@@ -88,6 +87,7 @@ TRACKED(/obj/effect/overmap/visitable/ship, speed)
 
 /// Under way (not still).
 CAPABILITIES(/obj/effect/overmap/visitable/ship)
+	configure(light_glow(power = 4))
 	every(1 SECOND, then(PROC_REF(ship_step)), when = nameof(under_way))
 	drag_onto(PROC_REF(drop_input))
 	op("eat_ship", ai(), reach(REACH_ADJACENT), takes("belly"), wait(5 SECONDS), then(PROC_REF(eaten_by)))

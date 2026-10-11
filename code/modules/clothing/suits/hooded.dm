@@ -249,10 +249,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
 	desc = "A softly-glowing, brass-colored button up winter coat. Instead of a zipper tab, it has a brass cog with a tiny red gemstone inset."
 	icon_state = "coatratvar"
 	hoodtype = /obj/item/clothing/head/hood/winter/ratvar
-	light_range = 3
-	light_power = 1
-	light_color = "#B18B25" //clockwork slab background top color
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/ratvar)
+	configure(light_glow(range = 3, power = 1, color = "#B18B25"))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/narsie
 	name = "runed winter coat"
@@ -265,9 +265,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
 	desc = "A starry winter coat that even glows softly."
 	icon_state = "coatcosmic"
 	hoodtype = /obj/item/clothing/head/hood/winter/cosmic
-	light_power = 1.8
-	light_range = 1.2
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/cosmic)
+	configure(light_glow(power = 1.8, range = 1.2))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/christmasred
 	name = "red christmas winter coat"

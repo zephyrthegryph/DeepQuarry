@@ -24,9 +24,9 @@
 	desc = "Run!"
 	icon_state = "at_shield1"
 	time_to_die = 2.5 SECONDS // After which we go boom.
-	light_range = 4
-	light_power = 5
-	light_color = "#FF6A00"
+
+CAPABILITIES(/obj/effect/temporary_effect/fire_blast)
+	configure(light_glow(range = 4, power = 5, color = "#FF6A00"))
 
 // the blast detonates when it expires.
 /obj/effect/temporary_effect/fire_blast/on_destroy(force)

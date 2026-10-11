@@ -551,7 +551,7 @@ CAPABILITIES(/obj/item/communicator)
 	add_fingerprint(A.actor)
 	. = TRUE
 	fon = !fon
-	set_light(fon * flum)
+	set_glow(src, GLOW(fon * flum, null, null))
 
 /obj/item/communicator/proc/ui_act_newsfeed(datum/act/op/A, newsfeed)
 	add_fingerprint(A.actor)

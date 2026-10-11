@@ -21,7 +21,6 @@
 	use_power = USE_POWER_IDLE
 	clicksound = SFX_RECYCLER_TYPING
 
-	light_color = "#0f8f0f"
 
 	var/door_open = FALSE
 	var/door_moving = FALSE
@@ -111,6 +110,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	configure(light_glow(color = "#0f8f0f"))
 	configure(uses_power(idle = 300, active = 300))
 	after_init(0, then(PROC_REF(move_after_init)))
 	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
@@ -514,11 +514,11 @@ UTILITY PROCS
 	is_on = state
 	if(is_on)
 		play_sfx(src, SFX_RECYCLER_INITIALBOOT)
-		set_light(light_range_on, light_power_on)
+		set_glow(src, GLOW(light_range_on, light_power_on, null))
 		monitor_screen.icon_state = "screen_default"
 	else
 		play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		monitor_screen.icon_state = "screen_off"
 
 #undef RECYCLER_ALLOWED

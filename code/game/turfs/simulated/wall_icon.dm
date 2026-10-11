@@ -30,9 +30,9 @@
 	desc = facts[WALL_FACT_DESC]
 
 	if(material.opacity > 0.5 && !opacity)
-		set_light(1)
+		set_glow(src, GLOW(1, null, null))
 	else if(material.opacity < 0.5 && opacity)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 
 	sync_damage_step()
 	if(SSair?.initialized)

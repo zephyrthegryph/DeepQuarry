@@ -26,34 +26,35 @@ MSG_DEF_SELF(keycard_auth/unpowered, "this device is not powered")
 	to_chat(A.actor, span_warning("A firewall prevents you from interfacing with this device!"))
 	return OP_OK
 
-/obj/machinery/keycard_auth/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin removing the faceplate from the [src]", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/machinery/keycard_auth/proc/screwdriver_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
+/obj/machinery/keycard_auth/proc/screwdriver_begins(datum/act/op/A)
+	return msg_text("You begin removing the faceplate from the [src]", null)
+
+/obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, "You remove the faceplate from the [src]")
-	var/obj/structure/frame/A = new /obj/structure/frame(loc)
+	var/obj/structure/frame/frame = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	rel_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
-	board.forceMove(A)
-	own_move(board, A, nameof(A.circuit)) // the board goes from this machine to the frame
-	A.need_circuit = FALSE
-	A.pixel_x = pixel_x
-	A.pixel_y = pixel_y
-	A.set_dir(dir)
-	A.set_anchored(TRUE)
+	rel_set(frame, nameof(frame.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	board.forceMove(frame)
+	own_move(board, frame, nameof(frame.circuit)) // the board goes from this machine to the frame
+	frame.need_circuit = FALSE
+	frame.pixel_x = pixel_x
+	frame.pixel_y = pixel_y
+	frame.set_dir(dir)
+	frame.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(C, /obj/item/circuitboard))
-			C.forceMove(A)
+			C.forceMove(frame)
 			continue
 		C.forceMove(loc)
-	rel_move(src, nameof(forensic_data), A, nameof(A.forensic_data)) //carry crime data over.
-	A.set_state(FRAME_WIRED)
+	rel_move(src, nameof(forensic_data), frame, nameof(frame.forensic_data)) //carry crime data over.
+	frame.set_state(FRAME_WIRED)
 	destroyed(src, user, "deconstructed")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby never called ..(): every item is swallowed by this, id cards checked for access.
 /obj/machinery/keycard_auth/proc/interaction_swipe(datum/act/op/A)
@@ -112,7 +113,7 @@ CAPABILITIES(/obj/machinery/keycard_auth)
 	without("ui_open")
 	op("triggerevent", ui_act("triggerevent", arg("event", schema_text(4096))), then(PROC_REF(ui_act_triggerevent)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
 	op("keycard_auth_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(keycard_auth_silicon_refuse)))
 	op("keycard_auth_swipe", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Swipe"), needs(req(PROC_REF(swipe_powered))), then(PROC_REF(interaction_swipe)))
 	op("keycard_auth_open_ui", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Use"), needs(req(PROC_REF(can_open_panel_holds))), then(PROC_REF(interaction_open_ui_impl)))

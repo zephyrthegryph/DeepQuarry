@@ -31,12 +31,14 @@ CAPABILITIES(/obj/item/gun/energy/altevian/large)
 	name = "meep beam"
 	icon_state = "meep"
 	damage = 25
-	light_color = "#77A6E1"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/meeplaser
 	tracer_type = /obj/effect/projectile/tracer/meeplaser
 	impact_type = /obj/effect/projectile/impact/meeplaser
+
+CAPABILITIES(/obj/item/projectile/beam/meeplaser)
+	configure(light_glow(color = "#77A6E1"))
 
 /obj/item/projectile/beam/meeplaser/strong
 	name = "repeater beam"
@@ -44,21 +46,21 @@ CAPABILITIES(/obj/item/gun/energy/altevian/large)
 
 /obj/effect/projectile/muzzle/meeplaser
 	icon_state = "muzzle_meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/tracer/meeplaser
 	icon_state = "meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/tracer/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/impact/meeplaser
 	icon_state = "impact_meep"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/impact/meeplaser)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/item/gun/energy/ratminer
 	name = "Altevian Repulsion Mineral Slicer"
@@ -95,12 +97,14 @@ CAPABILITIES(/obj/item/gun/energy/ratminer)
 	name = "slicer beam"
 	icon_state = "ratmining"
 	damage = 20
-	light_color = "#77A6E1"
 	hud_state = "laser_disabler"
 
 	muzzle_type = /obj/effect/projectile/muzzle/ratminer
 	tracer_type = /obj/effect/projectile/tracer/ratminer
 	impact_type = /obj/effect/projectile/impact/ratminer
+
+CAPABILITIES(/obj/item/projectile/beam/ratminer)
+	configure(light_glow(color = "#77A6E1"))
 
 /obj/item/projectile/beam/ratminer/on_range()
 	strike_thing()
@@ -134,18 +138,18 @@ CAPABILITIES(/obj/item/gun/energy/ratminer)
 
 /obj/effect/projectile/muzzle/ratminer
 	icon_state = "muzzle_ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/muzzle/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/tracer/ratminer
 	icon_state = "ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/tracer/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))
 
 /obj/effect/projectile/impact/ratminer
 	icon_state = "impact_ratmining"
-	light_range = 2
-	light_power = 0.5
-	light_color = "#77A6E1"
+
+CAPABILITIES(/obj/effect/projectile/impact/ratminer)
+	configure(light_glow(range = 2, power = 0.5, color = "#77A6E1"))

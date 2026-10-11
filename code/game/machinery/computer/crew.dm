@@ -3,12 +3,12 @@
 	desc = "Used to monitor active health sensors built into most of the crew's uniforms."
 	icon_keyboard = "med_key"
 	icon_screen = "crew"
-	light_color = "#315ab4"
 	use_power = USE_POWER_IDLE
 	circuit = /obj/item/circuitboard/crew
 	var/datum/tgui_module/crew_monitor/crew_monitor
 
 CAPABILITIES(/obj/machinery/computer/crew)
+	configure(light_glow(color = "#315ab4"))
 	configure(uses_power(idle = 250, active = 500))
 	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor, starts = /datum/tgui_module/crew_monitor)
 	op("use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_use)))

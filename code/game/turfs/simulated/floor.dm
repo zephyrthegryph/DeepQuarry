@@ -109,7 +109,7 @@ TRACKED(/turf/simulated/floor, burnt)
 			set_flooring(null)
 			set_plating_exposed(TRUE)
 
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	set_broken(null)
 	set_burnt(null)
 	set_flooring_override(null)

@@ -30,7 +30,7 @@
 CAPABILITIES(/obj/structure/fence)
 	on_notice(/datum/notice/bumped, then(PROC_REF(bumped_into)))
 	climb(gate = PROC_REF(needs_a_climbable_hole))
-	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), label("Cut through"), needs(req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), begins(PROC_REF(cut_begins)), wait(10 SECONDS), then(PROC_REF(wirecutter_act_tool_done))) // CUT_TIME
 	op("touch", hand(), label("Use"), then(PROC_REF(interaction_hand)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -100,31 +100,31 @@ CAPABILITIES(/obj/structure/fence)
 		electrocute(user)
 	return OP_OK
 
-/obj/structure/fence/proc/wirecutter_used(datum/act/op/A)
+/// A fence that can be cut, and is not cut through already.
+/obj/structure/fence/proc/cut_refusal(datum/act/op/A)
+	if(!read_once(cuttable))
+		return "this section of the fence can't be cut"
+	if(read_once(invulnerable))
+		return "this fence is too strong to cut through"
+	if(read_once(hole_size) >= MAX_HOLE_SIZE)
+		return "this fence has too much cut out of it already"
+
+/// An electrified fence shocks whoever cuts into it, and the cut stops there.
+/obj/structure/fence/proc/cut_started(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	playsound(src, sounds_of(W).use, 50, TRUE)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT) && electrocute(user))
-		return OP_OK
-	if(!cuttable)
-		to_chat(user, span_warning("This section of the fence can't be cut."))
-		return OP_OK
-	if(invulnerable)
-		to_chat(user, span_warning("This fence is too strong to cut through."))
-		return OP_OK
-	var/current_stage = hole_size
-	if(current_stage >= MAX_HOLE_SIZE)
-		to_chat(user, span_notice("This fence has too much cut out of it already."))
-		return OP_OK
-	act_message(user, src, MSG_SELF(span_danger("You start cutting through %T% with %I%.")), \
-		MSG_OTHERS(span_danger("%U% starts cutting through %T% with %I%.")), \
-		item = W)
-	use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50, receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, current_stage))
-	return OP_OK
+		return /datum/msg/req_silent
 
-/obj/structure/fence/proc/wirecutter_act_tool_done(mob/user, current_stage)
-	if(!(current_stage == hole_size))
-		return
+/obj/structure/fence/proc/cut_begins(datum/act/op/A)
+	return msg_text(span_danger("You start cutting through %T% with %I%."), span_danger("%U% starts cutting through %T% with %I%."))
+
+/obj/structure/fence/proc/wirecutter_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
+	if(hole_size >= MAX_HOLE_SIZE)
+		return OP_OK
 	switch(++hole_size)
 		if(MEDIUM_HOLE)
 			act_message(user, src, others = span_notice("%U% cuts into %T% some more."))

@@ -71,15 +71,18 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
 	set_wires_intact(!wires_intact)
 	return OP_OK
 
-/obj/machinery/atmospheric_field_generator/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(!hatch_open)
-		return OP_DECLINE
-	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start to disassemble \the [src].", start_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the welder answers (it did nothing otherwise and the click went on).
+/obj/machinery/atmospheric_field_generator/proc/welder_applies(datum/act/op/A)
+	return !!read_once(hatch_open)
 
-/obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)
+/obj/machinery/atmospheric_field_generator/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/atmospheric_field_generator/proc/welder_begins(datum/act/op/A)
+	return msg_text("You start to disassemble \the [src].", "[A.actor] starts to disassemble \the [src].")
+
+/obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You fully disassemble \the [src]. There were no salvageable parts."))
 	destroyed(src, user, "deconstructed")
 
@@ -117,7 +120,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(crowbar_used)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wirecutter_used)))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 5), priority(OP_PRIORITY_DEFAULT), when(PROC_REF(welder_applies)), starts(PROC_REF(welder_started)), begins(PROC_REF(welder_begins)), wait(1.5 SECONDS), then(PROC_REF(welder_act_tool_done)))
 
 /// A pulse took it down (the field drops) or its outage ended (the field comes back if it was on, or is always on).
 /obj/machinery/atmospheric_field_generator/proc/emp_state_changed(datum/act/A)
@@ -198,9 +201,6 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 	can_atmos_pass = ATMOS_PASS_NO
 	var/basestate = "arfg_field"
 
-	light_range = 3
-	light_power = 1
-	light_color = "#FFFFFF"
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
@@ -224,6 +224,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator)
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
 CAPABILITIES(/obj/structure/atmospheric_retention_field)
+	configure(light_glow(range = 3, power = 1, color = "#FFFFFF"))
 	smoothing()
 	op("hand", hand(), ungated(), label("Use"), then(PROC_REF(interaction_hand)))
 

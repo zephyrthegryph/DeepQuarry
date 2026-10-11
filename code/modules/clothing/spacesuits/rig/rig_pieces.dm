@@ -4,7 +4,6 @@
 
 /obj/item/clothing/head/helmet/space/rig
 	name = "helmet"
-	light_range = 4
 	sprite_sheets = list(
 		SPECIES_TAJARAN 		= 'icons/inventory/head/mob_tajaran.dmi',
 		SPECIES_SKRELL 			= 'icons/inventory/head/mob_skrell.dmi',
@@ -24,6 +23,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig)
+	configure(light_glow(range = 4))
 	configure(item_worn(flags = THICKMATERIAL|ALLOW_SURVIVALFOOD, hides = HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR))
 	configure(item_protection(max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
 

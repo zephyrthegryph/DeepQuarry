@@ -1,5 +1,4 @@
-human|none menu: Disassemble
-human|none click: Click: Disassemble
+@obj.structure.bed human|none
 robot|none menu: Disassemble
 robot|none click: Click: Disassemble
 @obj.structure ai|none

@@ -9,6 +9,13 @@ the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV ro
 cannot name such a var, so the Southern Cross atmospherics omni mixer is `/obj/machinery/atmospherics/omni/mixer/high_power`, restoring
 its 7500 W active draw lost when `uses_power()` landed. `smoothing_junction` (write-only) and `original_atom` (never filled) are deleted.
 
+**Light is the light_glow() trait (lane bv-traits).** `light_range`, `light_power` and `light_color` leave `/atom`: a type's light is
+`configure(light_glow(...))`, `set_light()` is `set_glow(A, GLOW(r, p, c))` and the light system reads `glow_of()`. A light still casts only
+while `light_on`. Southern Cross's `/obj/machinery/light` map edits of `light_color = "#DDFFD3"` are dropped: a fixture's light colour comes
+from its bulb (`refresh_light()`), so they never showed. A runtime-loaded map naming `light_*` goes through `set_trait()`. `fancy_shuttle`
+walls refuse any light (`accepts_glow()`), as their empty `set_light()` did. `/mob/living` `last_glow_*` are gone: Life compares the glow it
+wants with `glow_of()`.
+
 ## Chargers (cell charger, recharger, wall recharger)
 
 Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).
@@ -4728,6 +4735,9 @@ The robot and robot/platform conversion-pin key rows now include the eight `robo
 ## Acceptance foundation: master rotation rows (2026-10-11)
 
 Master `81e61e24e9` (2026-10-10 23:39 -0500) replaces Initialize-granted rotation verbs with native `rotatable()` on `/obj/item/pipe` and `/obj/structure/smoletrack`. Their pins now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around and the three native rotation keys. `/obj/machinery/pipedispenser`, its `/disposal` subtype and `/obj/machinery/pipelayer` also expose these menu choices through the held pipe. These five classes alone are refreshed; existing plain-click rows and refusal text remain unchanged. The acceptance landing did not add or rank these operations. Commit provenance was checked with pickaxe on the indented declaration and the exact master source diff.
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
 
 ## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
 
@@ -4742,6 +4752,8 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+Also re-blessed for master commits that landed without their pins: the pipe, cannon frame, pipe dispenser and smoletrack rotation ops, and the food reagent fills in `dq_reagents_start_snapshot`.
+The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reaches the VR sleeper refusal rows, and `rand(1, 999)` at init made them follow how much RNG earlier tests drew.
 
 ### Acceptance predicate dispatch (codex/acceptance-consumers-1011)
 
@@ -4754,6 +4766,7 @@ The paper look-tree pin drops only the four inherited `/obj/item/paper/cap_fixtu
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
 
 ## Live mob state into its domains (base_vars lane B, bv-hud)
 
@@ -4773,3 +4786,19 @@ the answer). No behaviour change intended.
 The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
 30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
 behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).
+### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
+
+- **Tool `_act` procs are ops.** Each `<quality>_act()` override is an `op("use_<quality>", tool(TOOL_X), ...)`; the pins' click rows now name
+  the tool op (`Click: Use screwdriver`, `Remove the DNA lock`, `Lock the assembly`) where they used to show the op the old hook pre-empted.
+  Hooks that blocked a click with a message are requirements: the refusal text is the engine's (`refused: ...` in the menu).
+- **A gun's screwdriver** answers its DNA lock op ahead of the gun's other ops, as the hook did; removing the lock is a 2.5 s timed op.
+- **The nuke's anchor removal** is five timed `stages()` steps that a welder, crowbar or wrench click reaches (the tool ops sat below the window
+  op, so a click opened the panel instead).
+- **The AI core frame's** stage checks compare exactly (`req_stage()`): `req_is(state, 1)` matched any nonzero stage, so the frame offered its
+  unanchor at every stage.
+- **Timed tool work** (`use_tool()`, now deleted) is the op's `wait()`: the progress, the interruption and the start messages are the op's.
+  A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
+- **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
+  tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
+rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
+rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.

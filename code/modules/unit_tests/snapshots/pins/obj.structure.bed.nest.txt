@@ -1,4 +1,6 @@
-@obj.structure.bed human|none
+human|none menu: Melt
+human|none menu: Use
+human|none click: Click: Use
 @obj.structure.bed robot|none
 @obj.structure ai|none
 @obj ghost|none

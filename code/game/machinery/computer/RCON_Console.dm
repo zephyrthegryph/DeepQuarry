@@ -9,13 +9,13 @@
 	desc = "Console used to remotely control electrical machinery on the station."
 	icon_keyboard = "power_key"
 	icon_screen = "ai-fixer"
-	light_color = "#a97faa"
 	circuit = /obj/item/circuitboard/rcon_console
 	req_one_access = list(ACCESS_ENGINE)
 	var/current_tag = null
 	var/datum/tgui_module/rcon/rcon
 
 CAPABILITIES(/obj/machinery/computer/rcon)
+	configure(light_glow(color = "#a97faa"))
 	owns_one(nameof(rcon), starts = /datum/tgui_module/rcon)
 	op("open_ui", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(TYPE_PROC_REF(/atom, op_open_ui)))
 

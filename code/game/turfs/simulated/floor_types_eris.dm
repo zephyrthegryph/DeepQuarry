@@ -717,7 +717,7 @@ CAPABILITIES(/turf/simulated/floor/tiled/eris/steel/bar_light)
 	after_init(0, then(PROC_REF(init_bar_light)))
 
 /turf/simulated/floor/tiled/eris/steel/bar_light/proc/init_bar_light(datum/act/timer/A)
-	set_light(3,4,"#00AAFF")
+	set_glow(src, GLOW(3, 4, "#00AAFF"))
 
 
 

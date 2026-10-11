@@ -1,8 +1,8 @@
-@obj.structure.bed human|none
--menu: Melt
-+0 menu: Rotate Clockwise
-+1 menu: Rotate Counter Clockwise
-+2 menu: Turn Around
+human|none menu: Rotate Clockwise
+human|none menu: Rotate Counter Clockwise
+human|none menu: Turn Around
+human|none menu: Use
+human|none click: Click: Use
 @obj.structure.bed robot|none
 -menu: Melt
 +0 menu: Rotate Clockwise

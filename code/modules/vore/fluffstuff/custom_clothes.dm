@@ -909,7 +909,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
 
 
 	w_class = ITEMSIZE_SMALL
-	light_range = 5
 	light_overlay = null
 	light_system = MOVABLE_LIGHT
 
@@ -924,6 +923,7 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
 
 // The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
 CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
+	configure(light_glow(range = 5))
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	op("pompom_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle light"), then(PROC_REF(pompom_light_self)))
 

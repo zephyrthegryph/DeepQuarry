@@ -13,7 +13,6 @@
 	name = "hard hat"
 	desc = "A piece of headgear used in dangerous working conditions to protect the head. Comes with a built-in flashlight."
 	icon_state = "hardhat0_yellow"
-	light_range = 4 //luminosity when on
 	light_cone_y_offset = 14
 	light_overlay = "hardhat_light"
 	armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=20;bio=10;rad=20"
@@ -23,6 +22,7 @@
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/hardhat)
+	configure(light_glow(range = 4))
 	configure(item_worn(hides = 0))
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))

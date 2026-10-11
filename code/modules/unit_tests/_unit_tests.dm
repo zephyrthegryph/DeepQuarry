@@ -419,6 +419,7 @@
 #include "dq_machine_work_helpers.dm"
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
+#include "dq_stages_tests.dm"
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
 #include "dq_memory_list_tests.dm"

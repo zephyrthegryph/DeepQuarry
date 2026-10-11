@@ -237,13 +237,13 @@
 	SM.damage = 150
 	SM.safe_warned = TRUE
 	pp_step(SM, PP_SM_STEP)
-	TEST_ASSERT_EQUAL(SM.light_range, 5, "past the warning point the light is range 5")
+	TEST_ASSERT_EQUAL(glow_of(SM).range, 5, "past the warning point the light is range 5")
 	SM.damage = 600
 	pp_step(SM, PP_SM_STEP)
-	TEST_ASSERT_EQUAL(SM.light_range, 7, "past the emergency point the light is range 7")
+	TEST_ASSERT_EQUAL(glow_of(SM).range, 7, "past the emergency point the light is range 7")
 	SM.damage = 0
 	pp_step(SM, PP_SM_STEP)
-	TEST_ASSERT_EQUAL(SM.light_range, 4, "a whole crystal's light is range 4")
+	TEST_ASSERT_EQUAL(glow_of(SM).range, 4, "a whole crystal's light is range 4")
 
 /// Delamination: past the explosion point a step starts the countdown (on a station level: 30 s of causality field, then the explosion; off one:
 /// at once). The explosion is the pull: grav_pulling and exploded set, anchored.

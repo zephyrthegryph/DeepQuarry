@@ -81,4 +81,4 @@ CAPABILITIES(/obj/effect/projectile_lighting)
 
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/effect/projectile_lighting/proc/glow(intensity)
-	set_light(glow_range, glow_intensity, glow_color)
+	set_glow(src, GLOW(glow_range, glow_intensity, glow_color))

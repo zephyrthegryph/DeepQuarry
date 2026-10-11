@@ -1,6 +1,5 @@
-human|none menu: Disassemble
-human|none menu: Turn Around (refused: It is fastened to the floor!)
-human|none click: Click: Disassemble
+@obj.structure.bed human|none
++1 menu: Turn Around (refused: It is fastened to the floor!)
 robot|none menu: Disassemble
 robot|none menu: Turn Around (refused: It is fastened to the floor!)
 robot|none click: Click: Disassemble

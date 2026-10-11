@@ -36,11 +36,11 @@
 	L.set_glow_range(8)
 	L.set_glow_intensity(-10)
 	L.set_glow_color("#FFFFFF")
-	L.set_light(8, -10, "#FFFFFF")
+	set_glow(L, GLOW(8, -10, "#FFFFFF"))
 
 /datum/body_effect/shadekin/create_shade/on_end(mob/living/L, expired)
 	L.set_glow_toggle(initial(L.glow_toggle))
 	L.set_glow_range(initial(L.glow_range))
 	L.set_glow_intensity(initial(L.glow_intensity))
 	L.set_glow_color(initial(L.glow_color))
-	L.set_light(0)
+	set_glow(L, GLOW(0, null, null))

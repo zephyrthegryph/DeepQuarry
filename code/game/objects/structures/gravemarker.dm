@@ -23,7 +23,7 @@ CAPABILITIES(/obj/structure/gravemarker)
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
 		asks(/datum/prompt/text, fields = list("title" = "Epitaph Carving", "question" = computed(PROC_REF(epitaph_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "epitaph"),
 		then(PROC_REF(carved)))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), begins(PROC_REF(wrench_begins)), wait(PROC_REF(wrench_duration)), then(PROC_REF(wrench_act_tool_done)))
 	param(nameof(marker_material), pos = 1, apply = PROC_REF(build_of))
 
 /// The marker's material (its constructor param).
@@ -82,13 +82,14 @@ CAPABILITIES(/obj/structure/gravemarker)
 		epitaph += carving_2
 	return OP_OK
 
-/obj/structure/gravemarker/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, volume = 0, start_self = "You start taking down 	he [src.name].", start_others = "[user] starts taking down 	he [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/structure/gravemarker/proc/wrench_begins(datum/act/op/A)
+	return msg_text("You start taking down 	he [src.name].", "[A.actor] starts taking down 	he [src.name].")
 
-/obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
+/obj/structure/gravemarker/proc/wrench_duration(datum/act/op/A)
+	return material.hardness
+
+/obj/structure/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, null, MSG_SELF("You take down 	he [src.name]."), MSG_OTHERS("%U% takes down 	he [src.name]."))
 	dismantle(user)
 

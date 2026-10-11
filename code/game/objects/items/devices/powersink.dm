@@ -30,29 +30,26 @@ TRACKED(/obj/item/powersink, mode)
 /obj/item/powersink/proc/operating(datum/act/A)
 	return mode == 2
 
-/obj/item/powersink/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(mode == 0)
-		var/turf/T = loc
-		if(!isturf(T) || !T.is_plating())
-			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
-			return OP_OK
-		rel_set(src, nameof(attached), locate_within(T, /obj/structure/cable))
-		if(!attached())
-			to_chat(user, "No exposed cable here to attach to.")
-			return OP_OK
-		set_anchored(TRUE)
-		set_mode(1)
-		act_message(user, src, others = span_notice("%U% attaches %T% to the cable!"))
-		playsound(src, sounds_of(tool).use, 50, 1)
-		return OP_OK
-	if(mode == 2)
-		set_anchored(FALSE)
-	set_mode(0)
-	act_message(user, src, others = span_notice("%U% detaches %T% from the cable!"))
-	set_light(0)
-	playsound(src, sounds_of(tool).use, 50, 1)
+/// It is attached over an exposed cable on bare plating.
+/obj/item/powersink/proc/cable_refusal(datum/act/op/A)
+	var/turf/T = read_once(loc)
+	if(!isturf(T) || !read_once(T.is_plating()))
+		return "the device must be placed over an exposed cable to attach to it"
+	if(!read_once(locate_within(T, /obj/structure/cable)))
+		return "there is no exposed cable here to attach to"
+
+/obj/item/powersink/proc/attached_to_cable(datum/act/op/A)
+	rel_set(src, nameof(attached), locate_within(loc, /obj/structure/cable))
+	set_anchored(TRUE)
+	act_message(A.actor, src, others = span_notice("%U% attaches %T% to the cable!"))
+	playsound(src, sounds_of(A.held).use, 50, 1)
+	return OP_OK
+
+/obj/item/powersink/proc/detached_from_cable(datum/act/op/A)
+	set_anchored(FALSE)
+	act_message(A.actor, src, others = span_notice("%U% detaches %T% from the cable!"))
+	set_glow(src, GLOW(0, null, null))
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	icon_state = "powersink0"
 	return OP_OK
 
@@ -63,7 +60,11 @@ CAPABILITIES(/obj/item/powersink)
 	// Drains the attached powernet while operating.
 	every(2 SECONDS, then(PROC_REF(powersink_step)), when = PROC_REF(operating))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	// 0 loose, 1 attached to a cable, 2 draining (turned on by hand); the screwdriver attaches it and takes it off again
+	stages(nameof(mode),
+		stage_step(0, 1, tool(TOOL_SCREWDRIVER), label("Attach to the cable"), needs(req(PROC_REF(cable_refusal))), wait(0), then(PROC_REF(attached_to_cable)), key = "attach"),
+		stage_step(1, 0, tool(TOOL_SCREWDRIVER), label("Detach"), wait(0), then(PROC_REF(detached_from_cable)), key = "detach"),
+		stage_step(2, 0, tool(TOOL_SCREWDRIVER), label("Detach"), wait(0), then(PROC_REF(detached_from_cable)), key = "detach_running"))
 
 /obj/item/powersink/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
@@ -77,7 +78,7 @@ CAPABILITIES(/obj/item/powersink)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
 			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
 			set_mode(1)
-			set_light(0)
+			set_glow(src, GLOW(0, null, null))
 			icon_state = "powersink0"
 		
 	return TRUE
@@ -94,7 +95,7 @@ CAPABILITIES(/obj/item/powersink)
 	if(!PN)
 		return 1
 
-	set_light(12)
+	set_glow(src, GLOW(12, null, null))
 	power_warn(PN)
 	// found a powernet, so drain up to max power from it
 	drained = power_draw(PN, drain_rate)

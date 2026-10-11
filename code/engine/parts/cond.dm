@@ -249,6 +249,18 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /proc/req_is(key, value = TRUE, because = null, of = ON_HOLDER, id = null)
 	return part_make(/datum/entry/part/req/is, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
 
+/// req_stage(KEY, value): the key is exactly `value` (a stage of stages(), code/library/structures/stages.dm). req_is() reads TRUE and FALSE as
+/// truthiness, so req_is(state, 1) also holds at 2; a stage compares exactly, and two req_stage() of one key with different values exclude each other
+/// (op_cond_leaf_negates()), so the steps of one stage machine never clash.
+/proc/req_stage(key, value, because = /datum/msg/req_wrong_state, of = ON_HOLDER, id = null)
+	return part_make(/datum/entry/part/req/is/exact, list("key" = key, "value" = value, "because" = because, "of" = of, "id" = id))
+
+/datum/entry/part/req/is/exact
+	part_name = "req_stage"
+
+/datum/entry/part/req/is/exact/holds(datum/act/op/A)
+	return op_key_value(op_subject(A, src.args["of"]), src.args["key"]) == src.args["value"]
+
 /// The current value of a key on an entity: a var name, a stat id or a capability key id.
 /proc/op_key_value(datum/D, key)
 	if(isnull(D))

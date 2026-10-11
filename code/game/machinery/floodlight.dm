@@ -102,7 +102,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 
 		rel_take(src, nameof(cell))
 		set_on(0)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		to_chat(user, "You remove the power cell")
 		changed(src)
 		return TRUE

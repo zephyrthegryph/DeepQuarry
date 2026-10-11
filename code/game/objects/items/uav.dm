@@ -19,8 +19,6 @@
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
 	light_cone_y_offset = 5
-	light_range = 4
-	light_power = 4
 	var/power_per_process = 50 // About 6.5 minutes of use on a high-cell (10,000)
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
@@ -44,6 +42,7 @@
 	var/no_masters_time = 0
 
 CAPABILITIES(/obj/item/uav)
+	configure(light_glow(range = 4, power = 4))
 	ref_many(nameof(masters), /mob)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
 	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))

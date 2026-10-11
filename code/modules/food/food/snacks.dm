@@ -3571,10 +3571,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/suppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FFFF00"))
+
 /obj/item/reagent_containers/food/snacks/sliceable/suppermatter
-	light_range = 1.4
-	light_power = 2
-	light_color = "#FFFF00"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/suppermattershard
@@ -3585,10 +3585,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 3
 	trash = null
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/suppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FFFF00"))
+
 /obj/item/reagent_containers/food/snacks/suppermattershard
-	light_range = 1.4
-	light_power = 1.4
-	light_color = "#FFFF00"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
@@ -3603,10 +3603,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 12
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter)
+	configure(light_glow(range = 1.4, power = 2, color = "#FF0000"))
+
 /obj/item/reagent_containers/food/snacks/sliceable/excitingsuppermatter
-	light_range = 1.4
-	light_power = 2
-	light_color = "#FF0000"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
@@ -3617,10 +3617,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/sliceable/turkey)
 	bitesize = 4
 	trash = null
 
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/excitingsuppermattershard)
+	configure(light_glow(range = 1.4, power = 1.4, color = "#FF0000"))
+
 /obj/item/reagent_containers/food/snacks/excitingsuppermattershard
-	light_range = 1.4
-	light_power = 1.4
-	light_color = "#FF0000"
 	light_on = TRUE
 
 /////////////////////////////////////////////////PIZZA/////////////////////////////////////////////////
@@ -4211,12 +4211,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/hotdog)
 	filling_color = "#5dadcf"
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/frostbelle)
+	configure(light_glow(range = 1.4, power = 1, color = "#5dadcf"))
 	configure(reagents(add = list(REAGENT_ID_OXYCODONE = 1, REAGENT_ID_SIFSAP = 5, REAGENT_ID_BLISS = 5)))
 
 /obj/item/reagent_containers/food/snacks/frostbelle
-	light_range = 1.4
-	light_power = 1
-	light_color = "#5dadcf"
 	light_on = TRUE
 
 /obj/item/reagent_containers/food/snacks/bellefritter

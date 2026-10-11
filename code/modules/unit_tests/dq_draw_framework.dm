@@ -109,10 +109,10 @@ TRACKED(/obj/dq_draw_watched, shown)
 	A.set_lit(TRUE)
 	appearance_flush()
 	TEST_ASSERT_EQUAL(dq_draw_blocker_count(A), 1, "and so does every change after")
-	TEST_ASSERT(A.light_range > 0, "a lit lightpost lights")
+	TEST_ASSERT(glow_of(A).range > 0, "a lit lightpost lights")
 	A.set_lit(FALSE)
 	appearance_flush()
-	TEST_ASSERT_EQUAL(A.light_range, 0, "an unlit one does not")
+	TEST_ASSERT_EQUAL(glow_of(A).range, 0, "an unlit one does not")
 
 // ---- the mob look helpers ----
 

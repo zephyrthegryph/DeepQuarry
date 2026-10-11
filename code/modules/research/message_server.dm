@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 						play_sfx(Console, SFX_MACHINES_TWOBEEP)
 						Console.audible_message(text("[icon2html(Console,hearers(Console))] *The Requests Console beeps: 'Message from [sender]'"),,4, runemessage = "beep beep")
 					LAZYADD(Console.message_log, list(list("Message from [sender]", "[authmsg]")))
-			Console.set_light(2)
+			set_glow(Console, GLOW(2, null, null))
 
 /obj/machinery/message_server/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor

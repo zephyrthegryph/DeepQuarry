@@ -5,7 +5,6 @@
 	circuit = /obj/item/circuitboard/aifixer
 	icon_keyboard = "tech_key"
 	icon_screen = "ai-fixer"
-	light_color = LIGHT_COLOR_PINK
 
 
 	/// Variable containing transferred AI
@@ -59,6 +58,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	configure(light_glow(color = LIGHT_COLOR_PINK))
 	configure(uses_power(active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
 	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))

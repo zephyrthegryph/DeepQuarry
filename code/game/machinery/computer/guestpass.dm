@@ -8,7 +8,6 @@ TRACKED(/obj/item/card/id/guest, expired)
 	desc = "Allows temporary access to station areas."
 	icon_state = "guest"
 	initial_sprite_stack = list()
-	light_color = "#0099ff"
 
 	var/list/temp_access //to prevent agent cards stealing access as permanent
 	EXPIRY_DECLARE(expiration_time)
@@ -52,6 +51,7 @@ TRACKED(/obj/item/card/id/guest, expired)
 MSG_DEF_SELF(guest_pass/deactivation_unavailable, "this guest pass is already deactivated or no longer carried")
 
 CAPABILITIES(/obj/item/card/id/guest)
+	configure(light_glow(color = "#0099ff"))
 	without("show")
 	op("show_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HELP, I_DISARM, I_GRAB), label("Show"), then(PROC_REF(interaction_guest_pass_show)))
 	op("deactivate_pass", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), stance(I_HURT), label("Deactivate"), needs(req(PROC_REF(deactivation_allowed))),

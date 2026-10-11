@@ -328,10 +328,10 @@ TRACKED(/obj/item/stack/material/processed_alloy, hot)
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
 	var/datum/material_batch/batch = physical_batch()
 	if(batch?.temperature() > T20C + 40)
-		set_light(2, 1, "#ff7b22")
+		set_glow(src, GLOW(2, 1, "#ff7b22"))
 		set_hot(TRUE)
 	else
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		set_hot(FALSE)
 
 /// Hot stock cools through a heat link to its turf's air (PROCESSED_STOCK_COOLING_RATE of its capacity, W/K: the old 8 % of the gap per
@@ -346,7 +346,7 @@ TRACKED(/obj/item/stack/material/processed_alloy, hot)
 	var/ambient_temperature = air ? air.return_temperature() : T20C
 	if(abs(batch.temperature() - ambient_temperature) < 5)
 		batch.settle_heat(air ? turf : null)
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 		set_hot(FALSE)
 		return
 	if(air)

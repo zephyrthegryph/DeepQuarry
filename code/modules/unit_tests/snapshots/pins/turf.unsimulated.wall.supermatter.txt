@@ -52,9 +52,16 @@ ghost|none click: Click: Examine
 -click: Click: Dig
 +5 menu: Touch with
 +7 click: Click: Touch with
+human|/obj/item/shovel menu: Crawl
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Touch with
+human|/obj/item/shovel menu: Turf item
+human|/obj/item/shovel click: Click: Touch with
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
 +4 menu: Touch with
 +6 click: Click: Touch with
-keys: crawl_drag, dig_grave, graffiti, silicon_hand, supermatter_wall_ghost_examine, supermatter_wall_hand, supermatter_wall_item, supermatter_wall_robot, supermatter_wall_silicon_examine, turf_crawl, turf_item, turf_touch
+keys: crawl_drag, dig, dig_grave, graffiti, silicon_hand, supermatter_wall_ghost_examine, supermatter_wall_hand, supermatter_wall_item, supermatter_wall_robot, supermatter_wall_silicon_examine, turf_crawl, turf_item, turf_touch

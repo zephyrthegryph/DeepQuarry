@@ -4,7 +4,7 @@
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
-+2 menu: Use screwdriver
++2 menu: Use screwdriver (refused: )
 +3 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 @obj human|/obj/item/tool/wrench
