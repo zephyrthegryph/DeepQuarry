@@ -111,11 +111,15 @@ CAPABILITIES(/datum/dq_state_batch_hook_fixture)
 	var/datum/dq_state_batch_fixture/second = allocate(/datum/dq_state_batch_fixture)
 	stat_value(first, STAT_STATE_BATCH_PULSE)
 	stat_value(second, STAT_STATE_BATCH_SUM)
+	var/prior_settle_depth = GLOB.stat_settle_depth
+	var/prior_writing = GLOB.stat_writing
 	var/caught = FALSE
 	try
 		state_batch(src, PROC_REF(write_receivers), list(first, second))
 	catch(var/exception/fault)
 		caught = findtext(fault.name, "Expected batch delivery status-hook failure") > 0
+	TEST_ASSERT_EQUAL(GLOB.stat_settle_depth, prior_settle_depth, "Delivery fault leaked the real stat settle nesting depth")
+	TEST_ASSERT_EQUAL(GLOB.stat_writing, prior_writing, "Delivery fault leaked the stat publication guard")
 	TEST_ASSERT(caught, "The actual synchronous status-hook delivery fault was swallowed")
 	TEST_ASSERT_EQUAL(stat_value(first, STAT_STATE_BATCH_PULSE), 1, "First receiver's real settled contribution was lost")
 	TEST_ASSERT_EQUAL(stat_value(second, STAT_STATE_BATCH_SUM), 2, "A later live receiver lost its publication after the first delivery fault")
