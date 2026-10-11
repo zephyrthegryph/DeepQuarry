@@ -16,6 +16,16 @@ impl BuildHost {
         self.release_idle_executor();
         self.rich_generation = self.rich_generation.saturating_add(1);
         self.procedures = None;
+        // Re-creatable projections must release their backing before pruning
+        // retained dependency nodes allocates its small traversal workspace.
+        // Escaped request owners remain valid independently of these host slots.
+        self.initializer_fragments = None;
+        self.class_projections = None;
+        self.required_types = None;
+        self.link_bindings = None;
+        self.generation = None;
+        self.host_facts = None;
+        self.maps = None;
         if let Some((_, owner)) = &self.symbolic {
             eprintln!("dmbd compact symbolic procedures begin");
             let report = owner.compact_for_pressure(192 * 1024 * 1024);
@@ -38,19 +48,12 @@ impl BuildHost {
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
             eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?}");
         }
-        self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {
             eprintln!("dmbd compact initializer assembly begin");
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
             eprintln!("dmbd compact initializer assembly {report:?}");
         }
-        self.class_projections = None;
-        self.required_types = None;
-        self.link_bindings = None;
-        self.generation = None;
-        self.host_facts = None;
         // Payload-free resource/demand proofs remain with the semantic owner.
-        self.maps = None;
         if self.memo.is_some() {
             self.memo = Some(Default::default());
         }
