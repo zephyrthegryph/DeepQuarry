@@ -410,7 +410,8 @@ impl Request<'_> {
                             inputs: owner.inputs,
                             values: owner.produced,
                         },
-                    );
+                    )
+                    .is_some();
                 }
                 leases
                     .values
