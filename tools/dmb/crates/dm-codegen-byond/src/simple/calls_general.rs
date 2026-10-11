@@ -18,7 +18,12 @@ impl Compiler<'_> {
             let [arg] = args else {
                 return Err(error(statement, "nameof() requires one reference"));
             };
-            self.admit_nameof_reference(arg, statement)?;
+            if let Err(failure) = self.admit_nameof_reference(arg, statement) {
+                if failure.kind == LowerErrorKind::SourceError && self.nameof_return_context {
+                    self.nameof_return_recovery = Some(nameof_diagnostic_recovery(arg));
+                }
+                return Err(failure);
+            }
             let leaf = nameof_reference(arg).ok_or_else(|| {
                 error(
                     statement,

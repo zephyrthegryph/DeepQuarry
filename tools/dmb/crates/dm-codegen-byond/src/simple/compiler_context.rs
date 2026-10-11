@@ -17,6 +17,8 @@ pub(super) fn compiler_context<'a>(
         statement_mask: None,
         discarded_call_root: None,
         resolver_failure: std::cell::RefCell::new(None),
+        nameof_return_context: false,
+        nameof_return_recovery: None,
         locals: Vec::new(),
         local_slots: dm_syntax::ScopeMap::default(),
         local_declarations: HashMap::new(),

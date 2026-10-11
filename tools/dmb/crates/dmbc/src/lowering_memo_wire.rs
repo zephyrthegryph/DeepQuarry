@@ -12,7 +12,9 @@ const EXECUTABLE_SCHEMA: u32 = 0x0206_001e;
 // Prior failure frames can contain selector-only wording under the same key.
 // Relative dot-formals additionally admit exact global-only formal proofs.
 // Old method-only negative frames must not bypass that current lookup.
-const FAILURE_SCHEMA: u32 = 0x0206_0022;
+// Ordinary return-nameof failures also retain their typed recovery sequence;
+// old primary-only failures must not replay under an unchanged procedure key.
+const FAILURE_SCHEMA: u32 = 0x0206_0023;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
 #[path = "lowering_memo_read_wire.rs"]

@@ -625,9 +625,9 @@ fn compile_with_lookup_mode(
         }
     };
     if let Some(error) = compiler.resolver_failure.take() {
-        return Err(vec![error.at(compiler.statement_span)]);
+        return Err(compiler.nameof_return_errors(error));
     }
-    lowered.map_err(|error| vec![error.at(compiler.statement_span)])?;
+    lowered.map_err(|error| compiler.nameof_return_errors(error))?;
     if compiler.debug_current.is_none() {
         compiler.debug_current = compiler.debug_last;
     }
@@ -888,6 +888,9 @@ struct Compiler<'a> {
     // Some legacy syntax fallbacks catch LowerError. Semantic query failures
     // survive those fallbacks and prevent any successful lowered result.
     resolver_failure: std::cell::RefCell<Option<LowerError>>,
+    // Issued by nameof admission and the enclosing parsed return statement.
+    nameof_return_context: bool,
+    nameof_return_recovery: Option<NameofDiagnosticRecovery>,
     locals: Vec<String>,
     local_slots: dm_syntax::ScopeMap<u32>,
     local_declarations: HashMap<u32, LowerSpan>,

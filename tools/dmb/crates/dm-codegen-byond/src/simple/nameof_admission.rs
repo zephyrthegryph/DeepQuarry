@@ -28,6 +28,32 @@ pub fn nameof_diagnostic_recovery(expression: &Expr) -> NameofDiagnosticRecovery
     }
 }
 impl Compiler<'_> {
+    /// Recovery is attached only to an actual source rejection in a parsed
+    /// return expression. Opaque semantic failures never gain diagnostics.
+    pub(super) fn nameof_return_errors(&mut self, failure: LowerError) -> Vec<LowerError> {
+        let primary = failure.at(self.statement_span);
+        let mut errors = vec![primary.clone()];
+        if primary.kind != LowerErrorKind::SourceError {
+            return errors;
+        }
+        let Some(recovery) = self.nameof_return_recovery.take() else {
+            return errors;
+        };
+        if recovery == NameofDiagnosticRecovery::ReferenceRejected {
+            errors.push(LowerError {
+                reason: "nameof: requires a var, proc reference, or type path".into(),
+                related: Vec::new(),
+                ..primary.clone()
+            });
+        }
+        errors.push(LowerError {
+            reason: "return: missing expression".into(),
+            related: Vec::new(),
+            ..primary
+        });
+        errors
+    }
+
     fn admit_nameof_lexical_type(
         &self,
         meaning: &dm_ir::SelectedMeaning,
@@ -287,6 +313,34 @@ mod tests {
                 matches!(query, dm_ir::ResolveQuery::ProcedureValue { owner, .. } if *owner == SymbolId::of("/"))).count();
             assert_eq!(global_reads, usize::from(mode == 0 || mode == 3));
         }
+        let source =
+            "// shifted current source\n\n/proc/probe()\n    return nameof(.proc/callback)\n";
+        let ast = dm_syntax::parse(source);
+        let inputs = crate::ProcedureInputs::default();
+        let compile = |mode| {
+            crate::compile_simple_proc_with_resolver(
+                &ast.items[0].children,
+                &inputs,
+                &symbols,
+                &RelativeHost(mode, Default::default()),
+            )
+        };
+        let errors = compile(3).err().expect("both namespaces are absent");
+        assert_eq!(errors.len(), 3);
+        assert_eq!(errors[0].reason, ".proc/callback: undefined type path");
+        assert_eq!(
+            errors[1].reason,
+            "nameof: requires a var, proc reference, or type path"
+        );
+        assert_eq!(errors[2].reason, "return: missing expression");
+        for error in &errors {
+            assert_eq!(error.kind, LowerErrorKind::SourceError);
+            assert_eq!(error.span, errors[0].span);
+            assert!(error.span.unwrap().start >= source.find("return nameof").unwrap());
+        }
+        let opaque = compile(2).err().expect("unissued method namespace");
+        assert_eq!(opaque.len(), 1);
+        assert_eq!(opaque[0].kind, LowerErrorKind::UnsupportedModel);
     }
     #[test]
     fn nameof_recovery_category_uses_reference_role_not_error_text() {

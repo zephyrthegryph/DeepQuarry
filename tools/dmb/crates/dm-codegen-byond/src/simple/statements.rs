@@ -361,7 +361,10 @@ impl Compiler<'_> {
             return Ok(());
         }
         if let Some(rest) = text.strip_prefix("return ") {
-            self.expression_text(rest, text)?;
+            let previous = std::mem::replace(&mut self.nameof_return_context, true);
+            let lowered = self.expression_text(rest, text);
+            self.nameof_return_context = previous;
+            lowered?;
             self.emit(opcode::RET, vec![]);
             return Ok(());
         }

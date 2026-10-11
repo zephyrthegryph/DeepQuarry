@@ -75,7 +75,10 @@ impl Compiler<'_> {
                 }
                 StatementKind::Return(None) => self.emit(opcode::END, vec![]),
                 StatementKind::Return(Some(value)) => {
-                    self.expression(value, &statement.raw_header)?;
+                    let previous = std::mem::replace(&mut self.nameof_return_context, true);
+                    let lowered = self.expression(value, &statement.raw_header);
+                    self.nameof_return_context = previous;
+                    lowered?;
                     self.emit(opcode::RET, vec![]);
                 }
                 StatementKind::Throw(value) => {
