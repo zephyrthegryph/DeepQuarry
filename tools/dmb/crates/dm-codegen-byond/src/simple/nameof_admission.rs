@@ -18,7 +18,10 @@ impl Compiler<'_> {
                     if reflective_type_role(path) == ReflectiveTypeRole::BuiltinListValue {
                         return Err(LowerError {
                             kind: LowerErrorKind::SourceError,
-                            ..error(statement, "nameof: requires a var, proc reference, or type path"),
+                            ..error(
+                                statement,
+                                "nameof: requires a var, proc reference, or type path",
+                            )
                         });
                     }
                     return self.source_feature_reference(expression, true, statement);
