@@ -40,3 +40,5 @@ also require their actual publication contract; administrative edits already
 invalidate through the existing edit dispatcher.
 
 Before the later compiler retirement, this landing also records real old-consent ordering and folder/closet admission boundaries. These tests run against unchanged consent and custom-slot production policies; no passing result is claimed until the combined focused gate completes.
+
+Additional old-code boundaries capture real wield state, drake/horse shapes, saddlebag and Avida query effects, and twelve offline named-owner denials. They do not claim authenticated positive identity coverage. Production remains unchanged for these remaining semantic tables until their old-code gate is green.
