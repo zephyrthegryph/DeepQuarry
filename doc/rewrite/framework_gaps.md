@@ -683,3 +683,10 @@ commented-out auto-light in `/atom/Initialize()` is not needed for them (a flash
 Open gap found doing it: `owns_one(nameof(v), /datum/gas_mixture, starts = /datum/gas_mixture)` (algae farm, bomb tester, compressor) and the
 camera's `starts = /obj/item/camera_assembly` leave the holder undeletable in the i7 harness, or make the assembly late for the camera's own
 init, so those four keep their `rel_set()` in `Initialize()` until the starts= path handles a gas mixture and a part the type's init reads.
+
+**Placed children and neighbours (ratchet-fw).** `spawns_many(nameof(list), type, at = offsets | PROC_REF, back = nameof(child var), each = PROC_REF, only_if = nameof(var))`
+builds one child per `list(dx, dy, extra...)` offset in the capability init, owned through the holder's `owns_many` list (the fusion field's
+particle catchers). `finds(nameof(var), type, near = NEAR_CARDINAL | NEAR_AROUND, back = nameof(...))` links the first adjacent `type` when the
+instance's init is complete (the teleporter station's hub). Both in `code/library/lifeforms/placement.dm`. Found while converting the field:
+`derives()` recomputes inside `param_write()` from `/atom/New()`, before the lifeform plan has run, and fails ("bad index"); the field uses
+`param(apply =)` for its id tag instead.

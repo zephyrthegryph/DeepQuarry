@@ -210,10 +210,10 @@ CAPABILITIES(/obj/machinery/teleport/hub)
 	circuit = /obj/item/circuitboard/teleporter_station
 	var/obj/machinery/teleport/hub/com
 
-// ALLOW(init/INSTANCE_STATE): takes the parts it was built with and draws its wiring
-/obj/machinery/teleport/station/Initialize(mapload)
-	. = ..()
-	default_apply_parts()
+// A station takes the parts it was built with, and links the hub beside it (the console links both again when it is the one built last).
+CAPABILITIES(/obj/machinery/teleport/station)
+	default_parts()
+	finds(nameof(com), /obj/machinery/teleport/hub, near = NEAR_CARDINAL)
 
 // the teleporter console forgets its station.
 

@@ -42,85 +42,44 @@
 	var/light_max_range = 5
 	var/light_max_power = 5
 
-	var/last_range
-	var/last_power
+	// lit at its minimum from the start (static light vars, applied when it materializes)
+	light_range = 2
+	light_power = 3
+	light_on = TRUE
+	var/last_range = 2
+	var/last_power = 3
 
 // The core owns its field (fusion_core/Startup()); the field names its core back and owns the catchers that take particles into it.
 CAPABILITIES(/obj/effect/fusion_em_field)
 	owns_many(nameof(particle_catchers))
 	ref_one(nameof(owned_core), /obj/machinery/power/fusion_core)
-	param(nameof(owned_core), pos = 1)
+	param(nameof(owned_core), pos = 1, apply = PROC_REF(core_given))
+	keeps_if(PROC_REF(has_core))
+	// the gimmicky things that handle field collisions, laid out around the core
+	spawns_many(nameof(particle_catchers), /obj/effect/fusion_particle_catcher, at = PROC_REF(catcher_layout), back = nameof(/obj/effect/fusion_particle_catcher::parent), each = PROC_REF(catcher_placed), only_if = nameof(owned_core))
 
-// ALLOW(init/INSTANCE_STATE): a field lights up and lays out its particle catchers around its core
-/obj/effect/fusion_em_field/Initialize(mapload)
-	. = ..()
+/// The catchers around the core (spawns_many()): list(dx, dy, size).
+TYPE_TABLE_DECLARE(/obj/effect/fusion_em_field, fusion_catcher_layout, list(
+	list(0, 0, 1),
+	list(-1, 0, 3), list(1, 0, 3), list(0, 1, 3), list(0, -1, 3),
+	list(-2, 0, 5), list(2, 0, 5), list(0, 2, 5), list(0, -2, 5),
+	list(-3, 0, 7), list(3, 0, 7), list(0, 3, 7), list(0, -3, 7)))
 
-	set_light(light_min_range,light_min_power)
-	last_range = light_min_range
-	last_power = light_min_power
+/// The layout table (spawns_many(at =)).
+/obj/effect/fusion_em_field/proc/catcher_layout()
+	return TYPE_TABLE_GET(src, fusion_catcher_layout)
 
-	if(!owned_core)
-		return INITIALIZE_HINT_QDEL
-	id_tag = owned_core.id_tag
-	//create the gimmicky things to handle field collisions
-	var/obj/effect/fusion_particle_catcher/catcher
+/// A catcher laid out around the core takes its size from its offset (spawns_many(each =)).
+/obj/effect/fusion_em_field/proc/catcher_placed(obj/effect/fusion_particle_catcher/catcher, list/offset)
+	catcher.SetSize(offset[3])
 
-	catcher = new (locate(src.x,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(1)
-	rel_add(src, nameof(particle_catchers), catcher)
+/// A field lives on its core (keeps_if()): a condition.
+/obj/effect/fusion_em_field/proc/has_core()
+	return !!owned_core
 
-	catcher = new (locate(src.x-1,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x+1,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+1,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-1,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(3)
-	rel_add(src, nameof(particle_catchers), catcher)
-
-	catcher = new (locate(src.x-2,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x+2,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+2,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-2,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(5)
-	rel_add(src, nameof(particle_catchers), catcher)
-
-	catcher = new (locate(src.x-3,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	rel_add(src, nameof(particle_catchers), catcher)
-
-	catcher = new (locate(src.x+3,src.y,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y+3,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	rel_add(src, nameof(particle_catchers), catcher)
-	catcher = new (locate(src.x,src.y-3,src.z))
-	rel_set(catcher, nameof(catcher.parent), src)
-	catcher.SetSize(7)
-	rel_add(src, nameof(particle_catchers), catcher)
+/// The field answers to its core's id tag (param(apply =): its constructor's core).
+/obj/effect/fusion_em_field/proc/core_given(obj/machinery/power/fusion_core/core)
+	id_tag = core?.id_tag
 
 /// The field's reaction (its core's step runs it): it takes fuel gas from the room, reacts, pays its heat to the grid (FUSION_ENERGY_PER_K W
 /// per K), loses 1% of its heat to radiation, checks its stability and radiates.

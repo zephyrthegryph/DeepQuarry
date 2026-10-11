@@ -96,3 +96,9 @@
 #define INPUT_DRAG_OVER "drag_over"
 /// What a click_on()/drag_onto() handler returns to let the type's own native Click()/MouseDrop() (its parent's) run after it.
 #define INPUT_FALLTHROUGH "\[input:fallthrough]"
+
+// ---- finds(near =) ----
+/// The four cardinal neighbour turfs, in GLOB.cardinal order.
+#define NEAR_CARDINAL "cardinal"
+/// The eight turfs around.
+#define NEAR_AROUND "around"
