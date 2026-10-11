@@ -1,10 +1,10 @@
 //! Generic exact observations shared by authored and resolved semantic queries.
 //! Ordering is canonical by query; absent answers are ordinary recorded values.
+mod certificate_delta;
+mod input_delta;
 mod receipt;
 mod receipt_admission;
 mod receipt_pool;
-mod input_delta;
-mod certificate_delta;
 pub use certificate_delta::{CertificateDelta, CertificateState};
 pub use input_delta::{DependencyCoverage, InputDelta};
 pub use receipt::{Receipt, ReceiptIter, ReceiptStorageView};
@@ -196,6 +196,10 @@ mod tests {
 /// Immutable current host for either authored or resolved observations.
 pub trait ObservationHost<Q, A: Eq, D> {
     fn answer(&self, query: &Q) -> A;
+    /// Opaque hosts conservatively require ordinary observed replay.
+    fn observes_answers(&self) -> bool {
+        true
+    }
     fn version(&self, _domain: &D) -> Option<u128> {
         None
     }
@@ -206,6 +210,9 @@ pub trait ObservationHost<Q, A: Eq, D> {
 impl<R: dm_ir::Resolver>
     ObservationHost<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain> for R
 {
+    fn observes_answers(&self) -> bool {
+        self.observes_reads()
+    }
     fn answer(&self, query: &dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
         self.resolve(*query)
     }

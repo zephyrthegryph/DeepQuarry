@@ -167,6 +167,7 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
         let key = stored_key.clone().unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
             let incidence_reads = state.incidence.as_ref().map(|_| receipt.reads.clone());
+            let incidence_versions = Arc::clone(&receipt.versions);
             let bucket = state
                 .buckets
                 .entry(hash)
@@ -179,7 +180,7 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 weight: receipt.weight,
             });
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(pointer as u64, hash, &reads);
+                index.insert(pointer as u64, hash, &reads, &incidence_versions);
             }
             state.bytes = state.bytes.saturating_add(receipt.weight);
         }
@@ -212,6 +213,18 @@ impl<Q, A: Eq, D, R: ObservationHost<Q, A, D>> ObservationHost<Q, A, D> for Exac
 impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
     ObservedArtifactLease<T, Q, A, D>
 {
+    /// Current local-input acceptance and observer delivery precede a pending
+    /// claim. The strong request-bound capability already proves all read values.
+    pub fn claim_unchanged<H>(
+        &self,
+        candidate: UnchangedCandidate<'_, '_, T, Q, A, D, H>,
+        key: &[u8],
+        locally_current: impl FnOnce(&Arc<T>) -> bool,
+        observed: impl FnMut(&Arc<[Observation<Q, A, D>]>),
+    ) -> Option<Arc<T>> {
+        let accepted = candidate.admit(key, locally_current, observed)?;
+        self.claim(key, accepted)
+    }
     pub fn visit_explained<R: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
@@ -309,6 +322,18 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
+        self.insert_with_qualified_receipt(key, reads, Arc::from([]), weight, create)
+    }
+    /// Versions must be qualified for the actual immutable answer provider.
+    /// Ordinary cross-host visit_explained still replays exact answers.
+    pub fn insert_with_qualified_receipt(
+        &self,
+        key: Arc<[u8]>,
+        reads: crate::Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self
             .store
@@ -320,12 +345,13 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .get(&hash)
             .into_iter()
             .flatten()
-            .find(|entry| entry.key == key && entry.reads == reads)
+            .find(|entry| entry.key == key && entry.reads == reads && entry.versions == versions)
             .map(|entry| (Arc::clone(&entry.value), Arc::clone(&entry.key)));
         if existing.is_none() && !self.permits_charge(state.bytes, weight) {
             return None;
         }
         let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
+        let incidence_versions = Arc::clone(&versions);
         let bucket = state
             .buckets
             .entry(hash)
@@ -337,12 +363,17 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads,
-                versions: Arc::from([]),
+                versions,
                 value: Arc::clone(&value),
                 weight,
             });
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
+                index.insert(
+                    Arc::as_ptr(&value) as usize as u64,
+                    hash,
+                    &reads,
+                    &incidence_versions,
+                );
             }
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)

@@ -94,7 +94,8 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
                     .visit_receipted_with_value(
                         &locator(identity(), b"qualified"),
                         &mut |reads, versions, candidate| {
-                            assert!(versions.is_empty());
+                            assert_eq!(versions, candidate.versions.as_ref());
+                            assert_eq!(versions.as_ptr(), candidate.versions.as_ptr());
                             validate_published_record(
                                 reads,
                                 candidate,

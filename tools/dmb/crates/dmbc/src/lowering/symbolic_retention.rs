@@ -74,6 +74,20 @@ impl SessionSymbolicMemo {
         if let Some(owner) = &self.publication {
             census.arc_object("session_symbolic.observed_owner", owner);
             census.arc_object("session_symbolic.observed_core", &owner.values);
+            owner.values.visit_incidence_storage(|leaf| {
+                census.slice("session_symbolic.incidence_reads", leaf, true);
+            });
+            owner
+                .values
+                .visit_incidence_buffer(|address, payload, capacity| {
+                    census.exposed_buffer(
+                        "session_symbolic.incidence_buffers",
+                        address,
+                        payload,
+                        capacity,
+                    );
+                });
+            census.unknown("session_symbolic.incidence", "private certificate subscription, uncovered variant and leaf subscriber BTree nodes are not exposed");
             owner.values.visit_storage(|view| match view {
                 dm_session::ArtifactStorageView::Bucket {
                     address,

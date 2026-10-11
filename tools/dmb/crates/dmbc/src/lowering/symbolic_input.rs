@@ -396,9 +396,9 @@ impl SessionSymbolicMemo {
                             ),
                             &mut |reads, _, record| {
                                 // The private publication producer stages a clone
-                                // of this SAME record.reads owner. Lease versions
-                                // stay empty; qualified producer versions remain
-                                // on the actual immutable candidate record.
+                                // of this SAME record.reads owner and qualified
+                                // record.versions owner. Ordinary cross-host
+                                // lease lookup still requires exact replay.
                                 validate_published_record(
                                     reads,
                                     record,

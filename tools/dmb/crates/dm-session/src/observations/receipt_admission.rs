@@ -20,6 +20,9 @@ pub struct ReceiptAdmission<'host, Q, A, D, H> {
 impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
 {
+    pub fn allows_certificate_reuse(&self) -> bool {
+        !self.host.observes_answers()
+    }
     pub fn new(host: &'host H) -> Self {
         Self {
             host,

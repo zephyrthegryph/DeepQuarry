@@ -16,6 +16,8 @@ pub(super) struct Incidence<Q, A, D> {
     leaves: BTreeMap<LeafId, Leaf<Q, A, D>>,
     variants: BTreeMap<u64, (u128, BTreeSet<LeafId>)>,
     domains: Vec<(D, BTreeSet<LeafId>)>,
+    certificates: Vec<(D, u128, BTreeSet<u64>)>,
+    uncovered: BTreeSet<u64>,
 }
 impl<Q, A, D> Default for Incidence<Q, A, D> {
     fn default() -> Self {
@@ -23,6 +25,8 @@ impl<Q, A, D> Default for Incidence<Q, A, D> {
             leaves: BTreeMap::new(),
             variants: BTreeMap::new(),
             domains: Vec::new(),
+            certificates: Vec::new(),
+            uncovered: BTreeSet::new(),
         }
     }
 }
@@ -40,6 +44,14 @@ impl<Q, A, D> Incidence<Q, A, D> {
             self.domains.capacity() * size,
         )
     }
+    pub(super) fn certificate_buffer(&self) -> (usize, usize, usize) {
+        let size = std::mem::size_of::<(D, u128, BTreeSet<u64>)>();
+        (
+            self.certificates.as_ptr() as usize,
+            self.certificates.len() * size,
+            self.certificates.capacity() * size,
+        )
+    }
     pub(super) fn counts(&self) -> (usize, usize, usize, usize) {
         (
             self.leaves.len(),
@@ -52,6 +64,11 @@ impl<Q, A, D> Incidence<Q, A, D> {
         )
     }
     pub(super) fn remove(&mut self, variant: u64) {
+        self.uncovered.remove(&variant);
+        self.certificates.retain_mut(|(_, _, members)| {
+            members.remove(&variant);
+            !members.is_empty()
+        });
         let Some((_, ids)) = self.variants.remove(&variant) else {
             return;
         };
@@ -70,7 +87,13 @@ impl<Q, A, D> Incidence<Q, A, D> {
     }
 }
 impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
-    pub(super) fn insert(&mut self, variant: u64, bucket: u128, receipt: &Receipt<Q, A, D>) {
+    pub(super) fn insert(
+        &mut self,
+        variant: u64,
+        bucket: u128,
+        receipt: &Receipt<Q, A, D>,
+        versions: &[(D, u128)],
+    ) {
         self.remove(variant);
         let mut ids = BTreeSet::new();
         receipt.visit_storage(|view| {
@@ -110,6 +133,59 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             leaf.subscribers.insert(variant);
         });
         self.variants.insert(variant, (bucket, ids));
+        let domains: BTreeSet<_> = receipt.iter().map(|read| read.domain.clone()).collect();
+        for domain in domains {
+            let mut supplied = versions
+                .iter()
+                .filter(|(d, _)| d == &domain)
+                .map(|(_, v)| *v);
+            let Some(version) = supplied.next() else {
+                self.uncovered.insert(variant);
+                continue;
+            };
+            if supplied.any(|other| other != version) {
+                self.uncovered.insert(variant);
+                continue;
+            }
+            match self
+                .certificates
+                .binary_search_by(|(d, v, _)| (d, *v).cmp(&(&domain, version)))
+            {
+                Ok(position) => {
+                    self.certificates[position].2.insert(variant);
+                }
+                Err(position) => self
+                    .certificates
+                    .insert(position, (domain, version, BTreeSet::from([variant]))),
+            }
+        }
+    }
+    pub(super) fn certificate_domains(&self) -> Vec<D> {
+        self.certificates
+            .iter()
+            .map(|(domain, _, _)| domain.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
+    // Current versions are supplied by the existing immutable request admission.
+    pub(super) fn certified(&self, current: &[(D, Option<u128>)]) -> BTreeSet<u64> {
+        let mut rejected = self.uncovered.clone();
+        for (domain, version, members) in &self.certificates {
+            if current
+                .iter()
+                .find(|(d, _)| d == domain)
+                .and_then(|(_, v)| *v)
+                != Some(*version)
+            {
+                rejected.extend(members);
+            }
+        }
+        self.variants
+            .keys()
+            .filter(|id| !rejected.contains(id))
+            .copied()
+            .collect()
     }
     /// Route live variants into their existing store buckets. Hashes locate only;
     /// callers still check live allocation identity and perform exact admission.

@@ -10,7 +10,11 @@ use std::{
     collections::BTreeMap,
     sync::{Arc, Mutex},
 };
+mod certified;
+#[cfg(test)]
+mod certified_tests;
 mod incidence;
+pub use certified::UnchangedCandidate;
 #[cfg(test)]
 mod incidence_tests;
 mod leased;
@@ -155,6 +159,8 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         if let Some(index) = &state.incidence {
             let (address, len, capacity) = index.domain_buffer();
             visit(address, len, capacity);
+            let (address, len, capacity) = index.certificate_buffer();
+            visit(address, len, capacity);
         }
     }
     pub fn with_limit(limit: usize) -> Self {
@@ -247,6 +253,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     Arc::as_ptr(&entry.value) as usize as u64,
                     hash,
                     &entry.reads,
+                    &entry.versions,
                 );
             }
         }
@@ -443,6 +450,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
+        let incidence_versions = Arc::clone(&versions);
         // Resident storage evicts before admitting a new value. Results are
         // independently published; an oversized value needs no resident copy.
         if let Retention::RetainedCurrentRevision = self.retention {
@@ -483,7 +491,12 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 });
             state.bytes += weight;
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
+                index.insert(
+                    Arc::as_ptr(&value) as usize as u64,
+                    hash,
+                    &reads,
+                    &incidence_versions,
+                );
             }
             return Some(value);
         }
@@ -530,6 +543,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                         Arc::as_ptr(&value) as usize as u64,
                         hash,
                         incidence_reads.as_ref().unwrap(),
+                        &incidence_versions,
                     );
                 }
                 state.bytes = state.bytes - removed_weight + weight;
@@ -546,7 +560,12 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         });
         state.bytes += weight;
         if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-            index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
+            index.insert(
+                Arc::as_ptr(&value) as usize as u64,
+                hash,
+                &reads,
+                &incidence_versions,
+            );
         }
         Some(value)
     }

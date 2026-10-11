@@ -17,8 +17,10 @@ pub(super) struct Owner {
 }
 impl Default for Owner {
     fn default() -> Self {
+        let values = Store::shared_current_rosters();
+        values.enable_incidence();
         Self {
-            values: Store::shared_current_rosters(),
+            values,
             publication: Arc::new(Default::default()),
         }
     }
@@ -83,13 +85,18 @@ impl SessionSymbolicMemo {
         if let Some(attempt) = &self.attempt {
             let key = locator(identity, &record.key);
             let reads = record.reads.clone();
+            let versions = Arc::clone(&record.versions);
             // Current-roster symbolic retention has no byte admission policy;
             // actual payload ownership remains reported by the explicit census.
             attempt
                 .with_pending(|leases| {
-                    leases
-                        .records
-                        .insert_with_receipt(key.into(), reads, 1, || record)
+                    leases.records.insert_with_qualified_receipt(
+                        key.into(),
+                        reads,
+                        versions,
+                        1,
+                        || record,
+                    )
                 })
                 .flatten()
                 .is_some()
