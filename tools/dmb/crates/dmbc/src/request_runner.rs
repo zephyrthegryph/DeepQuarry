@@ -409,6 +409,13 @@ fn run_build_attempt(
             .as_ref()
             .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
     )?;
+    // One-shot compilation uses the same named declaration receipt issuer as
+    // retained sessions. This owner lasts for this request only: disabling
+    // caches must not change which semantic answers the compiler can prove.
+    let mut request_semantic = dm_tree::frontend::RetainedSemanticTree::default();
+    let semantic_state = semantic_state
+        .as_deref_mut()
+        .unwrap_or(&mut request_semantic);
     let execution_result = execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     dmbc::daemon::control::checkpoint()?;
     let input_preparation_seconds;
@@ -462,7 +469,7 @@ fn run_build_attempt(
                 .as_ref()
                 .map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             executor,
-            semantic_state.as_deref_mut(),
+            Some(&mut *semantic_state),
         )
     };
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
@@ -482,17 +489,17 @@ fn run_build_attempt(
     query_attempt.capture(&frontend);
     if command == BuildCommand::Compile {
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
-        frontend_report.capture_metadata(semantic_state.as_deref());
+        frontend_report.capture_metadata(Some(&*semantic_state));
         let retained_engine = engine_capture
             .as_ref()
             .ok_or("compile requires captured engine")?;
         let bytes = &retained_engine.bytes;
         let engine = &retained_engine.snapshot;
-        crate::runner_retained_census::emit_frontend(&frontend, semantic_state.as_deref(),
+        crate::runner_retained_census::emit_frontend(&frontend, Some(&*semantic_state),
             frontend_memo.as_ref().map(|memo| memo as &dyn dm_preprocess::regions::ExpansionMemo),
             prepared_sources.as_deref(),
         )?;
-        crate::runner_retained_census::emit(semantic_state.as_deref())?;
+        crate::runner_retained_census::emit(Some(&*semantic_state))?;
         if progress_enabled {
             dmbc::daemon_eprintln!(
                 "native captured facts started: {} types, {} members, {} bodies",
