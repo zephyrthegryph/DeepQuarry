@@ -120,6 +120,8 @@
 	if(length(args) > 1 && lifeform_new_args(src, args))
 		init_args = args.Copy()
 		init_args.Cut(2, 3) // the make() record is not an Initialize() argument
+	if(ismob(src))
+		profiles_build(src) // its profile records exist before its init writes them (code/engine/declare/profiles.dm)
 	var/do_initialize = SSatoms.atom_initialized
 	if(do_initialize != INITIALIZATION_INSSATOMS)
 		init_args[1] = do_initialize == INITIALIZATION_INNEW_MAPLOAD

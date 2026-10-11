@@ -41,6 +41,10 @@
 
 #define TRACKED(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; tracked_changed(src, #V); return TRUE };SETTER(T, V)
 
+/// A field of a profile record (/datum/record, code/engine/declare/profiles.dm) that something draws or reacts to: its setter
+/// publishes the field on the record and on the record's holder, so the holder's draw and on_change() follow it.
+#define TRACKED_DATA(T, V) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; record_changed(src, #V); return TRUE };SETTER(T, V)
+
 /**
  * BRIDGE (removed with S4): TRACKED() that also raises the OM channel CHANNEL, for a var an OM stage `wake_on` or an
  * om_watch() still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else

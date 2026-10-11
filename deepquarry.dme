@@ -5671,6 +5671,7 @@
 #include "code\modules\combat_ai\ports\three_phases.dm"
 #include "code\modules\combat_ai\ports\ysbryd.dm"
 #include "code\engine\declare\entries.dm"
+#include "code\engine\declare\profiles.dm"
 #include "code\engine\declare\capability_def.dm"
 #include "code\engine\declare\table.dm"
 #include "code\engine\declare\activation.dm"
