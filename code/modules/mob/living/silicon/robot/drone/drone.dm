@@ -139,7 +139,7 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	..()
 	if(!module)
 		rel_set(src, nameof(module), new module_type(src))
-	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
+	bio.flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
 /mob/living/silicon/robot/drone/Login()
@@ -404,9 +404,9 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 
 /mob/living/silicon/robot/drone/construction/setup_module()
 	..()
-	flavor_text = "It's a bulky construction drone stamped with a Sol Central glyph."
+	bio.flavor_text = "It's a bulky construction drone stamped with a Sol Central glyph."
 
 /mob/living/silicon/robot/drone/mining/setup_module()
 	..()
-	flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
+	bio.flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
 

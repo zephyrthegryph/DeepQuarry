@@ -9,7 +9,7 @@
 	maximum_value_length = MAX_RECORD_LENGTH
 
 /datum/preference/text/human/med_record/apply_to_human(mob/living/carbon/human/target, value)
-	target.med_record = value
+	target.bio.med_record = value
 
 /datum/preference/text/human/sec_record
 	savefile_key = "sec_record"
@@ -19,7 +19,7 @@
 	maximum_value_length = MAX_RECORD_LENGTH
 
 /datum/preference/text/human/sec_record/apply_to_human(mob/living/carbon/human/target, value)
-	target.sec_record = value
+	target.bio.sec_record = value
 
 /datum/preference/text/human/gen_record
 	savefile_key = "gen_record"
@@ -29,7 +29,7 @@
 	maximum_value_length = MAX_RECORD_LENGTH
 
 /datum/preference/text/human/gen_record/apply_to_human(mob/living/carbon/human/target, value)
-	target.gen_record = value
+	target.bio.gen_record = value
 
 // /datum/category_item/player_setup_item/general/records was the Bay-prefs UI
 // wrapper for the three record prefs above. New auto-renderer handles them through the

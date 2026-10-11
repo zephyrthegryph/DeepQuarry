@@ -136,8 +136,8 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					ooc_notes += "\n\nMAYBES\n\n[H.identity().ooc_notes_maybes]"
 				if(H.identity().ooc_notes_dislikes)
 					ooc_notes += "\n\nDISLIKES\n\n[H.identity().ooc_notes_dislikes]"
-			if(LAZYLEN(H.flavor_texts))
-				flavor_text = H.flavor_texts["general"]
+			if(LAZYLEN(H.bio.flavor_texts))
+				flavor_text = H.bio.flavor_texts["general"]
 			if(H.custom_link)
 				custom_link = H.custom_link
 
@@ -189,7 +189,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 				if(R.identity().ooc_notes_dislikes)
 					ooc_notes += "\n\nDISLIKES\n\n[R.identity().ooc_notes_dislikes]"
 
-			flavor_text = R.flavor_text
+			flavor_text = R.bio.flavor_text
 
 		if(ispAI(C.mob))
 			var/mob/living/silicon/pai/P = C.mob
@@ -212,7 +212,7 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 					ooc_notes += "\n\nMAYBES\n\n[P.identity().ooc_notes_maybes]"
 				if(P.identity().ooc_notes_dislikes)
 					ooc_notes += "\n\nDISLIKES\n\n[P.identity().ooc_notes_dislikes]"
-			flavor_text = P.flavor_text
+			flavor_text = P.bio.flavor_text
 
 		if(isanimal(C.mob))
 			var/mob/living/simple_mob/S = C.mob

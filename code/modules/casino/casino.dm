@@ -707,7 +707,7 @@ TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 				var/obj/item/clothing/accessory/collar/casinosentientprize/C = new(src.loc)
 				C.sentientprizename = "[user.name]"
 				C.sentientprizeckey = "[user.ckey]"
-				C.sentientprizeflavor = user.flavor_text
+				C.sentientprizeflavor = user.bio.flavor_text
 				C.sentientprizeooc = user.identity().ooc_notes
 				C.sentientprizeitemtf = allowitemtf
 				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"

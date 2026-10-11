@@ -3240,6 +3240,7 @@
 #include "code\modules\mob\mob.dm"
 #include "code\modules\mob\mob_chunks.dm"
 #include "code\modules\mob\mob_defines.dm"
+#include "code\modules\mob\profile_records.dm"
 #include "code\modules\mob\mob_state.dm"
 #include "code\modules\mob\mutations.dm"
 #include "code\modules\mob\mob_grab.dm"

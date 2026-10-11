@@ -171,7 +171,7 @@
 	var/obj/item/clothing/accessory/permit/nanotech/permit = new()
 	permit.set_name(H.real_name)
 
-	if(H.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
+	if(H.bio.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
 		H.equip_to_slot_or_del(permit, SLOT_ID_HAND_L)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_HAND_R)
 	else

@@ -55,7 +55,7 @@
 	if(O)
 		// migrated flavor_texts
 		var/list/_flavor_texts = O.client?.prefs?.read_preference(/datum/preference/flavor_texts)
-		O.flavor_text = LAZYACCESS(_flavor_texts, "general")
+		O.bio.flavor_text = LAZYACCESS(_flavor_texts, "general")
 		return O
 
 	return ..(move)

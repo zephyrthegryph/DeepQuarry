@@ -499,9 +499,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			// flavor_changes is TGUI now; close via SStgui
 			SStgui.close_uis(src)
 		if("general")
-			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)	//Separating out OOC notes
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the general description of your character. This will be shown regardless of clothing.", default = html_decode(LAZYACCESS(bio.flavor_texts, part)), part = part)	//Separating out OOC notes
 		else
-			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(flavor_texts, part)), part = part)
+			open_request(src, /datum/prompt/text/flavor_part, PROC_REF(flavor_part_entered), answerer = user, question = "Update the flavor text for your [part].", default = html_decode(LAZYACCESS(bio.flavor_texts, part)), part = part)
 
 // --- HUD record links (examine) --------------------------------------------------
 // Each HUD reads and writes one record set. The status link edits the "status" set (the
@@ -641,7 +641,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	var/datum/prompt/text/flavor_part/ask = A.answer
 	var/msg = strip_html_simple(ask.value)
 	if(msg)
-		LAZYSET(flavor_texts, ask.part, msg)
+		LAZYSET(bio.flavor_texts, ask.part, msg)
 		set_flavor()
 
 /// The user's HUD of `hud_type` still works and they can act.
@@ -1692,14 +1692,14 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(C.body_parts_covered & FEET)
 			feet_exposed = 0
 
-	flavor_text = ""
-	for (var/T in flavor_texts)
-		if(flavor_texts[T] && flavor_texts[T] != "")
+	bio.flavor_text = ""
+	for (var/T in bio.flavor_texts)
+		if(bio.flavor_texts[T] && bio.flavor_texts[T] != "")
 			if((T == "general") || (T == "head" && head_exposed) || (T == "face" && face_exposed) || (T == "eyes" && eyes_exposed) || (T == "torso" && torso_exposed) || (T == "arms" && arms_exposed) || (T == "hands" && hands_exposed) || (T == "legs" && legs_exposed) || (T == "feet" && feet_exposed))
-				flavor_text += flavor_texts[T]
-				flavor_text += "\n\n"
+				bio.flavor_text = bio.flavor_text + (bio.flavor_texts[T])
+				bio.flavor_text = bio.flavor_text + ("\n\n")
 	if(!shrink)
-		return flavor_text
+		return bio.flavor_text
 	else
 		return ..()
 

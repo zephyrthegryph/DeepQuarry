@@ -150,7 +150,7 @@ CAPABILITIES(/obj/item/deadringer)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	corpse().identifying_gender = H.identifying_gender
-	corpse().flavor_texts = H.flavor_texts?.Copy()
+	corpse().bio.flavor_texts = H.bio.flavor_texts?.Copy()
 	corpse().real_name = H.real_name
 	corpse().name = H.name
 	corpse().emote("deathgasp") //Done after the name is set.

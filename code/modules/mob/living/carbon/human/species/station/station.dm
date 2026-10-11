@@ -526,7 +526,7 @@
 	H.equip_to_slot_or_del(new /obj/item/clothing/suit/space/void/zaddat/(H), SLOT_ID_SUIT)
 
 	var/obj/item/storage/toolbox/lunchbox/survival/zaddat/L = new(get_turf(H))
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
@@ -639,7 +639,7 @@
 	return FALSE
 
 /datum/species/diona/equip_survival_gear(mob/living/carbon/human/H)
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H), SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H.get_equipped_item(SLOT_ID_BACK)), SLOT_ID_IN_BACKPACK)

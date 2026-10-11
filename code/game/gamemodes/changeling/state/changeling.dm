@@ -199,7 +199,7 @@ TRACKED(/datum/changeling, camo_draining)
 	if(istype(H))
 		grant(H, granted_verb(/mob/living/carbon/human/proc/innate_shapeshifting), comp)
 		var/saved_dna = H.dna.Clone() /// Prevent transform from breaking.
-		var/datum/absorbed_dna/newDNA = new(H.real_name, saved_dna, H.species.name, H.languages, H.identifying_gender, H.flavor_texts, H.identity()?.genetic_effects?.Copy())
+		var/datum/absorbed_dna/newDNA = new(H.real_name, saved_dna, H.species.name, H.languages, H.identifying_gender, H.bio.flavor_texts, H.identity()?.genetic_effects?.Copy())
 		absorbDNA(newDNA)
 
 		//Code to make it so our BR is marked as a changeling body, so it can't be stolen.

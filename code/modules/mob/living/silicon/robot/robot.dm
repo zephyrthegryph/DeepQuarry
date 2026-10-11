@@ -634,9 +634,9 @@
 		var/list/_robot_flavor = client.prefs.read_preference(/datum/preference/flavour_texts_robot)
 		var/module_flavour = LAZYACCESS(_robot_flavor, modtype)
 		if(module_flavour && (module_flavour != " " || module_flavour != ".")) // Skip module flavor if " " or "."
-			flavor_text = module_flavour
+			bio.flavor_text = module_flavour
 		else
-			flavor_text = LAZYACCESS(_robot_flavor, "Default")
+			bio.flavor_text = LAZYACCESS(_robot_flavor, "Default")
 		//and meta info
 		identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

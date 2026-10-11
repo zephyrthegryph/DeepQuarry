@@ -63,7 +63,7 @@
 
 /mob/living/silicon/robot/drone/swarm/setup_module()
 	..()
-	flavor_text = "Some form of ancient machine."
+	bio.flavor_text = "Some form of ancient machine."
 
 /mob/living/silicon/robot/drone/swarm/gunner
 	name = "swarm gunner"

@@ -76,7 +76,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 	var/mob/living/carbon/human/H = player.current
 	if(istype(H))
 		H.gender = pick(MALE, FEMALE)
-		H.age = rand(25,45)
+		H.bio.age = rand(25,45)
 		H.dna.ready_dna(H)
 
 	return

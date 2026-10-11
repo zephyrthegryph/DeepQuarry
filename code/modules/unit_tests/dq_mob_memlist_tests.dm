@@ -17,7 +17,7 @@
 	TEST_ASSERT_NULL(H.custom_heat, "a fresh human owns no custom_heat list")
 	TEST_ASSERT_NULL(H.custom_cold, "a fresh human owns no custom_cold list")
 	TEST_ASSERT_NULL(H.all_underwear, "a fresh human owns no all_underwear list")
-	TEST_ASSERT_NULL(H.flavor_texts, "a fresh human owns no flavor_texts list")
+	TEST_ASSERT_NULL(H.bio.flavor_texts, "a fresh human owns no flavor_texts list")
 	TEST_ASSERT_NULL(H.trait_injection_reagents, "a fresh human owns no trait_injection_reagents list")
 
 /datum/unit_test/dq_mob_memlist_simple_mob_lazy_lists_null

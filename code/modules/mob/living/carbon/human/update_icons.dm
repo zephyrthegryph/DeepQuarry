@@ -1443,7 +1443,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(flavourtext)
 			// migrated flavor_texts
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
-			flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
+			bio.flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
 		if(oocnotes)
 			identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 			identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

@@ -15,7 +15,7 @@
 	test_time(1 SECONDS)
 	TEST_ASSERT_EQUAL(card.registered_user(), actor, "actual native Click registers its initiating human")
 	TEST_ASSERT_EQUAL(card.registered_name, actor.real_name, "real set_id_info copies the initiating human's identity")
-	TEST_ASSERT_EQUAL(card.age, actor.age, "real human identification supplies the owner's age")
+	TEST_ASSERT_EQUAL(card.age, actor.bio.age, "real human identification supplies the owner's age")
 	TEST_ASSERT_EQUAL(card.dna_hash, actor.dna.unique_enzymes, "real identification copies the owner's DNA hash")
 	TEST_ASSERT_EQUAL(card.fingerprint_hash, md5(actor.dna.GetUniIdentity()), "real identification records the owner's fingerprint hash")
 	TEST_ASSERT(card.front && findtext(card.front, "data:image/png;base64,"), "real identification generates a nonempty PNG photo")

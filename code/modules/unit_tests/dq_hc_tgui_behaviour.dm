@@ -817,7 +817,7 @@
 	canswer(M, H, "Pounds")
 	TEST_ASSERT_EQUAL(H.weight, 152, "the weight is set (rounded to four pounds)")
 	var/flavor_key = "general"
-	H.flavor_texts = list("general" = "")
+	H.bio.flavor_texts = list("general" = "")
 	cpress(M, H, "flavor_text", list("target" = flavor_key))
 	canswer(M, H, "A tall figure.")
-	TEST_ASSERT_EQUAL(H.flavor_texts[flavor_key], "A tall figure.", "the flavor text is set")
+	TEST_ASSERT_EQUAL(H.bio.flavor_texts[flavor_key], "A tall figure.", "the flavor text is set")

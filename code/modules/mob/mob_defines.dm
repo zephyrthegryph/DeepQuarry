@@ -83,12 +83,6 @@
 	var/transforming = null	//Carbon
 	var/other = 0.0
 	var/real_name = null
-	var/nickname = null
-	var/flavor_text = ""
-	var/med_record = ""
-	var/sec_record = ""
-	var/gen_record = ""
-	var/exploit_record = ""
 	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
 	var/blinded = null
 	var/bhunger = 0			//Carbon
@@ -261,6 +255,8 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
+	// Who the character says they are (profile_records.dm).
+	profile(nameof(bio), /datum/record/identity)
 	ref_one(nameof(s_active)) // the storage being viewed, anywhere nearby
 	ref_one(nameof(control_object)) // the object an admin possesses
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):

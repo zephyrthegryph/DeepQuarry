@@ -1498,9 +1498,9 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	new_mob.key = picked_client.key //Finally put them in the mob
 	// migrated flavor_texts/flavour_texts_robot
 	if(flavor == "General")
-		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")
+		new_mob.bio.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")
 	if(flavor == "Robot")
-		new_mob.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavour_texts_robot), "Default")
+		new_mob.bio.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavour_texts_robot), "Default")
 	if(organs)
 		new_mob.copy_from_prefs_vr()
 		if(LAZYLEN(new_mob.vore_organs))

@@ -389,7 +389,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		options = new /datum/human_transform_options
 	if(options.copy_name)
 		name = character.name
-		nickname = character.nickname
+		bio.nickname = character.bio.nickname
 	gender = character.gender
 	identifying_gender = character.identifying_gender
 
@@ -409,7 +409,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	markings_len = character.markings_len
 
 	if(options.copy_flavour)
-		flavor_texts = character.flavor_texts?.Copy()
+		bio.flavor_texts = character.bio.flavor_texts?.Copy()
 
 	copy_physique_from(character)
 	if(species)
@@ -423,10 +423,10 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		GLOB.wrapped_species_by_ref["\ref[src]"] = bodytype
 
 	custom_species	= character.custom_species
-	custom_say		= character.custom_say
-	custom_ask		= character.custom_ask
-	custom_whisper	= character.custom_whisper
-	custom_exclaim	= character.custom_exclaim
+	bio.custom_say = character.bio.custom_say
+	bio.custom_ask = character.bio.custom_ask
+	bio.custom_whisper = character.bio.custom_whisper
+	bio.custom_exclaim = character.bio.custom_exclaim
 
 	dna?.ResetUIFrom(src)
 	force_update_limbs()

@@ -175,10 +175,10 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	src.species_sounds_male = character.species.species_sounds_male
 	src.species_sounds_female = character.species.species_sounds_female
 	src.species_traits = character.species.traits.Copy()
-	src.custom_say = character.custom_say
-	src.custom_ask = character.custom_ask
-	src.custom_whisper = character.custom_whisper
-	src.custom_exclaim = character.custom_exclaim
+	src.custom_say = character.bio.custom_say
+	src.custom_ask = character.bio.custom_ask
+	src.custom_whisper = character.bio.custom_whisper
+	src.custom_exclaim = character.bio.custom_exclaim
 	src.custom_heat = character.custom_heat
 	src.custom_cold = character.custom_cold
 	src.digitigrade = character.looks.digitigrade
@@ -398,10 +398,10 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	////////////////////////////////////////////////////////////////////////////////
 	// Custom species and other cosmetic vars
 	H.custom_species = custom_species
-	H.custom_say = custom_say
-	H.custom_ask = custom_ask
-	H.custom_whisper = custom_whisper
-	H.custom_exclaim = custom_exclaim
+	H.bio.custom_say = custom_say
+	H.bio.custom_ask = custom_ask
+	H.bio.custom_whisper = custom_whisper
+	H.bio.custom_exclaim = custom_exclaim
 	H.custom_speech_bubble = custom_speech_bubble
 	H.custom_heat = custom_heat
 	H.custom_cold = custom_cold

@@ -8,26 +8,15 @@
 
 	var/damage_multiplier = 1 //multiplies melee combat damage
 
-	var/age = 30		//Player's age (pure fluff)
 
 	var/datum/robolimb/synthetic		//If they are a synthetic (aka synthetic torso). Also holds the datum for the type of robolimb.
 
 	var/list/all_underwear	// Lazy.
 	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
 	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
-	var/headset = 1		//Which headset type the player has chosen.
-	var/backbag = 2		//Which backpack type the player has chosen.
-	var/pdachoice = 1	//Which PDA type the player has chosen.
 
-	// General information
-	var/home_system = ""
-	var/birthplace = ""
-	var/citizenship = ""
-	/// Employer recorded in the station's personnel database. This is not a social reputation faction.
-	var/personal_faction = "NanoTrasen"
-	var/religion = ""
-	var/antag_faction = ""
-	var/antag_vis = ""
+	// Age, background, records, flavour text and kit choices: the bio profile record on /mob
+	// (/datum/record/identity, code/modules/mob/profile_records.dm).
 
 	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
@@ -38,7 +27,6 @@
 
 	var/hand_blood_color
 
-	var/list/flavor_texts	// Lazy.
 	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 
 	mob_bump_flag = HUMAN

@@ -700,12 +700,12 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_flavor_text(datum/act/op/A, target)
 	var/mob/user = A.actor
 	var/select_key = target
-	if(select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().flavor_texts))
+	if(select_key && can_change(owner(), APPEARANCE_MISC) && (select_key in owner().bio.flavor_texts))
 		pending_flavor_key = select_key
 		var/question = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank."
 		if(select_key == "general")
 			question = "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank."
-		open_request(src, /datum/prompt/text, PROC_REF(flavor_text_written), valid = PROC_REF(request_usable), answerer = user, question = question, title = "Flavor Text", default = html_decode(owner().flavor_texts[select_key]), multiline = TRUE, max_len = MAX_TGUI_INPUT, timeout = 0)
+		open_request(src, /datum/prompt/text, PROC_REF(flavor_text_written), valid = PROC_REF(request_usable), answerer = user, question = question, title = "Flavor Text", default = html_decode(owner().bio.flavor_texts[select_key]), multiline = TRUE, max_len = MAX_TGUI_INPUT, timeout = 0)
 		return
 	return FALSE
 
@@ -720,7 +720,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(msg == "!clear") // allows empty to wipe flavor
 		msg = ""
 	var/mob/living/carbon/human/flavor_owner = owner()
-	LAZYSET(flavor_owner.flavor_texts, select_key, msg)
+	LAZYSET(flavor_owner.bio.flavor_texts, select_key, msg)
 
 /datum/tgui_module/appearance_changer/proc/ui_act_load_saveslot(datum/act/op/A)
 	if(can_change(owner(), APPEARANCE_ALL_COSMETIC))
@@ -992,17 +992,17 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	data["species_sounds_male"] = owner().species.species_sounds_male
 	// flavor
 	var/mob/living/carbon/human/flavor_owner = owner()
-	if(!LAZYLEN(flavor_owner.flavor_texts))
-		LAZYSET(flavor_owner.flavor_texts, "general", "")
-		LAZYSET(flavor_owner.flavor_texts, "head", "")
-		LAZYSET(flavor_owner.flavor_texts, "face", "")
-		LAZYSET(flavor_owner.flavor_texts, "eyes", "")
-		LAZYSET(flavor_owner.flavor_texts, "torso", "")
-		LAZYSET(flavor_owner.flavor_texts, "arms", "")
-		LAZYSET(flavor_owner.flavor_texts, "hands", "")
-		LAZYSET(flavor_owner.flavor_texts, "legs", "")
-		LAZYSET(flavor_owner.flavor_texts, "feet", "")
-	data["flavor_text"] = owner().flavor_texts.Copy()
+	if(!LAZYLEN(flavor_owner.bio.flavor_texts))
+		LAZYSET(flavor_owner.bio.flavor_texts, "general", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "head", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "face", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "eyes", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "torso", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "arms", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "hands", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "legs", "")
+		LAZYSET(flavor_owner.bio.flavor_texts, "feet", "")
+	data["flavor_text"] = owner().bio.flavor_texts.Copy()
 
 	data["name"] = owner().name
 	data["specimen"] = owner().species.name
