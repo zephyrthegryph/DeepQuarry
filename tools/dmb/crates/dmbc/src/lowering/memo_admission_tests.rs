@@ -53,6 +53,9 @@ fn admission_defers_cold_producer_and_consumes_it_once_with_fresh_output() {
     assert_eq!(policy.0.load(Ordering::Relaxed), 0);
     let produced = pending.finish().unwrap().into_lowered();
     assert_eq!(policy.0.load(Ordering::Relaxed), 1);
+    // A fresh lowering owns a fresh one-shot parse arena. The pending attempt
+    // above has already consumed its executable body exactly once.
+    let fresh_arena = dm_tree::frontend::BodyArena::new(&frontend);
     let fresh = lower_one_input(
         &frontend,
         &frontend.bodies[0],
@@ -61,7 +64,7 @@ fn admission_defers_cold_producer_and_consumes_it_once_with_fresh_output() {
         &policy,
         None,
         None,
-        &arena,
+        &fresh_arena,
         false,
         false,
         false,
