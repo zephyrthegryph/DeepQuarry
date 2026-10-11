@@ -14,7 +14,7 @@ struct Leaf<Q, A, D> {
 /// live store allocations; removal precedes destruction. They are not proof.
 pub(super) struct Incidence<Q, A, D> {
     leaves: BTreeMap<LeafId, Leaf<Q, A, D>>,
-    variants: BTreeMap<u64, BTreeSet<LeafId>>,
+    variants: BTreeMap<u64, (u128, BTreeSet<LeafId>)>,
     domains: Vec<(D, BTreeSet<LeafId>)>,
 }
 impl<Q, A, D> Default for Incidence<Q, A, D> {
@@ -52,7 +52,7 @@ impl<Q, A, D> Incidence<Q, A, D> {
         )
     }
     pub(super) fn remove(&mut self, variant: u64) {
-        let Some(ids) = self.variants.remove(&variant) else {
+        let Some((_, ids)) = self.variants.remove(&variant) else {
             return;
         };
         for id in ids {
@@ -70,7 +70,7 @@ impl<Q, A, D> Incidence<Q, A, D> {
     }
 }
 impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
-    pub(super) fn insert(&mut self, variant: u64, receipt: &Receipt<Q, A, D>) {
+    pub(super) fn insert(&mut self, variant: u64, bucket: u128, receipt: &Receipt<Q, A, D>) {
         self.remove(variant);
         let mut ids = BTreeSet::new();
         receipt.visit_storage(|view| {
@@ -109,7 +109,15 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             debug_assert!(Arc::ptr_eq(owner, &leaf.owner));
             leaf.subscribers.insert(variant);
         });
-        self.variants.insert(variant, ids);
+        self.variants.insert(variant, (bucket, ids));
+    }
+    /// Route live variants into their existing store buckets. Hashes locate only;
+    /// callers still check live allocation identity and perform exact admission.
+    pub(super) fn affected_buckets(&self, affected: &BTreeSet<u64>) -> BTreeSet<u128> {
+        affected
+            .iter()
+            .filter_map(|id| self.variants.get(id).map(|(bucket, _)| *bucket))
+            .collect()
     }
     /// Each supplied domain includes all its subscribed variants. Callers must
     /// include every unversioned/unproved domain, not just known changed ones.
@@ -145,12 +153,20 @@ mod tests {
         let weak = Arc::downgrade(&leaf);
         let receipt = Receipt::from(leaf.clone());
         let mut index = Incidence::default();
-        index.insert(1, &receipt);
-        index.insert(2, &receipt);
+        index.insert(1, 10, &receipt);
+        index.insert(2, 20, &receipt);
         assert_eq!(index.leaves.len(), 1);
         assert_eq!(index.affected([&3]), BTreeSet::from([1, 2]));
+        assert_eq!(
+            index.affected_buckets(&index.affected([&3])),
+            BTreeSet::from([10, 20])
+        );
         index.remove(1);
         assert_eq!(index.affected([&3]), BTreeSet::from([2]));
+        assert_eq!(
+            index.affected_buckets(&index.affected([&3])),
+            BTreeSet::from([20])
+        );
         drop(receipt);
         drop(leaf);
         assert!(weak.upgrade().is_some());

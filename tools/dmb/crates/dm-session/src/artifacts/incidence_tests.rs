@@ -58,3 +58,36 @@ fn sibling_claim_release_preserves_only_current_live_variant() {
     assert_eq!(*old, 1);
     assert_eq!(store.visit_incidence_storage(|_| {}), Some((0, 0, 0, 0)));
 }
+
+#[test]
+fn routed_dirty_candidates_preserve_store_order_and_exclude_unrelated_roster() {
+    let store = Store::current_revision();
+    for key in 0u8..120 {
+        store.insert_with_receipt(
+            Arc::from([key]),
+            reads(if key % 29 == 0 { 7 } else { 8 }),
+            Arc::from([]),
+            1,
+            || key,
+        );
+    }
+    store.enable_incidence();
+    let expected: Vec<_> = {
+        let state = store.state.lock().unwrap();
+        state
+            .buckets
+            .values()
+            .flatten()
+            .filter(|entry| entry.reads.iter().any(|read| read.domain == 7))
+            .map(|entry| *entry.value)
+            .collect()
+    };
+    let mut actual = Vec::new();
+    store.visit_affected(&[7, 7, 99], |_, value| actual.push(**value));
+    assert_eq!(actual, expected);
+    let state = store.state.lock().unwrap();
+    let index = state.incidence.as_ref().unwrap();
+    let buckets = index.affected_buckets(&index.affected([&7]));
+    assert_eq!(buckets.len(), 5);
+    assert!(buckets.len() < state.buckets.len());
+}

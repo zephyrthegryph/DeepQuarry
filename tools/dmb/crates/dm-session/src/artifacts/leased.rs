@@ -166,7 +166,7 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
                 weight: receipt.weight,
             });
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(pointer as u64, &reads);
+                index.insert(pointer as u64, hash, &reads);
             }
             state.bytes = state.bytes.saturating_add(receipt.weight);
         }
@@ -254,7 +254,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 weight,
             });
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+                index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
             }
             state.bytes = state.bytes.saturating_add(weight);
             (value, key)

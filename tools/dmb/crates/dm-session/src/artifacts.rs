@@ -209,8 +209,14 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             return;
         }
         let mut index = incidence::Incidence::default();
-        for entry in state.buckets.values().flatten() {
-            index.insert(Arc::as_ptr(&entry.value) as usize as u64, &entry.reads);
+        for (&hash, bucket) in &state.buckets {
+            for entry in bucket {
+                index.insert(
+                    Arc::as_ptr(&entry.value) as usize as u64,
+                    hash,
+                    &entry.reads,
+                );
+            }
         }
         state.incidence = Some(index);
     }
@@ -222,9 +228,15 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             return;
         };
         let affected = index.affected(domains);
-        for entry in state.buckets.values().flatten() {
-            if affected.contains(&(Arc::as_ptr(&entry.value) as usize as u64)) {
-                visit(&entry.key, &entry.value);
+        // Sorted bucket routing preserves the old store encounter order without
+        // walking every unrelated resident. Collisions still inspect exact live IDs.
+        for hash in index.affected_buckets(&affected) {
+            if let Some(bucket) = state.buckets.get(&hash) {
+                for entry in bucket {
+                    if affected.contains(&(Arc::as_ptr(&entry.value) as usize as u64)) {
+                        visit(&entry.key, &entry.value);
+                    }
+                }
             }
         }
     }
@@ -424,7 +436,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                 });
             state.bytes += weight;
             if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-                index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+                index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
             }
             return Some(value);
         }
@@ -469,6 +481,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     index.remove(removed_id);
                     index.insert(
                         Arc::as_ptr(&value) as usize as u64,
+                        hash,
                         incidence_reads.as_ref().unwrap(),
                     );
                 }
@@ -486,7 +499,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         });
         state.bytes += weight;
         if let (Some(index), Some(reads)) = (&mut state.incidence, incidence_reads) {
-            index.insert(Arc::as_ptr(&value) as usize as u64, &reads);
+            index.insert(Arc::as_ptr(&value) as usize as u64, hash, &reads);
         }
         Some(value)
     }
