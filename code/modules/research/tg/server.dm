@@ -103,11 +103,8 @@ TRACKED(/obj/machinery/rnd/server, working)
 	// max_integrity = 1800 //takes roughly ~15s longer to break then full deconstruction.
 	circuit = null
 
-/obj/machinery/rnd/server/master/Initialize(mapload)
-	. = ..()
-	name = "\improper Master " + name
-
 CAPABILITIES(/obj/machinery/rnd/server/master)
+	name_prefix("\improper Master")
 	op("block", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_block)))
 
 /obj/machinery/rnd/server/master/proc/interaction_block(datum/act/op/A)

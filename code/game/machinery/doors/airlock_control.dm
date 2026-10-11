@@ -179,6 +179,7 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 // watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
 	gas_watch(mask = GAS_DEPENDENCY_PRESSURE, changed = PROC_REF(pressure_heard))
 	multitool_settings(list(
@@ -271,10 +272,6 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
-/obj/machinery/airlock_sensor/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
-
 /obj/machinery/airlock_sensor/examine(mob/user, infix, suffix)
 	. = ..()
 	if(in_range(src, user))
@@ -327,6 +324,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor)
 MSG_DEF_SELF(access_button/denied, "Access Denied")
 
 CAPABILITIES(/obj/machinery/access_button)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(channel = ENVIRON))
 	multitool_settings(list(
 		list("Tag", "master_tag", "text", 30),
@@ -380,10 +378,6 @@ CAPABILITIES(/obj/machinery/access_button)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
-
-/obj/machinery/access_button/Initialize(mapload)
-	. = ..()
-	set_frequency(frequency)
 
 /obj/machinery/access_button/airlock_interior
 	frequency = AIRLOCK_FREQ

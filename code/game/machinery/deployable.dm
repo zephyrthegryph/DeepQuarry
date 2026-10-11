@@ -154,22 +154,30 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 	var/toppled = FALSE
 	var/human_name = TRUE
 
-	var/static/list/cutout_types
+	var/list/cutout_types
 	resistance_flags = FLAMMABLE
 
 /obj/structure/barricade/cutout/Initialize(mapload)
 	. = ..()
 	color = null
-	if(human_name)
-		fake_name = random_name(pick(list(MALE, FEMALE)))
-	name = fake_name
-	desc = fake_desc
-	if(!cutout_types)
-		cutout_types = list()
-		var/list/types = typesof(/obj/structure/barricade/cutout)
-		for(var/cutout_type in types)
-			var/obj/structure/barricade/cutout/pathed_type = cutout_type
-			cutout_types[initial(pathed_type.construct_name)] = cutout_type
+
+/// A cutout of a person gets a random name.
+/obj/structure/barricade/cutout/proc/roll_fake_name(datum/roller/R)
+	return random_name(R.choose(list(MALE, FEMALE)))
+
+/// It shows the name and description of what it depicts.
+/obj/structure/barricade/cutout/proc/shown_name(datum/roller/R)
+	return fake_name
+
+/obj/structure/barricade/cutout/proc/shown_desc(datum/roller/R)
+	return fake_desc
+
+/// What a cutout can be painted as: construct name -> cutout type (per_type()).
+/obj/structure/barricade/cutout/proc/build_cutout_types()
+	. = list()
+	for(var/cutout_type in typesof(/obj/structure/barricade/cutout))
+		var/obj/structure/barricade/cutout/pathed_type = cutout_type
+		.[initial(pathed_type.construct_name)] = cutout_type
 
 /obj/structure/barricade/cutout/proc/topple()
 	if(toppled)
@@ -210,6 +218,10 @@ CAPABILITIES(/obj/machinery/deployable/barrier)
 		. += span_notice("... from this distance, they seem to be made of [material.name] ...")
 
 CAPABILITIES(/obj/structure/barricade/cutout)
+	per_type(nameof(cutout_types), PROC_REF(build_cutout_types))
+	rolls(nameof(fake_name), PROC_REF(roll_fake_name), when = nameof(human_name))
+	rolls(nameof(name), PROC_REF(shown_name), from = list(nameof(fake_name)))
+	rolls(nameof(desc), PROC_REF(shown_desc))
 	op("cutout_interaction_hand", hand(), label("Stand up"), then(PROC_REF(cutout_interaction_hand)))
 	// A painter paints it; both paint inputs use the same answer and timed work.
 	op("cutout_interaction_item", item(/obj/item/reagent_containers/glass/paint), label("Paint"),

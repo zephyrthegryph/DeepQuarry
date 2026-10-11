@@ -51,6 +51,7 @@ STAT(/obj/machinery/autolathe, disabled, ANY)
 STAT(/obj/machinery/autolathe, shocked, ANY)
 
 CAPABILITIES(/obj/machinery/autolathe)
+	default_parts()
 	configure(uses_power(idle = 10, active = 2000))
 	machine_basics(repair = NONE, frame = board_machine())
 	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
@@ -85,8 +86,6 @@ CAPABILITIES(/obj/machinery/autolathe)
 /obj/machinery/autolathe/Initialize(mapload)
 	. = ..()
 	stored_research_static = SSresearch.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
-	default_apply_parts()
-	RefreshParts()
 
 /// Its material store: every material, listed on examine; a sheet put in plays the loading animation.
 /obj/machinery/autolathe/proc/make_materials(current)

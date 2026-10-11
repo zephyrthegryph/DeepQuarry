@@ -22,6 +22,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/exonet_node)
+	default_parts()
 	configure(uses_power(idle = 2500))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	emp_disable(300 SECONDS)
@@ -30,7 +31,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 	op("toggle_PDA_port", ui_act("toggle_PDA_port"), then(PROC_REF(ui_act_toggle_pda_port)))
 	op("toggle_communicator_port", ui_act("toggle_communicator_port"), then(PROC_REF(ui_act_toggle_communicator_port)))
 	op("toggle_newscaster_port", ui_act("toggle_newscaster_port"), then(PROC_REF(ui_act_toggle_newscaster_port)))
-	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = pick_one(list(/datum/looping_sound/tcomms = 50, /datum/looping_sound/tcomms/two = 30, /datum/looping_sound/tcomms/three = 9, /datum/looping_sound/tcomms/four = 36))) // most hum the first midloop, the rest one of three others
 	interface("ExonetNode")
 	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
 
@@ -39,18 +40,7 @@ CAPABILITIES(/obj/machinery/exonet_node)
 // Description: Adds components to the machine for deconstruction.
 /obj/machinery/exonet_node/Initialize(mapload)
 	. = ..()
-	if(prob(60)) // 60% chance to change the midloop
-		if(prob(40))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
-			soundloop.mid_length = 40
-		else if(prob(20))
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_03.ogg' = 1)
-			soundloop.mid_length = 10
-		else
-			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_04.ogg' = 1)
-			soundloop.mid_length = 30
 	soundloop.start()
-	default_apply_parts()
 	if(mapload)
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
