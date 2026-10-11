@@ -68,7 +68,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 		if(W.sharp && W.edge)
 			play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 		else
-			playsound(src, W.hitsound, 50, 1)
+			playsound(src, sounds_of(W).hit, 50, 1)
 		if(damage_to_do > 5 && !indestructable)
 			adjust_health(-damage_to_do)
 		else

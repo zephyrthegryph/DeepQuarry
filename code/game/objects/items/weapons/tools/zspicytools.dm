@@ -9,7 +9,9 @@
 	item_state = "heavysniper"
 	toolspeed = 0.1
 	force = 30
-	usesound = SFX_WEAPONS_GUNSHOT_CANNON
+
+CAPABILITIES(/obj/item/tool/crowbar/heavysniper)
+	configure(item_sounds(use = SFX_WEAPONS_GUNSHOT_CANNON))
 
 /obj/item/weldingtool/lasercannon
 	name = "laser cannon welding tool"
@@ -19,9 +21,11 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "mhdhowitzer-wielded"
 	toolspeed = 0.1
-	usesound = SFX_WEAPONS_LASERCANNONFIRE
 	acti_sound = SFX_WEAPONS_KENETIC_RELOAD
 	always_process = TRUE
+
+CAPABILITIES(/obj/item/weldingtool/lasercannon)
+	configure(item_sounds(use = SFX_WEAPONS_LASERCANNONFIRE))
 
 /obj/item/weldingtool/lasercannon/weldingtool_step(datum/act/timer/A)
 	if(get_fuel() <= get_max_fuel())
@@ -39,9 +43,11 @@
 	icon_state = "fuelrodgun"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "coilgun"
-	usesound = SFX_WEAPONS_RAILGUN
 	toolspeed = 0.1
 	force = 30
+
+CAPABILITIES(/obj/item/tool/wrench/fuelrod)
+	configure(item_sounds(use = SFX_WEAPONS_RAILGUN))
 
 /obj/item/tool/wirecutters/chainsaw
 	name = "chainsaw wirecutters"
@@ -49,10 +55,12 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
 	item_state = "chainsaw0"
-	usesound = SFX_WEAPONS_CHAINSAW_ATTACK
 	random_color = FALSE
 	toolspeed = 0.1
 	force = 30
+
+CAPABILITIES(/obj/item/tool/wirecutters/chainsaw)
+	configure(item_sounds(use = SFX_WEAPONS_CHAINSAW_ATTACK))
 
 /obj/item/tool/screwdriver/diamonddrill
 	name = "diamond drill power screwdriver"
@@ -60,11 +68,12 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "diamonddrill"
 	item_state = "jackhammer"
-	hitsound = SFX_ITEMS_DRILL_HIT
-	usesound = SFX_ITEMS_DRILL_USE_2
 	random_color = FALSE
 	toolspeed = 0.1
 	force = 30
+
+CAPABILITIES(/obj/item/tool/screwdriver/diamonddrill)
+	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/stack/cable_coil/alien/blood
 	name = "Blood cable coil"

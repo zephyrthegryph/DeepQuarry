@@ -109,7 +109,7 @@ CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
 	var/obj/item/tool = A.held
 	if(length(modkits))
 		to_chat(user, span_notice("You pry the modifications out."))
-		playsound(loc, tool.usesound, 100, 1)
+		playsound(loc, sounds_of(tool).use, 100, 1)
 		for(var/obj/item/borg/upgrade/modkit/M in modkits)
 			M.uninstall(src)
 	else

@@ -22,11 +22,12 @@
 	icon_state = "donutbox6"
 	name = "donut box"
 	var/icon_type = "donut"
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	var/open = 0
 	var/open_state
 	var/closed_state
+
+CAPABILITIES(/obj/item/storage/fancy)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
 TRACKED(/obj/item/storage/fancy, open)
 

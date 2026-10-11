@@ -21,7 +21,7 @@
 		TEST_ASSERT_EQUAL(blade.active, 1, "actual native held input opens original blade")
 		TEST_ASSERT(blade.edge && blade.sharp, "actual native opening creates original cutting edges")
 		TEST_ASSERT(blade.force > 3, "actual steel opening increases cutting force above folded blunt force")
-		TEST_ASSERT_EQUAL(blade.hitsound, SFX_WEAPONS_BLADESLICE, "actual opening selects original blade sound")
+		TEST_ASSERT_EQUAL(sounds_of(blade).hit, SFX_WEAPONS_BLADESLICE, "actual opening selects original blade sound")
 		TEST_ASSERT_EQUAL(user.get_active_hand(), blade, "actual opening preserves exact original actor hand")
 		TEST_ASSERT_EQUAL(blade.material, original_material, "actual opening preserves exact original material")
 		if(istype(blade, /obj/item/material/butterfly/saw))

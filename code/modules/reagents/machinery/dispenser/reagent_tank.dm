@@ -245,7 +245,7 @@ MSG_DEF_SELF(fueltank/in_the_way, span_warning("There is another device in the w
 	act_message(user, src, MSG_SELF("You wrench %T%'s faucet [modded ? "closed" : "open"]"), \
 		MSG_OTHERS("%U% wrenches %T%'s faucet [modded ? "closed" : "open"]."))
 	modded = !modded
-	playsound(src, tool.usesound, 75, TRUE)
+	playsound(src, sounds_of(tool).use, 75, TRUE)
 	if(modded)
 		message_admins("[key_name_admin(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] opened fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]), leaking fuel.")
@@ -421,7 +421,7 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 /// The wrench is at the jug: the cooler takes a print and the tool its sound, as the wait starts.
 /obj/structure/reagent_dispensers/water_cooler/proc/jug_started(datum/act/op/A)
 	add_fingerprint(A.actor)
-	playsound(src, A.held.usesound, 50, TRUE)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
 /obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(datum/act/op/A)
 	var/mob/user = A.actor
@@ -444,14 +444,14 @@ MSG_DEF_SELF(water_cooler/has_cupholder, span_warning("There is already a cup di
 /obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	if(cupholder)
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		to_chat(user, span_notice("You take the cup dispenser off."))
 		new /obj/item/stack/material/plastic(loc)
 		for(var/i = 1 to cups)

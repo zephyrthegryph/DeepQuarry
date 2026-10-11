@@ -170,3 +170,6 @@
 #define ENTRY_CAP_KEYS "cap_keys"
 #define ENTRY_STATE_GRAPH "state_graph"
 #define ENTRY_LIST_STATE "list_state"
+
+/// A type trait argument (code/engine/declare/type_traits.dm) that sets the value to null: an argument left null is inherited instead.
+#define TRAIT_NONE "__trait_none__"

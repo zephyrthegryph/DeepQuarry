@@ -157,8 +157,6 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 	name = "small parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycrate3"
-	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
-	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 	var/obj/item/wrapped = null
 	var/sortTag = null
 	var/examtext = null
@@ -169,6 +167,7 @@ TRACKED(/obj/item/smallDelivery, examtext)
 TRACKED(/obj/item/smallDelivery, nameset)
 
 CAPABILITIES(/obj/item/smallDelivery)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("use", in_hand(), then(PROC_REF(interaction_self)))
 	op("tag", item(/obj/item/destTagger), then(PROC_REF(parcel_tag)))
 	op("label", item(/obj/item/pen),

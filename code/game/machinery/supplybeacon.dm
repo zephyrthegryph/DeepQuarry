@@ -72,7 +72,7 @@ CAPABILITIES(/obj/machinery/power/supply_beacon)
 		return OP_OK
 	set_anchored(!anchored)
 	act_message(A.actor, src, others = span_notice("%U% [anchored ? "secures" : "unsecures"] %T%."))
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/machinery/power/supply_beacon/proc/interaction_use(datum/act/op/A)

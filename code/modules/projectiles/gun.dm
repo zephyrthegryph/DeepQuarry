@@ -52,8 +52,6 @@
 	preserve_item = 1
 	attack_verb = list("struck", "hit", "bashed")
 	zoomdevicename = "scope"
-	drop_sound = SFX_ITEMS_DROP_GUN
-	pickup_sound = SFX_ITEMS_PICKUP_GUN
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -120,6 +118,7 @@ TRACKED(/obj/item/gun, dna_lock)
 TRACKED(/obj/item/gun, silenced)
 TRACKED(/obj/item/gun, mode_name)
 CAPABILITIES(/obj/item/gun)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GUN, pickup = SFX_ITEMS_PICKUP_GUN))
 	owns_many(nameof(firemodes), starts = PROC_REF(starting_firemodes))
 	owns_one(nameof(firemode_selector), starts = /datum/gun_firemode_selector)
 	drag_onto(PROC_REF(mousedrop_input))

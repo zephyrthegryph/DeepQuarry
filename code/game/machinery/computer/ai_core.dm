@@ -134,8 +134,8 @@ CAPABILITIES(/obj/structure/AIcore)
 	construction_tool_started(A)
 /obj/structure/AIcore/proc/construction_tool_started(datum/act/op/A)
 	var/obj/item/tool = A.held_provider()
-	if(tool.usesound)
-		play_sfx(src, tool.usesound, volume = 50, vary = TRUE)
+	if(sounds_of(tool).use)
+		play_sfx(src, sounds_of(tool).use, volume = 50, vary = TRUE)
 /obj/structure/AIcore/proc/frame_anchored(datum/act/op/A)
 	to_chat(A.actor, span_notice("You wrench the frame into place."))
 	set_anchored(TRUE)
@@ -158,21 +158,21 @@ CAPABILITIES(/obj/structure/AIcore)
 
 /obj/structure/AIcore/proc/board_fastened(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You screw the circuit board into place."))
 	icon_state = "2"
 	return OP_OK
 
 /obj/structure/AIcore/proc/board_unfastened(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You unfasten the circuit board."))
 	icon_state = "1"
 	return OP_OK
 
 /obj/structure/AIcore/proc/board_removed(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the circuit board."))
 	icon_state = "0"
 	circuit.forceMove(loc)
@@ -181,7 +181,7 @@ CAPABILITIES(/obj/structure/AIcore)
 
 /obj/structure/AIcore/proc/brain_removed(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the brain."))
 	brain.forceMove(loc)
 	rel_take(src, nameof(brain))
@@ -190,7 +190,7 @@ CAPABILITIES(/obj/structure/AIcore)
 
 /obj/structure/AIcore/proc/panel_removed(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the glass panel."))
 	icon_state = brain ? "3b" : "3"
 	new /obj/item/stack/material/glass/reinforced(loc, 2)
@@ -198,7 +198,7 @@ CAPABILITIES(/obj/structure/AIcore)
 
 /obj/structure/AIcore/proc/cables_cut(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the cables."))
 	icon_state = "2"
 	new /obj/item/stack/cable_coil(loc, 5)
@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 /obj/structure/AIcore/proc/monitor_connected(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(user, span_notice("You connect the monitor."))
 	if(!brain)
 		var/obj/structure/AIcore/deactivated/D = new(loc)

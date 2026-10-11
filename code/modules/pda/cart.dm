@@ -51,8 +51,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	icon_state = "cart"
 	item_state = "electronic"
 	w_class = ITEMSIZE_TINY
-	drop_sound = SFX_ITEMS_DROP_COMPONENT
-	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 	var/obj/item/radio/integrated/radio = null
 
@@ -61,6 +59,9 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/stored_data = list() // ALLOW(instance_list): d: cartridge program data
 	var/list/programs
 	var/list/messenger_plugins
+
+CAPABILITIES(/obj/item/cartridge)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_COMPONENT, pickup = SFX_ITEMS_PICKUP_COMPONENT))
 
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)

@@ -210,12 +210,12 @@ CAPABILITIES(/obj/item/cannonframe)
 	op("finish", lit_welder(fuel = 0), label("Weld the valve"), when(req_stage(nameof(buildstate), 5)), wait(0), says(MSG(cannon_frame/valve_welded)), then(PROC_REF(finished)))
 
 /obj/item/cannonframe/proc/tool_sounds(datum/act/op/A)
-	playsound(src, A.held.usesound, 100, 1)
+	playsound(src, sounds_of(A.held).use, 100, 1)
 	return OP_OK
 
 /// The valve welded in, the frame is a pneumatic cannon.
 /obj/item/cannonframe/proc/finished(datum/act/op/A)
-	playsound(src, A.held.usesound, 100, 1)
+	playsound(src, sounds_of(A.held).use, 100, 1)
 	replace_with(src, /obj/item/gun/launcher/pneumatic)
 	return OP_OK
 

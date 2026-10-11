@@ -6,13 +6,14 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "bolt"
 	item_state = "bolt"
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	throwforce = 8
 	w_class = ITEMSIZE_NORMAL
 	sharp = TRUE
 	edge = FALSE
 	injury_kind = INJURY_PIERCE
+
+CAPABILITIES(/obj/item/arrow)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/proc/removed() //Helper for metal rods falling apart.
 	return
@@ -28,8 +29,9 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "metal-rod"
 	item_state = "bolt"
-	drop_sound = SFX_ITEMS_DROP_SWORD
-	pickup_sound = SFX_ITEMS_PICKUP_SWORD
+
+CAPABILITIES(/obj/item/spike)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SWORD, pickup = SFX_ITEMS_PICKUP_SWORD))
 
 /obj/item/arrow/quill
 	name = "alien quill"
@@ -175,7 +177,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 		var/obj/item/C = cell()
 		C.forceMove(get_turf(user))
 		to_chat(user, span_notice("You jimmy [cell()] out of [src] with [tool]."))
-		playsound(src, tool.usesound, 50, 1)
+		playsound(src, sounds_of(tool).use, 50, 1)
 		rel_clear(src, nameof(cell))
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
@@ -287,12 +289,12 @@ CAPABILITIES(/obj/item/crossbowframe)
 	op("finish", tool(TOOL_SCREWDRIVER), label("Secure the parts"), when(req_stage(nameof(buildstate), 5)), wait(0), says(MSG(crossbow_frame/secured)), then(PROC_REF(finished)))
 
 /obj/item/crossbowframe/proc/tool_sounds(datum/act/op/A)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	return OP_OK
 
 /// Secured, the frame is a crossbow.
 /obj/item/crossbowframe/proc/finished(datum/act/op/A)
-	playsound(src, A.held.usesound, 50, 1)
+	playsound(src, sounds_of(A.held).use, 50, 1)
 	replace_with(src, /obj/item/gun/launcher/crossbow)
 	return OP_OK
 

@@ -67,8 +67,8 @@
 	if(QDELETED(I))
 		return
 
-	if(I.drop_sound)
-		playsound(I, I.drop_sound, 25, 0, preference = /datum/preference/toggle/drop_sounds)
+	if(sounds_of(I).drop)
+		playsound(I, sounds_of(I).drop, 25, 0, preference = /datum/preference/toggle/drop_sounds)
 
 //Drops the item in our left hand
 /mob/living/drop_l_hand(atom/Target)

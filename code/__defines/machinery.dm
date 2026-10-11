@@ -240,3 +240,7 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 #define BOMB_TESTER_MODE_SINGLE 1
 #define BOMB_TESTER_MODE_DOUBLE 2
 #define BOMB_TESTER_MODE_CANISTER 3
+
+/// The entry kind of item_sounds() (code/game/objects/items.dm) and the key its run-time writes publish.
+#define ENTRY_ITEM_SOUNDS "item_sounds"
+#define ITEM_SOUNDS_KEY "item_sounds"

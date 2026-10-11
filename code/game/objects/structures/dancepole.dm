@@ -11,7 +11,7 @@
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	set_anchored(!anchored)
-	playsound(src, O.usesound, 50, 1)
+	playsound(src, sounds_of(O).use, 50, 1)
 	to_chat(user, span_blue("You [anchored ? "secure" : "unsecure"] \the [src]."))
 	return OP_OK
 

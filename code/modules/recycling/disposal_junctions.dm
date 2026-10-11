@@ -120,7 +120,7 @@ TRACKED(/obj/structure/disposalpipe/sortjunction, panel_open)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	set_panel_open(!panel_open)
-	playsound(src, I.usesound, 100, 1)
+	playsound(src, sounds_of(I).use, 100, 1)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the wire panel."))
 	return OP_OK
 

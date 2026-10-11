@@ -134,7 +134,7 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	act_message(user, src, MSG_SELF(span_notice("You [anchored ? "un" : ""]secure %T%.")), \
 		MSG_OTHERS(span_warning("%U% has [anchored ? "un" : ""]secured %T%.")))
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	power_change()
 	update_icon()
 	if(!anchored)

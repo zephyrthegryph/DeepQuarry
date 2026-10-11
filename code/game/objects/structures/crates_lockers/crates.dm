@@ -113,7 +113,7 @@ CAPABILITIES(/obj/structure/closet/crate)
 	return OP_OK
 
 /obj/structure/closet/crate/proc/rigging_cut(datum/act/op/A)
-	playsound(src, A.held.usesound, 100, 1)
+	playsound(src, sounds_of(A.held).use, 100, 1)
 	set_rigged(FALSE)
 	return OP_OK
 

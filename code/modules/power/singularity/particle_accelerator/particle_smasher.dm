@@ -106,7 +106,7 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
 	set_anchored(!anchored)
-	playsound(src, W.usesound, 75, 1)
+	playsound(src, sounds_of(W).use, 75, 1)
 	act_message(user, null, MSG_SELF("You [anchored ? "secure" : "unsecure"] the [src.name] to the floor."), \
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))

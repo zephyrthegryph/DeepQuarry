@@ -33,13 +33,12 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/power_usage = 1
 	var/flickering = FALSE
 	var/single_use = FALSE
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/flashlight)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	after_init(0, then(PROC_REF(flashlight_after_init)))
 	// Battery drain runs while a powered light is on.
 	every(2 SECONDS, then(PROC_REF(flashlight_step)), when = cond_all(nameof(on), nameof(power_use)))
@@ -312,13 +311,14 @@ TRACKED(/obj/item/flashlight, power_use)
 	desc = "A pen-sized light, used by medical staff."
 	icon_state = "penlight"
 	item_state = "pen"
-	drop_sound = SFX_ITEMS_DROP_ACCESSORY
-	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	slot_flags = SLOT_EARS
 	light_range = 2
 	w_class = ITEMSIZE_TINY
 	power_use = 0
 	cell_type = null
+
+CAPABILITIES(/obj/item/flashlight/pen)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/flashlight/color	//Default color is blue
 	name = "blue flashlight"
@@ -360,7 +360,9 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list ("smacked", "thwacked", "thunked")
-	hitsound = SFX_SWING_HIT
+
+CAPABILITIES(/obj/item/flashlight/maglight)
+	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/flashlight/drone
 	name = "low-power flashlight"
@@ -431,12 +433,11 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 	var/produce_heat = 1500
 	power_use = 0
 	cell_type = null
-	drop_sound = SFX_ITEMS_DROP_GLOVES
-	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 	light_system = MOVABLE_LIGHT
 	single_use = TRUE
 
 CAPABILITIES(/obj/item/flashlight/flare)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	// Flares burn fuel while lit (they have no cell, so power_use is off).
 	every(2 SECONDS, then(PROC_REF(flare_step)), when = nameof(on))
 	rolls(nameof(fuel), PROC_REF(roll_fuel))

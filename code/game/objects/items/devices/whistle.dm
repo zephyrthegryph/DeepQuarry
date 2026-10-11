@@ -10,13 +10,12 @@
 	var/use_message = "Halt! Security!"
 	var/insults
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TRACKED(/obj/item/hailer, use_message)
 TRACKED(/obj/item/hailer, insults)
 
 CAPABILITIES(/obj/item/hailer)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
 	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req_bool(PROC_REF(unfried), because = PROC_REF(settings_refusal))),

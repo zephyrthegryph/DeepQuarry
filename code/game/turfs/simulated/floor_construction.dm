@@ -64,7 +64,7 @@ MSG_DEF_SELF(floor/structures_on, "It has structures that must be removed before
 
 /turf/simulated/floor/proc/plating_cut(datum/act/op/A)
 	var/obj/item/held = A.held
-	playsound(src, held.usesound, 80, 1)
+	playsound(src, sounds_of(held).use, 80, 1)
 	do_remove_plating(get_base_turf_by_area(src))
 	return OP_OK
 

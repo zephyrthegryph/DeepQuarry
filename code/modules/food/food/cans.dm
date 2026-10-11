@@ -2,8 +2,6 @@
 	volume = 40 //just over one and a half cups
 	amount_per_transfer_from_this = 5
 	open_at_start = FALSE //starts closed
-	drop_sound = SFX_ITEMS_DROP_SODA
-	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	cant_chance = 1 //arbitrarily high for april fools; if it's not reverted in its entirety I suggest rolling it down to 2% or something
 	is_can = TRUE
 
@@ -13,6 +11,7 @@ TRACKED(/obj/item/reagent_containers/food/drinks/cans, shaken)
 
 // A can is opened by using it, except in a hostile stance, where it is shaken (shaking a shut can makes it foam when it is opened).
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_SODA, pickup = SFX_ITEMS_PICKUP_SODA))
 	every(2 SECONDS, then(PROC_REF(cans_step)), when = nameof(shaken))
 	extend("open", stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(maybe_unlucky)))
 	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up)))
@@ -80,11 +79,10 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/decaf_cola)
 	icon_state = "waterbottle"
 	center_of_mass_x = 16
 	center_of_mass_y = 8
-	drop_sound = SFX_ITEMS_DROP_DISK
-	pickup_sound = SFX_ITEMS_PICKUP_DISK
 	cant_chance = 0
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_DISK, pickup = SFX_ITEMS_PICKUP_DISK))
 	configure(reagents(add = list(REAGENT_ID_WATER = 30)))
 
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
@@ -702,7 +700,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/nukie_one)
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "wataur"
 	volume = 150
-	drop_sound = SFX_ITEMS_DROP_FOOD
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_FOOD))
 	configure(reagents(add = list(REAGENT_ID_WATER = 120)))

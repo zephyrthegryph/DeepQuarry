@@ -494,7 +494,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(!ispowered)
 		return OP_OK
 	panelopen = !panelopen
-	playsound(src, tool.usesound, 100, TRUE)
+	playsound(src, sounds_of(tool).use, 100, TRUE)
 	to_chat(user, span_notice("You [panelopen ? "open up" : "close"] the unit's maintenance panel."))
 	return OP_OK
 

@@ -211,7 +211,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 
 /obj/structure/railing/proc/welder_sound(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 
 /obj/structure/railing/proc/welder_act_timed_done(datum/act/op/A)
 	act_message(A.actor, src, MSG_SELF(span_notice("You repair some damage to %T%.")), 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))

@@ -87,7 +87,7 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 /obj/machinery/nuclearbomb/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	add_fingerprint(user)
 	if(auth())
 		if(opened == 0)
@@ -120,8 +120,8 @@ TRACKED(/obj/machinery/nuclearbomb, extended)
 /obj/machinery/nuclearbomb/proc/removal_started(datum/act/op/A)
 	add_fingerprint(A.actor)
 	var/obj/item/tool = A.held
-	if(tool?.usesound)
-		playsound(src, tool.usesound, 50, 1)
+	if(tool && sounds_of(tool).use)
+		playsound(src, sounds_of(tool).use, 50, 1)
 	return OP_OK
 
 /obj/machinery/nuclearbomb/proc/covers_cut_begins(datum/act/op/A)

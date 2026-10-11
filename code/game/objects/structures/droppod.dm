@@ -136,7 +136,7 @@ MSG_DEF_SELF(drop_pod/breaking_down, span_notice("You start breaking down %T%.")
 
 /obj/structure/drop_pod/proc/wrench_act_done(datum/act/op/A)
 	var/obj/item/O = A.held
-	playsound(A.actor, O.usesound, 50, 1)
+	playsound(A.actor, sounds_of(O).use, 50, 1)
 	replace_with(src, /obj/item/stack/material/plasteel, 10)
 
 /obj/structure/drop_pod/return_air()

@@ -289,7 +289,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 			to_chat(user, "Eject the items first!")
 		return OP_OK
 	set_mode(mode == DISPOSALMODE_OFF ? DISPOSALMODE_EJECTONLY : DISPOSALMODE_OFF)
-	playsound(src, I.usesound, 50, 1)
+	playsound(src, sounds_of(I).use, 50, 1)
 	to_chat(user, "You [mode == DISPOSALMODE_EJECTONLY ? "remove" : "attach"] the screws around the power connection.")
 	return OP_OK
 

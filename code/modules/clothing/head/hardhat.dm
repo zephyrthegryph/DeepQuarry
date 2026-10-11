@@ -22,9 +22,10 @@
 	actions_types = list(/datum/action/item_action/toggle_head_light)
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = SFX_ITEMS_DROP_HELM
-	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/head/hardhat)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 
 /obj/item/clothing/head/hardhat/orange
 	icon_state = "hardhat0_orange"

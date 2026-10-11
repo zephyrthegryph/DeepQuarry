@@ -25,11 +25,12 @@
 /datum/type_trait/proc/apply_args(list/named)
 	for(var/name in named)
 		if(isnull(named[name]))
-			continue
+			continue // not named: inherited
+		var/value = named[name] == TRAIT_NONE ? null : named[name] // TRAIT_NONE: a subtype that sets the value to nothing
 		if(!(name in vars))
 			stack_trace("[type]: the trait has no value [name]")
 			continue
-		vars[name] = named[name] // ALLOW(api): a trait datum's values are set from its declaration's arguments by name
+		vars[name] = value // ALLOW(api): a trait datum's values are set from its declaration's arguments by name
 
 /// Writes this trait's values into `into` (a fresh one of the same type). A subtype copies its own vars.
 /datum/type_trait/proc/copy_values(datum/type_trait/into)

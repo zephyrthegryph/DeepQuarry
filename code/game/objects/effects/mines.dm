@@ -163,7 +163,7 @@ CAPABILITIES(/obj/effect/mine)
 	panel_open = !panel_open
 	act_message(user, null, MSG_SELF(span_notice("You very carefully screw the mine's panel [panel_open ? "open" : "closed"].")), \
 		MSG_OTHERS(span_warning("%U% very carefully screws the mine's panel [panel_open ? "open" : "closed"].")))
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	alpha = camo_net ? (panel_open ? 255 : 50) : 255
 	return OP_OK
 

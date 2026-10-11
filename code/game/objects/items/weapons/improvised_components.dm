@@ -13,7 +13,7 @@ CAPABILITIES(/obj/item/material/butterflyconstruction)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	to_chat(user, "You finish the concealed blade weapon.")
-	playsound(src, tool.usesound, 50, 1)
+	playsound(src, sounds_of(tool).use, 50, 1)
 	replace_with(src, /obj/item/material/butterfly, material.name)
 	return OP_OK
 

@@ -369,7 +369,7 @@ CAPABILITIES(/obj/machinery/door)
 	var/obj/item/stack/material/plasteel/reinforcing_sheet = new /obj/item/stack/material/plasteel(get_turf(src), reinforcing)
 	set_reinforcing(0)
 	act_message(user, src, self = span_notice("You remove \the [reinforcing_sheet]."))
-	playsound(src, A.held.usesound, 100, 1)
+	playsound(src, sounds_of(A.held).use, 100, 1)
 	return OP_OK
 
 // ---- repair: a welder, as long as the damage ----

@@ -4,14 +4,11 @@
 	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	icon_state = "butterflyknife"
 	item_state = null
-	hitsound = null
 	var/active = 0
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("patted", "tapped")
 	force_divisor = 0.25 // 15 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.25 // 5 when thrown with weight 20 (steel)
-	drop_sound = SFX_ITEMS_DROP_KNIFE
-	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 
 /obj/item/material/butterfly/update_force()
 	if(active)
@@ -19,7 +16,7 @@
 		sharp = TRUE
 		..() //Updates force.
 		throwforce = max(3,force-3)
-		hitsound = SFX_WEAPONS_BLADESLICE
+		set_hitsound(SFX_WEAPONS_BLADESLICE)
 		icon_state += "_open"
 		w_class = ITEMSIZE_NORMAL
 		attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
@@ -27,7 +24,7 @@
 		force = 3
 		edge = FALSE
 		sharp = FALSE
-		hitsound = initial(hitsound)
+		set_hitsound(sounds_of_type(type).hit)
 		icon_state = initial(icon_state)
 		w_class = initial(w_class)
 		attack_verb = initial(attack_verb)
@@ -47,6 +44,7 @@
 TRACKED(/obj/item/material/butterfly, active)
 
 CAPABILITIES(/obj/item/material/butterfly)
+	configure(item_sounds(hit = TRAIT_NONE, drop = SFX_ITEMS_DROP_KNIFE, pickup = SFX_ITEMS_PICKUP_KNIFE))
 	op("flip", in_hand(), label("Open or conceal blade"), then(PROC_REF(blade_flipped)))
 
 /// Preserve the blade subtype's complete force and equipment update.
@@ -79,7 +77,9 @@ CAPABILITIES(/obj/item/material/butterfly)
 	force_divisor = 0.15 // 9 when wielded with hardness 60 (steel)
 	MATERIAL_BULK(MAT_STEEL, 12000)
 	attack_verb = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	drop_sound = SFX_ITEMS_DROP_KNIFE
+
+CAPABILITIES(/obj/item/material/knife)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_KNIFE))
 
 // These no longer inherit from hatchets.
 /obj/item/material/knife/tacknife

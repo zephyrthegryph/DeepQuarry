@@ -100,6 +100,6 @@ CAPABILITIES(/obj/effect/decal/writing)
 /obj/effect/decal/writing/proc/clear_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/weldingtool/welder = A.held.get_welder()
-	playsound(loc, welder.usesound, 50, 1)
+	playsound(loc, sounds_of(welder).use, 50, 1)
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " clears away some graffiti."))
 	spent(src, user)

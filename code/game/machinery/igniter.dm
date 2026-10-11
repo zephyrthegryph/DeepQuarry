@@ -75,7 +75,7 @@ CAPABILITIES(/obj/machinery/igniter)
 	var/obj/item/tool = A.held
 	add_fingerprint(user)
 	disable = !disable
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	if(disable)
 		act_message(user, src, MSG_SELF(span_warning("You disable the connection to %T%.")), MSG_OTHERS(span_warning("%U% has disabled %T%!")))
 		icon_state = "[base_state]-d"

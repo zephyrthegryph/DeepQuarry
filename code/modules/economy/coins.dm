@@ -12,8 +12,6 @@
 	slot_flags = SLOT_EARS
 	var/string_attached
 	var/sides = 2
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/coin/gold
 	name = MAT_GOLD + " coin"
@@ -175,6 +173,7 @@ CAPABILITIES(/obj/item/coin/uranium)
 	return OP_OK
 
 CAPABILITIES(/obj/item/coin)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -207,8 +206,6 @@ CAPABILITIES(/obj/item/coin)
 	slot_flags = SLOT_EARS
 	var/sides = 2
 	var/value = 1
-	drop_sound = SFX_ITEMS_DROP_RING
-	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/aliencoin/basic
 
@@ -231,6 +228,7 @@ CAPABILITIES(/obj/item/coin)
 	value = 20
 
 CAPABILITIES(/obj/item/aliencoin)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 	op("flip", in_hand(), label("Flip coin"), then(PROC_REF(alien_coin_flip_requested)))
 	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 

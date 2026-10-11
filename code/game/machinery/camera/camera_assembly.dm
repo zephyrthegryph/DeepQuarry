@@ -68,14 +68,14 @@ CAPABILITIES(/obj/item/camera_assembly)
 /// Wrenched down: it is fastened and faces away from the wall.
 /obj/item/camera_assembly/proc/fastened(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(TRUE)
 	auto_turn()
 	return OP_OK
 
 /obj/item/camera_assembly/proc/unfastened(datum/act/op/A)
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	set_anchored(FALSE)
 	return OP_OK
 
@@ -86,8 +86,8 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/item/W = A.held_provider()
 	var/obj/item/weldingtool/welder = W.get_welder()
 	welder.eyecheck(A.actor)
-	if(W.usesound)
-		play_sfx(src, W.usesound, volume = 50, vary = TRUE)
+	if(sounds_of(W).use)
+		play_sfx(src, sounds_of(W).use, volume = 50, vary = TRUE)
 	return OP_OK
 
 /obj/item/camera_assembly/proc/weld_duration(datum/act/op/A)
@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 /obj/item/camera_assembly/proc/wires_cut(datum/act/op/A)
 	var/obj/item/tool = A.held
 	new /obj/item/stack/cable_coil(get_turf(src), 2)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	return OP_OK
 
 /obj/item/camera_assembly/proc/crowbar_used(datum/act/op/A)
@@ -109,7 +109,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 	var/obj/upgrade = locate_in_list(upgrades, /obj)
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
-		playsound(src, tool.usesound, 50, TRUE)
+		playsound(src, sounds_of(tool).use, 50, TRUE)
 		rel_take(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
 	return OP_OK
@@ -117,7 +117,7 @@ CAPABILITIES(/obj/item/camera_assembly)
 /obj/item/camera_assembly/proc/screwdriver_used(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	ask_camera_networks(user)
 	return OP_OK
 

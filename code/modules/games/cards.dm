@@ -41,10 +41,11 @@ CAPABILITIES(/obj/item/deck)
 	name = "deck of cards"
 	desc = "A simple deck of playing cards."
 	icon_state = "deck"
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/card_icon_prefix = ""
 	var/deck_size = 1 // # of times we will generate cards within this deck
+
+CAPABILITIES(/obj/item/deck/cards)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 
 /obj/item/deck/cards/proc/init_cards()
 	PROTECTED_PROC(TRUE)
@@ -470,10 +471,9 @@ CAPABILITIES(/obj/item/deck)
 	w_class = ITEMSIZE_TINY
 	var/list/cards = list() // ALLOW(instance_list): d: a card pack always holds cards
 	var/parentdeck = null // This variable is added here so that card pack dependent card can be mixed together by defining a "parentdeck" for them
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 
 CAPABILITIES(/obj/item/pack)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	owns_many(nameof(cards))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
@@ -498,8 +498,6 @@ CAPABILITIES(/obj/item/pack)
 	desc = "Some playing cards."
 	icon = 'icons/obj/playing_cards.dmi'
 	icon_state = "empty"
-	drop_sound = SFX_ITEMS_DROP_PAPER
-	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	w_class = ITEMSIZE_TINY
 
 	var/concealed = 0
@@ -554,6 +552,7 @@ CAPABILITIES(/obj/item/pack)
 		spent(src, user)
 
 CAPABILITIES(/obj/item/hand)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	rolls(nameof(jitter_x), range_of(-5, 5))
 	rolls(nameof(jitter_y), range_of(-5, 5))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))

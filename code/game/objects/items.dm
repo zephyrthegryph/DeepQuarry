@@ -12,8 +12,6 @@
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/hitsound = SFX_SWING_HIT
-	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
 	var/storage_cost = null
 	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
 	var/no_attack_log = 0			//If it's an item we don't want to log attack_logs with, set this to 1
@@ -100,14 +98,6 @@
 	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
-	///Used when thrown into a mob
-	var/mob_throw_hit_sound
-	// Sound used when equipping the items into a valid slot.
-	var/equip_sound
-	// pickup sound - this is the default
-	var/pickup_sound = SFX_GENERIC_PICKUP
-	// drop sound - this is the default
-	var/drop_sound = SFX_GENERIC_DROP
 
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
@@ -411,16 +401,16 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
 		if (throwforce > 0)
-			if (mob_throw_hit_sound)
-				playsound(hit_atom, mob_throw_hit_sound, volume, TRUE, -1)
-			else if(hitsound)
-				playsound(hit_atom, hitsound, volume, TRUE, -1)
+			if (sounds_of(src).throw_hit)
+				playsound(hit_atom, sounds_of(src).throw_hit, volume, TRUE, -1)
+			else if(sounds_of(src).hit)
+				playsound(hit_atom, sounds_of(src).hit, volume, TRUE, -1)
 			else
 				play_sfx(hit_atom, SFX_WEAPONS_GENHIT, volume = volume, extrarange = -1)
 		else
 			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
-		playsound(src, drop_sound, 30, preference = /datum/preference/toggle/drop_sounds)
+		playsound(src, sounds_of(src).drop, 30, preference = /datum/preference/toggle/drop_sounds)
 
 // apparently called whenever an item is removed from a slot, container, or anything else.
 // TO NOTE:
@@ -495,13 +485,13 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(user.client)	user.client.screen |= src
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
-		if(equip_sound && !muffled_by_belly(user))
-			playsound(src, equip_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+		if(sounds_of(src).equip && !muffled_by_belly(user))
+			playsound(src, sounds_of(src).equip, 20, preference = /datum/preference/toggle/pickup_sounds)
 		else if(!muffled_by_belly(user))
-			playsound(src, drop_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).drop, 20, preference = /datum/preference/toggle/pickup_sounds)
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
-			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
 	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
 	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
@@ -1129,3 +1119,77 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return I?.my_augment
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
+
+// ---- what an item sounds like: the item_sounds() type trait ----
+//
+// The sounds an item makes are per-type data, declared in its CAPABILITIES block, not vars on /obj/item: a card's block holds
+// configure(item_sounds(pickup = SFX_ITEMS_PICKUP_CARD, drop = SFX_ITEMS_DROP_CARD)).
+// hit (a strike), use (used as a tool), throw_hit (thrown into a mob), equip (worn), pickup and drop. A subtype names only what it changes;
+// TRAIT_NONE silences a sound it inherits. Read with sounds_of(I).hit ... (sounds_of_type(path) for a type's declaration); an item whose
+// sound changes at run time (a lit welder) writes it with set_hitsound() / set_usesound() / ..., which give it its own copy and publish
+// ITEM_SOUNDS_KEY.
+
+STATIC_ENTRY(item_sounds)
+
+/proc/item_sounds(hit = null, use = null, throw_hit = null, equip = null, pickup = null, drop = null)
+	RETURN_TYPE(/datum/entry)
+	return entry_make(ENTRY_ITEM_SOUNDS, null, list("hit" = hit, "use" = use, "throw_hit" = throw_hit, "equip" = equip, "pickup" = pickup, "drop" = drop))
+
+/datum/type_trait/item_sounds
+	var/hit
+	var/use
+	var/throw_hit
+	var/equip
+	var/pickup
+	var/drop
+
+/datum/type_trait/item_sounds/copy_values(datum/type_trait/item_sounds/into)
+	into.hit = hit
+	into.use = use
+	into.throw_hit = throw_hit
+	into.equip = equip
+	into.pickup = pickup
+	into.drop = drop
+
+/datum/entry_engine/type_trait/item_sounds
+	kind = ENTRY_ITEM_SOUNDS
+	trait_type = /datum/type_trait/item_sounds
+
+/// The sounds `I` makes (its own once one was set at run time). Read only.
+READS_AS(/proc/sounds_of, ITEM_SOUNDS_KEY)
+/proc/sounds_of(obj/item/I) as /datum/type_trait/item_sounds
+	READS_FROM(I)
+	return type_trait_of(I, ENTRY_ITEM_SOUNDS)
+
+/// The sounds an item type declares (no instance): the old initial(hitsound).
+/proc/sounds_of_type(type) as /datum/type_trait/item_sounds
+	READS_FROM() // declared per type: constant
+	return type_trait_of_type(type, ENTRY_ITEM_SOUNDS)
+
+/// Writes one of the item's sounds at run time (its own copy of the trait).
+/obj/item/proc/set_item_sound(field, value)
+	var/datum/type_trait/item_sounds/now = sounds_of(src)
+	if(now.vars[field] == value)
+		return FALSE
+	var/datum/type_trait/item_sounds/own = type_trait_own(src, ENTRY_ITEM_SOUNDS)
+	own.vars[field] = value // ALLOW(api): the field is one of the trait's six, named by the setter below
+	tracked_changed(src, ITEM_SOUNDS_KEY)
+	return TRUE
+
+/obj/item/proc/set_hitsound(value)
+	return set_item_sound("hit", value)
+
+/obj/item/proc/set_usesound(value)
+	return set_item_sound("use", value)
+
+/obj/item/proc/set_mob_throw_hit_sound(value)
+	return set_item_sound("throw_hit", value)
+
+/obj/item/proc/set_equip_sound(value)
+	return set_item_sound("equip", value)
+
+/obj/item/proc/set_pickup_sound(value)
+	return set_item_sound("pickup", value)
+
+/obj/item/proc/set_drop_sound(value)
+	return set_item_sound("drop", value)

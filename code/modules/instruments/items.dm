@@ -53,8 +53,10 @@ CAPABILITIES(/obj/item/instrument)
 	name = "space violin"
 	desc = "A wooden musical instrument with four strings and a bow. \"The devil went down to space, he was looking for an assistant to grief.\""
 	icon_state = "violin"
-	hitsound = SFX_SWING_HIT
 	allowed_instrument_ids = "violin"
+
+CAPABILITIES(/obj/item/instrument/violin)
+	configure(item_sounds(hit = SFX_SWING_HIT))
 
 /obj/item/instrument/violin/golden
 	name = "golden violin"
@@ -72,16 +74,20 @@ CAPABILITIES(/obj/item/instrument)
 	desc = "A 'Mura' brand banjo. It's pretty much just a drum with a neck and strings."
 	icon_state = "banjo"
 	attack_verb = list("scruggs-styled", "hum-diggitied", "shin-dug", "clawhammered")
-	hitsound = SFX_WEAPONS_BANJOSLAP
 	allowed_instrument_ids = "banjo"
+
+CAPABILITIES(/obj/item/instrument/banjo)
+	configure(item_sounds(hit = SFX_WEAPONS_BANJOSLAP))
 
 /obj/item/instrument/guitar
 	name = "guitar"
 	desc = "It's made of wood and has bronze strings."
 	icon_state = "guitar"
 	attack_verb = list("played metal on", "serenaded", "crashed", "smashed")
-	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = list("guitar","csteelgt","cnylongt", "ccleangt", "cmutedgt")
+
+CAPABILITIES(/obj/item/instrument/guitar)
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/eguitar
 	name = "electric guitar"
@@ -89,8 +95,10 @@ CAPABILITIES(/obj/item/instrument)
 	icon_state = "eguitar"
 	force = 12
 	attack_verb = list("played metal on", "shreded", "crashed", "smashed")
-	hitsound = SFX_WEAPONS_STRINGSMASH
 	allowed_instrument_ids = "eguitar"
+
+CAPABILITIES(/obj/item/instrument/eguitar)
+	configure(item_sounds(hit = SFX_WEAPONS_STRINGSMASH))
 
 /obj/item/instrument/glockenspiel
 	name = "glockenspiel"
@@ -184,7 +192,9 @@ CAPABILITIES(/obj/item/instrument)
 	force = 0
 	throw_speed = 3
 	throw_range = 15
-	hitsound = SFX_ITEMS_BIKEHORN
+
+CAPABILITIES(/obj/item/instrument/bikehorn)
+	configure(item_sounds(hit = SFX_ITEMS_BIKEHORN))
 
 /obj/item/instrument/musicalmoth
 	name = "musical moth"
@@ -194,7 +204,9 @@ CAPABILITIES(/obj/item/instrument)
 	attack_verb = list("fluttered", "flaped")
 	w_class = ITEMSIZE_SMALL
 	force = 0
-	hitsound = SFX_VOICE_MOTH_SCREAM_MOTH
+
+CAPABILITIES(/obj/item/instrument/musicalmoth)
+	configure(item_sounds(hit = SFX_VOICE_MOTH_SCREAM_MOTH))
 
 //////////////Fluff items
 

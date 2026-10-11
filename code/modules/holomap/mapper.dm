@@ -40,10 +40,9 @@
 	var/list/debug_mappers_list
 	var/list/debug_beacons_list
 
-	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
-	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 CAPABILITIES(/obj/item/mapping_unit)
+	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	every(2 SECONDS, then(PROC_REF(mapping_unit_step)), when = nameof(updating))
 	owns_one(nameof(cell), /obj/item/cell, starts = PROC_REF(make_cell))
 	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder, starts = /atom/movable/screen/mapper/extras_holder, starts_args = NO_LOC)

@@ -162,7 +162,7 @@ CAPABILITIES(/obj/item/clothing/mask/gas/sechailer)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
-	playsound(src, tool.usesound, 50, TRUE)
+	playsound(src, sounds_of(tool).use, 50, TRUE)
 	transfer_blooddna_to(mask)
 	transfer_fingerprints_to(mask)
 	transfer_fibres_to(mask)

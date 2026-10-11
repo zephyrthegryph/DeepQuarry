@@ -12,11 +12,11 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 150
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
-	usesound = SFX_ITEMS_RATCHET
 	toolspeed = 1
-	drop_sound = SFX_ITEMS_DROP_WRENCH
-	pickup_sound = SFX_ITEMS_PICKUP_WRENCH
 	tool_qualities = list(TOOL_WRENCH)
+
+CAPABILITIES(/obj/item/tool/wrench)
+	configure(item_sounds(use = SFX_ITEMS_RATCHET, drop = SFX_ITEMS_DROP_WRENCH, pickup = SFX_ITEMS_PICKUP_WRENCH))
 
 /obj/item/tool/wrench/pipe
 	name = "pipe wrench"
@@ -36,9 +36,11 @@
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked", "warped", "blasted")
-	usesound = SFX_EFFECTS_STEALTHOFF
 	toolspeed = 0.5
 	reach = 2
+
+CAPABILITIES(/obj/item/tool/wrench/hybrid)
+	configure(item_sounds(use = SFX_EFFECTS_STEALTHOFF))
 
 /datum/category_item/catalogue/anomalous/precursor_a/alien_wrench
 	name = "Precursor Alpha Object - Fastener Torque Tool"
@@ -61,14 +63,18 @@
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "wrench"
-	usesound = SFX_EFFECTS_EMPULSE
 	toolspeed = 0.1
+
+CAPABILITIES(/obj/item/tool/wrench/alien)
+	configure(item_sounds(use = SFX_EFFECTS_EMPULSE))
 
 /obj/item/tool/wrench/power
 	name = "power wrench"
 	desc = "You shouldn't see this."
-	usesound = SFX_ITEMS_DRILL_USE_2
 	force = 8
 	throwforce = 8
 	attack_verb = list("drilled", "screwed", "jabbed")
 	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/tool/wrench/power)
+	configure(item_sounds(use = SFX_ITEMS_DRILL_USE_2))

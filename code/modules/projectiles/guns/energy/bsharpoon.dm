@@ -46,7 +46,7 @@
 		return OP_OK
 	var/turf/T = get_turf(src)
 	to_chat(user, span_notice("You remove [scanmod] from [src]."))
-	playsound(src, tool.usesound, 75, 1)
+	playsound(src, sounds_of(tool).use, 75, 1)
 	scanmod.forceMove(T)
 	rel_take(src, nameof(scanmod))
 	update_fail_chance()
