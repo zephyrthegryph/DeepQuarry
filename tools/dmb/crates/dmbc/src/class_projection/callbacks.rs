@@ -7,6 +7,9 @@ use dm_ir::SymbolId;
 use dm_link::LinkTables;
 use std::collections::HashMap;
 
+#[path = "header_features.rs"]
+mod header_features;
+
 const EVENT: u64 = 0x800;
 const MOVE: u64 = 0x80000;
 const WHEEL: u64 = 0x100000;
@@ -42,10 +45,12 @@ pub fn materialize_callback_flags(
                 .map(|p| (SymbolId::of_bytes(p), i))
         })
         .collect();
+    let parents: Vec<_> = dmb.classes.iter().map(|c| c.parent_class_id()).collect();
+    let mut header = header_features::HeaderFeatures::default();
     let mut direct: Vec<_> = dmb.classes.iter().map(|c| c.flags & CALLBACKS).collect();
     for chain in projection.chains.iter().filter(|c| !c.verb) {
         let bits = callback_bits(chain.name);
-        if bits == 0
+        if (bits == 0 && !header_features::HeaderFeatures::recognizes(chain.name))
             || chain.entries.is_empty()
             || chain.owner == SymbolId::of("/")
             || chain.owner == SymbolId::of("/world")
@@ -67,13 +72,14 @@ pub fn materialize_callback_flags(
                 ));
             }
         }
+        header.observe(chain.name, class, &parents, &classes)?;
         direct[class] |= bits;
     }
-    let parents: Vec<_> = dmb.classes.iter().map(|c| c.parent_class_id()).collect();
     let effective = inherited_flags(&parents, &direct)?;
     for (class, bits) in dmb.classes.iter_mut().zip(effective) {
         class.flags = (class.flags & !CALLBACKS) | bits;
     }
+    header.apply(dmb);
     Ok(())
 }
 
