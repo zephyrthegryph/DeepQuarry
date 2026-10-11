@@ -11,7 +11,8 @@
     "resource_comparison": 5,
     "procedure_hit_verification": 4,
     "batch_spool_and_orphan_lifecycle": 10,
-    "authenticated_body_fork": 1
+    "authenticated_body_fork": 1,
+    "exact_input_and_certificate_delta": 5
   },
   "focused_failure": {
     "test": "failed_header_pruning_preserves_published_selector_owner",
@@ -32,7 +33,9 @@
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060510-aacd9df2-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060530-c8b5c89a-focused.json",
     "E:/dq-cache/dmb-native-v2/integration-gates/20261011-061747-3e0bf6ab-focused.json",
-    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060655-e847dfa9-focused.json"
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-060655-e847dfa9-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070538-9bda9c89-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070704-76e29f85-focused.json"
   ],
   "resources": {
     "distinct_assets": 3852,
@@ -102,11 +105,26 @@
     }
   ],
   "validation_blocker": {
-    "kind": "owned E disk space",
-    "free_bytes_observed": 278351872,
-    "rust_and_runtime_jobs_active": false,
-    "automatic_cleanup_rejected": true,
-    "manual_script": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-old-compiler-rcgu.ps1"
+    "kind": "disk blocker cleared by external space recovery",
+    "free_bytes_observed": 11758084096,
+    "owned_deletion_performed": false,
+    "focused_validation_resumed": true,
+    "formal_cohort_disk_gate_closed": false
   },
-  "dirty_scheduling": "open: exact local-input delta foundation remains separate from exhaustive semantic read change authority; no unaffected-row skip enabled"
+  "dirty_scheduling": "open: exact local-input delta foundation remains separate from exhaustive semantic read change authority; no unaffected-row skip enabled",
+  "delta_foundation_validation": {
+    "source_commits": [
+      "4a8de8750d",
+      "58a104b10f",
+      "fbd440c3db"
+    ],
+    "tests_passed": 5,
+    "scheduler_skip_enabled": false,
+    "tree_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070549-35f7e628-job-cargo.json",
+    "session_build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070451-52916be9-job-cargo.json",
+    "initial_build_failure": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070329-04f1638b-job-cargo.json",
+    "failure_fix": "fbd440c3db",
+    "nonmatching_fixture_filter_guard": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070518-2e9baefd-focused.json",
+    "performance_acceptance": false
+  }
 }
