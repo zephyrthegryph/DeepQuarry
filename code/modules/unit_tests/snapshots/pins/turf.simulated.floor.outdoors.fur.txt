@@ -122,6 +122,20 @@
 +8 menu: Pet
 +9 menu: Pet Fur
 +14 click: Click: Nothing
+human|/obj/item/shovel menu: Crawl
+human|/obj/item/shovel menu: Draw graffiti
+human|/obj/item/shovel menu: Emote Beyond
+human|/obj/item/shovel menu: Floor item help
+human|/obj/item/shovel menu: Graffiti
+human|/obj/item/shovel menu: Hit the floor
+human|/obj/item/shovel menu: Move To Top
+human|/obj/item/shovel menu: Nothing
+human|/obj/item/shovel menu: Pet
+human|/obj/item/shovel menu: Pet Fur
+human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/shovel menu: Touch
+human|/obj/item/shovel menu: Turf item
+human|/obj/item/shovel click: Click: Nothing
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
@@ -134,4 +148,4 @@
 +8 menu: Pet
 +9 menu: Pet Fur
 +13 click: Click: Nothing
-keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, graffiti, lay_flooring, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
+keys: crawl_drag, cut_plating, dig, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, graffiti, lay_flooring, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents

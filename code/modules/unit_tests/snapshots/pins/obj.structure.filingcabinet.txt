@@ -13,8 +13,8 @@ robot|none click: Click: Interaction hand
 +0 menu: Climb
 +2 menu: Interaction hand (refused: It's empty.)
 +3 menu: Interaction item
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
++5 menu: Take apart
++7 click: Click: Take apart
 @obj.structure human|/obj/item/tool/crowbar
 -menu: Use
 -click: Click: Use

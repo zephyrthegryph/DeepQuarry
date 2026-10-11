@@ -14,8 +14,7 @@ human|none click: Click: Use
 +1 menu: Eject pAI
 +3 menu: Open maintenance panel
 +5 menu: Use
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
++6 click: Click: Open maintenance panel
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Deconstruct (refused: the maintenance panel is closed)
@@ -29,8 +28,7 @@ human|none click: Click: Use
 +0 menu: Eject content
 +1 menu: Eject pAI
 +4 menu: Use
-+5 menu: Use wrench
-+6 click: Click: Use wrench
++5 click: Click: Use
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Eject content

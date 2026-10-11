@@ -27,9 +27,12 @@ ai|none click: Click: Toggle lock
 +3 menu: Remove Fire Axe
 +6 menu: Use (refused: The cabinet won't budge.)
 @obj.structure human|/obj/item/multitool
+-click: Click: Use
 +2 menu: Open/Close
 +3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++4 menu: Reset the lock
++7 menu: Use (refused: The cabinet won't budge.)
++8 click: Click: Reset the lock
 @obj.structure human|/obj/item/weldingtool
 +2 menu: Open/Close
 +3 menu: Remove Fire Axe
@@ -50,4 +53,4 @@ ai|none click: Click: Toggle lock
 +2 menu: Open/Close
 +3 menu: Remove Fire Axe
 +6 menu: Use (refused: The cabinet won't budge.)
-keys: drag_buckle, fireaxecabinet_silicon_lock, hand, item, melee_hit, remove_fire_axe_effect, robot_item, tk, toggle_openness_effect
+keys: drag_buckle, fireaxecabinet_silicon_lock, hand, item, lock_reset, melee_hit, remove_fire_axe_effect, robot_item, tk, toggle_openness_effect, unlock_reset

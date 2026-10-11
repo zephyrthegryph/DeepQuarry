@@ -62,8 +62,8 @@
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
 +6 menu: Turn Around
-+7 menu: Use welder
-+8 click: Click: Use welder
++7 menu: Weld in place (refused: you can only attach the pipe if the floor plating is removed)
++8 click: Click: Weld in place
 @obj.structure human|/obj/item/stack/cable_coil
 -menu: Use
 -click: Click: Use
