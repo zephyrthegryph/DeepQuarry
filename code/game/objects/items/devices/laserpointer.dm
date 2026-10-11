@@ -110,7 +110,7 @@ CAPABILITIES(/obj/item/laser_pointer)
 
 	//human/alien mobs
 	if(ishuman(target))
-		if(user.zone_sel.selecting == "eyes")
+		if(hud_of(user)?.zone_sel?.selecting == "eyes")
 			var/mob/living/carbon/human/H = target
 
 			//20% chance to actually hit the eyes

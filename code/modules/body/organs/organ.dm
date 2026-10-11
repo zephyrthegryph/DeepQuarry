@@ -590,7 +590,7 @@ CAPABILITIES(/obj/item/organ)
 /// The organ can be bitten: flesh, and the eater aims at the mouth.
 /obj/item/organ/proc/bite_offered(datum/act/op/A)
 	var/mob/user = A.actor
-	return (!is_robotic() && user?.zone_sel?.selecting == O_MOUTH) ? null : /datum/msg/req_failed
+	return (!is_robotic() && hud_of(user)?.zone_sel?.selecting == O_MOUTH) ? null : /datum/msg/req_failed
 
 /obj/item/organ/proc/bite_op(datum/act/op/A)
 	bitten(A.actor)

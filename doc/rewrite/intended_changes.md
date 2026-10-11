@@ -4538,3 +4538,16 @@ as a body temperature).
 ### Holder constructor diagnostic stack lines (requirements-zero-1010-h)
 
 Master commit `d7f737b36b` (2026-10-10 20:23:35 -0500) adds two explanatory lines before the parameter apply handler in `code/engine/lifeforms/params.dm`. The conversion pins for `/obj/item/holder`, `/obj/item/holder/mouse` and `/obj/item/holder/micro` therefore record that handler at line 239 instead of 237. Their existing missing-mob diagnostic, constructor behavior and all interaction rows are unchanged. Only these three diagnostic rows were refreshed from the final focused capture; this is a master-source location change, not a simulation-rule behavior change.
+
+## Mob screen elements on the client HUD (base_vars lane B, bv-hud)
+
+The 20 screen refs (`hands`, `healths`, `internals`, `pain`, `zone_sel`, the gun, ling, borer, wizard, shadekin, lleill, xenochimera and
+autowhisper displays, ...), `plane_holder`, `vis_enabled` and `planes_visible` leave `/mob` for `/datum/hud` (`hud_element()`, read
+`hud_of(M)?.x`; 649 sites, `tools/dx/codemods/move_to_hud.py`). The unused `purged` screen var is deleted.
+
+* **Logout drops the hud** (screens, plane masters and vision lists); Login builds a new one and `recalculate_vis()` rebuilds what the mob
+  sees. Before, the hud lived on until the next login.
+* **A mob without a client has no target zone selector**: `hud_of(M)?.zone_sel?.selecting` reads null where `M.zone_sel.selecting` would
+  have raised a runtime error (it was already null without a client). Vision toggles on a client-less mob (`plane_holder?.set_vis()`) do
+  nothing until a client logs in, as before for a mob that never had one.
+* Test mobs get an empty hud with `dq_test_hud(M)`.

@@ -215,25 +215,25 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /mob/living/carbon/human/proc/show_lleill_display()
-	if(lleill_display)
-		lleill_display.invisibility = INVISIBILITY_NONE
-		lleill_display.icon_state = "lleill-4"
+	if(hud_used?.lleill_display)
+		hud_used?.lleill_display?.invisibility = INVISIBILITY_NONE
+		hud_used?.lleill_display?.icon_state = "lleill-4"
 
 /datum/species/proc/update_lleill_hud(mob/living/carbon/human/H)
 	var/relative_energy = lleill_energy_max ? ((lleill_energy/lleill_energy_max)*100) : 0
-	if(H.lleill_display)
-		H.lleill_display.invisibility = INVISIBILITY_NONE
+	if(hud_of(H)?.lleill_display)
+		hud_of(H)?.lleill_display?.invisibility = INVISIBILITY_NONE
 		switch(relative_energy)
 			if(0 to 24)
-				H.lleill_display.icon_state = "lleill-0"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-0"
 			if(25 to 49)
-				H.lleill_display.icon_state = "lleill-1"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-1"
 			if(50 to 74)
-				H.lleill_display.icon_state = "lleill-2"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-2"
 			if(75 to 99)
-				H.lleill_display.icon_state = "lleill-3"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-3"
 			if(100 to INFINITY)
-				H.lleill_display.icon_state = "lleill-4"
+				hud_of(H)?.lleill_display?.icon_state = "lleill-4"
 	return
 
 /datum/species/lleill/add_inherent_verbs(mob/living/carbon/human/H)

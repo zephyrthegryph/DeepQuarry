@@ -137,11 +137,11 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 /obj/item/material/whip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	switch(stance)
 		if(I_HURT)
-			if(prob(10) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
+			if(prob(10) && ishuman(target) && (hud_of(user)?.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				to_chat(target, span_warning("\The [src] rips at your hands!"))
 				ranged_disarm(target)
 		if(I_DISARM)
-			if(prob(min(90, force * 3)) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
+			if(prob(min(90, force * 3)) && ishuman(target) && (hud_of(user)?.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				ranged_disarm(target)
 			else
 				act_message(target, src, others = span_danger("%T% sends %U% stumbling away."))
@@ -158,7 +158,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 	if(istype(H))
 		var/list/holding = list(H.get_active_hand() = 40, H.get_inactive_hand() = 20)
 
-		if(user.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
+		if(hud_of(user)?.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
 			for(var/obj/item/gun/W in holding)
 				if(W && prob(holding[W]))
 					var/list/turfs = list()
@@ -169,8 +169,8 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 						visible_message(span_danger("[H]'s [W] goes off due to \the [src]!"))
 						return W.afterattack(target,H)
 
-		if(!(H.species.flags & NO_SLIP) && prob(10) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
-			var/armor_check = H.armor_against(INJURY_BLUNT, user.zone_sel)
+		if(!(H.species.flags & NO_SLIP) && prob(10) && (hud_of(user)?.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
+			var/armor_check = H.armor_against(INJURY_BLUNT, hud_of(user)?.zone_sel)
 			H.apply_effect(3, WEAKEN, armor_check)
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if(armor_check < 60)
@@ -184,7 +184,7 @@ MSG_DEF_SELF(snowball/compacting, span_notice("You start compacting the snowball
 				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
-			if(user.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
+			if(hud_of(user)?.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
 				for(var/obj/item/I in holding)
 					if(I && prob(holding[I]))
 						H.drop_from_inventory(I)

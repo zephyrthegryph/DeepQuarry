@@ -67,7 +67,7 @@ TRACKED(/obj/item/weldingtool, always_process)
 /obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M) && stance == I_HELP)
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
+		var/obj/item/organ/external/S = H.organs_by_name[hud_of(user)?.zone_sel?.selecting]
 
 		if(!S || !S.is_robotic() || S.open == 3)
 			return ..()

@@ -63,14 +63,14 @@
 	// Should this all be in Touch()?
 	if(istype(H) && has_hands)
 		if(H.get_accuracy_penalty() && H != src)	//Should only trigger if they're not aiming well
-			var/hit_zone = get_zone_with_miss_chance(H.zone_sel.selecting, src, H.get_accuracy_penalty(), attacker = H)
+			var/hit_zone = get_zone_with_miss_chance(hud_of(H)?.zone_sel?.selecting, src, H.get_accuracy_penalty(), attacker = H)
 			if(!hit_zone)
 				H.do_attack_animation(src)
 				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 				act_message(src, H, others = span_filter_combat("[span_red(span_bold("%T% reaches for %U%, but misses!"))]"))
 				return FALSE
 
-		if(H != src && check_shields(0, null, H, H.zone_sel.selecting, H.name))
+		if(H != src && check_shields(0, null, H, hud_of(H)?.zone_sel?.selecting, H.name))
 			H.do_attack_animation(src)
 			return FALSE
 
@@ -123,7 +123,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		return FALSE;
 
 	// Abdominal thrusts on a choking patient (aim at the chest).
-	if(istype(H) && H != src && !on_fire && H.zone_sel?.selecting == BP_TORSO && stat != DEAD)
+	if(istype(H) && H != src && !on_fire && hud_of(H)?.zone_sel?.selecting == BP_TORSO && stat != DEAD)
 		var/datum/affliction/airway_obstruction/choke = body?.find_affliction(/datum/affliction/airway_obstruction)
 		if(choke)
 			perform_heimlich(H, choke)
@@ -151,7 +151,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 
 		perform_op(H, src, "cpr", null, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 
-	else if(!(M == src && apply_pressure(M, M.zone_sel.selecting)))
+	else if(!(M == src && apply_pressure(M, hud_of(M)?.zone_sel?.selecting)))
 		help_shake_act(M)
 	return TRUE
 
@@ -179,7 +179,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 
 	add_attack_logs(H,src,"Disarmed")
 
-	var/obj/item/organ/external/affecting = get_organ(ran_zone(M.zone_sel.selecting))
+	var/obj/item/organ/external/affecting = get_organ(ran_zone(hud_of(M)?.zone_sel?.selecting))
 
 	var/list/holding = list(get_active_hand() = 40, get_inactive_hand() = 20)
 
@@ -270,13 +270,13 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 
 	M.do_attack_animation(src)
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
-	act_message(M, src, others = span_warning("%U% has grabbed %T% [(M.zone_sel.selecting == BP_L_HAND || M.zone_sel.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
+	act_message(M, src, others = span_warning("%U% has grabbed %T% [(hud_of(M)?.zone_sel?.selecting == BP_L_HAND || hud_of(M)?.zone_sel?.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
 //Harm Intent
 /mob/living/carbon/human/proc/attack_hand_harm_intent(mob/living/carbon/human/H, mob/living/M as mob, has_hands)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//As a note: This intentionally doesn't immediately return if has_hands is false. This is because you can attack with kicks/bites!
-	if(has_hands && M.zone_sel.selecting == "mouth" && get_equipped_item(SLOT_ID_MASK) && istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade))
+	if(has_hands && hud_of(M)?.zone_sel?.selecting == "mouth" && get_equipped_item(SLOT_ID_MASK) && istype(get_equipped_item(SLOT_ID_MASK), /obj/item/grenade))
 		var/obj/item/grenade/G = get_equipped_item(SLOT_ID_MASK)
 		if(!G.active)
 			act_message(M, src, others = span_danger("%U% pulls the pin from %T%'s [G.name]!"))
@@ -293,7 +293,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	var/rand_damage = rand(1, 5)
 	var/block = 0
 	var/accurate = 0
-	var/hit_zone = H.zone_sel.selecting
+	var/hit_zone = hud_of(H)?.zone_sel?.selecting
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
 
 	if(!affecting || affecting.is_stump())
@@ -460,7 +460,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 	if(!neck_grab)
 		return FALSE
 
-	if(!def_zone) def_zone = user.zone_sel.selecting
+	if(!def_zone) def_zone = hud_of(user)?.zone_sel?.selecting
 	var/target_zone = check_zone(def_zone)
 	if(!target_zone)
 		return FALSE

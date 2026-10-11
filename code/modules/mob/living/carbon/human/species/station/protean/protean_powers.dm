@@ -781,7 +781,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	if(!(ORGAN_NANOFORM in A.target_parent_classes))
 		to_chat(H, span_danger("This implant is incompatible with our nanoform."))
 		return
-	var/obj/item/organ/external/target_organ = H.get_organ(H.zone_sel.selecting)
+	var/obj/item/organ/external/target_organ = H.get_organ(hud_of(H)?.zone_sel?.selecting)
 	if(!istype(target_organ) || target_organ.is_stump())
 		to_chat(H, span_danger("Your [target_organ] is currently unsuitable for implants."))
 		return
