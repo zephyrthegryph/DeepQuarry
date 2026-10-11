@@ -3,12 +3,10 @@
 	body_parts_covered = CHEST
 	item_flags = THICKMATERIAL
 
-	cold_protection = CHEST
-	min_cold_protection_temperature = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = CHEST
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.6
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/armor)
+	configure(item_protection(cold_parts = CHEST, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = CHEST, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
@@ -50,7 +48,9 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 	icon_state = "riot"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=80;bullet=10;laser=10;energy=10"
-	siemens_coefficient = 0.5
+
+CAPABILITIES(/obj/item/clothing/suit/armor/riot)
+	configure(item_protection(siemens = 0.5))
 
 /obj/item/clothing/suit/armor/riot/alt
 	icon_state = "riot_new"
@@ -64,7 +64,9 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 	blood_overlay_type = "armor"
 	slowdown = 0.5
 	armor_spec = "melee=10;bullet=80;laser=10;energy=10"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/armor/bulletproof)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/armor/bulletproof/alt
 	icon_state = "bulletproof_new"
@@ -78,7 +80,9 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 	blood_overlay_type = "armor"
 	slowdown = 0.5
 	armor_spec = "melee=10;bullet=10;laser=80;energy=50"
-	siemens_coefficient = 0.1
+
+CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
+	configure(item_protection(siemens = 0.1))
 
 /obj/item/clothing/suit/armor/laserproof/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(istype(damage_source, /obj/item/projectile/energy) || istype(damage_source, /obj/item/projectile/beam))
@@ -111,7 +115,9 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 	blood_overlay_type = "armor"
 	slowdown = 0.5
 	armor_spec = "melee=50;bullet=50;laser=50;energy=30;bomb=30"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/armor/tactical
 	name = "tactical armor"
@@ -122,26 +128,24 @@ TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(P
 	flags_inv = HIDETIE|HIDEHOLSTER
 	slowdown = 1
 	armor_spec = "melee=60;bullet=60;laser=60;energy=40;bomb=40"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tactical)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/suit/armor/swat
 	name = "swat suit"
 	desc = "A heavily armored suit that protects against moderate damage. Used in special operations."
 	icon_state = "deathsquad"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
 	item_flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|FEET|ARMS
 	slowdown = 1
 	w_class = ITEMSIZE_HUGE
 	armor_spec = "melee=80;bullet=60;laser=50;energy=25;bomb=50;bio=100;rad=100"
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 20* ONE_ATMOSPHERE
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/suit/armor/swat)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 20* ONE_ATMOSPHERE, siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
@@ -177,8 +181,10 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY
 	slowdown = -1
 	body_parts_covered = CHEST
 	armor_spec = "melee=50;bullet=50;laser=50;energy=50;bomb=50;rad=40"
-	siemens_coefficient = 0.4
 	var/block_chance = 20
+
+CAPABILITIES(/obj/item/clothing/suit/armor/alien)
+	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/suit/armor/alien/tank/get_mechanics_info(list/additional_information)
 	return ..(list("It has a 40% chance to completely nullify an incoming attack.") + additional_information)
@@ -242,11 +248,6 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/swat, suit_storage_spec, list(HOLD_ONLY
 	body_parts_covered = CHEST
 	item_flags = THICKMATERIAL
 
-	cold_protection = CHEST
-	min_cold_protection_temperature = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE
-	heat_protection = CHEST
-	max_heat_protection_temperature = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.6
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/vest, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
@@ -346,9 +347,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest, suit_storage_spec, list(HOLD_ON
 	icon_state = "flexitac"
 	item_state = "flexitac"
 	armor_spec = "melee=40;bullet=40;laser=60;energy=35;bomb=30"
-	cold_protection = CHEST
-	min_cold_protection_temperature = T0C - 20
 	slowdown = 0.5
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/heavy/flexitac)
+	configure(item_protection(cold_parts = CHEST, min_cold = T0C - 20))
 
 /obj/item/clothing/suit/storage/vest/detective
 	name = "detective armor vest"
@@ -425,9 +427,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/vest/press, suit_storage_spec, list(H
 	w_class = ITEMSIZE_LARGE//bulky item
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/suit/armor/centcomm)
+	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY))))
 
@@ -438,11 +440,12 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
 	armor_spec = "melee=90;bullet=80;laser=10;energy=10;bomb=80"
 	w_class = ITEMSIZE_HUGE // Very bulky, very heavy.
-	gas_transfer_coefficient = 0.90
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	slowdown = 5 // If you're a tank you're gonna move like a tank.
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/suit/armor/heavy)
+	configure(item_protection(gas_transfer = 0.90, siemens = 0))
 
 /obj/item/clothing/suit/armor/tdome
 	name = DEVELOPER_WARNING_NAME
@@ -454,13 +457,17 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/centcomm, suit_storage_spec, list(HOLD_
 	name = "Thunderdome suit (red)"
 	desc = "Reddish armor."
 	icon_state = "tdred"
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tdome/red)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/suit/armor/tdome/green
 	name = "Thunderdome suit (green)"
 	desc = "Pukish armor."
 	icon_state = "tdgreen"
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tdome/green)
+	configure(item_protection(siemens = 1))
 
 //Modular plate carriers
 /obj/item/clothing/suit/armor/pcarrier
@@ -508,8 +515,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/pcarrier, equip_spec, dq_spec_join(..()
 	desc = "A lightweight explorer plate carrier. It can be equipped with armor plates, but only protects from the cold on it's own."
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	cold_protection = CHEST|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/pcarrier/light
 	starting_accessories = list(/obj/item/clothing/accessory/armor/armorplate)
@@ -675,7 +683,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	body_parts_covered = CHEST
 	armor_spec = "melee=80;bullet=50;laser=10"
-	siemens_coefficient = 2
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/suit/armor/combat/crusader/bedevere
 	name = "bedevere's armor"
@@ -704,7 +714,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	body_parts_covered = CHEST
 	armor_spec = ""
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_costume)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/suit/armor/combat/crusader_costume/bedevere
 	name = "bedevere's costume armor"
@@ -738,11 +750,11 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	cold_protection = CHEST|LEGS|ARMS
 	slowdown=0
-	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
+
+CAPABILITIES(/obj/item/clothing/suit/armor/combat/crusader_explo)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_EXPLO, POCKET_ALL_TANKS, POCKET_MINING))))
 
@@ -772,8 +784,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spe
 	slowdown = 0.5
 	icon_state = "explorer"
 	flags = THICKMATERIAL
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/primative)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/storage/vest/martian_miner/unarmored
 	armor_spec = "bomb=25"
@@ -807,10 +820,11 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spe
 	item_state = "secjacket_open_s"
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|ARMS
 	armor_spec = "melee=15;bullet=10;laser=15;energy=5;bomb=15"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
 	open = 1
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/yw/secjacket)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|ARMS))
 
 /// Overrides the "Toggle Coat Buttons" interaction (storage.dm).
 /obj/item/clothing/suit/storage/toggle/yw/secjacket/toggle_toggle_verb(datum/act/op/A)
@@ -844,8 +858,9 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/combat/crusader_explo, suit_storage_spe
 	item_state = "blueshieldcoat_s"
 	blood_overlay_type = "armor"
 	armor_spec = "melee=20;bullet=15;laser=15;energy=10;bomb=10"
-	cold_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	heat_protection = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/armor/yw/blueshieldcoat)
+	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS, heat_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/storage/hazardvest/yw/brigphysician
 	name = "Brig Physician Vest"

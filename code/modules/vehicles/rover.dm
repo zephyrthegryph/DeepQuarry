@@ -88,18 +88,16 @@ CAPABILITIES(/obj/vehicle/train/rover/engine)
 	op("rover_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_rover_engine_key)))
 	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))
 	op("rover_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(rover_engine_stop_engine)))
-	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req_bool(PROC_REF(pred_rover_engine_has_key_holds), because = PROC_REF(pred_rover_engine_has_key_refusal))), then(PROC_REF(rover_engine_remove_key)))
+	op("rover_engine_remove_key", menu(), label("Remove key"), needs(req_on_holder_turf(), req_capable(), req(PROC_REF(pred_rover_engine_has_key_holds))), then(PROC_REF(rover_engine_remove_key)))
 
 /// Requirement (was REQ pred_rover_engine_has_key): the legacy check answers TRUE to pass.
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_holds(datum/act/op/A)
 	var/answer = pred_rover_engine_has_key(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why pred_rover_engine_has_key refuses: the legacy check text, else the clause reason.
-/obj/vehicle/train/rover/engine/proc/pred_rover_engine_has_key_refusal(datum/act/op/A)
-	var/answer = pred_rover_engine_has_key(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
 /obj/vehicle/train/rover/engine/proc/interaction_rover_engine_key(datum/act/op/A)
 	var/mob/user = A.actor

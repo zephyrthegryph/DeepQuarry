@@ -57,18 +57,16 @@ CAPABILITIES(/obj/machinery/item_bank)
 	op("retrieve_wait", ai(), takes("item_type"), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(retrieve_finished)))
 	op("store_wait", ai(), wait(10 SECONDS), on_interrupt(PROC_REF(bank_wait_interrupted)), then(PROC_REF(store_finished)))
 	op("use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_use)))
-	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req_bool(PROC_REF(can_store_holds), because = PROC_REF(can_store_refusal))), then(PROC_REF(interaction_store)))
+	op("store", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Store"), needs(req(PROC_REF(can_store_holds))), then(PROC_REF(interaction_store)))
 
 /// Requirement (was REQ_* can_store): the legacy check answers TRUE to pass.
 /obj/machinery/item_bank/proc/can_store_holds(datum/act/op/A)
 	var/answer = can_store(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_store_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/item_bank/proc/can_store_refusal(datum/act/op/A)
-	var/answer = can_store(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /**
  * Old attack_hand: `. = ..()` but never checked `.` before continuing, so the gate never
  * actually stopped it; approximated here as ungated with its own !operable()/panel_open
@@ -284,6 +282,9 @@ CAPABILITIES(/obj/machinery/item_bank)
 	persist_storable = FALSE
 /obj/item/clothing/head/helmet/space/void
 	persist_storable = FALSE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void)
+	configure(item_protection(max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 10 * ONE_ATMOSPHERE))
 /obj/item/clothing/suit/space/void
 	persist_storable = FALSE
 /obj/item/grab

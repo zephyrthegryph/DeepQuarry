@@ -1,23 +1,18 @@
-human|none menu: Climb
-human|none menu: Rotate Clockwise
-human|none menu: Rotate Counter Clockwise
-human|none menu: Toggle Open
-human|none menu: Turn Around
-human|none click: Click: Toggle Open
-robot|none menu: Climb
-robot|none menu: Rotate Clockwise
-robot|none menu: Rotate Counter Clockwise
-robot|none menu: Toggle Open
-robot|none menu: Turn Around
-robot|none menu: Use
-robot|none click: Click: Toggle Open
+@obj.structure.closet human|none
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
+@obj.structure.closet robot|none
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
 @obj.structure ai|none
 @obj.structure.closet ghost|none
--menu: Toggle Lock
 +0 menu: Climb (refused: You can't climb right now.)
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
-+3 menu: Toggle Open
 +4 menu: Turn Around
 @obj.structure.closet human|/obj/item/tool/screwdriver
 -menu: Toggle Lock
@@ -29,20 +24,14 @@ robot|none click: Click: Toggle Open
 +7 menu: Turn Around
 +8 click: nothing
 @obj.structure.closet human|/obj/item/tool/crowbar
--menu: Toggle Lock
--click: Click: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+6 menu: Toggle Open
 +7 menu: Turn Around
-+8 click: nothing
 @obj.structure.closet human|/obj/item/tool/wrench
--menu: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+7 menu: Toggle Open
 +8 menu: Turn Around
 @obj.structure.closet human|/obj/item/tool/wirecutters
 -menu: Toggle Lock
@@ -55,59 +44,38 @@ robot|none click: Click: Toggle Open
 +8 menu: Turn Around
 +9 click: Click: Open
 @obj.structure.closet human|/obj/item/multitool
--menu: Toggle Lock
--click: Click: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+6 menu: Toggle Open
 +7 menu: Turn Around
-+8 click: nothing
 @obj.structure.closet human|/obj/item/weldingtool
--menu: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+6 menu: Toggle Open
 +7 menu: Turn Around
 @obj.structure.closet human|/obj/item/stack/cable_coil
--menu: Toggle Lock
--click: Click: Toggle Lock
+-click: nothing
 +0 menu: Climb
 +4 menu: Rig
 +5 menu: Rotate Clockwise
 +6 menu: Rotate Counter Clockwise
-+8 menu: Toggle Open
 +9 menu: Turn Around
 +10 click: Click: Rig
 @obj.structure.closet human|/obj/item/stack/material/steel
--menu: Toggle Lock
--click: Click: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+6 menu: Toggle Open
 +7 menu: Turn Around
-+8 click: nothing
 @obj.structure.closet human|/obj/item/card/id
--menu: Toggle
--menu: Toggle Lock
--click: Click: Toggle
 +0 menu: Climb
 +4 menu: Rotate Clockwise
 +5 menu: Rotate Counter Clockwise
-+7 menu: Toggle Open
 +8 menu: Turn Around
-+9 click: nothing
 @obj.structure.closet human|/obj/item
--menu: Toggle Lock
--click: Click: Toggle Lock
 +0 menu: Climb
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
-+6 menu: Toggle Open
 +7 menu: Turn Around
-+8 click: nothing
 @obj human|/obj/item/radio/electropack
 -menu: Toggle Lock
 -click: Click: Toggle Lock

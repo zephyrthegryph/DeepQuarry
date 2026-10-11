@@ -35,7 +35,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 CAPABILITIES(/datum/edit_player_panel)
 	ref_one(nameof(holder), /datum/admins)
 	ref_one(nameof(target), /mob)
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("AdminEditPlayer", rights = R_HOLDER)
 
 	section(admin, "The admin actions of the Edit Player panel: rights, messages, moving, banning, muting")
@@ -201,7 +201,7 @@ GLOBAL_TABLE(non_innate_language_keys, GLOBAL_PROC_REF(build_non_innate_language
 
 /// A panel whose admin or player is gone answers nothing (silently).
 /datum/edit_player_panel/proc/ui_gate(datum/act/op/A)
-	return holder() && target()
+	return (holder() && target()) ? null : /datum/msg/req_silent
 
 /datum/edit_player_panel/proc/ui_act_editrights(datum/act/op/A, mode_arg)
 	var/mode = "[mode_arg]"

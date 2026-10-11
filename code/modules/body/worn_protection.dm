@@ -86,7 +86,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 	. = 1
 	for(var/obj/item/clothing/C in items)
 		if(C.body_parts_covered & part)
-			. *= C.siemens_coefficient
+			. *= protection_of(C).siemens
 
 /// Rebuilds the cache if it is stale.
 /datum/body/proc/ensure_worn_protection()
@@ -239,7 +239,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 /// null. The item protects at T exactly when this is at least T, which is what
 /// handle_high_temperature() answers.
 /obj/item/clothing/proc/worn_heat_limit()
-	. = max_heat_protection_temperature || null
+	. = protection_of(src).max_heat || null
 	for(var/obj/item/clothing/C in accessories)
 		var/limit = C.worn_heat_limit()
 		if(!isnull(limit) && (isnull(.) || limit > .))
@@ -247,7 +247,7 @@ GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LE
 
 /// Lowest temperature this item or any accessory on it protects down to, or null.
 /obj/item/clothing/proc/worn_cold_limit()
-	. = min_cold_protection_temperature || null
+	. = protection_of(src).min_cold || null
 	for(var/obj/item/clothing/C in accessories)
 		var/limit = C.worn_cold_limit()
 		if(!isnull(limit) && (isnull(.) || limit < .))

@@ -202,7 +202,7 @@
 /// Heat-proof gloves on the person (a lit tube is too hot to take out bare-handed).
 /datum/unit_test/dq_p2_lights/proc/gloved(mob/living/carbon/human/H)
 	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves, tile(0, 1))
-	G.max_heat_protection_temperature = 1000
+	G.set_max_heat_protection_temperature(1000)
 	H.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 	return H
 
@@ -704,7 +704,7 @@
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "a bare hand leaves a lit tube in")
 	TEST_ASSERT_NULL(H.get_active_hand(), "and holds nothing")
 	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves, tile(0, 1))
-	G.max_heat_protection_temperature = 1000
+	G.set_max_heat_protection_temperature(1000)
 	H.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 	click(H, L, null)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "gloves that take the heat let it come out")

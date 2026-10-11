@@ -141,8 +141,10 @@ TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(l
 	desc = "A traditional Teshari garb made for the " + JOB_HEAD_OF_SECURITY + ". Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_hos"
 	armor_spec = "melee=10" // start
-	siemens_coefficient = 0.9
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
+
+CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/hos)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/teshari/undercoat/jobs/rd
 	name = "research director undercoat"
@@ -219,8 +221,10 @@ TYPE_TABLE(/obj/item/clothing/under/teshari, fit_spec, list(REQ_FITS_BODYTYPES(l
 	desc = "A traditional Teshari garb made for the Security department. Made with slightly sturdier materials."
 	icon_state = "tesh_uniform_sec"
 	armor_spec = "melee=10" // start
-	siemens_coefficient = 0.9
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS // end
+
+CAPABILITIES(/obj/item/clothing/under/teshari/undercoat/jobs/sec)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/teshari/undercoat/jobs/service
 	name = "service undercoat"

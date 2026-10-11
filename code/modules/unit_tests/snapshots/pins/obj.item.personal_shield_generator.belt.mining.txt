@@ -1,86 +1,16 @@
-@obj human|none
--click: Click: Pick up
-+0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
-@obj robot|none
--click: Click: Pick up
-+0 menu: Alternate use
-+5 menu: Toggle Gun (refused: You can't do that.)
-+6 menu: Toggle Shield (refused: You can't do that.)
-+7 menu: Use
-+8 click: Click: Use
+@obj.item.personal_shield_generator human|none
+@obj.item.personal_shield_generator robot|none
 @obj.item ai|none
-@obj.item ghost|none
-+2 menu: Toggle Gun (refused: You can't do that.)
-+3 menu: Toggle Shield (refused: You can't do that.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Alternate use
-+2 menu: Remove cell
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Remove cell
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Alternate use
-+2 menu: Set the shield colour
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Set the shield colour
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
+@obj.item.personal_shield_generator ghost|none
+@obj.item.personal_shield_generator human|/obj/item/tool/screwdriver
+@obj.item.personal_shield_generator human|/obj/item/tool/crowbar
+@obj.item.personal_shield_generator human|/obj/item/tool/wrench
+@obj.item.personal_shield_generator human|/obj/item/tool/wirecutters
+@obj.item.personal_shield_generator human|/obj/item/multitool
+@obj.item.personal_shield_generator human|/obj/item/weldingtool
+@obj.item.personal_shield_generator human|/obj/item/stack/cable_coil
+@obj.item.personal_shield_generator human|/obj/item/stack/material/steel
+@obj.item.personal_shield_generator human|/obj/item/card/id
 @obj human|/obj/item/kit
 +0 menu: Alternate use
 +4 menu: Toggle Gun (refused: You can't do that.)
@@ -93,10 +23,7 @@
 +5 menu: Toggle Shield (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
-@obj.item human|/obj/item
-+0 menu: Alternate use
-+3 menu: Toggle Gun (refused: You can't do that.)
-+4 menu: Toggle Shield (refused: You can't do that.)
+@obj.item.personal_shield_generator human|/obj/item
 human|/obj/item/borg/upgrade/shield_upgrade menu: Alternate use
 human|/obj/item/borg/upgrade/shield_upgrade menu: Move To Top
 human|/obj/item/borg/upgrade/shield_upgrade menu: Toggle Digestable (refused: You can't do that.)

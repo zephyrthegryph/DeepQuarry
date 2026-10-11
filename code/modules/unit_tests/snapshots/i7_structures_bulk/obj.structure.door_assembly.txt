@@ -45,50 +45,19 @@
 -menu: Use
 -click: Click: Use
 +3 click: nothing
-human|/obj/item/airlock_electronics menu: Hit
-human|/obj/item/airlock_electronics menu: Move To Top
-human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/airlock_electronics click: nothing
+@obj human|/obj/item/airlock_electronics
 @obj.structure human|/obj/item/pen
 -menu: Use
 -click: Click: Use
 +2 menu: Rename
 +4 click: Click: Rename
-human|/obj/item/stack/material/glass/reinforced menu: Hit
-human|/obj/item/stack/material/glass/reinforced menu: Install windows
-human|/obj/item/stack/material/glass/reinforced menu: Move To Top
-human|/obj/item/stack/material/glass/reinforced menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/glass/reinforced click: Click: Install windows
-human|/obj/item/stack/material/gold menu: Hit
-human|/obj/item/stack/material/gold menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/gold menu: Move To Top
-human|/obj/item/stack/material/gold menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/gold click: Click: Install plating
-human|/obj/item/stack/material/silver menu: Hit
-human|/obj/item/stack/material/silver menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/silver menu: Move To Top
-human|/obj/item/stack/material/silver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/silver click: Click: Install plating
-human|/obj/item/stack/material/diamond menu: Hit
-human|/obj/item/stack/material/diamond menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/diamond menu: Move To Top
-human|/obj/item/stack/material/diamond menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/diamond click: Click: Install plating
-human|/obj/item/stack/material/uranium menu: Hit
-human|/obj/item/stack/material/uranium menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/uranium menu: Move To Top
-human|/obj/item/stack/material/uranium menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/uranium click: Click: Install plating
-human|/obj/item/stack/material/phoron menu: Hit
-human|/obj/item/stack/material/phoron menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/phoron menu: Move To Top
-human|/obj/item/stack/material/phoron menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/phoron click: Click: Install plating
-human|/obj/item/stack/material/sandstone menu: Hit
-human|/obj/item/stack/material/sandstone menu: Install plating (refused: You don't have enough for that.)
-human|/obj/item/stack/material/sandstone menu: Move To Top
-human|/obj/item/stack/material/sandstone menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/sandstone click: Click: Install plating
+@obj human|/obj/item/stack/material/glass/reinforced
+@obj human|/obj/item/stack/material/gold
+@obj human|/obj/item/stack/material/silver
+@obj human|/obj/item/stack/material/diamond
+@obj human|/obj/item/stack/material/uranium
+@obj human|/obj/item/stack/material/phoron
+@obj human|/obj/item/stack/material/sandstone
 @obj.structure human|/obj/item/stack/material
 -menu: Use
 -click: Click: Use

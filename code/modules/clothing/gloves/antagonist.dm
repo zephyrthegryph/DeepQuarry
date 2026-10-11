@@ -12,8 +12,6 @@
 	Touching with Disarm will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
-	siemens_coefficient = 0.5 // Not perfect, but slightly more protective than nothing.
-	permeability_coefficient = 0.01
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
@@ -22,6 +20,7 @@
 // (pickpocket_phase_done) and names the next wait, if any, in the op's arguments: phase ("rummage", "open", "take" or "give"), wait, slot_id,
 // slot, took, theirs and mine.
 CAPABILITIES(/obj/item/clothing/gloves/sterile/thieves)
+	configure(item_protection(siemens = 0.5, permeability = 0.01))
 	op("pickpocket", ai(), takes("victim", "stance", "victim_loc"), wait(PROC_REF(pickpocket_wait), keeps = STAY | ALIVE, repeats = PROC_REF(pickpocket_more), after_step = PROC_REF(pickpocket_phase_done)), on_interrupt(PROC_REF(pickpocket_interrupted)), then(PROC_REF(pickpocket_finished)))
 
 /// The chain ended; every stage acted as its lap ended.

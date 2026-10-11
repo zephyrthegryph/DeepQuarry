@@ -3,22 +3,28 @@
 	desc = "Strange-looking hat-wear that most certainly belongs to a real magic user."
 	icon_state = "wizard"
 	//Not given any special protective value since the magic robes are full-body protection --NEO
-	siemens_coefficient = 0.8
 	body_parts_covered = 0
 	wizard_garb = 1
+
+CAPABILITIES(/obj/item/clothing/head/wizard)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/red
 	name = "red wizard hat"
 	desc = "Strange-looking, red, hat-wear that most certainly belongs to a real magic user."
 	icon_state = "redwizard"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/wizard/red)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/fake
 	name = "wizard hat"
 	desc = "It has WIZZARD written across it in sequins. Comes with a cool beard."
 	icon_state = "wizard-fake"
 	body_parts_covered = HEAD|FACE
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/head/wizard/fake)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/head/wizard/fake/realistic
 	desc = "A cool-looking 'magic' hat."
@@ -33,38 +39,46 @@
 	name = "Witch Hat"
 	desc = "Strange-looking hat-wear, makes you want to cast fireballs."
 	icon_state = "marisa"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/wizard/marisa)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/magus
 	name = "Magus Helm"
 	desc = "A mysterious helmet that hums with an unearthly power"
 	icon_state = "magus"
-	siemens_coefficient = 0.8
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/wizard/magus)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/amp
 	name = "psychic amplifier"
 	desc = "A crown-of-thorns psychic amplifier. Kind of looks like a tiara having sex with an industrial robot."
 	icon_state = "amp"
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/wizard/amp)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/cap
 	name = "Gentlemans Cap"
 	desc = "A checkered gray flat cap woven together with the rarest of threads."
 	icon_state = "gentcap"
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	siemens_coefficient = 0.8
+
+CAPABILITIES(/obj/item/clothing/head/wizard/cap)
+	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/suit/wizrobe
 	name = "wizard robe"
 	desc = "A magnificant, gem-lined robe that seems to radiate power."
 	icon_state = "wizard"
-	gas_transfer_coefficient = 0.01 // IT'S MAGICAL OKAY JEEZ +1 TO NOT DIE
-	permeability_coefficient = 0.01
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=20;rad=20"
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 0.8
 	wizard_garb = 1
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.8))
 
 TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))))
 
@@ -109,14 +123,18 @@ TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(li
 	icon_state = "wizard-fake"
 	item_state_slots = list(slot_r_hand_str = "wizard", slot_l_hand_str = "wizard")
 	armor_spec = ""
-	siemens_coefficient = 1.0
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe/fake)
+	configure(item_protection(siemens = 1.0))
 
 /obj/item/clothing/head/wizard/marisa/fake
 	name = "Witch Hat"
 	desc = "Strange-looking hat-wear, makes you want to cast fireballs."
 	icon_state = "marisa"
 	armor_spec = ""
-	siemens_coefficient = 1.0
+
+CAPABILITIES(/obj/item/clothing/head/wizard/marisa/fake)
+	configure(item_protection(siemens = 1.0))
 
 /obj/item/clothing/suit/wizrobe/marisa/fake
 	name = "Witch Robe"
@@ -124,4 +142,6 @@ TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(li
 	icon_state = "marisa"
 	body_parts_covered = CHEST|ARMS|LEGS
 	armor_spec = ""
-	siemens_coefficient = 1.0
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe/marisa/fake)
+	configure(item_protection(siemens = 1.0))

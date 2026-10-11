@@ -205,8 +205,10 @@
 /obj/item/clothing/under/rank/scientist/skirt
 	name = "scientist's jumpskirt"
 	icon_state = "sciencef"
-	permeability_coefficient = 0.50
 	armor_spec = "bomb=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/scientist/skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/medical/skirt
 	name = "medical doctor's jumpskirt"
@@ -234,7 +236,9 @@
 	desc = "Standard feminine fashion for Security Officers.  It's made of sturdier material than the standard jumpskirts."
 	icon_state = "securityf"
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/security/skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/warden/skirt
 	desc = "Standard feminine fashion for a " + JOB_WARDEN + ". It is made of sturdier material than standard jumpskirts. It has the word \"" + JOB_WARDEN + "\" written on the shoulders."

@@ -4,24 +4,18 @@
 	desc = "A pointy pixelated-looking hat, 0s and 1s dancing off the fabric"
 	icon_state = "redwizard"
 	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
-	siemens_coefficient = 0.1
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/vrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/vrwizard
 	name = "wizard robes"
 	desc = "A silky robe with 0s and 1s flying off the seams."
 	icon_state = "redwizard"
 	armor_spec = "melee=20;bullet=20;laser=60;energy=60;bomb=70;bio=50;rad=50"
-	siemens_coefficient = 0.1
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/vrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/clothing/suit/vrwizard, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword,/obj/item/handcuffs))))
 
@@ -31,24 +25,18 @@ TYPE_TABLE(/obj/item/clothing/suit/vrwizard, suit_storage_spec, list(HOLD_ONLY(l
 	icon_state = "redwizard"
 	color = "#660066"
 	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
-	siemens_coefficient = 0.1
-	cold_protection = HEAD
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/head/darkvrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = HEAD, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/darkvrwizard
 	name = "wizard robes"
 	desc = "Robes holding the most attack and defense."
 	icon_state = "psyamp"
 	armor_spec = "melee=70;bullet=70;laser=40;energy=40;bomb=90;bio=70;rad=70"
-	siemens_coefficient = 0.1
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 3 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/darkvrwizard)
+	configure(item_protection(siemens = 0.1, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 3 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Candy section
 
@@ -76,7 +64,6 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 	desc = "A strange pair of gloves."
 	icon_state = "regen"
 	item_state = "graygloves"
-	siemens_coefficient = 0
 	armor_spec = "melee=70;bullet=60;laser=50;energy=50"
 
 /// Worn in the gloves slot (equipped()/dropped()). With the wearer view (a field, so its automatic
@@ -85,6 +72,7 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 TRACKED(/obj/item/clothing/gloves/stamina, worn_on_hands)
 
 CAPABILITIES(/obj/item/clothing/gloves/stamina)
+	configure(item_protection(siemens = 0))
 	every(2 SECONDS, then(PROC_REF(stamina_step)), when = nameof(worn_on_hands))
 
 /obj/item/clothing/gloves/stamina/equipped(mob/user, slot)
@@ -197,11 +185,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
 	icon_state = "armor"
 	blood_overlay_type = "armor"
 	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=50;bio=100;rad=75"
-	cold_protection = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15 * ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/armor/protectionbubble)
+	configure(item_protection(cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS | HEAD, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15 * ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //scrap section which is on hold till I get foes
 

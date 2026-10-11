@@ -18,7 +18,7 @@ import os
 import re
 import sys
 
-ROOT = "code"
+ROOTS = ("code", "maps")
 SPECS = {
     "power": dict(
         base="/obj/machinery", ctor="uses_power", reader="power_of", type_reader="power_of_type",
@@ -30,6 +30,15 @@ SPECS = {
         fields={"hitsound": "hit", "usesound": "use", "mob_throw_hit_sound": "throw_hit", "equip_sound": "equip",
                 "pickup_sound": "pickup", "drop_sound": "drop"},
         skip={"code/game/objects/items.dm"},
+    ),
+    "protection": dict(
+        base="/obj/item", ctor="item_protection", reader="protection_of", type_reader="protection_of_type",
+        fields={"heat_protection": "heat_parts", "cold_protection": "cold_parts", "max_heat_protection_temperature": "max_heat",
+                "min_cold_protection_temperature": "min_cold", "max_pressure_protection": "max_pressure",
+                "min_pressure_protection": "min_pressure", "gas_transfer_coefficient": "gas_transfer",
+                "permeability_coefficient": "permeability", "siemens_coefficient": "siemens"},
+        skip={"code/game/objects/items.dm"},
+        skip_refs=r"(^|\.)species$",  # a species' own siemens_coefficient
     ),
 }
 _args = [a for a in sys.argv[1:] if not a.startswith("--")]
@@ -53,7 +62,7 @@ CAPS = re.compile(r"^CAPABILITIES\((/[A-Za-z0-9_/]+)\)\s*$")
 
 
 def code_files():
-    for d, _, files in os.walk(ROOT):
+    for d, _, files in (w for r in ROOTS for w in os.walk(r)):
         if "_generated" in d.replace("\\", "/"):
             continue
         for f in files:
@@ -144,6 +153,8 @@ def under_base(path):
 
 
 def ref_ok(ref):
+    if ref and SPEC.get("skip_refs") and re.search(SPEC["skip_refs"], ref):
+        return False
     if not ref:
         return OWNER[0] is not None and under_base(OWNER[0])
     if "." in ref or "(" in ref:
@@ -249,7 +260,7 @@ def main():
             if tm and "/proc/" not in line and "/verb/" not in line:
                 cur = tm.group(1).rstrip("/")
                 OWNER[0] = None
-            elif line and not line.startswith("\t") and not line.startswith(" "):
+            elif line and not line.startswith("\t") and not line.startswith(" ") and not (cur and line.startswith("//")):
                 cur = None
                 pm = re.match(r"^(/[A-Za-z0-9_/]+?)/(?:proc/|verb/)?([A-Za-z_]\w*)\((.*)$", line)
                 OWNER[0] = pm.group(1) if pm and not pm.group(1).startswith("/proc") else None

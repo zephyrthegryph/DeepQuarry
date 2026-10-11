@@ -47,3 +47,11 @@ human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool click: Click: Embedded controller open ui
+human|none menu: Embedded controller open ui
+human|none menu: Ui open
+human|none click: Click: Embedded controller open ui
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Embedded controller open ui
+robot|none menu: Ui open
+robot|none menu: Use
+robot|none click: Click: Embedded controller open ui

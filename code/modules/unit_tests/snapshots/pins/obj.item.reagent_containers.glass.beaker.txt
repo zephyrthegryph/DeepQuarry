@@ -1,0 +1,43 @@
+@obj.item.reagent_containers.glass human|none
+@obj.item.reagent_containers.glass robot|none
+@obj.item ai|none
+@obj.item.reagent_containers.glass ghost|none
+@obj.item.reagent_containers.glass human|/obj/item/tool/screwdriver
+@obj.item.reagent_containers.glass human|/obj/item/tool/crowbar
+@obj.item.reagent_containers.glass human|/obj/item/tool/wrench
+@obj.item.reagent_containers human|/obj/item/tool/wirecutters
+-menu: Rename food
++0 menu: Dip into it
++2 menu: Open or close the lid
++3 menu: Set transfer amount
+@obj.item.reagent_containers.glass human|/obj/item/multitool
+@obj.item.reagent_containers.glass human|/obj/item/weldingtool
+@obj.item.reagent_containers.glass human|/obj/item/stack/cable_coil
+@obj.item.reagent_containers human|/obj/item/stack/material/steel
+-menu: Rename food
++1 menu: Open or close the lid
++2 menu: Set transfer amount
+@obj.item.reagent_containers.glass human|/obj/item/card/id
+@obj.item.reagent_containers human|/obj/item/kit
+-menu: Rename food
++1 menu: Dip into it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
+@obj.item.reagent_containers human|/obj/item/storage
+-menu: Rename food
++2 menu: Open or close the lid
++3 menu: Set transfer amount
+@obj human|/obj/item/pen
+-menu: Rename
+-click: Click: Rename
++0 menu: Dip into it
++1 menu: Label it
++3 menu: Open or close the lid
++4 menu: Set transfer amount
++6 click: Click: Label it
+@obj human|/obj/item/flashlight/pen
+@obj.item.reagent_containers human|/obj/item
+-menu: Rename food
++1 menu: Open or close the lid
++2 menu: Set transfer amount
+keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, glass_container.milk, glass_handling.blood_test, glass_handling.dip, glass_handling.label, kit_customize, kit_customize_last, move_to_top, pick_up_item, reagent_container.drink, reagent_container.feed, reagent_container.fill, reagent_container.lid, reagent_container.pour, reagent_container.set_amount, reagent_container.splash, toggle_digestable

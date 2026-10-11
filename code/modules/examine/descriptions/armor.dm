@@ -63,18 +63,18 @@
 	if(flags & AIRTIGHT)
 		armor_stats += "It is airtight. \n"
 
-	if(min_pressure_protection != null)
-		armor_stats += "It is rated for pressures as low as [min_pressure_protection] kPa. \n"
-	if(max_pressure_protection)
-		armor_stats += "It is rated for pressures as high as [max_pressure_protection] kPa. \n"
+	if(protection_of(src).min_pressure != null)
+		armor_stats += "It is rated for pressures as low as [protection_of(src).min_pressure] kPa. \n"
+	if(protection_of(src).max_pressure)
+		armor_stats += "It is rated for pressures as high as [protection_of(src).max_pressure] kPa. \n"
 
 	if(flags & THICKMATERIAL)	//stops syringes
 		armor_stats += "The material is exceptionally thick. \n"
 
-	if(min_cold_protection_temperature)
-		armor_stats += "It is rated for temperatures as low as [min_cold_protection_temperature] Kelvin. \n"
-	if(max_heat_protection_temperature)
-		armor_stats += "It is rated for temperatures as high as [max_heat_protection_temperature] Kelvin. \n"
+	if(protection_of(src).min_cold)
+		armor_stats += "It is rated for temperatures as low as [protection_of(src).min_cold] Kelvin. \n"
+	if(protection_of(src).max_heat)
+		armor_stats += "It is rated for temperatures as high as [protection_of(src).max_heat] Kelvin. \n"
 
 	var/list/covers = list()
 	var/list/slots = list()

@@ -4,7 +4,9 @@
 	icon_state = "syndicate"
 	desc = "A crimson helmet sporting clean lines and durable plating. Engineered to look menacing."
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/syndicate)
+	configure(item_protection(siemens = 0.6))
 
 /obj/item/clothing/suit/space/syndicate
 	name = "red space suit"
@@ -13,7 +15,9 @@
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0.5
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=30;rad=30;cold=60"
-	siemens_coefficient = 0.6
+
+CAPABILITIES(/obj/item/clothing/suit/space/syndicate)
+	configure(item_protection(siemens = 0.6))
 
 //Green syndicate space suit
 

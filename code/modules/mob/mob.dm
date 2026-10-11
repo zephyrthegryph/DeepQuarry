@@ -1517,7 +1517,7 @@ MSG_DEF_SELF(vv/no_languages, "This mob knows no languages.")
 
 /// Requirement: nobody drives the mob by remote control (its teleop is a relation view: null once that is gone).
 /mob/proc/vv_not_remote_driven(datum/act/op/A)
-	return !teleop
+	return (!teleop) ? null : MSG(vv/player_mob)
 
 /// A VV AI brain setup, after the faction, the combat mode and the wake question have all been answered.
 /mob/living/proc/vv_topic_give_ai(datum/act/op/A)

@@ -38,12 +38,12 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	owns_one(nameof(W), starts = /obj/item/tool/wrench)
 	part_replacement()
 	examine_line(PROC_REF(status_text))
-	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(cond_not(req(/obj/item))), needs(req_bool(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
+	op("toggle", hand(), label("Toggle"), wait(0), when(PROC_REF(panel_shut)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(can_run), because = MSG(pipelayer/no_metal))),
 		says(MSG(pipelayer/switched)), then(PROC_REF(toggled)))
 	op("eject", hand(), label("Eject metal"), priority(OP_PRIORITY_PART), when(PROC_REF(panel_is_open)), when(cond_not(req(/obj/item))), needs(req(PROC_REF(has_metal))),
 		asks(/datum/prompt/yes_no, fields = list("question" = "Do you want to eject all the metal?", "title" = "Eject?", "timeout" = 0)), then(PROC_REF(eject_answered)))
 	op("recycle", item(/obj/item/pipe), label("Recycle pipe"), wait(0),
-		needs(req_bool(PROC_REF(pipe_has_steel), because = MSG(pipelayer/thin_pipe)), req_bool(PROC_REF(room_for_pipe), because = MSG(pipelayer/full))),
+		needs(req(PROC_REF(pipe_has_steel), because = MSG(pipelayer/thin_pipe)), req(PROC_REF(room_for_pipe), because = MSG(pipelayer/full))),
 		says(MSG(pipelayer/recycled)), then(PROC_REF(recycled)))
 	op("load", item(/obj/item/stack/material), label("Load metal"), wait(0), needs(req(PROC_REF(held_steel)), req(PROC_REF(room_for_sheet))),
 		says(MSG(pipelayer/loaded)), then(PROC_REF(loaded)))
@@ -81,7 +81,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 
 /// It runs only with metal (switching it off always works).
 /obj/machinery/pipelayer/proc/can_run(datum/act/A)
-	return on || metal // ALLOW(reads): the store is read when it is switched, never from a cached menu
+	return (on || metal) ? null : MSG(pipelayer/no_metal) // ALLOW(reads): the store is read when it is switched, never from a cached menu
 
 /obj/machinery/pipelayer/proc/has_metal(datum/act/A)
 	return (metal >= 1) ? null : MSG(pipelayer/empty) // ALLOW(reads): the store is read when it is touched, never from a cached menu
@@ -103,10 +103,10 @@ CAPABILITIES(/obj/machinery/pipelayer)
 /// A pipe is worth its steel (a free dispenser pipe is not: no infinite steel).
 /obj/machinery/pipelayer/proc/pipe_has_steel(datum/act/op/A)
 	var/obj/item/pipe/P = A.held
-	return istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	return (istype(P) && P.material_total >= pipe_cost * SHEET_MATERIAL_AMOUNT) ? null : MSG(pipelayer/thin_pipe) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 
 /obj/machinery/pipelayer/proc/room_for_pipe(datum/act/A)
-	return metal + pipe_cost <= max_metal // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
+	return (metal + pipe_cost <= max_metal) ? null : MSG(pipelayer/full) // ALLOW(reads): the store is read when a pipe is fed in, never from a cached menu
 
 /obj/machinery/pipelayer/proc/recycled(datum/act/op/A)
 	if(!consume(A.held, A.actor))

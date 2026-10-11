@@ -116,7 +116,7 @@
 	var/obj/item/helmet = get_equipped_item(SLOT_ID_HEAD)
 	if(!suit || !helmet || !species)
 		return FALSE
-	return suit.min_pressure_protection < species.hazard_low_pressure && helmet.min_pressure_protection < species.hazard_low_pressure
+	return protection_of(suit).min_pressure < species.hazard_low_pressure && protection_of(helmet).min_pressure < species.hazard_low_pressure
 
 // --- Skin breathing (alraunes) ------------------------------------------------------------
 

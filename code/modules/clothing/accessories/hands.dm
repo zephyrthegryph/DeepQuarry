@@ -6,7 +6,6 @@
 	slot_flags = SLOT_GLOVES
 	MATERIAL_BULK(MAT_STEEL, 500)
 	attack_verb = list("punched", "beaten", "struck")
-	siemens_coefficient = 1
 	force = 10	//base punch strength is 5
 	punch_force = 5	//added to base punch strength when added as a glove accessory
 	icon = 'icons/inventory/hands/item.dmi'
@@ -16,6 +15,7 @@
 		)
 
 CAPABILITIES(/obj/item/clothing/accessory/knuckledusters)
+	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 
 //bracelets

@@ -1,11 +1,5 @@
-human|none menu: Embedded controller open ui
-human|none menu: Ui open
-human|none click: Click: Embedded controller open ui
-@obj.machinery robot|none
--click: Click: Use
-+1 menu: Embedded controller open ui
-+2 menu: Ui open
-+4 click: Click: Embedded controller open ui
+@obj.machinery.embedded_controller human|none
+@obj.machinery.embedded_controller robot|none
 @obj ai|none
 -click: Click: Use
 +0 menu: Ui open

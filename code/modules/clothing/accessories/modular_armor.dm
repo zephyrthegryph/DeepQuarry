@@ -50,16 +50,20 @@
 	desc = "A plasteel-reinforced synthetic armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
 	slowdown = 0.1
-	siemens_coefficient = 0.7
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/accessory/armor/armorplate/security/heavy
 	name = "heavy security armor plate"
 	desc = "A plastitanium-reinforced armor plate designed for Nanotrasen security forces. Attaches to a plate carrier."
 	icon_state = "armor_medium"
 	slowdown = 0.5
-	siemens_coefficient = 0.5
 	armor_spec = "melee=50;bullet=50;laser=55;energy=35;bomb=30;rad=15"
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armorplate/security/heavy)
+	configure(item_protection(siemens = 0.5))
 
 ///armored gloves
 
@@ -72,8 +76,6 @@
 	item_state = "handguards"
 	default_worn_icon = "handguards"
 	body_parts_covered = HANDS
-	heat_protection = HANDS
-	cold_protection = HANDS
 	overgloves = 1
 	punch_force = 3
 	slowdown = 0.1
@@ -81,6 +83,7 @@
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
+	configure(item_protection(heat_parts = HANDS, cold_parts = HANDS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///armored boots
@@ -94,8 +97,6 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	item_state = "footguards"
 	default_worn_icon = "footguards"
 	body_parts_covered = FEET
-	heat_protection = FEET
-	cold_protection = FEET
 	armor_spec = "melee=30;bullet=30;laser=45;energy=25;bomb=10"
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0.1
@@ -106,6 +107,7 @@ CAPABILITIES(/obj/item/clothing/gloves/handguards_modarm)
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
 
 CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
+	configure(item_protection(heat_parts = FEET, cold_parts = FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 ///snowflake leg guards
@@ -120,11 +122,12 @@ CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
 	default_worn_icon = "legguards"
 	gender = PLURAL
 	body_parts_covered = LEGS
-	heat_protection = LEGS
-	cold_protection = LEGS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_L
 	update_icon_define_digi = 'icons/obj/modular_armor_digi.dmi' ///this doesn't work, not sure why
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/legguards/modarm)
+	configure(item_protection(heat_parts = LEGS, cold_parts = LEGS))
 
 /obj/item/clothing/accessory/armor/legguards/modarm/green
 	icon_state = "legguardsG"
@@ -158,10 +161,11 @@ CAPABILITIES(/obj/item/clothing/shoes/footguards_modarm)
 	default_worn_icon = "armguards"
 	gender = PLURAL
 	body_parts_covered = ARMS
-	heat_protection = ARMS
-	cold_protection = ARMS
 	armor_spec = "melee=40;bullet=40;laser=40;energy=25;bomb=30"
 	slot = ACCESSORY_SLOT_ARMOR_A
+
+CAPABILITIES(/obj/item/clothing/accessory/armor/armguards/modarm)
+	configure(item_protection(heat_parts = ARMS, cold_parts = ARMS))
 
 /obj/item/clothing/accessory/armor/armguards/modarm/green
 	icon_state = "armguardsG"

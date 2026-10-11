@@ -46,7 +46,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	op("recal", ui_act("recal"), then(PROC_REF(ui_act_recal)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
-	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req_bool(PROC_REF(has_crystal_slot_holds), because = PROC_REF(has_crystal_slot_refusal))), then(PROC_REF(interaction_insert_crystal)))
+	op("insert_crystal", item(/obj/item/bluespace_crystal), priority(OP_PRIORITY_DEFAULT - 1), label("Insert crystal"), needs(req(PROC_REF(has_crystal_slot_holds))), then(PROC_REF(interaction_insert_crystal)))
 	op("insert_gps", item(/obj/item/gps), priority(OP_PRIORITY_DEFAULT - 1), label("Insert GPS"), then(PROC_REF(interaction_insert_gps)))
 
 /obj/machinery/computer/telescience/ownership()
@@ -75,13 +75,11 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 /// Requirement (was REQ_* has_crystal_slot): the legacy check answers TRUE to pass.
 /obj/machinery/computer/telescience/proc/has_crystal_slot_holds(datum/act/op/A)
 	var/answer = has_crystal_slot(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why has_crystal_slot_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/telescience/proc/has_crystal_slot_refusal(datum/act/op/A)
-	var/answer = has_crystal_slot(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/machinery/computer/telescience/proc/interaction_insert_crystal(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held

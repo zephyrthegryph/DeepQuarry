@@ -491,13 +491,13 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 
 /mob/living/carbon/human/proc/pl_suit_protected()
 	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_SUIT)
-	if(istype(C) && C.permeability_coefficient <= 0.1)
+	if(istype(C) && protection_of(C).permeability <= 0.1)
 		return TRUE
 	return FALSE
 
 /mob/living/carbon/human/proc/pl_head_protected()
 	var/obj/item/clothing/C = get_equipped_item(SLOT_ID_HEAD)
-	if(istype(C) && C.permeability_coefficient <= 0.1)
+	if(istype(C) && protection_of(C).permeability <= 0.1)
 		return TRUE
 	return FALSE
 

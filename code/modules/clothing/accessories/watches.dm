@@ -2,7 +2,6 @@
 	name = "wristwatch"
 	desc = "A cheap plastic quartz-based wristwatch. Painfully archaic by modern standards, but there's something charming about it all the same."
 	icon_state = "wristwatch_basic"
-	siemens_coefficient = 1
 	gender = "neuter"
 	slot = ACCESSORY_SLOT_WRIST
 	slot_flags = SLOT_GLOVES
@@ -15,6 +14,9 @@
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
+
+CAPABILITIES(/obj/item/clothing/accessory/watch)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/accessory/watch/examine(mob/user)
 	. = ..()

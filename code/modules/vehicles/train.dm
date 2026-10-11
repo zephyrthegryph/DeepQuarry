@@ -105,13 +105,11 @@
 /// Requirement (was REQ_* pred_train_unlatchable): the legacy check answers TRUE to pass.
 /obj/vehicle/train/proc/pred_train_unlatchable_holds(datum/act/op/A)
 	var/answer = pred_train_unlatchable(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why pred_train_unlatchable_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/vehicle/train/proc/pred_train_unlatchable_refusal(datum/act/op/A)
-	var/answer = pred_train_unlatchable(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement for "Unlatch": unhitches this train from the one in front of it. Overridden FALSE where nothing latches.
 /obj/vehicle/train/proc/pred_train_unlatchable(mob/actor, atom/target, obj/item/held)
 	return TRUE
@@ -283,4 +281,4 @@ CAPABILITIES(/obj/vehicle/train)
 	links(/obj/vehicle/train::lead, /obj/vehicle/train::tow)
 	op("train_drag", item(/atom/movable), gesture(GESTURE_DRAG), priority(OP_PRIORITY_DEFAULT - 2), label("Load"), then(PROC_REF(interaction_train_drag)))
 	op("train_hand", hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Interaction train hand"), then(PROC_REF(interaction_train_hand)))
-	op("train_unlatch", menu(), label("Unlatch"), needs(req_adjacent(), req_capable(), req_bool(PROC_REF(pred_train_unlatchable_holds), because = PROC_REF(pred_train_unlatchable_refusal))), then(PROC_REF(train_unlatch)))
+	op("train_unlatch", menu(), label("Unlatch"), needs(req_adjacent(), req_capable(), req(PROC_REF(pred_train_unlatchable_holds))), then(PROC_REF(train_unlatch)))

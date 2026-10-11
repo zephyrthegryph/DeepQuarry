@@ -201,20 +201,11 @@ base_var	code/game/objects/items.dm	var/melee_sweep = null // TRUE forces a 3-ti
 base_var	code/game/objects/items.dm	var/catchable = TRUE
 base_var	code/game/objects/items.dm	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
 base_var	code/game/objects/items.dm	var/pry = 0 //Used in attackby() to open doors
-base_var	code/game/objects/items.dm	var/heat_protection = 0 //flags which determine which body parts are protected from heat. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-base_var	code/game/objects/items.dm	var/cold_protection = 0 //flags which determine which body parts are protected from cold. Use the HEAD, UPPER_TORSO, LOWER_TORSO, etc. flags. See setup.dm
-base_var	code/game/objects/items.dm	var/max_heat_protection_temperature //Set this variable to determine up to which temperature (IN KELVIN) the item protects against heat damage. Keep at null to disable protection. Only protects areas set by heat_protection flags
-base_var	code/game/objects/items.dm	var/min_cold_protection_temperature //Set this variable to determine down to which temperature (IN KELVIN) the item protects against cold damage. 0 is NOT an acceptable number due to if(varname) tests!! Keep at null to disable protection. Only protects areas set by cold_protection flags
-base_var	code/game/objects/items.dm	var/max_pressure_protection // Set this variable if the item protects its wearer against high pressures below an upper bound. Keep at null to disable protection.
-base_var	code/game/objects/items.dm	var/min_pressure_protection // Set this variable if the item protects its wearer against low pressures above a lower bound. Keep at null to disable protection. 0 represents protection against hard vacuum.
 base_var	code/game/objects/items.dm	var/tmp/list/actions //list of /datum/action's that this item has.
 base_var	code/game/objects/items.dm	var/list/actions_types //list of paths of action datums to give to the item on New().
 base_var	code/game/objects/items.dm	var/flags_inv = 0
 base_var	code/game/objects/items.dm	var/body_parts_covered = 0 //see setup.dm for appropriate bit flags
 base_var	code/game/objects/items.dm	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
-base_var	code/game/objects/items.dm	var/gas_transfer_coefficient = 1 // for leaking gas from turf to mask and vice-versa (for masks right now, but at some point, i'd like to include space helmets)
-base_var	code/game/objects/items.dm	var/permeability_coefficient = 1 // for chemicals/diseases
-base_var	code/game/objects/items.dm	var/siemens_coefficient = 1 // for electrical admittance/conductance (electrocution checks and shit)
 base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 base_var	code/game/objects/items.dm	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 base_var	code/game/objects/items.dm	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents

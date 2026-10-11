@@ -5,8 +5,10 @@
 	icon_state = "vox-scrap"
 	icon_state = "vox-scrap"
 	body_parts_covered = CHEST|ARMS|LEGS
-	siemens_coefficient = 1 //Its literally metal
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/armor/vox_scrap)
+	configure(item_protection(siemens = 1))
 
 TYPE_TABLE(/obj/item/clothing/suit/armor/vox_scrap, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 

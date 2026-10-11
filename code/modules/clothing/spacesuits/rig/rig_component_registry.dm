@@ -77,12 +77,12 @@
 		piece.name = "[holder().suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [holder().name]."
 		piece.icon_state = "[holder().suit_state]"
-		piece.min_cold_protection_temperature = holder().min_cold_protection_temperature
-		piece.max_heat_protection_temperature = holder().max_heat_protection_temperature
+		piece.set_min_cold_protection_temperature(protection_of(holder()).min_cold)
+		piece.set_max_heat_protection_temperature(protection_of(holder()).max_heat)
 		// Preserve insulated gloves that already have a lower coefficient
-		if(piece.siemens_coefficient > holder().siemens_coefficient)
-			piece.siemens_coefficient = holder().siemens_coefficient
-		piece.permeability_coefficient = holder().permeability_coefficient
+		if(protection_of(piece).siemens > protection_of(holder()).siemens)
+			piece.set_siemens_coefficient(protection_of(holder()).siemens)
+		piece.set_permeability_coefficient(protection_of(holder()).permeability)
 		piece.unacidable = holder().unacidable
 		piece.set_armor(holder().get_armor())
 		piece.worn_protection_changed()

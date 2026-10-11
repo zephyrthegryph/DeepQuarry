@@ -841,10 +841,10 @@ TRACKED(/turf/simulated/wall, thermite)
 
 /obj/item/rcd/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
 	if(A.actor.stat || A.actor.restrained())
-		return FALSE
+		return MSG(op/topic_gate)
 
 /obj/item/rcd/proc/topic_close(datum/act/op/A)
 	// close TGUI window
