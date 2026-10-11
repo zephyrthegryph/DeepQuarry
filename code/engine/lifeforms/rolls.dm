@@ -300,6 +300,10 @@ GLOBAL_LIST_EMPTY(roll_rollers)
 					if(istext(n))
 						n = (n in holder.vars) ? holder.vars[n] : 0 // PIXEL_JITTER(nameof(randpixel)): the holder's own range
 					return list(R.number(-n, n), R.number(-n, n))
+				if("wall_offset")
+					var/atom/A = holder
+					var/dir = A.dir
+					return list((dir & 3) ? 0 : (dir == EAST ? -gen_args[1] : gen_args[1]), (dir & 3) ? (dir == NORTH ? -gen_args[2] : gen_args[2]) : 0)
 	declare_report("[C?.origin]: rolls(): [G.kind] is not a generator (pick_one, pick_weighted, range_of, PIXEL_JITTER, chance, PROC_REF)")
 	return null
 

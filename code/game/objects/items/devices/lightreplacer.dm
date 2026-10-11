@@ -44,7 +44,6 @@
 	var/max_uses = 32
 	var/uses = 32
 	var/emagged = 0
-	var/failmsg = ""
 	var/charge = 0
 	var/selected_color = LIGHT_COLOR_INCANDESCENT_TUBE //Default color!
 
@@ -56,9 +55,6 @@
 	///For attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/lightreplacer/Initialize(mapload)
-	. = ..()
-	failmsg = "The [name]'s refill light blinks red."
 
 /obj/item/lightreplacer/examine(mob/user)
 	. = ..()
@@ -229,7 +225,7 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 			return
 
 		else
-			to_chat(U, failmsg)
+			to_chat(U, "The [name]'s refill light blinks red.")
 			return
 	else
 		to_chat(U, "There is a working [target.get_fitting_name()] already inserted.")

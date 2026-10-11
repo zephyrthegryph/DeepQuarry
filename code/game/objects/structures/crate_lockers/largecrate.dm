@@ -12,7 +12,7 @@
 
 /obj/structure/largecrate/animal/bugsect
 	name = "Dangerous drone carrier"
-	starts_with = list(/mob/living/simple_mob/vore/sect_drone)
+	starts_with = null // rolled (rolls())
 
 CAPABILITIES(/obj/structure/largecrate/animal/bugsect)
 	rolls(nameof(starts_with), PROC_REF(roll_starts_with))

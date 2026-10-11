@@ -21,22 +21,14 @@
 		/obj/item/clothing/accessory/armband = 3,
 		/obj/item/clothing/accessory/holster/waist = 3)
 
-/obj/structure/closet/wardrobe/red/Initialize(mapload)
-	if(islist(starts_with))
-		if(prob(50))
-			starts_with += /obj/item/storage/backpack/security
-		else
-			starts_with += /obj/item/storage/backpack/satchel/sec
-		if(prob(50))
-			starts_with += /obj/item/storage/backpack/security
-		else
-			starts_with += /obj/item/storage/backpack/satchel/sec
-		if(prob(50))
-			starts_with += /obj/item/storage/backpack/security
-		else
-			starts_with += /obj/item/storage/backpack/satchel/sec
+CAPABILITIES(/obj/structure/closet/wardrobe/red)
+	initial_contents(PROC_REF(roll_backpacks), when = nameof(starts_with))
 
-	return ..()
+/// Rolled contents (initial_contents()): three security backpacks or satchels.
+/obj/structure/closet/wardrobe/red/proc/roll_backpacks(datum/roller/R)
+	. = list()
+	for(var/i in 1 to 3)
+		. += R.choose(list(/obj/item/storage/backpack/security, /obj/item/storage/backpack/satchel/sec))
 
 /obj/structure/closet/wardrobe/red/empty
 	starts_with = null
@@ -265,11 +257,11 @@
 		/obj/item/storage/backpack/satchel/tox)
 
 CAPABILITIES(/obj/structure/closet/wardrobe/science_white)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/wardrobe/science_white/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/dufflebag/sci
 	else
@@ -293,11 +285,11 @@ CAPABILITIES(/obj/structure/closet/wardrobe/science_white)
 		/obj/item/storage/backpack/satchel/tox)
 
 CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/wardrobe/robotics_black/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/dufflebag/sci
 	else
@@ -446,11 +438,11 @@ CAPABILITIES(/obj/structure/closet/wardrobe/robotics_black)
 		/obj/item/clothing/under/pants/camo)
 
 CAPABILITIES(/obj/structure/closet/wardrobe/tactical)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/wardrobe/tactical/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(25))
 		. += /obj/item/storage/belt/security/tactical/bandolier
 	else

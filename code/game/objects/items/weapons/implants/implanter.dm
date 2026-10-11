@@ -106,6 +106,21 @@ CAPABILITIES(/obj/item/implanter)
 /obj/item/implanter/loyalty
 	icon_state = "implanter1_1" // loaded: what update() would show
 
+/// Loaded implanters packed in the syndicate kits (they keep the plain implanter's name).
+/obj/item/implanter/freedom/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/freedom)
+
+/obj/item/implanter/freedom
+	icon_state = "implanter1_1" // loaded: what update() would show
+
+/obj/item/implanter/uplink/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED, starts = /obj/item/implant/uplink)
+
+/obj/item/implanter/uplink
+	icon_state = "implanter1_1" // loaded: what update() would show
+
 /obj/item/implanter/explosive
 	name = "implanter (E)"
 

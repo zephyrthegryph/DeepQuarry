@@ -29,9 +29,7 @@
 /obj/structure/closet/statue/Initialize(mapload)
 	. = ..()
 	var/mob/living/L = statue_of
-	var/found_target = FALSE
 	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
-		found_target = TRUE
 		if(L?.buckled_to())
 			var/atom/movable/_tmp_buck_9 = L?.buckled_to()
 			_tmp_buck_9.unbuckle_mob(L, TRUE)
@@ -54,12 +52,17 @@
 			statue_shape = "corgi"
 			desc = "If it takes forever, I will wait for you..."
 
-	if(!found_target) //meaning if the statue didn't find a valid target
-		return INITIALIZE_HINT_QDEL
 	if(statue_shape)
 		changed(src)
 
-	release_delay = timer * 2 SECONDS // the old countdown: one per 2 s step (after_init())
+/// A statue is made around a human, a monkey or a corgi (keeps_if()); without one it is discarded.
+/obj/structure/closet/statue/proc/has_subject()
+	var/mob/living/L = statue_of
+	return L && (ishuman(L) || L.isMonkey() || iscorgi(L))
+
+/// The old countdown, one step per 2 s (derives(), at init; read by its after_init()).
+/obj/structure/closet/statue/proc/timer_delay()
+	return timer * 2 SECONDS
 
 /// The petrification wears off (its timer): the statue frees whoever is inside.
 /obj/structure/closet/statue/proc/release(datum/act/A)
@@ -130,6 +133,8 @@ CAPABILITIES(/obj/structure/closet/statue)
 	without("melee_hit")
 	op("statue_strike", item(/obj/item), label("Strike"), priority(OP_PRIORITY_PART + 20), then(PROC_REF(statue_struck)))
 	param(nameof(statue_of), pos = 1, keep = FALSE)
+	keeps_if(PROC_REF(has_subject))
+	derives(nameof(release_delay), PROC_REF(timer_delay))
 
 /// A held thing strikes the statue.
 /obj/structure/closet/statue/proc/statue_struck(datum/act/op/A)

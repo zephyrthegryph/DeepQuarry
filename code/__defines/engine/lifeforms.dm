@@ -33,6 +33,9 @@
 #define ROLL_PIXEL "\[pixel]"
 /// A generator: each pixel offset rolled in -n..n (the old randpixel_xy()/pixel_x = rand(-n, n) pair).
 #define PIXEL_JITTER(n) roll_gen("jitter", list(n))
+/// rolls(ROLL_PIXEL, WALL_OFFSET(x, y), when = nameof(building)): a wall mount built in play shifts x px toward the wall west or east of it
+/// (east: -x) and y px north or south (north: -y), from its dir. Not random; a mapped one (building FALSE) keeps its offsets.
+#define WALL_OFFSET(x, y) roll_gen("wall_offset", list(x, y))
 
 // ---- make() / starts_args ----
 /// A value a make() call did not pass (the generated make()'s defaults).

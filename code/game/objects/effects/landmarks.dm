@@ -5,8 +5,10 @@
 	anchored = TRUE
 	unacidable = TRUE
 	simulated = FALSE
-	invisibility = INVISIBILITY_MAXIMUM
+	invisibility = INVISIBILITY_ABSTRACT
 	var/delete_me = FALSE
+	/// The first part of its tag (landmark_tag()).
+	var/tag_kind = "landmark"
 
 REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LANDMARKS)
 
@@ -15,6 +17,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 CAPABILITIES(/obj/effect/landmark)
 	membership(joins = REGISTRY_LANDMARKS)
 	map_resolver(GLOBAL_PROC_REF(resolve_landmark))
+	derives(nameof(tag), PROC_REF(landmark_tag))
 
 /// The map resolver of landmarks: a coordinate-only landmark (spawn points, event starts) becomes a
 /// row in its coordinate registry and never an atom; costume landmarks roll their costume. Any
@@ -76,12 +79,12 @@ CAPABILITIES(/obj/effect/landmark)
 			return GLOB.vinestart
 	return null
 
-TYPE_TABLE_DECLARE(/obj/effect/landmark, landmark_tag_setup, null)
+/// What locate("[kind]*[name]") finds it by (derives(), at init).
+/obj/effect/landmark/proc/landmark_tag()
+	return "[tag_kind]*[name]"
 
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
-	tag = text("landmark*[]", name)
-	invisibility = INVISIBILITY_ABSTRACT
 
 	// A subtype placed with a coordinate-only name still records (it stays: its type has work).
 	var/list/registry = landmark_coordinate_registry(name)
@@ -102,11 +105,6 @@ TYPE_TABLE_DECLARE(/obj/effect/landmark, landmark_tag_setup, null)
 			GLOB.tdomeadmin += loc
 		if("tdomeobserve")
 			GLOB.tdomeobserve += loc
-	switch(TYPE_TABLE_GET(src, landmark_tag_setup))
-		if(/obj/effect/landmark/start)
-			tag = "start*[name]"
-		if(/obj/effect/landmark/virtual_reality)
-			tag = "virtual_reality*[name]"
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)
@@ -117,16 +115,16 @@ TYPE_TABLE_DECLARE(/obj/effect/landmark, landmark_tag_setup, null)
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 	anchored = TRUE
+	tag_kind = "start"
 
-TYPE_TABLE(/obj/effect/landmark/start, landmark_tag_setup, /obj/effect/landmark/start)
 
 /obj/effect/landmark/virtual_reality
 	name = "virtual_reality"
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
 	anchored = TRUE
+	tag_kind = "virtual_reality"
 
-TYPE_TABLE(/obj/effect/landmark/virtual_reality, landmark_tag_setup, /obj/effect/landmark/virtual_reality)
 
 /obj/effect/landmark/costume
 

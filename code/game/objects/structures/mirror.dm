@@ -23,6 +23,7 @@ CAPABILITIES(/obj/structure/mirror)
 	op("add_glass", stack(/obj/item/stack/material/glass, 2), label("Add glass"), when(req(PROC_REF(frame_empty))), begins(MSG(mirror/adding_glass)), wait(2 SECONDS), then(PROC_REF(glass_added)))
 	param(nameof(dir), pos = 1)
 	param(nameof(building), pos = 2)
+	rolls(ROLL_PIXEL, WALL_OFFSET(28, 30), when = nameof(building))
 
 /// A mirror built on a wall (its constructor param).
 /obj/structure/mirror/var/building = FALSE
@@ -33,8 +34,6 @@ CAPABILITIES(/obj/structure/mirror)
 	if(building)
 		set_glass(0)
 		icon_state = "mirror_frame"
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -28 : 28)
-		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
 
 
 /// A hand, or a silicon beside it: the appearance changer, while the glass is whole.
