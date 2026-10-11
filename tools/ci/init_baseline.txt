@@ -1300,7 +1300,6 @@ init_lines	code/game/objects/items/contraband.dm	for(var/datum/reagent/R in reag
 init_lines	code/game/objects/items/contraband.dm	names += R.name
 init_lines	code/game/objects/items/contraband.dm	desc = "Contains [english_list(names)]."
 init_lines	code/game/objects/items/contraband.dm	get_appearance()
-init_lines	code/game/objects/items/devices/advnifrepair.dm	rel_set(src, nameof(supply), new /datum/reagents(max = 60, A = src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 init_lines	code/game/objects/items/devices/ai_detector.dm	range_alert = world.view
 init_lines	code/game/objects/items/devices/ai_detector.dm	range_warning = world.view * 2
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["supply_category"] = null
@@ -1343,9 +1342,6 @@ init_lines	code/game/objects/items/devices/geiger.dm	if(!geiger_sound)
 init_lines	code/game/objects/items/devices/geiger.dm	rel_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): the sound is made only while the geiger is scanning, which a declaration cannot condition
 init_lines	code/game/objects/items/devices/gps.dm	name = "global positioning system ([gps_tag])"
 init_lines	code/game/objects/items/devices/gps.dm	update_holder()
-init_lines	code/game/objects/items/devices/holowarrant.dm	for(var/i = 0 to 3)
-init_lines	code/game/objects/items/devices/holowarrant.dm	new /obj/item/holowarrant(src) // addition ends
-init_lines	code/game/objects/items/devices/lightreplacer.dm	failmsg = "The [name]'s refill light blinks red."
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	if(has_weapon)
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	if(ispath(active_weapon))
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	rel_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
@@ -1388,18 +1384,11 @@ init_lines	code/game/objects/items/devices/radio/radio.dm	internal_channels = GL
 init_lines	code/game/objects/items/devices/radio/radio.dm	update_broadcast_tiles()
 init_lines	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 init_lines	code/game/objects/items/devices/radio/radiopack.dm	make_tethered(handset_path)
-init_lines	code/game/objects/items/devices/scanners/mass_spectrometer.dm	var/datum/reagents/R = new/datum/reagents(5)
-init_lines	code/game/objects/items/devices/scanners/mass_spectrometer.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/devices/scanners/mass_spectrometer.dm	rel_set(R, nameof(R.my_atom), src)
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	if(ismob(loc))
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	var/mob/M = loc
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	M.motiontracker_subscribe()
 init_lines	code/game/objects/items/devices/spy_bug.dm	radio = new(src)
-init_lines	code/game/objects/items/devices/spy_bug.dm	name = "Camera #[rand(1000,9999)]"
-init_lines	code/game/objects/items/devices/spy_bug.dm	c_tag = name
-init_lines	code/game/objects/items/devices/spy_bug.dm	name = "DV-136ZB #[rand(1000,9999)]"
-init_lines	code/game/objects/items/devices/spy_bug.dm	c_tag = name
 init_lines	code/game/objects/items/devices/translocator.dm	flags |= NOBLUDGEON
 init_lines	code/game/objects/items/devices/translocator.dm	if(!power_source) // no cell_type
 init_lines	code/game/objects/items/devices/translocator.dm	rel_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
@@ -1430,19 +1419,6 @@ init_lines	code/game/objects/items/ghost_hunting/trap.dm	config_flags = EXPERIME
 init_lines	code/game/objects/items/ghost_hunting/trap.dm	experiment_events = ghost_events)
 init_lines	code/game/objects/items/ghost_hunting/weapons.dm	make_tethered(who_ya_gunna_call)
 init_lines	code/game/objects/items/paintkit.dm	set_info("debug suit", "This is a test", "debug", CUSTOM_ITEM_OBJ, CUSTOM_ITEM_MOB)
-init_lines	code/game/objects/items/pizza_voucher.dm	var/list/descstrings = list("24/7 PIZZA PIE HEAVEN",
-init_lines	code/game/objects/items/pizza_voucher.dm	"WE ALWAYS DELIVER!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"24-HOUR PIZZA PIE POWER!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"TOMATO SAUCE, CHEESE, WE'VE BOTH OF THESE!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"COOKED WITH LOVE INSIDE A BIG OVEN!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"WHEN YOU NEED A SLICE OF JOY IN YOUR LIFE!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"WHEN YOU NEED A DISK OF OVEN BAKED BLISS!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"EVERY TIME YOU DREAM OF CIRCULAR CUISINE!",
-init_lines	code/game/objects/items/pizza_voucher.dm	"WE ALWAYS DELIVER! WE ALWAYS DELIVER! WE ALWAYS DELIVER!")
-init_lines	code/game/objects/items/pizza_voucher.dm	desc = "A pocket-sized plastic slip with a button in the middle. \"[pick(descstrings)]\" is written on the back."
-init_lines	code/game/objects/items/poi_items.dm	drone_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]]"
-init_lines	code/game/objects/items/poi_items.dm	var/new_canalyzer = "[drone_name] [examine_canalyzer]" //Only way I could think to dynamically insert drone name here
-init_lines	code/game/objects/items/poi_items.dm	examine_canalyzer = new_canalyzer
 init_lines	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 init_lines	code/game/objects/items/stacks/sandbags.dm	update_slowdown()
 init_lines	code/game/objects/items/stacks/sandbags.dm	var/datum/material/M = get_material_by_name("[bag_material]")
@@ -1488,13 +1464,6 @@ init_lines	code/game/objects/items/toys/mech_toys.dm	if(SPECIAL_ATTACK_OTHER)
 init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a special move, which [special_attack_type_message]"
 init_lines	code/game/objects/items/toys/mech_toys.dm	else
 init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a mystery move, even I don't know."
-init_lines	code/game/objects/items/toys/toys.dm	var/datum/reagents/R = new/datum/reagents(10)
-init_lines	code/game/objects/items/toys/toys.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/toys/toys.dm	rel_set(R, nameof(R.my_atom), src)
-init_lines	code/game/objects/items/toys/toys.dm	desc = "A \"Space Life\" brand [name]"
-init_lines	code/game/objects/items/toys/toys.dm	adjusted_name = name
-init_lines	code/game/objects/items/toys/toys.dm	if (pokephrase != "Rawr~!")
-init_lines	code/game/objects/items/toys/toys.dm	pokephrase = pick("ROAR!", "RAWR!", "GAWR!", "GRR!", "GROAR!", "GRAH!", "Weh!", "Merp!")
 init_lines	code/game/objects/items/trash.dm	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 init_lines	code/game/objects/items/trash.dm	SSpersistence.track_value(src, /datum/persistent/filth/trash)
 init_lines	code/game/objects/items/trash_material.dm	for(var/list/L in matter_chances)
@@ -1520,31 +1489,11 @@ init_lines	code/game/objects/items/weapons/RCD.dm	if(TYPE_TABLE_GET(src, rcd_sta
 init_lines	code/game/objects/items/weapons/RCD.dm	set_stored_matter(max_stored_matter)
 init_lines	code/game/objects/items/weapons/candle.dm	light(span_notice("\The [src] mysteriously lights itself!."))
 init_lines	code/game/objects/items/weapons/candle.dm	light(span_notice("\The [src] mysteriously lights itself!."))
-init_lines	code/game/objects/items/weapons/capture_crystal.dm	var/subchoice = pickweight(possible_mob_types) //Some of the lists have nested lists, so let's pick one of them
-init_lines	code/game/objects/items/weapons/capture_crystal.dm	var/choice = pickweight(subchoice) //And then we'll pick something from whatever's left
-init_lines	code/game/objects/items/weapons/capture_crystal.dm	set_spawn_mob_type(choice) //Now when someone uses this, we'll spawn whatever we picked!
-init_lines	code/game/objects/items/weapons/chewables.dm	flags |= NOREACT // so it doesn't react until you light it
-init_lines	code/game/objects/items/weapons/chewables.dm	if(wrapped)
-init_lines	code/game/objects/items/weapons/chewables.dm	slot_flags = null
 init_lines	code/game/objects/items/weapons/chewables.dm	make_exact_fit()
-init_lines	code/game/objects/items/weapons/chewables.dm	if(!open_state)
-init_lines	code/game/objects/items/weapons/chewables.dm	open_state = "[initial(icon_state)]0"
-init_lines	code/game/objects/items/weapons/chewables.dm	if(!closed_state)
-init_lines	code/game/objects/items/weapons/chewables.dm	closed_state = "[initial(icon_state)]"
-init_lines	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/chewables.dm	color = reagents.get_color()
-init_lines	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): Initialize rolls a random flavour per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/chewables.dm	color = reagents.get_color()
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	flags |= NOREACT // so it doesn't react until you light it
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	if(smoketime && !max_smoketime)
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	set_max_smoketime(smoketime)
-init_lines	code/game/objects/items/weapons/cigs_lighters.dm	name = "empty [initial(name)]"
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	var/image/I = image(icon, "lighter-[pick("trans","tall","matte")]")
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	I.color = pick(available_colors)
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 init_lines	code/game/objects/items/weapons/cigs_lighters.dm	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
-init_lines	code/game/objects/items/weapons/cosmetics.dm	colour = pick("red","purple","jade","black")
-init_lines	code/game/objects/items/weapons/cosmetics.dm	name = "[colour] lipstick"
 init_lines	code/game/objects/items/weapons/dna_injector.dm	var/selector = TYPE_TABLE_GET(src, injector_random_selector)
 init_lines	code/game/objects/items/weapons/dna_injector.dm	switch(selector)
 init_lines	code/game/objects/items/weapons/dna_injector.dm	if(/obj/item/dnainjector/random)
@@ -1590,12 +1539,6 @@ init_lines	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_st
 init_lines	code/game/objects/items/weapons/flamethrower.dm	weldtool.status = 0 // for disassembly
 init_lines	code/game/objects/items/weapons/flamethrower.dm	igniter.set_secured(FALSE) // for disassembly
 init_lines	code/game/objects/items/weapons/flamethrower.dm	set_status(TRUE)
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	pixel_x = rand(-10,10)
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	pixel_y = rand(-10,10)
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	if(w_class > 0 && w_class < ITEMSIZE_LARGE)
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	else
-init_lines	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 init_lines	code/game/objects/items/weapons/grenades/confetti.dm	confetti_spread.attach(src)
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/stepdist = rand(1,4)//How far to step
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/temploc = src.loc//Saves the current location to know where to step away from
@@ -1712,12 +1655,6 @@ init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/
 init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/c100,
 init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/c100
 init_lines	code/game/objects/items/weapons/storage/bible.dm	)
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/syringe
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	for(var/i in 1 to 8)
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	if(prob(25))
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	continue
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	syringe = pick(subtypesof(/obj/item/reagent_containers/syringe))
-init_lines	code/game/objects/items/weapons/storage/boxes.dm	new syringe(src)
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/first = TRUE
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	for(var/pet in pet_list)
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	if(first)
@@ -1729,10 +1666,6 @@ init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/obj/item/reagent
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	C.name ="[pet] pet cube"
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	C.pet_path = pet_list[pet]
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	desc += "[pet]"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!open_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	open_state = "[initial(icon_state)]0"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!closed_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	closed_state = "[initial(icon_state)]"
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	var/obj/item/pen/crayon/C = new(src)
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.variant = v
@@ -1743,23 +1676,10 @@ init_lines	code/game/objects/items/weapons/storage/fancy.dm	var/obj/item/pen/cra
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.variant = v
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.apply_variant()
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.name = "[M.colourName] [initial(M.name)]"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!open_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	open_state = "[initial(icon_state)]_open"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!closed_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	closed_state = "[initial(icon_state)]"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	flags |= NOREACT
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT. So people can inject cigarettes without opening a packet, now with being able to inject the whole one
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	flags |= OPENCONTAINER
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(brand)
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.brand = brand
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.desc += " This one is \a [brand]."
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!open_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	open_state = "[initial(icon_state)]0"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(!closed_state)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	closed_state = "[initial(icon_state)]"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	flags |= NOREACT
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT
 init_lines	code/game/objects/items/weapons/storage/firstaid.dm	base_name = name
 init_lines	code/game/objects/items/weapons/storage/firstaid.dm	base_desc = desc
 init_lines	code/game/objects/items/weapons/storage/internal.dm	rel_set(src, nameof(master_item), loc)
@@ -1782,108 +1702,6 @@ init_lines	code/game/objects/items/weapons/storage/storage.dm	if(!open_state)
 init_lines	code/game/objects/items/weapons/storage/storage.dm	open_state = "[initial(icon_state)]_open"
 init_lines	code/game/objects/items/weapons/storage/storage.dm	if(!closed_state)
 init_lines	code/game/objects/items/weapons/storage/storage.dm	closed_state = "[initial(icon_state)]"
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	if(prob(50))
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new /obj/item/flashlight(src)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	else
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new /obj/item/flashlight/flare(src)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	if(prob(5))
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new /obj/item/clothing/gloves/yellow(src)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	else
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new /obj/item/stack/cable_coil/random(src,30)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	calibrate_size()
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	if(filled)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/list/lunches = lunchables_lunches()
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/lunch = lunches[pick(lunches)]
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new lunch(src)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/list/snacks = lunchables_snacks()
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/snack = snacks[pick(snacks)]
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new snack(src)
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/list/drinks = lunchables_drinks()
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	var/drink = drinks[pick(drinks)]
-init_lines	code/game/objects/items/weapons/storage/toolbox.dm	new drink(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	switch (pickweight(list("bloodyspai" = 1, "stealth" = 1, "screwed" = 1, "guns" = 1, "murder" = 1, "freedom" = 1, "hacker" = 1, "lordsingulo" = 1, "smoothoperator" = 1)))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("bloodyspai")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/under/chameleon(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/mask/gas/voice(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/card/id/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/shoes/syndigaloshes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("stealth")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/gun/energy/crossbow(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/pen/reagent/paralysis(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/chameleon(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("screwed")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/effect/spawner/newbomb/timer/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/effect/spawner/newbomb/timer/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/powersink(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/suit/space/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/head/helmet/space/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/mask/gas/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/tank/emergency/oxygen/double(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("guns")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/gun/projectile/revolver(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/ammo_magazine/s357(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/card/emag(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/plastique(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/plastique(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("murder")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/melee/energy/sword(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/glasses/thermal/syndi(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/card/emag(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/shoes/syndigaloshes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("freedom")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	var/obj/item/implanter/O = new /obj/item/implanter(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	rel_set(O, nameof(O.imp), new /obj/item/implant/freedom(O))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	var/obj/item/implanter/U = new /obj/item/implanter(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	rel_set(U, nameof(U.imp), new /obj/item/implant/uplink(U))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("hacker")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/encryptionkey/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/aiModule/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/card/emag(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/encryptionkey/binary(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("lordsingulo")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/radio/beacon/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/suit/space/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/head/helmet/space/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/mask/gas/syndicate(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/tank/emergency/oxygen/double(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/card/emag(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	if("smoothoperator")
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/storage/box/syndie_kit/g9mm(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/storage/bag/trash(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/soap/syndie(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/bodybag(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/under/suit_jacket(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/clothing/shoes/laceup(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	var/obj/item/implanter/O = new(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	rel_set(O, nameof(O.imp), new /obj/item/implant/freedom(O))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	O.update()
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	var/obj/item/implanter/O = new(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	rel_set(O, nameof(O.imp), new /obj/item/implant/uplink(O))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	O.update()
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/implanter(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new case_type(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	var/obj/item/storage/fancy/cigarettes/pack
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_ALUMINIUM = 5, REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SULFUR = 5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'F' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_ALUMINIUM = 5, REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SULFUR = 5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'F' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'S' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_PHOSPHORUS = 5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'S' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_POTASSIUM = 1.5, REAGENT_ID_NITROGEN = 1.5, REAGENT_ID_SILICON = 1.5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	fill_cigarre_package(pack, list(REAGENT_ID_SILICON = 4.5, REAGENT_ID_HYDROGEN = 4.5))
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'MB' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack = new /obj/item/storage/fancy/cigarettes(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots) // ALLOW(decl): fills a child pack, amount from its slots
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.desc += " 'T' has been scribbled on it."
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	new /obj/item/flame/lighter/zippo(src)
-init_lines	code/game/objects/items/weapons/storage/uplink_kits.dm	calibrate_size()
 init_lines	code/game/objects/items/weapons/storage/wallets.dm	var/amount = rand(50, 100) + rand(50, 100) // Triangular distribution from 100 to 200
 init_lines	code/game/objects/items/weapons/storage/wallets.dm	var/obj/item/spacecash/SC = null
 init_lines	code/game/objects/items/weapons/storage/wallets.dm	SC = new(src)
@@ -1914,31 +1732,6 @@ init_lines	code/game/objects/items/weapons/tanks/tanks.dm	var/forced_fill = TYPE
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	if(!isnull(forced_fill))
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	bomb_fill = forced_fill
 init_lines	code/game/objects/items/weapons/tanks/tanks.dm	onetankbomb(bomb_fill)
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if(random_color)
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	switch(pick("red","blue","purple","brown","green","cyan","yellow"))
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("red")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver2" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("blue")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_blue"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("purple")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver3" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_purple"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("brown")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver4" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_brown"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("green")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver5" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_green"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("cyan")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver6" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_cyan"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if ("yellow")
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver7" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	item_state = "screwdriver_yellow"
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	if (prob(75))
-init_lines	code/game/objects/items/weapons/tools/screwdriver.dm	pixel_y = rand(0, 16)
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	if(TOOL_WELDER in possible_tooltypes)
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	rel_set(src, nameof(welder), new weldertype(src)) // ALLOW(decl): only when a welder mode is possible
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	on_tool_switch()
@@ -1953,52 +1746,12 @@ init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	else
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(equip_mount), loc)
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	if(random_color)
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	switch(pick("red","blue","yellow"))
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	if ("red")
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	item_state = "cutters"
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	if ("blue")
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-b" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	item_state = "cutters_blue"
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	if ("yellow")
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-y" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	item_state = "cutters_yellow"
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	if (prob(75))
-init_lines	code/game/objects/items/weapons/tools/wirecutters.dm	pixel_y = rand(0, 16)
 init_lines	code/game/objects/items/weapons/weldbackpack.dm	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
 init_lines	code/game/objects/items/weapons/weldbackpack.dm	rel_set(src, nameof(reagents), R)
 init_lines	code/game/objects/items/weapons/weldbackpack.dm	rel_set(R, nameof(R.my_atom), src)
 init_lines	code/game/objects/items/weapons/weldbackpack.dm	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 init_lines	code/game/objects/items/weapons/weldbackpack.dm	nozzle_attached = 1
-init_lines	code/game/objects/mail.dm	if(stamped == TRUE)
-init_lines	code/game/objects/mail.dm	var/stamp_count = rand(1, stamp_max)
-init_lines	code/game/objects/mail.dm	var/list/new_stamps = list()
-init_lines	code/game/objects/mail.dm	for(var/i = 1, i <= stamp_count, i++)
-init_lines	code/game/objects/mail.dm	new_stamps += list("stamp_[rand(2, 8)]")
-init_lines	code/game/objects/mail.dm	set_stamps(new_stamps)
-init_lines	code/game/objects/mail.dm	set_postmark_dx(rand(-4, 0))
-init_lines	code/game/objects/mail.dm	set_postmark_roll(rand())
-init_lines	code/game/objects/mail.dm	var/list/mail_recipients = list()
-init_lines	code/game/objects/mail.dm	for(var/mob/living/carbon/human/alive in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-init_lines	code/game/objects/mail.dm	if(alive.stat != DEAD && alive.client && alive.client.inactivity <= 10 MINUTES)
-init_lines	code/game/objects/mail.dm	mail_recipients += alive
-init_lines	code/game/objects/mail.dm	for(var/iterator in 1 to storage_capacity)
-init_lines	code/game/objects/mail.dm	var/obj/item/mail/new_mail
-init_lines	code/game/objects/mail.dm	if(prob(70))
-init_lines	code/game/objects/mail.dm	new_mail = new /obj/item/mail(src)
-init_lines	code/game/objects/mail.dm	else
-init_lines	code/game/objects/mail.dm	new_mail = new /obj/item/mail/envelope(src)
-init_lines	code/game/objects/mail.dm	var/mob/living/carbon/human/mail_to
-init_lines	code/game/objects/mail.dm	if(length(mail_recipients))
-init_lines	code/game/objects/mail.dm	mail_to = pick(mail_recipients)
-init_lines	code/game/objects/mail.dm	if(mail_to)
-init_lines	code/game/objects/mail.dm	new_mail.initialize_for_recipient(mail_to.mind)
-init_lines	code/game/objects/mail.dm	mail_recipients -= mail_to
-init_lines	code/game/objects/mail.dm	else
-init_lines	code/game/objects/mail.dm	new_mail.junk_mail()
 init_lines	code/game/objects/mail.dm	junk_mail()
-init_lines	code/game/objects/mail.dm	set_info("I HATE CARGO MAIL\n\"GRAA LEMME BREAK YOUR DOORS DOWN I GOTTA GIVE YOU MAIL\nREE YOU GOTTA GET YOUR MAIL I SORTED IT\nYOU'RE WASTIN YOUR TIME IF YOU DONT GET MAIL YOU NEED TO GET YOUR MAIL NOW\nWHY ARENT YO UGETTING YOUR MAIL RAAA\"")
 init_lines	code/game/objects/micro_event.dm	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 init_lines	code/game/objects/micro_structures.dm	if(name == initial(name))
 init_lines	code/game/objects/micro_structures.dm	var/area/our_area = get_area(src)
@@ -2034,87 +1787,12 @@ init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	new /obj/item/gun/energy/locked/frontier(src)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	for(var/i = 1 to 2)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	new /obj/item/gun/energy/locked/frontier/holdout(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/medic
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/satchel/med
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/dufflebag/med
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	switch(pick("blue", "green", "purple", "black", "navyblue"))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("blue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/blue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("green")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("purple")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("black")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("navyblue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	switch(pick("blue", "green", "purple", "black", "navyblue"))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("blue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/blue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("green")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("purple")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("black")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("navyblue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/medic
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/satchel/med
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/storage/backpack/dufflebag/med
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	switch(pick("blue", "green", "purple", "black", "navyblue"))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("blue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/blue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("green")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/green
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("purple")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/purple
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("black")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/black
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	if ("navyblue")
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/clothing/head/surgery/navyblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/medical.dm	starts_with += /obj/item/gps/medical
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref())
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	name = "Owned by [owner_ref().name]"
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref().current)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	owner_picture = image(I, pixel_x = (32 - I.Width()))
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	spent(I)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/clothing/accessory/armband/cargo
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/encryptionkey/headset_cargo
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/clothing/accessory/armband/engine
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/encryptionkey/headset_eng
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/clothing/accessory/armband/science
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/encryptionkey/headset_sci
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/clothing/accessory/armband/medblue
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	starts_with += /obj/item/encryptionkey/headset_med
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	if(prob(25))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	new /obj/item/storage/backpack/security(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	new /obj/item/storage/backpack/satchel/sec(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	if(prob(75))
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/security.dm	new /obj/item/storage/backpack/dufflebag/sec(src)
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	var/mob/living/L = statue_of
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	var/found_target = FALSE
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(L && (ishuman(L) || L.isMonkey() || iscorgi(L)))
@@ -2145,124 +1823,10 @@ init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	return 
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(statue_shape)
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	changed(src)
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	release_delay = timer * 2 SECONDS // the old countdown: one per 2 s step (after_init())
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/common_min = 30 //Minimum amount of minerals in the stack for common minerals
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/common_max = 50 //Maximum amount of HONK in the stack for HONK common minerals
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/rare_min = 5 //Minimum HONK of HONK in the stack HONK HONK rare minerals
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/rare_max = 20 //Maximum HONK HONK HONK in the HONK for HONK rare HONK
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/pickednum = rand(1, 50)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum == 1)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/obj/item/paper/P = new /obj/item/paper(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	P.name = "IOU"
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	P.set_info("Sorry man, we needed the money so we sold your stash. It's ok, we'll double our money for sure this time!")
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/steel(src, rand(common_min, common_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 5)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/glass(src, rand(common_min, common_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 10)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/plasteel(src, rand(common_min, common_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 15)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/phoron(src, rand(rare_min, rare_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 20)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/silver(src, rand(rare_min, rare_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 30)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/gold(src, rand(rare_min, rare_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 40)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/uranium(src, rand(rare_min, rare_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum >= 45)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/stack/material/diamond(src, rand(rare_min, rare_max))
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	if(pickednum == 50)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new /obj/item/tank/jetpack/carbondioxide(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	var/static/list/resources = list(
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/steel,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/glass,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/gold,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/silver,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/phoron,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/uranium,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/diamond,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/material/plasteel,
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	/obj/item/stack/rods
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	for(var/i = 0, i<2, i++)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	for(var/res in resources)
-init_lines	code/game/objects/structures/crates_lockers/closets/syndicate.dm	new res(src, -1)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	switch (pickweight(list("small" = 55, "aid" = 25, "tank" = 10, "both" = 10)))
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	if ("small")
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with = list(
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/toolbox/emergency,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/tank/emergency/oxygen = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/mask/breath = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/suit/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/head/helmet/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/suit_cooling_unit/emergency = 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	if ("aid")
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with = list(
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/toolbox/emergency,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/firstaid/o2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/tank/emergency/oxygen/engi = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/mask/breath = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/suit/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/head/helmet/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/suit_cooling_unit/emergency = 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	if ("tank")
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with = list(
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/toolbox/emergency,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/tank/emergency/oxygen/double = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/mask/breath = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/suit/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/head/helmet/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/suit_cooling_unit = 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	if ("both")
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with = list(
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/toolbox/emergency,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/storage/firstaid/o2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/tank/emergency/oxygen/double = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/mask/breath = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/suit/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/clothing/head/helmet/space/emergency = 2,
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	/obj/item/suit_cooling_unit = 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	if(add_emergency_toolbox)
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with += /obj/item/storage/toolbox/emergency
-init_lines	code/game/objects/structures/crates_lockers/closets/utility_closets.dm	starts_with += /obj/item/storage/toolbox/emergency
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	if(islist(starts_with))
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/security
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/satchel/sec
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/security
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/satchel/sec
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	if(prob(50))
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/security
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	else
-init_lines	code/game/objects/structures/crates_lockers/closets/wardrobe.dm	starts_with += /obj/item/storage/backpack/satchel/sec
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	if(starts_with)
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	create_objects_in_loc(src, starts_with)
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	starts_with = null
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	for(var/obj/I in src.loc)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	if(I.density || I.anchored || I == src || !I.simulated)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	continue
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	I.forceMove(src)
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	starts_with = list(pick(/mob/living/simple_mob/vore/bee,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/catgirl;3,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/frog,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/horse,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/panther,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/giant_snake,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/wolf,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/animal/space/bear;0.5,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/animal/space/carp,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/mimic,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/rat,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/rat/tame,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/aggressive/rat/labrat,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/zorgoia, //CHOMPstation edit
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/rabbit,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	/mob/living/simple_mob/vore/weretiger;0.5,
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	))
-init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	starts_with = list(/obj/structure/musician/piano)
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	if(my_vehicle_type)
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	for(var/obj/I in get_turf(src))
 init_lines	code/game/objects/structures/crates_lockers/vehiclecage.dm	if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))

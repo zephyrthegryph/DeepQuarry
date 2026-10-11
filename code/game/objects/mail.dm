@@ -33,7 +33,7 @@
 	/// Does the letter have a stamp overlay?
 	var/stamped = TRUE
 	/// List of all stamp overlays on the letter.
-	var/list/stamps = list() // ALLOW(instance_list): d: mail items are stamped on creation
+	var/list/stamps // rolled at creation (rolls())
 	/// Maximum number of stamps on the letter.
 	var/stamp_max = 1
 	/// Physical offset of stamps on the object. X direction.
@@ -68,19 +68,11 @@
 	stamp_max = 2
 	stamp_offset_y = 5
 
-/obj/item/mail/Initialize(mapload)
-	. = ..()
-
-	// Icons
-	// Add some random stamps.
-	if(stamped == TRUE)
-		var/stamp_count = rand(1, stamp_max)
-		var/list/new_stamps = list()
-		for(var/i = 1, i <= stamp_count, i++)
-			new_stamps += list("stamp_[rand(2, 8)]")
-		set_stamps(new_stamps)
-	set_postmark_dx(rand(-4, 0))
-	set_postmark_roll(rand())
+/// Rolled before init (rolls()): one to stamp_max random stamps.
+/obj/item/mail/proc/roll_stamps(datum/roller/R)
+	. = list()
+	for(var/i in 1 to R.number(1, stamp_max))
+		. += "stamp_[R.number(2, 8)]"
 
 /obj/item/mail/blank
 	desc = "A blank envelope."
@@ -196,6 +188,9 @@ TRACKED(/obj/item/mail, postmark_roll)
 		look.overlay(look_overlay_image(icon, "postmark", pixel_x = stamp_offset_x + postmark_dx, pixel_y = stamp_offset_y + low + round(postmark_roll * (1 - low)), appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/mail)
+	rolls(nameof(stamps), PROC_REF(roll_stamps), when = nameof(stamped))
+	rolls(nameof(postmark_dx), range_of(-4, 0))
+	rolls(nameof(postmark_roll), range_of(0, 1, 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPER, pickup = SFX_ITEMS_PICKUP_PAPER))
 	// the old attack_self: open the letter
 	op("unwrap", in_hand(), label("Unwrap"), needs(req_bool(PROC_REF(may_open), because = MSG(mail/not_yours))), claims(), wait(1.5 SECONDS), then(PROC_REF(unwrap_timed_done)))
@@ -388,26 +383,25 @@ CAPABILITIES(/datum/prompt/choice/admin_mail)
 	points_per_crate = 0
 	closet_appearance = /datum/decl/closet_appearance/crate/nanotrasen
 
-/obj/structure/closet/crate/mail/full/Initialize(mapload)
-	. = ..()
+CAPABILITIES(/obj/structure/closet/crate/mail/full)
+	initial_contents(PROC_REF(roll_mail))
+
+/// Rolled contents (initial_contents()): a crateful of letters and envelopes, one for each active crew member it can address, junk after.
+/obj/structure/closet/crate/mail/full/proc/roll_mail(datum/roller/R)
+	. = list()
 	var/list/mail_recipients = list()
 	for(var/mob/living/carbon/human/alive in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(alive.stat != DEAD && alive.client && alive.client.inactivity <= 10 MINUTES)
 			mail_recipients += alive
 	for(var/iterator in 1 to storage_capacity)
-		var/obj/item/mail/new_mail
-		if(prob(70))
-			new_mail = new /obj/item/mail(src)
-		else
-			new_mail = new /obj/item/mail/envelope(src)
-		var/mob/living/carbon/human/mail_to
-		if(length(mail_recipients))
-			mail_to = pick(mail_recipients)
+		var/obj/item/mail/new_mail = R.chance(70) ? new /obj/item/mail : new /obj/item/mail/envelope
+		var/mob/living/carbon/human/mail_to = R.choose(mail_recipients)
 		if(mail_to)
 			new_mail.initialize_for_recipient(mail_to.mind)
 			mail_recipients -= mail_to
 		else
 			new_mail.junk_mail()
+		. += new_mail
 
 // Mailbag
 /obj/item/storage/bag/mail
@@ -582,10 +576,7 @@ CAPABILITIES(/obj/item/paper/fluff/junkmail_redpill)
 /obj/item/paper/fluff/love_letter
 	name = "love letter"
 	icon_state = "paper_words"
-
-/obj/item/paper/fluff/love_letter/Initialize(mapload)
-	. = ..()
-	set_info("I HATE CARGO MAIL\n\"GRAA LEMME BREAK YOUR DOORS DOWN I GOTTA GIVE YOU MAIL\nREE YOU GOTTA GET YOUR MAIL I SORTED IT\nYOU'RE WASTIN YOUR TIME IF YOU DONT GET MAIL YOU NEED TO GET YOUR MAIL NOW\nWHY ARENT YO UGETTING YOUR MAIL RAAA\"")
+	info = "I HATE CARGO MAIL\n\"GRAA LEMME BREAK YOUR DOORS DOWN I GOTTA GIVE YOU MAIL\nREE YOU GOTTA GET YOUR MAIL I SORTED IT\nYOU'RE WASTIN YOUR TIME IF YOU DONT GET MAIL YOU NEED TO GET YOUR MAIL NOW\nWHY ARENT YO UGETTING YOUR MAIL RAAA\""
 
 /obj/item/paper/fluff/junkmail_generic
 	name = "important document"
