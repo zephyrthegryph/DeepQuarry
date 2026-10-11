@@ -16,6 +16,7 @@
 	circuit = /obj/item/circuitboard/artifact_harvester
 
 CAPABILITIES(/obj/machinery/artifact_harvester)
+	default_parts()
 	configure(uses_power(idle = 50, active = 750))
 	started_work(step = PROC_REF(work_step))
 	ref_one(nameof(owned_scanner), /obj/machinery/artifact_scanpad)
@@ -39,7 +40,6 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
 		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
-	default_apply_parts()
 
 /obj/machinery/artifact_harvester/RefreshParts(limited = 0)
 	harvesting_speed = 0
