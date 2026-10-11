@@ -167,9 +167,9 @@ impl Default for ModifierArtifacts {
 }
 impl ModifierArtifacts {
     pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
-        self.values.prune_for_pressure(
+        self.values.prune_for_pressure_shared(
             bytes,
-            crate::heap_census::initializer_artifacts::compact_modifier_weight,
+            crate::heap_census::initializer_artifacts::compact_modifier_allocations,
         )
     }
     pub(super) fn for_request(&self, publishable: bool) -> Self {

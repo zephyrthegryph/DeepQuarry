@@ -81,13 +81,14 @@ pub(super) fn classification(c: &mut HeapCensus, value: &Arc<SemanticClassificat
         }
     });
 }
-pub(crate) fn compact_weight(
+pub(crate) fn compact_allocations(
     key: &Arc<[u8]>,
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
     value: &Arc<SemanticClassification>,
-) -> Option<usize> {
-    let mut census = HeapCensus::new("compact_initializer_classification_charge");
+    limit: usize,
+) -> Option<Vec<dm_session::PressureAllocation>> {
+    let mut census = HeapCensus::compact_pressure_allocations(limit);
     census.slice("compact.key", key, true);
     census.receipt("compact.reads", reads);
     census.slice("compact.versions", versions, true);
@@ -95,16 +96,17 @@ pub(crate) fn compact_weight(
         super::resident_weight::answer(&mut census, &read.answer);
     }
     classification(&mut census, value);
-    compact_charge(census, 0)
+    census.finish_compact_pressure_allocations()
 }
 
-pub(crate) fn compact_modifier_weight(
+pub(crate) fn compact_modifier_allocations(
     key: &Arc<[u8]>,
     reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
     value: &Arc<crate::initializer_policy::modifier_facts::ModifierArtifact>,
-) -> Option<usize> {
-    let mut census = HeapCensus::new("compact_initializer_modifier_charge");
+    limit: usize,
+) -> Option<Vec<dm_session::PressureAllocation>> {
+    let mut census = HeapCensus::compact_pressure_allocations(limit);
     census.slice("compact.key", key, true);
     census.receipt("compact.reads", reads);
     census.slice("compact.versions", versions, true);
@@ -114,7 +116,7 @@ pub(crate) fn compact_modifier_weight(
     if census.arc_object("initializer_modifiers.payload", value) {
         census.shared_initializer_write("initializer_modifiers.inputs", &value.input);
     }
-    compact_charge(census, 0)
+    census.finish_compact_pressure_allocations()
 }
 
 /// Conservative logical charge; repeated shared owners may be charged again.

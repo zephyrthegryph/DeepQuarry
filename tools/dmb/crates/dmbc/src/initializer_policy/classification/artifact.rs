@@ -106,9 +106,9 @@ impl InitializerArtifacts {
             .with_published(|roster| roster.clear());
         // Both stores share this aggregate logical cap. Every surviving modifier
         // retains its exact input and receipt; unknown nested owners decline.
-        let mut report = self.values.prune_for_pressure(
+        let mut report = self.values.prune_for_pressure_shared(
             bytes.saturating_sub(bytes / 4),
-            crate::heap_census::initializer_artifacts::compact_weight,
+            crate::heap_census::initializer_artifacts::compact_allocations,
         );
         let modifiers = self
             .modifiers
