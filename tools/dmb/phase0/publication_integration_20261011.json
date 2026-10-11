@@ -610,9 +610,13 @@
     "disk_replay_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/1e2f1d6f4f6a4e9aa55cbc94b4a844ac/receipt.json",
     "disk_replay_result": "Four accepted revisions byte-identical to fresh; exact modified procedure disk hits after unrelated edits and source relocation. Removed nested type still exits internal error 70, gate incomplete.",
     "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-124933-47c90f92/receipt.json",
-    "cohort_status": "running; no complete timing admitted",
+    "cohort_status": "failed source error; all 48681 procedure lowering completed in 41.413s; internal stage total107.212s; actual client launch-to-reap116.079s. No admitted output or end-to-end successful benchmark.",
     "cleanup_bytes": 595621314,
     "cleanup_manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-obsolete-symbols-and-timeout-leaves-20261011.json",
-    "scope": "Prototype functional checks; no completed new benchmark, full runtime, or six-worktree acceptance"
+    "scope": "Prototype functional checks; no completed new benchmark, full runtime, or six-worktree acceptance",
+    "cohort_failure": "code/modules/reagents/machinery/grinder.dm:138 .proc/puny_protons undefined type path; current source defines global /proc/puny_protons, relative reflection lacks global fallback",
+    "folded_paired_receipt": "E:/dq-cache/dmb-folded-source-features/20261011-84677b/e379f65e0ae14ed887ef56d9f322b2e2/receipt.json",
+    "modified_paired_receipt": "E:/dq-cache/dmb-modified-source-features/20261011-84677b/6dbf611c24404b0cbae8bb1ef7be10a9/receipt.json",
+    "paired_exact_diagnostic_cases": 22
   }
 }
