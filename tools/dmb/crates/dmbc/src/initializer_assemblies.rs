@@ -211,16 +211,6 @@ impl InitializerAssemblies {
         Some((code, std::sync::Arc::clone(&payload.encoding)))
     }
     #[cfg(test)]
-    pub(super) fn remember(
-        &self,
-        key: &receipts::Binding,
-        code: &ResolverProc,
-        roots: &[dm_codegen_byond::initializer::AssignmentView<'_>],
-        recorder: &crate::lowering_memo::RecordingResolver<'_, impl Resolver>,
-    ) -> Option<std::sync::Arc<crate::symbolic::InitializerEncoding>> {
-        self.remember_with_recipes(key, code, roots, recorder, None)
-    }
-    #[cfg(test)]
     pub(super) fn remember_with_recipes(
         &self,
         key: &receipts::Binding,
