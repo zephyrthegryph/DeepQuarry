@@ -706,6 +706,12 @@
         "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141441-303d483c-job-cargo.json",
         "cause": "Resolved query parity fixture string error conversion; fix assigned to query owner",
         "production_check_passed": true
+      },
+      {
+        "commit": "cfd55e5a55",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141742-6ac4a4b8-job-cargo.json",
+        "cause": "Compact ABI charge delegated through a test-only module; moved same helper into production child d12dd3be0e",
+        "production_check_passed": false
       }
     ],
     "scope": "Cargo check --tests is typechecking, not test execution or benchmark"
@@ -738,7 +744,9 @@
     "borrowed_symbolic_locator_commit": "66dd35993e",
     "obsolete_cold_algorithm_removed_commit": "6ff8beb846",
     "reserved_abi_map_charge_commit": "f0501e7249",
-    "benchmark_status": "not measured on these commits"
+    "benchmark_status": "not measured on these commits",
+    "analysis_owner_capture_commit": "99a80a9ecb",
+    "abi_production_helper_commit": "d12dd3be0e"
   },
   "shared_core_focused_20261011": {
     "source_commit": "b8c62168126f1b1aca4004d53eedbfcf02034af7",
@@ -747,5 +755,11 @@
     "passed": 10,
     "failed": 0,
     "scope": "borrowed exact lookup, logical pressure, six publication owners, concurrent refresh and immutable rebind; not six real worktrees or whole-program parity"
+  },
+  "current_six_package_check": {
+    "commit": "d12dd3be0e2ae61df09f20fcbeca89015cef3189",
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141952-a54276b1-job-cargo.json",
+    "passed": true,
+    "scope": "All six packages and test targets typecheck; this is not fixture execution or whole-program parity"
   }
 }
