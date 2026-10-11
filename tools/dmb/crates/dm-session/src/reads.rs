@@ -30,22 +30,36 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
         self.ledger.domain_receipts()
     }
     /// Preserve every edge after exact replay against this same immutable host.
-    /// Observing/opaque hosts are resolved normally so their instrumentation is
-    /// never bypassed; nonobserving hosts can reuse the validated answer owner.
+    /// Opaque observing hosts resolve normally. Transparent recorders import
+    /// admitted answers through the SAME nested ledgers; nonobserving providers
+    /// can reuse the validated answer owner without another evaluation.
     pub fn record_admitted(&self, reads: &[ResolverRead]) {
         for read in reads {
-            if self.resolver.observes_reads() {
+            if self.resolver.observes_reads()
+                && self.resolver.transparent_receipt_observer().is_none()
+            {
                 self.resolve(read.query);
             } else {
                 let version = self
                     .ledger
                     .domain_receipt(&read.domain)
                     .unwrap_or_else(|| self.resolver.domain_version(read.domain));
-                self.ledger
-                    .record(read.query, read.answer.clone(), read.domain, version);
+                if self.transparent_receipt_observer().is_some() {
+                    dm_ir::ResolvedReadObserver::record_answer(
+                        self,
+                        read.query,
+                        &read.answer,
+                        read.domain,
+                        version,
+                    );
+                } else {
+                    self.ledger
+                        .record(read.query, read.answer.clone(), read.domain, version);
+                }
             }
         }
     }
+
     /// These reads are mandatory even for bodies that use no inherited names.
     /// Structural ABI consumers observe declarations, not executable bodies.
     /// Body-sensitive consumers must continue using record_occurrence.
@@ -66,7 +80,32 @@ impl<'a, R: Resolver> RecordingResolver<'a, R> {
         });
     }
 }
+impl<R: Resolver> dm_ir::ResolvedReadObserver for RecordingResolver<'_, R> {
+    fn record_answer(
+        &self,
+        query: ResolveQuery,
+        answer: &ResolvedMeaning,
+        domain: ReadDomain,
+        version: Option<u128>,
+    ) {
+        // Only transparent nested recorders participate. Semantic interceptors
+        // cannot license this interface; ordinary resolve remains their path.
+        if let Some(inner) = self.resolver.transparent_receipt_observer() {
+            inner.record_answer(query, answer, domain, version);
+        }
+        self.ledger.record(query, answer.clone(), domain, version);
+    }
+}
 impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
+    fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
+        let provider: &dyn Resolver = if self.resolver.observes_reads() {
+            self.resolver.transparent_receipt_observer()?.provider()
+        } else {
+            self.resolver
+        };
+        dm_ir::TransparentReceiptObserver::new(provider, self)
+    }
+
     fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
         self.resolver.domain_version(domain)
     }
@@ -81,3 +120,7 @@ impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
         answer
     }
 }
+
+#[cfg(test)]
+#[path = "reads_observer_tests.rs"]
+mod observer_tests;

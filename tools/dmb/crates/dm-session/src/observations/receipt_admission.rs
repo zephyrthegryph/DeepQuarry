@@ -9,6 +9,23 @@ struct Verdict<Q, A, D> {
     owner: Arc<[Observation<Q, A, D>]>,
     changed: Option<Q>,
 }
+/// Private proof bound to the SAME current admission host. It is issued only
+/// after every observation in this leaf passed exact or qualified admission.
+struct AdmittedLeaf<'a, Q, A, D, H> {
+    host: &'a H,
+    owner: &'a Arc<[Observation<Q, A, D>]>,
+    current_version: &'a dyn Fn(&D) -> Option<u128>,
+}
+impl<Q, A: Eq, D, H: ObservationHost<Q, A, D>> AdmittedLeaf<'_, Q, A, D, H> {
+    fn deliver(self) {
+        if self.host.supports_admitted_observation() {
+            for read in self.owner.iter() {
+                self.host
+                    .observe_admitted(read, (self.current_version)(&read.domain));
+            }
+        }
+    }
+}
 /// The borrowed host has the existing ObservationHost immutable-current contract.
 /// Never retain this owner across a source/resolver revision. Cached verdicts
 /// identify strongly retained immutable leaf storage, not semantic pointer keys.
@@ -21,7 +38,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
     ReceiptAdmission<'host, Q, A, D, H>
 {
     pub fn allows_certificate_reuse(&self) -> bool {
-        !self.host.observes_answers()
+        !self.host.observes_answers() || self.host.supports_admitted_observation()
     }
     pub fn new(host: &'host H) -> Self {
         Self {
@@ -52,7 +69,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             .entry(domain.clone())
             .or_insert_with(|| Arc::new(OnceLock::new()))
             .clone();
-        *cell.get_or_init(|| self.host.version(domain))
+        *cell.get_or_init(|| self.host.version_for_admission(domain))
     }
 
     /// The ordinary artifact admission rule with request-shared certificate
@@ -78,11 +95,17 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
                 changed = super::first_changed_iter(
                     leaf.iter(),
                     &certified,
-                    |query| self.host.answer(query),
+                    |query| self.host.answer_for_admission(query),
                     |current, previous| self.host.equivalent(current, previous),
                 )
                 .cloned();
                 if changed.is_none() {
+                    AdmittedLeaf {
+                        host: self.host,
+                        owner: leaf,
+                        current_version: &|domain| self.current_version(domain),
+                    }
+                    .deliver();
                     admitted(leaf);
                 }
             }
@@ -106,6 +129,12 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
             if let ReceiptStorageView::Flat(leaf) = view {
                 changed = self.leaf_changed(leaf);
                 if changed.is_none() {
+                    AdmittedLeaf {
+                        host: self.host,
+                        owner: leaf,
+                        current_version: &|domain| self.host.version_for_admission(domain),
+                    }
+                    .deliver();
                     admitted(leaf);
                 }
             }
@@ -129,7 +158,7 @@ impl<'host, Q: Clone, A: Eq, D: Ord, H: ObservationHost<Q, A, D>>
         let changed = super::first_changed_iter(
             leaf.iter(),
             &Default::default(),
-            |query| self.host.answer(query),
+            |query| self.host.answer_for_admission(query),
             |current, previous| self.host.equivalent(current, previous),
         )
         .cloned();

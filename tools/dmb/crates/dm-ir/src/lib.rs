@@ -46,6 +46,8 @@ pub use selected_references::{
     SelectedBuiltin, SelectedMeaning, SelectedReference, SelectedReferences,
     SELECTED_REFERENCES_POLICY,
 };
+mod receipt_observer;
+pub use receipt_observer::{ResolvedReadObserver, TransparentReceiptObserver};
 mod memo_resolver;
 pub use memo_resolver::{MemoResolver, MemoStats};
 

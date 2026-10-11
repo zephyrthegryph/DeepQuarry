@@ -415,6 +415,13 @@ pub trait Resolver: Sync {
         true
     }
 
+    /// Default-declining transparent instrumentation. Unlike observes_reads,
+    /// this preserves delivery of admitted reads; semantic interceptors must
+    /// not expose an inner provider that answers different queries/meanings.
+    fn transparent_receipt_observer(&self) -> Option<crate::TransparentReceiptObserver<'_>> {
+        None
+    }
+
     /// Certifies every answer (including negatives and Unsupported) in this
     /// domain for this immutable issuer. Custom/mutable hosts remain uncertified.
     /// Include resolver schema and every precedence/overlay input; compute once.

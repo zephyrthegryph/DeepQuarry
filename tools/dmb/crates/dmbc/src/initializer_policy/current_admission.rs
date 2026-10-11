@@ -13,6 +13,9 @@ impl Resolver for Host<'_> {
     fn observes_reads(&self) -> bool {
         self.0.observes_reads()
     }
+    fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
+        self.0.transparent_receipt_observer()
+    }
 }
 pub(super) type Admission<'request, 'host> =
     ReceiptAdmission<'request, ResolveQuery, ResolvedMeaning, ReadDomain, Host<'host>>;

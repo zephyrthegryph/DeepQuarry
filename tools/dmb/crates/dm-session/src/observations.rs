@@ -206,6 +206,19 @@ pub trait ObservationHost<Q, A: Eq, D> {
     fn equivalent(&self, current: &A, previous: &A) -> bool {
         current == previous
     }
+
+    /// Optional complete transparent observer path. Opaque/custom hosts keep
+    /// their existing ordinary answer callbacks by default.
+    fn supports_admitted_observation(&self) -> bool {
+        false
+    }
+    fn answer_for_admission(&self, query: &Q) -> A {
+        self.answer(query)
+    }
+    fn version_for_admission(&self, domain: &D) -> Option<u128> {
+        self.version(domain)
+    }
+    fn observe_admitted(&self, _read: &Observation<Q, A, D>, _version: Option<u128>) {}
 }
 impl<R: dm_ir::Resolver>
     ObservationHost<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain> for R
@@ -218,6 +231,26 @@ impl<R: dm_ir::Resolver>
     }
     fn version(&self, domain: &dm_ir::ReadDomain) -> Option<u128> {
         self.domain_version(*domain)
+    }
+    fn supports_admitted_observation(&self) -> bool {
+        self.transparent_receipt_observer().is_some()
+    }
+    fn answer_for_admission(&self, query: &dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+        match self.transparent_receipt_observer() {
+            Some(observer) => observer.provider().resolve(*query),
+            None => self.resolve(*query),
+        }
+    }
+    fn version_for_admission(&self, domain: &dm_ir::ReadDomain) -> Option<u128> {
+        match self.transparent_receipt_observer() {
+            Some(observer) => observer.provider().domain_version(*domain),
+            None => self.domain_version(*domain),
+        }
+    }
+    fn observe_admitted(&self, read: &crate::ResolverRead, version: Option<u128>) {
+        if let Some(observer) = self.transparent_receipt_observer() {
+            observer.record_answer(read.query, &read.answer, read.domain, version);
+        }
     }
     fn equivalent(
         &self,
