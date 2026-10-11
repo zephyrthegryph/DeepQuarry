@@ -47,6 +47,15 @@ class Contracts(unittest.TestCase):
         self.assertIn('--suite-resume=' + str(args.resume), command)
         self.assertFalse(any(value.startswith('--normal-resume=') for value in command))
 
+    def test_shorter_owned_cohort_preserves_suite_selection(self):
+        args = self.args('--tier', 'all', '--batch-size', '32', '--seconds', '300')
+        self.assertTrue(runner.validate(args))
+        self.assertEqual(args.seconds, 300)
+        self.assertNotIn('--seconds', runner.command(args, True))
+        for seconds in ('0', '1801'):
+            with self.assertRaisesRegex(ValueError, 'cohort seconds'):
+                runner.validate(self.args('--tier', 'all', '--batch-size', '32', '--seconds', seconds))
+
     def test_historical_normal_and_focused_commands(self):
         args = self.args('--tier', 'normal', '--batch-size', '32')
         self.assertIn('--normal-batches=32', runner.command(args, runner.validate(args)))

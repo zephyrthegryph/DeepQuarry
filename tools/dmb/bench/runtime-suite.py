@@ -57,6 +57,8 @@ def parser():
         value.add_argument('--' + name + '-exe' if name == 'native' else '--template', type=Path)
         value.add_argument('--' + name + '-sha256')
     value.add_argument('--workers', type=int, default=2)
+    value.add_argument('--seconds', type=int, default=COHORT_SECONDS,
+                       help='owned cohort watchdog, 1..1800 seconds; interrupted worlds are excluded')
     value.add_argument('--security', choices=['trusted', 'safe', 'ultrasafe'], required=True)
     value.add_argument('--focus', action='append', default=[])
     value.add_argument('--tier', choices=['normal', 'all', 'exhaustive'])
@@ -72,6 +74,8 @@ def parser():
 
 
 def validate(args):
+    if not 1 <= args.seconds <= COHORT_SECONDS:
+        raise ValueError('cohort seconds must be1..1800')
     suite = args.tier is not None
     if suite == bool(args.focus):
         raise ValueError('select exactly one of --focus or --tier')
@@ -190,7 +194,7 @@ def main(argv=None):
     receipt_file = args.output / 'receipt.json'
     receipt = {'schema': 1, 'kind': 'bounded_runtime_suite', 'status': 'preparing', 'backend': args.backend,
         'tier': args.tier, 'focus': args.focus, 'command': command(args, suite), 'checkout': str(checkout),
-        'compile_watchdog_seconds': COMPILE_SECONDS, 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': COHORT_SECONDS,
+        'compile_watchdog_seconds': min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
         'inputClosureAuthenticated': False, 'acceptedRuntimeBaseline': False,
         'runner_sha256': hash_file(Path(__file__)), 'log': str(log), 'pins': {}, 'owned_child_cleanup': None}
     write_receipt(receipt_file, receipt)
@@ -251,7 +255,7 @@ def main(argv=None):
                         compilation_complete = True
                         write_receipt(receipt_file, receipt)
                 elapsed = time.monotonic() - started
-                if elapsed >= COHORT_SECONDS or not compilation_complete and elapsed >= COMPILE_SECONDS:
+                if elapsed >= args.seconds or not compilation_complete and elapsed >= COMPILE_SECONDS:
                     code = 124
                     raise TimeoutError('owned cohort or compilation watchdog expired')
                 try:
