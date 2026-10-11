@@ -4385,3 +4385,13 @@ IV drip, feeder) and the embedded controllers, frame and ghost jukebox are `draw
 * **A floor light's damage flicker is rolled when it is damaged** (it was rolled by the first draw after the damage).
 * **Lights that were set at init are declared**: the technomancer auras, modifiers, chroma (spell and the light it leaves), flame tongue, radiance and
   reflect, and the slime extract flashlight. The modifiers' colour moved from the base `light_color` to their own `spell_light_color`.
+
+## Machine power as a type trait (rewrite/look-traits, gap 5)
+
+`idle_power_usage`, `active_power_usage` and `power_channel` are no longer vars on `/obj/machinery`: they are the `uses_power()` type trait
+(212 types codemodded, `tools/dx/codemods/type_trait.py power`). Pinned by `dq_type_trait/*`, the grid tests and `dq_p2_lights/*`.
+
+* **The values publish one key**, `USES_POWER_KEY`, instead of three var names; the area-demand contributions read it.
+* **The Southern Cross omni mixer's map edit `active_power_usage = 7500` is gone** (a type trait cannot be var-edited on a map); the mixer draws
+  its type's declared power.
+* **View Variables** edits the three by their old names through `vv_edit_var()`; they no longer show as vars.
