@@ -466,15 +466,15 @@ impl SessionSymbolicMemo {
                 );
                 completed.is_some()
             };
+            let locator = symbolic_publication::BorrowedLocator::new(identity, key, prepared_tail);
+            let digest = locator.digest();
             let accepted = attempt
                 .with_pending(|leases| {
                     leases
                         .records
-                        .visit_receipted_with_value(
-                            &symbolic_publication::locator(
-                                identity,
-                                &key.materialize(prepared_tail),
-                            ),
+                        .visit_borrowed_receipted_with_value(
+                            digest,
+                            &|candidate| locator.matches(candidate),
                             &mut |reads, _, record| {
                                 // The private publication producer stages a clone
                                 // of this SAME record.reads owner and qualified

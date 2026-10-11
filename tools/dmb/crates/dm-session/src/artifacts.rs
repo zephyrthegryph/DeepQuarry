@@ -15,6 +15,7 @@ mod certified;
 mod certified_tests;
 mod incidence;
 pub use certified::{UnchangedCandidate, UnchangedCandidates};
+mod borrowed_lookup;
 #[cfg(test)]
 mod incidence_tests;
 mod leased;
@@ -366,45 +367,15 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
-        let hash = xxhash_rust::xxh3::xxh3_128(key);
-        // Resolver work takes place outside the store lock, allowing parallel units.
-        let candidates = {
-            let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
-            state
-                .buckets
-                .get(&hash)
-                .into_iter()
-                .flatten()
-                .filter(|entry| entry.key.as_ref() == key)
-                .map(|entry| {
-                    (
-                        entry.reads.clone(),
-                        Arc::clone(&entry.versions),
-                        Arc::clone(&entry.value),
-                        entry.weight,
-                    )
-                })
-                .collect::<Vec<_>>()
-        };
-        let mut changed = None;
-        for (reads, versions, value, weight) in candidates.into_iter().rev() {
-            let mismatch = validate(&reads, &versions, &value);
-            if let Some(query) = mismatch {
-                changed = Some(query.clone());
-            } else if accept(&value) {
-                return (
-                    Some(ObservedArtifact {
-                        value,
-                        reads,
-                        versions,
-                        weight,
-                    }),
-                    None,
-                );
-            }
-        }
-        (None, changed)
+        let (accepted, changed) = self.visit_borrowed_receipted_with_value(
+            xxhash_rust::xxh3::xxh3_128(key),
+            &|candidate| candidate == key,
+            validate,
+            accept,
+        );
+        (accepted.map(|(_, receipt)| receipt), changed)
     }
+
     pub fn insert_with(
         &self,
         key: Arc<[u8]>,

@@ -1,7 +1,7 @@
 //! One byte-order producer for persisted keys and their disk locators.
 use super::*;
 impl CurrentKey<'_> {
-    fn visit_fragments(&self, prepared: &PreparedKey, mut visit: impl FnMut(&[u8])) {
+    pub(crate) fn visit_fragments(&self, prepared: &PreparedKey, mut visit: impl FnMut(&[u8])) {
         let metadata = self.metadata.canonical_bytes();
         visit(PREFIX);
         visit(&self.prefix);

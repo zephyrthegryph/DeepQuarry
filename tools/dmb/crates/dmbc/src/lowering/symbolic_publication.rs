@@ -31,6 +31,36 @@ pub(super) fn locator(identity: UnitIdentity, exact_key: &[u8]) -> Vec<u8> {
     key.extend_from_slice(exact_key);
     key
 }
+pub(super) struct BorrowedLocator<'a, 'source> {
+    prefix: Vec<u8>,
+    key: &'a crate::lowering_memo::key_recipe::CurrentKey<'source>,
+    tail: &'a crate::lowering_memo::key_recipe::PreparedKey,
+}
+impl<'a, 'source> BorrowedLocator<'a, 'source> {
+    pub(super) fn new(
+        identity: UnitIdentity,
+        key: &'a crate::lowering_memo::key_recipe::CurrentKey<'source>,
+        tail: &'a crate::lowering_memo::key_recipe::PreparedKey,
+    ) -> Self {
+        Self {
+            prefix: crate::symbolic::shared_procedure_code::key(identity, None),
+            key,
+            tail,
+        }
+    }
+    pub(super) fn digest(&self) -> u128 {
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(&self.prefix);
+        self.key
+            .visit_fragments(self.tail, |part| hash.update(part));
+        hash.digest128()
+    }
+    pub(super) fn matches(&self, candidate: &[u8]) -> bool {
+        candidate
+            .strip_prefix(self.prefix.as_slice())
+            .is_some_and(|key| self.key.matches(key, None, self.tail))
+    }
+}
 impl SessionSymbolicMemo {
     pub(crate) fn current_revision() -> Self {
         Self {
@@ -161,3 +191,7 @@ impl SessionSymbolicMemo {
 #[cfg(test)]
 #[path = "symbolic_publication_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "symbolic_locator_tests.rs"]
+mod locator_tests;

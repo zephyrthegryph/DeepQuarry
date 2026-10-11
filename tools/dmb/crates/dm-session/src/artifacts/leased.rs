@@ -145,6 +145,21 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
 }
 impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
     fn claim(&self, key: &[u8], receipt: ObservedArtifact<T, Q, A, D>) -> Option<Arc<T>> {
+        self.claim_key(key, None, receipt)
+    }
+    pub(super) fn claim_shared(
+        &self,
+        key: Arc<[u8]>,
+        receipt: ObservedArtifact<T, Q, A, D>,
+    ) -> Option<Arc<T>> {
+        self.claim_key(&key, Some(Arc::clone(&key)), receipt)
+    }
+    fn claim_key(
+        &self,
+        key: &[u8],
+        shared_key: Option<Arc<[u8]>>,
+        receipt: ObservedArtifact<T, Q, A, D>,
+    ) -> Option<Arc<T>> {
         let mut state = self
             .store
             .state
@@ -164,7 +179,10 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
         if stored_key.is_none() && !self.permits_charge(state.bytes, receipt.weight) {
             return None;
         }
-        let key = stored_key.clone().unwrap_or_else(|| Arc::from(key));
+        let key = stored_key
+            .clone()
+            .or(shared_key)
+            .unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
             let incidence_reads = state.incidence.as_ref().map(|_| receipt.reads.clone());
             let incidence_versions = Arc::clone(&receipt.versions);
@@ -431,6 +449,36 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         drop(state);
         drop(detached);
         Some(value)
+    }
+}
+
+impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
+    ObservedArtifactLease<T, Q, A, D>
+{
+    /// Same candidate loop, ledger admission and claim rule as exact slice lookup.
+    pub fn visit_borrowed_receipted_with_value(
+        &self,
+        digest: u128,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        validate: &mut dyn FnMut(&Receipt<Q, A, D>, &[(D, u128)], &Arc<T>) -> Option<Q>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
+        let (accepted, changed) =
+            self.store
+                .visit_borrowed_receipted_with_value(digest, matches_key, validate, accept);
+        let accepted = accepted.and_then(|(key, receipt)| {
+            self.claim_shared(
+                key,
+                ObservedArtifact {
+                    value: Arc::clone(&receipt.value),
+                    reads: receipt.reads.clone(),
+                    versions: Arc::clone(&receipt.versions),
+                    weight: receipt.weight,
+                },
+            )?;
+            Some(receipt)
+        });
+        (accepted, changed)
     }
 }
 
