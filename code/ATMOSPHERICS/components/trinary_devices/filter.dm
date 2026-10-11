@@ -45,12 +45,6 @@
 	if(frequency)
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
-/obj/machinery/atmospherics/trinary/atmos_filter/Initialize(mapload)
-	. = ..()
-
-	if(frequency)
-		set_frequency(frequency)
-
 /obj/machinery/atmospherics/trinary/atmos_filter/draw(datum/look/look)
 	..()
 	var/prefix = mirrored ? "m" : "" // ALLOW(derived_reads): its orientation is fixed by its fitting; nothing changes it after it is built
@@ -147,6 +141,7 @@ TRACKED(/obj/machinery/atmospherics/trinary/atmos_filter, filter_type)
 	return data
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/atmos_filter)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosFilter")
 	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))

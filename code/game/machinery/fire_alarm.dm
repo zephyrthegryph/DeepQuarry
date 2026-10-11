@@ -41,6 +41,7 @@ TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
 	channel = CHANGE_MACHINE_SETTINGS
 
 CAPABILITIES(/obj/machinery/firealarm)
+	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("firealarm_trigger", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 1), label("Trigger"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_firealarm_trigger)))
 	op("firealarm_use", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), needs(req(PROC_REF(firealarm_use_ready), silent = TRUE)), then(PROC_REF(interaction_firealarm_use)))
@@ -74,9 +75,6 @@ CAPABILITIES(/obj/machinery/firealarm)
 
 /obj/machinery/firealarm/Initialize(mapload)
 	. = ..()
-	if(!pixel_x && !pixel_y)
-		offset_alarm()
-
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
@@ -348,3 +346,9 @@ MSG_DEF_SELF(partyalarm/unusable, "You can't work the button.")
 			critalarm.start()
 		if(causalitywarn)
 			causality.start()
+
+/// A wall-mounted fire alarm the map did not offset sits on the wall it faces.
+/obj/machinery/firealarm/proc/roll_wall_offset(datum/roller/R)
+	if(!pixel_x && !pixel_y)
+		offset_alarm()
+	return list(pixel_x, pixel_y)

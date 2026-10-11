@@ -123,7 +123,7 @@ CAPABILITIES(/datum/feed_network)
 	var/ispowered = 1 //starts powered, changes with power_change()
 	//var/list/datum/feed_channel/channel_list = list() //This list will contain the names of the feed channels. Each name will refer to a data region where the messages of the feed channels are stored.
 	//OBSOLETE: We're now using a global news network
-	var/paper_remaining = 0
+	var/paper_remaining = 15
 	var/securityCaster = 0
 		// 0 = Caster cannot be used to issue wanted posters
 		// 1 = the opposite
@@ -188,7 +188,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /obj/machinery/newscaster/Initialize(mapload)
 	. = ..()
 	unit_no = ++unit_no_cur
-	paper_remaining = 15
 
 /// Joins the exonet node, once the map around it exists.
 /obj/machinery/newscaster/proc/connect_exonet(datum/act/timer/A)

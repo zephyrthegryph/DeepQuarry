@@ -2,7 +2,6 @@
 /obj/effect/step_trigger/teleporter/roguemine_loop/north/Initialize(mapload)
 	. = ..()
 	teleport_x = x
-	teleport_y = 16
 	teleport_z = z
 
 // ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
@@ -22,7 +21,6 @@
 // ALLOW(init/INSTANCE_STATE): its teleport target follows where it is placed
 /obj/effect/step_trigger/teleporter/roguemine_loop/east/Initialize(mapload)
 	. = ..()
-	teleport_x = 16
 	teleport_y = y
 	teleport_z = z
 
@@ -145,3 +143,10 @@
 	teleport_x_offset =
 	teleport_y_offset =
 */
+
+/obj/effect/step_trigger/teleporter/roguemine_loop/north
+	teleport_y = 16
+
+/obj/effect/step_trigger/teleporter/roguemine_loop/east
+	teleport_x = 16
+

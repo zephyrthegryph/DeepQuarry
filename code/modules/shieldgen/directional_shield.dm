@@ -101,6 +101,7 @@ CAPABILITIES(/obj/effect/directional_shield)
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/shield_projector)
+	owns_one(nameof(recursive_move), /datum/recursive_move, starts = /datum/recursive_move) // it hears its holders move
 	on_notice(/datum/notice/movable_attempted_move, then(PROC_REF(moved_event)))
 	when(nameof(always_on), after_init(0, then(PROC_REF(raise_after_init))))
 	owns_many(nameof(active_shields))
@@ -112,10 +113,6 @@ CAPABILITIES(/obj/item/shield_projector)
 /// TRUE while the projector regenerates (damage starts it); whole, it parks.
 /obj/item/shield_projector/var/tmp/regenerating = FALSE
 TRACKED(/obj/item/shield_projector, regenerating)
-
-/obj/item/shield_projector/Initialize(mapload)
-	dq_add_recursive_move(src)
-	return ..()
 
 // its shields come down.
 /obj/item/shield_projector/on_destroy(force)
