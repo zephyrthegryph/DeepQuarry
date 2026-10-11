@@ -960,7 +960,7 @@
 	set category = VERB_CAT_ABILITIES_GENERAL
 	set desc = "Toggle your glowing on/off!"
 
-	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 
@@ -1007,7 +1007,7 @@
 	set category = VERB_CAT_ABILITIES_VORE
 	set desc = "Consume held garbage."
 
-	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !COOLDOWN_FINISHED(src, last_special))
+	if(stat || is_paralyzed() || has_status(STAT_WEAKENED) || has_status(STAT_STUNNED) || !cooldown_ready(src, last_special))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
 

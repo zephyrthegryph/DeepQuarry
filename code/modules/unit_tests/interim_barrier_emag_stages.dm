@@ -28,7 +28,7 @@
 	TEST_ASSERT(barrier.locked && barrier.anchored, "the real ID swipe cannot toggle a second-stage damaged mechanism")
 	TEST_ASSERT(emag_target(barrier, 1, user) <= 0, "a fully damaged mechanism consumes no third emag use (declined)")
 	TEST_ASSERT_EQUAL(barrier.emagged, 2, "a repeated actual emag preserves the second-stage damage")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	test_click(user, barrier, wrench)
 	TEST_ASSERT_EQUAL(barrier.emagged, 0, "actual wrench repair clears both emag stages")
 	TEST_ASSERT(!barrier.allowed(user), "actual wrench repair restores the security-access refusal for the same ID")

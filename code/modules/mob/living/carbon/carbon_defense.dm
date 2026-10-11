@@ -51,7 +51,7 @@
 	if(!W.edge || !W.force || W.obj_damage_type() != BRUTE)
 		return 0 //unsuitable weapon
 
-	EXPIRY_SET(user, next_move, 20, CLOCK_WORLD) //also should prevent user from triggering this repeatedly
+	cooldown_start(user, next_move, 20) //also should prevent user from triggering this repeatedly
 	perform_op(user, src, "slit_throat", W, ORIGIN_SYSTEM, AUTH_PHYSICAL)
 	return TRUE
 

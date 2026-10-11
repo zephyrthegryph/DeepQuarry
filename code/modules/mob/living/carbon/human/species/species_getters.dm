@@ -87,8 +87,8 @@
 /datum/species/proc/get_environment_discomfort(mob/living/carbon/human/H, msg_type)
 
 	var/discomfort_message
-	var/list/custom_cold = H.custom_cold
-	var/list/custom_heat = H.custom_heat
+	var/list/custom_cold = sparse_get(H, custom_cold)
+	var/list/custom_heat = sparse_get(H, custom_heat)
 	if(msg_type == ENVIRONMENT_COMFORT_MARKER_COLD && length(cold_discomfort_strings) /*&& !covered*/)
 		if(custom_cold && custom_cold.len > 0)
 			discomfort_message = pick(custom_cold)

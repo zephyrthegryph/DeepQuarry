@@ -60,97 +60,88 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	/mob/living/simple_mob/construct = TRUE,
 ))
 
-/atom/movable
-	var/tmp/belly_cycle_count = 0
-	var/tmp/list/recursive_listener_list
-	var/tmp/moved_recently_at = 0
-	var/tmp/list/dynamic_lights_affecting
-	var/tmp/image/cloak_selfimage
-	var/tmp/cloak_active = FALSE
-	var/tmp/parachute_deployed = FALSE
-	/// Per-instance parachuting flag; FALSE/null falls back to the type default.
-	var/tmp/parachuting_override = FALSE
-	// softfall and hovering are read-only at runtime (only mob subtypes set type-defaults);
-	// the resolved value comes from the GLOB lookup unless a per-instance override is set.
-	var/tmp/softfall_is_set = FALSE
-	var/tmp/softfall_value = FALSE
-	var/tmp/hovering_is_set = FALSE
-	var/tmp/hovering_value = FALSE
+// The per-instance state is sparse slots (code/engine/declare/sparse_slots.dm): nothing on /atom/movable until a slot is set.
+sparse(/atom/movable, belly_cycles, type = num)
+sparse(/atom/movable, recursive_listeners, type = list)
+sparse(/atom/movable, moved_recently, type = num)
+sparse(/atom/movable, dynamic_lights, type = list)
+sparse(/atom/movable, cloak_selfimage, type = /image)
+sparse(/atom/movable, cloaked, type = bool)
+sparse(/atom/movable, parachute, type = bool)
+sparse(/atom/movable, parachuting, type = bool)
+sparse(/atom/movable, softfall, type = bool)
+sparse(/atom/movable, hovering, type = bool)
 
 // Lights affecting this movable, keyed by the light; dropped with the movable (the light side may be dying too).
 
 // ---- Helpers (global procs to avoid /atom/movable proc-table bloat). ----
 
 /proc/dq_get_belly_cycles(atom/movable/am)
-	return am.belly_cycle_count
+	return sparse_get_or(am, belly_cycles, 0)
 /proc/dq_set_belly_cycles(atom/movable/am, v)
-	if(isnull(v) && !am.belly_cycle_count)
-		return
-	am.belly_cycle_count = v
+	sparse_set_or(am, belly_cycles, v, 0)
 
 // recursive_listeners is read+written using LAZY* semantics.
 /proc/dq_get_recursive_listeners(atom/movable/am)
-	return am.recursive_listener_list
+	return sparse_get(am, recursive_listeners)
 /proc/dq_set_recursive_listeners(atom/movable/am, list/v)
-	am.recursive_listener_list = v
+	sparse_set(am, recursive_listeners, v)
 /// LAZYOR equivalent.
 /proc/dq_recursive_listeners_or(atom/movable/am, item)
-	if(!am.recursive_listener_list)
-		am.recursive_listener_list = list()
-	am.recursive_listener_list |= item
+	var/list/L = sparse_get(am, recursive_listeners)
+	if(!L)
+		L = sparse_set(am, recursive_listeners, list())
+	L |= item
 /// LAZYREMOVE equivalent.
 /proc/dq_recursive_listeners_remove(atom/movable/am, item)
-	if(!am.recursive_listener_list)
+	var/list/L = sparse_get(am, recursive_listeners)
+	if(!L)
 		return
-	am.recursive_listener_list -= item
-	if(!length(am.recursive_listener_list))
-		am.recursive_listener_list = null
+	L -= item
+	if(!length(L))
+		sparse_set(am, recursive_listeners, null)
 /// LAZYLEN equivalent.
 /proc/dq_recursive_listeners_len(atom/movable/am)
-	return length(am.recursive_listener_list)
+	return length(sparse_get(am, recursive_listeners))
 
 /proc/dq_get_moved_recently(atom/movable/am)
-	return am.moved_recently_at
+	return sparse_get_or(am, moved_recently, 0)
 /proc/dq_set_moved_recently(atom/movable/am, v)
-	if(isnull(v) && !am.moved_recently_at)
-		return
-	am.moved_recently_at = v
+	sparse_set_or(am, moved_recently, v, 0)
 
 /proc/dq_get_affected_dynamic_lights(atom/movable/am)
-	return am.dynamic_lights_affecting
+	return sparse_get(am, dynamic_lights)
 /proc/dq_set_affected_dynamic_lights(atom/movable/am, list/v)
-	am.dynamic_lights_affecting = v
+	sparse_set(am, dynamic_lights, v)
 /// LAZYSET-equivalent for affected_dynamic_lights (auto-create list if null).
 /proc/dq_affected_dynamic_lights_set(atom/movable/am, key, value)
-	if(!am.dynamic_lights_affecting)
-		am.dynamic_lights_affecting = list()
-	am.dynamic_lights_affecting[key] = value
+	var/list/L = sparse_get(am, dynamic_lights)
+	if(!L)
+		L = sparse_set(am, dynamic_lights, list())
+	L[key] = value
 /// LAZYREMOVE-equivalent.
 /proc/dq_affected_dynamic_lights_remove(atom/movable/am, key)
-	if(!am.dynamic_lights_affecting)
+	var/list/L = sparse_get(am, dynamic_lights)
+	if(!L)
 		return
-	am.dynamic_lights_affecting -= key
-	if(!length(am.dynamic_lights_affecting))
-		am.dynamic_lights_affecting = null
+	L -= key
+	if(!length(L))
+		sparse_set(am, dynamic_lights, null)
 
 /proc/dq_get_cloaked_selfimage(atom/movable/am)
-	return am.cloak_selfimage
+	return sparse_get(am, cloak_selfimage)
 /proc/dq_set_cloaked_selfimage(atom/movable/am, v)
-	am.cloak_selfimage = v
+	sparse_set(am, cloak_selfimage, v)
 
 /proc/dq_get_cloaked(atom/movable/am)
-	return am.cloak_active
+	return sparse_get_or(am, cloaked, FALSE)
 /proc/dq_set_cloaked(atom/movable/am, v)
-	if(isnull(v) && !am.cloak_active)
-		return
-	am.cloak_active = v
+	sparse_set_or(am, cloaked, v, FALSE)
 
 /proc/dq_get_parachute(atom/movable/am)
-	return am.parachute_deployed
+	return sparse_get_or(am, parachute, FALSE)
 /proc/dq_set_parachute(atom/movable/am, v)
-	if(isnull(v) && !am.parachute_deployed)
-		return
-	am.parachute_deployed = v
+	sparse_set_or(am, parachute, v, FALSE)
 
 // Per-type-default resolver: walk the type hierarchy once per concrete
 // type encountered, cache the result. Per-call type2parent walks are
@@ -175,42 +166,47 @@ GLOBAL_LIST_EMPTY(_dq_softfall_resolved)
 GLOBAL_LIST_EMPTY(_dq_hovering_resolved)
 
 /proc/dq_get_parachuting(atom/movable/am)
-	if(am.parachuting_override != FALSE)
-		return am.parachuting_override
+	if(sparse_has(am, parachuting))
+		return sparse_get(am, parachuting)
 	return _dq_resolve_typed_default(am.type, GLOB.dq_parachuting_by_type, GLOB._dq_parachuting_resolved, FALSE)
 
 /proc/dq_set_parachuting(atom/movable/am, v)
-	if(isnull(v) && !am.parachuting_override)
-		return
-	am.parachuting_override = v
+	sparse_set_or(am, parachuting, v, FALSE)
 
 /proc/dq_get_softfall(atom/movable/am)
-	if(am.softfall_is_set)
-		return am.softfall_value
+	if(sparse_has(am, softfall))
+		return sparse_get(am, softfall)
 	return _dq_resolve_typed_default(am.type, GLOB.dq_softfall_by_type, GLOB._dq_softfall_resolved, FALSE)
 
 /proc/dq_set_softfall(atom/movable/am, v)
-	if(isnull(v) && !am.softfall_is_set)
+	if(isnull(v) && !sparse_has(am, softfall))
 		return
-	am.softfall_is_set = TRUE
-	am.softfall_value = v
+	sparse_set(am, softfall, v ? TRUE : FALSE)
 
 /proc/dq_get_hovering(atom/movable/am)
-	if(am.hovering_is_set)
-		return am.hovering_value
+	if(sparse_has(am, hovering))
+		return sparse_get(am, hovering)
 	return _dq_resolve_typed_default(am.type, GLOB.dq_hovering_by_type, GLOB._dq_hovering_resolved, FALSE)
 
 /proc/dq_set_hovering(atom/movable/am, v)
-	if(isnull(v) && !am.hovering_is_set)
+	if(isnull(v) && !sparse_has(am, hovering))
 		return
-	am.hovering_is_set = TRUE
-	am.hovering_value = v
+	sparse_set(am, hovering, v ? TRUE : FALSE)
 /// Clears the per-instance override so the type-default (GLOB lookup) re-applies.
 /proc/dq_clear_hovering(atom/movable/am)
-	am.hovering_is_set = FALSE
+	sparse_set(am, hovering, null)
 /proc/dq_clear_softfall(atom/movable/am)
-	am.softfall_is_set = FALSE
+	sparse_set(am, softfall, null)
 
 /// TRUE while any of this movable's sparse runtime state differs from its default.
 /proc/dq_movable_state_set(atom/movable/am)
-	return am.belly_cycle_count || am.recursive_listener_list || am.moved_recently_at || am.dynamic_lights_affecting 		|| am.cloak_selfimage || am.cloak_active || am.parachute_deployed || am.parachuting_override 		|| am.softfall_is_set || am.hovering_is_set
+	var/list/S = am.sparse_slots
+	if(!S)
+		return FALSE
+	for(var/key in GLOB.dq_movable_runtime_slots)
+		if(!isnull(S[key]))
+			return TRUE
+	return FALSE
+
+/// The sparse slots above: runtime state a saved movable cannot carry.
+GLOBAL_LIST_INIT(dq_movable_runtime_slots, list("belly_cycles", "recursive_listeners", "moved_recently", "dynamic_lights", "cloak_selfimage", "cloaked", "parachute", "parachuting", "softfall", "hovering"))

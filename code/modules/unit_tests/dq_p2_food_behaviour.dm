@@ -16,7 +16,7 @@
 /proc/fd_set_amount_alt(mob/actor, obj/item/reagent_containers/C, value)
 	actor.drop_item()
 	actor.set_use_stance(I_HELP)
-	actor.next_click = 0
+	cooldown_set_end(actor, next_click, 0)
 	input_submit(new /datum/input_event/click(actor, C, null, null, "left=1;alt=1"))
 	test_answer(actor, value)
 	test_time(10 SECONDS)

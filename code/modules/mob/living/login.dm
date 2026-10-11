@@ -31,6 +31,14 @@
 	//If they're SSD, remove it so they can wake back up.
 	SSantag.update_antag_icons(mind)
 	client.screen |= GLOB.global_hud.darksight
+	// The darksight overlay is client state: it lives on the hud Login() just built.
+	var/image/dsoverlay = image('icons/mob/darksight.dmi',GLOB.global_hud.darksight) //This is a secret overlay! Go look at the file, you'll see.
+	var/mutable_appearance/dsma = new(dsoverlay) //Changing like ten things, might as well.
+	dsma.alpha = 0
+	dsma.plane = PLANE_LIGHTING
+	dsma.blend_mode = BLEND_ADD
+	dsoverlay.appearance = dsma
+	hud_used.dsoverlay = dsoverlay
 	client.images |= dsoverlay
 
 	if(ai_brain && !ai_brain.autopilot)
