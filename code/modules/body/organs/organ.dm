@@ -76,7 +76,7 @@ TRACKED(/obj/item/organ, robotic)
 	. = ..()
 	if(isliving(loc))
 		var/mob/living/born_in = loc
-		src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
+		set_w_class(max(w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1)) //smaller mobs have smaller organs.
 		// Born inside a mob: take our place in its body (sets `owner`).
 		place_in_body(born_in)
 

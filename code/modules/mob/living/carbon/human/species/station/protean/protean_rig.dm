@@ -658,25 +658,25 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	wearer()?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
-		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
+		gloves.set_sprite_sheets(R.gloves.sprite_sheets.Copy())
 		gloves.sprite_sheets_obj = R.gloves.sprite_sheets_obj.Copy()
 		gloves.icon = R.gloves.icon
 		gloves.icon_state = R.gloves.icon_state
 		gloves.default_worn_icon = R.gloves.default_worn_icon
 	if(R.helmet)
-		helmet.sprite_sheets = R.helmet.sprite_sheets.Copy()
+		helmet.set_sprite_sheets(R.helmet.sprite_sheets.Copy())
 		helmet.sprite_sheets_obj = R.helmet.sprite_sheets_obj.Copy()
 		helmet.icon = R.helmet.icon
 		helmet.icon_state = R.helmet.icon_state
 		helmet.default_worn_icon = R.helmet.default_worn_icon
 	if(R.boots)
-		boots.sprite_sheets = R.boots.sprite_sheets.Copy()
+		boots.set_sprite_sheets(R.boots.sprite_sheets.Copy())
 		boots.sprite_sheets_obj = R.boots.sprite_sheets_obj.Copy()
 		boots.icon = R.boots.icon
 		boots.icon_state = R.boots.icon_state
 		boots.default_worn_icon = R.boots.default_worn_icon
 	if(R.chest)
-		chest.sprite_sheets = R.chest.sprite_sheets.Copy()
+		chest.set_sprite_sheets(R.chest.sprite_sheets.Copy())
 		chest.sprite_sheets_obj = R.chest.sprite_sheets_obj.Copy()
 		chest.icon = R.chest.icon
 		chest.icon_state = R.chest.icon_state
@@ -709,13 +709,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		//So we have to create a new rig, just so we can copy the lists we're after
 		//If someone figures out a smarter way to do this, please tell me
 		var/obj/item/rig/tempRig = new /obj/item/rig/protean()
-		gloves.sprite_sheets = tempRig.gloves.sprite_sheets.Copy()
+		gloves.set_sprite_sheets(tempRig.gloves.sprite_sheets.Copy())
 		gloves.sprite_sheets_obj = tempRig.gloves.sprite_sheets.Copy()
-		helmet.sprite_sheets = tempRig.helmet.sprite_sheets.Copy()
+		helmet.set_sprite_sheets(tempRig.helmet.sprite_sheets.Copy())
 		helmet.sprite_sheets_obj = tempRig.helmet.sprite_sheets.Copy()
-		boots.sprite_sheets = tempRig.boots.sprite_sheets.Copy()
+		boots.set_sprite_sheets(tempRig.boots.sprite_sheets.Copy())
 		boots.sprite_sheets_obj = tempRig.boots.sprite_sheets.Copy()
-		chest.sprite_sheets = tempRig.chest.sprite_sheets.Copy()
+		chest.set_sprite_sheets(tempRig.chest.sprite_sheets.Copy())
 		chest.sprite_sheets_obj = tempRig.chest.sprite_sheets.Copy()
 		slowdown = initial(slowdown)
 		name = tempRig.name

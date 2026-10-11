@@ -1093,7 +1093,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	throwforce = active_throwforce
 	sharp = TRUE
 	edge = TRUE
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
 /obj/item/melee/fluffstuff/proc/deactivate(mob/living/user)
@@ -1106,7 +1106,7 @@ CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
 	throwforce = initial(throwforce)
 	sharp = initial(sharp)
 	edge = initial(edge)
-	w_class = initial(w_class)
+	set_w_class(initial(w_class))
 
 CAPABILITIES(/obj/item/melee/fluffstuff)
 	op("fluffstuff_toggle_self", in_hand(), label("Toggle"), then(PROC_REF(fluffstuff_toggle_self)))

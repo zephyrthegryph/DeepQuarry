@@ -217,7 +217,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 		return FALSE
 	if(has_edge(W) && on_cutting_surface())
 		return FALSE
-	return W.w_class < w_class // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return W.w_class < w_class
 
 /// The held thing slips inside the loaf.
 /obj/item/reagent_containers/food/snacks/proc/hidden_inside(datum/act/op/A)

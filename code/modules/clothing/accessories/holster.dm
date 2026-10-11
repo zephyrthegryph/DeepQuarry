@@ -28,7 +28,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 	if(!move_into(src, nameof(src.holstered), I, user))
 		return
 	holstered.add_fingerprint(user)
-	w_class = max(w_class, holstered.w_class)
+	set_w_class(max(w_class, holstered.w_class))
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
 	name = "occupied [initial(name)]"
 
@@ -70,7 +70,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 		user.put_in_hands(holstered)
 		holstered.add_fingerprint(user)
-		w_class = initial(w_class)
+		set_w_class(initial(w_class))
 		clear_holster()
 
 //YW change start

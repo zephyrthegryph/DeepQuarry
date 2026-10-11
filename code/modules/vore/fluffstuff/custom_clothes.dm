@@ -1118,13 +1118,13 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat, suit_stor
 	if(user.canmove && !user.stat && !user.restrained())
 		if(up)
 			up = !up
-			body_parts_covered |= (EYES)
+			set_body_parts_covered(body_parts_covered | ((EYES)))
 			flags_inv |= (HIDEEYES)
 			icon_state = "vinjjdana"
 			to_chat(user, "You flip the goggles down to protect your eyes.")
 		else
 			up = !up
-			body_parts_covered &= ~(EYES)
+			set_body_parts_covered(body_parts_covered & (~(EYES)))
 			flags_inv &= ~(HIDEEYES)
 			icon_state = "vinjjdanaup"
 

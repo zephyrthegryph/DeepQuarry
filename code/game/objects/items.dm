@@ -1,3 +1,5 @@
+TRACKED(/obj/item, body_parts_covered)
+
 
 /obj/item
 	name = "item"
@@ -1273,3 +1275,14 @@ READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
 
 /obj/item/proc/set_siemens_coefficient(value)
 	return set_item_protection("siemens", value)
+
+TRACKED(/obj/item, slot_flags)
+
+SETTER(/obj/item, sprite_sheets)
+/obj/item/proc/set_sprite_sheets(list/value)
+	var/list/replacement = value?.Copy()
+	if(TRACKED_UNCHANGED(sprite_sheets, replacement))
+		return FALSE
+	sprite_sheets = replacement
+	tracked_changed(src, nameof(sprite_sheets))
+	return TRUE

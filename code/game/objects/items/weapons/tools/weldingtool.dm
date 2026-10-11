@@ -286,7 +286,7 @@ CAPABILITIES(/obj/item/weldingtool)
 			playsound(src, acti_sound, 50, 1)
 			src.force = 15
 			src.injury_kind = INJURY_BURN
-			src.w_class = ITEMSIZE_LARGE
+			src.set_w_class(ITEMSIZE_LARGE)
 			src.set_hitsound('sound/items/Welder.ogg')
 			set_welding(1)
 		else
@@ -303,7 +303,7 @@ CAPABILITIES(/obj/item/weldingtool)
 		playsound(src, deac_sound, 50, 1)
 		src.force = 3
 		src.injury_kind = initial(src.injury_kind)
-		src.w_class = initial(src.w_class)
+		src.set_w_class(initial(src.w_class))
 		set_welding(0)
 		src.set_hitsound(sounds_of_type(src.type).hit)
 

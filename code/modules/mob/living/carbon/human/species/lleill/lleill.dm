@@ -138,57 +138,57 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 
 /datum/species/lleill/get_icobase(mob/living/carbon/human/H, get_deform)
 	if(!H) return ..(null, get_deform)
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.type == src.type) return ..(H, get_deform)
 	return S.get_icobase(H,get_deform)
 
 /datum/species/lleill/get_race_key(mob/living/carbon/human/H)
-	return "[..()]-[GLOB.wrapped_species_by_ref["\ref[H]"]]"
+	return "[..()]-[H?.wrapped_bodytype()]"
 
 /datum/species/lleill/get_bodytype(mob/living/carbon/human/H)
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!H || !S) return ..()
 	if(S.type == src.type) return ..(H)
 	return S.get_bodytype(H)
 
 /datum/species/lleill/get_blood_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_blood_mask(H)
 
 /datum/species/lleill/get_damage_mask(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_damage_mask(H)
 
 /datum/species/lleill/get_damage_overlays(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_damage_overlays(H)
 
 /datum/species/lleill/get_tail(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail(H)
 
 /datum/species/lleill/get_tail_animation(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail_animation(H)
 
 /datum/species/lleill/get_tail_hair(mob/living/carbon/human/H)
 	if(!H) return ..()
-	var/datum/species/S = GLOB.all_species[GLOB.wrapped_species_by_ref["\ref[H]"]]
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 	if(!S || S.name == src.name)
 		return ..()
 	return S?.get_tail_hair(H)
@@ -239,3 +239,17 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 /datum/species/lleill/add_inherent_verbs(mob/living/carbon/human/H)
 	..()
 	add_lleill_abilities(H)
+
+/datum/species/lleill/acceptance_bodytype_reads(mob/living/carbon/human/H, list/seen = null)
+	. = ..()
+	if(!H)
+		return
+	var/datum/cap_data/wrapped_species_form/form = H.wrapped_species_state()
+	. += list(list(form, nameof(form.bodytype)))
+	var/list/visited = seen ? seen.Copy() : list()
+	if(src in visited)
+		return
+	visited += src
+	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
+	if(S && !(S in visited))
+		. += S.acceptance_bodytype_reads(H, visited)

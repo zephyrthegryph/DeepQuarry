@@ -85,7 +85,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	var/obj/item/storage/bag = A.holder
 	bag.make_contents_real()
 	var/obj/item/size_probe/probe = new
-	probe.w_class = ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL
+	probe.set_w_class(ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL)
 	var/refused = bag.insert_refusal(probe, user)
 	qdel(probe) // ALLOW(lifecycle): a probe made to measure the fit is dropped at once, it never held anything
 	if(refused)

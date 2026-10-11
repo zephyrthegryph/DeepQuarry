@@ -69,7 +69,7 @@ CAPABILITIES(/obj/item/melee/telebaton)
 			MSG_BLIND("You hear an ominous click."))
 		icon_state = "telebaton1"
 		item_state = icon_state
-		w_class = ITEMSIZE_NORMAL
+		set_w_class(ITEMSIZE_NORMAL)
 		force = 15//quite robust
 		attack_verb = list("smacked", "struck", "slapped")
 	else
@@ -78,7 +78,7 @@ CAPABILITIES(/obj/item/melee/telebaton)
 			MSG_BLIND("You hear a click."))
 		icon_state = "telebaton0"
 		item_state = icon_state
-		w_class = ITEMSIZE_SMALL
+		set_w_class(ITEMSIZE_SMALL)
 		force = 3//not so robust now
 		attack_verb = list("hit", "punched")
 

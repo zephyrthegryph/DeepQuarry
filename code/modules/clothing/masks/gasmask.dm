@@ -132,10 +132,10 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYP
 	if(user.canmove && !user.stat)
 		mask_open = !mask_open
 		if(mask_open)
-			body_parts_covered = EYES
+			set_body_parts_covered(EYES)
 			to_chat(user, "Your mask moves to allow you to eat.")
 		else
-			body_parts_covered = FACE|EYES
+			set_body_parts_covered(FACE|EYES)
 			to_chat(user, "Your mask moves to cover your mouth.")
 	return
 

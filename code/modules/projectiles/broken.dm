@@ -70,7 +70,7 @@ TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
 
 		my_guntype = path
 
-		w_class = initial(path.w_class)
+		set_w_class(initial(path.w_class))
 
 		if(do_rotation)
 			adjust_rotation(rand() * pick(-1,1) * rand(0, 45))

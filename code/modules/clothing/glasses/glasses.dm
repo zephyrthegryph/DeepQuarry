@@ -425,7 +425,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
-			body_parts_covered |= EYES
+			set_body_parts_covered(body_parts_covered | (EYES))
 			icon_state = initial(icon_state)
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
@@ -433,7 +433,7 @@ CAPABILITIES(/obj/item/clothing/glasses/welding)
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
-			body_parts_covered &= ~EYES
+			set_body_parts_covered(body_parts_covered & (~EYES))
 			icon_state = "[initial(icon_state)]up"
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
@@ -663,13 +663,13 @@ CAPABILITIES(/obj/item/clothing/glasses/aerogelgoggles)
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
-			body_parts_covered |= EYES
+			set_body_parts_covered(body_parts_covered | (EYES))
 			icon_state = initial(icon_state)
 			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
-			body_parts_covered &= ~EYES
+			set_body_parts_covered(body_parts_covered & (~EYES))
 			icon_state = "[initial(icon_state)]up"
 			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()

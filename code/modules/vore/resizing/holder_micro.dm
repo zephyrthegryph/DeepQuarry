@@ -22,7 +22,7 @@
 
 		// Leaving the following two set makes the sprite not visible
 		icon_override = null
-		sprite_sheets = null
+		set_sprite_sheets(null)
 		icon_state = "teshariplushie_white"
 		item_state = "teshariplushie_white"
 

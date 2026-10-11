@@ -581,12 +581,12 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(new_species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
 		var/datum/species/own_species = rel_private(owner(), nameof(/datum/dna::species))
-		own_species.base_species = new_species
+		own_species.set_base_species(new_species)
 		own_species.icobase = own_species.get_icobase()
 		own_species.deform = own_species.get_icobase(get_deform = TRUE)
 		own_species.vanity_base_fit = new_species
 		if(istype(owner().species, /datum/species/shapeshifter)) //TODO: See if this is still needed.
-			GLOB.wrapped_species_by_ref["\ref[owner()]"] = new_species
+			owner().set_wrapped_bodytype(new_species)
 		owner().regenerate_icons()
 		generate_data(user, owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)

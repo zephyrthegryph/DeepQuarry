@@ -58,10 +58,10 @@
 	if(!new_species)
 		return
 
-	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
+	set_wrapped_bodytype(new_species)
 	dna.base_species = new_species
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.base_species = new_species
+	species.set_base_species(new_species)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
 	regenerate_icons()
 

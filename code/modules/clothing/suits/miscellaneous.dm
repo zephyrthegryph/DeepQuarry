@@ -964,11 +964,11 @@ TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 
 	if(rolled == 0)
 		set_rolled(1)
-		body_parts_covered &= ~(ARMS)
+		set_body_parts_covered(body_parts_covered & (~(ARMS)))
 		to_chat(user, span_notice("You roll up the sleeves of your [src]."))
 	else
 		set_rolled(0)
-		body_parts_covered = initial(body_parts_covered)
+		set_body_parts_covered(initial(body_parts_covered))
 		to_chat(user, span_notice("You roll down the sleeves of your [src]."))
 	worn_protection_changed()
 

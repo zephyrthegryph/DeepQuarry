@@ -296,3 +296,7 @@
 				return
 			log_admin("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
 			message_admins(span_notice("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
+
+
+
+TRACKED(/obj, w_class)

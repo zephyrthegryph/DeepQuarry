@@ -199,11 +199,11 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 			)
 			desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-			slot_flags = SLOT_ID | SLOT_BELT | SLOT_GLOVES
-			sprite_sheets = list(
+			set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
+			set_sprite_sheets(list(
 				SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 				SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-			)
+			))
 		if(7)
 			icon = 'icons/obj/pda_slider.dmi'
 			model_name = "Slider® Personal Data Assistant"

@@ -44,13 +44,13 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 		src.hanging = !src.hanging
 		if (src.hanging)
 			set_gas_transfer_coefficient(1)
-			body_parts_covered = body_parts_covered & ~FACE
+			set_body_parts_covered(body_parts_covered & ~FACE)
 			set_armor(dq_armor_none())
 			icon_state = "steriledown"
 			to_chat(user, "You pull the mask below your chin.")
 		else
 			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
-			body_parts_covered = initial(body_parts_covered)
+			set_body_parts_covered(initial(body_parts_covered))
 			icon_state = initial(icon_state)
 			set_armor(null)
 			to_chat(user, "You pull the mask up to cover your face.")
@@ -285,12 +285,12 @@ CAPABILITIES(/obj/item/clothing/mask/ai)
 	switch(slot)
 		if(SLOT_ID_MASK) //Mask is the default for all the settings
 			flags_inv = initial(flags_inv)
-			body_parts_covered = initial(body_parts_covered)
+			set_body_parts_covered(initial(body_parts_covered))
 			icon_state = initial(icon_state)
 
 		if(SLOT_ID_HEAD)
 			flags_inv = 0
-			body_parts_covered = HEAD
+			set_body_parts_covered(HEAD)
 			icon_state = "[initial(icon_state)]_up"
 
 	return ..()

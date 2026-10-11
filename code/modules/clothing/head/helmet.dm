@@ -312,7 +312,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
+			set_body_parts_covered(body_parts_covered | ((EYES|FACE)))
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = base_state
 			tint = initial(tint)
@@ -320,7 +320,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
+			set_body_parts_covered(body_parts_covered & (~(EYES|FACE)))
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
@@ -376,7 +376,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
-			body_parts_covered |= (EYES|FACE)
+			set_body_parts_covered(body_parts_covered | ((EYES|FACE)))
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = base_state
 			tint = initial(tint)
@@ -384,7 +384,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
-			body_parts_covered &= ~(EYES|FACE)
+			set_body_parts_covered(body_parts_covered & (~(EYES|FACE)))
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE

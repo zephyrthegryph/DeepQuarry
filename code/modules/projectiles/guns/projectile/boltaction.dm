@@ -94,12 +94,12 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/pump/rifle/ceremonial)
 	if(sawn_off)
 		return
 	icon_state = "sawn_rifle"
-	w_class = ITEMSIZE_NORMAL
+	set_w_class(ITEMSIZE_NORMAL)
 	recoil = 2 // Owch
 	accuracy = -15 // You know damn well why.
 	item_state = "gun"
-	slot_flags &= ~SLOT_BACK // You can't sling it on your back
-	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) // But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	set_slot_flags(slot_flags & (~SLOT_BACK)) // You can't sling it on your back
+	set_slot_flags(slot_flags | ((SLOT_BELT|SLOT_HOLSTER))) // But you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
 	name = "sawn-off rifle"
 	desc = "The firepower of a rifle, now the size of a pistol, with an effective combat range of about three feet. Uses 7.62mm rounds."
 	pump_animation = "sawn_rifle-cycling"

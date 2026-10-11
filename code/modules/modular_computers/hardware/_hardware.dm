@@ -81,7 +81,7 @@ CAPABILITIES(/obj/item/computer_hardware)
 
 /obj/item/computer_hardware/Initialize(mapload)
 	. = ..()
-	w_class = hardware_size
+	set_w_class(hardware_size)
 	if(istype(loc, /obj/item/modular_computer))
 		rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 
