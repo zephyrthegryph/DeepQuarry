@@ -65,16 +65,16 @@ This saves us from having to call add_fingerprint() any time something is put in
 	var/obj/item/I = thing
 	switch(slot_id)
 		if(SLOT_ID_HEAD)
-			if(istype(I) && (I.flags_inv & (HIDEMASK|BLOCKHAIR|BLOCKHEADHAIR)))
+			if(istype(I) && (worn_of(I).hides & (HIDEMASK|BLOCKHAIR|BLOCKHEADHAIR)))
 				update_hair(0)	//rebuild hair
 				update_inv_ears(0)
 				update_inv_wear_mask(0)
 		if(SLOT_ID_MASK)
-			if(istype(I) && (I.flags_inv & (BLOCKHAIR|BLOCKHEADHAIR)))
+			if(istype(I) && (worn_of(I).hides & (BLOCKHAIR|BLOCKHEADHAIR)))
 				update_hair(0)	//rebuild hair
 				update_inv_ears(0)
 			// If this is how the internals are connected, disable them
-			if(!inserted && internal && !(get_equipped_item(SLOT_ID_HEAD)?.item_flags & AIRTIGHT))
+			if(!inserted && internal && !(worn_of(get_equipped_item(SLOT_ID_HEAD)).flags & AIRTIGHT))
 				if(hud_used?.internals)
 					hud_used?.internals?.icon_state = "internal0"
 				rel_clear(src, nameof(internal))
@@ -89,7 +89,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 /// A two-ear item fills the other ear with a placeholder.
 /mob/living/carbon/human/proc/equip_offear(obj/item/W, slot)
-	if(!(W.slot_flags & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
+	if(!(worn_of(W).slots & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
 		return
 	var/other = (slot == SLOT_ID_EAR_L) ? SLOT_ID_EAR_R : SLOT_ID_EAR_L
 	if(get_equipped_item(other))

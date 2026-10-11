@@ -7,7 +7,6 @@
 	randpixel = 0
 	center_of_mass_x = 0
 	center_of_mass_y = 0
-	slot_flags = SLOT_HEAD | SLOT_HOLSTER
 	show_messages = 1
 
 	sprite_sheets = list(
@@ -175,8 +174,10 @@
 
 //Mob specific holders.
 /obj/item/holder/diona
-	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER
 	item_state = "diona"
+
+CAPABILITIES(/obj/item/holder/diona)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER))
 
 /obj/item/holder/drone
 	item_state = "repairbot"
@@ -195,7 +196,6 @@
 	name = "mouse"
 	desc = "It's a small rodent."
 	item_state = "mouse_gray"
-	slot_flags = SLOT_EARS | SLOT_HEAD | SLOT_ID
 	w_class = ITEMSIZE_TINY
 
 /obj/item/holder/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
@@ -314,10 +314,10 @@
 	held_mob?.lay_down()
 
 /obj/item/holder/fish
-	attack_verb = list("fished", "disrespected", "smacked", "smackereled")
-	slot_flags = SLOT_HOLSTER
 
 CAPABILITIES(/obj/item/holder/fish)
+	configure(item_worn(slots = SLOT_HOLSTER))
+	configure(item_combat(attack_verbs = list("fished", "disrespected", "smacked", "smackereled")))
 	configure(item_sounds(hit = SFX_EFFECTS_SLIME_SQUISH))
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)
@@ -415,7 +415,6 @@ CAPABILITIES(/obj/item/holder/fish)
 	overlays |= M.overlays
 
 /obj/item/holder/protoblob
-	slot_flags = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS
 	w_class = ITEMSIZE_TINY
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/lefthand_holder.dmi',
@@ -430,4 +429,5 @@ CAPABILITIES(/obj/item/holder/fish)
 
 
 CAPABILITIES(/obj/item/holder/protoblob)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

@@ -337,7 +337,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	max_nutrition = 2200
 	nutrition = 0
 
-	makes_dirt = TRUE
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(mob_movement(makes_dirt = TRUE))
+
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -422,7 +424,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	faction = "metroids"
 	max_nutrition = 2200
 	nutrition = 0
-	makes_dirt = TRUE
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
 
@@ -437,6 +438,9 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	min_n2 = 0
 	max_n2 = 0
 	unsuitable_atoms_damage = 0
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(mob_movement(makes_dirt = TRUE))
 
 
 
@@ -509,7 +513,6 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	faction = "metroids"
 	max_nutrition = 2200
 	nutrition = 0
-	makes_dirt = TRUE
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -538,6 +541,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 
 /mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)

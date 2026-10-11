@@ -2,16 +2,15 @@
 /obj/item/melee/jellyfishwhip
 	name = "dettached jellyfish tendril"
 	desc = "The detatched limb of a titan jellyfish."
-	sharp = FALSE
-	edge = FALSE
-	force = 28
-	armor_penetration = 50
 	flags = NOCONDUCT | NOBLOODY
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "whip"
 	item_state = "chain"
+
+CAPABILITIES(/obj/item/melee/jellyfishwhip)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(sharp = FALSE, edge = FALSE, force = 28, armor_penetration = 50))
 
 /obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_HURT) //Healy mode
@@ -45,7 +44,6 @@
 
 /obj/item/melee/energy/tyr_sabre
 	name = "tyrian energy blade"
-	slot_flags = SLOT_BELT | SLOT_BACK //should make a proper sprite some time but spriting energy is hard
 	desc = "A forgien blade made via techniques of ages old. Gains a diffrent effect base off your stance."
 	active_force = 30
 	active_armourpen = 30
@@ -62,6 +60,9 @@
 		slot_l_hand_str = 'icons/obj/guns/precursor/lefthand.dmi',
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
+
+CAPABILITIES(/obj/item/melee/energy/tyr_sabre)
+	configure(item_worn(slots = SLOT_BELT | SLOT_BACK))
 
 /obj/item/melee/energy/tyr_sabre/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(stance == I_GRAB) //Anti-Heal mode

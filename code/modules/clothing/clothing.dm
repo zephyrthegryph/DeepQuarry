@@ -227,14 +227,14 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 /obj/item/clothing/ears
 	name = "ears"
 	w_class = ITEMSIZE_TINY
-	throwforce = 2
-	slot_flags = SLOT_EARS
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/ears/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/ears/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
 
 CAPABILITIES(/obj/item/clothing/ears)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 2))
 	op("ears_take_off_hand", hand(), then(PROC_REF(ears_take_off_hand)))
 
 /// Old attack_hand: take worn ears off into the hand.
@@ -297,7 +297,9 @@ CAPABILITIES(/obj/item/clothing/ears)
 	w_class = ITEMSIZE_HUGE
 	icon = 'icons/mob/screen1_Midnight.dmi'
 	icon_state = "block"
-	slot_flags = SLOT_EARS | SLOT_TWOEARS
+
+CAPABILITIES(/obj/item/clothing/ears/offear)
+	configure(item_worn(slots = SLOT_EARS | SLOT_TWOEARS))
 
 // ALLOW(init/INSTANCE_STATE): copies the look of the item it is made inside
 /obj/item/clothing/ears/offear/Initialize(mapload)
@@ -333,9 +335,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 	var/overgloves = 0							//Used by gauntlets and arm_guards
 	var/punch_force = 0							//How much damage do these gloves add to a punch?
 	var/punch_injury_kind						//What punches in these gloves inflict (INJURY_*); null = the punch's own kind.
-	body_parts_covered = HANDS
-	slot_flags = SLOT_GLOVES
-	attack_verb = list("challenged")
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
@@ -349,6 +348,8 @@ CAPABILITIES(/obj/item/clothing/ears)
 		|ACCESSORY_SLOT_WRIST)
 
 CAPABILITIES(/obj/item/clothing/gloves)
+	configure(item_worn(covers = HANDS, slots = SLOT_GLOVES))
+	configure(item_combat(attack_verbs = list("challenged")))
 	configure(item_protection(siemens = 0.9, heat_parts = HANDS, cold_parts = HANDS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
@@ -435,10 +436,10 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	glove_level = 1
 	fingerprint_chance = 100
 	punch_force = 2
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
 	acceptance("fit", fits(list(SPECIES_DIONA), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
@@ -453,8 +454,6 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 		slot_l_hand_str = 'icons/mob/items/lefthand_hats.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		)
-	body_parts_covered = HEAD
-	slot_flags = SLOT_HEAD
 	w_class = ITEMSIZE_SMALL
 	blood_sprite_state = "helmetblood"
 
@@ -470,6 +469,7 @@ CAPABILITIES(/obj/item/clothing/gloves/ring)
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	configure(item_worn(covers = HEAD, slots = SLOT_HEAD))
 	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
@@ -559,8 +559,6 @@ CAPABILITIES(/obj/item/clothing/head)
 		slot_l_hand_str = 'icons/mob/items/lefthand_masks.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_masks.dmi',
 		)
-	slot_flags = SLOT_MASK
-	body_parts_covered = HEAD|FACE|EYES
 	blood_sprite_state = "maskblood"
 	item_icons = list(
 		slot_wear_mask_str = 'icons/inventory/face/mob.dmi'
@@ -585,6 +583,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/list/say_verbs
 
 CAPABILITIES(/obj/item/clothing/mask)
+	configure(item_worn(slots = SLOT_MASK, covers = HEAD|FACE|EYES))
 	configure(item_protection(heat_parts = FALSE, cold_parts = FALSE))
 	configure(item_sounds(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
 
@@ -608,8 +607,6 @@ CAPABILITIES(/obj/item/clothing/mask)
 		)
 	desc = "Comfortable-looking shoes."
 	gender = PLURAL //Carn: for grammarically correct text-parsing
-	body_parts_covered = FEET
-	slot_flags = SLOT_FEET
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
@@ -626,7 +623,6 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
 	slowdown = SHOES_SLOWDOWN
-	force = 2
 	var/overshoes = 0
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/feet/mob_teshari.dmi',
@@ -641,6 +637,8 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	configure(item_worn(covers = FEET, slots = SLOT_FEET))
+	configure(item_combat(force = 2))
 	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
 	// A micro climbing out of the shoes (container_resist()): they are inside them, so what is kept is that the shoes stay where they were and the micro stays put.
@@ -659,6 +657,7 @@ CAPABILITIES(/obj/item/clothing/shoes)
 /// Native requirement: return null or the component refusal.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
 	return holding ? null : "there is no knife in it"
+
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -903,14 +902,12 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		slot_r_hand_str = 'icons/mob/items/righthand_suits.dmi',
 		)
 	var/fire_resist = T0C+100
-	body_parts_covered = CHEST|ARMS|LEGS
 	//Switch to taur sprites if a taur equips
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING
 	var/blood_overlay_type = "suit"
 	blood_sprite_state = "suitblood" //Defaults to the suit's blood overlay, so that some blood renders instead of no blood.
 
@@ -942,9 +939,11 @@ TRACKED(/obj/item/clothing/suit, hood_up)
 TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
+
 
 TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
@@ -1061,8 +1060,6 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 		slot_r_hand_str = 'icons/mob/items/righthand_uniforms.dmi',
 		)
 	name = "under"
-	body_parts_covered = ARMS|LEGS|ARMS
-	slot_flags = SLOT_ICLOTHING
 	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
@@ -1121,6 +1118,7 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	configure(item_worn(covers = ARMS|LEGS|ARMS, slots = SLOT_ICLOTHING))
 	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))
@@ -1348,10 +1346,10 @@ CAPABILITIES(/obj/item/clothing/under)
 
 	rolled_down = !rolled_down
 	if(rolled_down)
-		set_body_parts_covered(initial(body_parts_covered))
-		set_body_parts_covered(body_parts_covered & (~(UPPER_TORSO|ARMS)))
-		set_heat_protection(protection_of(src).heat_parts & (~(UPPER_TORSO|ARMS)))
-		set_cold_protection(protection_of(src).cold_parts & (~(UPPER_TORSO|ARMS)))
+		set_body_parts_covered(worn_of_type(type).covers)
+		set_body_parts_covered(worn_of(src).covers & (~(UPPER_TORSO|ARMS)))
+		protection_of(src).heat_parts &= ~(UPPER_TORSO|ARMS)
+		protection_of(src).cold_parts &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
 			icon_override = rolled_down_icon
 			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1360,7 +1358,7 @@ CAPABILITIES(/obj/item/clothing/under)
 
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
-		set_body_parts_covered(initial(body_parts_covered))
+		set_body_parts_covered(worn_of_type(type).covers)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_icon)
@@ -1386,9 +1384,9 @@ CAPABILITIES(/obj/item/clothing/under)
 
 	rolled_sleeves = !rolled_sleeves
 	if(rolled_sleeves)
-		set_body_parts_covered(body_parts_covered & (~(ARMS)))
-		set_heat_protection(protection_of(src).heat_parts & (~(ARMS)))
-		set_cold_protection(protection_of(src).cold_parts & (~(ARMS)))
+		set_body_parts_covered(worn_of(src).covers & (~(ARMS)))
+		protection_of(src).heat_parts &= ~(ARMS)
+		protection_of(src).cold_parts &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
 			icon_override = rolled_down_sleeves_icon
 			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1396,7 +1394,7 @@ CAPABILITIES(/obj/item/clothing/under)
 			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
-		set_body_parts_covered(initial(body_parts_covered))
+		set_body_parts_covered(worn_of_type(type).covers)
 		set_heat_protection(protection_of_type(type).heat_parts)
 		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_sleeves_icon)

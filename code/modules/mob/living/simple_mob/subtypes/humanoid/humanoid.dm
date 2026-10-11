@@ -1,5 +1,4 @@
 /mob/living/simple_mob/humanoid
-	mob_class = MOB_CLASS_HUMANOID
 
 	// Generic humanoid mob tolerances
 	min_oxy = 5
@@ -24,6 +23,9 @@
 
 
 	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/humanoid)
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID))
 
 /mob/living/simple_mob/humanoid
 	delete_on_death = TRUE

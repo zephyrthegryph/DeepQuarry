@@ -71,8 +71,10 @@ CAPABILITIES(/obj/item/book/codex/lore/news)
 	icon_state = "corp_regs"
 	item_state = "book10"
 	root_type = /datum/lore/codex/category/main_corp_regs
-	throwforce = 5 // Throw the book at 'em.
 	libcategory = "Reference"
+
+CAPABILITIES(/obj/item/book/codex/corp_regs)
+	configure(item_thrown(force = 5))
 */
 
 

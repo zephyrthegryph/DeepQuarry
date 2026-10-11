@@ -23,9 +23,7 @@
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "s-casing"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT | SLOT_EARS
 	MATERIAL_NONE
-	throwforce = 1
 	mag_type = SPEEDLOADER	//feeds revolvers / shotguns / internal-mag guns via load_ammo
 	caliber = ""			//inherited from the first round gathered
 	max_ammo = 8
@@ -45,6 +43,8 @@
 	return H
 
 CAPABILITIES(/obj/item/ammo_magazine/handful)
+	configure(item_worn(slots = SLOT_BELT | SLOT_EARS))
+	configure(item_thrown(force = 1))
 	op("combine", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), label("Combine"), then(PROC_REF(handful_interaction_item)))
 	op("take_round", hand(), ungated(), priority(OP_PRIORITY_NORMAL + 1), then(PROC_REF(handful_interaction_hand)))
 	op("pick_up", hand(), priority(OP_PRIORITY_DEFAULT), label("Pick up"), then(PROC_REF(handful_pick_up)))

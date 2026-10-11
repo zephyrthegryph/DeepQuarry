@@ -6,7 +6,6 @@
 	icon_state = "paperplane"
 	throw_range = 7
 	throw_speed = 1
-	throwforce = 0
 	w_class = ITEMSIZE_TINY
 
 	var/obj/item/paper/internalPaper
@@ -14,6 +13,7 @@
 	var/list/stamp_marks
 
 CAPABILITIES(/obj/item/paperplane)
+	configure(item_thrown(force = 0))
 	owns_one(nameof(internalPaper), /obj/item/paper)
 	param(nameof(internalPaper), pos = 1, apply = PROC_REF(fold_from))
 	rolls(nameof(pixel_x), range_of(-9, 9))
@@ -97,7 +97,7 @@ TRACKED(/obj/item/paperplane, stamp_marks)
 		return
 	var/mob/living/carbon/human/H = hit_atom
 	if(prob(2))
-		if((H.get_equipped_item(SLOT_ID_HEAD) && H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES) || (H.get_equipped_item(SLOT_ID_MASK) && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES) || (H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES))
+		if((H.get_equipped_item(SLOT_ID_HEAD) && worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & EYES) || (H.get_equipped_item(SLOT_ID_MASK) && worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & EYES) || (H.get_equipped_item(SLOT_ID_EYES) && worn_of(H.get_equipped_item(SLOT_ID_EYES)).covers & EYES))
 			return
 		visible_message(span_danger("\The [src] hits [H] in the eye!"))
 		H.status_adjust(STAT_BLURRY, 10)

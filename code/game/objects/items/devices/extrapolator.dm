@@ -3,8 +3,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "extrapolator_scan"
 	desc = "A bulky scanning device, used to extract genetic material of potential pathogens."
-	item_flags = NOBLUDGEON
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_NORMAL
 	/// Whether the extrapolator is curently in use
 	var/using = FALSE
@@ -40,6 +38,7 @@
 	refresh_parts()
 
 CAPABILITIES(/obj/item/extrapolator)
+	configure(item_worn(flags = NOBLUDGEON, slots = SLOT_BELT))
 	op("mode", in_hand(), label("Toggle extrapolator mode"), then(PROC_REF(extrapolator_mode_selected)))
 	op("item", item(/obj/item/stock_parts/scanning_module), label("Install"), then(PROC_REF(interaction_item)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))

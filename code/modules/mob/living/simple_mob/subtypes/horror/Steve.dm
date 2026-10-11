@@ -23,7 +23,6 @@
 	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 
 	needs_reload = TRUE
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	reload_max = 20
 
 	response_help = "pets the"
@@ -40,6 +39,7 @@
 	..()
 
 CAPABILITIES(/mob/living/simple_mob/horror/Steve)
+	configure(mob_kind(attack_cooldown = 5))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(play_reaction_sound)))
 
 /datum/say_list/Steve

@@ -5,7 +5,6 @@
 	icon_state = "taperoll"
 	w_class = ITEMSIZE_TINY
 
-	toolspeed = 2 //It is now used in surgery as a not awful, but probably dangerous option, due to speed.
 
 /obj/item/tape_roll/proc/can_place(mob/living/carbon/human/H, mob/user)
 	if(isrobot(user) || user == H)
@@ -27,6 +26,7 @@ MSG_DEF(tape/eyes_begin, null, span_danger("%U% begins taping over %T%'s eyes!")
 MSG_DEF(tape/mouth_begin, null, span_danger("%U% begins taping up %T%'s mouth!"))
 
 CAPABILITIES(/obj/item/tape_roll)
+	configure(item_tooling(speed = 2))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	op("tape_eyes", at_target(/mob/living/carbon/human), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), stance(I_DISARM, I_GRAB, I_HURT), label("Tape over the eyes"),
 		when(PROC_REF(aimed_at_eyes)),
@@ -79,7 +79,7 @@ CAPABILITIES(/obj/item/tape_roll)
 /obj/item/tape_roll/proc/face_free(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target
 	var/obj/item/worn = H.get_equipped_item(SLOT_ID_HEAD)
-	return (!worn || !(read_once(worn.body_parts_covered) & FACE)) ? null : span_warning("Remove their [worn] first.")
+	return (!worn || !(read_once(worn_of(worn).covers) & FACE)) ? null : span_warning("Remove their [worn] first.")
 
 /obj/item/tape_roll/proc/tape_eyes_done(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.target

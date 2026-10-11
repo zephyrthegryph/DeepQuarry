@@ -173,7 +173,7 @@
 /datum/unit_test/proc/dq_old_siemens(mob/living/carbon/human/H, obj/item/organ/external/E)
 	. = max(H.species.siemens_coefficient, 0)
 	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_SUIT), H.get_equipped_item(SLOT_ID_UNIFORM), H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
-		if(C.body_parts_covered & E.body_part)
+		if(worn_of(C).covers & E.body_part)
 			. *= protection_of(C).siemens
 	. *= H.factor(BF_SIEMENS)
 

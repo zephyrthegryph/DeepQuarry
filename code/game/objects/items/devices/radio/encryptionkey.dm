@@ -5,13 +5,13 @@
 	icon = 'icons/obj/radio.dmi'
 	icon_state = "cypherkey"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/translate_binary = 0
 	var/translate_hive = 0
 	var/syndie = 0
 	var/list/channels = list() // ALLOW(instance_list): d: every key defines its channels
 
 CAPABILITIES(/obj/item/encryptionkey)
+	configure(item_worn(slots = SLOT_EARS))
 	op("use_item", item(/obj/item), needs(req_adjacent()), then(PROC_REF(item_ignored)))
 
 /// Old attackby was an empty stub: it always swallowed the click with no action, no fallthrough.

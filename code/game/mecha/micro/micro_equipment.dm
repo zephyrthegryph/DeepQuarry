@@ -110,9 +110,11 @@ CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 	icon_state = "microdrill"
 	equip_cooldown = 30
 	energy_drain = 10
-	force = 15
 	equip_type = EQUIP_MICRO_UTILITY
 	required_type = list(/obj/mecha/micro/utility)
+
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/drill/micro)
+	configure(item_combat(force = 15))
 
 /obj/item/mecha_parts/mecha_equipment/tool/drill/micro/action(atom/target)
 	if(!action_checks(target)) return

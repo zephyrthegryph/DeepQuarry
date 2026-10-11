@@ -3,7 +3,6 @@
 	desc = "A combination autopainter and flash anodizer designed to give electronic assemblies a colorful, wear-resistant finish."
 	icon = 'icons/obj/integrated_electronics/electronic_tools.dmi'
 	icon_state = "detailer"
-	item_flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	var/detail_color = COLOR_ASSEMBLY_WHITE
 	var/static/list/color_list = list(
@@ -42,6 +41,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/integrated_electronics/detailer)
+	configure(item_worn(flags = NOBLUDGEON))
 	op("controls", in_hand(), label("Open assembly detailer"), then(PROC_REF(detailer_controls_requested)))
 	interface("ICDetailer", state = nameof(GLOB.tgui_inventory_state))
 	without("ui_open")

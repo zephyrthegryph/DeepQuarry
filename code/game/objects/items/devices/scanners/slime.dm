@@ -5,11 +5,11 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "xenobio"
 	item_state = "xenobio"
 	w_class = ITEMSIZE_SMALL
-	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
 
 CAPABILITIES(/obj/item/slime_scanner)
+	configure(item_thrown(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("scan_slime", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan slime"),
 		needs(req_adjacent(), req(/mob/living/simple_mob/slime/xenobio, of = ON_TARGET, because = PROC_REF(scan_refusal))), then(PROC_REF(slime_scanned)))

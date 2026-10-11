@@ -50,7 +50,6 @@
 	w_class = ITEMSIZE_SMALL
 	item_state = "crossbow"
 	MATERIAL_BULK(MAT_STEEL, 2000)
-	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	silenced = 1
 	projectile_type = /obj/item/projectile/energy/bolt
 	charge_cost = 480
@@ -67,10 +66,12 @@
 	desc = "A weapon favored by mercenary infiltration teams."
 	icon_state = "crossbowlarge"
 	w_class = ITEMSIZE_LARGE
-	force = 10
 	MATERIAL_BULK(MAT_STEEL, 200000)
-	slot_flags = SLOT_BELT
 	projectile_type = /obj/item/projectile/energy/bolt/large
+
+CAPABILITIES(/obj/item/gun/energy/crossbow/largecrossbow)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 
 /*
  * Plasma Stun

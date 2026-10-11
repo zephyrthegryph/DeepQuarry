@@ -52,6 +52,7 @@
 	pain_emote_3p = list("squeaks", "squiks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	param(nameof(keep_parent_data), pos = 1)
@@ -247,8 +248,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 	restrict_vore_ventcrawl = TRUE
 
-	can_pull_size = ITEMSIZE_TINY // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
-	can_pull_mobs = MOB_PULL_NONE // Rykka - Uncommented these. Not sure why they were commented out in the original Polaris files, maybe a mob rework mistake?
 
 	desc = "A small rodent, often seen hiding in maintenance areas and making a nuisance of itself. And stealing cheese, or annoying the chef. SQUEAK! <3"
 
@@ -300,6 +299,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse)
 
 
 CAPABILITIES(/obj/item/holder/mouse)
+	configure(item_worn(slots = SLOT_EARS | SLOT_HEAD | SLOT_ID))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

@@ -5,8 +5,6 @@
 	icon_state = "camgrenade"
 	item_state = "empgrenade"
 	w_class = ITEMSIZE_SMALL
-	force = 0
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
 	var/obj/item/bug_monitor/linkedmonitor
@@ -17,6 +15,8 @@
 
 
 CAPABILITIES(/obj/item/camerabug)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(camera), /obj/machinery/camera/bug, starts = nameof(camtype))
 	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
@@ -57,13 +57,13 @@ MSG_DEF_SELF(camerabug/not_on_floor, "It must be on the floor.")
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "camgrenadebroken"
 	item_state = "empgrenade"
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
 
 CAPABILITIES(/obj/item/brokenbug)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 
@@ -75,11 +75,13 @@ CAPABILITIES(/obj/item/brokenbug)
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
-	force = 0
-	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
+
+CAPABILITIES(/obj/item/brokenbug/spy)
+	configure(item_worn(slots = SLOT_EARS))
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 0))
 
 /obj/item/camerabug/spy
 	name = "bug"
@@ -89,8 +91,10 @@ CAPABILITIES(/obj/item/brokenbug)
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	camtype = /obj/machinery/camera/bug/spy
+
+CAPABILITIES(/obj/item/camerabug/spy)
+	configure(item_worn(slots = SLOT_EARS))
 
 /obj/item/camerabug/examine(mob/user)
 	. = ..()
@@ -124,7 +128,7 @@ CAPABILITIES(/obj/item/brokenbug)
 /obj/item/camerabug/proc/interaction_item(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
-	if(W.force >= 5)
+	if(combat_of(W).force >= 5)
 		visible_message("\The [src] lens shatters!")
 		new brokentype(get_turf(src))
 		if(linkedmonitor())

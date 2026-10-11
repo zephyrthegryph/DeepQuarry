@@ -58,7 +58,9 @@ DECLARE_GAS(/obj/item/tank/air, "air_contents", "volume", T20C, list(GAS_O2 = 6*
 	name = "phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
 	gauge_icon = null
-	slot_flags = null	//they have no straps!
+
+CAPABILITIES(/obj/item/tank/phoron)
+	configure(item_worn(slots = TRAIT_NONE))
 
 DECLARE_GAS(/obj/item/tank/phoron, "air_contents", "volume", T20C, list(GAS_PHORON = 3*ONE_ATMOSPHERE))
 
@@ -81,7 +83,9 @@ DECLARE_GAS(/obj/item/tank/phoron, "air_contents", "volume", T20C, list(GAS_PHOR
 	name = "phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
-	slot_flags = SLOT_BACK	//these ones have straps!
+
+CAPABILITIES(/obj/item/tank/vox)
+	configure(item_worn(slots = SLOT_BACK))
 
 DECLARE_GAS(/obj/item/tank/vox, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 /obj/item/tank/phoron/pressurized
@@ -101,11 +105,13 @@ DECLARE_GAS(/obj/item/tank/phoron/pressurized, "air_contents", "volume", T20C, l
 
 /obj/item/tank/emergency
 	name = "emergency tank"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	force = 4
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 	volume = 2 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
+
+CAPABILITIES(/obj/item/tank/emergency)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 4))
 
 /obj/item/tank/emergency/oxygen
 	name = "emergency oxygen tank"
@@ -156,8 +162,10 @@ DECLARE_GAS(/obj/item/tank/emergency/phoron, "air_contents", "volume", T20C, lis
 
 DECLARE_GAS(/obj/item/tank/carbon_dioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/carbon_dioxide
-	slot_flags = SLOT_BELT
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
+
+CAPABILITIES(/obj/item/tank/emergency/carbon_dioxide)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/tank/emergency/carbon_dioxide/double
 	name = "double emergency carbon dioxide tank"

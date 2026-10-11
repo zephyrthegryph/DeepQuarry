@@ -63,7 +63,7 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 	if(owner.h_style)
 		var/style = owner.h_style
 		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[style]
-		if(owner.get_equipped_item(SLOT_ID_HEAD) && (owner.get_equipped_item(SLOT_ID_HEAD).flags_inv & BLOCKHEADHAIR))
+		if(owner.get_equipped_item(SLOT_ID_HEAD) && (worn_of(owner.get_equipped_item(SLOT_ID_HEAD)).hides & BLOCKHEADHAIR))
 			if(!(hair_style.flags & HAIR_VERY_SHORT))
 				hair_style = GLOB.hair_styles_list["Short Hair"]
 		if(hair_style && (data.get_species_bodytype(owner) in hair_style.species_allowed))

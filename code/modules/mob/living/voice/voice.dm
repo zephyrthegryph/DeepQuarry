@@ -6,7 +6,6 @@
 	var/obj/item/communicator/comm = null
 	var/item_tf = FALSE
 
-	emote_type = 2 //This lets them emote through containers.  The communicator has a image feed of the person calling them so...
 
 
 // Proc: transfer_identity()
@@ -147,6 +146,7 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/voice)
+	configure(mob_kind(emote_type = 2))
 	ref_one(nameof(comm))
 	finds(nameof(comm), /obj/item/communicator, near = NEAR_LOC) // the communicator carrying us
 	knows(LANGUAGE_GALCOM, default = TRUE)

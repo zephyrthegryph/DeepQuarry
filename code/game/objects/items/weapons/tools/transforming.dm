@@ -44,15 +44,12 @@ MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SIL
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "jaws_pry"
 	item_state = "jawsoflife"
-	force = 15
-	toolspeed = 0.25
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
-	attack_verb = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "pinched", "nipped")
 	possible_tooltypes = list(TOOL_CROWBAR,TOOL_WIRECUTTER)
 
 CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
+	configure(item_tooling(speed = 0.25))
+	configure(item_combat(force = 15, sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "bashed", "battered", "bludgeoned", "whacked", "pinched", "nipped")))
 	configure(item_sounds(use = SFX_ITEMS_JAWS_PRY))
 
 /obj/item/tool/transforming/jawsoflife/on_tool_switch(mob/user)
@@ -61,7 +58,7 @@ CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
 			desc = initial(desc) + " It's fitted with a prying head."
 			icon_state = "jaws_pry"
 			set_usesound(SFX_ITEMS_JAWS_PRY)
-			pry = 1
+			set_pry(1)
 			tool_qualities = list(TOOL_CROWBAR)
 			if(user)
 				play_sfx(src, SFX_ITEMS_CHANGE_JAWS)
@@ -70,7 +67,7 @@ CAPABILITIES(/obj/item/tool/transforming/jawsoflife)
 			desc = initial(desc) + " It's fitted with a cutting head."
 			icon_state = "jaws_cutter"
 			set_usesound(SFX_ITEMS_JAWS_CUT)
-			pry = 0
+			set_pry(0)
 			tool_qualities = list(TOOL_WIRECUTTER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_CHANGE_JAWS)
@@ -83,15 +80,12 @@ MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_S
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "drill_bolt"
 	item_state = "drill"
-	force = 8
-	throwforce = 8
-	toolspeed = 0.25
-	sharp = FALSE
-	edge = FALSE
-	attack_verb = list("drilled", "screwed", "jabbed", "whacked")
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_SCREWDRIVER)
 
 CAPABILITIES(/obj/item/tool/transforming/powerdrill)
+	configure(item_tooling(speed = 0.25))
+	configure(item_thrown(force = 8))
+	configure(item_combat(force = 8, sharp = FALSE, edge = FALSE, attack_verbs = list("drilled", "screwed", "jabbed", "whacked")))
 	configure(item_sounds(hit = SFX_ITEMS_DRILL_HIT, use = SFX_ITEMS_DRILL_USE_2))
 
 /obj/item/tool/transforming/powerdrill/on_tool_switch(mob/user)
@@ -99,7 +93,7 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 		if(TOOL_WRENCH)
 			desc = initial(desc) + " It's fitted with a bolt driver."
 			icon_state = "drill_bolt"
-			sharp = FALSE
+			set_sharp(FALSE)
 			tool_qualities = list(TOOL_WRENCH)
 			if(user)
 				play_sfx(src, SFX_ITEMS_CHANGE_DRILL, 2)
@@ -107,7 +101,7 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 		if(TOOL_SCREWDRIVER)
 			desc = initial(desc) + " It's fitted with a screw driver."
 			icon_state = "drill_screw"
-			sharp = TRUE
+			set_sharp(TRUE)
 			tool_qualities = list(TOOL_SCREWDRIVER)
 			if(user)
 				play_sfx(src, SFX_ITEMS_CHANGE_DRILL, 2)
@@ -122,18 +116,15 @@ CAPABILITIES(/obj/item/tool/transforming/powerdrill)
 		slot_l_hand_str = 'icons/mob/items/lefthand_melee_vr.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_melee_vr.dmi',
 		)
-	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
-	force = 25
-	throwforce = 15
-	toolspeed = 0.25
-	sharp = FALSE
-	edge = FALSE
-	attack_verb = list("whacked", "slammed", "bashed", "wrenched", "fixed", "bolted", "clonked", "bonked")
 	possible_tooltypes = list(TOOL_WRENCH,TOOL_CROWBAR,TOOL_WIRECUTTER,TOOL_SCREWDRIVER,TOOL_MULTITOOL,TOOL_WELDER)
 	weldertype = /obj/item/weldingtool/dummy/altevian
 
 CAPABILITIES(/obj/item/tool/transforming/altevian)
+	configure(item_tooling(speed = 0.25))
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_thrown(force = 15))
+	configure(item_combat(force = 25, sharp = FALSE, edge = FALSE, attack_verbs = list("whacked", "slammed", "bashed", "wrenched", "fixed", "bolted", "clonked", "bonked")))
 	configure(item_sounds(hit = SFX_WEAPONS_SMASH))
 
 /obj/item/tool/transforming/altevian/on_tool_switch(mob/user)
@@ -189,4 +180,6 @@ CAPABILITIES(/obj/item/tool/transforming/altevian)
 				to_chat(user, span_notice("You reconfigure [src] into welding mode."))
 
 /obj/item/weldingtool/dummy/altevian
-	toolspeed = 0.25
+
+CAPABILITIES(/obj/item/weldingtool/dummy/altevian)
+	configure(item_tooling(speed = 0.25))

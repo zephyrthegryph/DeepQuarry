@@ -14,6 +14,7 @@
 	light_overlay = "helmet_light"
 	var/no_cycle = FALSE	//stop this item from being put in a cycler
 
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 /obj/item/clothing/suit/space/void
@@ -47,9 +48,11 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void, fit_spec, list(REQ_FITS_BO
 
 //Does it spawn with any Inbuilt devices?
 
+
 TYPE_TABLE(/obj/item/clothing/suit/space/void, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_RAPALA, SPECIES_VASILISSAN, SPECIES_ALRAUNE, SPECIES_PROMETHEAN, SPECIES_XENOCHIMERA, SPECIES_XENOMORPH_HYBRID))))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS))))
+
 // A path in boots/hood/tank is created in the suit; null deploys nothing.
 MSG_DEF_SELF(void/worn, "You cannot modify that while it is being worn.")
 MSG_DEF_SELF(void/nothing_to_eject, "There is no tank or cooling unit inserted.")
@@ -367,13 +370,13 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/syndicate_contract)
 	slowdown = 0.5
 	breach_threshold = 6 //this thing is basically tissue paper
 	w_class = ITEMSIZE_NORMAL //if it's snug, high-tech, and made of relatively soft materials, it should be much easier to store!
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = null
 	hood = /obj/item/clothing/head/helmet/space/void/autolok // autoinstall the helmet
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/autolok)
 	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 	configure(item_protection(siemens = 1))
 
 
@@ -436,10 +439,12 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 	desc = "A rather close-fitting helmet designed to protect the wearer from hazardous conditions. Automatically deploys when the suit's sensors detect an environment that is hazardous to the wearer."
 	icon_state = "autolokhelmet"
 	item_state = "autolokhelmet"
-	flags_inv = HIDEEARS|BLOCKHAIR //removed HIDEFACE/MASK/EYES flags so sunglasses or facemasks don't disappear. still gotta have BLOCKHAIR or it'll clip out tho.
 	sprite_sheets = ALL_VR_SPRITE_SHEETS_HEAD_MOB
 	sprite_sheets_obj = null
 
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
+	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 
 
@@ -468,6 +473,3 @@ MSG_DEF_SELF(void/nothing_installed, "It does not have anything installed.")
 /obj/item/clothing/head/helmet/space/void/heck/draw(datum/look/look)
 	..()
 	look.overlay(look_overlay_image(icon, "hostile_env_glass", appearance_flags = RESET_COLOR))
-
-CAPABILITIES(/obj/item/clothing/head/helmet/space/void/autolok)
-	acceptance("fit", fits(list(SPECIES_DIONA, SPECIES_VOX), exclude = TRUE), mode = ACCEPTANCE_REPLACE)

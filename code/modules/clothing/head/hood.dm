@@ -2,7 +2,9 @@
 	name = "hood"
 	desc = "A generic hood."
 	icon_state = "chaplain_hood" //just default to this, whatever. default_hood never existed.
-	flags_inv = HIDEEARS | BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood)
+	configure(item_worn(hides = HIDEEARS | BLOCKHAIR))
 
 // Winter coats
 /obj/item/clothing/head/hood/winter
@@ -229,7 +231,9 @@ CAPABILITIES(/obj/item/clothing/head/hood/carp_hood)
 	name  = "maroon cloak hood"
 	desc = "A hood attached to a maroon cloak."
 	icon_state = "maroon_cloakhood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood/cloak)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 /obj/item/clothing/head/hood/cloak/winter
 	name = "winter cloak hood"
@@ -300,8 +304,10 @@ CAPABILITIES(/obj/item/clothing/head/hood/chain)
 	name = "Refreshed Talon winter hood"
 	desc = "A cozy winter hood attached to a heavy winter jacket."
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/inventory/head/mob.dmi'
 	icon_state = "winterhoodr_talon"
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/talon/refreshed)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
 
 // Centcom Winter Hood
 /obj/item/clothing/head/hood/winter/centcom
@@ -323,14 +329,18 @@ CAPABILITIES(/obj/item/clothing/head/hood/chain)
 	name = "Hotdog suit hood"
 	desc = "The hood of a hotdog suit, attached to said hotdog suit." //Honestly i just don't know how to force the costume to hide hats.
 	icon_state = "hotdog_hood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood_vr/hotdog_hood)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 // Turnip suit hood
 /obj/item/clothing/head/hood_vr/turnip_hood
 	name = "Turnip suit hood"
 	desc = "The hood of a hotdog suit, attached to said hotdog suit. Most cooks cut this part off and throw it in the garbage"
 	icon_state = "turnip_hood"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hood_vr/turnip_hood)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 //Better hoodies hood
 /obj/item/clothing/head/hood/toggleable

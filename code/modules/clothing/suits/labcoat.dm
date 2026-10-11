@@ -4,9 +4,10 @@
 	icon_state = "labcoat"
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 	armor_spec = "bio=50"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MEDICAL))))
 
@@ -127,9 +128,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat, suit_storage_spec, li
 	name = "Talon labcoat"
 	desc = "A large, and extremely sterile labcoat that protects the wearer from chemical spills. This one has ITV Talon colored patterns along the labcoat, the designated shapes list it as a medical officer's labcoat."
 	icon = 'icons/inventory/suit/item.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	icon_state = "talon_labcoat"
 	item_state_slots = list(slot_r_hand_str = "talon_labcoat", slot_l_hand_str = "talon_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/talon)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi'))
 
 
 // 'Modern' labcoats

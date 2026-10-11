@@ -26,6 +26,6 @@
 	user.setClickCooldown(user.get_attack_speed(W))
 	if(W.obj_damage_type())
 		user.do_attack_animation(src)
-		act_message(user, src, others = span_danger("%U% [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "hits"] %T% with %I%!"), item = W)
-		receive_weapon_hit(W, user, W.force * melee_scale(), silent = FALSE)
+		act_message(user, src, others = span_danger("%U% [LAZYLEN(combat_of(W).attack_verbs) ? pick(combat_of(W).attack_verbs) : "hits"] %T% with %I%!"), item = W)
+		receive_weapon_hit(W, user, combat_of(W).force * melee_scale(), silent = FALSE)
 	return melee_passes() ? OP_PASS : OP_OK

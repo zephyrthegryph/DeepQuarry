@@ -1,5 +1,4 @@
 /mob/living/silicon/ai
-	death_message = "gives one shrill beep before falling lifeless."
 
 /// Death is decided by the AI machine plan; this is the one pass that follows it.
 /mob/living/silicon/ai/on_death(gibbed)

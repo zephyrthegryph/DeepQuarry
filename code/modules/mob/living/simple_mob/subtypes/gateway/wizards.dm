@@ -14,7 +14,6 @@
 	icon_dead = "bookbat_purple_dead"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vrerror)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "vr"
 
@@ -35,6 +34,9 @@
 			/obj/item/gun/magic/firestaff/vrwizard/poison = 10,
 			/obj/item/gun/magic/firestaff/vrwizard/lighting = 10
 			)
+
+CAPABILITIES(/mob/living/simple_mob/vr)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vr/firewiz
 	name = "hardlight creation fire"

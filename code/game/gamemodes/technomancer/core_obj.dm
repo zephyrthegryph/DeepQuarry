@@ -6,7 +6,6 @@
 	icon_state = "technomancer_core"
 	item_state = "technomancer_core"
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BACK
 	unacidable = TRUE
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/back/mob_teshari.dmi'
@@ -33,6 +32,7 @@
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
 CAPABILITIES(/obj/item/technomancer_core)
+	configure(item_worn(slots = SLOT_BACK))
 	ref_one(nameof(wearer))
 	owns_many(nameof(spells))
 	owns_many(nameof(summoned_mobs))

@@ -29,7 +29,6 @@
 
 	projectilesound = SFX_WEAPONS_THUDSWOOSH
 	projectiletype = /obj/item/projectile/webball
-	base_attack_cooldown = 10
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	poison_per_bite = 2

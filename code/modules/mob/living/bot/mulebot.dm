@@ -18,7 +18,6 @@
 	anchored = TRUE
 	density = TRUE
 	endurance = 150
-	mob_bump_flag = HEAVY
 
 	min_target_dist = 0
 	max_target_dist = 250
@@ -70,6 +69,7 @@
 
 // The hand entry above opens the controls, so the window's own open op answers the menu and a remote user only.
 CAPABILITIES(/mob/living/bot/mulebot)
+	configure(mob_movement(bump = HEAVY))
 	// the item effect calls the bot's own effect first (old `..()` then update_icons()), so the inherited bot op must not run a second time
 	without("bot_item")
 	op("mulebot_item", item(/obj/item), then(PROC_REF(mulebot_interaction_item)))

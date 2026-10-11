@@ -2,9 +2,9 @@
 	name = "\improper CentCom. hat"
 	icon_state = "centcom"
 	desc = "It's good to be emperor."
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/centhat)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/centhat/customs
@@ -17,6 +17,9 @@ CAPABILITIES(/obj/item/clothing/head/centhat)
 	desc = "a small metal ring, floating above it's wearer."
 	icon_state = "halo"
 
+CAPABILITIES(/obj/item/clothing/head/halo)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob_halo.dmi'))
+
 /obj/item/clothing/head/headband/maid/modern
 	name = "modern maid headband"
 	desc = "Just like from my Japanese cartoons!"
@@ -27,10 +30,9 @@ CAPABILITIES(/obj/item/clothing/head/centhat)
 	addblends = "pin_a"
 	name = "hair pin"
 	desc = "A nice hair pin."
-	slot_flags = SLOT_HEAD | SLOT_EARS
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/pin)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_EARS, covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_ACCESSORY, pickup = SFX_ITEMS_PICKUP_ACCESSORY))
 
 /obj/item/clothing/head/pin/pink
@@ -114,23 +116,27 @@ CAPABILITIES(/obj/item/clothing/head/pin)
 	icon_state = "redcoat"
 	item_state_slots = list(slot_r_hand_str = "pirate", slot_l_hand_str = "pirate")
 	desc = span_italics("'I guess it's a redhead.'")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/redcoat)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/mailman
 	name = "station cap"
 	icon_state = "mailman"
 	item_state_slots = list(slot_r_hand_str = "hopcap", slot_l_hand_str = "hopcap")
 	desc = "<i>Choo-choo</i>!"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/mailman)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/plaguedoctorhat
 	name = "plague doctor's hat"
 	desc = "These were once used by Plague doctors, allegedly. They're pretty much useless."
 	icon_state = "plaguedoctor"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/plaguedoctorhat)
+	configure(item_worn(covers = 0))
 	configure(item_protection(permeability = 0.01, siemens = 0.9))
 
 /obj/item/clothing/head/plaguedoctorhat/gold
@@ -143,16 +149,17 @@ CAPABILITIES(/obj/item/clothing/head/plaguedoctorhat)
 	desc = "It's unspeakably stylish"
 	icon_state = "hasturhood"
 	item_state_slots = list(slot_r_hand_str = "enginering_beret", slot_l_hand_str = "enginering_beret")
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/hasturhood)
+	configure(item_worn(hides = BLOCKHAIR, covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/head/nursehat
 	name = "nurse's hat"
 	desc = "It allows quick identification of trained medical personnel."
 	icon_state = "nursehat"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/nursehat)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/syndicatefake
@@ -160,41 +167,43 @@ CAPABILITIES(/obj/item/clothing/head/nursehat)
 	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black-red", slot_l_hand_str = "syndicate-helm-black-red")
 	icon_state = "syndicate"
 	desc = "A plastic replica of a bloodthirsty mercenary's space helmet, you'll look just like a real murderous criminal operative in this! This is a toy, it is not made for use in space!"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/syndicatefake)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/cueball
 	name = "cueball helmet"
 	desc = "A large, featureless white orb mean to be worn on your head. How do you even see out of this thing?"
 	icon_state = "cueball"
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/cueball)
+	configure(item_worn(hides = BLOCKHAIR, covers = HEAD|FACE|EYES))
 
 /obj/item/clothing/head/greenbandana
 	name = "green bandana"
 	desc = "It's a green bandana with some fine nanotech lining."
 	icon_state = "greenbandana"
-	flags_inv = 0
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/greenbandana)
+	configure(item_worn(hides = 0, covers = 0))
 
 /obj/item/clothing/head/cardborg
 	name = "cardborg helmet"
 	desc = "A helmet made out of a box."
 	icon_state = "cardborg_h"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/cardborg)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE, covers = HEAD|FACE|EYES))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 
 /obj/item/clothing/head/rabbitears
 	name = "rabbit ears"
 	desc = "A pair of rabbit ears!" // weird description bgone
 	icon_state = "bunny"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/rabbitears)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/flatcap
 	name = "flat cap"
@@ -214,14 +223,18 @@ CAPABILITIES(/obj/item/clothing/head/flatcap)
 	name = "pirate hat"
 	desc = "Yarr."
 	icon_state = "pirate"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/pirate)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/hgpiratecap
 	name = "pirate hat"
 	desc = "Yarr."
 	icon_state = "hgpiratecap"
 	item_state_slots = list(slot_r_hand_str = "hoscap", slot_l_hand_str = "hoscap")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/hgpiratecap)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/bandana
 	name = "pirate bandana"
@@ -233,19 +246,18 @@ CAPABILITIES(/obj/item/clothing/head/flatcap)
 	name = "witch costume wig"
 	desc = "Eeeee~heheheheheheh!"
 	icon_state = "witch"
-	flags_inv = BLOCKHAIR
 
 CAPABILITIES(/obj/item/clothing/head/witchwig)
+	configure(item_worn(hides = BLOCKHAIR))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/chicken
 	name = "chicken suit head"
 	desc = "Bkaw!"
 	icon_state = "chickenhead"
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/chicken)
+	configure(item_worn(hides = BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/bearpelt
@@ -253,9 +265,9 @@ CAPABILITIES(/obj/item/clothing/head/chicken)
 	desc = "Fuzzy."
 	icon_state = "bearpelt"
 	item_state_slots = list(slot_r_hand_str = "beret_black", slot_l_hand_str = "beret_black")
-	flags_inv = BLOCKHAIR
 
 CAPABILITIES(/obj/item/clothing/head/bearpelt)
+	configure(item_worn(hides = BLOCKHAIR))
 	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/head/xenos
@@ -263,10 +275,9 @@ CAPABILITIES(/obj/item/clothing/head/bearpelt)
 	icon_state = "xenos"
 	item_state_slots = list(slot_r_hand_str = "xenos_helm", slot_l_hand_str = "xenos_helm")
 	desc = "A helmet made out of chitinous alien hide."
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/xenos)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/philosopher_wig
@@ -274,17 +285,18 @@ CAPABILITIES(/obj/item/clothing/head/xenos)
 	desc = "A stylish monstrosity unearthed from Earth's Renaissance period. With this most distinguish'd wig, you'll be ready for your next soiree!"
 	icon_state = "philosopher_wig"
 	item_state_slots = list(slot_r_hand_str = "pwig", slot_l_hand_str = "pwig")
-	flags_inv = BLOCKHAIR
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/philosopher_wig)
+	configure(item_worn(hides = BLOCKHAIR, covers = 0))
 	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/head/orangebandana //themij: Taryn Kifer
 	name = "orange bandana"
 	desc = "An orange piece of cloth, worn on the head."
 	icon_state = "orange_bandana"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/orangebandana)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/hijab
 	name = "hijab"
@@ -292,15 +304,18 @@ CAPABILITIES(/obj/item/clothing/head/philosopher_wig)
 	icon_state = "hijab"
 	addblends = "hijab_a"
 	item_state_slots = list(slot_r_hand_str = "beret_white", slot_l_hand_str = "beret_white")
-	body_parts_covered = 0
-	flags_inv = BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/hijab)
+	configure(item_worn(covers = 0, hides = BLOCKHAIR))
 
 /obj/item/clothing/head/kippa
 	name = "kippa"
 	desc = "A small, brimless cap."
 	icon_state = "kippa"
 	addblends = "kippa_a"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/kippa)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/turban
 	name = "turban"
@@ -308,8 +323,9 @@ CAPABILITIES(/obj/item/clothing/head/philosopher_wig)
 	icon_state = "turban"
 	addblends = "turban_a"
 	item_state_slots = list(slot_r_hand_str = "beret_white", slot_l_hand_str = "beret_white")
-	body_parts_covered = 0
-	flags_inv = BLOCKHEADHAIR
+
+CAPABILITIES(/obj/item/clothing/head/turban)
+	configure(item_worn(covers = 0, hides = BLOCKHEADHAIR))
 
 /obj/item/clothing/head/taqiyah
 	name = "taqiyah"
@@ -323,56 +339,69 @@ CAPABILITIES(/obj/item/clothing/head/philosopher_wig)
 	desc = "A head-hugging brimless winter cap. This one is tight."
 	icon_state = "beanie"
 	addblends = "beanie_a"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/beanie)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/beanie_loose
 	name = "loose beanie"
 	desc = "A head-hugging brimless winter cap. This one is loose."
 	icon_state = "beanie_hang"
 	addblends = "beanie_hang_a"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/beanie_loose)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/beretg
 	name = "beret"
 	desc = "A beret, an artists favorite headwear."
 	icon_state = "beret_g"
 	addblends = "beret_g_a"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/beretg)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/sombrero
 	name = "sombrero"
 	desc = "A wide-brimmed hat popularly worn in Mexico."
 	icon_state = "sombrero"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/sombrero)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/headband/maid
 	name = "maid headband"
 	desc = "Keeps hair out of the way for important... jobs."
 	icon_state = "maid"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/headband/maid)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/maangtikka
 	name = "maang tikka"
 	desc = "A jeweled headpiece originating in India."
 	icon_state = "maangtikka"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/maangtikka)
+	configure(item_worn(covers = 0))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 /obj/item/clothing/head/jingasa
 	name = "jingasa"
 	desc = "A wide, flat rain hat originally from Japan."
 	icon_state = "jingasa"
-	body_parts_covered = 0
 	item_state_slots = list(slot_r_hand_str = "taq", slot_l_hand_str = "taq")
+
+CAPABILITIES(/obj/item/clothing/head/jingasa)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/blackngoldheaddress
 	name = "black and gold headdress"
 	desc = "An odd looking headdress that covers the eyes."
 	icon_state = "blackngoldheaddress"
-	flags_inv = HIDEEYES
-	body_parts_covered = HEAD|EYES
+
+CAPABILITIES(/obj/item/clothing/head/blackngoldheaddress)
+	configure(item_worn(hides = HIDEEYES, covers = HEAD|EYES))
 
 //Corporate Berets
 
@@ -409,15 +438,17 @@ CAPABILITIES(/obj/item/clothing/head/maangtikka)
 	desc = "Gentleman, elite aboard!"
 	icon_state = "bowler"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/bowler)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/that
 	name = "top-hat"
 	desc = "It's an amish looking hat."
 	icon_state = "tophat"
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/that)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/beaverhat
@@ -425,9 +456,9 @@ CAPABILITIES(/obj/item/clothing/head/that)
 	desc = "Soft felt makes this hat both comfortable and elegant."
 	icon_state = "beaver_hat"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/beaverhat)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/boaterhat
@@ -435,14 +466,18 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	desc = "The ultimate in summer fashion."
 	icon_state = "boater_hat"
 	item_state_slots = list(slot_r_hand_str = "tophat", slot_l_hand_str = "tophat")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/boaterhat)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/fedora
 	name = "fedora"
 	icon_state = "fedora_grey"
 	desc = "A sharp, stylish hat that's grey in color."
 	item_state_slots = list(slot_r_hand_str = "detective", slot_l_hand_str = "detective")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/fedora)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/fedora/brown
 	desc = "A brown fedora. Perfect for detectives or those trying to pilfer artifacts."
@@ -485,7 +520,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "cowboy hat"
 	desc = "For those that have spurs that go jingle jangle jingle."
 	icon_state = "cowboy_1"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/cowboy)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/cowboy/rattan
 	name = "rattan cowboy hat"
@@ -542,30 +579,34 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "marine helmet"
 	desc = "A marine helmet prop from the popular game 'Ruin'."
 	icon_state = "marine"
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/head/marine)
+	configure(item_worn(hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 
 //Laser Tag Helmets
 /obj/item/clothing/head/bluetag
 	name = "blue laser tag helmet"
 	desc = "Blue Pride, Station Wide."
 	icon_state = "bluetag"
-	flags_inv = HIDEEARS|BLOCKHEADHAIR
-	body_parts_covered = HEAD|EYES
+
+CAPABILITIES(/obj/item/clothing/head/bluetag)
+	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR, covers = HEAD|EYES))
 
 /obj/item/clothing/head/redtag
 	name = "red laser tag helmet"
 	desc = "Reputed to go faster."
 	icon_state = "redtag"
-	flags_inv = HIDEEARS|BLOCKHEADHAIR
-	body_parts_covered = HEAD|EYES
+
+CAPABILITIES(/obj/item/clothing/head/redtag)
+	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR, covers = HEAD|EYES))
 
 /obj/item/clothing/head/omnitag
 	name = "omni laser tag helmet"
 	desc = "FIRST BLOOD!"
 	icon_state = "marine"
-	flags_inv = HIDEEARS|BLOCKHEADHAIR
-	body_parts_covered = HEAD|EYES
+
+CAPABILITIES(/obj/item/clothing/head/omnitag)
+	configure(item_worn(hides = HIDEEARS|BLOCKHEADHAIR, covers = HEAD|EYES))
 
 //hair bows
 
@@ -573,7 +614,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "large bow"
 	desc = "A large bow that you can place on top of your head."
 	icon_state = "large_bow"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/bow)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/bow/small
 	name = "small bow"
@@ -598,7 +641,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	item_state = "flailing_helmet_worn"
 	name = "Flailing hat"
 	desc = "It's a hat, it flails."
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/wiggler)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/wiggler/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	var/image/so_far = ..()
@@ -622,7 +667,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	item_state = "crown"
 	name = "crown"
 	desc = "A crown, it's pretty."
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/crown)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/crown/goose_king
 	name = "Crown of the golden goose king"
@@ -699,8 +746,10 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "Angel halo"
 	desc = "A halo fashioned after classic depictions of an angel. It slowly pulses and rises."
 	icon = 'icons/inventory/head/mob_angel_halo.dmi'
-	default_worn_icon = 'icons/inventory/head/mob_angel_halo.dmi'
 	icon_state = "angel_halo"
+
+CAPABILITIES(/obj/item/clothing/head/angel_halo)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob_angel_halo.dmi'))
 //Angel Halo End
 
 
@@ -711,7 +760,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "fish skull"
 	desc = "You... you're not actually going to wear that, right?"
 	icon_state = "fishskull"
-	flags_inv = HIDEEARS|BLOCKHAIR
+
+CAPABILITIES(/obj/item/clothing/head/fish)
+	configure(item_worn(hides = HIDEEARS|BLOCKHAIR))
 
 /obj/item/clothing/head/crown
 	name = "crown"
@@ -729,8 +780,9 @@ CAPABILITIES(/obj/item/clothing/head/beaverhat)
 	name = "shiny hood"
 	desc = "You can be a super-hero in this! Just don't forget your suit!"
 	icon_state = "hood_o"
-	flags_inv = HIDEFACE|BLOCKHAIR
-	body_parts_covered = FACE|HEAD
+
+CAPABILITIES(/obj/item/clothing/head/shiny_hood)
+	configure(item_worn(hides = HIDEFACE|BLOCKHAIR, covers = FACE|HEAD))
 
 /obj/item/clothing/head/shiny_hood/poly
 	name = "polychromic shiny hood"
@@ -809,6 +861,9 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
 	name = "metal halo"
 	desc = "A halo made of a light metal. This one doesn't float, but it's still a circle on your head!"
 	icon_state = "halo_alt"
+
+CAPABILITIES(/obj/item/clothing/head/halo/alt)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
 
 /obj/item/clothing/head/buckethat
 	name = "bucket hat"
@@ -900,12 +955,10 @@ CAPABILITIES(/obj/item/clothing/head/shiny_hood/closed)
 	name = "holographic demonic halo"
 	desc = "A hologram displaying a demonic halo."
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/inventory/head/mob_halo.dmi'
 	icon_state = "halo"
 
 /obj/item/clothing/head/halo/alt
 	icon = 'icons/inventory/head/item.dmi'
-	default_worn_icon = 'icons/inventory/head/mob.dmi'
 
 //Replikant Hat
 

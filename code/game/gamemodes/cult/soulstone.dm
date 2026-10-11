@@ -9,7 +9,6 @@
 	item_state = "electronic"
 	desc = "A fragment of the legendary treasure known simply as the 'Soul Stone'. The shard still flickers with a fraction of the full artefacts power."
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	var/imprinted = "empty"
 	var/possible_constructs = list("Juggernaut","Wraith","Artificer","Harvester")
 
@@ -41,6 +40,7 @@
 // TGUI migration. attack_self opens Soulstone.tsx; Topic
 // "Summon" handler moves to tgui_act.
 CAPABILITIES(/obj/item/soulstone)
+	configure(item_worn(slots = SLOT_BELT))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	interface("Soulstone", title = "Soul Stone")
 	without("ui_open")

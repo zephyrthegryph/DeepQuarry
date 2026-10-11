@@ -12,7 +12,6 @@
 	icon_living = "shade"
 	icon_dead = "shade_dead"
 
-	mob_class = MOB_CLASS_DEMONIC
 	biology = BIOLOGY_SYNTHETIC // Runed-metal shells: repaired by artificers, immune to poison and suffocation.
 
 	ui_icons = 'icons/mob/screen1_construct.dmi'
@@ -48,7 +47,6 @@
 
 	armor_spec = "melee=10;bullet=10;laser=10;energy=10;bomb=10;bio=100;rad=100"
 
-	can_be_antagged = TRUE
 	faction = FACTION_CULT
 
 	supernatural = TRUE
@@ -96,6 +94,7 @@
 
 // Each construct is numbered.
 CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
 	rolls(nameof(name), PROC_REF(roll_numbered_name))
 	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
 
@@ -107,7 +106,6 @@ CAPABILITIES(/mob/living/simple_mob/construct)
 
 /mob/living/simple_mob/construct
 	delete_on_death = TRUE
-	death_message = "collapses in a shattered heap."
 
 /mob/living/simple_mob/construct/on_death(gibbed)
 	new /obj/item/ectoplasm (src.loc)

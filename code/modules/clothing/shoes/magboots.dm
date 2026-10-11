@@ -6,7 +6,6 @@
 	item_state_slots = list(slot_r_hand_str = "magboots", slot_l_hand_str = "magboots")
 	center_of_mass_x = 17
 	center_of_mass_y = 12
-	force = 3
 	overshoes = 1
 	shoes_under_pants = -1	//These things are huge
 	preserve_item = 1
@@ -22,6 +21,7 @@
 	step_volume_mod = 1.3
 	resistance_flags = FIRE_PROOF
 
+
 TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 /obj/item/clothing/shoes/magboots/proc/set_slowdown()
@@ -31,6 +31,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
 
 CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	acceptance("equip", req_acceptance_overshoe_clearance(), mode = ACCEPTANCE_APPEND)
+	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALBOOTS, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	op("magboots_toggle_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(magboots_toggle_self)))
 
@@ -39,10 +40,10 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	var/mob/user = A.actor
 	shoes_shake_out_self(A)
 	if(magpulse)
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
 		set_slowdown()
-		force = 3
+		set_force(3)
 		if(icon_base) icon_state = "[icon_base]0"
 		to_chat(user, mag_disable)
 		if(unremovable_when_enabled)
@@ -58,10 +59,10 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 				return
 			set_canremove(FALSE)
 
-		item_flags |= NOSLIP
+		set_item_flags(worn_of(src).flags | (NOSLIP))
 		magpulse = TRUE
 		set_slowdown()
-		force = 5
+		set_force(5)
 		if(icon_base) icon_state = "[icon_base]1"
 		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
@@ -110,7 +111,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()
-	. += "Its mag-pulse traction system appears to be [item_flags & NOSLIP ? "enabled" : "disabled"]."
+	. += "Its mag-pulse traction system appears to be [worn_of(src).flags & NOSLIP ? "enabled" : "disabled"]."
 
 /obj/item/clothing/shoes/magboots/vox
 
@@ -138,7 +139,7 @@ CAPABILITIES(/obj/item/clothing/shoes/magboots)
 	if(magpulse)
 		act_message(user, src, MSG_SELF("%T% go limp as they are removed from your feet."), \
 			MSG_OTHERS("%T% go limp as they are removed from %U%'s feet."))
-		item_flags &= ~NOSLIP
+		set_item_flags(worn_of(src).flags & (~NOSLIP))
 		magpulse = FALSE
 		set_canremove(TRUE)
 

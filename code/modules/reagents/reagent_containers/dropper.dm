@@ -10,13 +10,13 @@
 	max_transfer_amount = 5
 	min_transfer_amount = 1
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	volume = 5
 
 // A dropper is a sealed container of its volume that draws from open containers and tanks while it is empty and squirts what it holds into open
 // containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it
 // moves is set from 1 to its largest. What it holds is told to two tiles.
 CAPABILITIES(/obj/item/reagent_containers/dropper)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLASS, pickup = SFX_ITEMS_PICKUP_GLASS))
 	reagent_container(
 		volume = nameof(volume),
@@ -50,10 +50,10 @@ MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!
 
 		var/obj/item/safe_thing = null
 		if(victim.get_equipped_item(SLOT_ID_MASK))
-			if (victim.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
+			if (worn_of(victim.get_equipped_item(SLOT_ID_MASK)).covers & EYES)
 				safe_thing = victim.get_equipped_item(SLOT_ID_MASK)
 		if(victim.get_equipped_item(SLOT_ID_HEAD))
-			if (victim.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
+			if (worn_of(victim.get_equipped_item(SLOT_ID_HEAD)).covers & EYES)
 				safe_thing = victim.get_equipped_item(SLOT_ID_HEAD)
 		if(victim.get_equipped_item(SLOT_ID_EYES))
 			if (!safe_thing)

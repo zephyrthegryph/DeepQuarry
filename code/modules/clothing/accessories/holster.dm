@@ -185,10 +185,13 @@ CAPABILITIES(/obj/item/clothing/accessory/holster)
 	name = "rapier sheath"
 	desc = "A beautiful red sheath, probably for a beautiful blade."
 	icon_state = "sheath"
-	slot_flags = SLOT_BELT|ACCESSORY_SLOT_WEAPON
 	var/has_full_icon = 1
 	overlay_state = "sheath"
 
+CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
+	acceptance("hold", req_acceptance_type(list(/obj/item/melee/rapier), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(slots = SLOT_BELT|ACCESSORY_SLOT_WEAPON))
 
 
 /obj/item/clothing/accessory/holster/machete/rapier/swords
@@ -258,9 +261,6 @@ CAPABILITIES(/obj/item/clothing/accessory/holster/waist/kinetic_accelerator)
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/waist/lanyard)
 	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/baton,  /obj/item/melee/classic_baton,  /obj/item/melee/telebaton  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier)
-	acceptance("hold", req_acceptance_type(list(/obj/item/melee/rapier), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete/rapier/swords)
 	acceptance("hold", req_acceptance_type(list(  /obj/item/melee/rapier,  /obj/item/material/sword/katana,  /obj/item/toy/cultsword,  /obj/item/material/sword,  /obj/item/melee/cursedblade,  /obj/item/melee/cultblade  ), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

@@ -680,7 +680,7 @@
 	dq_give_zone_sel(attacker)
 	var/mob/living/carbon/human/victim = h_mortal()
 	var/obj/item/weapon = allocate(/obj/item, run_loc_floor_bottom_left)
-	weapon.force = 8
+	weapon.set_force(8)
 	weapon.set_w_class(ITEMSIZE_HUGE)
 	attacker.put_in_active_hand(weapon)
 	attacker.set_combat_mode(TRUE)

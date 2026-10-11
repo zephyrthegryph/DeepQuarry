@@ -1231,10 +1231,10 @@ init_lines	code/game/objects/items.dm	tool_qualities = intern_list(tool_qualitie
 init_lines	code/game/objects/items.dm	for(var/path in actions_types)
 init_lines	code/game/objects/items.dm	add_item_action(path)
 init_lines	code/game/objects/items.dm	if(embed_chance < 0)
-init_lines	code/game/objects/items.dm	if(sharp)
-init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/w_class))
+init_lines	code/game/objects/items.dm	if(combat_of(src).sharp)
+init_lines	code/game/objects/items.dm	embed_chance = max(5, round(combat_of(src).force/w_class))
 init_lines	code/game/objects/items.dm	else
-init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/(w_class*3)))
+init_lines	code/game/objects/items.dm	embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
 init_lines	code/game/objects/items/contraband.dm	get_appearance()
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	SSradio.add_object(src, 1435)
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["shuttle_doors"] = find_blast_doors()
@@ -1913,7 +1913,7 @@ init_lines	code/modules/body/organs/internal/augment/armmounted.dm	if(!length(to
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	integrated_tool_images = list()
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/I as anything in tools)
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.canremove = FALSE
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.toolspeed = toolspeed
+init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.set_toolspeed(tooling_of(src).speed)
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	rel_set(I, nameof(I.my_augment), src)
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.name = "integrated [I.name]"
 init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/Tool as anything in tools)
@@ -2316,7 +2316,7 @@ init_lines	code/modules/clothing/head/pilot_helmet.dm	I.alpha = 0
 init_lines	code/modules/clothing/head/pilot_helmet.dm	images["horizon"] = I
 init_lines	code/modules/clothing/head/pilot_helmet.dm	raw_images += I
 init_lines	code/modules/clothing/masks/gasmask.dm	if(type == /obj/item/clothing/mask/gas)
-init_lines	code/modules/clothing/masks/gasmask.dm	flags_inv &= ~HIDEFACE
+init_lines	code/modules/clothing/masks/gasmask.dm	set_flags_inv(worn_of(src).hides & (~HIDEFACE))
 init_lines	code/modules/clothing/masks/miscellaneous.dm	papermask_designs = list(
 init_lines	code/modules/clothing/masks/miscellaneous.dm	"Blank" = image(icon = src.icon, icon_state = "papermask"),
 init_lines	code/modules/clothing/masks/miscellaneous.dm	"Neutral" = image(icon = src.icon, icon_state = "neutralmask"),
@@ -2871,7 +2871,7 @@ init_lines	code/modules/hydroponics/grown.dm	update_desc()
 init_lines	code/modules/hydroponics/grown.dm	if(reagents.total_volume > 0)
 init_lines	code/modules/hydroponics/grown.dm	bitesize = 1+round(reagents.total_volume / 2, 1)
 init_lines	code/modules/hydroponics/grown.dm	if(seed().get_trait(TRAIT_STINGS))
-init_lines	code/modules/hydroponics/grown.dm	force = 1
+init_lines	code/modules/hydroponics/grown.dm	set_force(1)
 init_lines	code/modules/hydroponics/grown.dm	var/datum/seed/S = slice_seed
 init_lines	code/modules/hydroponics/grown.dm	if(!istype(S))
 init_lines	code/modules/hydroponics/grown.dm	return INITIALIZE_HINT_QDEL
@@ -4015,7 +4015,7 @@ init_lines	code/modules/pda/pda.dm	slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 init_lines	code/modules/pda/pda.dm	)
 init_lines	code/modules/pda/pda.dm	desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-init_lines	code/modules/pda/pda.dm	slot_flags = SLOT_ID | SLOT_BELT | SLOT_GLOVES
+init_lines	code/modules/pda/pda.dm	set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
 init_lines	code/modules/pda/pda.dm	sprite_sheets = list(
 init_lines	code/modules/pda/pda.dm	SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
@@ -4238,10 +4238,10 @@ init_lines	code/modules/power/cable.dm	color = pick(COLOR_RED, COLOR_BLUE, COLOR
 init_lines	code/modules/power/cable.dm	stacktype = /obj/item/stack/cable_coil
 init_lines	code/modules/power/cable.dm	color = pick(COLOR_RED, COLOR_YELLOW, COLOR_ORANGE)
 init_lines	code/modules/power/cable.dm	if(embed_chance == -1) //From /obj/item, don't want to do what the normal cable_coil does
-init_lines	code/modules/power/cable.dm	if(sharp)
-init_lines	code/modules/power/cable.dm	embed_chance = force/w_class
+init_lines	code/modules/power/cable.dm	if(combat_of(src).sharp)
+init_lines	code/modules/power/cable.dm	embed_chance = combat_of(src).force/w_class
 init_lines	code/modules/power/cable.dm	else
-init_lines	code/modules/power/cable.dm	embed_chance = force/(w_class*3)
+init_lines	code/modules/power/cable.dm	embed_chance = combat_of(src).force/(w_class*3)
 init_lines	code/modules/power/cell.dm	apply_blueprint_effects()
 init_lines	code/modules/power/cell.dm	enable_material_service()
 init_lines	code/modules/power/cell.dm	c_uid = cell_uid++
@@ -5339,7 +5339,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.desc = "
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_CLAYMORE)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/material/sword(src.loc)
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.force = 10
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_force(10)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = pick("great-sword","claymore","longsword","broadsword","shortsword","gladius")
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(prob(30))
@@ -5382,7 +5382,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_material_de
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_KATANA)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	apply_prefix = FALSE
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item = new /obj/item/material/sword/katana(src.loc)
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.force = 10
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.set_force(10)
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	new_item.name = "katana"
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	item_type = new_item.name
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(ARCHAEO_LASER)
@@ -5657,7 +5657,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/mate
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_unwielded *= 0.7
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_wielded *= 0.5
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	else
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.force *= 0.3
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.set_force(combat_of(MW).force * (0.3))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(istype(secondary_item, /obj/item/material))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/possible_object_paths = list()
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	possible_object_paths += subtypesof(/datum/material)
@@ -5677,7 +5677,7 @@ init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/obj/item/mate
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_unwielded *= 0.7
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	TH.force_wielded *= 0.5
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	else
-init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.force *= 0.3
+init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	MW.set_force(combat_of(MW).force * (0.3))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	if(istype(new_item, /obj/item/clothing/accessory/ring/material))
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	var/possible_object_paths = list()
 init_lines	code/modules/xenoarcheaology/finds/find_spawning.dm	possible_object_paths += subtypesof(/datum/material)

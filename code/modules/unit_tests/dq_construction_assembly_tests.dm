@@ -14,7 +14,7 @@
 /// A zero-speed tool of `path` on `T`.
 /datum/unit_test/proc/dq_asm_tool(path, turf/T)
 	var/obj/item/tool = allocate(path, T)
-	tool.toolspeed = 0
+	tool.set_toolspeed(0)
 	return tool
 
 /// A lit welder with plenty of fuel.

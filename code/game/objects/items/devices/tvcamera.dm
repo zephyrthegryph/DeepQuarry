@@ -5,7 +5,6 @@
 	icon_state = "camcorder"
 	item_state = "camcorder"
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BELT
 	var/channel = "NCS Northern Star News Feed"
 	var/obj/machinery/camera/network/thunder/camera
 	var/obj/item/radio/radio
@@ -17,6 +16,7 @@ TRACKED(/obj/item/tvcamera, streaming)
 /// Relation view: the atom being broadcast; the feed follows it while set.
 /obj/item/tvcamera/var/atom/showing
 CAPABILITIES(/obj/item/tvcamera)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(showing))
 	every(2 SECONDS, then(PROC_REF(tvcamera_step)), when = nameof(showing))
@@ -121,7 +121,6 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	icon_state = "eshield"
 	item_state = "eshield"
 	w_class = ITEMSIZE_COST_TINY
-	slot_flags = ACCESSORY_SLOT_DECOR
 	appearance_flags = RESET_COLOR
 	icon = 'icons/obj/weapons.dmi'
 	var/channel = "Default Bodycamera Feed"
@@ -134,6 +133,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 /obj/item/clothing/accessory/bodycam/var/atom/showing
 
 CAPABILITIES(/obj/item/clothing/accessory/bodycam)
+	configure(item_worn(slots = ACCESSORY_SLOT_DECOR))
 	every(2 SECONDS, then(PROC_REF(bodycam_step)), when = nameof(showing))
 	owns_one(nameof(bcamera), starts = /obj/machinery/camera/network/bodycamera, starts_set = list("c_tag" = holder_var(nameof(channel)), "status" = FALSE))
 	owns_one(nameof(bradio), starts = /obj/item/radio, starts_set = list("listening" = FALSE, "frequency" = BDCM_FREQ, "icon" = holder_var(nameof(icon)), "icon_state" = holder_var(nameof(icon_state))))

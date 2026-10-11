@@ -918,39 +918,39 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		if(!H.can_feel_pain())
 			return
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
+			if(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & EYES)
 				eyes_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
-			if((H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_HEAD).item_flags & FLEXIBLEMATERIAL))
+			if((worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE) && !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_HEAD)
 		if(H.get_equipped_item(SLOT_ID_MASK))
-			if(!eyes_covered && H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
+			if(!eyes_covered && worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & EYES)
 				eyes_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
-			if(!mouth_covered && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE) && !(H.get_equipped_item(SLOT_ID_MASK).item_flags & FLEXIBLEMATERIAL))
+			if(!mouth_covered && (worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & FACE) && !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).flags & FLEXIBLEMATERIAL))
 				mouth_covered = 1
 				safe_thing = H.get_equipped_item(SLOT_ID_MASK)
-		if(H.get_equipped_item(SLOT_ID_EYES) && H.get_equipped_item(SLOT_ID_EYES).body_parts_covered & EYES)
+		if(H.get_equipped_item(SLOT_ID_EYES) && worn_of(H.get_equipped_item(SLOT_ID_EYES)).covers & EYES)
 			if(!eyes_covered)
 				eyes_covered = 1
 				if(!safe_thing)
 					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(skin_burns)
 			for(var/obj/item/clothing/C in H.get_worn_clothing())
-				if(C.body_parts_covered & HEAD)
+				if(worn_of(C).covers & HEAD)
 					head_covered = 1
-				if(C.body_parts_covered & UPPER_TORSO)
+				if(worn_of(C).covers & UPPER_TORSO)
 					chest_covered = 1
-				if(C.body_parts_covered & LOWER_TORSO)
+				if(worn_of(C).covers & LOWER_TORSO)
 					groin_covered = 1
-				if(C.body_parts_covered & LEGS)
+				if(worn_of(C).covers & LEGS)
 					legs_covered = 1
-				if(C.body_parts_covered & ARMS)
+				if(worn_of(C).covers & ARMS)
 					arms_covered = 1
-				if(C.body_parts_covered & HANDS)
+				if(worn_of(C).covers & HANDS)
 					hands_covered = 1
-				if(C.body_parts_covered & FEET)
+				if(worn_of(C).covers & FEET)
 					feet_covered = 1
 				if(head_covered && chest_covered && groin_covered && legs_covered && arms_covered && hands_covered && feet_covered)
 					break

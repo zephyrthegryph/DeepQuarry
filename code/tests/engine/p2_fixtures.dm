@@ -168,8 +168,10 @@ CAPABILITIES(/obj/p2_bundled/stripped)
 /// An item that does no harm and does its work in afterattack (a spray, a syringe), counting how often it did.
 /obj/item/p2_afterattacker
 	name = "p2 afterattacker"
-	force = 0
 	var/reached = 0
+
+CAPABILITIES(/obj/item/p2_afterattacker)
+	configure(item_combat(force = 0))
 
 /obj/item/p2_afterattacker/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	reached++

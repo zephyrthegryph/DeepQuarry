@@ -5,7 +5,6 @@
 	icon = 'icons/obj/gps.dmi'
 	icon_state = "gps-gen"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_BELT
 	MATERIAL_BULK(MAT_STEEL, 500)
 
 	var/gps_tag = "GEN0"
@@ -87,6 +86,7 @@ STAT(/obj/item/gps, operable, ALL, virtual = TRUE)
 	return "global positioning system ([gps_tag])"
 
 CAPABILITIES(/obj/item/gps)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	ref_one(nameof(holder))
 	// The compass refreshes while a carried GPS is tracking.

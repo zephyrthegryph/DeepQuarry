@@ -132,7 +132,9 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	item_state = "cat"
 	named = TRUE
 	holder_type = /obj/item/holder/cat/runtime
-	makes_dirt = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/runtime)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/kitten
 	name = "kitten"
@@ -170,8 +172,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	icon_living = "bscat"
 	icon_rest = null
 	icon_dead = null
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/bluespace
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/bluespace)
+	configure(mob_movement(makes_dirt = 0))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/passive/cat/bluespace/replace_death(gibbed)
@@ -187,8 +191,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	icon_living = "breadcat"
 	icon_rest = "breadcat_rest"
 	icon_dead = "breadcat_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/breadcat
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/bread)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/original
 	name = "original cat"
@@ -198,8 +204,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	icon_living = "original"
 	icon_rest = "original_rest"
 	icon_dead = "original_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/original
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/original)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/cak
 	name = "cak"
@@ -209,8 +217,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	icon_living = "cak"
 	icon_rest = "cak_rest"
 	icon_dead = "cak_dead"
-	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/cak
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/cak)
+	configure(mob_movement(makes_dirt = 0))
 
 /mob/living/simple_mob/animal/passive/cat/space
 	name = "space cat"
@@ -221,7 +231,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	icon_rest = "spacecat_rest"
 	icon_dead = "spacecat_dead"
 	holder_type = /obj/item/holder/cat/spacecat
-	makes_dirt = 0
 
 	minbodytemp = 0				// Minimum "okay" temperature in kelvin
 	maxbodytemp = 900			// Maximum of above
@@ -237,6 +246,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/kitten)
 	min_n2 = 0					// N2 min
 	max_n2 = 0					// N2 max
 	unsuitable_atoms_damage = 2	// This damage is taken when atmos doesn't fit all the requirements above
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/space)
+	configure(mob_movement(makes_dirt = 0))
 
 /datum/say_list/cat
 	speak = list("Meow!","Esp!","Purr!","HSSSSS")
@@ -344,6 +356,9 @@ CAPABILITIES(/obj/item/cat_box)
 	meat_amount = 0
 	endurance = 50
 
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
+	configure(mob_kind(death_message = "teleports away!"))
+
 /mob/living/simple_mob/animal/passive/cat/tabiranth/life_special_due()
 	return TRUE
 
@@ -369,7 +384,6 @@ CAPABILITIES(/obj/item/cat_box)
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth
-	death_message = "teleports away!"
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/on_death(gibbed)
 	. = ..()

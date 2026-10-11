@@ -1,7 +1,6 @@
 /obj/item/clothing/gloves/arm_guard
 	name = DEVELOPER_WARNING_NAME // "arm guards"
 	desc = "These arm guards will protect your hands and arms."
-	body_parts_covered = HANDS|ARMS
 	overgloves = 1
 	punch_force = 3
 	w_class = ITEMSIZE_NORMAL
@@ -9,6 +8,7 @@
 
 CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
 	acceptance("equip", req_acceptance_arm_clearance(), mode = ACCEPTANCE_APPEND)
+	configure(item_worn(covers = HANDS|ARMS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALSHIELD, pickup = SFX_ITEMS_PICKUP_AXE))
 
 
@@ -17,10 +17,10 @@ CAPABILITIES(/obj/item/clothing/gloves/arm_guard)
 	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
 		return null
-	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & ARMS)
+	if(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & ARMS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
 	for(var/obj/item/clothing/accessory/W in H.get_equipped_item(SLOT_ID_SUIT))
-		if(W.body_parts_covered & ARMS)
+		if(worn_of(W).covers & ARMS)
 			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [W] is in the way"
 	return null
 

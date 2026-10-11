@@ -34,8 +34,6 @@
 	maxcharge = 2400
 	charge_amount = 20
 	standard_overlays = FALSE
-	force = 3
-	throwforce = 5
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -46,9 +44,6 @@
 	var/active_throwforce = 20
 	var/active_w_class = ITEMSIZE_LARGE
 	var/active_embed_chance = 0		//In the off chance one of these is supposed to embed, you can just tweak this var
-	sharp = FALSE
-	edge = FALSE
-	armor_penetration = 0
 	flags = NOBLOODY
 	var/lrange = 2
 	var/lpower = 2
@@ -62,15 +57,15 @@
 	item_state = "gsaber"
 	active = 1
 	embed_chance = active_embed_chance
-	force = active_force
-	armor_penetration = active_armourpen
-	throwforce = active_throwforce
-	sharp = TRUE
-	edge = TRUE
+	set_force(active_force)
+	set_armor_penetration(active_armourpen)
+	set_throwforce(active_throwforce)
+	set_sharp(TRUE)
+	set_edge(TRUE)
 	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
 	set_light(lrange, lpower, lcolor)
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
+	set_attack_verb(list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"))
 
 
 
@@ -82,17 +77,19 @@
 	item_state = "gsaberoff"
 	active = 0
 	embed_chance = initial(embed_chance)
-	force = initial(force)
-	armor_penetration = initial(armor_penetration)
-	throwforce = initial(throwforce)
-	sharp = initial(sharp)
-	edge = initial(edge)
+	set_force(combat_of_type(type).force)
+	set_armor_penetration(combat_of_type(type).armor_penetration)
+	set_throwforce(thrown_of_type(type).force)
+	set_sharp(combat_of_type(type).sharp)
+	set_edge(combat_of_type(type).edge)
 	set_w_class(initial(w_class))
 	set_light(0,0)
-	attack_verb = null
+	set_attack_verb(null)
 
 
 CAPABILITIES(/obj/item/cell/device/weapon/gunsword)
+	configure(item_thrown(force = 5))
+	configure(item_combat(force = 3, sharp = FALSE, edge = FALSE, armor_penetration = 0))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

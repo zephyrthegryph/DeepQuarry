@@ -1,7 +1,6 @@
 /obj/item/clothing/shoes/leg_guard
 	name = DEVELOPER_WARNING_NAME // "leg guards"
 	desc = "These will protect your legs and feet."
-	body_parts_covered = LEGS|FEET
 	slowdown = SHOES_SLOWDOWN+0.5
 	w_class = ITEMSIZE_NORMAL
 	step_volume_mod = 1.3
@@ -11,6 +10,7 @@
 CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 	acceptance("equip", req_acceptance_leg_clearance(), mode = ACCEPTANCE_APPEND)
+	configure(item_worn(covers = LEGS|FEET))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BOOTS, pickup = SFX_ITEMS_PICKUP_BOOTS))
 
 
@@ -21,10 +21,10 @@ CAPABILITIES(/obj/item/clothing/shoes/leg_guard)
 	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H) || !H.get_equipped_item(SLOT_ID_SUIT))
 		return null
-	if(H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & LEGS)
+	if(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).covers & LEGS)
 		return "\the [H.get_equipped_item(SLOT_ID_SUIT)] is in the way"
 	for(var/obj/item/clothing/accessory/W in H.get_equipped_item(SLOT_ID_SUIT))
-		if(W.body_parts_covered & LEGS)
+		if(worn_of(W).covers & LEGS)
 			return "\the [H.get_equipped_item(SLOT_ID_SUIT)]'s [W] is in the way"
 	return null
 

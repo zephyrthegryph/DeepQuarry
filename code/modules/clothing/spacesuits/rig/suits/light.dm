@@ -7,7 +7,6 @@
 	armor_spec = "melee=50;bullet=15;laser=50;energy=10;bomb=25"
 	emp_protection = 10
 	slowdown = 0
-	item_flags = THICKMATERIAL
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 
@@ -18,6 +17,10 @@
 	rigsuit_max_pressure = 5 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
 	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
+CAPABILITIES(/obj/item/rig/light)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(flags = THICKMATERIAL))
 
 
 /obj/item/clothing/suit/space/rig/light
@@ -62,9 +65,9 @@
 //The cybersuit is not space-proof. It does however, have good siemens_coefficient values
 /obj/item/clothing/head/helmet/space/rig/light/hacker
 	name = "headgear"
-	flags_inv = HIDEEARS
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig/light/hacker)
+	configure(item_worn(hides = HIDEEARS))
 	configure(item_protection(siemens = 0.4))
 
 /obj/item/clothing/suit/space/rig/light/hacker
@@ -141,9 +144,6 @@ CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/light/ninja)
 		/obj/item/rig_module/stealth_field,
 		/obj/item/rig_module/vision
 		)
-
-CAPABILITIES(/obj/item/rig/light)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_EXPLO, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/rig/light/ninja)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_SECURITY, POCKET_BAYSUIT), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

@@ -3,8 +3,6 @@
 	name = "breath mask"
 	icon_state = "breath"
 	item_state_slots = list(slot_r_hand_str = "breath", slot_l_hand_str = "breath")
-	item_flags = AIRTIGHT|FLEXIBLEMATERIAL
-	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 	var/hanging = 0
 	actions_types = list(/datum/action/item_action/adjust_breath_mask)
@@ -17,19 +15,20 @@
 		src.hanging = !src.hanging
 		if (src.hanging)
 			set_gas_transfer_coefficient(1)
-			set_body_parts_covered(body_parts_covered & ~FACE)
-			item_flags = item_flags & ~AIRTIGHT
+			set_body_parts_covered(worn_of(src).covers & ~FACE)
+			set_item_flags(worn_of(src).flags & ~AIRTIGHT)
 			icon_state = "breathdown"
 			to_chat(user, "Your mask is now hanging on your neck.")
 		else
 			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
-			set_body_parts_covered(initial(body_parts_covered))
-			item_flags = initial(item_flags)
+			set_body_parts_covered(worn_of_type(type).covers)
+			set_item_flags(worn_of_type(type).flags)
 			icon_state = initial(icon_state)
 			to_chat(user, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/mask/breath)
+	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))
 	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))
 	op("breath_mask_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(breath_mask_adjust_self)))
@@ -84,11 +83,10 @@ CAPABILITIES(/obj/item/clothing/mask/breath/anesthetic)
 	icon_state = "altevian-mask"
 	sprite_sheets = null
 	item_state_slots = list(slot_r_hand_str = "breath", slot_l_hand_str = "breath")
-	item_flags = AIRTIGHT|FLEXIBLEMATERIAL
-	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/clothing/mask/altevian_breath)
 	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = AIRTIGHT|FLEXIBLEMATERIAL, covers = FACE))
 	configure(item_protection(gas_transfer = 0.10, permeability = 0.50))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_COMPONENT, drop = SFX_ITEMS_DROP_COMPONENT))

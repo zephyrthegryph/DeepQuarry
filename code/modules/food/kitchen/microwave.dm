@@ -287,7 +287,7 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 /// How long securing or unsecuring takes: two seconds, shorter with a faster crowbar.
 /obj/machinery/microwave/proc/secure_time(datum/act/op/A)
 	var/obj/item/tool = A.held
-	return (2 SECONDS) / tool.toolspeed
+	return (2 SECONDS) / tooling_of(tool).speed
 
 /obj/machinery/microwave/proc/secure_begins(datum/act/op/A)
 	return msg_text(span_notice("You attempt to [anchored ? "unsecure" : "secure"] %T%."), span_notice("%U% begins [anchored ? "unsecuring" : "securing"] %T%."))

@@ -5,7 +5,6 @@
 	icon_state = "flashbang"
 	det_time = 20
 	item_state = "flashbang"
-	slot_flags = SLOT_BELT
 	hud_state = "grenade_smoke"
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
 	var/smoke_color
@@ -16,6 +15,7 @@
 	smoke.attach(src)
 
 CAPABILITIES(/obj/item/grenade/smokebomb)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)
 	op("smoke_color", tool(TOOL_MULTITOOL), wait(0), label("Set smoke colour"),
 		asks(/datum/prompt/color, fields = list("title" = "Smoke Color", "question" = "Choose a color for the smoke:", "default" = "smoke_color", "timeout" = 0)),

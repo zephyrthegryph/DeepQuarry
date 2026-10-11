@@ -12,7 +12,6 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	var/uses = 1
 	var/nofail
 
@@ -26,6 +25,7 @@
 MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
 
 CAPABILITIES(/obj/item/dnainjector)
+	configure(item_worn(slots = SLOT_EARS))
 	rolls(nameof(rolled_gene), PROC_REF(roll_gene))
 	setup(PROC_REF(load_gene))
 	owns_one(nameof(buf), /datum/dna2/record)

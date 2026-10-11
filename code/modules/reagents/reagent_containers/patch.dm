@@ -14,7 +14,6 @@
 
 	max_transfer_amount = null
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	volume = 60
 
 	var/pierce_material = FALSE	// If true, the patch can be used through thick material.
@@ -22,4 +21,5 @@
 // A patch is a pill that goes on the skin: on the limb aimed at, at once on yourself and in three seconds on somebody else. A missing or robotic limb refuses
 // it, and so does thick material (unless it pierces).
 CAPABILITIES(/obj/item/reagent_containers/pill/patch)
+	configure(item_worn(slots = SLOT_EARS))
 	configure(dose(route = CHEM_TOUCH, pierces = nameof(pierce_material)))

@@ -37,19 +37,19 @@
 	for(var/obj/item/clothing/C in contents_of(src))
 		if(item_is_in_hands(C))
 			continue
-		if(C.body_parts_covered & HEAD)
+		if(worn_of(C).covers & HEAD)
 			coverage += list(organs_by_name[BP_HEAD])
-		if(C.body_parts_covered & UPPER_TORSO)
+		if(worn_of(C).covers & UPPER_TORSO)
 			coverage += list(organs_by_name[BP_TORSO])
-		if(C.body_parts_covered & LOWER_TORSO)
+		if(worn_of(C).covers & LOWER_TORSO)
 			coverage += list(organs_by_name[BP_GROIN])
-		if(C.body_parts_covered & LEGS)
+		if(worn_of(C).covers & LEGS)
 			coverage += list(organs_by_name[BP_L_LEG], organs_by_name[BP_R_LEG])
-		if(C.body_parts_covered & ARMS)
+		if(worn_of(C).covers & ARMS)
 			coverage += list(organs_by_name[BP_R_ARM], organs_by_name[BP_L_ARM])
-		if(C.body_parts_covered & FEET)
+		if(worn_of(C).covers & FEET)
 			coverage += list(organs_by_name[BP_L_FOOT], organs_by_name[BP_R_FOOT])
-		if(C.body_parts_covered & HANDS)
+		if(worn_of(C).covers & HANDS)
 			coverage += list(organs_by_name[BP_L_HAND], organs_by_name[BP_R_HAND])
 	return coverage
 
@@ -118,13 +118,13 @@
 	var/obj/item/organ/external/H = organs_by_name[BP_HEAD]
 
 	//Look at their head
-	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEFACE)))
+	if(!get_equipped_item(SLOT_ID_HEAD) || !(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & HIDEFACE)))
 		if(H && H.robotic == ORGAN_ROBOT) //Exactly robotic, not higher as lifelike is higher
 			return 1
 
 	//Look at their torso
-	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEJUMPSUIT)))
-		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(get_equipped_item(SLOT_ID_UNIFORM).body_parts_covered & UPPER_TORSO)))
+	if(!get_equipped_item(SLOT_ID_SUIT) || (get_equipped_item(SLOT_ID_SUIT) && !(worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDEJUMPSUIT)))
+		if(!get_equipped_item(SLOT_ID_UNIFORM) || (get_equipped_item(SLOT_ID_UNIFORM) && !(worn_of(get_equipped_item(SLOT_ID_UNIFORM)).covers & UPPER_TORSO)))
 			if(T && T.robotic == ORGAN_ROBOT)
 				return 1
 

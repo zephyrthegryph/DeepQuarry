@@ -12,15 +12,15 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	icon = 'icons/obj/module.dmi'
 	icon_state = "std_mod"
 	desc = "An AI Module for transmitting encrypted instructions to the AI."
-	force = 5.0
 	w_class = ITEMSIZE_SMALL
-	throwforce = 5.0
 	throw_speed = 3
 	throw_range = 15
 	preserve_item = 1
 	var/datum/ai_laws/laws = null
 
 CAPABILITIES(/obj/item/aiModule)
+	configure(item_thrown(force = 5.0))
+	configure(item_combat(force = 5.0))
 	owns_one(nameof(laws), /datum/ai_laws)
 	// A cyborg takes the board ten seconds after it is slid in; the board has to stay in hand.
 	op("install_in_robot", ai(), takes("robot"), wait(10 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), on_interrupt(PROC_REF(install_timed_failed)), then(PROC_REF(install_timed_done)))

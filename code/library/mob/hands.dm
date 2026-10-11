@@ -6,6 +6,8 @@
 
 CAPABILITIES(/mob/living/carbon/human)
 	wrapped_species_form()
+	configure(mob_kind(can_be_antagged = TRUE, inventory_panel = /datum/inventory_panel/human))
+	configure(mob_movement(bump = HUMAN, push = ~HEAVY, swap = ~HEAVY))
 	cooldowns(push_lying_cooldown, disarm_cooldown, breath_sound_cooldown, chew_cooldown, xylophone)
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	op("vr_transform", menu(), when(PROC_REF(vr_transform_granted)), label("Transform Into Creature"), needs(req_self(), req_capable()), asks(/datum/prompt/choice, fields = list("title" = "Mob list", "question" = "Please select a creature:", "choices" = computed(PROC_REF(vr_creature_options)), "ask_flags" = ASK_CONSCIOUS, "timeout" = 0), step = "creature"), then(PROC_REF(vr_creature_chosen)))
@@ -101,6 +103,8 @@ CAPABILITIES(/mob/living/carbon/human)
 	op("joint_dislocate", ai(), begins(PROC_REF(joint_dislocate_text)), wait(10 SECONDS), then(PROC_REF(grab_joint_human_done)))
 
 CAPABILITIES(/mob/living/silicon/robot)
+	configure(mob_kind(death_message = "shudders violently for a moment, then becomes motionless, its eyes slowly darkening.", can_be_antagged = TRUE))
+	configure(mob_movement(bump = ROBOT, swap = ~HEAVY, push = ~HEAVY))
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
 	ref_one(nameof(cell))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)

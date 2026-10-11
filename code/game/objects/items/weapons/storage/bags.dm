@@ -30,9 +30,9 @@
 	allow_quick_empty = 1
 	display_contents_with_number = 0 // UNStABLE AS FuCK, turn on when it stops crashing clients
 	use_to_pickup = TRUE
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/storage/bag)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_BACKPACK, pickup = SFX_ITEMS_PICKUP_BACKPACK))
 
 // -----------------------------

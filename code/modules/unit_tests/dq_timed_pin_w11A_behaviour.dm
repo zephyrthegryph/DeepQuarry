@@ -41,7 +41,7 @@
 	user = person()
 	var/obj/item/shovel/dig = hold(/obj/item/shovel)
 	dig.grave_mode = TRUE
-	dig.toolspeed = 1
+	dig.set_toolspeed(1)
 	target = get_step(user, NORTH)
 	held = dig
 

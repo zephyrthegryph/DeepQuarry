@@ -51,7 +51,6 @@
 		)
 	item_state = "kineticgun"
 	cell_type = /obj/item/cell/device/weapon/empproof
-	item_flags = NONE
 	charge_meter = FALSE
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
@@ -102,6 +101,7 @@
 		M.uninstall(src, FALSE)
 
 CAPABILITIES(/obj/item/gun/energy/kinetic_accelerator)
+	configure(item_worn(flags = NONE))
 	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/crowbar_used(datum/act/op/A)
@@ -597,7 +597,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 			var/kill_modifier = 1
 			if(K.pressure_decrease_active)
 				kill_modifier *= K.pressure_decrease
-			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, K.armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
+			L.receive_split(damage_packet(K, K.firer, null, K.def_zone, DAMAGE_PACKET_PROJECTILE, combat_of(K).armor_penetration), K.injury_kind, K.injury_kinds, bounties_reaped[L.type] * kill_modifier)
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/L)
 	var/bonus_mod = 1
 	if(ismegafauna(L)) //megafauna reward

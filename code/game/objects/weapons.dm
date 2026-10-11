@@ -9,6 +9,8 @@
 			)
 
 CAPABILITIES(/obj/item/melee)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_METALWEAPON))
 
 // Attacks mobs (atm only simple ones due to friendly fire issues) that are adjacent to the target and user.
@@ -45,7 +47,7 @@ CAPABILITIES(/obj/item/melee)
 
 // This cannot go into afterattack since some mobs delete themselves upon dying.
 /obj/item/material/pre_attack(mob/living/target, mob/living/user)
-	if(can_cleave && istype(target))
+	if(combat_of(src).can_cleave && istype(target))
 		cleave(user, target)
 	..()
 

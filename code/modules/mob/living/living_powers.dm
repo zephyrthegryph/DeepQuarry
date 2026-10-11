@@ -26,10 +26,10 @@
 	set desc = "Toggles the 'safeties' on self-surgery, allowing you to do so."
 	set category = VERB_CAT_OBJECT
 
-	allow_self_surgery = !allow_self_surgery
+	set_allow_self_surgery(!kind_of(src).self_surgery)
 
-	to_chat(src, span_notice("You will [allow_self_surgery ? "now" : "no longer"] attempt to operate upon yourself."))
-	log_admin("DEBUG \[[world.timeofday]\]: [src.ckey ? "[src.name]:([src.ckey])" : "[src.name]"] has [allow_self_surgery ? "Enabled" : "Disabled"] self surgery.")
+	to_chat(src, span_notice("You will [kind_of(src).self_surgery ? "now" : "no longer"] attempt to operate upon yourself."))
+	log_admin("DEBUG \[[world.timeofday]\]: [src.ckey ? "[src.name]:([src.ckey])" : "[src.name]"] has [kind_of(src).self_surgery ? "Enabled" : "Disabled"] self surgery.")
 
 /mob/living/proc/toggle_patting_defence()
 	set name = "Toggle Reflexive Biting"

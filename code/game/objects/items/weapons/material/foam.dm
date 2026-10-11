@@ -1,22 +1,25 @@
 TYPE_TABLE(/obj/item/material/twohanded/baseballbat/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/sword/foam
-	attack_verb = list("bonked","whacked")
 	force_divisor = 1
 	unbreakable = 1
 	injury_kind = INJURY_PAIN
 
+CAPABILITIES(/obj/item/material/sword/foam)
+	configure(item_combat(attack_verbs = list("bonked","whacked")))
+
 /obj/item/material/twohanded/baseballbat/foam
-	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
 	unbreakable = 1
 	injury_kind = INJURY_PAIN
 
+CAPABILITIES(/obj/item/material/twohanded/baseballbat/foam)
+	configure(item_combat(attack_verbs = list("bonked","whacked")))
+
 TYPE_TABLE(/obj/item/material/sword/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/twohanded/spear/foam
-	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
 	injury_kind = INJURY_PAIN
@@ -25,10 +28,12 @@ TYPE_TABLE(/obj/item/material/sword/foam, weapon_forced_material, MAT_FOAM)
 	icon_state = "spear_mask0"
 	unbreakable = 1
 
+CAPABILITIES(/obj/item/material/twohanded/spear/foam)
+	configure(item_combat(attack_verbs = list("bonked","whacked")))
+
 TYPE_TABLE(/obj/item/material/twohanded/spear/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/twohanded/fireaxe/foam
-	attack_verb = list("bonked","whacked")
 	force_wielded = 1
 	force_divisor = 1
 	injury_kind = INJURY_PAIN
@@ -36,6 +41,9 @@ TYPE_TABLE(/obj/item/material/twohanded/spear/foam, weapon_forced_material, MAT_
 	base_icon = "fireaxe_mask"
 	icon_state = "fireaxe_mask0"
 	unbreakable = 1
+
+CAPABILITIES(/obj/item/material/twohanded/fireaxe/foam)
+	configure(item_combat(attack_verbs = list("bonked","whacked")))
 
 TYPE_TABLE(/obj/item/material/twohanded/fireaxe/foam, weapon_forced_material, MAT_FOAM)
 

@@ -36,7 +36,6 @@
 
 	melee_damage_lower = 2
 	melee_damage_upper = 10
-	base_attack_cooldown = 1 SECOND
 	attacktext = list("nipped", "bit", "cut", "clawed")
 
 	organ_names = /datum/decl/mob_organ_names/bird
@@ -47,6 +46,9 @@
 	)
 
 	say_list_type = /datum/say_list/duck
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/duck)
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/duck
 	speak = list("Wack!", "Wock?", "Wack.")

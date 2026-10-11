@@ -37,7 +37,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 15
-	base_attack_cooldown = 1 SECOND
 	attacktext = list("nipped", "bit", "cut", "clawed")
 	meat_amount = 3
 
@@ -118,6 +117,7 @@
 	emote_hear = list("chitters", "clicks")
 
 CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

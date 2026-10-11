@@ -103,9 +103,9 @@ TRACKED(/obj/s1_fixture/picky, welded)
 /// +1 on a strike to the rack it sits in, while it sits in the rack's main slot (and nowhere else).
 /obj/item/s1_fixture/gizmo
 	name = "s1 gizmo"
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/s1_fixture/gizmo)
+	configure(item_worn(slots = SLOT_BELT))
 	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER)
 
 /// Not a gizmo.
@@ -115,9 +115,9 @@ CAPABILITIES(/obj/item/s1_fixture/gizmo)
 /// Worn gear: +2 on a strike to whoever wears it, in any worn slot. Held, it does nothing.
 /obj/item/s1_fixture/charm
 	name = "s1 charm"
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/s1_fixture/charm)
+	configure(item_worn(slots = SLOT_BELT))
 	while_slotted(SLOT_ANY_WORN, extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_HOLDER)
 
 /// Held gear: +3 on a strike to whoever holds it in a hand.
@@ -145,9 +145,9 @@ CAPABILITIES(/obj/item/s1_fixture/spear)
 /// A worn gauntlet: its wearer manipulates one tile away for as long as it is worn.
 /obj/item/s1_fixture/gauntlet
 	name = "s1 gauntlet"
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/s1_fixture/gauntlet)
+	configure(item_worn(slots = SLOT_BELT))
 	while_slotted(SLOT_ANY_WORN, provides(AFF_MANIPULATE, reach = 1), on = ON_HOLDER)
 
 // ---- species ----

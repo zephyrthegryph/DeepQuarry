@@ -25,7 +25,6 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	icon = 'icons/obj/storage.dmi'
 	icon_state ="scientology" //placeholder
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
 	var/budget = 1000
 	var/max_budget = 1000
 	var/mob/living/carbon/human/owner = null
@@ -39,6 +38,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/universal = FALSE // Allows non-technomancers to use this catalog
 
 CAPABILITIES(/obj/item/technomancer_catalog)
+	configure(item_worn(slots = SLOT_BELT))
 	owns_many(nameof(assistance_instances))
 	owns_many(nameof(consumable_instances))
 	owns_many(nameof(equipment_instances))

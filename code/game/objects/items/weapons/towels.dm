@@ -2,10 +2,7 @@
 	name = "towel"
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "towel"
-	slot_flags = SLOT_HEAD | SLOT_BELT | SLOT_OCLOTHING
-	force = 3.0
 	w_class = ITEMSIZE_NORMAL
-	attack_verb = list("whipped")
 	desc = "A soft cotton towel."
 
 /obj/item/towel/equipped(M, slot)
@@ -19,6 +16,8 @@
 			set_sprite_sheets(list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi'))
 
 CAPABILITIES(/obj/item/towel)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_BELT | SLOT_OCLOTHING))
+	configure(item_combat(force = 3.0, attack_verbs = list("whipped")))
 	configure(item_sounds(hit = SFX_WEAPONS_TOWELWHIP, drop = SFX_ITEMS_DROP_CLOTH, pickup = SFX_ITEMS_PICKUP_CLOTH))
 	op("wipe", in_hand(), label("Towel yourself off"), then(PROC_REF(toweled_off)))
 

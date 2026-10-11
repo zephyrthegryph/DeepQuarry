@@ -4,7 +4,9 @@
 	desc = "A nondescript pair of tough blue jeans."
 	icon_state = "jeans"
 	gender = PLURAL
-	body_parts_covered = LOWER_TORSO|LEGS
+
+CAPABILITIES(/obj/item/clothing/under/pants)
+	configure(item_worn(covers = LOWER_TORSO|LEGS))
 
 /obj/item/clothing/under/pants/ripped
 	name = "ripped jeans"

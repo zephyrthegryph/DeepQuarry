@@ -214,7 +214,7 @@ CAPABILITIES(/obj/machinery/door/window)
 	var/mob/user = A.actor
 	var/obj/item/I = A.held
 	user.setClickCooldown(user.get_attack_speed(I))
-	var/aforce = I.force
+	var/aforce = combat_of(I).force
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[src] was hit by [I]."))
 	if(I.obj_damage_type())

@@ -47,7 +47,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BLUNT
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to brute for physical projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
 			act_message(src, null, \
@@ -58,7 +58,7 @@
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BURN
 				incoming_damage = round(incoming_damage / 4) //Damage from strange sources is converted to burn for energy-type projectiles, though severely decreased.
-			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
+			injure(projectile_kind, incoming_damage, null, P, combat_of(P).armor_penetration, flags = INJURE_ARMORED)
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)

@@ -36,24 +36,24 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	var/mob/living/M = loc
 	if(istype(M) && M.can_wield_item(src) && is_held_twohanded(M))
 		set_wielded(1)
-		force = force_wielded
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		force = force_unwielded
+		set_force(force_unwielded)
 		name = "[base_name]"
 	..()
 
 /obj/item/material/twohanded/update_force()
 	base_name = name
-	if(sharp || edge)
+	if(combat_of(src).sharp || combat_of(src).edge)
 		force_wielded = material.edge_damage()
 	else
 		force_wielded = material.blunt_damage()
 	force_wielded = round(force_wielded*force_divisor)
 	force_unwielded = round(force_wielded*unwielded_force_divisor)
-	force = force_unwielded
-	throwforce = round(force*thrown_force_divisor)
+	set_force(force_unwielded)
+	set_throwforce(round(combat_of(src).force*thrown_force_divisor))
 
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -91,30 +91,27 @@ TRACKED(/obj/item/material/twohanded, wielded)
 	unwielded_force_divisor = 0.25
 	force_divisor = 0.7 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	dulled_divisor = 0.75	//Still metal on a stick
-	sharp = TRUE
-	edge = TRUE
 	injury_kind = INJURY_CUT
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	force_wielded = 30
-	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	applies_material_colour = 0
-	can_cleave = TRUE
 
 CAPABILITIES(/obj/item/material/twohanded/fireaxe)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(sharp = TRUE, edge = TRUE, attack_verbs = list("attacked", "chopped", "cleaved", "torn", "cut"), can_cleave = TRUE))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		pry = 1
-		force = force_wielded
+		set_pry(1)
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		pry = 0
-		force = force_unwielded
+		set_pry(0)
+		set_force(force_unwielded)
 		name = "[base_name]"
 	..()
 
@@ -140,7 +137,9 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe)
 	name = "scythe"
 	desc = "A sharp and curved blade on a long fibremetal handle, this tool makes it easy to reap what you sow."
 	force_divisor = 0.65
-	attack_verb = list("chopped", "sliced", "cut", "reaped")
+
+CAPABILITIES(/obj/item/material/twohanded/fireaxe/scythe)
+	configure(item_combat(attack_verbs = list("chopped", "sliced", "cut", "reaped")))
 
 //spears, bay edition
 /obj/item/material/twohanded/spear
@@ -148,24 +147,19 @@ CAPABILITIES(/obj/item/material/twohanded/fireaxe)
 	base_icon = "spearglass"
 	name = "spear"
 	desc = "A haphazardly-constructed yet still deadly weapon of ancient design."
-	force = 10
 	w_class = ITEMSIZE_HUGE
-	slot_flags = SLOT_BACK
 	force_divisor = 0.5 			// 15 when wielded with hardness 30 (glass)
 	unwielded_force_divisor = 0.375
 	thrown_force_divisor = 1.5 		// 22.5 when thrown with weight 15 (glass)
 	throw_speed = 3
-	edge = FALSE
-	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 	default_material = MAT_GLASS
 	applies_material_colour = 0
 	fragile = 1	//It's a haphazard thing of glass, wire, and steel
-	reach = 2 // Spears are long.
-	attackspeed = 14
 
 CAPABILITIES(/obj/item/material/twohanded/spear)
+	configure(item_worn(slots = SLOT_BACK))
+	configure(item_combat(force = 10, edge = FALSE, sharp = TRUE, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored"), reach = 2, attack_speed = 14))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, throw_hit = SFX_WEAPONS_PIERCE))
 
 //This is mostly for centaurs.
@@ -176,12 +170,12 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 	icon_state = "lance"
 	item_state = "lance"
 	force_divisor = 0.3
-	force = 10
 	thrown_force_divisor = 1
 	default_material = "MAT_STEEL"
 	fragile = 0
-	sharp = TRUE
-	edge = FALSE
+
+CAPABILITIES(/obj/item/material/twohanded/spear/lance)
+	configure(item_combat(force = 10, sharp = TRUE, edge = FALSE))
 
 /obj/item/material/twohanded/riding_crop
 	name = "riding crop"
@@ -192,7 +186,9 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 	unbreakable = 1
 	base_icon = "riding_crop"
 	icon_state = "riding_crop0"
-	attack_verb = list("cropped","spanked","swatted","smacked","peppered")
+
+CAPABILITIES(/obj/item/material/twohanded/riding_crop)
+	configure(item_combat(attack_verbs = list("cropped","spanked","swatted","smacked","peppered")))
 
 /obj/item/material/twohanded/spear/flint
 	default_material = MAT_FLINT
@@ -213,16 +209,12 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 	name = "sledgehammer"
 	desc = "A long, heavy hammer meant to be used with both hands. Typically used for breaking rocks and driving posts, it can also be used for breaking bones or driving points home."
 	unwielded_force_divisor = 0.25
-	force = 25
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
 	slowdown = 1.5
 	dulled_divisor = 0.95	//Still metal on a stick
-	sharp = 0
-	edge = 0
 	force_wielded = 23 //A fair bit less than the fireaxe.
-	attack_verb = list("attacked", "smashed", "crushed", "wacked", "pounded")
 	applies_material_colour = 0
 
 	item_icons = list(
@@ -231,19 +223,20 @@ CAPABILITIES(/obj/item/material/twohanded/spear)
 		)
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
+	configure(item_combat(force = 25, sharp = 0, edge = 0, attack_verbs = list("attacked", "smashed", "crushed", "wacked", "pounded")))
 	configure(item_sounds(hit = SFX_WEAPONS_HEAVYSMASH))
 
 /obj/item/material/twohanded/sledgehammer/update_held_icon()
 	var/mob/living/M = loc
 	if(istype(M) && !issmall(M) && M.item_is_in_hands(src) && !M.hands_are_full())
 		set_wielded(1)
-		pry = 1
-		force = force_wielded
+		set_pry(1)
+		set_force(force_wielded)
 		name = "[base_name] (wielded)"
 	else
 		set_wielded(0)
-		pry = 0
-		force = force_unwielded
+		set_pry(0)
+		set_force(force_unwielded)
 		name = "[base_name]"
 	..()
 
@@ -271,12 +264,12 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer)
 	name = "Mjollnir"
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
-	force = 50
-	throwforce = 15
 	force_wielded = 75
 	slowdown = 0
 
 CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
+	configure(item_thrown(force = 15))
+	configure(item_combat(force = 50))
 	configure(item_sounds(hit = SFX_EFFECTS_LIGHTNINGBOLT))
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
@@ -326,10 +319,10 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 	item_state = "saber"
 	unwielded_force_divisor = 0.1
 	force_divisor = 0.3
-	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	edge = TRUE
-	sharp = TRUE
 	injury_kind = INJURY_CUT
+
+CAPABILITIES(/obj/item/material/twohanded/longsword)
+	configure(item_combat(attack_verbs = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut"), edge = TRUE, sharp = TRUE))
 
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if (src.wielded == 1)
@@ -359,9 +352,9 @@ CAPABILITIES(/obj/item/material/twohanded/sledgehammer/mjollnir)
 	var/disarm_defense = 1.5	//bonus multiplier to parry rate when in disarm stance
 	var/stun_chance = 25	//chance to weaken an opponent when used in disarm stance only, remembering that disarm also halves damage dealt
 	var/stun_duration = 2
-	attack_verb = list("struck","smashed","thumped","thrashed","beaten","slammed","battered")
-	edge = FALSE
-	sharp = FALSE
+
+CAPABILITIES(/obj/item/material/twohanded/staff)
+	configure(item_combat(attack_verbs = list("struck","smashed","thumped","thrashed","beaten","slammed","battered"), edge = FALSE, sharp = FALSE))
 
 /obj/item/material/twohanded/staff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	var/parry_chance

@@ -17,13 +17,13 @@
 	light_cone_y_offset = 14
 	light_overlay = "hardhat_light"
 	armor_spec = "melee=30;bullet=5;laser=20;energy=10;bomb=20;bio=10;rad=20"
-	flags_inv = 0
 	actions_types = list(/datum/action/item_action/toggle_head_light)
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/hardhat)
+	configure(item_worn(hides = 0))
 	configure(item_protection(siemens = 0.9))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HELM, pickup = SFX_ITEMS_PICKUP_HELM))
 
@@ -54,9 +54,6 @@ CAPABILITIES(/obj/item/clothing/head/hardhat/red)
 	name = "firefighter helmet"
 	desc = "A helmet with face mask specially designed for firefighting. It's airtight and has a port for internals."
 	icon_state = "helmet_firefighter"
-	item_flags = THICKMATERIAL | AIRTIGHT
-	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
-	body_parts_covered = HEAD|FACE|EYES
 	flash_protection = FLASH_PROTECTION_MODERATE
 	sprite_sheets = list(
 		SPECIES_TAJARAN = 'icons/inventory/head/mob_tajaran.dmi',
@@ -64,6 +61,7 @@ CAPABILITIES(/obj/item/clothing/head/hardhat/red)
 		)
 
 CAPABILITIES(/obj/item/clothing/head/hardhat/firefighter)
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT, hides = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR, covers = HEAD|FACE|EYES))
 	configure(item_protection(permeability = 0, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE+5000, min_pressure = 0.5 * ONE_ATMOSPHERE, max_pressure = 20 * ONE_ATMOSPHERE, min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/head/hardhat/firefighter/atmos

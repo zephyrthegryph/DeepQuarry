@@ -422,7 +422,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	desc = "The altevians' newest iteration of their armored suits. This one is tailored for zero-g environments, and while it can still be worn in an area with gravity, it'll put a strain on even the most athletic of individuals."
 
 	icon = 'icons/inventory/suit/item_altevian.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob_altevian.dmi'
 	icon_state = "rig-heartbreaker"
 
 	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
@@ -430,6 +429,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	no_cycle = TRUE
 	slowdown = 2.5
 
+CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
+	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_altevian.dmi'))
 
 
 /obj/item/clothing/head/helmet/space/void/altevian_heartbreaker
@@ -437,13 +440,16 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/aether)
 	desc = "The altevians' newest iteration of their armored suits. This one is tailored for zero-g environments, and while it can still be worn in an area with gravity, it'll put a strain on even the most athletic of individuals."
 
 	icon = 'icons/inventory/head/item_altevian.dmi'
-	default_worn_icon = 'icons/inventory/head/mob_altevian.dmi'
 	icon_state = "rig0-heartbreaker"
 
 	armor_spec = "melee=70;bullet=70;laser=70;energy=30;bomb=80;bio=100;rad=40;cold=60"
 
 	no_cycle = TRUE
 
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
+	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob_altevian.dmi'))
 
 
 /obj/item/clothing/suit/space/void/salvagecorp_shipbreaker
@@ -473,12 +479,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/medical)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/refurb/mining)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_ALL_TANKS, POCKET_GENERIC, POCKET_EMERGENCY, POCKET_MINING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/suit/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/head/helmet/space/void/altevian_heartbreaker)
-	acceptance("fit", fits(list(SPECIES_ALTEVIAN)), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

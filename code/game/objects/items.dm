@@ -17,24 +17,11 @@ TRACKED(/obj/item, canremove)
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
 	var/storage_cost = null
-	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
 	var/no_attack_log = 0			//If it's an item we don't want to log attack_logs with, set this to 1
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
-	var/force = 0
-	var/throwforce = 0
-	var/sharp = FALSE		// whether this object cuts
-	var/edge = FALSE		// whether this object is more likely to dismember
-	var/armor_penetration = 0
 	// --- Phased player melee (windup -> swing -> recovery). See code/modules/mob/living/melee_swing.dm ---
-	var/melee_windup = 0	// Deciseconds of windup before the swing lands. 0 = w_class-scaled default.
-	var/melee_recovery = 0	// Deciseconds of recovery (post-swing click cooldown). 0 = w_class-scaled default.
-	var/melee_sweep = null	// TRUE forces a 3-tile arc, FALSE forces single-tile; null = size default (LARGE+ sweeps).
-	var/catchable = TRUE
-	var/can_cleave = FALSE // If true, a 'cleaving' attack will occur.
-	var/pry = 0			//Used in attackby() to open doors
 
 
 	var/tmp/list/actions //list of /datum/action's that this item has.
@@ -42,10 +29,7 @@ TRACKED(/obj/item, canremove)
 
 	//This flag is used to determine when items in someone's inventory cover others. IE helmets making it so you can't see glasses, etc.
 	//It should be used purely for appearance. For gameplay effects caused by items covering body parts, use body_parts_covered.
-	var/flags_inv = 0
-	var/body_parts_covered = 0 //see setup.dm for appropriate bit flags
 
-	var/item_flags = 0 //Miscellaneous flags pertaining to equippable objects.
 
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
@@ -82,12 +66,8 @@ TRACKED(/obj/item, canremove)
 	// Works similarly to worn sprite_sheets, except the alternate sprites are used when the clothing/refit_for_species() proc is called.
 	var/list/sprite_sheets_obj
 
-	var/toolspeed = 1 // This is a multipler on how 'fast' a tool works.  e.g. setting this to 0.5 will make the tool work twice as fast.
-	var/attackspeed = DEFAULT_ATTACK_COOLDOWN // How long click delay will be when using this, in 1/10ths of a second. Checked in the user's get_attack_speed().
-	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/default_worn_icon	//Default on-mob icon
 	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
@@ -95,7 +75,6 @@ TRACKED(/obj/item, canremove)
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
 
-	var/rock_climbing = FALSE //If true, allows climbing cliffs using click drag for single Z, walls if multiZ
 	var/climbing_delay = 1 //If rock_climbing, lower better.
 	var/digestable = TRUE
 	var/item_tf_spawn_allowed = FALSE
@@ -134,17 +113,16 @@ TRACKED(/obj/item, gurgled_color)
 /obj/item/Initialize(mapload)
 	. = ..()
 	// Read-only per-type tables: share identical ones (writers assign a new list).
-	attack_verb = intern_list(attack_verb)
 	tool_qualities = intern_list(tool_qualities)
 
 	for(var/path in actions_types)
 		add_item_action(path)
 
 	if(embed_chance < 0)
-		if(sharp)
-			embed_chance = max(5, round(force/w_class))
+		if(combat_of(src).sharp)
+			embed_chance = max(5, round(combat_of(src).force/w_class))
 		else
-			embed_chance = max(5, round(force/(w_class*3)))
+			embed_chance = max(5, round(combat_of(src).force/(w_class*3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 // Machine components are normally located inside their owner: a component
@@ -381,8 +359,8 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	return
 
 /obj/item/proc/get_volume_by_throwforce_and_or_w_class() // This is used for figuring out how loud our sounds are for throwing.
-	if(throwforce && w_class)
-		return CLAMP((throwforce + w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
+	if(thrown_of(src).force && w_class)
+		return CLAMP((thrown_of(src).force + w_class) * 5, 30, 100)// Add the item's throwforce to its weight class and multiply by 5, then clamp the value between 30 and 100
 	else if(w_class)
 		return CLAMP(w_class * 8, 20, 100) // Multiply the item's weight class by 8, then clamp the value between 20 and 100
 	else
@@ -393,7 +371,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	material_response_impact(get_turf(hit_atom) || get_turf(src), hit_atom)
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
-		if (throwforce > 0)
+		if (thrown_of(src).force > 0)
 			if (sounds_of(src).throw_hit)
 				playsound(hit_atom, sounds_of(src).throw_hit, volume, TRUE, -1)
 			else if(sounds_of(src).hit)
@@ -432,7 +410,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 
 	if(!equipping) //We ONLY send these signals when we ACTUALLY drop the item. Because our item code is stupid, swapping items between your hand is 'dropping' them.
 		PUBLISH_LEGACY(src, /datum/notice/item_dropped, user)
-		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
+		if((worn_of(src).flags & DROPDEL) && loc != user && !QDELETED(src))
 			spent(src, user)
 
 	if(item_my_augment(src) && !QDELETED(src))
@@ -556,7 +534,7 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	var/mob/living/carbon/human/U = user
 	if(istype(H))
 		for(var/obj/item/protection in list(H.get_equipped_item(SLOT_ID_HEAD), H.get_equipped_item(SLOT_ID_MASK), H.get_equipped_item(SLOT_ID_EYES)))
-			if(protection && (protection.body_parts_covered & EYES))
+			if(protection && (worn_of(protection).covers & EYES))
 				// you can't stab someone in the eyes wearing a mask!
 				to_chat(user, span_warning("You're going to need to remove the eye covering first."))
 				return ITEM_INTERACT_FAILURE
@@ -829,8 +807,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 				return sheet
 
 	//4: item's default icon
-	if(default_worn_icon)
-		return default_worn_icon
+	if(worn_of(src).worn_icon)
+		return worn_of(src).worn_icon
 
 	//5: Use our species_sheet as a fallback if we have one. A 'default' sprite is better than nothing at all (or a misaligned sprite)
 	//We ONLY do this if our species is 'abnormally shaped' i.e. tesh/vox/werebeast.
@@ -1084,7 +1062,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
-		new_voice.emote_type = 1
+		new_voice.set_emote_type(1)
 	// Let the inhabitor know what happened to them
 	if(istype(src, /obj/item/mindbinder))
 		to_chat(new_voice,span_notice("Your mind has been stored in [src]!"))

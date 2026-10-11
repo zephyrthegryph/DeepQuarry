@@ -179,7 +179,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "myicon"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/type/fluff/charactername)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 */
 
@@ -190,7 +192,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 	icon_state = "wolfgirlhat"
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/head/fluff/wolfgirl)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //Natje: Awen Henry
 /obj/item/clothing/shoes/fluff/wolfgirl
@@ -199,7 +203,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 	icon_state = "wolfgirlsandals"
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/shoes/fluff/wolfgirl)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //Natje: Awen Henry
 /obj/item/clothing/under/fluff/wolfgirl
@@ -211,8 +217,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	rolled_sleeves = 0
 	rolled_down = 0
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	body_parts_covered = CHEST|ARMS|LEGS
+CAPABILITIES(/obj/item/clothing/under/fluff/wolfgirl)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS|LEGS))
+
 
 //SpoopyLizz: Roiz Lizden
 /obj/item/clothing/suit/storage/hooded/wintercoat/roiz
@@ -222,7 +229,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon_state = "coatroiz"
 	has_hood_sprite = TRUE
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/roiz)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 /obj/item/clothing/suit/storage/hooded/wintercoat/roiz/digest_act(atom/movable/item_storage = null)
 	return FALSE
 
@@ -234,7 +243,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "bearpelt"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/fluff/ketrai)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //benemuel:Yuuko Shimmerpond
 /obj/item/clothing/under/fluff/sakura_hokkaido_kimono
@@ -243,7 +254,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "sh_kimono"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/under/fluff/sakura_hokkaido_kimono)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //JoanRisu:Joan Risu
 /obj/item/clothing/under/suit_jacket/female/fluff/asuna
@@ -253,7 +266,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joanasuna"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/suit_jacket/female/fluff/asuna)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //eekasqueak:Serkii Miishy
 /obj/item/clothing/under/skirt/fluff/serkii
@@ -263,7 +278,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "serkiskirt"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/skirt/fluff/serkii)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //Unknown. Please check records from the forums.
 /obj/item/clothing/under/suit_jacket/female/fluff/miqote
@@ -273,7 +290,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "miqote"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/suit_jacket/female/fluff/miqote)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //JoanRisu:Joan Risu
 /obj/item/clothing/under/fluff/nightgown
@@ -283,7 +302,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joannightgown"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/fluff/nightgown)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //Vorrarkul:Lucina Dakarim
 /obj/item/clothing/under/dress/fluff/lucinadress
@@ -293,7 +314,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "solara_dress"
 
-	default_worn_icon = 'icons/inventory/uniform/mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/dress/fluff/lucinadress)
+	configure(item_worn(worn_icon = 'icons/inventory/uniform/mob.dmi'))
+
 
 //For general use
 /obj/item/clothing/suit/storage/vest/hoscoat/fluff/brittrenchcoat
@@ -302,7 +325,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "brittrenchcoat"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/fluff/brittrenchcoat)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //For general use
 /obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat
@@ -312,7 +337,9 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "greatcoat"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/ancient_greatcoat)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //For general use
 /obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat
@@ -320,10 +347,13 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 	desc = "A sophisticated long coat made of fur."
 	icon_state = "russofurcoat"
 
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 
 	armor_spec = ""
-	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', hides = HIDETIE|HIDEHOLSTER))
 
 //For general use
 
@@ -334,10 +364,8 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedcoat"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	blood_overlay_type = "coat"
-	body_parts_covered = CHEST|ARMS
 	armor_spec = "melee=10;bullet=20;laser=10" //As much armor as the cyberpunk jacket. Also priced the same.
 	var/unbuttoned = FALSE
 
@@ -345,6 +373,7 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/sec)
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 	op("fedcoat_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(fedcoat_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
@@ -391,14 +420,16 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedmodern"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	blood_overlay_type = "coat"
-	body_parts_covered = CHEST|ARMS
 	armor_spec = "melee=10;bullet=20;laser=10"
 
 	//Variants
 
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/fluff/modernfedcoat/modernfedblue
 	name = "Modern Federation Uniform Jacket (Blue)"
@@ -425,9 +456,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedcapofficer"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	//Variants
+
+CAPABILITIES(/obj/item/clothing/head/caphat/formal/fedcover)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 /obj/item/clothing/head/caphat/formal/fedcover/fedcoverblue
 	name = "Federation Officer's Cap (Blue)"
 	desc = "An officer's cap that demands discipline from the one who wears it."
@@ -435,7 +468,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedcapsci"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/caphat/formal/fedcover/fedcoverblue)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/head/caphat/formal/fedcover/fedcovereng
 	name = "Federation Officer's Cap (Yellow)"
@@ -444,7 +479,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedcapeng"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/caphat/formal/fedcover/fedcovereng)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/head/caphat/formal/fedcover/fedcoversec
 	name = "Federation Officer's Cap (Red)"
@@ -453,7 +490,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fedcapsec"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/caphat/formal/fedcover/fedcoversec)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/head/caphat/formal/fedcover/police
 	name = "Police Officer's Cap"
@@ -462,7 +501,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "policecover"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/caphat/formal/fedcover/police)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /*POLARISTODO - Needs rework in update_icons as it doesn't use item_state
 //For general use
@@ -473,8 +514,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "gogyellow"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "gogyellow"
+
+CAPABILITIES(/obj/item/clothing/glasses/welding/fluff/yellow)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/glasses/welding/fluff/blue
 	name = "Blue Goggles"
@@ -483,8 +526,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "gogblue"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "gogblue"
+
+CAPABILITIES(/obj/item/clothing/glasses/welding/fluff/blue)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 */
 
 //wickedtemp:chakat tempest
@@ -503,8 +548,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "smilepin"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	overlay_state = "" //They don't have one
+
+CAPABILITIES(/obj/item/clothing/accessory/fluff/smilepin)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //For general use
 /obj/item/clothing/accessory/fluff/heartpin
@@ -514,8 +561,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "heartpin"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	overlay_state = "" //They don't have one
+
+CAPABILITIES(/obj/item/clothing/accessory/fluff/heartpin)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //john.wayne9392:Harmony Prechtl
 /obj/item/clothing/suit/armor/captain/fluff/harmsuit
@@ -524,7 +573,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "harmarmor"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/suit/armor/captain/fluff/harmsuit)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //john.wayne9392:Harmony Prechtl
 /obj/item/clothing/head/helmet/space/capspace/fluff/harmhelm
@@ -534,7 +585,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "harmspace"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/helmet/space/capspace/fluff/harmhelm)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //john.wayne9392:Harmony Prechtl
 /obj/item/clothing/under/rank/captain/fluff/harmuniform
@@ -544,8 +597,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "harmcaptain"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	//Variant
+
+CAPABILITIES(/obj/item/clothing/under/rank/captain/fluff/harmuniform)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 /obj/item/clothing/under/rank/captain/fluff/harmuniform/centcom
 	name = "\improper CentCom administrator's uniform"
 	desc = "It's a green jumpsuit with some gold markings denoting the rank of \"Administrator\"."
@@ -563,8 +618,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "tasaldsuit"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	armor_spec = "melee=10"
+
+CAPABILITIES(/obj/item/clothing/under/det/fluff/tasald)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 // bwoincognito:Tasald Corlethian
 /obj/item/clothing/suit/storage/det_suit/fluff/tasald
@@ -574,11 +631,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "tasvest"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	blood_overlay_type = "coat"
-	body_parts_covered = CHEST|LEGS|ARMS
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/det_suit/fluff/tasald)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|ARMS))
 
 //Event Costumes Below
 /obj/item/clothing/head/helmet/fluff/freddy
@@ -588,13 +646,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/fedcoat)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "freddyhead"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	armor_spec = ""
-	flags_inv = HIDEMASK|HIDEEARS
 
 	//Bonnie Head
 
 CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', hides = HIDEMASK|HIDEEARS))
 	configure(item_protection(permeability = 0.01, cold_parts = HEAD, siemens = 0.9))
 /obj/item/clothing/head/helmet/fluff/freddy/bonnie
 	desc = "Children's entertainer."
@@ -622,16 +679,14 @@ CAPABILITIES(/obj/item/clothing/head/helmet/fluff/freddy)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "freddysuit"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	armor_spec = ""
-	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT
 
 	//Bonnie Suit
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|LEGS|FEET|ARMS|HANDS, hides = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.02, cold_parts = UPPER_TORSO | LOWER_TORSO | LEGS | FEET | ARMS | HANDS, siemens = 0.9))
 
 
@@ -660,11 +715,15 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "scree-helm"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	item_state_slots = list(slot_r_hand_str = "engspace_helmet", slot_l_hand_str = "engspace_helmet")
 
 	light_overlay = "helmet_light_dual"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
@@ -682,9 +741,13 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/sc
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "scree-spess"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 
@@ -718,6 +781,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespes
 		slot_head_str = 'icons/vore/custom_onmob_32x48_vr.dmi'
 		)
 
+
 TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/fluff/avida/proc/match_ears, null))))
 
 /// Always fits; picks the trimmed sprite when the wearer's ears suit it.
@@ -737,8 +801,11 @@ TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), l
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "alurane-vines"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "alurane-vines_r", slot_l_hand_str = "alurane-vines_l")
+
+CAPABILITIES(/obj/item/clothing/under/fluff/aluranevines)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/aluranevines/proc/owner_fit, "wrapping vines around yourself is an odd idea"))))
 
@@ -753,7 +820,11 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "rig-hos"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //HOS Hardsuit Helmet
 
@@ -765,7 +836,11 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "rig0-hos"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
+	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //adk09:Lethe
 
@@ -778,7 +853,9 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/inventory/head/item.dmi'
 	icon_state = "hoscap"
 
-	default_worn_icon = 'icons/inventory/head/mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/helmet/hos/fluff/lethe)
+	configure(item_worn(worn_icon = 'icons/inventory/head/mob.dmi'))
+
 
 /obj/item/storage/belt/utility/fluff/vulpine
 	name = "vulpine belt"
@@ -787,9 +864,11 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "vulpine_belt"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	storage_slots = 9
+
+CAPABILITIES(/obj/item/storage/belt/utility/fluff/vulpine)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/storage/belt/utility/fluff/vulpine/Initialize(mapload)
 	. = ..()
@@ -809,9 +888,11 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "molenar"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	var/item_open = "molenar_open"
 	var/item_closed = "molenar"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/labcoat/fluff/molenar)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //scree:Scree
 /obj/item/clothing/head/fluff/pompom
@@ -821,7 +902,6 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "pom"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	w_class = ITEMSIZE_SMALL
 	light_range = 5
@@ -839,6 +919,7 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join
 
 // The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
 CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	op("pompom_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle light"), then(PROC_REF(pompom_light_self)))
 
 /// Old attack_self: light or dim the pom-pom.
@@ -875,9 +956,12 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joanhelm"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	light_overlay = "helmet_light"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit, "it doesn't fit"))))
 
@@ -899,7 +983,12 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joansuit"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
 
 
 
@@ -915,9 +1004,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "joanuniform"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	rolled_sleeves = 0
 	starting_accessories = list(/obj/item/clothing/accessory/tie/black)
+
+CAPABILITIES(/obj/item/clothing/under/rank/internalaffairs/fluff/joan)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //Kisukegema:Kisuke `the nerd` Gema
 /obj/item/clothing/glasses/omnihud/kamina
@@ -996,7 +1087,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	name = "Hair Flower Pin"
 	desc = "It's a flower fashioned into a hair pin. It's very nice."
 	icon_state = "hairflower_pink"
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/fluff/hairflowerpin)
+	configure(item_worn(covers = 0))
 
 //bwoincognito:Octavious Ward
 /obj/item/clothing/suit/storage/trench/fluff/octaviouscoat
@@ -1004,8 +1097,12 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	desc = "A finely made leather coat designed for use in laboratories and doubles for parties. Has the letters O.C.W. embroidered in sliver on the right breast pocket."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "octavgentlecoat"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	blood_overlay_type = "coat"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //bwoincognito:Octavious Ward
 
@@ -1017,7 +1114,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "octavgentlesuit"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/det/fluff/octavious)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //bwoincognito:Octavious Ward
 /obj/item/clothing/head/fedora/fluff/bowler
@@ -1027,7 +1126,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "bowler"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/fedora/fluff/bowler)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //bwoincognito:Octavious Ward
 /obj/item/clothing/mask/gas/plaguedoctor/fluff/octaviousmask
@@ -1039,7 +1140,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 		slot_wear_mask_str = 'icons/vore/custom_clothes_mob.dmi'
 		)
 	armor_spec = "laser=2;energy=2;bio=90"
-	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/gas/plaguedoctor/fluff/octaviousmask)
+	configure(item_worn(covers = HEAD|FACE|EYES))
 
 //bwoincognito:Octavious Ward
 /obj/item/clothing/glasses/hud/health/octaviousmonicle
@@ -1048,7 +1151,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "clockworkgoggle_l"
 	item_state_slots = null
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/glasses/hud/health/octaviousmonicle)
+	configure(item_worn(covers = 0))
 
 
 /obj/item/clothing/shoes/black/cuffs
@@ -1058,9 +1163,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon_state = "gildedcuffs"
 	blocks_footsteps = FALSE
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/shoes/black/cuffs)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
 
-	body_parts_covered = 0
+
 
 /obj/item/clothing/shoes/black/cuffs/red
 	name = "red leg wraps"
@@ -1086,17 +1192,20 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "jemli_hat"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/fedora/fluff/jemli)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //virgo113:Verin Raharra
 /obj/item/clothing/suit/storage/hazardvest/fluff/verin
 	name = "Green Haz-coat"
 	desc = "A well-worn green, long coat made with lightweight materials, it has a radioactive hazard icon on it's right sleeve. Smells faintly like sergal."
 	armor_spec = "rad=20"
-	body_parts_covered = UPPER_TORSO|ARMS
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "verin"
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hazardvest/fluff/verin)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //whiskyrose:Vinjj
 /obj/item/clothing/head/welding/fluff/vinjj
@@ -1104,15 +1213,15 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	desc = "A lovely blue and purple bandanna with a refined topaz hanging from its tail end, a pair of goggles are hidden underneath its fabric. Although for some strange reason, wearing this seems to inspire lewd thoughts."
 	armor_spec = ""
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/vore/custom_clothes_mob.dmi',
 		slot_r_hand_str = 'icons/vore/custom_clothes_mob.dmi',
 		)
 	icon_state = "vinjjdana"
 	item_state_slots = list(slot_r_hand_str = "vinjjdana_r", slot_l_hand_str = "vinjjdana_l")
-	flags_inv = (HIDEEYES)
-	body_parts_covered = HEAD|EYES
+
+CAPABILITIES(/obj/item/clothing/head/welding/fluff/vinjj)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', hides = (HIDEEYES), covers = HEAD|EYES))
 
 /// Overrides the "Adjust welding mask" interaction: it only conceals the eyes - it's a hat, not a mask.
 /obj/item/clothing/head/welding/fluff/vinjj/head_welding_toggle_verb(mob/user, obj/item/held)
@@ -1120,14 +1229,14 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	if(user.canmove && !user.stat && !user.restrained())
 		if(up)
 			up = !up
-			set_body_parts_covered(body_parts_covered | ((EYES)))
-			flags_inv |= (HIDEEYES)
+			set_body_parts_covered(worn_of(src).covers | ((EYES)))
+			set_flags_inv(worn_of(src).hides | ((HIDEEYES)))
 			icon_state = "vinjjdana"
 			to_chat(user, "You flip the goggles down to protect your eyes.")
 		else
 			up = !up
-			set_body_parts_covered(body_parts_covered & (~(EYES)))
-			flags_inv &= ~(HIDEEYES)
+			set_body_parts_covered(worn_of(src).covers & (~(EYES)))
+			set_flags_inv(worn_of(src).hides & (~(HIDEEYES)))
 			icon_state = "vinjjdanaup"
 
 			to_chat(user, "You push the goggles up out of your face.")
@@ -1142,10 +1251,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	name = "Chococoat"
 	desc = "A long coat designed to resemble Getmore Chocolate Corp's namesake chocolate bar wrapper." //A walking advertisement?
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "chococoat_on"
 	icon_state = "chococoat"
-	body_parts_covered = CHEST|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/chococoat)
+	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
 //KiwiDaNinja: Chakat Taiga
 
@@ -1154,9 +1266,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..
 	name = "Taiga's F.D Uniform"
 	desc = "This uniform - consisting of only the uniform shirt, and built out of a soft fleece - dons the badge of Amistad Fire and Rescuse on both shoulders. The badges denote the wearer as a FF/" + JOB_PARAMEDIC + ", and their name is embroidered in a gold thread on their right breast; Chakat Taiga! An 'official' badge is pinned to their left breast." //A walking advertisement?
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "taigaff_on"
 	icon_state = "taigaff" //Went ahead and made the det_corporate sprite fit.
+
+CAPABILITIES(/obj/item/clothing/under/fluff/taiga)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 /*
 Departamental Swimsuits, for general use
 */
@@ -1164,9 +1278,9 @@ Departamental Swimsuits, for general use
 /obj/item/clothing/under/swimsuit/fluff
 	name = DEVELOPER_WARNING_NAME
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 CAPABILITIES(/obj/item/clothing/under/swimsuit/fluff)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/under/swimsuit/fluff/engineering
@@ -1267,13 +1381,12 @@ CAPABILITIES(/obj/item/clothing/under/rank/trek/medsci)
 /obj/item/clothing/suit/storage/trek/ds9
 	name = "Padded Overcoat"
 	desc = "The overcoat worn by all officers of the 2380s."
-	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	icon_state = "trek_ds9_coat"
-	body_parts_covered = CHEST|ARMS
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_ENGINEERING, POCKET_MEDICAL), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob.dmi', covers = CHEST|ARMS))
 	configure(item_protection(permeability = 0.50))
 
 
@@ -1304,14 +1417,17 @@ CAPABILITIES(/obj/item/clothing/suit/storage/trek/ds9)
 	name = "Worn baseball outfit"
 	desc = span_bold("Purification in progress...")
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "batter"
+
+CAPABILITIES(/obj/item/clothing/under/batter)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/suit/storage/hooded/wintercoat/jessie
 	name = "Handmade Winter Suit"
 	desc = "A durable, but somewhat ragged lower portion of a snow suit fitted for a wolftaur."
 	icon = 'icons/mob/taursuits_wolf.dmi'
 	icon_state = "jessiecoat"
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit, "you need a wolf-taur half to wear this"))))
 
@@ -1341,14 +1457,19 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec,
 //samanthafyre:Kateryna Petrovitch
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/kate, fit_spec, null)
+
 /obj/item/clothing/head/helmet/space/fluff/kate
 	name = "Kat's Navy Engineer Helmet"
 	desc = "A customized combat space helmet made for Kateryna. It uses a navy design as the base before it\
 	was customized to suit the wearer's personality."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "lilithhelmet"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	light_overlay = "helmet_light"
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, fit_spec, null)
 
@@ -1363,7 +1484,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	desc = "Eyewear worn by a once famous Thunderdome competitor. Fo' shizzle."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "alfonso_visor"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/glasses/sunglasses/fluff/alfonso)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //JackNoir413: Mor Xaina
 /obj/item/clothing/under/fluff/morunder
@@ -1371,7 +1494,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	desc = "Fashionable grey top, combined with black shorts. Fancy!"
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "morunder"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/under/fluff/morunder)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //JackNoir413: Mor Xaina
 /obj/item/clothing/gloves/fluff/morsleeves
@@ -1379,7 +1504,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	desc = "Cute long armwarmers. Sadly, they don't cover fingers."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "morsleeves"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/gloves/fluff/morsleeves)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //JackNoir413: Mor Xaina
 /obj/item/clothing/shoes/fluff/morthighs
@@ -1387,7 +1514,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	desc = "Striped, soft thigh-high socks with no fingers. Must be hard to wash them..."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "morthighs"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/shoes/fluff/morthighs)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //Jackets For General Use. Sprited by Joji.
 /obj/item/clothing/suit/storage/fluff/jacket //Not the toggle version since it uses custom toggle code to update the on-mob icon.
@@ -1397,10 +1526,10 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "fjacket"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	var/unbuttoned = FALSE
 
 CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	op("jacket_toggle_verb", menu(), label("Toggle coat buttons"), needs(carried()), then(PROC_REF(jacket_toggle_verb)))
 
 /// Old verb "Toggle coat buttons".
@@ -1429,7 +1558,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "acjacket"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket/air_cavalry)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/suit/storage/fluff/jacket/air_force
 	name = "Air Force Jacket"
@@ -1438,7 +1569,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "afjacket"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket/air_force)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/suit/storage/fluff/jacket/navy
 	name = "Navy Jacket"
@@ -1447,7 +1580,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "navyjacket"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket/navy)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/suit/storage/fluff/jacket/special_forces
 	name = "Special Forces Jacket"
@@ -1456,7 +1591,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "sfjacket"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket/special_forces)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //General use
 /obj/item/clothing/head/fluff/headbando
@@ -1466,28 +1603,36 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "headbando"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/fluff/headbando)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 /obj/item/clothing/suit/storage/fluff/gntop
 	name = "GN crop jacket"
 	desc = "A nifty little jacket. At least it keeps your shoulders warm."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "gntop"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/gntop)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/under/fluff/gnshorts
 	name = "GN shorts"
 	desc = "Stylish white shorts with pockets, stripes, and even a belt."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "gnshorts"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/under/fluff/gnshorts)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/under/fluff/v_nanovest
 	name = "Varmacorp nanovest"
 	desc = "A nifty little vest optimized for nanite contact."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "nanovest"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/under/fluff/v_nanovest)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //General use
 /obj/item/clothing/suit/storage/fluff/loincloth
@@ -1497,7 +1642,9 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "loincloth"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/fluff/loincloth)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //BeyondMyLife: Ne'tra Ky'ram
 /obj/item/clothing/suit/storage/hooded/wintercoat/kilanocoat
@@ -1508,8 +1655,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	item_state_slots = list(slot_r_hand_str = "kilanocoat", slot_l_hand_str = "kilanocoat")
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	has_hood_sprite = TRUE
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/kilanocoat)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
 //BeyondMyLife: Ne'tra Ky'ram
@@ -1517,11 +1666,11 @@ CAPABILITIES(/obj/item/clothing/suit/storage/fluff/jacket)
 	name = "black and gold armourweave dress"
 	desc = "A black and gold patterned silky dress, with some kind of inlined, heavier material lining the skirt and chest area."
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "kilanosuit"
 	armor_spec = "melee=10"
 
 CAPABILITIES(/obj/item/clothing/under/fluff/kilanosuit)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
 
 //BeyondMyLife: Ne'tra Ky'ram
@@ -1535,39 +1684,49 @@ CAPABILITIES(/obj/item/clothing/under/fluff/kilanosuit)
 	desc = "A Black and Gold security belt, somewhat resembling something you must've seen in a comic years ago."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanobelt"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/storage/belt/security/fluff/kilano)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
+TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/gloves/fluff/kilano/netra
 	name = "black and gold dress gloves"
 	desc = "Some fancy looking black and gold patterned gloves made of a silky material."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanogloves" //TODO: White sprite.
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano/netra)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife: Ne'tra Ky'ram
 
 TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano/netra, fit_spec, null)
+
 /obj/item/clothing/shoes/boots/fluff/kilano
 	name = "black and gold winter boots"
 	desc = "Some Fur lined black and gold heavy duty winter bots."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanoboots"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/kilano)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(cold_parts = FEET|LEGS, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET|LEGS, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //BeyondMyLife: Ne'tra Ky'ram
 
 TYPE_TABLE(/obj/item/clothing/shoes/boots/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/accessory/storage/black_vest/fluff/kilano
 	name = "black and gold webbing vest"
 	desc = "A black and gold webbing vest, it looks like a child spilled a box of crayons all over it."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanovest"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/accessory/storage/black_vest/fluff/kilano)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //BeyondMyLife:Kilano Soryu //Moved these for orginization purposes.
 /obj/item/clothing/under/dress/fluff/kilano
@@ -1577,13 +1736,13 @@ TYPE_TABLE(/obj/item/clothing/shoes/boots/fluff/kilano, fit_spec, null)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanodress"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/under/dress/fluff/kilano)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST|ARMS))
 
-	body_parts_covered = CHEST|ARMS
+
 
 //BeyondMyLife:Kilano Soryu
 
-TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
 /obj/item/clothing/gloves/fluff/kilano
 	name = "Bleached Gloves"
 	desc = "Some old captain's gloves, bleached white, almost unrecognizable from the color change besides the gold trim."
@@ -1591,11 +1750,14 @@ TYPE_TABLE(/obj/item/clothing/under/dress/fluff/kilano, fit_spec, null)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "kilanogloves"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //BeyondMyLife: Cassandra Selones
 
 TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
+
 /obj/item/clothing/shoes/boots/fluff/kilano/purple
 	name = "purple and silver winter boots"
 	desc = "Some fur lined boots, purple and silver."
@@ -1632,12 +1794,13 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "latexmaid"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	sprite_sheets = list(
 			SPECIES_TESHARI = 'icons/vore/custom_clothes_tesh_vr.dmi'
 			)
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/under/fluff/latexmaid)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = CHEST))
 
 //Aztectornado:Tron inspired Siren outfit
 /obj/item/clothing/under/fluff/siren
@@ -1646,9 +1809,11 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 	description_fluff = "Unlike other competitor suits, the Ward Takahashi Siren jumpsuit features a whole host of extra sensors for augmented reality use, and features a non-invasive neural sensor/stimulator for a fully immersive experience."
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "tronsiren"
 	rolled_sleeves = 0
+
+CAPABILITIES(/obj/item/clothing/under/fluff/siren)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/gloves/fluff/siren
 	name = "Siren Gloves"
@@ -1656,8 +1821,10 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 	description_fluff = "Like its jumpsuit companion, the Ward Takahashi Siren gloves feature multiple sensors for usage in augmented reality. The gloves operate fine even without a paired jumpsuit, offering optimal AR menu control and haptic feedback."
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "tronsiren_gloves"
+
+CAPABILITIES(/obj/item/clothing/gloves/fluff/siren)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/shoes/boots/fluff/siren
 	name = "Siren Boots"
@@ -1666,7 +1833,9 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 
 	icon_state = "tronsiren_shoes"
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/siren)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/head/helmet/space/void/security/hasd
 	name = "HASD EVA faceplate"
@@ -1675,7 +1844,11 @@ TYPE_TABLE(/obj/item/clothing/gloves/fluff/kilano, fit_spec, null)
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "hasd_helm"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, fit_spec, null)
 
@@ -1692,6 +1865,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, 
 	icon_state = "hasd_suit"
 	pixel_x = -16
 
+
+
 TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, fit_spec, null)
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit, "this suit is not designed for you"))))
@@ -1707,7 +1882,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "zao_cap"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/fluff/zao)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //Nepox:Annie Rose
 /obj/item/clothing/accessory/sweater/fluff/annie
@@ -1718,10 +1895,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	icon_state = "sweater_annie"
 	icon_override = 'icons/vore/custom_clothes_mob.dmi'
 
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+CAPABILITIES(/obj/item/clothing/accessory/sweater/fluff/annie)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS))
 
 //General definition for bracer items. No icons.
 /obj/item/clothing/accessory/bracer
@@ -1729,10 +1907,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	desc = "A bracer."
 	icon_state = null
 	item_state = null
-	default_worn_icon = null
-	slot_flags = SLOT_GLOVES | SLOT_TIE
 	w_class = ITEMSIZE_SMALL
 	slot = ACCESSORY_SLOT_ARMBAND
+
+CAPABILITIES(/obj/item/clothing/accessory/bracer)
+	configure(item_worn(worn_icon = TRAIT_NONE, slots = SLOT_GLOVES | SLOT_TIE))
 
 //AegisOA:Xander Bevin
 //WanderingDeviant:S'thasha Tavakdavi
@@ -1741,7 +1920,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	desc = "A sturdy arm-guard of polished plasteel that sports gold trimming, silver tribal-looping etchings, and a single cut diamond set into its side. Attached to one's forearm with a small, magnetic clasp."
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "bracer_xander_sthasha"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/accessory/bracer/fluff/xander_sthasha)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/accessory/bracer/fluff/xander_sthasha/digest_act(atom/movable/item_storage = null)
 	return FALSE
@@ -1754,10 +1935,11 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	name = "golden string"
 	desc = "It appears to just be a length of gold-colored string attached to a simple plastic clasp, meant to be worn around the neck"
 	icon = 'icons/vore/custom_items_vr.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "goldenstring"
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_TIE
+
+CAPABILITIES(/obj/item/clothing/accessory/collar/fluff/goldenstring)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', slots = SLOT_TIE))
 
 //Chaoko99: Aika Hisakawa
 /obj/item/clothing/suit/fluff/blue_trimmed_coat
@@ -1766,8 +1948,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "aika_coat"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	flags_inv = HIDEJUMPSUIT | HIDETIE
 
 	item_icons = list(
 		slot_l_hand_str = 'icons/vore/custom_clothes_mob.dmi',
@@ -1775,12 +1955,14 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 		)
 	item_state_slots = list(slot_r_hand_str = "aika_coat_r", slot_l_hand_str = "aika_coat_l")
 
+CAPABILITIES(/obj/item/clothing/suit/fluff/blue_trimmed_coat)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', hides = HIDEJUMPSUIT | HIDETIE))
+
 //Burrito Justice: Jayda Wilson
 /obj/item/clothing/under/solgov/utility/sifguard/medical/fluff
 	desc = "The utility uniform of the Terran Commonwealth Explorer Corps, made from biohazard resistant material. This is an older issuing of the uniform, with integrated department markings."
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	icon_state = "blackutility_med"
 	worn_state = "blackutility_med"
@@ -1789,20 +1971,26 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec
 	rolled_sleeves = 0
 	starting_accessories = null
 
+CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 //Vorrarkul: Melanie Farmer
 /obj/item/clothing/under/fluff/slime_skeleton
 	name = "Melanie's Skeleton"
 	desc = "The skeleton of a promethean, still covered in residual slime. Upon closer inspection, they're not even real bones!"
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 
 	icon_state = "melanie_skeleton"
 
-	body_parts_covered = 0
+CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
+
+
+
+
 
 TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude", SPECIES_TESHARI))))
-
 
 TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit, "only slimes can wear this"))))
 
@@ -1819,7 +2007,9 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 	desc = "It's a black long hoodie with a big blue star at the chest area. It's made of pretty soft material."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "star_hoodie"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/suit/storage/star)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //KillerDragn:Excess
 /obj/item/clothing/accessory/collar/pink/fluff/warning
@@ -1830,12 +2020,13 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 /obj/item/clothing/under/fluff/excess
 	name = "XS-21E Labeled Latex Clothing"
 	desc = "A latex navy blue tube-top and matching compression shorts, with a bright yellow stripe down the side. \"XS-21E\" is written on the thigh. \"Warning\" is written in yellow by the stripe on the top."
-	body_parts_covered = CHEST
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "latex_clothes"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	color = COLOR_NAVY
 	sprite_sheets = list()
+
+CAPABILITIES(/obj/item/clothing/under/fluff/excess)
+	configure(item_worn(covers = CHEST, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //SweetBlueSylveon:Pip Shyner
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip
@@ -1844,8 +2035,10 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "pipcloak"
 	item_state = "pipcloak"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_override = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 /obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/equipped()
 	..()
@@ -1866,7 +2059,9 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 	icon_state = "deadringer"
 	w_class = ITEMSIZE_SMALL
 	slot = ACCESSORY_SLOT_INSIGNIA
-	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
+
+CAPABILITIES(/obj/item/clothing/accessory/watch/custom)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))
 
 //Pimientopyro:Zaku Fyodorovna
 /obj/item/clothing/suit/varsity/green/sweater_vest
@@ -1880,7 +2075,9 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "azuracollar"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/accessory/collar/azura)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 
 //Xonkon: Zena Aviv
@@ -1890,11 +2087,14 @@ TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_jo
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "zenahelmet"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/zena)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
+
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/zena, fit_spec, null)
-
-
 
 /obj/item/clothing/suit/space/void/engineering/zena
 	name = "custom shroud suit"
@@ -1902,10 +2102,13 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/zena, fit_spec,
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "zenasuit"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/zena)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
+
+
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
-
 
 /obj/item/clothing/suit/storage/flintlock
 	name = "green jacket"
@@ -1914,10 +2117,10 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
 	icon_state = "flintlock"
 	item_state_slots = list(slot_r_hand_str = "item_greensuit", slot_l_hand_str = "item_greensuit")
 	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|ARMS
-	flags_inv = HIDEHOLSTER
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+CAPABILITIES(/obj/item/clothing/suit/storage/flintlock)
+	configure(item_worn(covers = UPPER_TORSO|ARMS, hides = HIDEHOLSTER, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 //BobOfBoblandia: Charles Gettler
 /obj/item/clothing/head/that/fluff/gettler
@@ -1929,9 +2132,12 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/zena, fit_spec, null)
 	name = "dorky outfit"
 	desc = "A little witch costume that looks like it's been worn as ordinary clothes. Who in their right mind would...??"
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "nikki_outfit"
 	sensor_mode = 3 // I'm a dumbass and forget these all the time please understand :(
+
+CAPABILITIES(/obj/item/clothing/under/skirt/outfit/fluff/nikki)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit, "it doesn't fit"))))
 
@@ -1942,8 +2148,11 @@ TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spe
 	name = "non-magical boots"
 	desc = "Boots optimally built for a dork. They don't sparkle or anything, but you can imagine them doing that when you click the heels together."
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "nikki_boots"
+
+CAPABILITIES(/obj/item/clothing/shoes/fluff/nikki)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
+
 
 TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/fluff/nikki/proc/owner_fit, "they don't fit"))))
 
@@ -1955,12 +2164,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 	desc = "Snazzy!"
 	flags = NONE
 	armor_spec = "" // It's not armor, it's a dorky frickin cape
-	body_parts_covered = null // Cape ain't gonna cover a THING
 	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	icon_state = "nikkicape"
 
 CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
+	configure(item_worn(covers = TRAIT_NONE, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(cold_parts = CHEST|ARMS))
 
 /obj/item/clothing/head/fluff/nikki
@@ -1981,12 +2189,12 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/nikki)
 		slot_r_hand_str = 'icons/vore/custom_clothes_right_hand_vr.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_32x48_vr.dmi'
 		)
-	flags_inv = HIDEEARS
 	w_class = ITEMSIZE_LARGE // THIS HAT IS FUCKIN HUGE YO
 	var/owner = "ryumi"
 	var/obj/item/perfect_tele/translocator = null // The translocator installed inside, if there is one. Gotta go out and get it first!
 
 CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
+	configure(item_worn(hides = HIDEEARS))
 	// Climbing into the hat (hat_warp()): five seconds beside the one going in.
 	op("nikki_hat_warp", ai(), takes("victim", "proximity", "from"), wait(5 SECONDS), then(PROC_REF(hat_warp_done)))
 	owns_one(nameof(translocator), /obj/item/perfect_tele)
@@ -2171,13 +2379,14 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 /obj/item/clothing/head/fluff/giantbow	//Public version
 	name = "Giant Bow"
 	desc = "It's a huge bow! So pretty!"
-	slot_flags = SLOT_HEAD | SLOT_EARS
 
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "dessabow"
 
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	item_state = "giantbow_mob"
+
+CAPABILITIES(/obj/item/clothing/head/fluff/giantbow)
+	configure(item_worn(slots = SLOT_HEAD | SLOT_EARS, worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //Halored: Mercury
 
@@ -2198,8 +2407,10 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	name = "big round blue glasses"
 	desc = "A set of glasses! They are big, round, and very reflective, catching the light and obscuring the eyes!"
 	icon_state = "bigroundglasses"
-	slot_flags = SLOT_EYES | SLOT_EARS
 	glasses_layer_above = TRUE
+
+CAPABILITIES(/obj/item/clothing/glasses/big_round)
+	configure(item_worn(slots = SLOT_EYES | SLOT_EARS))
 
 //valkaerie: Valkaerie Stoze
 
@@ -2208,7 +2419,9 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	desc = "Curled horns that look that they shouldn't really be pulled off!"
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "valkhorns"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
+
+CAPABILITIES(/obj/item/clothing/ears/earring/fluff/valkhorns)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 //sixberry: Thistle
 
@@ -2217,8 +2430,9 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 	desc = "A thorned crown sporting numerous amethyst inserts, all of which seem to glow faintly in the dark.  Just holding it makes you feel as though you've forgotten something unpleasant."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "memorycrown"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	slot_flags = SLOT_HEAD
+
+CAPABILITIES(/obj/item/clothing/head/fluff/memory_crown)
+	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', slots = SLOT_HEAD))
 */ //Chomp REMOVE END
 
 //For general use
@@ -2228,18 +2442,18 @@ CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
 
 	icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_item.dmi'
 	icon_state = "purple_robes"
-	default_worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi'
 	hoodtype = /obj/item/clothing/head/hood/purple_robes
 
 	blood_overlay_type = "coat"
 	has_hood_sprite = FALSE //No need.
-	body_parts_covered = CHEST|ARMS|LEGS
 	var/toggled = FALSE
 	COOLDOWN_DECLARE(toggle_cooldown)
+
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/purple_robes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
 CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
+	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi', covers = CHEST|ARMS|LEGS))
 	op("purple_robes_toggle_verb", menu(), label("Toggle Eyes"), needs(carried()), then(PROC_REF(purple_robes_toggle_verb)))
 
 /// Old verb "Toggle Eyes".
@@ -2280,31 +2494,6 @@ CAPABILITIES(/obj/item/clothing/suit/storage/hooded/purple_robes)
 	name = "purple hood"
 	icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_item.dmi'
 	icon_state = "hood"
-	default_worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi'
 
-CAPABILITIES(/obj/item/clothing/suit/storage/vest/hoscoat/russofurcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/suit/storage/fluff/modernfedcoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
-
-CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
-
-CAPABILITIES(/obj/item/clothing/suit/space/void/security/fluff/hos)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
-
-CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/fluff/hos)
-	acceptance("fit", mode = ACCEPTANCE_EMPTY)
-
-CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/suit/storage/trench/fluff/octaviouscoat)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
-
-CAPABILITIES(/obj/item/clothing/suit/chococoat)
-	acceptance("suit_storage", req_acceptance_type(list (/obj/item/material/knife), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+CAPABILITIES(/obj/item/clothing/head/hood/purple_robes)
+	configure(item_worn(worn_icon = 'icons/vore/fluff_clothing/eyerobes/custom_clothes_robe_mob.dmi'))

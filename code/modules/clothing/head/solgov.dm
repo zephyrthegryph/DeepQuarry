@@ -59,9 +59,9 @@
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/utility)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/utility/fleet
@@ -100,9 +100,9 @@ CAPABILITIES(/obj/item/clothing/head/utility/fleet)
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/service)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/service/sifguard
@@ -161,9 +161,9 @@ CAPABILITIES(/obj/item/clothing/head/service)
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet",
 		)
-	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/head/dress)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/head/dress/fleet/garrison
@@ -373,7 +373,9 @@ CAPABILITIES(/obj/item/clothing/head/dress)
 	item_state_slots = list(
 		slot_l_hand_str = "helmet",
 		slot_r_hand_str = "helmet")
-	body_parts_covered = 0
+
+CAPABILITIES(/obj/item/clothing/head/almach)
+	configure(item_worn(covers = 0))
 
 /obj/item/clothing/head/terran/navy/service
 	name = "Ares service cover"

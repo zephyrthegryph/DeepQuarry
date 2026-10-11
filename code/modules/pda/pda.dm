@@ -8,7 +8,6 @@
 	icon_state = "pda"
 	item_state = "electronic"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi')
 
 	//Main variables
@@ -64,6 +63,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/pda)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT))
 	setup(PROC_REF(configure_wrist_slots))
 	// Ten seconds of threatening to make it disappear in front of its owner (obj/item/proc/threat_eaten, code/game/objects/trash_eating.dm).
 	op("threaten_eat", ai(), wait(10 SECONDS), then(PROC_REF(threat_eaten)))

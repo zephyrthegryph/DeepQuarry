@@ -7,14 +7,18 @@ MATERIAL_MIX(/obj/item/dq_property_test, list(MAT_STEEL = 1000, MAT_CARDBOARD = 
 /obj/item/dq_property_test
 	name = "property test item"
 	w_class = ITEMSIZE_SMALL
-	sharp = TRUE
+
+CAPABILITIES(/obj/item/dq_property_test)
+	configure(item_combat(sharp = TRUE))
 
 /// Same values as its parent, so it must share the parent's interned table.
 /obj/item/dq_property_test/twin
 
 /obj/item/dq_property_test/blunt
-	sharp = FALSE
 	MATERIAL_BULK(MAT_STEEL, 200)
+
+CAPABILITIES(/obj/item/dq_property_test/blunt)
+	configure(item_combat(sharp = FALSE))
 
 GLOBAL_LIST_INIT(dq_variants_property_test, list(
 	"big" = list("w_class" = ITEMSIZE_HUGE),
@@ -348,7 +352,7 @@ CAPABILITY_TYPE(dq_property_test, CAP_DQ_PROPERTY_TEST, /datum/capability/dq_pro
 	var/obj/item/dq_property_test/item = allocate(path)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "an unchanged instance matches its type")
 	item.set_w_class(ITEMSIZE_LARGE)
-	item.sharp = FALSE
+	item.set_sharp(FALSE)
 	TEST_ASSERT_EQUAL(PROPERTY(item, PROP_SIZE_CLASS), ITEMSIZE_LARGE, "instance state overrides the type value")
 	TEST_ASSERT(!HAS_TAG(item, TAG_SHARP), "a blunted instance is not sharp")
 	TEST_ASSERT_EQUAL(dq_type_property(path, PROP_SIZE_CLASS), ITEMSIZE_SMALL, "the per-type value is unchanged")

@@ -5,7 +5,6 @@
 	icon_state = "tape"
 	w_class = ITEMSIZE_SMALL
 
-	toolspeed = 3 //You can use it in surgery. It's stupid, but you can.
 
 	var/turf/start
 	var/turf/end
@@ -119,6 +118,7 @@ TRACKED(/obj/item/tape, crumpled)
 		look.overlay(look_appearance(icon, get_start() ? "stop" : "start", appearance_flags = RESET_COLOR))
 
 CAPABILITIES(/obj/item/taperoll)
+	configure(item_tooling(speed = 3))
 	op("lay_tape", in_hand(), label("Lay tape"), then(PROC_REF(tape_laying_requested)))
 
 /obj/item/taperoll/proc/tape_laying_requested(datum/act/op/A)

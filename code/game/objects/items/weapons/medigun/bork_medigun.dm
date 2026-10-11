@@ -10,7 +10,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_medigun.dmi',
 		)
 	w_class = ITEMSIZE_HUGE
-	force = 0
 	var/beam_range = 3 // How many tiles away it can scan. Changing this also changes the box size.
 	var/busy = MEDIGUN_IDLE // Set to true when scanning, to stop multiple scans.
 	var/action_cancelled = FALSE
@@ -110,6 +109,7 @@
 		animate(i, color = new_color, time = new_time)
 
 CAPABILITIES(/obj/item/bork_medigun)
+	configure(item_combat(force = 0))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.

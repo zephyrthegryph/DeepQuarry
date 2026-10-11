@@ -18,7 +18,6 @@
 	name = "grab"
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "reinforce"
-	item_flags = DROPDEL | NOSTRIP
 	var/atom/movable/screen/grab/hud = null
 	var/state = GRAB_PASSIVE
 
@@ -193,6 +192,7 @@
 
 
 CAPABILITIES(/obj/item/grab)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("tighten", in_hand(), label("Tighten grip"), then(PROC_REF(interaction_tighten)))
 	// The hands-on inspection of a grabbed limb (mob_grab_specials.dm): each step starts the next, an interrupted one goes on to the next as well.
 	op("inspect_organ", ai(), begins(PROC_REF(inspect_organ_text)), wait(1 SECOND), on_interrupt(PROC_REF(inspect_organ_grab_failed)), then(PROC_REF(inspect_organ_grab_done)))

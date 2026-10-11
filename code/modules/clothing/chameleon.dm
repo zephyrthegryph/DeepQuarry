@@ -10,8 +10,8 @@
 	name = copy.name
 	icon_state = copy.icon_state
 	item_state = copy.item_state
-	set_body_parts_covered(copy.body_parts_covered)
-	flags_inv = copy.flags_inv
+	set_body_parts_covered(worn_of(copy).covers)
+	set_flags_inv(worn_of(copy).hides)
 
 	item_icons = copy.item_icons?.Copy()
 	item_state_slots = copy.item_state_slots?.Copy()
@@ -82,7 +82,6 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 	name = "grey cap"
 	icon_state = "greysoft"
 	desc = "It looks like a plain hat, but upon closer inspection, there's an advanced holographic array installed inside. It seems to have a small dial inside."
-	body_parts_covered = 0
 
 /obj/item/clothing/head/chameleon/on_materialize()
 	if(!GLOB.chamelion_head_choices)
@@ -98,6 +97,7 @@ CAPABILITIES(/obj/item/clothing/under/chameleon)
 	update_clothing_icon()
 
 CAPABILITIES(/obj/item/clothing/head/chameleon)
+	configure(item_worn(covers = 0))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
 	op("head_chameleon_change_verb", menu(), label("Change Hat/Helmet Appearance"), needs(carried()), asks(/datum/prompt/choice, fields = list("question" = "Choose an appearance.", "title" = "Chameleon", "choices" = computed(PROC_REF(head_chameleon_change_verb_a1_choices)), "timeout" = 0), step = "a1"), then(PROC_REF(head_chameleon_change_verb)))
 
@@ -523,7 +523,7 @@ TRACKED(/obj/item/gun/energy/chameleon, disguise_state)
 	var/obj/item/gun/copy = ..()
 	set_disguise_state(copy.icon_state)
 
-	flags_inv = copy.flags_inv
+	set_flags_inv(worn_of(copy).hides)
 	if(copy.fire_sound)
 		fire_sound = copy.fire_sound
 	else

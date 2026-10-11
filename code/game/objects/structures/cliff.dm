@@ -71,7 +71,7 @@ CAPABILITIES(/obj/structure/cliff)
 	if(ishuman(climber))
 		var/mob/living/carbon/human/H = climber
 		var/obj/item/clothing/shoes/shoes = H.get_equipped_item(SLOT_ID_SHOES)
-		if(shoes && shoes.rock_climbing)
+		if(shoes && tooling_of(shoes).climbing)
 			return null
 	return "\The [src] is too steep to climb unassisted."
 

@@ -224,7 +224,7 @@
 			small_jaws.icon_state = "knife_cyborg"
 			small_jaws.set_hitsound('sound/weapons/slash.ogg')
 			small_jaws.desc = "A sharp knife used for defending crew against hostile threats. Not effective for non-defense use. If emagged, can be upgraded to a claymore."
-			small_jaws.attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
+			small_jaws.set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
 		var/obj/item/melee/robotic/jaws/big/big_jaws = locate_in_list(module.modules, /obj/item/melee/robotic/jaws/big)
 		if(big_jaws)
 			big_jaws.name = "claymore"
@@ -232,7 +232,7 @@
 			big_jaws.icon = 'icons/obj/tools_robot.dmi'
 			big_jaws.icon_state = "claymore_cyborg"
 			big_jaws.set_hitsound('sound/weapons/slice.ogg')
-			big_jaws.attack_verb = list("sliced", "slashed", "jabbed", "stabbed")
+			big_jaws.set_attack_verb(list("sliced", "slashed", "jabbed", "stabbed"))
 	return
 
 // Dogborgs and not-dogborgs that use dogborg stuff. Oh no.

@@ -6,12 +6,12 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	icon_state = "pinoff"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT
-	throwforce = 5
 	throw_speed = 4
 	throw_range = 20
 
 CAPABILITIES(/obj/item/motiontracker)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 
 

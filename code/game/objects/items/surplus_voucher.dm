@@ -2,12 +2,12 @@
 /obj/item/surplus_voucher
 	icon = 'icons/obj/items.dmi'
 	icon_state = "pizza_voucher"
-	throwforce = 0
 	throw_speed = 5
 	throw_range = 4
-	force = 0
 
 CAPABILITIES(/obj/item/surplus_voucher)
+	configure(item_thrown(force = 0))
+	configure(item_combat(force = 0))
 	op("redeem", in_hand(), label("Redeem"), then(PROC_REF(interaction_redeem)))
 
 /// Redeem the voucher: its surplus delivery lands here. Each kind of voucher overrides spawn_item().

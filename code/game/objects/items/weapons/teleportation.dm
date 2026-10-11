@@ -134,7 +134,6 @@ CAPABILITIES(/obj/item/locator)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "hand_tele"
 	item_state = "electronic"
-	throwforce = 5
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 5
@@ -142,6 +141,7 @@ CAPABILITIES(/obj/item/locator)
 	preserve_item = 1
 
 CAPABILITIES(/obj/item/hand_tele)
+	configure(item_thrown(force = 5))
 	// the old attack_self: pick a locked-on teleporter (or a random spot nearby) and open a portal to it
 	op("lock_in", in_hand(), needs(req(PROC_REF(can_open_portal))),
 		asks(/datum/prompt/choice, fields = list("title" = "Hand Teleporter", "question" = "Please select a teleporter to lock in on.", "choices" = computed(PROC_REF(teleporter_choices)), "timeout" = 0)),

@@ -4,7 +4,6 @@
 	icon_state = "cargosoft"
 	item_state_slots = list(slot_r_hand_str = "cargosoft", slot_l_hand_str = "cargosoft")
 	var/flipped = 0
-	body_parts_covered = 0
 	special_handling = TRUE
 
 /obj/item/clothing/head/soft/dropped(mob/user, equipping, slot)
@@ -17,6 +16,7 @@
 TRACKED(/obj/item/clothing/head/soft, flipped)
 
 CAPABILITIES(/obj/item/clothing/head/soft)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 	op("flip", in_hand(), label("Flip"), then(PROC_REF(soft_cap_flip_self)))
 

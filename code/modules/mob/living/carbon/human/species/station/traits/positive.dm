@@ -660,7 +660,7 @@
 /datum/trait/positive/heavyweight/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
 	H.set_mob_size(MOB_LARGE)
-	H.mob_bump_flag = HEAVY
+	H.set_mob_bump_flag(HEAVY)
 
 /datum/trait/positive/grappling_expert
 	name = "Grappling Expert"

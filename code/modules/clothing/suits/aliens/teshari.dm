@@ -7,7 +7,9 @@
 	desc = "It drapes over a Teshari's shoulders and closes at the neck with pockets convienently placed inside."
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesh_cloak_bn"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
@@ -202,11 +204,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak, fit_spec, list(REQ_FIT
 	name = "head of security cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers." //CHOMPedot
 	icon_state = "tesh_cloak_hos"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
@@ -215,11 +216,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/hos, suit_storage_
 	name = "security cloak"
 	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_cloak_sec"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/cloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
@@ -256,7 +256,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/labcoat/teshari, fit_spec, lis
 	desc = "A coat that seems too small to fit a human."
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesharicoat"
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoat)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
@@ -265,7 +267,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoat, fit_spec, list(RE
 	desc = "A coat that seems too small to fit a human."
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesharicoatwhite"
-	body_parts_covered = CHEST|ARMS|LEGS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 
 //Hooded teshari cloaks
 
@@ -276,10 +280,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/tesharicoatwhite, fit_spec, li
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesh_hcloak_bo"
 	item_state_slots = list(slot_r_hand_str = "tesh_hcloak_bo", slot_l_hand_str = "tesh_hcloak_bo")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDEHOLSTER|HIDETIE
 	actions_types = list(/datum/action/item_action/toggle_hood)
 	hoodtype = /obj/item/clothing/head/tesh_hood
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/teshari)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDEHOLSTER|HIDETIE))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
@@ -289,12 +294,12 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/teshari, suit_storage_spec, li
 	name = "Cloak Hood"
 	desc = "A hood attached to a teshari cloak."
 	icon = 'icons/inventory/suit/item_teshari.dmi'
-	default_worn_icon = 'icons/inventory/suit/mob_teshari.dmi'
 	icon_state = "tesh_hood_bo"
 	sprite_sheets = null
 	item_state_slots = list(slot_r_hand_str = "tesh_hood_bo", slot_l_hand_str = "tesh_hood_bo")
-	flags_inv = BLOCKHAIR
-	body_parts_covered = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/tesh_hood)
+	configure(item_worn(worn_icon = 'icons/inventory/suit/mob_teshari.dmi', hides = BLOCKHAIR, covers = HEAD))
 
 TYPE_TABLE(/obj/item/clothing/head/tesh_hood, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_TESHARI))))
 
@@ -427,7 +432,9 @@ TYPE_TABLE(/obj/item/clothing/head/tesh_hood, fit_spec, list(REQ_FITS_BODYTYPES(
 	desc = "A more ridged and stylized Teshari cloak."
 	icon = 'icons/inventory/suit/item_teshari.dmi'
 	icon_state = "tesh_beltcloak_bo"
-	body_parts_covered = UPPER_TORSO|ARMS
+
+CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak)
+	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 //Belted job cloaks
 
@@ -501,11 +508,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak, fit_spec, list(REQ
 	name = "security belted cloak"
 	desc = "A soft Teshari cloak made for the Security department. This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_sec"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))
@@ -534,11 +540,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/sec, suit_stor
 	name = "security chief belted cloak"
 	desc = "A soft Teshari cloak made for the " + JOB_HEAD_OF_SECURITY + ". This one is made with stronger fibers."
 	icon_state = "tesh_beltcloak_hos"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10" // end
 
 CAPABILITIES(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO, flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.6))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/teshari/beltcloak/jobs/hos, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_SECURITY))))

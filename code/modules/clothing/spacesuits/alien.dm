@@ -41,12 +41,12 @@ CAPABILITIES(/obj/item/clothing/suit/space/skrell)
 /obj/item/clothing/suit/space/vox
 	w_class = ITEMSIZE_NORMAL
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
 
 CAPABILITIES(/obj/item/clothing/suit/space/vox)
 	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EXPLO, POCKET_ALL_TANKS, /obj/item/melee/energy/sword), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL))
 	configure(item_protection(siemens = 0.2, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 
@@ -56,11 +56,10 @@ CAPABILITIES(/obj/item/clothing/suit/space/vox)
 /obj/item/clothing/head/helmet/space/vox
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50;cold=60"
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL | AIRTIGHT
-	flags_inv = 0
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/vox)
 	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(flags = THICKMATERIAL | AIRTIGHT, hides = 0))
 	configure(item_protection(siemens = 0.2))
 
 

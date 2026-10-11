@@ -47,7 +47,6 @@
 
 	melee_damage_lower = 5
 	melee_damage_upper = 10	//minor damage variance, since they should only be fighting carp
-	base_attack_cooldown = 18 // A bit slower than carp
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("lanced","bitten","impaled","gored")
@@ -57,11 +56,14 @@
 	meat_amount = 5
 	meat_type = /obj/item/reagent_containers/food/snacks/carpmeat/ray
 
-	mob_bump_flag = 0
 
 	say_list_type = /datum/say_list/space_ray
 
 	var/knockdown_chance = 66
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/ray)
+	configure(mob_kind(attack_cooldown = 18))
+	configure(mob_movement(bump = 0))
 
 /mob/living/simple_mob/animal/space/ray/apply_melee_effects(atom/A)
 	if(isliving(A))

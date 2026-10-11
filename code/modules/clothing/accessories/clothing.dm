@@ -68,12 +68,11 @@
 	desc = "You probably need some welder googles to look at this."
 	icon_state = "hawaiian_cyan"
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/hawaiian)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/hawaiian/blue
@@ -127,12 +126,11 @@ CAPABILITIES(/obj/item/clothing/accessory/hawaiian/random_flower)
 	desc = "A classic themed neosilk tropical shirt. This one makes you feel like an animal."
 	icon_state = "animalstyle"
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/tropical)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 /obj/item/clothing/accessory/tropical/green
@@ -185,8 +183,6 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 	item_state = "classicponcho"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS|LEGS
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 	sprite_sheets = list(
@@ -195,6 +191,7 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS|LEGS))
 	configure(item_protection(max_heat = T0C+100, heat_parts = CHEST|ARMS|LEGS, cold_parts = CHEST|ARMS|LEGS, siemens = 0.9))
 
 //This is really scuffed and needs fixing sometime.
@@ -277,9 +274,9 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho)
 	desc = "An elaborate brown and gold cloak."
 	icon_state = "qmcloak"
 	item_state = "qmcloak"
-	body_parts_covered = null
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
+	configure(item_worn(covers = TRAIT_NONE))
 	configure(item_protection(heat_parts = TRAIT_NONE, cold_parts = TRAIT_NONE))
 
 /obj/item/clothing/accessory/poncho/roles/cloak/ce
@@ -387,13 +384,12 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak)
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(slot_r_hand_str = "wcoat", slot_l_hand_str = "wcoat")
 	armor_spec = ""
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/wcoat)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST))
 	configure(item_protection(heat_parts = CHEST, cold_parts = CHEST, siemens = 0.9))
 
 
@@ -452,12 +448,11 @@ CAPABILITIES(/obj/item/clothing/accessory/wcoat)
 	desc = "A warm knit sweater."
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	icon_state = "sweater"
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = CHEST|ARMS
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 
 CAPABILITIES(/obj/item/clothing/accessory/sweater)
+	configure(item_worn(slots = SLOT_OCLOTHING | SLOT_TIE, covers = CHEST|ARMS))
 	configure(item_protection(heat_parts = CHEST|ARMS, cold_parts = CHEST|ARMS, max_heat = ARMOR_MAX_HEAT_PROTECTION_TEMPERATURE-275, min_cold = ARMOR_MIN_COLD_PROTECTION_TEMPERATURE+80, siemens = 0.9))
 
 /obj/item/clothing/accessory/sweater/pink
@@ -519,7 +514,9 @@ CAPABILITIES(/obj/item/clothing/accessory/sweater)
 	name = "virgin killer"
 	desc = "A knit sweater that leaves little to the imagination."
 	icon_state = "virginkiller"
-	body_parts_covered = CHEST
+
+CAPABILITIES(/obj/item/clothing/accessory/sweater/virgin)
+	configure(item_worn(covers = CHEST))
 
 /*
  * Misc
@@ -576,8 +573,6 @@ CAPABILITIES(/obj/item/clothing/accessory/sweater)
 	icon_state = "klbr"
 	icon_override = 'icons/inventory/accessory/mob.dmi'
 	item_state_slots = list(SLOT_ID_RIGHT_HAND = "armor", SLOT_ID_LEFT_HAND = "armor")
-	slot_flags = SLOT_OCLOTHING | SLOT_TIE
-	body_parts_covered = UPPER_TORSO|ARMS
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
 

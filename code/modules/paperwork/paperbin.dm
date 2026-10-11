@@ -8,7 +8,6 @@
 			slot_r_hand_str = 'icons/mob/items/righthand_material.dmi',
 			)
 	item_state = "sheet-metal"
-	throwforce = 1
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 3
 	throw_range = 7
@@ -41,6 +40,7 @@
 	return
 
 CAPABILITIES(/obj/item/paper_bin)
+	configure(item_thrown(force = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CARDBOARDBOX, pickup = SFX_ITEMS_PICKUP_CARDBOARDBOX))
 	// a hand that cannot move takes nothing; with no custom paper in the bin it asks which paper
 	op("take_paper", hand(), ungated(), needs(req(PROC_REF(hand_usable))),

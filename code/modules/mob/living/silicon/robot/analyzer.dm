@@ -8,8 +8,6 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	icon_state = "robotanalyzer"
 	item_state = "analyzer"
 	desc = "A hand-held scanner able to diagnose robotic injuries."
-	slot_flags = SLOT_BELT
-	throwforce = 3
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
@@ -20,6 +18,8 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/robotanalyzer)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 3))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("mode", hand(), gesture(GESTURE_ALT), then(PROC_REF(mode_toggled)))
 

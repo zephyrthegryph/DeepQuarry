@@ -4,8 +4,6 @@
 
 /obj/item/clothing/head/helmet/space/rig
 	name = "helmet"
-	item_flags = THICKMATERIAL|ALLOW_SURVIVALFOOD
-	flags_inv = HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
 	light_range = 4
 	sprite_sheets = list(
 		SPECIES_TAJARAN 		= 'icons/inventory/head/mob_tajaran.dmi',
@@ -26,7 +24,9 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/rig)
+	configure(item_worn(flags = THICKMATERIAL|ALLOW_SURVIVALFOOD, hides = HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR))
 	configure(item_protection(max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
+
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
@@ -34,22 +34,23 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig, fit_spec, list(REQ_FITS_BOD
 	name = "gauntlets"
 	icon_state = "security_rig"
 	flags = PHORONGUARD
-	item_flags = THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig)
+	configure(item_worn(flags = THICKMATERIAL))
+
 TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
+
 /obj/item/clothing/shoes/magboots/rig
 	name = "boots"
 	icon_base = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+
 TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
 /obj/item/clothing/suit/space/rig
 	name = "chestpiece"
-	body_parts_covered = CHEST|LEGS|ARMS
-	flags_inv =			 HIDEJUMPSUIT|HIDETAIL
-	item_flags =		 THICKMATERIAL | AIRTIGHT
 	slowdown = 0
 	//will reach 10 breach damage after 25 laser carbine blasts, 3 revolver hits, or ~1 PTR hit. Completely immune to smg or sts hits.
 	breach_threshold = 38
@@ -75,11 +76,14 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig, fit_spec, list(REQ_FITS_BODYTY
 	var/obj/item/material/knife/tacknife
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+
+
 TYPE_TABLE(/obj/item/clothing/suit/space/rig, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_RAPALA, SPECIES_ALRAUNE, SPECIES_FENNEC, SPECIES_XENOHYBRID, SPECIES_ALTEVIAN, SPECIES_SHADEKIN))))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/rig, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS,/obj/item/storage))))
 
 CAPABILITIES(/obj/item/clothing/suit/space/rig)
+	configure(item_worn(covers = CHEST|LEGS|ARMS, hides = HIDEJUMPSUIT|HIDETAIL, flags = THICKMATERIAL | AIRTIGHT))
 	configure(item_protection(heat_parts = CHEST|LEGS|ARMS, cold_parts = CHEST|LEGS|ARMS, max_pressure = TRAIT_NONE, min_pressure = TRAIT_NONE))
 	op("rig_suit_draw_knife_hand", hand(), ungated(), label("Rig suit draw knife hand"), then(PROC_REF(rig_suit_draw_knife_hand)))
 	op("rig_suit_sheathe_knife_item", item(/obj/item), label("Rig suit sheathe knife item"), then(PROC_REF(rig_suit_sheathe_knife_item)))
@@ -150,16 +154,20 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 
 /obj/item/clothing/head/lightrig
 	name = DEVELOPER_WARNING_NAME // "mask"
-	body_parts_covered = HEAD|FACE|EYES
 	flags =              THICKMATERIAL|AIRTIGHT
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/clothing/head/lightrig)
+	configure(item_worn(covers = HEAD|FACE|EYES))
+
 /obj/item/clothing/suit/lightrig
 	name = DEVELOPER_WARNING_NAME // "suit"
-	flags_inv =          HIDEJUMPSUIT
 	flags =              THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/clothing/suit/lightrig)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+	configure(item_worn(hides = HIDEJUMPSUIT))
 
 
 /obj/item/clothing/shoes/lightrig
@@ -173,6 +181,3 @@ CAPABILITIES(/obj/item/clothing/suit/space/rig)
 /// the tacknife this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
 	return tacknife
-
-CAPABILITIES(/obj/item/clothing/suit/lightrig)
-	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

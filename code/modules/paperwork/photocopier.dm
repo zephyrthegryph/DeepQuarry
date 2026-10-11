@@ -397,7 +397,7 @@ CAPABILITIES(/obj/machinery/photocopier)
 	for(var/obj/item/clothing/C in contents_of(M))
 		if(M.item_is_in_hands(C))
 			continue
-		if((C.body_parts_covered & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))
+		if((worn_of(C).covers & LOWER_TORSO) && !istype(C,/obj/item/clothing/under/permit))
 			to_chat(M, span_warning("One needs to not be wearing pants to photocopy one's ass..."))
 			return FALSE
 	return TRUE

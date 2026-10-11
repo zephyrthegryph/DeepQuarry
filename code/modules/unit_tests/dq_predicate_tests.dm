@@ -14,7 +14,9 @@
 	MATERIAL_BULK(MAT_STEEL, 12000)
 
 /obj/item/dq_pred_test/knife
-	sharp = TRUE
+
+CAPABILITIES(/obj/item/dq_pred_test/knife)
+	configure(item_combat(sharp = TRUE))
 
 /obj/item/dq_pred_test/welder
 	tool_qualities = list(TOOL_WELDER)
