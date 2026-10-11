@@ -65,6 +65,24 @@ function testFiles(tests) {
   return files;
 }
 
+/** Files derived from the tree, regenerated after every merge (look keys, the factored pin bases): an overlap there is no overlap. */
+const REGENERATED = [/^code\/modules\/unit_tests\/snapshots\/look_keys\.txt$/, /^code\/modules\/unit_tests\/snapshots\/op_bases\//];
+
+/** The snapshot directories the files defining the tests read (`code/modules/unit_tests/snapshots/<dir>/`). */
+function snapshotDirs(tfiles) {
+  const dirs = new Set();
+  for (const f of tfiles) {
+    let text = '';
+    try {
+      text = fs.readFileSync(f, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const m of text.matchAll(/code\/modules\/unit_tests\/snapshots\/[A-Za-z0-9_]+\//g)) dirs.add(m[0]);
+  }
+  return dirs;
+}
+
 function check(ref, master) {
   const found = findStamp(ref);
   if (found.none) return { verdict: 'UNSTAMPED', why: 'no lane-ready note on this branch (run tools/dq_lane_ready.sh in the lane)', tests: [] };
@@ -88,9 +106,12 @@ function check(ref, master) {
   const covers = (s.covers || []).map(globToRegex);
   const globals = globalPrefixes();
   const hits = [];
+  const snaps = snapshotDirs(tfiles);
   for (const f of delta) {
+    if (REGENERATED.some((re) => re.test(f))) continue;
     let why = '';
     if (own.includes(f)) why = 'a file the branch changed';
+    else if ([...snaps].some((d) => f.startsWith(d))) why = 'a snapshot its tests read';
     else if (tfiles.has(f)) why = 'a file that defines its tests';
     else if (globals.some((g) => f.startsWith(g))) why = 'a global path (tools/ci/lane_ready_global.txt)';
     else if (covers.some((re) => re.test(f))) why = 'covered by the stamp';
