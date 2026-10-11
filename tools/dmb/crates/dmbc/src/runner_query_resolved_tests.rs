@@ -46,7 +46,7 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         &mut io::sink(),
         None,
         |row: &crate::selected_query::CurrentProcedureReferences| -> std::io::Result<()> {
-            row.write_jsonl(&mut expected)?;
+            row.write_jsonl(&mut expected).map_err(io::Error::other)?;
             Ok(())
         },
     )
