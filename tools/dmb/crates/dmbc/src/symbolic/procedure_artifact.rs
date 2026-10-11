@@ -3,6 +3,8 @@
 use super::parallel::BoundContribution;
 use super::*;
 pub(crate) mod disk;
+pub(super) mod retained_abi;
+use retained_abi::RetainedAbi;
 #[path = "retained_census.rs"]
 mod retained_census;
 
@@ -16,7 +18,7 @@ pub struct ReusableProcedureArtifact {
     image_owner: Arc<latest_image::LatestImage>,
     features: BytecodeFeatures,
     frame: Arc<FrozenFrame>,
-    abi: Option<Arc<crate::procedure_policy::PreparedAbi>>,
+    abi: Option<Arc<RetainedAbi>>,
     inventory: Arc<dm_link::InventoryContribution>,
     instances: Vec<(SymbolId, SymbolId)>,
     helpers: Vec<HelperArtifact>,
@@ -276,7 +278,7 @@ impl Contribution {
                 image_owner,
                 features,
                 frame,
-                abi,
+                abi: abi.as_ref().map(|abi| Arc::new(RetainedAbi::capture(abi))),
                 inventory: Arc::new(
                     dm_link::InventoryContribution::new(
                         unit_key(identity),
@@ -375,11 +377,14 @@ impl Contribution {
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
         crate::composition::ProcedureMetadataRecipe::census(&self.artifact.metadata_recipe, census);
         census.arc_object("prepared_artifact", &self.artifact);
+        if let Some(abi) = &self.artifact.abi {
+            RetainedAbi::census(abi, census);
+        }
         census.vec_payload("prepared_revision.debug_helpers", &self.binding.helpers);
         census.prepared_procedure_parts(
             &self.artifact.frozen,
             &self.artifact.frame,
-            &self.artifact.abi,
+            &self.binding.abi,
             &self.binding.origin,
             &self.binding.debug,
         );

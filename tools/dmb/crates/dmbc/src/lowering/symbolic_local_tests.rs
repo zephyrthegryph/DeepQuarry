@@ -57,7 +57,14 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     let licensed = policy
         .current_local_inputs(&front, front.snapshot.tree.symbols())
         .unwrap();
+    let issued_inputs = licensed.prepared(row).unwrap().inputs;
+    let owners_before = Arc::strong_count(&issued_inputs);
     let mut certificate = Certificate::issue(&licensed, row, 7).unwrap();
+    assert_eq!(
+        Arc::strong_count(&issued_inputs),
+        owners_before,
+        "certificate witnesses must not keep source-bearing input owners alive"
+    );
     assert!(
         certificate.selected.is_some(),
         "the actual successful ABI producer issues this unit owner"
@@ -94,7 +101,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     assert!(Arc::ptr_eq(&admitted.inputs, &prepared.inputs));
     assert!(certificate.matches(&licensed, row, 8, &record).is_none());
     let mut detached = certificate.clone();
-    detached.inputs = Arc::new(dm_codegen_byond::lower_resolver::ProcedureInputs::default());
+    detached.inputs = std::sync::Weak::new();
     assert!(detached.matches(&licensed, row, 7, &record).is_none());
     let foreign = build();
     let foreign_roster = PreparedBodyRoster::issue(&foreign).unwrap();

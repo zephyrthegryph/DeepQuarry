@@ -471,7 +471,10 @@ impl Encoded<'_> {
             image_owner: Arc::new(Default::default()),
             features,
             frame: Arc::new(frame),
-            abi: prepared.abi.clone(),
+            abi: prepared
+                .abi
+                .as_ref()
+                .map(|abi| Arc::new(RetainedAbi::capture(abi))),
             inventory: Arc::new(
                 dm_link::InventoryContribution::new(unit_key(identity), expected, slots)
                     .with_strings(strings),

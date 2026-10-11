@@ -11,7 +11,10 @@ impl ReusableProcedureArtifact {
         census.slice("session_symbolic.warnings", &artifact.warnings, true);
         census.latest_image(&artifact.image_owner);
         crate::composition::ProcedureMetadataRecipe::census(&artifact.metadata_recipe, census);
-        census.retained_symbolic_procedure(&artifact.frozen, &artifact.frame, &artifact.abi);
+        census.retained_symbolic_procedure(&artifact.frozen, &artifact.frame, &None);
+        if let Some(abi) = &artifact.abi {
+            RetainedAbi::census(abi, census);
+        }
         census.prepared_inventory_contribution(&artifact.inventory);
         census.vec_payload("session_symbolic.instances", &artifact.instances);
         if census.vec_payload("session_symbolic.helpers", &artifact.helpers) {

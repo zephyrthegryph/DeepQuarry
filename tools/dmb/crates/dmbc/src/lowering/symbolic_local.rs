@@ -2,15 +2,15 @@
 use super::*;
 #[derive(Clone)]
 pub(in crate::lowering) struct Certificate {
-    selected: Option<Arc<crate::driver_facts::abi_artifacts::UnitArtifact>>,
-    graph: Option<Arc<dm_tree::frontend::CallableAbiGraph>>,
-    inputs: Arc<dm_codegen_byond::lower_resolver::ProcedureInputs>,
-    abi: Arc<crate::procedure_policy::PreparedAbi>,
+    selected: Option<std::sync::Weak<crate::driver_facts::abi_artifacts::UnitArtifact>>,
+    graph: Option<std::sync::Weak<dm_tree::frontend::CallableAbiGraph>>,
+    inputs: std::sync::Weak<dm_codegen_byond::lower_resolver::ProcedureInputs>,
+    abi: std::sync::Weak<crate::procedure_policy::PreparedAbi>,
     identity: UnitIdentity,
     policy: u128,
     termination: u8,
     key: Option<Arc<[u8]>>,
-    code: Arc<dm_tree::frontend::BodyCodeIdentity>,
+    code: std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
 }
 #[cfg(test)]
 #[path = "symbolic_local_modified_tests.rs"]
@@ -26,21 +26,21 @@ impl Certificate {
         policy: u128,
     ) -> Option<Self> {
         let prepared = roster.prepared(row)?;
-        let selected = roster.selected(row).cloned();
+        let selected = roster.selected(row).map(Arc::downgrade);
         let graph = if selected.is_none() {
-            Some(Arc::clone(roster.graph()?))
+            Some(Arc::downgrade(roster.graph()?))
         } else {
             None
         };
         Some(Self {
             selected,
             graph,
-            inputs: prepared.inputs,
-            abi: prepared.abi?,
+            inputs: Arc::downgrade(&prepared.inputs),
+            abi: Arc::downgrade(prepared.abi.as_ref()?),
             identity: row.source().identity,
             policy,
             termination: row.termination().canonical_tag(),
-            code: Arc::clone(row.code_identity()),
+            code: Arc::downgrade(row.code_identity()),
             key: None,
         })
     }
@@ -65,15 +65,18 @@ impl Certificate {
             return None;
         }
         match (&self.selected, roster.selected(row)) {
-            (Some(previous), Some(current)) if Arc::ptr_eq(previous, current) => {}
-            (None, None) if Arc::ptr_eq(self.graph.as_ref()?, roster.graph()?) => {}
+            (Some(previous), Some(current)) if Arc::ptr_eq(&previous.upgrade()?, current) => {}
+            (None, None) if Arc::ptr_eq(&self.graph.as_ref()?.upgrade()?, roster.graph()?) => {}
             _ => return None,
         }
         let prepared = roster.prepared(row)?;
-        if !Arc::ptr_eq(&self.inputs, &prepared.inputs)
-            || !Arc::ptr_eq(&self.abi, prepared.abi.as_ref()?)
+        if !Arc::ptr_eq(&self.inputs.upgrade()?, &prepared.inputs)
+            || !Arc::ptr_eq(&self.abi.upgrade()?, prepared.abi.as_ref()?)
             || record.recipe.as_ref()?.metadata.as_ref() != roster.metadata(row)?.as_ref()
-            || (!(Arc::ptr_eq(&self.code, row.code_identity())
+            || (!(self
+                .code
+                .upgrade()
+                .is_some_and(|code| Arc::ptr_eq(&code, row.code_identity()))
                 && self
                     .key
                     .as_ref()
@@ -88,21 +91,27 @@ impl Certificate {
         Some(prepared)
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
-        census.arc_object("frontend.body_code_identity", &self.code);
+        // Weak witnesses keep their allocation shells, not nested live payloads.
+        fn shell<T>(census: &mut crate::heap_census::HeapCensus, value: &std::sync::Weak<T>) {
+            let bytes = std::mem::size_of::<T>();
+            census.exposed_buffer(
+                "procedure.local_weak_shell",
+                value.as_ptr() as usize,
+                bytes,
+                bytes,
+            );
+        }
+        shell(census, &self.code);
+        shell(census, &self.inputs);
+        shell(census, &self.abi);
+        if let Some(selected) = &self.selected {
+            shell(census, selected);
+        }
+        if let Some(graph) = &self.graph {
+            shell(census, graph);
+        }
         if let Some(key) = &self.key {
             census.slice("procedure.local_key", key.as_ref(), true);
-        }
-        if let Some(selected) = &self.selected {
-            if census.arc_object("prepared_abi.unit_payload", selected) {
-                if let Some(canonical) = &selected.canonical {
-                    census.prepared_canonical(canonical);
-                }
-            }
-        }
-        census.shared_procedure_inputs(&self.inputs);
-        census.abi(&self.abi);
-        if let Some(graph) = &self.graph {
-            census.callable_abi_graph(graph);
         }
     }
 }
