@@ -303,3 +303,49 @@ fn identity(value: dm_ir::ProcedureIdentity) -> UnitIdentity {
         occurrence: value.occurrence,
     }
 }
+
+/// Current scheduler admission already closes both immediate failure and formal
+/// inherited-layout edges. Seed those exact owners once, leaving only dirty
+/// roots for the existing executor; this is not source-only skip authority.
+pub(super) struct Seed {
+    pub(super) layouts: HashMap<MemberId, Arc<PreparedAbi>>,
+    pub(super) remaining: Vec<bool>,
+    pub(super) results: Vec<Option<crate::procedure_policy::PreparedUnit>>,
+    pub(super) ready: Vec<usize>,
+}
+pub(super) fn seed(
+    frontend: &ColdFrontend,
+    roster: &dm_tree::frontend::CallableRoster,
+    admitted: BTreeMap<usize, crate::procedure_policy::PreparedUnit>,
+) -> Result<Seed, AbiError> {
+    let mut seed = Seed {
+        layouts: HashMap::new(),
+        remaining: vec![true; frontend.bodies.len()],
+        results: (0..frontend.bodies.len()).map(|_| None).collect(),
+        ready: Vec::new(),
+    };
+    let mut roots: BTreeSet<_> = roster.ready().iter().copied().collect();
+    for (ordinal, mut unit) in admitted {
+        let body = frontend
+            .bodies
+            .get(ordinal)
+            .ok_or_else(|| AbiError::invariant("admitted ABI ordinal outside current frontend"))?;
+        unit.require_production_abi()?;
+        unit.executable_body = Vec::new();
+        if unit.canonical.is_none() {
+            unit.issue_canonical();
+        }
+        seed.layouts.insert(
+            body.member,
+            unit.abi.as_ref().expect("validated production ABI").clone(),
+        );
+        seed.results[ordinal] = Some(unit);
+        seed.remaining[ordinal] = false;
+        roots.extend(roster.dependents(ordinal).iter().copied());
+    }
+    seed.ready = roots
+        .into_iter()
+        .filter(|ordinal| seed.remaining[*ordinal])
+        .collect();
+    Ok(seed)
+}

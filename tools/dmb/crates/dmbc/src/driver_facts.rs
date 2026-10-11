@@ -507,7 +507,7 @@ fn prepare_source_abi_mode_on_executor(
     };
     let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
-    let mut scheduled = artifacts
+    let scheduled = artifacts
         .map(|store| {
             abi_scheduler::admitted(
                 store,
@@ -525,25 +525,18 @@ fn prepare_source_abi_mode_on_executor(
             )
         })
         .unwrap_or_default();
-    let mut layouts = HashMap::new();
-    let mut remaining = vec![true; frontend.bodies.len()];
-    let mut results: Vec<Option<crate::procedure_policy::PreparedUnit>> =
-        (0..remaining.len()).map(|_| None).collect();
+    let abi_scheduler::Seed {
+        mut layouts,
+        mut remaining,
+        mut results,
+        mut ready,
+    } = abi_scheduler::seed(frontend, roster, scheduled)?;
     let mut failures = BTreeMap::new();
-    let mut ready = roster.ready().to_vec();
-    // The build executor survives every dependency wave and every other stage.
+    // Only dirty rows enter dependency waves. Admitted immutable layouts already
+    // satisfy their current predecessor edges and never re-enter worker dispatch.
     if !ready.is_empty() {
         while !ready.is_empty() {
             let encounter = ready.clone();
-            let mut admitted_wave = Vec::new();
-            ready.retain(|ordinal| {
-                if let Some(unit) = scheduled.remove(ordinal) {
-                    admitted_wave.push((*ordinal, Ok(unit)));
-                    false
-                } else {
-                    true
-                }
-            });
             let inherited = DriverInheritedFacts {
                 frontend,
                 engine,
@@ -643,7 +636,6 @@ fn prepare_source_abi_mode_on_executor(
                 })
             }))
             .map_err(|_| AbiError::invariant("ABI preparation worker panicked"))?;
-            wave.extend(admitted_wave);
             let positions: HashMap<_, _> = encounter
                 .iter()
                 .enumerate()

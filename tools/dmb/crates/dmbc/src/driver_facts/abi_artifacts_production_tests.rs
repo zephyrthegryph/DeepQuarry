@@ -728,3 +728,30 @@ fn issued_abi_local_structure_tracks_parent_and_definition_without_sibling_churn
     let overriding = facts("/datum/base\n/datum/base/proc/p()\n    return 0\n/datum/a\n    parent_type = /datum/base\n/datum/a/p()\n    return 1\n");
     assert_ne!(original.0, overriding.0, "declaration/override mode is a mandatory local fact");
 }
+
+#[test]
+fn admitted_abi_seed_dispatches_only_dirty_dependency_roots() {
+    let owner = crate::runner_host::EnginePayload::capture(
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(), 1, true, 0,
+    ).unwrap();
+    let current = frontend("/datum/a/proc/p(x=1)\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n", &owner.snapshot);
+    let prepared = prepared(&current, &owner.snapshot, None);
+    let roster = current.callable_roster().unwrap();
+    let all: BTreeMap<_, _> = prepared.prepared.units().iter().enumerate()
+        .map(|(ordinal, (_, unit))| (ordinal, unit.clone())).collect();
+    let all_seed = abi_scheduler::seed(&current, roster, all.clone()).unwrap();
+    assert!(all_seed.ready.is_empty(), "fully admitted graph performs no executor wave");
+    assert!(all_seed.remaining.iter().all(|pending| !pending));
+    for (ordinal, (_, expected)) in prepared.prepared.units().iter().enumerate() {
+        let actual = all_seed.results[ordinal].as_ref().unwrap();
+        assert!(Arc::ptr_eq(&actual.inputs, &expected.inputs));
+        assert!(Arc::ptr_eq(actual.abi.as_ref().unwrap(), expected.abi.as_ref().unwrap()));
+    }
+    let selected = all.into_iter().filter(|(ordinal, _)| *ordinal == 0 || *ordinal == 3).collect();
+    let partial = abi_scheduler::seed(&current, roster, selected).unwrap();
+    assert_eq!(partial.ready, vec![1], "only first dirty descendant is ready, not its child or admitted sibling");
+    assert_eq!(partial.remaining, vec![false, true, true, false]);
+    assert_eq!(partial.layouts.len(), 2);
+    let cold = abi_scheduler::seed(&current, roster, BTreeMap::new()).unwrap();
+    assert_eq!(cold.ready, roster.ready(), "unissued path retains original cold roots");
+}
