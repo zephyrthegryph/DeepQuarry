@@ -44,7 +44,6 @@
 	say_list_type = /datum/say_list/squirrel
 
 	mob_size = MOB_SMALL
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	var/do_seasons = TRUE
 	picked_color = FALSE
@@ -153,6 +152,7 @@
 // A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
 // keener to pounce.
 CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	configure(mob_movement(softfall = TRUE))
 	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
 	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))
 	after_init(0, then(PROC_REF(season_coat)))

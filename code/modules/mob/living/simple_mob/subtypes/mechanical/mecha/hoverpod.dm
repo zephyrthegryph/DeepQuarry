@@ -21,7 +21,6 @@
 	wreckage = /obj/structure/loot_pile/mecha/hoverpod
 
 	endurance = 150
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	projectile_dispersion = 10
 	projectile_accuracy = -30
@@ -32,6 +31,7 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/hoverpod)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 

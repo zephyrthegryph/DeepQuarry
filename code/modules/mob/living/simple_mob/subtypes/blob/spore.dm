@@ -17,7 +17,6 @@
 	melee_damage_lower = 2
 	melee_damage_upper = 4
 	movement_cooldown = -2
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	attacktext = list("slammed into")
 	attack_sound = SFX_EFFECTS_SLIME_SQUISH
@@ -32,6 +31,7 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(death_message = "bursts!"))
 	param(nameof(factory), /obj/structure/blob/factory, pos = 1)
 

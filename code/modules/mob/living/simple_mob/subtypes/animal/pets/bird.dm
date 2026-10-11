@@ -18,9 +18,6 @@
 	melee_damage_upper = 3
 
 	movement_cooldown = -1
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
-	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
-	// dq_get_parachuting(src) type-default moved to GLOB.dq_parachuting_by_type
 
 	meat_amount = 1
 	meat_type = /obj/item/reagent_containers/food/snacks/meat/chicken
@@ -35,6 +32,9 @@
 
 	say_list_type = /datum/say_list/bird
 	holder_type = /obj/item/holder/bird
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird)
+	configure(mob_movement(softfall = TRUE, hovering = TRUE, parachuting = TRUE))
 
 /datum/say_list/bird
 	speak = list("Chirp!","Caw!","Screech!","Squawk!")

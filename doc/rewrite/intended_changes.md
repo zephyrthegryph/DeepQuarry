@@ -4705,3 +4705,9 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+
+## Softfall, hovering and parachuting type defaults are trait fields (base_vars lane B, bv-hud)
+
+The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
+30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
+behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).
