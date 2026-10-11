@@ -54,6 +54,10 @@ pub enum SourceQuery {
         start: u32,
         limit: u32,
     },
+    /// Lazily parse one exact currently issued body; both revision pins required.
+    BodyModel {
+        ordinal: u32,
+    },
     /// Only facts already issued by explicit analyze --resolved; never relowers.
     SelectedReferences {
         ordinal: u32,
@@ -135,6 +139,7 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
                 expected.as_deref(),
                 expected_source.as_deref(),
             )?;
+            validate_body_requests(&reply, &source_questions)?;
             occurrence_pages::validate_requested(&reply, &source_questions)?;
             semantic_pages::validate_requested(&reply, &source_questions)?;
             Ok(reply)
@@ -142,6 +147,24 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
         super::protocol::Reply::Rejected(error) => Err(error.into()),
         _ => Err("unexpected read-only query reply".into()),
     }
+}
+fn validate_body_requests(reply: &QueryReply, questions: &[SourceQuery]) -> io::Result<()> {
+    let mut expected = questions.iter().filter_map(|q| match q {
+        SourceQuery::BodyModel { ordinal } => Some(*ordinal),
+        _ => None,
+    });
+    for line in reply.jsonl.lines() {
+        let row: serde_json::Value = serde_json::from_str(line).map_err(io::Error::other)?;
+        if row["row"] == "source_body_model"
+            && expected.next().map(u64::from) != row["ordinal"].as_u64()
+        {
+            return Err(io::Error::other("body query response ordinal mismatch"));
+        }
+    }
+    if expected.next().is_some() {
+        return Err(io::Error::other("body query response missing"));
+    }
+    Ok(())
 }
 fn validate_reply(
     reply: &QueryReply,
@@ -193,6 +216,22 @@ fn validate_reply(
         }
         if row["row"] == "source_occurrences_page" || row["row"] == "source_body_contexts_page" {
             occurrence_pages::validate(&row, reply.source_revision.as_deref())?;
+            source_rows += 1;
+            continue;
+        }
+        if row["row"] == "source_body_model" {
+            if row["schema"] != "dm-session-source-query-v1"
+                || row["source_revision"].as_str() != reply.source_revision.as_deref()
+                || row["ordinal"]
+                    .as_u64()
+                    .and_then(|n| u32::try_from(n).ok())
+                    .is_none()
+                || row["typed_jsonl"].as_str().is_none()
+                || row["lexical_jsonl"].as_str().is_none()
+                || row["semantic_resolution_complete"] != false
+            {
+                return Err(io::Error::other("invalid current body model envelope"));
+            }
             source_rows += 1;
             continue;
         }
@@ -405,6 +444,10 @@ pub(crate) fn evaluate_snapshot(
             snapshot.write_body_contexts_page(*start, *limit, tree, &mut output)?;
             continue;
         }
+        if let SourceQuery::BodyModel { ordinal } = question {
+            snapshot.write_body_model(*ordinal, tree, &mut output)?;
+            continue;
+        }
         if let SourceQuery::SelectedReferences { ordinal } = question {
             snapshot.write_selected(*ordinal, &mut output)?;
             continue;
@@ -412,7 +455,8 @@ pub(crate) fn evaluate_snapshot(
         let (ordinal, provenance) = match question {
             SourceQuery::Occurrence { ordinal } => (*ordinal, false),
             SourceQuery::Provenance { ordinal } => (*ordinal, true),
-            SourceQuery::SelectedReferences { .. }
+            SourceQuery::BodyModel { .. }
+            | SourceQuery::SelectedReferences { .. }
             | SourceQuery::OccurrencesPage { .. }
             | SourceQuery::BodyContextsPage { .. }
             | SourceQuery::SemanticTypesPage { .. }

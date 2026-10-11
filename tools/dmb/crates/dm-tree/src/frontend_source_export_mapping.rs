@@ -156,6 +156,31 @@ impl SourceExportMapping {
     pub fn coordinate_fingerprint(&self) -> u128 {
         self.coordinate_fingerprint
     }
+    /// Current expanded coordinate, using the same issued origin choice as Mapping.
+    pub fn output(&self, offset: usize) -> Option<SourceLocation> {
+        let index = self
+            .origins
+            .partition_point(|origin| origin.output_span.end <= offset);
+        let origin = self.origins.get(index).or_else(|| self.origins.last())?;
+        let (include, encounter) = *self.regions.get(origin.region)?;
+        let coordinates = self.includes.get(include)?;
+        let mut chain = vec![include];
+        let mut cursor = include;
+        while let Some(parent) = self.includes.get(cursor)?.parent {
+            chain.push(parent);
+            cursor = parent;
+        }
+        chain.reverse();
+        source_location(
+            origin,
+            &coordinates.path,
+            &coordinates.semantic_path,
+            encounter,
+            include,
+            chain.into(),
+            &self.by_path,
+        )
+    }
     pub fn location(&self, ordinal: OccurrenceId) -> Option<&SourceLocation> {
         self.locations
             .get_or_init(|| {

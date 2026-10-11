@@ -504,6 +504,9 @@ mod relative_declarations;
 #[path = "frontend_body_code.rs"]
 mod body_code;
 pub use body_code::IssuedBodyCode;
+#[path = "frontend_body_archive.rs"]
+mod body_archive;
+pub use body_archive::{ArchivedBody, BodyArchive};
 pub use relative_declarations::BodyCodeIdentity;
 pub use relative_declarations::{CurrentSyntaxChunk, DeclarationSyntax, ItemView, RelativeSyntax};
 #[path = "body_arena.rs"]
@@ -579,36 +582,12 @@ impl ParsedBody<'_> {
         supported: fn(&[dm_syntax::Statement]) -> bool,
     ) -> Self {
         self.statement_attempted = true;
-        let parsed = dm_syntax::parse_body_items_with_context(
-            &self.item.children,
+        self.statements = Some(body_archive::parse_statements(
+            &mut self.item,
             &self.issuer.issued_arena,
-            &|offset| self.issuer.issued_syntax.declaration_header_at(offset),
-        );
-        fn headers(items: &[Item], result: &mut std::collections::HashSet<(usize, usize)>) {
-            for item in items {
-                if item.header.trim_start().starts_with("var/") {
-                    result.insert((item.header_span.start, item.header_span.end));
-                }
-                headers(&item.children, result);
-            }
-        }
-        let stored_candidates =
-            crate::procedure_statics::items_may_contain_stored_declarations(&self.item.children);
-        let mut declaration_headers = std::collections::HashSet::new();
-        // This roster certifies only extracted stored-local declarations. The
-        // existing negative proof excludes all such origins; ordinary locals
-        // need neither header traversal nor HashSet backing allocation.
-        if stored_candidates {
-            headers(&self.item.children, &mut declaration_headers);
-        }
-        if parsed.diagnostics.is_empty() && supported(&parsed.statements) {
-            self.item.children = Vec::new();
-        }
-        self.statements = Some(Arc::new(StatementBody {
-            parsed,
-            declaration_headers,
-            stored_candidates,
-        }));
+            &self.issuer.issued_syntax,
+            supported,
+        ));
 
         self
     }

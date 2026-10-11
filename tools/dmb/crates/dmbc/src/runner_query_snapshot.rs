@@ -31,6 +31,7 @@ pub(crate) struct SourceSnapshot {
     occurrences: Arc<dm_tree::OccurrenceTable>,
     /// Same immutable current producer owner; no parsed syntax or source arena.
     bodies: Option<Arc<[dm_tree::frontend::BodyOccurrence]>>,
+    body_archive: Option<Arc<dm_tree::frontend::BodyArchive>>,
     source_mapping: Option<Arc<dm_tree::frontend::SourceExportMapping>>,
     paths: BTreeMap<dm_ir::FileId, Arc<PathBuf>>,
     selected: selected::SelectedRows,
@@ -63,6 +64,15 @@ impl SourceSnapshot {
         });
         if let Some(bodies) = &self.bodies {
             census.body_occurrences("query_snapshot.bodies", bodies);
+        }
+        if let Some(archive) = &self.body_archive {
+            if census.arc_object("query_snapshot.body_archive", archive) {
+                archive.visit_storage(|source, syntax, bodies| {
+                    census.source_text("query_snapshot.body_archive.text", source);
+                    census.declaration_syntax("query_snapshot.body_archive.syntax", syntax);
+                    census.body_occurrences("query_snapshot.body_archive.bodies", bodies);
+                });
+            }
         }
         if let Some(mapping) = &self.source_mapping {
             census.source_export_mapping(mapping);
@@ -149,6 +159,7 @@ impl SourceSnapshot {
             selected: Default::default(),
             replay_proof: None,
             occurrences: Arc::clone(&frontend.snapshot.occurrences),
+            body_archive: frontend.body_archive(),
             bodies: frontend
                 .callable_roster()
                 .ok()
@@ -381,3 +392,55 @@ impl Drop for QueryAttempt {
 #[cfg(test)]
 #[path = "runner_query_body_context_tests.rs"]
 mod body_context_tests;
+
+impl SourceSnapshot {
+    pub(crate) fn write_body_model(
+        &self,
+        ordinal: u32,
+        tree: &dm_tree::SemanticTree,
+        output: &mut impl std::io::Write,
+    ) -> std::io::Result<()> {
+        use std::io::{self, Write};
+        let archive = self
+            .body_archive
+            .as_ref()
+            .filter(|archive| archive.matches_tree(tree))
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::NotFound, "current body archive unavailable")
+            })?;
+        let body = archive
+            .parse(ordinal as usize)
+            .map_err(|error| io::Error::other(error.message))?;
+        struct Bounded(Vec<u8>);
+        impl Write for Bounded {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                if self.0.len().saturating_add(bytes.len()) > 192 * 1024 {
+                    return Err(io::Error::other("body model query exceeds output budget"));
+                }
+                self.0.extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+        let mut syntax = Bounded(Vec::new());
+        dm_analysis::typed_body_jsonl::write_archived_jsonl(&body, &mut syntax)
+            .map_err(io::Error::other)?;
+        let lexical = dm_analysis::typed_body::lexical::analyze_archived(&body, None)
+            .map_err(io::Error::other)?;
+        let mut bindings = Bounded(Vec::new());
+        dm_analysis::typed_body::lexical::jsonl::write_jsonl(&lexical, &mut bindings)
+            .map_err(io::Error::other)?;
+        serde_json::to_writer(&mut *output, &serde_json::json!({
+            "row":"source_body_model", "schema":"dm-session-source-query-v1",
+            "source_revision":format!("{:032x}",self.source_revision), "ordinal":ordinal,
+            "member":body.occurrence().member.0,"declaration":body.occurrence().declaration.0,
+            "typed_jsonl":String::from_utf8(syntax.0).map_err(io::Error::other)?,
+            "lexical_jsonl":String::from_utf8(bindings.0).map_err(io::Error::other)?,
+            "semantic_resolution_complete":false,
+            "coverage":"current typed syntax and lexical bindings; nonlocal resolved selections require compiler host facts"
+        })).map_err(io::Error::other)?;
+        output.write_all(b"\n")
+    }
+}

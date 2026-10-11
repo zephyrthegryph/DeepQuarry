@@ -106,9 +106,28 @@ pub fn analyze<'a>(
         .statement_body()
         .ok_or(BindingError::NoTypedModel(NoTypedModel))?
         .parsed();
-    let tree = &frontend.snapshot.tree;
+    analyze_model(&frontend.snapshot.tree, body.occurrence(), model, mask)
+}
+/// Analyze one exact issued archive body without rebuilding the frontend.
+pub fn analyze_archived<'a>(
+    body: &'a dm_tree::frontend::ArchivedBody<'_>,
+    mask: Option<&StatementMask>,
+) -> Result<LexicalBody<'a>, BindingError> {
+    analyze_model(
+        body.tree(),
+        body.occurrence(),
+        body.statement_body().parsed(),
+        mask,
+    )
+}
+fn analyze_model<'a>(
+    tree: &dm_tree::SemanticTree,
+    occurrence: &'a BodyOccurrence,
+    model: &'a dm_syntax::ParsedBody,
+    mask: Option<&StatementMask>,
+) -> Result<LexicalBody<'a>, BindingError> {
     let member = tree
-        .member(body.occurrence().member)
+        .member(occurrence.member)
         .ok_or(BindingError::InvalidSignature)?;
     let procedure = member
         .metadata
@@ -142,7 +161,7 @@ pub fn analyze<'a>(
         .leave_scope()
         .expect("root analysis scope is balanced");
     Ok(LexicalBody {
-        occurrence: body.occurrence(),
+        occurrence: occurrence,
         scopes: visitor.scopes,
         references: visitor.references,
         selectors: visitor.selectors,

@@ -1,5 +1,5 @@
 //! Optional streaming node rows from the shared typed visitor.
-use crate::typed_body::{self, NoTypedModel};
+use crate::typed_body::NoTypedModel;
 use dm_syntax::{Expr, ExprKind, NodeStep, Statement, TypedVisitor, VisitDecision, VisitReport};
 use dm_tree::frontend::ParsedBody;
 use serde_json::{json, Value};
@@ -33,27 +33,44 @@ pub fn write_jsonl(
     // Reject absence before writing a partial stream.
     body.statement_body()
         .ok_or(ExportError::NoTypedModel(NoTypedModel))?;
-    let occurrence = body.occurrence();
+    write_model(
+        body.occurrence(),
+        body.statement_body().expect("checked above").parsed(),
+        writer,
+    )
+}
+/// The archive is minted by the same current frontend producer as ParsedBody.
+pub fn write_archived_jsonl(
+    body: &dm_tree::frontend::ArchivedBody<'_>,
+    writer: &mut impl Write,
+) -> Result<VisitReport, ExportError> {
+    write_model(body.occurrence(), body.statement_body().parsed(), writer)
+}
+fn write_model(
+    occurrence: &dm_tree::frontend::BodyOccurrence,
+    model: &dm_syntax::ParsedBody,
+    writer: &mut impl Write,
+) -> Result<VisitReport, ExportError> {
     let mut visitor = Rows {
         writer,
         member: occurrence.member.0,
         declaration: occurrence.declaration.0,
         error: None,
     };
-    let result = typed_body::visit(body, &mut visitor).map_err(ExportError::NoTypedModel)?;
+    let report = dm_syntax::visit_statements(&model.statements, &mut visitor);
     if let Some(error) = visitor.error {
         return Err(error);
     }
     visitor.emit(json!({"schema":SCHEMA,"row":"body_summary",
         "member":visitor.member,"declaration":visitor.declaration,
-        "statements":result.report.statements,"expressions":result.report.expressions,
-        "unsupported_statements":result.report.unsupported_statements,
-        "diagnostics":result.diagnostics.iter().map(|d|json!({
+        "statements":report.statements,"expressions":report.expressions,
+        "unsupported_statements":report.unsupported_statements,
+        "diagnostics":model.diagnostics.iter().map(|d|json!({
             "span":[d.span.start,d.span.end],"message":d.message})).collect::<Vec<_>>() }));
     if let Some(error) = visitor.error {
         return Err(error);
     }
-    Ok(result.report)
+    Ok(report)
 }
 struct Rows<'a, W> {
     writer: &'a mut W,
