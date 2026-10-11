@@ -35,10 +35,6 @@ TRACKED(/obj/item/oldtwohanded, wielded)
 	set_force(force_wielded)
 	name = "[initial(name)] (Wielded)"
 
-TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/oldtwohanded/proc/not_wielded, "unwield it first"))))
-
-/obj/item/oldtwohanded/proc/not_wielded()
-	return !wielded
 
 /obj/item/oldtwohanded/dropped(mob/user, equipping, slot)
 	//handles unwielding a twohanded weapon when dropped as well as clearing up the offhand
@@ -59,6 +55,7 @@ TYPE_TABLE(/obj/item/oldtwohanded, equip_spec, dq_spec_join(..(), list(REQ_ON(PR
 	unwield()
 
 CAPABILITIES(/obj/item/oldtwohanded)
+	acceptance("equip", req_acceptance_unwielded(), mode = ACCEPTANCE_APPEND)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -129,3 +126,12 @@ CAPABILITIES(/obj/item/oldtwohanded/spear)
 	configure(item_thrown(force = 20))
 	configure(item_combat(force = 14, edge = 0, sharp = 1, attack_verbs = list("attacked", "poked", "jabbed", "torn", "gored")))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE))
+
+/proc/req_acceptance_unwielded()
+	return part_make(/datum/entry/part/req/acceptance_leaf/unwielded, list())
+/datum/entry/part/req/acceptance_leaf/unwielded/acceptance_reason(datum/act/op/A)
+	var/obj/item/oldtwohanded/I = A.target
+	return I.wielded ? "unwield it first" : null
+/datum/entry/part/req/acceptance_leaf/unwielded/read_keys(datum/act/op/A)
+	var/obj/item/oldtwohanded/I = A.target
+	return list(list(I, nameof(I.wielded)))

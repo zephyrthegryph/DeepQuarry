@@ -289,6 +289,9 @@
 #include "dq_material_state_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
+#include "dq_native_numeric_tests.dm"
+#include "dq_vore_native_consent_tests.dm"
+#include "dq_containment_sharp_native.dm"
 #include "dq_constraint_tests.dm"
 #include "dq_containment_tests.dm"
 #include "dq_destroy_transaction_tests.dm"
@@ -1274,6 +1277,8 @@
 #include "j_closet_resident_cost_tests.dm"
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
+#include "dq_nikki_rig_chest_tests.dm"
+#include "dq_acceptance_garment_identity_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

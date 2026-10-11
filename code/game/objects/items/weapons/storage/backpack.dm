@@ -560,10 +560,6 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	var/taurtype = /datum/sprite_accessory/tail/taur/horse //Acceptable taur type to be wearing this
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-TYPE_TABLE(/obj/item/storage/backpack/saddlebag, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag/proc/taur_fit, null))))
-
-/obj/item/storage/backpack/saddlebag/proc/taur_fit(mob/living/carbon/human/H)
-	return (istype(H) && istype(H.tail_style, taurtype)) ? TRUE : lowertext(no_message)
 
 /* If anyone wants to make some... this is how you would.
 /obj/item/storage/backpack/saddlebag/spider
@@ -583,17 +579,42 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag, equip_spec, dq_spec_join(..(), 
 	slowdown = 0.5 //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
 
-TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/storage/backpack/saddlebag_common/proc/taur_fit, null))))
+TRACKED(/obj/item/storage/backpack/saddlebag_common, icon_base)
+TRACKED(/obj/item/storage/backpack/saddlebag_common, no_message)
 
-/// Any taur half; the bags take the look of the wearer's.
-/obj/item/storage/backpack/saddlebag_common/proc/taur_fit(mob/living/carbon/human/H)
-	var/datum/sprite_accessory/tail/taur/TT = istype(H) ? H.tail_style : null
-	if(!istype(TT))
-		return lowertext(no_message)
-	item_state = "[icon_base]_[TT.icon_sprite_tag]"	//icon_sprite_tag is something like "deer"
-	return TRUE
+CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
+	acceptance("equip", req_acceptance_common_taur(), mode = ACCEPTANCE_APPEND)
 
+/proc/req_acceptance_common_taur()
+	return part_make(/datum/entry/part/req/acceptance_leaf/common_taur, list())
+/datum/entry/part/req/acceptance_leaf/common_taur/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/storage/backpack/saddlebag_common/I = A.target
+	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur) ? null : lowertext(I.no_message)
+/datum/entry/part/req/acceptance_leaf/common_taur/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/storage/backpack/saddlebag_common/I = A.target
+	. = list(list(I, nameof(I.no_message)))
+	if(istype(H))
+		. += list(list(H, nameof(H.tail_style)))
 
+/obj/item/storage/backpack/saddlebag_common/draw(datum/look/look)
+	..()
+	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	look.watch(H)
+	var/state = initial(item_state)
+	if(H && H.get_equipped_item(SLOT_ID_BACK) == src)
+		var/datum/sprite_accessory/tail/taur/TT = H.tail_style
+		look.watch(TT)
+		if(istype(TT))
+			state = "[icon_base]_[TT.icon_sprite_tag]"
+	look.held_state(state)
+	look.effect(PROC_REF(redraw_worn_back))
+
+/obj/item/storage/backpack/saddlebag_common/proc/redraw_worn_back()
+	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	if(H && H.get_equipped_item(SLOT_ID_BACK) == src)
+		H.update_inv_back()
 
 /obj/item/storage/backpack/saddlebag_common/robust //Shared bag for other taurs with sturdy backs
 	name = "Robust Saddlebags"
@@ -723,3 +744,21 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 	slowdown = 0.5
+
+CAPABILITIES(/obj/item/storage/backpack/saddlebag)
+	acceptance("equip", req_acceptance_saddlebag_taur(), mode = ACCEPTANCE_APPEND)
+
+TRACKED(/obj/item/storage/backpack/saddlebag, taurtype)
+TRACKED(/obj/item/storage/backpack/saddlebag, no_message)
+/proc/req_acceptance_saddlebag_taur()
+	return part_make(/datum/entry/part/req/acceptance_leaf/saddlebag_taur, list())
+/datum/entry/part/req/acceptance_leaf/saddlebag_taur/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/storage/backpack/saddlebag/I = A.target
+	return istype(H) && istype(H.tail_style, I.taurtype) ? null : lowertext(I.no_message)
+/datum/entry/part/req/acceptance_leaf/saddlebag_taur/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/storage/backpack/saddlebag/I = A.target
+	. = list(list(I, nameof(I.taurtype)), list(I, nameof(I.no_message)))
+	if(istype(H))
+		. += list(list(H, nameof(H.tail_style)))

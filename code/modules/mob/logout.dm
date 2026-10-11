@@ -19,5 +19,6 @@
 
 	set_listening(NON_LISTENING_ATOM) //maybe remove this, even if it will cause a teensy bit more lag
 	..()
+	on_client_changed("logout")
 
 	return TRUE

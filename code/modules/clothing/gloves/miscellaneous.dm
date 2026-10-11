@@ -178,7 +178,7 @@ CAPABILITIES(/obj/item/clothing/gloves/weddingring)
 /obj/item/clothing/gloves/weddingring/proc/engraving_picked(datum/act/op/A)
 	var/datum/prompt/text/picked = A.answer
 	set_partnername(picked.value)
-	name = "[initial(name)] - [partnername]"
+	set_name("[initial(name)] - [partnername]")
 	return OP_OK
 
 /obj/item/clothing/gloves/weddingring/silver

@@ -513,7 +513,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	D.looks.set_eyes_color(rgb(200, 200, 200))
 	D.update_eyes()
 	LAZYCLEARLIST(D.all_underwear)
-	D.key = ghost.key
+	D.set_key(ghost.key)
 	GLOB.cult.add_antagonist(D.mind)
 
 	if(!chose_name)

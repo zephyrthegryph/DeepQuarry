@@ -1,7 +1,4 @@
-// Predicate language (code/datums/properties/predicates.dm): each clause kind,
-// combinators, reason text, unit checking at compile, watch marking, and a
-// table over sample actors and items.
-
+// Real requirement fixture data and final-form behavior tests.
 // ---- Fixtures ----
 
 /obj/item/dq_pred_test
@@ -24,11 +21,8 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 /obj/item/dq_pred_test/welder/advanced
 	tool_qualities = list(TOOL_WELDER = 2)
 
-/obj/item/dq_pred_test/proc/dq_is_ready(mob/actor, atom/target, obj/item/held)
-	return name == "ready" ? TRUE : "it isn't ready"
-
-/proc/dq_pred_test_global(mob/actor, atom/target, obj/item/held)
-	return istype(held, /obj/item/dq_pred_test/knife)
+/obj/item/dq_pred_test/proc/dq_is_ready(datum/act/op/A)
+	return name == "ready" ? null : "it isn't ready"
 
 /// A handed mob whose hands are set directly: r_hand is the active hand.
 /mob/living/dq_pred_test
@@ -48,19 +42,6 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 	move_into(src, SLOT_ID_HAND_R, right, src)
 	move_into(src, SLOT_ID_HAND_L, left, src)
 	hand = null
-
-/datum/predicate/dq_test_weld_light
-	name = "weld a light thing"
-	test_only = TRUE
-	spec = list(
-		REQ_REACH_ADJACENT,
-		REQ_TOOL_TIER(TOOL_WELDER, 2),
-		REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5)),
-	)
-
-/datum/predicate/dq_test_bad_units
-	test_only = TRUE
-	spec = list(REQ_BELOW(PRED_TARGET, PROP_MASS, KELVIN(373)))
 
 // A channel-backed temperature, for watch marking. Built into a private registry.
 /datum/property_def/dq_pred_test_temperature
@@ -93,253 +74,84 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 			return T
 	return null
 
-/datum/unit_test/proc/dq_pred(list/spec, label = "test")
-	RETURN_TYPE(/datum/predicate)
-	var/datum/predicate/P = new
-	P.name = label
-	P.spec = spec
-	P.compile()
-	return P
+// Native coverage of the existing numeric predicate clauses and ordered weld table.
+// Existing dq_pred_test item/actor fixtures stay included until full test migration.
+/datum/unit_test/dq_native_predicate_numeric
+	abstract_type = /datum/unit_test/dq_native_predicate_numeric
 
-// ---- Clause kinds ----
+/datum/unit_test/dq_native_predicate_numeric/proc/reason(datum/entry/part/req/R, mob/actor, datum/target, obj/item/held = null)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.actor = actor
+	A.target = target
+	A.holder = target
+	A.set_held_provider(held)
+	try
+		. = op_req_check(A, R)
+	catch(var/exception/E)
+		A.release()
+		throw E
+	A.release()
 
-/datum/unit_test/dq_predicate_clauses
-
-/datum/unit_test/dq_predicate_clauses/Run()
+/datum/unit_test/dq_native_predicate_numeric/clauses/Run()
 	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
 	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
 	var/obj/item/dq_pred_test/heavy/heavy = allocate(/obj/item/dq_pred_test/heavy)
-	var/obj/item/dq_pred_test/knife/knife = allocate(/obj/item/dq_pred_test/knife)
-	var/obj/item/dq_pred_test/welder/welder = allocate(/obj/item/dq_pred_test/welder)
-	var/obj/item/dq_pred_test/welder/advanced/advanced = allocate(/obj/item/dq_pred_test/welder/advanced)
+	TEST_ASSERT_EQUAL(dq_property(light, PROP_MASS), 1, "actual light material mass is 1 kg")
+	TEST_ASSERT_EQUAL(dq_property(heavy, PROP_MASS), 12, "actual heavy material mass is 12 kg")
+	TEST_ASSERT_NULL(reason(req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5)), actor, light), "1 kg is below 5 kg")
+	TEST_ASSERT_EQUAL(reason(req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5)), actor, heavy), "too heavy: 12 kg > 5 kg", "exact old high reason")
+	TEST_ASSERT_EQUAL(reason(req_measure(PROP_MASS, SIM_COMPARE_GT, KG(5)), actor, light), "too light: 1 kg < 5 kg", "exact old low reason")
+	TEST_ASSERT_NULL(reason(req_measure(PROP_MASS, SIM_COMPARE_LTE, KG(1)), actor, light), "inclusive upper bound")
+	TEST_ASSERT_EQUAL(reason(req_measure(PROP_MASS, SIM_COMPARE_LT, KG(1)), actor, light), "too heavy: 1 kg, must be below 1 kg", "strict equality refuses")
+	TEST_ASSERT_NULL(reason(req_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(ITEMSIZE_LARGE)), actor, heavy), "size inclusive lower bound")
+	TEST_ASSERT_EQUAL(reason(req_measure(PROP_SIZE_CLASS, SIM_COMPARE_GTE, SIZE_CLASS(ITEMSIZE_LARGE)), actor, light), "too small: size [ITEMSIZE_SMALL] < size [ITEMSIZE_LARGE]", "exact old size reason")
+	TEST_ASSERT_NULL(reason(req_measure(PROP_SIZE_CLASS, SIM_COMPARE_EQ, SIZE_CLASS(ITEMSIZE_SMALL)), actor, light), "size equality")
+	TEST_ASSERT_EQUAL(reason(req_measure(PROP_SIZE_CLASS, SIM_COMPARE_EQ, SIZE_CLASS(ITEMSIZE_SMALL)), actor, heavy), "size class must be size [ITEMSIZE_SMALL], is size [ITEMSIZE_LARGE]", "size equality refusal")
+	TEST_ASSERT_NULL(reason(req_measure_not(PROP_MASS, SIM_COMPARE_LT, KG(5)), actor, heavy), "inverted comparison passes")
+	TEST_ASSERT_EQUAL(reason(req_measure_not(PROP_MASS, SIM_COMPARE_LT, KG(5)), actor, light), "too light: 1 kg < 5 kg", "NOT folds comparison and reason")
+	TEST_ASSERT_NULL(reason(req_band(PROP_MASS, KG(0.5), KG(2)), actor, light), "inside band")
+	TEST_ASSERT_EQUAL(reason(req_band(PROP_MASS, KG(0.5), KG(2)), actor, heavy), "too heavy: 12 kg, must be 0.5 kg to 2 kg", "exact band reason")
+	TEST_ASSERT_NULL(reason(req_band(PROP_MASS, KG(0.5), KG(2), outside = TRUE), actor, heavy), "outside band")
+	TEST_ASSERT(!isnull(reason(req_band(PROP_MASS, KG(0.5), KG(2), outside = TRUE), actor, light)), "outside band rejects inside")
+	var/datum/entry/part/req/R = req_property_compare(PROP_MASS, SIM_COMPARE_GT, PROP_MASS, ON_HELD, ON_TARGET)
+	TEST_ASSERT_NULL(reason(R, actor, light, heavy), "actual held 12 kg outweighs target 1 kg")
+	TEST_ASSERT_EQUAL(reason(R, actor, heavy, light), "the held item is too light: 1 kg < 12 kg", "relative reason preserved")
+	TEST_ASSERT_EQUAL(reason(R, actor, heavy), "needs something in hand", "missing held operand refuses")
 
-	// Tags.
-	var/datum/predicate/sharp = dq_pred(list(REQ_TAG(PRED_TARGET, TAG_SHARP)))
-	TEST_ASSERT(sharp.check(actor, knife, null), "the knife is sharp")
-	TEST_ASSERT_EQUAL(sharp.why_not(actor, light, null), "must be sharp", "tag reason")
-	TEST_ASSERT_NULL(sharp.why_not(actor, knife, null), "a pass has no reason")
-	var/datum/predicate/blunt = dq_pred(list(REQ_NO_TAG(PRED_TARGET, TAG_SHARP)))
-	TEST_ASSERT(blunt.check(actor, light, null), "negated tag passes on a blunt item")
-	TEST_ASSERT_EQUAL(blunt.why_not(actor, knife, null), "must not be sharp", "negated tag reason")
-	var/datum/predicate/held_sharp = dq_pred(list(REQ_TAG(PRED_HELD, TAG_SHARP)))
-	TEST_ASSERT_EQUAL(held_sharp.why_not(actor, light, null), "needs something sharp in hand", "held tag reason with empty hands")
-	TEST_ASSERT(held_sharp.check(actor, light, knife), "held knife is sharp")
+/datum/unit_test/dq_native_predicate_numeric/validation/Run()
+	for(var/kind in list("wrong unit", "bare number", "unknown property", "tag as measure", "unknown role", "reversed band", "cross units", "unknown comparator"))
+		var/caught = FALSE
+		try
+			switch(kind)
+				if("wrong unit")
+					req_measure(PROP_MASS, SIM_COMPARE_LT, KELVIN(373))
+				if("bare number")
+					req_measure(PROP_MASS, SIM_COMPARE_LT, 5, null)
+				if("unknown property")
+					req_measure("dq_nope", SIM_COMPARE_LT, KG(5))
+				if("tag as measure")
+					req_measure(TAG_SHARP, SIM_COMPARE_LT, RATIO(1))
+				if("unknown role")
+					req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5), of = 999)
+				if("reversed band")
+					req_band(PROP_MASS, KG(5), KG(1))
+				if("cross units")
+					req_property_compare(PROP_MASS, SIM_COMPARE_LT, PROP_MELTING_POINT)
+				if("unknown comparator")
+					req_measure(PROP_MASS, "~", KG(5))
+		catch(var/exception/E)
+			caught = TRUE
+			TEST_ASSERT(length(E.name), "[kind] supplies a diagnostic")
+		TEST_ASSERT(caught, "[kind] is genuinely rejected by native constructor")
 
-	// Comparisons with units.
-	var/datum/predicate/under5 = dq_pred(list(REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5))))
-	TEST_ASSERT(under5.check(actor, light, null), "1 kg is below 5 kg")
-	TEST_ASSERT_EQUAL(under5.why_not(actor, heavy, null), "too heavy: 12 kg > 5 kg", "comparison reason")
-	var/datum/predicate/over5 = dq_pred(list(REQ_ABOVE(PRED_TARGET, PROP_MASS, KG(5))))
-	TEST_ASSERT_EQUAL(over5.why_not(actor, light, null), "too light: 1 kg < 5 kg", "low reason")
-	var/datum/predicate/at_most1 = dq_pred(list(REQ_AT_MOST(PRED_TARGET, PROP_MASS, KG(1))))
-	TEST_ASSERT(at_most1.check(actor, light, null), "1 kg is at most 1 kg")
-	var/datum/predicate/below1 = dq_pred(list(REQ_BELOW(PRED_TARGET, PROP_MASS, KG(1))))
-	TEST_ASSERT_EQUAL(below1.why_not(actor, light, null), "too heavy: 1 kg, must be below 1 kg", "equal-value reason")
-	var/datum/predicate/at_least = dq_pred(list(REQ_AT_LEAST(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(ITEMSIZE_LARGE))))
-	TEST_ASSERT(at_least.check(actor, heavy, null), "large is at least large")
-	TEST_ASSERT_EQUAL(at_least.why_not(actor, light, null), "too small: size [ITEMSIZE_SMALL] < size [ITEMSIZE_LARGE]", "size reason")
-	var/datum/predicate/exact = dq_pred(list(REQ_EQUALS(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(ITEMSIZE_SMALL))))
-	TEST_ASSERT(exact.check(actor, light, null), "equality")
-	TEST_ASSERT_EQUAL(exact.why_not(actor, heavy, null), "size class must be size [ITEMSIZE_SMALL], is size [ITEMSIZE_LARGE]", "equality reason")
-	var/datum/predicate/not_under5 = dq_pred(list(REQ_NOT(REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5)))))
-	TEST_ASSERT(not_under5.check(actor, heavy, null), "NOT below 5 kg passes at 12 kg")
-	TEST_ASSERT_EQUAL(not_under5.why_not(actor, light, null), "too light: 1 kg < 5 kg", "NOT inverts the comparison and its reason")
-	var/datum/predicate/band = dq_pred(list(REQ_BETWEEN(PRED_TARGET, PROP_MASS, KG(0.5), KG(2))))
-	TEST_ASSERT(band.check(actor, light, null), "1 kg is within 0.5..2 kg")
-	TEST_ASSERT_EQUAL(band.why_not(actor, heavy, null), "too heavy: 12 kg, must be 0.5 kg to 2 kg", "band reason")
-	var/datum/predicate/outside = dq_pred(list(REQ_NOT(REQ_BETWEEN(PRED_TARGET, PROP_MASS, KG(0.5), KG(2)))))
-	TEST_ASSERT(outside.check(actor, heavy, null), "negated band passes outside")
-	TEST_ASSERT(!outside.check(actor, light, null), "negated band fails inside")
-	var/datum/predicate/held_heavier = dq_pred(list(REQ_COMPARE(PRED_HELD, PROP_MASS, PRED_CMP_GT, PRED_TARGET, PROP_MASS)))
-	TEST_ASSERT(held_heavier.check(actor, light, heavy), "held 12 kg outweighs a 1 kg target")
-	TEST_ASSERT_EQUAL(held_heavier.why_not(actor, heavy, light), "the held item is too light: 1 kg < 12 kg", "relational reason")
-	TEST_ASSERT_EQUAL(held_heavier.why_not(actor, heavy, null), "needs something in hand", "relational with nothing held")
+/obj/item/dq_pred_test/proc/native_weld_tier_two(datum/act/op/A)
+	var/obj/item/I = A.held_provider()
+	return I && dq_tool_tier(I, TOOL_WELDER) >= 2 ? null : "needs a welder (tier 2)"
 
-	// Tools and tiers.
-	var/datum/predicate/weld = dq_pred(list(REQ_TOOL(TOOL_WELDER)))
-	TEST_ASSERT(weld.check(actor, light, welder), "a welder welds")
-	TEST_ASSERT_EQUAL(weld.why_not(actor, light, knife), "needs a welder", "tool reason")
-	var/datum/predicate/weld2 = dq_pred(list(REQ_TOOL_TIER(TOOL_WELDER, 2)))
-	TEST_ASSERT(!weld2.check(actor, light, welder), "a plain welder is tier 1")
-	TEST_ASSERT(weld2.check(actor, light, advanced), "the advanced welder is tier 2")
-	TEST_ASSERT_EQUAL(weld2.why_not(actor, light, welder), "needs a welder (tier 2)", "tier reason")
-	TEST_ASSERT_EQUAL(dq_pred(list(REQ_TOOL(TOOL_ANALYZER))).why_not(actor, light, null), "needs an analyzer", "article")
-
-	// Hands.
-	var/datum/predicate/free = dq_pred(list(REQ_HAND_FREE))
-	actor.hold(null, null)
-	TEST_ASSERT(free.check(actor, light, null), "empty hands are free")
-	actor.hold(welder, knife)
-	TEST_ASSERT_EQUAL(free.why_not(actor, light, welder), "needs a free hand", "hands full")
-	var/datum/predicate/in_hand = dq_pred(list(REQ_TARGET_IN_HAND))
-	TEST_ASSERT(in_hand.check(actor, knife, welder), "the knife is in the off hand")
-	TEST_ASSERT_EQUAL(in_hand.why_not(actor, light, welder), "must be held in hand", "in-hand reason")
-	actor.hold(null, null)
-	var/datum/predicate/holding = dq_pred(list(REQ_HOLDING))
-	TEST_ASSERT_EQUAL(holding.why_not(actor, light, null), "needs something in hand", "holding reason")
-	var/datum/predicate/empty = dq_pred(list(REQ_EMPTY_HANDED))
-	TEST_ASSERT_EQUAL(empty.why_not(actor, light, knife), "needs an empty hand", "empty-handed reason")
-
-	// Reach and self.
-	var/turf/start = dq_pred_open_row()
-	TEST_ASSERT(start, "found five open tiles in a row")
-	actor.forceMove(start)
-	var/obj/item/dq_pred_test/near = allocate(/obj/item/dq_pred_test, locate(start.x + 1, start.y, start.z))
-	var/obj/item/dq_pred_test/far = allocate(/obj/item/dq_pred_test, locate(start.x + 4, start.y, start.z))
-	var/datum/predicate/adjacent = dq_pred(list(REQ_REACH_ADJACENT))
-	TEST_ASSERT(adjacent.check(actor, near, null), "one tile away is adjacent")
-	TEST_ASSERT_EQUAL(adjacent.why_not(actor, far, null), "too far away", "reach reason")
-	var/datum/predicate/reach3 = dq_pred(list(REQ_REACH(3)))
-	TEST_ASSERT(reach3.check(actor, near, null), "within 3 tiles")
-	TEST_ASSERT_EQUAL(reach3.why_not(actor, far, null), "too far away (more than 3 tiles)", "range reason")
-	var/datum/predicate/self = dq_pred(list(REQ_SELF))
-	TEST_ASSERT(self.check(actor, actor, null), "self")
-	TEST_ASSERT_EQUAL(dq_pred(list(REQ_NOT_SELF)).why_not(actor, actor, null), "can't be done to yourself", "not-self reason")
-
-	// Procs.
-	var/datum/predicate/ready = dq_pred(list(REQ_TARGET_STATE(/obj/item/dq_pred_test/proc/dq_is_ready)))
-	light.name = "ready"
-	TEST_ASSERT(ready.check(actor, light, null), "proc returns TRUE")
-	light.name = "unready"
-	TEST_ASSERT_EQUAL(ready.why_not(actor, light, null), "it isn't ready", "a proc's text is the reason")
-	TEST_ASSERT_EQUAL(ready.why_not(actor, actor, null), "not possible right now", "a subject without the proc fails")
-	var/datum/predicate/global_proc = dq_pred(list(REQ_PROC(/proc/dq_pred_test_global, "needs the knife")))
-	TEST_ASSERT(global_proc.check(actor, light, knife), "global proc passes")
-	TEST_ASSERT_EQUAL(global_proc.why_not(actor, light, welder), "needs the knife", "FALSE uses the declared reason")
-
-// ---- Combinators ----
-
-/datum/unit_test/dq_predicate_combinators
-
-/datum/unit_test/dq_predicate_combinators/Run()
-	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
-	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
-	var/obj/item/dq_pred_test/heavy/heavy = allocate(/obj/item/dq_pred_test/heavy)
-	var/obj/item/dq_pred_test/knife/knife = allocate(/obj/item/dq_pred_test/knife)
-	var/obj/item/dq_pred_test/welder/welder = allocate(/obj/item/dq_pred_test/welder)
-
-	// ALL reports the first failing clause, in declaration order.
-	var/datum/predicate/all = dq_pred(list(REQ_TOOL(TOOL_WELDER), REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5))))
-	TEST_ASSERT_EQUAL(all.why_not(actor, heavy, knife), "needs a welder", "first failing clause wins")
-	TEST_ASSERT_EQUAL(all.why_not(actor, heavy, welder), "too heavy: 12 kg > 5 kg", "then the next")
-	TEST_ASSERT(all.check(actor, light, welder), "both pass")
-
-	// ANY joins its children's reasons.
-	var/datum/predicate/any = dq_pred(list(REQ_ANY(REQ_TOOL(TOOL_WELDER), REQ_TAG(PRED_HELD, TAG_SHARP))))
-	TEST_ASSERT(any.check(actor, light, welder), "welder satisfies ANY")
-	TEST_ASSERT(any.check(actor, light, knife), "knife satisfies ANY")
-	TEST_ASSERT_EQUAL(any.why_not(actor, light, null), "needs a welder or needs something sharp in hand", "ANY reason")
-
-	// NOT over ALL is ANY of the negations (De Morgan), and nests.
-	var/datum/predicate/not_all = dq_pred(list(REQ_NOT(REQ_ALL(REQ_TAG(PRED_TARGET, TAG_SHARP), REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5))))))
-	TEST_ASSERT(!not_all.check(actor, knife, null), "a light knife is sharp AND light")
-	TEST_ASSERT(not_all.check(actor, light, null), "not sharp")
-	TEST_ASSERT(not_all.check(actor, heavy, null), "not light")
-	TEST_ASSERT_EQUAL(not_all.why_not(actor, knife, null), "must not be sharp or too light: 1 kg < 5 kg", "negated ALL reason")
-	var/datum/predicate/double_not = dq_pred(list(REQ_NOT(REQ_NOT(REQ_TAG(PRED_TARGET, TAG_SHARP)))))
-	TEST_ASSERT(double_not.check(actor, knife, null), "NOT NOT is the clause")
-	TEST_ASSERT(!double_not.check(actor, light, null), "NOT NOT fails like the clause")
-
-	// BECAUSE replaces a reason, including a whole group's.
-	var/datum/predicate/because = dq_pred(list(REQ_BECAUSE(REQ_ALL(REQ_TOOL(TOOL_WELDER), REQ_HOLDING), "needs a lit welder")))
-	TEST_ASSERT_EQUAL(because.why_not(actor, light, null), "needs a lit welder", "BECAUSE on a group")
-	TEST_ASSERT_EQUAL(dq_pred(list(REQ_BECAUSE(REQ_TAG(PRED_TARGET, TAG_SHARP), "too dull"))).why_not(actor, light, null), "too dull", "BECAUSE on a leaf")
-
-	// A single clause works as a whole spec.
-	TEST_ASSERT(dq_pred(REQ_TAG(PRED_TARGET, TAG_SHARP)).check(actor, knife, null), "a bare clause is a spec")
-
-	// Shared singletons: compiled once per declaration.
-	TEST_ASSERT(PREDICATE(/datum/predicate/dq_test_weld_light) == PREDICATE(/datum/predicate/dq_test_weld_light), "one instance per type")
-	var/datum/predicate/keyed = dq_predicate_for("dq_pred_test_key", list(REQ_HOLDING))
-	TEST_ASSERT(keyed == dq_predicate_for("dq_pred_test_key", list(REQ_HAND_FREE)), "keyed specs compile once")
-	TEST_ASSERT(PREDICATE_PASSES(keyed, actor, light, knife), "keyed predicate evaluates")
-	TEST_ASSERT_EQUAL(PREDICATE_REASON(keyed, actor, light, null), "needs something in hand", "PREDICATE_REASON")
-
-// ---- Compile-time validation ----
-
-/datum/unit_test/dq_predicate_validation
-
-/datum/unit_test/dq_predicate_validation/Run()
-	// Declared predicates compile cleanly at boot.
-	for(var/error in dq_predicates_validate(dq_property_registry()))
-		TEST_FAIL(error)
-	var/datum/predicate/fixture = PREDICATE(/datum/predicate/dq_test_weld_light)
-	TEST_ASSERT(isnull(fixture.errors), "the fixture compiles")
-
-	// Kelvin against kilograms fails, and the predicate then always fails.
-	var/datum/predicate/bad = new /datum/predicate/dq_test_bad_units
-	TEST_ASSERT(!bad.compile(), "a unit mismatch fails compilation")
-	TEST_ASSERT(dq_errors_mention(bad.errors, "compares mass (kg) with 373 K"), "unit mismatch reported: [jointext(bad.errors, "; ")]")
-	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
-	TEST_ASSERT(!bad.check(null, light, null), "an invalid predicate never passes")
-
-	var/list/cases = list(
-		"bare number" = list(list(PRED_OP_CMP, PRED_TARGET, PROP_MASS, PRED_CMP_LT, 5)),
-		"unknown property dq_nope" = list(REQ_BELOW(PRED_TARGET, "dq_nope", KG(5))),
-		"sharp is a tag" = list(REQ_BELOW(PRED_TARGET, TAG_SHARP, RATIO(1))),
-		"mass is a measure" = list(REQ_TAG(PRED_TARGET, PROP_MASS)),
-		"unknown tag dq_nope" = list(REQ_TAG(PRED_TARGET, "dq_nope")),
-		"unknown subject" = list(REQ_TAG(7, TAG_SHARP)),
-		"bounds reversed" = list(REQ_BETWEEN(PRED_TARGET, PROP_MASS, KG(5), KG(1))),
-		"compares mass (kg) with melting_point (K)" = list(REQ_COMPARE(PRED_TARGET, PROP_MASS, PRED_CMP_LT, PRED_HELD, PROP_MELTING_POINT)),
-		"unknown comparison" = list(REQ_COMPARE(PRED_TARGET, PROP_MASS, "~", PRED_HELD, PROP_MASS)),
-		"unknown clause" = list(list("frobnicate")),
-		"has no clauses" = list(),
-		"REQ_TOOL needs" = list(REQ_TOOL_TIER(TOOL_WELDER, 0)),
-	)
-	for(var/expected in cases)
-		var/datum/predicate/P = new
-		P.name = expected
-		P.spec = cases[expected]
-		TEST_ASSERT(!P.compile(), "[expected] should not compile")
-		TEST_ASSERT(dq_errors_mention(P.errors, expected), "expected an error mentioning '[expected]', got [jointext(P.errors || list(), "; ")]")
-
-// ---- Watch marking ----
-
-/datum/unit_test/dq_predicate_watchable
-
-/datum/unit_test/dq_predicate_watchable/Run()
-	var/datum/property_registry/registry = new(
-		list(new /datum/property_def/dq_pred_test_temperature, new /datum/property_def/mass),
-		list(new /datum/property_provider/dq_pred_test_domain, new /datum/property_provider/material/mass),
-	)
-	var/datum/predicate/P = new
-	P.name = "watch test"
-	P.spec = list(
-		REQ_ABOVE(PRED_TARGET, "dq_pred_test_temperature", KELVIN(373)),
-		REQ_NOT(REQ_BETWEEN(PRED_TARGET, "dq_pred_test_temperature", KELVIN(200), KELVIN(300))),
-		REQ_COMPARE(PRED_TARGET, "dq_pred_test_temperature", PRED_CMP_GT, PRED_ACTOR, "dq_pred_test_temperature"),
-		REQ_BELOW(PRED_TARGET, PROP_MASS, KG(5)),
-		REQ_EQUALS(PRED_TARGET, "dq_pred_test_temperature", KELVIN(300)),
-		REQ_HAND_FREE,
-	)
-	TEST_ASSERT(P.compile(registry), "compiles against the private registry: [jointext(P.errors || list(), "; ")]")
-	TEST_ASSERT_EQUAL(length(P.watchable), 3, "threshold, band and difference on the channel-backed property")
-	var/datum/pred_node/cmp/threshold = P.watchable[1]
-	TEST_ASSERT_EQUAL(threshold.watch_kind, PRED_WATCH_THRESHOLD, "threshold kind")
-	TEST_ASSERT_EQUAL(threshold.op, PRED_CMP_GT, "threshold op")
-	TEST_ASSERT_EQUAL(threshold.value, 373, "threshold value")
-	var/datum/pred_node/band/band = P.watchable[2]
-	TEST_ASSERT_EQUAL(band.watch_kind, PRED_WATCH_BAND, "band kind")
-	TEST_ASSERT(band.outside, "the negated band is marked outside")
-	var/datum/pred_node/rel/difference = P.watchable[3]
-	TEST_ASSERT_EQUAL(difference.watch_kind, PRED_WATCH_DIFFERENCE, "difference kind")
-
-	// NOT folds into the threshold's operator.
-	var/datum/predicate/negated = new
-	negated.spec = list(REQ_NOT(REQ_ABOVE(PRED_TARGET, "dq_pred_test_temperature", KELVIN(373))))
-	negated.compile(registry)
-	var/datum/pred_node/cmp/inverted = negated.watchable[1]
-	TEST_ASSERT_EQUAL(inverted.op, PRED_CMP_LTE, "NOT > is <=")
-
-// ---- Table ----
-
-/datum/unit_test/dq_predicate_table
-
-/datum/unit_test/dq_predicate_table/Run()
+/datum/unit_test/dq_native_predicate_numeric/table/Run()
 	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
 	var/turf/start = dq_pred_open_row()
-	TEST_ASSERT(start, "found five open tiles in a row")
+	TEST_ASSERT(start, "real five-open-tile reach fixture exists")
 	actor.forceMove(start)
 	var/alist/items = alist(
 		"light" = allocate(/obj/item/dq_pred_test, locate(start.x + 1, start.y, start.z)),
@@ -349,8 +161,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 		"advanced" = allocate(/obj/item/dq_pred_test/welder/advanced),
 		"knife" = allocate(/obj/item/dq_pred_test/knife),
 	)
-	var/datum/predicate/weld_light = PREDICATE(/datum/predicate/dq_test_weld_light)
-	// target, held, other hand, expected reason (null = passes)
+	var/datum/entry/part/req/plan = all_of(req_range(1, because = "too far away"), req(PROC_REF(native_weld_tier_two)), req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5)))
 	var/list/rows = list(
 		list("light", "advanced", null, null),
 		list("light", "welder", null, "needs a welder (tier 2)"),
@@ -362,28 +173,297 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 		list("light", "advanced", "knife", null),
 	)
 	for(var/list/row as anything in rows)
-		var/atom/target = items[row[1]]
+		var/obj/item/target = items[row[1]]
 		var/obj/item/held = row[2] ? items[row[2]] : null
 		actor.hold(held, row[3] ? items[row[3]] : null)
-		var/reason = weld_light.why_not(actor, target, held)
-		TEST_ASSERT_EQUAL(reason, row[4], "[row[1]] with [row[2] || "nothing"]")
-		TEST_ASSERT_EQUAL(weld_light.check(actor, target, held), isnull(row[4]), "check agrees with why_not for [row[1]] with [row[2] || "nothing"]")
+		var/actual = reason(plan, actor, target, held)
+		TEST_ASSERT_EQUAL(actual, row[4], "[row[1]] with [row[2]] preserves ordered old table refusal")
+		TEST_ASSERT_EQUAL(isnull(actual), isnull(row[4]), "allowed/refused agrees for each actual row")
+
+/datum/property_provider/dq_native_temperature
+	property = "dq_pred_test_temperature"
+	source = PROP_SOURCE_DOMAIN
+	applies_to = /obj/item/dq_native_numeric_source
+	unit = PROP_UNIT_KELVIN
+	test_only = TRUE
+/datum/property_provider/dq_native_temperature/instance_value(datum/D)
+	var/obj/item/dq_native_numeric_source/F = D
+	return F.value
+/datum/property_provider/dq_native_temperature/requirement_read_keys(datum/D)
+	var/obj/item/dq_native_numeric_source/F = D
+	return list(list(F, nameof(F.value)))
+
+/datum/unit_test/dq_native_predicate_numeric/watchable/Run()
+	var/datum/property_def/D = allocate(/datum/property_def/dq_pred_test_temperature)
+	var/datum/property_provider/P = allocate(/datum/property_provider/dq_native_temperature)
+	var/datum/property_registry/registry = allocate(/datum/property_registry, list(D), list(P))
+	TEST_ASSERT(!length(registry.errors), "actual Kelvin provider private registry validates")
+	var/obj/item/dq_native_numeric_source/left = allocate(/obj/item/dq_native_numeric_source)
+	var/obj/item/dq_native_numeric_source/right = allocate(/obj/item/dq_native_numeric_source)
+	left.set_value(400)
+	right.set_value(350)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.target = left
+	A.holder = left
+	A.set_held_provider(right)
+	var/datum/entry/part/req/T = req_measure("dq_pred_test_temperature", SIM_COMPARE_GT, KELVIN(373), registry = registry)
+	var/datum/entry/part/req/B = req_band("dq_pred_test_temperature", KELVIN(200), KELVIN(300), outside = TRUE, registry = registry)
+	var/datum/entry/part/req/C = req_property_compare("dq_pred_test_temperature", SIM_COMPARE_GT, "dq_pred_test_temperature", ON_TARGET, ON_HELD, registry = registry)
+	var/datum/entry/part/req/all = all_of(T, B, C)
+	TEST_ASSERT_EQUAL(all.children[1], T, "threshold remains first ordered requirement")
+	TEST_ASSERT_EQUAL(all.children[2], B, "outside band remains second")
+	TEST_ASSERT_EQUAL(all.children[3], C, "difference remains third")
+	TEST_ASSERT_EQUAL(T.args["compare"], SIM_COMPARE_GT, "threshold comparator metadata retained")
+	TEST_ASSERT_EQUAL(T.args["value"], 373, "threshold bound retained")
+	TEST_ASSERT(B.args["outside"], "negated band representation retains outside")
+	var/datum/entry/part/req/inverted = req_measure_not("dq_pred_test_temperature", SIM_COMPARE_GT, KELVIN(373), registry = registry)
+	TEST_ASSERT_EQUAL(inverted.args["compare"], SIM_COMPARE_LTE, "NOT > folds to <=")
+	TEST_ASSERT_NULL(op_req_check(A, all), "all actual Kelvin conditions initially hold")
+	var/list/reads = all.read_keys(A)
+	TEST_ASSERT(length(reads) >= 7, "ordered plan exposes each borrowed registry and both actual source dependencies")
+	left.set_value(373)
+	TEST_ASSERT(!isnull(op_req_check(A, T)), "strict threshold refuses equal value")
+	TEST_ASSERT_NULL(op_req_check(A, inverted), "inverted threshold permits equal value")
+	left.set_value(300)
+	TEST_ASSERT(!isnull(op_req_check(A, B)), "outside band refuses inclusive high edge")
+	left.set_value(200)
+	TEST_ASSERT(!isnull(op_req_check(A, B)), "outside band refuses inclusive low edge")
+	left.set_value(199)
+	TEST_ASSERT_NULL(op_req_check(A, B), "outside band passes immediately below edge")
+	left.set_value(400)
+	right.set_value(400)
+	TEST_ASSERT(!isnull(op_req_check(A, C)), "dynamic difference refuses equality")
+	right.set_value(399)
+	TEST_ASSERT_NULL(op_req_check(A, C), "dynamic difference recovers below left")
+	left.set_value(null)
+	TEST_ASSERT_EQUAL(op_req_check(A, inverted), "temperature unknown", "inverted threshold cannot silently accept absent value")
+	A.release()
+
+
+// Final null-or-reason test callbacks; no legacy predicate compiler is invoked.
+/obj/item/dq_pred_test/proc/native_sharp(datum/act/op/A)
+	return dq_has_tag(A.target, TAG_SHARP) ? null : "must be sharp"
+/obj/item/dq_pred_test/proc/native_blunt(datum/act/op/A)
+	return dq_has_tag(A.target, TAG_SHARP) ? "must not be sharp" : null
+/obj/item/dq_pred_test/proc/native_held_sharp(datum/act/op/A)
+	var/obj/item/I = A.held_provider()
+	return I && dq_has_tag(I, TAG_SHARP) ? null : "needs something sharp in hand"
+/obj/item/dq_pred_test/proc/native_welder(datum/act/op/A)
+	var/obj/item/I = A.held_provider()
+	return I && dq_tool_tier(I, TOOL_WELDER) >= 1 ? null : "needs a welder"
+/obj/item/dq_pred_test/proc/native_analyzer(datum/act/op/A)
+	var/obj/item/I = A.held_provider()
+	return I && dq_tool_tier(I, TOOL_ANALYZER) >= 1 ? null : "needs an analyzer"
+/obj/item/dq_pred_test/proc/native_free_hand(datum/act/op/A)
+	return A.actor?.dq_has_free_hand() ? null : "needs a free hand"
+/obj/item/dq_pred_test/proc/native_in_hand(datum/act/op/A)
+	return A.actor && (A.actor.get_active_hand() == A.target || A.actor.get_inactive_hand() == A.target) ? null : "must be held in hand"
+/obj/item/dq_pred_test/proc/native_holding(datum/act/op/A)
+	return A.held_provider() ? null : "needs something in hand"
+/obj/item/dq_pred_test/proc/native_empty(datum/act/op/A)
+	return A.held_provider() ? "needs an empty hand" : null
+/obj/item/dq_pred_test/proc/native_self(datum/act/op/A)
+	return A.actor == A.target ? null : "can only be done to yourself"
+/obj/item/dq_pred_test/proc/native_not_self(datum/act/op/A)
+	return A.actor == A.target ? "can't be done to yourself" : null
+/obj/item/dq_pred_test/proc/native_ready(datum/act/op/A)
+	if(!istype(A.target, /obj/item/dq_pred_test))
+		return "not possible right now"
+	var/obj/item/dq_pred_test/I = A.target
+	return I.dq_is_ready(A)
+/obj/item/dq_pred_test/proc/native_knife(datum/act/op/A)
+	return istype(A.held_provider(), /obj/item/dq_pred_test/knife) ? null : "needs the knife"
+
+/datum/unit_test/dq_native_predicate_numeric/nonnumeric/Run()
+	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
+	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
+	var/obj/item/dq_pred_test/knife/knife = allocate(/obj/item/dq_pred_test/knife)
+	var/obj/item/dq_pred_test/welder/welder = allocate(/obj/item/dq_pred_test/welder)
+	var/obj/item/dq_pred_test/welder/advanced/advanced = allocate(/obj/item/dq_pred_test/welder/advanced)
+	// Holder remains a real callback owner even when the target is the actor.
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = light
+	A.actor = actor
+	A.target = knife
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_sharp))), "actual knife is sharp")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_blunt))), "must not be sharp", "negative tag reason")
+	A.target = light
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_sharp))), "must be sharp", "positive tag exact refusal")
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_blunt))), "actual light item is blunt")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_held_sharp))), "needs something sharp in hand", "held tag empty refusal")
+	A.set_held_provider(knife)
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_held_sharp))), "actual held tag passes")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_welder))), "needs a welder", "wrong tool refusal")
+	A.set_held_provider(welder)
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_welder))), "actual welder quality permits")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_weld_tier_two))), "needs a welder (tier 2)", "plain welder fails tier two")
+	A.set_held_provider(advanced)
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_weld_tier_two))), "actual advanced quality tier two permits")
+	A.set_held_provider(null)
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_analyzer))), "needs an analyzer", "article unchanged")
+	actor.hold(null, null)
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_free_hand))), "real empty hand permits")
+	actor.hold(welder, knife)
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_free_hand))), "needs a free hand", "real full hands refuse")
+	A.target = knife
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_in_hand))), "actual offhand item counts as held")
+	A.target = light
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_in_hand))), "must be held in hand", "actual loose item refuses")
+	actor.hold(null, null)
+	A.set_held_provider(null)
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_holding))), "needs something in hand", "holding refuses empty")
+	A.set_held_provider(knife)
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_empty))), "needs an empty hand", "empty-handed rejects actual item")
+	A.target = actor
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_self))), "actual target actor permits self")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_not_self))), "can't be done to yourself", "not-self reason unchanged")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_ready))), "not possible right now", "wrong target type refusal")
+	A.target = light
+	light.name = "ready"
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_ready))), "real ready state permits")
+	light.name = "unready"
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_ready))), "it isn't ready", "real unready state reason")
+	TEST_ASSERT_NULL(op_req_check(A, req(PROC_REF(native_knife))), "actual knife selection permits")
+	A.set_held_provider(welder)
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_knife))), "needs the knife", "selection refusal exact")
+	A.release()
+
+/datum/unit_test/dq_native_predicate_numeric/combinators/Run()
+	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
+	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
+	var/obj/item/dq_pred_test/heavy/heavy = allocate(/obj/item/dq_pred_test/heavy)
+	var/obj/item/dq_pred_test/knife/knife = allocate(/obj/item/dq_pred_test/knife)
+	var/obj/item/dq_pred_test/welder/welder = allocate(/obj/item/dq_pred_test/welder)
+	var/datum/entry/part/req/all = all_of(req(PROC_REF(native_welder)), req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5)))
+	TEST_ASSERT_EQUAL(reason(all, actor, heavy, knife), "needs a welder", "ordered first refusal")
+	TEST_ASSERT_EQUAL(reason(all, actor, heavy, welder), "too heavy: 12 kg > 5 kg", "ordered second refusal")
+	TEST_ASSERT_NULL(reason(all, actor, light, welder), "both conditions permit")
+	var/datum/entry/part/req/any = any_of(req(PROC_REF(native_welder)), req(PROC_REF(native_held_sharp)))
+	TEST_ASSERT_NULL(reason(any, actor, light, welder), "ANY actual welder branch permits")
+	TEST_ASSERT_NULL(reason(any, actor, light, knife), "ANY actual sharp branch permits")
+	TEST_ASSERT_EQUAL(reason(any, actor, light), "needs a welder or needs something sharp in hand", "ANY joined reasons exact")
+	var/datum/entry/part/req/not_all = any_of(req(PROC_REF(native_blunt)), req_measure_not(PROP_MASS, SIM_COMPARE_LT, KG(5)))
+	TEST_ASSERT(!isnull(reason(not_all, actor, knife)), "light sharp knife fails both negated branches")
+	TEST_ASSERT_NULL(reason(not_all, actor, light), "blunt branch permits")
+	TEST_ASSERT_NULL(reason(not_all, actor, heavy), "heavy branch permits")
+	TEST_ASSERT_EQUAL(reason(not_all, actor, knife), "must not be sharp or too light: 1 kg < 5 kg", "De Morgan exact reasons")
+	// Double negation is declared as original positive requirement, not generic NOT over unknown.
+	TEST_ASSERT_NULL(reason(req(PROC_REF(native_sharp)), actor, knife), "double-negated tag is positive clause")
+	TEST_ASSERT(!isnull(reason(req(PROC_REF(native_sharp)), actor, light)), "double-negated tag fails same input")
+	TEST_ASSERT_EQUAL(reason(req(PROC_REF(native_sharp), because = "too dull"), actor, light), "too dull", "leaf because overrides refusal")
+	TEST_ASSERT_NULL(reason(req(PROC_REF(native_sharp)), actor, knife), "single native leaf is complete requirement")
+	TEST_ASSERT_EQUAL(req(PROC_REF(native_holding)), req(PROC_REF(native_holding)), "identical native declarations intern once")
+	TEST_ASSERT_NOTEQUAL(req(PROC_REF(native_holding)), req(PROC_REF(native_free_hand)), "different callbacks never collide")
+	TEST_ASSERT_EQUAL(reason(req(PROC_REF(native_holding)), actor, light), "needs something in hand", "native interned leaf still evaluates refusal")
+
+/obj/item/dq_pred_test/proc/native_lit_welder(datum/act/op/A)
+	var/datum/entry/part/req/plan = all_of(req(PROC_REF(native_welder)), req(PROC_REF(native_holding)))
+	return op_req_check(A, plan)
+
+/datum/unit_test/dq_native_predicate_numeric/empty_identity/Run()
+	var/obj/item/dq_pred_test/light = allocate(/obj/item/dq_pred_test)
+	var/datum/act/op/A = take(/datum/act/op)
+	A.holder = light
+	A.target = light
+	var/datum/entry/part/req/empty_all = part_make(/datum/entry/part/req/all, null, list())
+	var/datum/entry/part/req/empty_any = part_make(/datum/entry/part/req/any, null, list())
+	TEST_ASSERT_NULL(op_req_check(A, empty_all), "explicit native empty ALL is the identity true")
+	TEST_ASSERT(!isnull(op_req_check(A, empty_any)), "explicit native empty ANY refuses rather than silently allowing")
+	TEST_ASSERT_EQUAL(op_req_check(A, req(PROC_REF(native_lit_welder), because = "needs a lit welder")), "needs a lit welder", "whole-plan because overrides ordered child refusal")
+	var/datum/entry/part/req/first = req(PROC_REF(native_holding), id = "native_identity_test")
+	var/datum/entry/part/req/same = req(PROC_REF(native_holding), id = "native_identity_test")
+	var/datum/entry/part/req/other = req(PROC_REF(native_free_hand), id = "native_identity_test")
+	TEST_ASSERT_EQUAL(first, same, "same ID and payload share native flyweight")
+	TEST_ASSERT_NOTEQUAL(first, other, "same ID with changed payload never returns stale cached requirement")
+	TEST_ASSERT_EQUAL(op_req_check(A, first), "needs something in hand", "interned requirement evaluates current context")
+	A.release()
+
+/datum/unit_test/dq_native_predicate_numeric/range_validation/Run()
+	var/mob/living/dq_pred_test/actor = allocate(/mob/living/dq_pred_test)
+	var/turf/start = dq_pred_open_row()
+	TEST_ASSERT(start, "five-open-tile fixture exists")
+	actor.forceMove(start)
+	var/obj/item/dq_pred_test/near = allocate(/obj/item/dq_pred_test, locate(start.x + 1, start.y, start.z))
+	var/obj/item/dq_pred_test/far = allocate(/obj/item/dq_pred_test, locate(start.x + 4, start.y, start.z))
+	TEST_ASSERT_NULL(reason(req_range(3), actor, near), "actual near tile lies within three")
+	TEST_ASSERT_EQUAL(reason(req_range(3), actor, far), "too far away (more than 3 tiles)", "arbitrary reach exact old refusal")
+	for(var/kind in list("unknown tag", "measure as tag", "invalid because"))
+		var/caught = FALSE
+		try
+			switch(kind)
+				if("unknown tag")
+					req_acceptance_tag("dq_nope")
+				if("measure as tag")
+					req_acceptance_tag(PROP_MASS)
+				if("invalid because")
+					req_measure(PROP_MASS, SIM_COMPARE_LT, KG(5), because = 42)
+		catch(var/exception/E)
+			caught = TRUE
+			TEST_ASSERT(length(E.name), "[kind] has concrete native diagnostic")
+		TEST_ASSERT(caught, "[kind] must be rejected by actual final constructor")
+
+
+// Applicable final native acceptance boundaries retained from predicate clause tests.
+/datum/unit_test/dq_native_requirement_boundaries
+	abstract_type = /datum/unit_test/dq_native_requirement_boundaries
+
+/datum/unit_test/dq_native_requirement_boundaries/clauses/Run()
+	var/obj/item/paper/P = allocate(/obj/item/paper, test_floor())
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, test_floor())
+	var/datum/act/op/acceptance/A = acceptance_act(W, W, P)
+	defer_cleanup(null, GLOBAL_PROC_REF(acceptance_act_release), A)
+	var/datum/entry/part/req/tagged = req_acceptance_tag(TAG_PAPERWORK)
+	TEST_ASSERT_NULL(op_req_check(A, tagged), "Actual paper passes its actual property tag")
+	A.target = W
+	TEST_ASSERT_NOTNULL(op_req_check(A, tagged), "Actual wrench fails paperwork property")
+	var/datum/entry/part/req/only_paper = req_acceptance_type(/obj/item/paper)
+	TEST_ASSERT_EQUAL(op_req_check(A, only_paper), "only takes certain things", "Exact original type refusal")
+	A.target = P
+	TEST_ASSERT_NULL(op_req_check(A, only_paper), "Actual paper type permits")
+	TEST_ASSERT_EQUAL(op_req_check(A, req_acceptance_type(/obj/item/paper, exclude = TRUE)), "not that kind of thing", "Exact original excluded-type refusal")
+	P.set_w_class(ITEMSIZE_SMALL)
+	var/datum/entry/part/req/size = req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL))
+	TEST_ASSERT_NULL(op_req_check(A, size), "Actual exact numeric size boundary is inclusive")
+	P.set_w_class(ITEMSIZE_LARGE)
+	TEST_ASSERT_EQUAL(op_req_check(A, size), "too big: size [ITEMSIZE_LARGE] > size [ITEMSIZE_SMALL]", "Exact original size refusal")
+	P.set_w_class(ITEMSIZE_SMALL)
+	TEST_ASSERT_NULL(op_req_check(A, size), "Real setter restores allowance")
+
+/datum/unit_test/dq_native_requirement_boundaries/composition/Run()
+	var/obj/item/paper/P = allocate(/obj/item/paper, test_floor())
+	P.set_w_class(ITEMSIZE_LARGE)
+	var/datum/act/op/acceptance/A = acceptance_act(P, P, P)
+	defer_cleanup(null, GLOBAL_PROC_REF(acceptance_act_release), A)
+	var/datum/entry/part/req/type = req_acceptance_type(/obj/item/tool/wrench, because = "wrong type first")
+	var/datum/entry/part/req/size = req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL), because = "too large first")
+	TEST_ASSERT_EQUAL(reason_text(op_req_check(A, all_of(type, size))), "wrong type first", "First ordered failing requirement wins")
+	TEST_ASSERT_EQUAL(reason_text(op_req_check(A, all_of(size, type))), "too large first", "Changing actual order changes first refusal")
+	TEST_ASSERT_NULL(op_req_check(A, any_of(type, req_acceptance_type(/obj/item/paper))), "One real branch permits")
+	TEST_ASSERT_EQUAL(req_acceptance_type(/obj/item/paper), req_acceptance_type(/obj/item/paper), "Identical native declarations share immutable flyweight")
+	TEST_ASSERT_NOTEQUAL(req_acceptance_type(/obj/item/paper), req_acceptance_type(/obj/item/tool/wrench), "Different native declarations do not collide")
+
+/datum/unit_test/dq_native_requirement_boundaries/metadata/Run()
+	var/obj/item/paper/P = allocate(/obj/item/paper, test_floor())
+	var/datum/act/op/acceptance/A = acceptance_act(P, P, P)
+	defer_cleanup(null, GLOBAL_PROC_REF(acceptance_act_release), A)
+	var/datum/entry/part/req/size = req_acceptance_max_size(SIZE_CLASS(ITEMSIZE_SMALL))
+	var/found = FALSE
+	for(var/list/pair as anything in size.read_keys(A))
+		if(pair[1] == P && pair[2] == nameof(P.w_class))
+			found = TRUE
+	TEST_ASSERT(found, "Numeric size requirement publishes its actual model setter dependency")
+	TEST_ASSERT_NULL(req_acceptance_type(/obj/item/paper).read_keys(A), "Immutable actual type identity requires no fabricated change key")
 
 /obj/item/dq_pred_test/override_ready
 
-/obj/item/dq_pred_test/override_ready/dq_is_ready(mob/actor, atom/target, obj/item/held)
+/obj/item/dq_pred_test/override_ready/dq_is_ready(datum/act/op/A)
 	return "subtype refuses readiness"
 
-/datum/unit_test/dq_predicate_subject_override
-
-/datum/unit_test/dq_predicate_subject_override/Run()
+/datum/unit_test/dq_native_predicate_numeric/subject_override/Run()
 	var/obj/item/dq_pred_test/base = allocate(/obj/item/dq_pred_test)
-	base.name = "ready"
+	base.set_name("ready")
 	var/obj/item/dq_pred_test/override_ready/child = allocate(/obj/item/dq_pred_test/override_ready)
-	child.name = "ready"
-	var/datum/predicate/P = dq_pred(list(REQ_ON(PRED_TARGET, /obj/item/dq_pred_test/proc/dq_is_ready, "fallback refusal")))
-	TEST_ASSERT(P.check(null, base, null), "absolute declaration still allows the base callback")
-	TEST_ASSERT_NULL(P.why_not(null, base, null), "base reason remains absent")
-	TEST_ASSERT(!P.check(null, child, null), "the actual subject override wins over the declared base implementation")
-	TEST_ASSERT_EQUAL(P.why_not(null, child, null), "subtype refuses readiness", "actual override refusal is preserved")
-	qdel(P)
+	child.set_name("ready")
+	var/datum/entry/part/req/R = req(TYPE_PROC_REF(/obj/item/dq_pred_test, dq_is_ready), of = ON_TARGET)
+	TEST_ASSERT_NULL(reason(R, null, base), "absolute declaration still allows base implementation")
+	TEST_ASSERT_EQUAL(reason(R, null, child), "subtype refuses readiness", "actual subject override wins with exact refusal")

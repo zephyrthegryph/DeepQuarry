@@ -68,7 +68,7 @@
 /proc/material_overrides_set(obj/O, list/overrides)
 	var/list/interned = material_overrides_intern(overrides)
 	if(interned || material_build_of(O))
-		material_build(O).overrides = interned
+		material_build(O).set_overrides(interned)
 
 /// Interned override lists keyed by their contents. Thousands of pipes, cables and
 /// machines carry identical overrides, so they share one list. Shared lists are read-only.
@@ -168,8 +168,8 @@
 
 /// Rebuild this object to another blueprint: template, total and chosen materials.
 /obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
-	material_template = template_path
-	material_total = total
+	set_material_template(template_path)
+	set_material_total(total)
 	var/datum/material_template/template = get_material_template()
 	var/list/overrides = list()
 	for(var/role in materials_by_role)
@@ -180,9 +180,9 @@
 
 /// Make this object of one plain material, or of nothing with a null material.
 /obj/proc/set_bulk_material(material_id, total)
-	material_template = material_id ? /datum/material_template/bulk : null
-	material_bulk_material = material_id
-	material_total = material_id ? total : 0
+	set_material_template(material_id ? /datum/material_template/bulk : null)
+	set_material_bulk_material(material_id)
+	set_material_total(material_id ? total : 0)
 	material_overrides_set(src, null)
 
 /obj/proc/primary_construction_material() as /datum/material
@@ -215,8 +215,8 @@
 		return FALSE
 	if(source.material_template == /datum/material_template/mix)
 		var/datum/material_template/mix/mix = source.declared_material_mix()
-		material_template = null
-		material_total = 0
+		set_material_template(null)
+		set_material_total(0)
 		if(mix)
 			// A mix is per type; carry the dominant material as plain bulk.
 			var/dominant
@@ -225,9 +225,9 @@
 					dominant = material_id
 			set_bulk_material(dominant, mix.total)
 	else
-		material_template = source.material_template
-		material_total = source.material_total
-		material_bulk_material = source.material_bulk_material
+		set_material_template(source.material_template)
+		set_material_total(source.material_total)
+		set_material_bulk_material(source.material_bulk_material)
 		material_overrides_set(src, material_build_view(source).overrides)
 	if(material_assembly_of(source) || material_assembly_of(src))
 		var/datum/material_assembly/from = material_assembly_view(source)
@@ -304,19 +304,19 @@
 /// Replace this item's composition with an arbitrary mix (material id -> units).
 /// Takes ownership of the list; an empty or null mix means made of nothing.
 /obj/item/proc/set_material_mix(list/mix)
-	material_template = null
+	set_material_template(null)
 	material_overrides_set(src, null)
 	var/list/stored = length(mix) ? mix : null
 	if(stored || material_build_of(src))
-		material_build(src).mix = stored
+		material_build(src).set_mix(stored)
 
 /// Add units of materials to this item's mix, starting from its current composition.
 /obj/item/proc/add_materials(list/added)
 	var/datum/material_build/build = material_build(src)
-	if(!build.mix)
-		build.mix = material_totals()
+	var/list/next = build.mix ? build.mix.Copy() : material_totals()
 	for(var/material_id in added)
-		build.mix[material_id] = (build.mix[material_id] || 0) + added[material_id]
+		next[material_id] = (next[material_id] || 0) + added[material_id]
+	build.set_mix(next)
 
 /// Scale every amount in this item's composition (lathe efficiency).
 /obj/item/proc/scale_materials(factor)
@@ -326,7 +326,7 @@
 			scaled[material_id] = CEILING(scaled[material_id] * factor, 1)
 		set_material_mix(scaled)
 		return
-	material_total = CEILING(material_total * factor, 1)
+	set_material_total(CEILING(material_total * factor, 1))
 
 /// A type's material totals (material id -> units) from its declared blueprint,
 /// read without an instance. Null if the type has no composition.
@@ -363,8 +363,12 @@
 /obj/item/proc/set_single_material(material_id, amount)
 	var/datum/material_build/build = material_build_of(src)
 	if(build)
-		build.mix = null
+		build.set_mix(null)
 	if(has_functional_construction())
-		material_total = amount
+		set_material_total(amount)
 		return
 	set_bulk_material(material_id, amount)
+
+TRACKED(/obj, material_template)
+TRACKED(/obj, material_total)
+TRACKED(/obj, material_bulk_material)

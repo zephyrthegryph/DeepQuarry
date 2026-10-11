@@ -126,7 +126,7 @@ CAPABILITIES(/datum/mind)
 			new_character.add_spell(spell_to_add)
 
 	if(active || force)
-		new_character.key = key		//now transfer the key to link the client to our new body
+		new_character.set_key(key) //now transfer the key to link the client to our new body
 
 	if(new_character.client)
 		new_character.client.init_verbs() // re-initialize character specific verbs

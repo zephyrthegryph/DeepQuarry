@@ -80,7 +80,7 @@ CAPABILITIES(/datum/ghosttrap)
 /datum/ghosttrap/proc/transfer_personality(mob/candidate, mob/target)
 	if(!assess_candidate(candidate))
 		return 0
-	target.ckey = candidate.ckey
+	target.set_ckey(candidate.ckey)
 	if(target.mind)
 		target.mind.assigned_role = "[ghost_trap_role]"
 	announce_ghost_joinleave(candidate, 0, "[ghost_trap_message]")

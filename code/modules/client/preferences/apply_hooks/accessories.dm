@@ -15,11 +15,11 @@
 		return
 
 	var/list/ear_styles = preferences.get_available_styles(GLOB.ear_styles_list)
-	target.ear_style = ear_styles[preferences.read_preference(/datum/preference/text/human/ear_style)]
-	target.ear_secondary_style = ear_styles[preferences.read_preference(/datum/preference/text/human/ear_secondary_style)]
+	target.set_ear_style(ear_styles[preferences.read_preference(/datum/preference/text/human/ear_style)])
+	target.set_ear_secondary_style(ear_styles[preferences.read_preference(/datum/preference/text/human/ear_secondary_style)])
 
 	var/list/tail_styles = preferences.get_available_styles(GLOB.tail_styles_list)
-	target.tail_style = tail_styles[preferences.read_preference(/datum/preference/text/human/tail_style)]
+	target.set_tail_style(tail_styles[preferences.read_preference(/datum/preference/text/human/tail_style)])
 
 	var/list/wing_styles = preferences.get_available_styles(GLOB.wing_styles_list)
 	target.wing_style = wing_styles[preferences.read_preference(/datum/preference/text/human/wing_style)]

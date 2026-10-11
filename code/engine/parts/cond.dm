@@ -196,6 +196,12 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 			return A.actor
 		if(ON_HELD)
 			return A.held_provider()
+		if(ON_WEARER)
+			return A.wearer
+		if(ON_MOVER)
+			return A.mover
+		if(ON_DESTINATION)
+			return A.destination
 	return A.target
 
 /proc/req_make(req_type, list/named)
@@ -698,3 +704,35 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		frame[2] = TRUE
 		frame = frame[1]
 	return value
+
+/// A native distance requirement, distinct from adjacency (which includes reach gates).
+/proc/req_range(tiles, exclude = FALSE, because = null)
+	if(!isnum(tiles) || tiles < 0)
+		CRASH("requirement range must be a nonnegative numeric tile distance")
+	return part_make(/datum/entry/part/req/range, list("tiles" = tiles, "exclude" = exclude, "because" = because))
+
+/datum/entry/part/req/range
+	part_name = "req_range"
+
+/datum/entry/part/req/range/check(datum/act/op/A)
+	var/turf/from = get_turf(A?.actor)
+	var/turf/to = get_turf(A?.target)
+	var/in_range = from && to && from.z == to.z && get_dist(from, to) <= src.args["tiles"]
+	if(in_range != !!src.args["exclude"])
+		return null
+	if(!isnull(src.args["because"]))
+		return req_reason_value(A, src.args["because"])
+	return src.args["exclude"] ? "too close (within [src.args["tiles"]] tiles)" : "too far away (more than [src.args["tiles"]] tiles)"
+
+/datum/entry/part/req/range/holds(datum/act/op/A)
+	return isnull(check(A))
+
+/datum/entry/part/req/range/refusal(datum/act/op/A)
+	return check(A)
+
+/datum/entry/part/req/range/read_keys(datum/act/op/A)
+	. = list()
+	if(A?.actor)
+		. += list(list(A.actor, OP_KEEP_MOVED))
+	if(A?.target)
+		. += list(list(A.target, OP_KEEP_MOVED))

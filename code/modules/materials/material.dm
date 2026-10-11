@@ -324,3 +324,5 @@ GLOBAL_LIST_EMPTY(material_recipe_cache) // ALLOW(cache): recipe objects built o
 		return ITEM_INTERACT_SUCCESS
 	..()
 
+
+TRACKED(/datum/material, composite_material)

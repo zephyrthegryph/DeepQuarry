@@ -153,7 +153,7 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 	message_admins("[key_name(user)] has sent [key_name(M)] back to the Lobby.")
 
 	var/mob/new_player/NP = new()
-	NP.ckey = M.ckey
+	NP.set_ckey(M.ckey)
 	spent(M, user)
 
 /// Sends `M` to one of the thunderdome landmark lists; `strip` drops their gear first.

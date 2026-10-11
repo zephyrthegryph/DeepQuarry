@@ -133,11 +133,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	return TRUE
 
 // --- Producers ----------------------------------------------------------------------------
-// Hooks on /mob that the generic mob code calls; living mobs raise the matching channel.
-
-/// A client logged into or out of this mob: the HUD, senses and client stages restart.
-/mob/living/proc/on_client_changed(reason)
-	PUBLISH_CHANGE(src, MOB_KEY_CLIENT)
+// Hooks on /mob that the generic mob code calls; each publisher owns its state key.
 
 /// An admin edit of a plain var (one with no setter) announces nothing, so the canmove, HUD and sight reactions
 /// would keep their stale result: status is the key all three read.

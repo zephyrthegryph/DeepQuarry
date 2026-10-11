@@ -939,6 +939,7 @@ TRACKED(/obj/item/clothing/suit, hood_up)
 TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
+	acceptance("equip", req_acceptance_limb_clearance(), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = CHEST|ARMS|LEGS, slots = SLOT_OCLOTHING))
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_EMERGENCY), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
@@ -1633,3 +1634,11 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 
 TRACKED(/obj/item/clothing/gloves, glove_level)
 TRACKED(/obj/item/clothing/gloves, overgloves)
+
+TRACKED(/obj/item/clothing/gloves, name)
+
+TRACKED(/obj/item/clothing/gloves, gender)
+
+TRACKED(/obj/item/clothing/shoes, name)
+
+TRACKED(/obj/item/clothing/shoes, gender)

@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
-	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
+	new_voice.set_ckey(candidate.ckey) //Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
 	new_voice.real_name = "cursed sword"
 	rel_add(src, nameof(voice_mobs), new_voice)

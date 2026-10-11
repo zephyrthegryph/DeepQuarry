@@ -789,7 +789,7 @@ CAPABILITIES(/datum/respawn_review)
 	new_character.sync_addictions() // These are addicitions our profile wants... May as well give them!
 	new_character.initialize_vessel()
 	if(inhabit)
-		new_character.key = player_key
+		new_character.set_key(player_key)
 		//Were they any particular special role? If so, copy.
 		if(new_character.mind)
 			var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
@@ -1495,7 +1495,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 		new_mob.name = spawner_name
 
 
-	new_mob.key = picked_client.key //Finally put them in the mob
+	new_mob.set_key(picked_client.key) //Finally put them in the mob
 	// migrated flavor_texts/flavour_texts_robot
 	if(flavor == "General")
 		new_mob.bio.flavor_text = LAZYACCESS(new_mob?.client?.prefs?.read_preference(/datum/preference/flavor_texts), "general")

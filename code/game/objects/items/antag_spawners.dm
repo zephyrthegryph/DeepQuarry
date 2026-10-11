@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
 	fx_sparks(src, 5, FALSE)
 	var/mob/living/carbon/human/H = new/mob/living/carbon/human(T)
 	C.prefs.copy_to(H)
-	H.key = C.key
+	H.set_key(C.key)
 
 	to_chat(H, span_infoplain(span_bold("You are the Technomancer's apprentice! Your goal is to assist them in their mission at the [station_name()].")))
 	to_chat(H, span_infoplain(span_bold("Your service has not gone unrewarded, however. Studying under them, you have learned how to use a Manipulation Core \
@@ -128,7 +128,7 @@ CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
 	to_chat(C, span_notice(span_bold("Be sure to examine your currently loaded lawset closely.") + " It would be wise \
 	to speak with your team, and learn what their plan is for today."))
 
-	R.key = C.key
+	R.set_key(C.key)
 
 	after(src, 0.1 SECONDS, PROC_REF(finish_drone_spawn), with = list(R), keeps_dead = TRUE)
 

@@ -605,9 +605,9 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	var/datum/sprite_accessory/style = source[style_path]
 	switch(kind)
 		if("ears")
-			ear_style = style
+			set_ear_style(style)
 		if("tail")
-			tail_style = style
+			set_tail_style(style)
 		if("wings")
 			wing_style = style
 	var/static/list/suffixes = list("c1" = "", "c2" = "2", "c3" = "3")
@@ -649,7 +649,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	if(!A.answer)
 		return
 	var/datum/prompt/choice/ask = A.request
-	ear_secondary_style = GLOB.ear_styles_list[ask.choices[ask.value]]
+	set_ear_secondary_style(GLOB.ear_styles_list[ask.choices[ask.value]])
 	var/list/defaults = list()
 	if(ear_secondary_style)
 		for(var/channel in 1 to ear_secondary_style.get_color_channel_count())

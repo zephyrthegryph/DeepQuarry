@@ -665,7 +665,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		A.look_apply_light(0)
 	cache.look_set_bits = now
 	if(!isnull(identity_name))
-		A.name = identity_name
+		if(hascall(A, "__setter_name"))
+			call(A, "set_name")(identity_name)
+		else
+			A.name = identity_name
 	if(!isnull(identity_desc))
 		A.desc = identity_desc
 	if(!isnull(held_state))

@@ -221,7 +221,7 @@ CAPABILITIES(/datum/inbelly_spawn_review)
 		new_character.sync_organ_dna()
 	new_character.sync_addictions()
 	new_character.initialize_vessel()
-	new_character.key = player_key
+	new_character.set_key(player_key)
 	if(new_character.mind)
 		var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 		if(antag_data)

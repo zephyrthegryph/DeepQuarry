@@ -519,7 +519,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 	// end: Dont delete mobs-in-mobs
 
 	//This should guarantee that ghosts don't spawn.
-	to_despawn.ckey = null
+	to_despawn.set_ckey(null)
 
 	// Delete the mob.
 	spent(to_despawn)

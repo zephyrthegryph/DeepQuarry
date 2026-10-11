@@ -1,103 +1,134 @@
-// Vore consent as requirements (C7, doc/rewrite/rules.md §6 "vore consent").
-//
-// The prey's vore preferences are P2 predicate clauses, evaluated with the
-// predator as actor and the prey as target, so every refusal has a reason:
-//   - devouring (vore_sanity_checks) needs /datum/predicate/vore_devour;
-//   - each digestion mode names the predicate its effect needs (`consent` on
-//     /datum/digest_mode): a prey that refuses is held instead of processed;
-//   - the stripping and worn-item addons need the prey's stripping and
-//     contamination preferences.
-// A mode is a rule: its trigger is the belly cycle (a rate over time, see
-// belly_slot.dm), its condition is its consent predicate, its effect is
-// process_mob().
+// Existing profile fields publish on their actual record and owning mob. No base vars added.
+TRACKED_DATA(/datum/record/vore_prefs, devourable)
+TRACKED_DATA(/datum/record/vore_prefs, digestable)
+TRACKED_DATA(/datum/record/vore_prefs, absorbable)
+TRACKED_DATA(/datum/record/vore_prefs, permit_healbelly)
+TRACKED_DATA(/datum/record/vore_prefs, strip_pref)
+TRACKED_DATA(/datum/record/vore_prefs, contaminate_pref)
 
-// ---- Clause procs: called on the subject with (actor, target, held) ----
+// Native consent requirements, actor=predator, target=prey.
+/datum/entry/part/req/vore_consent/check(datum/act/op/A)
+	return consent_reason(A)
 
-/mob/living/proc/vore_pref_devourable(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.devourable
+/datum/entry/part/req/vore_consent/proc/consent_reason(datum/act/op/A)
+	return /datum/msg/req_failed
 
-/mob/living/proc/vore_pref_digestable(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.digestable
+/datum/entry/part/req/vore_consent/devourable/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.devourable)
+		return "They aren't able to be devoured."
+	return null
 
-/mob/living/proc/vore_pref_absorbable(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.absorbable
+/datum/entry/part/req/vore_consent/devourable/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "devourable"))
 
-/mob/living/proc/vore_pref_healbelly(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.permit_healbelly
+/datum/entry/part/req/vore_consent/devour/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	var/mob/living/pred = istype(A.actor, /mob/living) ? A.actor : null
+	if(!prey || !prey.vore_prefs.devourable)
+		return "They aren't able to be devoured."
+	if(!prey || prey.absorbed)
+		return "They aren't in a state to be devoured."
+	if(!pred || pred.absorbed)
+		return "They aren't in a state to be devoured."
+	return null
 
-/mob/living/proc/vore_pref_strippable(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.strip_pref
+/datum/entry/part/req/vore_consent/devour/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "devourable"))
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "absorbed"))
+	if(istype(A.actor, /mob/living))
+		. += list(list(A.actor, "absorbed"))
 
-/mob/living/proc/vore_pref_contaminable(mob/actor, atom/target, obj/item/held)
-	return vore_prefs.contaminate_pref
+/datum/entry/part/req/vore_consent/digest/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.digestable)
+		return "they don't allow digestion"
+	if(!prey || prey.absorbed)
+		return "they are already absorbed"
+	return null
 
-/mob/living/proc/vore_not_absorbed(mob/actor, atom/target, obj/item/held)
-	return !absorbed
+/datum/entry/part/req/vore_consent/digest/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "digestable"))
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "absorbed"))
 
-/mob/living/proc/vore_not_dead(mob/actor, atom/target, obj/item/held)
-	return stat != DEAD
+/datum/entry/part/req/vore_consent/absorb/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.absorbable)
+		return "they don't allow absorption"
+	if(!prey || prey.absorbed)
+		return "they are already absorbed"
+	return null
 
-// ---- Predicates ----
+/datum/entry/part/req/vore_consent/absorb/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "absorbable"))
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "absorbed"))
 
-/// The prey's devourable preference alone (spontaneous and automatic vore, can_vore()).
-/datum/predicate/vore_devourable
-	name = "devourable"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_devourable, null), "They aren't able to be devoured."))
+/datum/entry/part/req/vore_consent/heal/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.permit_healbelly)
+		return "they don't allow healing bellies"
+	if(!prey || prey.is_dead())
+		return "they are dead"
+	return null
 
-/// Being eaten at all.
-/datum/predicate/vore_devour
-	name = "devour"
-	spec = list(
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_devourable, null), "They aren't able to be devoured."),
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_not_absorbed, null), "They aren't in a state to be devoured."),
-		REQ_BECAUSE(REQ_ON(PRED_ACTOR, /mob/living/proc/vore_not_absorbed, null), "They aren't in a state to be devoured."),
-	)
+/datum/entry/part/req/vore_consent/heal/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "permit_healbelly"))
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "stat"))
 
-/// Digest mode: the prey allows digestion and is not already absorbed.
-/datum/predicate/vore_digest
-	name = "digest"
-	spec = list(
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_digestable, null), "they don't allow digestion"),
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_not_absorbed, null), "they are already absorbed"),
-	)
+/datum/entry/part/req/vore_consent/strip/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.strip_pref)
+		return "they don't allow stripping"
+	return null
 
-/// Absorb mode: the prey allows absorption and is not already absorbed.
-/datum/predicate/vore_absorb
-	name = "absorb"
-	spec = list(
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_absorbable, null), "they don't allow absorption"),
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_not_absorbed, null), "they are already absorbed"),
-	)
+/datum/entry/part/req/vore_consent/strip/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "strip_pref"))
 
-/// Heal mode: the prey allows heal bellies and is alive.
-/datum/predicate/vore_heal
-	name = "heal"
-	spec = list(
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_healbelly, null), "they don't allow healing bellies"),
-		REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_not_dead, null), "they are dead"),
-	)
+/datum/entry/part/req/vore_consent/affect_worn/consent_reason(datum/act/op/A)
+	var/mob/living/prey = istype(A.target, /mob/living) ? A.target : null
+	if(!prey || !prey.vore_prefs.contaminate_pref)
+		return "they don't allow their worn items to be affected"
+	return null
 
-/// The stripping addon.
-/datum/predicate/vore_strip
-	name = "strip"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_strippable, null), "they don't allow stripping"))
+/datum/entry/part/req/vore_consent/affect_worn/read_keys(datum/act/op/A)
+	. = list()
+	if(istype(A.target, /mob/living))
+		. += list(list(A.target, "vore_prefs"), list(A.target.vars["vore_prefs"], "contaminate_pref"))
 
-/// The worn-items addon.
-/datum/predicate/vore_affect_worn
-	name = "affect worn items"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /mob/living/proc/vore_pref_contaminable, null), "they don't allow their worn items to be affected"))
+/// A real native requirement evaluation; pooled query always released.
+/proc/vore_consent_refusal(requirement_type, mob/living/pred, mob/living/prey)
+	if(!ispath(requirement_type, /datum/entry/part/req/vore_consent))
+		CRASH("invalid native vore consent requirement")
+	var/datum/entry/part/req/R = part_make(requirement_type)
+	var/datum/act/op/acceptance/A = acceptance_act(prey, null, prey, null, pred)
+	try
+		op_menu_record_reads(R.read_keys(A))
+		. = op_req_check(A, R)
+	catch(var/exception/fault)
+		acceptance_act_release(A)
+		throw fault
+	acceptance_act_release(A)
 
-// ---- Reads ----
+/// Effect-domain decision, derived from the actual null-or-reason requirement.
+/proc/vore_consents(requirement_type, mob/living/pred, mob/living/prey)
+	return isnull(vore_consent_refusal(requirement_type, pred, prey))
 
-/// Why `pred` can't `kind` (a /datum/predicate/vore_* path) `prey`, or null if it can.
-/proc/vore_consent_refusal(predicate_path, mob/living/pred, mob/living/prey)
-	var/datum/predicate/P = PREDICATE(predicate_path)
-	return PREDICATE_REASON(P, pred, prey, null)
-
-/// TRUE if `prey` consents to `predicate_path` from `pred`.
-/proc/vore_consents(predicate_path, mob/living/pred, mob/living/prey)
-	var/datum/predicate/P = PREDICATE(predicate_path)
-	return PREDICATE_PASSES(P, pred, prey, null)
 
 /datum/digest_mode
 	/// The consent predicate this mode's effect needs from the prey, or null.
@@ -110,13 +141,13 @@
 	return vore_consent_refusal(consent, B.owner, L)
 
 /datum/digest_mode/digest
-	consent = /datum/predicate/vore_digest
+	consent = /datum/entry/part/req/vore_consent/digest
 
 /datum/digest_mode/absorb
-	consent = /datum/predicate/vore_absorb
+	consent = /datum/entry/part/req/vore_consent/absorb
 
 /datum/digest_mode/heal
-	consent = /datum/predicate/vore_heal
+	consent = /datum/entry/part/req/vore_consent/heal
 
 /// Tells the predator, once as `L` arrives, why this belly's mode will only hold them.
 /obj/belly/proc/show_mode_refusal(mob/living/L)

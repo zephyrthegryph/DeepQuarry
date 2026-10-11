@@ -1448,3 +1448,5 @@ GLOBAL_LIST_INIT(fancy_sprite_accessory_color_channel_names, list("Primary", "Se
 	icon_state = "preg_tummy_teshari"
 	color_blend_mode = ICON_MULTIPLY
 	body_parts = list(BP_TORSO,BP_GROIN,BP_L_HAND,BP_R_HAND,BP_L_LEG,BP_R_LEG)
+
+TRACKED(/datum/sprite_accessory, name)

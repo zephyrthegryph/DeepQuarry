@@ -29,11 +29,16 @@
 
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool)
-	var/datum/predicate/tool_check = dq_predicate_for("[type]/tool", list(REQ_TOOL_TIER(TOOL_WELDER, 1)), "engine tool adapter")
-	TEST_ASSERT(!length(tool_check.errors), "real tool predicate compiles")
-	TEST_ASSERT(tool_check.check(actor, paper, welder), "concrete tool adapter accepts an actual welding tool")
-	TEST_ASSERT(!tool_check.check(actor, paper, pen), "concrete tool adapter rejects a pen")
-	TEST_ASSERT_NOTNULL(tool_check.why_not(actor, paper, pen), "rejected tool produces an actual reason")
+	var/datum/act/op/tool_context = allocate(/datum/act/op)
+	tool_context.holder = src
+	tool_context.actor = actor
+	tool_context.target = paper
+	var/datum/entry/part/req/tool_check = req(TYPE_PROC_REF(/datum/unit_test/dq_engine_foundation_adapters, welding_tool_refusal))
+	tool_context.set_held_provider(welder)
+	TEST_ASSERT_NULL(op_req_check(tool_context, tool_check), "Concrete native tool requirement accepts actual welding tool")
+	tool_context.set_held_provider(pen)
+	TEST_ASSERT_EQUAL(op_req_check(tool_context, tool_check), "needs a welder", "Concrete native requirement rejects pen with exact original reason")
+	tool_context.set_held_provider(null)
 
 	var/datum/material/steel = GLOB.name_to_material[MAT_STEEL]
 	TEST_ASSERT_NOTNULL(steel, "actual material registry contains steel")
@@ -119,3 +124,7 @@
 	TEST_ASSERT_EQUAL(holder.containment_move_flags(), 0, "cleared flags return to zero")
 	TEST_ASSERT_NULL(holder.containment_successor(), "cleared successor releases reference")
 	TEST_ASSERT(!holder.latent_is_declared() && !holder.latent_policy_disabled(), "cleared flags return to defaults")
+
+/datum/unit_test/dq_engine_foundation_adapters/proc/welding_tool_refusal(datum/act/op/A)
+	var/obj/item/I = A.held_provider()
+	return I && I.has_tool_quality(TOOL_WELDER) && dq_tool_tier(I, TOOL_WELDER) >= 1 ? null : "needs a welder"

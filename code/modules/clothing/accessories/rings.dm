@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/seal/signet)
 	set_nameset(TRUE)
 
 /obj/item/clothing/accessory/ring/seal/signet/proc/change_name(signet_name = "Unknown")
-	name = "[signet_name]'s signet ring"
+	set_name("[signet_name]'s signet ring")
 	desc = "A signet ring belonging to [signet_name], for when you're too sophisticated to sign letters."
 
 /obj/item/clothing/accessory/ring/wedding
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/clothing/accessory/ring/wedding)
 	var/datum/prompt/text/picked = A.answer
 	if(picked.value)
 		set_partnername(picked.value)
-		name = "[initial(name)] - [partnername]"
+		set_name("[initial(name)] - [partnername]")
 	return OP_OK
 
 /obj/item/clothing/accessory/ring/wedding/silver

@@ -111,7 +111,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 	if(!R.key)
 		for(var/mob/observer/dead/ghost in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(ghost.mind && ghost.mind.current == R)
-				R.key = ghost.key
+				R.set_key(ghost.key)
 
 	if(R.stat == DEAD)
 		var/revived = R.return_from_death("restart module", src)

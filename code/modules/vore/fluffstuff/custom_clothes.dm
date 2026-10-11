@@ -722,6 +722,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/freddy)
 	light_overlay = "helmet_light_dual"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm)
+	acceptance("equip", req_acceptance_owner_key("scree", "your face and whoever is meant for this helmet are too different"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 
@@ -730,10 +731,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/proc/owner_fit, "your face and whoever is meant for this helmet are too different"))))
-
-/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/screehelm/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "scree"
 
 //scree:Scree
 /obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess
@@ -747,6 +744,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/engineering/hazmat/fluff/sc
 	item_state_slots = list(slot_r_hand_str = "eng_voidsuit", slot_l_hand_str = "eng_voidsuit")
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess)
+	acceptance("equip", req_acceptance_owner_key("scree", "it only has three fingers, and room for extra limbs"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 
@@ -755,10 +753,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screesp
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/proc/owner_fit, "it only has three fingers, and room for extra limbs"))))
-
-/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespess/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "scree"
 
 //scree:Avida
 /obj/item/clothing/under/skirt/outfit/fluff/avida
@@ -785,16 +779,20 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screespes
 		)
 
 
-TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/fluff/avida/proc/match_ears, null))))
+/obj/item/clothing/head/fluff/avida/draw(datum/look/look)
+	..()
+	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	look.watch(H)
+	var/state = initial(item_state)
+	if(H && H.get_equipped_item(SLOT_ID_HEAD) == src)
+		var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
+		look.watch(H.ear_style)
+		look.watch(H.ear_secondary_style)
+		if(!((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names)))
+			state = "avidahatnoears"
+	look.held_state(state)
+	// Head parent already requests its real worn-slot redraw after applying the look.
 
-/// Always fits; picks the trimmed sprite when the wearer's ears suit it.
-/obj/item/clothing/head/fluff/avida/proc/match_ears(mob/living/carbon/human/H)
-	var/static/list/allowed_ear_names = list("Bnnuy Ears", "Bnnuy Ears 2")
-	if(istype(H) && ((H.ear_style?.name in allowed_ear_names) || (H.ear_secondary_style?.name in allowed_ear_names)))
-		item_state = initial(src.item_state)
-	else //if not, just use a generic icon
-		item_state = "avidahatnoears"
-	return TRUE
 
 //natje:Pumila
 /obj/item/clothing/under/fluff/aluranevines
@@ -807,13 +805,10 @@ TYPE_TABLE(/obj/item/clothing/head/fluff/avida, equip_spec, dq_spec_join(..(), l
 	item_state_slots = list(slot_r_hand_str = "alurane-vines_r", slot_l_hand_str = "alurane-vines_l")
 
 CAPABILITIES(/obj/item/clothing/under/fluff/aluranevines)
+	acceptance("equip", req_acceptance_owner_key("natje", "wrapping vines around yourself is an odd idea"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/under/fluff/aluranevines, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/aluranevines/proc/owner_fit, "wrapping vines around yourself is an odd idea"))))
-
-/obj/item/clothing/under/fluff/aluranevines/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "natje"
 
 //HOS Hardsuit
 /obj/item/clothing/suit/space/void/security/fluff/hos // ToDo: Rig version.
@@ -965,13 +960,10 @@ CAPABILITIES(/obj/item/clothing/head/fluff/pompom)
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/joan)
+	acceptance("equip", req_acceptance_owner_key("joanrisu", "it doesn't fit"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit, "it doesn't fit"))))
-
-/obj/item/clothing/head/helmet/space/fluff/joan/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "joanrisu"
 
 //JoanRisu:Joan Risu
 /obj/item/clothing/suit/space/fluff/joan
@@ -989,6 +981,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/joan, equip_spec, dq_spec_
 	icon_state = "joansuit"
 
 CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
+	acceptance("equip", req_acceptance_owner_key("joanrisu", "it doesn't fit"), mode = ACCEPTANCE_APPEND)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
 
@@ -997,11 +990,6 @@ CAPABILITIES(/obj/item/clothing/suit/space/fluff/joan)
 
 
 
-
-TYPE_TABLE(/obj/item/clothing/suit/space/fluff/joan, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/fluff/joan/proc/owner_fit, "it doesn't fit"))))
-
-/obj/item/clothing/suit/space/fluff/joan/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "joanrisu"
 
 
 /obj/item/clothing/under/rank/internalaffairs/fluff/joan
@@ -1437,10 +1425,6 @@ CAPABILITIES(/obj/item/clothing/under/batter)
 	icon_state = "jessiecoat"
 
 
-TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit, "you need a wolf-taur half to wear this"))))
-
-/obj/item/clothing/suit/storage/hooded/wintercoat/jessie/proc/taur_fit(mob/living/carbon/human/H)
-	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
 
 //samanthafyre:Kateryna Petrovitch
 /obj/item/clothing/suit/armor/vest/wolftaur/kate
@@ -1474,6 +1458,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie, equip_spec,
 	light_overlay = "helmet_light"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
+	acceptance("equip", req_acceptance_owner_key("samanthafyre", "it doesn't fit"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
@@ -1482,10 +1467,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/fluff/kate)
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/fluff/kate, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/fluff/kate/proc/owner_fit, "it doesn't fit"))))
-
-/obj/item/clothing/head/helmet/space/fluff/kate/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "samanthafyre"
 
 //Seiga: Alfonso Oak Telanor
 /obj/item/clothing/glasses/sunglasses/fluff/alfonso
@@ -1797,7 +1778,7 @@ CAPABILITIES(/obj/item/clothing/gloves/fluff/kilano)
 	icon_state = "phi_ring"
 
 /obj/item/clothing/accessory/ring/seal/signet/fluff/phi/change_name(signet_name = "Unknown")
-	name = "[signet_name]'s Bone Signet Ring"
+	set_name("[signet_name]'s Bone Signet Ring")
 	desc = "A signet ring belonging to [signet_name], carved from the bones of something long extinct, as a ward against bad luck."
 
 //KotetsuRedwood:Latex Maid Dresses, for everyone to 'enjoy'. :3c
@@ -1858,6 +1839,7 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/fluff/siren)
 	icon_state = "hasd_helm"
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
+	acceptance("equip", req_acceptance_owner_key("silencedmp5a5", "the faceplate is not made for your anatomy"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
@@ -1867,10 +1849,6 @@ CAPABILITIES(/obj/item/clothing/head/helmet/space/void/security/hasd)
 
 
 
-TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit, "the faceplate is not made for your anatomy"))))
-
-/obj/item/clothing/head/helmet/space/void/security/hasd/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "silencedmp5a5"
 
 /obj/item/clothing/suit/space/void/security/hasd
 	name = "HASD EVA bodyplates"
@@ -1883,10 +1861,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/security/hasd, equip_spec, 
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/space/void/security/hasd, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit, "this suit is not designed for you"))))
-
-/obj/item/clothing/suit/space/void/security/hasd/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "silencedmp5a5"
 
 //Zigfe:Zaoozaoo Xrimxuqmqixzix
 /obj/item/clothing/head/fluff/zao
@@ -1998,6 +1972,7 @@ CAPABILITIES(/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff)
 	icon_state = "melanie_skeleton"
 
 CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
+	acceptance("equip", req_acceptance_slime_species(), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", fits(list(SPECIES_TESHARI), exclude = TRUE), mode = ACCEPTANCE_REPLACE)
 
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi', covers = 0))
@@ -2008,12 +1983,8 @@ CAPABILITIES(/obj/item/clothing/under/fluff/slime_skeleton)
 
 
 
-TYPE_TABLE(/obj/item/clothing/under/fluff/slime_skeleton, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit, "only slimes can wear this"))))
 
 /// Promethean species, not body type: other species share the slime body type.
-/obj/item/clothing/under/fluff/slime_skeleton/proc/slime_fit(mob/living/carbon/human/H)
-	return !ishuman(H) || H.get_species() == SPECIES_PROMETHEAN
-
 /obj/item/clothing/under/fluff/slime_skeleton/digest_act(atom/movable/item_storage = null)
 	return FALSE	//Indigestible
 
@@ -2155,13 +2126,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/flintlock)
 	sensor_mode = 3 // I'm a dumbass and forget these all the time please understand :(
 
 CAPABILITIES(/obj/item/clothing/under/skirt/outfit/fluff/nikki)
+	acceptance("equip", req_acceptance_owner_key("ryumi", "it doesn't fit"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit, "it doesn't fit"))))
-
-/obj/item/clothing/under/skirt/outfit/fluff/nikki/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "ryumi"
 
 /obj/item/clothing/shoes/fluff/nikki
 	name = "non-magical boots"
@@ -2170,13 +2138,10 @@ TYPE_TABLE(/obj/item/clothing/under/skirt/outfit/fluff/nikki, equip_spec, dq_spe
 	icon_state = "nikki_boots"
 
 CAPABILITIES(/obj/item/clothing/shoes/fluff/nikki)
+	acceptance("equip", req_acceptance_owner_key("ryumi", "they don't fit"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 
 
-TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/fluff/nikki/proc/owner_fit, "they don't fit"))))
-
-/obj/item/clothing/shoes/fluff/nikki/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "ryumi"
 
 /obj/item/clothing/suit/fluff/nikki //see /obj/item/rig/nikki
 	name = "cape"
@@ -2521,4 +2486,8 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/kate)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
 
 CAPABILITIES(/obj/item/clothing/suit/space/void/security/hasd)
+	acceptance("equip", req_acceptance_owner_key("silencedmp5a5", "this suit is not designed for you"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat/jessie)
+	acceptance("equip", req_acceptance_taur_shape(/datum/sprite_accessory/tail/taur/wolf, "you need a wolf-taur half to wear this"), mode = ACCEPTANCE_APPEND)

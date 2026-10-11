@@ -90,7 +90,7 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 		D.mind.active = TRUE
 		D.mind.transfer_to(src)
 	else
-		src.ckey = D.ckey
+		src.set_ckey(D.ckey)
 	spent(D)
 
 	// Clean up the simplemob

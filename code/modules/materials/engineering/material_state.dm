@@ -130,9 +130,9 @@ CAPABILITIES(/datum/material_build)
 /// Writes saved() back; a null `saved` puts the saved fields at their defaults. The live response stays.
 /datum/material_build/proc/restore(list/saved)
 	var/list/restored_overrides = saved?["overrides"]
-	overrides = length(restored_overrides) ? material_overrides_intern(restored_overrides) : null
+	set_overrides(length(restored_overrides) ? material_overrides_intern(restored_overrides) : null)
 	var/list/restored_mix = saved?["mix"]
-	mix = length(restored_mix) ? restored_mix.Copy() : null
+	set_mix(length(restored_mix) ? restored_mix.Copy() : null)
 	engineered_id = saved?["id"]
 	profile = saved?["profile"]
 	surgery_cleanliness_bonus = saved?["cleanliness"] || 0
@@ -186,7 +186,9 @@ CAPABILITIES(/datum/material_build)
 	var/datum/material_build/build = capability_data(O)?[/datum/material_build]
 	if(!build)
 		build = new
-		LAZYSET(capability_runtime(O).data, /datum/material_build, build)
+		var/datum/capability_runtime/state = capability_runtime(O)
+		LAZYSET(state.data, /datum/material_build, build)
+		engine_key_changed(O, OP_KEY_CAP_DATA)
 	return build
 
 /// Deletes O's material records in the destroy transaction's links step (/obj/on_destroy), while the object's links
@@ -199,7 +201,9 @@ CAPABILITIES(/datum/material_build)
 		var/datum/record = capability_data(O)?[key]
 		if(!record)
 			continue
-		LAZYREMOVE(capability_runtime(O).data, key)
+		var/datum/capability_runtime/state = capability_runtime(O)
+		LAZYREMOVE(state.data, key)
+		engine_key_changed(O, OP_KEY_CAP_DATA)
 		spent(record)
 
 /// The material an item was engineered from (the /obj/item compatibility field), or null.
@@ -249,3 +253,6 @@ CAPABILITIES(/datum/material_build)
 		return "has a live material service, which pins it materialised"
 	if(material_build_of(src)?.response)
 		return "has a material response with live hooks, which pins it materialised"
+
+TRACKED(/datum/material_build, overrides)
+TRACKED(/datum/material_build, mix)

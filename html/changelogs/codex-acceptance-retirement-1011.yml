@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Nikki's RIG owns its configured cape without treating it as a space-suit chest."
+  - bugfix: "Equipment refusal menus follow changes to garment names and grammar."

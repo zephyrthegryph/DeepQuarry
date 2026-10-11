@@ -127,3 +127,8 @@ TRACKED(/mob/living/carbon/human, vantag_pref)
 /// Limbs and organs attach and detach through the body (body/parts/attach.dm invalidates it): MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
+TRACKED(/mob/living/carbon/human, tail_style)
+
+TRACKED(/mob/living/carbon/human, ear_style)
+
+TRACKED(/mob/living/carbon/human, ear_secondary_style)

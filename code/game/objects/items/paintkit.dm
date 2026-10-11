@@ -36,7 +36,17 @@
 
 /obj/item/kit/proc/customize(obj/item/I, mob/user)
 	if(can_customize(I))
-		I.name = new_name ? new_name : I.name
+		if(istype(I, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/tracked_garment_name = I
+			tracked_garment_name.set_name(new_name ? new_name : I.name)
+		else if(istype(I, /obj/item/clothing/shoes))
+			var/obj/item/clothing/shoes/tracked_garment_name = I
+			tracked_garment_name.set_name(new_name ? new_name : I.name)
+		else if(istype(I, /obj/item/clothing/accessory))
+			var/obj/item/clothing/accessory/tracked_garment_name = I
+			tracked_garment_name.set_name(new_name ? new_name : I.name)
+		else
+			I.name = new_name ? new_name : I.name
 		I.desc = new_desc ? new_desc : I.desc
 		I.icon = new_icon_file ? new_icon_file : I.icon
 		I.icon_override = new_icon_override_file ? new_icon_override_file : I.icon_override
@@ -160,7 +170,17 @@
 	for(var/obj/item/piece in list(RIG.gloves,RIG.helmet,RIG.boots,RIG.chest))
 		if(!istype(piece))
 			continue
-		piece.name = "[RIG.suit_type] [initial(piece.name)]"
+		if(istype(piece, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/tracked_garment_name = piece
+			tracked_garment_name.set_name("[RIG.suit_type] [initial(piece.name)]")
+		else if(istype(piece, /obj/item/clothing/shoes))
+			var/obj/item/clothing/shoes/tracked_garment_name = piece
+			tracked_garment_name.set_name("[RIG.suit_type] [initial(piece.name)]")
+		else if(istype(piece, /obj/item/clothing/accessory))
+			var/obj/item/clothing/accessory/tracked_garment_name = piece
+			tracked_garment_name.set_name("[RIG.suit_type] [initial(piece.name)]")
+		else
+			piece.name = "[RIG.suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [RIG.name]."
 		piece.icon_state = "[RIG.suit_state]"
 		if(istype(piece, /obj/item/clothing/shoes))

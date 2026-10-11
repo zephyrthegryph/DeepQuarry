@@ -53,7 +53,7 @@ CAPABILITIES(/datum/admin_set_ckey_review)
 	var/mob/M = target_mob
 	log_admin("[key_name(actor)] set ckey of [key_name(M)] to [selection]")
 	message_admins("[key_name_admin(actor)] set ckey of [key_name_admin(M)] to [selection]", 1)
-	M.ckey = selection.ckey
+	M.set_ckey(selection.ckey)
 	feedback_add_details("admin_verb","SCK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/admin_set_ckey_review/proc/retire()

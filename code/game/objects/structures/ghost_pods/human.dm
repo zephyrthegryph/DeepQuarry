@@ -48,7 +48,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
 	to_chat(M, span_notice("You are a [occupant_type]!"))
 	if(make_antag)
 		to_chat(M, span_warning("Your intent may not be completely beneficial."))
-	H.ckey = M.ckey
+	H.set_ckey(M.ckey)
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
 	log_and_message_admins("successfully opened \a [src] and became a [occupant_type].")
 
@@ -172,7 +172,7 @@ CAPABILITIES(/obj/structure/ghost_pod/manual/human)
 	to_chat(M, span_notice("You are a [occupant_type]!"))
 	if(make_antag)
 		to_chat(M, span_warning("Your intent may not be completely beneficial."))
-	H.ckey = M.ckey
+	H.set_ckey(M.ckey)
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
 	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].", opening_actor)
 

@@ -496,11 +496,11 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(!client)
 		log_game("[key] AM failed due to disconnect.")
 		spent(M)
-		M.key = null
+		M.set_key(null)
 		return
 
 	M.has_respawned = TRUE //When we returned to main menu, send respawn message
-	M.key = key
+	M.set_key(key)
 
 	if(M.mind)
 		M.mind.reset()

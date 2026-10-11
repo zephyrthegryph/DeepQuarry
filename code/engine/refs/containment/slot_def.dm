@@ -12,7 +12,7 @@
 // /atom/proc/slot_def_types(). The registry (registry.dm) builds each holder
 // type's slot list once, from every decl whose `holder` matches. It says what
 // the slot accepts (a P2 predicate, evaluated with the inserted thing as
-// PRED_TARGET and the mover as PRED_ACTOR), how much it holds, and what the
+// native requirement and the mover as native requirement), how much it holds, and what the
 // base Destroy() does with its contents. The ledger (ledger.dm) keeps each
 // holder's per-instance state.
 
@@ -40,7 +40,7 @@
 	var/capacity_model = SLOT_CAPACITY_NONE
 	/// Limit in the capacity model's units. See capacity_for().
 	var/capacity = 0
-	/// /datum/predicate subtype the inserted thing must pass, or null for anything.
+	/// native acceptance plan the inserted thing must pass, or null for anything.
 	var/accepts
 	/// CONSTRAINT_* kind the holder declares for this slot (P3), such as
 	/// CONSTRAINT_HOLD for storage: checked after `accepts`, for holders whose
@@ -220,11 +220,13 @@ DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEV
 
 /// Why `thing` can't go in this slot on `holder`, not counting capacity, or null.
 /datum/relation_definition/slot/proc/refusal(atom/holder, atom/movable/thing, mob/actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		. = P.why_not(actor, thing, null)
+	if(istype(accepts, /datum/entry/part/acceptance_plan))
+		var/datum/entry/part/acceptance_plan/P = accepts
+		. = acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id)
 		if(.)
 			return .
+	else if(accepts)
+		CRASH("slot accepts must be a compiled native requirement plan")
 	if(holder_constraint)
 		return holder.containment_constraint_refusal(holder_constraint, thing, actor)
 	return null
@@ -278,8 +280,12 @@ GLOBAL_DATUM(containment_slot_factory, /datum/containment_slot_factory)
 	RETURN_TYPE(/datum/relation_definition/slot/declared)
 	return exposure == SLOT_EXPOSURE_SEALED ? new /datum/relation_definition/slot/declared/sealed : new /datum/relation_definition/slot/declared
 
-/datum/relation_definition/slot/proc/set_declared_accepts(accepts)
-	CRASH("Not a declared containment slot")
+/datum/relation_definition/slot/proc/set_declared_accepts(parts)
+	var/list/requirements = entry_flatten(list(parts))
+	for(var/part in requirements)
+		if(!istype(part, /datum/entry/part/req))
+			CRASH("custom slot accepts must be native requirements")
+	accepts = acceptance_compile(list(acceptance(slot_id, requirements, mode = ACCEPTANCE_REPLACE)))
 
 /datum/relation_definition/slot/declared
 	name = "declared slot"

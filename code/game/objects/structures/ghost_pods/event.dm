@@ -44,7 +44,7 @@
 	if you are cute enough, try to make friends with this place's inhabitants."))
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a spooky space monster, but your role is to facilitate spooky space monster roleplay, not to fight the station and kill people. You can of course eat and/or digest people as you like if OOC prefs align, but this should be done as part of roleplay. If you intend to fight the station and kill people and such, you need permission from the staff team. GENERALLY, this role should avoid well populated areas. You’re a weird spooky space monster, so the bar is probably not where you’d want to go if you intend to survive. Of course, you’re welcome to try to make friends and roleplay how you will in this regard, but something to keep in mind."))
-	newPred.ckey = M.ckey
+	newPred.set_ckey(M.ckey)
 	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
 	newPred.offer_load_bellies()
@@ -81,7 +81,7 @@
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a spooky space monster, but your role is to facilitate spooky space monster roleplay, not to fight the station and kill people. You can of course eat and/or digest people as you like if OOC prefs align, but this should be done as part of roleplay. If you intend to fight the station and kill people and such, you need permission from the staff team. GENERALLY, this role should avoid well populated areas. You’re a weird spooky space monster, so the bar is probably not where you’d want to go if you intend to survive. Of course, you’re welcome to try to make friends and roleplay how you will in this regard, but something to keep in mind."))
 
-	newMorph.ckey = M.ckey
+	newMorph.set_ckey(M.ckey)
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully entered \a [src] and became a Morph.")
 	newMorph.offer_load_bellies()
@@ -150,7 +150,7 @@ DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/maintpred/redgate, REG
 	new_character.dna.ResetUIFrom(new_character)
 	new_character.sync_organ_dna()
 	new_character.sync_addictions()
-	new_character.key = M.key
+	new_character.set_key(M.key)
 	new_character.mind.loaded_from_ckey = picked_ckey
 	new_character.mind.loaded_from_slot = picked_slot
 

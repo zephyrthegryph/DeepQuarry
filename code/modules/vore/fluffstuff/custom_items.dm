@@ -626,7 +626,7 @@ TRACKED(/obj/item/clothing/accessory/collar/khcrystal, watching)
 	if(owner_c)
 		to_chat(owner_c, span_notice("A signal is sent notifying of your demise by \the [name]."))
 	update_state(3)
-	name = "broken [initial(name)]"
+	set_name("broken [initial(name)]")
 	desc = "This seems like a necklace, but the actual pendant is missing."
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/update_state(tostate)
@@ -1267,10 +1267,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/flask/vacuumflask/fluff/vi
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "tiemgogs"
 
-TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit, "these don't look like they were made to fit you"))))
-
-/obj/item/clothing/glasses/welding/tiemgogs/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "radiantaurora"
 
 //Ryumi - Nikki Yumeno
 /obj/item/rig/nikki
@@ -1296,6 +1292,8 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 
 
 CAPABILITIES(/obj/item/rig/nikki)
+	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
+	acceptance("equip", req_acceptance_owner_key("ryumi", "the necklace never quite gets past your head"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
@@ -1317,10 +1315,6 @@ CAPABILITIES(/obj/item/rig/nikki)
 		return OP_DECLINE
 	return OP_DECLINE
 
-TYPE_TABLE(/obj/item/rig/nikki, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/rig/nikki/proc/owner_fit, "the necklace never quite gets past your head"))))
-
-/obj/item/rig/nikki/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "ryumi"
 
 //Nickcrazy - Damon Bones Xrim
 /obj/item/clothing/suit/storage/toggle/bomber/bombersec
@@ -1679,12 +1673,9 @@ CAPABILITIES(/obj/item/dice/loaded/ceph)
 	replacementType = /obj/item/remote_scene_tool/tally_doll
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_necklace)
+	acceptance("equip", req_acceptance_owner_key("bricker98", "the collar doesn't fit you"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(slots = SLOT_MASK | SLOT_OCLOTHING))
 
-TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/remote_scene_tool/tally_necklace/proc/owner_fit, "the collar doesn't fit you"))))
-
-/obj/item/remote_scene_tool/tally_necklace/proc/owner_fit(mob/living/carbon/human/H)
-	return H?.ckey == "bricker98"
 
 /obj/item/remote_scene_tool/tally_doll  //A reskinned sticker for the doll, using a custom sprite
 	name = "Talenya's voodoo doll"
@@ -1697,3 +1688,23 @@ TYPE_TABLE(/obj/item/remote_scene_tool/tally_necklace, equip_spec, dq_spec_join(
 
 CAPABILITIES(/obj/item/remote_scene_tool/tally_doll)
 	configure(item_worn(slots = NONE))
+
+CAPABILITIES(/obj/item/clothing/glasses/welding/tiemgogs)
+	acceptance("equip", req_acceptance_owner_key("radiantaurora", "these don't look like they were made to fit you"), mode = ACCEPTANCE_APPEND)
+
+// Content-owned slime leaf belongs beside slime_skeleton declaration.
+/proc/req_acceptance_slime_species()
+	return part_make(/datum/entry/part/req/acceptance_leaf/slime_species, list())
+/datum/entry/part/req/acceptance_leaf/slime_species/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = istype(A.wearer, /mob/living/carbon/human) ? A.wearer : null
+	if(!H)
+		return null
+	// Real initialized species, avoiding get_species()'s lazy mutation during a query.
+	return H.species?.name == SPECIES_PROMETHEAN ? null : "only slimes can wear this"
+/datum/entry/part/req/acceptance_leaf/slime_species/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = istype(A.wearer, /mob/living/carbon/human) ? A.wearer : null
+	. = list()
+	if(H)
+		. += list(list(H, nameof(H.species)))
+		if(H.species)
+			. += list(list(H.species, nameof(H.species.name)))

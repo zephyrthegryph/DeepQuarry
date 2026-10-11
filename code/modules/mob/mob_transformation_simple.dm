@@ -84,7 +84,7 @@ CAPABILITIES(/datum/prompt/text/mob_type)
 	if(isliving(src) && isliving(M))
 		move_player(src, M, "admin changed mob type to [new_type]")
 	else
-		M.key = key // admin tool on an observer or into a non-living mob: first assignment
+		M.set_key(key) // admin tool on an observer or into a non-living mob: first assignment
 
 	if(subspecies && ishuman(M))
 		var/mob/living/carbon/human/H = M

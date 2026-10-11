@@ -194,7 +194,7 @@
 		return FALSE
 
 	// Consent as requirements (vore_consent.dm): the first failing clause gives the reason.
-	var/refusal = vore_consent_refusal(/datum/predicate/vore_devour, pred, prey)
+	var/refusal = vore_consent_refusal(/datum/entry/part/req/vore_consent/devour, pred, prey)
 	if(refusal)
 		if(!prey.vore_prefs.devourable)
 			to_chat(user, span_vnotice(refusal))

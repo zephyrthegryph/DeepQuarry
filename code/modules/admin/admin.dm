@@ -873,7 +873,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	message_admins(span_adminnotice("[key_name_admin(admin)] has put [frommob.ckey] in control of [tomob.name]."))
 	log_admin("[key_name(admin)] stuffed [frommob.ckey] into [tomob.name].")
 	feedback_add_details("admin_verb","CGD")
-	tomob.ckey = frommob.ckey
+	tomob.set_ckey(frommob.ckey)
 	spent(frommob)
 	return 1
 

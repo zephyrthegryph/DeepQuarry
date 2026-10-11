@@ -44,7 +44,7 @@
 	//Component/device holders.
 	var/obj/item/tank/air_supply                       // Air tank, if any.
 	var/obj/item/clothing/shoes/boots = null                  // Deployable boots, if any.
-	var/obj/item/clothing/suit/space/rig/chest                // Deployable chestpiece, if any.
+	var/obj/item/clothing/suit/chest                // Deployable chestpiece, if any.
 	var/obj/item/clothing/head/helmet/space/rig/helmet = null // Deployable helmet, if any.
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = null  // Deployable gauntlets, if any.
 	var/obj/item/cell/cell                             // Power supply, if any.
@@ -897,7 +897,9 @@ TRACKED(/obj/item/rig, carried_by_mob)
 
 	var/chance
 	if(!is_emp)
-		chance = 2*max(0, damage - (chest? chest.breach_threshold : 0))
+		var/obj/item/clothing/suit/space/space_chest = chest
+		var/threshold = istype(space_chest) ? space_chest.breach_threshold : 0
+		chance = 2*max(0, damage - threshold)
 	else
 		//Want this to be roughly independant of the number of modules, meaning that X emp hits will disable Y% of the suit's modules on average.
 		//that way people designing hardsuits don't have to worry (as much) about how adding that extra module will affect emp resiliance by 'soaking' hits for other modules

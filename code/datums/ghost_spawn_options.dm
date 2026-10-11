@@ -52,7 +52,7 @@
 		if(CONFIG_GET(flag/uneducated_mice))
 			host.universal_understand = 0
 		announce_ghost_joinleave(user, 0, "They are now a mouse.")
-		host.ckey = user.ckey
+		host.set_ckey(user.ckey)
 		host.add_ventcrawl(vent_found)
 		to_chat(host, span_info("You are now a mouse. Try to avoid interaction with players, and do not give hints away that you are more than a simple rodent."))
 

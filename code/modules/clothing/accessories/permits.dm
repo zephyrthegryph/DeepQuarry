@@ -21,14 +21,14 @@ CAPABILITIES(/obj/item/clothing/accessory/permit)
 	emag(then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE)
 
 /obj/item/clothing/accessory/permit/proc/registered(datum/act/op/A)
-	set_name(A.actor.name)
+	register_name(A.actor.name)
 	to_chat(A.actor, "[src] registers your name.")
 	return OP_OK
 
-/obj/item/clothing/accessory/permit/proc/set_name(new_name)
+/obj/item/clothing/accessory/permit/proc/register_name(new_name)
 	set_owner(TRUE)
 	if(new_name)
-		src.name = "[initial(name)] ([new_name])"
+		set_name("[initial(name)] ([new_name])")
 		desc = "[initial(desc)] It belongs to [new_name]."
 
 /obj/item/clothing/accessory/permit/proc/naming_reset(datum/act/op/A)

@@ -139,7 +139,7 @@
 					if(weld_rate && storedmod.damage && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
 						to_chat(H, span_notice("[storedmod] is repaired!"))
 						storedmod.damage = 0
-				if(wornrig.chest)
+				if(istype(wornrig.chest, /obj/item/clothing/suit/space/rig))
 					var/obj/item/clothing/suit/space/rig/rigchest = wornrig.chest
 					if(weld_rate && rigchest.damage && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
 						own_clear(rigchest, nameof(rigchest.breaches), OWN_DELETE)

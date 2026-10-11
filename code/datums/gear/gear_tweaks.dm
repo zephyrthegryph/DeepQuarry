@@ -314,7 +314,17 @@ GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 /datum/gear_tweak/custom_name/tweak_item(obj/item/I, metadata)
 	if(!metadata)
 		return I.name
-	I.name = metadata
+	if(istype(I, /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/tracked_garment_name = I
+		tracked_garment_name.set_name(metadata)
+	else if(istype(I, /obj/item/clothing/shoes))
+		var/obj/item/clothing/shoes/tracked_garment_name = I
+		tracked_garment_name.set_name(metadata)
+	else if(istype(I, /obj/item/clothing/accessory))
+		var/obj/item/clothing/accessory/tracked_garment_name = I
+		tracked_garment_name.set_name(metadata)
+	else
+		I.name = metadata
 
 /*
 Custom Description

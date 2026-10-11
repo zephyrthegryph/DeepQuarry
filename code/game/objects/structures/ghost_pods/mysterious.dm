@@ -19,7 +19,7 @@
 	if(M.mind)
 		M.mind.transfer_to(R)
 	to_chat(M, span_notice("You are a <b>Corgi</b>! Woof!"))
-	R.ckey = M.ckey
+	R.set_ckey(M.ckey)
 	visible_message(span_warning("With a bright flash of light, \the [src] disappears, and in its place stands a small corgi."))
 	log_and_message_admins("successfully touched \a [src] and summoned a corgi.", opening_actor)
 	..()

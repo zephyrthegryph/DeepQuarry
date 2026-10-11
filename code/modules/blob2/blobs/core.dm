@@ -209,7 +209,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 		if(!desired_blob_type && !isnull(difficulty_threshold))
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
-		B.key = new_overmind.key
+		B.set_key(new_overmind.key)
 		rel_set(B, nameof(B.blob_core), src)
 		rel_set(src, nameof(overmind), B)
 		sync_overmind_look()

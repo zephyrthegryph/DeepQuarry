@@ -80,7 +80,7 @@
 	message_admins(msg)
 	log_game(msg)
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
-	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
+	new_voice.set_ckey(candidate.ckey) //Finally, bring the client over.
 	rel_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 

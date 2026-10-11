@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/stack/material)
 
 	if(!default_type)
 		default_type = MAT_STEEL
-	material = get_material_by_name("[default_type]")
+	set_material(get_material_by_name("[default_type]"))
 	if(!material)
 		stack_trace("Material of type: [default_type] does not exist.")
 		return INITIALIZE_HINT_QDEL
@@ -103,7 +103,7 @@ CAPABILITIES(/obj/item/stack/material)
 	if(!new_stack)
 		return null
 	new_stack.default_type = material.name
-	new_stack.material = material
+	new_stack.set_material(material)
 	new_stack.recipes = material.get_recipes()
 	new_stack.stacktype = material.stack_type
 	new_stack.feedstock_purity = feedstock_purity
@@ -130,3 +130,5 @@ CAPABILITIES(/obj/item/stack/material)
 		material.build_rod_product(user, W, src)
 		return OP_PASS
 	return OP_DECLINE
+
+TRACKED(/obj/item/stack/material, material)

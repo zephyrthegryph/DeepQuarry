@@ -73,6 +73,9 @@
 	return "too big: [dq_format_measure(current, PROP_UNIT_SIZE_CLASS)] > [dq_format_measure(src.args["max_size"], PROP_UNIT_SIZE_CLASS)]"
 
 /proc/req_acceptance_tag(tag_id, exclude = FALSE, because = null)
+	var/datum/property_def/D = dq_property_registry().defs[tag_id]
+	if(!D || D.kind != PROP_KIND_TAG)
+		CRASH("tag requirement needs a known tag property")
 	return part_make(/datum/entry/part/req/acceptance_leaf/property_tag, list("tag" = tag_id, "exclude" = exclude, "because" = because))
 
 /datum/entry/part/req/acceptance_leaf/property_tag/acceptance_reason(datum/act/op/A)
@@ -188,6 +191,11 @@
 		var/obj/item/I = thing
 		if(istype(I))
 			. += list(list(I, ITEM_WORN_KEY))
+		return
+	if(istype(base, /datum/property_provider/type_var/tag/sharp))
+		var/obj/item/I = thing
+		if(istype(I))
+			. += list(list(I, ITEM_COMBAT_KEY))
 		return
 	if(property == PROP_SIZE_CLASS && base?.state_var == "w_class")
 		var/obj/O = thing
@@ -325,3 +333,22 @@
 	return TRUE
 
 
+
+/proc/req_acceptance_owner_key(owner_key, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/owner_key, list("owner_key" = owner_key, "because" = because))
+/datum/entry/part/req/acceptance_leaf/owner_key/acceptance_reason(datum/act/op/A)
+	var/mob/wearer = A.wearer
+	return wearer?.ckey == src.args["owner_key"] ? null : src.args["because"]
+/datum/entry/part/req/acceptance_leaf/owner_key/read_keys(datum/act/op/A)
+	var/mob/wearer = A.wearer
+	// Generic client lifecycle and registered key setters publish genuine identity changes.
+	return wearer ? list(list(wearer, MOB_KEY_CLIENT)) : list()
+
+/proc/req_acceptance_taur_shape(tail_type, because)
+	return part_make(/datum/entry/part/req/acceptance_leaf/taur_shape, list("tail_type" = tail_type, "because" = because))
+/datum/entry/part/req/acceptance_leaf/taur_shape/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = istype(A.wearer, /mob/living/carbon/human) ? A.wearer : null
+	return H && istype(H.tail_style, src.args["tail_type"]) ? null : src.args["because"]
+/datum/entry/part/req/acceptance_leaf/taur_shape/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = istype(A.wearer, /mob/living/carbon/human) ? A.wearer : null
+	return H ? list(list(H, nameof(H.tail_style))) : list()

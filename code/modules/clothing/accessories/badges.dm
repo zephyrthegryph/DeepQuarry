@@ -19,9 +19,9 @@
 	var/fluff_badge = FALSE
 	var/holo = FALSE
 
-/obj/item/clothing/accessory/badge/proc/set_name(new_name)
+/obj/item/clothing/accessory/badge/proc/register_name(new_name)
 	stored_name = new_name
-	name = "[initial(name)] ([stored_name])"
+	set_name("[initial(name)] ([stored_name])")
 
 /obj/item/clothing/accessory/badge/proc/set_desc(mob/living/carbon/human/H)
 
@@ -43,7 +43,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge)
 			return OP_DECLINE
 		else
 			to_chat(user, "You polish your old badge fondly, shining up the surface.")
-		set_name(user.real_name)
+		register_name(user.real_name)
 		return OP_DECLINE
 
 	if(isliving(user))
@@ -147,7 +147,7 @@ CAPABILITIES(/obj/item/clothing/accessory/badge/holo)
 	var/obj/item/O = A.held
 	if(istype(O, /obj/item/card/id) || istype(O, /obj/item/pda))
 		to_chat(user, "You imprint your ID details onto the badge.")
-		set_name(user.real_name)
+		register_name(user.real_name)
 		return OP_PASS
 	return OP_DECLINE
 

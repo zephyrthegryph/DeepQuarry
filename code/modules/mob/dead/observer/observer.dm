@@ -211,7 +211,7 @@ Works together with spawning an observer, noted above.
 		var/mob/observer/dead/ghost = new(src, aghost)	//Transfer safety to observer spawning proc.
 		ghost.can_reenter_corpse = can_reenter_corpse
 		ghost.timeofdeath = src.timeofdeath
-		ghost.key = key
+		ghost.set_key(key)
 		if(istype(loc, /obj/structure/morgue))
 			var/obj/structure/morgue/M = loc
 			M.update()
@@ -568,7 +568,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(client) //qdelling a ghost with a client = make a new ghost i guess
 		ghostize()
 	if(key)
-		key = null
+		set_key(null)
 	..()
 
 /mob/Moved(atom/old_loc, direction, forced = FALSE)

@@ -303,7 +303,7 @@
 /mob/living/simple_mob/animal/borer/proc/transfer_personality(mob/candidate)
 	if(!candidate)
 		return
-	ckey = candidate.ckey
+	set_ckey(candidate.ckey)
 
 	if(candidate.mind)
 		rel_set(src, nameof(mind), candidate.mind)

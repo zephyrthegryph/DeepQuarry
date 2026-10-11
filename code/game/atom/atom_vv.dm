@@ -274,4 +274,14 @@ CAPABILITIES(/datum/prompt/yes_no/vv_edit)
 			update_icon()
 
 /proc/vv_auto_rename(atom/target, newname)
-	target.name = newname
+	if(istype(target, /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/tracked_garment_name = target
+		tracked_garment_name.set_name(newname)
+	else if(istype(target, /obj/item/clothing/shoes))
+		var/obj/item/clothing/shoes/tracked_garment_name = target
+		tracked_garment_name.set_name(newname)
+	else if(istype(target, /obj/item/clothing/accessory))
+		var/obj/item/clothing/accessory/tracked_garment_name = target
+		tracked_garment_name.set_name(newname)
+	else
+		target.name = newname

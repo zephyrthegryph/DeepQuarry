@@ -36,7 +36,6 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	slot_id = "main"
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 3
-	accepts = /datum/predicate/dq_test_sharp_only
 	drop_policy = SLOT_DROP_SPILL
 
 /datum/relation_definition/slot/dq_test_pocket
@@ -45,10 +44,9 @@ CAPABILITIES(/obj/item/dq_containment_test/wood)
 	drop_policy = SLOT_DROP_TRANSFER
 	is_default = TRUE
 
-/datum/predicate/dq_test_sharp_only
-	name = "sharp only"
-	test_only = TRUE
-	spec = list(REQ_TAG(PRED_TARGET, TAG_SHARP))
+/datum/relation_definition/slot/dq_test_main/New()
+	. = ..()
+	set_declared_accepts(req_acceptance_tag(TAG_SHARP))
 
 /// Blocks moves through the pre signals and records what the ledger reported.
 /datum/dq_containment_listener

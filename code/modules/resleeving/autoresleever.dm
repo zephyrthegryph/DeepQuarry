@@ -169,8 +169,8 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	var/spawnthing = new spawntype(spawnloc)
 	if(isliving(spawnthing))
 		var/mob/living/L = spawnthing
-		L.key = player_key
-		L.ckey = picked_ckey
+		L.set_key(player_key)
+		L.set_ckey(picked_ckey)
 		log_admin("[L.ckey]'s has been spawned as [L] via \the [src].")
 		message_admins("[L.ckey]'s has been spawned as [L] via \the [src].")
 	else
@@ -203,7 +203,7 @@ CAPABILITIES(/obj/machinery/transhuman/autoresleever)
 	if(ghost.mind)
 		ghost.mind.transfer_to(new_character)
 
-	new_character.key = player_key
+	new_character.set_key(player_key)
 
 	//Were they any particular special role? If so, copy.
 

@@ -79,7 +79,7 @@
 	//Write the appearance and whatnot out to the character
 	var/client/C = client
 	C.prefs.copy_to(avatar)
-	avatar.key = key
+	avatar.set_key(key)
 	for(var/lang in C.prefs.read_preference(/datum/preference/alternate_languages)) // migrated
 		var/datum/language/chosen_language = GLOB.all_languages[lang]
 		if(chosen_language)

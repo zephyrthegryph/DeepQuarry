@@ -85,7 +85,7 @@ ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the opt
 		if(body)
 			body.teleop = ghost
 			if(!body.key)
-				body.key = "@[user.key]"	//Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
+				body.set_key("@[user.key]") //Haaaaaaaack. But the people have spoken. If it breaks; blame adminbus
 		feedback_add_details("admin_verb","O") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(invisimin, R_ADMIN|R_MOD|R_EVENT, "Invisimin", "Toggles ghost-like invisibility (Don't abuse this).", ADMIN_CATEGORY_GAME)

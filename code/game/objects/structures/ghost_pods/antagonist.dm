@@ -21,7 +21,7 @@
 	to_chat(M, span_boldnotice("Be sure to carefully listen to your queen, as xenomorph egg spawns may act different to loner xenomorph spawns."))
 	to_chat(M, span_boldwarning("Remember, you are technically a antagonist. Be sure to learn the context of your existence via IC or ahelp to prevent headaches, and follow the orders of your queen to the letter."))
 	to_chat(M, span_notice(" Your life for the hive!"))
-	R.ckey = M.ckey
+	R.set_ckey(M.ckey)
 	visible_message(span_warning("\the [src] peels open, and a fresh larva slithers out!"))
 	..()
 

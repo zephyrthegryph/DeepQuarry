@@ -11,7 +11,7 @@
 //      such slot, a simple mob has no hands);
 //   3. the slot's `accepts` predicate says no. For worn slots that is P3's
 //      equip slot predicate (code/datums/properties/equip_slots.dm),
-//      evaluated with the WEARER as PRED_ACTOR, as those predicates expect.
+//      evaluated with the WEARER as native requirement, as those predicates expect.
 //
 // Part map (humanoid; mirrors the old has_organ_for_slot()):
 //   hand_l            BP_L_HAND
@@ -68,10 +68,7 @@
 		return .
 	if(acceptance_declared(GLOB.native_equipment_acceptance, slot_id))
 		return dq_native_equip_slot_reason(wearer, slot_id, thing, actor)
-	if(accepts)
-		var/datum/predicate/P = dq_predicate(accepts)
-		return P.why_not(wearer, thing, null)
-	return null
+	return ..()
 
 // ---- The shared slot ----
 

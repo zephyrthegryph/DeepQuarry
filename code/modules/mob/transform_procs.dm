@@ -106,7 +106,7 @@
 		if(move_player(src, O, "AIized"))
 			rel_set(O.mind, nameof(/datum/mind::original_character), O)
 	else
-		O.key = key // admin-made AI from an observer: first assignment
+		O.set_key(key) // admin-made AI from an observer: first assignment
 
 	//Languages
 	add_language(LANGUAGE_ROBOT_TALK, 1)
@@ -297,7 +297,7 @@
 	if(isliving(src))
 		move_player(src, new_mob, "animalized by [key_name(user)]")
 	else
-		new_mob.key = key // admin tool on an observer: first assignment
+		new_mob.set_key(key) // admin tool on an observer: first assignment
 	new_mob.set_use_stance(I_HURT)
 	to_chat(new_mob, "You feel more... animalistic")
 

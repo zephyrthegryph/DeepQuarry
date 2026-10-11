@@ -942,7 +942,17 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 /obj/machinery/casinosentientprize_handler/proc/item_tf_transform(mob/living/sentient_prize, item_type, item_name, item_desc, item_color)
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
 	if(LAZYLEN(item_name))
-		newitem.name = item_name
+		if(istype(newitem, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/tracked_garment_name = newitem
+			tracked_garment_name.set_name(item_name)
+		else if(istype(newitem, /obj/item/clothing/shoes))
+			var/obj/item/clothing/shoes/tracked_garment_name = newitem
+			tracked_garment_name.set_name(item_name)
+		else if(istype(newitem, /obj/item/clothing/accessory))
+			var/obj/item/clothing/accessory/tracked_garment_name = newitem
+			tracked_garment_name.set_name(item_name)
+		else
+			newitem.name = item_name
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
 	if(item_color)

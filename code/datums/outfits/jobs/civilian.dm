@@ -36,7 +36,7 @@
 	..()
 	if(H.get_equipped_item(SLOT_ID_BACK))
 		for(var/obj/item/clothing/accessory/permit/gun/bar/permit in H.get_equipped_item(SLOT_ID_BACK).contents)
-			permit.set_name(H.real_name)
+			permit.register_name(H.real_name)
 
 /datum/decl/hierarchy/outfit/job/service/bartender/barista
 	name = OUTFIT_JOB_NAME(JOB_ALT_BARISTA)

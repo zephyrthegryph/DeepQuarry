@@ -88,7 +88,7 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 	if(user.mind)
 		user.mind.transfer_to(src)
 	if(key != user.key)
-		key = user.key
+		set_key(user.key)
 	SetName("[modtype] [braintype]-[rand(100,999)]")
 	after(src, 0.1 SECONDS, PROC_REF(welcome_client))
 	spent(user)

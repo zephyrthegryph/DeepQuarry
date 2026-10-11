@@ -334,7 +334,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().ear_style = instance
+		owner().set_ear_style(instance)
 		owner().update_hair()
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
@@ -349,7 +349,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().ear_secondary_style = instance
+		owner().set_ear_secondary_style(instance)
 		if(!islist(owner().ear_secondary_colors))
 			owner().ear_secondary_colors = list()
 		if(instance && length(owner().ear_secondary_colors) < instance.get_color_channel_count())
@@ -412,7 +412,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().tail_style = instance
+		owner().set_tail_style(instance)
 		owner().update_tail_showing()
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)

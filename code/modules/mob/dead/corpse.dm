@@ -56,7 +56,7 @@
 		M.set_species(species)
 	if(tail_type && tail_type.len)
 		if(tail_type[1] in GLOB.tail_styles_list)
-			M.tail_style = GLOB.tail_styles_list[tail_type[1]]
+			M.set_tail_style(GLOB.tail_styles_list[tail_type[1]])
 			if(tail_type.len > 1)
 				var/list/color_rgb_list = hex2rgb(tail_type[2])
 				M.r_tail = color_rgb_list[1]
@@ -75,7 +75,7 @@
 			M.update_tail_showing()
 	if(ear_type && ear_type.len)
 		if(ear_type[1] in GLOB.ear_styles_list)
-			M.ear_style = GLOB.ear_styles_list[ear_type[1]]
+			M.set_ear_style(GLOB.ear_styles_list[ear_type[1]])
 			if(ear_type.len > 1)
 				var/list/color_rgb_list = hex2rgb(ear_type[2])
 				M.r_ears = color_rgb_list[1]
@@ -97,7 +97,7 @@
 		M.update_hair()
 	// handle secondary ears
 	if(length(ear_secondary_type) && (ear_secondary_type[1] in GLOB.ear_styles_list))
-		M.ear_secondary_style = GLOB.ear_styles_list[ear_secondary_type[1]]
+		M.set_ear_secondary_style(GLOB.ear_styles_list[ear_secondary_type[1]])
 		if(length(ear_secondary_type) > 1)
 			M.ear_secondary_colors = ear_secondary_type.Copy(2, min(length(GLOB.fancy_sprite_accessory_color_channel_names), length(ear_secondary_type)) + 1)
 

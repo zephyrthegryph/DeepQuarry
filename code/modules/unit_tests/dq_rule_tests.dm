@@ -108,7 +108,7 @@
 
 	var/datum/rule/band = dq_rule_fixture(/datum/rule/dq_test_band)
 	var/datum/rule_trigger/band_trigger = band.triggers[1]
-	TEST_ASSERT_EQUAL(band_trigger.kind, RULE_TRIGGER_BAND, "REQ_BETWEEN on temperature is a Band watch")
+	TEST_ASSERT_EQUAL(band_trigger.kind, RULE_TRIGGER_BAND, "Native temperature range is a Band watch")
 
 	var/datum/rule/static_only = new /datum/rule/dq_test_static_only
 	TEST_ASSERT(!static_only.compile(), "a rule over static properties only is rejected")
@@ -337,7 +337,7 @@
 	TEST_ASSERT(bare_binding, "a cooler bottle subscribes")
 	bare.dematerialize()
 	TEST_ASSERT(QDELETED(bare_binding), "dematerializing drops the subscriptions")
-	bare.material_template = null
+	bare.set_material_template(null)
 	TEST_ASSERT_NULL(dq_rules_on_materialize(bare, TRUE), "without a melting point there is nothing to watch")
 
 // ---- Time above threshold, bands, data transforms ----

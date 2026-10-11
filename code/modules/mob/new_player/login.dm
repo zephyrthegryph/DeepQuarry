@@ -4,7 +4,7 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 	// Happens sometimes
 	if(QDELETED(src))
 		var/mob/new_player/replacement = new /mob/new_player()
-		replacement.key = key
+		replacement.set_key(key)
 		return
 
 	update_Login_details(src)    //handles setting lastKnownIP and computer_id for use by the ban systems as well as checking for multikeying

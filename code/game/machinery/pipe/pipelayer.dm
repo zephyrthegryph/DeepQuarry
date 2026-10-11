@@ -198,7 +198,7 @@ CAPABILITIES(/obj/machinery/pipelayer)
 	var/obj/item/pipe/P = new pi_type(w_turf, p_type, p_dir)
 	P.setPipingLayer(p_layer)
 	// We used metal to make these, so should be reclaimable!
-	P.material_total = pipe_cost * SHEET_MATERIAL_AMOUNT
+	P.set_material_total(pipe_cost * SHEET_MATERIAL_AMOUNT)
 	P.fasten(null)
 
 	return 1

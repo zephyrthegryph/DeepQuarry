@@ -1348,13 +1348,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket/captain)
 	pixel_x = -16
 
 CAPABILITIES(/obj/item/clothing/suit/drake_cloak)
+	acceptance("equip", req_acceptance_taur_shape(/datum/sprite_accessory/tail/taur/drake, "you need a drake-taur half to wear this"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = UPPER_TORSO|ARMS))
 
 
-TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/drake_cloak/proc/taur_fit, "you need a drake-taur half to wear this"))))
-
-/obj/item/clothing/suit/drake_cloak/proc/taur_fit(mob/living/carbon/human/H)
-	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/drake)
 
 /obj/item/clothing/suit/barding/get_mechanics_info(list/additional_information)
 	return ..(list("Only a horse-bodied taur can wear this.") + additional_information)
@@ -1367,13 +1364,10 @@ TYPE_TABLE(/obj/item/clothing/suit/drake_cloak, equip_spec, dq_spec_join(..(), l
 	armor_spec = "melee=5;bullet=5;laser=5;energy=5;bomb=5" //Minor armor for fluff.
 
 CAPABILITIES(/obj/item/clothing/suit/barding)
+	acceptance("equip", req_acceptance_taur_shape(/datum/sprite_accessory/tail/taur/horse, "you need a horse-taur half to wear this"), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(covers = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS))
 
 
-TYPE_TABLE(/obj/item/clothing/suit/barding, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/barding/proc/taur_fit, "you need a horse-taur half to wear this"))))
-
-/obj/item/clothing/suit/barding/proc/taur_fit(mob/living/carbon/human/H)
-	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/horse)
 
 //Bardings are medieval suits of armor.
 /obj/item/clothing/suit/barding/agatha

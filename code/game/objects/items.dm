@@ -1028,7 +1028,17 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 /obj/item/wash(clean_types)
 	. = ..()
 	if(cleanname)
-		name = cleanname
+		if(istype(src, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/tracked_garment_name = src
+			tracked_garment_name.set_name(cleanname)
+		else if(istype(src, /obj/item/clothing/shoes))
+			var/obj/item/clothing/shoes/tracked_garment_name = src
+			tracked_garment_name.set_name(cleanname)
+		else if(istype(src, /obj/item/clothing/accessory))
+			var/obj/item/clothing/accessory/tracked_garment_name = src
+			tracked_garment_name.set_name(cleanname)
+		else
+			name = cleanname
 	if(cleandesc)
 		desc = cleandesc
 
@@ -1044,7 +1054,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
-	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
+	new_voice.set_ckey(candidate.ckey) //Finally, bring the client over.
 	rel_clear(candidate, nameof(/mob::mind)) // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.

@@ -197,10 +197,10 @@ CAPABILITIES(/datum/material/processed_alloy)
 	var/weighted_radioactivity = 0
 	var/weighted_toxicity = 0
 	var/weighted_radiation_resistance = 0
-	material.composite_material = list()
+	var/list/composition = list()
 	for(var/component in batch.composition)
 		var/share = LAZYACCESS(batch.composition, component) / max(batch.amount, 1)
-		material.composite_material[component] = SHEET_MATERIAL_AMOUNT * share
+		composition[component] = SHEET_MATERIAL_AMOUNT * share
 		var/datum/material/component_material = get_material_by_name(component)
 		if(!component_material)
 			continue
@@ -212,6 +212,7 @@ CAPABILITIES(/datum/material/processed_alloy)
 		weighted_radioactivity += dq_material_radioactivity(component_material) * share
 		weighted_toxicity += dq_material_toxicity(component_material) * share
 		weighted_radiation_resistance += component_material.radiation_resistance * share
+	material.set_composite_material(composition)
 	material.density = clamp(round(max(weighted_density, batch.hardness * 0.35 + batch.toughness * 0.25)), 1, 120)
 	material.protectiveness = clamp(round(batch.toughness * 0.48 + batch.hardness * 0.28 - batch.brittleness * 0.2), 1, 75)
 	material.explosion_resistance = clamp(round(batch.toughness / 8 + batch.hardness / 14 - batch.brittleness / 20), 1, 25)

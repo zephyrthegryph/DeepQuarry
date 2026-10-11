@@ -46,6 +46,10 @@ GLOBAL_REAL_VAR(list/setup_pending)
 			var/prefix = E.args["prefix"]
 			if(istext(prefix) && hascall(holder, prefix))
 				prefix = call(holder, prefix)()
-			A.name = "[prefix] [A.name]"
+			var/prefixed_name = "[prefix] [A.name]"
+			if(hascall(A, "__setter_name"))
+				call(A, "set_name")(prefixed_name)
+			else
+				A.name = prefixed_name
 		if(QDELETED(holder))
 			return

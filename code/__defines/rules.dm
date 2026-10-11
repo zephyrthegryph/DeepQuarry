@@ -1,6 +1,6 @@
 // Rules (doc/rewrite/rules.md §4). Code: code/datums/rules/.
 //
-// A rule is a condition (a predicate over the object, PRED_TARGET) plus an
+// A rule is a condition (a native condition over its target) plus an
 // effect. Rules are declared as /datum/rule subtypes naming the types they
 // apply to; they are shared singletons, and an instance costs nothing until it
 // is subscribed when it materializes.

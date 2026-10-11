@@ -7,7 +7,17 @@
 	var/obj/item/copy = new newtype(null) //so that it is GCed once we exit
 
 	desc = copy.desc
-	name = copy.name
+	if(istype(src, /obj/item/clothing/gloves))
+		var/obj/item/clothing/gloves/tracked_garment_name = src
+		tracked_garment_name.set_name(copy.name)
+	else if(istype(src, /obj/item/clothing/shoes))
+		var/obj/item/clothing/shoes/tracked_garment_name = src
+		tracked_garment_name.set_name(copy.name)
+	else if(istype(src, /obj/item/clothing/accessory))
+		var/obj/item/clothing/accessory/tracked_garment_name = src
+		tracked_garment_name.set_name(copy.name)
+	else
+		name = copy.name
 	icon_state = copy.icon_state
 	item_state = copy.item_state
 	set_body_parts_covered(worn_of(copy).covers)
@@ -173,7 +183,7 @@ CAPABILITIES(/obj/item/clothing/suit/chameleon)
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/act/A)
-	name = "black shoes"
+	set_name("black shoes")
 	desc = "A pair of black shoes."
 	icon_state = "black"
 	update_clothing_icon()
@@ -271,7 +281,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/act/A)
-	name = "black gloves"
+	set_name("black gloves")
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 	icon_state = "black"
 	update_clothing_icon()
@@ -437,7 +447,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 
 /// A pulse scrambles the disguise back to its base look (the cover is blown).
 /obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/act/A)
-	name = "black tie"
+	set_name("black tie")
 	desc = "Looks like a black tie, but his one also has a dial inside."
 	icon_state = "blacktie"
 	update_clothing_icon()

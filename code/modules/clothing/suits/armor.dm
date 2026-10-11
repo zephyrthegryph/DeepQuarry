@@ -11,17 +11,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor)
 
 
 /// Suits can't go on over gloves or shoes that cover the same limbs.
-TYPE_TABLE(/obj/item/clothing/suit, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/proc/limb_clearance, null))))
-
-/obj/item/clothing/suit/proc/limb_clearance(mob/living/carbon/human/H)
-	if(!istype(H))
-		return TRUE
-	for(var/obj/item/clothing/I in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
-		if(I && (worn_of(src).covers & ARMS && worn_of(I).covers & ARMS))
-			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
-		if(I && (worn_of(src).covers & LEGS && worn_of(I).covers & LEGS))
-			return "\the [I] [I.gender == PLURAL ? "are" : "is"] in the way"
-	return TRUE
 
 /obj/item/clothing/suit/armor/vest
 	name = "armor"
@@ -506,20 +495,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/tdome/green)
 		|ACCESSORY_SLOT_ARMBAND) // let pcarriers have fashion
 	blood_overlay_type = "armor"
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/pcarrier, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance, null))))
-
-/obj/item/clothing/suit/armor/pcarrier/proc/plate_clearance(mob/living/carbon/human/H)
-	if(!istype(H))
-		return TRUE
-	if(H.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(H.get_equipped_item(SLOT_ID_GLOVES)).covers & ARMS))
-		for(var/obj/item/clothing/accessory/A in contents_of(src))
-			if(worn_of(A).covers & ARMS)
-				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_GLOVES)] are in each other's way"
-	if(H.get_equipped_item(SLOT_ID_SHOES) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).covers & LEGS))
-		for(var/obj/item/clothing/accessory/A in contents_of(src))
-			if(worn_of(A).covers & LEGS)
-				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_SHOES)] are in each other's way"
-	return TRUE
 
 /obj/item/clothing/suit/armor/pcarrier/explorer
 	name = "explorer plate carrier" // Clarity for vendors.
@@ -633,10 +608,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier/explorer)
 
 
 
-TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit, "you need a wolf-taur half to wear this"))))
-
-/obj/item/clothing/suit/armor/vest/wolftaur/proc/taur_fit(mob/living/carbon/human/H)
-	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/wolf)
 
 // HoS armor improved by to be slightly better than normal security stuff.
 /obj/item/clothing/suit/storage/vest/hoscoat
@@ -905,4 +876,63 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest/press)
 	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_DETECTIVE, /obj/item/camera,/obj/item/clothing/head/helmet), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 
 CAPABILITIES(/obj/item/clothing/suit/armor/vest/wolftaur)
+	acceptance("equip", req_acceptance_taur_shape(/datum/sprite_accessory/tail/taur/wolf, "you need a wolf-taur half to wear this"), mode = ACCEPTANCE_APPEND)
 	acceptance("fit", mode = ACCEPTANCE_EMPTY)
+
+/proc/req_acceptance_limb_clearance()
+	return part_make(/datum/entry/part/req/acceptance_leaf/limb_clearance, list())
+/datum/entry/part/req/acceptance_leaf/limb_clearance/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/clothing/suit/I = A.target
+	if(!istype(H))
+		return null
+	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
+		if(C && (worn_of(I).covers & ARMS && worn_of(C).covers & ARMS))
+			return "\the [C] [C.gender == PLURAL ? "are" : "is"] in the way"
+		if(C && (worn_of(I).covers & LEGS && worn_of(C).covers & LEGS))
+			return "\the [C] [C.gender == PLURAL ? "are" : "is"] in the way"
+	return null
+
+/datum/entry/part/req/acceptance_leaf/limb_clearance/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/clothing/suit/I = A.target
+	. = list(list(I, ITEM_WORN_KEY), list(I, SLOT_OCCUPANCY_KEY))
+	if(!istype(H))
+		return
+	. += list(list(H, SLOT_OCCUPANCY_KEY))
+	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
+		if(C)
+			. += list(list(C, ITEM_WORN_KEY), list(C, nameof(C.name)), list(C, nameof(C.gender)))
+
+/proc/req_acceptance_plate_clearance()
+	return part_make(/datum/entry/part/req/acceptance_leaf/plate_clearance, list())
+/datum/entry/part/req/acceptance_leaf/plate_clearance/acceptance_reason(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/clothing/suit/armor/pcarrier/I = A.target
+	if(!istype(H))
+		return null
+	if(H.get_equipped_item(SLOT_ID_GLOVES) && (worn_of(H.get_equipped_item(SLOT_ID_GLOVES)).covers & ARMS))
+		for(var/obj/item/clothing/accessory/C in contents_of(I))
+			if(worn_of(C).covers & ARMS)
+				return "\the [C] and \the [H.get_equipped_item(SLOT_ID_GLOVES)] are in each other's way"
+	if(H.get_equipped_item(SLOT_ID_SHOES) && (worn_of(H.get_equipped_item(SLOT_ID_SHOES)).covers & LEGS))
+		for(var/obj/item/clothing/accessory/C in contents_of(I))
+			if(worn_of(C).covers & LEGS)
+				return "\the [C] and \the [H.get_equipped_item(SLOT_ID_SHOES)] are in each other's way"
+	return null
+
+/datum/entry/part/req/acceptance_leaf/plate_clearance/read_keys(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
+	var/obj/item/clothing/suit/I = A.target
+	. = list(list(I, ITEM_WORN_KEY), list(I, SLOT_OCCUPANCY_KEY))
+	if(!istype(H))
+		return
+	. += list(list(H, SLOT_OCCUPANCY_KEY))
+	for(var/obj/item/clothing/C in list(H.get_equipped_item(SLOT_ID_GLOVES), H.get_equipped_item(SLOT_ID_SHOES)))
+		if(C)
+			. += list(list(C, ITEM_WORN_KEY), list(C, nameof(C.name)), list(C, nameof(C.gender)))
+	for(var/obj/item/clothing/accessory/C in contents_of(I))
+		. += list(list(C, ITEM_WORN_KEY), list(C, nameof(C.name)))
+
+CAPABILITIES(/obj/item/clothing/suit/armor/pcarrier)
+	acceptance("equip", req_acceptance_plate_clearance(), mode = ACCEPTANCE_APPEND)

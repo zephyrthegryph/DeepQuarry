@@ -361,7 +361,7 @@
 	TEST_ASSERT_NOTNULL(dq_constraint_refusal(refit, CONSTRAINT_FIT, refit, H), "suit refitted for a Teshari refuses a human")
 	TEST_ASSERT_NULL(LAZYACCESS(stock.constraint_overrides, CONSTRAINT_FIT), "the stock suit keeps its type's fit")
 	refit.restrict_fit(null)
-	TEST_ASSERT_NULL(dq_constraint(refit, CONSTRAINT_FIT), "restrict_fit(null) fits anyone")
+	TEST_ASSERT_NULL(dq_constraint_refusal(refit, CONSTRAINT_FIT, refit, H), "restrict_fit(null) fits anyone")
 
 /// Every constraint declaration compiles (no unknown types, units or tags).
 /datum/unit_test/dq_constraint_declarations_compile
@@ -410,21 +410,18 @@
 		if(!I)
 			continue
 		for(var/kind in kinds)
-			var/datum/predicate/P = dq_constraint(I, kind)
-			if(P && P.errors)
-				TEST_FAIL("[path] [kind]: [jointext(P.errors, "; ")]")
+			var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(I, kind)
+			if(acceptance_declared(I, kind))
+				TEST_ASSERT(P, "[path] [kind] has an actual compiled native plan")
+				for(var/datum/entry/child as anything in P.children)
+					TEST_ASSERT(istype(child, /datum/entry/part/req), "[path] [kind] compiles requirement children")
 			checked++
 		for(var/atom/movable/A in I)
 			qdel(A)
 		qdel(I)
 		CHECK_TICK
-	for(var/path in subtypesof(/datum/predicate/equip_slot))
-		var/datum/predicate/equip_slot/declared = path
-		if(!initial(declared.slot))
-			continue
-		var/datum/predicate/P = dq_predicate(path)
-		if(P.errors)
-			TEST_FAIL("[path]: [jointext(P.errors, "; ")]")
+	for(var/slot in table_of(GLOB.native_equipment_acceptance).acceptance_channels)
+		TEST_ASSERT(acceptance_plan_for(GLOB.native_equipment_acceptance, slot), "Actual native worn-slot catalog resolves its declared plan")
 	TEST_NOTICE(src, "[checked] item constraints compiled")
 
 #undef DQ_PARITY_FIXTURE

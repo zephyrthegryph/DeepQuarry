@@ -20,9 +20,9 @@
 	identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
 	identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 	private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
-	vore_prefs.digestable = client.prefs_vr.digestable
-	vore_prefs.devourable = client.prefs_vr.devourable
-	vore_prefs.absorbable = client.prefs_vr.absorbable
+	vore_prefs.set_digestable(client.prefs_vr.digestable)
+	vore_prefs.set_devourable(client.prefs_vr.devourable)
+	vore_prefs.set_absorbable(client.prefs_vr.absorbable)
 	vore_prefs.feeding = client.prefs_vr.feeding
 	vore_prefs.can_be_drop_prey = client.prefs_vr.can_be_drop_prey
 	vore_prefs.can_be_drop_pred = client.prefs_vr.can_be_drop_pred
@@ -38,7 +38,7 @@
 	vore_prefs.allow_spontaneous_tf = client.prefs_vr.allow_spontaneous_tf
 	vore_prefs.digest_leave_remains = client.prefs_vr.digest_leave_remains
 	vore_prefs.allowmobvore = client.prefs_vr.allowmobvore
-	vore_prefs.permit_healbelly = client.prefs_vr.permit_healbelly
+	vore_prefs.set_permit_healbelly(client.prefs_vr.permit_healbelly)
 	vore_prefs.noisy = client.prefs_vr.noisy
 	vore_prefs.selective_preference = client.prefs_vr.selective_preference
 	vore_prefs.size_strip_preference = client.prefs_vr.size_strip_preference
@@ -65,8 +65,8 @@
 	vore_prefs.apply_reagents = client.prefs_vr.apply_reagents
 	autotransferable = client.prefs_vr.autotransferable
 	vore_prefs.noisy_full = client.prefs_vr.noisy_full
-	vore_prefs.strip_pref = client.prefs_vr.strip_pref
-	vore_prefs.contaminate_pref = client.prefs_vr.contaminate_pref
+	vore_prefs.set_strip_pref(client.prefs_vr.strip_pref)
+	vore_prefs.set_contaminate_pref(client.prefs_vr.contaminate_pref)
 	vore_prefs.vore_sprite_color = client.prefs_vr.vore_sprite_color
 	vore_prefs.vore_sprite_multiply = client.prefs_vr.vore_sprite_multiply
 	vore_prefs.no_latejoin_vore_warning = client.prefs_vr.no_latejoin_vore_warning

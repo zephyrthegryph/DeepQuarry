@@ -27,7 +27,7 @@
 	to_chat(M, span_notice(span_bold("Be sure to examine your currently loaded lawset closely.") + " Remember, your \
 	definiton of 'the station' is where your pod is, and unless your laws say otherwise, the entity that released you \
 	from the pod is not a crewmember."))
-	R.ckey = M.ckey
+	R.set_ckey(M.ckey)
 	visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
 	log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
 	..()
@@ -50,7 +50,7 @@
 	to_chat(M, span_notice("You are a <b>Gravekeeper Drone</b>, activated once again to tend to the restful dead."))
 	to_chat(M, span_notice(span_bold("Be sure to examine your currently loaded lawset closely.") + " Remember, your \
 	definiton of 'your gravesite' is where your pod is."))
-	R.ckey = M.ckey
+	R.set_ckey(M.ckey)
 	visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
 	..()
 
@@ -70,7 +70,7 @@
 	if(M.mind)
 		M.mind.transfer_to(R)
 	to_chat(M, span_cult("You are <b>[R]</b>, the remnant of some distant species, mechanical or flesh, living or dead."))
-	R.ckey = M.ckey
+	R.set_ckey(M.ckey)
 	visible_message(span_cult("As \the [src] shudders, it glows before lifting itself with three shimmering limbs!"))
 	var/list/drone_briefing = list(span_notice("Many of your tools are standard drone devices, however others provide you with particular benefits."),
 		span_notice("Unlike standard drones, you are capable of utilizing 'zero point wells', found in your 'spells' tab."),
@@ -139,7 +139,7 @@
 		to_chat(M, span_notice(span_bold("Be sure to examine your currently loaded lawset closely.") + " Remember, your \
 		definiton of 'the station' is where your pod is, and unless your laws say otherwise, the entity that released you \
 		from the pod is not a crewmember."))
-		R.ckey = M.ckey
+		R.set_ckey(M.ckey)
 		visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
 		log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
 		set_used(TRUE)

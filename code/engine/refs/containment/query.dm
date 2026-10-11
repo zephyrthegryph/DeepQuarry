@@ -24,6 +24,9 @@
 
 // Engine declarations: add beside the existing slot query methods.
 /datum/relation_definition/slot/proc/admission_read_keys(atom/holder, atom/movable/thing, mob/actor)
+	if(istype(accepts, /datum/entry/part/acceptance_plan))
+		var/datum/entry/part/acceptance_plan/P = accepts
+		return acceptance_plan_query(P, holder, slot_id, holder, thing, mover = actor, slot_id = slot_id, reads_only = TRUE)
 	return list()
 
 /datum/relation_definition/slot/proc/removal_read_keys(atom/holder, atom/movable/thing, mob/actor)

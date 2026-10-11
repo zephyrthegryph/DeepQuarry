@@ -81,7 +81,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	to_chat(M, span_notice("You are " + span_bold("[newPred]") + ", somehow having stowed away in search of food, shelter, or safety. The environment around you is a strange and unfamiliar one, but sooner or later you'll have to leave your hiding place in search of food. How you choose to do so is up to you, just beware that you don't end up falling prey to some other creature."))
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a spooky (or cute!) space critter, but your role is to facilitate roleplay, not to fight the station and slaughter people. You're free to get into any kind of roleplay scene you like if OOC prefs align, but emphasis is on the 'roleplay' here. If you intend to be an actual threat, you MUST seek permission from staff first. GENERALLY, this role should avoid well populated areas, but you might be able to get away with it if you spawn as something relatively innocuous."))
-	newPred.ckey = M.ckey
+	newPred.set_ckey(M.ckey)
 	act_message(newPred, null, others = span_warning("%U% emerges from somewhere!"))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a [newPred].", newPred)
 	newPred.offer_load_bellies()
@@ -100,7 +100,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	to_chat(M, span_critical("Please be advised, this role is NOT AN ANTAGONIST."))
 	to_chat(M, span_warning("You may be a weird goopy creature, but your role is to facilitate weird goopy creature roleplay, not to fight the station and slaughter people. You're free to get into any kind of roleplay scene you like if OOC prefs align, but emphasis is on the 'roleplay' here. If you intend to be an actual threat, you MUST seek permission from staff first. GENERALLY, this role should avoid well populated areas, but you might be able to get away with it if you play your cards right."))
 
-	newMorph.ckey = M.ckey
+	newMorph.set_ckey(M.ckey)
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully used a Maintenance Critter spawner to spawn in as a Morph.", newMorph)
 	newMorph.offer_load_bellies()
@@ -125,7 +125,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 	new_character.dna.ResetUIFrom(new_character)
 	new_character.sync_organ_dna()
 	new_character.sync_addictions()
-	new_character.key = M.key
+	new_character.set_key(M.key)
 	new_character.mind.loaded_from_ckey = picked_ckey
 	new_character.mind.loaded_from_slot = picked_slot
 

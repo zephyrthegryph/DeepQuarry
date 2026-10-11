@@ -790,11 +790,11 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
 /obj/item/clothing/accessory/collar/shock/proc/apply_ui_tag(mob/user, sanitized)
 	if(!length(sanitized))
 		to_chat(user, span_notice("[src]'s tag set to blank."))
-		name = initial(name)
+		set_name(initial(name))
 		desc = initial(desc)
 	else
 		to_chat(user, span_notice("[src]'s tag set to '[sanitized]'."))
-		name = initial(name) + " ([sanitized])"
+		set_name(initial(name) + " ([sanitized])")
 		desc = initial(desc) + " The tag says \"[sanitized]\"."
 	. = TRUE
 
@@ -931,7 +931,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 
 	if(!str || !length(str))
 		to_chat(user,span_notice("[name]'s tag set to be blank."))
-		name = initial(name)
+		set_name(initial(name))
 		desc = initial(desc)
 	else
 		to_chat(user,span_notice("You set the [name]'s tag to '[str]'."))
@@ -939,7 +939,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 	return FALSE
 
 /obj/item/clothing/accessory/collar/proc/initialize_tag(tag)
-		name = initial(name) + " ([tag])"
+		set_name(initial(name) + " ([tag])")
 		desc = initial(desc) + " \"[tag]\" has been engraved on the tag."
 		writtenon = 1
 
@@ -988,17 +988,17 @@ CAPABILITIES(/obj/item/clothing/accessory/collar)
 			to_chat(user,span_notice("You don't write anything."))
 		else
 			to_chat(user,span_notice("You [erasing] the words with the [I]."))
-			name = initial(name)
+			set_name(initial(name))
 			desc = initial(desc) + " The tag has had the words [erasemethod]."
 	else
 		if(!writtenon)
 			to_chat(user,span_notice("You write '[str]' on the tag with the [I]."))
-			name = initial(name) + " ([str])"
+			set_name(initial(name) + " ([str])")
 			desc = initial(desc) + " \"[str]\" has been [writemethod] on the tag."
 			writtenon = 1
 		else
 			to_chat(user,span_notice("You [erasing] the words on the tag with the [I], and write '[str]'."))
-			name = initial(name) + " ([str])"
+			set_name(initial(name) + " ([str])")
 			desc = initial(desc) + " Something has been [erasemethod] on the tag, and it now has \"[str]\" [writemethod] on it."
 
 /datum/prompt/text/collar_tag
@@ -1649,3 +1649,5 @@ CAPABILITIES(/obj/item/clothing/accessory/scarf/teshari/neckscarf)
 
 CAPABILITIES(/obj/item/clothing/accessory/holster/machete)
 	acceptance("hold", req_acceptance_type(list(/obj/item/material/knife/machete, /obj/item/kinetic_crusher/machete), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
+
+TRACKED(/obj/item/clothing/accessory, name)

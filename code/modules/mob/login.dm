@@ -120,3 +120,9 @@
 
 	var/atom/movable/screen/plane_master/augmented/aug = plane_holder.plane_masters[VIS_AUGMENTED]
 	aug.apply()
+
+	// Key ownership changed; nonliving mobs use the same keyed dependency as living mobs.
+	on_client_changed("login")
+
+/mob/proc/on_client_changed(reason)
+	PUBLISH_CHANGE(src, MOB_KEY_CLIENT)

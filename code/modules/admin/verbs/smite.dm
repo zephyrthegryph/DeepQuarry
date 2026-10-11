@@ -402,7 +402,7 @@ GLOBAL_VAR(redspace_abduction_z)
 			if(target)
 				target.set_transforming(FALSE) //Undo cheap hack
 			if(controller_ckey) //Put admin in mob
-				shadekin.ckey = controller_ckey
+				shadekin.set_ckey(controller_ckey)
 			else //Permakin'd
 				if(target)
 					to_chat(target,span_danger("You're carried off into The Dark by the [shadekin]. Who knows if you'll find your way back?"))

@@ -169,7 +169,7 @@
 	var/obj/item/stack/material/steel/metal_stack = new(null, 5)
 
 	var/obj/item/clothing/accessory/permit/nanotech/permit = new()
-	permit.set_name(H.real_name)
+	permit.register_name(H.real_name)
 
 	if(H.bio.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
 		H.equip_to_slot_or_del(permit, SLOT_ID_HAND_L)
@@ -241,10 +241,10 @@
 	var/validstring = "VALID THROUGH END OF: "
 	var/registring = "REGISTRANT: "
 
-/obj/item/clothing/accessory/permit/nanotech/set_name(new_name)
+/obj/item/clothing/accessory/permit/nanotech/register_name(new_name)
 	set_owner(TRUE)
 	if(new_name)
-		name = "[initial(name)] ([new_name])"
+		set_name("[initial(name)] ([new_name])")
 		validstring = "[initial(validstring)][time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"
 		registring = "[initial(registring)][new_name]"
 

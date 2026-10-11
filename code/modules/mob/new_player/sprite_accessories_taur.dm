@@ -1344,3 +1344,5 @@
 	name = "Teshari dual-color Alt (Taur)"
 	extra_overlay = "tesh_markings_alt"
 
+
+TRACKED(/datum/sprite_accessory/tail/taur, icon_sprite_tag)

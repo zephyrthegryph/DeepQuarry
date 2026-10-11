@@ -313,7 +313,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		else if(selected_player.mob.mind)
 			transfer_mind(selected_player.mob.mind, spawned_mob, "dropped in a pod by [key_name(user)]", force = TRUE)
 		else
-			spawned_mob.ckey = selected_player.mob.ckey // an observer without a character: first assignment
+			spawned_mob.set_ckey(selected_player.mob.ckey) // an observer without a character: first assignment
 		spawned_mobs = list(spawned_mob)
 		message_admins("[key_name(user)] dropped a pod containing \the [spawned_mob] ([spawned_mob.key]) at ([user_mob.x],[user_mob.y],[user_mob.z])")
 		log_admin("[key_name(user)] dropped a pod containing \the [spawned_mob] ([spawned_mob.key]) at ([user_mob.x],[user_mob.y],[user_mob.z])")

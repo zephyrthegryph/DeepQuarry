@@ -132,7 +132,6 @@ CAPABILITIES(/obj/structure/closet)
 	slot_id = CONTAINER_SLOT_INTERIOR
 	name = "interior"
 	capacity_model = SLOT_CAPACITY_UNITS
-	accepts = /datum/predicate/slot_closet_interior
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_INTERNAL
 	damage_transmission = list(0, 0, 0.25, 0, 0, 0, 0.25, 0, 0, 0, 0, 0)
@@ -143,9 +142,23 @@ CAPABILITIES(/obj/structure/closet)
 /datum/relation_definition/slot/closet_interior/cost(obj/structure/closet/holder, atom/movable/thing)
 	return holder.storage_cost_of(thing)
 
-/datum/predicate/slot_closet_interior
-	name = "closet interior"
-	spec = list(REQ_BECAUSE(REQ_ON(PRED_TARGET, /atom/movable/proc/slot_loose, null), "it is fastened down"))
+/datum/relation_definition/slot/closet_interior/New()
+	. = ..()
+	set_declared_accepts(part_make(/datum/entry/part/req/acceptance_leaf/closet_loose))
+
+/datum/entry/part/req/acceptance_leaf/closet_loose/acceptance_reason(datum/act/op/A)
+	var/atom/movable/thing = A.target
+	return thing?.slot_loose(A.mover, thing, null) ? null : "it is fastened down"
+
+/datum/entry/part/req/acceptance_leaf/closet_loose/read_keys(datum/act/op/A)
+	var/atom/movable/thing = A.target
+	. = list()
+	if(!thing || istype(thing, /obj/effect/dummy/chameleon))
+		return
+	. += list(list(thing, nameof(thing.anchored)))
+	if(isliving(thing))
+		var/mob/living/L = thing
+		. += list(list(L, nameof(L.pinned)), list(L, LK_BUCKLED_TO))
 
 /obj/structure/closet/latent_generator()
 	return starts_with

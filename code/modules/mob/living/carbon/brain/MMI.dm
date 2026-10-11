@@ -306,7 +306,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 	src.searching = 0
 	var/mob/living/carbon/brain/view = get_occupant()
 	log_game("MIND: [key_name(candidate)] joined [src] as a new synthetic intelligence")
-	view.ckey = candidate.ckey
+	view.set_ckey(candidate.ckey)
 	src.name = "[name] ([view.name])"
 	to_chat(view, span_infoplain(span_bold("You are [src.name], brought into existence on [station_name()].")))
 	to_chat(view, span_infoplain(span_bold("As a synthetic intelligence, you are designed with organic values in mind.")))

@@ -181,3 +181,18 @@
 		throw fault
 	op_pure_end()
 	acceptance_act_release(A)
+
+/// Validate already compiled native acceptance plans; constructors validate schema when a type is first compiled.
+/proc/acceptance_validate_cached()
+	. = list()
+	var/list/cache = type_table_cache()
+	for(var/path in cache)
+		var/datum/type_table/T = cache[path]
+		for(var/channel in T.acceptance_channels)
+			var/datum/entry/part/acceptance_plan/P = T.acceptance_channels[channel]
+			if(!istype(P))
+				. += "[path] [channel] has no resolved acceptance plan"
+				continue
+			for(var/datum/entry/child as anything in P.children)
+				if(!istype(child, /datum/entry/part/req))
+					. += "[path] [channel] contains a non-requirement child"

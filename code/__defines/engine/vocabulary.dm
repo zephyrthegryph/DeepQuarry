@@ -109,6 +109,9 @@
 #define ON_HOLDER 2
 #define ON_ACTOR 3
 #define ON_HELD 4
+#define ON_WEARER 7
+#define ON_MOVER 8
+#define ON_DESTINATION 9
 #define ON_CONTENTS 5
 /// verb_entry(): the verb lands on the activation's source instead of its holder (an item's own verb, listed while a mob carries it).
 #define ON_SOURCE 6

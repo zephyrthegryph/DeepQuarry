@@ -74,7 +74,17 @@
 		if(!istype(piece))
 			continue
 		piece.set_canremove(FALSE)
-		piece.name = "[holder().suit_type] [initial(piece.name)]"
+		if(istype(piece, /obj/item/clothing/gloves))
+			var/obj/item/clothing/gloves/tracked_garment_name = piece
+			tracked_garment_name.set_name("[holder().suit_type] [initial(piece.name)]")
+		else if(istype(piece, /obj/item/clothing/shoes))
+			var/obj/item/clothing/shoes/tracked_garment_name = piece
+			tracked_garment_name.set_name("[holder().suit_type] [initial(piece.name)]")
+		else if(istype(piece, /obj/item/clothing/accessory))
+			var/obj/item/clothing/accessory/tracked_garment_name = piece
+			tracked_garment_name.set_name("[holder().suit_type] [initial(piece.name)]")
+		else
+			piece.name = "[holder().suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [holder().name]."
 		piece.icon_state = "[holder().suit_state]"
 		piece.set_min_cold_protection_temperature(protection_of(holder()).min_cold)

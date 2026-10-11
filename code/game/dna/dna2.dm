@@ -315,14 +315,14 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// Ears
 	var/ears = GetUIValueRange(DNA_UI_EAR_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears < 1)
-		H.ear_style = null
+		H.set_ear_style(null)
 	else if((0 < ears) && (ears <= GLOB.ear_styles_list.len))
-		H.ear_style = GLOB.ear_styles_list[GLOB.ear_styles_list[ears]]
+		H.set_ear_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears]])
 	var/ears_secondary = GetUIValueRange(DNA_UI_EAR_SECONDARY_STYLE, GLOB.ear_styles_list.len + 1) - 1
 	if(ears_secondary < 1)
-		H.ear_secondary_style = null
+		H.set_ear_secondary_style(null)
 	else if((0 < ears_secondary) && (ears_secondary <= GLOB.ear_styles_list.len))
-		H.ear_secondary_style = GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]]
+		H.set_ear_secondary_style(GLOB.ear_styles_list[GLOB.ear_styles_list[ears_secondary]])
 
 	// Ear Color
 	H.r_ears  = GetUIValueRange(DNA_UI_EARS_R,    255)
@@ -350,9 +350,9 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	//Tail
 	var/tail = GetUIValueRange(DNA_UI_TAIL_STYLE, GLOB.tail_styles_list.len + 1) - 1
 	if(tail < 1)
-		H.tail_style = null
+		H.set_tail_style(null)
 	else if((0 < tail) && (tail <= GLOB.tail_styles_list.len))
-		H.tail_style = GLOB.tail_styles_list[GLOB.tail_styles_list[tail]]
+		H.set_tail_style(GLOB.tail_styles_list[GLOB.tail_styles_list[tail]])
 
 	//Wing
 	var/wing = GetUIValueRange(DNA_UI_WING_STYLE, GLOB.wing_styles_list.len + 1) - 1

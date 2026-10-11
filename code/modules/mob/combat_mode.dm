@@ -70,32 +70,6 @@
 			attack_variant = null
 			set_combat_mode(FALSE)
 
-/// Stance clauses (dq_stance_clause()): the actor's input has that stance.
-/proc/dq_pred_stance_help(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && actor.input_stance() == I_HELP
-
-/proc/dq_pred_stance_disarm(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && actor.input_stance() == I_DISARM
-
-/proc/dq_pred_stance_grab(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && actor.input_stance() == I_GRAB
-
-/proc/dq_pred_stance_harm(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && actor.input_stance() == I_HURT
-
-/// The selector clause for an interaction that answers `stance`, with the reason shown when it doesn't match.
-/proc/dq_stance_clause(stance)
-	switch(stance)
-		if(I_HELP)
-			return REQ_PROC(/proc/dq_pred_stance_help, "combat mode is on")
-		if(I_DISARM)
-			return REQ_PROC(/proc/dq_pred_stance_disarm, "hold Disarm")
-		if(I_GRAB)
-			return REQ_PROC(/proc/dq_pred_stance_grab, "hold Grab")
-		if(I_HURT)
-			return REQ_PROC(/proc/dq_pred_stance_harm, "combat mode is off")
-	CRASH("dq_stance_clause: unknown stance [stance]")
-
 /**
  * Runs one Use on `target` as `variant` (the Disarm or Grab interaction), then
  * puts the previous variant back. Returns what the Use returned.

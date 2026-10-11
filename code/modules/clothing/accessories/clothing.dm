@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/clothing/accessory/hawaiian_random)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/clothing/accessory/hawaiian_random/proc/roll_look(datum/roller/R)
 	var/random_color = R.choose(list("blue", "pink", "red", "yellow", "cyan"))
-	name = "[random_color] hawaiian shirt"
+	set_name("[random_color] hawaiian shirt")
 	return "hawaiian_[random_color]"
 
 /obj/item/clothing/accessory/hawaiian/random_flower
@@ -154,7 +154,7 @@ CAPABILITIES(/obj/item/clothing/accessory/tropical_random)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/item/clothing/accessory/tropical_random/proc/roll_look(datum/roller/R)
 	var/obj/item/clothing/accessory/new_item = R.choose(list(/obj/item/clothing/accessory/tropical, /obj/item/clothing/accessory/tropical/green, /obj/item/clothing/accessory/tropical/pink, /obj/item/clothing/accessory/tropical/blue))
-	name = initial(new_item.name)
+	set_name(initial(new_item.name))
 	desc = initial(new_item.desc)
 	return initial(new_item.icon_state)
 

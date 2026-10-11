@@ -4773,3 +4773,20 @@ the answer). No behaviour change intended.
 The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
 30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
 behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).
+
+## Final acceptance and Nikki chest preparation (codex/acceptance-retirement-1011)
+
+The final 24 equipment tables use native acceptance requirements with the same
+ordered refusal checks. Garment display names and gender feed refusal wording;
+their actual writers publish tracked changes so cached menus can observe edits.
+Badge and permit owner registration is kept separate from a raw display-name
+setter: registering still stores the owner and formats the badge or permit,
+while an admin display-name edit preserves the exact supplied name and does not
+change registration. These changes have not yet been verified or blessed.
+
+Nikki's RIG declares ownership of its configured cape, which is an ordinary
+clothing suit rather than a space-suit chest. Space-only breach, recharge and
+welding behavior remains conditional on a real space-suit chest. Real cape
+custody/deletion and ordinary RIG impact-threshold tests are added; no pin change
+is presented as proof of constructor validity. This is a bug correction, not a
+snapshot stability change.

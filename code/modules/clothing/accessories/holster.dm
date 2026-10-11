@@ -30,11 +30,11 @@
 	holstered.add_fingerprint(user)
 	set_w_class(max(w_class, holstered.w_class))
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
-	name = "occupied [initial(name)]"
+	set_name("occupied [initial(name)]")
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
 	rel_take(src, nameof(holstered))
-	name = initial(name)
+	set_name(initial(name))
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.
 /obj/item/clothing/accessory/holster/proc/unholster(mob/user, stance = I_HELP)

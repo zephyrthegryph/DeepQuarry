@@ -16,10 +16,8 @@
 	if(atom_integrity == max_integrity)
 		. += "atom_integrity"
 
-// constraint_overrides holds compiled /datum/predicate instances (rules.md
-// §3), each a cached, shared-by-key singleton rather than owned by this item
-// (C5); excluded rather than refused, so a latent-safe item with one (a
-// refitted suit, an exact-fit box) still serializes.
+// Native override plans are interned runtime declarations, deliberately excluded
+// from latent state just as before. Refit persistence is not silently introduced here.
 /obj/item/state_exclude()
 	. = ..()
 	. += "constraint_overrides"
