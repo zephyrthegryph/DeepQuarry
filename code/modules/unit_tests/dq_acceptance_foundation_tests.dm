@@ -565,3 +565,45 @@ CAPABILITIES(/obj/item/dq_acceptance_query_members_reader)
 	for(var/list/pair as anything in pairs)
 		found |= pair[1] == I && pair[2] == nameof(I.acceptance_limit)
 	TEST_ASSERT(found, "Generated parent row follows actual parent_type instead of slash nesting")
+
+// Distinct actual invocation roots retain ordered refusal and setter recovery.
+/mob/dq_acceptance_role_reads
+	var/query_ready = FALSE
+TRACKED(/mob/dq_acceptance_role_reads, query_ready)
+/obj/item/dq_acceptance_role_destination
+	var/query_ready = FALSE
+TRACKED(/obj/item/dq_acceptance_role_destination, query_ready)
+CAPABILITIES(/obj/item/dq_acceptance_role_destination)
+	acceptance("dq-query-distinct-roles", req(PROC_REF(roles_reason)))
+/obj/item/dq_acceptance_role_destination/proc/roles_reason(datum/act/op/A)
+	var/mob/dq_acceptance_role_reads/W = A.wearer
+	var/mob/dq_acceptance_role_reads/M = A.mover
+	var/obj/item/dq_acceptance_role_destination/D = A.destination
+	if(!W.query_ready)
+		return "wearer not ready"
+	if(!M.query_ready)
+		return "mover not ready"
+	if(!D.query_ready)
+		return "destination not ready"
+	return null
+/datum/unit_test/dq_acceptance_distinct_role_reads/Run()
+	var/obj/item/dq_acceptance_role_destination/declarer = allocate(/obj/item/dq_acceptance_role_destination)
+	var/obj/item/dq_acceptance_role_destination/destination = allocate(/obj/item/dq_acceptance_role_destination)
+	var/obj/item/dq_acceptance_native/candidate = allocate(/obj/item/dq_acceptance_native)
+	var/mob/dq_acceptance_role_reads/wearer = allocate(/mob/dq_acceptance_role_reads)
+	var/mob/dq_acceptance_role_reads/mover = allocate(/mob/dq_acceptance_role_reads)
+	var/list/pairs = acceptance_read_keys(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover)
+	for(var/datum/expected in list(wearer, mover, destination))
+		var/found = FALSE
+		for(var/list/pair as anything in pairs)
+			found |= pair[1] == expected && pair[2] == "query_ready"
+		TEST_ASSERT(found, "Compiled callback tracks each distinct actual role owner before first refusal")
+	TEST_ASSERT_EQUAL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "wearer not ready", "Wearer has first refusal")
+	wearer.set_query_ready(TRUE)
+	TEST_ASSERT_EQUAL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "mover not ready", "Wearer setter lifts only its refusal")
+	mover.set_query_ready(TRUE)
+	TEST_ASSERT_EQUAL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "destination not ready", "Mover setter lifts only its refusal")
+	destination.set_query_ready(TRUE)
+	TEST_ASSERT_NULL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "Actual destination setter allows")
+	declarer.set_query_ready(FALSE)
+	TEST_ASSERT_NULL(acceptance_reason(declarer, "dq-query-distinct-roles", destination, candidate, wearer, mover), "Declaration owner is not silently substituted for destination")
