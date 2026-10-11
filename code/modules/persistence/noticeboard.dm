@@ -23,7 +23,7 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(noticeboard_blast_dismantle))))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(5 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 // ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
@@ -149,16 +149,17 @@ CAPABILITIES(/obj/structure/noticeboard)
 			pixel_y = 0
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/noticeboard/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, start_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/structure/noticeboard/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)
+/obj/structure/noticeboard/proc/wrench_begins(datum/act/op/A)
+	return msg_text(null, "[A.actor] begins dismantling [src].")
+
+/obj/structure/noticeboard/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% has dismantled %T%!"))
 	dismantle()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_ai: look at the board.
 /obj/structure/noticeboard/proc/noticeboard_silicon_examine(datum/act/op/A)

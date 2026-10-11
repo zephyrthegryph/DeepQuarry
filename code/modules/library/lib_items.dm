@@ -31,7 +31,7 @@ CAPABILITIES(/obj/structure/bookcase)
 		asks(/datum/prompt/text, fields = list("question" = "What would you like to title this bookshelf?", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "k37"),
 		then(PROC_REF(title_shelf)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(2.5 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 // ALLOW(init/INSTANCE_STATE): gathers the books the map placed on its tile
 /obj/structure/bookcase/Initialize(mapload)
@@ -62,19 +62,20 @@ CAPABILITIES(/obj/structure/bookcase)
 	set_anchored(!anchored)
 	return OP_OK
 
-/obj/structure/bookcase/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, start_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/structure/bookcase/proc/screwdriver_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 75, TRUE)
 
-/obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)
+/obj/structure/bookcase/proc/screwdriver_begins(datum/act/op/A)
+	return msg_text("You begin dismantling \the [src].", null)
+
+/obj/structure/bookcase/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You dismantle \the [src]."))
 	new /obj/item/stack/material/wood(get_turf(src), 3)
 	for(var/obj/item/book/book in contents)
 		book.forceMove(get_turf(src))
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// The question is asked only while there are books on the shelf.
 /obj/structure/bookcase/proc/has_books(datum/act/op/A)

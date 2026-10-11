@@ -459,7 +459,7 @@ MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 CAPABILITIES(/obj/item/rectape)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item/pen), label("Label"), then(PROC_REF(interaction_item)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(screwdriver_refusal), silent = TRUE)), starts(PROC_REF(screwdriver_started)), begins(PROC_REF(screwdriver_begins)), wait(12 SECONDS), then(PROC_REF(screwdriver_act_tool_done)))
 
 /obj/item/rectape/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -501,15 +501,18 @@ CAPABILITIES(/obj/item/rectape)
 		open_request(src, /datum/prompt/text, PROC_REF(label_entered), answerer = user, title = "Tape labeling", question = "What would you like to label the tape?", ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 	return TRUE
 
-/obj/item/rectape/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(!ruined)
-		return OP_OK
-	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the screwdriver does nothing (the click is used up, nothing is said).
+/obj/item/rectape/proc/screwdriver_refusal(datum/act/op/A)
+	return read_once(!ruined) ? "no" : null
 
-/obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)
+/obj/item/rectape/proc/screwdriver_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/item/rectape/proc/screwdriver_begins(datum/act/op/A)
+	return msg_text("You start winding the tape back in...", null)
+
+/obj/item/rectape/proc/screwdriver_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!(ruined))
 		return
 	to_chat(user, span_notice("You wound the tape back in."))
