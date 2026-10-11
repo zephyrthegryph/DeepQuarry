@@ -380,6 +380,41 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
+/// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
+/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), parts..., sets(VAR, to)`. The key is `k`, else `<var>_<from>_<to>` with the var
+/// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
+pub fn stages_op_args(stages_args: &str) -> Vec<String> {
+    let args = split_args(stages_args);
+    let Some(var) = args.first() else { return Vec::new() };
+    let var = var.trim();
+    let var_name = var.strip_prefix("nameof(").and_then(|v| v.strip_suffix(')')).unwrap_or(var).trim().trim_matches('"');
+    let var_name = var_name.rsplit(|c| c == ':' || c == '.' || c == '/').next().unwrap_or(var_name).to_string();
+    let mut out = Vec::new();
+    for step in &args[1..] {
+        let step = step.trim();
+        let Some(inner) = step.strip_prefix("stage_step(").and_then(|s| s.strip_suffix(')')) else { continue };
+        let parts = split_args(inner);
+        if parts.len() < 2 {
+            continue;
+        }
+        let (from, to) = (parts[0].trim(), parts[1].trim());
+        let mut key = format!("\"{}_{}_{}\"", var_name, from.trim_matches('"'), to.trim_matches('"'));
+        let mut rest = Vec::new();
+        for p in &parts[2..] {
+            let p = p.trim();
+            match p.split_once('=') {
+                Some((name, value)) if name.trim() == "key" && !p.contains('(') => key = value.trim().to_string(),
+                _ => rest.push(p.to_string()),
+            }
+        }
+        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from)];
+        op.extend(rest);
+        op.push(format!("sets({}, {})", var, to));
+        out.push(op.join(", "));
+    }
+    out
+}
+
 /// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
 pub fn split_args(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -616,6 +651,14 @@ fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stages_desugar_to_ops() {
+        let ops = stages_op_args("nameof(state), stage_step(0, 1, tool(TOOL_WRENCH), wait(0)), stage_step(1, 0, tool(TOOL_WRENCH), key = \"unanchor\")");
+        assert_eq!(ops.len(), 2);
+        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), tool(TOOL_WRENCH), wait(0), sets(nameof(state), 1)");
+        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), tool(TOOL_WRENCH), sets(nameof(state), 0)");
+    }
 
     #[test]
     fn splits_top_level_commas_only() {
