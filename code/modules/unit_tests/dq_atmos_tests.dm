@@ -7559,18 +7559,27 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// The pipe devices' Rust law is a generated push: a write to a var the law reads queues push_to_rust() once (DEP_PUSH),
 /// a var it does not read queues nothing, and no device has a hand update_rust_device().
+// The unread-field probe is fixture-only; no production or base-type var is added.
+/obj/machinery/atmospherics/binary/passive_gate/dq_push_probe
+	var/unused_probe = 0
+
+TRACKED(/obj/machinery/atmospherics/binary/passive_gate/dq_push_probe, unused_probe)
+
 /datum/unit_test/dq_pipe_device_law_push_is_generated
 
 /datum/unit_test/dq_pipe_device_law_push_is_generated/Run()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for the device push test")
-	var/obj/machinery/atmospherics/binary/passive_gate/G = allocate(/obj/machinery/atmospherics/binary/passive_gate, T)
+	var/obj/machinery/atmospherics/binary/passive_gate/dq_push_probe/G = allocate(/obj/machinery/atmospherics/binary/passive_gate/dq_push_probe, T)
 	refresh_flush()
 	G.set_target_pressure(G.target_pressure + 1)
 	TEST_ASSERT(G.refresh_queued & DEP_PUSH, "a gate's target pressure did not queue its push")
 	refresh_flush()
 	G.set_flowing(!G.flowing)
-	TEST_ASSERT_EQUAL(G.refresh_queued, 0, "an unread write queued work")
+	TEST_ASSERT_EQUAL(G.refresh_queued, DEP_DRAW, "the appearance-only flowing field queues draw, not a Rust-law push")
+	refresh_flush()
+	G.set_unused_probe(1)
+	TEST_ASSERT_EQUAL(G.refresh_queued, 0, "a genuinely unread tracked fixture field queues no work")
 	var/obj/machinery/atmospherics/unary/vent_pump/V = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
 	refresh_flush()
 	V.set_external_pressure_bound(V.external_pressure_bound + 1)

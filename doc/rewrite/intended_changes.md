@@ -4774,3 +4774,18 @@ midnight counters are not reset or backdated by these changes.
 The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
 30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
 behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).
+### Master mob trait declaration placement (2026-10-11)
+
+Master merge `25a8015bdc8` (2026-10-11 04:40:46 -0500, bv-traits-mobs) inserted `CAPABILITIES` blocks midway through three type data declarations: `/mob/living/simple_mob/metroid/juvenile/zeta`, `/mob/living/simple_mob/metroid/juvenile/omega`, and `/mob/living/simple_mob/vore/wolftaur/syndicate` (including inherited syndicate variants). The remaining projectile, atmosphere, pixel, evolution, speech and armor assignments were consequently interpreted as capability entries and raised `not_an_entry` during the look sweep and destruction.
+
+Move each block past the final data assignment, preserving all values and the same movement or attack-cooldown configuration. This repairs declaration validity; it does not intentionally change appearance or click behavior. Any snapshot change is limited to removing these master-caused construction/destruction runtimes and regenerated declaration source locations. Do not bless unrelated appearance or interaction differences.
+
+## Master declaration moves recorded by the hygiene conversion pins (2026-10-11)
+
+These pin refreshes record master changes; the test-setter and teardown hygiene work changes none of these production declarations.
+
+* `/mob/living/silicon/robot`: master `8b3e4f9ed9` (2026-10-11 00:12 -05:00) moved the existing utility capability from an initialization grant into `CAPABILITIES`. The blueprint now includes the eight `robot_utility.*` keys: customize appearance, nom, purge nutrition, spark plug, decals, glowing stomach, grabbability and lights. Their runtime grant already existed.
+* `/mob/living/silicon/robot/platform`: inherits that utility-key change. Master `babfc5a10a` (2026-10-11 01:16 -05:00) also moved its existing cargo grant into its block, so the blueprint lists `platform_cargo.eject_cargo`; `setup(go_inactive)` preserves its inactive startup behavior.
+* `/obj/item/pipe` and `/obj/structure/smoletrack`: master `81e61e24e9` (2026-10-10 23:39 -05:00) moved `make_rotatable()` from initialization into declared `rotatable()`. Their keys and actor/item menus now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around. The pipe's existing Rotate op remains.
+* `/obj/machinery/pipedispenser`, `/obj/machinery/pipedispenser/disposal` and `/obj/machinery/pipelayer`: the same `81e61e24e9` change exposes the held pipe's three rotation options when a pipe is offered. These rows come from the pipe capability, not new dispenser operations.
+* `/obj/item/holder`, `/obj/item/holder/micro` and `/obj/item/holder/mouse`: their already-recorded constructor refusal, "Holder was not passed a mob", is unchanged. Master `dc349171a8` (2026-10-11 02:47 -05:00) moved `slot_flags` to `item_worn`, shifting the holder stack location from line 33 to 32. Master `d863720479` (2026-10-10 23:55 -05:00) added parameter-write isolation, shifting the parameter stack location from line 239 to 251. Only these locations are refreshed; this does not claim successful construction or accept a new runtime.

@@ -143,6 +143,7 @@
 	..()
 
 /datum/unit_test/dq_medpod/sleeper_refusals/run_pods()
+	scope_contagion_archive()
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, floor_at(1, 1))
 	var/mob/living/carbon/human/H = person(floor_at(0, 1))
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, floor_at(1, 0))

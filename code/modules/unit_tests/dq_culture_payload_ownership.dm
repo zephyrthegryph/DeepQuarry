@@ -1,4 +1,29 @@
+/// Archive entries created by a test are actual owned templates, not fixture allocations.
+/// Keep all old identities borrowed; release only new templates through real lifecycle teardown.
+/datum/unit_test/proc/scope_contagion_archive()
+	var/list/before = GLOB.archive_diseases.Copy()
+	var/list/scoped = before.Copy()
+	set_global(nameof(GLOB.archive_diseases), scoped)
+	defer_cleanup(src, TYPE_PROC_REF(/datum/unit_test, release_contagion_archive), scoped, before)
+	return list(scoped, before)
+
+/datum/unit_test/proc/release_contagion_archive(list/scoped, list/before)
+	var/list/borrowed = list()
+	for(var/key in before)
+		borrowed |= before[key]
+	for(var/key in scoped.Copy())
+		var/datum/affliction/contagion/engineered/archived = scoped[key]
+		if(archived == before[key])
+			continue
+		if(key in before)
+			scoped[key] = before[key]
+		else
+			scoped -= key
+		if(archived && !(archived in borrowed) && !QDELETED(archived))
+			lifeform_end(archived, END_SCOPE)
+
 /datum/unit_test/dq_culture_payload_ownership/Run()
+	scope_contagion_archive()
 	var/obj/item/reagent_containers/glass/beaker/vial/culture/cold/C = allocate(/obj/item/reagent_containers/glass/beaker/vial/culture/cold)
 	var/datum/reagent/blood/B = C.reagents.get_reagent(REAGENT_ID_BLOOD)
 	TEST_ASSERT(B && length(B.data["viruses"]) == 1, "real culture starts with infected blood")
@@ -23,6 +48,7 @@
 	TEST_ASSERT(!QDELETED(donor), "source owner remains alive")
 
 /datum/unit_test/dq_culture_payload_ownership/transfer/Run()
+	scope_contagion_archive()
 	var/obj/item/reagent_containers/glass/beaker/vial/culture/cold/C = allocate(/obj/item/reagent_containers/glass/beaker/vial/culture/cold)
 	var/obj/item/reagent_containers/glass/beaker/T = allocate(/obj/item/reagent_containers/glass/beaker)
 	TEST_ASSERT_EQUAL(C.reagents.trans_id_to(T, REAGENT_ID_BLOOD, 3, TRUE), 3, "real temporary-holder transfer preserves quantity")
@@ -39,6 +65,7 @@
 	TEST_ASSERT(QDELETED(survivor), "destination releases its final disease")
 
 /datum/unit_test/dq_culture_payload_ownership/codec/Run()
+	scope_contagion_archive()
 	var/obj/item/reagent_containers/glass/beaker/vial/culture/cold/C = allocate(/obj/item/reagent_containers/glass/beaker/vial/culture/cold)
 	var/datum/reagent/blood/B = C.reagents.get_reagent(REAGENT_ID_BLOOD)
 	var/datum/state_context/ctx = allocate(/datum/state_context)
@@ -51,9 +78,11 @@
 	TEST_ASSERT(length(copies) == 1 && copies[1] != originals[1], "decode materializes independent child")
 	var/datum/affliction/contagion/child = copies[1]
 	qdel(P)
-	TEST_ASSERT(QDELETED(child) && !QDELETED(originals[1]), "decoded temporary child is owned without deleting source")
+	var/datum/affliction/contagion/original = originals[1]
+	TEST_ASSERT(QDELETED(child) && !QDELETED(original), "decoded temporary child is owned without deleting source")
 
 /datum/unit_test/dq_culture_payload_ownership/mixed_and_paint/Run()
+	scope_contagion_archive()
 	var/obj/item/reagent_containers/glass/beaker/vial/culture/cold/C = allocate(/obj/item/reagent_containers/glass/beaker/vial/culture/cold)
 	var/obj/item/reagent_containers/glass/beaker/vial/culture/flu/F = allocate(/obj/item/reagent_containers/glass/beaker/vial/culture/flu)
 	var/obj/item/reagent_containers/glass/beaker/T = allocate(/obj/item/reagent_containers/glass/beaker)
@@ -74,6 +103,7 @@
 	TEST_ASSERT_EQUAL(P.get_data(), "#123456", "scalar paint payload never enters list-copy branch")
 
 /datum/unit_test/dq_culture_payload_ownership/watch_lifetime/Run()
+	var/list/archive_scope = scope_contagion_archive()
 	var/list/before = list()
 	for(var/index in GLOB.op_watchers)
 		var/list/on = GLOB.op_watchers[index]
@@ -106,10 +136,23 @@
 	for(var/index in GLOB.every_hop_watches)
 		if(!(index in hops_before))
 			hops_created[index] = GLOB.every_hop_watches[index]
+	var/list/archive_now = archive_scope[1]
+	var/list/archive_before = archive_scope[2]
+	var/list/archive_created = list()
+	for(var/key in archive_now)
+		if(archive_now[key] != archive_before[key])
+			archive_created |= archive_now[key]
 	qdel(P)
 	qdel(C)
 	qdel(F)
 	qdel(T)
+	release_contagion_archive(archive_now, archive_before)
+	for(var/datum/affliction/contagion/engineered/archived as anything in archive_created)
+		TEST_ASSERT(QDELETED(archived), "Every archive template created by this test ended with its scope")
+	for(var/key in archive_before)
+		var/datum/affliction/contagion/engineered/borrowed = archive_before[key]
+		TEST_ASSERT_EQUAL(archive_now[key], borrowed, "Every preexisting catalogue key retains its exact identity [key]")
+		TEST_ASSERT(!QDELETED(borrowed), "Every preexisting catalogue template survives scope cleanup [key]")
 	TEST_ASSERT(QDELETED(copy) && QDELETED(mixed), "All observed recipient and snapshot children are destroyed")
 	for(var/index in created)
 		var/list/added = created[index]
@@ -139,6 +182,7 @@
 	CRASH("culture codec deliberate postapply failure")
 
 /datum/unit_test/dq_culture_payload_ownership/registry/Run()
+	scope_contagion_archive()
 	var/datum/reagent/blood/B = allocate(/datum/reagent/blood)
 	var/datum/state_context/ctx = allocate(/datum/state_context)
 	var/datum/state_codec/reagents/codec = allocate(/datum/state_codec/reagents)
@@ -160,6 +204,7 @@
 	TEST_ASSERT(!QDELETED(S) && GLOB.all_species[SPECIES_HUMAN] == S, "Malformed decode preserves actual borrowed registry identity")
 
 /datum/unit_test/dq_culture_payload_ownership/postapply_failure/Run()
+	scope_contagion_archive()
 	var/datum/reagent/blood/B = allocate(/datum/reagent/blood)
 	var/datum/state_context/ctx = allocate(/datum/state_context)
 	var/datum/state_codec/reagents/codec = allocate(/datum/state_codec/reagents)
