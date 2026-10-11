@@ -1,0 +1,5 @@
+#include "child.dm"
+#if 0
+/proc/hidden()
+    return 4
+#endif
