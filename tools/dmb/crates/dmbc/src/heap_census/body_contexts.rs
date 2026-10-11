@@ -1,6 +1,15 @@
 //! Shared current source envelope census, counting immutable owners once.
 use super::*;
 impl HeapCensus {
+    pub(crate) fn body_archive(&mut self, archive: &Arc<dm_tree::frontend::BodyArchive>) {
+        if self.arc_object("query_snapshot.body_archive", archive) {
+            archive.visit_storage(|source, syntax, bodies| {
+                self.source_text("query_snapshot.body_archive.text", source);
+                self.declaration_syntax("query_snapshot.body_archive.syntax", syntax);
+                self.body_occurrences("query_snapshot.body_archive.bodies", bodies);
+            });
+        }
+    }
     pub(crate) fn body_occurrences(
         &mut self,
         owner: &str,

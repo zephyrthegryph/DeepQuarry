@@ -66,13 +66,7 @@ impl SourceSnapshot {
             census.body_occurrences("query_snapshot.bodies", bodies);
         }
         if let Some(archive) = &self.body_archive {
-            if census.arc_object("query_snapshot.body_archive", archive) {
-                archive.visit_storage(|source, syntax, bodies| {
-                    census.source_text("query_snapshot.body_archive.text", source);
-                    census.declaration_syntax("query_snapshot.body_archive.syntax", syntax);
-                    census.body_occurrences("query_snapshot.body_archive.bodies", bodies);
-                });
-            }
+            census.body_archive(archive);
         }
         if let Some(mapping) = &self.source_mapping {
             census.source_export_mapping(mapping);
