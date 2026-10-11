@@ -1013,5 +1013,71 @@
     "cases": 18,
     "open_case": "undefined_modified_initializer_type",
     "scope": "Native primary error stable; identical captured source and pinned BYOND raw stdout differed between one and two errors across captures. Baseline stability controls required before adding a secondary diagnostic."
+  },
+  "counted_4bf_real_cohort": {
+    "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\receipt.json",
+    "sha256": "66c0e8c1533f697a2e97b6d10ffde570784b3e51b1abebed82ab201e91fe1c91",
+    "status": "passed",
+    "compiler_commit": "4bf626fc4ff660133868bad6032b21a79e105aed",
+    "allocation_counting": true,
+    "performance_acceptance": false,
+    "rows": [
+      {
+        "kind": "initial",
+        "client_end_to_end_seconds": 111.6880000000001,
+        "fresh_cache_off_seconds": 76.76599999999962,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "unchanged",
+        "client_end_to_end_seconds": 6.109000000000378,
+        "fresh_cache_off_seconds": 78.26599999999962,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "body",
+        "client_end_to_end_seconds": 80.26599999999962,
+        "fresh_cache_off_seconds": 78.40599999999995,
+        "fresh_native_byte_oracle": true
+      },
+      {
+        "kind": "structural",
+        "client_end_to_end_seconds": 93.0,
+        "fresh_cache_off_seconds": 76.23400000000038,
+        "fresh_native_byte_oracle": true
+      }
+    ],
+    "pressure_observations": [
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(6003208192) private-after=Some(5781225472) seconds=1.596297 rust-requested-live-before=4937616785 rust-requested-live-after=4262886826",
+      "dmbd artifact release tier=3 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5455904768) private-after=Some(4830298112) seconds=26.639521 rust-requested-live-before=4262877636 rust-requested-live-after=2051388613",
+      "dmbd idle release tier=session project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme pressure=true private-before=Some(4830330880) private-after=Some(1206206464) seconds=3.901533 rust-requested-live-before=2051388028 rust-requested-live-after=401263",
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5802496000) private-after=Some(5393412096) seconds=1.632723 rust-requested-live-before=4794911584 rust-requested-live-after=4077650377",
+      "dmbd artifact release tier=3 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5392773120) private-after=Some(4455243776) seconds=29.480160 rust-requested-live-before=4077641091 rust-requested-live-after=1985420635",
+      "dmbd idle release tier=session project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme pressure=true private-before=Some(4455272448) private-after=Some(670117888) seconds=4.535285 rust-requested-live-before=1985420050 rust-requested-live-after=410015",
+      "dmbd artifact release tier=2 project=\\\\?\\E:\\dq-cache\\dmb-native-iterations\\20261011-161200-0d7a34cb\\project\\comparison.dme private-before=Some(5825343488) private-after=Some(5442080768) seconds=1.410192 rust-requested-live-before=4795492777 rust-requested-live-after=4078198823"
+    ],
+    "sampled_peak_private_bytes": 6269521920,
+    "owned_job_reaped": true,
+    "daemon_reaped": true,
+    "scope": "Diagnostic counted prototype build, not acceptance speed; independent fresh prepass, native oracle passes, BYOND semantic structural coverage incomplete. Allocator reclamation prototype cb23 not included."
+  },
+  "diagnostic_baseline_repeats": {
+    "receipt": "E:/dq-cache/dmb-modified-initializer-diagnostic-repeat/d1dd08b6dcac46adafca08f5200d9916/receipt.json",
+    "complete": true,
+    "baseline_stable": true,
+    "baseline_repeats": 3,
+    "observed_secondary_amount_error": false,
+    "scope": "Three independent repeats plus global proc, two-field, empty-field and valid-type controls. Original discrepant BYOND log preserved; no speculative secondary native diagnostic."
+  },
+  "list_runtime_debug_origins": {
+    "receipt": "E:/dq-cache/dmb-list-index-runtime-contract/20261011-origin-debug-4bf/c749652a70e34c83951f9481b82884c6/receipt.json",
+    "complete": true,
+    "matches": true,
+    "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
+  },
+  "six_git_worktree_first_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/1877e5198711454b8199cdbe5afe4697/receipt.json",
+    "passed": false,
+    "scope": "Twelve fresh oracles completed; concurrent client Job resume hit ctypes ThreadEntry identity race. Six owned worktrees removed and children reaped. Same shared helper fix pending."
   }
 }
