@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "scope": "focused integration checks; not full-suite, runtime baseline or benchmark acceptance",
+  "compiler_library_check_passed": true,
+  "library_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052447-b817f70b-job-cargo.json",
+  "focused_passed": {
+    "shared_publication_and_leases": 11,
+    "frontend_replay_and_request_lifecycle": 8,
+    "binding_request_lifecycle": 2,
+    "compiler_artifact_and_composition_lifecycle": 17,
+    "resource_comparison": 5
+  },
+  "focused_failure": {
+    "test": "failed_header_pruning_preserves_published_selector_owner",
+    "cause": "Header miss returned a separate Arc rather than the admitted stored owner",
+    "fix_commit": "1bec0c4b6b9826c9726b9eda7dbc66226fb5b11b",
+    "rerun_status": "pending"
+  },
+  "test_binary_source": "working tree, including preserved pre-existing edits; not an immutable compiler benchmark pin",
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052550-a4a96960-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052852-da67ab84-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-052917-99453442-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053357-469d8d15-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053430-a7845966-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261011-053547-d39cea37-focused.json"
+  ],
+  "resources": {
+    "distinct_assets": 3852,
+    "changed_or_missing": 0,
+    "byond_identical_duplicate_records": 8,
+    "duplicate_bytes": 294398,
+    "complete_tool_comparison": true,
+    "semantic_equivalent": true,
+    "shared_input_closure_authenticated": false
+  },
+  "full_runtime_baseline": "open",
+  "latest_full_game_incremental_benchmark": "open",
+  "six_worktree_acceptance": "open",
+  "shared_configuration_and_input_closure": "open"
+}
