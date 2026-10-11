@@ -168,6 +168,93 @@ mod tests {
     }
 
     #[test]
+    fn actual_argument_source_lowering_keeps_definite_missing_call_typed_at_current_header() {
+        struct Host(bool);
+        impl dm_ir::Resolver for Host {
+            fn resolve(&self, query: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+                match query {
+                    dm_ir::ResolveQuery::GlobalProc(_) if !self.0 => {
+                        dm_ir::ResolvedMeaning::Missing
+                    }
+                    _ => dm_ir::ResolvedMeaning::Unsupported(query),
+                }
+            }
+        }
+        for padding in ["", "\n\n"] {
+            let text =
+                format!("{padding}/proc/probe(x in formerly_missing_helper())\n    return x\n");
+            let frontend = dm_tree::frontend::build(
+                std::path::Path::new("project.dme"),
+                &Source(&text),
+                &Default::default(),
+                1,
+            )
+            .unwrap();
+            let body = &frontend.bodies[0];
+            let header = frontend.compact_body(body).unwrap();
+            let member = frontend.snapshot.tree.member(body.member).unwrap();
+            let metadata = member.metadata.procedure.as_ref().unwrap();
+            let inputs = ProcedureInputs {
+                parameters: vec!["x".into()],
+                ..Default::default()
+            };
+            let helper = ArgumentSourceHelper {
+                argument: 0,
+                frame_parameters: inputs.parameters.clone(),
+                expression: metadata.signature.parameters[0]
+                    .source_expression
+                    .clone()
+                    .unwrap(),
+            };
+            let owner = UnitIdentity {
+                owner: dm_ir::SymbolId::of("/"),
+                name: dm_ir::SymbolId::of("probe"),
+                namespace: crate::lowering::Namespace::Proc,
+                occurrence: 0,
+            };
+            for opaque in [false, true] {
+                let failure = lower_helpers(
+                    HelperInputs {
+                        frontend: &frontend,
+                        parsed: header.into(),
+                        metadata,
+                        owner,
+                        inputs: &inputs,
+                        helpers: std::slice::from_ref(&helper),
+                        symbols: frontend.snapshot.tree.symbols(),
+                    },
+                    &Host(opaque),
+                )
+                .err()
+                .expect("invalid helper");
+                let HelperFailure::Diagnostics(diagnostics) = failure else {
+                    panic!("emitter failure lost its type")
+                };
+                assert_eq!(
+                    diagnostics[0].kind,
+                    if opaque {
+                        DiagnosticKind::UnsupportedModel
+                    } else {
+                        DiagnosticKind::SourceError
+                    }
+                );
+                assert_eq!(
+                    diagnostics[0].origin,
+                    frontend
+                        .location(source_offset(header.into(), metadata, 0).unwrap())
+                        .unwrap()
+                );
+                if !opaque {
+                    assert_eq!(
+                        diagnostics[0].message,
+                        "formerly_missing_helper: undefined proc"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
     fn helper_failure_preserves_kind_and_rebinds_current_signature_and_related_parameter() {
         for (padding, authored) in [("", "list(1, 2)"), ("\n\n", "list( 1, /* current */ 2)")] {
             let text = format!("{padding}/proc/probe(x in {authored})\n    return x\n");

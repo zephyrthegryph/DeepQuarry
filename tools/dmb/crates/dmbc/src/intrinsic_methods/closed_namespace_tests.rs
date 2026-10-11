@@ -29,10 +29,11 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
     .unwrap();
     let mut symbols = frontend.snapshot.tree.symbols().clone();
     let constants = crate::engine_host::ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+    let modified_alias = symbols.intern("/datum/probe{value=1}").unwrap();
     let runtime = crate::engine_host::RuntimeAliasCatalog::new(
         engine.identity(),
         &symbols,
-        Vec::new(),
+        vec![(modified_alias, SymbolId::of("/datum/probe"))],
         frontend
             .snapshot
             .tree
@@ -166,6 +167,19 @@ fn documented_datum_namespace_closes_arbitrary_missing_names_only_on_reviewed_hi
         host.resolve(ResolveQuery::RuntimeType(SymbolId::of("/datum/probe"))),
         ResolvedMeaning::Symbol(SymbolId::of("/datum/probe"))
     );
+    assert_eq!(
+        host.resolve(ResolveQuery::RuntimeType(modified_alias)),
+        ResolvedMeaning::Symbol(SymbolId::of("/datum/probe"))
+    );
+    for path in ["/matrix", "/filter", "/icon", "/regex"] {
+        assert!(
+            !matches!(
+                host.resolve(ResolveQuery::RuntimeType(SymbolId::of(path))),
+                ResolvedMeaning::Missing
+            ),
+            "opaque native type must remain excluded: {path}"
+        );
+    }
     assert!(!matches!(
         host.resolve(ResolveQuery::Proc {
             owner: SymbolId::of("/datum"),
