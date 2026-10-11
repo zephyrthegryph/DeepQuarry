@@ -53,6 +53,7 @@ fn mandatory(write: &InitializerWrite, queries: &mut Vec<ResolveQuery>) {
         });
     }
 }
+#[cfg(test)]
 pub(super) fn capture(
     binding: &Binding,
     policy: &[u8],

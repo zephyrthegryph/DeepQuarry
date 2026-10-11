@@ -4,6 +4,7 @@ mod admission;
 #[path = "memo_verify.rs"]
 mod verify;
 use super::*;
+#[cfg(test)]
 pub(super) use admission::lower_one_input;
 pub(super) use admission::map_stage;
 pub(super) use admission::Admission;

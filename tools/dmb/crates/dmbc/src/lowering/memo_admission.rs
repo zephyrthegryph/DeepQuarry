@@ -62,6 +62,7 @@ pub(in crate::lowering) fn map_stage<I: Sync, O: Send>(
         })
         .collect()
 }
+#[cfg(test)]
 pub(in crate::lowering) fn lower_one_input<'frontend, R: Resolver, P: AbiPolicy>(
     frontend: &'frontend ColdFrontend,
     body: &BodyOccurrence,

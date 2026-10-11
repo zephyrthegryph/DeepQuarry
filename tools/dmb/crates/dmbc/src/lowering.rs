@@ -189,6 +189,7 @@ pub struct SourceUnitIdentity {
 }
 #[path = "lowering_source_identity.rs"]
 mod source_identity;
+#[cfg(test)]
 pub(crate) use source_identity::from_issued as source_identity_for_issued;
 pub use source_identity::source_unit_identity;
 #[path = "lowering/prepared_roster.rs"]
