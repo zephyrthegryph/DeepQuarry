@@ -21,6 +21,28 @@ pub(super) fn frontend(source: &str, engine: &EngineSnapshot) -> ColdFrontend {
     )
     .unwrap()
 }
+fn retained_frontend(
+    source: &str,
+    engine: &EngineSnapshot,
+    state: &mut dm_tree::frontend::RetainedSemanticTree,
+) -> ColdFrontend {
+    let seed = engine.frontend_seed();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    dm_tree::frontend::build_with_executor_and_semantic_state(
+        Path::new("abi-retained.dme"),
+        &Text(source),
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
+        None,
+        &executor,
+        Some(state),
+    )
+    .unwrap()
+}
 fn prepared(
     front: &ColdFrontend,
     engine: &EngineSnapshot,
@@ -98,10 +120,12 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
     .unwrap();
     let engine = &owner.snapshot;
     let store = AbiArtifacts::with_engine_owner(owner.clone());
-    let first=frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine);
+    let mut state = dm_tree::frontend::RetainedSemanticTree::new();
+    // Certificates are process-local issuer proofs: exercise the actual retained frontend.
+    let first=retained_frontend("/datum/a/proc/p(x=1)\n    set invisibility = 7\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n",engine, &mut state);
     let before = prepared(&first, engine, Some(&store));
     assert_eq!(store.scheduled_reused(), 0);
-    let changed=frontend("// current origin moved\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x+1\n",engine);
+    let changed=retained_frontend("// current origin moved\n/datum/a/proc/p(x=1)\n    set invisibility = 9\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x+1\n",engine, &mut state);
     let retained = prepared(&changed, engine, Some(&store));
     same(&retained, &prepared(&changed, engine, None));
     assert_eq!(
@@ -114,19 +138,35 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
         1,
         "only independent owner skips worker preparation"
     );
-    assert_eq!(store.qualified_reused(), 1, "independent issued owner must avoid inherited factory validation");
+    assert_eq!(
+        store.qualified_reused(),
+        1,
+        "independent issued owner must avoid inherited factory validation"
+    );
     let (_, old) = before.prepared.units().last().unwrap();
     let (_, current) = retained.prepared.units().last().unwrap();
     assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
-    let previous_proof = before.prepared.units_owner()
-        .selected(before.prepared.units().len() - 1).unwrap();
-    let current_proof = retained.prepared.units_owner()
-        .selected(retained.prepared.units().len() - 1).unwrap();
-    assert!(Arc::ptr_eq(previous_proof, current_proof),
-        "actual admitted independent unit certificate survives changed graph");
-    assert!(!Arc::ptr_eq(before.prepared.units_owner().selected(0).unwrap(),
-        retained.prepared.units_owner().selected(0).unwrap()),
-        "changed inherited facts require a new actual unit certificate");
+    let previous_proof = before
+        .prepared
+        .units_owner()
+        .selected(before.prepared.units().len() - 1)
+        .unwrap();
+    let current_proof = retained
+        .prepared
+        .units_owner()
+        .selected(retained.prepared.units().len() - 1)
+        .unwrap();
+    assert!(
+        Arc::ptr_eq(previous_proof, current_proof),
+        "actual admitted independent unit certificate survives changed graph"
+    );
+    assert!(
+        !Arc::ptr_eq(
+            before.prepared.units_owner().selected(0).unwrap(),
+            retained.prepared.units_owner().selected(0).unwrap()
+        ),
+        "changed inherited facts require a new actual unit certificate"
+    );
     for (_, unit) in retained.prepared.units().iter().take(3) {
         assert_eq!(unit.abi.as_ref().unwrap().layout.invisibility, Some(9));
     }
@@ -712,46 +752,96 @@ fn disk_roundtrip(signature: &str, changed_signature: &str) {
 #[test]
 fn issued_abi_local_structure_tracks_parent_and_definition_without_sibling_churn() {
     let owner = crate::runner_host::EnginePayload::capture(
-        include_bytes!("../../../../fixtures/native_template.bin").to_vec(), 1, true, 0,
-    ).unwrap();
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
     let engine = &owner.snapshot;
     let facts = |text: &str| {
         let current = frontend(text, engine);
         let member = current.bodies.last().unwrap().member;
         abi_artifacts::observations::structural_inputs(&current, member).unwrap()
     };
-    let original = facts("/datum/base\n/datum/a\n    parent_type = /datum/base\n/datum/a/proc/p()\n    return 1\n");
+    let original = facts(
+        "/datum/base\n/datum/a\n    parent_type = /datum/base\n/datum/a/proc/p()\n    return 1\n",
+    );
     let sibling = facts("/datum/other\n    var/extra = 2\n/datum/base\n/datum/a\n    parent_type = /datum/base\n/datum/a/proc/p()\n    return 1\n");
-    assert_eq!(original, sibling, "unrelated owner cannot change local structural meaning");
+    assert_eq!(
+        original, sibling,
+        "unrelated owner cannot change local structural meaning"
+    );
     let reparented = facts("/datum/base\n/datum/a\n/datum/a/proc/p()\n    return 1\n");
-    assert_ne!(original.1, reparented.1, "parent mutation must reject the local licence");
+    assert_ne!(
+        original.1, reparented.1,
+        "parent mutation must reject the local licence"
+    );
     let overriding = facts("/datum/base\n/datum/base/proc/p()\n    return 0\n/datum/a\n    parent_type = /datum/base\n/datum/a/p()\n    return 1\n");
-    assert_ne!(original.0, overriding.0, "declaration/override mode is a mandatory local fact");
+    assert_ne!(
+        original.0, overriding.0,
+        "declaration/override mode is a mandatory local fact"
+    );
 }
 
 #[test]
 fn admitted_abi_seed_dispatches_only_dirty_dependency_roots() {
     let owner = crate::runner_host::EnginePayload::capture(
-        include_bytes!("../../../../fixtures/native_template.bin").to_vec(), 1, true, 0,
-    ).unwrap();
+        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        1,
+        true,
+        0,
+    )
+    .unwrap();
     let current = frontend("/datum/a/proc/p(x=1)\n    return x\n/datum/a/mid/p(x=2)\n    return ..()\n/datum/a/mid/leaf/p(x=3)\n    return ..()\n/datum/independent/proc/q(x=4)\n    return x\n", &owner.snapshot);
     let prepared = prepared(&current, &owner.snapshot, None);
     let roster = current.callable_roster().unwrap();
-    let all = || -> BTreeMap<_, _> { prepared.prepared.units().iter().enumerate()
-        .map(|(ordinal, (_, unit))| (ordinal, crate::procedure_policy::PreparedReplay::from_unit(unit).unwrap().into_view())).collect() };
+    let all = || -> BTreeMap<_, _> {
+        prepared
+            .prepared
+            .units()
+            .iter()
+            .enumerate()
+            .map(|(ordinal, (_, unit))| {
+                (
+                    ordinal,
+                    crate::procedure_policy::PreparedReplay::from_unit(unit)
+                        .unwrap()
+                        .into_view(),
+                )
+            })
+            .collect()
+    };
     let all_seed = abi_scheduler::seed(&current, roster, all()).unwrap();
-    assert!(all_seed.ready.is_empty(), "fully admitted graph performs no executor wave");
+    assert!(
+        all_seed.ready.is_empty(),
+        "fully admitted graph performs no executor wave"
+    );
     assert!(all_seed.remaining.iter().all(|pending| !pending));
     for (ordinal, (_, expected)) in prepared.prepared.units().iter().enumerate() {
         let actual = all_seed.results[ordinal].as_ref().unwrap();
         assert!(Arc::ptr_eq(&actual.inputs, &expected.inputs));
-        assert!(Arc::ptr_eq(actual.abi.as_ref().unwrap(), expected.abi.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(
+            actual.abi.as_ref().unwrap(),
+            expected.abi.as_ref().unwrap()
+        ));
     }
-    let selected = all().into_iter().filter(|(ordinal, _)| *ordinal == 0 || *ordinal == 3).collect();
+    let selected = all()
+        .into_iter()
+        .filter(|(ordinal, _)| *ordinal == 0 || *ordinal == 3)
+        .collect();
     let partial = abi_scheduler::seed(&current, roster, selected).unwrap();
-    assert_eq!(partial.ready, vec![1], "only first dirty descendant is ready, not its child or admitted sibling");
+    assert_eq!(
+        partial.ready,
+        vec![1],
+        "only first dirty descendant is ready, not its child or admitted sibling"
+    );
     assert_eq!(partial.remaining, vec![false, true, true, false]);
     assert_eq!(partial.layouts.len(), 2);
     let cold = abi_scheduler::seed(&current, roster, BTreeMap::new()).unwrap();
-    assert_eq!(cold.ready, roster.ready(), "unissued path retains original cold roots");
+    assert_eq!(
+        cold.ready,
+        roster.ready(),
+        "unissued path retains original cold roots"
+    );
 }

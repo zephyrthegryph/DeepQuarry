@@ -147,13 +147,17 @@ fn cached_parent_chain_change_rejects_current_declaration() {
 }
 
 #[test]
-fn repeated_include_duplicate_locations_keep_distinct_current_encounters() {
+fn active_include_duplicate_locations_keep_distinct_current_encounters() {
     struct Included;
     impl SourceProvider for Included {
         fn read(&self, path: &Path) -> Result<String, String> {
             match path.file_name().and_then(|name| name.to_str()) {
-                Some("variables.dme") => Ok("#include \"same.dm\"\n#include \"same.dm\"\n".into()),
-                Some("same.dm") => Ok("/datum/example\n    var/static/value = 1\n".into()),
+                Some("variables.dme") => {
+                    Ok("#include \"first.dm\"\n#include \"second.dm\"\n".into())
+                }
+                Some("first.dm" | "second.dm") => {
+                    Ok("/datum/example\n    var/static/value = 1\n".into())
+                }
                 _ => Err("unknown fixture input".into()),
             }
         }
@@ -171,4 +175,19 @@ fn repeated_include_duplicate_locations_keep_distinct_current_encounters() {
     assert_ne!(first.include_occurrence, second.include_occurrence);
     assert_ne!(first.encounter_ordinal, second.encounter_ordinal);
     assert_ne!(first.include_chain, second.include_chain);
+}
+
+#[test]
+fn repeated_include_suppression_does_not_invent_duplicate_declarations() {
+    struct Included;
+    impl SourceProvider for Included {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            match path.file_name().and_then(|name| name.to_str()) {
+                Some("variables.dme") => Ok("#include \"same.dm\"\n#include \"same.dm\"\n".into()),
+                Some("same.dm") => Ok("/datum/example\n    var/static/value = 1\n".into()),
+                _ => Err("unknown fixture input".into()),
+            }
+        }
+    }
+    build(Path::new("variables.dme"), &Included, &BTreeMap::new(), 1).unwrap();
 }
