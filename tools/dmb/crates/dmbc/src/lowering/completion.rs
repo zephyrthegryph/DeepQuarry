@@ -34,14 +34,20 @@ impl<T, E> CompletedLoweringBatch<T, E> {
     }
 }
 #[allow(clippy::too_many_arguments)]
-pub fn lower_frontend_completed_on_execution<R: Resolver, P: AbiPolicy, T: Send, E: Send>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_completed_on_execution<
+    'frontend,
+    R: Resolver,
+    P: AbiPolicy,
+    T: Send,
+    E: Send,
+>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: Option<&crate::startup::CapturedStartup>,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
     complete: &(impl Fn(LoweredUnit) -> Result<T, E> + Sync),
 ) -> CompletedLoweringBatch<T, E> {
     lower_frontend_completed_input_on_execution(
@@ -57,14 +63,20 @@ pub fn lower_frontend_completed_on_execution<R: Resolver, P: AbiPolicy, T: Send,
     )
 }
 #[allow(clippy::too_many_arguments)]
-pub fn lower_frontend_completed_input_on_execution<R: Resolver, P: AbiPolicy, T: Send, E: Send>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_completed_input_on_execution<
+    'frontend,
+    R: Resolver,
+    P: AbiPolicy,
+    T: Send,
+    E: Send,
+>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: Option<&crate::startup::CapturedStartup>,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
     symbolic: bool,
     complete: &(impl Fn(CompletedInput) -> Result<T, E> + Sync),
 ) -> CompletedLoweringBatch<T, E> {

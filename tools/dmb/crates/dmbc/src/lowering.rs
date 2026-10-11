@@ -336,8 +336,8 @@ pub struct LoweringBatch {
     pub units: Vec<LoweredUnit>,
     pub diagnostics: Vec<LoweringDiagnostic>,
 }
-pub fn lower_frontend<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
@@ -345,23 +345,23 @@ pub fn lower_frontend<R: Resolver, P: AbiPolicy>(
     lower_frontend_impl(frontend, host, policy, config, None, None)
 }
 /// Startup admission is an exact captured body inventory, never a bypass flag.
-pub fn lower_frontend_with_statics<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_statics<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
 ) -> LoweringBatch {
     lower_frontend_impl(frontend, host, policy, config, Some(startup), None)
 }
 /// Memo admission retains the cold startup/ABI guards. The caller supplies a
 /// compiler policy identity; it must not substitute a whole-program tree hash.
-pub fn lower_frontend_with_memo<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_memo<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
 ) -> LoweringBatch {
     lower_frontend_impl(frontend, host, policy, config, Some(startup), Some(memo))
@@ -428,8 +428,8 @@ impl<'a, 'frontend> LoweringExecution<'a, 'frontend> {
         self
     }
 }
-pub fn lower_frontend_on_executor<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_on_executor<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
@@ -454,12 +454,12 @@ pub fn lower_frontend_on_executor<R: Resolver, P: AbiPolicy>(
     )
 }
 /// Borrow the configured build executor; no stage-local pool is constructed.
-pub fn lower_frontend_with_statics_on_executor<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_statics_on_executor<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     executor: &dm_exec::BuildExecutor,
 ) -> LoweringBatch {
     let bodies = if policy.uses_issued_statements() {
@@ -480,12 +480,12 @@ pub fn lower_frontend_with_statics_on_executor<R: Resolver, P: AbiPolicy>(
         LoweringExecution::new(executor, &bodies),
     )
 }
-pub fn lower_frontend_with_memo_on_executor<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_memo_on_executor<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
     executor: &dm_exec::BuildExecutor,
 ) -> LoweringBatch {
@@ -507,13 +507,13 @@ pub fn lower_frontend_with_memo_on_executor<R: Resolver, P: AbiPolicy>(
         LoweringExecution::new(executor, &bodies),
     )
 }
-pub fn lower_frontend_with_statics_on_executor_and_bodies<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_statics_on_executor_and_bodies<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
-    execution: LoweringExecution<'_, '_>,
+    startup: &crate::startup::CapturedStartup<'frontend>,
+    execution: LoweringExecution<'_, 'frontend>,
 ) -> LoweringBatch {
     lower_frontend_impl_on_execution(
         frontend,
@@ -525,14 +525,14 @@ pub fn lower_frontend_with_statics_on_executor_and_bodies<R: Resolver, P: AbiPol
         execution,
     )
 }
-pub fn lower_frontend_with_memo_on_executor_and_bodies<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+pub fn lower_frontend_with_memo_on_executor_and_bodies<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
 ) -> LoweringBatch {
     lower_frontend_impl_on_execution(
         frontend,
@@ -544,12 +544,12 @@ pub fn lower_frontend_with_memo_on_executor_and_bodies<R: Resolver, P: AbiPolicy
         execution,
     )
 }
-fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+fn lower_frontend_impl<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: Option<&crate::startup::CapturedStartup>,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
 ) -> LoweringBatch {
     let executor = match dm_exec::BuildExecutor::new(config.workers) {
@@ -589,14 +589,14 @@ fn lower_frontend_impl<R: Resolver, P: AbiPolicy>(
         LoweringExecution::new(&executor, &bodies),
     )
 }
-fn lower_frontend_impl_on_execution<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
+fn lower_frontend_impl_on_execution<'frontend, R: Resolver, P: AbiPolicy>(
+    frontend: &'frontend ColdFrontend,
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: Option<&crate::startup::CapturedStartup>,
+    startup: Option<&crate::startup::CapturedStartup<'frontend>>,
     memo: Option<&crate::lowering_memo::ProcedureMemo>,
-    execution: LoweringExecution<'_, '_>,
+    execution: LoweringExecution<'_, 'frontend>,
 ) -> LoweringBatch {
     let completed = lower_frontend_completed_on_execution(
         frontend,
