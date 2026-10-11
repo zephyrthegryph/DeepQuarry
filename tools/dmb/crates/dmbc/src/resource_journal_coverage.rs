@@ -20,7 +20,7 @@ pub struct ObservedResourceCoverage {
 fn invalid(message: impl Into<String>) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message.into())
 }
-struct JournalProvider<'a> {
+struct JournalProvider<'a, 'journal> {
     root: &'a Path,
     files: BTreeMap<&'a Path, JournalFileAccess<'a>>,
     folders: BTreeMap<&'a Path, &'a crate::input_snapshot::FolderListing>,
@@ -28,8 +28,10 @@ struct JournalProvider<'a> {
     reads: Cell<usize>,
     bytes: Cell<usize>,
     limits: CoverageLimits,
+    physical: Option<&'a JournalAccessView<'journal>>,
+    root_identity: Cell<Option<u128>>,
 }
-impl CaptureProvider for JournalProvider<'_> {
+impl CaptureProvider for JournalProvider<'_, '_> {
     fn read_candidate(&self, path: &Path) -> io::Result<Option<SharedBytes>> {
         if relative_filesystem_path(path, self.root).is_none() {
             return Err(io::Error::new(io::ErrorKind::Unsupported, "resource candidate escapes supported project root"));
@@ -39,6 +41,15 @@ impl CaptureProvider for JournalProvider<'_> {
         self.reads.set(reads);
         let path = canonical_path(path);
         let parent = path.parent().ok_or_else(|| invalid("resource candidate has no parent"))?;
+        if let Some(journal) = self.physical {
+            for observed in [path.as_path(), parent] {
+                let identity = journal.physical_root_identity(observed, self.root)?;
+                if self.root_identity.get().is_some_and(|previous| previous != identity) {
+                    return Err(invalid("resource journal root identity changed during capture"));
+                }
+                self.root_identity.set(Some(identity));
+            }
+        }
         let listing = self.folders.get(parent)
             .ok_or_else(|| invalid("resource candidate search-folder roster is not observed"))?;
         if let crate::input_snapshot::FolderListing::Present(names) = listing {
@@ -83,17 +94,35 @@ pub fn validate_observed_demand(
     journal: &JournalAccessView<'_>,
     limits: CoverageLimits,
 ) -> io::Result<ObservedResourceCoverage> {
+    validate_demand(demand, captured, config, journal, limits, false)
+}
+/// Strict capture-time physical containment, in addition to observed demand.
+/// Requires held no-reparse ancestor evidence for every consumed candidate and
+/// folder. Old journals and unsupported platform issuers explicitly decline.
+/// This still does not certify BYOND's complete input/configuration closure.
+pub fn validate_physically_contained_demand(
+    demand: ResourceDemand, captured: &CapturedResources, config: CaptureConfig<'_>,
+    journal: &JournalAccessView<'_>, limits: CoverageLimits,
+) -> io::Result<ObservedResourceCoverage> {
+    validate_demand(demand, captured, config, journal, limits, true)
+}
+fn validate_demand(
+    demand: ResourceDemand, captured: &CapturedResources, config: CaptureConfig<'_>,
+    journal: &JournalAccessView<'_>, limits: CoverageLimits, physical: bool,
+) -> io::Result<ObservedResourceCoverage> {
     captured.require_complete()?;
     if demand.search_roots().any(|path| relative_filesystem_path(path, demand.project_root()).is_none()) {
         return Err(io::Error::new(io::ErrorKind::Unsupported, "resource search root escapes supported project root"));
     }
     let root = demand.project_root().to_owned();
+    let root_identity = if physical { Some(journal.physical_root_identity(&root, &root)?) } else { None };
     let provider = JournalProvider {
         root: &root,
         files: journal.files().map(|file| (file.path, file)).collect(),
         negative: journal.negative_paths().collect(),
         folders: journal.folders().collect(),
         reads: Cell::new(0), bytes: Cell::new(0), limits,
+        physical: physical.then_some(journal), root_identity: Cell::new(root_identity),
     };
     let current = dm_resources::capture::capture_discovered(demand, config, &provider)
         .map_err(|error| invalid(format!("resource journal coverage declined: {error:?}")))?;

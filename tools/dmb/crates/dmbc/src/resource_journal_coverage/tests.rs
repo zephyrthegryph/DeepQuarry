@@ -71,6 +71,41 @@ fn observed_resource_coverage_declines_file_created_after_folder_observation() {
         Ok(())
     }).unwrap();
 }
+
+#[cfg(windows)]
+#[test]
+fn physical_resource_coverage_replays_capture_time_ancestors_and_declines_old_journals() {
+    let root = Root::new();
+    let source = root.0.join("late/asset.txt");
+    std::fs::write(&source, b"winner").unwrap();
+    let directory = root.0.join("journal");
+    let journal = Inputs::record(&directory).unwrap();
+    let policy = raw_policy();
+    let config = CaptureConfig { policy: &policy, encoded: &[], additional: &[] };
+    let current = demand(&root.0, "asset.txt");
+    let captured = capture_discovered(current.clone(), config, &RecordingInputs::new(&journal, 1)).unwrap();
+    journal.with_access_view(|view| validate_physically_contained_demand(current.clone(), &captured, config, &view, limits())).unwrap().unwrap();
+    journal.finish().unwrap(); drop(journal);
+    // Replay authenticates recorded paths, not today's live file state.
+    std::fs::remove_file(source).unwrap();
+    let replay = Inputs::replay(&directory).unwrap();
+    replay.with_access_view(|view| validate_physically_contained_demand(current.clone(), &captured, config, &view, limits())).unwrap().unwrap();
+    drop(replay);
+    // Older observed journals retain their original contract; strict admission
+    // cannot manufacture ancestor authority from stamps or folder names.
+    let index_path = directory.join("index.json");
+    let mut index: serde_json::Value = serde_json::from_slice(&std::fs::read(&index_path).unwrap()).unwrap();
+    index.as_object_mut().unwrap().remove("physical_v1");
+    let bytes = serde_json::to_vec(&index).unwrap();
+    std::fs::write(&index_path, &bytes).unwrap();
+    std::fs::write(directory.join("index.hash"), xxhash_rust::xxh3::xxh3_128(&bytes).to_le_bytes()).unwrap();
+    let old = Inputs::replay(&directory).unwrap();
+    old.with_access_view(|view| {
+        validate_observed_demand(current.clone(), &captured, config, &view, limits())?;
+        assert!(validate_physically_contained_demand(current.clone(), &captured, config, &view, limits()).is_err());
+        Ok(())
+    }).unwrap();
+}
 #[test]
 fn observed_resource_coverage_uses_real_encoder_source_receipt_and_declines_changed_source() {
     use sha2::{Digest, Sha256};

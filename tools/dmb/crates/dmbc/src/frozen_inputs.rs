@@ -18,7 +18,13 @@ struct Index {
     files: BTreeMap<PathBuf, (Stamp, u128)>,
     negative: BTreeSet<PathBuf>,
     folders: BTreeMap<PathBuf, FolderListing>,
+    // Versioned physical evidence is optional: old journals remain valid for
+    // observed-only replay, but cannot license strict physical containment.
+    #[serde(default)]
+    physical_v1: BTreeMap<PathBuf, physical_paths::Proof>,
 }
+#[path = "frozen_inputs/physical_paths.rs"]
+mod physical_paths;
 
 impl Index {
     fn lookup_path<'a>(&'a self, path: &Path) -> Cow<'a, Path> {
@@ -64,6 +70,21 @@ impl JournalFileAccess<'_> {
     }
 }
 impl JournalAccessView<'_> {
+    /// Capture-time no-reparse path proof; never probes the replay filesystem.
+    /// Returns the recorded root file identity for cross-demand consistency.
+    pub fn physical_root_identity(&self, path: &Path, root: &Path) -> io::Result<u128> {
+        let path = canonical_path(path);
+        let proof = self.index.physical_v1.get(&path).ok_or_else(||
+            io::Error::new(io::ErrorKind::Unsupported, "journal has no capture-time physical path authority"))?;
+        for ancestor in proof.ancestors() {
+            if let Some(other) = self.index.physical_v1.get(ancestor) {
+                if !proof.agrees_with(other) {
+                    return Err(invalid("journal physical ancestor identity changed during capture"));
+                }
+            }
+        }
+        proof.contained_root_identity(&path, root)
+    }
     pub fn files(&self) -> impl Iterator<Item = JournalFileAccess<'_>> {
         self.index.files.iter().map(|(path, (stamp, content))| JournalFileAccess {
             path, stamp, content: *content, journal: self.journal,
@@ -211,6 +232,7 @@ impl SnapshotProvider for Inputs {
         match self {
             Self::Live => FileSystemInputs.read_verified(&path),
             Self::Recording(journal) => {
+                let physical = physical_paths::capture(&path).ok();
                 let result = FileSystemInputs.read_verified(&path);
                 let mut index = journal
                     .index
@@ -233,12 +255,22 @@ impl SnapshotProvider for Inputs {
                         if !payload.exists() {
                             fs::write(payload, bytes)?;
                         }
+                        if let Some(guard) = physical.filter(|guard| guard.proof().present() && !guard.proof().terminal_directory()) {
+                            index.physical_v1.insert(path.clone(), guard.proof());
+                        } else {
+                            index.physical_v1.remove(&path);
+                        }
                         index.files.insert(path, (stamp.clone(), hash));
                         Ok(read)
                     }
                     Err(error) if error.kind() == io::ErrorKind::NotFound => {
                         if index.files.contains_key(&path) {
                             return Err(invalid("verification input disappeared during capture"));
+                        }
+                        if let Some(guard) = physical.filter(|guard| !guard.proof().present() || guard.proof().terminal_directory()) {
+                            index.physical_v1.insert(path.clone(), guard.proof());
+                        } else {
+                            index.physical_v1.remove(&path);
                         }
                         index.negative.insert(path);
                         Err(error)
@@ -266,6 +298,7 @@ impl SnapshotProvider for Inputs {
         match self {
             Self::Live => FileSystemInputs.list(&path),
             Self::Recording(journal) => {
+                let physical = physical_paths::capture(&path).ok();
                 let listing = FileSystemInputs.list(&path)?;
                 let mut index = journal
                     .index
@@ -277,6 +310,14 @@ impl SnapshotProvider for Inputs {
                     .is_some_and(|previous| previous != &listing)
                 {
                     return Err(invalid("verification search folder changed during capture"));
+                }
+                if let Some(guard) = physical.filter(|guard| match &listing {
+                    FolderListing::Missing => !guard.proof().present(),
+                    FolderListing::Present(_) => guard.proof().present() && guard.proof().terminal_directory(),
+                }) {
+                    index.physical_v1.insert(path.clone(), guard.proof());
+                } else {
+                    index.physical_v1.remove(&path);
                 }
                 index.folders.insert(path, listing.clone());
                 Ok(listing)
