@@ -18,12 +18,40 @@ pub(super) struct CallableProviders {
     pub spellings: SymbolTable,
     pub intrinsic: BTreeSet<SymbolId>,
 }
+/// Closed ordinary-global name policy under the existing pinned native ABI
+/// interpretation. Exclusions need not have supported values or runtime behavior.
+#[derive(Debug)]
+pub(super) struct OrdinaryGlobalNames {
+    excluded: BTreeSet<SymbolId>,
+}
+impl OrdinaryGlobalNames {
+    pub(super) fn covers(&self, name: SymbolId) -> bool {
+        !self.excluded.contains(&name)
+    }
+    /// The pinned root catalog excludes every catalogued predefined name,
+    /// including opaque values; the pinned OD lexical dispatcher excludes its
+    /// special identifiers. This is a separate ordinary-name interpretation,
+    /// not a claim that the positive constant catalog is complete.
+    pub(super) fn covers_predefined_absence(&self, name: SymbolId) -> bool {
+        !self.excluded.contains(&name)
+    }
+    pub(super) fn census(self: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
+        if census.arc_object("host.ordinary_global_names", self) {
+            census.observe_items("host.ordinary_global_names.excluded", self.excluded.len());
+            census.unknown(
+                "host.ordinary_global_names",
+                "private BTreeSet node backing excluded",
+            );
+        }
+    }
+}
 pub(super) struct VariableProviders {
     pub issuer: Option<u64>,
     pub spellings: SymbolTable,
     pub intrinsic: BTreeSet<SymbolId>,
     pub constants: ConstantCatalog,
     pub positive_constants: BTreeMap<SymbolId, SemanticValue>,
+    pub ordinary_globals: Arc<OrdinaryGlobalNames>,
     pub identity: u128,
 }
 impl CallableProviders {
@@ -120,8 +148,51 @@ impl VariableProviders {
                 positive_constants.insert(name, value.clone());
             }
         }
-        let mut bytes =
-            b"pinned-authored-variable-absence-v4;physical-boolean-constants;captured-slot-uniqueness;lexical-type-full-namespace-exclusion".to_vec();
+        // Source reference: OpenDream 1362abc5accbc2037df9b45efa1de13fb1bb677f,
+        // DMExpressionBuilder identifier dispatcher 608..653. It checks authored
+        // globals first, then a closed lexical special-name set, then absence.
+        // All specials remain exclusions; this does not assert their BYOND value
+        // or runtime support. Root catalog constants are separate positive facts.
+        let mut excluded = intrinsic.clone();
+        excluded.extend(pinned_constants.values.keys().copied());
+        for name in [
+            "src",
+            "usr",
+            "args",
+            "callee",
+            "caller",
+            "world",
+            "__TYPE__",
+            "__IMPLIED_TYPE__",
+            "__PROC__",
+            "global",
+        ] {
+            excluded.insert(SymbolId::of(name));
+        }
+        for owner in catalog["Types"]
+            .as_array()
+            .ok_or("native variable catalog absent")?
+        {
+            if owner["Path"].as_str() == Some("/") {
+                if let Some(values) = owner.get("GlobalVariables") {
+                    for name in values
+                        .as_object()
+                        .ok_or("root constant catalog malformed")?
+                        .keys()
+                    {
+                        excluded.insert(SymbolId::of(name));
+                    }
+                }
+            }
+        }
+        let ordinary_globals = Arc::new(OrdinaryGlobalNames { excluded });
+        // Versioned source policy is bound to the exact template/schema already
+        // checked by NamedEngineCoverage::pinned above, never an ambient version.
+        let mut bytes = b"pinned-authored-variable-absence-v6;ordinary-root-global-and-predefined-absence;native-ABI-5161687-schema1;OD1362abc5accbc2037df9b45efa1de13fb1bb677f;dispatcher-SHA256=33cd1daf2c2090b6de58ea5ccecdc28918fb9b71deff84c51cbc693795b5bd38;objecttree-SHA256=2c19b1ea64495e67516b972d57aed171a4044eb0ae7835b4eb84ed2ee80a3440;vars-SHA256=ce372f294699c7c3d39c3a52e306d269800c033edb9f82620faf5fe4d3fc66ce".to_vec();
+        bytes.extend_from_slice(&engine.interpretation_schema().to_le_bytes());
+        for name in &ordinary_globals.excluded {
+            bytes.extend_from_slice(&name.bits().to_le_bytes());
+        }
         bytes.extend_from_slice(&engine.identity().to_le_bytes());
         bytes.extend_from_slice(crate::engine::catalog::CATALOG_SCHEMA.as_bytes());
         bytes.extend_from_slice(CATALOG);
@@ -143,6 +214,7 @@ impl VariableProviders {
             intrinsic,
             constants: pinned_constants,
             positive_constants,
+            ordinary_globals,
             identity: xxhash_rust::xxh3::xxh3_128(&bytes),
         })
     }
@@ -163,6 +235,7 @@ impl PinnedEngineProviders {
             return;
         }
         self.callables.closed.census(census);
+        self.variables.ordinary_globals.census(census);
         if census.arc_object("host.intrinsic_methods", &self.callables.methods) {
             census.collection_entries::<((SymbolId, SymbolId), Arc<[u8]>)>(
                 "host.intrinsic_methods",

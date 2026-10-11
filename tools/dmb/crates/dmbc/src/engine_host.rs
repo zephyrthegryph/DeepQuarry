@@ -527,7 +527,9 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                 .cloned()
                 .map(M::Value)
                 .unwrap_or_else(|| {
-                    if self.constants.completeness == Completeness::Complete {
+                    if self.constants.completeness == Completeness::Complete
+                        || self.predefined_absence_version(name).is_some()
+                    {
                         M::Missing
                     } else {
                         M::Unsupported(query)
@@ -639,7 +641,8 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
                         }
                     }
                     if self.variable_absence.as_ref().is_some_and(|coverage| {
-                        coverage.payload.names.contains(&name)
+                        coverage.payload.covers(query)
+                            && self.current_variable_absence(query).is_some()
                             && coverage.source.lookup_type(owner).is_some()
                     }) && self.runtime.ordinary.contains(&owner)
                     {

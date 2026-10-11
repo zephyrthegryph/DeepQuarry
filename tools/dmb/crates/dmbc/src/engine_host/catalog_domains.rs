@@ -9,7 +9,7 @@ pub(super) fn issue() -> Option<u64> {
     })
     .ok()
 }
-impl<R: Resolver> EngineResolverHost<R> {
+impl<R: Resolver + Send> EngineResolverHost<R> {
     // Outer Option distinguishes an unrelated domain from an uncertified answer.
     pub(super) fn catalog_domain(&self, domain: ReadDomain) -> Option<Option<u128>> {
         match domain {
@@ -18,7 +18,9 @@ impl<R: Resolver> EngineResolverHost<R> {
                     || self.constants.completeness == Completeness::Complete)
                     .then_some(self.constants.issuer)
                     .flatten()
-                    .map(u128::from),
+                    .and_then(|issuer| issuer.checked_mul(4)?.checked_add(3))
+                    .map(u128::from)
+                    .or_else(|| self.predefined_absence_version(name)),
             ),
             ReadDomain::RuntimeCatalog(path) => Some((|| {
                 let issuer = self.runtime.issuer?;

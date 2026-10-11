@@ -3,6 +3,7 @@ use super::*;
 #[derive(Debug)]
 pub(crate) struct VariableCoverage {
     pub(super) names: HashSet<SymbolId>,
+    ordinary_globals: Arc<engine_providers::OrdinaryGlobalNames>,
     pub(super) positive_constants: BTreeMap<SymbolId, SemanticValue>,
 }
 impl VariableCoverage {
@@ -32,11 +33,31 @@ impl VariableCoverage {
             .collect();
         Arc::new(Self {
             names,
+            ordinary_globals: Arc::clone(&providers.ordinary_globals),
             positive_constants,
         })
     }
+    pub(super) fn covers_predefined_absence(&self, name: SymbolId) -> bool {
+        self.ordinary_globals.covers_predefined_absence(name)
+    }
+    pub(super) fn covers(&self, query: Q) -> bool {
+        match query {
+            // Finite source-admitted coverage predates the ordinary-name policy
+            // (notably lexical __TYPE__ storage absence). Preserve it exactly;
+            // exclusions constrain only the newly generalized branch.
+            Q::GlobalVar(name) => self.names.contains(&name) || self.ordinary_globals.covers(name),
+            Q::Var { name, .. }
+            | Q::HasMemberVar { name, .. }
+            | Q::DeclaredVarType { name, .. }
+            | Q::VarStorage { name, .. }
+            | Q::StaticVar { name, .. }
+            | Q::Constant { name, .. } => self.names.contains(&name),
+            _ => false,
+        }
+    }
     pub(crate) fn census(self: &Arc<Self>, census: &mut crate::heap_census::HeapCensus) {
         if census.arc_object("host.variable_coverage", self) {
+            self.ordinary_globals.census(census);
             census.observe_items("host.variable_coverage.names", self.names.len());
             census.observe_items(
                 "host.variable_coverage.constants",
