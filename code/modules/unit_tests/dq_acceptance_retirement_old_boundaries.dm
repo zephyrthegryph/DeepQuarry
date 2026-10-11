@@ -60,3 +60,28 @@
 	var/obj/effect/dummy/chameleon/D = allocate(/obj/effect/dummy/chameleon, T)
 	D.set_anchored(TRUE)
 	TEST_ASSERT_NULL(dq_ledger_refusal(D, C, CONTAINER_SLOT_INTERIOR, mover), "The actual chameleon exception remains admissible despite anchor")
+
+
+// Old-code proof: actual butterfly model state, exact slot refusal and custody.
+// Append to the already included dq_containment_tests.dm before converting sharp.
+/datum/unit_test/dq_containment_sharp_old
+
+/datum/unit_test/dq_containment_sharp_old/Run()
+	var/turf/T = dq_containment_floor()
+	TEST_ASSERT(T, "clean containment floor exists")
+	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
+	var/obj/item/material/butterfly/knife = allocate(/obj/item/material/butterfly, T)
+	TEST_ASSERT_EQUAL(dq_ledger_refusal(knife, box, "main"), "must be sharp", "folded real blade refuses with unchanged text")
+	TEST_ASSERT(!move_into(box, "main", knife), "refused blade cannot enter")
+	TEST_ASSERT_EQUAL(knife.loc, T, "refusal leaves real custody unchanged")
+	knife.set_active(TRUE)
+	knife.update_force()
+	TEST_ASSERT(is_sharp(knife), "real blade activation supplies sharp property")
+	TEST_ASSERT_NULL(dq_ledger_refusal(knife, box, "main"), "open blade is accepted")
+	TEST_ASSERT(move_into(box, "main", knife), "accepted blade actually enters")
+	TEST_ASSERT_EQUAL(knife.loc, box, "accepted blade has real holder")
+	TEST_ASSERT(move_into(T, null, knife), "blade can actually leave")
+	knife.set_active(FALSE)
+	knife.update_force()
+	TEST_ASSERT_EQUAL(dq_ledger_refusal(knife, box, "main"), "must be sharp", "closing real blade restores exact refusal")
+	TEST_ASSERT_EQUAL(knife.loc, T, "closing does not change custody")
