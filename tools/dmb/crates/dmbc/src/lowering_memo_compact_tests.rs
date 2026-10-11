@@ -397,7 +397,16 @@ fn check_replay_features(
         assert!(decode(&bytes)
             .unwrap()
             .executable
-            .restore(&front, body, ready, bindings, offsets.len(), &extra, &[])
+            .restore(
+                &front,
+                body,
+                ready,
+                bindings,
+                offsets.len(),
+                &extra,
+                &[],
+                None
+            )
             .is_none());
     }
     let context = || crate::lowering_memo_wire::ProcedureReplayContext {
@@ -475,7 +484,59 @@ fn check_replay_features(
         "ordinary disk hit bypasses rich IR replay"
     );
     assert!(selected.unit.is_none());
+    // Real mapped record through the SAME typed-bucket and current-host path.
+    // Its word owner outlives the snapshot without copying the decoded words.
+    let mapped_temp = MappedTemp::new();
+    let cache = dm_cache::Cache::open(&mapped_temp.0, Default::default()).unwrap();
+    let record_key = crate::lowering_memo::ProcedureMemo::record_key(b"exact-source-and-policy");
+    cache
+        .publish(&[dm_cache::Record {
+            key: record_key,
+            symbols: Vec::new(),
+            payload: dm_cache::encode_variants(&[bytes.clone()]).unwrap().into(),
+        }])
+        .unwrap();
+    let snapshot = cache.snapshot().unwrap();
+    let mapped = std::cell::RefCell::new(None);
+    assert!(snapshot
+        .get_candidate_backed(record_key, |bytes, _, backing| {
+            let candidates = crate::lowering_memo_wire::candidates(bytes)?;
+            let result = candidates.procedure_matching_backed(
+                &|key| key == b"exact-source-and-policy",
+                payload.identity,
+                context(),
+                &host,
+                ready,
+                Some(backing),
+            );
+            let accepted = result.prepared.is_some();
+            *mapped.borrow_mut() = result.prepared;
+            Ok(accepted)
+        })
+        .is_some());
+    let mapped = mapped.into_inner().unwrap();
+    assert!(matches!(
+        mapped.shared_artifact().code().code().word_storage(),
+        dm_ir::WordStorageView::Shared {
+            backing: dm_ir::ByteOwnerStorage {
+                memory_mapped: true,
+                ..
+            },
+            ..
+        }
+    ));
+    drop(snapshot);
+    drop(cache);
     let restored = payload.rebind(context(), ready).unwrap();
+    assert_eq!(
+        mapped.shared_artifact().code().code().canonical_bytes(),
+        restored.shared_artifact().code().code().canonical_bytes()
+    );
+    assert_eq!(
+        mapped.shared_artifact().code().labels(),
+        restored.shared_artifact().code().labels()
+    );
+
     assert_eq!(
         encode(
             b"exact-source-and-policy",
@@ -666,4 +727,29 @@ fn check_replay_features(
 fn compact_sequence_rejects_advertised_oversize_before_payload_elements() {
     let bytes = dm_wire::encode(99, &vec![0u8; MAX_ITEMS + 1]).unwrap();
     assert!(dm_wire::decode::<BoundedVec<u8>>(99, &bytes, bytes.len()).is_err());
+}
+
+struct MappedTemp(std::path::PathBuf);
+impl MappedTemp {
+    fn new() -> Self {
+        static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let parent = if cfg!(windows) {
+            std::path::PathBuf::from("E:/dq-cache/dmb-protocol-checks")
+        } else {
+            std::env::temp_dir()
+        };
+        std::fs::create_dir_all(&parent).unwrap();
+        let root = parent.join(format!(
+            "compact-mapped-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        std::fs::create_dir(&root).unwrap();
+        Self(root)
+    }
+}
+impl Drop for MappedTemp {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.0);
+    }
 }

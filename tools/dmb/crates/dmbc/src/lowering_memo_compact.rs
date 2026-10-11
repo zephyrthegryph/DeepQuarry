@@ -347,10 +347,19 @@ impl Payload<'_> {
             relative_debug: self.debug.0.clone(),
         }
     }
+    #[cfg(test)]
     pub(crate) fn rebind(
         self,
         context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
         prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> Result<crate::symbolic::PreparedContribution, ReplayDecline> {
+        self.rebind_with_backing(context, prepared, None)
+    }
+    pub(crate) fn rebind_with_backing(
+        self,
+        context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
     ) -> Result<crate::symbolic::PreparedContribution, ReplayDecline> {
         let bindings = context.bindings.ok_or(ReplayDecline::ExecutableIssuer)?;
         prepared
@@ -383,6 +392,7 @@ impl Payload<'_> {
                 debug.entries.len(),
                 &instances,
                 &self.instances.0,
+                backing,
             )
             .ok_or(ReplayDecline::ExecutableIssuer)?;
         crate::symbolic::ReusableProcedureArtifact::disk_bind_helpers(
@@ -392,6 +402,7 @@ impl Payload<'_> {
             context.body,
             prepared,
             bindings,
+            backing,
         )
         .ok_or(ReplayDecline::ExecutableIssuer)?;
         let requests = artifact.disk_type_requests_with_modified(&self.recipes.0);

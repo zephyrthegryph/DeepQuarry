@@ -773,6 +773,7 @@ impl Candidates<'_> {
             prepared,
         )
     }
+    #[cfg(test)]
     pub(crate) fn procedure_matching<R: Resolver>(
         self,
         matches_key: &dyn Fn(&[u8]) -> bool,
@@ -780,6 +781,17 @@ impl Candidates<'_> {
         context: ProcedureReplayContext<'_>,
         host: &R,
         prepared: &crate::procedure_policy::PreparedUnit,
+    ) -> ProcedureLookup {
+        self.procedure_matching_backed(matches_key, identity, context, host, prepared, None)
+    }
+    pub(crate) fn procedure_matching_backed<R: Resolver>(
+        self,
+        matches_key: &dyn Fn(&[u8]) -> bool,
+        identity: ProcedureIdentity,
+        context: ProcedureReplayContext<'_>,
+        host: &R,
+        prepared: &crate::procedure_policy::PreparedUnit,
+        backing: Option<&dm_cache::MappedPayload>,
     ) -> ProcedureLookup {
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
@@ -826,7 +838,7 @@ impl Candidates<'_> {
                 }
                 let promotion = v.promotion();
                 let verification_reads = context.verify.then(|| v.verification_reads());
-                match v.rebind(
+                match v.rebind_with_backing(
                     ProcedureReplayContext {
                         frontend: context.frontend,
                         body: context.body,
@@ -837,6 +849,7 @@ impl Candidates<'_> {
                         modified: context.modified,
                     },
                     prepared,
+                    backing,
                 ) {
                     Ok(value) => {
                         result.verification_reads = verification_reads;

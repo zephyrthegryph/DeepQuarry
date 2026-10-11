@@ -98,3 +98,24 @@ fn declined_or_malformed_candidates_cannot_issue_mapped_owners() {
     assert_eq!(snapshot.rejected().len(), 1);
     assert!(snapshot.record_used_keys().is_empty());
 }
+
+#[test]
+fn callback_backing_only_preserves_bytes_and_does_not_admit_declined_candidate() {
+    let root = Temp::new();
+    let cache = Cache::open(&root.0, Limits::default()).unwrap();
+    let value = record(b"typed");
+    cache.publish(std::slice::from_ref(&value)).unwrap();
+    let snapshot = cache.snapshot().unwrap();
+    let bytes = std::cell::RefCell::new(None);
+    assert!(snapshot
+        .get_candidate_backed(value.key, |payload, _, backing| {
+            assert_eq!(payload.as_ptr(), backing.bytes().as_ptr());
+            *bytes.borrow_mut() = Some(backing.clone());
+            Ok(false)
+        })
+        .is_none());
+    assert!(snapshot.record_used_keys().is_empty());
+    assert!(snapshot.rejected().is_empty());
+    drop(snapshot);
+    assert_eq!(bytes.borrow().as_ref().unwrap().bytes(), b"typed");
+}

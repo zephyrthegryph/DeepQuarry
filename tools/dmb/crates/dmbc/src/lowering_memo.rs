@@ -347,41 +347,43 @@ impl ProcedureMemo {
             };
         };
         let replay = std::cell::RefCell::new(None);
-        let view = snapshot.get_candidate(key.record_key(tail), |bytes, _symbols| {
-            let candidates = {
-                let _profile = dm_profile::item("lowering.disk_lookup_decode");
-                crate::lowering_memo_wire::candidates(bytes)?
-            };
-            // Validate the complete typed envelope before replaying any reads.
-            // Only exact semantic admission makes this mapped record reachable.
-            let result = {
-                let _profile = dm_profile::item("lowering.disk_validate_replay");
-                candidates.procedure_matching(
-                    &|candidate| key.matches(candidate, None, tail),
-                    identity,
-                    crate::lowering_memo_wire::ProcedureReplayContext {
-                        frontend: context.frontend,
-                        body: context.body,
-                        parsed: context.parsed,
-                        bindings: context.bindings,
-                        selections_only: context.selections_only,
-                        verify: context.verify,
-                        modified: context.modified,
-                    },
-                    host,
-                    prepared,
-                )
-            };
-            let admitted = result.unit.is_some()
-                || result.prepared.is_some()
-                || result.selections.is_some()
-                || result.errors.is_some();
-            let mut replay = replay.borrow_mut();
-            if admitted || replay.is_none() {
-                *replay = Some(result);
-            }
-            Ok(admitted)
-        });
+        let view =
+            snapshot.get_candidate_backed(key.record_key(tail), |bytes, _symbols, backing| {
+                let candidates = {
+                    let _profile = dm_profile::item("lowering.disk_lookup_decode");
+                    crate::lowering_memo_wire::candidates(bytes)?
+                };
+                // Validate the complete typed envelope before replaying any reads.
+                // Only exact semantic admission makes this mapped record reachable.
+                let result = {
+                    let _profile = dm_profile::item("lowering.disk_validate_replay");
+                    candidates.procedure_matching_backed(
+                        &|candidate| key.matches(candidate, None, tail),
+                        identity,
+                        crate::lowering_memo_wire::ProcedureReplayContext {
+                            frontend: context.frontend,
+                            body: context.body,
+                            parsed: context.parsed,
+                            bindings: context.bindings,
+                            selections_only: context.selections_only,
+                            verify: context.verify,
+                            modified: context.modified,
+                        },
+                        host,
+                        prepared,
+                        Some(backing),
+                    )
+                };
+                let admitted = result.unit.is_some()
+                    || result.prepared.is_some()
+                    || result.selections.is_some()
+                    || result.errors.is_some();
+                let mut replay = replay.borrow_mut();
+                if admitted || replay.is_none() {
+                    *replay = Some(result);
+                }
+                Ok(admitted)
+            });
         let result =
             replay
                 .into_inner()

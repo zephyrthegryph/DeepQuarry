@@ -13,12 +13,16 @@ impl CacheSnapshot {
         key: RecordKey,
         validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<bool, String>,
     ) -> Option<RecordView<'a>> {
-        self.get_candidate_with(key, validate_and_accept, |_, view| view)
+        self.get_candidate_with(
+            key,
+            |bytes, symbols, _| validate_and_accept(bytes, symbols),
+            |_, view| view,
+        )
     }
     pub(crate) fn get_candidate_with<'a, T>(
         &'a self,
         key: RecordKey,
-        validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])]) -> Result<bool, String>,
+        validate_and_accept: impl Fn(&[u8], &[(u64, &[u8])], &Arc<Segment>) -> Result<bool, String>,
         capture: impl Fn(&Arc<Segment>, RecordView<'a>) -> T,
     ) -> Option<T> {
         loop {
@@ -31,7 +35,7 @@ impl CacheSnapshot {
                 }
                 let accepted = Cell::new(false);
                 let candidate = segment.get(key, |payload, symbols| {
-                    accepted.set(validate_and_accept(payload, symbols)?);
+                    accepted.set(validate_and_accept(payload, symbols, segment)?);
                     Ok(())
                 });
                 match candidate {

@@ -259,6 +259,7 @@ impl Encoded<'_> {
         debug_count: usize,
         instances: &std::collections::BTreeSet<SymRef>,
         plain: &[(SymbolId, SymbolId)],
+        backing: Option<&dm_cache::MappedPayload>,
     ) -> Option<Arc<ReusableProcedureArtifact>> {
         self.restore_mode(
             frontend,
@@ -269,6 +270,7 @@ impl Encoded<'_> {
             false,
             instances,
             plain,
+            backing,
         )
     }
     #[allow(clippy::too_many_arguments)]
@@ -282,6 +284,7 @@ impl Encoded<'_> {
         helper: bool,
         instances: &std::collections::BTreeSet<SymRef>,
         plain: &[(SymbolId, SymbolId)],
+        backing: Option<&dm_cache::MappedPayload>,
     ) -> Option<Arc<ReusableProcedureArtifact>> {
         if self.warnings.0.iter().any(|warning| {
             !crate::procedure_warnings::valid_receipt(warning, debug_count, |id| {
@@ -393,12 +396,19 @@ impl Encoded<'_> {
         if &selected_instances != instances {
             return None;
         }
-        let words = self
-            .words
-            .chunks_exact(4)
-            .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
-            .collect();
-        let code = dm_ir::SymbolicCode::new(words, relocations).ok()?;
+        let words = match backing.and_then(|owner| owner.subslice(&self.words)) {
+            Some(owner) => {
+                let length = owner.bytes().len();
+                dm_ir::WordStorage::shared(Arc::new(MappedWords(owner)), 0..length).ok()?
+            }
+            None => dm_ir::WordStorage::Owned(
+                self.words
+                    .chunks_exact(4)
+                    .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
+                    .collect(),
+            ),
+        };
+        let code = dm_ir::SymbolicCode::from_word_storage(words, relocations).ok()?;
         let labels = self
             .labels
             .chunks_exact(5)
@@ -493,6 +503,7 @@ impl ReusableProcedureArtifact {
         body: &dm_tree::frontend::BodyOccurrence,
         prepared: &crate::procedure_policy::PreparedUnit,
         bindings: crate::lowering::DiskReplayBindings<'_>,
+        backing: Option<&dm_cache::MappedPayload>,
     ) -> Option<()> {
         let abi = prepared.abi.as_ref()?;
         if helpers.len() != abi.source_helpers.len() {
@@ -541,6 +552,7 @@ impl ReusableProcedureArtifact {
                 true,
                 &std::collections::BTreeSet::new(),
                 &helper.instances.0,
+                backing,
             )?;
             let code = Arc::try_unwrap(code).ok()?;
             restored.push(HelperArtifact {
@@ -566,5 +578,22 @@ impl ReusableProcedureArtifact {
         }
         Arc::get_mut(artifact)?.helpers = restored;
         Some(())
+    }
+}
+
+/// Storage-only bridge. Exact candidate/current proof stays in the ordinary
+/// compact replay; this owner simply keeps its immutable mapped bytes alive.
+struct MappedWords(dm_cache::MappedPayload);
+impl dm_ir::ImmutableByteOwner for MappedWords {
+    fn bytes(&self) -> &[u8] {
+        self.0.bytes()
+    }
+    fn storage(&self) -> dm_ir::ByteOwnerStorage {
+        let (address, bytes) = self.0.mapping_storage();
+        dm_ir::ByteOwnerStorage {
+            address,
+            bytes,
+            memory_mapped: true,
+        }
     }
 }
