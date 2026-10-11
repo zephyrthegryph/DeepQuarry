@@ -55,7 +55,7 @@ CAPABILITIES(/obj/machinery/camera)
 	op("camera_bash", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(held_is_bashing)))), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable(), req_on_origin(ORIGIN_MENU, req(PROC_REF(held_is_bashing), because = MSG(camera/not_possible)))), then(PROC_REF(interaction_bash)))
 	op("camera_silicon_look", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Look through"), then(PROC_REF(camera_silicon_look)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
-	owns_one(nameof(assembly), /obj/item/camera_assembly, starts = /obj/item/camera_assembly, starts_set = list(nameof(/obj/item/camera_assembly::state) = 4)) // a built camera's assembly is fully wired
+	owns_one(nameof(assembly), /obj/item/camera_assembly, starts = /obj/item/camera_assembly, starts_set = list("state" = 4)) // a built camera's assembly is fully wired
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Camera", count = 6, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
