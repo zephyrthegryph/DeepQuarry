@@ -1352,14 +1352,6 @@ init_lines	code/game/objects/items/ghost_hunting/weapons.dm	make_tethered(who_ya
 init_lines	code/game/objects/items/paintkit.dm	set_info("debug suit", "This is a test", "debug", CUSTOM_ITEM_OBJ, CUSTOM_ITEM_MOB)
 init_lines	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 init_lines	code/game/objects/items/stacks/sandbags.dm	update_slowdown()
-init_lines	code/game/objects/items/stacks/sandbags.dm	var/datum/material/M = get_material_by_name("[bag_material]")
-init_lines	code/game/objects/items/stacks/sandbags.dm	if(!M)
-init_lines	code/game/objects/items/stacks/sandbags.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/stacks/sandbags.dm	color = M.icon_colour
-init_lines	code/game/objects/items/stacks/sandbags.dm	var/datum/material/M = get_material_by_name("[bag_material]")
-init_lines	code/game/objects/items/stacks/sandbags.dm	if(!M)
-init_lines	code/game/objects/items/stacks/sandbags.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/stacks/sandbags.dm	color = M.icon_colour
 init_lines	code/game/objects/items/stacks/stack.dm	if(!stacktype)
 init_lines	code/game/objects/items/stacks/stack.dm	stacktype = type
 init_lines	code/game/objects/items/stacks/stack.dm	if(!no_variants)
@@ -1403,8 +1395,6 @@ init_lines	code/game/objects/items/weapons/ecigs.dm	sync_item_state()
 init_lines	code/game/objects/items/weapons/extinguisher.dm	if(rand_overlays)
 init_lines	code/game/objects/items/weapons/extinguisher.dm	var/choice = rand(1,rand_overlays)
 init_lines	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
-init_lines	code/game/objects/items/weapons/flamethrower.dm	weldtool.status = 0 // for disassembly
-init_lines	code/game/objects/items/weapons/flamethrower.dm	igniter.set_secured(FALSE) // for disassembly
 init_lines	code/game/objects/items/weapons/flamethrower.dm	set_status(TRUE)
 init_lines	code/game/objects/items/weapons/grenades/confetti.dm	confetti_spread.attach(src)
 init_lines	code/game/objects/items/weapons/grenades/flashbang.dm	var/stepdist = rand(1,4)//How far to step
@@ -1553,9 +1543,6 @@ init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(equip_mount), loc)
 init_lines	code/game/objects/mail.dm	junk_mail()
 init_lines	code/game/objects/micro_event.dm	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
-init_lines	code/game/objects/micro_structures.dm	if(name == initial(name))
-init_lines	code/game/objects/micro_structures.dm	var/area/our_area = get_area(src)
-init_lines	code/game/objects/micro_structures.dm	name = "[our_area.name] [name]"
 init_lines	code/game/objects/micro_structures.dm	if(pixel_x || pixel_y)
 init_lines	code/game/objects/micro_structures.dm	offset_tunnel()
 init_lines	code/game/objects/micro_structures.dm	obj_instance_setup()
