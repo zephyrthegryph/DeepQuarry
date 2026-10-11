@@ -1075,6 +1075,13 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "incremental_runtime_e64": {
+    "receipt": "E:/dq-cache/dmb-incremental-runtime-contract/20261011-e64/ea1f27da245d481480b1d21b45d6dc12/receipt.json",
+    "complete": true,
+    "matches": true,
+    "compiler_commit": "e64fbafd2a70a93cc2ebaf9bc26bda2fe367ecdb",
+    "scope": "Fourteen standalone retained/fresh revision pairs and trusted BYOND/native runtime observations passed, covering defaults, inheritance, body and structural edits, deletion and resources. Actual output bytes compared before runtime mutation. Does not close full DeepQuarry runtime baseline or later per-wave admission observer fixes."
+  },
   "six_git_worktree_corrected_capture": {
     "receipt": "E:/dq-cache/dmb-six-git-contract/4cc2f11888ed4c04a5a4c81132b4198b/receipt.json",
     "complete": true,
