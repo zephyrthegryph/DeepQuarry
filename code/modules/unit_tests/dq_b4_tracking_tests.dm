@@ -49,7 +49,7 @@
 	TEST_ASSERT_EQUAL(F["anchored"], 0, "Inherited anchor row has zero channel mask")
 	TEST_ASSERT_EQUAL(F["density"], 0, "Inherited density row has zero channel mask")
 
-/// NOPOWER is the power capability's state (set_powered(), published as MACHINE_KEY_POWERED), BROKEN the integrity
+/// NOPOWER is the power capability's state (set_powered(), published on its actual stat key), BROKEN the integrity
 /// state (atom_break() / atom_fix(), INTEGRITY_KEY_BROKEN), and use_power the tracked draw mode.
 /datum/unit_test/dq_b4_machine_state_publishes
 
@@ -58,14 +58,14 @@
 	M.set_powered(TRUE)
 	M.atom_fix()
 	M.set_use_power(USE_POWER_IDLE)
-	var/datum/dq_b4_key_probe/power = dq_b4_probe(M, MACHINE_KEY_POWERED)
+	var/datum/dq_b4_key_probe/power = dq_b4_probe(M, "stat:[STAT_HAS_POWER]")
 	var/datum/dq_b4_key_probe/broken = dq_b4_probe(M, INTEGRITY_KEY_BROKEN)
 	var/datum/dq_b4_key_probe/draw = dq_b4_probe(M, "use_power")
 	TEST_ASSERT(M.set_powered(FALSE), "losing power is a change")
 	TEST_ASSERT(!M.set_powered(FALSE), "losing it again is not")
 	TEST_ASSERT(M.power_lost() && !M.operable(), "has_stat() and operable() read the power state")
 	rx_drain()
-	TEST_ASSERT_EQUAL(power.hits, 1, "set_powered() publishes MACHINE_KEY_POWERED once")
+	TEST_ASSERT_EQUAL(power.hits, 1, "set_powered() publishes the actual has_power stat once")
 	M.atom_break()
 	TEST_ASSERT(M.broken_now(), "atom_break() sets BROKEN")
 	rx_drain()

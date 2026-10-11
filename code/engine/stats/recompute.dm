@@ -561,6 +561,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	else
 		row = list(def.id, source, value, 0, priority, 0, HOLD_CLOCK_OWN, null, ++GLOB.stat_hold_serial, key, null)
 		rec.holds += list(row)
+		stat_source_join(target, rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, target)

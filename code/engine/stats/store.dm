@@ -32,6 +32,8 @@
 	var/list/ct_targets
 	/// The entities holding rows that name this datum as their source (so its deletion can release them).
 	var/list/held_on
+	/// Membership key -> count of live source rows (SUM_PER_KEY can have several).
+	var/list/source_members
 	/// Hop readers naming this datum through a single-valued relation: rel var -> the readers (the reverse of what the readers' relation vars name).
 	var/list/hop_in
 	/// What this datum's own hop relations name now: rel var -> target, so a change finds the list to leave.
@@ -151,6 +153,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	else
 		row = list(def.id, source, value, expires, priority, flags, clock, reason, ++GLOB.stat_hold_serial, key, null)
 		rec.holds += list(row)
+		stat_source_join(E, rec, row)
 		if(isdatum(source))
 			var/datum/stat_record/src_rec = stat_record_of(source)
 			LAZYOR(src_rec.held_on, E)
@@ -301,6 +304,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 
 /// Takes one row out of the record, and its source's index of where it holds.
 /proc/stat_hold_remove(datum/E, datum/stat_record/rec, list/row)
+	var/membership_left = stat_source_leave(E, rec, row)
 	rec.holds -= list(row)
 	if(!length(rec.holds))
 		rec.holds = null
@@ -320,6 +324,8 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 					src_rec.held_on = null
 	if(row[H_STAT] == HOLD_STANDING)
 		standing_row_removed(E, row) // a standing row: the entity's cached standings are stale (standings.dm)
+	if(membership_left)
+		state_changed(E, 0, HOLD_MEMBERS_KEY)
 
 /// The sources holding a stat: a fresh list, safe to hold while releasing.
 /proc/held_by(datum/E, stat)
@@ -340,6 +346,44 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		if(row[H_STAT] == def.id && row[H_KEY] == key && !isnull(row[H_SOURCE]))
 			. |= list(row[H_SOURCE])
 
+/// Internal identity of one live (stat, source) member. Captured before source teardown; never a public read key.
+/proc/stat_source_member_key(stat, source)
+	var/datum/stat_def/def = stat_def_of(stat)
+	if(!def || isnull(source))
+		return null
+	if(isdatum(source))
+		var/datum/D = source
+		return "hold_member:[def.id]:d:[REF(D)]"
+	return "hold_member:[def.id]:s:[source]"
+
+/// First row for (stat, source) enters membership; updating an existing row is not an edge.
+/proc/stat_source_join(datum/E, datum/stat_record/rec, list/row)
+	var/key = stat_source_member_key(row[H_STAT], row[H_SOURCE])
+	if(!key)
+		return
+	row.len = max(row.len, H_MEMBER_KEY)
+	row[H_MEMBER_KEY] = key
+	var/count = LAZYACCESS(rec.source_members, key) || 0
+	LAZYSET(rec.source_members, key, count + 1)
+	if(!count)
+		state_changed(E, 0, HOLD_MEMBERS_KEY)
+
+/// Last live source row leaves membership. Forgetting an outliving source calls this without deleting its hold.
+/proc/stat_source_leave(datum/E, datum/stat_record/rec, list/row)
+	var/key = length(row) >= H_MEMBER_KEY ? row[H_MEMBER_KEY] : null
+	if(!key)
+		return
+	row[H_MEMBER_KEY] = null
+	var/count = LAZYACCESS(rec.source_members, key) || 0
+	if(count > 1)
+		LAZYSET(rec.source_members, key, count - 1)
+	else if(count)
+		LAZYREMOVE(rec.source_members, key)
+		return TRUE
+	return FALSE
+
+/// Conservatively reads the real collection of all live source memberships on E.
+READS_AS(/proc/held_by_source, HOLD_MEMBERS_KEY)
 /// TRUE if `source` holds the stat. Allocates nothing.
 /proc/held_by_source(datum/E, stat, source)
 	READS_FROM(E)
@@ -424,7 +468,10 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 			if(!(row[H_FLAGS] & HF_OUTLIVES))
 				gone += list(row)
 			else
+				var/membership_left = stat_source_leave(target, trec, row)
 				row[H_SOURCE] = null // outlives_source = TRUE: it runs its course (or stays, if untimed), with nothing to release it by
+				if(membership_left)
+					state_changed(target, 0, HOLD_MEMBERS_KEY)
 				log_world("STAT: hold on [target.type] [row[H_STAT]] outlived its source [D.type] (outlives_source)")
 		if(length(gone))
 			stat_release_rows(target, trec, gone)
@@ -439,5 +486,6 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 			if(src_rec?.held_on)
 				src_rec.held_on -= D
 	rec.holds = null
+	rec.source_members = null
 	// The contributes_to rows this entity placed on other entities leave with it (their source is this datum, released above); forget the targets.
 	rec.ct_targets = null

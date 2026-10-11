@@ -165,7 +165,7 @@ TRACKED(/obj/machinery/door/unpowered, locked)
 ///   in_maintenance true while SRC_MAINTENANCE holds it (an open service hatch: set_maintenance())
 ///   switched_on    false while SRC_SWITCH holds it (the machine's own switch: set_switched_on())
 /// and a pulse is a timed SRC_EMP hold on STAT_OPERABLE (emp_disable()). STAT_OPERABLE is the machine working. The named readers below say each in
-/// one word. There is no `stat` var on a machine: watchers use on_change(STAT_OPERABLE) and the "stat" key is only what the conditions publish.
+/// one word. There is no `stat` var on a machine: watchers use generated stat keys and the live hold-source membership key.
 
 READS_AS(/obj/machinery/proc/power_lost, stat:[STAT_HAS_POWER])
 /obj/machinery/proc/power_lost()
@@ -184,7 +184,6 @@ READS_AS(/obj/machinery/proc/switched_off, stat:[STAT_SWITCHED_ON])
 	return !stat_value(src, STAT_SWITCHED_ON)
 
 /// A pulse is holding it down now.
-READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
 /obj/machinery/proc/emp_held()
 	return emp_disabled(src)
 
@@ -199,7 +198,7 @@ READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
 	return !stat_value(src, condition)
 
 /// Places or releases `source`'s hold on `condition` (a condition stat) and tells the watchers. `held` is the condition being in force. TRUE when it changed.
-/obj/machinery/proc/condition_hold(condition, source, held, bit, channel)
+/obj/machinery/proc/condition_hold(condition, source, held)
 	var/was = condition_in_force(condition)
 	if(held)
 		hold(src, condition, (condition == STAT_IN_MAINTENANCE) ? TRUE : FALSE, source)
@@ -208,13 +207,7 @@ READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
 	var/now = condition_in_force(condition)
 	if(was == now)
 		return FALSE
-	condition_announce(channel)
 	return TRUE
-
-/// Tells the watchers a condition changed: its channel, the publish, and the stat layer's recompute of what reads it.
-/obj/machinery/proc/condition_announce(channel)
-	changed(src, channel)
-	PUBLISH_CHANGE(src, MACHINE_KEY_STAT)
 
 /// COMPATIBILITY SHIM (tests, the benchmark's old path): forces a machine's power by hand. The grid does not write has_power: it is the area's channel
 /// read (area_gives_power(), machinery_power.dm). Forcing it dark is a SRC_GRID hold; forcing it on a machine whose area is dark sets `power_forced`.
@@ -222,28 +215,26 @@ READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
 /obj/machinery/proc/set_grid_power(powered)
 	var/was = power_lost()
 	if(powered)
-		condition_hold(STAT_HAS_POWER, SRC_GRID, FALSE, NOPOWER, CHANGE_MACHINE_POWER)
+		condition_hold(STAT_HAS_POWER, SRC_GRID, FALSE)
 		if(power_lost())
 			set_power_forced(TRUE)
 	else
 		set_power_forced(FALSE)
-		condition_hold(STAT_HAS_POWER, SRC_GRID, TRUE, NOPOWER, CHANGE_MACHINE_POWER)
+		condition_hold(STAT_HAS_POWER, SRC_GRID, TRUE)
 	var/flipped = was != power_lost()
-	if(flipped)
-		condition_announce(CHANGE_MACHINE_POWER)
 	return flipped
 
 /// The machine is broken (atom_break()) or mended (atom_fix()). TRUE when it changed.
 /obj/machinery/proc/set_broken_condition(broken)
-	return condition_hold(STAT_INTACT, SRC_DAMAGE, broken, BROKEN, CHANGE_MACHINE_BROKEN)
+	return condition_hold(STAT_INTACT, SRC_DAMAGE, broken)
 
 /// The service hatch is open (the machine is under maintenance) or shut. TRUE when it changed.
 /obj/machinery/proc/set_maintenance(maintaining)
-	return condition_hold(STAT_IN_MAINTENANCE, SRC_MAINTENANCE, maintaining, MAINT, CHANGE_MACHINE_BROKEN)
+	return condition_hold(STAT_IN_MAINTENANCE, SRC_MAINTENANCE, maintaining)
 
 /// The machine's own switch: on or off. TRUE when it changed.
 /obj/machinery/proc/set_switched_on(on_now)
-	return condition_hold(STAT_SWITCHED_ON, SRC_SWITCH, !on_now, POWEROFF, CHANGE_MACHINE_POWER)
+	return condition_hold(STAT_SWITCHED_ON, SRC_SWITCH, !on_now)
 
 /// Powered and working: powered, whole, not in maintenance, and no pulse holding it down.
 /// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,

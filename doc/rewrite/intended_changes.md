@@ -4778,3 +4778,27 @@ substitute a composed operability value for masked EMP source membership.
 ### Machine channel maps and power-mode delivery (2026-10-11)
 
 Remove twenty obsolete machine scheduler-field mappings after their legacy appearance and work subscribers have been converted. Generic atom and vehicle mappings remain. Native relation, tracked-variable and composed-stat keys continue to deliver changes. `set_use_power()` publishes its genuine tracked key once; its equality guard and immediate area-demand recomputation remain. Airlock mode forwarding had no remaining subscriber: removing that channel-only helper preserves electrification, power-outage release, bolt sounds and autoclose effects. Tests assert actual native-key delivery, area demand and bolt hold/release behavior rather than the retired channel bits. No appearance or click pin changes are intended by this cohort.
+
+### Machine condition delivery and live hold membership (Codex, 2026-10-11)
+
+Machine condition accessors read their actual composed stat keys. Condition changes
+no longer also publish the legacy channel and synthetic `stat` key; `set_powered`
+no longer republishes a synthetic powered key. Power-loss/restoration notices and
+power-change effects remain. Existing condition and area-demand tests assert the
+same results through native state delivery.
+
+`held_by_source` reads the holder's actual collection of live `(stat, source)`
+memberships. Its collection key publishes on a first-row insertion or last-row
+removal, including masked EMP changes. Additional keyed rows, hold reapplication,
+and value/deadline edits do not add membership edges. The dependency is deliberately
+conservative: an unrelated source or stat may invalidate a reader, whose result is
+unchanged. No source-specific inference is claimed.
+
+A hold with `outlives_source = TRUE` forgets its source when that source dies, as
+before; its contribution remains. Membership therefore leaves immediately, and
+later contribution expiry does not publish a second membership exit. This corrects
+the original proposal's description, preserving existing runtime behavior.
+
+This entry documents the source intent; verification and any pin changes are
+reported separately after the focused gate. No pins have been blessed for this
+cohort yet.

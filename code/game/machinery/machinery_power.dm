@@ -94,7 +94,6 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
-	condition_announce(CHANGE_MACHINE_POWER) // the `stat` publish and the power channel: gates that wake on `stat` hear the flip, as they did from the bit's writer
 	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(power_lost())
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_lost)
@@ -114,14 +113,11 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
  * COMPATIBILITY SHIM. The grid no longer writes the powered state: the machine's STAT_HAS_POWER is the area's channel read (area_gives_power()),
  * and power_change() only acts on its flips. set_powered() remains as a manual override (a hold on STAT_HAS_POWER, source SRC_GRID, the NOPOWER
  * bit's own writer) for the benchmark's old path and for callers that force a machine dark; it goes with them.
- * The power capability's "powered" state (G8): NOPOWER. A change raises CHANGE_MACHINE_POWER (the
- * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. power_lost() and operable() read
- * it. Returns TRUE when the state changed.
+ * The actual has_power stat publishes its own key when its composed value changes. Returns TRUE when the state changed.
  */
 /obj/machinery/proc/set_powered(powered)
 	if(!set_grid_power(powered))
 		return FALSE
-	PUBLISH_CHANGE(src, MACHINE_KEY_POWERED)
 	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!
