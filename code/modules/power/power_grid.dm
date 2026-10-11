@@ -107,8 +107,10 @@ CAPABILITIES(/datum/power_grid_registry)
 	if(grid)
 		return grid
 	grid = new
+	// Readers warmed against Rust already see the real native values. Hydrate
+	// before identity publication so adopting the record cannot expose zero defaults.
+	grid.poll_native(id)
 	power_grid_registry().put(id, grid)
-	power_grid_refresh(id)
 	return grid
 
 /// Poll the real region fields once per power step. No per-machine relay.
@@ -116,14 +118,18 @@ CAPABILITIES(/datum/power_grid_registry)
 	if(id <= 0)
 		return TRUE
 	var/datum/power_grid/grid = power_grid_lookup(id)
-	if(!grid)
-		return FALSE
+	return grid ? grid.poll_native(id) : FALSE
+
+/// The same real native poll fills an unpublished new record and updates a live one.
+/datum/power_grid/proc/poll_native(id)
+	if(id <= 0)
+		return TRUE // detached ledgers retain their real tracked values
 	var/list/info = vg_power_region_read(id)
 	if(!info)
 		return FALSE
-	grid.set_avail(info[1])
-	grid.set_load(info[2])
-	grid.set_brownout(!!info[3])
+	set_avail(info[1])
+	set_load(info[2])
+	set_brownout(!!info[3])
 	return TRUE
 
 // ---- reads ------------------------------------------------------------------
