@@ -109,3 +109,22 @@ fn symbolic_claim_requires_exact_negative_read_and_current_consumer_admission() 
     assert!(weak.upgrade().is_none());
     drop(next);
 }
+
+#[test]
+fn request_facades_share_actual_session_counters_and_sealed_insert_declines() {
+    let owner = SessionSymbolicMemo::current_revision();
+    let first = owner.for_request(true);
+    assert!(Arc::ptr_eq(&first.admitted, &owner.admitted));
+    assert!(Arc::ptr_eq(&first.reused, &owner.reused));
+    assert!(Arc::ptr_eq(&first.pruned, &owner.pruned));
+    assert!(Arc::ptr_eq(&first.declines, &owner.declines));
+    first.admitted.fetch_add(2, Ordering::Relaxed);
+    first.declines.read_changed.fetch_add(1, Ordering::Relaxed);
+    assert!(first.publish_successful());
+    assert!(!first.insert_record(identity(), record(b"sealed", vec![])));
+    drop(first);
+    let next = owner.for_request(true);
+    assert_eq!(next.admitted.load(Ordering::Relaxed), 2);
+    assert_eq!(owner.retention_stats().successful_admissions, 2);
+    assert_eq!(owner.decline_stats().read_changed, 1);
+}

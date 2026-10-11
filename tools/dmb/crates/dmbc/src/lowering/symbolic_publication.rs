@@ -56,6 +56,10 @@ impl SessionSymbolicMemo {
             shared_code: None,
             shared_code_pool: self.shared_code_pool.clone(),
             receipt_groups: Arc::clone(&self.receipt_groups),
+            admitted: Arc::clone(&self.admitted),
+            reused: Arc::clone(&self.reused),
+            pruned: Arc::clone(&self.pruned),
+            declines: Arc::clone(&self.declines),
             ..Self::default()
         })
     }
@@ -75,22 +79,26 @@ impl SessionSymbolicMemo {
             .as_ref()
             .is_some_and(|attempt| attempt.publish_successful())
     }
-    pub(super) fn insert_record(&self, identity: UnitIdentity, record: Record) {
+    pub(super) fn insert_record(&self, identity: UnitIdentity, record: Record) -> bool {
         if let Some(attempt) = &self.attempt {
             let key = locator(identity, &record.key);
             let reads = record.reads.clone();
             // Current-roster symbolic retention has no byte admission policy;
             // actual payload ownership remains reported by the explicit census.
-            attempt.with_pending(|leases| {
-                leases
-                    .records
-                    .insert_with_receipt(key.into(), reads, 1, || record)
-            });
+            attempt
+                .with_pending(|leases| {
+                    leases
+                        .records
+                        .insert_with_receipt(key.into(), reads, 1, || record)
+                })
+                .flatten()
+                .is_some()
         } else {
             self.records
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
                 .insert(identity, Arc::new(record));
+            true
         }
     }
     pub(super) fn visit_records(&self, mut visit: impl FnMut(&Arc<Record>)) -> usize {

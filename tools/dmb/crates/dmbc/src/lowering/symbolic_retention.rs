@@ -64,6 +64,10 @@ impl SessionSymbolicMemo {
     /// Borrow one quiescent record roster into the caller's allocation ledger.
     /// No materialization, decoder, resolver or callback into this store runs.
     pub(crate) fn retained_census(&self, mut census: &mut HeapCensus) -> usize {
+        census.arc_object("session_symbolic.counters", &self.admitted);
+        census.arc_object("session_symbolic.counters", &self.reused);
+        census.arc_object("session_symbolic.counters", &self.pruned);
+        census.arc_object("session_symbolic.counters", &self.declines);
         if let Some(owner) = &self.shared_code_pool {
             crate::symbolic::shared_procedure_code::census(owner, census);
         }

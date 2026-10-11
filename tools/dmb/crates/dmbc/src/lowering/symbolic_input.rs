@@ -21,10 +21,10 @@ pub(crate) struct SessionSymbolicMemo {
     attempt: Option<dm_session::ArtifactAttempt<symbolic_publication::Leases>>,
     shared_code: Option<crate::symbolic::shared_procedure_code::Lease>,
     shared_code_pool: Option<Arc<crate::symbolic::shared_procedure_code::SharedProcedureCode>>,
-    admitted: AtomicU64,
-    reused: AtomicU64,
-    pruned: AtomicU64,
-    declines: DeclineCounters,
+    admitted: Arc<AtomicU64>,
+    reused: Arc<AtomicU64>,
+    pruned: Arc<AtomicU64>,
+    declines: Arc<DeclineCounters>,
     receipt_groups: Arc<receipt_groups::ProcedureGroups>,
 }
 #[derive(Default)]
@@ -238,8 +238,9 @@ impl CompletedInput {
                                 .expect("reusable contribution has source recipes"),
                         ),
                     };
-                    store.insert_record(value.identity(), record);
-                    store.admitted.fetch_add(1, Ordering::Relaxed);
+                    if store.insert_record(value.identity(), record) {
+                        store.admitted.fetch_add(1, Ordering::Relaxed);
+                    }
                 } else {
                     store
                         .declines
@@ -642,8 +643,9 @@ pub(super) fn remember_selections<R: Resolver>(
         required_types: Arc::from([]),
         modified_recipes: Arc::from([]),
     };
-    store.insert_record(identity, record);
-    store.admitted.fetch_add(1, Ordering::Relaxed);
+    if store.insert_record(identity, record) {
+        store.admitted.fetch_add(1, Ordering::Relaxed);
+    }
 }
 pub(super) fn accepted_admission(
     memo: &crate::lowering_memo::ProcedureMemo,
