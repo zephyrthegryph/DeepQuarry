@@ -333,7 +333,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
         memo.and_then(|memo| memo.startup.as_deref()),
         &roster,
     )
-    .map_err(ColdError::Initializer)?;
+    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
     measurement.complete();
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
     let prepared =
@@ -406,7 +406,7 @@ pub fn compile_captured_classified_with_stage<R: Resolver, P: AbiPolicy>(
         &executor,
         &bodies,
     )
-    .map_err(ColdError::Initializer)?;
+    .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
     compile_with_startup(
         frontend,
         resolver,
@@ -864,3 +864,6 @@ mod prepared_tests;
 #[cfg(test)]
 #[path = "cold/ledger_release_tests.rs"]
 mod ledger_release_tests;
+
+#[path = "cold/static_diagnostics.rs"]
+mod static_diagnostics;

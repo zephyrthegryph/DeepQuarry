@@ -7,6 +7,10 @@ use dm_ir::{
 use dm_syntax::{Item, Span, Statement, StatementKind};
 use std::{collections::HashSet, sync::Arc};
 
+#[path = "procedure_static_duplicates.rs"]
+mod duplicates;
+pub use duplicates::{duplicate_static_declaration, DuplicateStaticDeclaration};
+
 #[path = "procedure_static_inventory.rs"]
 mod inventory;
 pub use inventory::StaticInventory;
