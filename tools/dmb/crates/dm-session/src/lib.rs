@@ -15,4 +15,5 @@ pub use observations::{
     Observation, ObservationHost, ObservationLedger, Receipt, ReceiptAdmission, ReceiptGroupPool,
     ReceiptStorageView,
     DependencyCoverage, InputDelta,
+    CertificateDelta, CertificateState,
 };

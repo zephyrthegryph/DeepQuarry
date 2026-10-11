@@ -7,6 +7,9 @@ mod callable_roster;
 #[path = "frontend_procedure_delta.rs"]
 mod procedure_delta;
 pub use procedure_delta::ProcedureInputDelta;
+#[path = "frontend_read_delta.rs"]
+mod read_delta;
+pub use read_delta::FrontendReadHost;
 #[path = "frontend_compile_only.rs"]
 mod compile_only;
 pub use callable_roster::{
