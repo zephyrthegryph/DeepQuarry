@@ -1,5 +1,5 @@
 // Native ordered acceptance requirements and their actual state dependencies.
-// No predicate compiler/node calls. Requirement result is null or exact text.
+// Requirement results are null to allow or the exact refusal reason.
 /datum/entry/part/req/acceptance_leaf/holds(datum/act/op/A)
 	return isnull(acceptance_reason(A))
 
@@ -54,7 +54,7 @@
 		return "it isn't made for a [bodytype]"
 	return "it only fits [english_list(names, and_text = " or ")]"
 
-// Declare via req_acceptance_max_size(SIZE_CLASS(limit)); bare numeric limits are invalid.
+// Size requirements carry an explicit numeric size-class unit.
 /proc/req_acceptance_max_size(size, unit, because = null)
 	var/datum/property_def/D = dq_property_registry().defs[PROP_SIZE_CLASS]
 	if(!D || D.kind != PROP_KIND_MEASURE || unit != D.unit || !isnum(size))
@@ -174,7 +174,7 @@
 /proc/req_acceptance_suit_storage_takes(because = null)
 	return part_make(/datum/entry/part/req/acceptance_leaf/suit_storage_takes, list("because" = because))
 
-// IGNORED dependency integration: tracking writer drafts must land first.
+// Resolve only actual registered property dependency providers.
 /proc/acceptance_property_read_keys(datum/thing, property)
 	. = list()
 	if(!thing)
@@ -307,5 +307,21 @@
 	// lookup list; contents ledger covers physical insertion and removal.
 	for(var/obj/item/clothing/accessory/W in suit)
 		. += list(list(W, nameof(W.body_parts_covered)))
+
+
+
+/// Whether clothing restricted to `bodytypes` fits `bodytype`. Custom-fitted
+/// Vox, Werebeast and Teshari clothing fits only them, and Teshari and
+/// Werebeasts need their own sprites for anything restricted.
+/proc/dq_fits_bodytype(list/bodytypes, exclusive, bodytype, list/sprite_sheets)
+	if(exclusive)
+		return !(bodytype in bodytypes)
+	if(bodytype in bodytypes)
+		return TRUE
+	if(((SPECIES_VOX in bodytypes) && bodytype != SPECIES_VOX) || ((SPECIES_WEREBEAST in bodytypes) && bodytype != SPECIES_WEREBEAST) || ((SPECIES_TESHARI in bodytypes) && bodytype != SPECIES_TESHARI))
+		return FALSE
+	if((bodytype == SPECIES_TESHARI || bodytype == SPECIES_WEREBEAST) && !LAZYACCESS(sprite_sheets, bodytype))
+		return FALSE
+	return TRUE
 
 
