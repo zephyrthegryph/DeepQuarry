@@ -391,11 +391,11 @@ impl AbiPolicy for MustNotLower {
         _: &SymbolTable,
         _: &SourceLocation,
     ) -> Result<ProcedureInputs, String> {
-        panic!("unsupported programs must be rejected before body lowering")
+        panic!("engine mismatches must be rejected before body lowering")
     }
 }
 #[test]
-fn pinned_engine_and_full_admission_precede_expensive_lowering() {
+fn pinned_engine_template_and_schema_precede_body_lowering() {
     let bytes = include_bytes!("../../../../fixtures/native_template.bin");
     let engine = EngineSnapshot::from_bytes(bytes, 1).unwrap();
     let seed = engine.frontend_seed();
@@ -411,24 +411,42 @@ fn pinned_engine_and_full_admission_precede_expensive_lowering() {
     )
     .unwrap();
     let references = ReferenceBindings::default();
-    let result = compile_captured_program(
+    let evaluator = crate::driver_facts::DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: frontend.snapshot.tree.as_ref(),
+        symbols: frontend.snapshot.tree.symbols(),
+    };
+    struct MustNotProject;
+    impl crate::class_projection::TypeValuePolicy for MustNotProject {
+        fn tag(&self, _: dm_ir::SymbolId) -> Result<u8, crate::class_projection::ProjectionError> {
+            panic!("engine mismatch must precede projection")
+        }
+    }
+    let mut changed_bytes = bytes.to_vec();
+    changed_bytes[0] ^= 1;
+    let result = compile_captured_classified_program(
         &frontend,
         frontend.snapshot.tree.as_ref(),
         &MustNotLower,
         CapturedLinkInputs {
-            engine_bytes: bytes,
+            engine_bytes: &changed_bytes,
             engine: &engine,
             references: &references,
             inventory: Default::default(),
         },
+        CapturedDeclarationInputs {
+            initializers: &evaluator,
+            type_values: &MustNotProject,
+            resource_search_context: None,
+            source_type_order: &[],
+            source_allocation_roster: None,
+        },
         Default::default(),
     );
-    assert!(matches!(
-        result,
-        Err(ColdError::Composition(CompositionError::Unsupported(_)))
-    ));
+    assert!(matches!(result, Err(ColdError::EngineMismatch)));
     let changed_schema = EngineSnapshot::from_bytes(bytes, 2).unwrap();
-    let result = compile_captured_program(
+    let result = compile_captured_classified_program(
         &frontend,
         frontend.snapshot.tree.as_ref(),
         &MustNotLower,
@@ -437,6 +455,13 @@ fn pinned_engine_and_full_admission_precede_expensive_lowering() {
             engine: &changed_schema,
             references: &references,
             inventory: Default::default(),
+        },
+        CapturedDeclarationInputs {
+            initializers: &evaluator,
+            type_values: &MustNotProject,
+            resource_search_context: None,
+            source_type_order: &[],
+            source_allocation_roster: None,
         },
         Default::default(),
     );

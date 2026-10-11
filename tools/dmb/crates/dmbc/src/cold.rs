@@ -1,8 +1,8 @@
-//! One uncached orchestration path over captured semantic inputs.
+//! Common captured orchestration over current semantic inputs and shared artifacts.
 //! Admission is deliberately bounded by the production composer. A successful
 //! return means every declaration was admitted, rather than a partial artifact.
 use crate::{
-    composition::{validate_global_program, CompositionError},
+    composition::CompositionError,
     lowering::{AbiPolicy, LoweringConfig, LoweringDiagnostic},
     symbolic::{IntegrationError, ReferenceBindings},
 };
@@ -60,8 +60,7 @@ pub struct ColdOutput {
     pub dmb: byond_dmb::dmb::EncodedDmb,
     pub timings: ColdTimings,
     pub warnings: Vec<crate::initializer_policy::warnings::InitializerWarning>,
-    /// Owned exact startup stage output, available to resident hosts. The global
-    /// fixture path has no captured declaration/static startup stage.
+    /// Owned exact startup stage output, available to resident hosts.
     pub startup: Option<std::sync::Arc<crate::startup::StartupFacts>>,
 }
 #[derive(Debug)]
@@ -110,67 +109,6 @@ pub struct CapturedLinkInputs<'a> {
 /// No filesystem, durable item store or historical mutable bindings are read.
 /// Resource encoding/publication are subsequent stages and excluded from these
 /// timings; these are not end-to-end compiler benchmark figures.
-pub fn compile_captured_program<R: Resolver, P: AbiPolicy>(
-    frontend: &ColdFrontend,
-    resolver: &R,
-    policy: &P,
-    links: CapturedLinkInputs<'_>,
-    config: LoweringConfig,
-) -> Result<ColdOutput, ColdError> {
-    let total = Instant::now();
-    let executor = dm_exec::BuildExecutor::new(config.workers)
-        .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
-    let captured = frontend.engine.as_ref().ok_or(ColdError::EngineMismatch)?;
-    if captured.identity != links.engine.identity() {
-        return Err(ColdError::EngineMismatch);
-    }
-    if !links
-        .engine
-        .matches_template(links.engine_bytes, links.engine.interpretation_schema())
-    {
-        return Err(ColdError::EngineMismatch);
-    }
-    validate_global_program(frontend).map_err(ColdError::Composition)?;
-    let stage = Instant::now();
-    let batch =
-        crate::lowering::lower_frontend_on_executor(frontend, resolver, policy, config, &executor);
-    let lowering = stage.elapsed();
-    if !batch.diagnostics.is_empty() {
-        return Err(ColdError::Lowering(batch.diagnostics));
-    }
-    if batch.units.iter().any(|unit| unit.abi.is_none()) {
-        return Err(ColdError::NonAuthoritativeAbi);
-    }
-    let stage = Instant::now();
-    let frozen = crate::symbolic::freeze_artifact_tables_with_executor(
-        batch,
-        frontend.snapshot.tree.symbols(),
-        links.references,
-        links.inventory,
-        Vec::new(),
-        &executor,
-    )
-    .map_err(ColdError::Linking)?;
-    let symbolic_linking = stage.elapsed();
-    let stage = Instant::now();
-    let dmb =
-        crate::composition::compose_global_program_encoded(links.engine_bytes, &frozen, frontend)
-            .map_err(ColdError::Composition)?;
-    Ok(ColdOutput {
-        warnings: Vec::new(),
-        dmb,
-        startup: None,
-        timings: ColdTimings {
-            abi_preparation: Duration::ZERO,
-            lowering,
-            initializers: Duration::ZERO,
-            symbolic_linking,
-            composition: stage.elapsed(),
-            total: total.elapsed(),
-        },
-    })
-}
-
 /// One captured cold path for declarations, ordinary/helper procedures and
 /// classified initializer artifacts. The same shared freezer/writer publishes
 /// their exact table assignment together; unsupported facts fail the whole run.
