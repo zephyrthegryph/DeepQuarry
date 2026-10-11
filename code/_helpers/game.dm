@@ -70,6 +70,7 @@
 	return !isStationLevel(level)
 
 /proc/isPlayerLevel(level)
+	READS_FROM() // the map's level list, no entity state
 	return level in using_map.player_levels
 
 /proc/isAdminLevel(level)

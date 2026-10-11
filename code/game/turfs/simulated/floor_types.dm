@@ -323,9 +323,8 @@ CAPABILITIES(/turf/simulated/shuttle/floor/alien)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
-	. = ..()
-	observe(src, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(radiate)))
+CAPABILITIES(/turf/simulated/floor/tiled/material/uranium)
+	on_notice(/datum/notice/atom_propagate_rad_pulse, then(PROC_REF(radiate)))
 
 /turf/simulated/floor/tiled/material/uranium/proc/radiate(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)

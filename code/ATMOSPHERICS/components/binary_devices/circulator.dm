@@ -1,6 +1,7 @@
 //node1, air1, network1 correspond to input
 //node2, air2, network2 correspond to output
 /obj/machinery/atmospherics/binary/circulator
+	air1_volume = 400
 	name = "circulator"
 	desc = "A gas circulator turbine and heat exchanger."
 	icon = 'icons/obj/power.dmi'
@@ -35,10 +36,6 @@ MSG_DEF(circulator/unsecured, "You unsecure the bolts holding %T% to the floor."
 CAPABILITIES(/obj/machinery/atmospherics/binary/circulator)
 	rotatable()
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
-
-/obj/machinery/atmospherics/binary/circulator/Initialize(mapload)
-	. = ..()
-	air1.set_volume(400)
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed
