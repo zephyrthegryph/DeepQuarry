@@ -15,7 +15,7 @@
 +5 click: Click: Use multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Use welder
++4 menu: Use welder (refused: )
 +5 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel

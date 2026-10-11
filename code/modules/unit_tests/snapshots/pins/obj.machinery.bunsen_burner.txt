@@ -16,7 +16,7 @@ human|none click: Click: Remove container
 -click: nothing
 +1 menu: Place container
 +2 menu: Remove container
-+4 menu: Use crowbar
++4 menu: Use crowbar (refused: )
 +5 click: Click: Place container
 @obj human|/obj/item/tool/wrench
 -click: nothing
