@@ -27,6 +27,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
 /proc/stat_call(datum/holder, proc_name)
+	lookup_reads_prepare(holder)
 	// One context for every contribution handler: a handler may not keep it, and a recompute inside a handler puts the outer holder back.
 	var/static/datum/act/eval/ctx = new
 	var/datum/outer = ctx.holder

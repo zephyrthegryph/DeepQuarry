@@ -24,6 +24,7 @@
 
 CAPABILITIES(/datum/rx_state)
 	owns_one(nameof(containment_ledger), /datum/ledger)
+	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
 
 /atom/proc/containment_ledger()
 	RETURN_TYPE(/datum/ledger)

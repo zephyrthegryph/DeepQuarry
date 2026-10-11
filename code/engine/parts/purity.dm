@@ -45,6 +45,7 @@ GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 /// Evaluates `cond` of `holder` as a pure condition: a proc of the holder answering TRUE or FALSE. The one place the engine calls a condition proc by name
 /// outside an op context.
 /proc/op_pure_call(datum/holder, proc_name, datum/act/A)
+	lookup_reads_prepare(holder, A)
 	op_pure_begin()
 	// A condition that throws must not leave the purity guard up: every write after it would be reported.
 	try

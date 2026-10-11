@@ -23,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
-use crate::sem::reads::{Annotations, ReadKind, ReadsEngine};
+use crate::sem::reads::{Annotations, LookupArgument, LookupRead, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the walk does not enter. The Verdigris bindings (code/__defines/verdigris/) read Rust-owned values: a condition that
 /// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
@@ -75,6 +75,23 @@ impl Generator for Reads {
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
+                for marker in decls.markers_named("READ_LOOKUP") {
+                    let name = marker.args.first().and_then(|p| p.strip_prefix("/proc/"));
+                    let Some(decl) = name.and_then(|n| ann.lookups.get(n)) else {
+                        out.diag(&marker.rel, marker.line, "READ_LOOKUP needs a global proc, registry/key GLOBAL_PROC_REFs, positive argument index and result=/datum/type");
+                        continue;
+                    };
+                    for proc_name in [decl.registry.as_str(), decl.identity_key.as_str(), name.unwrap()] {
+                        if sem.global_proc(proc_name).is_none() {
+                            out.diag(&marker.rel, marker.line, format!("READ_LOOKUP provider {proc_name} does not exist"));
+                            continue;
+                        }
+                        let body = ReadsEngine::new(&sem, &decls, &ann).analyze("/", proc_name);
+                        for effect in body.effects {
+                            out.diag(&marker.rel, marker.line, format!("READ_LOOKUP provider {proc_name} is not pure: {} {}", effect.kind, effect.name));
+                        }
+                    }
+                }
                 for h in &handlers {
                     let id = format!("{}::{}", h.owner, h.proc);
                     if rows.contains_key(&id) {
@@ -126,6 +143,7 @@ impl Generator for Reads {
                     ReadKind::Accessor => 1,
                     ReadKind::Native => 2,
                     ReadKind::System => 3,
+                    ReadKind::Lookup(_) => 4,
                 };
                 let mut parts = vec![roots.id(root).to_string(), kind_id.to_string(), names.id(&canonical_read_key(kind, var, &capability_keys, &defines)).to_string()];
                 for h in hops {
@@ -144,6 +162,7 @@ impl Generator for Reads {
         out.line("#define READ_KIND_ACCESSOR 1");
         out.line("#define READ_KIND_NATIVE 2");
         out.line("#define READ_KIND_SYSTEM 3");
+        out.line("#define READ_KIND_LOOKUP 4");
         out.blank();
         out.doc("Every interned name a read uses (a var, a relation hop, an accessor key). Id = index in this list.");
         out.line("GLOBAL_LIST_INIT(generated_read_names, list(");
@@ -161,8 +180,77 @@ impl Generator for Reads {
         out.blank();
         out.doc("Chunked read rows; one global initializer assembles the complete table.");
         out.line(read_table_initializer(&entries));
+        emit_lookup_methods(out, &rows, &crate::sem::gen::test_only_types(cx.tree));
     }
 }
+
+fn dm_text(value: &str) -> String {
+    format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
+}
+fn lookup_descriptor(read: &LookupRead) -> String {
+    let (root, path, literal, is_literal) = match &read.binding.argument {
+        LookupArgument::Literal(value) => ("holder".to_string(), Vec::new(), value.clone(), "TRUE"),
+        LookupArgument::Path { root, path } => (root.clone(), path.clone(), "null".to_string(), "FALSE"),
+    };
+    format!("list(\"key\" = {}, \"registry\" = GLOBAL_PROC_REF({}), \"identity_key\" = GLOBAL_PROC_REF({}), \"lookup\" = GLOBAL_PROC_REF({}), \"root\" = {}, \"path\" = list({}), \"literal\" = {}, \"is_literal\" = {}, \"field\" = {})",
+        dm_text(&read.key()), read.binding.registry, read.binding.identity_key, read.binding.lookup,
+        dm_text(&root), path.iter().map(|p| dm_text(p)).collect::<Vec<_>>().join(", "), literal, is_literal, dm_text(&read.field))
+}
+fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>) {
+    let mut owners: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
+    for (id, reads) in rows {
+        let Some((owner, name)) = id.rsplit_once("::") else { continue };
+        let descriptors: Vec<_> = reads.iter().filter_map(|r| match &r.1 {
+            ReadKind::Lookup(read) => Some(lookup_descriptor(read)),
+            _ => None,
+        }).collect();
+        if !descriptors.is_empty() {
+            owners.entry(owner.to_string()).or_default().insert(name.to_string(), descriptors);
+        }
+    }
+    for (owner, methods) in owners {
+        let test_only = test_types.contains(&owner);
+        if test_only { out.line(crate::sem::gen::TEST_GUARD); }
+        out.blank();
+        out.line(format!("{owner}/generated_lookup_reads(proc_name = null)"));
+        out.line("\tif(isnull(proc_name))");
+        out.line("\t\t. = ..()");
+        let all: Vec<_> = methods.values().flatten().cloned().collect();
+        out.line(format!("\t\t. += list({})", all.join(", ")));
+        out.line("\t\treturn");
+        out.line("\tswitch(proc_name)");
+        for (name, descriptors) in &methods {
+            out.line(format!("\t\tif({})", dm_text(&name)));
+            out.line(format!("\t\t\treturn list({})", descriptors.join(", ")));
+        }
+        out.line("\treturn ..()");
+        let mut output_entries = Vec::new();
+        for (name, descriptors) in &methods {
+            let call = match name.as_str() {
+                "draw" | "hidden_verbs" => Some("drawn_from"),
+                "ui_data" | "tgui_data" => Some("ui_from"),
+                "push_to_rust" => Some("rust_push"),
+                "should_run" => Some("runs_while"),
+                _ => None,
+            };
+            if let Some(call) = call {
+                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), _ => None }).collect();
+                output_entries.push(format!("\t. += {call}({})", keys.join(", ")));
+            } else if let Some(var) = name.strip_prefix("derive_") {
+                let keys: Vec<_> = rows[&format!("{owner}::{name}")].iter().filter_map(|r| match &r.1 { ReadKind::Lookup(read) => Some(dm_text(&read.key())), _ => None }).collect();
+                output_entries.push(format!("\t. += derive(nameof({var}), {})", keys.join(", ")));
+            }
+            let _ = descriptors;
+        }
+        if !output_entries.is_empty() {
+            out.line(format!("{owner}/generated_lookup_output_reads()"));
+            out.line("\t. = ..()");
+            for line in output_entries { out.line(line); }
+        }
+        if test_only { out.line("#endif"); }
+    }
+}
+
 
 pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
     reg.push(Box::new(Reads));
@@ -235,4 +323,28 @@ mod tests {
             assert_eq!(chunk.matches(" = list(0, list(1, 0,").count(), 300);
         }
     }
+    #[test]
+    fn lookup_descriptor_preserves_actual_root_literal_and_registry_identity_contract() {
+        use crate::sem::reads::{LookupArgument, LookupBound, LookupRead};
+        let make = |argument| LookupRead { binding: LookupBound { registry: "grid_registry".into(), identity_key: "grid_identity".into(), lookup: "grid_lookup".into(), argument }, field: "load".into() };
+        for root in ["holder", "actor", "target", "held", "authority"] {
+            let read = make(LookupArgument::Path { root: root.into(), path: vec!["terminal".into(), "power_region".into()] });
+            let text = super::lookup_descriptor(&read);
+            assert!(text.contains(&format!("\"root\" = \"{root}\"")));
+            assert!(text.contains("\"path\" = list(\"terminal\", \"power_region\")"));
+            assert!(text.contains("\"registry\" = GLOBAL_PROC_REF(grid_registry)"));
+            assert!(text.contains("\"identity_key\" = GLOBAL_PROC_REF(grid_identity)"));
+            assert!(text.contains("\"is_literal\" = FALSE"));
+            assert!(!read.key().contains('.') && !read.key().contains(':'));
+            assert_eq!(read.key(), read.clone().key());
+        }
+        let literal = make(LookupArgument::Literal("-5".into()));
+        assert!(super::lookup_descriptor(&literal).contains("\"literal\" = -5, \"is_literal\" = TRUE"));
+        let another = make(LookupArgument::Literal("-6".into()));
+        assert_ne!(literal.key(), another.key(), "distinct literal grids must not share a computed key");
+        let mut field = literal.clone();
+        field.field = "avail".into();
+        assert_ne!(literal.key(), field.key(), "supply and load are distinct actual producers");
+    }
+
 }

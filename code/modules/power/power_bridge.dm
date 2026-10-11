@@ -24,9 +24,9 @@
 
 /datum/system/machines
 	/// Region id (Rust's raw handle bits + 1; negative for detached test
-	/// grids) -> its flat state list (power_grid.dm). An alist: the ids are
+	/// grids) -> its tracked state datum (power_grid.dm). An alist: the ids are
 	/// numbers, and a plain list would treat them as positions.
-	var/alist/power_grids = alist()
+	VAR_PRIVATE/datum/power_grid_registry/power_grids
 	/// Region id -> /datum/material_power_overlay, for regions holding an engineered conductor.
 	var/alist/power_material_overlays = alist()
 	/// Last id handed to a detached test grid (counts down from 0).
@@ -39,6 +39,9 @@
 	/// ticks; null when no poll is in progress (poll_power_storage()).
 	var/list/power_poll_queue
 	var/power_poll_index = 1
+
+CAPABILITIES(/datum/system/machines)
+	owns_one(nameof(power_grids), /datum/power_grid_registry, starts = /datum/power_grid_registry)
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
@@ -93,7 +96,7 @@
 			power_material_overlays[id] = new /datum/material_power_overlay(id)
 	for(var/id in power_material_overlays)
 		var/datum/material_power_overlay/overlay = power_material_overlays[id]
-		if(!power_grids[id] || !overlay.process_material_network())
+		if(!power_grids.lookup(id) || !overlay.process_material_network())
 			power_material_overlays -= id
 			spent(overlay)
 
@@ -116,7 +119,7 @@
 	for(var/id in power_material_overlays)
 		spent(power_material_overlays[id])
 	power_material_overlays = alist()
-	power_grids = alist()
+	power_grids.clear()
 	power_regions_stale = TRUE
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_unregister()

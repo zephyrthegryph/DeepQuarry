@@ -32,6 +32,7 @@ pub const MARKERS: &[&str] = &[
     "RESOURCE_DEF",
     "SOURCE_DEF",
     "READS_AS",
+    "READ_LOOKUP",
     "READS_FROM",
     "STATIC_ENTRY",
 ];

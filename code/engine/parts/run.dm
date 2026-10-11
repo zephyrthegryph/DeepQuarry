@@ -303,6 +303,7 @@
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
 	. = op_require_reason_inner(A, P, B)
 	op_pure_end()
@@ -456,6 +457,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_one(nameof(progbar), /datum/progress_view)
 	owns_one(nameof(cog), /datum/cog_view)
+	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
 
 /datum/pending_op
 	var/datum/holder
@@ -960,6 +962,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /datum/pending_op
 	/// The (entity, key) reads the op watches, as list(datum, key) rows, while it waits.
 	var/list/watching
+	var/datum/lookup_read_scope/lookup_scope
 	/// TRUE while a re-check runs, so a read published by the re-check itself does not start another.
 	var/rechecking = FALSE
 
@@ -967,6 +970,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /datum/pending_op/proc/watch_begin(datum/act/op/A)
 	if(watching)
 		return
+	if(!lookup_scope)
+		var/datum/lookup_read_scope/scope = new
+		rel_set(src, nameof(lookup_scope), scope)
+	lookup_reads_prepare(A.holder, A, lookup_scope)
 	watching = op_watch_reads(A)
 	for(var/list/pair as anything in watching)
 		var/datum/watched = pair[1]
@@ -1011,6 +1018,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 /// Drops the subscription.
 /datum/pending_op/proc/watch_end()
+	if(lookup_scope)
+		rel_clear(src, nameof(lookup_scope))
 	for(var/list/pair as anything in watching)
 		var/datum/watched = pair[1]
 		if(!QDELETED(watched))
@@ -1068,7 +1077,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			pairs += list(pair)
 		return
 	if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
-		for(var/key in change_read_keys(A.holder, cond))
+		for(var/key in change_read_keys(A.holder, cond, A))
 			pairs += list(list(A.holder, key))
 
 /// All steps answered: the last checks, then Do.
