@@ -1035,11 +1035,6 @@ init_lines	code/game/mecha/working/ripley.dm	cell.set_charge(rand(0, cell.charge
 init_lines	code/game/mecha/working/working.dm	var/turf/T = get_turf(src)
 init_lines	code/game/mecha/working/working.dm	if(isPlayerLevel(T.z))
 init_lines	code/game/mecha/working/working.dm	new /obj/item/mecha_parts/mecha_tracking(src)
-init_lines	code/game/objects/effects/alien/aliens.dm	if(isspace(loc) || delete_me)
-init_lines	code/game/objects/effects/alien/aliens.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/effects/alien/aliens.dm	if(icon_state == "weeds")
-init_lines	code/game/objects/effects/alien/aliens.dm	icon_state = pick("weeds", "weeds1", "weeds2", "weeds3", "weeds4", "weeds5", "weeds6", "weeds7", "weeds8", "weeds9", "weeds10", "weeds11", "weeds12", "weeds13", "weeds14", "weeds15") // More icons variants.
-init_lines	code/game/objects/effects/alien/aliens.dm	fullUpdateWeedOverlays()
 init_lines	code/game/objects/effects/alien/aliens.dm	for(var/obj/effect/alien/weeds/existing in contents_of(loc))
 init_lines	code/game/objects/effects/alien/aliens.dm	if(existing == src)
 init_lines	code/game/objects/effects/alien/aliens.dm	continue
@@ -1189,11 +1184,6 @@ init_lines	code/game/objects/effects/effect_system.dm	play_sfx(src, SFX_SPARKS, 
 init_lines	code/game/objects/effects/effect_system.dm	var/turf/T = src.loc
 init_lines	code/game/objects/effects/effect_system.dm	if (istype(T, /turf))
 init_lines	code/game/objects/effects/effect_system.dm	T.hotspot_expose(1000,100)
-init_lines	code/game/objects/effects/effect_system.dm	expire(5 SECONDS)
-init_lines	code/game/objects/effects/effect_system.dm	if(time_to_live)
-init_lines	code/game/objects/effects/effect_system.dm	expire(time_to_live)
-init_lines	code/game/objects/effects/effect_system.dm	if(time_to_live)
-init_lines	code/game/objects/effects/effect_system.dm	expire(time_to_live)
 init_lines	code/game/objects/effects/landmarks.dm	tag = text("landmark*[]", name)
 init_lines	code/game/objects/effects/landmarks.dm	invisibility = INVISIBILITY_ABSTRACT
 init_lines	code/game/objects/effects/landmarks.dm	var/list/registry = landmark_coordinate_registry(name)
@@ -1231,8 +1221,6 @@ init_lines	code/game/objects/effects/map_effects/portal.dm	find_lines()
 init_lines	code/game/objects/effects/mines.dm	register_dangerous_to_step()
 init_lines	code/game/objects/effects/mines.dm	if(camo_net)
 init_lines	code/game/objects/effects/mines.dm	alpha = 50
-init_lines	code/game/objects/effects/misc.dm	if(time_to_die)
-init_lines	code/game/objects/effects/misc.dm	expire(time_to_die)
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
 init_lines	code/game/objects/effects/misc.dm	icon_state += "[rand(1,2)]" // To have two variants of lightning sprites.
 init_lines	code/game/objects/effects/misc.dm	animate(src, alpha = 0, time = time_to_die - 1)
@@ -1279,9 +1267,6 @@ init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	animate(
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	animate(src, alpha = max_alpha, time = duration * 0.6, flags = ANIMATION_PARALLEL)
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	animate(alpha = 0, time = duration * 0.4)
 init_lines	code/game/objects/effects/temporary_visuals/miscellaneous.dm	apply_wibbly_filters(src)
-init_lines	code/game/objects/effects/temporary_visuals/temporary_visual.dm	if(randomdir)
-init_lines	code/game/objects/effects/temporary_visuals/temporary_visual.dm	dir = pick(list(NORTH, SOUTH, EAST, WEST))
-init_lines	code/game/objects/effects/temporary_visuals/temporary_visual.dm	expire(duration)
 init_lines	code/game/objects/items.dm	attack_verb = intern_list(attack_verb)
 init_lines	code/game/objects/items.dm	tool_qualities = intern_list(tool_qualities)
 init_lines	code/game/objects/items.dm	for(var/path in actions_types)
@@ -1359,30 +1344,10 @@ init_lines	code/game/objects/items/devices/radio/intercom.dm	var/area/A = get_ar
 init_lines	code/game/objects/items/devices/radio/intercom.dm	if(A)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
 init_lines	code/game/objects/items/devices/radio/intercom.dm	set_on(A?.powered(EQUIP))
-init_lines	code/game/objects/items/devices/radio/intercom.dm	switch(TYPE_TABLE_GET(src, intercom_channel_setup))
-init_lines	code/game/objects/items/devices/radio/intercom.dm	if(/obj/item/radio/intercom/department/medbay)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	internal_channels = GLOB.default_medbay_channels.Copy()
-init_lines	code/game/objects/items/devices/radio/intercom.dm	if(/obj/item/radio/intercom/department/security)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	internal_channels = list(
-init_lines	code/game/objects/items/devices/radio/intercom.dm	num2text(PUB_FREQ) = list(),
-init_lines	code/game/objects/items/devices/radio/intercom.dm	num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	if(/obj/item/radio/intercom/entertainment)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	internal_channels = list(
-init_lines	code/game/objects/items/devices/radio/intercom.dm	num2text(PUB_FREQ) = list(),
-init_lines	code/game/objects/items/devices/radio/intercom.dm	num2text(ENT_FREQ) = list()
-init_lines	code/game/objects/items/devices/radio/intercom.dm	)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	if(/obj/item/radio/intercom/syndicate)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	if(/obj/item/radio/intercom/raider)
-init_lines	code/game/objects/items/devices/radio/intercom.dm	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
 init_lines	code/game/objects/items/devices/radio/radio.dm	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 init_lines	code/game/objects/items/devices/radio/radio.dm	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-init_lines	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_internal_channels.Copy()
-init_lines	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 init_lines	code/game/objects/items/devices/radio/radio.dm	update_broadcast_tiles()
-init_lines	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 init_lines	code/game/objects/items/devices/radio/radiopack.dm	make_tethered(handset_path)
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	if(ismob(loc))
@@ -1451,19 +1416,6 @@ init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	return INITIALIZE_
 init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	if(material) //sanity check
 init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	recipes = material.get_recipes()
 init_lines	code/game/objects/items/stacks/tiles/tile_types.dm	stacktype = material.stack_type
-init_lines	code/game/objects/items/toys/mech_toys.dm	desc = "Mini-Mecha action figure! Collect them all! Attack your friends or another mech with one to initiate epic mech combat! [desc]."
-init_lines	code/game/objects/items/toys/mech_toys.dm	combat_health = max_combat_health
-init_lines	code/game/objects/items/toys/mech_toys.dm	switch(special_attack_type)
-init_lines	code/game/objects/items/toys/mech_toys.dm	if(SPECIAL_ATTACK_DAMAGE)
-init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "an aggressive move, which deals bonus damage."
-init_lines	code/game/objects/items/toys/mech_toys.dm	if(SPECIAL_ATTACK_HEAL)
-init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a defensive move, which grants bonus healing."
-init_lines	code/game/objects/items/toys/mech_toys.dm	if(SPECIAL_ATTACK_UTILITY)
-init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a utility move, which heals the user and damages the opponent."
-init_lines	code/game/objects/items/toys/mech_toys.dm	if(SPECIAL_ATTACK_OTHER)
-init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a special move, which [special_attack_type_message]"
-init_lines	code/game/objects/items/toys/mech_toys.dm	else
-init_lines	code/game/objects/items/toys/mech_toys.dm	special_attack_type_message = "a mystery move, even I don't know."
 init_lines	code/game/objects/items/trash.dm	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 init_lines	code/game/objects/items/trash.dm	SSpersistence.track_value(src, /datum/persistent/filth/trash)
 init_lines	code/game/objects/items/trash_material.dm	for(var/list/L in matter_chances)
@@ -1471,13 +1423,6 @@ init_lines	code/game/objects/items/trash_material.dm	if(prob(L[2]))
 init_lines	code/game/objects/items/trash_material.dm	var/list/added = list()
 init_lines	code/game/objects/items/trash_material.dm	added[L[1]] = max(0, L[3] + rand(-2,2))
 init_lines	code/game/objects/items/trash_material.dm	add_materials(added)
-init_lines	code/game/objects/items/trash_material.dm	switch(TYPE_TABLE_GET(src, scrap_icon_kind))
-init_lines	code/game/objects/items/trash_material.dm	if(SCRAP_ICON_METAL)
-init_lines	code/game/objects/items/trash_material.dm	icon_state = "metal[rand(4)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/trash_material.dm	if(SCRAP_ICON_CIRCUIT)
-init_lines	code/game/objects/items/trash_material.dm	icon_state = "circuit[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-init_lines	code/game/objects/items/trash_material.dm	if(SCRAP_ICON_DEVICE)
-init_lines	code/game/objects/items/trash_material.dm	icon_state = "device[rand(3)]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 init_lines	code/game/objects/items/uav.dm	if(!cell && cell_type)
 init_lines	code/game/objects/items/uav.dm	rel_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
 init_lines	code/game/objects/items/uav.dm	ion_trail.set_up(src)
@@ -1566,12 +1511,8 @@ init_lines	code/game/objects/items/weapons/id cards/station_ids.dm	access |= SSa
 init_lines	code/game/objects/items/weapons/id cards/station_ids.dm	access |= SSaccess.get_all_station_access()
 init_lines	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access = GLOB.syndicate_access.Copy()
 init_lines	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access |= SSaccess.get_all_station_access()
-init_lines	code/game/objects/items/weapons/implants/implant.dm	var/datum/reagents/R = new/datum/reagents(50)
-init_lines	code/game/objects/items/weapons/implants/implant.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/weapons/implants/implant.dm	rel_set(R, nameof(R.my_atom), src)
 init_lines	code/game/objects/items/weapons/implants/implantchair.dm	add_implants()
 init_lines	code/game/objects/items/weapons/implants/implantcircuits.dm	rel_set(IC, nameof(IC.implant), src)
-init_lines	code/game/objects/items/weapons/implants/implantuplink.dm	activation_emote = pick("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 init_lines	code/game/objects/items/weapons/inducer.dm	if(!cell && cell_type)
 init_lines	code/game/objects/items/weapons/inducer.dm	rel_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 init_lines	code/game/objects/items/weapons/inducer.dm	if(!istype(hume))
@@ -1603,10 +1544,6 @@ init_lines	code/game/objects/items/weapons/material/ashtray.dm	color = null
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	randpixel_xy()
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	set_base_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 init_lines	code/game/objects/items/weapons/material/ashtray.dm	sync_butts()
-init_lines	code/game/objects/items/weapons/material/chainsaw.dm	var/datum/reagents/R = new/datum/reagents(max_fuel)
-init_lines	code/game/objects/items/weapons/material/chainsaw.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/weapons/material/chainsaw.dm	rel_set(R, nameof(R.my_atom), src)
-init_lines	code/game/objects/items/weapons/material/chainsaw.dm	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	if(default_material) // May still be null if a material was not specified as a default.
 init_lines	code/game/objects/items/weapons/material/material_armor.dm	set_material(default_material)
 init_lines	code/game/objects/items/weapons/material/material_weapons.dm	var/forced_material = TYPE_TABLE_GET(src, weapon_forced_material)
@@ -1648,13 +1585,6 @@ init_lines	code/game/objects/items/weapons/policetape.dm	var/obj/machinery/door/
 init_lines	code/game/objects/items/weapons/policetape.dm	if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 init_lines	code/game/objects/items/weapons/policetape.dm	afterattack(door, null, TRUE)
 init_lines	code/game/objects/items/weapons/policetape.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/weapons/storage/bible.dm	starts_with = list(
-init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/reagent_containers/food/drinks/bottle/small/beer,
-init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/reagent_containers/food/drinks/bottle/small/beer,
-init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/c100,
-init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/c100,
-init_lines	code/game/objects/items/weapons/storage/bible.dm	/obj/item/spacecash/c100
-init_lines	code/game/objects/items/weapons/storage/bible.dm	)
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	var/first = TRUE
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	for(var/pet in pet_list)
 init_lines	code/game/objects/items/weapons/storage/boxes.dm	if(first)
@@ -1686,10 +1616,6 @@ init_lines	code/game/objects/items/weapons/storage/internal.dm	rel_set(src, name
 init_lines	code/game/objects/items/weapons/storage/internal.dm	if(!istype(master_item(), /obj/item))
 init_lines	code/game/objects/items/weapons/storage/internal.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/storage/internal.dm	name = master_item().name
-init_lines	code/game/objects/items/weapons/storage/misc.dm	if(!empty)
-init_lines	code/game/objects/items/weapons/storage/misc.dm	for(var/i in 1 to 6)
-init_lines	code/game/objects/items/weapons/storage/misc.dm	var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
-init_lines	code/game/objects/items/weapons/storage/misc.dm	new type_to_spawn(src)
 init_lines	code/game/objects/items/weapons/storage/mre.dm	pickflavor()
 init_lines	code/game/objects/items/weapons/storage/mre.dm	if(seasoning)
 init_lines	code/game/objects/items/weapons/storage/mre.dm	reagents.add_reagent(seasoning, 1) // ALLOW(decl): state picked in determinetype()
@@ -1702,16 +1628,6 @@ init_lines	code/game/objects/items/weapons/storage/storage.dm	if(!open_state)
 init_lines	code/game/objects/items/weapons/storage/storage.dm	open_state = "[initial(icon_state)]_open"
 init_lines	code/game/objects/items/weapons/storage/storage.dm	if(!closed_state)
 init_lines	code/game/objects/items/weapons/storage/storage.dm	closed_state = "[initial(icon_state)]"
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	var/amount = rand(50, 100) + rand(50, 100) // Triangular distribution from 100 to 200
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	var/obj/item/spacecash/SC = null
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	SC = new(src)
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	for(var/i in list(100, 50, 20, 10, 5, 1))
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	if(amount < i)
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	continue
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	while(amount >= i)
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	amount -= i
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	SC.adjust_worth(i)
-init_lines	code/game/objects/items/weapons/storage/wallets.dm	color = get_random_colour()
 init_lines	code/game/objects/items/weapons/syndie.dm	var/K = rand(1,2000)
 init_lines	code/game/objects/items/weapons/syndie.dm	K = md5(num2text(K)+name)
 init_lines	code/game/objects/items/weapons/syndie.dm	K = copytext(K,1,7)
@@ -1735,10 +1651,6 @@ init_lines	code/game/objects/items/weapons/tanks/tanks.dm	onetankbomb(bomb_fill)
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	if(TOOL_WELDER in possible_tooltypes)
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	rel_set(src, nameof(welder), new weldertype(src)) // ALLOW(decl): only when a welder mode is possible
 init_lines	code/game/objects/items/weapons/tools/transforming.dm	on_tool_switch()
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	var/datum/reagents/R = new/datum/reagents(max_fuel)
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(R, nameof(R.my_atom), src)
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /obj/item/weldpack))
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	var/obj/item/weldpack/holder = loc
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(mounted_pack), holder)
@@ -1746,11 +1658,6 @@ init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	else
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(equip_mount), loc)
-init_lines	code/game/objects/items/weapons/weldbackpack.dm	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
-init_lines	code/game/objects/items/weapons/weldbackpack.dm	rel_set(src, nameof(reagents), R)
-init_lines	code/game/objects/items/weapons/weldbackpack.dm	rel_set(R, nameof(R.my_atom), src)
-init_lines	code/game/objects/items/weapons/weldbackpack.dm	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-init_lines	code/game/objects/items/weapons/weldbackpack.dm	nozzle_attached = 1
 init_lines	code/game/objects/mail.dm	junk_mail()
 init_lines	code/game/objects/micro_event.dm	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 init_lines	code/game/objects/micro_structures.dm	if(name == initial(name))
@@ -1769,7 +1676,6 @@ init_lines	code/game/objects/structures/artstuff.dm	SSpersistence.painting_frame
 init_lines	code/game/objects/structures/artstuff.dm	if(building)
 init_lines	code/game/objects/structures/artstuff.dm	pixel_x = (dir & 3)? 0 : (dir == 4 ? -30 : 30)
 init_lines	code/game/objects/structures/artstuff.dm	pixel_y = (dir & 3)? (dir ==1 ? -30 : 30) : 0
-init_lines	code/game/objects/structures/bedsheet_bin.dm	make_rotatable(only_flip = TRUE)
 init_lines	code/game/objects/structures/catwalk.dm	if(delete_me)
 init_lines	code/game/objects/structures/catwalk.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/structures/catwalk.dm	for(var/obj/structure/catwalk/C in get_turf(src))
@@ -1783,10 +1689,6 @@ init_lines	code/game/objects/structures/cliff.dm	register_dangerous_to_step()
 init_lines	code/game/objects/structures/cliff.dm	if(!mapload)
 init_lines	code/game/objects/structures/cliff.dm	turf_edges_refresh(get_turf(src)) // the tiles around it stop spilling their edges onto it (a map load computes them once at its end)
 init_lines	code/game/objects/structures/crates_lockers/__closets.dm	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	for(var/i = 1 to 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	new /obj/item/gun/energy/locked/frontier(src)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	for(var/i = 1 to 2)
-init_lines	code/game/objects/structures/crates_lockers/closets/secure/guncabinet.dm	new /obj/item/gun/energy/locked/frontier/holdout(src)
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref())
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	name = "Owned by [owner_ref().name]"
 init_lines	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	if(owner_ref().current)
@@ -2029,8 +1931,6 @@ init_lines	code/game/objects/structures/safe.dm	var/turf/T = loc
 init_lines	code/game/objects/structures/safe.dm	if(istype(T) && !T.is_plating())
 init_lines	code/game/objects/structures/safe.dm	hide(1)
 init_lines	code/game/objects/structures/salvageable.dm	new /obj/structure/table/reinforced (loc)
-init_lines	code/game/objects/structures/signs.dm	desc = "A warning sign which reads '[name]'."
-init_lines	code/game/objects/structures/signs.dm	desc += " Enter at own risk!."
 init_lines	code/game/objects/structures/stasis_cage.dm	var/mob/living/simple_mob/A = locate_within(loc, /mob/living/simple_mob)
 init_lines	code/game/objects/structures/stasis_cage.dm	if(A)
 init_lines	code/game/objects/structures/stasis_cage.dm	contain(A)
@@ -2042,10 +1942,6 @@ init_lines	code/game/objects/structures/stool_bed_chair_nest/bed.dm	make_rotatab
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	if((dir & NORTH) && !corner_piece)
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	plane = MOB_PLANE
 init_lines	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	layer = ABOVE_MOB_LAYER
-init_lines	code/game/objects/structures/tank_dispenser.dm	for(var/i in 1 to oxygentanks)
-init_lines	code/game/objects/structures/tank_dispenser.dm	new /obj/item/tank/oxygen(src)
-init_lines	code/game/objects/structures/tank_dispenser.dm	for(var/i in 1 to phorontanks)
-init_lines	code/game/objects/structures/tank_dispenser.dm	new /obj/item/tank/phoron(src)
 init_lines	code/game/objects/structures/transit_tubes.dm	follow_tube()
 init_lines	code/game/objects/structures/transit_tubes.dm	if(tube_dirs == null)
 init_lines	code/game/objects/structures/transit_tubes.dm	init_dirs()
@@ -7109,11 +7005,7 @@ world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 world_reads	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
 world_reads	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
-world_reads	code/game/objects/items/devices/radio/intercom.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/intercom.dm	channels = GLOB.radiochannels.Copy()
-world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_internal_channels.Copy()
-world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
-world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
@@ -7129,7 +7021,6 @@ world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLO
 world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
 world_reads	code/game/objects/items/weapons/dna_injector.dm	pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
 world_reads	code/game/objects/items/weapons/id cards/syndicate_ids.dm	access = GLOB.syndicate_access.Copy()
-world_reads	code/game/objects/items/weapons/storage/misc.dm	var/type_to_spawn = pickweight(GLOB.random_weighted_donuts)
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)
 world_reads	code/game/objects/structures/props/puzzledoor.dm	for(var/obj/structure/prop/lock/L in orange(src, check_range))
 world_reads	code/game/turfs/flooring/seasonal.dm	switch(GLOB.world_time_season)

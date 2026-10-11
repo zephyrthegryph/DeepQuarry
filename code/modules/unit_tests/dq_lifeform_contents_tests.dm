@@ -99,3 +99,28 @@ CAPABILITIES(/obj/item/dq_rolled_box)
 	TEST_ASSERT_EQUAL(made, 1, "a roll proc's instance is placed in the holder")
 	TEST_ASSERT_EQUAL(other, 4, "nameof(type_var), a weighted pick_one(), a roll proc's type and chance = 100 each made an other part")
 	TEST_ASSERT_EQUAL(plain, 2, "nameof(list var) made its type = count, and chance = 0 made nothing")
+
+// lives_for(nameof(var)) (code/engine/lifeforms/lifetimes.dm): the holder lapses that long after its init; a var of 0 never lapses.
+/obj/effect/dq_lives_for
+	name = "short-lived"
+	var/ttl = 2 SECONDS
+
+CAPABILITIES(/obj/effect/dq_lives_for)
+	lives_for(nameof(ttl))
+
+/obj/effect/dq_lives_for/forever
+	ttl = 0
+
+/datum/unit_test/dq_lifeform_lives_for
+
+/datum/unit_test/dq_lifeform_lives_for/Run()
+	scheduler_test_begin()
+	var/obj/effect/dq_lives_for/brief = new(dq_containment_floor())
+	var/obj/effect/dq_lives_for/forever/lasting = new(dq_containment_floor())
+	scheduler_advance(1)
+	TEST_ASSERT(!QDELETED(brief), "it lives until its time is up")
+	scheduler_advance(2)
+	TEST_ASSERT(QDELETED(brief), "it lapsed after its ttl")
+	TEST_ASSERT(!QDELETED(lasting), "a ttl of 0 never lapses")
+	qdel(lasting)
+	scheduler_test_end()

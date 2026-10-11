@@ -4424,3 +4424,27 @@ by `dq_type_trait/item_protection_declared`, the body slot insulation and clothi
 trait (no instance var to name as its state var). `protection_of(null)` answers the defaults, so a read through an empty slot (`worn?.x`)
 still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
 as a body temperature).
+
+## Objects init burn-down (rewrite/init-objects, October 2026)
+
+`code/game/objects/` Initialize() jobs moved to forms (`initial_contents()` with rolled sources, `rolls()`, `reagents()`, `derives()`,
+`lives_for()`, `keeps_if()`, `name_prefix()`, `setup()`, var defaults). What changed beyond the draws now coming from the instance's seeded
+stream (a converted `rand()`/`pick()`/`prob()` no longer draws from the world RNG):
+
+* **Closets and crates whose `rolls(nameof(starts_with))` never ran now get their rolled extras.** A roll writes only a target still at its
+  compiled default, and `initial()` of a list var is null, so a type whose `starts_with` is a list never rolled (the head of security's, the
+  warden's and the officers' backpacks, the botanist's apron, the cargo, engineering, science and misc lockers' extras, the animal crates'
+  random animal). The closets roll their extras through `initial_contents(PROC_REF(roll_starts_with))`; the crates' `starts_with` defaults
+  to null, so their roll runs. Rolled closet extras are made at init instead of staying latent.
+* **The legacy emergency closet keeps its own contents.** Its `starts_with` was overwritten by the random kit in Initialize(); the kit is now a
+  roll, which a declared list suppresses (as a map edit of `starts_with` does).
+* **The booze bible holds its beer and cash.** It assigned `starts_with` after the storage had already read it, so it started empty.
+* **Weeds, crayon-free boxes and similar: a map edit wins over a roll.** Rolled vars (a gift's wrapping, a pizza voucher's slogan, a drone
+  circuit's name, a dragon plushie's phrase, a lipstick's colour) keep a mapper's value instead of being overwritten.
+* **`/obj/structure/largecrate` makes its `starts_with` through `initial_contents(nameof(starts_with))`** (in nullspace, then moved in) and
+  keeps the var set afterwards.
+* **Timed effects (`lives_for()`)** arm their lifetime when the instance's init is complete: a map-loaded one counts from the end of the map
+  load. A temporary visual whose duration is 0 no longer lapses at once (none exists).
+* **Rolls replaced `TYPE_TABLE` selectors** (scrap material sprites, intercom channel sets became a `starting_channels()` override derived at
+  init), so a map edit of the sprite or channels is kept.
+* **A plushie restores its own current name after speaking** when it was never renamed, instead of the name it had at init.

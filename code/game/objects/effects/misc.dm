@@ -14,10 +14,8 @@
 	invisibility = INVISIBILITY_NONE
 	var/time_to_die = 10 SECONDS // Afer which, it will delete itself.
 
-/obj/effect/temporary_effect/Initialize(mapload)
-	. = ..()
-	if(time_to_die)
-		expire(time_to_die)
+CAPABILITIES(/obj/effect/temporary_effect)
+	lives_for(nameof(time_to_die))
 
 // Shown really briefly when attacking with axes.
 /obj/effect/temporary_effect/cleave_attack
