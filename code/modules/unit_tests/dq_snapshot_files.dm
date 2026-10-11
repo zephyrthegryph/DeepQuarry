@@ -152,6 +152,7 @@
 	if(dq_snapshot_blessing())
 		for(var/type in actual_by_type)
 			dq_snapshot_write(dir, type, actual_by_type[type])
+			fdel(dq_snapshot_type_file("data/test-snapshots/[name]/", type))
 		log_test("snapshot [name]: blessed [length(actual_by_type)] type file(s) under [dir]")
 		return null
 	// Each differing row once, with the types it differs for: a change to an inherited row reads as one line, not one per type.
@@ -164,6 +165,7 @@
 		// An empty file is a type not recorded yet (tools/dq_pin.sh makes one): record it, don't fail.
 		if(!length(expected) && length(actual))
 			dq_snapshot_write(dir, type, actual)
+			fdel(dq_snapshot_type_file("data/test-snapshots/[name]/", type))
 			log_test("snapshot [name]: recorded [type] ([length(actual)] rows) into [dq_snapshot_type_file(dir, type)]")
 			continue
 		var/differs = FALSE

@@ -70,6 +70,7 @@
 		for(var/key in ordered)
 			sorted[key] = merged[key]
 		dq_loot_pin_write(DQ_LOOT_PIN_DIR, name, sorted)
+		fdel("data/test-snapshots/loot/[name].txt")
 		log_test("loot pin [name]: recorded [length(rows)] row(s)")
 		return null
 	var/list/problems = list()
@@ -78,7 +79,9 @@
 			problems += "new: [key] => [copytext(rows[key], 1, 300)]"
 		else if(expected[key] != rows[key])
 			problems += "changed: [key]\n   was: [copytext(expected[key], 1, 300)]\n   now: [copytext(rows[key], 1, 300)]"
+	// A pin that matches drops the current-rows file an earlier failing run left (as dq_snapshot_compare() does per type).
 	if(!length(problems))
+		fdel("data/test-snapshots/loot/[name].txt")
 		return null
 	dq_loot_pin_write("data/test-snapshots/loot/", name, rows)
 	var/report = "[length(problems)] loot pin row(s) of [name] differ (current rows in data/test-snapshots/loot/[name].txt):"
