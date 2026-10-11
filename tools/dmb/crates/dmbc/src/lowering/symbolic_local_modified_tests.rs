@@ -165,9 +165,7 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
             panic!("expected reused contribution")
         };
         let (_, fresh) = prepare(&current, row, &host, &policy, &startup, &licensed);
-        assert!(reused
-            .shared_artifact()
-            .verification_equal(&fresh.shared_artifact()));
+        assert!(reused.verification_equal(&fresh));
         assert_eq!(reused.modified_seeds().len(), fresh.modified_seeds().len());
         for (a, b) in reused.modified_seeds().iter().zip(fresh.modified_seeds()) {
             let (ar, ac) = a.clone().into_current_capture();
