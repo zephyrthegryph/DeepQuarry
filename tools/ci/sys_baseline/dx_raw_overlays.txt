@@ -69,8 +69,6 @@ dx_raw_overlays	code/game/gamemodes/technomancer/spells/control.dm	L.cut_overlay
 dx_raw_overlays	code/game/machinery/bluespace_denier.dm	add_overlay("[base_state]-s")
 dx_raw_overlays	code/game/machinery/bluespace_denier.dm	cut_overlays()
 dx_raw_overlays	code/game/machinery/bluespace_denier.dm	add_overlay("[base_state]-s")
-dx_raw_overlays	code/game/machinery/doors/brigdoors.dm	cut_overlays()
-dx_raw_overlays	code/game/machinery/doors/brigdoors.dm	add_overlay(mutable_appearance('icons/obj/status_display.dmi', state))
 dx_raw_overlays	code/game/machinery/flasher.dm	add_overlay("[base_state]-s")
 dx_raw_overlays	code/game/machinery/flasher.dm	cut_overlays()
 dx_raw_overlays	code/game/machinery/flasher.dm	add_overlay("[base_state]-s")

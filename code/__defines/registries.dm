@@ -67,6 +67,7 @@
 #define REGISTRY_CATALOGUERS "all_cataloguers"
 #define REGISTRY_CHEM_IMPLANTS "all_chem_implants"
 #define REGISTRY_CHICKENS "chickens"
+#define REGISTRY_TEPPIS "teppis"
 #define REGISTRY_CLEANBOT_RESERVED_TURFS "cleanbot_reserved_turfs"
 #define REGISTRY_COMMUNICATORS "all_communicators"
 #define REGISTRY_DOG_TELEPORTERS "dog_teleporters"

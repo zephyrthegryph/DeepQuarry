@@ -44,3 +44,41 @@
 
 	var/mob/living/simple_mob/animal/giant_spider/spider = allocate(/mob/living/simple_mob/animal/giant_spider, T)
 	TEST_ASSERT(is_swarmer(spider), "a giant spider swarms from creation")
+
+/datum/unit_test/dq_mob_init_forms_bodies
+
+/datum/unit_test/dq_mob_init_forms_bodies/Run()
+	var/turf/T = dq_containment_floor()
+
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT(istype(H.reagents, /datum/reagents/metabolism/bloodstream), "a carbon's reagents are its bloodstream")
+	TEST_ASSERT_EQUAL(H.bloodstr, H.reagents, "and bloodstr names it")
+	TEST_ASSERT(istype(H.ingested, /datum/reagents/metabolism/ingested) && istype(H.touching, /datum/reagents/metabolism/touch), "it has a stomach and a skin")
+	TEST_ASSERT(H.nutrition >= 200 && H.nutrition <= 400, "a human starts with 200-400 nutrition ([H.nutrition])")
+	TEST_ASSERT(length(H.hide_underwear), "every underwear category starts shown")
+
+	var/mob/living/carbon/human/skrell/S = allocate(/mob/living/carbon/human/skrell, T)
+	TEST_ASSERT_EQUAL(S.species?.name, SPECIES_SKRELL, "a species subtype is made as its species")
+	TEST_ASSERT_EQUAL(S.h_style, "Skrell Short Tentacles", "with its hair")
+
+	var/mob/living/carbon/human/monkey/punpun/P = allocate(/mob/living/carbon/human/monkey/punpun, T)
+	TEST_ASSERT_EQUAL(P.name, "Pun Pun", "Pun Pun is named over its species' name")
+
+	var/mob/living/carbon/human/ai_controlled/joe = allocate(/mob/living/carbon/human/ai_controlled, T)
+	TEST_ASSERT(istype(joe.get_equipped_item(SLOT_ID_SHOES), /obj/item/clothing/shoes/galoshes), "an ai-controlled human wears its outfit (wears())")
+	var/obj/item/card/id/card = joe.get_equipped_item(SLOT_ID_ID)
+	TEST_ASSERT_EQUAL(card?.registered_name, joe.real_name, "and its ID card is fitted to it")
+
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, TRUE)
+	TEST_ASSERT(AI.aiRadio, "an AI has its radio")
+	TEST_ASSERT_EQUAL(AI.common_radio, AI.aiRadio, "which is its common radio")
+	TEST_ASSERT(AI.laws, "and its laws")
+	TEST_ASSERT_EQUAL(AI.announcement?.title, "A.I. Announcement", "its announcements are titled")
+	TEST_ASSERT(AI.real_name in GLOB.ai_names, "it takes an AI name ([AI.real_name])")
+	TEST_ASSERT_EQUAL(AI.announcement?.announcer, AI.name, "which its announcements carry")
+	TEST_ASSERT(AI.psupply, "it has its power supply")
+	TEST_ASSERT(AI.aiPDA && AI.aiCommunicator, "a real AI has a PDA and a communicator")
+
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	TEST_ASSERT_EQUAL(R.robot_modules_background?.icon_state, "block", "a robot's module screen is made")
+	TEST_ASSERT(GLOB.all_languages[LANGUAGE_ROBOT_TALK] in R.languages, "a robot knows robot talk")

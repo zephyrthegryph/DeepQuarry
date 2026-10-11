@@ -38,6 +38,12 @@
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
+/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
+	if(target == "name")
+		return real_name
+	return species ? species.get_random_name(gender) : real_name
+
 /// Every underwear category starts shown (derives(), once at init).
 /mob/living/carbon/human/proc/underwear_all_shown(target)
 	. = list()
@@ -49,21 +55,12 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
 // ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
 /mob/living/carbon/human/Initialize(mapload)
-	if(!dna)
-		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
-		// Species name is handled by set_species()
-
+	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
 		if(species_at_make)
 			set_species(species_at_make)
 		else
 			set_species()
-
-	if(species)
-		real_name = species.get_random_name(gender)
-		name = real_name
-		if(mind)
-			mind.name = real_name
 
 	. = ..()
 

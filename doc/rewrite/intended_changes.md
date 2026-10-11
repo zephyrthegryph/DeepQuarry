@@ -4437,8 +4437,8 @@ mapper can notice:
   and description are unchanged. **Fleming** (the virology mouse) keeps its strain and may carry a second one, as before.
 * **A mouse whose colour has no holder of its own** (none of the rolled ones) keeps its type's holder unless it is unnamed, when it takes the
   rat's, as the old chain of `if`s did.
-* **Starting equipment** (`wears()`): the ai-controlled humans and Pun Pun equip their outfit in the capability init, before their human
-  body's code after `..()` (it was after); their first `regenerate_icons()` draws it.
+* **Starting equipment** (`wears()`): the ai-controlled humans and Pun Pun equip their outfit when their init is complete (`after_init(0)`), as
+  before; for a map-loaded one that is after the map load.
 * **Population caps count with registries**: chickens (`REGISTRY_CHICKENS`) and the dog teleporters (`REGISTRY_DOG_TELEPORTERS`; a sender
   pairs on first use, as it already did when its partner was not up yet). The stardog's eye area finds its eyes among the things it already
   scans instead of a list the eyes joined.

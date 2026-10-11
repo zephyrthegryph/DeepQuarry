@@ -35,7 +35,6 @@ doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE (the APC today): a fie
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:436-463 (15 lines of state checks around "open the cover")
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: apc.dm:700-715
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: atmo_control.dm:714-745
-doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: canister.dm:173-190
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: door_control.dm:98 (a string template language)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: expedition_controller.dm:249 (expedition writes flight's private index)
 doc_legacy_block	doc/rewrite/migration_guide.md	// BEFORE: geiger.dm:131 (a replace-timer used as "reset if nothing for N")
