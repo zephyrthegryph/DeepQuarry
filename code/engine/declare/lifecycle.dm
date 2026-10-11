@@ -237,6 +237,11 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			own_apply_starts_set(D, var_name, T.start_sets[var_name])
 
 /// owns_*(starts_set = list(var = value)): each occupant of D.var_name gets each value, through its set_<var>() when it has one.
+/// starts_set = list(var = holder_var(nameof(x))): the occupant takes the holder's x when it is configured (a camera's tag from its drone's
+/// channel), where a constant would not do.
+/proc/holder_var(var_name)
+	return entry_make("holder_var", null, list("var" = var_name))
+
 /proc/own_apply_starts_set(datum/D, var_name, list/settings)
 	var/value = D.vars[var_name]
 	var/list/children = islist(value) ? value : list(value)
@@ -244,11 +249,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(!isdatum(child))
 			continue
 		for(var/key in settings)
+			var/setting = settings[key]
+			if(istype(setting, /datum/entry))
+				var/datum/entry/E = setting
+				if(E.kind == "holder_var")
+					setting = D.vars[E.args["var"]]
 			var/setter = "set_[key]"
 			if(hascall(child, setter))
-				call(child, setter)(settings[key])
+				call(child, setter)(setting)
 			else if(key in child.vars)
-				child.vars[key] = settings[key] // ALLOW(api): the declared post-build setting of an occupant that has no setter for it
+				child.vars[key] = setting // ALLOW(api): the declared post-build setting of an occupant that has no setter for it
 			else
 				OWN_REPORT("[D.type].[var_name]: starts_set names '[key]', which [child.type] doesn't have")
 

@@ -1255,17 +1255,7 @@ init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/w_class)
 init_lines	code/game/objects/items.dm	else
 init_lines	code/game/objects/items.dm	embed_chance = max(5, round(force/(w_class*3)))
 init_lines	code/game/objects/items/contraband.dm	get_appearance()
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["supply_category"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["supply_controls"] = FALSE // Cannot control the supply shuttle, cannot accept orders
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["supply_pack_expanded"] = list()
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["supply_reqtime"] = -1
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	SSradio.add_object(src, 1435)
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["stat_display_line1"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["stat_display_line2"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["stat_display_active1"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["stat_display_active2"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["stat_display_special"] = null
-init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["shuttle_door_code"] = "smindicate" // Copied from PDA code
 init_lines	code/game/objects/items/devices/communicator/cartridge.dm	internal_data["shuttle_doors"] = find_blast_doors()
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	rel_set(src, nameof(node), get_exonet_node())
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	camera.name = "[src] #[rand(100,999)]"
@@ -1317,18 +1307,6 @@ init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	var/mob/M 
 init_lines	code/game/objects/items/devices/scanners/motion_tracker.dm	M.motiontracker_subscribe()
 init_lines	code/game/objects/items/devices/spy_bug.dm	radio = new(src)
 init_lines	code/game/objects/items/devices/translocator.dm	rebuild_radial_images()
-init_lines	code/game/objects/items/devices/tvcamera.dm	camera.c_tag = channel
-init_lines	code/game/objects/items/devices/tvcamera.dm	camera.status = FALSE
-init_lines	code/game/objects/items/devices/tvcamera.dm	radio.listening = FALSE
-init_lines	code/game/objects/items/devices/tvcamera.dm	radio.set_frequency(ENT_FREQ)
-init_lines	code/game/objects/items/devices/tvcamera.dm	radio.icon = src.icon
-init_lines	code/game/objects/items/devices/tvcamera.dm	radio.icon_state = src.icon_state
-init_lines	code/game/objects/items/devices/tvcamera.dm	bcamera.c_tag = channel
-init_lines	code/game/objects/items/devices/tvcamera.dm	bcamera.status = FALSE
-init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.listening = FALSE
-init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.set_frequency(BDCM_FREQ)
-init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.icon = src.icon
-init_lines	code/game/objects/items/devices/tvcamera.dm	bradio.icon_state = src.icon_state
 init_lines	code/game/objects/items/ghost_hunting/goggles.dm	if(static_vision)
 init_lines	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 init_lines	code/game/objects/items/ghost_hunting/trap.dm	var/static/list/ghost_events = list(
@@ -1456,16 +1434,6 @@ init_lines	code/game/objects/items/weapons/policetape.dm	var/obj/machinery/door/
 init_lines	code/game/objects/items/weapons/policetape.dm	if(istype(door, /obj/machinery/door/airlock) || istype(door, /obj/machinery/door/firedoor))
 init_lines	code/game/objects/items/weapons/policetape.dm	afterattack(door, null, TRUE)
 init_lines	code/game/objects/items/weapons/policetape.dm	return INITIALIZE_HINT_QDEL
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/v in list("red", "orange", "yellow", "green", "blue", "purple"))
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	var/obj/item/pen/crayon/C = new(src)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.variant = v
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.apply_variant()
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.name = "[C.colourName] [initial(C.name)]"
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/v in list("black", "red", "orange", "yellow", "green", "blue", "purple"))
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	var/obj/item/pen/crayon/marker/M = new(src)
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.variant = v
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.apply_variant()
-init_lines	code/game/objects/items/weapons/storage/fancy.dm	M.name = "[M.colourName] [initial(M.name)]"
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	if(brand)
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
 init_lines	code/game/objects/items/weapons/storage/fancy.dm	C.brand = brand
@@ -1502,8 +1470,6 @@ init_lines	code/game/objects/items/weapons/tools/transforming.dm	on_tool_switch(
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /obj/item/weldpack))
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	var/obj/item/weldpack/holder = loc
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(mounted_pack), holder)
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	else
-init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
 init_lines	code/game/objects/items/weapons/tools/weldingtool.dm	rel_set(src, nameof(equip_mount), loc)
 init_lines	code/game/objects/mail.dm	junk_mail()
