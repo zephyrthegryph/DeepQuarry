@@ -187,7 +187,7 @@
 	if(istype(base, /datum/property_provider/type_var/tag/slot_flag))
 		var/obj/item/I = thing
 		if(istype(I))
-			. += list(list(I, nameof(I.slot_flags)))
+			. += list(list(I, ITEM_WORN_KEY))
 		return
 	if(property == PROP_SIZE_CLASS && base?.state_var == "w_class")
 		var/obj/O = thing
@@ -302,11 +302,11 @@
 	var/obj/item/suit = H.get_equipped_item(SLOT_ID_SUIT)
 	if(!suit)
 		return
-	. += list(list(suit, nameof(suit.body_parts_covered)), list(suit, SLOT_OCCUPANCY_KEY))
+	. += list(list(suit, ITEM_WORN_KEY), list(suit, SLOT_OCCUPANCY_KEY))
 	// The actual clearance callbacks iterate suit contents, not the accessories
 	// lookup list; contents ledger covers physical insertion and removal.
 	for(var/obj/item/clothing/accessory/W in suit)
-		. += list(list(W, nameof(W.body_parts_covered)))
+		. += list(list(W, ITEM_WORN_KEY))
 
 
 

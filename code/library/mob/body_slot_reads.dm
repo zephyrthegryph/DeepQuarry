@@ -61,11 +61,11 @@
 	. = list(list(src, SLOT_OCCUPANCY_KEY))
 	if(!I)
 		return
-	. += list(list(I, ATOM_KEY_LOC), list(I, nameof(I.canremove)), list(I, nameof(I.body_parts_covered)))
+	. += list(list(I, ATOM_KEY_LOC), list(I, nameof(I.canremove)), list(I, ITEM_WORN_KEY))
 	var/slot = inventory_slot_id(I)
 	var/datum/relation_definition/slot/body/def = dq_ledger_peek(src)?.def_by_id(slot)
 	if(!istype(def) || !def.covered_by)
 		return
 	var/obj/item/covering = get_equipped_item(def.covered_by)
 	if(covering)
-		. += list(list(covering, ATOM_KEY_LOC), list(covering, nameof(covering.body_parts_covered)))
+		. += list(list(covering, ATOM_KEY_LOC), list(covering, ITEM_WORN_KEY))

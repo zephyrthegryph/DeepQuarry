@@ -1,5 +1,3 @@
-TRACKED(/obj/item, body_parts_covered)
-
 TRACKED(/obj/item, canremove)
 
 
@@ -1249,8 +1247,6 @@ READS_AS(/proc/protection_of, ITEM_PROTECTION_KEY)
 
 /obj/item/proc/set_siemens_coefficient(value)
 	return set_item_protection("siemens", value)
-
-TRACKED(/obj/item, slot_flags)
 
 SETTER(/obj/item, sprite_sheets)
 /obj/item/proc/set_sprite_sheets(list/value)
