@@ -46,4 +46,5 @@ pub struct LowerRelated {
 
 #[path = "undefined_variable_diagnostic.rs"]
 mod undefined_variable;
+pub(crate) use undefined_variable::undefined_type_message;
 pub(crate) use undefined_variable::undefined_variable_message;

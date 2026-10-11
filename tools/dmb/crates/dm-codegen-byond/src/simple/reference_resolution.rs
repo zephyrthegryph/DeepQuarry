@@ -88,12 +88,17 @@ impl Compiler<'_> {
                 }
             },
         )?;
-        self.validate_variable_type(&meaning, statement)?;
+        self.validate_variable_type(&meaning, name, statement)?;
         Ok(meaning)
     }
     /// Validate the selected declaration, never another namespace with the same name.
     /// Runtime aliases remain licensed by the ordinary current resolver.
-    fn validate_variable_type(&self, meaning: &M, statement: &str) -> Result<(), LowerError> {
+    fn validate_variable_type(
+        &self,
+        meaning: &M,
+        name: &str,
+        statement: &str,
+    ) -> Result<(), LowerError> {
         use dm_ir::ResolveQuery as Q;
         let Some(lookup) = self.lookup else {
             return Ok(());
@@ -125,7 +130,8 @@ impl Compiler<'_> {
         };
         let result = lookup.runtime_type(&path).map_err(|mut failure| {
             if failure.kind == LowerErrorKind::SourceError {
-                failure.reason = format!("{statement}: undefined type: {path}");
+                failure.reason =
+                    crate::lower_diagnostics::undefined_type_message(statement, name, &path);
             }
             failure
         });

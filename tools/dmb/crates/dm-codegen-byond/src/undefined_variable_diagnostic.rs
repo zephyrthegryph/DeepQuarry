@@ -2,6 +2,15 @@
 //! Arithmetic and argument contexts identify the unresolved name alone.
 use dm_syntax::TokenKind;
 pub(crate) fn undefined_variable_message(statement: &str, name: &str) -> String {
+    format!("{}: undefined var", reference_context(statement, name))
+}
+pub(crate) fn undefined_type_message(statement: &str, name: &str, path: &str) -> String {
+    format!(
+        "{}: undefined type: {path}",
+        reference_context(statement, name)
+    )
+}
+fn reference_context(statement: &str, name: &str) -> String {
     let lexed = dm_syntax::lex_spans(statement);
     let tokens: Vec<_> = lexed
         .tokens
@@ -61,7 +70,7 @@ pub(crate) fn undefined_variable_message(statement: &str, name: &str) -> String 
     } else {
         name.to_owned()
     };
-    format!("{context}: undefined var")
+    context
 }
 #[cfg(test)]
 mod tests {
@@ -83,6 +92,10 @@ mod tests {
             ("return \"missing\" + missing", "missing: undefined var"),
         ] {
             assert_eq!(undefined_variable_message(statement, "missing"), expected);
+            assert_eq!(
+                undefined_type_message(statement, "missing", "/datum/missing"),
+                expected.replace(": undefined var", ": undefined type: /datum/missing")
+            );
         }
     }
 }
