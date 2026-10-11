@@ -44,7 +44,9 @@ pub(super) fn capture(path: &Path) -> io::Result<Guard> {
     if ancestors.len() > 256 { return Err(invalid("physical journal path depth exceeds bound")); }
     let mut guard = Guard { proof: Proof { nodes: Vec::new(), missing_from: None }, _handles: Vec::new() };
     for ancestor in ancestors {
-        let file = match fs::OpenOptions::new().access_mode(0x80)
+        // READ_ATTRIBUTES alone does not participate in Win32 sharing checks.
+        // GENERIC_READ binds the no-write/no-delete sharing restriction.
+        let file = match fs::OpenOptions::new().access_mode(0x80000000)
             // FILE_SHARE_READ only: exclude rename/delete and reparse writes.
             .share_mode(1).custom_flags(0x02000000 | 0x00200000).open(ancestor) {
             Ok(file) => file,

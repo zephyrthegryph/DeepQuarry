@@ -94,9 +94,22 @@ fn physical_resource_coverage_replays_capture_time_ancestors_and_declines_old_jo
     // Older observed journals retain their original contract; strict admission
     // cannot manufacture ancestor authority from stamps or folder names.
     let index_path = directory.join("index.json");
-    let mut index: serde_json::Value = serde_json::from_slice(&std::fs::read(&index_path).unwrap()).unwrap();
-    index.as_object_mut().unwrap().remove("physical_v1");
-    let bytes = serde_json::to_vec(&index).unwrap();
+    // Keep u128 identities/content as typed integers. Generic JSON Value would
+    // round values outside u64 through a float and emit invalid u128 spellings.
+    #[derive(serde::Serialize)]
+    struct LegacyIndex {
+        files: BTreeMap<PathBuf, (crate::input_snapshot::Stamp, u128)>,
+        negative: BTreeSet<PathBuf>,
+        folders: BTreeMap<PathBuf, crate::input_snapshot::FolderListing>,
+    }
+    let current_journal = Inputs::replay(&directory).unwrap();
+    let legacy = current_journal.with_access_view(|view| Ok(LegacyIndex {
+        files: view.files().map(|file| (file.path.to_owned(), (file.stamp.clone(), file.content))).collect(),
+        negative: view.negative_paths().map(Path::to_owned).collect(),
+        folders: view.folders().map(|(path, names)| (path.to_owned(), names.clone())).collect(),
+    })).unwrap().unwrap();
+    drop(current_journal);
+    let bytes = serde_json::to_vec(&legacy).unwrap();
     std::fs::write(&index_path, &bytes).unwrap();
     std::fs::write(directory.join("index.hash"), xxhash_rust::xxh3::xxh3_128(&bytes).to_le_bytes()).unwrap();
     let old = Inputs::replay(&directory).unwrap();
