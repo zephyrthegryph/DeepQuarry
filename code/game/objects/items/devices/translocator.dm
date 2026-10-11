@@ -29,6 +29,7 @@
 	var/static/radial_plus = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_plus")
 	var/static/radial_set = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_set")
 	var/static/radial_seton = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_seton")
+	flags = NOBLUDGEON
 
 
 	/// What a beacon is called, and what makes them, in the beacon menu's messages (a tome's pages).
@@ -58,9 +59,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 /obj/item/perfect_tele/Initialize(mapload)
 	. = ..()
 
-	flags |= NOBLUDGEON
-	if(!power_source) // no cell_type
-		rel_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 	rebuild_radial_images()
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so

@@ -46,7 +46,7 @@
 CAPABILITIES(/obj/item/uav)
 	ref_many(nameof(masters), /mob)
 	every(2 SECONDS, then(PROC_REF(uav_step)), when = PROC_REF(is_flying))
-	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), needs(req(PROC_REF(has_cell), silent = TRUE)), wait(3 SECONDS), then(PROC_REF(screwdriver_used)))
 	// packing or unpacking it takes ten seconds beside it (chosen from the handle radial below)
@@ -70,8 +70,6 @@ CAPABILITIES(/obj/item/uav)
 /obj/item/uav/Initialize(mapload)
 	. = ..()
 
-	if(!cell && cell_type)
-		rel_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
 
 	ion_trail.set_up(src)
 	ion_trail.stop()
@@ -319,7 +317,7 @@ TRACKED(/obj/item/uav, state)
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in masters))
-		if(COOLDOWN_FINISHED(src, next_move))
+		if(cooldown_ready(src, next_move))
 			EXPIRY_SET(src, next_move, (1 SECOND/signal), CLOCK_WORLD)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move

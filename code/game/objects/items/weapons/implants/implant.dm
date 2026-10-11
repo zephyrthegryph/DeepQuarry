@@ -418,11 +418,6 @@ Can only be loaded while still in its original case.<BR>
 the implant may become unstable and either pre-maturely inject the subject or simply break."}
 	return dat
 
-/obj/item/implant/chem/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(50)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
 
 /obj/item/implant/chem/trigger(emote, source as mob, mob/actor)
 	if(emote == "deathgasp")
@@ -442,6 +437,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 
 CAPABILITIES(/obj/item/implant/chem)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(chem_implant_emp))))
+	reagents(50)
 /// An EMP may make the implant release its chemicals.
 /obj/item/implant/chem/proc/chem_implant_emp(datum/act/hit/emp/A)
 	var/datum/damage_packet/packet = A.packet

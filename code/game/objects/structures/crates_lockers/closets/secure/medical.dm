@@ -48,46 +48,10 @@
 		/obj/item/storage/box/freezer = 3,
 		/obj/item/storage/belt/medical)
 
-/obj/structure/closet/secure_closet/medical3/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/medic
-	else
-		starts_with += /obj/item/storage/backpack/satchel/med
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/med
-	switch(pick("blue", "green", "purple", "black", "navyblue"))
-		if ("blue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs
-			starts_with += /obj/item/clothing/head/surgery/blue
-		if ("green")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-			starts_with += /obj/item/clothing/head/surgery/green
-		if ("purple")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-			starts_with += /obj/item/clothing/head/surgery/purple
-		if ("black")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-			starts_with += /obj/item/clothing/head/surgery/black
-		if ("navyblue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-			starts_with += /obj/item/clothing/head/surgery/navyblue
-	switch(pick("blue", "green", "purple", "black", "navyblue"))
-		if ("blue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs
-			starts_with += /obj/item/clothing/head/surgery/blue
-		if ("green")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-			starts_with += /obj/item/clothing/head/surgery/green
-		if ("purple")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-			starts_with += /obj/item/clothing/head/surgery/purple
-		if ("black")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-			starts_with += /obj/item/clothing/head/surgery/black
-		if ("navyblue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-			starts_with += /obj/item/clothing/head/surgery/navyblue
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
+	initial_contents(pick_one(list(/obj/item/storage/backpack/medic, /obj/item/storage/backpack/satchel/med)))
+	initial_contents(/obj/item/storage/backpack/dufflebag/med, chance = 50)
+	initial_contents(PROC_REF(roll_scrubs))
 
 
 /obj/structure/closet/secure_closet/paramedic
@@ -123,7 +87,8 @@
 		/obj/item/extinguisher/mini,
 		/obj/item/storage/box/freezer,
 		/obj/item/clothing/accessory/storage/white_vest,
-		/obj/item/taperoll/medical)
+		/obj/item/taperoll/medical,
+		/obj/item/gps/medical)
 
 /obj/structure/closet/secure_closet/chief_medical_officer
 	name = "chief medical officer's locker"
@@ -164,30 +129,10 @@
 		/obj/item/storage/belt/medical,
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
-/obj/structure/closet/secure_closet/chief_medical_officer/Initialize(mapload)
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/medic
-	else
-		starts_with += /obj/item/storage/backpack/satchel/med
-	if(prob(50))
-		starts_with += /obj/item/storage/backpack/dufflebag/med
-	switch(pick("blue", "green", "purple", "black", "navyblue"))
-		if ("blue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs
-			starts_with += /obj/item/clothing/head/surgery/blue
-		if ("green")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/green
-			starts_with += /obj/item/clothing/head/surgery/green
-		if ("purple")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/purple
-			starts_with += /obj/item/clothing/head/surgery/purple
-		if ("black")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/black
-			starts_with += /obj/item/clothing/head/surgery/black
-		if ("navyblue")
-			starts_with += /obj/item/clothing/under/rank/medical/scrubs/navyblue
-			starts_with += /obj/item/clothing/head/surgery/navyblue
-	return ..()
+CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
+	initial_contents(pick_one(list(/obj/item/storage/backpack/medic, /obj/item/storage/backpack/satchel/med)))
+	initial_contents(/obj/item/storage/backpack/dufflebag/med, chance = 50)
+	initial_contents(PROC_REF(roll_scrubs))
 
 
 /obj/structure/closet/secure_closet/animal
@@ -272,7 +217,12 @@
 		/obj/item/tank/anesthetic = 3,
 		/obj/item/clothing/mask/breath/medical = 3)
 
-
-/obj/structure/closet/secure_closet/paramedic/Initialize(mapload)
-	starts_with += /obj/item/gps/medical
-	return ..()
+/// Rolled contents (initial_contents()): one set of scrubs and the matching cap, in a random colour.
+/obj/structure/closet/secure_closet/proc/roll_scrubs(datum/roller/R)
+	var/static/list/sets = list(
+		list(/obj/item/clothing/under/rank/medical/scrubs, /obj/item/clothing/head/surgery/blue),
+		list(/obj/item/clothing/under/rank/medical/scrubs/green, /obj/item/clothing/head/surgery/green),
+		list(/obj/item/clothing/under/rank/medical/scrubs/purple, /obj/item/clothing/head/surgery/purple),
+		list(/obj/item/clothing/under/rank/medical/scrubs/black, /obj/item/clothing/head/surgery/black),
+		list(/obj/item/clothing/under/rank/medical/scrubs/navyblue, /obj/item/clothing/head/surgery/navyblue))
+	return R.choose(sets)

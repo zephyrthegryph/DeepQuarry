@@ -31,11 +31,11 @@
 		/obj/item/gun/projectile/shotgun/pump/rifle = 2)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(85))
 		. += /obj/item/gun/projectile/shotgun/pump/rifle
 	else
@@ -84,11 +84,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
 		/obj/item/cataloguer)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/explorer)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/explorer/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/explorer
 	else
@@ -135,11 +135,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/explorer)
 		/obj/item/personal_shield_generator/belt/melee/loaded)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/pathfinder)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/pathfinder/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/explorer
 	else
@@ -192,11 +192,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/pathfinder)
 		/obj/item/personal_shield_generator/belt/medical/loaded)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/sar)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/sar/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack/medic
 	else
@@ -242,11 +242,11 @@ CAPABILITIES(/obj/structure/closet/secure_closet/sar)
 		)
 
 CAPABILITIES(/obj/structure/closet/secure_closet/pilot)
-	rolls(nameof(starts_with), PROC_REF(roll_starts_with))
+	initial_contents(PROC_REF(roll_starts_with))
 
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/pilot/proc/roll_starts_with(datum/roller/R)
-	. = islist(starts_with) ? list() + starts_with : starts_with
+	. = list()
 	if(R.chance(50))
 		. += /obj/item/storage/backpack
 	else

@@ -16,12 +16,6 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	var/recent_fail = 0
 
 
-/obj/item/mass_spectrometer/Initialize(mapload)
-	. = ..()
-	var/datum/reagents/R = new/datum/reagents(5)
-	rel_set(src, nameof(reagents), R)
-	rel_set(R, nameof(R.my_atom), src)
-
 /obj/item/mass_spectrometer/on_reagent_change()
 	if(reagents.total_volume)
 		icon_state = initial(icon_state) + "_s"
@@ -29,6 +23,7 @@ MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		icon_state = initial(icon_state)
 
 CAPABILITIES(/obj/item/mass_spectrometer)
+	reagents(5)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_analyze_holds))), then(PROC_REF(interaction_self)))
 

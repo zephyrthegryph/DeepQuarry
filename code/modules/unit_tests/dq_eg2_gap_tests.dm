@@ -157,7 +157,7 @@
 	var/obj/item/storage/bible/B = allocate(/obj/item/storage/bible, run_loc_floor_bottom_left)
 	H.put_in_active_hand(B)
 	H.set_use_stance(I_HELP)
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
 	test_time(1 SECONDS)
 	var/datum/prompt/choice/asked = SSrequests.open_for(H)
@@ -169,7 +169,7 @@
 	TEST_ASSERT_EQUAL(B.icon_state, "koran", "the chosen skin is the bible's")
 	TEST_ASSERT(H.mind.my_religion.configured, "and the religion is configured")
 	B.icon_state = "bible"
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
 	test_time(1 SECONDS)
 	TEST_ASSERT_NULL(SSrequests.open_for(H), "a later use asks nothing")

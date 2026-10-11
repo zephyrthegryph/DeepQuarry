@@ -306,7 +306,9 @@ run. On a merge conflict in a pin file, take master's file (`git show origin/mas
   written by `dq_merge_gates.sh` when its test world ran) on exactly that commit, with `"ok":true`;
 - it is already in `origin/master`;
 - it is a merge of master into one stamped parent and **the stamp carries across the re-merge**: (a) the merge is clean (`git merge-tree`
-  of the two parents has no conflict and the merge commit's tree is that result, regenerated files aside); (b) what master changed since
+  of the two parents has no conflict outside the regenerated files, `look_keys.txt` and `snapshots/op_bases/`, which `dq_merge_master.sh`
+  regenerates after the merge, and the merge commit's tree is that result, regenerated files aside; `bash tools/ci/test_push_stamp.sh`
+  checks this in a scratch repository); (b) what master changed since
   the stamp's master base is disjoint from what the stamp depends on, judged by `tools/dq_lane_check.js --master <master parent>`: the
   lane's files and their directories, the files defining its tests, the snapshot directories those read
   (`code/modules/unit_tests/snapshots/<dir>/`), its `--covers` globs and `tools/ci/lane_ready_global.txt`; `look_keys.txt` and

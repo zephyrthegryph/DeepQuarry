@@ -37,7 +37,7 @@
 	if(p2c_legacy(M) && hascall(M, "wrench_act"))
 		call(M, "wrench_act")(H, tool)
 		return
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	test_click(H, M, tool)
 
 /// A dragged item dropped onto the machine.

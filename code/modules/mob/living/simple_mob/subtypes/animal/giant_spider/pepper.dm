@@ -28,4 +28,6 @@
 	poison_per_bite = 5
 	poison_type = REAGENT_ID_CONDENSEDCAPSAICINV
 
-TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/pepper, spider_preparent_scale, 1.1)
+/mob/living/simple_mob/animal/giant_spider/pepper
+	icon_scale_x = 1.1
+	icon_scale_y = 1.1

@@ -30,7 +30,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	. = ..()
-	if(. || COOLDOWN_TIMELEFT(src, next_move)) // || !can_perform_action(target, NOT_INSIDE_TARGET | SILENT_ADJACENCY | ALLOW_RESTING | FORBID_TELEKINESIS_REACH))
+	if(. || cooldown_left(src, next_move)) // || !can_perform_action(target, NOT_INSIDE_TARGET | SILENT_ADJACENCY | ALLOW_RESTING | FORBID_TELEKINESIS_REACH))
 		return
 
 	. = TRUE
