@@ -213,7 +213,7 @@
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	for(var/path in list(/obj/structure/bed/chair/office, /obj/structure/bed/chair/wood, /obj/structure/bed/roller))
 		var/obj/structure/bed/B = allocate(path, floor_at(1, 1))
-		B.padding_material = get_material_by_name(MAT_CLOTH)
+		B.set_padding_material(get_material_by_name(MAT_CLOTH))
 		touch(H, B, tool(/obj/item/tool/wirecutters))
 		TEST_ASSERT_NOTNULL(p2_seat_padding(B), "[path] kept its padding")
 		qdel(B)

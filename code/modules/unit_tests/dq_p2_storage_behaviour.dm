@@ -839,7 +839,7 @@
 	TEST_ASSERT(!sb_is_open(H, S), "does not open by alt-click")
 	sb_open_held(H, S)
 	TEST_ASSERT(!sb_is_open(H, S), "nor held in the hand")
-	S.locked = 0
+	S.set_locked(0)
 	sb_click(H, S, I)
 	TEST_ASSERT_EQUAL(I.loc, S, "an unlocked briefcase takes items")
 	sb_open_held(H, S)
@@ -862,7 +862,7 @@
 	var/mob/living/carbon/human/H = sb_actor()
 	var/obj/item/storage/box/lights/bulbs/B = sb_make(/obj/item/storage/box/lights/bulbs)
 	var/obj/item/lightreplacer/R = sb_make(/obj/item/lightreplacer)
-	R.uses = 0
+	R.set_uses(0)
 	var/count = sb_count(B)
 	TEST_ASSERT(count > 2, "the box starts with bulbs")
 	sb_click(H, B, R)

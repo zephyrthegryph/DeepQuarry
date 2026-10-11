@@ -4710,3 +4710,15 @@ the answer). No behaviour change intended.
 State-leak diagnostics now fail the test's final JSON result after teardown. Genuine cumulative action/coalescing counters and clock rollovers remain counters; fixtures restore prompt overrides and warm immutable policy caches before taking their state snapshots. The NIFSoft starting catalog is a shared immutable path catalog, with independent vendor inventory records and unchanged stock, prices and ordering.
 
 Blood/culture copies own their copied contagion children, including temporary transfer and serialization payloads. Deleting a temporary payload removes its children and their watches while preserving the donor and borrowed registry identities. A freshly materialized child is also deleted if applying its saved state throws. Reagent quantities and culture selection are unchanged; this fixes leaked temporary contagions rather than re-blessing snapshot rows.
+
+
+### Test hygiene: shared visibility and dispatch scratch state (2026-10-11)
+
+Unit-test setup initializes the actual persistent dview singleton before the
+runner captures shared state. It retains the production cache and verifies its
+identity and parked location; teardown does not delete it or restore a null
+pointer over a live cache. Fixtures register the actual previous act_last_reply
+and test_prompts values through existing scoped restoration, including failure
+paths. These are scratch outputs, not exclusions from leak detection. The real
+null-to-list/flag leak assertions remain active. Cumulative act/coalescer and
+midnight counters are not reset or backdated by these changes.

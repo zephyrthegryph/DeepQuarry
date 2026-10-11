@@ -552,6 +552,14 @@ GLOBAL_VAR(dq_test_select_names)
 	rel_set(src, nameof(run_loc_floor_bottom_left), test_block.bottom_left)
 	rel_set(src, nameof(run_loc_floor_top_right), test_block.top_right)
 
+	// dview is a persistent production singleton, not a disposable fixture mob.
+	// Initialize it before the runner snapshots shared state, and keep its identity.
+	dview(0, run_loc_floor_bottom_left)
+	// Action reply and prompt recording are per-call/test scratch state. Register
+	// their actual prior values so failed fixtures restore them at normal teardown.
+	set_global(nameof(GLOB.act_last_reply), GLOB.act_last_reply)
+	set_global(nameof(GLOB.test_prompts), GLOB.test_prompts)
+
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
 	// calls left it. That previous position depends on execution order and on

@@ -36,3 +36,12 @@
 	TEST_ASSERT_EQUAL(unit_test_leak_status(UNIT_TEST_PASSED, FALSE, reason), UNIT_TEST_FAILED, "Gravity leaks fail the same final-result path")
 	A.gravitychange(original)
 	TEST_ASSERT_NULL(unit_test_gravity_guard(before, type, FALSE), "Restored area gravity is clean")
+
+/datum/unit_test/dq_state_leak_guard/dview_cache/Run()
+	var/mob/dview/cached = GLOB.dview_mob
+	TEST_ASSERT_NOTNULL(cached, "Real dview singleton is initialized before fixture execution")
+	TEST_ASSERT_NULL(cached.loc, "Shared visibility cache is parked outside the test floor")
+	dview(0, test_floor())
+	TEST_ASSERT_EQUAL(GLOB.dview_mob, cached, "Actual view call retains production singleton identity")
+	TEST_ASSERT_NULL(cached.loc, "Actual view call restores parked location after reading the floor")
+	TEST_ASSERT(!QDELETED(cached), "Fixture never deletes the shared visibility cache")

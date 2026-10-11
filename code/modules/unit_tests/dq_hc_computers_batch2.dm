@@ -233,7 +233,7 @@
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
 	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
-	G.expired = 0
+	G.set_expired(0)
 	G.icon_state = "guest"
 	H.set_combat_mode(TRUE)
 	hc_hold(H, G)

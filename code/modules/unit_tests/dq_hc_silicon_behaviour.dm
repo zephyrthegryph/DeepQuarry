@@ -132,7 +132,7 @@
 /datum/unit_test/dq_hc_silicon/ai_shell_pick_cancel_deploys_nothing/run_gate()
 	var/mob/living/silicon/ai/AI = make_ai()
 	var/mob/living/silicon/robot/shell = allocate(/mob/living/silicon/robot, test_floor())
-	shell.shell = TRUE
+	shell.set_shell(TRUE)
 	AI.deploy_to_shell()
 	hci_answer(AI, null, TRUE)
 	settle()
@@ -181,7 +181,7 @@
 	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
 	ID.access = list(ACCESS_SECURITY)
 	H.put_in_active_hand(ID)
-	P.idaccessible = 1
+	P.set_idaccessible(1)
 	P.idcard.access = list()
 	hcs_swipe(H, P, ID)
 	hci_answer(H, "Add Access")
@@ -195,7 +195,7 @@
 	var/mob/living/silicon/pai/P = make_pai(H)
 	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
 	H.put_in_active_hand(ID)
-	P.idaccessible = 1
+	P.set_idaccessible(1)
 	P.idcard.access = list(ACCESS_SECURITY)
 	hcs_swipe(H, P, ID)
 	hci_answer(H, "Remove Access")
@@ -210,7 +210,7 @@
 	var/obj/item/card/id/ID = allocate(/obj/item/card/id, test_floor())
 	ID.access = list(ACCESS_SECURITY)
 	H.put_in_active_hand(ID)
-	P.idaccessible = 1
+	P.set_idaccessible(1)
 	P.idcard.access = list()
 	hcs_swipe(H, P, ID)
 	H.drop_item()
@@ -322,7 +322,7 @@
 /datum/unit_test/dq_hc_silicon/robot_pry_component_takes_the_part_out/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, get_step(H, EAST))
-	R.opened = TRUE
+	R.set_opened(TRUE)
 	R.cell = null
 	var/datum/robot_component/target = first_prying_target(R)
 	TEST_ASSERT(target, "the borg has an external component to pry out")
@@ -336,11 +336,11 @@
 /datum/unit_test/dq_hc_silicon/robot_pry_component_dropped_when_borg_closes/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, get_step(H, EAST))
-	R.opened = TRUE
+	R.set_opened(TRUE)
 	R.cell = null
 	var/datum/robot_component/target = first_prying_target(R)
 	R.pry_component(H)
-	R.opened = FALSE
+	R.set_opened(FALSE)
 	hci_answer(H, "[target.name]")
 	settle()
 	TEST_ASSERT_NOTEQUAL(target.installed, ROBOT_PART_MISSING, "a borg that closed meanwhile keeps its part")
@@ -493,7 +493,7 @@
 	var/mob/living/silicon/robot/platform/P = allocate(/mob/living/silicon/robot/platform, get_step(H, EAST))
 	var/obj/item/floor_painter/painter = allocate(/obj/item/floor_painter, test_floor())
 	H.put_in_active_hand(painter)
-	painter.paint_colour = "#123456"
+	painter.set_paint_colour("#123456")
 	var/obj/item/robot_module/robot/platform/tank_module = P.module
 	TEST_ASSERT(istype(tank_module), "the platform has its module")
 	P.try_paint(painter, H)

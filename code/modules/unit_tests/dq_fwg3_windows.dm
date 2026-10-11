@@ -200,7 +200,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/obj/machinery/power/shield_generator/S = allocate(/obj/machinery/power/shield_generator, T)
-	S.mode_changes_locked = FALSE
+	S.set_mode_changes_locked(FALSE)
 	hc_ui(H, S, "set_range")
 	p2cl_answer(H, 7)
 	test_time(1)
@@ -209,10 +209,10 @@
 	p2cl_answer(H, 12)
 	test_time(1)
 	TEST_ASSERT_EQUAL(S.input_cap, 12000, "the answered cap, in kW")
-	S.running = 0
+	S.set_running(0)
 	hc_ui(H, S, "begin_shutdown")
 	TEST_ASSERT_NULL(SSrequests.open_for(H), "an idle generator asks nothing")
-	S.mode_changes_locked = TRUE
+	S.set_mode_changes_locked(TRUE)
 	hc_ui(H, S, "set_range")
 	TEST_ASSERT_NULL(SSrequests.open_for(H), "locked modes ask nothing")
 

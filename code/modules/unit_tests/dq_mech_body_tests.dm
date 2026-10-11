@@ -102,7 +102,7 @@
 	H.enable_godmode() // the test floor has no air: the half minute each use waits would put the actor out
 	H.set_combat_mode(FALSE)
 	var/datum/mech_body_plan/plan = mech_body_plan()
-	mech.state = MECHA_OPERATING
+	mech.set_state(MECHA_OPERATING)
 
 	var/obj/item/tool/screwdriver/screwdriver = dq_fast_tool(/obj/item/tool/screwdriver, T)
 	plan.afflict(mech, MECHA_INT_TEMP_CONTROL)
@@ -133,21 +133,21 @@
 	plan.afflict(mech, MECHA_INT_SHORT_CIRCUIT)
 	use(H, mech, coil)
 	TEST_ASSERT(plan.has_affliction(mech, MECHA_INT_SHORT_CIRCUIT), "the wiring is out of reach with the hatch closed")
-	mech.state = MECHA_CELL_OPEN
+	mech.set_state(MECHA_CELL_OPEN)
 	use(H, mech, coil)
 	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_SHORT_CIRCUIT), "cable replaces fused wires behind the open hatch")
 
 	// Nanopaste works with the bolts undone: a damaged component is mended.
 	var/obj/item/stack/nanopaste/paste = allocate(/obj/item/stack/nanopaste, T)
-	mech.state = MECHA_BOLTS_SECURED
+	mech.set_state(MECHA_BOLTS_SECURED)
 	var/paste_before = paste.get_amount()
 	use(H, mech, paste)
 	TEST_ASSERT_EQUAL(paste.get_amount(), paste_before, "nanopaste does nothing with the bolts done up")
-	mech.state = MECHA_PANEL_LOOSE
+	mech.set_state(MECHA_PANEL_LOOSE)
 	TEST_ASSERT(isnull(mech.maintenance_panel_loose(null)), "the panel is loose")
 
 	// Recalibration is the pilot's, from the cockpit: the op needs the pilot and control damage.
-	mech.state = MECHA_OPERATING
+	mech.set_state(MECHA_OPERATING)
 	plan.afflict(mech, MECHA_INT_CONTROL_LOST)
 	TEST_ASSERT(mech.control_lost(null), "it applies while the mech has control damage")
 	plan.cure(mech, MECHA_INT_CONTROL_LOST)

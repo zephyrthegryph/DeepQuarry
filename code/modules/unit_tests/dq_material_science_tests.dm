@@ -841,12 +841,12 @@
 	var/obj/structure/cable/start = new(locate(2, 2, 1))
 	var/obj/structure/cable/middle = new(locate(3, 2, 1))
 	var/obj/structure/cable/end = new(locate(4, 2, 1))
-	start.d1 = 0
-	start.d2 = EAST
-	middle.d1 = EAST
-	middle.d2 = WEST
-	end.d1 = 0
-	end.d2 = WEST
+	start.set_d1(0)
+	start.set_d2(EAST)
+	middle.set_d1(EAST)
+	middle.set_d2(WEST)
+	end.set_d1(0)
+	end.set_d2(WEST)
 	net.add_cable(start)
 	net.add_cable(middle)
 	net.add_cable(end)

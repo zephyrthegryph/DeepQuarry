@@ -471,7 +471,7 @@
 /datum/unit_test/dq_p2_lights/an_oversized_cell_burns_the_fixture_out_on_emergency_power/run_gate()
 	var/obj/machinery/light/L = light()
 	var/obj/item/cell/C = p2l_cell(L)
-	C.maxcharge = 2000
+	C.set_maxcharge(2000)
 	C.set_charge(2000)
 	set_area_power(FALSE)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BURNED, "the tube burned out")
@@ -1155,7 +1155,7 @@
 /datum/unit_test/dq_p2_lights/floor_lamp_without_a_shade_gives_up_its_bulb/run_gate()
 	var/obj/machinery/light/flamp/F = light(/obj/machinery/light/flamp)
 	var/mob/living/carbon/human/H = gloved(person())
-	F.lamp_shade = 0
+	F.set_lamp_shade(0)
 	click(H, F, null)
 	TEST_ASSERT_EQUAL(p2l_status(F), LIGHT_EMPTY, "the bulb came out")
 	TEST_ASSERT(istype(H.get_active_hand(), /obj/item/light/bulb/large), "into the hand")
@@ -1194,7 +1194,7 @@
 /datum/unit_test/dq_p2_lights/shaded_floor_lamp_ignores_the_area_switch/run_gate()
 	var/obj/machinery/light/flamp/F = light(/obj/machinery/light/flamp, tile(1, 3))
 	var/obj/machinery/light/flamp/N = light(/obj/machinery/light/flamp, tile(3, 3))
-	N.lamp_shade = 0
+	N.set_lamp_shade(0)
 	set_area_switch(0)
 	TEST_ASSERT(F.on, "a shaded lamp stays lit")
 	TEST_ASSERT(!N.on, "a bare lamp goes dark")

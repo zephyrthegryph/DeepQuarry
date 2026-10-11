@@ -1203,7 +1203,7 @@
 /datum/unit_test/dq_p2_door/airlock_welding_fitted_plasteel_reinforces_the_door/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
-	D.reinforcing = 2 // two sheets fitted
+	D.set_reinforcing(2) // two sheets fitted
 	TEST_ASSERT(!D.heat_proof, "not reinforced yet")
 	click(H, D, give_welder(H))
 	TEST_ASSERT(D.heat_proof, "welding the fitted plasteel in reinforces the door")
@@ -1214,7 +1214,7 @@
 /datum/unit_test/dq_p2_door/airlock_fitted_plasteel_can_be_pried_back_off/run_gate()
 	var/obj/machinery/door/airlock/D = make_door()
 	var/mob/living/carbon/human/H = make_person(null)
-	D.reinforcing = 2 // two sheets fitted
+	D.set_reinforcing(2) // two sheets fitted
 	click(H, D, give_tool(H, /obj/item/tool/crowbar))
 	TEST_ASSERT_EQUAL(D.reinforcing, 0, "a crowbar takes the unwelded plasteel back off")
 	TEST_ASSERT(!D.heat_proof, "the door is not reinforced")
@@ -1392,7 +1392,7 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/airlock_electronics/board = frame_up(A, H, list(ACCESS_ENGINE, ACCESS_SECURITY))
 	TEST_ASSERT_NOTNULL(board, "the frame went up")
-	board.one_access = TRUE
+	board.set_one_access(TRUE)
 	click(H, A, give_tool(H, /obj/item/tool/screwdriver))
 	var/obj/machinery/door/airlock/D = locate(/obj/machinery/door/airlock) in tile(2, 2)
 	TEST_ASSERT_NOTNULL(D, "an airlock stands where the assembly was")

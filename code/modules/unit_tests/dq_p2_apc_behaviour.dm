@@ -252,7 +252,7 @@
 
 /// Opens the cover of a finished APC: the cover lock off, then the crowbar.
 /datum/unit_test/dq_p2_apc/proc/open_cover(mob/living/carbon/human/H, obj/machinery/power/apc/A)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, tool(/obj/item/tool/crowbar))
 
 /// The wire panel open (the screwdriver, with the cover shut).
@@ -432,7 +432,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, bar)
 	TEST_ASSERT(p2_apc_cover_open(A), "with the cover lock off a charged cell does not hold it")
 	touch(H, A, null)
@@ -448,7 +448,7 @@
 /datum/unit_test/dq_p2_apc/broken_apc_cover_stays_shut/run_gate()
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
 	TEST_ASSERT(A.broken_now(), "three quarters of its integrity gone: broken")
@@ -494,7 +494,7 @@
 	bat.w_class = ITEMSIZE_NORMAL
 	var/obj/item/frame/apc/frame = allocate(/obj/item/frame/apc, run_loc_floor_bottom_left)
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	touch(H, A, bar)
 	touch(H, A, null)
 	TEST_ASSERT_NULL(A.cell, "the cell is out")

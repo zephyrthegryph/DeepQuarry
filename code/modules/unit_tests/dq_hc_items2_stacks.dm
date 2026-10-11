@@ -185,7 +185,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/turf/T = get_turf(H)
 	var/obj/item/stack/marker_beacon/ten/S = allocate(/obj/item/stack/marker_beacon/ten, T)
-	S.picked_color = "Jade"
+	S.set_picked_color("Jade")
 	S.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(S.icon_state, "markerjade", "the stack shows its colour")
@@ -206,7 +206,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/turf/T = get_turf(H)
 	var/obj/item/stack/marker_beacon/S = allocate(/obj/item/stack/marker_beacon, T)
-	S.picked_color = "Jade"
+	S.set_picked_color("Jade")
 	hci_click(H, S, null, I_HELP, "alt=1")
 	test_time(5 SECONDS)
 	hci_answer(H, "Indigo")

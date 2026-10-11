@@ -27,11 +27,11 @@
 /datum/unit_test/dq_hc_computers/arcade_claw_machine/run_gate()
 	var/obj/machinery/computer/arcade/clawmachine/C = hc_console(/obj/machinery/computer/arcade/clawmachine)
 	var/mob/living/carbon/human/H = hc_actor()
-	C.gamepaid = 0
+	C.set_gamepaid(0)
 	var/status = C.gameStatus
 	press(H, C, "newgame")
 	TEST_ASSERT_EQUAL(C.gameStatus, status, "an unpaid game does not start")
-	C.gamepaid = 1
+	C.set_gamepaid(1)
 	press(H, C, "newgame")
 	TEST_ASSERT_EQUAL(C.gameStatus, "CLAWMACHINE_ON", "a paid game starts")
 	TEST_ASSERT_EQUAL(C.wintick, 0, "from the first move")
@@ -233,11 +233,11 @@
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "the actual uniform supplies the worn credential slot")
 	TEST_ASSERT(H.equip_to_slot_if_possible(I, SLOT_ID_ID, disable_warning = TRUE), "the actual credential is worn in the ID slot")
 	TEST_ASSERT_NULL(H.get_active_hand(), "the public hand click uses the actor's actual empty hand")
-	C.prison_break = TRUE
+	C.set_prison_break(TRUE)
 	var/datum/op_result/broken_route = own(test_click(H, C, null))
 	TEST_ASSERT_EQUAL(broken_route?.outcome, ACT_REFUSED, "a real credential cannot bypass a broken prison route")
 	TEST_ASSERT_EQUAL(reason_text(broken_route?.reason), "unable to locate shuttle", "the actual route failure supplies its refusal")
-	C.prison_break = FALSE
+	C.set_prison_break(FALSE)
 	var/datum/op_result/accepted = own(test_click(H, C, null))
 	TEST_ASSERT_EQUAL(accepted?.key, "ui_open", "the generated binding remains the actual public window operation")
 	TEST_ASSERT_EQUAL(accepted?.outcome, ACT_COMMITTED, "restoring the route permits the actual credentialed actor")

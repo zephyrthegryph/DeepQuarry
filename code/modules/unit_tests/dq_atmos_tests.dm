@@ -3300,7 +3300,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/atmospherics/valve/VL = new(V)
 	VL.dir = get_dir(V, B)
 	VL.initialize_directions = axis
-	VL.open = FALSE
+	VL.set_open(FALSE)
 	var/obj/machinery/atmospherics/pipe/simple/PB = new(B)
 	PB.dir = axis
 	PB.initialize_directions = axis
@@ -3317,7 +3317,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		"closed valve didn't separate pipelines — PA and PB share parent [PA.parent]")
 
 	// Open the valve and rebuild — they should merge.
-	VL.open = TRUE
+	VL.set_open(TRUE)
 	VL.update_icon()
 	// Publish the valve's newly enabled internal edge.
 	VL.rust_register_pipe_topology()
@@ -3958,7 +3958,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	A.set_broken_condition(FALSE)
 	rel_set(A.alarm_area_ref(), nameof(/area::main_air_alarm), A)
 	A.alarm_area_ref().air_alarms_refresh()
-	A.target_temperature = T20C
+	A.set_target_temperature(T20C)
 	A.scan_room(null)
 	TEST_ASSERT_EQUAL(A.danger_level, 0, \
 		"air alarm flagged danger on a standard breathable atmosphere")
@@ -4300,8 +4300,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/test_turf = run_loc_floor_bottom_left
 	var/obj/machinery/light/L = new(test_turf)
 	L.set_grid_power(FALSE)
-	L.emergency_mode = TRUE
-	L.auto_flicker = FALSE
+	L.set_emergency_mode(TRUE)
+	L.set_auto_flicker(FALSE)
 	L.begin_emergency_discharge()
 	TEST_ASSERT(after_pending(L, "discharge"), "emergency light did not schedule its discharge timer")
 	// The drain is settled when the light must change, not every few seconds: a full cell keeps its emergency
@@ -4319,7 +4319,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_emergency_light_dims_once/Run()
 	var/obj/machinery/light/L = new(run_loc_floor_bottom_left)
-	L.auto_flicker = FALSE
+	L.set_auto_flicker(FALSE)
 	var/obj/item/cell/C = L.emergency_cell()
 	TEST_ASSERT(C, "the fixture has an emergency cell")
 	C.set_charge(C.maxcharge)
@@ -4335,7 +4335,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/expected = (C.charge - dim_at) / 0.2 * (2 SECONDS)
 	TEST_ASSERT(abs(L.emergency_discharge_wait() - expected) <= 2, "a full cell waits [L.emergency_discharge_wait()] ds to dim, expected about [expected]")
 	L.set_grid_power(FALSE)
-	L.emergency_mode = TRUE
+	L.set_emergency_mode(TRUE)
 	L.begin_emergency_discharge()
 	var/before = C.charge
 	// Ten minutes of drain, settled in one batch.
@@ -4546,9 +4546,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.set_density(FALSE)
 	A.set_operating(FALSE)
 	set_bolted(A, FALSE, TRUE)
-	A.frozen = FALSE
+	A.set_frozen(FALSE)
 	A.autoclose_cancel()
-	A.safe = TRUE
+	A.set_safeties(TRUE)
 	A.set_autoclose(TRUE)
 	var/obj/blocker = new(T)
 	blocker.set_density(TRUE)
@@ -4570,7 +4570,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.set_density(TRUE)
 	A.set_operating(FALSE)
 	set_bolted(A, FALSE, TRUE)
-	A.frozen = FALSE
+	A.set_frozen(FALSE)
 	A.id_tag = "dq_secure_open_test"
 	TEST_ASSERT(A.power_systems_on(), "the test airlock has no power")
 	var/datum/signal/S = new
@@ -4855,13 +4855,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/generator_environment = T.return_air()
 	var/generator_pressure_ratio = generator_environment ? min(generator_environment.return_pressure() / ONE_ATMOSPHERE, 1) : 0
 	portable_generator.temperature = 20 + (generator_environment ? generator_environment.return_temperature() - T20C : 0) * generator_pressure_ratio
-	portable_generator.overheating = 0
+	portable_generator.set_overheating(0)
 	TEST_ASSERT(!portable_generator.has_work(), "a cold inactive portable generator's step (every(when = has_work)) has no work")
-	portable_generator.sheets = 1
+	portable_generator.set_sheets(1)
 	portable_generator.TogglePower()
 	TEST_ASSERT(portable_generator.has_work(), "a started portable generator's step has work")
 	var/obj/machinery/smartfridge/smartfridge = new(T)
-	smartfridge.shoot_inventory = FALSE
+	TEST_ASSERT(!smartfridge.shoot_inventory, "fresh smartfridge has no item_throw holds contributing stock throwing")
 	TEST_ASSERT(test_machine_idle(smartfridge), "stable smartfridge remained scheduled")
 	var/obj/machinery/smartfridge/drying_rack/drying_rack = new(T)
 	TEST_ASSERT(test_machine_idle(drying_rack), "empty drying rack remained scheduled")
@@ -7569,7 +7569,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	G.set_target_pressure(G.target_pressure + 1)
 	TEST_ASSERT(G.refresh_queued & DEP_PUSH, "a gate's target pressure did not queue its push")
 	refresh_flush()
-	G.flowing = !G.flowing
+	G.set_flowing(!G.flowing)
 	TEST_ASSERT_EQUAL(G.refresh_queued, 0, "an unread write queued work")
 	var/obj/machinery/atmospherics/unary/vent_pump/V = allocate(/obj/machinery/atmospherics/unary/vent_pump, T)
 	refresh_flush()

@@ -290,7 +290,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
-	R.amount = 3
+	R.set_amount(3)
 	hci_click(H, B, R)
 	hci_answer(H, "Grill")
 	settle()
@@ -305,7 +305,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/bonfire/B = allocate(/obj/structure/bonfire, tile(3, 2))
 	var/obj/item/stack/rods/R = allocate(/obj/item/stack/rods, tile(2, 2))
-	R.amount = 3
+	R.set_amount(3)
 	hci_click(H, B, R)
 	H.drop_item()
 	hci_answer(H, "Grill")
@@ -361,7 +361,7 @@
 /datum/unit_test/dq_hc_struct/locked_reflector_asks_nothing/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
-	R.finished = TRUE
+	R.set_finished(TRUE)
 	var/angle = R.rotation_angle
 	R.can_rotate = FALSE
 	R.rotate(H)
@@ -422,7 +422,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/button/windowtint/B = allocate(/obj/machinery/button/windowtint, tile(3, 2))
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, tile(2, 2))
-	B.id = null
+	B.set_id(null)
 	hci_click(H, B, M)
 	hci_answer(H, "tintA")
 	settle()
@@ -482,7 +482,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/toilet/teleplumbed/T = allocate(/obj/structure/toilet/teleplumbed, tile(3, 2))
 	T.set_cistern(TRUE)
-	T.open = FALSE
+	T.set_open(FALSE)
 	var/obj/item/bluespace_crystal/crystal = T.teleplumb_crystal
 	TEST_ASSERT_NOTNULL(crystal, "it has a crystal")
 	hci_click(H, T, null)
@@ -522,7 +522,7 @@
 /datum/unit_test/dq_hc_struct/reflector_angle_is_asked_and_set/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/structure/reflector/R = allocate(/obj/structure/reflector, tile(3, 2))
-	R.finished = TRUE
+	R.set_finished(TRUE)
 	R.rotate(H)
 	TEST_ASSERT(asked(H), "an unlocked reflector asks for an angle")
 	hci_answer(H, 90)

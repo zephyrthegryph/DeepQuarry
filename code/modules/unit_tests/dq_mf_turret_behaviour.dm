@@ -47,7 +47,7 @@
 /proc/mft_area_power(area/A, on)
 	A.set_requires_power(TRUE)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = on
+	A.set_power_equip(on)
 	for(var/obj/machinery/M in A)
 		M.power_change()
 

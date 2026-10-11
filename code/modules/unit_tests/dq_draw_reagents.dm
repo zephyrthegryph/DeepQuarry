@@ -342,7 +342,7 @@ TRACKED(/obj/dq_draw_throws, boom)
 	var/obj/dq_draw_throws/A = allocate(/obj/dq_draw_throws, test_floor())
 	var/obj/dq_draw_throws/B = allocate(/obj/dq_draw_throws, test_floor())
 	refresh_flush()
-	A.boom = TRUE
+	A.set_boom(TRUE)
 	var/threw = FALSE
 	try
 		refresh_look(A)
@@ -351,6 +351,6 @@ TRACKED(/obj/dq_draw_throws, boom)
 	TEST_ASSERT(threw, "the draw's runtime reaches the caller")
 	TEST_ASSERT_EQUAL(GLOB.derived_evaluating, 0, "and the engine is not left inside an output")
 	TEST_ASSERT(!OP_PURE_ACTIVE, "so a write after it is not reported as made inside one")
-	A.boom = FALSE
+	A.set_boom(FALSE)
 	TEST_ASSERT_NOTNULL(refresh_look(B), "the next output evaluates")
 	TEST_ASSERT_NOTNULL(refresh_look(A), "and the one that threw draws again once it stops")

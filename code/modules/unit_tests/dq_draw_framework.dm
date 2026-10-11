@@ -145,12 +145,12 @@ TRACKED(/obj/dq_draw_watched, shown)
 	var/mob/living/simple_mob/animal/hyena/H = allocate(/mob/living/simple_mob/animal/hyena, T)
 	var/datum/look/look = new
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "live", "a conscious mob shows the living state")
-	H.stat = UNCONSCIOUS
+	H.set_stat(UNCONSCIOUS)
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "rest", "an unconscious one shows the resting state")
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", null, "dead"), initial(H.icon_state), "with no resting sprite it keeps its own")
-	H.stat = DEAD
+	H.set_stat(DEAD)
 	TEST_ASSERT_EQUAL(look.life_state(H, "live", "rest", "dead"), "dead", "a dead one shows the dead state")
-	H.stat = CONSCIOUS
+	H.set_stat(CONSCIOUS)
 
 // ---- dir: a draw that reads dir redraws when set_dir() changes it; look.offset() ----
 

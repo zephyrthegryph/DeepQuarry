@@ -119,7 +119,7 @@
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
 		H.set_use_stance(stance)
 		H.put_in_active_hand(crowbar)
-		R.opened = FALSE
+		R.set_opened(FALSE)
 		TEST_ASSERT(R.interaction_tool_act(H, crowbar, TOOL_CROWBAR) & ITEM_INTERACT_SUCCESS, "stance [stance]: the crowbar works the chassis")
 		TEST_ASSERT(R.opened, "stance [stance]: the crowbar opens the cover")
 		H.drop_from_inventory(crowbar)
@@ -130,7 +130,7 @@
 		TEST_ASSERT(R.interaction_tool_act(H, welder, TOOL_WELDER) & ITEM_INTERACT_SUCCESS, "stance [stance]: the welder works the chassis")
 		TEST_ASSERT(R.injury_load(INJURY_CATEGORY_PHYSICAL) < before, "stance [stance]: the weld repairs dents")
 		H.drop_from_inventory(welder)
-	R.opened = FALSE
+	R.set_opened(FALSE)
 	H.set_use_stance(I_HURT)
 	H.put_in_active_hand(crowbar)
 	TEST_ASSERT(!(R.interaction_tool_act(H, crowbar, TOOL_CROWBAR) & (ITEM_INTERACT_SUCCESS | ITEM_INTERACT_BLOCKING)), "combat mode: no op answers the crowbar, so it goes on to strike")

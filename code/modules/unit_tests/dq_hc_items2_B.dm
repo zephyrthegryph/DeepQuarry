@@ -180,7 +180,7 @@
 /datum/unit_test/dq_hc_items/b_wrapped_chewable_unwraps_in_the_hand/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/clothing/mask/chewable/tobacco/W = allocate(/obj/item/clothing/mask/chewable/tobacco, tile(2, 2))
-	W.wrapped = TRUE
+	W.set_wrapped(TRUE)
 	hci_click(H, W, W)
 	settle()
 	TEST_ASSERT(!W.wrapped, "using a wrapped chewable unwraps it")

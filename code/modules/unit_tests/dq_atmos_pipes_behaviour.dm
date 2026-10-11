@@ -585,7 +585,7 @@
 	TEST_ASSERT(I.use_power, "a hand switches it on")
 	ap_click(H, I)
 	TEST_ASSERT(!I.use_power, "and off")
-	I.id = "ap_inj"
+	I.set_id("ap_inj")
 	ap_radio(I, "ap_inj", list("power" = "1", "set_volume_rate" = "30"))
 	TEST_ASSERT(I.use_power, "the radio switches it on")
 	TEST_ASSERT_EQUAL(I.volume_rate, 30, "and sets its rate")

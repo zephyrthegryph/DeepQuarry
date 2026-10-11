@@ -1082,7 +1082,7 @@
 	TEST_ASSERT(report.consent_time, "patient signature did not register rare-case consent")
 	TEST_ASSERT(report.print_case_forms(test_turf), "registered rare-case paperwork had no replacement path")
 	report.consent_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	narrative.info += " Treatment relieved pleural pressure. Follow-up showed stable respiration without complication."
+	narrative.set_info(narrative.info + " Treatment relieved pleural pressure. Follow-up showed stable respiration without complication.")
 	narrative.on_field_written(doctor, 1, null)
 	narrative.on_field_written(doctor, 2, null)
 	var/obj/item/paper/baseline = new(test_turf)

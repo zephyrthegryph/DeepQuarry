@@ -71,11 +71,11 @@
 /datum/unit_test/dq_hc_items/geiger_alt_resets_only_while_scanning/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/geiger/G = allocate(/obj/item/geiger, tile(2, 2))
-	G.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_HIGH
+	G.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_HIGH)
 	hci_click(H, G, null, I_HELP, "alt=1")
 	settle()
 	TEST_ASSERT_EQUAL(G.last_perceived_radiation_danger, PERCEIVED_RADIATION_DANGER_HIGH, "an alt-click on a counter that is off does nothing")
-	G.scanning = TRUE
+	G.set_scanning(TRUE)
 	hci_click(H, G, null, I_HELP, "alt=1")
 	settle()
 	TEST_ASSERT_NULL(G.last_perceived_radiation_danger, "an alt-click on a running counter clears the danger")
@@ -84,13 +84,13 @@
 
 /datum/unit_test/dq_hc_items/geiger_level_follows_danger/run_gate()
 	var/obj/item/geiger/G = allocate(/obj/item/geiger, tile(2, 2))
-	G.scanning = TRUE
-	G.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_EXTREME
+	G.set_scanning(TRUE)
+	G.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_EXTREME)
 	G.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(G.icon_state, "geiger_on_5", "extreme danger shows level 5")
 	var/obj/item/geiger/wall/W = allocate(/obj/item/geiger/wall, tile(3, 3))
-	W.last_perceived_radiation_danger = PERCEIVED_RADIATION_DANGER_LOW
+	W.set_last_perceived_radiation_danger(PERCEIVED_RADIATION_DANGER_LOW)
 	W.update_icon()
 	settle()
 	TEST_ASSERT_EQUAL(W.icon_state, "geiger_level_2", "the wall counter has its own states")

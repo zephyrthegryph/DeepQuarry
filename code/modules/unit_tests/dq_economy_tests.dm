@@ -574,7 +574,7 @@
 	register.price_list["meal"] = 25
 	var/obj/item/spacecash/ewallet/wallet = new(customer)
 	wallet.owner_name = customer_account.owner_name
-	wallet.worth = 60
+	wallet.set_worth(60)
 	register.scan_wallet(wallet, customer)
 	TEST_ASSERT_EQUAL(wallet.worth, 35, "real register did not debit the e-wallet")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 25, "real register did not credit Service for an e-wallet sale")
