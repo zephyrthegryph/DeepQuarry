@@ -16,6 +16,7 @@ mod source_recipe;
 pub(crate) use source_recipe::{RecipeWire, SourceRecipe};
 mod descriptor_recipe;
 mod expression_recipe;
+mod retained;
 pub(crate) use expression_recipe::ExpressionRecipe;
 
 pub struct Collected {
@@ -199,7 +200,7 @@ pub fn collect_with_defaults<'a, R: Resolver>(
     for (code, debug) in seeds {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls)
+    finish_collection(seen, pending, symbols, host, calls, None)
 }
 /// Consume compact body seeds before initializer/map seeds in their original order.
 pub fn collect_prepared_with_defaults<'a, R: Resolver>(
@@ -228,6 +229,17 @@ pub fn collect_owned_prepared_with_defaults<'a, R: Resolver>(
     host: &R,
     calls: Option<&dyn dm_tree::constants::PureCalls>,
 ) -> Result<Collected, String> {
+    collect_owned_prepared_retained(prepared, trailing, defaults, symbols, host, calls, None)
+}
+pub(crate) fn collect_owned_prepared_retained<'a, R: Resolver>(
+    prepared: impl IntoIterator<Item = PreparedSeed>,
+    trailing: impl IntoIterator<Item = (&'a ResolverProc, &'a DebugOrigins)>,
+    defaults: &[(SymRef, CapturedModifiedInstance, DebugOrigins)],
+    symbols: &SymbolTable,
+    host: &R,
+    calls: Option<&dyn dm_tree::constants::PureCalls>,
+    fragments: Option<&crate::initializer_lowering::InitializerFragments>,
+) -> Result<Collected, String> {
     let mut seen = HashMap::new();
     let mut pending = VecDeque::new();
     enqueue_defaults(defaults, &mut seen, &mut pending)?;
@@ -251,7 +263,7 @@ pub fn collect_owned_prepared_with_defaults<'a, R: Resolver>(
     for (code, debug) in trailing {
         enqueue(code, debug, &mut seen, &mut pending)?;
     }
-    finish_collection(seen, pending, symbols, host, calls)
+    finish_collection(seen, pending, symbols, host, calls, fragments)
 }
 fn finish_collection<R: Resolver>(
     mut seen: HashMap<SymRef, Arc<[u8]>>,
@@ -259,29 +271,16 @@ fn finish_collection<R: Resolver>(
     symbols: &SymbolTable,
     host: &R,
     calls: Option<&dyn dm_tree::constants::PureCalls>,
+    fragments: Option<&crate::initializer_lowering::InitializerFragments>,
 ) -> Result<Collected, String> {
+    let mut current_keys = Vec::new();
     let mut result = Collected {
         descriptors: Vec::new(),
         artifacts: Vec::new(),
     };
     while let Some((symbol, captured, source)) = pending.pop_front() {
         let descriptor = &captured.descriptor;
-        let fields = descriptor
-            .fields()
-            .iter()
-            .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
-            .collect::<Result<Vec<_>, String>>()?;
-        let code = dm_codegen_byond::initializer::lower_modified_assignments(
-            &fields,
-            descriptor.runtime_type(),
-            dm_codegen_byond::initializer::InitializerContext {
-                symbols,
-                resource_search_context: descriptor.resource_context(),
-                debug: Some(&source),
-            },
-            &ResourceProofHost { host, descriptor },
-        )
-        .map_err(|error| format!("modified initializer {symbol:?}: {error:?}"))?;
+        let code = retained::lower(symbol, descriptor, &source, symbols, host, calls, fragments, &mut current_keys)?;
         let debug_origins = DebugOrigins {
             entries: source.entries,
         };
@@ -294,7 +293,7 @@ fn finish_collection<R: Resolver>(
             code: code.into(),
             debug_origins: Arc::new(debug_origins),
             coverage: InitializationCoverage::ModifiedAssignments {
-                count: u32::try_from(fields.len())
+                count: u32::try_from(descriptor.fields().len())
                     .map_err(|_| "modified field count exceeds u32")?,
                 canonical_body: Arc::from(descriptor.canonical_bytes()),
             },
@@ -303,6 +302,7 @@ fn finish_collection<R: Resolver>(
         result.descriptors.push((symbol, captured));
         result.artifacts.push(artifact);
     }
+    if let Some(fragments) = fragments { fragments.retain_modified_keys(current_keys); }
     Ok(result)
 }
 /// Seed stored defaults from the exact classified source occurrence ledger.
@@ -639,6 +639,30 @@ mod resource_tests {
             symbols.intern(spelling).unwrap();
         }
         let defaults = [(symbol, captured, debug)];
+        let retained = crate::initializer_lowering::InitializerFragments::default();
+        let first = collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &defaults,
+            &symbols, &Host { content: 99 }, None, Some(&retained)).unwrap();
+        // Ordinary fragment pruning must not evict the previous modified roster.
+        retained.retain_keys(&Default::default());
+        let mut shifted = defaults.clone();
+        shifted[0].2.entries[0].semantic_path = "included/current.dm".into();
+        shifted[0].2.entries[0].line = 41;
+        let second = collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &shifted,
+            &symbols, &Host { content: 99 }, None, Some(&retained)).unwrap();
+        assert_eq!(retained.hits.load(std::sync::atomic::Ordering::Relaxed), 1);
+        assert_eq!(second.artifacts[0].debug_origins, Arc::new(shifted[0].2.clone()));
+        assert_eq!(dm_codegen_byond::encoder::freeze_proc(&first.artifacts[0].code.procedure.code).unwrap().code().canonical_bytes(),
+            dm_codegen_byond::encoder::freeze_proc(&second.artifacts[0].code.procedure.code).unwrap().code().canonical_bytes());
+        assert!(collect_owned_prepared_retained(std::iter::empty(), std::iter::empty(), &shifted,
+            &symbols, &Host { content: 100 }, None, Some(&retained)).is_err());
+        assert_eq!(retained.hits.load(std::sync::atomic::Ordering::Relaxed), 1);
+        let mut changed_input = crate::initializer_lowering::receipts::Binding::modified(
+            symbol, &defaults[0].1.descriptor, None);
+        changed_input.inputs = Arc::new(crate::initializer_lowering::receipts::Inputs::Modified {
+            canonical: Arc::from(defaults[0].1.descriptor.canonical_bytes()),
+            policy: Some(17), lexical_owner: SymbolId::of("/"), resource_context: Some(7),
+        });
+        assert!(retained.modified(&changed_input, &Host { content: 99 }).is_none());
         let output = collect_with_defaults(
             std::iter::empty(),
             &defaults,

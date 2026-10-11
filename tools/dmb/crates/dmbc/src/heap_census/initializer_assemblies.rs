@@ -72,6 +72,7 @@ impl HeapCensus {
             return;
         }
         match inputs.as_ref() {
+            Inputs::Modified { canonical, .. } => { self.slice(owner, canonical, true); }
             Inputs::Fragment(input) => {
                 match &input.write.value {
                     dm_ir::InitializerValue::Expression(value) => self.expression(owner, value),

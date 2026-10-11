@@ -34,6 +34,13 @@ impl HeapCensus {
         }
         if let Some(store) = &memo.initializer_fragments {
             if self.arc_object("cold_boundary.fragment_store", store) {
+                store.visit_key_roster(|ordinary, modified| {
+                    for keys in [ordinary, modified] {
+                        if self.vec_payload("cold_boundary.fragment_key_roster", keys) {
+                            for key in keys { self.slice("cold_boundary.fragment_keys", key, true); }
+                        }
+                    }
+                });
                 store.visit_storage(|view| match view {
                     dm_session::ObservedArtifactStorageView::Store { buckets, entries } => {
                         self.observe_items("cold_boundary.fragment_index", entries);

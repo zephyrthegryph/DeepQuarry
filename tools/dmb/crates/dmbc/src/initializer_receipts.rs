@@ -39,6 +39,12 @@ pub(crate) struct GroupWrite {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Inputs {
     Fragment(FragmentInputs),
+    Modified {
+        canonical: Arc<[u8]>,
+        policy: Option<u128>,
+        lexical_owner: dm_ir::SymbolId,
+        resource_context: Option<u128>,
+    },
     Assembly {
         receiver: Option<dm_ir::SymbolId>,
         writes: Vec<GroupWrite>,
@@ -50,6 +56,13 @@ pub(crate) struct Binding {
     pub inputs: Arc<Inputs>,
 }
 impl Binding {
+    pub fn modified(reference: dm_ir::SymRef, descriptor: &dm_ir::ModifiedInstance, policy: Option<u128>) -> Self {
+        let mut key = b"initializer-modified-placement-v1".to_vec();
+        // Symbolic identity locates only; full canonical input is replayed.
+        if let dm_ir::SymRef::Instance(name) = reference { symbol(&mut key, name); }
+        Self::new(key, 0, Inputs::Modified { canonical: Arc::from(descriptor.canonical_bytes()), policy,
+            lexical_owner: descriptor.lexical_owner(), resource_context: descriptor.resource_context() })
+    }
     pub fn fragment(duplicate: usize, inputs: FragmentInputs) -> Self {
         let key = fragment_locator(&inputs.write);
         Self::new(key, duplicate, Inputs::Fragment(inputs))
