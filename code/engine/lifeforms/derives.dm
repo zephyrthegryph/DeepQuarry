@@ -96,20 +96,17 @@ GLOBAL_LIST_EMPTY(derives_running)
 	if(!(target in holder.vars))
 		declare_report("[C.origin]: derives(\"[target]\") on [holder.type]: no such var")
 		return
-	var/list/running = GLOB.derives_running
-	if(!running)
-		running = GLOB.derives_running = list()
-	if(running[holder])
+	if(LAZYACCESS(GLOB.derives_running, holder))
 		return
-	running[holder] = TRUE
+	LAZYSET(GLOB.derives_running, holder, TRUE)
 	var/value
 	try
 		value = call(holder, E.args["proc"])(target) // x(target): one proc may compute several targets
 	catch(var/exception/e)
 		stack_trace("derives([target]) on [holder.type]: [e] ([e.file]:[e.line])")
-		running -= holder
+		LAZYREMOVE(GLOB.derives_running, holder)
 		return
-	running -= holder
+	LAZYREMOVE(GLOB.derives_running, holder)
 	if(holder.vars[target] == value)
 		return
 	holder.vars[target] = value // ALLOW(api): the engine writes a derives() target and publishes it

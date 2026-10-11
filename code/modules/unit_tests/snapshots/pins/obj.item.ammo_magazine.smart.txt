@@ -15,10 +15,10 @@
 -click: nothing
 +0 menu: Clear Ammo Data (refused: You can't do that.)
 +1 menu: Load
-+3 menu: Smart item
-+5 menu: Use
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
++3 menu: Remove the cell (refused: )
++4 menu: Smart item
++6 menu: Use
++7 click: Click: Remove the cell
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Clear Ammo Data (refused: You can't do that.)
@@ -88,15 +88,19 @@
 +6 menu: Use
 +7 click: Click: Load
 @obj.item human|/obj/item
+-menu: Alternate use
 -click: Click: Use
 +0 menu: Clear Ammo Data (refused: You can't do that.)
 +1 menu: Load
 +3 menu: Smart item
 +6 click: Click: Load
-@obj.item human|/obj/item/card/emag
-+0 menu: Clear Ammo Data (refused: You can't do that.)
-+1 menu: Load
-+3 menu: Smart item
+human|/obj/item/card/emag menu: Clear Ammo Data (refused: You can't do that.)
+human|/obj/item/card/emag menu: Load
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Smart item
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/cell/device menu: Charge with your body (refused: not in your hand)
 human|/obj/item/cell/device menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/cell/device menu: Drain its charge (refused: not in your hand)

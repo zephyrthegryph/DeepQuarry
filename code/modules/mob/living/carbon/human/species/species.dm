@@ -519,7 +519,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /// its parent's slot (code/modules/body/parts/), so no list is written here.
 /datum/species/proc/create_organs(mob/living/carbon/human/H) //Handles creation of mob organs.
 
-	H.mob_size = mob_size
+	H.set_mob_size(mob_size)
 	var/obj/item/organ/old_root = H.slot_item(SLOT_ID_PART_ROOT)
 	if(old_root)
 		replaced_by(old_root, H)
@@ -901,7 +901,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	var/datum/species/new_copy = new src.type()
 	new_copy.race_key = race_key
 	if (selects_bodytype && custom_base)
-		new_copy.base_species = custom_base
+		new_copy.set_base_species(custom_base)
 		if(selects_bodytype == SELECTS_BODYTYPE_CUSTOM || selects_bodytype == SELECTS_BODYTYPE_ZORREN) //If race selects a bodytype, retrieve the custom_base species and copy needed variables.
 			var/datum/species/S = GLOB.all_species[custom_base]
 			S.copy_variables(new_copy, copy_vars)
@@ -974,6 +974,16 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			if(species_list_holds_owned(L))
 				continue
 			value = L.Copy()
+		if(var_name == nameof(name))
+			copy.set_name(value)
+			continue
+		if(var_name == nameof(base_species))
+			copy.set_base_species(value)
+			continue
+		var/datum/species/event1/event_copy = copy
+		if(istype(event_copy) && var_name == nameof(event_copy.use_bodyshape))
+			event_copy.set_use_bodyshape(value)
+			continue
 		copy.vars[var_name] = value // ALLOW(api): a species copy writes every species var by name, which is what copying one means
 	return copy
 
@@ -982,6 +992,16 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	//Makes thorough copy of species datum.
 	for(var/i in whitelist)
 		if(S.vars[i] != vars[i] && !islist(vars[i])) //If vars are same, no point in copying.
+			if(i == nameof(name))
+				S.set_name(vars[i])
+				continue
+			if(i == nameof(base_species))
+				S.set_base_species(vars[i])
+				continue
+			var/datum/species/event1/event_copy = S
+			if(istype(event_copy) && i == nameof(event_copy.use_bodyshape))
+				event_copy.set_use_bodyshape(vars[i])
+				continue
 			S.vars[i] = vars[i] // ALLOW(api): species copy and shared-list interning
 
 /datum/species/get_bodytype()
@@ -1049,3 +1069,20 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	return null
 
 // An icon file and a trail type path.
+
+// Dynamic species copy/trait assignments route only native acceptance fields.
+// TRUE means the key was handled, including an unchanged setter value.
+/datum/species/proc/set_acceptance_shape_field(field, value)
+	if(field == nameof(name))
+		set_name(value)
+		return TRUE
+	if(field == nameof(base_species))
+		set_base_species(value)
+		return TRUE
+	var/datum/species/event1/E = src
+	if(istype(E) && field == nameof(E.use_bodyshape))
+		E.set_use_bodyshape(value)
+		return TRUE
+	return FALSE
+
+TRACKED(/datum/species, base_species)

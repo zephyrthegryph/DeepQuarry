@@ -24,7 +24,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	helmet.icon_state = tmp.icon_state
 	helmet.item_state = tmp.item_state
 	helmet.item_state_slots = tmp.item_state_slots?.Copy()
-	helmet.sprite_sheets = tmp.sprite_sheets?.Copy()
+	helmet.set_sprite_sheets(tmp.sprite_sheets?.Copy())
 	helmet.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
 	helmet.set_default_worn_icon(worn_of(tmp).worn_icon)
 
@@ -39,7 +39,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_emagged)
 	suit.icon_state = tmp.icon_state
 	suit.item_state = tmp.item_state
 	suit.item_state_slots = tmp.item_state_slots?.Copy()
-	suit.sprite_sheets = tmp.sprite_sheets?.Copy()
+	suit.set_sprite_sheets(tmp.sprite_sheets?.Copy())
 	suit.sprite_sheets_obj = tmp.sprite_sheets_obj?.Copy()
 	suit.set_default_worn_icon(worn_of(tmp).worn_icon)
 

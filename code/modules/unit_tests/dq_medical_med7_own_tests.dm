@@ -131,9 +131,9 @@
 	var/obj/item/organ/internal/heart = H.organ_in(O_HEART)
 	TEST_ASSERT_NOTNULL(heart, "setup: the human needs a heart")
 	var/old_parent = heart.parent_organ
-	heart.parent_organ = "no such limb"
+	heart.set_parent_organ("no such limb")
 	TEST_ASSERT(!heart.check_verb_compatability(), "no parent limb: not compatible")
-	heart.parent_organ = old_parent
+	heart.set_parent_organ(old_parent)
 
 /// P2-D9: control efficiency is an interface on every brain-slot organ.
 /datum/unit_test/dq_med7_p2d9_control_efficiency
@@ -188,3 +188,55 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(H.global_hud_claims), 1, "claims are a set")
 	H.reconcile_global_huds()
 	TEST_ASSERT_NULL(H.global_hud_claims, "a reconcile consumes the claims")
+
+/datum/unit_test/dq_organ_preinit_identity
+	abstract_type = /datum/unit_test/dq_organ_preinit_identity
+
+/datum/unit_test/dq_organ_preinit_identity/forced_growth/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	TEST_ASSERT(arm && !arm.is_robotic(), "real host has organic forced limb")
+	var/obj/item/organ/internal/malignant/tumor/G = allocate(/obj/item/organ/internal/malignant/tumor, H, null, BP_L_ARM, "dq_forced_growth")
+	TEST_ASSERT_EQUAL(G.organ_tag, "dq_forced_growth", "forced tag is applied before placement")
+	TEST_ASSERT_EQUAL(G.parent_organ, BP_L_ARM, "forced limb overrides random choice")
+	TEST_ASSERT_EQUAL(G.owner, H, "real constructor places growth in host")
+	TEST_ASSERT_EQUAL(G.loc, arm, "growth custody is the forced containing limb")
+	TEST_ASSERT_EQUAL(arm.slot_lookup(SLOT_ID_PART_ORGANS, "dq_forced_growth"), G, "actual internal-organ slot index records forced tag")
+	TEST_ASSERT_EQUAL(G.status, 0, "forced organic growth remains live")
+
+/datum/unit_test/dq_organ_preinit_identity/engineered/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/internal/malignant/engineered/G = allocate(/obj/item/organ/internal/malignant/engineered, H, null, BP_TORSO, "dq_engineered_growth")
+	TEST_ASSERT_EQUAL(G.parent_organ, BP_TORSO, "engineered forced limb retained")
+	TEST_ASSERT_EQUAL(G.organ_tag, "dq_engineered_growth", "engineered forced tag retained")
+	TEST_ASSERT_EQUAL(G.owner, H, "engineered growth placed in real host")
+	TEST_ASSERT_EQUAL(G.status, 0, "engineered skips random organic-site failure")
+	var/obj/item/organ/internal/malignant/tumor/dead = allocate(/obj/item/organ/internal/malignant/tumor, test_floor())
+	TEST_ASSERT(dead.status & ORGAN_DEAD, "unforced growth outside living host remains dead")
+	TEST_ASSERT(findtext(dead.organ_tag, "malignant_") == 1, "unforced tag retains random suffix")
+
+/datum/unit_test/dq_organ_preinit_identity/stump/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/limb = H.get_organ(BP_L_HAND)
+	TEST_ASSERT(limb && limb.owner == H, "real host has hand to replace")
+	own(limb) // detached production child remains tracked for teardown, even on an early assertion failure
+	var/tag = limb.organ_tag
+	var/parent_tag = limb.parent_organ
+	var/max_damage = limb.max_damage
+	var/body_part = limb.body_part
+	var/joint = limb.joint
+	limb.removed(null)
+	TEST_ASSERT(!H.organs_by_name[tag], "old hand is detached before stump construction")
+	var/obj/item/organ/external/stump/S = allocate(/obj/item/organ/external/stump, H, null, limb)
+	TEST_ASSERT_EQUAL(S.organ_tag, tag, "stump inherits limb identity before placement")
+	TEST_ASSERT_EQUAL(S.parent_organ, parent_tag, "stump inherits parent identity")
+	TEST_ASSERT_EQUAL(S.owner, H, "stump constructor places in real host")
+	TEST_ASSERT_EQUAL(H.organs_by_name[tag], S, "stump occupies old body identity")
+	TEST_ASSERT_EQUAL(S.body_part, body_part, "body part copy remains pre-parent")
+	TEST_ASSERT_EQUAL(S.joint, joint, "joint copy retained")
+	TEST_ASSERT_EQUAL(S.max_damage, max_damage, "damage cap copied after parent")
+	TEST_ASSERT(S.is_stump(), "actual stump contract retained")
+	qdel(limb)
+	TEST_ASSERT(QDELETED(limb), "detached original hand is genuinely deleted")
+	TEST_ASSERT_EQUAL(S.owner, H, "deleting detached original leaves stump in host")
+	TEST_ASSERT_EQUAL(H.organs_by_name[tag], S, "original cleanup preserves actual stump body index")

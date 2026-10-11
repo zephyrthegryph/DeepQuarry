@@ -74,6 +74,7 @@
 +5 menu: Use
 +6 click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 +0 menu: Change Fire Mode (refused: You can't do that.)
 +3 menu: Toggle Spatial Rearrangement (refused: You can't do that.)
 keys: collect_item, drag_buckle, fire_mode, gen_silicon_item_silicon_equip_module, harpoon_verb_dropnom_mode, harpoon_verb_fire_mode, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, use_screwdriver

@@ -615,11 +615,6 @@
 /datum/entry/part/effect/take_out/yielded_tier()
 	return OP_PRIORITY_TAKE_OUT
 
-/datum/entry/part/req/generic/boolean/build_problem()
-	if(istext(src.args["what"]) && isnull(src.args["because"]))
-		return "req_bool(PROC_REF([src.args["what"]])) has no reason"
-	return null
-
 /datum/entry/part/req/is/build_problem()
 	var/key = src.args["key"]
 	if(src.args["because"])
@@ -737,6 +732,10 @@
 			return !!KA.args["not"] == !!KN.args["not"] && actor_kind_same_types(KA.args["types"], KN.args["types"])
 	if(istype(cond_a, /datum/entry/part/req/graph_at) && istype(cond_b, /datum/entry/part/req/graph_at))
 		return graph_at_exclusive(cond_a, cond_b)
+	if(istype(cond_a, /datum/entry/part/req/is/exact) && istype(cond_b, /datum/entry/part/req/is/exact))
+		var/datum/entry/part/req/is/exact/SA = cond_a
+		var/datum/entry/part/req/is/exact/SB = cond_b
+		return SA.args["key"] == SB.args["key"] && SA.args["of"] == SB.args["of"] && SA.args["value"] != SB.args["value"]
 	if(istype(cond_a, /datum/entry/part/req/is) && istype(cond_b, /datum/entry/part/req/is))
 		var/datum/entry/part/req/is/RA = cond_a
 		var/datum/entry/part/req/is/RB = cond_b

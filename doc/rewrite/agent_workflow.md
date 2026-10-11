@@ -182,7 +182,7 @@ captures, writes the original back and checks the look returned (a type whose lo
 probes on fresh instances). The vars probed are narrowed to those a draw can read by `analyze look-keys` (`data/look-plan.tsv`: per type a key and a
 probe list, `*` meaning unknown, scan everything). `dq_focused_test.sh` runs the pins as `DQ_LOOK_SHARDS` (default 4, `--look-shards=N`) worlds from the
 one compiled `.dmb`, each probing every Nth type (`sweep_owns`), beside one world for any other selected tests; the summaries merge into one
-`data/test-runs/<id>_focused.json`. Without `--full` only types whose key differs from `code/modules/unit_tests/snapshots/look_keys.txt` are probed (no
+`data/test-runs/<id>_focused.json`. Without `--full` only types whose key differs from a verified appearance anchor (§19) are probed (no
 changed type: no world is booted); a passing run that covered both pins rewrites that file, so commit it with the snapshots. `--full` probes everything
 (merge worktree, nightly); `--bless` and `--repeat` run the pins unsharded and full; `tools/dq_pin.sh --look-state/--look-tree` records new pins with
 `--look-shards=1 --full`. `--look-order=reverse|shuffle:N` reorders the types and `--look-dump=DIR` writes the rows each world produced, merged and
@@ -369,7 +369,15 @@ values and, here only, the vars a non-virtual `STAT()` composes. It is shrink-on
 (225 sites when it landed; the 43 cheap ones, APC channels/charging/status and cell charge, now use `set_x()`). In a test write
 `A.set_x(v)`, or `set_var()` when the test must put the value back. A drift report now also prints where the drawn look key and the
 current one part, which names the part that moved.
-# Verified appearance coverage
+## 18. Interrupted lane-ready runs never stamp
+
+Lane-ready requires the gate result for its exact tested commit, the production compile/DreamChecker, analyzer and ratchet markers, and a test-result JSON whose counts match the gate. An interrupted run or missing evidence is refused. The controlled wrapper regression is `bash tools/ci/test_lane_ready_evidence.sh`; it runs no compiler or DM world. DM selectors passed to the note writer retain their literal paths on Windows.
+
+After diagnosing a wrapper-only failure following successful gates, `dq_lane_ready.sh --reuse-gates --tests-file <list>` may finish stamping the unchanged clean commit. It validates the real `sha=` gate format, compile/analyzer/ratchet markers, matching runtime JSON commit and counts, and that every requested selector was already tested. It performs no merge, compile or test run; changed source needs fresh gates. The controlled evidence regression checks missing, incomplete, inconsistent and wrong-commit evidence, and refuses untested selectors during reuse.
+
+Serialized focused runs keep the incremental look plan: DQ_FOCUS_SPLIT=0 launches one combined world with the main selectors and both look pins. It forwards the prepared look parameters and records keys only after success. This avoids an accidental full appearance sweep when parallel worlds are disabled. The pure-shell regression is tools/ci/test_focused_look_single.sh.
+
+## 19. Verified appearance coverage
 
 Combined focused runs prepare and pass the analyzer's appearance probe plan,
 just as separate appearance worlds do. Regenerated `look_keys.txt` describes the
@@ -377,7 +385,7 @@ current declarations; it does not prove that those declarations passed a pin.
 
 Incremental coverage therefore starts from a verified appearance anchor. The
 normal gate note records the tested commit, plan hash, result-file hash and
-fixture/tool source identities only when both appearance pins actually passed.
+fixture/tool source identities and checked golden tree identities only when both appearance pins actually passed.
 Missing, failed or skipped pins do not establish coverage, including known
 failures accepted by the general gate. A changed fixture or tool invalidates the
 anchor. Missing trustworthy evidence falls back to full planned probing.

@@ -200,6 +200,19 @@ fn marker_option(m: &Marker, name: &str) -> Option<String> {
 
 /// Every `op("name", ...)` in a marker body: `cap.name` inside a capability marker, `name` otherwise.
 fn collect_ops(body: &str, cap: Option<&String>, out: &mut BTreeSet<String>) {
+    // stages(VAR, stage_step(...), ...) declares one op per step (code/library/structures/stages.dm)
+    let mut j = 0;
+    while let Some(p) = body[j..].find("stages(") {
+        let at = j + p;
+        j = at + 7;
+        if at > 0 && (body.as_bytes()[at - 1].is_ascii_alphanumeric() || body.as_bytes()[at - 1] == b'_') {
+            continue;
+        }
+        let Some(close) = super::decls::matching_paren(body, at + 6) else { continue };
+        for op_args in super::decls::stages_op_args(&body[at + 7..close]) {
+            collect_ops(&format!("op({})", op_args), cap, out);
+        }
+    }
     let b = body.as_bytes();
     let mut i = 0;
     while let Some(p) = body[i..].find("op(") {

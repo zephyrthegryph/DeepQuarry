@@ -425,8 +425,9 @@ CAPABILITIES(/obj/item/holder/fish)
 		slot_r_ear_str = 'icons/mob/ears.dmi',
 		slot_l_ear_str = 'icons/mob/ears.dmi')
 
+
+
+
 CAPABILITIES(/obj/item/holder/protoblob)
 	configure(item_worn(slots = SLOT_HEAD | SLOT_OCLOTHING | SLOT_HOLSTER | SLOT_ICLOTHING | SLOT_ID | SLOT_EARS))
-
-TYPE_TABLE(/obj/item/holder/protoblob, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))))
-
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)

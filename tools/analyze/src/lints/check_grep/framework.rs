@@ -463,6 +463,11 @@ impl Compiled {
             }
         }
         let hits = self.hits(f, text);
+        self.scan_lines(cx, f, out, hits);
+    }
+
+    /// Apply the ordinary rule filters to semantic tree-pass findings as well.
+    pub(super) fn scan_lines(&self, cx: &Cx, f: &SourceFile, out: &mut Sink, hits: Vec<usize>) {
         if hits.is_empty() {
             return;
         }

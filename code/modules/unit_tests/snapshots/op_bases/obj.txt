@@ -54,15 +54,13 @@ human|/obj/item/areaeditor click: Click: Add material
 human|/obj/item/assembly/prox_sensor menu: Move To Top
 human|/obj/item/assembly/prox_sensor menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly/prox_sensor click: nothing
-human|/obj/item/assembly/signaler menu: Hammer on the door
-human|/obj/item/assembly/signaler menu: Hold the door open
+human|/obj/item/assembly/signaler menu: Add signaler
+human|/obj/item/assembly/signaler menu: Alternate use
 human|/obj/item/assembly/signaler menu: Move To Top
-human|/obj/item/assembly/signaler menu: Open
-human|/obj/item/assembly/signaler menu: Ring the bell
-human|/obj/item/assembly/signaler menu: Signaler
 human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/assembly/signaler click: Click: Signaler
+human|/obj/item/assembly/signaler menu: Use
+human|/obj/item/assembly/signaler click: Click: Add signaler
 human|/obj/item/assembly_holder menu: Attach assembly (refused: <span class='notice'>You need to wire the device up first.</span>)
 human|/obj/item/assembly_holder menu: Move To Top
 human|/obj/item/assembly_holder menu: Tank item
@@ -125,11 +123,24 @@ human|/obj/item/card/data menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/data menu: Use
 human|/obj/item/card/data menu: Use item
 human|/obj/item/card/data click: Click: Insert data card
-human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Configure Voice Synthesiser (refused: You can't do that.)
+human|/obj/item/card/emag menu: Deploy Hardsuit (refused: You can't do that.)
+human|/obj/item/card/emag menu: Engage Module (refused: You can't do that.)
 human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Open Hardsuit Interface (refused: You can't do that.)
+human|/obj/item/card/emag menu: Rig item
+human|/obj/item/card/emag menu: Rig shock hand
+human|/obj/item/card/emag menu: Select Module (refused: You can't do that.)
+human|/obj/item/card/emag menu: Switch Vision Mode (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Boots (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Chestpiece (refused: You can't do that.)
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Gauntlets (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Hardsuit (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Helmet (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Module (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Visor (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
-human|/obj/item/card/emag menu: Use item
 human|/obj/item/card/emag click: Click: Use
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
@@ -437,7 +448,10 @@ human|/obj/item/pickaxe/plasmacutter click: Click: Slice apart
 human|/obj/item/pipe menu: Flip Pipe
 human|/obj/item/pipe menu: Move To Top
 human|/obj/item/pipe menu: Put back
+human|/obj/item/pipe menu: Rotate Clockwise
+human|/obj/item/pipe menu: Rotate Counter Clockwise
 human|/obj/item/pipe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe menu: Turn Around
 human|/obj/item/pipe menu: Ui open
 human|/obj/item/pipe click: Click: Put back
 human|/obj/item/pipe_meter menu: Move To Top

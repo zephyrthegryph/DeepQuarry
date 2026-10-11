@@ -64,17 +64,12 @@
 			if(existing && existing != thing)
 				return "[existing] already has that"
 	if(def.capacity_model != SLOT_CAPACITY_NONE)
-		var/cost = def.cost(holder, thing)
-		if(dest.used[id] + def.latent_used(holder) + cost > def.capacity_for(holder))
-			return "there's no room for it"
-	// A hook on the holder (observe(holder, /datum/act/check_insert, ...)) may refuse the move: the question, not the move, so it never commits.
-	GLOB.act_next_actor = actor
-	var/datum/act/check_insert/check = ACT_TRY(holder, check_insert, thing, id)
-	GLOB.act_next_actor = null
-	if(!check)
-		return "it won't go in"
-	act_cancel(check)
-	return null
+		var/limit = def.capacity_for(holder)
+		if(limit != INFINITY)
+			var/cost = def.cost(holder, thing)
+			if(dest.current_used(id) + def.latent_used(holder) + cost > limit)
+				return "there's no room for it"
+	return reason_text(op_transfer_precheck(holder, /datum/act/insert, thing, id, actor))
 
 /// Why `thing` can't leave the slot it is in now, or null. Things not in a
 /// slot can always leave.
@@ -88,13 +83,7 @@
 	. = def.removal_refusal(source, thing, actor)
 	if(.)
 		return .
-	GLOB.act_next_actor = actor
-	var/datum/act/check_remove/check = ACT_TRY(source, check_remove, thing, entry[LEDGER_E_SLOT])
-	GLOB.act_next_actor = null
-	if(!check)
-		return "it won't come out"
-	act_cancel(check)
-	return null
+	return reason_text(op_transfer_precheck(source, /datum/act/remove, thing, entry[LEDGER_E_SLOT], actor))
 
 /// Commits a checked move. Returns TRUE if the thing ended up in the slot.
 /// `flags` (LEDGER_MOVE_*) reaches note_enter()/reslot() and, through them,

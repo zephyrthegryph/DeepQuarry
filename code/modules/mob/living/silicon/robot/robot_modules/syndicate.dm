@@ -96,8 +96,8 @@
 	rel_add(src, nameof(synths), glass)
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
-	N.uses_charge = 1
-	N.charge_costs = list(1000)
+	N.set_uses_charge(1)
+	N.set_charge_costs(list(1000))
 	rel_add(N, nameof(N.synths), nanite)
 	rel_add(src, nameof(modules), N)
 
@@ -142,14 +142,14 @@
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
-	O.uses_charge = 1
-	O.charge_costs = list(1000)
+	O.set_uses_charge(1)
+	O.set_charge_costs(list(1000))
 	rel_add(O, nameof(O.synths), medicine)
-	B.uses_charge = 1
-	B.charge_costs = list(1000)
+	B.set_uses_charge(1)
+	B.set_charge_costs(list(1000))
 	rel_add(B, nameof(B.synths), medicine)
-	S.uses_charge = 1
-	S.charge_costs = list(1000)
+	S.set_uses_charge(1)
+	S.set_charge_costs(list(1000))
 	rel_add(S, nameof(S.synths), medicine)
 	rel_add(src, nameof(modules), O)
 	rel_add(src, nameof(modules), B)

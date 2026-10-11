@@ -38,7 +38,7 @@
 	if(istype(A.target, /atom) && op_var_slot(A.target, src.args["slot"]))
 		return varslot_refusal(A.target, src.args["slot"], thing, A.actor)
 	var/why = slot_precheck(A.target, src.args["slot"], thing, A.actor)
-	return why || op_insert_precheck(A.target, thing, src.args["slot"])
+	return why || op_insert_precheck(A.target, thing, src.args["slot"], A.actor)
 
 /datum/entry/part/effect/put_in/run_effect(datum/act/op/A)
 	return op_transport_insert(A, src.args["slot"], A.reservations)

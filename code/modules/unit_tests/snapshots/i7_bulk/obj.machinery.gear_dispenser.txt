@@ -43,7 +43,7 @@ human|none click: Click: Use
 -click: nothing
 +2 menu: Use
 +3 click: Click: Use
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 keys: drag_buckle, emag.subvert, emag.use, gear_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

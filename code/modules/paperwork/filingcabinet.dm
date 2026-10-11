@@ -34,7 +34,7 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	without("ui_open")
 	op("remove_object", ui_act("remove_object", arg("ref", schema_ref(/obj/item))), then(PROC_REF(ui_act_remove_object)))
 	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Take apart"), starts(PROC_REF(dismantle_started)), begins(PROC_REF(dismantle_begins)), wait(1 SECOND), then(PROC_REF(screwdriver_act_tool_done)))
 
 // ALLOW(init/INSTANCE_STATE): gathers the papers the map placed on its tile
 /obj/structure/filingcabinet/Initialize(mapload)
@@ -65,20 +65,22 @@ CAPABILITIES(/obj/structure/filingcabinet)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return OP_OK
 
-/obj/structure/filingcabinet/proc/screwdriver_used(datum/act/op/A)
+/obj/structure/filingcabinet/proc/dismantle_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/filingcabinet/proc/dismantle_begins(datum/act/op/A)
+	return msg_text("You begin taking the [name] apart.")
+
+/obj/structure/filingcabinet/proc/screwdriver_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, start_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
-	return OP_OK
-
-/obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	to_chat(user, span_notice("You take the [name] apart."))
 	new /obj/item/stack/material/steel(loc, 4)
 	for(var/obj/item/I in contents)
 		I.forceMove(loc)
 	destroyed(src, user, "deconstructed")
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 MSG_DEF_SELF(filingcabinet/empty, "It's empty.")
 

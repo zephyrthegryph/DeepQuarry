@@ -103,7 +103,7 @@ human|none click: Click: Use
 +3 menu: Swipe card
 +5 menu: Turn Around
 +7 click: Click: Swipe card
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +1 menu: Rotate Clockwise

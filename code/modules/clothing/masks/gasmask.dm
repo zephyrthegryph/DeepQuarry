@@ -124,8 +124,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/swat)
 	helmet_handling = TRUE
 	special_handling = TRUE
 
+
+
 TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, gasmask_filtered_gases, list(GAS_O2, GAS_N2O))
-TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
 /obj/item/clothing/mask/gas/swat/vox/proc/feeding_port(mob/user)
 	if(user.canmove && !user.stat)
@@ -139,6 +140,7 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/swat/vox, fit_spec, list(REQ_FITS_BODYTYP
 	return
 
 CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
+	acceptance("fit", fits(list(SPECIES_VOX)), mode = ACCEPTANCE_REPLACE)
 	configure(item_worn(flags = BLOCK_GAS_SMOKE_EFFECT | AIRTIGHT))
 	op("vox_mask_port_self", in_hand(), label("Feeding port"), then(PROC_REF(vox_mask_port_self)))
 
@@ -154,11 +156,14 @@ CAPABILITIES(/obj/item/clothing/mask/gas/swat/vox)
 	item_state = "vax_mask"
 
 CAPABILITIES(/obj/item/clothing/mask/gas/zaddat)
+	acceptance("fit", fits(list(SPECIES_ZADDAT)), mode = ACCEPTANCE_REPLACE)
+
 	configure(item_worn(hides = HIDEEARS))
 
-TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2, GAS_N2O))
 
-TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_ZADDAT))))
+
+
+TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2, GAS_N2O))
 
 /obj/item/clothing/mask/gas/syndicate
 	name = "tactical mask"

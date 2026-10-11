@@ -43,7 +43,15 @@ human|/obj/item/stack/material/steel click: Click: Use
 +3 menu: Use
 +4 click: Click: Use
 @obj.item.toy human|/obj/item/kit
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
++3 menu: Use
 @obj.item.toy human|/obj/item/storage
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
++3 menu: Use
++4 click: Click: Use
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use

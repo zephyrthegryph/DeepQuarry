@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(task_serial, 0)
 			CRASH("task [type] was given a positional argument ([entry]); name it (var = value)")
 	return task_launch(type, actor, target, params, starter)
 
-/// Starts a task from a built params list (var name -> value): task_begin() and the helpers that build their own (use_tool()).
+/// Starts a task from a built params list (var name -> value): task_begin() and the helpers that build their own.
 /proc/task_launch(type, datum/actor, datum/target, list/params, datum/starter)
 	if(!ispath(type, /datum/task))
 		CRASH("unknown task [type]")

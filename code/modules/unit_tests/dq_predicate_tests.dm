@@ -368,3 +368,22 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 		var/reason = weld_light.why_not(actor, target, held)
 		TEST_ASSERT_EQUAL(reason, row[4], "[row[1]] with [row[2] || "nothing"]")
 		TEST_ASSERT_EQUAL(weld_light.check(actor, target, held), isnull(row[4]), "check agrees with why_not for [row[1]] with [row[2] || "nothing"]")
+
+/obj/item/dq_pred_test/override_ready
+
+/obj/item/dq_pred_test/override_ready/dq_is_ready(mob/actor, atom/target, obj/item/held)
+	return "subtype refuses readiness"
+
+/datum/unit_test/dq_predicate_subject_override
+
+/datum/unit_test/dq_predicate_subject_override/Run()
+	var/obj/item/dq_pred_test/base = allocate(/obj/item/dq_pred_test)
+	base.name = "ready"
+	var/obj/item/dq_pred_test/override_ready/child = allocate(/obj/item/dq_pred_test/override_ready)
+	child.name = "ready"
+	var/datum/predicate/P = dq_pred(list(REQ_ON(PRED_TARGET, /obj/item/dq_pred_test/proc/dq_is_ready, "fallback refusal")))
+	TEST_ASSERT(P.check(null, base, null), "absolute declaration still allows the base callback")
+	TEST_ASSERT_NULL(P.why_not(null, base, null), "base reason remains absent")
+	TEST_ASSERT(!P.check(null, child, null), "the actual subject override wins over the declared base implementation")
+	TEST_ASSERT_EQUAL(P.why_not(null, child, null), "subtype refuses readiness", "actual override refusal is preserved")
+	qdel(P)

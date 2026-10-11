@@ -7,7 +7,7 @@
 +0 menu: Assembly item
 +1 menu: Grenade interaction hand
 +4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
++5 click: Click: Assembly item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Assembly item
@@ -56,10 +56,9 @@
 +0 menu: Assembly item
 +2 menu: Grenade interaction hand
 +5 click: Click: Assembly item
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
-+4 click: Click: Assembly item
-keys: assemble, assembly_item, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, use_screwdriver
+human|/obj/item menu: Assembly item
+human|/obj/item menu: Grenade interaction hand
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Assembly item
+keys: assemble, assembly_item, collect_item, det_time_10_30, det_time_1_10, det_time_30_50, det_time_50_1, drag_buckle, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, stage_1_2, stage_2_1, toggle_digestable, use_screwdriver

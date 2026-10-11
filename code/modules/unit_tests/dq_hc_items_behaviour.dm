@@ -122,7 +122,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/turf/T = tile(2, 2)
 	var/obj/item/gunbox/B = allocate(/obj/item/gunbox, T)
-	B.w_class = ITEMSIZE_SMALL
+	B.set_w_class(ITEMSIZE_SMALL)
 	hci_click(H, B, B)
 	settle()
 	hci_answer(H, "MarsTech P92X (9mm)")
@@ -140,7 +140,7 @@
 /datum/unit_test/dq_hc_items/gunbox_cancel_keeps_box/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/gunbox/B = allocate(/obj/item/gunbox, tile(2, 2))
-	B.w_class = ITEMSIZE_SMALL
+	B.set_w_class(ITEMSIZE_SMALL)
 	hci_click(H, B, B)
 	settle()
 	hci_answer(H, null, TRUE)
@@ -153,7 +153,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/turf/T = tile(2, 2)
 	var/obj/item/gunbox/stun/B = allocate(/obj/item/gunbox/stun, T)
-	B.w_class = ITEMSIZE_SMALL
+	B.set_w_class(ITEMSIZE_SMALL)
 	hci_click(H, B, B)
 	settle()
 	hci_answer(H, "Taser")
@@ -303,7 +303,7 @@
 /datum/unit_test/dq_hc_items/contraband_unwraps_into_hands/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/contraband/B = allocate(/obj/item/contraband, tile(2, 2))
-	B.w_class = ITEMSIZE_SMALL
+	B.set_w_class(ITEMSIZE_SMALL)
 	hci_click(H, B, B)
 	settle()
 	TEST_ASSERT(QDELETED(B), "the package is used up")
@@ -316,7 +316,7 @@
 /datum/unit_test/dq_hc_items/contraband_package_unwraps_once/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/contraband/package/B = allocate(/obj/item/contraband/package, tile(2, 2))
-	B.w_class = ITEMSIZE_SMALL
+	B.set_w_class(ITEMSIZE_SMALL)
 	hci_click(H, B, B)
 	settle()
 	TEST_ASSERT(QDELETED(B), "the package is used up")

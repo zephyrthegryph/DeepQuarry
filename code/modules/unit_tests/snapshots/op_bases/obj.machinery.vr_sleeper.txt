@@ -84,6 +84,6 @@ human|none click: nothing
 robot|none menu: Blocked (refused: not possible right now)
 robot|none menu: Eject
 robot|none menu: Eject VR Capsule
-robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-751 with a sharp beep.)
+robot|none menu: Enter VR Capsule (refused: The strange pod rejects Default Cyborg-1 with a sharp beep.)
 robot|none menu: Use
 robot|none click: Click: Use

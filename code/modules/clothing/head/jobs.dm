@@ -173,9 +173,10 @@ CAPABILITIES(/obj/item/clothing/head/helmet/dermal)
 	show_examine = FALSE
 
 CAPABILITIES(/obj/item/clothing/head/det)
+	acceptance("suit_storage", req_acceptance_type(list(POCKET_SLEUTH), because = "it doesn't take that"), mode = ACCEPTANCE_REPLACE)
 	configure(item_protection(siemens = 0.9))
 
-TYPE_TABLE(/obj/item/clothing/head/det, suit_storage_spec, list(HOLD_ONLY(list(POCKET_SLEUTH))))
+
 
 /obj/item/clothing/head/det/grey
 	icon_state = "fedora_grey"

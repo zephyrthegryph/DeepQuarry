@@ -47,7 +47,7 @@ human|none click: Click: Toggle
 -click: nothing
 +1 menu: Toggle
 +3 click: Click: Toggle
-@obj human|/obj/item/card/emag
+@obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use item
 +1 menu: Toggle

@@ -92,7 +92,7 @@
 
 /// The canister can be relabelled now (its window's can_relabel).
 /proc/am_canister_relabelable(obj/machinery/portable_atmospherics/canister/C)
-	return !!C.can_relabel(null)
+	return isnull(C.can_relabel(null))
 
 /// A cyborg pulse-pressurizes its jetpack `J` from canister `C`.
 /proc/am_jetpack_refill(mob/living/silicon/robot/R, obj/machinery/portable_atmospherics/canister/C, obj/item/tank/jetpack/J)
@@ -772,7 +772,7 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/weldingtool/W = welder()
 	var/datum/op_result/R = am_click(H, V, W)
-	TEST_ASSERT(am_device_welded(V), "the vent is welded shut ([R?.outcome] [R?.key] [R?.reason] [json_encode(GLOB.dq_tool_last_use)])")
+	TEST_ASSERT(am_device_welded(V), "the vent is welded shut ([R?.outcome] [R?.key] [R?.reason])")
 	am_click(H, V, W)
 	TEST_ASSERT(!am_device_welded(V), "and freed")
 	am_click(H, S, W)

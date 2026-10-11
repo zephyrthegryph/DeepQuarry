@@ -4607,6 +4607,9 @@ by `dq_type_trait/item_protection_declared`, the body slot insulation and clothi
 trait (no instance var to name as its state var). `protection_of(null)` answers the defaults, so a read through an empty slot (`worn?.x`)
 still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
 as a body temperature).
+### Holder constructor diagnostic stack lines (requirements-zero-1010-h)
+
+Master commit `d7f737b36b` (2026-10-10 20:23:35 -0500) adds two explanatory lines before the parameter apply handler in `code/engine/lifeforms/params.dm`. The conversion pins for `/obj/item/holder`, `/obj/item/holder/mouse` and `/obj/item/holder/micro` therefore record that handler at line 239 instead of 237. Their existing missing-mob diagnostic, constructor behavior and all interaction rows are unchanged. Only these three diagnostic rows were refreshed from the final focused capture; this is a master-source location change, not a simulation-rule behavior change.
 
 ## Objects init burn-down (rewrite/init-objects, October 2026)
 
@@ -4671,6 +4674,13 @@ spit, disarm, push, breath, chew, xylophone, sonar and vent-sound ones) move int
 * **The darksight overlay exists only while a client is logged in**: it is built at login on the hud; Life skips the darksight
   adjustment for a client-less mob (it adjusted an image nobody saw).
 * **The buildmode AI-selection marker is made the first time an admin selects that mob**, not for every living mob at init.
+
+### Acceptance foundation repairs (codex/acceptance-context-native-1011)
+
+The 140 added acceptance pins record existing equipment, clothing and storage behavior before table conversion. Expansion against 8495891878 found no changed existing rows; 173 existing files changed only through inherited-row factoring. No acceptance-table conversion or pin re-bless is included.
+
+The human wrapped_species_form capability now declares its existing initialization hook, so its borrowed holder is set and its tracked bodytype setter updates the compatibility map. Plain references without unlink callbacks publish the final replacement instead of an intermediate null, preventing a valid waiting operation from being cancelled during rel_set. Paired links and callback notification behavior are unchanged. Generated list-hop dependency names escape literal brackets so the runtime can watch actual membership. These are functional repairs; they do not authorize changed click/menu pin rows.
+
 ## Mob init burn-down (rewrite/init-mob, October 2026)
 
 `Initialize()` overrides under `code/modules/mob/` became forms (doc/rewrite/framework_gaps.md, "Mob init burn-down forms"). What a player or
@@ -4718,6 +4728,16 @@ mapper can notice:
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
 
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
+## Acceptance prerequisite pin refresh (2026-10-11)
+
+The robot and robot/platform conversion-pin key rows now include the eight `robot_utility.*` ops declared by master `8b3e4f9ed9`. Platform also includes `platform_cargo.eject_cargo`, declared by master `babfc5a10a`. Only these two key rows changed; clicks and menu rows are unchanged. The pin comparison discards random default Cyborg serials only in VR-capsule refusal text and numeric source locations only in constructor traceback segments, retaining the complete refusal/fault text and source paths. These are capture stability repairs, not gameplay changes.
+
+## Acceptance foundation: master rotation rows (2026-10-11)
+
+Master `81e61e24e9` (2026-10-10 23:39 -0500) replaces Initialize-granted rotation verbs with native `rotatable()` on `/obj/item/pipe` and `/obj/structure/smoletrack`. Their pins now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around and the three native rotation keys. `/obj/machinery/pipedispenser`, its `/disposal` subtype and `/obj/machinery/pipelayer` also expose these menu choices through the held pipe. These five classes alone are refreshed; existing plain-click rows and refusal text remain unchanged. The acceptance landing did not add or rank these operations. Commit provenance was checked with pickaxe on the indented declaration and the exact master source diff.
 
 ## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
 
@@ -4732,6 +4752,14 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+Also re-blessed for master commits that landed without their pins: the pipe, cannon frame, pipe dispenser and smoletrack rotation ops, and the food reagent fills in `dq_reagents_start_snapshot`.
+The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reaches the VR sleeper refusal rows, and `rand(1, 999)` at init made them follow how much RNG earlier tests drew.
+
+### Acceptance predicate dispatch (codex/acceptance-consumers-1011)
+
+The legacy subject callback evaluator now invokes the actual receiver's override after validating the declared absolute proc path. Previously an /atom/movable slot_loose callback bypassed /mob/living's pinned, buckled and chameleon checks. Closet admission now honors those existing checks. dq_predicate_subject_override covers the dispatch and exact refusal; this is a correction of an existing refusal defect, not permission to re-bless unrelated rows.
+
+The paper look-tree pin drops only the four inherited `/obj/item/paper/cap_fixture` rows. Master commit `6d986cf503` (2026-10-09) removed that unused legacy writable-capability fixture and its include. The current producer confirms the fixture no longer exists; ordinary paper appearance rows are unchanged.
 
 ## Mob stat is TRACKED; the incapacitated var goes (base_vars lane B, bv-hud)
 
@@ -4755,6 +4783,7 @@ and test_prompts values through existing scoped restoration, including failure
 paths. These are scratch outputs, not exclusions from leak detection. The real
 null-to-list/flag leak assertions remain active. Cumulative act/coalescer and
 midnight counters are not reset or backdated by these changes.
+Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
 
 ## Live mob state into its domains (base_vars lane B, bv-hud)
 
@@ -4822,3 +4851,20 @@ Master `6d986cf503` (2026-10-09 19:58:38 -05:00) deleted
 appearance golden. The fresh failed hygiene run contains no such type, and no
 production paper behavior changed. No other paper rows are refreshed here.
 
+### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
+
+- **Tool `_act` procs are ops.** Each `<quality>_act()` override is an `op("use_<quality>", tool(TOOL_X), ...)`; the pins' click rows now name
+  the tool op (`Click: Use screwdriver`, `Remove the DNA lock`, `Lock the assembly`) where they used to show the op the old hook pre-empted.
+  Hooks that blocked a click with a message are requirements: the refusal text is the engine's (`refused: ...` in the menu).
+- **A gun's screwdriver** answers its DNA lock op ahead of the gun's other ops, as the hook did; removing the lock is a 2.5 s timed op.
+- **The nuke's anchor removal** is five timed `stages()` steps that a welder, crowbar or wrench click reaches (the tool ops sat below the window
+  op, so a click opened the panel instead).
+- **The AI core frame's** stage checks compare exactly (`req_stage()`): `req_is(state, 1)` matched any nonzero stage, so the frame offered its
+  unanchor at every stage.
+- **Timed tool work** (`use_tool()`, now deleted) is the op's `wait()`: the progress, the interruption and the start messages are the op's.
+  A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
+- **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
+  tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
+rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
+rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.
+acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combination with rf-toolact4's grenade stages (the locked manhack grenade and chem grenade rows come back unfactored, the camera assembly loses its Alternate use row, the sechailer's wirecutter click) and the protoblob holder row without source lines.

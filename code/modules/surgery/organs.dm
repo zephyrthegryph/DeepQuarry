@@ -89,7 +89,7 @@
 	if(!istype(O) || target.organ_in(O.organ_tag))
 		return
 	if(istype(O, /obj/item/organ/internal/malignant))
-		O.parent_organ = part.organ_tag
+		O.set_parent_organ(part.organ_tag)
 	user.remove_from_mob(O)
 	O.replaced(target, part)
 	log_game("SURGERY: [key_name(user)] implanted [O] ([O.type]) into [key_name(target)] [part], carrying [length(O.afflictions_here())] afflictions")

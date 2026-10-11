@@ -59,7 +59,7 @@ pub fn parts() -> Vec<Part> {
             "admin rights: shrink-only baseline (one mechanism: admin_can)",
             "raw .holder reads outside modules/admin/holder* over the ratchet. Use admin_can(client, rights).",
             Files::Code,
-            line(r"\.holder\b"),
+            Find::Tree,
         )
         .flt(vec![
             Flt::DropLit("code/modules/admin/holder"),
@@ -137,6 +137,13 @@ pub fn parts() -> Vec<Part> {
             "screwdriver/crowbar/wrench/wirecutter/multitool/welder _act() procs are gone (banned everywhere). Declare op(\"use_x\", tool(TOOL_X), ...) (python tools/codemods/tool_act.py).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act\("),
+        ),
+        Part::new(
+            "tools_use_tool_banned",
+            "tools: the legacy use_tool() timer",
+            "use_tool() and its tool jobs are gone. A tool used on something is an op: tool(TOOL_X) or lit_welder(fuel =), begins(), starts(), wait(t), then(), on_interrupt() (python tools/codemods/use_tool_wait.py).",
+            Files::Code,
+            line(r"\buse_tool\("),
         ),
         Part::new(
             "objects_ratchet_on_damage_reactions",
@@ -426,7 +433,7 @@ pub fn parts() -> Vec<Part> {
             "legacy equip restriction vars",
             "new raw slot_flags check. Use dq_item_fits_slot_flags() / the wearable constraints.",
             Files::Code,
-            line(r"slot_flags\s*&[^=]"),
+            Find::Tree,
         )
         .allow(Allow::Strict)
         .flt(vec![Flt::DropPaths("slot_flags_allow"), drop(r":\s*//")]),

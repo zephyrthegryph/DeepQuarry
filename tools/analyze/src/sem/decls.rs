@@ -44,6 +44,8 @@ pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GR
 /// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
 /// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
 pub const ENTRY_PROC: &str = "ENTRY_PROC";
+/// Runtime observe calls carry the same typed requirement parts as declarations.
+pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
 /// Calls that make a returned list a list of declaration entries.
 const ENTRY_CALLS: &[&str] = &["op(", "extend(", "interface(", "ui_shape(", "on_notice(", "on_change(", "without(", "configure("];
@@ -380,6 +382,40 @@ pub fn strip_comments_keep_strings(text: &str) -> String {
     String::from_utf8(out).unwrap_or_default()
 }
 
+/// The ops a `stages(VAR, stage_step(from, to, parts..., key = "k"), ...)` call's arguments stand for (code/library/structures/stages.dm), as
+/// `op(...)` argument lists: `"key", when(req_stage(VAR, from)), sets(VAR, to), parts...`. The key is `k`, else `<var>_<from>_<to>` with the var
+/// the `nameof(...)` of VAR. Readers of op declarations (the op keys, op_order) treat a stages() call as these ops.
+pub fn stages_op_args(stages_args: &str) -> Vec<String> {
+    let args = split_args(stages_args);
+    let Some(var) = args.first() else { return Vec::new() };
+    let var = var.trim();
+    let var_name = var.strip_prefix("nameof(").and_then(|v| v.strip_suffix(')')).unwrap_or(var).trim().trim_matches('"');
+    let var_name = var_name.rsplit(|c| c == ':' || c == '.' || c == '/').next().unwrap_or(var_name).to_string();
+    let mut out = Vec::new();
+    for step in &args[1..] {
+        let step = step.trim();
+        let Some(inner) = step.strip_prefix("stage_step(").and_then(|s| s.strip_suffix(')')) else { continue };
+        let parts = split_args(inner);
+        if parts.len() < 2 {
+            continue;
+        }
+        let (from, to) = (parts[0].trim(), parts[1].trim());
+        let mut key = format!("\"{}_{}_{}\"", var_name, from.trim_matches('"'), to.trim_matches('"'));
+        let mut rest = Vec::new();
+        for p in &parts[2..] {
+            let p = p.trim();
+            match p.split_once('=') {
+                Some((name, value)) if name.trim() == "key" && !p.contains('(') => key = value.trim().to_string(),
+                _ => rest.push(p.to_string()),
+            }
+        }
+        let mut op = vec![key, format!("when(req_stage({}, {}))", var, from), format!("sets({}, {})", var, to)];
+        op.extend(rest);
+        out.push(op.join(", "));
+    }
+    out
+}
+
 /// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
 pub fn split_args(s: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -562,8 +598,41 @@ fn scan_file(f: &SourceFile) -> FileDecls {
             }
         }
     }
+    scan_runtime_observers(f, &stripped, &starts, &mut fd);
     scan_calls(f, &stripped, &starts, &mut fd);
     fd
+}
+
+/// Records runtime observation parts without guessing the listener's type. Typed proc
+/// references in those parts are genuine callback roots for generated read metadata.
+fn scan_runtime_observers(f: &SourceFile, text: &str, starts: &Arc<Vec<u32>>, fd: &mut FileDecls) {
+    let bytes = text.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'"' {
+            i += 1;
+            while i < bytes.len() {
+                if bytes[i] == b'\\' { i += 2; continue; }
+                if bytes[i] == b'"' { i += 1; break; }
+                i += 1;
+            }
+            continue;
+        }
+        let start = i;
+        if !bytes[i].is_ascii_alphabetic() && bytes[i] != b'_' { i += 1; continue; }
+        while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') { i += 1; }
+        if &text[start..i] != "observe" || (start > 0 && (bytes[start - 1].is_ascii_alphanumeric() || matches!(bytes[start - 1], b'_' | b'.' | b'/' | b':'))) { continue; }
+        let mut open = i;
+        while open < bytes.len() && bytes[open].is_ascii_whitespace() { open += 1; }
+        if bytes.get(open) != Some(&b'(') { continue; }
+        let Some(close) = matching_paren(text, open) else { continue };
+        let body = text[open + 1..close].to_string();
+        let args = split_args(&body);
+        if args.len() < 4 { continue; }
+        let line = match starts.binary_search(&(start as u32)) { Ok(n) => n as u32 + 1, Err(n) => n as u32 };
+        fd.markers.push(Marker { name: RUNTIME_OBSERVE.to_string(), rel: f.rel.clone(), line,
+            args, body, body_offset: open + 1, line_starts: starts.clone() });
+    }
 }
 
 /// Finds `name(...)` calls of the key/source families in comment-stripped text.
@@ -616,6 +685,14 @@ fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stages_desugar_to_ops() {
+        let ops = stages_op_args("nameof(state), stage_step(0, 1, tool(TOOL_WRENCH), wait(0)), stage_step(1, 0, tool(TOOL_WRENCH), key = \"unanchor\")");
+        assert_eq!(ops.len(), 2);
+        assert_eq!(ops[0], "\"state_0_1\", when(req_stage(nameof(state), 0)), sets(nameof(state), 1), tool(TOOL_WRENCH), wait(0)");
+        assert_eq!(ops[1], "\"unanchor\", when(req_stage(nameof(state), 1)), sets(nameof(state), 0), tool(TOOL_WRENCH)");
+    }
 
     #[test]
     fn splits_top_level_commas_only() {

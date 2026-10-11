@@ -16,7 +16,8 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj.item human|/obj/item/card/emag
--menu: Use
-+2 menu: Use (refused: You don't appear to be able to bypass this hardened device!)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use (refused: You don't appear to be able to bypass this hardened device!)
+human|/obj/item/card/emag click: Click: Use
 keys: access, access_all, collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, login, logout, move_to_top, one_access, pick_up_item, toggle_digestable, ui_open

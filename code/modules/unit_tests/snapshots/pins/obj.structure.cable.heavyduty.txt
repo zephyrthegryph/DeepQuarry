@@ -15,8 +15,8 @@
 +5 click: Click: Use multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Use welder
-+5 click: Click: Use welder
++0 menu: Cut the cable (refused: )
++5 click: Click: Cut the cable
 @obj.structure human|/obj/item/stack/cable_coil
 -click: Click: Use
 +0 menu: Connect cable (refused: you will need heavier cables to connect to these)

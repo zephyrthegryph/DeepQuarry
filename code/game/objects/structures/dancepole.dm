@@ -16,15 +16,16 @@
 	return OP_OK
 
 CAPABILITIES(/obj/structure/dancepole)
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(3 SECONDS), then(PROC_REF(wrench_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
-/obj/structure/dancepole/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/O = A.held
-	use_tool(user, O, src, delay = 3 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "Now disassembling \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/structure/dancepole/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/dancepole/proc/wrench_act_tool_done(mob/user)
+/obj/structure/dancepole/proc/wrench_begins(datum/act/op/A)
+	return msg_text("Now disassembling \the [src]...", null)
+
+/obj/structure/dancepole/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You disassembled \the [src]!"))
 	replace_with(src, /obj/item/stack/material/steel, 1)

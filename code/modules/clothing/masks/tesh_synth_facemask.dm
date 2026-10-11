@@ -16,6 +16,7 @@ TRACKED(/obj/item/clothing/mask/synthfacemask, visor_state)
 /obj/item/clothing/mask/synthfacemask/var/mob/living/carbon/maskmaster
 
 CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
+	acceptance("equip", req_acceptance_robotic_head(), mode = ACCEPTANCE_APPEND)
 	configure(item_worn(flags = AIRTIGHT | FLEXIBLEMATERIAL | BLOCK_GAS_SMOKE_EFFECT))
 	ref_one(nameof(maskmaster))
 	every(1 SECOND, then(PROC_REF(synthfacemask_step)), when = nameof(maskmaster))
@@ -24,21 +25,22 @@ CAPABILITIES(/obj/item/clothing/mask/synthfacemask)
 	..()
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
-		canremove = FALSE
+		set_canremove(FALSE)
 		rel_set(src, nameof(maskmaster), H)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
-	canremove = TRUE
+	set_canremove(TRUE)
 	rel_clear(src, nameof(maskmaster))
 	..()
 
-TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade"))))
 
-/obj/item/clothing/mask/synthfacemask/proc/robotic_head(mob/living/carbon/human/H)
+
+/obj/item/clothing/mask/synthfacemask/proc/robotic_head(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.wearer
 	if(!istype(H))
-		return FALSE
+		return "you must have a compatible robotic head to install this upgrade"
 	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
-	return istype(E) && (E.is_robotic())
+	return istype(E) && E.is_robotic() ? null : "you must have a compatible robotic head to install this upgrade"
 
 /obj/item/clothing/mask/synthfacemask/draw(datum/look/look)
 	..()
@@ -72,3 +74,23 @@ TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(),
 /// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
 	return maskmaster
+
+/proc/req_acceptance_robotic_head()
+	return part_make(/datum/entry/part/req/acceptance_leaf/robotic_head, list())
+
+
+/datum/entry/part/req/acceptance_leaf/robotic_head/acceptance_reason(datum/act/op/A)
+	var/obj/item/clothing/mask/synthfacemask/I = A.target
+	return I.robotic_head(A)
+
+
+/datum/entry/part/req/acceptance_leaf/robotic_head/read_keys(datum/act/op/A)
+	. = list()
+	var/mob/living/carbon/human/H = A.wearer
+	if(!istype(H))
+		return
+	. += list(list(H, SLOT_OCCUPANCY_KEY), list(H, nameof(H.organs)))
+	// organs_by_name is a derived external-part cache. Track actual tree-slot
+	// owners and membership rather than introducing a second state map.
+	for(var/obj/item/organ/external/E as anything in H.organs)
+		. += list(list(E, SLOT_OCCUPANCY_KEY), list(E, nameof(E.robotic)), list(E, nameof(E.organ_tag)))

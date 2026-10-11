@@ -428,14 +428,22 @@ case "$split_mode" in
 esac
 if [ "${DQ_FOCUS_SPLIT:-}" = "0" ] && [ "$split_mode" = "auto" ]; then do_split=0; fi
 if [ "$bless" -eq 1 ] || [ "$repeat" -gt 1 ]; then
+	look_full=1
 	if [ "$split_mode" = "on" ]; then echo "--split-slow ignored: it is not used with --bless or --repeat" >&2; fi
 	do_split=0
 fi
-# A look run: the pins are worlds of their own (sharded) unless bless, repeat or an empty snapshot file makes them run as before.
+# Look pins prepare incremental reads in both split and serialized modes; bless and repeat stay full.
 look_world=0
-if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ] && [ "$split_mode" != "off" ] && [ "${DQ_FOCUS_SPLIT:-}" != "0" ]; then
+look_single=0
+if [ ${#look_group[@]} -gt 0 ] && [ "$bless" -eq 0 ] && [ "$repeat" -eq 1 ]; then
 	look_world=1
-	do_split=1
+	if [ "$split_mode" = "off" ] || [ "${DQ_FOCUS_SPLIT:-}" = "0" ]; then
+		# One serialized world still uses the same incremental appearance plan.
+		look_single=1
+		do_split=0
+	else
+		do_split=1
+	fi
 fi
 LOOK_PARAMS=""
 LOOK_PLAN_FILE=""
@@ -530,11 +538,13 @@ combined_log="data/focused-runs/last.$$.log"
 run_once() {
 	# Git Bash can use the same worktree-pinned entry point and system Bun as
 	# the POSIX runner; avoid the batch bootstrap's separate tool download.
-	if [ -n "$LOOK_PARAMS" ]; then
-		DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}$LOOK_PARAMS" tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
-	else
+	(
+		# Concrete plans apply to combined normal, bless and repeat worlds alike.
+		if [ -n "$LOOK_PARAMS" ]; then
+			export DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}$LOOK_PARAMS"
+		fi
 		tools/build/build.sh dm-test "--focus=$focus" ${args[@]+"${args[@]}"}
-	fi
+	)
 }
 
 # Several worlds from one compiled .dmb. The first world compiles; once it has launched its world ("Test world runN"), the rest start,
@@ -709,7 +719,7 @@ look_keys_record() {
 }
 
 # A look run with no stale type and nothing else to run needs no world at all.
-if [ "$look_world" -eq 1 ] && [ "$LOOK_STALE_COUNT" -eq 0 ] && [ ${#main_group[@]} -eq 0 ] && [ ${#slow_group[@]} -eq 0 ]; then
+if [ "$look_world" -eq 1 ] && [ "$look_single" -eq 0 ] && [ "$LOOK_STALE_COUNT" -eq 0 ] && [ ${#main_group[@]} -eq 0 ] && [ ${#slow_group[@]} -eq 0 ]; then
 	echo "FOCUSED RESULT: 0 passed, 0 failed (look pins: no type changed since the recorded keys, nothing probed; --full probes all)"
 	status_write passed "result=look pins: nothing stale" "passed=0" "failed=0" "exit_code=0"
 	ledger_add 0 0 ""
@@ -731,6 +741,7 @@ fi
 if [ "$repeat" -eq 1 ]; then
 	run_once 2>&1 | tee "$combined_log"
 	rc=${PIPESTATUS[0]}
+	# Use the exact plan passed into the world; never regenerate a different plan after success.
 	if [ "$rc" -eq 0 ] && [ ${#look_group[@]} -gt 0 ]; then look_keys_record || rc=$?; fi
 	print_result "$combined_log" "$rc"
 	rm -f "$combined_log"

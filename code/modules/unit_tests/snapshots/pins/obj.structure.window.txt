@@ -42,4 +42,4 @@ robot|none click: Click: Knock
 @obj.structure human|/obj/item
 +0 menu: Bang on
 +2 menu: Knock
-keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, melee_hit, pry_in, pry_out, tk_knock, unfasten_frame, weld_repair
+keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, melee_hit, polarize, pry_in, pry_out, tk_knock, unfasten_frame, weld_repair

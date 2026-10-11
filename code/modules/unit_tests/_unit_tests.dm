@@ -298,6 +298,8 @@
 #include "dq_mob_memlist_tests.dm"
 #include "dq_latent_tests.dm"
 #include "dq_latency_policy_tests.dm"
+#include "dq_rule_native_old_metadata_tests.dm"
+#include "dq_rule_native_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_h3_heat_tests.dm"
 #include "dq_boot_bind_tests.dm"
@@ -419,6 +421,7 @@
 #include "dq_machine_work_helpers.dm"
 #include "dq_tool_tests.dm"
 #include "dq_construction_tests.dm"
+#include "dq_stages_tests.dm"
 #include "dq_construction_mech_tests.dm"
 #include "dq_construction_assembly_tests.dm"
 #include "dq_memory_list_tests.dm"
@@ -1264,6 +1267,16 @@
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
 
+#include "dq_acceptance_foundation_tests.dm"
+#include "dq_acceptance_tracking_tests.dm"
+#include "dq_acceptance_old_grouped_tests.dm"
+#include "dq_native_slot_accepts_tests.dm"
+
+#include "j_transfer_storage_regressions.dm"
+
+#include "j_closet_resident_cost_tests.dm"
+#include "dq_acceptance_final24_old_boundaries.dm"
+#include "dq_acceptance_retirement_old_boundaries.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

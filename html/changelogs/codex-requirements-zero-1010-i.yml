@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Track item size, equipment fit and body-shape changes for operation requirements."

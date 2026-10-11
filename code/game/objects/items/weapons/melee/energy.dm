@@ -63,7 +63,7 @@
 	set_edge(TRUE)
 	injury_kind = active_injury_kind
 	injury_kinds = active_injury_kinds
-	w_class = active_w_class
+	set_w_class(active_w_class)
 	play_sfx(src, SFX_WEAPONS_SABERON)
 	set_glow(src, GLOW(lrange, lpower, lcolor))
 
@@ -81,7 +81,7 @@
 	set_edge(combat_of_type(type).edge)
 	injury_kind = initial(injury_kind)
 	injury_kinds = null
-	w_class = initial(w_class)
+	set_w_class(initial(w_class))
 	set_glow(src, GLOW(0, 0, null))
 
 /obj/item/melee/energy/proc/use_charge(cost)

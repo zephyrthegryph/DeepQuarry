@@ -28,12 +28,12 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_FOREARM)
-			organ_tag = O_AUG_R_FOREARM
-			parent_organ = BP_R_ARM
+			set_organ_tag(O_AUG_R_FOREARM)
+			set_parent_organ(BP_R_ARM)
 			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_FOREARM)
-			organ_tag = O_AUG_L_FOREARM
-			parent_organ = BP_L_ARM
+			set_organ_tag(O_AUG_L_FOREARM)
+			set_parent_organ(BP_L_ARM)
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the lower [parent_organ] mount."))
 
@@ -74,12 +74,12 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_HAND)
-			organ_tag = O_AUG_R_HAND
-			parent_organ = BP_R_HAND
+			set_organ_tag(O_AUG_R_HAND)
+			set_parent_organ(BP_R_HAND)
 			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_HAND)
-			organ_tag = O_AUG_L_HAND
-			parent_organ = BP_L_HAND
+			set_organ_tag(O_AUG_L_HAND)
+			set_parent_organ(BP_L_HAND)
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
 
@@ -117,12 +117,12 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/mob/user = A.actor
 	switch(organ_tag)
 		if(O_AUG_L_UPPERARM)
-			organ_tag = O_AUG_R_UPPERARM
-			parent_organ = BP_R_ARM
+			set_organ_tag(O_AUG_R_UPPERARM)
+			set_parent_organ(BP_R_ARM)
 			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_UPPERARM)
-			organ_tag = O_AUG_L_UPPERARM
-			parent_organ = BP_L_ARM
+			set_organ_tag(O_AUG_L_UPPERARM)
+			set_parent_organ(BP_L_ARM)
 			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
 
@@ -168,7 +168,7 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	integrated_object_type = null
 
 
-	/// Tool path -> each stowed tool this augment carries (owned), built in Initialize() from
+	/// Tool path -> each stowed tool this augment carries (owned), built from
 	/// tool_types(). The deployed tool is owned by integrated_object instead, and moves back here
 	/// when another is picked (select_integrated_tool()).
 	var/list/integrated_tools
@@ -179,6 +179,7 @@ CAPABILITIES(/obj/item/organ/internal/augment/armmounted)
 	var/list/synths
 
 CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
+	setup(PROC_REF(configure_integrated_tools))
 	configure(item_tooling(speed = 0.8))
 	owns_many(nameof(synths), starts = PROC_REF(starting_synths))
 	owns_many(nameof(integrated_tools), starts = PROC_REF(starting_tools))
@@ -211,8 +212,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 /// Matter synthesizers feeding the augment's stack tools (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, synth_types, list(/datum/matter_synth/wire))
 
-/obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
-	. = ..()
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/configure_integrated_tools()
 
 	var/list/tools = all_integrated_tools()
 	if(!length(tools))
@@ -221,7 +221,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	integrated_tool_images = list()
 
 	for(var/obj/item/I as anything in tools)
-		I.canremove = FALSE
+		I.set_canremove(FALSE)
 		I.set_toolspeed(tooling_of(src).speed)
 		rel_set(I, nameof(I.my_augment), src)
 		I.name = "integrated [I.name]"
@@ -230,8 +230,8 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 		if(istype(Tool, /obj/item/stack))
 			var/obj/item/stack/S = Tool
 			for(var/datum/matter_synth/MS as anything in synths)
-				rel_add(S, nameof(S.synths), MS)
-			S.uses_charge = length(synths)
+				S.add_synth(MS)
+			S.set_uses_charge(length(synths))
 		integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
 
 /// Every tool this augment carries: the stowed ones and the deployed one.

@@ -634,6 +634,7 @@ admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 104
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 objects_ratchet_on_legacy_interactions = 0
 objects_ratchet_on_tool_act_overrides = 0
+tools_use_tool_banned = 0
 objects_ratchet_on_damage_reactions = 0
 objects_ratchet_on_declare_emag = 0
 objects_ratchet_on_periodic = 0
@@ -1691,5 +1692,5 @@ folders = [
 exempt_prefixes = ["code/engine/_generated/"]
 
 [lint.requirement_bool]
-# Only transitional boolean callbacks count; generated copies and test fixtures do not.
-exempt_prefixes = ["code/modules/unit_tests/", "code/tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
+# The retired constructor is banned everywhere; generated copies are derived output.
+exempt_prefixes = ["code/engine/_generated/"]

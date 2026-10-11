@@ -9,6 +9,12 @@ human|/obj/item/card/id menu: Put in
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Put in
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Open
+human|/obj/item/kit menu: Put in
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
 human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Open
 human|/obj/item/multitool menu: Put in
@@ -25,6 +31,12 @@ human|/obj/item/stack/material/steel menu: Open
 human|/obj/item/stack/material/steel menu: Put in
 human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/steel click: Click: Put in
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Open
+human|/obj/item/storage menu: Put in
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Put in
 human|/obj/item/tool/crowbar menu: Move To Top
 human|/obj/item/tool/crowbar menu: Open
 human|/obj/item/tool/crowbar menu: Put in
