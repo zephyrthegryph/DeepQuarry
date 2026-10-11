@@ -107,7 +107,7 @@
 		if(islist(value))
 			var/list/L = value
 			value = L.Copy()
-		if(hascall(into, "__setter_[field]"))
+		if(hascall(into, "set_[field]"))
 			call(into, "set_[field]")(value)
 		else
 			into.vars[field] = value // ALLOW(api): record_copy writes a plain data field of a record by name
@@ -133,7 +133,7 @@
 		if(islist(value))
 			var/list/L = value
 			value = L.Copy()
-		if(hascall(R, "__setter_[field]"))
+		if(hascall(R, "set_[field]"))
 			call(R, "set_[field]")(value)
 		else
 			R.vars[field] = value // ALLOW(api): record_import writes a plain data field of a record by name
