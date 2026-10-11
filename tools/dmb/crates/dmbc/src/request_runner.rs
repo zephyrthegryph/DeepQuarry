@@ -388,7 +388,7 @@ fn run_build_attempt(
         }
     });
     let map_memo = host
-        .map_memo(memo_policy, cache_snapshot.clone())
+        .map_memo(memo_policy, cache_snapshot.clone(), command == BuildCommand::Compile && demand.is_none())
         .map(|memo| match &cache_publisher {
             Some(publisher) => memo.with_publisher(Arc::clone(publisher)),
             None => memo,
@@ -928,6 +928,9 @@ fn run_build_attempt(
         // Required compile, freshness, pair installation and session operations
         // succeeded. The sole cache segment is published only at this boundary.
         dmbc::daemon::control::checkpoint()?;
+        if let Some(memo) = &map_memo {
+            memo.publish_successful();
+        }
         let cache_batch_stats = memo_cache.as_ref().map(|cache| match cache.finish_batch() {
             Ok(report) => serde_json::json!({
                 "segment": report.segment.map(|id| format!("{id:032x}")),

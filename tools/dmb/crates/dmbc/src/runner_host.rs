@@ -328,6 +328,7 @@ impl BuildHost {
         &mut self,
         policy: u128,
         disk: Option<Arc<disk::LazyDisk>>,
+        publishable: bool,
     ) -> Option<crate::map_memo::MapMemo> {
         if self.memo.is_none() {
             return disk.map(|snapshot| {
@@ -344,10 +345,11 @@ impl BuildHost {
                 Arc::new(crate::map_memo::RetainedMaps::current_revision()),
             ));
         }
-        Some(crate::map_memo::MapMemo::with_resident(
+        Some(crate::map_memo::MapMemo::with_resident_for_request(
             policy,
             Arc::clone(&self.maps.as_ref().unwrap().1),
             disk,
+            publishable,
         ))
     }
     pub(crate) fn procedure_memo(
@@ -791,15 +793,15 @@ mod tests {
     fn maps_retain_one_policy_owner_without_retaining_request_disk_snapshots() {
         let mut host = BuildHost::default();
         capture(&mut host, BTreeMap::new());
-        assert!(host.map_memo(1, None).is_some());
+        assert!(host.map_memo(1, None, true).is_some());
         let first = Arc::clone(&host.maps.as_ref().unwrap().1);
-        assert!(host.map_memo(1, None).is_some());
+        assert!(host.map_memo(1, None, true).is_some());
         assert!(Arc::ptr_eq(&first, &host.maps.as_ref().unwrap().1));
-        assert!(host.map_memo(2, None).is_some());
+        assert!(host.map_memo(2, None, true).is_some());
         assert!(!Arc::ptr_eq(&first, &host.maps.as_ref().unwrap().1));
         capture(&mut host, BTreeMap::from([("MODE".into(), "1".into())]));
         assert!(host.maps.is_none());
-        assert!(BuildHost::one_shot().map_memo(1, None).is_none());
+        assert!(BuildHost::one_shot().map_memo(1, None, true).is_none());
     }
     #[test]
     fn exact_configuration_reuses_owner_and_request_overlay_is_independent() {
