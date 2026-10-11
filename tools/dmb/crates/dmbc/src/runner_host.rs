@@ -804,6 +804,15 @@ mod tests {
         assert!(BuildHost::one_shot().map_memo(1, None, true).is_none());
     }
     #[test]
+    fn map_analysis_does_not_supersede_pending_build_publication() {
+        let mut host = BuildHost::default();
+        let build = host.map_memo(1, None, true).unwrap();
+        let analysis = host.map_memo(1, None, false).unwrap();
+        assert!(!analysis.publish_successful());
+        assert!(build.publish_successful());
+        assert!(!build.publish_successful());
+    }
+    #[test]
     fn exact_configuration_reuses_owner_and_request_overlay_is_independent() {
         let mut host = BuildHost::default();
         let first = capture(&mut host, BTreeMap::new());
