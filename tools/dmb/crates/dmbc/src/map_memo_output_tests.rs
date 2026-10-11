@@ -242,7 +242,7 @@ fn retained_modified_map_outputs_match_fresh_and_decline_source_or_dependency_ch
         )
         .unwrap();
         let mut retained_units = 0;
-        owner.outputs.visit_storage(&mut |view| {
+        owner.outputs.visit_storage(&mut |view: dm_session::ArtifactStorageView<'_, outputs::MapOutputs>| {
             if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
                 if matches!(value.as_ref(), outputs::MapOutputs::Unit(_)) {
                     retained_units += 1;
