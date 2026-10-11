@@ -30,7 +30,7 @@
 	user.set_use_stance(I_HELP)
 	TEST_ASSERT(!user.incapacitated(), "actual actor is capable before player clicks")
 	TEST_ASSERT(assert_resolves(user, first, kit, GESTURE_CLICK, "refit"), "Actual player input must select kit refitting: [explain_click(user, first, kit)]")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	var/datum/input_event/click/first_click = new(user, first, null, "mapwindow.map", "left=1")
 	input_submit(first_click)
 	test_time(1 SECOND)
@@ -38,7 +38,7 @@
 	TEST_ASSERT_EQUAL(kit.parts, remaining_parts, "first refit spends exactly its own component quota")
 	TEST_ASSERT_EQUAL(first.loc, T, "refit preserves original target on its floor")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), kit, "complement quota preserves original kit in hand")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	input_submit(new /datum/input_event/click(user, repeated, null, "mapwindow.map", "left=1"))
 	test_time(1 SECOND)
 	var/list/after_fit = dq_fit_bodytypes(repeated)
@@ -50,7 +50,7 @@
 	TEST_ASSERT_EQUAL(user.get_active_hand(), kit, "same-kind refusal preserves original kit in hand")
 	TEST_ASSERT_EQUAL(repeated.loc, T, "same-kind refusal preserves original target containment")
 	TEST_ASSERT(!QDELETED(repeated), "same-kind refusal preserves original target alive")
-	user.next_click = 0
+	cooldown_set_end(user, next_click, 0)
 	input_submit(new /datum/input_event/click(user, complement, null, "mapwindow.map", "left=1"))
 	test_time(1 SECOND)
 	TEST_ASSERT(SPECIES_TAJARAN in dq_fit_bodytypes(complement), "remaining component still refits the original complementary piece")

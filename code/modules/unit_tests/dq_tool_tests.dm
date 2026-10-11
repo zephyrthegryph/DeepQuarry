@@ -120,7 +120,7 @@ CAPABILITIES(/obj/dq_tool_target)
 	TEST_ASSERT(!("dq_tool_weld" in target.done), "an unlit welder can't pay: the effect did not run")
 	welder.set_welding(TRUE)
 	var/start = welder.get_fuel()
-	H.next_click = 0
+	cooldown_set_end(H, next_click, 0)
 	test_click(H, target, welder)
 	test_time(1 SECOND)
 	TEST_ASSERT(("dq_tool_weld" in target.done), "a lit welder pays: the effect ran")

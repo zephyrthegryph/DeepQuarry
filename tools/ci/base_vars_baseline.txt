@@ -10,7 +10,6 @@ base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/tmp/rebuilding = FALSE
 base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/tmp/smoothing_junction = 0
 base_var	code/ATMOSPHERICS/tg_infra_compat.dm	var/move_resist = 100
 base_var	code/_helpers/icons.dm	/atom/var/tmp/icon/examine_icon_snapshot
-base_var	code/_onclick/click.dm	/mob/COOLDOWN_DECLARE(next_click)
 base_var	code/_onclick/hud/alert.dm	var/list/alerts = null // contains /atom/movable/screen/alert only // On /mob so clientless mobs will throw alerts properly
 base_var	code/_onclick/hud/fullscreen.dm	var/list/screens = null
 base_var	code/_onclick/telekinesis.dm	var/tk_reach = TRUE
@@ -66,27 +65,9 @@ base_var	code/datums/soul_link.dm	var/list/datum/soul_link/owned_soul_links // S
 base_var	code/datums/soul_link.dm	var/list/datum/soul_link/shared_soul_links // Soul links we are a/the sharer of (a relation list view).
 base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/alt_appearances_owned
 base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/datum/alternate_appearance/alt_appearances_viewing
-base_var	code/datums/sparse_vars/catalogue_delay.dm	var/catalogue_delay_override
-base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached
-base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached_name
-base_var	code/datums/sparse_vars/chat_color_cache.dm	var/tmp/chat_color_cached_darkened
 base_var	code/datums/sparse_vars/forensics.dm	var/forensic_was_bloodied
 base_var	code/datums/sparse_vars/forensics.dm	var/forensic_blood_color
 base_var	code/datums/sparse_vars/forensics.dm	var/forensic_fluorescent
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/belly_cycle_count = 0
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/list/recursive_listener_list
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/moved_recently_at = 0
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/list/dynamic_lights_affecting
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/image/cloak_selfimage
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/cloak_active = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/parachute_deployed = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/parachuting_override = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/softfall_is_set = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/softfall_value = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_is_set = FALSE
-base_var	code/datums/sparse_vars/movable_misc.dm	var/tmp/hovering_value = FALSE
-base_var	code/datums/sparse_vars/observer_events.dm	var/tmp/list/observer_event_listeners
-base_var	code/datums/sparse_vars/update_on_z.dm	var/tmp/list/image/z_update_images
 base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
 base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
@@ -389,28 +370,21 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pulse = PULSE_NORM
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/does_not_breathe = 0 //Used for specific mobs that can't take advantage of the species flags (changelings)
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/addictions = null // contains currently addicted chem reagent IDs
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/addiction_counters = null // contains counters by reagent ID
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	COOLDOWN_DECLARE(taste_cooldown)
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	COOLDOWN_DECLARE(taste_repeat_cooldown)
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/last_taste_text = ""
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
 base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_stomach = FALSE
 base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_taur = FALSE
 base_var	code/modules/mob/living/carbon/human/human.dm	var/embedded_flag //To check if we've need to roll for damage on movement while an item is imbedded in us.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
-base_var	code/modules/mob/living/carbon/human/human.dm	COOLDOWN_DECLARE(push_lying_cooldown) //For human_attackhand.dm: lying-struggle antispam
-base_var	code/modules/mob/living/carbon/human/human.dm	COOLDOWN_DECLARE(disarm_cooldown) //For human_attackhand.dm: repeat-disarm window
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spitting = 0 //Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_projectile = null //Projectile type.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_name = null //String
-base_var	code/modules/mob/living/carbon/human/human.dm	COOLDOWN_DECLARE(spit_cooldown) //Timestamp.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/can_defib = 1 //Horrible damage (like beheadings) will prevent defibbing organics.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 base_var	code/modules/mob/living/carbon/human/human.dm	var/active_regen_delay = 300
-base_var	code/modules/mob/living/carbon/human/human.dm	COOLDOWN_DECLARE(breath_sound_cooldown) //Allows us to store the value across proc calls per-mob.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/list/teleporters = list() //Used for lleill abilities
 base_var	code/modules/mob/living/carbon/human/human.dm	var/rest_dir = 0 //To lay down in a specific direction
 base_var	code/modules/mob/living/carbon/human/human.dm	var/list/datum/genetics/side_effect/genetic_side_effects = list() //For any genetic side effects we currently have.
-base_var	code/modules/mob/living/carbon/human/human.dm	COOLDOWN_DECLARE(chew_cooldown)
 base_var	code/modules/mob/living/carbon/human/human_attackhand.dm	var/datum/unarmed_attack/default_attack
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/r_hair = 0
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/g_hair = 0
@@ -455,8 +429,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/religion = ""
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_faction = ""
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/antag_vis = ""
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/voice = "" //Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/special_voice = "" // For changing our voice. Used by a symptom.
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/xylophone = 0 //For the spoooooooky xylophone cooldown: world.time it can play again
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/flavor_texts // Lazy.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
@@ -519,7 +491,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/body_wri
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/gender_change_cooldown = 0 // A cooldown for gender and gender indentify changing procs to make it easy to avoid spam of gender change
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/speech_sound_enabled = TRUE
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/nutrition_hidden = FALSE
-base_var	code/modules/mob/living/carbon/human/human_powers.dm	var/next_sonar_ping = 0
 base_var	code/modules/mob/living/carbon/human/life.dm	var/heartbeat = 0
 base_var	code/modules/mob/living/carbon/human/life.dm	var/chemical_darksight = 0
 base_var	code/modules/mob/living/carbon/human/life.dm	EXPIRY_DECLARE(hud_full_refresh_at)
@@ -553,7 +524,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/mob_class = null // A mob
 base_var	code/modules/mob/living/living_defines.dm	var/hud_updateflag = 0
 base_var	code/modules/mob/living/living_defines.dm	var/nutrition = 400
 base_var	code/modules/mob/living/living_defines.dm	var/max_nutrition = MAX_NUTRITION
-base_var	code/modules/mob/living/living_defines.dm	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
 base_var	code/modules/mob/living/living_defines.dm	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
 base_var	code/modules/mob/living/living_defines.dm	var/now_pushing = null
 base_var	code/modules/mob/living/living_defines.dm	var/mob_bump_flag = 0
@@ -566,10 +536,8 @@ base_var	code/modules/mob/living/living_defines.dm	var/on_fire = 0
 base_var	code/modules/mob/living/living_defines.dm	var/fire_stacks
 base_var	code/modules/mob/living/living_defines.dm	var/fire_stack_decay_rate = -0.05
 base_var	code/modules/mob/living/living_defines.dm	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
-base_var	code/modules/mob/living/living_defines.dm	var/lastpuke = 0
 base_var	code/modules/mob/living/living_defines.dm	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
 base_var	code/modules/mob/living/living_defines.dm	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
-base_var	code/modules/mob/living/living_defines.dm	var/image/dsoverlay = null //Overlay used for darksight eye adjustments
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_range = null
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_intensity = null
 base_var	code/modules/mob/living/living_defines.dm	var/last_glow_color = null
@@ -578,15 +546,12 @@ base_var	code/modules/mob/living/living_defines.dm	var/nest //Not specific, beca
 base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list
 base_var	code/modules/mob/living/living_defines.dm	var/makes_dirt = TRUE //FALSE if the mob shouldn't be making dirt on the ground when it walks
-base_var	code/modules/mob/living/living_defines.dm	var/image/selected_image = null // Used for buildmode AI control stuff.
 base_var	code/modules/mob/living/living_defines.dm	var/allow_self_surgery = FALSE // Used to determine if the mob can perform surgery on itself.
 base_var	code/modules/mob/living/living_defines.dm	var/flying = 0 // Allows flight
 base_var	code/modules/mob/living/living_defines.dm	var/inventory_panel_type = /datum/inventory_panel
 base_var	code/modules/mob/living/living_defines.dm	var/datum/inventory_panel/inventory_panel
-base_var	code/modules/mob/living/living_defines.dm	COOLDOWN_DECLARE(resist_cooldown) // world.time the next resist is allowed.
 base_var	code/modules/mob/living/living_defines.dm	var/tiredness = 0 //For vore draining
 base_var	code/modules/mob/living/living_defines.dm	var/fear = 0 //For fear effects and phobias
-base_var	code/modules/mob/living/living_defines.dm	COOLDOWN_DECLARE(fear_sound_cooldown) //For making sure the heartbeats don't play over each other
 base_var	code/modules/mob/living/living_defines.dm	var/touch_reaction_flags
 base_var	code/modules/mob/living/living_defines.dm	var/mob/living/tf_form // Shapeshifter shenanigans
 base_var	code/modules/mob/living/living_defines.dm	var/datum/mind/tf_form_mind
@@ -603,8 +568,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/custom_say = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_ask = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_exclaim = null
 base_var	code/modules/mob/living/living_defines.dm	var/custom_whisper = null
-base_var	code/modules/mob/living/living_defines.dm	var/list/custom_heat
-base_var	code/modules/mob/living/living_defines.dm	var/list/custom_cold
 base_var	code/modules/mob/living/living_defines.dm	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 base_var	code/modules/mob/living/living_defines.dm	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 base_var	code/modules/mob/living/living_defines.dm	var/eggs = 0
@@ -626,7 +589,6 @@ base_var	code/modules/mob/mob.dm	var/tmp/user_vars_remembered //not needed for m
 base_var	code/modules/mob/mob_defines.dm	var/tmp/datum/persistent_client/persistent_client
 base_var	code/modules/mob/mob_defines.dm	var/datum/mind/mind
 base_var	code/modules/mob/mob_defines.dm	var/stat = CONSCIOUS //Whether a mob is alive or dead.
-base_var	code/modules/mob/mob_defines.dm	COOLDOWN_DECLARE(next_move) // world.time when mob is next allowed to self-move.
 base_var	code/modules/mob/mob_defines.dm	VAR_FINAL/incapacitated = NONE
 base_var	code/modules/mob/mob_defines.dm	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
 base_var	code/modules/mob/mob_defines.dm	var/tmp/atom/movable/screen/movable/ability_master/ability_master = null
@@ -669,7 +631,6 @@ base_var	code/modules/mob/mob_defines.dm	var/facing_dir = null // Used for the a
 base_var	code/modules/mob/mob_defines.dm	var/name_archive //For admin things like possession
 base_var	code/modules/mob/mob_defines.dm	EXPIRY_DECLARE(timeofdeath) //Living
 base_var	code/modules/mob/mob_defines.dm	var/death_message = "seizes up and falls limp..."
-base_var	code/modules/mob/mob_defines.dm	COOLDOWN_DECLARE(cpr_time) //Carbon
 base_var	code/modules/mob/mob_defines.dm	var/bodytemperature = BODYTEMP_NORMAL
 base_var	code/modules/mob/mob_defines.dm	var/charges = 0.0
 base_var	code/modules/mob/mob_defines.dm	var/losebreath = 0.0//Carbon
@@ -731,7 +692,6 @@ base_var	code/modules/mob/mob_defines.dm	var/vent_crawl_time = 4.5 SECONDS // Ti
 base_var	code/modules/mob/mob_defines.dm	VAR_PRIVATE/is_motion_tracking = FALSE // Prevent multiple unsubs and resubs, also used to check if the vis layer is enabled, use has_motiontracking() to get externally.
 base_var	code/modules/mob/mob_defines.dm	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 base_var	code/modules/mob/mob_defines.dm	var/is_slipping = FALSE
-base_var	code/modules/mob/mob_defines.dm	COOLDOWN_DECLARE(slip_protect)
 base_var	code/modules/mob/mob_defines.dm	var/vantag_hud = 0 // Do I have the HUD enabled?
 base_var	code/modules/mob/mob_defines.dm	var/disconnect_time = null //Time of client loss, set by Logout(), for timekeeping
 base_var	code/modules/mob/mob_defines.dm	var/size_multiplier = 1 //multiplier for the mob's icon size
@@ -760,7 +720,6 @@ base_var	code/modules/tgui_input/say_modal/typing.dm	var/tmp/mutable_appearance/
 base_var	code/modules/tgui_input/say_modal/typing.dm	var/tmp/mutable_appearance/active_thinking_indicator
 base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/list/icon/pipes_shown = list()
 base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/is_ventcrawling = FALSE
-base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/var/next_play_vent = 0
 base_var	code/modules/ventcrawl/ventcrawl.dm	/mob/living/var/ventcrawl_layer = 3
 base_var	code/modules/vore/appearance/preferences.dm	var/tmp/datum/sprite_accessory/hair_accessory/hair_accessory_style_static
 base_var	code/modules/vore/eating/living.dm	var/list/temp_languages // Absorbs add languages to the pred. Lazy.

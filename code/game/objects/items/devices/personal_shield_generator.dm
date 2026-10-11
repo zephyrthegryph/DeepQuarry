@@ -243,9 +243,9 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
 /obj/item/personal_shield_generator/proc/toggle_shield_effect(mob/living/carbon/human/user, obj/item/held)
 
-	if(!COOLDOWN_FINISHED(user, last_special))
+	if(!cooldown_ready(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 1 SECONDS) //No spamming!
+	cooldown_start(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!bcell || !bcell.check_charge(generator_hit_cost) || !bcell.check_charge(generator_active_cost))
 		to_chat(user, span_warning("You require a charged cell to do this!"))
@@ -270,9 +270,9 @@ MSG_DEF_SELF(shield_generator/no_cell, "There is no removable cell.")
 
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held) //Make this work on Alt-Click
 
-	if(!COOLDOWN_FINISHED(user, last_special))
+	if(!cooldown_ready(user, last_special))
 		return
-	COOLDOWN_START(user, last_special, 1 SECONDS) //No spamming!
+	cooldown_start(user, last_special, 1 SECONDS) //No spamming!
 
 	if(!active_weapon)
 		to_chat(user, span_warning("The gun is missing!"))

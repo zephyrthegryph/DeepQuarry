@@ -457,7 +457,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 
 /mob/living/simple_mob/animal/synx
 	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
-	var/next_sonar_ping = 0
 
 /mob/living/simple_mob/animal/synx/proc/sonar_ping()
 	set name = "Listen In"
@@ -467,13 +466,13 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
 		return
-	if(!COOLDOWN_FINISHED(src, next_sonar_ping))
+	if(!cooldown_ready(src, next_sonar_ping))
 		to_chat(src, span_warning("You need another moment to focus."))
 		return
 	if(is_deaf() || is_below_sound_pressure(get_turf(src)))
 		to_chat(src, span_warning("You are for all intents and purposes currently deaf!"))
 		return
-	COOLDOWN_START(src, next_sonar_ping, 10 SECONDS)
+	cooldown_start(src, next_sonar_ping, 10 SECONDS)
 	var/heard_something = FALSE
 	to_chat(src, span_notice("You take a moment to listen in to your environment..."))
 	for(var/mob/living/L in range(client.view, src))
