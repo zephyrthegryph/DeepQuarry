@@ -134,6 +134,9 @@
 	can_repeat = FALSE
 	banglet = TRUE
 
+CAPABILITIES(/obj/item/grenade/flashbang/clusterbang/segment)
+	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
+
 /obj/item/grenade/flashbang/clusterbang/segment/Initialize(mapload) //Segments should never exist except part of the clusterbang, since these immediately 'do their thing' and asplode
 	. = ..()
 
@@ -141,11 +144,13 @@
 	var/temploc = src.loc//Saves the current location to know where to step away from
 	walk_away(src,temploc,stepdist)//I must go, my people need me
 
-	after(src, rand(1.5 SECONDS, 6 SECONDS), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 
 /obj/item/grenade/flashbang/cluster
 	icon_state = "flashbang_active" // only exists primed
 	banglet = TRUE
+
+CAPABILITIES(/obj/item/grenade/flashbang/cluster)
+	after_init(PROC_REF(scattered_fuse), then(PROC_REF(fuse_out)))
 
 /obj/item/grenade/flashbang/cluster/Initialize(mapload)//Same concept as the segments, so that all of the parts don't become reliant on the clusterbang
 	. = ..()
@@ -154,7 +159,6 @@
 	var/temploc = src.loc
 	walk_away(src,temploc,stepdist)
 
-	after(src, rand(1.5 SECONDS, 6 SECONDS), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."
@@ -162,3 +166,11 @@
 /obj/item/grenade/flashbang/clusterbang/primed/Initialize(mapload)
 	. = ..()
 	activate()
+
+/// A scattered bang's fuse: 1.5 to 6 seconds (after_init()).
+/obj/item/grenade/flashbang/proc/scattered_fuse(datum/act/timer/A)
+	return rand(1.5 SECONDS, 6 SECONDS)
+
+/// Its fuse burnt out (after_init()).
+/obj/item/grenade/flashbang/proc/fuse_out(datum/act/timer/A)
+	detonate()
