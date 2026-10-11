@@ -40,6 +40,15 @@
     items.Add(7)
     var/list/copied = items.Copy()
     return length(copied) + copied[3]
+/proc/for_list_methods()
+    for(var/list/value = list(7); value; value = null)
+        value.Add(11)
+        return value.Copy()[1] + value.Copy()[2]
+    return 0
+/proc/for_source_receiver()
+    for(var/datum/callable_receiver/value = new; value; value = null)
+        return value.member_only()
+    return 0
 /world/New()
     ..()
     world.log << file2text(callable_fixture_resource)
@@ -62,5 +71,7 @@
     world.log << "DQ_CALL implicit_array_methods [implicit_array_methods()]"
     var/datum/callable_field_array/field_receiver = new
     world.log << "DQ_CALL field_array_methods [field_receiver.field_array_methods()]"
+    world.log << "DQ_CALL for_list_methods [for_list_methods()]"
+    world.log << "DQ_CALL for_source_receiver [for_source_receiver()]"
     world.log << "DQ_CALL finished"
     shutdown()
