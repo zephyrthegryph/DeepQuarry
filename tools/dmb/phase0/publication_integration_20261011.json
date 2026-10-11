@@ -634,5 +634,21 @@
     "six_worktree_projection_bytes": 9001992102,
     "six_worktree_with_reserve_bytes": 26181861286,
     "six_worktree_limit": "Requires new current source/BYOND capture; historical source Git commit is unproven. No roots created."
+  },
+  "latest_a7_validation": {
+    "compiler_commit": "a7d86bfff44d744dbded3627b8b3b24cb315f364",
+    "compiler_sha256": "b26e9bab81c613ad179f2de43c46edbcda5b48acbd0bcfe2dd8827e89d921cea",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-130129-4a73a9a3-job-cargo.json",
+    "build_passed": true,
+    "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/459775962a1345e1921767e72b7b6316/receipt.json",
+    "disk_contract_complete": true,
+    "disk_contract_revisions": 5,
+    "relative_paired_receipt": "E:/dq-cache/dmb-nameof-relative-global/20261011-a7d86b/e280aca3a91d421cbf692e3be533e715/receipt.json",
+    "relative_acceptance_and_class_agree": true,
+    "relative_diagnostics_agree": false,
+    "relative_gap": "Missing relative reference correctly rejects, but ordinary procedure omits nameof and return recovery diagnostics",
+    "cohort_receipt": "E:/dq-cache/dmb-native-iterations/20261011-130426-88c2a001/receipt.json",
+    "cohort_status": "running; no admitted complete benchmark",
+    "scope": "Prototype profile, no full runtime or six-worktree acceptance"
   }
 }
