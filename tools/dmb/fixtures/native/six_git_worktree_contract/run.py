@@ -85,7 +85,9 @@ def main():
             if result["exit"]!=0 or any(h.sha(path/name)!=digest for name,digest in before.items()): raise ValueError("compile/source failure")
             published=fresh.read_json(output/"compile-result.json",65536)
             acquired_file=output/"acquired.json";slots=output/"slots"
-            acquired_result=h.run_child(args.native,["acquire","--output-store",str(output/"store"),"--pair-id",published["pair_id"],"--slots",str(slots),"--result-file",str(acquired_file)],output/"acquire",min(deadline,time.monotonic()+30),cache_directory=cache)
+            acquire_arguments=["acquire","--output-store",str(output/"store"),"--pair-id",published["pair_id"],"--slots",str(slots),"--result-file",str(acquired_file)]
+            acquired_result=h.run_child(args.native,acquire_arguments,output/"acquire",min(deadline,time.monotonic()+30),cache_directory=cache)
+            receipt["children"][label]["acquire"]={"result":acquired_result,"arguments":acquire_arguments}
             if acquired_result["exit"]: raise ValueError("acquire failed")
             acquired=fresh.read_json(acquired_file,65536)
             hashes=fresh.admit_pair(published,acquired,output/"artifacts/probe.dme",output/"store",slots,h.regular,h.sha)
