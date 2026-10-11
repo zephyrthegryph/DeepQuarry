@@ -59,33 +59,81 @@ impl VariableContext for Context<'_, '_> {
 }
 impl Compiler<'_> {
     pub(super) fn variable_meaning(&self, name: &str, statement: &str) -> Result<M, LowerError> {
-        dm_ir::reference_resolution::resolve_variable(&Context(self), name).map_err(|failure| {
-            match failure {
-                VariableResolutionError::Host(error) => error,
-                VariableResolutionError::MissingGlobalStorage => {
-                    error(statement, "global variable has no shared storage")
-                }
-                VariableResolutionError::Unresolved => {
-                    if self.lookup.is_some() {
-                        // Every namespace probe above completed authoritatively.
-                        // Unsupported/failed host answers exit through Host instead.
-                        LowerError {
-                            primary_anchor: None,
-                            related: Vec::new(),
-                            kind: LowerErrorKind::SourceError,
-                            ..error(
-                                statement,
-                                &crate::lower_diagnostics::undefined_variable_message(
-                                    statement, name,
-                                ),
-                            )
+        let meaning = dm_ir::reference_resolution::resolve_variable(&Context(self), name).map_err(
+            |failure| {
+                match failure {
+                    VariableResolutionError::Host(error) => error,
+                    VariableResolutionError::MissingGlobalStorage => {
+                        error(statement, "global variable has no shared storage")
+                    }
+                    VariableResolutionError::Unresolved => {
+                        if self.lookup.is_some() {
+                            // Every namespace probe above completed authoritatively.
+                            // Unsupported/failed host answers exit through Host instead.
+                            LowerError {
+                                primary_anchor: None,
+                                related: Vec::new(),
+                                kind: LowerErrorKind::SourceError,
+                                ..error(
+                                    statement,
+                                    &crate::lower_diagnostics::undefined_variable_message(
+                                        statement, name,
+                                    ),
+                                )
+                            }
+                        } else {
+                            error(statement, &format!("unresolved variable name: {name}"))
                         }
-                    } else {
-                        error(statement, &format!("unresolved variable name: {name}"))
+                    }
+                }
+            },
+        )?;
+        self.validate_variable_type(&meaning, statement)?;
+        Ok(meaning)
+    }
+    /// Validate the selected declaration, never another namespace with the same name.
+    /// Runtime aliases remain licensed by the ordinary current resolver.
+    fn validate_variable_type(&self, meaning: &M, statement: &str) -> Result<(), LowerError> {
+        use dm_ir::ResolveQuery as Q;
+        let Some(lookup) = self.lookup else {
+            return Ok(());
+        };
+        let query = match meaning {
+            M::InstanceField {
+                owner: Some(owner),
+                name,
+            } => Q::DeclaredVarType {
+                owner: *owner,
+                name: *name,
+            },
+            M::SharedStorage(SymRef::VariableSlot(slot)) => {
+                let slots = lookup.slots.borrow();
+                let Some(slot) = slots.get(&SymRef::VariableSlot(*slot)) else {
+                    return Ok(());
+                };
+                if slot.owner == SymbolId::of("/") {
+                    Q::GlobalVar(slot.name)
+                } else {
+                    Q::DeclaredVarType {
+                        owner: slot.owner,
+                        name: slot.name,
                     }
                 }
             }
-        })
+            // Locals/arguments and procedure statics use separate declaration issuers.
+            // Do not infer their validity from an unrelated global declaration.
+            _ => return Ok(()),
+        };
+        let Some(path) = self.declared_type_text(query)? else {
+            return Ok(());
+        };
+        let result = lookup.runtime_type(&path).map_err(|mut failure| {
+            if failure.kind == LowerErrorKind::SourceError {
+                failure.reason = format!("{statement}: undefined type: {path}");
+            }
+            failure
+        });
+        self.semantic(result).map(|_| ())
     }
     pub(super) fn variable_operand(
         &mut self,
