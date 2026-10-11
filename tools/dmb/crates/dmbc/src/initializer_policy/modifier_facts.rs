@@ -206,6 +206,9 @@ impl ModifierArtifacts {
 }
 struct Host<'a>(&'a dyn Resolver);
 impl Resolver for Host<'_> {
+    fn observes_reads(&self) -> bool {
+        self.0.observes_reads()
+    }
     fn resolve(&self, q: ResolveQuery) -> dm_ir::ResolvedMeaning {
         self.0.resolve(q)
     }
@@ -280,7 +283,7 @@ pub(super) fn modifier_facts_reused<'a>(
             .store
             .modifiers
             .values
-            .visit_explained(&keys[ordinal].bytes, &host, &mut |value| {
+            .visit_current_qualified(&keys[ordinal].bytes, &host, &mut |value| {
                 value.input.as_ref() == write
             })
             .0
@@ -318,10 +321,10 @@ pub(super) fn modifier_facts_reused<'a>(
                 &reads,
                 &versions,
             ) {
-                reuse.store.modifiers.values.insert_with(
+                reuse.store.modifiers.values.insert_current_qualified_with(
                     keys[ordinal].bytes.clone().into(),
-                    reads,
-                    versions,
+                    reads.into(),
+                    versions.into(),
                     weight,
                     || ModifierArtifact {
                         input: Arc::clone(&keys[ordinal].input),

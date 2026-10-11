@@ -287,6 +287,9 @@ pub struct InitializerReuse<'a> {
 }
 struct ResolverView<'a>(&'a dyn Resolver);
 impl Resolver for ResolverView<'_> {
+    fn observes_reads(&self) -> bool {
+        self.0.observes_reads()
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }
@@ -606,7 +609,7 @@ pub(super) fn classify_one_keyed_grouped(
                 if let Some(value) = reuse
                     .store
                     .values
-                    .visit_explained(key, &host, &mut |value| {
+                    .visit_current_qualified(key, &host, &mut |value| {
                         value.input.as_ref() == Some(&input)
                     })
                     .0
@@ -731,7 +734,7 @@ pub(super) fn classify_one_keyed_grouped(
                 write.lexical_owner,
                 receipt_pool.filter(|_| !reuse.store.bounded),
             );
-            reuse.store.values.insert_with_receipt(
+            reuse.store.values.insert_current_qualified_with(
                 Arc::clone(key),
                 receipt,
                 versions.into(),

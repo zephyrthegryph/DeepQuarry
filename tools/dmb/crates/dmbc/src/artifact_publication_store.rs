@@ -121,6 +121,53 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
             None => self.core.visit_explained(key, host, accept),
         }
     }
+    /// Additive current-issuer admission. Ordinary/cross-host callers keep
+    /// `visit_explained`; observable hosts always replay every exact answer.
+    /// Only complete matching immutable provider-qualified issuer receipts skip
+    /// their own domains (including engine overlays, never a bare source stamp).
+    /// This narrow adapter owns admission cells per row, not across a whole wave.
+    pub(crate) fn visit_current_qualified<H: ObservationHost<Q, A, D>>(
+        &self,
+        key: &[u8],
+        host: &H,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<Arc<T>>, Option<Q>) {
+        if host.observes_answers() {
+            return self.visit_explained(key, host, accept);
+        }
+        let admission = dm_session::observations::ReceiptAdmission::new(host);
+        let mut validate = |reads: &Receipt<Q, A, D>, versions: &[(D, u128)]| {
+            admission.first_changed_receipted(reads, versions, |_| {})
+        };
+        let (accepted, changed) = match &self.attempt {
+            Some(attempt) => attempt
+                .with_pending(|lease| lease.visit_receipted_with(key, &mut validate, accept))
+                .unwrap_or((None, None)),
+            None => self.core.visit_receipted_with(key, &mut validate, accept),
+        };
+        (accepted.map(|receipt| receipt.value), changed)
+    }
+    /// Versions were recorded by the same current immutable evaluator host.
+    /// This is separate from the conservative ordinary insertion API.
+    pub(crate) fn insert_current_qualified_with(
+        &self,
+        key: Arc<[u8]>,
+        reads: Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
+        match &self.attempt {
+            Some(attempt) => attempt
+                .with_pending(|lease| {
+                    lease.insert_with_qualified_receipt(key, reads, versions, weight, create)
+                })
+                .flatten(),
+            None => self
+                .core
+                .insert_with_receipt(key, reads, versions, weight, create),
+        }
+    }
     /// Original accepted receipt; caller may compare it with an independent producer.
     pub(crate) fn lookup_accepted<H: ObservationHost<Q, A, D>>(
         &self,
@@ -179,3 +226,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
 mod tests;
 
 pub(crate) type Store<T, Q, A, D> = PublicationStore<T, Q, A, D>;
+
+#[cfg(test)]
+#[path = "artifact_publication_qualified_tests.rs"]
+mod qualified_tests;
