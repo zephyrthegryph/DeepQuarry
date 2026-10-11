@@ -156,7 +156,7 @@ test('zero structural differences do not authenticate DreamMaker input closure',
   const contract = shadowSnapshotContract();
   expect(contract.status).toBe('incomplete');
   expect(contract.reason).toContain('source/resource closure');
-  expect(contract.reason).toContain('configuration receipt');
+  expect(contract.reason).toContain('implicit compiler configuration');
 });
 test('shadow requires full comparison coverage and zero discrepancies', () => {
   expect(classifyShadowReport(structuralReport(), 'current').status).toBe('parity');
@@ -320,6 +320,7 @@ for (const captured of [false, true]) test(`shadow inspects acquired generation 
       expect(args[1]).toBe(invocation?.relativeManifest ?? path.resolve(project));
       expect(options?.cwd).toBe(invocation?.root);
       const artifacts = args[args.indexOf('--artifact-directory') + 1];
+      expect(args[args.indexOf('--record-inputs') + 1]).toBe(path.join(artifacts, 'inputs'));
       // These mutable conventional files deliberately differ from the acquired pair.
       fs.writeFileSync(path.join(artifacts, 'probe.dmb'), 'mutable');
       fs.writeFileSync(path.join(artifacts, 'probe.rsc'), 'mutable');
@@ -374,6 +375,11 @@ for (const captured of [false, true]) test(`shadow inspects acquired generation 
     expect(admission.resourceAdmission.status).toBe('parity');
     expect(admission.status).toBe('incomplete');
     const context = JSON.parse(fs.readFileSync(path.join(artifact, 'source-snapshot-contract.json'), 'utf8'));
+    const configuration = JSON.parse(fs.readFileSync(path.join(artifact, 'configuration-prerequisite.json'), 'utf8'));
+    expect(configuration.status).toBe('incomplete');
+    expect(configuration.inputClosureAuthenticated).toBe(false);
+    expect(configuration.reason).toContain('not issued by current preparation');
+    expect(context.configurationPrerequisite).toEqual(configuration);
     expect(context.comparisonContext.project).toBe(project);
     expect(context.comparisonContext.capturedInvocation).toEqual(invocation ?? null);
     if (captured) expect(fs.readFileSync(callerProject.replace(/\.dme$/, '.dmb'), 'utf8')).toBe('caller retained');

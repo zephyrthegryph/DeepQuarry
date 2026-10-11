@@ -6,6 +6,7 @@ import path from 'node:path';
 import Juke from '../juke/index.js';
 import { classifyResourceReport } from './shadow_resources';
 import { captureShadowOutputPair } from './shadow_output';
+import { sharedCompilerConfiguration } from './shared_compiler_configuration';
 import type { ByondCompilationResult, DreamMakerOptions, PreparedDreamMaker } from './byond';
 import { conventionalOutput, createNativeRequestDirectory, parseCompileResult, readNativeResult, withCompiledOutput, type CompiledOutput, type NativePairOutput } from './native_pair';
 
@@ -15,9 +16,9 @@ import { byondProvenance, nativeProvenance, observedExecutable } from './compile
 type CompilerMode = 'byond' | 'native' | 'shadow';
 const structuralCategories = ['type_set', 'type_headers', 'variable_defaults', 'procedure_table', 'procedure_flags', 'globals', 'strings_by_use', 'bytecode', 'other'];
 export type ShadowAdmission = { status: 'parity' | 'invalid_report' | 'incomplete' | 'differences'; reason: string };
-/** Current DreamMaker adapter issues no authenticated compilation-input receipt. */
+/** Issued configuration prerequisites do not authenticate compilation inputs. */
 export function shadowSnapshotContract(): { status: 'incomplete'; reason: string } {
-  return { status: 'incomplete', reason: 'DreamMaker callback supplies no authenticated source/resource closure or effective compiler configuration receipt; shared compilation snapshot is unproven' };
+  return { status: 'incomplete', reason: 'Shared source/resource closure and complete implicit compiler configuration remain unissued; shared compilation snapshot is unproven' };
 }
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -113,7 +114,7 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   const args = ['compile', invocation?.relativeManifest ?? path.resolve(dme), '--engine-template', path.resolve(template), '--bootstrap-catalog', '--workers', workers];
   if (nativeNoDaemon()) args.push('--no-daemon');
   for (const define of options.defines ?? []) args.push(`-D${define}`);
-  if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--exact-inputs', '--no-cache');
+  if (artifacts) args.push('--artifact-directory', artifacts, '--output-store', path.join(artifacts, 'store'), '--record-inputs', path.join(artifacts, 'inputs'), '--exact-inputs', '--no-cache');
   return [executable, args];
 }
 class NativeResultError extends Error {}
@@ -195,6 +196,18 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
     // Cancellation ends the request before any comparison compiler or inspector.
     if (native.code === 75 || native.signal) throw new Juke.ExitCode(native.code || 1, native.signal ?? null);
+    // Configuration is a prerequisite, not a source/resource closure proof.
+    // Preserve rejection evidence even when the reference compiler later fails.
+    let configurationPrerequisite;
+    try {
+      if (native.code !== 0 || !native.output) throw new Error('Native compilation issued no successful output configuration.');
+      if (!preparedByond) throw new Error('DreamMaker preparation issued no configuration.');
+      configurationPrerequisite = sharedCompilerConfiguration(preparedByond, options.defines ?? [], native.output);
+    } catch (error) {
+      configurationPrerequisite = { schema: 1, status: 'incomplete', inputClosureAuthenticated: false,
+        nativeTargetProfileAuthenticated: false, reason: error instanceof Error ? error.message : String(error) };
+    }
+    fs.writeFileSync(path.join(artifacts, 'configuration-prerequisite.json'), JSON.stringify(configurationPrerequisite, null, 2));
     let byondResult: ByondCompilationResult | void;
     try {
       byondResult = await byond(invocation?.relativeManifest, preparedByond, invocation);
@@ -250,7 +263,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       // Invocation metadata is useful evidence but cannot issue snapshot authority.
       // Even a supplied future receipt needs an authenticated producer/consumer
       // protocol before admission; no callback boolean or cast is trusted here.
-      fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, preparedByondCompiler: preparedByond ?? null, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
+      fs.writeFileSync(path.join(artifacts, 'source-snapshot-contract.json'), JSON.stringify({ comparisonContext, comparisonLabel: snapshot, sourceSnapshot, configurationPrerequisite, preparedByondCompiler: preparedByond ?? null, byondInvocation: byondResult ? byondResult.invocation : null }, null, 2));
       const inspected = await execute(inspector, ['structural-diff', expected, acquiredDmb, report, snapshot], { throw: false });
       if (inspected.code !== 0) {
         Juke.logger.error(`Shadow comparison failed: inspector exited ${inspected.code}. See ${artifacts}.`);
