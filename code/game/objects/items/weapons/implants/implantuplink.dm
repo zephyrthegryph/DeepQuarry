@@ -3,11 +3,9 @@
 	desc = "Summon things."
 	var/activation_emote = "chuckle"
 
-/// It carries a hidden uplink from the start.
 CAPABILITIES(/obj/item/implant/uplink)
+	// It carries a hidden uplink from the start.
 	slot(SLOT_HIDDEN_UPLINK, accepts = /obj/item/uplink/hidden, capacity = 1, starts = /obj/item/uplink/hidden)
-
-CAPABILITIES(/obj/item/implant/uplink)
 	rolls(nameof(activation_emote), pick_one(list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")))
 
 /obj/item/implant/uplink/post_implant(mob/source, mob/user = null)
