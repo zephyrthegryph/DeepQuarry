@@ -18,3 +18,11 @@ can express them; genuine tracked fields on related profile records are supporte
 
 Source and focused regressions are prepared. Compilation, analyzer checks and
 runtime verification remain pending; no pins have been blessed.
+
+Native records are hydrated before their registry identity is published. Subsequent
+Rust ledger samples use a synchronous state-publication batch: actual setters
+write the complete sample before exact changed keys are delivered. Nested batches
+deduplicate keys, weak receiver handles avoid extending lifetimes, and completed
+mutations still publish when a writer throws. This prevents an intermediate
+supply/load pair from falsely canceling an otherwise allowed pending operation.
+The adoption and atomic-publication regressions remain unverified.
