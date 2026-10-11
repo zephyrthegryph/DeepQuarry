@@ -716,6 +716,7 @@ fn prepare_source_abi_mode_on_executor(
     let diagnostics: Vec<_> = failures.into_iter().collect();
     let units =
         PreparedAbiUnits::issue(frontend, Arc::clone(index), entries, diagnostics.is_empty())?;
+    let units = prepared_units::certify_capture(units, batch_capture.as_ref());
     let prepared = PreparedSourceAbi { units, diagnostics };
     if prepared.diagnostics.is_empty() {
         if let (Some(store), Some(inputs)) = (artifacts, batch_inputs) {

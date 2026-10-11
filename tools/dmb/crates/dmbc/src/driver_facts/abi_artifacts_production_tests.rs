@@ -117,6 +117,15 @@ fn structural_abi_scheduler_reuses_unrelated_owner_and_rebinds_formal_wave() {
     let (_, old) = before.prepared.units().last().unwrap();
     let (_, current) = retained.prepared.units().last().unwrap();
     assert!(Arc::ptr_eq(&old.inputs, &current.inputs));
+    let previous_proof = before.prepared.units_owner()
+        .selected(before.prepared.units().len() - 1).unwrap();
+    let current_proof = retained.prepared.units_owner()
+        .selected(retained.prepared.units().len() - 1).unwrap();
+    assert!(Arc::ptr_eq(previous_proof, current_proof),
+        "actual admitted independent unit certificate survives changed graph");
+    assert!(!Arc::ptr_eq(before.prepared.units_owner().selected(0).unwrap(),
+        retained.prepared.units_owner().selected(0).unwrap()),
+        "changed inherited facts require a new actual unit certificate");
     for (_, unit) in retained.prepared.units().iter().take(3) {
         assert_eq!(unit.abi.as_ref().unwrap().layout.invisibility, Some(9));
     }

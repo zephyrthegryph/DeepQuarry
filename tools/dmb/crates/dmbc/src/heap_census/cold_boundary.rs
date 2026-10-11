@@ -204,6 +204,17 @@ impl HeapCensus {
         if !self.arc_object("prepared_source_abi.owner", owner) {
             return;
         }
+        if let Some(selected) = owner.selected_storage() {
+            if self.slice("prepared_source_abi.selected_owners", selected, true) {
+                for unit in selected.iter() {
+                    if self.arc_object("prepared_abi.unit_payload", unit) {
+                        self.shared_procedure_inputs(&unit.inputs);
+                        self.abi(&unit.abi);
+                        if let Some(canonical) = &unit.canonical { self.prepared_canonical(canonical); }
+                    }
+                }
+            }
+        }
         owner.visit_storage(|entries, roster, members| {
             if let Some(roster) = roster { self.callable_abi_roster(roster); }
             if self.arc_object("prepared_source_abi.member_index", members) {

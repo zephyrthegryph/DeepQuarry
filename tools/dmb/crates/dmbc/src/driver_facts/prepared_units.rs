@@ -1,6 +1,7 @@
 //! Producer-bound ABI coverage, without captured source contexts.
 use super::*;
 pub(crate) struct PreparedAbiUnits {
+    selected: Option<Arc<[Arc<super::abi_artifacts::UnitArtifact>]>>,
     entries: Arc<[(MemberId, crate::procedure_policy::PreparedUnit)]>,
     roster: Option<Arc<dm_tree::frontend::CallableAbiRoster>>,
     members: Arc<BTreeMap<UnitIdentity, MemberId>>,
@@ -58,6 +59,7 @@ impl PreparedAbiUnits {
             None
         };
         Ok(Arc::new(Self {
+            selected: None,
             entries: entries.into(),
             roster,
             members,
@@ -101,6 +103,63 @@ impl PreparedAbiUnits {
             ));
         }
         Self::issue(frontend, members, entries, true)
+            .map(|owner| Self::certify_selected(owner, units.iter().cloned()))
+    }
+    /// Only a successful current producer pass supplies these selected owners.
+    /// Storage enumeration or equal-output guesses cannot issue this proof.
+    fn certify_selected(
+        mut owner: Arc<Self>,
+        selected: impl Iterator<
+            Item = (
+                dm_ir::ProcedureIdentity,
+                Arc<super::abi_artifacts::UnitArtifact>,
+            ),
+        >,
+    ) -> Arc<Self> {
+        let Some(roster) = &owner.roster else {
+            return owner;
+        };
+        let selected: Vec<_> = selected.collect();
+        if selected.len() != owner.entries.len() || selected.len() != roster.entries().len() {
+            return owner;
+        }
+        let exact = roster
+            .entries()
+            .iter()
+            .zip(owner.entries.iter())
+            .zip(&selected)
+            .all(|((entry, (_, prepared)), (identity, artifact))| {
+                entry.identity == *identity
+                    && Arc::ptr_eq(&prepared.inputs, &artifact.inputs)
+                    && prepared
+                        .abi
+                        .as_ref()
+                        .is_some_and(|abi| Arc::ptr_eq(abi, &artifact.abi))
+            });
+        if !exact {
+            return owner;
+        }
+        if let Some(current) = Arc::get_mut(&mut owner) {
+            current.selected = Some(
+                selected
+                    .into_iter()
+                    .map(|(_, unit)| unit)
+                    .collect::<Vec<_>>()
+                    .into(),
+            );
+        }
+        owner
+    }
+    pub(crate) fn selected(
+        &self,
+        ordinal: usize,
+    ) -> Option<&Arc<super::abi_artifacts::UnitArtifact>> {
+        self.selected.as_ref()?.get(ordinal)
+    }
+    pub(crate) fn selected_storage(
+        &self,
+    ) -> Option<&Arc<[Arc<super::abi_artifacts::UnitArtifact>]>> {
+        self.selected.as_ref()
     }
     pub(super) fn members(&self) -> &Arc<BTreeMap<UnitIdentity, MemberId>> {
         &self.members
@@ -143,9 +202,47 @@ impl PreparedAbiUnits {
     #[cfg(test)]
     pub(super) fn failed_empty() -> Arc<Self> {
         Arc::new(Self {
+            selected: None,
             entries: Arc::from([]),
             roster: None,
             members: Arc::new(BTreeMap::new()),
         })
     }
+}
+
+/// Freeze the actual chosen current per-unit artifacts while the successful
+/// producer still owns its capture, before batch::remember consumes it.
+pub(super) fn certify_capture(
+    owner: Arc<PreparedAbiUnits>,
+    capture: Option<&super::abi_artifacts::batch::Capture>,
+) -> Arc<PreparedAbiUnits> {
+    let Some(capture) = capture else {
+        return owner;
+    };
+    let capture = capture.lock().unwrap_or_else(|error| error.into_inner());
+    let Some(roster) = &owner.roster else {
+        return owner;
+    };
+    let selected: Option<Vec<_>> = roster
+        .entries()
+        .iter()
+        .map(|entry| {
+            let identity = UnitIdentity {
+                owner: entry.identity.owner,
+                name: entry.identity.name,
+                namespace: if entry.identity.verb {
+                    Namespace::Verb
+                } else {
+                    Namespace::Proc
+                },
+                occurrence: entry.identity.occurrence,
+            };
+            let (artifact, _) = capture.get(&identity)?;
+            Some((entry.identity, Arc::clone(artifact)))
+        })
+        .collect();
+    let Some(selected) = selected else {
+        return owner;
+    };
+    PreparedAbiUnits::certify_selected(owner, selected.into_iter())
 }

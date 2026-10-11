@@ -2,7 +2,8 @@
 use super::*;
 #[derive(Clone)]
 pub(in crate::lowering) struct Certificate {
-    graph: Arc<dm_tree::frontend::CallableAbiGraph>,
+    selected: Option<Arc<crate::driver_facts::abi_artifacts::UnitArtifact>>,
+    graph: Option<Arc<dm_tree::frontend::CallableAbiGraph>>,
     inputs: Arc<dm_codegen_byond::lower_resolver::ProcedureInputs>,
     abi: Arc<crate::procedure_policy::PreparedAbi>,
     identity: UnitIdentity,
@@ -20,8 +21,15 @@ impl Certificate {
         policy: u128,
     ) -> Option<Self> {
         let prepared = roster.prepared(row)?;
+        let selected = roster.selected(row).cloned();
+        let graph = if selected.is_none() {
+            Some(Arc::clone(roster.graph()?))
+        } else {
+            None
+        };
         Some(Self {
-            graph: Arc::clone(roster.graph()?),
+            selected,
+            graph,
             inputs: prepared.inputs,
             abi: prepared.abi?,
             identity: row.source().identity,
@@ -36,14 +44,19 @@ impl Certificate {
         policy: u128,
         record: &Record,
     ) -> Option<PreparedUnit> {
-        // Strong immutable owner identity is deliberately conservative: a new
-        // graph owner declines, even if its semantic bytes could compare equal.
+        // The current ABI producer has replayed this exact unit's Inputs and
+        // semantic receipt before retaining its strong artifact owner. Custom
+        // or uncaptured preparation keeps the conservative whole-graph guard.
         if self.policy != policy
             || self.identity != row.source().identity
             || self.termination != row.input().termination().canonical_tag()
-            || !Arc::ptr_eq(&self.graph, roster.graph()?)
         {
             return None;
+        }
+        match (&self.selected, roster.selected(row)) {
+            (Some(previous), Some(current)) if Arc::ptr_eq(previous, current) => {}
+            (None, None) if Arc::ptr_eq(self.graph.as_ref()?, roster.graph()?) => {}
+            _ => return None,
         }
         let prepared = roster.prepared(row)?;
         if !Arc::ptr_eq(&self.inputs, &prepared.inputs)
@@ -59,9 +72,18 @@ impl Certificate {
         Some(prepared)
     }
     pub(super) fn census(&self, census: &mut crate::heap_census::HeapCensus) {
+        if let Some(selected) = &self.selected {
+            if census.arc_object("prepared_abi.unit_payload", selected) {
+                if let Some(canonical) = &selected.canonical {
+                    census.prepared_canonical(canonical);
+                }
+            }
+        }
         census.shared_procedure_inputs(&self.inputs);
         census.abi(&self.abi);
-        census.callable_abi_graph(&self.graph);
+        if let Some(graph) = &self.graph {
+            census.callable_abi_graph(graph);
+        }
     }
 }
 impl SessionSymbolicMemo {

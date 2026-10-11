@@ -19,6 +19,23 @@ impl<'a> LocalInputRoster<'a> {
     ) -> Self {
         Self { frontend, units }
     }
+    pub(crate) fn selected(
+        &self,
+        row: &PreparedBody<'_>,
+    ) -> Option<&std::sync::Arc<super::abi_artifacts::UnitArtifact>> {
+        if !row.authenticates(self.frontend) {
+            return None;
+        }
+        let ordinal = self
+            .frontend
+            .callable_roster()
+            .ok()?
+            .ordinal(row.body().member)?;
+        if self.units.entries().get(ordinal)?.0 != row.body().member {
+            return None;
+        }
+        self.units.selected(ordinal)
+    }
     pub(crate) fn metadata(
         &self,
         row: &PreparedBody<'_>,

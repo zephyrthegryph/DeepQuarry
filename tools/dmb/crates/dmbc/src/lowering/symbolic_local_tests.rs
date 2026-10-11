@@ -32,6 +32,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
     let front = build();
     let startup = crate::startup::capture(&front).unwrap();
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let artifacts = crate::driver_facts::AbiArtifacts::with_engine_owner(Arc::clone(&engine));
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
             &front,
@@ -40,7 +41,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             &startup,
             None,
             &executor,
-            None,
+            Some(&artifacts),
         )
         .unwrap();
     assert!(
@@ -57,6 +58,14 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
         .current_local_inputs(&front, front.snapshot.tree.symbols())
         .unwrap();
     let certificate = Certificate::issue(&licensed, row, 7).unwrap();
+    assert!(
+        certificate.selected.is_some(),
+        "the actual successful ABI producer issues this unit owner"
+    );
+    assert!(
+        certificate.graph.is_none(),
+        "per-unit proof must not retain old full graphs across structural edits"
+    );
     let prepared = licensed.prepared(row).unwrap();
     let current =
         crate::lowering_memo::key_recipe::CurrentKey::from_prepared(&front, row, 7, false, false)
