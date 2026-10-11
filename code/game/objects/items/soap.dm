@@ -80,7 +80,7 @@ CAPABILITIES(/obj/item/soap)
 	. = ..()
 	if(ishuman(target) && hud_of(user)?.zone_sel?.selecting == O_MOUTH)
 		if(target != user)
-			act_message(user, src, others = span_danger("%U% washes 	he [target]'s mouth out with %T%!"))
+			act_message(user, src, others = span_danger("%U% washes \the [target]'s mouth out with %T%!"))
 			//Add pieface cleaning here if that ever gets ported.
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 		return
@@ -92,7 +92,7 @@ CAPABILITIES(/obj/item/soap)
 		to_chat(user, span_warning("You need to take that [target] off before cleaning it."))
 	else if(istype(target,/turf))
 		if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
-			act_message(user, src, MSG_SELF(span_notice("You effortlessly scrub 	he [target]")), MSG_OTHERS("%U% effortlessly scrubs 	he [target] out with wet [src]"))
+			act_message(user, src, MSG_SELF(span_notice("You effortlessly scrub \the [target]")), MSG_OTHERS("%U% effortlessly scrubs \the [target] out with wet [src]"))
 			var/turf/T = target
 			T.wash(CLEAN_SCRUB)
 			reagents.trans_to_turf(T, 1, 10)
@@ -113,13 +113,13 @@ CAPABILITIES(/obj/item/soap)
 
 /obj/item/soap/proc/scrub_decal_done(datum/act/op/A)
 	var/atom/target = A.target
-	A.actor.balloon_alert(A.actor, "you scrub 	he [target] out.")
+	A.actor.balloon_alert(A.actor, "you scrub \the [target] out.")
 	consumed(target, src)
 	return OP_OK
 
 /obj/item/soap/proc/scrub_floor_done(datum/act/op/A)
 	var/turf/T = A.target
-	A.actor.balloon_alert(A.actor, "you scrub 	he [T] clean.")
+	A.actor.balloon_alert(A.actor, "you scrub \the [T] clean.")
 	T.wash(CLEAN_SCRUB)
 	reagents.trans_to_turf(T, 1, 10)
 	return OP_OK
