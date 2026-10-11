@@ -88,6 +88,8 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         crate::daemon::query::evaluate_snapshot(&request, &tree, &state.lock().unwrap()).unwrap();
     let row: serde_json::Value = serde_json::from_str(answer.jsonl.trim()).unwrap();
     assert_eq!(row["captured_jsonl"].as_str().unwrap().as_bytes(), expected);
+    assert!(String::from_utf8(expected).unwrap().contains("shared"),
+        "the full ordinary oracle must retain the procedure static reference");
     assert_eq!(archive.len(), 1);
     state
         .lock()

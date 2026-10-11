@@ -155,6 +155,13 @@ impl ResolvedContext {
         {
             return Err(io::Error::other("current startup mask differs"));
         }
+        // Use the SAME startup-issued static inventory overlay as ordinary
+        // analysis/lowering; the scalar host alone cannot resolve local statics.
+        let resolver = dm_tree::procedure_statics::StaticResolver::from_inventory(
+            &self.resolver,
+            Arc::clone(self.startup.static_inventory()),
+        )
+        .map_err(io::Error::other)?;
         let removed: std::collections::HashSet<_> = current
             .origins
             .iter()
@@ -192,7 +199,7 @@ impl ResolvedContext {
                 view,
                 &inputs,
                 symbols,
-                &self.resolver,
+                &resolver,
                 Some(&debug),
                 occurrence.expanded_span,
             )
@@ -208,7 +215,7 @@ impl ResolvedContext {
                 &executable,
                 &inputs,
                 symbols,
-                &self.resolver,
+                &resolver,
                 Some(&debug),
             )
             .map(|_| None)
