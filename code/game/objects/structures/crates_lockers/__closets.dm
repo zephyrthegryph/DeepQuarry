@@ -578,7 +578,6 @@ CAPABILITIES(/obj/structure/closet)
 /obj/structure/closet/proc/prey_by_name(mob/living/user)
 	var/list/by_name = list()
 	for(var/mob/living/L in contents) // ALLOW(latent,reads): mobs are never latent; who is shut in is read when the entry is offered and when it is picked
-		// ALLOW(reads): who can be eaten is read when the entry is offered and when it is picked
 		if(L == user || !L.vore_prefs.devourable) //no eating yourself. 1984.
 			continue
 		var/label = "[L]"

@@ -226,7 +226,7 @@ impl Decls {
             d.markers.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
             // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
             // declares `a` on /A and `b` on /B.
-            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
+            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many|profile)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
             let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
             let mut found: Vec<(String, String)> = Vec::new();
             for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {

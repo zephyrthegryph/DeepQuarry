@@ -366,10 +366,10 @@
 	var/datum/vore_preferences/P = client.prefs_vr
 
 	record_import(vore_prefs, P)
-	spont_belly_rear = P.spont_belly_rear
-	spont_belly_left = P.spont_belly_left
-	spont_belly_front = P.spont_belly_front
-	spont_belly_right = P.spont_belly_right
+	rel_set(src, nameof(spont_belly_rear), P.spont_belly_rear)
+	rel_set(src, nameof(spont_belly_left), P.spont_belly_left)
+	rel_set(src, nameof(spont_belly_front), P.spont_belly_front)
+	rel_set(src, nameof(spont_belly_right), P.spont_belly_right)
 	autotransferable = P.autotransferable
 
 	if(bellies)

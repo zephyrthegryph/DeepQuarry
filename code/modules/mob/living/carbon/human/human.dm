@@ -37,7 +37,6 @@
 	COOLDOWN_DECLARE(chew_cooldown)
 
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_hair, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
@@ -49,9 +48,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
 	if(forced_species)
 		species_at_make = forced_species
-	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
-	if(forced_hair)
-		looks.set_hair_style(forced_hair)
 	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
 	if(forced_faction)
 		faction = forced_faction

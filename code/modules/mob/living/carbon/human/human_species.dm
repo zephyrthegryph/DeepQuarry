@@ -56,43 +56,52 @@
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'
 TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran, forced_initial_species, SPECIES_TAJARAN)
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran, forced_initial_hair, "Tajaran Ears")
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
 	icon = 'icons/mob/human_races/r_lizard.dmi'
 TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi, forced_initial_species, SPECIES_UNATHI)
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi, forced_initial_hair, "Unathi Horns")
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
 	icon = 'icons/mob/human_races/r_sergal.dmi' // our icons
 TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal, forced_initial_species, SPECIES_SERGAL)
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal, forced_initial_hair, "Sergal Ears")
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Ears"))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	icon = 'icons/mob/human_races/r_vulpkanin.dmi'
 TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin, forced_initial_species, SPECIES_VULPKANIN)
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin, forced_initial_hair, "vulpkanin, dual-color")
+CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "vulpkanin, dual-color"))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari
 	icon = 'icons/mob/human_races/r_teshari.dmi'
 TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/teshari, forced_initial_species, SPECIES_TESHARI)
 
 TYPE_TABLE(/mob/living/carbon/human/skrell, forced_initial_species, SPECIES_SKRELL)
-TYPE_TABLE(/mob/living/carbon/human/skrell, forced_initial_hair, "Skrell Short Tentacles")
+CAPABILITIES(/mob/living/carbon/human/skrell)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Skrell Short Tentacles"))
 
 TYPE_TABLE(/mob/living/carbon/human/tajaran, forced_initial_species, SPECIES_TAJARAN)
-TYPE_TABLE(/mob/living/carbon/human/tajaran, forced_initial_hair, "Tajaran Ears")
+CAPABILITIES(/mob/living/carbon/human/tajaran)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
 
 TYPE_TABLE(/mob/living/carbon/human/unathi, forced_initial_species, SPECIES_UNATHI)
-TYPE_TABLE(/mob/living/carbon/human/unathi, forced_initial_hair, "Unathi Horns")
+CAPABILITIES(/mob/living/carbon/human/unathi)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
 
 TYPE_TABLE(/mob/living/carbon/human/vox, forced_initial_species, SPECIES_VOX)
-TYPE_TABLE(/mob/living/carbon/human/vox, forced_initial_hair, "Short Vox Quills")
+CAPABILITIES(/mob/living/carbon/human/vox)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Short Vox Quills"))
 
 TYPE_TABLE(/mob/living/carbon/human/diona, forced_initial_species, SPECIES_DIONA)
 
 TYPE_TABLE(/mob/living/carbon/human/teshari, forced_initial_species, SPECIES_TESHARI)
-TYPE_TABLE(/mob/living/carbon/human/teshari, forced_initial_hair, "Teshari Default")
+CAPABILITIES(/mob/living/carbon/human/teshari)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Teshari Default"))
 
 TYPE_TABLE(/mob/living/carbon/human/promethean, forced_initial_species, SPECIES_PROMETHEAN)
 
@@ -123,7 +132,8 @@ TYPE_TABLE(/mob/living/carbon/human/stok, forced_initial_species, SPECIES_MONKEY
 TYPE_TABLE(/mob/living/carbon/human/stok, initial_species_copy, TRUE)
 
 TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_species, SPECIES_SERGAL)
-TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_hair, "Sergal Plain")
+CAPABILITIES(/mob/living/carbon/human/sergal)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Plain"))
 
 TYPE_TABLE(/mob/living/carbon/human/akula, forced_initial_species, SPECIES_AKULA)
 

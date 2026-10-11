@@ -405,12 +405,13 @@ impl OwnershipKinds {
             }
         }
         // The declared form: the entries of CAPABILITIES(T) blocks (sem::decls reads the blocks, backslash form and block form alike).
-        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
+        // profile(nameof(x), /datum/record/T) is an owns_one (code/engine/declare/profiles.dm).
+        let entry = regex::Regex::new(r"\b(owns_one|owns_many|ref_one|ref_many|profile)\(\s*nameof\((\w+)\)").expect("ownership entry pattern");
         let mut declared: HashMap<(String, String), &'static str> = HashMap::new();
         for m in crate::sem::decls::Decls::get(tree).markers_named("CAPABILITIES") {
             let Some(ty) = m.args.first() else { continue };
             for c in entry.captures_iter(&m.body) {
-                let kind = if c[1].starts_with("owns_") { "OWN" } else { "REL" };
+                let kind = if c[1].starts_with("owns_") || &c[1] == "profile" { "OWN" } else { "REL" };
                 declared.entry((ty.clone(), c[2].to_string())).or_insert(kind);
             }
         }

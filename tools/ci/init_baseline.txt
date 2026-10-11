@@ -4446,7 +4446,7 @@ init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	i
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	identifying_gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	. = ..(mapload, generate_species)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	species.produceCopy(species.traits.Copy(),src,null,FALSE)
-init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	h_style = to_wear_hair
+init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	looks.set_hair_style(to_wear_hair)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_uniform)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	equip_to_slot_or_del(new to_wear_uniform(src), SLOT_ID_UNIFORM)
 init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	if(to_wear_suit)
@@ -4499,9 +4499,6 @@ init_lines	code/modules/mob/living/carbon/human/ai_controlled/ai_controlled.dm	a
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
 init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_species)
 init_lines	code/modules/mob/living/carbon/human/human.dm	species_at_make = forced_species
-init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_hair = TYPE_TABLE_GET(src, forced_initial_hair)
-init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_hair)
-init_lines	code/modules/mob/living/carbon/human/human.dm	h_style = forced_hair
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
 init_lines	code/modules/mob/living/carbon/human/human.dm	if(forced_faction)
 init_lines	code/modules/mob/living/carbon/human/human.dm	faction = forced_faction
@@ -4548,7 +4545,6 @@ init_lines	code/modules/mob/living/carbon/human/npcs.dm	name = "Pun Pun"
 init_lines	code/modules/mob/living/carbon/human/npcs.dm	real_name = name
 init_lines	code/modules/mob/living/carbon/human/npcs.dm	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), SLOT_ID_UNIFORM)
 init_lines	code/modules/mob/living/carbon/human/npcs.dm	regenerate_icons()
-init_lines	code/modules/mob/living/carbon/human/npcs.dm	can_be_drop_prey = TRUE
 init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	var/area/A = get_area(src)
 init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	area_name = A.name
 init_lines	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	name = "[area_name] glamour ring"
@@ -5570,7 +5566,7 @@ init_lines	code/modules/pda/pda.dm	cartridge?.update_programs(src) // declared c
 init_lines	code/modules/pda/pda.dm	new /obj/item/pen(src)
 init_lines	code/modules/pda/pda.dm	if(ishuman(loc))
 init_lines	code/modules/pda/pda.dm	var/mob/living/carbon/human/H = loc
-init_lines	code/modules/pda/pda.dm	pdachoice = H.pdachoice
+init_lines	code/modules/pda/pda.dm	pdachoice = H.bio.pdachoice
 init_lines	code/modules/pda/pda.dm	else
 init_lines	code/modules/pda/pda.dm	pdachoice = 1
 init_lines	code/modules/pda/pda.dm	switch(pdachoice)

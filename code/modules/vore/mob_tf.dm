@@ -143,10 +143,10 @@
 	new_mob.appendage_alt_setting = appendage_alt_setting
 
 	record_copy(new_mob.vore_prefs, vore_prefs)
-	new_mob.spont_belly_rear = spont_belly_rear
-	new_mob.spont_belly_left = spont_belly_left
-	new_mob.spont_belly_front = spont_belly_front
-	new_mob.spont_belly_right = spont_belly_right
+	rel_set(new_mob, nameof(spont_belly_rear), spont_belly_rear)
+	rel_set(new_mob, nameof(spont_belly_left), spont_belly_left)
+	rel_set(new_mob, nameof(spont_belly_front), spont_belly_front)
+	rel_set(new_mob, nameof(spont_belly_right), spont_belly_right)
 	new_mob.autotransferable = autotransferable
 
 // Requires a /mob/living type path for transformation. Returns the new mob on success, null in all other cases.

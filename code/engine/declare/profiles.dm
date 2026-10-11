@@ -84,10 +84,9 @@
 	var/static/list/base_names
 	if(!base_names)
 		base_names = list()
-		var/datum/record/base = new
+		var/static/datum/record/base = new // kept: one plain record whose vars are the ones every record has
 		for(var/name in base.vars)
 			base_names[name] = TRUE
-		qdel(base)
 	fields = list()
 	for(var/name in R.vars)
 		if(!base_names[name])

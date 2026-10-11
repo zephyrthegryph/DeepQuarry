@@ -8,19 +8,23 @@
 	return new_alien
 
 TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_species, SPECIES_XENO_DRONE)
-TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_hair, "Bald")
+CAPABILITIES(/mob/living/carbon/human/xdrone)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 TYPE_TABLE(/mob/living/carbon/human/xdrone, forced_initial_faction, FACTION_XENO)
 
 TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_species, SPECIES_XENO_SENTINEL)
-TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_hair, "Bald")
+CAPABILITIES(/mob/living/carbon/human/xsentinel)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 TYPE_TABLE(/mob/living/carbon/human/xsentinel, forced_initial_faction, FACTION_XENO)
 
 TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_species, SPECIES_XENO_HUNTER)
-TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_hair, "Bald")
+CAPABILITIES(/mob/living/carbon/human/xhunter)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 TYPE_TABLE(/mob/living/carbon/human/xhunter, forced_initial_faction, FACTION_XENO)
 
 TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_species, SPECIES_XENO_QUEEN)
-TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_hair, "Bald")
+CAPABILITIES(/mob/living/carbon/human/xqueen)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 TYPE_TABLE(/mob/living/carbon/human/xqueen, forced_initial_faction, FACTION_XENO)
 
 //Removed AddInfectionImages, no longer required.

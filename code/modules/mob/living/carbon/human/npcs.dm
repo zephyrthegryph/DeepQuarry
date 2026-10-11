@@ -13,4 +13,6 @@ TYPE_TABLE(/obj/item/clothing/under/punpun, fit_spec, list(REQ_FITS_BODYTYPES(li
 	real_name = name
 	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), SLOT_ID_UNIFORM)
 	regenerate_icons()
-	vore_prefs.can_be_drop_prey = TRUE
+
+CAPABILITIES(/mob/living/carbon/human/monkey/punpun)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
