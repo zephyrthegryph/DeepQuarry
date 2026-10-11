@@ -116,3 +116,45 @@ fn retained_assignment_recipe_reuses_after_current_validation_and_rejects_policy
     retained.build(inventory(b"last")).unwrap();
     assert_eq!(retained.assignment_reuses(), 2);
 }
+
+#[test]
+fn unpublished_link_binding_changes_cannot_replace_published_recipe() {
+    let owner = RetainedBindings::default();
+    let first = owner.for_request(true);
+    let original = first.build(inventory(b"before")).unwrap().binding_tables();
+    assert!(first.publish_successful());
+    let changed_inventory = || {
+        let mut value = inventory(b"changed");
+        value.fixed.push((Key::String(SymbolId::of("name")), 7));
+        value
+    };
+    let failed = owner.for_request(true);
+    let changed = failed.build(changed_inventory()).unwrap();
+    assert!(!original.same_owner(&changed.binding_tables()));
+    drop(failed);
+    let build = owner.for_request(true);
+    let current = build.build(inventory(b"after")).unwrap();
+    assert!(original.same_owner(&current.binding_tables()));
+    assert_eq!(build.assignment_reuses(), 1);
+    let analysis = owner.for_request(false);
+    analysis.build(changed_inventory()).unwrap();
+    assert!(!analysis.publish_successful());
+    assert!(build.publish_successful());
+    let next = owner.for_request(true);
+    assert!(original.same_owner(&next.build(inventory(b"current")).unwrap().binding_tables()));
+    let structural = owner.for_request(true);
+    let fresh = LinkTables::build(changed_inventory()).unwrap();
+    let current = structural.build(changed_inventory()).unwrap();
+    assert_eq!(current.assignments(), fresh.assignments());
+    assert!(structural.publish_successful());
+    let replaced = owner.for_request(true);
+    assert!(current.binding_tables().same_owner(
+        &replaced
+            .build(changed_inventory())
+            .unwrap()
+            .binding_tables()
+    ));
+    // A sealed request remains usable as a fresh builder but never mutates its publication.
+    first.build(changed_inventory()).unwrap();
+    assert!(original.same_owner(&first.current.lock().unwrap().as_ref().unwrap().bindings));
+}

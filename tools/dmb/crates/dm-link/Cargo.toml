@@ -7,3 +7,4 @@ description = "Deterministic semantic table assignment and immutable procedure l
 
 [dependencies]
 dm-ir = { path = "../dm-ir" }
+dm-session = { path = "../dm-session" }

@@ -54,17 +54,69 @@ struct Current {
     bindings: BindingTables,
     recipe: Arc<super::assignment_recipe::AssignmentRecipe>,
 }
-#[derive(Default)]
+type Pending = Arc<std::sync::Mutex<Option<Arc<Current>>>>;
 pub struct RetainedBindings {
-    current: std::sync::Mutex<Option<Arc<Current>>>,
+    current: Pending,
+    publication: Arc<dm_session::ArtifactPublication<Pending>>,
+    attempt: dm_session::ArtifactAttempt<Pending>,
     assignment_reuses: std::sync::atomic::AtomicUsize,
 }
+impl Default for RetainedBindings {
+    fn default() -> Self {
+        let current = Arc::new(std::sync::Mutex::new(None));
+        let publication = Arc::new(dm_session::ArtifactPublication::default());
+        let attempt = publication.begin(Arc::clone(&current));
+        Self {
+            current,
+            publication,
+            attempt,
+            assignment_reuses: Default::default(),
+        }
+    }
+}
 impl RetainedBindings {
+    pub fn for_request(&self, publishable: bool) -> Arc<Self> {
+        let previous = self
+            .publication
+            .with_published(|current| current.lock().unwrap_or_else(|e| e.into_inner()).clone())
+            .unwrap_or_else(|| {
+                self.current
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .clone()
+            });
+        let current = Arc::new(std::sync::Mutex::new(previous));
+        let attempt = if publishable {
+            self.publication.begin(Arc::clone(&current))
+        } else {
+            self.publication.begin_ephemeral(Arc::clone(&current))
+        };
+        Arc::new(Self {
+            current,
+            publication: Arc::clone(&self.publication),
+            attempt,
+            assignment_reuses: Default::default(),
+        })
+    }
+    pub fn publish_successful(&self) -> bool {
+        self.attempt.publish_successful()
+    }
+    fn visit_owners(&self, mut visit: impl FnMut(&Pending)) {
+        visit(&self.current);
+        self.publication.with_published(|current| {
+            if !Arc::ptr_eq(current, &self.current) {
+                visit(current);
+            }
+        });
+    }
+
     /// Observe the current immutable owner without cloning or rebuilding tables.
     /// The callback must not call back into this retained owner.
-    pub fn visit_current(&self, visitor: impl FnOnce(Option<&BindingTables>)) {
-        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        visitor(current.as_ref().map(|current| &current.bindings));
+    pub fn visit_current(&self, mut visitor: impl FnMut(Option<&BindingTables>)) {
+        self.visit_owners(|owner| {
+            let current = owner.lock().unwrap_or_else(|e| e.into_inner());
+            visitor(current.as_ref().map(|current| &current.bindings));
+        });
     }
     pub fn assignment_reuses(&self) -> usize {
         self.assignment_reuses
@@ -75,18 +127,28 @@ impl RetainedBindings {
     pub fn visit_recipe_storage(
         &self,
         mut buffer: impl FnMut(usize, usize, usize),
-        maps: impl FnMut(usize),
+        mut maps: impl FnMut(usize),
     ) {
-        let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(current) = current.as_ref() {
-            let size = std::mem::size_of::<Current>();
-            buffer(Arc::as_ptr(current) as usize, size, size);
-            let size = std::mem::size_of::<super::assignment_recipe::AssignmentRecipe>();
-            buffer(Arc::as_ptr(&current.recipe) as usize, size, size);
-            current.recipe.visit_storage(buffer, maps);
-        }
+        self.visit_owners(|owner| {
+            let current = owner.lock().unwrap_or_else(|e| e.into_inner());
+            if let Some(current) = current.as_ref() {
+                let size = std::mem::size_of::<Current>();
+                buffer(Arc::as_ptr(current) as usize, size, size);
+                let size = std::mem::size_of::<super::assignment_recipe::AssignmentRecipe>();
+                buffer(Arc::as_ptr(&current.recipe) as usize, size, size);
+                current.recipe.visit_storage(&mut buffer, &mut maps);
+            }
+        });
     }
     pub fn build(&self, inventory: LinkInventory) -> Result<LinkTables, LinkError> {
+        let mut inventory = Some(inventory);
+        self.attempt
+            .with_pending(|_| self.build_pending(inventory.take().expect("one pending build")))
+            .unwrap_or_else(|| {
+                LinkTables::build(inventory.take().expect("sealed build retains input"))
+            })
+    }
+    fn build_pending(&self, inventory: LinkInventory) -> Result<LinkTables, LinkError> {
         let previous = self
             .current
             .lock()

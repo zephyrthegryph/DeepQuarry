@@ -217,6 +217,7 @@ name = "dm-link"
 version = "0.1.0"
 dependencies = [
  "dm-ir",
+ "dm-session",
 ]
 
 [[package]]
