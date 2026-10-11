@@ -232,5 +232,31 @@
       }
     ],
     "scope": "bounded selected tests; not runtime parity, current CLI acceptance or benchmark"
+  },
+  "focused_validation_9ef6": {
+    "source_commit": "9ef6daf3aadd98e8566e464ea1f161c046b9917d",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-091415-5e0cd94a-job-cargo.json",
+    "passed": 49,
+    "failed": 0,
+    "receipts": [
+      "20261011-091927-489ba5ef-focused.json",
+      "20261011-091922-e583d37e-focused.json",
+      "20261011-091922-884b3be5-focused.json",
+      "20261011-091922-46d6a155-focused.json",
+      "20261011-091949-77625207-focused.json"
+    ],
+    "scope": "selected shared-core, six synthetic sessions, ABI, current diagnostics; not full suite or real concurrency acceptance",
+    "filter_correction": "first intrinsic namespace filter matched no tests; corrected namespace passed in final receipt"
+  },
+  "compile_error_contract_9ef6": {
+    "cases": 14,
+    "acceptance_matches": 14,
+    "rejection_class_matches": 14,
+    "exact_diagnostic_matches": 11,
+    "remaining": [
+      "initializer wording prefix in two cases",
+      "malformed signature line1 versus BYOND line2"
+    ],
+    "runtime": "not run"
   }
 }
