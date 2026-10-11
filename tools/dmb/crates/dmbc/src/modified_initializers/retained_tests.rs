@@ -22,7 +22,7 @@ fn seed(padding: usize, amount: u32) -> (SymRef, CapturedModifiedInstance, Debug
         " ".repeat(padding)
     );
     let parsed = dm_syntax::parse_expression(&text);
-    assert!(parsed.errors.is_empty(), "{:#?}", parsed.errors);
+    assert!(parsed.diagnostics.is_empty(), "{:#?}", parsed.diagnostics);
     let expression = parsed.expr.unwrap();
     let dm_syntax::ExprKind::ObjectInitializer { fields, .. } = &expression.kind else {
         panic!("object")
