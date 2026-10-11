@@ -225,3 +225,112 @@ fn six_source_sessions_asymmetric_edits_and_panic_reset_match_fresh_bytes() {
         .iter()
         .all(|slot| slot.newest.lock().unwrap().is_empty()));
 }
+
+// This captures the production daemon diagnostic byte stream, without replacing
+// the compiler or introducing a diagnostic/cache implementation in the fixture.
+fn run_captured(
+    request: BuildRequest,
+    host: &mut crate::runner_host::BuildHost,
+) -> (
+    Result<BuildOutcome, Box<dyn std::error::Error>>,
+    Vec<String>,
+) {
+    let records = Arc::new(Mutex::new(Vec::<u8>::new()));
+    let captured = Arc::clone(&records);
+    crate::daemon::OUTPUT.with(|sink| {
+        assert!(sink.borrow().is_none());
+        *sink.borrow_mut() = Some(Box::new(move |stdout, bytes| {
+            if !stdout {
+                captured.lock().unwrap().extend_from_slice(bytes);
+            }
+            Ok(())
+        }));
+    });
+    let _output = crate::daemon::OutputBinding;
+    // Each attempt owns a distinct cancellation/publication token. Publication
+    // sealing of a successful predecessor cannot leak into a later request.
+    let _request = control::bind(control::Cancellation::default());
+    let result = crate::request_runner::run_build_with_host(request, host);
+    let bytes = records.lock().unwrap().clone();
+    let diagnostics = String::from_utf8(bytes)
+        .unwrap()
+        .lines()
+        .filter(|line| {
+            line.contains(":error:")
+                || line.contains(":native unsupported:")
+                || line.contains(":internal compiler error:")
+        })
+        .map(str::to_owned)
+        .collect();
+    (result, diagnostics)
+}
+
+#[test]
+fn source_rejection_preserves_prior_pair_and_recovery_matches_fresh_current_include() {
+    let roots = Roots::new();
+    let shared = shared();
+    let initial_request = request(&roots, 0, false);
+    let slot = shared.slot(
+        initial_request.project.clone(),
+        &initial_request.defines,
+        Some(&initial_request),
+    );
+    let destination = initial_request.artifact_directory.as_ref().unwrap().clone();
+    let mut host = slot.lock_host().unwrap();
+    let (initial, diagnostics) = run_captured(initial_request, &mut host);
+    assert!(diagnostics.is_empty());
+    let initial = published(initial.unwrap(), &destination);
+    for shift in [0, 3] {
+        // The actual included file changes, and both primary/related locations
+        // must belong to this revision rather than the predecessor's source.
+        let bad = format!("{}{}{}", "// moved include\n".repeat(shift), SOURCE,
+            "/proc/rejected()\n    var/duplicate = 1\n    var/duplicate = 2\n    return duplicate\n");
+        roots.edit(0, &bad);
+        let (retained, retained_diagnostics) = run_captured(request(&roots, 0, false), &mut host);
+        let (fresh, fresh_diagnostics) = run_captured(
+            request(&roots, 0, true),
+            &mut crate::runner_host::BuildHost::one_shot(),
+        );
+        for result in [retained, fresh] {
+            let error = result.err().expect("invalid source must reject");
+            assert_eq!(
+                crate::request_failure::classify(error.as_ref()),
+                crate::request_failure::FailureKind::Source
+            );
+        }
+        assert_eq!(retained_diagnostics, fresh_diagnostics);
+        let first_line = SOURCE.lines().count() + shift + 2;
+        assert_eq!(
+            retained_diagnostics,
+            vec![
+                format!(
+                    "probe.dm:{}:error: duplicate: duplicate definition",
+                    first_line + 1
+                ),
+                format!("probe.dm:{first_line}:error: duplicate: previous definition"),
+            ]
+        );
+        // Error attempts cannot install outputs or replace the last valid pair.
+        assert_eq!(
+            std::fs::read(destination.join("probe.dmb")).unwrap(),
+            initial.1
+        );
+        assert_eq!(
+            std::fs::read(destination.join("probe.rsc")).unwrap(),
+            initial.2
+        );
+    }
+    roots.edit(0, &SOURCE.replace("return value", "return value + 2"));
+    let (recovered, diagnostics) = run_captured(request(&roots, 0, false), &mut host);
+    assert!(diagnostics.is_empty());
+    let recovered = published(recovered.unwrap(), &destination);
+    let fresh_request = request(&roots, 0, true);
+    let fresh_destination = fresh_request.artifact_directory.as_ref().unwrap().clone();
+    let (fresh, diagnostics) = run_captured(
+        fresh_request,
+        &mut crate::runner_host::BuildHost::one_shot(),
+    );
+    assert!(diagnostics.is_empty());
+    assert_eq!(recovered, published(fresh.unwrap(), &fresh_destination));
+    assert_ne!(recovered.0, initial.0);
+}
