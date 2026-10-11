@@ -14,6 +14,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { assertDirectoryChain, parseCompileResult, type CompiledOutput } from './native_pair';
 import { CompilerProvenanceError, type CompilerProvenance } from './compiler_provenance';
+import { verifyCapturedRuntimeLibrary, type CapturedRuntimeLibrary } from './captured_runtime_library';
 
 const HEX = /^[0-9a-f]{64}$/;
 type FilePin = { path: string; sha256: string; bytes: number };
@@ -21,6 +22,7 @@ export type FocusedCompiledCapture = {
   schema: 1; kind: 'explicit_focused_compiled_output'; inputClosureAuthenticated: false;
   compilationReceipt: FilePin; output: CompiledOutput;
   pair: { dmb: FilePin; rsc: FilePin };
+  runtimeLibrary?: CapturedRuntimeLibrary;
 };
 function fail(message: string): never { throw new CompilerProvenanceError(message); }
 function filePin(file: string): FilePin {
@@ -95,6 +97,10 @@ function validate(capture: FocusedCompiledCapture): CompilerProvenance {
   if (JSON.stringify(receipt.pair) !== JSON.stringify(expectedPair)) fail('Focused compilation receipt pair differs.');
   if (!capture.pair) fail('Focused capture lacks artifact pins.');
   verify(capture.pair.dmb); verify(capture.pair.rsc);
+  if (capture.runtimeLibrary) {
+    if (JSON.stringify(capture.runtimeLibrary.pair) !== JSON.stringify(capture.pair)) fail('Captured runtime library belongs to another compiled pair.');
+    verifyCapturedRuntimeLibrary(capture.runtimeLibrary);
+  }
   if (capture.output.kind === 'conventional') {
     if (path.resolve(capture.output.dmb) !== capture.pair.dmb.path || path.resolve(capture.output.rsc) !== capture.pair.rsc.path) fail('Focused conventional output differs from pinned artifacts.');
   } else if (capture.output.dmbBytes !== capture.pair.dmb.bytes || capture.output.rscBytes !== capture.pair.rsc.bytes) fail('Focused native artifact sizes differ.');
@@ -104,9 +110,10 @@ function validate(capture: FocusedCompiledCapture): CompilerProvenance {
  * Native paths must be copies acquired by the ordinary compiler acquire API.
  * This does not compile, acquire, or infer a backend from artifact filenames.
  */
-export function captureFocusedCompiledOutput(compilationReceipt: string, output: CompiledOutput, dmb: string, rsc: string): FocusedCompiledCapture {
+export function captureFocusedCompiledOutput(compilationReceipt: string, output: CompiledOutput, dmb: string, rsc: string, runtimeLibrary?: CapturedRuntimeLibrary): FocusedCompiledCapture {
   const capture: FocusedCompiledCapture = { schema: 1, kind: 'explicit_focused_compiled_output', inputClosureAuthenticated: false,
-    compilationReceipt: filePin(compilationReceipt), output, pair: { dmb: filePin(dmb), rsc: filePin(rsc) } };
+    compilationReceipt: filePin(compilationReceipt), output, pair: { dmb: filePin(dmb), rsc: filePin(rsc) },
+    ...(runtimeLibrary ? { runtimeLibrary } : {}) };
   validate(capture);
   return capture;
 }
@@ -117,6 +124,7 @@ export function loadFocusedCompiledOutput(file: string, expectedSha256: string, 
   const compilation = validate(capture);
   if (backend !== compilation.requestedBackend || JSON.stringify(defines) !== JSON.stringify(compilation.orderedDefines)) fail('Focused replay backend/ordered defines differ.');
   return { output: capture.output,
+    runtimeLibrary: capture.runtimeLibrary,
     evidence: { kind: capture.kind, receipt: admitted.pin, inputClosureAuthenticated: false as const },
     verifyHosted(dmb: string) {
       validate(capture);

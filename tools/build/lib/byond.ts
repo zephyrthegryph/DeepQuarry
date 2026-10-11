@@ -330,6 +330,7 @@ async function compileByond(
 }
 
 type DDOptions = {
+  runtimeLibrary?: import('./captured_runtime_library').CapturedRuntimeLibrary;
   dmbFile: string;
   /** Exact successful native pair, or explicit conventional fallback output. */
   compiledOutput?: CompiledOutput;
@@ -623,9 +624,12 @@ export async function withRuntimeIdentityChecks<T>(run: () => Promise<T>, verify
 }
 
 async function runHostedWorld(options: DDOptions, args: any[]): Promise<DDResult> {
-  checkVerdigrisAbi();
-  const library = options.compiledOutput?.kind === 'native_pair'
-    ? stageRuntimeLibrary(path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
+  const capturedLibrary = options.runtimeLibrary
+    ? (await import('./captured_runtime_library')).verifyCapturedRuntimeLibrary(options.runtimeLibrary)
+    : undefined;
+  if (!capturedLibrary) checkVerdigrisAbi();
+  const library = capturedLibrary || options.compiledOutput?.kind === 'native_pair'
+    ? stageRuntimeLibrary(capturedLibrary ?? path.resolve(process.platform === 'win32' ? 'verdigris.dll' : 'libverdigris.so'), path.dirname(options.dmbFile))
     : undefined;
   let conventionalLibrary: HostedLibraryIdentity | undefined;
   return withRuntimeIdentityChecks(async () => {

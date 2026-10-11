@@ -7,7 +7,8 @@ import { parseCompileResult, conventionalOutput, withCompiledOutput } from '../.
 import { beginCompilerReceipt, byondProvenance, nativeProvenance, observedExecutable } from '../../build/lib/compiler_provenance';
 import { captureFocusedCompiledOutput } from '../../build/lib/focused_compiled_run';
 
-const [directory, expected] = process.argv.slice(2);
+const [directory, expected, runtimeBuildReceipt, runtimeBuildSha] = process.argv.slice(2);
+if (Boolean(runtimeBuildReceipt) !== Boolean(runtimeBuildSha)) throw new Error('runtime build receipt pins must be paired');
 if (!directory || !/^[0-9a-f]{64}$/.test(expected ?? '')) throw new Error('capture directory and receipt SHA256 required');
 const root = path.resolve(directory);
 const hash = (file: string) => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
@@ -55,7 +56,15 @@ for (const backend of ['byond', 'native'] as const) {
       fs.copyFileSync(acquired.replace(/\.dmb$/i, '.rsc'), rsc, fs.constants.COPYFILE_EXCL);
     }
     const attempt = beginCompilerReceipt(owned, output);
-    const capture = captureFocusedCompiledOutput(attempt.file, output, dmb, rsc);
+    const pinFile = (file: string) => ({ path: path.resolve(file), sha256: hash(file), bytes: fs.statSync(file).size });
+    let library;
+    if (runtimeBuildReceipt) {
+      if (hash(runtimeBuildReceipt) !== runtimeBuildSha) throw new Error('runtime build receipt changed');
+      const build = JSON.parse(fs.readFileSync(runtimeBuildReceipt, 'utf8'));
+      library = { buildReceipt: pinFile(runtimeBuildReceipt), sourcePin: pinFile(receipt.pin),
+        library: build.library, pair: { dmb: pinFile(dmb), rsc: pinFile(rsc) } };
+    }
+    const capture = captureFocusedCompiledOutput(attempt.file, output, dmb, rsc, library);
     const file = path.join(owned, 'capture.json');
     fs.writeFileSync(file, JSON.stringify(capture, null, 2), { flag: 'wx' });
     console.log(JSON.stringify({ backend, capture: file, sha256: hash(file) }));

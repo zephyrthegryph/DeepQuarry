@@ -840,6 +840,7 @@ async function runIsolatedTestWorld(
           dmbFile: `${runBase}.dmb`,
           compiledOutput: compiled.kind === 'native_pair' ? compiled : { ...compiled, dmb: path.resolve(`${runBase}.dmb`), rsc: path.resolve(`${runBase}.rsc`) },
           namedDmVersion: dmVersion,
+          runtimeLibrary: options.capturedRun?.runtimeLibrary,
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: (pid) => { worldSpawned = true; options.sampler?.start(pid); },

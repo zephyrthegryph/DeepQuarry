@@ -121,6 +121,8 @@ def main():
     parser.add_argument('--focus', action='append', required=True)
     parser.add_argument('--require-snapshot-runtime-abi', action='store_true',
                         help='Decline incoherent captured DM/Rust bindings before compiler launch; not DLL provenance')
+    parser.add_argument('--runtime-build-receipt', type=Path)
+    parser.add_argument('--runtime-build-receipt-sha256')
     parser.add_argument('--job-memory-mib', type=int, default=4096)
     parser.add_argument('--seconds', type=int, default=900)
     args = parser.parse_args()
@@ -143,6 +145,14 @@ def main():
     if args.require_snapshot_runtime_abi:
         from snapshot_runtime_library import preflight
         preflight(args.prepared_root)
+    if (args.runtime_build_receipt is None) != (args.runtime_build_receipt_sha256 is None):
+        raise ValueError('runtime build receipt and SHA must be paired')
+    if args.runtime_build_receipt is not None:
+        from snapshot_runtime_library import preflight
+        preflight(args.prepared_root)
+        regular(args.runtime_build_receipt)
+        if sha(args.runtime_build_receipt) != args.runtime_build_receipt_sha256:
+            raise ValueError('runtime build receipt pin mismatch')
     job_bytes = memory_bytes(args.job_memory_mib)
     deadline = time.monotonic() + args.seconds
     job = OwnedJob(memory_bytes=job_bytes)
@@ -167,6 +177,7 @@ def main():
                     cleanup = terminate_owned(child)
                     raise TimeoutError('focused compiler exceeded300s: ' + str(cleanup))
             return {'command': command, 'exit_code': code, 'timeout': False,
+                    'cwd': str(cwd),
                     'seconds': time.monotonic() - started, 'log': str(log), 'reaped': True}
         report.update(capture(args.prepared_root, args.output, args.byond, args.native,
                               args.template, pins, args.define, launch, deadline))
@@ -193,7 +204,10 @@ def main():
                     raise ValueError(name + ' executable pin mismatch')
                 setattr(args, name, tool)
             adapter = Path(__file__).with_name('focused_pair_runtime_capture.ts')
-            adapted = launch([str(args.bun), str(adapter), str(args.output), sha(args.output / 'focused-pair-receipt.json', deadline)],
+            adapter_command = [str(args.bun), str(adapter), str(args.output), sha(args.output / 'focused-pair-receipt.json', deadline)]
+            if args.runtime_build_receipt is not None:
+                adapter_command.extend([str(args.runtime_build_receipt.resolve()), args.runtime_build_receipt_sha256])
+            adapted = launch(adapter_command,
                              Path(args.checkout).resolve(strict=True), args.output / 'runtime-adapter.log', deadline)
             if adapted['exit_code'] != 0:
                 raise ValueError('focused runtime capture issuer rejected pair')

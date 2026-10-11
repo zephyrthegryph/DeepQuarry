@@ -48,11 +48,17 @@ the manifest's ABI and commit labels alone do not prove matching recovered bytes
    CARGO_TARGET_DIR=NEW_E_TARGET, no foreign DLL/prebuilt/ABI-check bypass,300seconds
    and4GB. Missing captured Rust inputs or stale bindings fail; do not silently
    substitute current checkout sources. Preserve actual build input/output pins.
-5. A runtime-library hook remains REQUIRED: the focused adapter currently observes
-   the review checkout library. Extend its existing observed/staged library route
-   to accept the source-proven staged build and compare its generated ABI with the
-   compiled captured generation. Until that hook admits the NEW build receipt,
-   stop before DreamDaemon. Recompiling BYOND/native through
+5. Run the new `build_captured_verdigris.py --prepared-root NEW_ROOT --output
+   NEW_BUILD_EVIDENCE --target-directory NEW_E_TARGET --cargo ABSOLUTE_CARGO_EXE
+   --cargo-sha256 PIN` under root supervision. It issues the source-qualified
+   `runtime-build-receipt.json` through the ordinary300second/4GB owned Job.
+   The focused adapter admits that actual receipt via
+   `--runtime-build-receipt FILE --runtime-build-receipt-sha256 SHA`, checking
+   complete before/after roster, compiled source pin, current generated ABI,
+   Cargo invocation/identity and DLL hash. The ordinary runtime library stager
+   selects this exact DLL for both paired worlds, retaining post-run checks.
+   It cannot silently use the review checkout library for this explicit route.
+   Recompiling BYOND/native through
    `recapture_focused_pair.py --require-snapshot-runtime-abi` uses the new roster,
    ordered UNIT_TESTS/CITESTING/DM_VERSION/DM_BUILD defines and original toolpins.
 
