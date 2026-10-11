@@ -436,9 +436,9 @@ MSG_DEF_SELF(harm_click_only, "That would destroy it. Use harm intent if you mea
 /// a fall-through to the bare-hand op); a menu pick is deliberate and passes. Use as needs(req(TYPE_PROC_REF(/atom, harm_click_only), because = MSG(harm_click_only))).
 /atom/proc/harm_click_only(datum/act/op/A)
 	if(A.origin == ORIGIN_MENU)
-		return TRUE
+		return null
 	var/mob/M = A.actor
-	return istype(M) && click_stance_of(M) == I_HURT
+	return (istype(M) && click_stance_of(M) == I_HURT) ? null : MSG(harm_click_only)
 
 /// The stance of the actor's click now. A click is decided once, so nothing subscribes to the combat mode it reads.
 /proc/click_stance_of(mob/M)

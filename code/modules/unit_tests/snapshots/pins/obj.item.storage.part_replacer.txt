@@ -1,87 +1,51 @@
-@obj human|none
+@obj.item.storage human|none
 +0 menu: Empty contents
-+2 menu: Open
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-@obj robot|none
+@obj.item.storage robot|none
 +0 menu: Empty contents
-+3 menu: Open
 +5 menu: Reskin
 +6 menu: Switch gathering method (refused: You can't do that.)
 @obj.item ai|none
-@obj.item.storage ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
+@obj.item ghost|none
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
++2 menu: Switch gathering method (refused: You can't do that.)
+@obj.item.storage human|/obj/item/tool/screwdriver
++0 menu: Empty contents
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/tool/crowbar
--click: nothing
+@obj.item.storage human|/obj/item/tool/crowbar
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/tool/wrench
--click: nothing
+@obj.item.storage human|/obj/item/tool/wrench
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/tool/wirecutters
--click: nothing
+@obj.item.storage human|/obj/item/tool/wirecutters
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/multitool
--click: nothing
+@obj.item.storage human|/obj/item/multitool
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/weldingtool
--click: nothing
+@obj.item.storage human|/obj/item/weldingtool
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/stack/cable_coil
--click: nothing
+@obj.item.storage human|/obj/item/stack/cable_coil
 +0 menu: Empty contents
-+3 menu: Open
-+4 menu: Put in
 +5 menu: Reskin
 +6 menu: Switch gathering method (refused: You can't do that.)
-+8 click: Click: Put in
-@obj human|/obj/item/stack/material/steel
--click: nothing
+@obj.item.storage human|/obj/item/stack/material/steel
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-@obj human|/obj/item/card/id
--click: nothing
+@obj.item.storage human|/obj/item/card/id
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +5 menu: Reskin
 +6 menu: Switch gathering method (refused: You can't do that.)
-+8 click: Click: Put in
 @obj human|/obj/item/kit
 +1 menu: Empty contents
 +3 menu: Open
@@ -94,21 +58,12 @@
 +4 menu: Put in
 +5 menu: Reskin
 +6 menu: Switch gathering method (refused: You can't do that.)
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
+@obj.item.storage human|/obj/item
 +0 menu: Empty contents
-+2 menu: Open
-+3 menu: Put in
 +4 menu: Reskin
 +5 menu: Switch gathering method (refused: You can't do that.)
-+7 click: Click: Put in
-human|/obj/item/lightreplacer menu: Empty contents
-human|/obj/item/lightreplacer menu: Move To Top
-human|/obj/item/lightreplacer menu: Open
-human|/obj/item/lightreplacer menu: Put in
-human|/obj/item/lightreplacer menu: Reskin
-human|/obj/item/lightreplacer menu: Switch gathering method (refused: You can't do that.)
-human|/obj/item/lightreplacer menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/lightreplacer click: Click: Put in
+@obj human|/obj/item/lightreplacer
++0 menu: Empty contents
++4 menu: Reskin
++5 menu: Switch gathering method (refused: You can't do that.)
 keys: collect_item, drag_buckle, feed_replacer, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, reskin, storage.climb_in, storage.empty, storage.empty_out, storage.gather, storage.gather_mode, storage.open, storage.put_in, storage.refuse, storage.toggle_open, toggle_digestable

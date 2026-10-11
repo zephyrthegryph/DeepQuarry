@@ -1,0 +1,14 @@
+@datum human|none
+@datum robot|none
+ai|none click: nothing
+@datum ghost|none
+@datum human|/obj/item/tool/screwdriver
+@datum human|/obj/item/tool/crowbar
+@datum human|/obj/item/tool/wrench
+@datum human|/obj/item/tool/wirecutters
+@datum human|/obj/item/multitool
+@datum human|/obj/item/weldingtool
+@datum human|/obj/item/stack/cable_coil
+@datum human|/obj/item/stack/material/steel
+@datum human|/obj/item/card/id
+keys: active_cloaking, adspam, ai, appendicitis, assist_organ, autosave, autosave2, beast_form, be_event_invis, bluespace_artillery, break_bone, break_legs, brutal_pred, clear_issue, cloaking, cocoon, colormate, damage_organ, darksight, direct_narrate, drop_all, drop_held, drop_organ, drop_specific, dust, elder_smite, equip_item, gib, give_chem, give_item, give_quest, health_scan, hot_dog, item_tf, lightning_strike, list_all, lleill_alchemy, lleill_drain, lleill_energy, lleill_invisibility, lleill_transmute, medical_issue, mob_tf, orbit, paralyse, peppernade, pie_splat, player_panel, popup-box, purge, quick_nif, redspace_abduct, rejuvenate, repair_organ, resize, revert-mob-tf, robot_organ, see_event_invis, set_size, shadekin_attack, shadekin_vore, spicerequest, spicy_air, spin, spont_combustion, squish, stasis, stop-orbits, subtle_message, teleport, terror, terror_aoe, transformation, trash_eater, ui_open, vent_crawl, view_variables, wet_floors

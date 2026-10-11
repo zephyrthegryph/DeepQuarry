@@ -35,18 +35,16 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))
 	op("id_swipe", inputs(item(/obj/item/card/id), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 1), label("Swipe ID"), then(PROC_REF(interaction_id_swipe)))
 	op("hit", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), then(PROC_REF(interaction_hit)))
-	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req_bool(PROC_REF(can_toggle_holds), because = PROC_REF(can_toggle_refusal))), then(PROC_REF(interaction_toggle)))
+	op("toggle", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 2), label("Toggle"), needs(req(PROC_REF(can_toggle_holds))), then(PROC_REF(interaction_toggle)))
 
 /// Requirement (was REQ_* can_toggle): the legacy check answers TRUE to pass.
 /obj/machinery/shieldwallgen/proc/can_toggle_holds(datum/act/op/A)
 	var/answer = can_toggle(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_toggle_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/shieldwallgen/proc/can_toggle_refusal(datum/act/op/A)
-	var/answer = can_toggle(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// Requirement: TRUE, or why the generator can't be switched.
 /obj/machinery/shieldwallgen/proc/can_toggle(mob/user, atom/target, obj/item/held)
 	if(state != 1)

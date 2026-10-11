@@ -14,7 +14,7 @@ CAPABILITIES(/obj/structure/trash_pile)
 	climb()
 	owns_one(nameof(mouse_nest), starts = /obj/structure/mob_spawner/mouse_nest)
 	// the old attack_ghost: offer to spawn as a mouse (refused with the old reasons; never fell through to the default)
-	op("become_mouse", observer(), label("Become mouse"), needs(req_bool(PROC_REF(mouse_allowed), because = PROC_REF(mouse_refusal))),
+	op("become_mouse", observer(), label("Become mouse"), needs(req(PROC_REF(mouse_allowed))),
 		asks(/datum/prompt/yes_no, fields = list("title" = "Are you sure you want to squeek?", "question" = "Are you -sure- you want to become a mouse?", "timeout" = 0), keeps = TARGET_PRESENT),
 		then(PROC_REF(mouse_confirmed)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
@@ -74,12 +74,9 @@ CAPABILITIES(/obj/structure/trash_pile)
 
 /// A ghost may become a mouse here: player mice allowed, not banned, free to respawn, off the admin levels, past the mouse respawn time.
 /obj/structure/trash_pile/proc/mouse_allowed(datum/act/op/A)
-	return isnull(mouse_refusal(A))
-
-/// Why a ghost may not become a mouse here, or null.
-/obj/structure/trash_pile/proc/mouse_refusal(datum/act/op/A)
 	return read_once(mouse_spawn_refusal(A.actor, get_turf(src))) // the config, the bans and the death time are asked when the click is made
 
+/// Why a ghost may not become a mouse here, or null.
 /// Why `user` may not spawn as a mouse at `T`, or null: the config, the ghost-role ban, respawn rules, the admin levels and the mouse respawn time.
 /// None of it is round state an op could watch (config, bans, a client's death time): it reads nothing the graph follows, and a requirement calls it inside read_once().
 /proc/mouse_spawn_refusal(mob/observer/user, turf/T)

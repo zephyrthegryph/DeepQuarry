@@ -4,56 +4,47 @@ robot|none menu: Open
 robot|none menu: Use
 robot|none click: Click: Open
 @obj.structure ai|none
-ghost|none menu: Inhabit (refused: It is not open to spirits right now.)
-ghost|none click: Click: Inhabit
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod ghost|none
+-menu: Inhabit
++0 menu: Inhabit (refused: It is not open to spirits right now.)
+@obj.structure.ghost_pod human|/obj/item/tool/screwdriver
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/tool/crowbar
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/tool/wrench
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/tool/wirecutters
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/multitool
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/weldingtool
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/stack/cable_coil
+-click: nothing
 +3 menu: Open
 +5 click: Click: Open
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/stack/material/steel
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item/card/id
+-click: nothing
 +2 menu: Open
 +5 click: Click: Open
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
+@obj.structure.ghost_pod human|/obj/item
+-click: nothing
 +2 menu: Open
 +4 click: Click: Open
 keys: drag_buckle, inhabit, melee_hit, open, silicon_hand

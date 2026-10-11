@@ -141,7 +141,6 @@
 	hud_used?.zone_sel?.icon = ui_style
 	hud_used?.zone_sel?.color = ui_color
 	hud_used?.zone_sel?.alpha = ui_alpha
-	hud_used?.zone_sel?.cut_overlays()
 	rel_add(HUD, nameof(HUD.hud_elements), hud_used?.zone_sel)
 
 	rel_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())

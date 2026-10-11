@@ -654,7 +654,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/drift = list()
 	var/key = refresh_look(A, apply = FALSE)
 	if(key != A.rx?.look_key)
-		drift += "draw()"
+		drift += "draw() [refresh_key_difference(A.rx?.look_key, key)]"
 	var/eval_depth_hidden_verbs = GLOB.derived_evaluating
 	DERIVED_EVAL_BEGIN
 	var/list/hidden
@@ -828,3 +828,14 @@ GLOBAL_VAR_INIT(look_effects_ran, 0)
 				break
 		if(seen)
 			state_changed(watcher)
+
+/// Where two look keys part (drift reports): the text around the first difference, so the part that moved is named.
+/proc/refresh_key_difference(was, now)
+	was = "[was]"
+	now = "[now]"
+	var/at = 1
+	var/shortest = min(length(was), length(now))
+	while(at <= shortest && text2ascii(was, at) == text2ascii(now, at))
+		at++
+	var/from = max(1, at - 40)
+	return "(drawn: ...[copytext(was, from, at + 60)]... now: ...[copytext(now, from, at + 60)]...)"

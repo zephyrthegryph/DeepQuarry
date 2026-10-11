@@ -182,7 +182,6 @@
 	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel())
 	hud_used?.zone_sel?.icon = HUD.ui_style
 	hud_used?.zone_sel?.alpha = HUD.ui_alpha
-	hud_used?.zone_sel?.cut_overlays()
 
 	//Handle the gun settings buttons
 	rel_set(hud_used, nameof(/datum/hud::gun_setting_icon), new /atom/movable/screen/gun/mode(null))

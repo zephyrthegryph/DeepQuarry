@@ -1408,12 +1408,23 @@
 	for(var/type in expected)
 		var/turf/T = tile(4, 1)
 		var/obj/machinery/light_construct/C = frame(type, T)
+		// Only the sheets this frame drops: a stack another test left on the tile is neither counted nor taken (an earlier version
+		// deleted the first stack it found, which in a long run was such a stray, and left this frame's own sheets behind).
+		var/list/before = list()
+		for(var/obj/item/stack/material/steel/old in T)
+			before += old
 		click(H, C, W)
 		TEST_ASSERT(QDELETED(C), "[type] came apart")
-		var/obj/item/stack/material/steel/sheets = locate(/obj/item/stack/material/steel) in T
-		TEST_ASSERT(istype(sheets), "[type] left steel")
-		TEST_ASSERT_EQUAL(sheets.amount, expected[type], "[type] refunds its sheets")
-		qdel(sheets)
+		var/refunded = 0
+		var/list/dropped = list()
+		for(var/obj/item/stack/material/steel/sheets in T)
+			if(!(sheets in before))
+				refunded += sheets.amount
+				dropped += sheets
+		TEST_ASSERT(length(dropped), "[type] left steel")
+		TEST_ASSERT_EQUAL(refunded, expected[type], "[type] refunds its sheets")
+		for(var/obj/item/stack/material/steel/sheets as anything in dropped)
+			qdel(sheets)
 
 /// A wired frame cannot be taken apart with a wrench.
 /datum/unit_test/dq_p2_lights/wrench_refuses_a_wired_frame

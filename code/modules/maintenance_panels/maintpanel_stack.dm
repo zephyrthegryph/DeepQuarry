@@ -16,11 +16,11 @@ MSG_DEF_SELF(maintenance_panel/clumsy, "this task is too complex for your clumsy
 
 CAPABILITIES(/obj/item/stack/tile/maintenance_panel)
 	without("ui_open")
-	op("maintenance_panel_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Build panel"), needs(req_bool(PROC_REF(actor_dexterous_holds), because = MSG(maintenance_panel/clumsy))), then(PROC_REF(maintenance_panel_self)))
+	op("maintenance_panel_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Build panel"), needs(req(PROC_REF(actor_dexterous_holds), because = MSG(maintenance_panel/clumsy))), then(PROC_REF(maintenance_panel_self)))
 
 /// Requirement: the actor can use tools.
 /obj/item/stack/tile/maintenance_panel/proc/actor_dexterous_holds(datum/act/op/A)
-	return !!A.actor.IsAdvancedToolUser()
+	return (!!A.actor.IsAdvancedToolUser()) ? null : MSG(maintenance_panel/clumsy)
 
 /// Old attack_self: build a panel.
 /obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(datum/act/op/A)

@@ -282,7 +282,6 @@
 	hud_used?.zone_sel?.icon = HUD.ui_style
 	hud_used?.zone_sel?.color = HUD.ui_color
 	hud_used?.zone_sel?.alpha = HUD.ui_alpha
-	hud_used?.zone_sel?.cut_overlays()
 	hud_elements |= hud_used?.zone_sel
 
 	//Handle the gun settings buttons

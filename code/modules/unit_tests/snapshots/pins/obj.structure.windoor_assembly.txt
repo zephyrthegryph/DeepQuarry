@@ -1,0 +1,68 @@
+@obj.structure human|none
++0 menu: Flip Windoor Assembly
+@obj.structure robot|none
++0 menu: Flip Windoor Assembly
+@obj.structure ai|none
+@obj ghost|none
++0 menu: Flip Windoor Assembly
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Build assembly secured
++1 menu: Flip Windoor Assembly
++5 click: Click: Build assembly secured
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++0 menu: Dismantle
++1 menu: Flip Windoor Assembly
++5 click: Click: Dismantle
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++5 click: nothing
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++5 click: nothing
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++4 click: nothing
+@obj human|/obj/item/airlock_electronics
++0 menu: Flip Windoor Assembly
+@obj.structure human|/obj/item/pen
+-menu: Use
+-click: Click: Use
++0 menu: Flip Windoor Assembly
++3 menu: Rename
++5 click: Click: Rename
+keys: construction.build:windoor_assembly_boarded, construction.build:windoor_assembly_finished, construction.build:windoor_assembly_secured, construction.build:windoor_assembly_wired, construction.dismantle, construction.undo:windoor_assembly_boarded, construction.undo:windoor_assembly_secured, construction.undo:windoor_assembly_wired, drag_buckle, flip, melee_hit, rename, rename_robot

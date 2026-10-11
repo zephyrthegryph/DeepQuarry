@@ -303,7 +303,7 @@ CAPABILITIES(/obj/item/bedsheet/pillow/exercise)
 	icon_state = "dumbbell"
 
 CAPABILITIES(/obj/item/entrepreneur/dumbbell)
-	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_exercise_holds), because = PROC_REF(can_exercise_refusal))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_exercise_holds))), wait(3 SECONDS), then(PROC_REF(exercise_done)))
 
 /// Requirement: the user isn't too hungry to exercise.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise(mob/user, atom/target, obj/item/held)
@@ -316,13 +316,11 @@ CAPABILITIES(/obj/item/entrepreneur/dumbbell)
 /// Requirement (was REQ_* can_exercise): the legacy check answers TRUE to pass.
 /obj/item/entrepreneur/dumbbell/proc/can_exercise_holds(datum/act/op/A)
 	var/answer = can_exercise(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_exercise_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/entrepreneur/dumbbell/proc/can_exercise_refusal(datum/act/op/A)
-	var/answer = can_exercise(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/item/entrepreneur/dumbbell/proc/exercise_done(datum/act/op/A)
 	var/mob/living/M = A.actor
 	var/mob/user = M
@@ -457,30 +455,24 @@ CAPABILITIES(/obj/item/entrepreneur/emf)
 	var/accurate = FALSE
 
 CAPABILITIES(/obj/item/entrepreneur/spirit_board)
-	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req_bool(PROC_REF(can_slide_holds), because = PROC_REF(can_slide_refusal))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
+	op("item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_slide_holds))), wait(3 SECONDS), then(PROC_REF(spirit_slide_done)))
 	op("alt", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k451", when = PROC_REF(alt_asks)), then(PROC_REF(interaction_alt)))
-	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req_bool(PROC_REF(can_ghost_guide_holds), because = PROC_REF(can_ghost_guide_refusal))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
+	op("spirit_board_ghost_guide", observer(), label("Guide"), needs(req(PROC_REF(can_ghost_guide_holds))), asks(/datum/prompt/choice, fields = list("question" = "What should it land on next?", "title" = "Next result", "choices" = nameof(possible_results), "timeout" = 0), step = "k459", when = PROC_REF(ghost_asks)), then(PROC_REF(spirit_board_ghost_guide)))
 
 /// Requirement: a drink container to slide across the board (a non-living user is ignored silently by the effect).
 /obj/item/entrepreneur/spirit_board/proc/can_slide_holds(datum/act/op/A)
 	if(!isliving(A.actor))
-		return TRUE
-	return istype(A.held, /obj/item/reagent_containers/food/drinks)
+		return null
+	return (istype(A.held, /obj/item/reagent_containers/food/drinks)) ? null : "you need some sort of glass, bottle or cup to contact the spirit world"
 
 /// Why can_slide_holds refuses.
-/obj/item/entrepreneur/spirit_board/proc/can_slide_refusal(datum/act/op/A)
-	return "you need some sort of glass, bottle or cup to contact the spirit world"
-
 /// Requirement: the guiding ghost isn't ghost-role banned (a board with ghosts disabled ignores them silently).
 /obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_holds(datum/act/op/A)
 	if(!ghost_enabled)
-		return TRUE
-	return !jobban_isbanned(A.actor, JOB_GHOSTROLES)
+		return null
+	return (!jobban_isbanned(A.actor, JOB_GHOSTROLES)) ? null : "you cannot interact with this board because you are banned from playing ghost roles"
 
 /// Why can_ghost_guide_holds refuses.
-/obj/item/entrepreneur/spirit_board/proc/can_ghost_guide_refusal(datum/act/op/A)
-	return "you cannot interact with this board because you are banned from playing ghost roles"
-
 /obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(datum/act/op/A)
 	var/mob/living/user = A.actor
 	var/obj/item/reagent_containers/food/drinks/W = A.held
