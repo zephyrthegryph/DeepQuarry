@@ -93,7 +93,7 @@ pub(super) fn contextual_fixed_word_is_scalar(
                 // ordinary prompts; generic choices preserve proved radius.
                 0 => raw_words[1] == 0 && matches!(raw_words[0], 640 | 132 | 2176 | 136 | 144 | 0 | 16 | 4096),
                 64 => (raw_words[0] == 2 && matches!(raw_words[1], 0 | 5 | 125))
-                    || (matches!(raw_words[0], 4224 | 0 | 16 | 4096) && raw_words[1] == 0),
+                    || (matches!(raw_words[0], 1 | 4224 | 0 | 16 | 4096) && raw_words[1] == 0),
                 _ => false,
             })
         // Compile-only color probes: no radius, optional evaluated choices.

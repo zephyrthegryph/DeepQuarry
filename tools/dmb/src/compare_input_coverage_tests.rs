@@ -18,7 +18,8 @@ fn input_words(bytes: &[u8], name: &[u8], opcode: u32) -> Vec<u32> {
 
 #[test]
 fn numeric_and_file_prompt_absence_matches_captured_native_forms() {
-    let native = include_bytes!("../fixtures/translation/input_numeric_file/input_numeric_file.native.bin");
+    let native =
+        include_bytes!("../fixtures/translation/input_numeric_file/input_numeric_file.native.bin");
     for (name, expected) in [
         (b"/proc/number_prompt".as_slice(), [136, 0, 0]),
         (b"/proc/file_prompt".as_slice(), [144, 0, 0]),
@@ -90,7 +91,8 @@ fn color_radius_absence_is_covered_only_for_proved_shapes() {
 
 #[test]
 fn omitted_file_and_anything_shapes_match_authenticated_native_capture() {
-    let native = include_bytes!("../fixtures/translation/input_remaining_shapes/input_shapes.native.bin");
+    let native =
+        include_bytes!("../fixtures/translation/input_remaining_shapes/input_shapes.native.bin");
     for (name, expected) in [
         (b"/proc/omitted_prompt".as_slice(), [0, 0, 0]),
         (b"/proc/omitted_choices".as_slice(), [0, 0, 64]),
@@ -110,4 +112,19 @@ fn omitted_file_and_anything_shapes_match_authenticated_native_capture() {
         assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &unproved));
     }
     assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[8192, 0, 0]));
+}
+
+#[test]
+fn mob_choices_absent_radius_matches_preserved_byond_matrix() {
+    // receipt.json pins DM 516.1687 and output SHA
+    // 1976beb24c0bb0c78753d5056ab9703736bbadcca6a5105922335256ddabce48.
+    // case_15 is `input("prompt") as mob in choices`; this same shape occurs
+    // in the preserved whole-program remoteobserve procedure.
+    let native = include_bytes!("../fixtures/native/input_warning_masks/matrix.native.bin");
+    let actual = input_words(native, b"/proc/case_15", 0xc1);
+    assert_eq!(actual, [1, 0, 64]);
+    assert!(contextual_fixed_word_is_scalar(0xc1, 1, &actual));
+    for unproved in [[1, 1, 64], [1, 0, 32], [1, 0, 0]] {
+        assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &unproved));
+    }
 }

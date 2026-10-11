@@ -73,7 +73,7 @@ fn explicit_count_roles_preserve_unknown_receivers_and_unproved_input_radius() {
     // evidence; their operand widths alone cannot establish semantic coverage.
     assert_eq!(fixed_word_role(0x106, 0), FixedWordRole::Opaque);
     assert_eq!(fixed_word_role(0x110, 0), FixedWordRole::Opaque);
-    assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[1, 0, 64]));
+    assert!(!contextual_fixed_word_is_scalar(0xc1, 1, &[1, 1, 64]));
     assert_eq!(fixed_word_role(0x30, 1), FixedWordRole::ProcedureId);
     assert!(!fixed_word_is_scalar(0xdead, 0));
 }
