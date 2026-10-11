@@ -1,6 +1,6 @@
 # Finite global-name diagnostics
 
-The original eight controls have a captured comparison below; the six opt-in controls are prepared but not yet captured. No completeness claim is made. The compiler-only driver authenticates every source/manifest and explicit tool pins, records exact exits/diagnostics, runs suspended owned Job children with 30s deadlines, and preserves E-owned output. Never starts DreamDaemon.
+All fourteen observed controls run by default. No completeness claim is made. The compiler-only driver authenticates every source/manifest and explicit tool pins, records exact exits/diagnostics, runs suspended owned Job children with 30s deadlines, and preserves E-owned output. Never starts DreamDaemon.
 
 Use `python run.py --backend byond-only --dm "D:/Program Files (x86)/BYOND516/bin/dm.exe" --dm-sha256 8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0 --output-root E:/dq-cache/dmb-builtin-global-name-diagnostics` after execution authorization. Paired mode requires explicit native/template pins too.
 
@@ -14,9 +14,9 @@ native returns unsupported status 70. All children were reaped. Receipt:
 This confirms a classification gap; it does not turn a finite set of name
 observations into a complete intrinsic namespace authority.
 
-## Opt-in lexical-special observations
+## Lexical-special observations
 
-The original eight default cases remain unchanged. Six additional raw-DM controls
+The original eight controls remain available. Six additional raw-DM controls
 exercise `callee`, `caller`, `__TYPE__`, `__IMPLIED_TYPE__`, `__PROC__`, and
 `global`. The implied-type case uses a typed local constructor context; the
 global case uses an authored root variable through the lexical global namespace.
@@ -32,4 +32,13 @@ Append this selection to the existing pinned compiler-only invocation:
 
 The shared driver retains its serial children, 30-second child limits and bounded
 overall Job lifetime. A larger finite corpus still cannot prove complete native
-namespace coverage. No new cases have been executed.
+namespace coverage.
+
+The fourteen-case capture with native `c2b169cd0c` completed and reaped every
+child. Eleven cases agree, but `unknown_global` returned internal status 70
+instead of a source error, and valid `context_type`/`context_implied_type`
+returned unsupported variable-storage queries. Receipt:
+`E:/dq-cache/dmb-builtin-global-name-diagnostics/08aca3ca6d60418aa5fab4217f77fc31/receipt.json`.
+This exposed the one-shot CLI's missing named declaration receipts, which the
+retained-host Rust fixtures did not exercise. Subsequent fixes require a fresh
+paired CLI capture; unit fixtures alone do not close these regressions.
