@@ -16,10 +16,6 @@
 +3 menu: Transfer
 +5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/tool/wrench
--click: Click: Use
-+1 menu: Threaten to push the button! (refused: You can't do that.)
-+3 menu: Transfer
-+5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/tool/wirecutters
 -click: Click: Use
 +1 menu: Threaten to push the button! (refused: You can't do that.)

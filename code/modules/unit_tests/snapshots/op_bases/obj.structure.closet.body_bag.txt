@@ -1,0 +1,12 @@
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove injector (refused: It has no injector in it.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Open
+human|/obj/item/tool/screwdriver click: Click: Remove injector
+human|/obj/item/tool/wirecutters menu: Cut the tag off
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Open
+human|/obj/item/tool/wirecutters click: Click: Cut the tag off

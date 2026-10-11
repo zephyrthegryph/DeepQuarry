@@ -13,7 +13,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 	op("change_inherent_law", ui_act("change_inherent_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_inherent_law)))
 	op("change_supplied_law", ui_act("change_supplied_law", arg("val", schema_text(4096))), then(PROC_REF(ui_act_change_supplied_law)))
 	op("change_supplied_law_position", ui_act("change_supplied_law_position"), then(PROC_REF(ui_act_change_supplied_law_position)))
-	op("edit_law", ui_act("edit_law", arg("edit_law")), needs(req_bool(PROC_REF(ui_malf), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Edit Law", "question" = "Enter new law. Leaving the field blank will cancel the edit.", "default" = computed(PROC_REF(edit_law_default)))), then(PROC_REF(ui_act_edit_law)))
+	op("edit_law", ui_act("edit_law", arg("edit_law")), needs(req(PROC_REF(ui_malf), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Edit Law", "question" = "Enter new law. Leaving the field blank will cancel the edit.", "default" = computed(PROC_REF(edit_law_default)))), then(PROC_REF(ui_act_edit_law)))
 	op("delete_law", ui_act("delete_law", arg("delete_law")), then(PROC_REF(ui_act_delete_law)))
 	op("state_law_set", ui_act("state_law_set", arg("state_law_set")), then(PROC_REF(ui_act_state_law_set)))
 	op("transfer_laws", ui_act("transfer_laws", arg("transfer_laws")), then(PROC_REF(ui_act_transfer_laws)))
@@ -109,7 +109,7 @@ CAPABILITIES(/datum/tgui_module/law_manager)
 
 /// Only an antagonist (or an admin on a silicon that is not slaved) edits or deletes laws; anyone else's button is not answered.
 /datum/tgui_module/law_manager/proc/ui_malf(datum/act/op/A)
-	return is_malf(A.actor)
+	return (is_malf(A.actor)) ? null : /datum/msg/req_silent
 
 /// The law the edit button names, when it is one of the owner's.
 /datum/tgui_module/law_manager/proc/edited_law(datum/act/op/A)

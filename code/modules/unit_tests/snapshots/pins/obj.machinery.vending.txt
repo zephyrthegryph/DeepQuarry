@@ -77,24 +77,8 @@ human|none click: Click: Ui open
 +1 menu: Rotate Clockwise (refused: It is fastened to the floor!)
 +2 menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
 +4 menu: Turn Around (refused: It is fastened to the floor!)
-human|/obj/item/coin menu: Move To Top
-human|/obj/item/coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/coin menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/coin menu: Turn Around (refused: It is fastened to the floor!)
-human|/obj/item/coin click: nothing
-human|/obj/item/fake_coin menu: Move To Top
-human|/obj/item/fake_coin menu: Rotate Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/fake_coin menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/fake_coin menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/fake_coin menu: Turn Around (refused: It is fastened to the floor!)
-human|/obj/item/fake_coin click: nothing
-human|/obj/item/refill_cartridge menu: Move To Top
-human|/obj/item/refill_cartridge menu: Refill (refused: That cartridge does not fit it.)
-human|/obj/item/refill_cartridge menu: Rotate Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/refill_cartridge menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
-human|/obj/item/refill_cartridge menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/refill_cartridge menu: Turn Around (refused: It is fastened to the floor!)
-human|/obj/item/refill_cartridge click: Click: Refill
+@obj human|/obj/item/coin
+@obj human|/obj/item/fake_coin
+@obj human|/obj/item/refill_cartridge
 wires: Contraband, Electrification, ID Scan, Item Throw
 keys: anchor.toggle, check_logs, drag_buckle, emag.subvert, emag.use, insert_coin, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_with_item, panel.open, refill, reject_fake_coin, remove_coin, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, stock, toggle_voice, ui_open, vend, wires.cut, wires.pulse

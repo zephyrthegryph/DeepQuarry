@@ -1,0 +1,76 @@
+human|none menu: Color
+human|none menu: Pick up
+human|none click: Click: Pick up
+robot|none menu: Color
+robot|none menu: Pick up
+robot|none click: Click: Pick up
+@obj.structure ai|none
+@obj ghost|none
+@obj.structure human|/obj/item/tool/screwdriver
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/tool/crowbar
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/tool/wrench
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/tool/wirecutters
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/multitool
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/weldingtool
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/stack/cable_coil
+-menu: Use
+-click: Click: Use
++0 menu: Color
++4 menu: Pick up
++6 click: Click: Pick up
+@obj.structure human|/obj/item/stack/material/steel
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+@obj.structure human|/obj/item/card/id
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++6 click: Click: Pick up
+@obj.structure human|/obj/item
+-menu: Use
+-click: Click: Use
++0 menu: Color
++3 menu: Pick up
++5 click: Click: Pick up
+human|/obj/item/stack/marker_beacon menu: Color
+human|/obj/item/stack/marker_beacon menu: Hit
+human|/obj/item/stack/marker_beacon menu: Move To Top
+human|/obj/item/stack/marker_beacon menu: Pick up
+human|/obj/item/stack/marker_beacon menu: Pick up into
+human|/obj/item/stack/marker_beacon menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/marker_beacon click: Click: Pick up into
+keys: drag_buckle, melee_hit, pick_up, pick_up_into, recolor

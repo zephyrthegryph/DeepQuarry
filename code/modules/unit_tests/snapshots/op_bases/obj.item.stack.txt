@@ -1,3 +1,8 @@
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Split
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Split
 human|/obj/item/card/id menu: Move To Top
 human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Split
@@ -47,8 +52,8 @@ human|/obj/item/tool/wrench click: Click: Split
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Split
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Use welder
-human|/obj/item/weldingtool click: Click: Use welder
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Split
 human|none menu: Move To Top
 human|none menu: Pick up
 human|none menu: Split

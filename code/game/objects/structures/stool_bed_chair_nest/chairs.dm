@@ -21,15 +21,15 @@ MSG_DEF_SELF(chair/padded, "Take the padding off first.")
 CAPABILITIES(/obj/structure/bed/chair)
 	after_init(0, then(PROC_REF(init_update_layer)))
 	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
-		needs(req_bool(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req_bool(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
+		needs(req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
 	op("interaction_tk", tk(), label("Rotate"), then(PROC_REF(interaction_tk)))
 
 /obj/structure/bed/chair/proc/kit_ready(datum/act/op/A)
 	var/obj/item/assembly/shock_kit/SK = A.held
-	return !!SK.status // ALLOW(reads): a kit's secured switch is read when it is clicked on; the click asks again
+	return (!!SK.status) ? null : MSG(chair/kit_unready) // ALLOW(reads): a kit's secured switch is read when it is clicked on; the click asks again
 
 /obj/structure/bed/chair/proc/unpadded_chair(datum/act/A)
-	return !padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+	return (!padding_material) ? null : MSG(chair/padded) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
 /// A secured shock kit turns the chair into an electric chair, with the kit inside.
 /obj/structure/bed/chair/proc/electrified(datum/act/op/A)
