@@ -450,6 +450,7 @@ fn run_build_attempt(
     let semantic_state = semantic_state
         .as_deref_mut()
         .unwrap_or(&mut request_semantic);
+    let declaration_request = semantic_state.begin_declaration_request(publishable_artifacts);
     let execution_result = execution.run(|executor| -> Result<BuildOutcome, Box<dyn std::error::Error>> {
     dmbc::daemon::control::checkpoint()?;
     let input_preparation_seconds;
@@ -929,6 +930,7 @@ fn run_build_attempt(
         // Required compile, freshness, pair installation and session operations
         // succeeded. The sole cache segment is published only at this boundary.
         dmbc::daemon::control::checkpoint()?;
+        declaration_request.publish_successful();
         if let Some(memo) = &procedure_memo {
             memo.publish_successful();
         }
