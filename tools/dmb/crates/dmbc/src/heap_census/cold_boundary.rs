@@ -386,6 +386,7 @@ mod tests {
             ))),
         });
         let projection = ClassProjection {
+            source_features: Default::default(),
             type_construction: Default::default(),
             variable_records: Default::default(),
             field_placements: FieldPlacements::default(),
