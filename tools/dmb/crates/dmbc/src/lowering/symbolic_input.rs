@@ -11,6 +11,8 @@ mod receipt_groups;
 mod retained;
 pub(super) use receipt_groups::RequestAdmission;
 pub use retained::SymbolicRetentionStats;
+#[path = "symbolic_partial_admission.rs"]
+mod partial_admission;
 #[path = "symbolic_candidates.rs"]
 mod candidates;
 #[path = "symbolic_publication.rs"]
@@ -565,11 +567,10 @@ impl SessionSymbolicMemo {
                 });
                 false
             } else if let Some(admission) = request_admission {
-                // Partial candidate certificates cannot authorize this leaf. First
-                // use resolves the entire exact leaf; later request-local hits share
-                // that full proof and preserve every observer edge.
-                admission
-                    .first_changed(&record.reads, |leaf| observer.record_admitted(leaf))
+                // Preserve this candidate's exact matching issuer domains;
+                // unknown/changed domains still replay every positive/negative
+                // edge. Partial admission never seeds a full-leaf verdict.
+                partial_admission::changed(admission, &record.reads, &record.versions, observer)
                     .is_some()
             } else {
                 record
