@@ -27,7 +27,7 @@ pub use initializer::{
 pub mod map;
 mod modified_instance;
 pub mod skin;
-pub use modified_instance::{CapturedModifiedResource, ModifiedInstance};
+pub use modified_instance::{CapturedModifiedResource, ModifiedCaptureError, ModifiedInstance};
 pub mod constants;
 mod procedure_static;
 pub use procedure_static::{

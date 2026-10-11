@@ -183,26 +183,27 @@ impl DriverEvaluator<'_> {
                 }
             };
             let observer = source_features.map(|_| &observe_nameof as &dyn Fn(&dm_syntax::Expr));
-            let descriptor = dm_ir::ModifiedInstance::capture_with_resources_and_nameof_observer(
-                id,
-                owner,
-                self.resource_search_context,
-                fields,
-                |raw| {
-                    dm_codegen_byond::decode_constant_string_literal(raw)
-                        .ok()
-                        .flatten()
-                },
-                self.pure_calls,
-                |path| {
-                    let search_context = self
-                        .resource_search_context
-                        .ok_or("modified resource scalar has no captured search context")?;
-                    let query = ResolveQuery::ResourceIn {
-                        path: SymbolId::of(path),
-                        search_context,
-                    };
-                    match self.resolver.resolve(query) {
+            let descriptor =
+                dm_ir::ModifiedInstance::capture_with_resources_and_nameof_observer_checked(
+                    id,
+                    owner,
+                    self.resource_search_context,
+                    fields,
+                    |raw| {
+                        dm_codegen_byond::decode_constant_string_literal(raw)
+                            .ok()
+                            .flatten()
+                    },
+                    self.pure_calls,
+                    |path| {
+                        let search_context = self
+                            .resource_search_context
+                            .ok_or("modified resource scalar has no captured search context")?;
+                        let query = ResolveQuery::ResourceIn {
+                            path: SymbolId::of(path),
+                            search_context,
+                        };
+                        match self.resolver.resolve(query) {
                         ResolvedMeaning::Resource { path, content } => {
                             Ok(dm_ir::CapturedModifiedResource { path, content })
                         }
@@ -211,9 +212,24 @@ impl DriverEvaluator<'_> {
                                 .into(),
                         ),
                     }
-                },
-                observer,
-            )?;
+                    },
+                    observer,
+                )
+                .map_err(|error| {
+                    if error == dm_ir::ModifiedCaptureError::InvalidNameofReference {
+                        if let Some(failure) = typed_failure {
+                            *failure.borrow_mut() = Some(dm_codegen_byond::LowerError {
+                                kind: dm_codegen_byond::LowerErrorKind::SourceError,
+                                reason: error.to_string(),
+                                ..Default::default()
+                            });
+                        }
+                    }
+                    error.to_string()
+                });
+            // Preserve descriptor source failures for evaluate_prepared_write,
+            // while opaque resource/policy failures keep their original class.
+            let descriptor = descriptor?;
             if let Some(error) = feature_failure.into_inner() {
                 return Err(error);
             }
@@ -594,7 +610,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
         let mut bytes =
-            b"dmbc-driver-initializer-policy-v6;nameof-current-lexical-scope\0".to_vec();
+            b"dmbc-driver-initializer-policy-v7;modified-nameof-source-class\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -845,3 +861,7 @@ mod tests;
 #[cfg(test)]
 #[path = "driver_qualified_initial_tests.rs"]
 mod qualified_initial_tests;
+
+#[cfg(test)]
+#[path = "driver_modified_nameof_tests.rs"]
+mod modified_nameof_tests;

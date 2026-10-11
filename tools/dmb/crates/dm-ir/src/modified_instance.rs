@@ -10,6 +10,33 @@ pub struct CapturedModifiedResource {
     pub content: u128,
 }
 
+/// Typed failures from the same descriptor normalization traversal.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ModifiedCaptureError {
+    InvalidNameofReference,
+    Unsupported(String),
+}
+impl std::fmt::Display for ModifiedCaptureError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidNameofReference => {
+                f.write_str("nameof: requires a var, proc reference, or type path")
+            }
+            Self::Unsupported(reason) => f.write_str(reason),
+        }
+    }
+}
+impl From<String> for ModifiedCaptureError {
+    fn from(reason: String) -> Self {
+        Self::Unsupported(reason)
+    }
+}
+impl From<&str> for ModifiedCaptureError {
+    fn from(reason: &str) -> Self {
+        Self::Unsupported(reason.into())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ModifiedInstance {
     runtime_type: SymbolId,
@@ -57,6 +84,28 @@ impl ModifiedInstance {
         resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
         observer: Option<&dyn Fn(&Expr)>,
     ) -> Result<Self, String> {
+        Self::capture_with_resources_and_nameof_observer_checked(
+            runtime_type,
+            lexical_owner,
+            resource_context,
+            fields,
+            decode,
+            calls,
+            resource,
+            observer,
+        )
+        .map_err(|error| error.to_string())
+    }
+    pub fn capture_with_resources_and_nameof_observer_checked(
+        runtime_type: SymbolId,
+        lexical_owner: SymbolId,
+        resource_context: Option<u128>,
+        fields: &[(String, Expr)],
+        decode: impl Fn(&str) -> Option<Vec<u8>>,
+        calls: Option<&dyn crate::constants::PureCalls>,
+        resource: impl Fn(&str) -> Result<CapturedModifiedResource, String>,
+        observer: Option<&dyn Fn(&Expr)>,
+    ) -> Result<Self, ModifiedCaptureError> {
         let proofs = std::cell::RefCell::new(BTreeMap::new());
         let capture = |raw: &str| {
             let path = raw
@@ -81,7 +130,7 @@ impl ModifiedInstance {
                     normalize_with_resources(value, &decode, calls, &capture, observer)?,
                 ))
             })
-            .collect::<Result<Vec<_>, String>>()?;
+            .collect::<Result<Vec<_>, ModifiedCaptureError>>()?;
         let mut result = Self::capture(runtime_type, lexical_owner, resource_context, &fields);
         result.resources = Arc::new(proofs.into_inner());
         let mut bytes = b"dm-modified-instance-v2\0".to_vec();
@@ -343,7 +392,7 @@ fn normalize_with_resources(
     calls: Option<&dyn crate::constants::PureCalls>,
     capture: &impl Fn(&str) -> Result<(), String>,
     observer: Option<&dyn Fn(&Expr)>,
-) -> Result<Expr, String> {
+) -> Result<Expr, ModifiedCaptureError> {
     use crate::constants::{self, Constant};
     if let ExprKind::Literal(raw) = &value.kind {
         if raw.starts_with('\'') {
@@ -410,6 +459,21 @@ fn normalize_with_resources(
             **condition = normalize_with_resources(condition, decode, calls, capture, observer)?;
             **then_value = normalize_with_resources(then_value, decode, calls, capture, observer)?;
             **else_value = normalize_with_resources(else_value, decode, calls, capture, observer)?;
+        }
+        // Evaluated nameof could not resolve a reference in this descriptor
+        // context. Short-circuited calls were already folded by the common
+        // constant evaluator above and never reach this rejection.
+        ExprKind::Call { callee, args }
+            if matches!(&callee.kind, ExprKind::Ident(name) if name == "nameof")
+                && matches!(
+                    args.as_slice(),
+                    [Expr {
+                        kind: ExprKind::Member { .. } | ExprKind::StaticMember { .. },
+                        ..
+                    }]
+                ) =>
+        {
+            return Err(ModifiedCaptureError::InvalidNameofReference);
         }
         ExprKind::Call { callee, args } if matches!(&callee.kind,ExprKind::Ident(name) if name=="list" || name=="newlist") => {
             for value in args {
@@ -503,6 +567,38 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn modified_nameof_typed_failure_preserves_opaque_and_skipped_cases() {
+        for (source, invalid_nameof, accepted) in [
+            ("nameof(world.cpu)", true, false),
+            ("nameof(/obj::icon)", true, false),
+            ("0 && nameof(world.cpu)", false, true),
+            ("unknown_call()", false, false),
+        ] {
+            let value = dm_syntax::parse_expression(source).expr.unwrap();
+            let result = ModifiedInstance::capture_with_resources_and_nameof_observer_checked(
+                SymbolId::of("/obj"),
+                SymbolId::of("/datum"),
+                None,
+                &[("a".into(), value)],
+                |_| None,
+                None,
+                |_| panic!("no resource access"),
+                None,
+            );
+            if accepted {
+                assert!(result.is_ok());
+            } else if invalid_nameof {
+                assert_eq!(
+                    result.unwrap_err(),
+                    ModifiedCaptureError::InvalidNameofReference
+                );
+            } else {
+                assert!(matches!(result, Err(ModifiedCaptureError::Unsupported(_))));
+            }
+        }
     }
 
     #[test]
