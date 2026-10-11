@@ -18,6 +18,7 @@
 	var/list/remotes
 
 CAPABILITIES(/obj/machinery/petrification)
+	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))
 	configure(uses_power(idle = 100, active = 1000))
 	owns_many(nameof(remotes))
 	interface("PetrificationInterface")
@@ -33,13 +34,6 @@ CAPABILITIES(/obj/machinery/petrification)
 /obj/machinery/petrification/proc/ui_fingerprint(datum/act/op/A)
 	add_fingerprint(A.actor)
 	return OP_OK
-
-// ALLOW(init/INSTANCE_STATE): offsets onto the wall it faces unless the map placed it
-/obj/machinery/petrification/Initialize(mapload)
-	. = ..()
-	if(!pixel_x && !pixel_y)
-		pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
-		pixel_y = (dir & 3) ? (dir == 1 ? 26 : -26) : 0
 
 /obj/machinery/petrification/proc/get_viable_targets()
 	var/list/targets = list()
@@ -374,3 +368,9 @@ CAPABILITIES(/datum/prompt/choice/petrify_consent)
 	timeout = 0
 	usable_state = "default"
 	recheck_on_open = TRUE
+
+/// The map did not offset it: it sits on the wall it faces.
+/obj/machinery/petrification/proc/roll_wall_offset(datum/roller/R)
+	if(pixel_x || pixel_y)
+		return list(pixel_x, pixel_y)
+	return list((dir & 3) ? 0 : (dir == 4 ? 26 : -26), (dir & 3) ? (dir == 1 ? 26 : -26) : 0)
