@@ -1,9 +1,3 @@
-#define FIGHTER_LOADOUT_GUNPOD 1
-#define FIGHTER_LOADOUT_RECON 2
-#define FIGHTER_LOADOUT_BARON 3
-#define FIGHTER_LOADOUT_SCORALIS 4
-#define FIGHTER_LOADOUT_ALLURE 5
-#define FIGHTER_LOADOUT_PINNACE 6
 
 #define NOGRAV_FIGHTER_DAMAGE 20
 
@@ -61,40 +55,12 @@ CAPABILITIES(/obj/mecha/combat/fighter)
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 	op("toggle_landing_gear", topic("toggle_landing_gear"), then(PROC_REF(topic_toggle_landing_gear)))
 
-TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 
 /obj/mecha/combat/fighter/Initialize(mapload)
 	. = ..()
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
-	switch(TYPE_TABLE_GET(src, fighter_init_loadout))
-		if(FIGHTER_LOADOUT_GUNPOD)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-			ME.attach(src)
-			ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive
-			ME.attach(src)
-		if(FIGHTER_LOADOUT_RECON)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/teleporter(src)
-			ME.attach(src)
-			ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
-			ME.attach(src)
-		if(FIGHTER_LOADOUT_BARON)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-			ME.attach(src)
-			ME = new /obj/item/mecha_parts/mecha_equipment/omni_shield
-			ME.attach(src)
-		if(FIGHTER_LOADOUT_SCORALIS)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg
-			ME.attach(src)
-			ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-			ME.attach(src)
-		if(FIGHTER_LOADOUT_ALLURE)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/cloak
-			ME.attach(src)
-		if(FIGHTER_LOADOUT_PINNACE)
-			var/obj/item/mecha_parts/mecha_equipment/ME = new /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser
-			ME.attach(src)
 
 /obj/mecha/combat/fighter/moved_inside(mob/living/carbon/human/H)
 	. = ..()
@@ -338,10 +304,10 @@ TYPE_TABLE_DECLARE(/obj/mecha/combat/fighter, fighter_init_loadout, null)
 	var/stripe2_color
 
 //Loaded version with guns
-TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, fighter_init_loadout, FIGHTER_LOADOUT_GUNPOD)
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/explosive))
 
 //Blinky
-TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, fighter_init_loadout, FIGHTER_LOADOUT_RECON)
+TYPE_TABLE(/obj/mecha/combat/fighter/gunpod/recon, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/teleporter, /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay))
 
 /// The stripes, in the colours a multitool gave them.
 /obj/mecha/combat/fighter/gunpod/draw(datum/look/look)
@@ -430,7 +396,7 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	ground_capable = FALSE
 
 //Loaded version with guns
-TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, fighter_init_loadout, FIGHTER_LOADOUT_BARON)
+TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser, /obj/item/mecha_parts/mecha_equipment/omni_shield))
 
 /obj/effect/decal/mecha_wreckage/baron
 	name = "Baron wreckage"
@@ -463,7 +429,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter/baron/loaded, fighter_init_loadout, FIGHTER
 	ground_capable = FALSE
 
 //Loaded version with guns
-TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, fighter_init_loadout, FIGHTER_LOADOUT_SCORALIS)
+TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/lmg, /obj/item/mecha_parts/mecha_equipment/cloak))
 
 /obj/effect/decal/mecha_wreckage/scoralis
 	name = "scoralis wreckage"
@@ -497,7 +463,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter/scoralis/loaded, fighter_init_loadout, FIGH
 	max_integrity = 500
 
 //Loaded version with guns
-TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, fighter_init_loadout, FIGHTER_LOADOUT_ALLURE)
+TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/cloak))
 
 /obj/effect/decal/mecha_wreckage/allure
 	name = "allure wreckage"
@@ -531,7 +497,7 @@ TYPE_TABLE(/obj/mecha/combat/fighter/allure/loaded, fighter_init_loadout, FIGHTE
 	max_integrity = 200
 
 //Loaded version with guns
-TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, fighter_init_loadout, FIGHTER_LOADOUT_PINNACE)
+TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, mecha_starting_equipment, list(/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser))
 
 /obj/effect/decal/mecha_wreckage/pinnace
 	name = "pinnace wreckage"
@@ -553,9 +519,3 @@ TYPE_TABLE(/obj/mecha/combat/fighter/pinnace/loaded, fighter_init_loadout, FIGHT
 #undef NOGRAV_FIGHTER_DAMAGE
 
 
-#undef FIGHTER_LOADOUT_GUNPOD
-#undef FIGHTER_LOADOUT_RECON
-#undef FIGHTER_LOADOUT_BARON
-#undef FIGHTER_LOADOUT_SCORALIS
-#undef FIGHTER_LOADOUT_ALLURE
-#undef FIGHTER_LOADOUT_PINNACE

@@ -15,7 +15,9 @@
 //
 // radio_listen(freq = nameof(var), filter =) is the radio listener of the area air device (code/domains/atmos/area_air_device.dm) as a form:
 // the instance listens on the frequency its var holds from init, retunes when the var is written, and stops listening when it is destroyed.
-// `freq` may be a number for a fixed frequency; `filter` is a RADIO_* filter or PROC_REF(x) of the holder answering one.
+// `freq` may be a number for a fixed frequency; `filter` is a RADIO_* filter or PROC_REF(x) of the holder answering one. `via = PROC_REF(x)` hands
+// the frequency to the holder's own tuner, x(frequency) (a radio machine's set_frequency(), which keeps its radio_connection and filter), at init
+// when the var holds one and when the var is written; the machine's own teardown leaves the frequency.
 
 /proc/registry(id, key = null, by = REG_GLOBAL, when = null)
 	if(!istext(id))
@@ -23,8 +25,8 @@
 		return null
 	return entry_make(ENTRY_REGISTRY, "registry:[id]", list("id" = id, "key" = key, "by" = by, "when" = when))
 
-/proc/radio_listen(freq, filter = null)
-	return entry_make(ENTRY_RADIO_LISTEN, "radio_listen", list("freq" = freq, "filter" = filter))
+/proc/radio_listen(freq, filter = null, via = null)
+	return entry_make(ENTRY_RADIO_LISTEN, "radio_listen", list("freq" = freq, "filter" = filter, "via" = via))
 
 /// The keyed index of one registry id.
 /datum/lifeform_index
@@ -164,6 +166,7 @@ GLOBAL_LIST_EMPTY(lifeform_indexes) // registry id -> /datum/lifeform_index
 // ---- radio_listen ----
 
 GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on now
+GLOBAL_LIST_EMPTY(radio_listen_via) // holder -> TRUE when its own tuner (via =) holds the registration: its own teardown leaves the frequency
 
 /proc/radio_listen_init(datum/holder, datum/lifeform_plan/P)
 	for(var/datum/centry/C as anything in P.radios)
@@ -172,6 +175,9 @@ GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on n
 /proc/radio_listen_teardown(datum/holder, datum/lifeform_plan/P)
 	var/old = GLOB.radio_listen_tuned[holder]
 	GLOB.radio_listen_tuned -= holder
+	if(GLOB.radio_listen_via[holder])
+		GLOB.radio_listen_via -= holder
+		return
 	if(old)
 		unregister_radio(holder, old)
 
@@ -181,6 +187,13 @@ GLOBAL_LIST_EMPTY(radio_listen_tuned) // holder -> the frequency it listens on n
 	var/freq = E.args["freq"]
 	if(istext(freq))
 		freq = (freq in holder.vars) ? holder.vars[freq] : null
+	var/via = E.args["via"]
+	if(via) // the holder's own tuner keeps its connection and leaves the old frequency (a radio machine's set_frequency())
+		if(freq && GLOB.radio_listen_tuned[holder] != freq)
+			GLOB.radio_listen_via[holder] = TRUE
+			GLOB.radio_listen_tuned[holder] = freq
+			call(holder, via)(freq)
+		return
 	var/filter = E.args["filter"]
 	if(istext(filter) && hascall(holder, filter))
 		filter = call(holder, filter)()

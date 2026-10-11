@@ -22,7 +22,6 @@
 	rel_set(src, nameof(linked_account), GLOB.station_account)
 
 	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
-	access_code = rand(1111,111111)
 	print_reference()
 
 	//create a short manual as well
@@ -77,6 +76,7 @@
 	return TRUE
 
 CAPABILITIES(/obj/item/eftpos)
+	rolls(nameof(access_code), range_of(1111, 111111))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	interface("Eftpos", title = "EFTPOS scanner")
 	without("ui_open")

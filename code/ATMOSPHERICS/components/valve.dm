@@ -182,6 +182,7 @@ CAPABILITIES(/obj/machinery/atmospherics/valve)
 
 /// A digital valve turns for someone its access lets in, while it has power; so does its wrench.
 CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
+	radio_listen(freq = nameof(frequency), via = PROC_REF(set_frequency)) // its radio follows its frequency from init
 	silicon_hand()
 	extend("toggle", needs(req(PROC_REF(actor_allowed)), req(PROC_REF(has_power))))
 	extend("unwrench", needs(req(PROC_REF(actor_allowed))))
@@ -203,11 +204,6 @@ CAPABILITIES(/obj/machinery/atmospherics/valve/digital)
 	frequency = new_frequency
 	if(frequency)
 		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
-
-/obj/machinery/atmospherics/valve/digital/Initialize(mapload)
-	. = ..()
-	if(frequency)
-		set_frequency(frequency)
 
 /obj/machinery/atmospherics/valve/digital/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id))
