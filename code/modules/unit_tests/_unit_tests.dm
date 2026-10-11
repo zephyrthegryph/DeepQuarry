@@ -1270,6 +1270,7 @@
 #include "j_transfer_storage_regressions.dm"
 
 #include "j_closet_resident_cost_tests.dm"
+#include "dq_acceptance_final24_old_boundaries.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
