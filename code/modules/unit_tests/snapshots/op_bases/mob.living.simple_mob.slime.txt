@@ -1,0 +1,18 @@
+human|none menu: Disarm
+human|none menu: Grab
+human|none menu: Help
+human|none menu: Nutrition heal
+human|none menu: Punch
+human|none menu: Shove
+human|none menu: Take hat off
+human|none menu: Take hold
+human|none click: Click: Help
+robot|none menu: Disarm
+robot|none menu: Grab
+robot|none menu: Help
+robot|none menu: Nutrition heal
+robot|none menu: Punch
+robot|none menu: Shove
+robot|none menu: Take hat off
+robot|none menu: Take hold
+robot|none click: Click: Help

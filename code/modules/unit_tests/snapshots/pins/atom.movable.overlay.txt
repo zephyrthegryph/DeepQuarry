@@ -57,4 +57,3 @@ human|/obj/item menu: Pass touch
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Pass touch
 keys: drag_buckle, pass_item, pass_touch
-

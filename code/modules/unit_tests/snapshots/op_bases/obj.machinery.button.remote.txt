@@ -1,0 +1,25 @@
+ai|none menu: Toggle
+ai|none menu: Use
+ai|none click: Click: Toggle
+ghost|none click: nothing
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Press
+human|/obj/item/card/emag menu: Toggle
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use (refused: It has no lock to subvert.)
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Press
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Toggle
+human|none menu: Press
+human|none menu: Use
+human|none click: Click: Use
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Press
+robot|none menu: Toggle
+robot|none menu: Use
+robot|none click: Click: Use

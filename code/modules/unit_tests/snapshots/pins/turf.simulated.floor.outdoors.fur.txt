@@ -1,20 +1,19 @@
-human|none menu: Emote Beyond
-human|none menu: Graffiti
-human|none menu: Pet
-human|none menu: Pet Fur
-human|none menu: Touch
-human|none click: Click: Pet
-robot|none menu: Emote Beyond
-robot|none menu: Graffiti
-robot|none menu: Pet
-robot|none menu: Pet Fur
-robot|none menu: Touch
-robot|none menu: Use
-robot|none click: Click: Pet
-ai|none click: nothing
-ghost|none menu: Emote Beyond (refused: You can't reach that.)
-ghost|none menu: Pet Fur
-ghost|none click: nothing
+@turf human|none
+-click: Click: Touch
++0 menu: Emote Beyond
++2 menu: Pet
++3 menu: Pet Fur
++5 click: Click: Pet
+@turf robot|none
+-click: Click: Touch
++0 menu: Emote Beyond
++2 menu: Pet
++3 menu: Pet Fur
++6 click: Click: Pet
+@turf ai|none
+@turf ghost|none
++0 menu: Emote Beyond (refused: You can't reach that.)
++1 menu: Pet Fur
 human|/obj/item/tool/screwdriver menu: Crawl
 human|/obj/item/tool/screwdriver menu: Draw graffiti
 human|/obj/item/tool/screwdriver menu: Emote Beyond
@@ -158,4 +157,3 @@ human|/obj/item menu: Touch
 human|/obj/item menu: Turf item
 human|/obj/item click: Click: Nothing
 keys: crawl_drag, cut_plating, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, fur_emote_beyond, fur_item, fur_pet, fur_pet_verb, graffiti, lay_flooring, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents
-

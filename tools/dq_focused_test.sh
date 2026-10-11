@@ -480,7 +480,16 @@ status_write running "tests=${#tests[@]}" "split=$do_split"
 
 # The one-line verdict every run ends with, parsed from dm-test's "Unit-test summary: N passed, M failed, K skipped ...
 # (saved data/test-runs/X.json)" line(s). $1 = the combined log; $2 = exit code; $3 = json (split runs pass their merged one).
+# A run that blessed or recorded op pins wrote them as plain rows: factor them back against the shared base blocks
+# (code/modules/unit_tests/snapshots/op_bases/, tools/dq_pin_factor.py; doc/rewrite/snapshot_pins.md "Factored op pins").
+pin_factor_after_run() {
+	if [ -n "$(git status --porcelain -- code/modules/unit_tests/snapshots 2>/dev/null)" ]; then
+		"${PYTHON:-python3}" tools/dq_pin_factor.py || echo "dq_pin_factor failed: run python3 tools/dq_pin_factor.py before committing the pins" >&2
+	fi
+}
+
 print_result() {
+	pin_factor_after_run
 	local log="$1" rc="$2" json="${3:-}" line passed failed skipped note="" tail_note="" st=passed
 	line="$(grep -h 'Unit-test summary: [0-9]* passed' "$log" 2>/dev/null | tail -n 1 || true)"
 	if [ -z "$json" ]; then

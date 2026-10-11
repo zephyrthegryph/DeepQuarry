@@ -1,0 +1,68 @@
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Open
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Open
+human|/obj/item/card/emag menu: Hammer on the door
+human|/obj/item/card/emag menu: Hold the door open
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Open
+human|/obj/item/card/emag menu: Ring the bell
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Open
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Open
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Open
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Open
+human|/obj/item/stack/material/plasteel menu: Hammer on the door
+human|/obj/item/stack/material/plasteel menu: Hold the door open
+human|/obj/item/stack/material/plasteel menu: Move To Top
+human|/obj/item/stack/material/plasteel menu: Open
+human|/obj/item/stack/material/plasteel menu: Reinforce
+human|/obj/item/stack/material/plasteel menu: Ring the bell
+human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/plasteel click: Click: Reinforce
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Open
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Open
+human|/obj/item/tool/crowbar menu: Hammer on the door
+human|/obj/item/tool/crowbar menu: Hold the door open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Open
+human|/obj/item/tool/crowbar menu: Pry (refused: The airlock's motors resist your efforts to force it.)
+human|/obj/item/tool/crowbar menu: Ring the bell
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Pry
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Open
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Open
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Open
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Open
+human|/obj/item/weldingtool menu: Hammer on the door
+human|/obj/item/weldingtool menu: Hold the door open
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Open
+human|/obj/item/weldingtool menu: Ring the bell
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Weld shut
+human|/obj/item/weldingtool click: Click: Weld shut
+human|none menu: Open
+human|none click: Click: Open
