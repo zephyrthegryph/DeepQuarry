@@ -235,3 +235,58 @@ fn ordered_incidence_replacement_touches_only_its_reverse_domains() {
     }
     assert_eq!(index.counts(), (0, 0, 0, 0));
 }
+
+#[test]
+fn incidence_distinguishes_stored_conflicts_from_current_first_duplicate_and_local_proof() {
+    let mut index = incidence::Incidence::default();
+    let receipt: Receipt<u8, bool, u8> = vec![
+        Observation {
+            query: 1,
+            answer: false,
+            domain: 3,
+        },
+        Observation {
+            query: 2,
+            answer: true,
+            domain: 4,
+        },
+    ]
+    .into();
+    index.insert(1, 10, &receipt, &[(3, 7), (3, 7), (4, 8)]);
+    index.insert(2, 20, &receipt, &[(3, 7), (3, 9), (4, 8)]);
+    index.insert(3, 30, &receipt, &[(3, 7)]);
+    // Identical repeated stored versions remain certified; conflicting stored
+    // evidence never admits even when that same domain has a local proof.
+    assert_eq!(
+        index.certified(&[(3, Some(7)), (3, Some(9)), (4, Some(8))]),
+        BTreeSet::from([1])
+    );
+    assert!(index
+        .certified(&[(3, Some(9)), (3, Some(7)), (4, Some(8))])
+        .is_empty());
+    assert!(index
+        .certified(&[(3, None), (3, Some(7)), (4, Some(8))])
+        .is_empty());
+    assert_eq!(
+        index.certified_with_local(&[(4, Some(8))], Some(&3)),
+        BTreeSet::from([1])
+    );
+    // Local proof of the uncovered domain can select its subscriber, but the
+    // other domain still needs an exact current certificate.
+    assert_eq!(
+        index.certified_with_local(&[(3, Some(7))], Some(&4)),
+        BTreeSet::from([1, 3])
+    );
+    assert!(index
+        .certified_with_local(&[(3, Some(9))], Some(&4))
+        .is_empty());
+    assert_eq!(index.affected([&3, &4]), BTreeSet::from([1, 2, 3]));
+    index.remove(2);
+    assert_eq!(
+        index.certified_with_local(&[(3, Some(7))], Some(&4)),
+        BTreeSet::from([1, 3])
+    );
+    index.remove(1);
+    index.remove(3);
+    assert_eq!(index.counts(), (0, 0, 0, 0));
+}
