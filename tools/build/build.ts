@@ -69,6 +69,7 @@ import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } fr
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
+import { loadFocusedCompiledOutput } from './lib/focused_compiled_run';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -475,6 +476,9 @@ export const NormalBatchesParameter = new Juke.Parameter({ type: 'number' });
 export const SuiteBatchesParameter = new Juke.Parameter({ type: 'number' });
 export const SuiteResumeParameter = new Juke.Parameter({ type: 'string' });
 export const SuiteResumeSha256Parameter = new Juke.Parameter({ type: 'string', name: 'suite-resume-sha256' });
+/** Explicit historical generation replay; never current-source compile reuse. */
+export const FocusedCompiledOutputParameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output' });
+export const FocusedCompiledOutputSha256Parameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output-sha256' });
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 /** `dm-test --exhaustive`: shorthand for `--tier=all`. */
 export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
@@ -568,6 +572,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
 type WorldRun = {
   compilation: CompilerProvenance | null;
   compilerReceipt: string;
+  capturedCompiledOutput?: ReturnType<typeof loadFocusedCompiledOutput>['evidence'];
   runtimeIdentity?: RuntimeIdentity;
   clean: boolean;
   cleanText: string | null;
@@ -774,10 +779,14 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: ReturnType<typeof loadFocusedCompiledOutput> } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
+  if (options.capturedRun) {
+    // Early replay evidence survives failed boots/missing test result files.
+    fs.writeFileSync(`${compilerReceipt.file}.captured-output.json`, `${JSON.stringify(options.capturedRun.evidence, null, 2)}\n`, { flag: 'wx' });
+  }
   Juke.logger.info(`Compiler attempt evidence: ${compilerReceipt.file}`);
   const slot = acquireRunSlot();
   const base = dmbFile.replace(/\.dmb$/, '');
@@ -845,8 +854,8 @@ async function runIsolatedTestWorld(
           watchdogFile: resultsFile,
           watchdogTimeoutMs: options.watchdogTimeoutMs ?? (focus ? FOCUSED_TIMEOUT_MINUTES * 60 * 1000 : undefined),
           onSpawn: (pid) => { worldSpawned = true; options.sampler?.start(pid); },
-          onPreparedOutput: (dmb) => { options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
-          watchdogMaximumMs: options.issueInventory || options.exactBatch ? 300_000 : undefined,
+          onPreparedOutput: (dmb) => { options.capturedRun?.verifyHosted(dmb); options.onPreparedOutput?.(dmb); compilerReceipt.prepared(dmb); },
+          watchdogMaximumMs: options.issueInventory || options.exactBatch || options.capturedRun ? 300_000 : undefined,
           onRuntimeIdentity: identity => { runtimeIdentity = identity; },
         },
         String(port),
@@ -863,6 +872,7 @@ async function runIsolatedTestWorld(
       if (error instanceof NativeAcquisitionError || error instanceof CompilerProvenanceError) throw error;
       // DreamDaemon exits non-zero even on clean runs; the files below decide.
     }
+    options.capturedRun?.verifyRetained();
     let cleanText: string | null = null;
     try {
       cleanText = fs.readFileSync(`${logDir}/clean_run.lk`, 'utf-8');
@@ -881,6 +891,7 @@ async function runIsolatedTestWorld(
     return {
       compilation: compiled.provenance ?? null,
       compilerReceipt: compilerReceipt.file,
+      capturedCompiledOutput: options.capturedRun?.evidence,
       inventory, runtimeIdentity,
       clean: cleanText !== null,
       cleanText,
@@ -997,6 +1008,7 @@ function recordTestRun(run: WorldRun, label: string | null, defines: string[]): 
   recordSweepHashes(run.results);
   const record = testRunRecord(runIdentity(label), label, [...(run.compilation?.orderedDefines ?? defines)], run.clean, run.durationSeconds, run.results, run.compilation, run.runtimeIdentity);
   record.compiler_receipt = run.compilerReceipt;
+  if (run.capturedCompiledOutput) Object.assign(record, { captured_compiled_output: run.capturedCompiledOutput });
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   Juke.logger.info(
     `Unit-test summary: ${record.counts.passed} passed, ${record.counts.failed} failed, ${record.counts.skipped} skipped `
@@ -1733,6 +1745,8 @@ export const DmTestTarget = new Juke.Target({
     SuiteBatchesParameter,
     SuiteResumeParameter,
     SuiteResumeSha256Parameter,
+    FocusedCompiledOutputParameter,
+    FocusedCompiledOutputSha256Parameter,
     NormalResumeParameter,
     NormalResumeSha256Parameter,
     NormalPlanParameter,
@@ -1744,7 +1758,7 @@ export const DmTestTarget = new Juke.Target({
     ExhaustiveParameter,
     ProfileTestsParameter,
   ],
-  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) ? [] : [
+  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) || get(FocusedCompiledOutputParameter) ? [] : [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
@@ -1754,6 +1768,16 @@ export const DmTestTarget = new Juke.Target({
   executes: async ({ get }) => {
     const normalBatches = get(NormalBatchesParameter);
     const suiteBatchCount = get(SuiteBatchesParameter);
+    const capturedPath = get(FocusedCompiledOutputParameter);
+    const capturedSha = get(FocusedCompiledOutputSha256Parameter);
+    if (capturedSha && !capturedPath) throw new Error('focused-compiled-output-sha256 requires focused-compiled-output');
+    if (capturedPath && (!capturedSha || !focusedTestNames(get)?.length || normalBatches != null || suiteBatchCount != null
+        || get(NormalResumeParameter) || get(SuiteResumeParameter) || get(NormalPlanParameter)
+        || get(DmVersionParameter) || get(WarningParameter).length || get(NoWarningParameter).length
+        || get(ShardsParameter) != null && get(ShardsParameter) !== 1)) {
+      throw new Error('Captured output requires a pinned focused single-world run, without batch/resume/compiler-policy overrides.');
+    }
+    const capturedRun = capturedPath ? loadFocusedCompiledOutput(capturedPath, capturedSha, compilerMode(), [...TEST_DEFINES, ...get(DefineParameter)]) : undefined;
     if (suiteBatchCount != null && normalBatches != null) throw new Error('suite-batches and normal-batches are exclusive');
     if (get(SuiteResumeSha256Parameter) && !get(SuiteResumeParameter)) throw new Error('suite-resume-sha256 requires suite-resume');
     if (get(SuiteResumeParameter) && (suiteBatchCount == null || get(NormalResumeParameter) || get(NormalPlanParameter))) throw new Error('suite-resume requires suite-batches and forbids other resume/plan options');
@@ -1787,19 +1811,19 @@ export const DmTestTarget = new Juke.Target({
       return;
     }
     reportFocus(focus);
-    const compiledOutput = await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+    const compiledOutput = capturedRun?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
     const selection = resolveTestSelection(get);
     const worldParams = testWorldParams(get);
     if (selection) worldParams['test-select'] = writeRunList('select.txt', selection);
     if (!focus) Juke.logger.info(`dm-test: single world, tier ${worldParams['test-tier']}.`);
-    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus, { compiledOutput });
+    const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), worldParams, focus, { compiledOutput, capturedRun });
     fs.rmSync(`${SHARD_DIR}/${process.pid}`, { recursive: true, force: true });
     if (!run.clean) printLogTails(run.logDir, run.killedByWatchdog ? 40 : 80);
     recordTestRun(run, get(LabelParameter), get(DefineParameter));
     // Keep the successful output pair for inspection; the next derived build
     // still invokes its compiler. Only the temporary derived manifest is removed.
     // Failed compilation uses the existing cleanup path above.
-    await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    if (!capturedRun) await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
     if (!run.clean) {
       Juke.logger.error('Test run was not clean, exiting');
       throw new Juke.ExitCode(1);
