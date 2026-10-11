@@ -15,7 +15,7 @@ pub fn visit<'frontend, R: Resolver, P: AbiPolicy, E>(
     host: &R,
     policy: &P,
     config: LoweringConfig,
-    startup: &crate::startup::CapturedStartup,
+    startup: &crate::startup::CapturedStartup<'frontend>,
     memo: &crate::lowering_memo::ProcedureMemo,
     execution: LoweringExecution<'_, 'frontend>,
     page_size: usize,
