@@ -1,3 +1,21 @@
+/// A manual that shows a wiki page in a frame: the page under the configured wiki URL (wiki_frame(), derived into dat at init).
+/obj/item/book/manual/var/wiki_frame_page
+
+/// The framed wiki page (derives(), at init).
+/obj/item/book/manual/proc/wiki_frame()
+	return {"
+
+		<html><head>
+		</head>
+
+		<body>
+		<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)][wiki_frame_page]&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
+		</body>
+
+		</html>
+
+		"}
+
 /*********************MANUALS (BOOKS)***********************/
 
 /obj/item/book/manual
@@ -1823,50 +1841,34 @@
 
 
 /obj/item/book/manual/standard_operating_procedure
+	wiki_frame_page = "Standard_Operating_Procedure"
 	name = "Standard Operating Procedure"
 	desc = "A set of corporate guidelines for keeping space stations running smoothly."
 	icon_state = "sop"
 	icon = 'icons/obj/library.dmi'
 	author = "NanoTrasen"
 	title = "Standard Operating Procedure"
+	
 
-/obj/item/book/manual/standard_operating_procedure/Initialize(mapload)
-	. = ..()
-	dat = {"
+CAPABILITIES(/obj/item/book/manual/standard_operating_procedure)
+	derives(nameof(dat), PROC_REF(wiki_frame))
 
-		<html><head>
-		</head>
 
-		<body>
-		<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)]Standard_Operating_Procedure&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
-		</body>
-
-		</html>
-
-		"}
 
 /obj/item/book/manual/command_guide
+	wiki_frame_page = "Chain_of_Command"
 	name = "The Chain of Command"
 	desc = "A set of corporate guidelines outlining the entire command structure of NanoTrasen from top to bottom."
 	icon_state = "commandGuide"
 	icon = 'icons/obj/library.dmi'
 	author = "Jeremiah Acacius"
 	title = "Corporate Regulations"
+	
 
-/obj/item/book/manual/command_guide/Initialize(mapload)
-	. = ..()
-	dat = {"
+CAPABILITIES(/obj/item/book/manual/command_guide)
+	derives(nameof(dat), PROC_REF(wiki_frame))
 
-		<html><head>
-		</head>
 
-		<body>
-		<iframe width='100%' height='97%' src="[CONFIG_GET(string/wikiurl)]Chain_of_Command&printable=yes&remove_links=1" frameborder="0" id="main_frame"></iframe>
-		</body>
-
-		</html>
-
-		"}
 
 //accurate as of 2/17/21 Extra credit to document editting and proofreading editing to Luna
 /obj/item/book/manual/cook_guide
