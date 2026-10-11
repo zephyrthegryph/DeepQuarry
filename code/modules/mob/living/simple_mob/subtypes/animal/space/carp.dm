@@ -88,11 +88,13 @@
 CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	swarming()
+
+// A random-coloured carp takes a fixed atom colour (add_atom_colour()), which no form sets yet
 /mob/living/simple_mob/animal/space/carp/Initialize(mapload)
 	. = ..()
 	carp_randomify(rarechance)
-	update_icons()
-	enable_swarming()
 
 // This is so carps can swarm
 /mob/living/simple_mob/animal/space/carp/CanPass(atom/movable/mover, turf/target)
@@ -384,18 +386,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 
 	var/body_color
 
-// ALLOW(init/INSTANCE_STATE): rolls its body colour
-/mob/living/simple_mob/animal/space/carp/station/Initialize(mapload)
-	.=..()
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/station)
+	rolls(nameof(body_color), pick_one(list("green", "red", "orange", "yellow", "blue")))
+	rolls(nameof(color), PROC_REF(roll_station_colour), from = list(nameof(body_color)))
 
-	body_color = pick(list("green","red","orange","yellow","blue"))
-	if(body_color == "green")
-		color = "#660066"
-	if(body_color == "red")
-		color = "#FF0000"
-	if(body_color == "orange")
-		color = "#FF6600"
-	if(body_color == "yellow")
-		color = "#FFFF00"
-	if(body_color == "blue")
-		color = "#0099CC"
+/// Its colour follows its body colour (rolls()).
+/mob/living/simple_mob/animal/space/carp/station/proc/roll_station_colour(datum/roller/R)
+	return list("green" = "#660066", "red" = "#FF0000", "orange" = "#FF6600", "yellow" = "#FFFF00", "blue" = "#0099CC")[body_color]

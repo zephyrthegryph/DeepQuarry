@@ -102,7 +102,6 @@
 		)
 
 
-	var/expirmental
 
 /datum/category_item/catalogue/fauna/astralcollective
 	name = "Astral Collective"
@@ -110,11 +109,17 @@
 	things that seem abnormal."
 	value = CATALOGUER_REWARD_EASY
 
-// ALLOW(init/INSTANCE_STATE): rolls which experiment it is
-/mob/living/simple_mob/humanoid/astral_collective/Initialize(mapload)
-	. = ..()
-	expirmental = rand(1,4)
-	expirmentresult()
+/// The body effect its experiment gave it (rolls()).
+/mob/living/simple_mob/humanoid/astral_collective/var/experiment_effect
+
+/// The swift ones came out smaller, the titans bigger (rolls()).
+/mob/living/simple_mob/humanoid/astral_collective/proc/experiment_size(datum/roller/R)
+	switch(experiment_effect)
+		if(/datum/body_effect/astralcollect_swift)
+			return size_multiplier - 0.4
+		if(/datum/body_effect/astralcollect_titan)
+			return size_multiplier + 0.5
+	return size_multiplier
 
 /datum/body_effect/astralcollect_swift
 	stacks = MODIFIER_STACK_FORBID
@@ -157,19 +162,6 @@
 	mob_overlay_state = "redspace_aura"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.6, BF_INCOMING_THERMAL = 0.6)
 
-/mob/living/simple_mob/humanoid/astral_collective/proc/expirmentresult()
-	switch(expirmental)
-		if(1)
-			apply_body_effect(/datum/body_effect/astralcollect_swift, null, src)
-			size_multiplier -= 0.4
-		if(2)
-			apply_body_effect(/datum/body_effect/astralcollect_regen, null, src)
-		if(3)
-			apply_body_effect(/datum/body_effect/astralcollect_titan, null, src)
-			size_multiplier += 0.5
-		if(4)
-			apply_body_effect(/datum/body_effect/astralcollect_mistake, null, src)
-
 /mob/living/simple_mob/humanoid/astral_collective/purity
 	name = "Astral Collective Purity"
 	desc = "A strange living bioweapon"
@@ -205,14 +197,14 @@
 	projectiletype = /obj/item/projectile/energy/astral_collective/basic
 
 /mob/living/simple_mob/humanoid/astral_collective/ranged/do_special_attack(atom/A, stance)
-	switch(expirmental)
-		if(1)
+	switch(experiment_effect)
+		if(/datum/body_effect/astralcollect_swift)
 			burn_beam(A)
-		if(2)
+		if(/datum/body_effect/astralcollect_regen)
 			heal_beam(A)
-		if(3)
+		if(/datum/body_effect/astralcollect_titan)
 			brute_beam(A)
-		if(4)
+		if(/datum/body_effect/astralcollect_mistake)
 			mend(TREAT_TISSUE_REPAIR, 40)
 			mend(TREAT_BURN_CARE, 40)
 
@@ -500,7 +492,10 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/astralcollect_church, null, src)
 
-/// Immune to incapacitation by nature (stun, weakness, paralysis).
+/// Immune to incapacitation by nature (stun, weakness, paralysis). Each member is one experiment: its effect, and its size with it.
 CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "devourable" = FALSE))
 	immune_to_incapacitation()
+	rolls(nameof(experiment_effect), pick_one(list(/datum/body_effect/astralcollect_swift, /datum/body_effect/astralcollect_regen, /datum/body_effect/astralcollect_titan, /datum/body_effect/astralcollect_mistake)))
+	rolls(nameof(size_multiplier), PROC_REF(experiment_size), from = list(nameof(experiment_effect)))
+	body_effect(nameof(experiment_effect))

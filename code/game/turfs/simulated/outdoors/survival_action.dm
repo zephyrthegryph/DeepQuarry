@@ -1,6 +1,7 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
 CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
+	rolls(nameof(flooring_override), pick_one(list("dirt0" = 150, "dirt1" = 25, "dirt2" = 25, "dirt3" = 25, "dirt4" = 25, "dirt5" = 10, "dirt6" = 10, "dirt7" = 3, "dirt8" = 3, "dirt9" = 1)))
 	op("newdirt_hand", hand(), ungated(), stance(I_HELP), label("Dig"), then(PROC_REF(newdirt_hand)))
 	op("loosen_rocks", ai(), wait(5 SECONDS), then(PROC_REF(loosen_rocks_done)))
 	op("pile_up", ai(), wait(5 SECONDS), then(PROC_REF(pile_done)))

@@ -20,6 +20,11 @@
 		return null
 	return entry_make(ENTRY_PER_TYPE, "per_type:[var_name]", list("var" = var_name, "build" = build))
 
+/// The stock build of a per_type() var that only interns the type's own value: per_type(nameof(attacktext), TYPE_PROC_REF(/datum, per_type_own)) makes every
+/// instance of the type share the first one's list (what shared_type_list() did by hand in Initialize()).
+/datum/proc/per_type_own(var_name)
+	return vars[var_name]
+
 /// type -> var -> the built table.
 /proc/per_type_tables()
 	var/static/list/tables = list() // ALLOW(sys_static_getter): built lazily per type by the first instance, which a TYPE_TABLE (built at compile time) cannot do
@@ -38,7 +43,7 @@
 			declare_report("[C.origin]: per_type(\"[var_name]\") on [holder.type]: no such var")
 			continue
 		if(!(var_name in mine))
-			mine[var_name] = call(holder, E.args["build"])()
+			mine[var_name] = call(holder, E.args["build"])(var_name) // build(var_name): one build proc may serve several vars
 		holder.vars[var_name] = mine[var_name] // ALLOW(api): every instance's per_type var names the one shared table
 
 /// The table `type` has built for `var_name`, or null before its first instance (tests, explain tools).

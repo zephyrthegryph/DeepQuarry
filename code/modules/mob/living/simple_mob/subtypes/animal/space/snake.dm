@@ -201,13 +201,9 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
 	nutriment_amt = 1
 	nutriment_desc = list(REAGENT_ID_SUGAR = 1)
 
-// ALLOW(init/INSTANCE_STATE): rolls its sugar colour
-/obj/item/reagent_containers/food/snacks/snakesnack/Initialize(mapload)
-	. = ..()
-	if(!snack_colour)
-		snack_colour = pick( list("yellow","green","pink","blue") )
-	icon_state = "snack_[snack_colour]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
+/// Its sugar colour names it (rolls()).
+/obj/item/reagent_containers/food/snacks/snakesnack/proc/colour_desc(datum/roller/R)
+	return "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 
 /obj/item/storage/box/snakesnackbox
 	starts_with = list(
@@ -221,3 +217,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
 
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/snakesnack)
 	configure(reagents(add = list(REAGENT_ID_SUGAR = 2)))
+	rolls(nameof(snack_colour), pick_one(list("yellow", "green", "pink", "blue")), when = cond_not(nameof(snack_colour)))
+	look_from(nameof(snack_colour), state = "snack_*")
+	rolls(nameof(desc), PROC_REF(colour_desc), from = list(nameof(snack_colour)))

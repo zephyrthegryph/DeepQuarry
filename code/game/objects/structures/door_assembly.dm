@@ -132,23 +132,21 @@
 	airlock_type = "/multi_tile/glass"
 	glass = -1 //To prevent bugs in deconstruction process.
 
-/obj/structure/door_assembly/multi_tile/Initialize(mapload)
+CAPABILITIES(/obj/structure/door_assembly/multi_tile)
+	setup(PROC_REF(fit_bounds))
+
+/// Its bounds span its width along its facing: at setup (setup()) and whenever it moves.
+/obj/structure/door_assembly/multi_tile/proc/fit_bounds()
 	if(dir in list(EAST, WEST))
 		bound_width = width * world.icon_size
 		bound_height = world.icon_size
 	else
 		bound_width = world.icon_size
 		bound_height = width * world.icon_size
-	. = ..()
 
 /obj/structure/door_assembly/multi_tile/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(dir in list(EAST, WEST))
-		bound_width = width * world.icon_size
-		bound_height = world.icon_size
-	else
-		bound_width = world.icon_size
-		bound_height = width * world.icon_size
+	fit_bounds()
 
 TRACKED(/obj/structure/door_assembly, glass)
 

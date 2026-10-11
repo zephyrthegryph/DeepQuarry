@@ -691,6 +691,15 @@ instance's init is complete (the teleporter station's hub). Both in `code/librar
 `derives()` recomputes inside `param_write()` from `/atom/New()`, before the lifeform plan has run, and fails ("bad index"); the field uses
 `param(apply =)` for its id tag instead.
 
+**Init forms added by the init-rest lane (October 2026).** `gas_port(nameof(var), volume =)` (`code/domains/atmos/gas_port.dm`): an
+atmospherics device's port mixture made at capability init through `atmos_air_set()` (the PROTO port a pipe network may repoint), `volume` litres or
+`nameof()` a holder var; the unary, binary and trinary bases and the pipe turbine declare theirs, and a subtype's pump or filter sets `air*_volume`
+(nine `atmos_air_set(..., new /datum/gas_mixture)` + `set_volume()` pairs). `initial_contents(pick_one(list))` rolls each item it makes from the
+holder's stream (a box's random cartridge, a starter capture crystal). Open: `set_frequency(frequency)` at init on radio machines (18 sites in
+atmospherics, airlocks, sensors) has no form: `radio_listen()` keeps its own connection table and does not set the machine's `radio_connection`,
+so these keep the call until radio machines move to `radio_listen()` as a family. `/obj/item/archaeological_find` (710 lines) is a generator, not
+per-instance state: it needs a data table of find recipes (one record per ARCHAEO_ type) before its Initialize can go.
+
 **The init ratchet counts lines (ratchet-fw, October 2026).** The init lint's `initialize` rule counted `Initialize()` overrides (1005 at the
 switch, 848 of them `initialize` and 157 `world_reads`); an override with twenty jobs and one with one counted the same, and an
 `ALLOW(init/CODE)` took a whole override off the count. The new `init_lines` rule counts each imperative line in every override body, kept or
@@ -700,3 +709,33 @@ total was raised. `ALLOW(init/CODE)` still has to name a reason code, but it no 
 an override goes to a form or to a named `setup(PROC_REF(x))` hook (`name_prefix(prefix)` for the "empty [name]" pattern), and the override
 is deleted with its last line. setup() hooks run when the instance's `Initialize()` chain has returned, before `after_init()`
 (`code/engine/lifeforms/setup.dm`).
+
+## O. Objects init burn-down forms (rewrite/init-objects, 2026-10-11)
+
+| ID | Form | Change |
+|---|---|---|
+| IO1 (DONE) | `initial_contents(nameof(type_var) \| pick_one(list) \| PROC_REF(x), chance = p)` (`code/engine/lifeforms/contents.dm`) | Rolled starting contents: x(datum/roller/R) answers a type, a list of types, `type = count`, or instances it made in nullspace; every draw comes from the holder's stream. Replaced the closets', kits', toolboxes', wallets' and crates' `if(prob()) new X(src)` and `switch(pick())` blocks. Tested by `dq_lifeform_rolled_contents`. |
+| IO2 (DONE) | `lives_for(nameof(var) \| delay)` (`code/engine/lifeforms/lifetimes.dm`) | The holder lapses that long after its init is complete; a var that is 0 when due means never. Replaced `if(time_to_die) expire(time_to_die)` (temporary effects and visuals, smoke, confetti). A constant lifetime stays `lifecycle_lifetime`. Tested by `dq_lifeform_lives_for`. |
+| IO3 (DONE) | `rolls(ROLL_PIXEL, WALL_OFFSET(x, y), when = nameof(building))` (`code/__defines/engine/lifeforms.dm`, `roll_generate()`) | The wall-mount offset a thing built in play takes from its dir (mirrors, extinguisher cabinets, paintings). Four machinery and power sites (doorbell, frame, petrification, lightswitch) can use it. |
+| IO4 (DONE) | `GLOB.derives_running` teardown | `lifeform_destroy()` LAZYREMOVE()d it to null, so every `derives()` after the first holder with one ended runtimed ("bad index"). It is a plain `-=` now. |
+| IO5 (open) | `rolls()` on a var whose compiled default is a list | `roll_target_untouched()` compares with `initial()`, which is null for a list var, so such a roll never runs. The closets' `rolls(nameof(starts_with), ...)` silently did nothing; they roll their extras through `initial_contents(PROC_REF(...))` now, and the crates' rolled `starts_with` defaults to null. A list target should compare with the type's pristine list (state_type_list_default() answers it for latent-safe types) or the declaration should be refused. |
+| IO6 (open) | A `setup()`/`after_init()` handler naming a proc inherited from a far ancestor (`PROC_REF(update_transform)` on `/obj/structure/flora`) | It failed to compile in the generated `declared_entries()` ("undefined type path"); a local wrapper proc works. dmb-check did not catch it. |
+
+## P. Mob init burn-down forms (rewrite/init-mob, 2026-10-10)
+
+| ID | Form | Change |
+|---|---|---|
+| MI1 (DONE) | `derives()` from a param-written relation | **The "bad index" was a nulled global** (the same fix as IO4, landed on both lanes): `lifeform_destroy()` ran `LAZYREMOVE(GLOB.derives_running, holder)`, which sets the list to null when it empties, so every `derives_compute()` after the first derives holder was destroyed indexed null. It now removes with `-=` and `derives_compute()` remakes the list if it is null. Separately, `param_write()` sets `param_writing` around its `rel_set()`, and `lifeform_published()` ignores writes while it is set: a param is written in `/atom/New()`, before the plan's init, which computes and joins from the written value anyway. The fusion field's `param(apply = PROC_REF(core_given))` workaround is gone: it declares `derives(nameof(id_tag), PROC_REF(core_tag), from = list(nameof(owned_core)))`. Test `dq_lifeform_derives_param`. |
+| MI2 (DONE) | `look_from(nameof(key), state =, item =, living =, dead =, rest =, only_if =)` (`code/library/lifeforms/look_from.dm`) | A family of icon states named after one var (`"mouse_*_sleep"`, `*` the key's value), written in the capability preinit, after `rolls()`. It took the `icon_state = "x_[body_color]"; set_icon_living(...); set_icon_dead(...)` tails of 14 types (chicken, lizard, mouse, mouse army, rabbit, the seven random-skin vore mobs, cat, fennec, spooky ghost, shadekin, snake snack). |
+| MI3 (DONE; closes IO5) | `rolls()` generators: `nameof(list var)` picks from the holder's own list (a type's `skins`); a `PROC_REF` roller is called `x(R, target)`, so one proc rolls several targets; a list var initialised `list(...)` counts as untouched (initial() does not return it); `range_of()` on a fractional step keeps `hi` (0.8 / 0.1 was 7.99) | `code/engine/lifeforms/rolls.dm`. |
+| MI4 (DONE) | `wears(item, slot, each =)` (`code/library/mob/wears.dm`) | Starting equipment: `item` a type or `nameof(var)` holding one, equipped in the capability init with `equip_to_slot_or_del()`; `each` fits it first (an ID card). Key: the slot. 193 `equip_to_slot_or_del(new ...)` sites exist repo-wide; the ai-controlled humans' 15 are converted. |
+| MI5 (DONE) | `body_effect(effect, when =)` (`code/library/mob/body_effect.dm`) | A body effect held from creation (`effect` a path or `nameof(var)`): imperion, the two ruby slimes, the replicant, the astral collective's rolled experiment. |
+| MI6 (DONE) | `knows(language, when =, speaks =, default =)` | `language` may be `nameof(var)` holding a language or a list (a simple mob's `has_langs`); `speaks = FALSE` leaves it out of a silicon's speech synthesizer; `default = TRUE` makes it (the first) the default language. |
+| MI7 (DONE) | `per_type(nameof(var), build)` calls `build(var_name)`; `/datum/proc/per_type_own` is the stock build that interns the type's own value | Replaces `x = shared_type_list(type, "x", x)` in `Initialize()` (simple mob attack texts, friendly texts, loot table, ID access; xenobio mutation table). Reference it as `TYPE_PROC_REF(/datum, per_type_own)`: `PROC_REF()` does not resolve a `/datum` proc from a mob's block. A writer copies first (the synx, expedition spawns). |
+| MI8 (DONE) | `derives()` calls `x(target)`; with no `from` it computes once, after the declared children exist | A starting value that depends on a child (the macrophage's disease bonus, the pitcher fruit's seed, the fleshtaker's base values). |
+| MI9 (DONE) | `cond_config(/datum/config_entry/flag/x)` (`code/engine/declare/relations.dm`) | A condition on a server config flag, for `verb_entry(when =)` and the other condition readers (a config-gated verb was a `grant()` in `Initialize()`). |
+| MI10 (DONE) | `finds(..., near = NEAR_LOC)` | Links what the holder is made inside (a voice and its communicator). |
+| MI11 (DONE) | `swarming()` declared on a type | The swarming capability gained an `on_holder_init` (offset and pairing at creation), so a type that always swarms declares it instead of `enable_swarming()` in `Initialize()`. |
+| MI12 (DONE) | `/datum/effect/effect/system/ion_trail_follow/New(atom, start_now)` | A declared ion trail (`owns_one(..., starts = ..., starts_args = list(TRUE))`) follows its holder and is lit from creation. |
+| MI13 (DONE) | Phase contract: `/mob/Initialize()` calls `update_transform()` after `..()` | Rolled sizes and icon scales (preinit) show from creation. |
+| MI14 (DONE, part) | Mob bodies made before parent init: `owns_one`/`owns_many(..., early = TRUE)` | Phase 0 of the init contract (final_api.html section 6): `InitAtom()` builds the early occupants before the `Initialize()` chain, after the params `/atom/New()` wrote (`own_init_starts(..., early_pass = TRUE)`; `own_table.early_vars`). The AI's radio and laws and the human's DNA are early: the code before `..()` that stays (an AI taking its brain's mind and greeting it, a human's `set_species()`) reads them. What the old code did before `..()` only by habit moved to the ordinary phases (the AI's name, announcement, PDA and languages; the robot's screen and languages). Left: the human's `set_species()` (the body itself), the robot's `setup_*()` chain (virtual steps its subtypes override), the observer copying the body it leaves. |

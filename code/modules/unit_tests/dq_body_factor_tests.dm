@@ -313,7 +313,7 @@
 	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn, C)
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT), 0, "a fully charged brute shield should absorb everything")
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
-	C.charge = 0
+	C.set_charge(0)
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT) > 0, "an empty shield should let the hit through")
 	TEST_ASSERT(dq_near(H.factor(BF_SIEMENS), 2), "the shield's conductivity is an ordinary factor")
 

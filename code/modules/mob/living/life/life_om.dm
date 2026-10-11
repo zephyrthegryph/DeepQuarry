@@ -7,6 +7,7 @@
 /// A living mob runs Life while it is in the world.
 /mob/living/on_materialize()
 	. = ..()
+	life_update_relevance() // its z-level's presence list, for a low-priority mob (was in Initialize())
 	seq_start(src, /datum/sequence/life)
 	// Trait states attached before the mob was live (species and trait setup in Initialize) contribute their steps now.
 	for(var/datum/trait_state/S as anything in trait_states)

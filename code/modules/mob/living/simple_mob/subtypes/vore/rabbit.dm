@@ -49,19 +49,8 @@
 	var/grump_decay = 5 SECONDS // This is how quickly our grumpiness decays.
 
 CAPABILITIES(/mob/living/simple_mob/vore/rabbit)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
-
-// ALLOW(init/INSTANCE_STATE): rolls its fur colour
-/mob/living/simple_mob/vore/rabbit/Initialize(mapload)
-	. = ..()
-
-	if(!body_color)
-		body_color = pick( list("brown","black","white") )
-	icon_state = "rabbit_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	item_state = "rabbit_[body_color]"
-	set_icon_living("rabbit_[body_color]")
-	set_icon_dead("rabbit_[body_color]_dead")
-	set_icon_rest("rabbit_[body_color]_rest")
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "rabbit_*", item = "rabbit_*", living = "rabbit_*", dead = "rabbit_*_dead", rest = "rabbit_*_rest")
 
 /mob/living/simple_mob/vore/rabbit/life_type_post_due()
 	return TRUE

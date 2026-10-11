@@ -245,12 +245,12 @@ CAPABILITIES(/obj/item/glamour_face)
 	var/connected_mob
 	var/area_name
 
-// ALLOW(init/INSTANCE_STATE): names itself after the area it is placed in
-/obj/structure/glamour_ring/Initialize(mapload)
-	. = ..()
+// It is named after the area it is placed in (rolls(), in its CAPABILITIES).
+/obj/structure/glamour_ring/proc/placed_in(datum/roller/R, target)
+	if(target == "name")
+		return "[area_name] glamour ring"
 	var/area/A = get_area(src)
-	area_name = A.name
-	name = "[area_name] glamour ring"
+	return A?.name
 
 MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines of the glamour ring."))
 
@@ -269,6 +269,8 @@ MSG_DEF_SELF(glamour_ring/breaking, span_warning("You begin to break the lines o
 /// Old attack_hand: the ring's connected lleill (or anyone) is asked whether to break it, and its owner whether to restore energy instead.
 CAPABILITIES(/obj/structure/glamour_ring)
 	op("ring_hand", hand(), ungated(), label("Use"), needs(req(PROC_REF(ring_connected), silent = TRUE)), asks(/datum/prompt/choice, fields = list("title" = "Destroy ring", "question" = computed(PROC_REF(ring_question)), "choices" = computed(PROC_REF(ring_choices)), "buttons" = TRUE, "ask_flags" = ASK_NEAR_SUBJECT | ASK_CAPABLE, "timeout" = 0), step = "action"), begins(PROC_REF(ring_begins)), wait(PROC_REF(ring_wait)), on_interrupt(PROC_REF(ring_interrupted)), then(PROC_REF(ring_action_chosen)))
+	rolls(nameof(area_name), PROC_REF(placed_in))
+	rolls(nameof(name), PROC_REF(placed_in), from = list(nameof(area_name)))
 
 /obj/structure/glamour_ring/proc/ring_connected(datum/act/op/A)
 	return (read_once(istype(connected_mob, /mob/living/carbon/human))) ? null : /datum/msg/req_silent

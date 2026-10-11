@@ -31,16 +31,9 @@
 	if(from)
 		inherit_information(from)
 
-// ALLOW(init/INSTANCE_STATE): a slime shares its type's mutation table and is numbered before its parents' init
-/mob/living/simple_mob/slime/xenobio/Initialize(mapload)
-	if(slime_mutation)
-		slime_mutation = shared_type_list(type, "slime_mutation", slime_mutation)
-	//legacy ASSERT against ai_holder_type removed; slimes now use the
-	// brain framework and /datum/slime_state for discipline.
-	number = rand(1, 1000)
-	update_name()
-
-	. = ..()
+/// A wild slime is named for its colour, age and number (rolls(), after its number; a docile one keeps its name).
+/mob/living/simple_mob/slime/xenobio/proc/roll_slime_name(datum/roller/R)
+	return "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
 
 
 // it lets go of its victim.

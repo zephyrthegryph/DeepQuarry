@@ -12,6 +12,13 @@
 	if(var_name == NAMEOF(src, vars))
 		return FALSE
 	datum_flags |= DF_VAR_EDITED
+	// A trait field (VV lists `@kind.field`; SDQL may name the old var): the holder's own copy of its trait block, through set_trait().
+	if(!(var_name in vars))
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(!trait_field)
+			return FALSE
+		set_trait(src, trait_field[1], trait_field[2], var_value)
+		return TRUE
 	// A var with a registered setter is edited through it, so everything that reacts to the change
 	// reacts to an admin's edit too (dx_conventions.md §1).
 	// Only a registered setter (TRACKED or SETTER): a proc merely named set_<x> may be a verb or take
@@ -27,6 +34,10 @@
 	switch(var_name)
 		if (NAMEOF(src, vars))
 			return debug_variable(var_name, list(), 0, src)
+	if(!(var_name in vars))
+		var/list/trait_field = type_trait_field_named(src, var_name)
+		if(trait_field)
+			return debug_variable(var_name, type_trait_of(src, trait_field[1]).vars[trait_field[2]], 0, src)
 	return debug_variable(var_name, vars[var_name], 0, src)
 
 /**

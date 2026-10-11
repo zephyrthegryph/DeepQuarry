@@ -152,24 +152,37 @@ CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
 	say_maybe_target = list("Sqk?")
 	say_got_target = list("SQUEAK!!!")
 
-/mob/living/simple_mob/vore/squirrel/Initialize(mapload)
-	. = ..()
-	if(do_seasons)
-		switch(GLOB.world_time_season)
-			if("spring")
-				if(prob(1))
-					winterize()
-			if("summer")
-				pass()
-			if("autumn")
-				vore_bump_chance = 20
-				if(prob(50))
-					winterize()
-					vore_bump_chance = 20
-					return
-			if("winter")
-				winterize()
-				return
+// A wild squirrel follows the season: plumped up for winter (always in winter, half the time in autumn, rarely in spring) and, in autumn,
+// keener to pounce.
+CAPABILITIES(/mob/living/simple_mob/vore/squirrel)
+	rolls(nameof(winter_coat), PROC_REF(roll_season), when = nameof(do_seasons))
+	rolls(nameof(vore_bump_chance), PROC_REF(roll_season), when = nameof(do_seasons))
+	after_init(0, then(PROC_REF(season_coat)))
+
+/// It is wearing its winter coat (rolls(): winterize() puts it on once its init is complete).
+/mob/living/simple_mob/vore/squirrel/var/winter_coat = FALSE
+
+/mob/living/simple_mob/vore/squirrel/proc/roll_season(datum/roller/R, target)
+	switch(target)
+		if("winter_coat")
+			switch(GLOB.world_time_season)
+				if("spring")
+					return R.chance(1)
+				if("autumn")
+					return R.chance(50)
+				if("winter")
+					return TRUE
+			return FALSE
+		if("vore_bump_chance")
+			return GLOB.world_time_season == "autumn" ? 20 : vore_bump_chance
+
+/mob/living/simple_mob/vore/squirrel/proc/season_coat(datum/act/timer/A)
+	if(!winter_coat)
+		return
+	var/bump = vore_bump_chance
+	winterize()
+	if(GLOB.world_time_season == "autumn")
+		vore_bump_chance = bump // an autumn squirrel stays as keen in its winter coat
 
 /// The eyes, drawn unaffected by the tint of the body.
 /mob/living/simple_mob/vore/squirrel/draw(datum/look/look)

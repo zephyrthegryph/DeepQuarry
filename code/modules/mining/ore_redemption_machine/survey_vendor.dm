@@ -9,12 +9,9 @@
 	icon_deny = "exploration-deny"
 	icon_vend = "exploration-vend"
 
-/obj/machinery/mineral/equipment_vendor/survey/Initialize(mapload)
-	. = ..()
-	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
-	// record, freed in on_destroy()). Rebuilt per vendor type here.
-	prize_list = list()
-	prize_list["Gear"] = list(
+/obj/machinery/mineral/equipment_vendor/survey/build_prize_list()
+	. = list()
+	.["Gear"] = list(
 		EQUIPMENT("Brown Webbing",									/obj/item/clothing/accessory/storage/brown_vest,							500),
 		EQUIPMENT("Defense Equipment - Smoke Bomb",					/obj/item/grenade/smokebomb,												10),
 		EQUIPMENT("Defense Equipment - Razor Drone Deployer",		/obj/item/grenade/spawnergrenade/manhacks/station/locked,					100),
@@ -61,7 +58,7 @@
 		EQUIPMENT("Survival Equipment - Pathfinder Belt",			/obj/item/storage/belt/explorer/pathfinder,									200),
 		EQUIPMENT("Exotic Sample Container",						/obj/item/storage/sample_container,											100),
 	)
-	prize_list["Consumables"] = list(
+	.["Consumables"] = list(
 		EQUIPMENT("1 Marker Beacon",								/obj/item/stack/marker_beacon,												1),
 		EQUIPMENT("10 Marker Beacons",								/obj/item/stack/marker_beacon/ten,											10),
 		EQUIPMENT("30 Marker Beacons",								/obj/item/stack/marker_beacon/thirty,										30),
@@ -77,7 +74,7 @@
 		EQUIPMENT("Oxy Medipen",									/obj/item/reagent_containers/hypospray/autoinjector/oxy,					25),
 		EQUIPMENT("Trauma Medipen",									/obj/item/reagent_containers/hypospray/autoinjector/trauma,					25),
 	)
-	prize_list["Digging Tools"] = list(
+	.["Digging Tools"] = list(
 		EQUIPMENT("Survey Tools - Shovel",							/obj/item/shovel,															40),
 		EQUIPMENT("Survey Tools - Mechanical Trap",					/obj/item/beartrap,															50),
 		EQUIPMENT("Survey Tools - Binoculars",						/obj/item/binoculars,														40),
@@ -86,7 +83,7 @@
 		EQUIPMENT("Fine Excavation Kit - Measuring Tape",			/obj/item/measuring_tape,													10),
 
 	)
-	prize_list["Shelter Capsules"] = list(
+	.["Shelter Capsules"] = list(
 		EQUIPMENT("Shelter Capsule - Shelter (5x5)",				/obj/item/survivalcapsule,									50),
 		EQUIPMENT("Shelter Capsule - Pocket Dorm (5x5)",			/obj/item/survivalcapsule/pocketdorm,						50),
 		EQUIPMENT("Shelter Capsule - Kitchen (7x7)",				/obj/item/survivalcapsule/kitchen,							310),
@@ -100,7 +97,7 @@
 		EQUIPMENT("Shelter Capsule - Deluxe Cabin (11x11)",			/obj/item/survivalcapsule/luxurycabin,						1000),
 		EQUIPMENT("Shelter Capsule - Cafe (11x11)",					/obj/item/survivalcapsule/cafe,								1000),
 	)
-	prize_list["Miscellaneous"] = list(
+	.["Miscellaneous"] = list(
 		EQUIPMENT(REAGENT_ABSINTHE,									/obj/item/reagent_containers/food/drinks/bottle/absinthe,					10),
 		EQUIPMENT(REAGENT_WHISKEY,									/obj/item/reagent_containers/food/drinks/bottle/whiskey,					10),
 		EQUIPMENT("Cigar",											/obj/item/clothing/mask/smokable/cigarette/cigar/havana,					15),

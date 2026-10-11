@@ -922,11 +922,13 @@ CAPABILITIES(/obj/structure/control_pod)
 	icon = 'icons/obj/landmark_vr.dmi'
 	icon_state = "transition"
 
-// ALLOW(init/INSTANCE_STATE): names itself after the area it is placed in
-/obj/effect/landmark/stardog/Initialize(mapload)
-	. = ..()
+// It is named after the area it is placed in (the dog lands by area name).
+CAPABILITIES(/obj/effect/landmark/stardog)
+	rolls(nameof(name), PROC_REF(area_name))
+
+/obj/effect/landmark/stardog/proc/area_name(datum/roller/R)
 	var/area/a = get_area(src)
-	name = a.name
+	return a ? a.name : name
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye
 	name = "visual nexus"
@@ -997,8 +999,6 @@ MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 	name = "eye"
 	icon_state = "bluwhicir"
 
-	var/list/our_eyes
-
 /area/redgate/stardog/eyes/Entered(mob/M)
 	. = ..()
 	consider_eyes()
@@ -1009,10 +1009,12 @@ MSG_DEF_SELF(ship_emote/incapable, "you can't do that right now")
 
 /area/redgate/stardog/eyes/proc/consider_eyes()	//CONSIDER THEM PLEASE
 	var/close = FALSE
+	var/list/our_eyes = list()
 	var/list/check = get_area_turfs(/area/redgate/stardog/eyes)
 	for(var/turf/t in check)
 		for(var/thing in contents_of(t))
 			if(istype(thing, /obj/effect/dog_eye))	//We can have eyes in our eyes, it's fine
+				our_eyes += thing
 				continue
 			if(isobserver(thing))	//Ghosts aren't real
 				continue
@@ -1060,12 +1062,6 @@ CAPABILITIES(/obj/effect/dog_nose)
 	if(L.client)
 		to_chat(L, span_notice("A hot breath rushes up from under your feet, before the air rushes back down into the dog's nose as the dog sniffs you! SNEEF SNEEF!!!"))
 
-/obj/effect/dog_eye/Initialize(mapload)
-	. = ..()
-	var/area/redgate/stardog/eyes/e = get_area(src)
-	if(istype(e,/area/redgate/stardog/eyes))
-		rel_add(e, nameof(e.our_eyes), src)
-
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"
 	desc = "It's waiting to accept treats!"
@@ -1075,7 +1071,6 @@ CAPABILITIES(/obj/effect/dog_nose)
 	anchored = TRUE
 	pixel_x = -16
 	var/id = "mouth_a"							//same id will be linked
-	var/static/list/dog_teleporters = list()	//List of all the teleporters
 	var/reciever = FALSE						//If true, doesn't teleport, only recieves
 	var/obj/effect/dog_teleporter/target		//Target for teleporting to, automatically set by id
 	var/throw_through = TRUE					//When moved the mob/obj will be thrown south
@@ -1084,20 +1079,13 @@ CAPABILITIES(/obj/effect/dog_nose)
 	var/check_keys = FALSE
 	var/check_prefs = TRUE
 
-/obj/effect/dog_teleporter/Initialize(mapload)
-	. = ..()
-	rel_add(src, nameof(dog_teleporters), src)
-	do_setup()
-	if(icon_state == "exit_b")	//♪♫Blinded by the light♪♫
-		set_light(5, 1, "#ffffff")
+// Every teleporter, for pairing by id (do_setup() pairs a sender on its first use).
+REGISTRY_MEMBERSHIP(/obj/effect/dog_teleporter, REGISTRY_DOG_TELEPORTERS)
 
 /obj/effect/dog_teleporter/proc/do_setup()
 	if(target)
 		return
-	for(var/obj/effect/dog_teleporter/T in dog_teleporters.Copy())
-		if(!istype(T,/obj/effect/dog_teleporter))
-			rel_remove(src, nameof(dog_teleporters), T)
-			continue
+	for(var/obj/effect/dog_teleporter/T as anything in REGISTRY_MEMBERS(REGISTRY_DOG_TELEPORTERS))
 		if(id == T.id)
 			if(T == src)
 				continue
@@ -1219,6 +1207,10 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	id = "mouth_b"
 
 /obj/effect/dog_teleporter/exit
+	light_range = 5	//♪♫Blinded by the light♪♫
+	light_power = 1
+	light_color = "#ffffff"
+	light_on = TRUE
 	name = "exit"
 	desc = "You can see the light at the end of the tunnel!"
 	icon_state = "exit_b"
@@ -1229,6 +1221,10 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	check_prefs = FALSE	//We don't have to worry about it on the way out
 
 /obj/effect/dog_teleporter/mouth_return
+	light_range = 5	//♪♫Blinded by the light♪♫
+	light_power = 1
+	light_color = "#ffffff"
+	light_on = TRUE
 	name = "light"
 	desc = "You can see the light shining in from above!"
 	icon_state = "exit_b"

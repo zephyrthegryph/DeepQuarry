@@ -57,12 +57,10 @@
 	var/category_implants	 = 1
 	var/category_event		 = 1	//For special events, holidays, etc
 
-/obj/machinery/casino_prize_dispenser/Initialize(mapload)
-	. = ..()
-	power_change()
-
-	item_list = list()
-	item_list["Weapons"] = list(
+/// The prize table, one per dispenser type (per_type()).
+/obj/machinery/casino_prize_dispenser/proc/build_item_list()
+	. = list()
+	.["Weapons"] = list(
 		CASINO_PRIZE("Scepter", /obj/item/scepter, 1, 500, "weapons"),
 		CASINO_PRIZE("Chain of Command", /obj/item/melee/chainofcommand, 1, 250, "weapons"),
 		CASINO_PRIZE("Size Gun", /obj/item/gun/energy/sizegun, 1, 100, "weapons"),
@@ -72,7 +70,7 @@
 		CASINO_PRIZE("Floral Gun", /obj/item/gun/energy/floragun, 1, 250, "weapons"),
 		CASINO_PRIZE("Net Gun", /obj/item/gun/energy/netgun, 1, 500, "weapons"),
 	)
-	item_list["Gear"] = list(
+	.["Gear"] = list(
 		CASINO_PRIZE("Experimental Welder", /obj/item/weldingtool/experimental, 1, 500, "gear"),
 		CASINO_PRIZE("Alien Belt", /obj/item/storage/belt/utility/alien, 1, 500, "gear"),
 		CASINO_PRIZE("Alien Armor", /obj/item/clothing/suit/armor/alien, 1, 1000, "gear"),
@@ -82,7 +80,7 @@
 		CASINO_PRIZE("Bluespace Beaker", /obj/item/reagent_containers/glass/beaker/bluespace, 1, 200, "gear"),
 		CASINO_PRIZE("Cryo Beaker", /obj/item/reagent_containers/glass/beaker/noreact, 1, 200, "gear"),
 	)
-	item_list["Clothing"] = list(
+	.["Clothing"] = list(
 		CASINO_PRIZE("Purple cap", /obj/item/clothing/head/soft/purple/wah, 1, 50, "clothing"),
 		CASINO_PRIZE("Shark mask", /obj/item/clothing/mask/shark, 1, 50, "clothing"),
 		CASINO_PRIZE("Pig mask", /obj/item/clothing/mask/pig, 1, 50, "clothing"),
@@ -109,7 +107,7 @@
 		CASINO_PRIZE("Plague doctor costume", /obj/item/storage/box/casino/costume_plaguedoctor, 1, 100, "clothing"),
 		CASINO_PRIZE("Witch costume", /obj/item/storage/box/casino/costume_cutewitch, 1, 100, "clothing"),
 	)
-	item_list["Miscellaneous"] = list(
+	.["Miscellaneous"] = list(
 		CASINO_PRIZE("Toy sword", /obj/item/toy/sword, 1, 50, "misc"),
 		CASINO_PRIZE("Waterflower", /obj/item/reagent_containers/spray/waterflower, 1, 50, "misc"),
 		CASINO_PRIZE("Horse stick", /obj/item/toy/stickhorse, 1, 50, "misc"),
@@ -145,7 +143,7 @@
 		CASINO_PRIZE("Instrument: Saxophone (warning: spooky)", /obj/item/instrument/saxophone/spectral, 1, 200, "misc"),
 		CASINO_PRIZE("Instrument: Musical Moth (you monster)", /obj/item/instrument/musicalmoth, 1, 100, "misc"),
 	)
-	item_list["Drinks"] = list(
+	.["Drinks"] = list(
 		CASINO_PRIZE("Redeemer's brew", /obj/item/reagent_containers/food/drinks/bottle/redeemersbrew, 1, 50, "drinks"),
 		CASINO_PRIZE("Poison wine", /obj/item/reagent_containers/food/drinks/bottle/pwine, 1, 50, "drinks"),
 		CASINO_PRIZE(REAGENT_PATRON, /obj/item/reagent_containers/food/drinks/bottle/patron, 1, 50, "drinks"),
@@ -156,7 +154,7 @@
 		CASINO_PRIZE("Whiskey bliss", /obj/item/reagent_containers/food/drinks/bottle/specialwhiskey, 1, 50, "drinks"),
 		CASINO_PRIZE("Snaps", /obj/item/reagent_containers/food/drinks/bottle/snaps, 1, 50, "drinks"),
 	)
-	item_list["Pets"] = list(
+	.["Pets"] = list(
 		CASINO_PRIZE("Casino Geese", /obj/item/grenade/spawnergrenade/casino, 1, 200, "pets"),
 		CASINO_PRIZE("Goat", /obj/item/grenade/spawnergrenade/casino/goat, 1, 150, "pets"),
 		CASINO_PRIZE("Armadillo", /obj/item/grenade/spawnergrenade/casino/armadillo, 1, 150, "pets"),
@@ -177,7 +175,7 @@
 		CASINO_PRIZE("Absolute unit of an Otie", /obj/item/grenade/spawnergrenade/casino/otie/chubby, 1, 500, "pets"),
 		CASINO_PRIZE("Zorgoia", /obj/item/grenade/spawnergrenade/casino/zorgoia, 1, 500, "pets"),
 	)
-	item_list["Mechs and Rigs"] = list(
+	.["Mechs and Rigs"] = list(
 		CASINO_PRIZE("Mech:Mining Ripley", /obj/item/grenade/spawnergrenade/casino/gygax/mining, 1, 1000, "mechs"),
 		CASINO_PRIZE("Mech:Firefighter Ripley", /obj/item/grenade/spawnergrenade/casino/gygax/firefighter, 1, 750, "mechs"),
 		CASINO_PRIZE("Mech:Serenity", /obj/item/grenade/spawnergrenade/casino/gygax/serenity, 1, 1500, "mechs"),
@@ -197,7 +195,7 @@
 		CASINO_PRIZE("Rig: Industrial suit control module", /obj/item/rig/industrial, 1, 300, "mechs"),
 		CASINO_PRIZE("Rig: Rescue suit control module", /obj/item/rig/medical, 1, 300, "mechs"),
 	)
-	item_list["Implants and Genemods"] = list(
+	.["Implants and Genemods"] = list(
 		CASINO_PRIZE("Implanter (Remember to get one unless you want to borrow from station!)", /obj/item/implanter, 1, 100, "implants"),
 		CASINO_PRIZE("Implant: Tazer", /obj/item/implantcase/taser, 1, 1000, "implants"),
 		CASINO_PRIZE("Implant: Medkit", /obj/item/implantcase/medkit, 1, 500, "implants"),
@@ -225,7 +223,7 @@
 		CASINO_PRIZE("Genemod: X-ray", /obj/item/dnainjector/set_trait/xray, 1, 1000, "implants"),
 	)
 
-	item_list["Event"] = list(
+	.["Event"] = list(
 	)
 
 /obj/machinery/casino_prize_dispenser/power_change()
@@ -293,6 +291,8 @@
 	return data
 
 CAPABILITIES(/obj/machinery/casino_prize_dispenser)
+	per_type(nameof(item_list), PROC_REF(build_item_list))
+	setup(PROC_REF(power_change)) // the dispenser shows its powered or unpowered face from the start, map-loaded too
 	configure(uses_power(idle = 10))
 	interface("CasinoPrizeDispenser")
 	without("ui_open")

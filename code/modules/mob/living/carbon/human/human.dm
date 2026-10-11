@@ -31,46 +31,33 @@
 	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_species, null)
-TYPE_TABLE_DECLARE(/mob/living/carbon/human, forced_initial_faction, null)
 TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 
-/// The species a human is made as (its constructor param), or null for the default.
+/// A human is named by its species, for its gender (rolls(), after set_species() ran before its parents' init).
+/mob/living/carbon/human/proc/roll_species_name(datum/roller/R, target)
+	if(target == "name")
+		return real_name
+	return species ? species.get_random_name(gender) : real_name
+
+/// Every underwear category starts shown (derives(), once at init).
+/mob/living/carbon/human/proc/underwear_all_shown(target)
+	. = list()
+	for(var/category in GLOB.global_underwear.categories_by_name)
+		.[category] = FALSE
+
+/// The species a human is made as (its constructor param, or a species subtype's own), or null for the default.
 /mob/living/carbon/human/var/species_at_make // ALLOW(base_vars): param() carries the constructor's species into init through a var of the type it declares
 
 // ALLOW(init/INSTANCE_STATE): a human sets up its species, DNA, blood, underwear and look around its parents' init
 /mob/living/carbon/human/Initialize(mapload)
-	var/forced_species = TYPE_TABLE_GET(src, forced_initial_species)
-	if(forced_species)
-		species_at_make = forced_species
-	var/forced_faction = TYPE_TABLE_GET(src, forced_initial_faction)
-	if(forced_faction)
-		faction = forced_faction
-	if(!dna)
-		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
-		// Species name is handled by set_species()
-
+	// its DNA exists already (an early starting occupant): set_species() writes into it
 	if(!species)
 		if(species_at_make)
 			set_species(species_at_make)
 		else
 			set_species()
 
-	if(species)
-		real_name = species.get_random_name(gender)
-		name = real_name
-		if(mind)
-			mind.name = real_name
-
-	set_nutrition(rand(200,400))
-	if(forced_species)
-		. = ..(mapload, forced_species)
-	else
-		. = ..()
-
-	hide_underwear.Cut()
-	for(var/category in GLOB.global_underwear.categories_by_name)
-		hide_underwear[category] = FALSE
+	. = ..()
 
 	if(dna)
 		dna.ready_dna(src)
@@ -79,8 +66,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		sync_organ_dna()
 	initialize_vessel()
 	regenerate_icons()
-
-	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")

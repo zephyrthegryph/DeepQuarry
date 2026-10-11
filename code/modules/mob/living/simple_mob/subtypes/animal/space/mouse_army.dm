@@ -58,23 +58,10 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
-
-// ALLOW(init/INSTANCE_STATE): rolls its number and its rank
-/mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
-	. = ..()
-
-
-	if(name == initial(name))
-		name = "[name] ([rand(1, 1000)])"
-	real_name = name
-
-	if(!rank)
-		rank = pick( list("operative","pyro", "ammo", "stealth") )
-	icon_state = "mouse_[rank]" // ALLOW(decl): Initialize picks the mouse's icon from a random rank; a declaration has no random form
-	item_state = "mouse_[rank]"
-	set_icon_living("mouse_[rank]")
-	set_icon_dead("mouse_[rank]_dead")
-	set_icon_rest("mouse_[rank]_sleep")
+	rolls(nameof(name), PROC_REF(roll_numbered_name))
+	rolls(nameof(real_name), PROC_REF(roll_real_name), from = list(nameof(name)))
+	rolls(nameof(rank), pick_one(list("operative", "pyro", "ammo", "stealth")), when = cond_not(nameof(rank)))
+	look_from(nameof(rank), state = "mouse_*", item = "mouse_*", living = "mouse_*", dead = "mouse_*_dead", rest = "mouse_*_sleep")
 
 /mob/living/simple_mob/animal/space/mouse_army/Crossed(AM as mob|obj)
 	var/mob/SK = AM

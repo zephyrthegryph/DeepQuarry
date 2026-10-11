@@ -38,15 +38,8 @@
 	faction = FACTION_CATGIRL
 
 CAPABILITIES(/mob/living/simple_mob/vore/catgirl)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
-
-// ALLOW(init/INSTANCE_STATE): rolls its skin when its type says to
-/mob/living/simple_mob/vore/catgirl/Initialize(mapload)
-	. = ..()
-	if(random_skin)
-		set_icon_living(pick(skins))
-		set_icon_rest("[icon_living]asleep")
-		set_icon_dead("[icon_living]-dead")
+	rolls(nameof(icon_living), nameof(skins), when = nameof(random_skin))
+	look_from(nameof(icon_living), rest = "*asleep", dead = "*-dead", only_if = nameof(random_skin))
 
 // Activate Noms!
 /mob/living/simple_mob/vore/catgirl

@@ -51,21 +51,27 @@
 /mob/living/bot/proc/ui_fingerprint(datum/act/op/A)
 	add_fingerprint(A.actor)
 
-/mob/living/bot/Initialize(mapload)
-	. = ..()
+/// Its ID card opens what its type says (owns_one(starts =)).
+/mob/living/bot/proc/start_botcard(current, mapload)
+	var/obj/item/card/id/card = new /obj/item/card/id(src)
+	card.access = botcard_access.Copy()
+	return card
 
-	botcard.access = botcard_access.Copy()
+/// What it checks for access before taking orders (owns_one(starts =)).
+/mob/living/bot/proc/start_access_scanner(current, mapload)
+	var/obj/scanner = new /obj(src)
+	scanner.req_access = req_access.Copy()
+	scanner.req_one_access = req_one_access.Copy()
+	return scanner
 
-	access_scanner.req_access = req_access.Copy()
-	access_scanner.req_one_access = req_one_access.Copy()
+/// A map that has bots stay put keeps every bot from patrolling (rolls(): the map's setting, read as it is made).
+/mob/living/bot/proc/map_patrol(datum/roller/R)
+	return using_map.bot_patrolling ? will_patrol : FALSE
 
-	if(!using_map.bot_patrolling)
-		will_patrol = FALSE
-
+/// A bot made switched on starts working: its light and its target state (setup()).
+/mob/living/bot/proc/start_switched_on()
 	if(on)
-		turn_on() // Update lights and other stuff
-	update_icons()
-	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
+		turn_on()
 
 /// Bots shrug off stuns and run their AI (the old bot Life() tail after ..()).
 /mob/living/bot/proc/life_bot_core(datum/seq_frame/life/F)
@@ -693,8 +699,11 @@ CAPABILITIES(/mob/living/bot)
 	silicon_hand()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
 	ref_many(nameof(ignore_list))
-	owns_one(nameof(botcard), starts = /obj/item/card/id)
-	owns_one(nameof(access_scanner), starts = /obj)
+	owns_one(nameof(botcard), starts = PROC_REF(start_botcard))
+	owns_one(nameof(access_scanner), starts = PROC_REF(start_access_scanner))
+	rolls(nameof(will_patrol), PROC_REF(map_patrol))
+	knows(LANGUAGE_GALCOM, default = TRUE)
+	setup(PROC_REF(start_switched_on))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 

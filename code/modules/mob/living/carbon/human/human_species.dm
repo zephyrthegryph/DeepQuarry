@@ -55,109 +55,139 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran, forced_initial_species, SPECIES_TAJARAN)
-CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
+/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
+	species_at_make = SPECIES_TAJARAN
+/mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
+	h_style = "Tajaran Ears"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/unathi
 	icon = 'icons/mob/human_races/r_lizard.dmi'
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi, forced_initial_species, SPECIES_UNATHI)
-CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/unathi)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
+/mob/living/carbon/human/dummy/mannequin/autoequip/unathi
+	species_at_make = SPECIES_UNATHI
+/mob/living/carbon/human/dummy/mannequin/autoequip/unathi
+	h_style = "Unathi Horns"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/sergal
 	icon = 'icons/mob/human_races/r_sergal.dmi' // our icons
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal, forced_initial_species, SPECIES_SERGAL)
-CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/sergal)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Ears"))
+/mob/living/carbon/human/dummy/mannequin/autoequip/sergal
+	species_at_make = SPECIES_SERGAL
+/mob/living/carbon/human/dummy/mannequin/autoequip/sergal
+	h_style = "Sergal Ears"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
 	icon = 'icons/mob/human_races/r_vulpkanin.dmi'
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin, forced_initial_species, SPECIES_VULPKANIN)
-CAPABILITIES(/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "vulpkanin, dual-color"))
+/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
+	species_at_make = SPECIES_VULPKANIN
+/mob/living/carbon/human/dummy/mannequin/autoequip/vulpkanin
+	h_style = "vulpkanin, dual-color"
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari
 	icon = 'icons/mob/human_races/r_teshari.dmi'
-TYPE_TABLE(/mob/living/carbon/human/dummy/mannequin/autoequip/teshari, forced_initial_species, SPECIES_TESHARI)
+/mob/living/carbon/human/dummy/mannequin/autoequip/teshari
+	species_at_make = SPECIES_TESHARI
 
-TYPE_TABLE(/mob/living/carbon/human/skrell, forced_initial_species, SPECIES_SKRELL)
-CAPABILITIES(/mob/living/carbon/human/skrell)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Skrell Short Tentacles"))
+/mob/living/carbon/human/skrell
+	species_at_make = SPECIES_SKRELL
+/mob/living/carbon/human/skrell
+	h_style = "Skrell Short Tentacles"
 
-TYPE_TABLE(/mob/living/carbon/human/tajaran, forced_initial_species, SPECIES_TAJARAN)
-CAPABILITIES(/mob/living/carbon/human/tajaran)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Tajaran Ears"))
+/mob/living/carbon/human/tajaran
+	species_at_make = SPECIES_TAJARAN
+/mob/living/carbon/human/tajaran
+	h_style = "Tajaran Ears"
 
-TYPE_TABLE(/mob/living/carbon/human/unathi, forced_initial_species, SPECIES_UNATHI)
-CAPABILITIES(/mob/living/carbon/human/unathi)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Unathi Horns"))
+/mob/living/carbon/human/unathi
+	species_at_make = SPECIES_UNATHI
+/mob/living/carbon/human/unathi
+	h_style = "Unathi Horns"
 
-TYPE_TABLE(/mob/living/carbon/human/vox, forced_initial_species, SPECIES_VOX)
-CAPABILITIES(/mob/living/carbon/human/vox)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Short Vox Quills"))
+/mob/living/carbon/human/vox
+	species_at_make = SPECIES_VOX
+/mob/living/carbon/human/vox
+	h_style = "Short Vox Quills"
 
-TYPE_TABLE(/mob/living/carbon/human/diona, forced_initial_species, SPECIES_DIONA)
+/mob/living/carbon/human/diona
+	species_at_make = SPECIES_DIONA
 
-TYPE_TABLE(/mob/living/carbon/human/teshari, forced_initial_species, SPECIES_TESHARI)
-CAPABILITIES(/mob/living/carbon/human/teshari)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Teshari Default"))
+/mob/living/carbon/human/teshari
+	species_at_make = SPECIES_TESHARI
+/mob/living/carbon/human/teshari
+	h_style = "Teshari Default"
 
-TYPE_TABLE(/mob/living/carbon/human/promethean, forced_initial_species, SPECIES_PROMETHEAN)
+/mob/living/carbon/human/promethean
+	species_at_make = SPECIES_PROMETHEAN
 
-TYPE_TABLE(/mob/living/carbon/human/zaddat, forced_initial_species, SPECIES_ZADDAT)
+/mob/living/carbon/human/zaddat
+	species_at_make = SPECIES_ZADDAT
 
 /mob/living/carbon/human/monkey
 	low_sorting_priority = TRUE
 
-TYPE_TABLE(/mob/living/carbon/human/monkey, forced_initial_species, SPECIES_MONKEY)
+/mob/living/carbon/human/monkey
+	species_at_make = SPECIES_MONKEY
 TYPE_TABLE(/mob/living/carbon/human/monkey, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/farwa
 	low_sorting_priority = TRUE
 
-TYPE_TABLE(/mob/living/carbon/human/farwa, forced_initial_species, SPECIES_MONKEY_TAJ)
+/mob/living/carbon/human/farwa
+	species_at_make = SPECIES_MONKEY_TAJ
 TYPE_TABLE(/mob/living/carbon/human/farwa, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/neaera
 	low_sorting_priority = TRUE
 
-TYPE_TABLE(/mob/living/carbon/human/neaera, forced_initial_species, SPECIES_MONKEY_SKRELL)
+/mob/living/carbon/human/neaera
+	species_at_make = SPECIES_MONKEY_SKRELL
 TYPE_TABLE(/mob/living/carbon/human/neaera, initial_species_copy, TRUE)
 
 /mob/living/carbon/human/stok
 	low_sorting_priority = TRUE
 
-TYPE_TABLE(/mob/living/carbon/human/stok, forced_initial_species, SPECIES_MONKEY_UNATHI)
+/mob/living/carbon/human/stok
+	species_at_make = SPECIES_MONKEY_UNATHI
 TYPE_TABLE(/mob/living/carbon/human/stok, initial_species_copy, TRUE)
 
-TYPE_TABLE(/mob/living/carbon/human/sergal, forced_initial_species, SPECIES_SERGAL)
-CAPABILITIES(/mob/living/carbon/human/sergal)
-	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Sergal Plain"))
+/mob/living/carbon/human/sergal
+	species_at_make = SPECIES_SERGAL
+/mob/living/carbon/human/sergal
+	h_style = "Sergal Plain"
 
-TYPE_TABLE(/mob/living/carbon/human/akula, forced_initial_species, SPECIES_AKULA)
+/mob/living/carbon/human/akula
+	species_at_make = SPECIES_AKULA
 
-TYPE_TABLE(/mob/living/carbon/human/nevrean, forced_initial_species, SPECIES_NEVREAN)
+/mob/living/carbon/human/nevrean
+	species_at_make = SPECIES_NEVREAN
 
-TYPE_TABLE(/mob/living/carbon/human/xenochimera, forced_initial_species, SPECIES_XENOCHIMERA)
+/mob/living/carbon/human/xenochimera
+	species_at_make = SPECIES_XENOCHIMERA
 
-TYPE_TABLE(/mob/living/carbon/human/spider, forced_initial_species, SPECIES_VASILISSAN)
+/mob/living/carbon/human/spider
+	species_at_make = SPECIES_VASILISSAN
 
-TYPE_TABLE(/mob/living/carbon/human/vulpkanin, forced_initial_species, SPECIES_VULPKANIN)
+/mob/living/carbon/human/vulpkanin
+	species_at_make = SPECIES_VULPKANIN
 
-TYPE_TABLE(/mob/living/carbon/human/protean, forced_initial_species, SPECIES_PROTEAN)
+/mob/living/carbon/human/protean
+	species_at_make = SPECIES_PROTEAN
 
-TYPE_TABLE(/mob/living/carbon/human/alraune, forced_initial_species, SPECIES_ALRAUNE)
+/mob/living/carbon/human/alraune
+	species_at_make = SPECIES_ALRAUNE
 
-TYPE_TABLE(/mob/living/carbon/human/shadekin, forced_initial_species, SPECIES_SHADEKIN)
+/mob/living/carbon/human/shadekin
+	species_at_make = SPECIES_SHADEKIN
 
-TYPE_TABLE(/mob/living/carbon/human/altevian, forced_initial_species, SPECIES_ALTEVIAN)
+/mob/living/carbon/human/altevian
+	species_at_make = SPECIES_ALTEVIAN
 
-TYPE_TABLE(/mob/living/carbon/human/lleill, forced_initial_species, SPECIES_LLEILL)
+/mob/living/carbon/human/lleill
+	species_at_make = SPECIES_LLEILL
 
-TYPE_TABLE(/mob/living/carbon/human/hanner, forced_initial_species, SPECIES_HANNER)
+/mob/living/carbon/human/hanner
+	species_at_make = SPECIES_HANNER
 
-TYPE_TABLE(/mob/living/carbon/human/sparkledog, forced_initial_species, SPECIES_SPARKLE)
+/mob/living/carbon/human/sparkledog
+	species_at_make = SPECIES_SPARKLE
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/carbon/human/dummy)

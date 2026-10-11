@@ -53,11 +53,12 @@
 		/datum/spell/aoe_turf/conjure/swarmer/melee
 		)
 
+// It speaks the swarm's language.
+CAPABILITIES(/mob/living/silicon/robot/drone/swarm)
+	knows(LANGUAGE_SWARMBOT)
+
 /mob/living/silicon/robot/drone/swarm/Initialize(mapload)
 	. = ..()
-
-	add_language(LANGUAGE_SWARMBOT, 1)
-
 	for(var/spell in spell_setup)
 		src.add_spell(new spell, "nano_spell_ready", /atom/movable/screen/movable/spell_master/swarm)
 

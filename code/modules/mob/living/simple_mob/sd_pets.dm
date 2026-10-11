@@ -39,20 +39,14 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/tulidaan)
 /mob/living/simple_mob/animal/passive/mouse/jerboa/leggy
 	name = "Leggy"
 	desc = "Don't make fun, they have a condition."
-
-CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
-
-TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy, preserve_mouse_identity, TRUE)
+	digestable = 0
+	keep_parent_data = TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/brown/feivel
 	name = "Feivel"
 	desc = "Heading out west wasn't far enough, so he's going to space!"
-
-CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/brown/feivel)
-	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
-
-TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/feivel, preserve_mouse_identity, TRUE)
+	digestable = 0
+	keep_parent_data = TRUE
 
 /mob/living/simple_mob/animal/passive/cat/jones
 	name = "Jones"

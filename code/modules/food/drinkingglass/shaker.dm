@@ -10,12 +10,10 @@
 	max_transfer_amount = 50
 	rim_pos = null // no fruit slices
 	var/lid_color = "black"
-TRACKED(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, lid_color)
 
-// ALLOW(init/INSTANCE_STATE): rolls its lid colour
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/Initialize(mapload)
-	. = ..()
-	set_lid_color(pick("black", "red", "blue"))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask)
+	rolls(nameof(lid_color), pick_one(list("black", "red", "blue")))
+TRACKED(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, lid_color)
 
 /// The shaker is drawn with the lid it rolled.
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/draw_contents(datum/look/look)

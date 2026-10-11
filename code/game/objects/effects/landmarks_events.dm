@@ -249,9 +249,12 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	isNarrate = TRUE
 	setup_flow = /datum/prompt/text/event_trigger_setup/narrate_name
 
-/obj/effect/landmark/event_trigger/auto_narrate/Initialize(mapload)
-	. = ..()
-	message_range = world.view
+CAPABILITIES(/obj/effect/landmark/event_trigger/auto_narrate)
+	derives(nameof(message_range), PROC_REF(view_range))
+
+/// It narrates as far as a player sees (derives(), at init).
+/obj/effect/landmark/event_trigger/auto_narrate/proc/view_range()
+	return world.view
 
 /obj/effect/landmark/event_trigger/auto_narrate/apply_vars(mob/M, list/setup)
 	..()

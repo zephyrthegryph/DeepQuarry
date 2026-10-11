@@ -1,5 +1,4 @@
 GLOBAL_VAR_CONST(MAX_CHICKENS, 50)	// How many chickens CAN we have?
-GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 
 /mob/living/simple_mob/animal/passive/chicken
 	name = "chicken"
@@ -31,24 +30,15 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	var/eggsleft = 0
 	var/body_color
 
-/mob/living/simple_mob/animal/passive/chicken/Initialize(mapload)
-	. = ..()
-	if(!body_color)
-		body_color = pick( list("brown","black","white") )
-	icon_state = "chicken_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
-	set_icon_living("chicken_[body_color]")
-	set_icon_dead("chicken_[body_color]_dead")
-	pixel_x = rand(-6, 6)
-	pixel_y = rand(0, 10)
-	GLOB.chicken_count += 1
-
-// the population cap counts it out.
-/mob/living/simple_mob/animal/passive/chicken/lifecycle_dematerialize()
-	GLOB.chicken_count -= 1
-	..()
+// The population cap counts the chickens in the world.
+REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/passive/chicken, REGISTRY_CHICKENS)
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 	op("chicken_item", item(/obj/item), then(PROC_REF(chicken_interaction_item)))
+	rolls(nameof(body_color), pick_one(list("brown", "black", "white")), when = cond_not(nameof(body_color)))
+	look_from(nameof(body_color), state = "chicken_*", living = "chicken_*", dead = "chicken_*_dead")
+	rolls(nameof(pixel_x), range_of(-6, 6))
+	rolls(nameof(pixel_y), range_of(0, 10))
 
 /// Old attackby: feeding wheat.
 /mob/living/simple_mob/animal/passive/chicken/proc/chicken_interaction_item(datum/act/op/A)
@@ -83,7 +73,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/chicken)
 		var/obj/item/reagent_containers/food/snacks/egg/E = new(get_turf(src))
 		E.pixel_x = rand(-6,6)
 		E.pixel_y = rand(-6,6)
-		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
+		if(REGISTRY_COUNT(REGISTRY_CHICKENS) < GLOB.MAX_CHICKENS && prob(10))
 			E.set_growing(TRUE)
 
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0

@@ -134,19 +134,13 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 	can_buckle = 1
 	buckle_lying = TRUE
 
-	var/persist_time = 5 MINUTES //How long until we cease existing.
+	lifecycle_lifetime = 5 MINUTES //How long until we cease existing.
 	var/mob/living/simple_mob/vore/slug/owner_slug = null
-	var/turf/my_turf = null //The turf we spawn on.
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
-/obj/effect/slug_glue/Initialize(mapload)
-	. = ..()
-	if(!persist_time)
-		return INITIALIZE_HINT_QDEL
-	rel_set(src, nameof(my_turf), get_turf(src))
-	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
-		return INITIALIZE_HINT_QDEL
-	expire(persist_time)
+/// Aside from not making sense in water, keeping it out prevents drowning (keeps_if()).
+/obj/effect/slug_glue/proc/not_in_water()
+	return !istype(get_turf(src), /turf/simulated/floor/water)
 /*	for(var/obj/effect/slug_glue/G in my_turf.contents)
 		if(G == src)
 			continue
@@ -166,7 +160,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		return ..()
 	else if(istype(AM, /mob/living))
 		if(prob(50))
-			to_chat(AM, span_warning("You stick to \the [my_turf]!"))
+			to_chat(AM, span_warning("You stick to \the [get_turf(src)]!"))
 			return FALSE
 	return ..()
 
@@ -191,7 +185,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 			buckle_mob(L)
 			L.stop_pulling()
 			L.status_at_least(STAT_WEAKENED, 2)
-			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [my_turf]!"))
+			to_chat(L, span_warning("You tripped in the sticky substance, sticking to [get_turf(src)]!"))
 			play_sfx(src, SFX_RAKSHASA_DECAY3)
 			alert_slug(L)
 
@@ -212,6 +206,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/slug)
 		my_slug.ai_brain.lose_target() // Instant loss of target — sim mob giving up if prey escapes.
 
 CAPABILITIES(/obj/effect/slug_glue)
+	keeps_if(PROC_REF(not_in_water))
 	// Struggling out of the glue (user_unbuckle_mob()): whoever tugs stays next to it for as long as the size of the stuck one says, stunned or not.
 	op("struggle_free", ai(), takes("buckled", "time"), wait(PROC_REF(struggle_time), keeps = HELD | ADJACENT | TARGET_PRESENT | STAY), then(PROC_REF(user_unbuckle_mob_slug_glue_done)))
 

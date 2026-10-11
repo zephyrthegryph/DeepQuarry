@@ -33,17 +33,10 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/hoverpod)
-	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow, starts_args = list(TRUE)) // follows it, lit from the start
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/manned
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
-
-/mob/living/simple_mob/mechanical/mecha/hoverpod/Initialize(mapload)
-	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow()) // ALLOW(decl): configured and started before parent init
-	ion_trail.set_up(src)
-	ion_trail.start()
-	return ..()
-
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/Process_Spacemove(check_drift = 0)
 	return TRUE

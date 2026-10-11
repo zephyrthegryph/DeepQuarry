@@ -20,11 +20,6 @@ human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-human|/obj/item/stack menu: Combine
-human|/obj/item/stack menu: Move To Top
-human|/obj/item/stack menu: Split
-human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack click: Click: Combine
 human|/obj/item/stack/material menu: Alternate use
 human|/obj/item/stack/material menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 human|/obj/item/stack/material menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)

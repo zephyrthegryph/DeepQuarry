@@ -121,19 +121,13 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	rolls(nameof(icon_scale_x), range_of(0.8, 1.1, 0.1), when = nameof(randomize_size))
+	rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x)), when = nameof(randomize_size))
 
 /// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).
 /mob/living/simple_mob/animal/sif/sakimm/draw(datum/look/look)
 	..()
 	look.hat(hat, -15) // Sakimm are tiny!
-
-// ALLOW(init/INSTANCE_STATE): rolls its size when its type says to
-/mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
-	. = ..()
-
-
-	if(randomize_size)
-		adjust_scale(rand(8, 11) / 10)
 
 /mob/living/simple_mob/animal/sif/sakimm/IIsAlly(mob/living/L)
 	. = ..()

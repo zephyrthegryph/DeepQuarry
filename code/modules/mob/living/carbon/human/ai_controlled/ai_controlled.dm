@@ -6,12 +6,12 @@
 
 	low_sorting_priority = TRUE
 
-	var/generate_species = SPECIES_HUMAN
+	species_at_make = SPECIES_HUMAN // its species (a constructor argument still wins)
 
 	var/generate_gender = FALSE
 	var/generate_id_gender = FALSE
 
-	var/to_wear_hair = "Bald"
+	h_style = "Bald"
 
 	var/to_wear_helmet = /obj/item/clothing/head/welding
 	var/to_wear_glasses = /obj/item/clothing/glasses/threedglasses
@@ -32,88 +32,58 @@
 	var/to_wear_l_hand = null
 	var/to_wear_r_hand = /obj/item/melee/baton
 
+// Its outfit: each to_wear_* var names what it starts wearing in that slot (null: nothing), so a subtype only changes the vars.
+CAPABILITIES(/mob/living/carbon/human/ai_controlled)
+	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
+	wears(nameof(to_wear_suit), SLOT_ID_SUIT)
+	wears(nameof(to_wear_shoes), SLOT_ID_SHOES)
+	wears(nameof(to_wear_gloves), SLOT_ID_GLOVES)
+	wears(nameof(to_wear_l_radio), SLOT_ID_EAR_L)
+	wears(nameof(to_wear_r_radio), SLOT_ID_EAR_R)
+	wears(nameof(to_wear_glasses), SLOT_ID_EYES)
+	wears(nameof(to_wear_mask), SLOT_ID_MASK)
+	wears(nameof(to_wear_helmet), SLOT_ID_HEAD)
+	wears(nameof(to_wear_belt), SLOT_ID_BELT)
+	wears(nameof(to_wear_r_pocket), SLOT_ID_POCKET_R)
+	wears(nameof(to_wear_l_pocket), SLOT_ID_POCKET_L)
+	wears(nameof(to_wear_back), SLOT_ID_BACK)
+	wears(nameof(to_wear_l_hand), SLOT_ID_HAND_L)
+	wears(nameof(to_wear_r_hand), SLOT_ID_HAND_R)
+	wears(nameof(to_wear_id_type), SLOT_ID_ID, each = PROC_REF(fit_id_card))
+
+TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
+
+// Its genders are picked before the human init names it after its gender
 /mob/living/carbon/human/ai_controlled/Initialize(mapload)
 	if(generate_gender)
 		gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
-
 	if(generate_id_gender)
 		identifying_gender = pick(list(MALE, FEMALE, PLURAL, NEUTER))
+	return ..()
 
-	. = ..(mapload, generate_species)
-
-	species.produceCopy(species.traits.Copy(),src,null,FALSE)
-
-	looks.set_hair_style(to_wear_hair)
-
-	if(to_wear_uniform)
-		equip_to_slot_or_del(new to_wear_uniform(src), SLOT_ID_UNIFORM)
-
-	if(to_wear_suit)
-		equip_to_slot_or_del(new to_wear_suit(src), SLOT_ID_SUIT)
-
-	if(to_wear_shoes)
-		equip_to_slot_or_del(new to_wear_shoes(src), SLOT_ID_SHOES)
-
-	if(to_wear_gloves)
-		equip_to_slot_or_del(new to_wear_gloves(src), SLOT_ID_GLOVES)
-
-	if(to_wear_l_radio)
-		equip_to_slot_or_del(new to_wear_l_radio(src), SLOT_ID_EAR_L)
-
-	if(to_wear_r_radio)
-		equip_to_slot_or_del(new to_wear_r_radio(src), SLOT_ID_EAR_R)
-
-	if(to_wear_glasses)
-		equip_to_slot_or_del(new to_wear_glasses(src), SLOT_ID_EYES)
-
-	if(to_wear_mask)
-		equip_to_slot_or_del(new to_wear_mask(src), SLOT_ID_MASK)
-
-	if(to_wear_helmet)
-		equip_to_slot_or_del(new to_wear_helmet(src), SLOT_ID_HEAD)
-
-	if(to_wear_belt)
-		equip_to_slot_or_del(new to_wear_belt(src), SLOT_ID_BELT)
-
-	if(to_wear_r_pocket)
-		equip_to_slot_or_del(new to_wear_r_pocket(src), SLOT_ID_POCKET_R)
-
-	if(to_wear_l_pocket)
-		equip_to_slot_or_del(new to_wear_l_pocket(src), SLOT_ID_POCKET_L)
-
-	if(to_wear_back)
-		equip_to_slot_or_del(new to_wear_back(src), SLOT_ID_BACK)
-
-	if(to_wear_l_hand)
-		equip_to_slot_or_del(new to_wear_l_hand(src), SLOT_ID_HAND_L)
-
-	if(to_wear_r_hand)
-		equip_to_slot_or_del(new to_wear_r_hand(src), SLOT_ID_HAND_R)
-
-	if(to_wear_id_type)
-		var/obj/item/card/id/W = new to_wear_id_type(src)
-		W.name = "[real_name]'s ID Card"
-		var/datum/job/jobdatum
-		for(var/jobtype in typesof(/datum/job))
-			var/datum/job/J = new jobtype
-			if(J.title == to_wear_id_job)
-				jobdatum = J
-				break
-		if(jobdatum)
-			W.access = jobdatum.get_access()
-		else
-			W.access = list()
-		if(to_wear_id_job)
-			W.assignment = to_wear_id_job
-		W.registered_name = real_name
-		equip_to_slot_or_del(W, SLOT_ID_ID)
+/// Its ID card carries its name and its job's access (wears(each =)).
+/mob/living/carbon/human/ai_controlled/proc/fit_id_card(obj/item/card/id/W)
+	W.name = "[real_name]'s ID Card"
+	var/datum/job/jobdatum
+	for(var/jobtype in typesof(/datum/job))
+		var/datum/job/J = new jobtype
+		if(J.title == to_wear_id_job)
+			jobdatum = J
+			break
+	if(jobdatum)
+		W.access = jobdatum.get_access()
+	else
+		W.access = list()
+	if(to_wear_id_job)
+		W.assignment = to_wear_id_job
+	W.registered_name = real_name
 
 /*
  * Subtypes.
  */
 
 /mob/living/carbon/human/ai_controlled/replicant
-	generate_species = SPECIES_REPLICANT_BETA
+	species_at_make = SPECIES_REPLICANT_BETA
 
 	generate_gender = TRUE
 	identifying_gender = NEUTER
@@ -138,10 +108,8 @@
 
 	to_wear_r_hand = null
 
-/mob/living/carbon/human/ai_controlled/replicant/Initialize(mapload)
-	. = ..()
-	name = species.get_random_name(gender)
-	apply_body_effect(/datum/body_effect/homeothermic, 0, null)
+CAPABILITIES(/mob/living/carbon/human/ai_controlled/replicant)
+	body_effect(/datum/body_effect/homeothermic)
 
 
 /mob/living/carbon/human/ai_controlled

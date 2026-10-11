@@ -54,6 +54,8 @@
 	species_sounds = "None"
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
+	// what its venom bite can inject (/mob/living/proc/injection)
+	trait_injection_reagents = list(REAGENT_ID_MICROCILLIN, REAGENT_ID_MACROCILLIN, REAGENT_ID_NORMALCILLIN, REAGENT_ID_NUMBENZYME, REAGENT_ID_ANDROROVIR, REAGENT_ID_GYNOROVIR, REAGENT_ID_ANDROGYNOROVIR, REAGENT_ID_STOXIN, REAGENT_ID_RAINBOWTOXIN, REAGENT_ID_PARALYSISTOXIN, REAGENT_ID_PAINENZYME)
 
 	//This is copypastad from protean code, hope it isnt too painful lol
 	// ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
@@ -236,6 +238,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 	op("zorgoia_hand_help", hand(), ungated(), stance(I_HELP), label("Pet"), then(PROC_REF(zorgoia_interaction_hand_help)))
 	op("zorgoia_hand_grab", hand(), ungated(), stance(I_GRAB), label("Grab"), then(PROC_REF(zorgoia_interaction_hand_grab)))
+	rolls(nameof(goia_overlays), PROC_REF(roll_look))
 
 /// The help-stance input of zorgoia_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand_help(datum/act/op/A)
@@ -244,45 +247,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 /// The grab-stance input of zorgoia_interaction_hand: the shared handler with its stance.
 /mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand_grab(datum/act/op/A)
 	return zorgoia_interaction_hand(A, I_GRAB)
-
-/mob/living/simple_mob/vore/zorgoia/Initialize(mapload)
-	. = ..()
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MICROCILLIN)			// get small
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MACROCILLIN)			// get BIG
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NORMALCILLIN)			// normal
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NUMBENZYME)			// no feelings
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROROVIR)			// -> MALE
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_GYNOROVIR)			// -> FEMALE
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_ANDROGYNOROVIR)		// -> PLURAL
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_STOXIN)				// night night chem
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_RAINBOWTOXIN)			// Funny flashing lights.
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PARALYSISTOXIN) 		// Paralysis!
-	LAZYADD(src.trait_injection_reagents, REAGENT_ID_PAINENZYME)			// Pain INCREASER
-	// LAZYADD(src.trait_injection_reagents, REAGENT_ID_APHRODISIAC)			// Horni // Downstream only
-
-	var/list/goia_colors = list("#1a00ff", "#6c5bff", "#ff00fe", "#ff0000", "#00d3ff", "#00ff7c", "#00ff35", "#e1ff00", "#ff9f00", "#393939")
-	var/bodycolor = pick(goia_colors)
-	var/spines = pick(goia_colors)
-	goia_set("main", "zorgoia_main")
-	goia_set("zorgoia_main", bodycolor)
-	goia_set("ears", pick(ear_styles))
-	goia_set("zorgoia_ears", bodycolor)
-	goia_set("spots", pick(spots_styles))
-	goia_set("zorgoia_spots", pick(goia_colors))
-	goia_set("claws", pick(claws_styles))
-	goia_set("zorgoia_claws", spines)
-	goia_set("spines", pick(spines_styles))
-	goia_set("zorgoia_spines", spines)
-	goia_set("fluff", pick(fluff_styles))
-	goia_set("zorgoia_fluff", bodycolor)
-	goia_set("underbelly", pick(underbelly_styles))
-	goia_set("zorgoia_underbelly", bodycolor)
-	goia_set("eyes", pick(eyes_styles))
-	goia_set("zorgoia_eyes", "#[get_random_colour(1)]")
-	goia_set("spike", pick(spiky_styles))
-	goia_set("zorgoia_spike", "#[get_random_colour(0,0,255)]")
-	goia_set("belly", pick(belly_styles))
-	goia_set("zorgoia_belly", bodycolor)
 
 /// The zorgoia is all overlays: one tinted layer per body part, stacked in this order (the belly last, on top).
 /mob/living/simple_mob/vore/zorgoia/draw(datum/look/look)
@@ -303,6 +267,34 @@ CAPABILITIES(/mob/living/simple_mob/vore/zorgoia)
 	look.overlay(look_overlay_image(icon, "[goia_overlays["underbelly"]][resting ? "-rest" : (vore_fullness ? "-[vore_fullness]" : null)]", MOB_LAYER, MOB_PLANE, pixel_x = -16, color = goia_overlays["zorgoia_underbelly"], appearance_flags = (RESET_COLOR|PIXEL_SCALE)))
 
 /// Sets one entry of the overlay table; the table is replaced whole so the tracked write is seen.
+/// Each spawned zorgoia looks its own (rolls()): a style for each part, its body colour on most layers, its spine colour on two.
+/mob/living/simple_mob/vore/zorgoia/proc/roll_look(datum/roller/R)
+	var/static/list/goia_colors = list("#1a00ff", "#6c5bff", "#ff00fe", "#ff0000", "#00d3ff", "#00ff7c", "#00ff35", "#e1ff00", "#ff9f00", "#393939")
+	var/bodycolor = R.choose(goia_colors)
+	var/spines = R.choose(goia_colors)
+	var/list/table = goia_overlays.Copy()
+	table["main"] = "zorgoia_main"
+	table["zorgoia_main"] = bodycolor
+	table["ears"] = R.choose(ear_styles)
+	table["zorgoia_ears"] = bodycolor
+	table["spots"] = R.choose(spots_styles)
+	table["zorgoia_spots"] = R.choose(goia_colors)
+	table["claws"] = R.choose(claws_styles)
+	table["zorgoia_claws"] = spines
+	table["spines"] = R.choose(spines_styles)
+	table["zorgoia_spines"] = spines
+	table["fluff"] = R.choose(fluff_styles)
+	table["zorgoia_fluff"] = bodycolor
+	table["underbelly"] = R.choose(underbelly_styles)
+	table["zorgoia_underbelly"] = bodycolor
+	table["eyes"] = R.choose(eyes_styles)
+	table["zorgoia_eyes"] = "#[R.choose(list("FF0000", "FF7F00", "FFFF00", "00FF00", "0000FF", "4B0082", "8F00FF"))]"
+	table["spike"] = R.choose(spiky_styles)
+	table["zorgoia_spike"] = R.hex_colour(0, 255)
+	table["belly"] = R.choose(belly_styles)
+	table["zorgoia_belly"] = bodycolor
+	return table
+
 /mob/living/simple_mob/vore/zorgoia/proc/goia_set(key, value)
 	var/list/table = goia_overlays.Copy()
 	table[key] = value

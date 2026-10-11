@@ -44,7 +44,10 @@
 
 // Variant that automatically commands nearby allies to follow it when created.
 // Useful to avoid having to manually set follow to a lot of hivebots that are gonna die in the next minute anyways.
-/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow/Initialize(mapload)
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow)
+	after_init(0, then(PROC_REF(rally_followers))) // once the map around it has loaded
+
+/mob/living/simple_mob/mechanical/hivebot/support/commander/autofollow/proc/rally_followers(datum/act/timer/A)
 	for(var/mob/living/L in hearers(7, src))
 		if(!L.ai_brain)
 			continue
@@ -52,7 +55,6 @@
 			continue
 		var/datum/ai_brain/AI = L.ai_brain
 		AI.set_follow(src)
-	return ..()
 
 
 // This hivebot adds charges to nearby allied hivebots that use the charge system for their special attacks.

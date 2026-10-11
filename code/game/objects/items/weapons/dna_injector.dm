@@ -1,3 +1,7 @@
+#define DNA_POOL_GOOD (1<<0)
+#define DNA_POOL_NEUTRAL (1<<1)
+#define DNA_POOL_BAD (1<<2)
+
 /obj/item/dnainjector
 	name = "\improper DNA injector"
 	desc = "This injects the person with DNA."
@@ -22,47 +26,41 @@
 MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% with %I%!"))
 
 CAPABILITIES(/obj/item/dnainjector)
+	rolls(nameof(rolled_gene), PROC_REF(roll_gene))
+	setup(PROC_REF(load_gene))
 	owns_one(nameof(buf), /datum/dna2/record)
 	op("inject", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Inject"),
 		needs(req_adjacent(), req(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))
 
-TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
+/// A random injector rolls its gene (rolls()) from these pools (DNA_POOL_*), and is labelled with it, or may remove it, as its type says.
+/obj/item/dnainjector/var/random_pools = 0
+/obj/item/dnainjector/var/random_labeled = FALSE
+/obj/item/dnainjector/var/random_disable = FALSE
+/// The gene it starts loaded with (rolled before init), and whether it removes that gene.
+/obj/item/dnainjector/var/tmp/datum/gene/trait/rolled_gene
+/obj/item/dnainjector/var/disabling = FALSE
 
-// ALLOW(init/INSTANCE_STATE): allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
-/obj/item/dnainjector/Initialize(mapload)
-	var/selector = TYPE_TABLE_GET(src, injector_random_selector)
-	switch(selector)
-		if(/obj/item/dnainjector/random)
-			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), FALSE, TRUE)
-		if(/obj/item/dnainjector/random_labeled)
-			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral + GLOB.dna_genes_bad), TRUE, TRUE)
-		if(/obj/item/dnainjector/random_good)
-			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), FALSE, TRUE)
-		if(/obj/item/dnainjector/random_good_labeled)
-			pick_block( pick(GLOB.dna_genes_good + GLOB.dna_genes_neutral ), TRUE, TRUE)
-		if(/obj/item/dnainjector/random_bad)
-			pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), FALSE, TRUE)
-		if(/obj/item/dnainjector/random_bad_labeled)
-			pick_block( pick(GLOB.dna_genes_bad + GLOB.dna_genes_neutral ), TRUE, TRUE)
-		if(/obj/item/dnainjector/random_verygood)
-			pick_block( pick(GLOB.dna_genes_good), FALSE, FALSE)
-		if(/obj/item/dnainjector/random_verygood_labeled)
-			pick_block( pick(GLOB.dna_genes_good), TRUE, FALSE)
-		if(/obj/item/dnainjector/random_verybad)
-			pick_block( pick(GLOB.dna_genes_bad), FALSE, FALSE)
-		if(/obj/item/dnainjector/random_verybad_labeled)
-			pick_block( pick(GLOB.dna_genes_bad), TRUE, FALSE)
-		if(/obj/item/dnainjector/random_neutral)
-			pick_block( pick(GLOB.dna_genes_neutral ), FALSE, TRUE)
-		if(/obj/item/dnainjector/random_neutral_labeled)
-			pick_block( pick(GLOB.dna_genes_neutral ), TRUE, TRUE)
+/// Rolled before init (rolls()): a gene from the type's pools, or none for an injector that is not random.
+/obj/item/dnainjector/proc/roll_gene(datum/roller/R)
+	var/list/pool = list()
+	if(random_pools & DNA_POOL_GOOD)
+		pool += GLOB.dna_genes_good
+	if(random_pools & DNA_POOL_NEUTRAL)
+		pool += GLOB.dna_genes_neutral
+	if(random_pools & DNA_POOL_BAD)
+		pool += GLOB.dna_genes_bad
+	return R.choose(pool)
+
+/// Its own setup (setup()): the rolled gene sets the block it writes, and a premade injector builds the DNA buffer that carries it.
+/obj/item/dnainjector/proc/load_gene()
+	if(rolled_gene)
+		pick_block(rolled_gene, random_labeled, random_disable, disabling)
 	if(datatype && block)
-		rel_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
+		rel_set(src, nameof(buf), new /datum/dna2/record)
 		rel_set(buf, nameof(buf.dna), new /datum/dna)
 		buf.types = datatype
 		buf.dna.ResetSE()
 		SetValue(src.value)
-	. = ..()
 
 /obj/item/dnainjector/proc/GetRealBlock(selblock)
 	if(selblock==0)
@@ -184,49 +182,79 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 /obj/item/dnainjector/random
 	name = "\improper DNA injector"
 	desc = "This injects the person with DNA."
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_disable = TRUE
 
 // Purely rando
-TYPE_TABLE(/obj/item/dnainjector/random, injector_random_selector, /obj/item/dnainjector/random)
 
-TYPE_TABLE(/obj/item/dnainjector/random_labeled, injector_random_selector, /obj/item/dnainjector/random_labeled)
+/obj/item/dnainjector/random_labeled
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // Good/bad but also neutral genes mixed in, less OP selection of genes
-TYPE_TABLE(/obj/item/dnainjector/random_good, injector_random_selector, /obj/item/dnainjector/random_good)
+/obj/item/dnainjector/random_good
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL
+	random_disable = TRUE
 
-TYPE_TABLE(/obj/item/dnainjector/random_good_labeled, injector_random_selector, /obj/item/dnainjector/random_good_labeled)
+/obj/item/dnainjector/random_good_labeled
+	random_pools = DNA_POOL_GOOD | DNA_POOL_NEUTRAL
+	random_labeled = TRUE
+	random_disable = TRUE
 
-TYPE_TABLE(/obj/item/dnainjector/random_bad, injector_random_selector, /obj/item/dnainjector/random_bad)
+/obj/item/dnainjector/random_bad
+	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_disable = TRUE
 
-TYPE_TABLE(/obj/item/dnainjector/random_bad_labeled, injector_random_selector, /obj/item/dnainjector/random_bad_labeled)
+/obj/item/dnainjector/random_bad_labeled
+	random_pools = DNA_POOL_NEUTRAL | DNA_POOL_BAD
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // Purely good/bad genes, intended to be usually good rewards or punishments
-TYPE_TABLE(/obj/item/dnainjector/random_verygood, injector_random_selector, /obj/item/dnainjector/random_verygood)
+/obj/item/dnainjector/random_verygood
+	random_pools = DNA_POOL_GOOD
 
-TYPE_TABLE(/obj/item/dnainjector/random_verygood_labeled, injector_random_selector, /obj/item/dnainjector/random_verygood_labeled)
+/obj/item/dnainjector/random_verygood_labeled
+	random_pools = DNA_POOL_GOOD
+	random_labeled = TRUE
 
-TYPE_TABLE(/obj/item/dnainjector/random_verybad, injector_random_selector, /obj/item/dnainjector/random_verybad)
+/obj/item/dnainjector/random_verybad
+	random_pools = DNA_POOL_BAD
 
-TYPE_TABLE(/obj/item/dnainjector/random_verybad_labeled, injector_random_selector, /obj/item/dnainjector/random_verybad_labeled)
+/obj/item/dnainjector/random_verybad_labeled
+	random_pools = DNA_POOL_BAD
+	random_labeled = TRUE
 
 // Random neutral traits
-TYPE_TABLE(/obj/item/dnainjector/random_neutral, injector_random_selector, /obj/item/dnainjector/random_neutral)
+/obj/item/dnainjector/random_neutral
+	random_pools = DNA_POOL_NEUTRAL
+	random_disable = TRUE
 
-TYPE_TABLE(/obj/item/dnainjector/random_neutral_labeled, injector_random_selector, /obj/item/dnainjector/random_neutral_labeled)
+/obj/item/dnainjector/random_neutral_labeled
+	random_pools = DNA_POOL_NEUTRAL
+	random_labeled = TRUE
+	random_disable = TRUE
 
 // If you want a unique injector, use a subtype of these
 /obj/item/dnainjector/set_trait
 	var/trait_path
-	var/disabling = FALSE
+	random_labeled = TRUE
 
-/obj/item/dnainjector/set_trait/Initialize(mapload)
-	var/G = get_gene_from_trait(trait_path)
-	if(trait_path && G)
-		pick_block( G, TRUE, FALSE, disabling)
-	else
-		. = ..()
-		return INITIALIZE_HINT_QDEL
-	. = ..()
+CAPABILITIES(/obj/item/dnainjector/set_trait)
+	keeps_if(PROC_REF(has_gene))
+	setup(PROC_REF(loaded))
 
+/// Its gene is the one its trait names (rolls() of the base type).
+/obj/item/dnainjector/set_trait/roll_gene(datum/roller/R)
+	return trait_path ? get_gene_from_trait(trait_path) : null
+
+/// An injector whose trait has no gene is discarded (keeps_if()).
+/obj/item/dnainjector/set_trait/proc/has_gene()
+	return !!rolled_gene
+
+/// Once loaded (setup(), after the base's), a used set injector removes its trait.
+/obj/item/dnainjector/set_trait/proc/loaded()
 	disabling = TRUE
 
 // Injectors for all original genes and some new ones
@@ -346,3 +374,7 @@ TYPE_TABLE(/obj/item/dnainjector/random_neutral_labeled, injector_random_selecto
 	trait_path = /datum/trait/positive/nonconductive_plus
 /obj/item/dnainjector/set_trait/nonconduct/disable
 	disabling = TRUE
+
+#undef DNA_POOL_GOOD
+#undef DNA_POOL_NEUTRAL
+#undef DNA_POOL_BAD

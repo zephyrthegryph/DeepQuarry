@@ -5,16 +5,12 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY|PIPING_ONE_PER_TURF
 
 	var/datum/gas_mixture/air_contents
+	/// The volume its mixture is made with (an injector or scrubber sets its own).
+	var/air_volume = 200
 
 	var/datum/pipe_network/network
 	/// Its one pipe neighbour (a relation view: it reads null once the neighbour is gone; disconnect() is the domain unlink).
 	var/obj/machinery/atmospherics/node
-
-/obj/machinery/atmospherics/unary/Initialize(mapload)
-	. = ..()
-
-	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
-	air_contents.set_volume(200)
 
 /obj/machinery/atmospherics/unary/init_dir()
 	initialize_directions = dir
@@ -124,6 +120,7 @@ MSG_DEF_SELF(air_device/welded, "You cannot unwrench it, it is welded down firml
 	return (!weld_shut_welded(src, null)) ? null : MSG(air_device/welded)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary)
+	gas_port(nameof(air_contents), volume = nameof(air_volume))
 	ref_one(nameof(node))
 	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	pipe_device_switch()

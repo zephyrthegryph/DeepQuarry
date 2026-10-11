@@ -3,12 +3,8 @@
 	icon_state = "pipe-t"
 	var/tmp/atom/linked	// The linked atom. It should have a disposal system connection to handle receiving disposal packets.
 
-// ALLOW(init/INSTANCE_STATE): its pipe direction follows the way it was placed
-/obj/structure/disposalpipe/trunk/Initialize(mapload)
-	. = ..()
-	dpdir = dir
-
 CAPABILITIES(/obj/structure/disposalpipe/trunk)
+	derives(nameof(dpdir), PROC_REF(facing_end)) // at init: the pipe's ends follow how it was placed
 	after_init(0, then(PROC_REF(link_after_init)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
@@ -65,3 +61,7 @@ CAPABILITIES(/obj/structure/disposalpipe/trunk)
 /// The linked atom. It should have a disposal system connection to handle receiving disposal packets. (a relation view: it reads null once the target is deleted).
 /obj/structure/disposalpipe/trunk/proc/linked() as /atom
 	return linked
+
+/// Its one end faces the way it was placed.
+/obj/structure/disposalpipe/trunk/proc/facing_end()
+	return dir
