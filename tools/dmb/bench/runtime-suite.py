@@ -124,6 +124,12 @@ def validate(args):
 
 
 def command(args, suite):
+    if not suite and not args.define:
+        result = [str(args.bash_exe), 'tools/dq_focused_test.sh', *args.focus]
+        if args.focused_compiled_output:
+            result += [f'--focused-compiled-output={args.focused_compiled_output}',
+                       f'--focused-compiled-output-sha256={args.focused_compiled_output_sha256}']
+        return result
     result = [str(args.bash_exe), 'tools/build/build.sh', 'dm-test']
     if suite:
         # Normal aliases preserve historical normal checkpoints/protocol.
