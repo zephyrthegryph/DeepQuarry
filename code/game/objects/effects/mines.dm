@@ -17,8 +17,10 @@
 /obj/effect/mine/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
-	if(camo_net)
-		alpha = 50
+
+/// A mine under a camouflage net is faint (derives(), at init).
+/obj/effect/mine/proc/camo_alpha()
+	return camo_net ? 50 : alpha
 
 CAPABILITIES(/obj/effect/mine)
 	owns_one(nameof(trap), starts = nameof(trap))
@@ -33,6 +35,7 @@ CAPABILITIES(/obj/effect/mine)
 	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	extend(/datum/act/hit/projectile, instead(then(PROC_REF(mine_shot))))
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(mine_blast)))
+	derives(nameof(alpha), PROC_REF(camo_alpha))
 
 
 /obj/effect/mine/proc/wire_lights()

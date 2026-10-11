@@ -265,6 +265,7 @@ CAPABILITIES(/obj/item/inducer)
 	item_flags = ABSTRACT
 
 	var/mob/living/carbon/human/hume
+	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
 	param(nameof(hume), pos = 1)
@@ -275,7 +276,6 @@ CAPABILITIES(/obj/item/cell/standin)
 	. = ..()
 	if(!istype(hume))
 		return INITIALIZE_HINT_QDEL
-	expire(20 SECONDS)
 
 
 /// Setup: the stand-in holds what its human has eaten, up to what a new body starts with.

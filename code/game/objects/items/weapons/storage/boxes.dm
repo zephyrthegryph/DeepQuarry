@@ -371,20 +371,24 @@ CAPABILITIES(/obj/item/storage/box/monkeycubes)
 	starts_with = null // Don't add monkeys, we run our own setup
 	var/pet_list = list("Ian" = /mob/living/simple_mob/animal/passive/dog/corgi/Ian) // Should be capped at 7 per box!
 
-/obj/item/storage/box/monkeycubes/pets/Initialize(mapload)
-	. = ..()
-	// spawn each pet in the box
-	var/first = TRUE
+CAPABILITIES(/obj/item/storage/box/monkeycubes/pets)
+	initial_contents(PROC_REF(pet_cubes))
+	derives(nameof(desc), PROC_REF(pets_desc))
+
+/// Starting contents (initial_contents()): one wrapped cube for each pet on its list, named for the pet.
+/obj/item/storage/box/monkeycubes/pets/proc/pet_cubes(datum/roller/R)
+	. = list()
 	for(var/pet in pet_list)
-		if(first)
-			desc += " Contains: "
-			first = FALSE
-		else
-			desc += ", "
-		var/obj/item/reagent_containers/food/snacks/monkeycube/pet/wrapped/C = new(src)
-		C.name ="[pet] pet cube"
+		var/obj/item/reagent_containers/food/snacks/monkeycube/pet/wrapped/C = new
+		C.name = "[pet] pet cube"
 		C.pet_path = pet_list[pet]
-		desc += "[pet]"
+		. += C
+
+/// The box says which pets it holds (derives(), at init).
+/obj/item/storage/box/monkeycubes/pets/proc/pets_desc()
+	if(!length(pet_list))
+		return desc
+	return "[desc] Contains: [jointext(pet_list, ", ")]"
 
 /obj/item/storage/box/monkeycubes/pets/NT_standard
 	name = "pet cube box (NT standard)"

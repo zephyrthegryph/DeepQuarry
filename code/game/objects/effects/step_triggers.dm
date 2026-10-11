@@ -311,9 +311,12 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 /obj/effect/autostriptarget/mob
 	name = "Autostrip target to send mobs to."
 
-/obj/effect/step_trigger/teleporter/deathfall/Initialize(mapload)
-	. = ..()
-	teleport_z = src.z //This is for use in gateways, so mappers can hard map the X and Y without worrying about going to brazil
+CAPABILITIES(/obj/effect/step_trigger/teleporter/deathfall)
+	derives(nameof(teleport_z), PROC_REF(own_z))
+
+/// For gateways: mappers hard map the X and Y, the Z is its own (derives(), at init).
+/obj/effect/step_trigger/teleporter/proc/own_z()
+	return z
 
 /obj/effect/step_trigger/teleporter/deathfall/Trigger(atom/movable/A)
 	var/turf/simulated/T = locate(teleport_x, teleport_y, teleport_z)
@@ -346,9 +349,8 @@ CAPABILITIES(/obj/effect/step_trigger/autostrip)
 		message_admins("ERROR: planetary_fall step trigger lacks a planet to fall onto.")
 		return
 
-/obj/effect/step_trigger/teleporter/poi/Initialize(mapload) //This is for placing teleporters in gateways/POIS, where Z levels can be different and I cant be assed to make fake teleporter stairs
-	. = ..()
-	teleport_z = src.z
+CAPABILITIES(/obj/effect/step_trigger/teleporter/poi)
+	derives(nameof(teleport_z), PROC_REF(own_z))
 
 /obj/effect/step_trigger/teleporter/randomspawn //teleporter/random was taken. This version only teleports when stepped on *sometimes*, and you can give it a chance not to spawn
 	var/destroyprob = 99

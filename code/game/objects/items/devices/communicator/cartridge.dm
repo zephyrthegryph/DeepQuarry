@@ -207,13 +207,8 @@ CAPABILITIES(/obj/item/commcard/signal/science)
 	name = "\improper Space Parts & Space Vendors cartridge"
 	desc = "Perfect for the Quartermaster on the go!"
 	icon_state = "cart-q"
+	internal_data = list("supply_category" = null, "supply_controls" = FALSE, "supply_pack_expanded" = list(), "supply_reqtime" = -1) // cannot control the supply shuttle, cannot accept orders
 
-/obj/item/commcard/supply/Initialize(mapload)
-	. = ..()
-	internal_data["supply_category"] = null
-	internal_data["supply_controls"] = FALSE // Cannot control the supply shuttle, cannot accept orders
-	internal_data["supply_pack_expanded"] = list()
-	internal_data["supply_reqtime"] = -1
 
 /obj/item/commcard/supply/get_data()
 	// Supply records data
@@ -246,16 +241,12 @@ CAPABILITIES(/obj/item/commcard/signal/science)
 /obj/item/commcard/head
 	name = "\improper Easy-Record DELUXE"
 	icon_state = "cart-h"
+	internal_data = list("stat_display_line1" = null, "stat_display_line2" = null, "stat_display_active1" = null, "stat_display_active2" = null, "stat_display_special" = null)
 
 /obj/item/commcard/head/Initialize(mapload)
 	// Have to register the commcard with the Radio controller to receive updates to the status displays
 	SSradio.add_object(src, 1435)
 	. = ..()
-	internal_data["stat_display_line1"] = null
-	internal_data["stat_display_line2"] = null
-	internal_data["stat_display_active1"] = null
-	internal_data["stat_display_active2"] = null
-	internal_data["stat_display_special"] = null
 
 /obj/item/commcard/head/get_data()
 	return list(
@@ -475,10 +466,10 @@ CAPABILITIES(/obj/item/commcard/head/captain)
 /obj/item/commcard/mercenary
 	name = "\improper Detomatix cartridge"
 	icon_state = "cart"
+	internal_data = list("shuttle_door_code" = "smindicate") // Copied from PDA code
 
 /obj/item/commcard/mercenary/Initialize(mapload)
 	. = ..()
-	internal_data["shuttle_door_code"] = "smindicate" // Copied from PDA code
 	internal_data["shuttle_doors"] = find_blast_doors()
 
 /obj/item/commcard/mercenary/get_data()
