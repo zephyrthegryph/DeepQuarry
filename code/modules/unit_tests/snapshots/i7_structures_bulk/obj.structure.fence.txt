@@ -16,8 +16,8 @@ robot|none click: Click: Use
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
 +0 menu: Climb (refused: There is no hole in the fence to climb through.)
-+5 menu: Use wirecutter
-+6 click: Click: Use wirecutter
++1 menu: Cut through
++6 click: Click: Cut through
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb (refused: There is no hole in the fence to climb through.)
 @obj.structure human|/obj/item/weldingtool

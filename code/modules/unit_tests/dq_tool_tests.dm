@@ -1,4 +1,4 @@
-// The tool pipeline (roadmap I4): use_tool() checks, fuel and stack use, the
+// The tool pipeline (roadmap I4): quality checks, the tool ops' fuel, the
 // interaction cost, every TOOL_* quality reaching interactions, and timing
 // parity for a sample of converted hand-written sites.
 
@@ -39,30 +39,25 @@ CAPABILITIES(/obj/dq_tool_target)
 	tool.set_toolspeed(0)
 	return tool
 
-// ---- use_tool() checks ----
+// ---- tool checks ----
 
 /// Quality and tier are checked, with the reason given.
-/datum/unit_test/dq_use_tool_quality
+/datum/unit_test/dq_tool_quality_failure
 
-/datum/unit_test/dq_use_tool_quality/Run()
+/datum/unit_test/dq_tool_quality_failure/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/obj/dq_tool_target/target = allocate(/obj/dq_tool_target, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
 	var/obj/item/dq_tool_probe/probe = allocate(/obj/item/dq_tool_probe, T)
 
-	TEST_ASSERT(!use_tool(H, screwdriver, target, quality = TOOL_WRENCH, silent = TRUE), "a screwdriver is not a wrench")
 	TEST_ASSERT_EQUAL(tool_quality_failure(screwdriver, TOOL_WRENCH), "needs a wrench", "the reason names the quality")
 	TEST_ASSERT_EQUAL(tool_quality_failure(null, TOOL_WELDER), "needs a welder", "no tool at all")
-	TEST_ASSERT(use_tool(H, screwdriver, target, quality = TOOL_SCREWDRIVER), "the right quality, no wait")
-	TEST_ASSERT(use_tool(H, probe, target, quality = TOOL_WRENCH, tier = 2), "tier 2 meets tier 2")
-	TEST_ASSERT(!use_tool(H, probe, target, quality = TOOL_WRENCH, tier = 3, silent = TRUE), "tier 2 fails tier 3")
+	TEST_ASSERT_NULL(tool_quality_failure(probe, TOOL_WRENCH, 2), "tier 2 meets tier 2")
 	TEST_ASSERT_EQUAL(tool_quality_failure(probe, TOOL_WRENCH, 3), "needs a wrench (tier 3)", "the tier is named")
 
 /// Time scales by tool speed and the skill factor, and an unscaled delay is recorded.
-/datum/unit_test/dq_use_tool_delay
+/datum/unit_test/dq_tool_delay
 
-/datum/unit_test/dq_use_tool_delay/Run()
+/datum/unit_test/dq_tool_delay/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/item/dq_tool_probe/probe = allocate(/obj/item/dq_tool_probe, T)
@@ -73,40 +68,6 @@ CAPABILITIES(/obj/dq_tool_target)
 	TEST_ASSERT_EQUAL(tool_delay(H, wrench, 4 SECONDS, TOOL_WRENCH), 4 SECONDS, "toolspeed 1 keeps it")
 	TEST_ASSERT_EQUAL(tool_delay(H, null, 4 SECONDS, null), 4 SECONDS, "no tool, no scaling")
 	TEST_ASSERT_EQUAL(tool_delay(H, wrench, 0, TOOL_WRENCH), 0, "no delay, no wait")
-
-/// A welder must be lit and hold the fuel; the fuel is burned at the end.
-/datum/unit_test/dq_use_tool_fuel
-
-/datum/unit_test/dq_use_tool_fuel/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/obj/dq_tool_target/target = allocate(/obj/dq_tool_target, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool, T)
-
-	TEST_ASSERT(!welder.isOn(), "the welder starts unlit")
-	TEST_ASSERT(!use_tool(H, welder, target, quality = TOOL_WELDER, silent = TRUE), "an unlit welder is refused")
-	welder.set_welding(TRUE)
-	var/start = welder.get_fuel()
-	TEST_ASSERT(use_tool(H, welder, target, quality = TOOL_WELDER, amount = 5), "a lit welder with fuel works")
-	TEST_ASSERT_EQUAL(welder.get_fuel(), start - 5, "exactly the asked fuel is burned")
-	TEST_ASSERT(use_tool(H, welder, target, quality = TOOL_WELDER), "a zero-fuel job works")
-	TEST_ASSERT_EQUAL(welder.get_fuel(), start - 5, "a zero-fuel job burns nothing")
-	TEST_ASSERT(!use_tool(H, welder, target, quality = TOOL_WELDER, amount = 1000, silent = TRUE), "not enough fuel is refused")
-	TEST_ASSERT_EQUAL(welder.get_fuel(), start - 5, "a refused job burns nothing")
-
-/// A stack pays units.
-/datum/unit_test/dq_use_tool_stack
-
-/datum/unit_test/dq_use_tool_stack/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/obj/dq_tool_target/target = allocate(/obj/dq_tool_target, T)
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, T, 10)
-
-	TEST_ASSERT(use_tool(H, coil, target, quality = TOOL_CABLE_COIL, amount = 4), "enough cable")
-	TEST_ASSERT_EQUAL(coil.get_amount(), 6, "four lengths used")
-	TEST_ASSERT(!use_tool(H, coil, target, quality = TOOL_CABLE_COIL, amount = 7, silent = TRUE), "not enough cable")
-	TEST_ASSERT_EQUAL(coil.get_amount(), 6, "nothing used when refused")
 
 /// The op's cost goes through the tool: fuel is paid, an unlit welder blocks it.
 /datum/unit_test/dq_use_tool_interaction_cost
@@ -178,7 +139,7 @@ CAPABILITIES(/obj/dq_tool_target)
 	own_turf_contents(T) // the salvaged steel
 	test_driver_end()
 
-/// Manual valve: the wrench is an op with a 4 s wait (intended_changes.md, "Pipe devices"; was a use_tool() of 40 ticks).
+/// Manual valve: the wrench is an op with a 4 s wait (intended_changes.md, "Pipe devices"; was a timer helper of 40 ticks).
 /datum/unit_test/dq_tool_parity_valve
 
 /datum/unit_test/dq_tool_parity_valve/Run()

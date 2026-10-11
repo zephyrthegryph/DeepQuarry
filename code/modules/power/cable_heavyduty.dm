@@ -18,19 +18,23 @@
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))
 	return OP_OK
 
-/obj/structure/cable/heavyduty/proc/welder_used(datum/act/op/A)
+/// The cable is cut only where the plating is bare (a welder elsewhere does nothing).
+/obj/structure/cable/heavyduty/proc/on_bare_plating(datum/act/op/A)
+	var/turf/T = read_once(loc)
+	return istype(T) && read_once(T.is_plating())
+
+/obj/structure/cable/heavyduty/proc/plating_refusal(datum/act/op/A)
+	return on_bare_plating(A) ? null : "the plating is covered"
+
+/obj/structure/cable/heavyduty/proc/cut_refusal(datum/act/op/A)
+	return read_once(allow_cutting) ? null : "something in these cables makes them too strong to cut"
+
+/obj/structure/cable/heavyduty/proc/cut_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/structure/cable/heavyduty/proc/welder_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	var/turf/T = src.loc
-	if(!T.is_plating() || !allow_cutting)
-		if(!allow_cutting)
-			to_chat(user, span_warning("Something in these cables make them too strong to cut!"))
-		return OP_OK
-
-	use_tool(user, W, src, delay = 25 SECONDS, quality = TOOL_WELDER, amount = 2, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, T))
-	return OP_OK
-
-/obj/structure/cable/heavyduty/proc/welder_act_tool_done(mob/user, turf/T)
+	var/turf/T = loc
 	var/obj/item/stack/cable_coil/heavyduty/CC
 	if(src.d1)
 		CC = new/obj/item/stack/cable_coil/heavyduty(T, 2, color)
@@ -48,7 +52,7 @@ MSG_DEF_SELF(heavy_cable/needs_heavier, "you will need heavier cables to connect
 
 CAPABILITIES(/obj/structure/cable/heavyduty)
 	op("heavy_coil", item(/obj/item/stack/cable_coil), priority(OP_PRIORITY_DEFAULT - 1), label("Connect cable"), needs(req(PROC_REF(heavy_coil_holds))), then(PROC_REF(heavyduty_interaction_item)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 2), label("Cut the cable"), needs(req(PROC_REF(plating_refusal), silent = TRUE), req(PROC_REF(cut_refusal))), starts(PROC_REF(cut_started)), wait(25 SECONDS), then(PROC_REF(welder_act_tool_done)))
 
 /// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
 /obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(datum/act/op/A)

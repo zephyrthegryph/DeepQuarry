@@ -1,41 +1,86 @@
 @obj human|none
 +0 menu: Flip Pipe
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
 @obj robot|none
 +1 menu: Flip Pipe
++4 menu: Rotate Clockwise
++5 menu: Rotate Counter Clockwise
++7 menu: Turn Around
 @obj.item ai|none
 @obj.item ghost|none
 +0 menu: Flip Pipe (refused: You can't do that now.)
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/tool/screwdriver
 +0 menu: Flip Pipe
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/tool/crowbar
 +0 menu: Flip Pipe
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Fasten
 +1 menu: Flip Pipe
-+4 click: Click: Fasten
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
++7 click: Click: Fasten
 @obj human|/obj/item/tool/wirecutters
 +0 menu: Flip Pipe
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/multitool
 +0 menu: Flip Pipe
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/weldingtool
 +0 menu: Flip Pipe
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/stack/cable_coil
 +0 menu: Flip Pipe
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Flip Pipe
 +1 menu: Form material (refused: It already has a material liner and shell.)
-+4 click: Click: Form material
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
++7 click: Click: Form material
 @obj human|/obj/item/card/id
 +0 menu: Flip Pipe
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
 @obj human|/obj/item/kit
 +1 menu: Flip Pipe
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
 @obj human|/obj/item/storage
 +1 menu: Flip Pipe
++3 menu: Rotate Clockwise
++4 menu: Rotate Counter Clockwise
++6 menu: Turn Around
 human|/obj/item/stack/material menu: Flip Pipe
 human|/obj/item/stack/material menu: Form material (refused: It already has a material liner and shell.)
 human|/obj/item/stack/material menu: Move To Top
+human|/obj/item/stack/material menu: Rotate Clockwise
+human|/obj/item/stack/material menu: Rotate Counter Clockwise
 human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material menu: Turn Around
 human|/obj/item/stack/material click: Click: Form material
-keys: collect_item, drag_buckle, fasten, flip, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, line, move_to_top, pick_up_item, rotate, toggle_digestable
+keys: collect_item, drag_buckle, fasten, flip, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, line, move_to_top, pick_up_item, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, rotate, toggle_digestable

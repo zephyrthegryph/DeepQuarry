@@ -737,6 +737,10 @@
 			return !!KA.args["not"] == !!KN.args["not"] && actor_kind_same_types(KA.args["types"], KN.args["types"])
 	if(istype(cond_a, /datum/entry/part/req/graph_at) && istype(cond_b, /datum/entry/part/req/graph_at))
 		return graph_at_exclusive(cond_a, cond_b)
+	if(istype(cond_a, /datum/entry/part/req/is/exact) && istype(cond_b, /datum/entry/part/req/is/exact))
+		var/datum/entry/part/req/is/exact/SA = cond_a
+		var/datum/entry/part/req/is/exact/SB = cond_b
+		return SA.args["key"] == SB.args["key"] && SA.args["of"] == SB.args["of"] && SA.args["value"] != SB.args["value"]
 	if(istype(cond_a, /datum/entry/part/req/is) && istype(cond_b, /datum/entry/part/req/is))
 		var/datum/entry/part/req/is/RA = cond_a
 		var/datum/entry/part/req/is/RB = cond_b

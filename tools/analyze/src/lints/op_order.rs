@@ -444,6 +444,17 @@ impl Model {
                         comp.ops.insert(op.key.clone(), op);
                     }
                 }
+                "stages" => {
+                    // one op per stage_step() (code/library/structures/stages.dm)
+                    for op_args in crate::sem::decls::stages_op_args(&args) {
+                        if let Some(op) = self.parse_op(&op_args, prefix, 0) {
+                            if !comp.ops.contains_key(&op.key) {
+                                comp.order.push(op.key.clone());
+                            }
+                            comp.ops.insert(op.key.clone(), op);
+                        }
+                    }
+                }
                 "extend" => {
                     let parts = split_args(&args);
                     let Some(target) = parts.first() else { continue };
@@ -699,6 +710,13 @@ fn norm_cond(c: &str) -> String {
                 None | Some("TRUE") | Some("1") => return norm_cond(key),
                 _ => {}
             }
+        }
+    }
+    if let Some(inner) = whole_call(c, "req_stage") {
+        // req_stage(K, v): K is exactly v; two of one K with different values exclude each other (cond_negates)
+        let args: Vec<String> = split_args(inner).into_iter().filter(|a| !a.contains('=') || a.contains("==")).collect();
+        if let (Some(key), Some(value)) = (args.first(), args.get(1)) {
+            return format!("stage({})=={}", compact(key), compact(value));
         }
     }
     if let Some(inner) = whole_call(c, "req_actor_kind") {
@@ -1174,6 +1192,10 @@ fn overlap(a: &Bind, b: &Bind) -> Option<String> {
 fn cond_negates(a: &str, b: &str) -> bool {
     if b == format!("cond_not({})", a) || a == format!("cond_not({})", b) {
         return true;
+    }
+    // req_stage(K, a) against req_stage(K, b), a != b
+    if let (Some((ka, va)), Some((kb, vb))) = (a.strip_prefix("stage(").and_then(|s| s.split_once(")==")), b.strip_prefix("stage(").and_then(|s| s.split_once(")=="))) {
+        return ka == kb && va != vb;
     }
     // req_graph_at(list(S...)) against one with none of its stages
     if let (Some(x), Some(y)) = (whole_call(a, "req_graph_at"), whole_call(b, "req_graph_at")) {

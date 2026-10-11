@@ -20,7 +20,10 @@ f="${1:-${DQ_LOOK_KEYS_FILE:-code/modules/unit_tests/snapshots/look_keys.txt}}"
 plan() { # <out>: write the current plan
 	local bin
 	bin="$(bash tools/ci/analyze.sh)" || { echo "check_look_keys_format: the analyze engine could not be built" >&2; return 1; }
-	"$bin" look-keys --out "$1" >/dev/null || { echo "check_look_keys_format: analyze look-keys failed" >&2; return 1; }
+	# The analyzer is a Windows program: an MSYS path such as /tmp/x (TMPDIR=/tmp) is E:/tmp/x to it, not the file bash reads.
+	local out="$1"
+	command -v cygpath >/dev/null 2>&1 && out="$(cygpath -m "$1")"
+	"$bin" look-keys --out "$out" >/dev/null || { echo "check_look_keys_format: analyze look-keys failed" >&2; return 1; }
 	[ -s "$1" ] || { echo "check_look_keys_format: analyze look-keys wrote an empty plan" >&2; return 1; }
 }
 

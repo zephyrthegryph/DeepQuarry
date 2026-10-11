@@ -3,11 +3,11 @@ human|none menu: Rotate Counter Clockwise
 human|none menu: Turn Around
 human|none menu: Use
 human|none click: Click: Use
-robot|none menu: Rotate Clockwise
-robot|none menu: Rotate Counter Clockwise
-robot|none menu: Turn Around
-robot|none menu: Use
-robot|none click: Click: Use
+@obj.structure.bed robot|none
+-menu: Melt
++0 menu: Rotate Clockwise
++1 menu: Rotate Counter Clockwise
++2 menu: Turn Around
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Rotate Clockwise

@@ -61,22 +61,22 @@ CAPABILITIES(/obj/item/floor_light)
 	act_message(user, src, others = span_notice("%U% has [anchored ? "attached" : "detached"] %T%."))
 	return OP_OK
 
-/obj/machinery/floor_light/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(!(damaged || (broken_now())))
-		return OP_OK
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return OP_OK
+/// When the welder does nothing (the click is used up, nothing is said).
+/obj/machinery/floor_light/proc/welder_refusal(datum/act/op/A)
+	return read_once(!(damaged || (broken_now()))) ? "no" : null
 
-/obj/machinery/floor_light/proc/welder_act_tool_done(mob/user)
+/obj/machinery/floor_light/proc/welder_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
+
+/obj/machinery/floor_light/proc/welder_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	if(QDELETED(src))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	act_message(user, src, others = span_notice("%U% has repaired %T%."))
 	atom_fix()
 	set_damaged(null)
 	update_brightness()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 MSG_DEF_SELF(floor_light/unanchored, "it must be screwed down first")
 
@@ -162,7 +162,7 @@ CAPABILITIES(/obj/machinery/floor_light)
 	configure(uses_power(idle = 2, active = 20, channel = LIGHT))
 	started_work(step = PROC_REF(work_step))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(floor_light_blast))))
-	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	op("use_welder", lit_welder(fuel = 0), priority(OP_PRIORITY_DEFAULT), needs(req(PROC_REF(welder_refusal), silent = TRUE)), starts(PROC_REF(welder_started)), wait(2 SECONDS), then(PROC_REF(welder_act_tool_done)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("floor_light_harm", item(/obj/item), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Hit"), passes(), then(PROC_REF(interaction_harm)))
 	op("floor_light_smash", hand(), ungated(), stance(I_HURT), priority(OP_PRIORITY_DEFAULT - 1), label("Smash"), then(PROC_REF(interaction_smash)))

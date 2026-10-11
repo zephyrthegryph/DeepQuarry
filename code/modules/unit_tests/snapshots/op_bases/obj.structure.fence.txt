@@ -45,12 +45,12 @@ human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/wirecutters menu: Climb (refused: There is no hole in the fence door to climb through.)
+human|/obj/item/tool/wirecutters menu: Cut through (refused: this section of the fence can't be cut)
 human|/obj/item/tool/wirecutters menu: Hit
 human|/obj/item/tool/wirecutters menu: Move To Top
 human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Use
-human|/obj/item/tool/wirecutters menu: Use wirecutter
-human|/obj/item/tool/wirecutters click: Click: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Cut through
 human|/obj/item/tool/wrench menu: Climb (refused: There is no hole in the fence door to climb through.)
 human|/obj/item/tool/wrench menu: Hit
 human|/obj/item/tool/wrench menu: Move To Top

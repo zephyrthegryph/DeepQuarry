@@ -1,7 +1,8 @@
 @obj.structure.bed human|none
 +1 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed robot|none
-+1 menu: Turn Around (refused: It is fastened to the floor!)
+robot|none menu: Disassemble
+robot|none menu: Turn Around (refused: It is fastened to the floor!)
+robot|none click: Click: Disassemble
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Turn Around (refused: It is fastened to the floor!)

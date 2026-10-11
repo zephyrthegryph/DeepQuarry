@@ -23,8 +23,8 @@ CAPABILITIES(/obj/structure/noticeboard)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("noticeboard_silicon_examine", remote(), label("Examine"), then(PROC_REF(noticeboard_silicon_examine)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(noticeboard_blast_dismantle))))
-	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_wrench", tool(TOOL_WRENCH), starts(PROC_REF(wrench_started)), begins(PROC_REF(wrench_begins)), wait(5 SECONDS), then(PROC_REF(wrench_act_tool_done)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Offset"), wait(0), asks(/datum/prompt/choice/noticeboard_offset, step = "offset"), then(PROC_REF(offset_chosen)))
 
 // ALLOW(init/INSTANCE_STATE): takes the notices the map placed on its tile
 /obj/structure/noticeboard/Initialize(mapload)
@@ -83,42 +83,20 @@ CAPABILITIES(/obj/structure/noticeboard)
 		return OP_PASS
 	return OP_DECLINE
 
-/obj/structure/noticeboard/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	ask_noticeboard_offset(user, A.held)
+/// The answer moves the board (the op re-checks the user is still beside it with the screwdriver in hand).
+/obj/structure/noticeboard/proc/offset_chosen(datum/act/op/A)
+	var/choice = A.step_value("offset")
+	if(!choice)
+		return OP_OK
+	apply_noticeboard_offset(choice, A.held)
+	SStgui.update_uis(src)
 	return OP_OK
-
-/// Asks where the board goes; the answer is checked again against the board, the user and the screwdriver (noticeboard_offset_chosen()).
-/obj/structure/noticeboard/proc/ask_noticeboard_offset(mob/user, obj/item/tool)
-	open_request(src, /datum/prompt/choice/noticeboard_offset, PROC_REF(noticeboard_offset_chosen), answerer = user, subject = tool)
 
 /datum/prompt/choice/noticeboard_offset
 	title = "Noticeboard Offset"
 	question = "Which direction do you wish to place the noticeboard?"
 	choices = list("North", "South", "East", "West", "No Offset")
 	timeout = 0
-	recheck_on_open = TRUE
-
-/datum/prompt/choice/noticeboard_offset/recheck_extra()
-	. = ..()
-	if(.)
-		return
-	var/obj/structure/noticeboard/board = owner
-	var/obj/item/tool = subject
-	if(!istype(board) || QDELETED(board) || QDELETED(answerer) || !istype(tool) || QDELETED(tool))
-		return "The board, user or tool is no longer available."
-	if(!isnull(value) && (!value || !board.Adjacent(answerer) || tool.loc != answerer || answerer.incapacitated()))
-		return "The noticeboard cannot be adjusted now."
-
-/obj/structure/noticeboard/proc/noticeboard_offset_chosen(datum/act/request/A)
-	var/mob/user = A.request.answerer
-	var/obj/item/tool = A.request.subject
-	if(!A.answer)
-		if(!QDELETED(user) && !QDELETED(tool) && !isnull(A.request.value))
-			SStgui.update_uis(src)
-		return
-	apply_noticeboard_offset(A.answer.value, tool)
-	SStgui.update_uis(src)
 
 /obj/structure/noticeboard/proc/apply_noticeboard_offset(choice, obj/item/tool)
 	playsound(loc, sounds_of(tool).use, 50, TRUE)
@@ -140,16 +118,17 @@ CAPABILITIES(/obj/structure/noticeboard)
 			pixel_y = 0
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/noticeboard/proc/wrench_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, start_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return OP_OK
+/obj/structure/noticeboard/proc/wrench_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
-/obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)
+/obj/structure/noticeboard/proc/wrench_begins(datum/act/op/A)
+	return msg_text(null, "[A.actor] begins dismantling [src].")
+
+/obj/structure/noticeboard/proc/wrench_act_tool_done(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, others = span_danger("%U% has dismantled %T%!"))
 	dismantle()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attack_ai: look at the board.
 /obj/structure/noticeboard/proc/noticeboard_silicon_examine(datum/act/op/A)

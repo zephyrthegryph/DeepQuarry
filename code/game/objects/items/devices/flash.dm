@@ -48,28 +48,28 @@ CAPABILITIES(/obj/item/flash)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(power_supply), starts = nameof(cell_type))
 	op("self", in_hand(), label("Flash"), then(PROC_REF(interaction_self)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), label("Repair the bulb"), when(nameof(broken)), begins(PROC_REF(repair_begins)), wait(PROC_REF(repair_time)), then(PROC_REF(screwdriver_act_tool_done)), on_interrupt(PROC_REF(screwdriver_act_tool_failed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(flash_emp)))
 
-/obj/item/flash/proc/screwdriver_used(datum/act/op/A)
+/obj/item/flash/proc/repair_begins(datum/act/op/A)
+	return msg_text(null, span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
+
+/// Forty seconds to a minute of fiddling with the bulb.
+/obj/item/flash/proc/repair_time(datum/act/op/A)
+	return 40 SECONDS + rand(0, 20 SECONDS)
+
+/obj/item/flash/proc/screwdriver_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/tool = A.held
-	if(!broken)
-		return OP_DECLINE
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " starts trying to repair %T%'s bulb."))
-	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, job_type = /datum/task/timed/tool_job/flash_repair)
-	return OP_OK
-
-/obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
 	if(!(can_repair))
-		return
+		return OP_OK
 	if(prob(30))
 		act_message(user, src, others = span_notice("%U% successfully repairs %T%!"))
 		set_broken(FALSE)
 	playsound(src, sounds_of(tool).use, 50, 1)
 
-/obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
-	act_message(user, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
+/obj/item/flash/proc/screwdriver_act_tool_failed(datum/act/op/A)
+	act_message(A.actor, src, others = span_infoplain(span_bold("%U%") + " fails to repair %T%."))
 
 TRACKED(/obj/item/flash, broken)
 

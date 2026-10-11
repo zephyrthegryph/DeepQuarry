@@ -11,11 +11,11 @@
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 -click: Click: Use
-+4 menu: Use multitool (refused: its panel is closed)
-+5 click: Click: Use multitool
++2 menu: Set ejection strength (refused: its panel is closed)
++5 click: Click: Set ejection strength
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Use welder
++4 menu: Use welder (refused: )
 +5 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel

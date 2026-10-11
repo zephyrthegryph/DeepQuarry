@@ -4718,6 +4718,9 @@ mapper can notice:
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
 
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
 
 ## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
 
@@ -4732,12 +4735,15 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+Also re-blessed for master commits that landed without their pins: the pipe, cannon frame, pipe dispenser and smoletrack rotation ops, and the food reagent fills in `dq_reagents_start_snapshot`.
+The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reaches the VR sleeper refusal rows, and `rand(1, 999)` at init made them follow how much RNG earlier tests drew.
 
 ## Mob stat is TRACKED; the incapacitated var goes (base_vars lane B, bv-hud)
 
 `stat` is declared `TRACKED(/mob, stat)`: the generated `set_stat()` replaces the hand-written one (same compare, write and publish;
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
+Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
 
 ## Live mob state into its domains (base_vars lane B, bv-hud)
 
@@ -4802,3 +4808,19 @@ the original proposal's description, preserving existing runtime behavior.
 This entry documents the source intent; verification and any pin changes are
 reported separately after the focused gate. No pins have been blessed for this
 cohort yet.
+### rf-toolact lanes (2026-10-11): tool ops, stages(), timed ops
+
+- **Tool `_act` procs are ops.** Each `<quality>_act()` override is an `op("use_<quality>", tool(TOOL_X), ...)`; the pins' click rows now name
+  the tool op (`Click: Use screwdriver`, `Remove the DNA lock`, `Lock the assembly`) where they used to show the op the old hook pre-empted.
+  Hooks that blocked a click with a message are requirements: the refusal text is the engine's (`refused: ...` in the menu).
+- **A gun's screwdriver** answers its DNA lock op ahead of the gun's other ops, as the hook did; removing the lock is a 2.5 s timed op.
+- **The nuke's anchor removal** is five timed `stages()` steps that a welder, crowbar or wrench click reaches (the tool ops sat below the window
+  op, so a click opened the panel instead).
+- **The AI core frame's** stage checks compare exactly (`req_stage()`): `req_is(state, 1)` matched any nonzero stage, so the frame offered its
+  unanchor at every stage.
+- **Timed tool work** (`use_tool()`, now deleted) is the op's `wait()`: the progress, the interruption and the start messages are the op's.
+  A power sink detached from its cable is also unfastened (it stayed anchored when detached before it was switched on).
+- **Questions** (camera networks and name, noticeboard offset, disposal outlet range) are `asks()` steps of their tool op: the op keeps the
+  tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
+rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
+rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.

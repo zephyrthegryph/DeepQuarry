@@ -42,7 +42,7 @@ human|none click: Click: Use
 +0 menu: Hit
 +2 menu: Smash
 +4 menu: Use (refused: it must be screwed down first)
-+5 menu: Use welder
++5 menu: Use welder (refused: )
 +6 click: Click: Use welder
 @obj human|/obj/item/stack/cable_coil
 -click: nothing

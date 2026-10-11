@@ -38,7 +38,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	param(nameof(tint_ovr), pos = 5)
 	param(nameof(can_revert), pos = 6)
 	param(nameof(discard_clothes), pos = 7)
-	op("anchor", tool(TOOL_WRENCH), wait(0), label("Use"), then(PROC_REF(gargoyle_wrenched)))
+	op("anchor", tool(TOOL_WRENCH), label("Use"), needs(req(PROC_REF(anchor_refusal))), starts(PROC_REF(anchoring_started)), wait(2 SECONDS), then(PROC_REF(attackby_tool_done)))
 	op("item", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), then(PROC_REF(interaction_item)))
 	op("item_cyborg", item(/obj/item), label("Use"), when(req_actor_kind(/mob/living/silicon/robot)), then(PROC_REF(interaction_item_cyborg)))
 
@@ -267,16 +267,12 @@ CAPABILITIES(/obj/structure/gargoyle)
 	damage(damage)
 
 /// Old attackby with a wrench: anchor or free the statue (not over open space).
-/obj/structure/gargoyle/proc/gargoyle_wrenched(datum/act/op/A)
-	var/mob/living/user = A.actor
-	var/obj/item/W = A.held
-	if(isspace(loc) || isopenspace(loc))
-		to_chat(user, span_warning("You can't anchor that here!"))
-		set_anchored(FALSE)
-		return OP_OK
-	var/was_anchored = anchored
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
-	return OP_OK
+/// A statue is not anchored over space.
+/obj/structure/gargoyle/proc/anchor_refusal(datum/act/op/A)
+	return read_once(isspace(loc) || isopenspace(loc)) ? "you can't anchor that here" : null
+
+/obj/structure/gargoyle/proc/anchoring_started(datum/act/op/A)
+	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
 /// Old attackby: feed the petrified gargoyle's catch, or hit the statue.
 /obj/structure/gargoyle/proc/interaction_item(datum/act/op/A)
@@ -308,8 +304,8 @@ CAPABILITIES(/obj/structure/gargoyle)
 			damage(combat_of(W).force)
 	return OP_OK
 
-/obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
-	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))
+/obj/structure/gargoyle/proc/attackby_tool_done(datum/act/op/A)
+	to_chat(A.actor, span_notice("You [anchored ? "un" : ""]anchor the [src]."))
 	set_anchored(!anchored)
 
 /obj/structure/gargoyle/set_dir(new_dir)

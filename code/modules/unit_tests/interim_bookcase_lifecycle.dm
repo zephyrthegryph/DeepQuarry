@@ -12,7 +12,7 @@
 		TEST_ASSERT_NULL(user.get_active_hand(), "actual insertion vacates the book's hand slot")
 		books += book
 	TEST_ASSERT_EQUAL(contents_count(shelf), 2, "the real shelf contains both inserted books before dismantling")
-	TEST_ASSERT_EQUAL(shelf.screwdriver_act_tool_done(user), ITEM_INTERACT_SUCCESS, "actual dismantling completion reports success")
+	TEST_ASSERT_EQUAL(test_op_handler(shelf, "screwdriver_act_tool_done", user), OP_OK, "actual dismantling completion reports success")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(shelf), "actual dismantling immediately consumes the original shelf")
 	for(var/obj/item/book/book as anything in books)

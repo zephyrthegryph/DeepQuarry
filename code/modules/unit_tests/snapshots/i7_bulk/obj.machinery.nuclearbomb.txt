@@ -17,23 +17,21 @@ human|none click: Click: Ui open
 -click: nothing
 +0 menu: Make Deployable
 +3 menu: Ui open
-+4 menu: Use
-+5 menu: Use screwdriver
-+6 click: Click: Ui open
++4 menu: Unscrew the control panel (refused: 	he the Nuclear Fission Explosive emits a buzzing noise, the panel staying locked in)
++5 menu: Use
++6 click: Click: Unscrew the control panel
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Make Deployable
 +3 menu: Ui open
 +4 menu: Use
-+5 menu: Use crowbar
-+6 click: Click: Ui open
++5 click: Click: Ui open
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Make Deployable
 +3 menu: Ui open
 +4 menu: Use
-+5 menu: Use wrench
-+6 click: Click: Ui open
++5 click: Click: Ui open
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Make Deployable
@@ -53,8 +51,7 @@ human|none click: Click: Ui open
 +0 menu: Make Deployable
 +3 menu: Ui open
 +4 menu: Use
-+5 menu: Use welder
-+6 click: Click: Ui open
++5 click: Click: Ui open
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +1 menu: Make Deployable
@@ -80,4 +77,4 @@ human|none click: Click: Ui open
 +4 menu: Use
 +5 click: Click: Ui open
 @obj human|/obj/item/disk/nuclear
-keys: anchor, auth, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, pulse, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_crowbar, use_screwdriver, use_welder, use_wire_tools, use_wrench, wire
+keys: anchor, auth, close_panel, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, open_panel, pulse, removal_stage_0_1, removal_stage_1_2, removal_stage_2_3, removal_stage_3_4, removal_stage_4_5, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_wire_tools, wire
