@@ -150,15 +150,35 @@ fn ordered_input_filters_match_pinned_diagnostics_including_multiplicity() {
     // the expression. Keep those authenticated coordinates distinct from the
     // current statement ordinal that this producer is licensed to issue.
     let without_list_locations = [(50, 51), (54, 55), (58, 59), (62, 63)];
-    let captured_log =
-        include_str!("../../../../../fixtures/native/input_filter_order/compile.log");
+    // Use the committed capture; compile.log is a generated, ignored artifact
+    // and is absent from an immutable Git snapshot or fresh checkout.
+    let capture: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../fixtures/native/input_filter_order/receipt.json"
+    ))
+    .unwrap();
+    assert_eq!(capture["status"], "captured");
+    assert_eq!(
+        capture["compiler_sha256"],
+        "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    );
+    let captured = capture["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|case| case["name"] == "matrix")
+        .unwrap();
+    assert_eq!(captured["byond"]["exit_code"], 0);
+    let diagnostics = captured["byond"]["diagnostics"].as_array().unwrap();
     for (expression_line, byond_line) in without_list_locations {
         let expression = source.lines().nth(expression_line - 1).unwrap();
         let lookahead = source.lines().nth(byond_line - 1).unwrap();
         assert!(expression.contains("input(\"prompt\")") && expression.contains("anything"));
         assert!(!expression.contains(" in choices"));
         assert!(lookahead.starts_with("/proc/"));
-        assert!(captured_log.contains(&format!("matrix.dm:{byond_line}:warning (anything_no_list): 'anything' has no meaning without a list")));
+        assert!(diagnostics.iter().any(|row| row["file"] == "matrix.dm"
+            && row["line"] == byond_line
+            && row["severity"] == "warning (anything_no_list)"
+            && row["message"] == "'anything' has no meaning without a list"));
     }
     for item in &ast.items {
         let bindings = LowerBindings {
