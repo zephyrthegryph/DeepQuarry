@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/storage/box/gum)
 		var/mob/living/M = loc
 		if(!isliving(M))
 			return ..()
-		if(M.can_be_drop_pred && M.food_vore && vore_selected_of(M))
+		if(M.vore_prefs.can_be_drop_pred && M.vore_prefs.food_vore && vore_selected_of(M))
 			for(var/mob/living/F in victims)
 				if(!F.vore_prefs.can_be_drop_prey || !F.vore_prefs.food_vore)
 					to_chat(F, span_warning("You manage to pull yourself free of \the [src] at the last second!"))

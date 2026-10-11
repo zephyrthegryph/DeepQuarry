@@ -71,7 +71,7 @@
 /datum/vore_look/proc/get_general_data(mob/owner)
 	return list(
 		"active_belly" = vore_selected_of(owner)?.name,
-		"belly_rub_target" = owner.belly_rub_target,
+		"belly_rub_target" = owner.vore_prefs.belly_rub_target,
 		// start, vore sprites
 		"aestethic_messages" = compile_aesthetic_messages(owner),
 		"vore_sprite_color" = owner.vore_prefs.vore_sprite_color,

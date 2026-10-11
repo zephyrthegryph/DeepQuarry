@@ -139,13 +139,13 @@ CAPABILITIES(/datum/hose_connector/inflation)
 							my_hose.disconnect() // Pop!
 							return
 			if(connection_mode == CHEM_VORE)
-				if(!human_owner().receive_reagents)
+				if(!human_owner().vore_prefs.receive_reagents)
 					to_chat(human_owner(), span_warning("You can't transfer reagents into your [sanitize(vore_selected_of(human_owner()).name)], your prefs dont allow it!"))
 					my_hose.disconnect() // Pop!
 					return
 		if(other.flow_direction == HOSE_INPUT || other.flow_direction == HOSE_NEUTRAL) // If filling mouth check prefs for belly fluid consumption.
 			if(connection_mode == CHEM_VORE)
-				if(!human_owner().give_reagents)
+				if(!human_owner().vore_prefs.give_reagents)
 					to_chat(human_owner(), span_warning("You can't transfer reagents from your [sanitize(vore_selected_of(human_owner()).name)], your prefs dont allow it!"))
 					my_hose.disconnect() // Pop!
 					return
