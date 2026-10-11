@@ -19,6 +19,10 @@ CASES += ('bodyless_each_typed_eof', 'bodyless_each_typed_empty_braces',
           'bodyless_pair_eof', 'bodyless_pair_empty_braces',
           'bodyless_pair_semicolon', 'bodyless_pair_dedented_return')
 CASES += ('bodyless_each_typed_next_proc', 'bodyless_each_typed_parent_next_proc', 'bodyless_each_typed_parent_return', 'bodyless_pair_next_proc', 'bodyless_pair_parent_next_proc', 'bodyless_pair_parent_return')
+CASES += tuple('bodyless_context_' + kind + '_' + context
+               for kind in ('each', 'pair')
+               for context in ('absolute_datum_proc', 'relative_datum_proc',
+                               'following_type', 'following_statement'))
 DM_SHA = "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
 
 def diagnostics(text):
