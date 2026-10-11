@@ -24,16 +24,10 @@ CAPABILITIES(/obj/structure/extinguisher_cabinet)
 	op("wrench_toggle", tool(TOOL_WRENCH), label("Use"), wait(0), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(nameof(has_extinguisher)), then(PROC_REF(toggled)))
 	op("unwrench", tool(TOOL_WRENCH), label("Unwrench"), wait(1.5 SECONDS), when(req_actor_kind(/mob/living/silicon/robot, not = TRUE)), when(cond_not(nameof(has_extinguisher))),
 		begins(MSG(extinguisher_cabinet/unwrenching)), says(MSG(extinguisher_cabinet/unwrenched)), then(PROC_REF(unwrenched)))
+	rolls(ROLL_PIXEL, WALL_OFFSET(27, 27), when = nameof(building))
 
 /// A cabinet built on a wall (its constructor param).
 /obj/structure/extinguisher_cabinet/var/building = FALSE
-
-// ALLOW(init/INSTANCE_STATE): a built cabinet sits on its wall empty; a mapped one comes with its extinguisher
-/obj/structure/extinguisher_cabinet/Initialize(mapload)
-	. = ..()
-	if(building)
-		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
-		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 
 
 /// Anything held: an extinguisher goes into an open empty cabinet; anything else opens or shuts it.

@@ -24,10 +24,13 @@
 /obj/item/lipstick/random
 	name = "lipstick"
 
-/obj/item/lipstick/random/Initialize(mapload)
-	. = ..()
-	colour = pick("red","purple","jade","black")
-	name = "[colour] lipstick"
+CAPABILITIES(/obj/item/lipstick/random)
+	rolls(nameof(colour), pick_one(list("red", "purple", "jade", "black")))
+	rolls(nameof(name), PROC_REF(name_for_colour), from = list(nameof(colour)))
+
+/// Rolled before init (rolls()), after the colour: named for it.
+/obj/item/lipstick/random/proc/name_for_colour(datum/roller/R)
+	return "[colour] lipstick"
 
 TRACKED(/obj/item/lipstick, open)
 

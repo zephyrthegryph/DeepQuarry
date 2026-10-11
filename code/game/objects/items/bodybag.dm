@@ -203,7 +203,7 @@ MSG_DEF(cryobag/injector_out, "You pry the injector out of %T%.", "%U% pries the
 // A stasis bag takes only people (the first one zips it up for good), keeps its own air, and has an injector slot for a syringe. A shut one is scanned through
 // its skin (a health analyzer), takes a syringe with an item and gives it back to a screwdriver until somebody has been zipped in. Opening a used one asks first.
 CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
-	owns_one(nameof(tank), /obj/item/tank)
+	owns_one(nameof(tank), /obj/item/tank, starts = nameof(tank_type), starts_args = NO_LOC) // in nullspace, so opening the bag does not eject it
 	owns_one(nameof(syringe), /obj/item/reagent_containers/syringe)
 	extend("door", when(cond_not(nameof(used))))
 	op("door_used", inputs(hand(), menu()), answers(INTENT_USE), label("Toggle Open"), when(nameof(used)), when(req(PROC_REF(bare_hand_or_menu))),
@@ -215,9 +215,6 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
 	op("remove_injector", tool(TOOL_SCREWDRIVER), label("Remove injector"), when(cond_not(nameof(opened))), priority(OP_PRIORITY_PART), wait(0),
 		needs(req(PROC_REF(injector_removable))), then(PROC_REF(injector_removed)), says(MSG(cryobag/injector_out)))
 
-/obj/structure/closet/body_bag/cryobag/Initialize(mapload)
-	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
-	..()
 
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()

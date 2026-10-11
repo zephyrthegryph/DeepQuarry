@@ -45,12 +45,17 @@ CAPABILITIES(/obj/structure/micro_tunnel)
 	op("micro_reach_wait", ai(), takes("contained_mobs"), wait(3 SECONDS), on_interrupt(PROC_REF(micro_reach_failed)), then(PROC_REF(micro_reach_done)))
 	op("micro_move_wait", ai(), takes("contained_mobs", "choice"), wait(10 SECONDS), then(PROC_REF(micro_interact_timed_done)))
 	op("micro_climb_wait", ai(), takes("contained_mobs"), wait(10 SECONDS), on_interrupt(PROC_REF(micro_interact_timed_failed2)), then(PROC_REF(micro_interact_timed_done2)))
+	derives(nameof(name), PROC_REF(area_name))
+
+/// An unnamed tunnel is named for its area (derives(), at init).
+/obj/structure/micro_tunnel/proc/area_name()
+	if(name != initial(name))
+		return name
+	var/area/our_area = get_area(src)
+	return "[our_area?.name] [name]"
 
 /obj/structure/micro_tunnel/Initialize(mapload)
 	. = ..()
-	if(name == initial(name))
-		var/area/our_area = get_area(src)
-		name = "[our_area.name] [name]"
 	if(pixel_x || pixel_y)
 		return
 	offset_tunnel()

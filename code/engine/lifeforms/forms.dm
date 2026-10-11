@@ -237,7 +237,7 @@
 	if(P.adjacencies)
 		adjacency_teardown(holder, P)
 	if(P.derives)
-		LAZYREMOVE(GLOB.derives_running, holder)
+		GLOB.derives_running -= holder // never LAZYREMOVE: a nulled global list breaks every later derives()
 
 // ---- the change watch ----
 

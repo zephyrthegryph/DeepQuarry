@@ -1,3 +1,7 @@
+/// Rolled before init (rolls()): a dropped tool sits up to 16 px up its tile three times in four.
+/obj/item/tool/proc/roll_drop_y(datum/roller/R)
+	return R.chance(75) ? R.number(0, 16) : pixel_y
+
 /*
  * Screwdriver
  */
@@ -23,36 +27,29 @@
 	var/random_color = TRUE
 
 CAPABILITIES(/obj/item/tool/screwdriver)
+	rolls(nameof(icon_state), PROC_REF(roll_colour), when = nameof(random_color))
+	rolls(nameof(item_state), PROC_REF(item_state_for_colour), when = nameof(random_color), from = list(nameof(icon_state)))
+	rolls(nameof(pixel_y), PROC_REF(roll_drop_y))
 	configure(item_sounds(hit = SFX_WEAPONS_BLADESLICE, use = SFX_ITEMS_SCREWDRIVER, drop = SFX_ITEMS_DROP_SCREWDRIVER, pickup = SFX_ITEMS_PICKUP_SCREWDRIVER))
 
-/obj/item/tool/screwdriver/Initialize(mapload)
-	. = ..()
-	if(random_color)
-		switch(pick("red","blue","purple","brown","green","cyan","yellow"))
-			if ("red")
-				icon_state = "screwdriver2" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver"
-			if ("blue")
-				icon_state = "screwdriver" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_blue"
-			if ("purple")
-				icon_state = "screwdriver3" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_purple"
-			if ("brown")
-				icon_state = "screwdriver4" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_brown"
-			if ("green")
-				icon_state = "screwdriver5" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_green"
-			if ("cyan")
-				icon_state = "screwdriver6" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_cyan"
-			if ("yellow")
-				icon_state = "screwdriver7" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
-				item_state = "screwdriver_yellow"
+/// A random handle colour (rolls()): icon_state -> the matching in-hand item_state.
+GLOBAL_LIST_INIT(screwdriver_colours, list(
+		"screwdriver2" = "screwdriver",
+		"screwdriver" = "screwdriver_blue",
+		"screwdriver3" = "screwdriver_purple",
+		"screwdriver4" = "screwdriver_brown",
+		"screwdriver5" = "screwdriver_green",
+		"screwdriver6" = "screwdriver_cyan",
+		"screwdriver7" = "screwdriver_yellow"))
 
-	if (prob(75))
-		pixel_y = rand(0, 16)
+/// Rolled before init (rolls()): one of the handle colours.
+/obj/item/tool/screwdriver/proc/roll_colour(datum/roller/R)
+	return R.choose(GLOB.screwdriver_colours)
+
+/// Rolled before init (rolls()), after the colour: the in-hand sprite of the colour it rolled.
+/obj/item/tool/screwdriver/proc/item_state_for_colour(datum/roller/R)
+	return GLOB.screwdriver_colours[icon_state] || item_state
+
 
 /obj/item/tool/screwdriver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M) || stance == I_HELP)
