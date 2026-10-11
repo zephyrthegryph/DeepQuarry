@@ -1,5 +1,6 @@
 """Bounded explicit runtime contract across actual retained and fresh compilers."""
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -83,6 +84,39 @@ def apply_step(source, step):
     return source.replace(before, after, 1)
 
 
+def admitted_asset_edits(steps, fixture_names):
+    """Only explicit extra source assets may be edited; special hooks stay separate."""
+    allowed = set(fixture_names) - {"probe.dm", "probe.dme", "contract-resource.txt", "scenarios.json"}
+    paths = set()
+    for step in steps:
+        if "asset_edit" not in step:
+            continue
+        edit = step["asset_edit"]
+        if (not isinstance(edit, dict) or set(edit) != {"path", "before", "after"}
+                or not isinstance(edit["path"], str) or edit["path"] not in allowed
+                or not isinstance(edit["before"], str) or not edit["before"]
+                or not isinstance(edit["after"], str)):
+            raise ValueError("asset edit requires one declared extra asset and exact before/after text")
+        paths.add(edit["path"])
+    return tuple(sorted(paths))
+
+
+def current_asset_hashes(original, copies, names, original_hashes, current_bytes, regular, sha):
+    """Original producer bytes stay immutable; each private copy matches issued revision."""
+    hashes = {}
+    for name in names:
+        regular(original, name)
+        if sha(original / name) != original_hashes[name]:
+            raise ValueError("original asset changed during revision: " + name)
+        expected = hashlib.sha256(current_bytes[name]).hexdigest() if name in current_bytes else original_hashes[name]
+        for directory in copies:
+            regular(directory, name)
+            if sha(directory / name) != expected:
+                raise ValueError("current asset copy differs from admitted revision: " + name)
+        hashes[name] = expected
+    return hashes
+
+
 def read_steps(file, labels=LABELS, prefix="DQ_CONTRACT"):
     if file.stat().st_size > 64 * 1024:
         raise ValueError("scenario descriptor exceeds 64KiB")
@@ -162,6 +196,15 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
             setattr(args, name, file)
             retirement.record_pin(receipt, name, file, expected)
         steps = read_steps(fixture_directory / "scenarios.json", labels, prefix)
+        edited_assets = admitted_asset_edits(steps, fixture_names)
+        extra_assets = tuple(name for name in fixture_names if name not in ("probe.dm", "probe.dme", "contract-resource.txt"))
+        asset_text = {}
+        for name in edited_assets:
+            file = retirement.fixture_file(fixture_directory, name)
+            if file.stat().st_size > 1024 * 1024:
+                raise ValueError("editable fixture asset exceeds 1MiB")
+            asset_text[name] = file.read_bytes().decode("utf-8")
+        immutable_assets = tuple(name for name in immutable_assets if name not in edited_assets)
         source = (fixture_directory / "probe.dm").read_text(encoding="utf-8")
         resource = (fixture_directory / "contract-resource.txt").read_text(encoding="utf-8")
         native_source, byond_source = root / "native-source", root / "byond-source"
@@ -205,6 +248,12 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
             source = apply_step(source, step)
             if "resource_before" in step or "resource_after" in step:
                 resource = apply_step(resource, {"before": step.get("resource_before"), "after": step.get("resource_after")})
+            if "asset_edit" in step:
+                edit = step["asset_edit"]
+                asset_text[edit["path"]] = apply_step(asset_text[edit["path"]], edit)
+                if len(asset_text[edit["path"]].encode("utf-8")) > 1024 * 1024:
+                    raise ValueError("edited fixture asset exceeds 1MiB")
+            current_asset_bytes = {name: text.encode("utf-8") for name, text in asset_text.items()}
             expected = expected_markers(step["expected"], labels, prefix)
             label = f"{index:02d}-{step['name']}"
             row = {"name": step["name"], "status": "pending", "expected": expected}
@@ -215,6 +264,13 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
                 temporary.write_text(source, encoding="utf-8", newline="\n")
                 os.replace(temporary, target)
                 (directory / "contract-resource.txt").write_text(resource, encoding="utf-8", newline="\n")
+                for name, data in current_asset_bytes.items():
+                    target = directory / name
+                    retirement.fixture_file(directory, name)
+                    temporary = target.with_name(target.name + ".next")
+                    with temporary.open("xb") as output:
+                        output.write(data)
+                    os.replace(temporary, target)
             for directory in (native_source, byond_source):
                 for name in immutable_assets:
                     retirement.fixture_file(directory, name)
@@ -223,6 +279,9 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
                     if h.sha(directory / name) != expected_hash or h.sha(fixture_directory / name) != expected_hash:
                         raise ValueError("immutable fixture asset changed before revision: " + name)
             row["immutable_asset_sha256"] = {name: receipt["fixture_sources"][name] for name in immutable_assets}
+            row["asset_sha256"] = current_asset_hashes(fixture_directory,
+                (native_source, byond_source), extra_assets, receipt["fixture_sources"],
+                current_asset_bytes, retirement.fixture_file, h.sha)
             row["source_sha256"] = h.sha(native_source / "probe.dm")
             row["resource_sha256"] = h.sha(native_source / "contract-resource.txt")
             if h.sha(byond_source / "probe.dm") != row["source_sha256"]:
@@ -300,6 +359,10 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
                         raise ValueError("immutable fixture asset changed during request: " + name)
                 if h.sha(directory / "contract-resource.txt") != row["resource_sha256"]:
                     raise ValueError("current resource input changed during a request")
+            if current_asset_hashes(fixture_directory, (native_source, byond_source),
+                    extra_assets, receipt["fixture_sources"], current_asset_bytes,
+                    retirement.fixture_file, h.sha) != row["asset_sha256"]:
+                raise ValueError("current asset evidence changed during request")
             row["status"] = "passed"
         for name in receipt["fixture_sources"]:
             if h.sha(fixture_directory / name) != receipt["fixture_sources"][name]:

@@ -13,6 +13,43 @@ spec.loader.exec_module(helper)
 
 
 class RuntimeContractHelperTests(unittest.TestCase):
+    def test_asset_edits_require_declared_extra_path_and_exact_occurrence(self):
+        names = ("probe.dm", "probe.dme", "contract-resource.txt", "probe.dmm")
+        valid = {"asset_edit": {"path": "probe.dmm", "before": "amount = 7", "after": "amount = 19"}}
+        self.assertEqual(helper.admitted_asset_edits([valid], names), ("probe.dmm",))
+        self.assertEqual(helper.apply_step("amount = 7", valid["asset_edit"]), "amount = 19")
+        for path in ("../probe.dmm", "other.dmm", "probe.dm", "probe.dme", "contract-resource.txt"):
+            invalid = {"asset_edit": {**valid["asset_edit"], "path": path}}
+            with self.assertRaises(ValueError):
+                helper.admitted_asset_edits([invalid], names)
+        with self.assertRaises(ValueError):
+            helper.apply_step("amount = 7 amount = 7", valid["asset_edit"])
+        with self.assertRaises(ValueError):
+            helper.admitted_asset_edits([{"asset_edit": {**valid["asset_edit"], "unexpected": 1}}], names)
+
+    def test_current_asset_proof_rejects_copy_or_original_mutation(self):
+        retirement = helper.load("current_asset_retirement", HERE.parent / "power_retirement_runtime/run.py")
+        with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:
+            root = Path(directory)
+            original, first, second = root / "original", root / "native", root / "byond"
+            for folder in (original, first, second):
+                folder.mkdir()
+            (original / "probe.dmm").write_bytes(b"amount = 7")
+            for folder in (first, second):
+                (folder / "probe.dmm").write_bytes(b"amount = 19")
+            sha = lambda file: hashlib.sha256(file.read_bytes()).hexdigest()
+            hashes = {"probe.dmm": sha(original / "probe.dmm")}
+            args = (original, (first, second), ("probe.dmm",), hashes,
+                    {"probe.dmm": b"amount = 19"}, retirement.fixture_file, sha)
+            self.assertEqual(helper.current_asset_hashes(*args)["probe.dmm"], sha(first / "probe.dmm"))
+            (second / "probe.dmm").write_bytes(b"amount = 23")
+            with self.assertRaisesRegex(ValueError, "current asset copy"):
+                helper.current_asset_hashes(*args)
+            (second / "probe.dmm").write_bytes(b"amount = 19")
+            (original / "probe.dmm").write_bytes(b"amount = 19")
+            with self.assertRaisesRegex(ValueError, "original asset changed"):
+                helper.current_asset_hashes(*args)
+
     def test_extra_asset_transport_rejects_source_mutation_during_copy(self):
         retirement = helper.load("asset_contract_retirement", HERE.parent / "power_retirement_runtime/run.py")
         with tempfile.TemporaryDirectory(dir="E:/dq-cache") as directory:

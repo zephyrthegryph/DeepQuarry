@@ -44,6 +44,36 @@
         11,
         17
       ]
+    },
+    {
+      "name": "map_nested",
+      "asset_edit": {
+        "path": "probe.dmm",
+        "before": "amount = 7",
+        "after": "amount = 19"
+      },
+      "expected": [
+        1,
+        1,
+        19,
+        11,
+        17
+      ]
+    },
+    {
+      "name": "map_scalar",
+      "asset_edit": {
+        "path": "probe.dmm",
+        "before": "scalar = 11",
+        "after": "scalar = 23"
+      },
+      "expected": [
+        1,
+        1,
+        19,
+        23,
+        17
+      ]
     }
   ]
 }

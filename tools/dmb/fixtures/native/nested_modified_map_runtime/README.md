@@ -17,7 +17,7 @@ runtime fixture, with an owned E:/dq-cache output root. Both map and resource ar
 explicit hash-checked assets. No new executor or cache is introduced.
 
 `run_retained.py` uses the existing common retained contract with explicit
-immutable map/resource assets. Initial, unchanged, body13Ã¢â€ â€™17 and unrelated field
+immutable map/resource assets. Initial, unchanged, body13ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢17 and unrelated field
 insertion revisions require exact retained/fresh DMB/RSC equality and all BYOND
 runtime values. The map stays constant; no file-specific map edit is claimed.
 
@@ -32,3 +32,13 @@ This is focused runtime correctness evidence, not full-suite or performance
 acceptance.
 This is focused execution evidence when run, not full-suite parity or historical
 initializer root-cause proof.
+
+## Additional map-edit scenarios (not yet executed)
+
+The same scenario descriptor now adds `map_nested` (amount7→19) and
+`map_scalar` (scalar11→23), with unchanged body marker17. `asset_edit` names an
+explicit transported asset and one exact before/after text site. Only private
+native/BYOND copies are atomically replaced; original fixture hashes remain
+immutable. Every revision records and rechecks current map bytes in both source
+roots. The earlier853 receipt proves the original four revisions only, not these
+new map-edit steps. No second runtime runner or cache is introduced.
