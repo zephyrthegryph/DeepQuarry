@@ -9,4 +9,4 @@ LABELS = ("parent_present", "child_type", "nested_amount", "leaf_scalar", "body_
 if __name__ == "__main__":
     raise SystemExit(contract.main(fixture_directory=HERE, labels=LABELS, prefix="DQ_NESTED",
         asset_files=("contract-resource.txt", "probe.dmm"),
-        scope="nested map modifier across retained initial/unchanged/body/structural revisions"))
+        scope="nested map modifier across retained initial/unchanged/body/structural/nested-map/scalar-map revisions"))
