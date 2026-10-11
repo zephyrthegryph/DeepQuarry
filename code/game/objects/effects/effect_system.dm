@@ -429,6 +429,15 @@ CAPABILITIES(/obj/effect/effect/smoke/elemental)
 	var/processing = 1
 	var/on = 1
 
+/// A starting occupant (owns_one(nameof(ion_trail), ..., starts = /datum/effect/effect/system/ion_trail_follow)) is made as new type(holder): it
+/// follows its holder from the start, and `start_now` (starts_args = list(TRUE)) lights it at once.
+/datum/effect/effect/system/ion_trail_follow/New(atom/attach_to, start_now = FALSE)
+	..()
+	if(isatom(attach_to))
+		set_up(attach_to)
+		if(start_now)
+			start()
+
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
 	rel_set(src, nameof(oldposition), get_turf(atom))

@@ -388,9 +388,8 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 		/mob/living/simple_mob/slime/xenobio/ruby
 	)
 
-/mob/living/simple_mob/slime/xenobio/ruby/Initialize(mapload)
-	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
-	return ..()
+CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
+	body_effect(/datum/body_effect/slime_strength) // always swole
 
 /mob/living/simple_mob/slime/xenobio/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()
@@ -804,9 +803,8 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 		/mob/living/simple_mob/slime/xenobio/rainbow
 	)
 
-/mob/living/simple_mob/slime/xenobio/rainbow/Initialize(mapload)
-	unify()
-	return ..()
+/mob/living/simple_mob/slime/xenobio/rainbow
+	unity = TRUE // what unify() sets: it counts every colour as its own
 
 // The RD's pet slime.
 /mob/living/simple_mob/slime/xenobio/rainbow/kendrick
@@ -816,9 +814,12 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	// Doing pacify() in initialize() won't actually pacify the AI due to the ai_brain not existing due to parent initialize() not being called yet.
 	// Instead lets just give them an ai_brain that does that for us.
 
-/mob/living/simple_mob/slime/xenobio/rainbow/kendrick/Initialize(mapload)
-	pacify() // So the physical mob also gets made harmless.
-	return ..()
+/mob/living/simple_mob/slime/xenobio/rainbow/kendrick
+	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
+	harmless = TRUE
+	faction = FACTION_NEUTRAL
+	melee_damage_upper = 0
+	melee_damage_lower = 0
 
 // A pacified pink slime for either Admin-spawning or putting in a casino reward or capture crystal.
 /mob/living/simple_mob/slime/xenobio/pink/sana
@@ -826,6 +827,9 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 	desc = "A pink slime that seems to be oddly friendly, and doesn't seem interested in eating your face like the rest of them."
 	rainbow_core_candidate = FALSE
 
-/mob/living/simple_mob/slime/xenobio/pink/sana/Initialize(mapload)
-	pacify() // So the physical mob also gets made harmless.
-	return ..()
+/mob/living/simple_mob/slime/xenobio/pink/sana
+	// born pacified (what pacify() sets on the mob; the slime base's update_mood() at init takes its mood and vore settings from it)
+	harmless = TRUE
+	faction = FACTION_NEUTRAL
+	melee_damage_upper = 0
+	melee_damage_lower = 0

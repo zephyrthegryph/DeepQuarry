@@ -4,6 +4,10 @@ TRACKED(/mob/living/simple_mob, has_hands)
 // AI code has been made into a datum, inside the AI module folder.
 
 /mob/living/simple_mob
+	// footsteps (footstep() in its CAPABILITIES)
+	footstep_type = FOOTSTEP_MOB_SHOE
+	footstep_volume = 1
+	footstep_e_range = -6
 	name = "animal"
 	desc = ""
 	icon = 'icons/mob/animal.dmi'
@@ -186,7 +190,18 @@ CAPABILITIES(/mob/living/simple_mob)
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
 	ref_many(nameof(tamers))
-	owns_one(nameof(myid), /obj/item/card/id)
+	owns_one(nameof(myid), /obj/item/card/id, starts = PROC_REF(start_id))
+	// per-subtype constant tables: every instance of a type shares one list (a subtype that changes its attacktext copies it first)
+	per_type(nameof(attacktext), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(friendly), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(loot_list), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(myid_access), TYPE_PROC_REF(/datum, per_type_own))
+	per_type(nameof(organ_names), PROC_REF(organ_names_decl))
+	knows(nameof(has_langs), default = TRUE)
+	// a mob with no living state of its own wears its type's icon state (it would turn invisible otherwise)
+	derives(nameof(icon_living), PROC_REF(default_icon_living))
+	verb_entry(/mob/living/simple_mob/proc/ColorMate, when = cond_config(/datum/config_entry/flag/allow_simple_mob_recolor))
+	footstep()
 	owns_one(nameof(mob_radio), /obj/item/radio/headset)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(synthetic_emp_surge)))
 	on_notice(/datum/notice/hit, then(PROC_REF(thrown_reaction_sound)))
@@ -210,42 +225,25 @@ CAPABILITIES(/mob/living/simple_mob)
 
 // Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
 
-/mob/living/simple_mob/Initialize(mapload)
-	// Per-subtype constant tables: share one list across every instance of
-	// this type instead of allocating a fresh copy per mob. attacktext can
-	// be a single string on some subtypes, so only intern the list form;
-	// subtypes that mutate their attacktext list (e.g. synx) copy it first.
-	if(islist(attacktext))
-		attacktext = shared_type_list(type, "attacktext", attacktext)
-	if(islist(friendly))
-		friendly = shared_type_list(type, "friendly", friendly)
-	if(islist(loot_list))
-		loot_list = shared_type_list(type, "loot_list", loot_list)
-	if(islist(myid_access))
-		myid_access = shared_type_list(type, "myid_access", myid_access)
+/// Its ID card, when its type gives it one (owns_one(starts =)), with the type's access.
+/mob/living/simple_mob/proc/start_id(current, mapload)
+	if(!ID_provided)
+		return null
+	var/obj/item/card/id/card = new /obj/item/card/id(src)
+	card.access = id_access()
+	return card
 
-	if(ID_provided)
-		rel_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
-		myid.access = myid_access ? myid_access.Copy() : list()
+/// The access its ID card starts with: the type's myid_access (a subtype may add to it).
+/mob/living/simple_mob/proc/id_access()
+	return myid_access ? myid_access.Copy() : list()
 
-	for(var/L in has_langs)
-		languages |= GLOB.all_languages[L]
-	if(languages.len)
-		default_language = languages[1]
+/// Its organ names' shared decl (per_type()).
+/mob/living/simple_mob/proc/organ_names_decl(var_name)
+	return organ_names ? GET_DECL(organ_names) : null
 
-	if(!icon_living) // Prevent the mob from turning invisible if icon_living is null.
-		set_icon_living(initial(icon_state))
-
-	if(organ_names)
-		organ_names = GET_DECL(organ_names)
-
-	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-		grant(src, granted_verb(/mob/living/simple_mob/proc/ColorMate), verb_source(VERB_SOURCE_CONFIG))
-
-	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
-
-	return ..()
-
+/// Its living state, or its type's icon state when it has none (derives(), once at init, after the rolls).
+/mob/living/simple_mob/proc/default_icon_living()
+	return icon_living || initial(icon_state)
 
 // eye glow comes off and belly contents are released.
 /mob/living/simple_mob/on_destroy(force)
@@ -977,6 +975,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 // Example:
 // /mob/living/simple_mob/my_mob/update_transforms()
 // 		update_transform_horizontal()
+
+/// A creature rolled to a random icon scale keeps its proportions: rolls(nameof(icon_scale_y), PROC_REF(roll_same_scale), from = list(nameof(icon_scale_x))).
+/mob/living/simple_mob/proc/roll_same_scale(datum/roller/R)
+	return icon_scale_x
 
 /mob/living/simple_mob/proc/update_transform_horizontal()
 	// First, get the correct size.
