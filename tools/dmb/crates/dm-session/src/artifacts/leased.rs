@@ -361,7 +361,21 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_qualified(key, reads, versions, weight, None, create)
+        self.insert_qualified(key, reads, versions, weight, None, false, create)
+    }
+    /// Publish a freshly computed result after consumer input admission missed.
+    /// Equal locator/read ledgers alone do not certify equal producer inputs.
+    /// Existing published/escaped owners stay immutable; only this lease adopts
+    /// the new physical variant, through the ordinary claim/index lifetime path.
+    pub fn insert_fresh_with_qualified_receipt(
+        &self,
+        key: Arc<[u8]>,
+        reads: crate::Receipt<Q, A, D>,
+        versions: Arc<[(D, u128)]>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
+        self.insert_qualified(key, reads, versions, weight, None, true, create)
     }
     /// Republish a current immutable producer value only for this exact already
     /// admitted payload and ledger. Previous publication claims remain live;
@@ -375,7 +389,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         weight: usize,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
-        self.insert_qualified(key, reads, versions, weight, Some(previous), create)
+        self.insert_qualified(key, reads, versions, weight, Some(previous), false, create)
     }
     fn insert_qualified(
         &self,
@@ -384,6 +398,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         versions: Arc<[(D, u128)]>,
         weight: usize,
         previous: Option<&Arc<T>>,
+        fresh: bool,
         create: impl FnOnce() -> T,
     ) -> Option<Arc<T>> {
         let hash = xxhash_rust::xxh3::xxh3_128(&key);
@@ -408,7 +423,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .into_iter()
             .flatten()
             .find(|entry| {
-                previous.is_none()
+                !fresh
+                    && previous.is_none()
                     && entry.key == key
                     && entry.reads == reads
                     && entry.versions == versions
@@ -484,3 +500,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "leased/fresh_tests.rs"]
+mod fresh_tests;

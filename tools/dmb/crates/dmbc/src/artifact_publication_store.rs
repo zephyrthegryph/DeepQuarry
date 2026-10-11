@@ -160,8 +160,10 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         };
         (accepted.map(|receipt| receipt.value), changed)
     }
+    /// Fresh producer publication after exact current input admission missed.
     /// Versions were recorded by the same current immutable evaluator host.
-    /// This is separate from the conservative ordinary insertion API.
+    /// Equal locator/read ledgers cannot reuse the rejected old input payload.
+    /// The no-lease compatibility core insertion already creates a fresh value.
     pub(crate) fn insert_current_qualified_with(
         &self,
         key: Arc<[u8]>,
@@ -173,7 +175,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
         match &self.attempt {
             Some(attempt) => attempt
                 .with_pending(|lease| {
-                    lease.insert_with_qualified_receipt(key, reads, versions, weight, create)
+                    lease.insert_fresh_with_qualified_receipt(key, reads, versions, weight, create)
                 })
                 .flatten(),
             None => self
