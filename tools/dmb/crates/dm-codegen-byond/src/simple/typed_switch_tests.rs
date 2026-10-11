@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Ledger, link_proc};
+use crate::{link_proc, Ledger};
 
 #[test]
 fn constant_string_and_null_tables_preserve_executable_debug_sources() {
@@ -29,25 +29,21 @@ fn constant_string_and_null_tables_preserve_executable_debug_sources() {
     .unwrap();
     assert_eq!(compiled.local_count, 0);
     let frozen = crate::freeze_proc(&compiled.code).unwrap();
-    let decoded = byond_dmb::bytecode::decode(frozen.code().words()).unwrap();
+    let decoded = byond_dmb::bytecode::decode(frozen.code().words().as_ref()).unwrap();
     assert!(decoded.iter().any(|instruction| instruction.opcode == 0x78));
-    assert!(
-        !decoded
-            .iter()
-            .any(|instruction| instruction.opcode == opcode::TEQ)
-    );
+    assert!(!decoded
+        .iter()
+        .any(|instruction| instruction.opcode == opcode::TEQ));
     let selector = decoded
         .iter()
         .position(|instruction| instruction.opcode == opcode::GET_VAR)
         .unwrap();
     assert_eq!(decoded[selector - 2].opcode, 0x84);
     assert_eq!(decoded[selector - 1].opcode, 0x85);
-    assert!(
-        frozen
-            .code()
-            .relocations()
-            .any(|site| matches!(site.reference, SymRef::SourceLine(_)))
-    );
+    assert!(frozen
+        .code()
+        .relocations()
+        .any(|site| matches!(site.reference, SymRef::SourceLine(_))));
 }
 
 #[test]
@@ -145,12 +141,10 @@ fn overlapping_range_and_exact_case_preserve_authored_fallback() {
     let compiled = compile_simple_proc_with_params(&ast.items[0].children, &["x".into()]).unwrap();
     assert_eq!(compiled.local_count, 1);
     let linked = link_proc(&compiled.code, &Ledger::default()).unwrap();
-    assert!(
-        !byond_dmb::bytecode::decode(&linked.words)
-            .unwrap()
-            .iter()
-            .any(|ins| ins.opcode == 0x7a)
-    );
+    assert!(!byond_dmb::bytecode::decode(&linked.words)
+        .unwrap()
+        .iter()
+        .any(|ins| ins.opcode == 0x7a));
 }
 
 #[test]

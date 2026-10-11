@@ -87,7 +87,16 @@ impl HeapCensus {
                 self.frozen_code_metrics.observe(code);
             }
             self.owner("frozen_code").observed_items +=
-                (code.words().len() + code.relocations().len()) as u64;
+                (code.word_len() + code.relocations().len()) as u64;
+            if let dm_ir::WordStorageView::Shared { backing, .. } = code.word_storage() {
+                let category = if backing.memory_mapped {
+                    "frozen_code.mapped_words"
+                } else {
+                    "frozen_code.shared_word_bytes"
+                };
+                self.buffer(category, backing.address, backing.bytes, backing.bytes);
+                self.unknown(category, "byte-owner control block/private metadata excluded; mapped extent is file-backed, not measured private memory");
+            }
             code.visit_storage(|address, length, capacity| {
                 self.buffer("frozen_code", address, length, capacity);
             });

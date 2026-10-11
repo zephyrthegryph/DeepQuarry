@@ -109,7 +109,7 @@ fn direct_discarded_calls_match_native_ownership_modes_and_pop_markers() {
                 .unwrap();
                 let frozen = crate::freeze_proc(&compiled.code).unwrap();
                 let words = frozen.code().words();
-                let decoded = byond_dmb::bytecode::decode(words).unwrap();
+                let decoded = byond_dmb::bytecode::decode(words.as_ref()).unwrap();
                 let calls = decoded
                     .iter()
                     .filter(|instruction| matches!(instruction.opcode, 0x29 | 0x2a))

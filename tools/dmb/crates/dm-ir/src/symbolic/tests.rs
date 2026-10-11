@@ -187,7 +187,10 @@ fn original_storage_validation(
         }
     }
     relocations.sort_unstable_by_key(|relocation| relocation.offset);
-    Ok(SymbolicCode::compact(words, relocations))
+    Ok(SymbolicCode::compact(
+        crate::WordStorage::Owned(words),
+        relocations,
+    ))
 }
 
 #[test]
@@ -380,7 +383,7 @@ fn packed_values_validate_both_words_encoding_and_range() {
             value: 0x1000000
         })
     );
-    assert_eq!(code.words(), [0, 0]);
+    assert_eq!(code.words().as_ref(), [0, 0]);
     let different_tag = SymbolicCode::new(
         vec![0, 0],
         vec![Relocation {
@@ -520,7 +523,7 @@ fn linking_separate_table_assignments_never_mutates_shared_words() {
         Err(RelocationError::Unresolved(symbol))
     );
     assert_eq!(code.link(|_| Some(3)).unwrap(), vec![99, 3, 3]);
-    assert_eq!(code.words(), [99, 0, 0]);
+    assert_eq!(code.words().as_ref(), [99, 0, 0]);
 }
 
 #[test]
@@ -541,5 +544,64 @@ fn malformed_relocation_tables_are_rejected_before_linking() {
     assert_eq!(
         SymbolicCode::new(vec![1], vec![relocation]),
         Err(RelocationError::NonzeroPlaceholder(0))
+    );
+}
+
+#[test]
+fn shared_word_code_preserves_canonical_relocations_and_final_link_image() {
+    let words = vec![99u32, 0, 17];
+    let relocation = Relocation {
+        offset: 1,
+        reference: SymRef::String(SymbolId::of("mapped string")),
+        encoding: RelocationEncoding::Direct,
+    };
+    let mut bytes = vec![255];
+    for word in &words {
+        bytes.extend_from_slice(&word.to_le_bytes());
+    }
+    let owner = std::sync::Arc::new(bytes);
+    let weak = std::sync::Arc::downgrade(&owner);
+    let storage = crate::WordStorage::shared(owner.clone(), 1..13).unwrap();
+    let shared = SymbolicCode::from_word_storage(storage, vec![relocation]).unwrap();
+    let owned = SymbolicCode::new(words, vec![relocation]).unwrap();
+    assert_eq!(shared, owned);
+    assert_eq!(shared.canonical_bytes(), owned.canonical_bytes());
+    assert_eq!(shared.fingerprint(), owned.fingerprint());
+    assert_eq!(shared.word_iter().collect::<Vec<_>>(), vec![99, 0, 17]);
+    assert_eq!(shared.link(|_| Some(42)).unwrap(), vec![99, 42, 17]);
+    assert_eq!(shared.word_at(1), Some(0));
+    assert_eq!(
+        shared.storage_capacities().0,
+        0,
+        "shared bytes are not a retained word Vec"
+    );
+    let mut buffers = Vec::new();
+    shared.visit_storage(|address, len, capacity| buffers.push((address, len, capacity)));
+    assert_eq!(
+        buffers.len(),
+        2,
+        "word backing has its explicit shared storage descriptor"
+    );
+    assert!(matches!(
+        shared.word_storage(),
+        crate::WordStorageView::Shared { .. }
+    ));
+    drop(owner);
+    assert!(weak.upgrade().is_some());
+    drop(shared);
+    assert!(weak.upgrade().is_none());
+}
+#[test]
+fn shared_word_code_uses_same_placeholder_error_order_as_owned_code() {
+    let owner = std::sync::Arc::new(vec![1, 0, 0, 0]);
+    let storage = crate::WordStorage::shared(owner, 0..4).unwrap();
+    let relocation = Relocation {
+        offset: 0,
+        reference: SymRef::String(SymbolId::of("bad placeholder")),
+        encoding: RelocationEncoding::Direct,
+    };
+    assert_eq!(
+        SymbolicCode::from_word_storage(storage, vec![relocation]).unwrap_err(),
+        SymbolicCode::new(vec![1], vec![relocation]).unwrap_err()
     );
 }

@@ -81,7 +81,7 @@ fn mixed_content_uses_exact_canonical_bytes_and_shared_lazy_storage() {
         panic!("structured content");
     };
     let (_, code, _) = retained.parts();
-    assert_eq!(code.words(), &[9, 8]);
+    assert_eq!(code.words().as_ref(), &[9, 8]);
     assert!(retained.materialized_bytes().is_some());
     expected[0] ^= 1;
     assert!(matches!(

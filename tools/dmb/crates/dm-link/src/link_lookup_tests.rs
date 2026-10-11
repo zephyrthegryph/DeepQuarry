@@ -44,7 +44,7 @@ fn repeated_typed_references_share_resolution_without_changing_first_missing_ord
     ]);
     let linked = tables.link(&valid, &source).unwrap();
     assert_eq!(linked.words.as_slice(), &[9, 9, 23, 23]);
-    assert_eq!(valid.words(), &[0, 0, 0, 0]);
+    assert_eq!(valid.words().as_ref(), &[0, 0, 0, 0]);
     let first_missing = SymRef::String(SymbolId::of("z_missing"));
     let second_missing = SymRef::String(SymbolId::of("a_missing"));
     let invalid = code(&[reference, reference, first_missing, second_missing]);

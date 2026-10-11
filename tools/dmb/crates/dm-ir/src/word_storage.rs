@@ -85,6 +85,12 @@ impl WordStorage {
             Self::Shared(words) => (words.range.end - words.range.start) / 4,
         }
     }
+    pub fn owned_slice(&self) -> Option<&[u32]> {
+        match self {
+            Self::Owned(words) => Some(words),
+            Self::Shared(_) => None,
+        }
+    }
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }

@@ -59,7 +59,7 @@ impl RelocationMetrics {
         }
         self.sum_unique_non_source_references_per_code += distinct.len() as u64;
         let (words, relocations) = code.storage_capacities();
-        self.words_len += code.words().len() as u64;
+        self.words_len += code.word_len() as u64;
         self.words_capacity += words as u64;
         self.relocations_capacity += relocations as u64;
         self.retained_reference_entries += code.reference_count() as u64;

@@ -931,7 +931,7 @@ mod tests {
             )
             .unwrap();
         assert_eq!(&*image.words, &[42, 0x123456, 0x1206, 0x3456, 24]);
-        assert_eq!(code.words(), &[42, 0, 0, 0, 0]);
+        assert_eq!(code.words().as_ref(), &[42, 0, 0, 0, 0]);
         inventory.fixed = vec![(key, 0x1000000)];
         let oversized = LinkTables::build(inventory).unwrap();
         assert_eq!(
@@ -943,7 +943,7 @@ mod tests {
                 value: 0x1000000
             })
         );
-        assert_eq!(code.words(), &[42, 0, 0, 0, 0]);
+        assert_eq!(code.words().as_ref(), &[42, 0, 0, 0, 0]);
     }
 }
 

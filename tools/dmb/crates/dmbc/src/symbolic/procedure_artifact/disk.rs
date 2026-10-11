@@ -186,8 +186,8 @@ impl<'a> Encoded<'a> {
             return None;
         };
         let (prefix, _, suffix) = content.parts();
-        let mut words = Vec::with_capacity(frozen.code().words().len().checked_mul(4)?);
-        for word in frozen.code().words() {
+        let mut words = Vec::with_capacity(frozen.code().word_len().checked_mul(4)?);
+        for word in frozen.code().word_iter() {
             words.extend_from_slice(&word.to_le_bytes());
         }
         let mut labels = Vec::with_capacity(frozen.labels().len().checked_mul(5)?);

@@ -104,7 +104,7 @@ pub struct Relocation {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct SymbolicCode {
-    words: Vec<u32>,
+    words: crate::WordStorage,
     sites: Box<[PackedSite]>,
     references: Box<[SymRef]>,
 }
@@ -195,7 +195,15 @@ pub enum RelocationError {
 }
 
 impl SymbolicCode {
-    pub fn new(words: Vec<u32>, mut relocations: Vec<Relocation>) -> Result<Self, RelocationError> {
+    pub fn new(words: Vec<u32>, relocations: Vec<Relocation>) -> Result<Self, RelocationError> {
+        Self::from_word_storage(crate::WordStorage::Owned(words), relocations)
+    }
+    /// Validate the SAME symbolic storage invariants over owned or shared bytes.
+    /// Borrowed backing never certifies opcode shape or semantic reference facts.
+    pub fn from_word_storage(
+        words: crate::WordStorage,
+        mut relocations: Vec<Relocation>,
+    ) -> Result<Self, RelocationError> {
         u32::try_from(words.len()).map_err(|_| RelocationError::WordCountOverflow)?;
         // A checked interval proof eliminates covered-word storage only when
         // encounter order is already canonical and every interval is disjoint.
@@ -218,12 +226,12 @@ impl SymbolicCode {
                     .checked_add(delta)
                     .ok_or(RelocationError::OutOfBounds(relocation.offset))?;
                 let word = words
-                    .get(at as usize)
+                    .word_at(at as usize)
                     .ok_or(RelocationError::OutOfBounds(at))?;
                 if seen.as_mut().is_some_and(|seen| !seen.insert(at)) {
                     return Err(RelocationError::Duplicate(at));
                 }
-                if *word != 0 {
+                if word != 0 {
                     return Err(RelocationError::NonzeroPlaceholder(at));
                 }
             }
@@ -265,7 +273,7 @@ impl SymbolicCode {
                 let at = offset
                     .checked_add(delta)
                     .ok_or(RelocationError::OutOfBounds(offset))?;
-                if self.words.get(at as usize).is_none() {
+                if self.words.word_at(at as usize).is_none() {
                     return Err(RelocationError::OutOfBounds(at));
                 }
                 if !covered.insert(at) {
@@ -317,7 +325,7 @@ impl SymbolicCode {
     fn write_canonical(&self, mut bytes: impl FnMut(&[u8])) {
         bytes(b"dm-symbolic-code-v2\0");
         bytes(&(self.words.len() as u64).to_le_bytes());
-        for word in &self.words {
+        for word in self.words.iter() {
             bytes(&word.to_le_bytes())
         }
         bytes(&(self.sites.len() as u64).to_le_bytes());
@@ -338,8 +346,26 @@ impl SymbolicCode {
         xxhash_rust::xxh3::xxh3_128(&self.canonical_bytes())
     }
 
-    pub fn words(&self) -> &[u32] {
-        &self.words
+    /// Compatibility slice view. Shared little-endian backing materializes only
+    /// when a slice is explicitly requested; current consumers should use the
+    /// allocation-free word_len/word_at/word_iter boundary where possible.
+    pub fn words(&self) -> std::borrow::Cow<'_, [u32]> {
+        match self.words.owned_slice() {
+            Some(words) => std::borrow::Cow::Borrowed(words),
+            None => std::borrow::Cow::Owned(self.words.to_vec()),
+        }
+    }
+    pub fn word_len(&self) -> usize {
+        self.words.len()
+    }
+    pub fn word_at(&self, at: usize) -> Option<u32> {
+        self.words.word_at(at)
+    }
+    pub fn word_iter(&self) -> crate::WordIter<'_> {
+        self.words.iter()
+    }
+    pub fn word_storage(&self) -> crate::WordStorageView {
+        self.words.storage()
     }
 
     pub fn relocations(&self) -> RelocationView<'_> {
@@ -355,15 +381,22 @@ impl SymbolicCode {
     }
     /// Word vector capacity and exact compact-site allocation length.
     pub fn storage_capacities(&self) -> (usize, usize) {
-        (self.words.capacity(), self.sites.len())
+        let capacity = match self.words.storage() {
+            crate::WordStorageView::Owned { capacity_bytes, .. } => capacity_bytes / 4,
+            crate::WordStorageView::Shared { .. } => 0,
+        };
+        (capacity, self.sites.len())
     }
     /// Exact retained buffers; no expanded relocation array is materialized.
     pub fn visit_storage(&self, mut visitor: impl FnMut(usize, usize, usize)) {
-        visitor(
-            self.words.as_ptr() as usize,
-            self.words.len() * 4,
-            self.words.capacity() * 4,
-        );
+        if let crate::WordStorageView::Owned {
+            address,
+            length_bytes,
+            capacity_bytes,
+        } = self.words.storage()
+        {
+            visitor(address, length_bytes, capacity_bytes);
+        }
         visitor(
             self.sites.as_ptr() as usize,
             self.sites.len() * 12,
@@ -378,7 +411,7 @@ impl SymbolicCode {
     pub fn reference_count(&self) -> usize {
         self.references.len()
     }
-    fn compact(words: Vec<u32>, relocations: Vec<Relocation>) -> Self {
+    fn compact(words: crate::WordStorage, relocations: Vec<Relocation>) -> Self {
         let mut references = Vec::new();
         let mut indexes = HashMap::new();
         let sites = relocations
@@ -423,7 +456,7 @@ impl SymbolicCode {
         &self,
         mut resolve: impl FnMut(SymRef) -> Option<u32>,
     ) -> Result<Vec<u32>, RelocationError> {
-        let mut linked = self.words.clone();
+        let mut linked = self.words.to_vec();
         for relocation in self.relocations() {
             let value = resolve(relocation.reference)
                 .ok_or(RelocationError::Unresolved(relocation.reference))?;

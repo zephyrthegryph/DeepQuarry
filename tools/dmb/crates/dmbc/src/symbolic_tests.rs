@@ -359,11 +359,11 @@ fn actual_lowered_string_body_freezes_and_links_without_legacy_ledger() {
         .tables
         .index(Key::String(SymbolId::of("hello")))
         .is_some());
-    let original = batch.units[0].frozen.code().words().to_vec();
+    let original = batch.units[0].frozen.code().words().as_ref().to_vec();
     let first = batch.link_unit(0, &SourceBindings::default()).unwrap();
     let second = batch.link_unit(0, &SourceBindings::default()).unwrap();
     assert_eq!(first, second);
-    assert_eq!(batch.units[0].frozen.code().words(), original);
+    assert_eq!(batch.units[0].frozen.code().words().as_ref(), original);
 }
 #[test]
 fn captured_binding_conflict_fails_before_table_assignment() {

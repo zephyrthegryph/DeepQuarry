@@ -434,7 +434,7 @@ mod tests {
         assert!(std::ptr::eq(first.as_ref(), frozen.code()));
         assert_eq!(first.canonical_len(), first.canonical_bytes().len());
         drop(frozen);
-        assert_eq!(first.words(), [0]);
+        assert_eq!(first.words().as_ref(), [0]);
         assert!(second.relocations().is_empty());
     }
     #[test]
@@ -458,7 +458,10 @@ mod tests {
                 .collect::<Vec<_>>(),
             [SymRef::SourceFile(0), SymRef::SourceLine(0)]
         );
-        assert_eq!(frozen.code().words(), [0x84, 0, 0x85, 0, 0xf, 6, 0]);
+        assert_eq!(
+            frozen.code().words().as_ref(),
+            [0x84, 0, 0x85, 0, 0xf, 6, 0]
+        );
         assert_eq!(frozen.labels(), [Some(6)]);
         assert_eq!(
             frozen
@@ -489,7 +492,10 @@ mod tests {
             ],
         };
         let frozen = freeze_proc(&proc).unwrap();
-        assert_eq!(frozen.code().words(), [0x60, 0, 0, 0x33, 0xffe7, 0, 0]);
+        assert_eq!(
+            frozen.code().words().as_ref(),
+            [0x60, 0, 0, 0x33, 0xffe7, 0, 0]
+        );
         assert_eq!(
             frozen.code().relocation(0).unwrap(),
             Relocation {
@@ -590,7 +596,7 @@ mod tests {
         };
         let frozen = freeze_proc(&proc).unwrap();
         assert_eq!(
-            frozen.code().words(),
+            frozen.code().words().as_ref(),
             [0x60, 0x2a, bits >> 16, bits & 0xffff, 0x60, 40, 0, 0]
         );
         assert!(frozen.code().relocations().is_empty());
