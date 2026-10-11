@@ -125,7 +125,7 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
     const currentIdentity = observedExecutable(executable);
     if (JSON.stringify(currentIdentity) !== JSON.stringify(compilerIdentity)) throw new NativeResultError('Native executable changed during compilation.');
     if (result.code !== 0) return result;
-    const outputProject = artifacts ? path.join(artifacts, path.basename(dme)) : invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
+    const outputProject = artifacts ? path.join(artifacts, path.basename(invocation?.relativeManifest ?? dme)) : invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
     try {
       const output = parseCompileResult(readNativeResult(receipt), executable, outputProject);
       output.provenance = nativeProvenance(output, options.defines ?? [], compilerIdentity);
@@ -144,7 +144,6 @@ async function nativeCompile(dme: string, options: DreamMakerOptions, execute: C
 export async function selectedCompiler(dme: string, options: DreamMakerOptions, byond: (capturedProject?: string, prepared?: PreparedDreamMaker, invocation?: CompilerInvocation) => Promise<ByondCompilationResult | void>, execute: CompilerExecutor = Juke.exec, prepareByond?: () => Promise<PreparedDreamMaker>, capturedInvocation?: CompilerInvocation): Promise<CompiledOutput> {
   const mode = compilerMode();
   const invocation = bindCompilerInvocation(capturedInvocation, options.defines ?? []);
-  if (invocation && mode === 'shadow') throw new Error('Captured shadow invocation requires independent output namespace authority; not yet supported.');
   const outputProject = invocation ? path.join(invocation.root, invocation.relativeManifest) : dme;
   if (mode === 'byond') {
     const result = await byond(invocation?.relativeManifest, undefined, invocation);
@@ -162,22 +161,24 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     return { ...conventionalOutput(outputProject), provenance: byondProvenance(mode, options.defines ?? [], fallback, 'internal_error_70') };
   }
   // Validate native option admission before any BYOND version/preparation child.
-  nativeCommand(dme, options);
+  nativeCommand(dme, options, undefined, invocation);
   const preparedByond = prepareByond ? await prepareByond() : undefined;
   const root = path.resolve(process.env.DQ_SHADOW_ROOT ?? 'E:/dq-cache/dmb-shadow');
   fs.mkdirSync(root, { recursive: true });
   const artifacts = fs.mkdtempSync(path.join(root, 'shadow-'));
-  const stem = path.basename(dme).replace(/\.dme$/i, '');
+  const stem = path.basename(outputProject).replace(/\.dme$/i, '');
   const nativeDmb = path.join(artifacts, `${stem}.dmb`);
   const nativeRsc = path.join(artifacts, `${stem}.rsc`);
   try {
-    const native = await nativeCompile(dme, options, execute, artifacts);
+    // Native publishes into this private artifact namespace; DreamMaker retains
+    // the captured manifest's conventional namespace. Inspect only owned copies.
+    const native = await nativeCompile(dme, options, execute, artifacts, invocation);
     fs.writeFileSync(path.join(artifacts, 'native.log'), native.combined);
     // Cancellation ends the request before any comparison compiler or inspector.
     if (native.code === 75) throw new Juke.ExitCode(75);
     let byondResult: ByondCompilationResult | void;
     try {
-      byondResult = await byond(undefined, preparedByond);
+      byondResult = await byond(invocation?.relativeManifest, preparedByond, invocation);
     } catch (error) {
       const reference = failedCompileOutcome(error);
       const candidate = observedCompileOutcome(native.code, native.combined, native.code, native.signal ?? null);
@@ -203,7 +204,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       Juke.logger.error(`Shadow compiler disagreement: native exited ${native.code}, DreamMaker succeeded. See ${artifacts}.`);
       throw new Juke.ExitCode(1);
     }
-    const byondOutput = captureShadowOutputPair(path.resolve(dme), artifacts);
+    const byondOutput = captureShadowOutputPair(path.resolve(outputProject), artifacts);
     fs.writeFileSync(path.join(artifacts, 'byond-output-capture.json'), JSON.stringify(byondOutput.proof, null, 2));
     const inspector = process.env.DQ_DMB_INSPECT;
     if (!inspector) throw new Error('Shadow mode requires DQ_DMB_INSPECT for named per-procedure comparison.');
@@ -216,7 +217,8 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       // returns no authenticated read roster or effective-version receipt.
       const comparisonContext = {
         schema: 'unverified-shadow-comparison-context-v1',
-        project: path.resolve(dme), manifestSha256: createHash('sha256').update(fs.readFileSync(dme)).digest('hex'),
+        project: path.resolve(outputProject), manifestSha256: createHash('sha256').update(fs.readFileSync(outputProject)).digest('hex'),
+        capturedInvocation: invocation ?? null,
         requestedDefines: options.defines ?? [], requestedNamedDmVersion: options.namedDmVersion ?? null,
         requestedWarningsAsErrors: options.warningsAsErrors ?? false,
         requestedIgnoredWarningCodes: options.ignoreWarningCodes ?? [],
@@ -257,7 +259,7 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
         throw new Juke.ExitCode(1);
       }
       Juke.logger.info(`Shadow structural parity: ${report}`);
-      return { ...conventionalOutput(dme), provenance: byondProvenance(mode, options.defines ?? [], byondResult) };
+      return { ...conventionalOutput(outputProject), provenance: byondProvenance(mode, options.defines ?? [], byondResult) };
     });
   } finally {
     // Preserve small diagnostics/receipts, remove only this invocation's bulky outputs.

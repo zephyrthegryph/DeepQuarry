@@ -6,6 +6,7 @@ import { observeDreamMakerIdentity, type PreparedDreamMaker } from './byond';
 import fs from 'node:fs';
 import { captureShadowOutputPair } from './shadow_output';
 import path from 'node:path';
+import { compilerInvocation } from './compiler_invocation';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
   for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
@@ -267,7 +268,7 @@ test('typed and unknown native statuses preserve exact exit and never fall back'
   }
 });
 
-test('shadow inspects acquired generation through both children and still rejects unproven closure', async () => {
+for (const captured of [false, true]) test(`shadow inspects acquired generation and rejects unproven closure (captured=${captured})`, async () => {
   fs.mkdirSync('E:/dq-cache', { recursive: true });
   const ownedRoot = fs.mkdtempSync('E:/dq-cache/shadow-pair-fixture-');
   process.env.DQ_COMPILER = 'shadow';
@@ -276,8 +277,16 @@ test('shadow inspects acquired generation through both children and still reject
   process.env.DQ_DMB_INSPECT = 'fixture-inspector';
   process.env.DQ_SHADOW_ROOT = path.join(ownedRoot, 'shadow');
   process.env.DQ_NATIVE_RUN_ROOT = path.join(ownedRoot, 'run');
-  const project = path.join(ownedRoot, 'probe.dme');
+  const projectRoot = captured ? path.join(ownedRoot, 'captured', 'nested') : ownedRoot;
+  fs.mkdirSync(projectRoot, { recursive: true });
+  const project = path.join(projectRoot, 'probe.dme');
   fs.writeFileSync(project, '// fixture');
+  const callerProject = captured ? path.join(ownedRoot, 'different-caller.dme') : project;
+  if (captured) {
+    fs.writeFileSync(callerProject, '// caller, not consumed');
+    fs.writeFileSync(callerProject.replace(/\.dme$/, '.dmb'), 'caller retained');
+  }
+  const invocation = captured ? compilerInvocation(path.join(ownedRoot, 'captured'), 'nested/probe.dme', []) : undefined;
   const order: string[] = [];
   const prepared: PreparedDreamMaker = { executable: 'dm.exe',
     identity: { status: 'unknown', executable: 'dm.exe', reason: 'test PATH fallback' },
@@ -285,9 +294,11 @@ test('shadow inspects acquired generation through both children and still reject
   let slot = '';
   let inspected = 0;
   let acquisition = 0;
-  const execute = async (_executable: string, args: string[]) => {
+  const execute = async (_executable: string, args: string[], options?: { cwd?: string }) => {
     if (args[0] === 'compile') {
       order.push('native');
+      expect(args[1]).toBe(invocation?.relativeManifest ?? path.resolve(project));
+      expect(options?.cwd).toBe(invocation?.root);
       const artifacts = args[args.indexOf('--artifact-directory') + 1];
       // These mutable conventional files deliberately differ from the acquired pair.
       fs.writeFileSync(path.join(artifacts, 'probe.dmb'), 'mutable');
@@ -325,12 +336,14 @@ test('shadow inspects acquired generation through both children and still reject
     return { code: 0, combined: '' };
   };
   try {
-    await expect(selectedCompiler(project, {}, async (_captured, compiler) => {
+    await expect(selectedCompiler(callerProject, {}, async (manifest, compiler, bound) => {
       order.push('byond');
       expect(compiler).toBe(prepared);
+      expect(manifest).toBe(invocation?.relativeManifest);
+      expect(bound).toEqual(invocation);
       fs.writeFileSync(project.replace(/\.dme$/, '.dmb'), 'D');
       fs.writeFileSync(project.replace(/\.dme$/, '.rsc'), 'RS');
-    }, execute, async () => { order.push('prepare'); return prepared; })).rejects.toBeInstanceOf(Juke.ExitCode);
+    }, execute, async () => { order.push('prepare'); return prepared; }, invocation)).rejects.toBeInstanceOf(Juke.ExitCode);
     expect(order).toEqual(['prepare', 'native', 'byond']);
     expect(acquisition).toBe(1);
     expect(inspected).toBe(2);
@@ -340,6 +353,10 @@ test('shadow inspects acquired generation through both children and still reject
     expect(admission.structuralAdmission.status).toBe('parity');
     expect(admission.resourceAdmission.status).toBe('parity');
     expect(admission.status).toBe('incomplete');
+    const context = JSON.parse(fs.readFileSync(path.join(artifact, 'source-snapshot-contract.json'), 'utf8'));
+    expect(context.comparisonContext.project).toBe(project);
+    expect(context.comparisonContext.capturedInvocation).toEqual(invocation ?? null);
+    if (captured) expect(fs.readFileSync(callerProject.replace(/\.dme$/, '.dmb'), 'utf8')).toBe('caller retained');
   } finally {
     fs.rmSync(ownedRoot, { recursive: true, force: true });
   }
