@@ -120,7 +120,7 @@ passes() { # <sha> <depth>
 		fi
 		verdict="$(sed 's/ tests=.*//' /tmp/dq_push_stamp.$$ | head -c 300)"
 		rm -f /tmp/dq_push_stamp.$$
-		if note_ok merge-gates "$lane" commit; then
+		if note_ok merge-gates "$lane" commit && ! note_ok lane-ready "$lane" branch_commit; then
 			batch_disjoint "$lane" "$mp" || return 1
 			why="${why}the batch ${lane:0:10}'s stamp carries across the re-merge ${sha:0:10}; "
 			seen[$sha]=1
