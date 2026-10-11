@@ -213,6 +213,20 @@ def rewrite_reads(code, masked):
     return "".join(out)
 
 
+def continues_def(lines, j):
+    """Whether line j still belongs to the type definition above it: indented, or a blank line or column-0 comment that more
+    indented lines follow (a def interrupted by a // section note)."""
+    line = lines[j].rstrip("")
+    if line.startswith("	") or line.startswith(" "):
+        return True
+    if line == "" or line.startswith("//"):
+        k = j + 1
+        while k < len(lines) and (lines[k].rstrip("") == "" or lines[k].startswith("//")):
+            k += 1
+        return k < len(lines) and lines[k].startswith("	")
+    return False
+
+
 def main():
     files = {p: read(p) for p in code_files()}
     caps_at = {}
@@ -282,7 +296,7 @@ def main():
             else:
                 idx = next(i for i, l in enumerate(lines) if TYPE_LINE.match(l.rstrip("\r")) and TYPE_LINE.match(l.rstrip("\r")).group(1) == t)
                 j = idx + 1
-                while j < len(lines) and (lines[j].startswith("\t") or lines[j].startswith(" ") or lines[j].rstrip("\r") == "" and j + 1 < len(lines) and lines[j + 1].startswith("\t")):
+                while j < len(lines) and continues_def(lines, j):
                     j += 1
                 lines[j:j] = [cr, "CAPABILITIES(%s)%s" % (t, cr), entry + cr]
     changed = 0

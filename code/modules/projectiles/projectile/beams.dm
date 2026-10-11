@@ -284,8 +284,6 @@ CAPABILITIES(/obj/item/projectile/beam)
 	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
 
-CAPABILITIES(/obj/item/projectile/beam/stun)
-	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 
 	combustion = FALSE
@@ -295,6 +293,9 @@ CAPABILITIES(/obj/item/projectile/beam/stun)
 	impact_type = /obj/effect/projectile/impact/stun
 
 	hud_state = "taser" // TGMC Ammo HUD port
+
+CAPABILITIES(/obj/item/projectile/beam/stun)
+	configure(item_sounds(hit = SFX_WEAPONS_ZAPBANG))
 
 /obj/item/projectile/beam/stun/weak
 	name = "weak stun beam"

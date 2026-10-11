@@ -7,8 +7,6 @@
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
 
-CAPABILITIES(/obj/item/clothing/gloves/yellow)
-	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 // start: More gloves give cold/heat protection.
 	cold_protection = HANDS
@@ -16,6 +14,9 @@ CAPABILITIES(/obj/item/clothing/gloves/yellow)
 	heat_protection = HANDS
 	max_heat_protection_temperature = GLOVES_MAX_HEAT_PROTECTION_TEMPERATURE
 // end.
+
+CAPABILITIES(/obj/item/clothing/gloves/yellow)
+	configure(item_sounds(drop = SFX_ITEMS_DROP_RUBBER, pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 /obj/item/clothing/gloves/fyellow                             //Cheap Chinese Crap
 	desc = "These gloves are cheap copies of proper insulated gloves. No way this can end badly."
