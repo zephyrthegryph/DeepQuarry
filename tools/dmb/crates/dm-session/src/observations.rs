@@ -257,6 +257,10 @@ impl<R: dm_ir::Resolver>
         current: &dm_ir::ResolvedMeaning,
         previous: &dm_ir::ResolvedMeaning,
     ) -> bool {
-        current.canonical_bytes() == previous.canonical_bytes()
+        current == previous || current.canonical_bytes() == previous.canonical_bytes()
     }
 }
+
+#[cfg(test)]
+#[path = "observations/equivalent_tests.rs"]
+mod equivalent_tests;

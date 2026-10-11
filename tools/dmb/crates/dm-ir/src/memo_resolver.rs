@@ -114,6 +114,7 @@ fn fixed_retainable(meaning: &ResolvedMeaning) -> bool {
             | ResolvedMeaning::Resource { .. }
             | ResolvedMeaning::Member { .. }
             | ResolvedMeaning::ProcedureStatic(_)
+            | ResolvedMeaning::Declaration { .. }
             | ResolvedMeaning::Value(
                 SemanticValue::Null
                     | SemanticValue::NumberBits(_)
@@ -447,3 +448,7 @@ mod tests {
         assert!((1..=8).contains(&host.0.lock().unwrap().len()));
     }
 }
+
+#[cfg(test)]
+#[path = "memo_resolver_declaration_tests.rs"]
+mod declaration_tests;
