@@ -1075,6 +1075,17 @@
     "matches": true,
     "scope": "Actual paired trusted standalone nested list runtime, DEBUG enabled, exception file/line/message comparison plus marker and runtime observations. First no-DEBUG reference failed attribution assertion and is preserved. Not full DeepQuarry runtime gate."
   },
+  "allocator_reclamation_build": {
+    "commit": "cb23d1937ab6dfd887eb38de2c71e2b3e76717d5",
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-163346-4a1481b5-job-cargo.json",
+    "binary_sha256": "a8dc925f2400930c16c8193864780238b7b0b1d3b96c0fd83edba1151b429403",
+    "scope": "Bounded release compilation succeeded after a first 300-second dependency build timed out and reaped. No measured reclamation benefit yet. This binary predates shared footprint accounting and named-pipe retry."
+  },
+  "six_git_worktree_second_capture": {
+    "receipt": "E:/dq-cache/dmb-six-git-contract/0b6df1d03ad146aaa1b60b56fe2aacc3/receipt.json",
+    "passed": false,
+    "scope": "Concurrent process-launch race fixed. One required-daemon client encountered a busy Windows named pipe while the daemon remained alive; autostart was disabled. Bounded busy retry committed d32e98c50b; actual corrected-binary rerun pending. All children reaped and six owned worktrees removed."
+  },
   "six_git_worktree_first_capture": {
     "receipt": "E:/dq-cache/dmb-six-git-contract/1877e5198711454b8199cdbe5afe4697/receipt.json",
     "passed": false,
