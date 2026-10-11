@@ -694,6 +694,18 @@
         "commit": "14ee88b416",
         "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-133702-82624426-job-cargo.json",
         "cause": "new pressure test used boolean insertion API as Arc; fixedb301093"
+      },
+      {
+        "commit": "66dd35993e",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141309-ca1aace4-job-cargo.json",
+        "cause": "Moved output digest helper retained binary crate imports; fix assigned to query owner",
+        "production_check_passed": false
+      },
+      {
+        "commit": "b8c6216812",
+        "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141441-303d483c-job-cargo.json",
+        "cause": "Resolved query parity fixture string error conversion; fix assigned to query owner",
+        "production_check_passed": true
       }
     ],
     "scope": "Cargo check --tests is typechecking, not test execution or benchmark"
@@ -703,7 +715,10 @@
     "minimum_free_gib": 16,
     "cleanup": "obsolete compiler library deletion rejected by automatic review: blocked by policy; no deletion performed",
     "user_input_requested": true,
-    "coding_continues": true
+    "coding_continues": true,
+    "resolved": true,
+    "free_bytes_latest": 44088565760,
+    "resolution": "External cleanup observed; no rejected deletion retried"
   },
   "latest_1a185_validation": {
     "compiler_commit": "1a185920ca2adc72884f2ee874955f4fca9c62e5",
@@ -718,5 +733,19 @@
     "disk_contract_receipt": "E:/dq-cache/dmb-modified-procedure-disk-contract/20261011-1a185/8c9ca601cfcb4a2bacf00c1207f88699/receipt.json",
     "disk_contract_complete": true,
     "disk_contract_fresh_oracles_passed": 5
+  },
+  "current_source_migration": {
+    "borrowed_symbolic_locator_commit": "66dd35993e",
+    "obsolete_cold_algorithm_removed_commit": "6ff8beb846",
+    "reserved_abi_map_charge_commit": "f0501e7249",
+    "benchmark_status": "not measured on these commits"
+  },
+  "shared_core_focused_20261011": {
+    "source_commit": "b8c62168126f1b1aca4004d53eedbfcf02034af7",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141600-2df9df86-job-cargo.json",
+    "test_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-141642-e89e2a4f-focused.json",
+    "passed": 10,
+    "failed": 0,
+    "scope": "borrowed exact lookup, logical pressure, six publication owners, concurrent refresh and immutable rebind; not six real worktrees or whole-program parity"
   }
 }
