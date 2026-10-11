@@ -4,7 +4,9 @@ use dm_ir::{ProcedureIdentity, ReadDomain, ResolveQuery, Resolver, SymbolId};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{borrow::Cow, sync::Arc};
 // Includes the certified src-cache operand encoding policy.
-pub(crate) const SCHEMA: u32 = 0x0206_001f;
+pub(crate) const SCHEMA: u32 = 0x0206_0024;
+#[path = "lowering_memo_compact_typed.rs"]
+mod typed;
 const MAX_RECORD: usize = 8 * 1024 * 1024;
 const MAX_ITEMS: usize = 65536;
 #[cfg(test)]
@@ -182,6 +184,7 @@ pub(crate) struct Payload<'a> {
     pub(crate) identity: ProcedureIdentity,
     #[serde(borrow)]
     pub(crate) reads: BoundedVec<ReadWire<'a>>,
+    typed_answers: BoundedVec<Option<dm_ir::PortableResolvedAnswer>>,
     pub(crate) versions: BoundedVec<(ReadDomain, u128)>,
     pub(crate) debug: BoundedVec<crate::debug_sources::RelativeDebugAnchor>,
     pub(crate) required_types: BoundedVec<SymbolId>,
@@ -215,7 +218,15 @@ pub(crate) fn encode<'a>(
     }
     let executable = artifact.disk_encoded()?;
     let identity = value.identity();
+    let reads: Vec<_> = reads.into_iter().collect();
+    let typed_answers = BoundedVec(
+        reads
+            .iter()
+            .map(|r| dm_ir::PortableResolvedAnswer::capture(&r.answer))
+            .collect(),
+    );
     let payload = Payload {
+        typed_answers,
         key: Cow::Borrowed(key),
         identity: ProcedureIdentity {
             owner: identity.owner,
@@ -253,6 +264,20 @@ pub(crate) fn encode<'a>(
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     let value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
     crate::lowering_memo_wire::validate_versions(&value.versions.0)?;
+    if value.typed_answers.0.len() != value.reads.0.len()
+        || value
+            .typed_answers
+            .0
+            .iter()
+            .zip(&value.reads.0)
+            .any(|(typed, read)| {
+                typed
+                    .as_ref()
+                    .is_some_and(|answer| !answer.matches_canonical(&read.answer))
+            })
+    {
+        return Err("malformed compact typed answer sidecar".into());
+    }
     if !mandatory_declaration_reads(value.identity, &value.reads.0) {
         return Err("missing/malformed compact declaration receipt".into());
     }
@@ -340,9 +365,9 @@ impl Payload<'_> {
             .then_some(r.query)
         })
     }
-    /// Compact answers are canonical bytes, so a transparent observer still
-    /// needs typed hydration from its exact provider. Keep delivery pending until
-    /// the caller has admitted the complete executable/current-source binding.
+    /// Certified simple sidecars preserve the exact original typed answer.
+    /// Uncovered variants/domains hydrate from the current exact provider. Keep
+    /// delivery pending until complete executable/current-source admission.
     pub(crate) fn transparent_reads<R: Resolver>(
         &self,
         host: &R,
@@ -352,8 +377,16 @@ impl Payload<'_> {
         };
         let provider = observer.provider();
         let mut pending = Vec::with_capacity(self.reads.0.len());
-        for read in &self.reads.0 {
-            let answer = provider.resolve(read.query);
+        let matching = dm_session::observations::certified_domains(&self.versions.0, |d| {
+            provider.domain_version(*d)
+        });
+        for (read, typed) in self.reads.0.iter().zip(&self.typed_answers.0) {
+            let answer = typed::hydrate(
+                read.query,
+                typed.as_ref(),
+                matching.contains(&read.query.domain()),
+                provider,
+            );
             if answer.canonical_bytes() != read.answer.as_ref() {
                 return Err(read.query);
             }

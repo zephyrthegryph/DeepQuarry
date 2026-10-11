@@ -302,6 +302,34 @@ fn check_replay_features(
     );
     let payload = decode(&bytes).unwrap();
     assert!(payload.changed_read(&host).is_none());
+    let mut corrupt_sidecar = decode(&bytes).unwrap();
+    corrupt_sidecar.typed_answers.0.pop();
+    let malformed = dm_wire::encode_bounded(SCHEMA, &corrupt_sidecar, MAX_RECORD).unwrap();
+    assert!(
+        decode(&malformed).is_err(),
+        "missing sidecar row must fail before replay"
+    );
+    let mut corrupt_sidecar = decode(&bytes).unwrap();
+    let index = corrupt_sidecar
+        .typed_answers
+        .0
+        .iter()
+        .position(Option::is_some)
+        .unwrap();
+    let replacement = if corrupt_sidecar.reads.0[index].answer.as_ref()
+        == dm_ir::ResolvedMeaning::Presence(true).canonical_bytes()
+    {
+        dm_ir::PortableResolvedAnswer::Presence(false)
+    } else {
+        dm_ir::PortableResolvedAnswer::Presence(true)
+    };
+    corrupt_sidecar.typed_answers.0[index] = Some(replacement);
+    let malformed = dm_wire::encode_bounded(SCHEMA, &corrupt_sidecar, MAX_RECORD).unwrap();
+    assert!(
+        decode(&malformed).is_err(),
+        "typed/canonical disagreement must fail before replay"
+    );
+
     // An explicitly nonobserving provider remains the authority even when its
     // answers include the fixture's ordinary instance selection overlay.
     struct Quiet<'a>(&'a dyn Resolver);

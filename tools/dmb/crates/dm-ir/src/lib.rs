@@ -5,6 +5,8 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
+mod portable_answer;
+pub use portable_answer::PortableResolvedAnswer;
 mod warnings;
 pub use warnings::WarningCode;
 
