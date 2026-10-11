@@ -53,7 +53,9 @@ fn live_writer_and_its_staging_survive_other_request_cleanup_then_finish() {
     let staged = path.with_extension("segment.tmp");
     std::fs::write(&staged, b"in-flight staging").unwrap();
     assert_eq!(
-        orphans::reap(&directory.0, bounds(64, 8)).unwrap().reaped,
+        orphans::reap(path.parent().unwrap(), bounds(64, 8))
+            .unwrap()
+            .reaped,
         0
     );
     let other = cache.batch_spool().unwrap();
@@ -63,6 +65,39 @@ fn live_writer_and_its_staging_survive_other_request_cleanup_then_finish() {
     std::fs::remove_file(&staged).unwrap();
     assert!(writer.finish().unwrap().segment.is_some());
     assert!(!path.exists());
+}
+
+#[test]
+fn published_root_leaves_cannot_starve_private_spool_cleanup() {
+    let directory = Directory::new();
+    let cache = directory.cache();
+    for id in 0..80u128 {
+        std::fs::write(
+            directory.0.join(format!("{id:032x}.seg")),
+            b"published sentinel",
+        )
+        .unwrap();
+    }
+    let private = orphans::prepare_root(&directory.0).unwrap();
+    let orphan = private.join(".batch-v2-42-123-0.tmp");
+    std::fs::write(&orphan, b"retired private payload").unwrap();
+    let old_root_spool = directory.0.join(".batch-v2-42-122-0.tmp");
+    std::fs::write(&old_root_spool, b"pre-child-layout preserved").unwrap();
+    let writer = cache.batch_spool().unwrap();
+    assert_eq!(writer.path.parent(), Some(private.as_path()));
+    assert!(!orphan.exists());
+    assert_eq!(
+        std::fs::read(&old_root_spool).unwrap(),
+        b"pre-child-layout preserved"
+    );
+    for id in 0..80u128 {
+        assert_eq!(
+            std::fs::read(directory.0.join(format!("{id:032x}.seg"))).unwrap(),
+            b"published sentinel"
+        );
+    }
+    drop(writer);
+    assert_eq!(std::fs::read_dir(&private).unwrap().count(), 0);
 }
 
 #[test]

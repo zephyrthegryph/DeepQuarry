@@ -35,6 +35,17 @@ fn record(content: u128, payload: &[u8]) -> Record {
         payload: Arc::from(payload),
     }
 }
+fn remaining_entries(directory: &Directory) -> Vec<PathBuf> {
+    let private = directory.0.join(".batch-spools-v2");
+    if private.exists() {
+        assert_eq!(std::fs::read_dir(&private).unwrap().count(), 0);
+    }
+    std::fs::read_dir(&directory.0)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| path != &private)
+        .collect()
+}
 #[test]
 fn streamed_segment_matches_existing_encoder_and_is_invisible_until_finish() {
     let directory = Directory::new();
@@ -94,12 +105,12 @@ fn cancellation_and_poisoned_append_publish_nothing_and_remove_private_files() {
         let mut spool = cache.batch_spool().unwrap();
         spool.append(record(1, b"old")).unwrap();
     }
-    assert_eq!(std::fs::read_dir(&directory.0).unwrap().count(), 0);
+    assert!(remaining_entries(&directory).is_empty());
     let mut spool = cache.batch_spool().unwrap();
     spool.append(record(1, b"old")).unwrap();
     assert!(spool.append(record(1, b"different")).is_err());
     assert!(spool.finish().is_err());
-    assert_eq!(std::fs::read_dir(&directory.0).unwrap().count(), 0);
+    assert!(remaining_entries(&directory).is_empty());
     assert!(cache
         .batch_spool()
         .unwrap()
@@ -168,9 +179,6 @@ fn finish_content_collision_preserves_destination_and_cleans_every_private_file(
     assert_eq!(std::fs::read(&destination).unwrap(), incumbent);
     assert!(!private.exists());
     assert!(!staged.exists());
-    let remaining: Vec<_> = std::fs::read_dir(&directory.0)
-        .unwrap()
-        .map(|entry| entry.unwrap().path())
-        .collect();
+    let remaining = remaining_entries(&directory);
     assert_eq!(remaining, vec![destination]);
 }

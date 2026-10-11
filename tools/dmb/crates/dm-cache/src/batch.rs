@@ -63,14 +63,14 @@ fn invalid(message: &str) -> CacheError {
 }
 impl Cache {
     pub fn batch_spool(&self) -> Result<BatchSpool, CacheError> {
-        orphans::validate_root(self.root())?;
+        let directory = orphans::prepare_root(self.root())?;
         // Advisory, bounded maintenance of only lifetime-locked v2 spools.
-        let _ = orphans::reap(self.root(), orphans::Bounds::default());
+        let _ = orphans::reap(&directory, orphans::Bounds::default());
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_err(|error| invalid(&error.to_string()))?
             .as_nanos();
-        let path = self.root().join(format!(
+        let path = directory.join(format!(
             ".batch-v2-{}-{stamp}-{}.tmp",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)

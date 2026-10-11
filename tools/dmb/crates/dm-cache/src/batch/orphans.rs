@@ -84,6 +84,17 @@ pub(super) fn validate_root(root: &Path) -> io::Result<()> {
         ))
     }
 }
+pub(super) fn prepare_root(cache_root: &Path) -> io::Result<std::path::PathBuf> {
+    validate_root(cache_root)?;
+    let directory = cache_root.join(".batch-spools-v2");
+    match fs::create_dir(&directory) {
+        Ok(()) => (),
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => (),
+        Err(error) => return Err(error),
+    }
+    validate_root(&directory)?;
+    Ok(directory)
+}
 fn same_leaf(path: &Path, held: &Metadata) -> bool {
     fs::symlink_metadata(path).is_ok_and(|current| {
         if !current.is_file()
