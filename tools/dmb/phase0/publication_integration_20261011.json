@@ -1200,5 +1200,34 @@
     "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
     "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
     "scope": "Six actual owned tiny Git worktrees matched independent fresh output pairs under concurrent clients, source error isolation and recovery. Daemon and Job reaped and owned worktrees removed. Not real DeepQuarry six-worktree performance acceptance."
+  },
+  "deepquarry_f5_diagnostic_cohort": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-173833-8d9ac6e9/receipt.json",
+    "status": "passed",
+    "compiler_commit": "f5a9e361954cbbe653cf79657a3829b1513f363a",
+    "compiler_sha256": "7f4cae9e1e8296ad45e2887a60c1937854581b4bfa79d162e25bdae3cf4c7cfc",
+    "acceptance_profile": false,
+    "workers": 2,
+    "retained_client_launch_through_reap_seconds": {
+      "initial": 118.641,
+      "unchanged": 1.89,
+      "body": 95.578,
+      "new_variable": 85.359
+    },
+    "fresh_uncached_client_seconds": [
+      85.328,
+      79.968,
+      77.844,
+      79.25
+    ],
+    "all_four_native_byte_oracles": true,
+    "byond_baseline_gate": "open",
+    "body_disk_hits": 48680,
+    "body_recomputed_procedures": 1,
+    "body_disk_lookup_seconds": 29.6139178,
+    "body_frontend_seconds": 11.2558603,
+    "peak_job_commit_bytes": 6149767168,
+    "sampled_peak_private_bytes": 6147223552,
+    "scope": "Counted diagnostic opt0 compiler/opt2 tree+codegen, not release acceptance or semantic BYOND parity. Unchanged improves over prior6.109s diagnostic; body and structural remain slow. Later mapped words and duplicate validator scan removal excluded from this binary. All owned children reaped. Initial publication population is separate from uncached fresh compilation. Total1015.015s includes independent fresh oracle prepass, captures and structural diagnostic reports."
   }
 }
