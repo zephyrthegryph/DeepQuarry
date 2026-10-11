@@ -231,6 +231,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	owner.dq_look_scope_globals() // constructors and state probes may populate shared caches or archive owned disease templates
 	var/list/universe = dq_look_universe(want_tree, want_state)
 	var/list/plan = dq_look_read_plan()
+	var/list/recorded = want_state ? dq_look_recorded_probe_names() : null
 	var/list/only = dq_look_param_lines("look-types")
 	var/list/only_set
 	if(only)
@@ -265,7 +266,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		if(ispath(type, /turf))
 			dq_look_unit_turf(type, T, res)
 		else
-			dq_look_unit(type, T, ispath(type, /obj) ? base_vars_obj : base_vars_mob, plan, res, need_tree, need_state, fresh)
+			dq_look_unit(type, T, ispath(type, /obj) ? base_vars_obj : base_vars_mob, plan, res, need_tree, need_state, fresh, recorded?["[type]"])
 		if(trace)
 			dq_look_globals_report(type, before)
 	dq_look_reset(T) // the block is released clean: nothing of the last type is left on it
@@ -357,7 +358,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
  * One obj/mob type: made once on the test floor (the RNG reseeded from its path); its look is the tree row set and the state
  * pins' base; then the probes (see the file comment).
  */
-/datum/unit_test/proc/dq_look_unit(type, turf/T, list/base_vars, list/plan, datum/dq_look_result/res, need_tree, need_state, force_fresh = FALSE)
+/datum/unit_test/proc/dq_look_unit(type, turf/T, list/base_vars, list/plan, datum/dq_look_result/res, need_tree, need_state, force_fresh = FALSE, list/recorded_names = null)
 	dq_look_reset(T)
 	log_test("look pin: making [type]") // a type that hangs names itself in the log
 	rand_seed(dq_test_seed_for("[type]"))
@@ -373,7 +374,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 			dq_look_settle()
 			res.made = dq_look_pin_lines(subject)
 			if(need_state)
-				names = dq_look_probe_names(subject, base_vars, plan?["[type]"])
+				names = dq_look_probe_names(subject, base_vars, plan?["[type]"], recorded_names)
 	catch(var/exception/e)
 		runtime = dq_look_state_error(e)
 		res.made = list("runtime: [runtime]")
@@ -411,12 +412,58 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		qdel(subject)
 	dq_look_drain_turf(T)
 
+/// Only names are recovered from prior rows; appearance payloads remain expectations, never new results.
+/datum/unit_test/proc/dq_look_recorded_probe_names(list/expected)
+	if(isnull(expected))
+		var/list/bad = list()
+		expected = dq_snapshot_read_dir(DQ_LOOK_STATE_DIR, bad)
+		for(var/problem in bad)
+			Fail("LOOK COVERAGE: cannot read prior state rows: [problem]")
+	. = list()
+	for(var/root in expected)
+		for(var/row in expected[root])
+			var/space = findtext(row, " ")
+			var/equal = findtext(row, "=", space + 1)
+			if(!space || !equal || findtext(copytext(row, space + 1, equal), " "))
+				continue // made/runtime rows have no numeric probe assignment
+			var/type_name = copytext(row, 1, space)
+			var/field = copytext(row, space + 1, equal)
+			var/list/names = .[type_name]
+			if(!names)
+				names = list()
+				.[type_name] = names
+			if(!(field in names))
+				names += field
+
+/// Restore-required coverage must name a real numeric field with the actual existing write path.
+/datum/unit_test/proc/dq_look_recorded_probe_problem(atom/subject, name)
+	if(!(name in subject.vars))
+		return "recorded field [name] no longer exists on [subject.type]; migrate its real probe adapter or document its retirement"
+	if(!isnum(subject.vars[name]))
+		return "recorded field [name] is no longer numeric on [subject.type]; migrate its real probe adapter or document its retirement"
+	try
+		// This tests writability without choosing a new value; existing tracked setters still own writes.
+		dq_look_write(subject, name, subject.vars[name])
+	catch(var/exception/e)
+		return "recorded field [name] cannot use its real write path on [subject.type]: [dq_look_state_error(e)]"
+	return null
+
 /// The numeric vars of `subject` worth writing: those it declares below its base, without time-like names, in declaration order, at
 /// most DQ_LOOK_STATE_MAX_VARS of them. A concrete read plan filters candidates before that limit.
-/datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry)
+/datum/unit_test/proc/dq_look_probe_names(atom/subject, list/base_vars, plan_entry, list/recorded_names = null)
 	var/list/found = list()
+	if(plan_entry == "*" && length(recorded_names))
+		if(length(recorded_names) > DQ_LOOK_STATE_MAX_VARS)
+			Fail("LOOK COVERAGE: [subject.type] has [length(recorded_names)] required historical fields, exceeding the existing [DQ_LOOK_STATE_MAX_VARS] budget; none may be silently truncated")
+			return found
+		for(var/name in recorded_names)
+			var/problem = dq_look_recorded_probe_problem(subject, name)
+			if(problem)
+				Fail("LOOK COVERAGE: [problem]")
+				continue
+			found += name
 	for(var/name in subject.vars)
-		if(name in base_vars)
+		if(name in base_vars || name in found)
 			continue
 		if(islist(plan_entry) && !(name in plan_entry))
 			continue
@@ -640,6 +687,10 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/late_read = 0
 
 TRACKED(/obj/dq_look_late_dependency, late_read)
+/obj/dq_look_late_dependency/draw(datum/look/look)
+	..()
+	look.state("late-[late_read]")
+
 
 /datum/unit_test/dq_look_sweep_plan_before_limit/Run()
 	dq_look_scope_globals()
@@ -649,6 +700,20 @@ TRACKED(/obj/dq_look_late_dependency, late_read)
 	var/list/fallback = dq_look_probe_names(probe, base_vars, "*")
 	TEST_ASSERT_EQUAL(length(fallback), DQ_LOOK_STATE_MAX_VARS, "Unknown read plans retain the original fallback limit")
 	TEST_ASSERT(!(nameof(probe.late_read) in fallback), "The actual late field lies beyond the unfiltered limit")
+	var/list/recorded = dq_look_recorded_probe_names(list("fixture" = list("/obj/dq_look_late_dependency late_read=1 +state: late-1", "/obj/dq_look_late_dependency late_read=2 +state: late-2")))
+	var/list/stable_unknown = dq_look_probe_names(probe, base_vars, "*", recorded["/obj/dq_look_late_dependency"])
+	TEST_ASSERT_EQUAL(length(stable_unknown), DQ_LOOK_STATE_MAX_VARS, "Unknown plans retain the existing budget while prioritizing historical coverage")
+	TEST_ASSERT_EQUAL(stable_unknown[1], nameof(probe.late_read), "Actual late recorded dependency survives 25 earlier unrelated fields")
+	var/unknown_base = refresh_look(probe)
+	probe.set_late_read(1)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(probe.icon_state, "late-1", "Required historical field uses its real tracked setter to change the native look")
+	probe.set_late_read(0)
+	refresh_flush()
+	TEST_ASSERT_EQUAL(probe.rx.look_key, unknown_base, "Real tracked setter roundtrip restores the original native look")
+	TEST_ASSERT_NOTNULL(dq_look_recorded_probe_problem(probe, "removed_field"), "A removed historical input reports a coverage problem, never silent retirement")
+	TEST_ASSERT_NOTNULL(dq_look_recorded_probe_problem(probe, nameof(probe.name)), "A nonnumeric historical input reports explicit coverage error")
+
 	var/list/planned = dq_look_probe_names(probe, base_vars, list(nameof(probe.late_read)))
 	TEST_ASSERT_EQUAL(length(planned), 1, "Concrete plan excludes all early unread fields before applying the limit")
 	TEST_ASSERT_EQUAL(planned[1], nameof(probe.late_read), "The real analyzed late dependency remains eligible")
