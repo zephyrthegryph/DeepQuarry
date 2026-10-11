@@ -589,7 +589,12 @@ impl ClassificationFailure {
             let reasons = [
                 (recovery == dm_codegen_byond::NameofDiagnosticRecovery::ReferenceRejected)
                     .then_some("nameof: requires a var, proc reference, or type path"),
-                Some("=: missing expression"),
+                Some(match recovery {
+                    dm_codegen_byond::NameofDiagnosticRecovery::ModifiedReferenceRequired => {
+                        ": missing expression"
+                    }
+                    _ => "=: missing expression",
+                }),
             ];
             for reason in reasons.into_iter().flatten() {
                 issues.push(ClassificationIssue {

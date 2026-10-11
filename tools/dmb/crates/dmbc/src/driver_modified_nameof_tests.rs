@@ -69,7 +69,8 @@ fn modified_nameof_rejection_preserves_source_class_and_skipped_control() {
             .evaluate_prepared_write(write, expression)
             .unwrap();
         if rejected {
-            assert!(matches!(value, Evaluation::SourceError(ref reason)
+            assert!(matches!(value, Evaluation::InvalidNameof(ref reason,
+                dm_codegen_byond::NameofDiagnosticRecovery::ModifiedReferenceRequired)
                 if reason == "nameof: requires a var, proc reference, or type path"));
         } else {
             assert!(matches!(

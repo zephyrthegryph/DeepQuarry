@@ -34,6 +34,25 @@ fn folded_nameof_recovery_preserves_order_and_assignment_ordinal() {
     .err()
     .unwrap();
     assert_eq!(failure.into_issues(9).len(), 2);
+    let failure = Evaluation::InvalidNameof(
+        "nameof: requires a var, proc reference, or type path".into(),
+        Recovery::ModifiedReferenceRequired,
+    )
+    .checked()
+    .err()
+    .unwrap();
+    let issues = failure.into_issues(19);
+    assert_eq!(
+        issues
+            .iter()
+            .map(|issue| issue.reason.as_str())
+            .collect::<Vec<_>>(),
+        [
+            "nameof: requires a var, proc reference, or type path",
+            ": missing expression",
+        ]
+    );
+    assert!(issues.iter().all(|issue| issue.source_ordinal == 19));
     let failure = ClassificationFailure::from("opaque reference authority");
     let issues = failure.into_issues(11);
     assert_eq!(issues.len(), 1);

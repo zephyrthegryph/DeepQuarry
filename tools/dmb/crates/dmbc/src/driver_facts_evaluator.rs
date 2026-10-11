@@ -219,7 +219,7 @@ impl DriverEvaluator<'_> {
                     if error == dm_ir::ModifiedCaptureError::InvalidNameofReference {
                         if let Some(failure) = typed_failure {
                             *failure.borrow_mut() = Some(folded_features::FoldedReferenceFailure {
-                                recovery: None,
+                                recovery: Some(dm_codegen_byond::NameofDiagnosticRecovery::ModifiedReferenceRequired),
                                 error: dm_codegen_byond::LowerError {
                                     kind: dm_codegen_byond::LowerErrorKind::SourceError,
                                     reason: error.to_string(),

@@ -8,6 +8,9 @@ use super::*;
 pub enum NameofDiagnosticRecovery {
     ReferenceRejected,
     ReferenceRequired,
+    /// Descriptor normalization rejected the member-reference grammar before
+    /// ordinary nameof admission. Its missing expression has no assignment label.
+    ModifiedReferenceRequired,
 }
 pub fn nameof_diagnostic_recovery(expression: &Expr) -> NameofDiagnosticRecovery {
     match &expression.kind {
