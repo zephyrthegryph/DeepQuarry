@@ -25,7 +25,7 @@ CAPABILITIES(/obj/item/storage/sample_container)
 	. = ..()
 	look.state("sample_container_[held_count()]")
 	if(held_count() > 0)
-		look.light(1, held_count(), lightcolor)
+		look.glow(1, held_count(), lightcolor)
 
 /obj/item/storage/sample_container/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/research_sample/S in turf_contents_of_type(T, /obj/item/research_sample))

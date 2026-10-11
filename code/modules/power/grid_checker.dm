@@ -27,10 +27,10 @@ TRACKED(/obj/machinery/power/grid_checker, power_failing)
 	..()
 	if(power_failing)
 		look.state("gridchecker_off")
-		look.light(2, 2, "#F86060")
+		look.glow(2, 2, "#F86060")
 	else
 		look.state("gridchecker_on")
-		look.light(2, 2, "#A8B0F8")
+		look.glow(2, 2, "#A8B0F8")
 
 /obj/machinery/power/grid_checker/proc/crowbar_used(datum/act/op/A)
 	return OP_DECLINE

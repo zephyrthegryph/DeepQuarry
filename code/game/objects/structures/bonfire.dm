@@ -237,9 +237,9 @@ TRACKED(/obj/structure/bonfire, grill)
 		if(has_buckled_mobs() && fuel >= 5)
 			look.overlay(look_overlay_image(icon, "bonfire_intense", layer = MOB_LAYER + 0.1, pixel_y = 13, appearance_flags = RESET_COLOR))
 		var/light_strength = max(fuel / 2, 2)
-		look.light(light_strength, light_strength, "#FF9933")
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 	if(grill)
 		look.overlay(look_appearance(icon, "bonfire_grill", appearance_flags = RESET_COLOR))
 
@@ -431,9 +431,9 @@ CAPABILITIES(/obj/structure/fireplace)
 		look.overlay(emissive_appearance(icon, "[drawn_state]_glow"))
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		look.light(light_strength, light_strength, "#FF9933")
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/structure/fireplace/proc/fireplace_step(datum/act/timer/A)
 	if(!check_oxygen())
@@ -481,7 +481,7 @@ CAPABILITIES(/obj/structure/fireplace)
 	if(burning)
 		look.state("[initial(icon_state)]1")
 		var/light_strength = max(get_fuel_amount() / 2, 2)
-		look.light(light_strength, light_strength, "#FF9933")
+		look.glow(light_strength, light_strength, "#FF9933")
 	else
 		look.state(initial(icon_state))
-		look.light_off()
+		look.glow(GLOW_OFF)

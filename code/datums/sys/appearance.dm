@@ -26,9 +26,6 @@
 	var/list/appearance_emissives
 	/// APPEARANCE_WATCH: names of the declared fields a procedural update_icon() reads.
 	var/list/appearance_watch
-	/// DECLARE_APPEARANCE_PROC: the provider proc, and the fields/channels it reads.
-	var/appearance_proc
-	var/list/appearance_proc_fields
 	/// Names read by call() (procs) rather than from vars; name -> TRUE.
 	var/list/appearance_procs
 	/// Channels whose raise refreshes the appearance (the fields it reads).
@@ -52,13 +49,7 @@
 	for(var/name in fields)
 		LAZYOR(appearance_watch, name)
 
-/datum/lifecycle_decls/proc/set_appearance_proc(proc_ref, list/fields)
-	appearance_proc = proc_ref
-	appearance_proc_fields = fields
-
 /datum/lifecycle_decls/proc/clear_appearance()
-	appearance_proc = null
-	appearance_proc_fields = null
 	appearance_layers = null
 	appearance_template = null
 	appearance_levels = null
@@ -146,7 +137,7 @@
 /// computes appearance_mask.
 /datum/lifecycle_decls/proc/finish_appearance(datum/D)
 	if(!isatom(D))
-		if(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_watch)
+		if(appearance_layers || appearance_template || appearance_levels || appearance_emissives || appearance_watch)
 			stack_trace("appearance declarations on [owner_type]: only atoms have an appearance; dropped")
 		drop_appearance()
 		return
@@ -183,16 +174,9 @@
 			appearance_emissives -= field
 	if(!length(appearance_emissives))
 		appearance_emissives = null
-	appearance_draws = !!(appearance_proc || appearance_layers || appearance_template || appearance_levels || appearance_emissives)
+	appearance_draws = !!(appearance_layers || appearance_template || appearance_levels || appearance_emissives)
 	var/list/fields = definition_registry().fields_of(owner_type)
 	appearance_mask = 0
-	for(var/entry in appearance_proc_fields)
-		if(isnum(entry))
-			appearance_mask |= entry
-		else if(fields[entry])
-			appearance_mask |= fields[entry]
-		else
-			stack_trace("DECLARE_APPEARANCE_PROC([owner_type], \"[entry]\"): not a declared field with a channel; ignored")
 	for(var/name in read_names)
 		appearance_mask |= fields[name]
 	for(var/name in appearance_watch?.Copy())
@@ -209,8 +193,6 @@
 /atom
 	/// The declared appearance key applied last (its overlays are the ones to swap out).
 	var/tmp/decl_appearance_key
-	/// What the DECLARE_APPEARANCE_PROC provider returned last (the overlays the runtime owns for it).
-	var/tmp/list/appearance_proc_overlays
 	/// TRUE while queued for a refresh on the presentation lane (appearance_queue()), or
 	/// APPEARANCE_PENDING_LATENT while a latent movable waits to materialize before it joins.
 	var/tmp/appearance_queued = FALSE
@@ -322,28 +304,9 @@
 
 DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance), SC_NEVER, 0, SC_INTERN)
 
-/// Applies the appearance for A's current state: the keyed declarations, then the provider.
+/// Applies the appearance for A's current state: the keyed declarations.
 /datum/lifecycle_decls/proc/apply_appearance(atom/A)
 	apply_appearance_keyed(A)
-	if(appearance_proc)
-		apply_appearance_proc(A)
-
-/// Runs the provider and swaps its overlays: the ones it returned last time out, the new ones in.
-/datum/lifecycle_decls/proc/apply_appearance_proc(atom/A)
-	var/result = call(A, appearance_proc)()
-	var/list/overlays
-	if(islist(result))
-		var/list/returned = result
-		for(var/overlay in returned)
-			if(!isnull(overlay))
-				LAZYADD(overlays, overlay)
-	else if(!isnull(result))
-		overlays = list(result)
-	if(A.appearance_proc_overlays)
-		A.cut_overlay(A.appearance_proc_overlays)
-	A.appearance_proc_overlays = overlays
-	if(overlays)
-		A.add_overlay(overlays)
 
 /// Applies the keyed declarations for A's state; swaps out the overlays the previous key added.
 /datum/lifecycle_decls/proc/apply_appearance_keyed(atom/A)
@@ -369,8 +332,7 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 /// mask, so a declared field's setter refreshes it from then on.
 /// A keyed declaration that reads only vars is drawn right here; one that calls a reader proc may
 /// depend on what the subtype's Initialize() sets up after `. = ..()`, so it is queued and drawn on
-/// the next presentation pass instead. A provider first runs on the type's own first update_icon()
-/// (its Initialize() draws, as before).
+/// the next presentation pass instead.
 /datum/lifecycle_decls/proc/init_appearance(atom/A)
 	if(appearance_mask)
 		A.om_listen |= appearance_mask
@@ -387,10 +349,6 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
 	if(decls?.appearance_draws)
 		decls.apply_appearance(src)
-
-/// The default DECLARE_APPEARANCE_PROC provider: no overlays. Types override it and declare it.
-/atom/proc/appearance_overlays()
-	return null
 
 // ---- automatic refresh ----
 

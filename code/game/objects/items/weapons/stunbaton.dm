@@ -106,9 +106,9 @@ CAPABILITIES(/obj/item/melee/baton/loaded)
 		drawn_state = look.state("[initial(name)]")
 
 	if(drawn_state == "[initial(name)]_active")
-		look.light(2, 1, lightcolor)
+		look.glow(2, 1, lightcolor)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/baton/dropped(mob/user, equipping, slot)
 	..()

@@ -15,7 +15,7 @@
 	icon_state = "mend_life"
 	cast_methods = CAST_MELEE
 	aspect = ASPECT_BIOMED
-	light_color = "#FF5C5C"
+	spell_light_color = "#FF5C5C"
 	modifier_type = /datum/body_effect/technomancer/purify
 	modifier_duration = 10 SECONDS
 

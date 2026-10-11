@@ -51,7 +51,7 @@ CAPABILITIES(/obj/machinery/light_switch)
 		look.state("light-p")
 		return
 	look.state("light[on]")
-	look.light(2, 0.1, on ? "#82FF4C" : "#F86060")
+	look.glow(2, 0.1, on ? "#82FF4C" : "#F86060")
 	look.glow("overlay")
 
 /// Within reach it says what it is set to.

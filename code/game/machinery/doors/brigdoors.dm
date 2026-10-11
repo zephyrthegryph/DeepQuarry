@@ -40,6 +40,9 @@
 	maptext_width = 32
 
 TRACKED(/obj/machinery/door_timer, timing)
+/// The seconds left the display shows while it counts: redraw() writes it each interval, so the display follows the clock.
+/obj/machinery/door_timer/var/shown_seconds = 0
+TRACKED(/obj/machinery/door_timer, shown_seconds)
 
 // ---- what a door timer is, declared ----
 //
@@ -75,14 +78,13 @@ CAPABILITIES(/obj/machinery/door_timer)
 
 	if(!LAZYLEN(targets) && !LAZYLEN(brig_doors) && !LAZYLEN(brig_flashers))
 		atom_break()
-	update_icon()
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer
 // update the door_timer window and the icon
 /// Redraws its display while it counts (the time left shows on it).
 /obj/machinery/door_timer/proc/redraw(datum/act/A)
-	update_icon()
+	set_shown_seconds(round(time_left(seconds = TRUE)))
 
 /// The time is set to run out `timer_duration` from now.
 /obj/machinery/door_timer/proc/arm_end()
@@ -105,6 +107,7 @@ CAPABILITIES(/obj/machinery/door_timer)
 
 	set_timing(TRUE)
 	arm_end()
+	redraw()
 
 	for(var/obj/machinery/door/window/brigdoor/door as anything in brig_doors)
 		if(door.density)
@@ -127,7 +130,6 @@ CAPABILITIES(/obj/machinery/door_timer)
 	set_timing(FALSE)
 	cancel_after(src, "end")
 	set_timer(0)
-	update_icon()
 
 	for(var/obj/machinery/door/window/brigdoor/door as anything in brig_doors)
 		if(!door.density)
@@ -205,48 +207,22 @@ CAPABILITIES(/obj/machinery/door_timer)
 	set_timer(timer_duration + preset_time)
 	return OP_OK
 
-//icon update function
-// if NOPOWER, display blank
-// if BROKEN, display blue screen of death icon AI uses
-// if timing=true, run update display function
-DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/door_timer/appearance_overlays()
-	. = list()
+/// What the timer shows: a dark frame without power, the blue screen when broken, else its cell and the time left while it counts.
+/obj/machinery/door_timer/draw(datum/look/look)
+	..()
 	if(power_lost())
-		icon_state = "frame"
-		return .
-
+		look.state("frame")
+		return
+	look.state(initial(icon_state))
 	if(broken_now())
-		set_picture("ai_bsod")
-		return .
-
-	if(timing)
-		var/disp1 = id
-		var/timeleft = time_left(seconds = TRUE)
-		var/disp2 = "[add_leading(num2text((timeleft / 60) % 60), 2, "0")]:[add_leading(num2text(timeleft % 60), 2, "0")]"
-		if(length(disp2) > CHARS_PER_LINE)
-			disp2 = "Error"
-		update_display(disp1, disp2)
-	else
-		if(maptext)
-			maptext = ""
-	return .
-
-// Adds an icon in case the screen is broken/off, stolen from status_display.dm
-/obj/machinery/door_timer/proc/set_picture(state)
-	if(maptext)
-		maptext = ""
-	cut_overlays()
-	add_overlay(mutable_appearance('icons/obj/status_display.dmi', state))
-
-//Checks to see if there's 1 line or 2, adds text-icons-numbers/letters over display
-// Stolen from status_display
-/obj/machinery/door_timer/proc/update_display(line1, line2)
-	line1 = uppertext(line1)
-	line2 = uppertext(line2)
-	var/new_text = {"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[line1]<br>[line2]</div>"}
-	if(maptext != new_text)
-		maptext = new_text
+		look.overlay(look_image('icons/obj/status_display.dmi', "ai_bsod"))
+		return
+	if(!timing)
+		return
+	var/disp2 = "[add_leading(num2text((shown_seconds / 60) % 60), 2, "0")]:[add_leading(num2text(shown_seconds % 60), 2, "0")]"
+	if(length(disp2) > CHARS_PER_LINE)
+		disp2 = "Error"
+	look.overlay(look_maptext_image({"<div style="font-size:[FONT_SIZE];color:[FONT_COLOR];font:'[FONT_STYLE]';text-align:center;" valign="top">[uppertext(id)]<br>[uppertext(disp2)]</div>"}, maptext_width, maptext_height))
 
 /obj/machinery/door_timer/cell_1
 	name = "Cell 1"

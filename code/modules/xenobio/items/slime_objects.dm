@@ -223,17 +223,15 @@ CAPABILITIES(/obj/item/slime_crystal)
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "floor1" //not a slime extract sprite but... something close enough!
 	item_state = "slime"
-	light_color = "#FFF423"
 	w_class = ITEMSIZE_TINY
-	light_range = 6
 	on = 1 //Bio-luminesence has one setting, on.
 	power_use = 0
 	light_system = STATIC_LIGHT
 	special_handling = TRUE
 
-/obj/item/flashlight/slime/Initialize(mapload)
-	. = ..()
-	set_light(light_range, light_power, light_color)
+// Bioluminescence: always lit, in its own yellow.
+CAPABILITIES(/obj/item/flashlight/slime)
+	look_glow(GLOW(6, 0.8, "#FFF423"))
 
 /obj/item/flashlight/slime/update_brightness()
 	return

@@ -82,6 +82,8 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "contributes_to", ctx: Ctx::Eval, role: Role::Contribution },
     HookForm { kw: "outputs", ctx: Ctx::Eval, role: Role::Output },
     HookForm { kw: "look_layer", ctx: Ctx::Eval, role: Role::Condition },
+    // `look_glow(PROC_REF(x), when = ...)`: the light's value, read when the look is drawn; like a condition it reads declared state only
+    HookForm { kw: "look_glow", ctx: Ctx::Eval, role: Role::Condition },
     HookForm { kw: "then", ctx: Ctx::Op, role: Role::Effect },
     HookForm { kw: "because", ctx: Ctx::Op, role: Role::Reason },
     // req_window_usable(remote = ...): the optional remote admission predicate remains boolean.
@@ -264,7 +266,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change, after_init) runs in that context.
         let in_op_when = f.kw == "when" && enclosing_op_start(body, start).is_some_and(|op_start| {
             !ranges.iter().any(|&(oidx, s, e)| s > op_start && s != e && start >= s && start < e
-                && matches!(HOOK_FORMS[oidx].kw, "every" | "after" | "delayed" | "contributes" | "contributes_to" | "outputs" | "look_layer"))
+                && matches!(HOOK_FORMS[oidx].kw, "every" | "after" | "delayed" | "contributes" | "contributes_to" | "outputs" | "look_layer" | "look_glow"))
         });
         let mut ctx = if in_asks_when || in_op_when { Ctx::Op } else { f.ctx };
         let mut notice = String::new();

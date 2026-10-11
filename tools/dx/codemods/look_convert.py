@@ -11,7 +11,7 @@ at all, so no chain mixes a legacy declaration with a draw(). Per type, in the l
             if("1")
                 look.overlay("state")
         <the provider body>                     DECLARE_APPEARANCE_PROC: . += x is look.overlay(x), icon_state = x is look.state(x),
-                                                color/alpha/... look.set_*(), set_light() look.light() / look.light_off(),
+                                                color/alpha/... look.set_*(), set_light() look.glow() / look.glow(GLOW_OFF),
                                                 flick(x, src) look.play_flick(x); a body that reads its own icon_state keeps it in
                                                 a local (var/drawn_state = look.state_so_far(src); drawn_state = look.state(x))
 
@@ -754,10 +754,10 @@ def translate_stmt(ix, t, stmt, locals_, state_reads):
         if name == "set_light":
             args = [a.strip() for a in split_args(args_raw)]
             if len(args) == 1 and args[0] in ("0", "FALSE"):
-                return "look.light_off()"
+                return "look.glow(GLOW_OFF)"
             if len(args) == 1:
                 args.append("light_power")
-            return "look.light(%s)" % ", ".join(fix_expr(a, state_reads) for a in args[:3])
+            return "look.glow(%s)" % ", ".join(fix_expr(a, state_reads) for a in args[:3])
         if name == "update_held_icon" and not args_raw.strip():
             return "// the hands that hold it redraw when the look changes its sprite (look.apply_to())"
         if name == "flick":

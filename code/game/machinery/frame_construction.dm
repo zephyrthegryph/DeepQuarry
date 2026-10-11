@@ -75,18 +75,17 @@ STAGE_DEF(machine_frame, finished)
 	self = "You connect the monitor."
 
 /obj/structure/frame/proc/native_anchor(datum/act/op/A)
-	state = FRAME_PLACED
+	set_state(FRAME_PLACED)
 	var/obj/structure/frame/frame = src
 	var/mob/actor = A.actor
 	frame.set_anchored(TRUE)
 	if(!frame.need_circuit && frame.circuit)
-		frame.state = FRAME_FASTENED
+		frame.set_state(FRAME_FASTENED)
 		frame.check_components()
 		frame.update_desc()
 		to_chat(actor, span_notice("You wrench the frame into place and set the outer cover."))
 	else
 		to_chat(actor, span_notice("You wrench the frame into place."))
-	update_icon()
 	return OP_OK
 
 
@@ -102,64 +101,58 @@ STAGE_DEF(machine_frame, finished)
 	var/obj/item/held = A.held
 	if(!move_into(frame, nameof(frame.circuit), held, actor))
 		return OP_FAILED
-	state = FRAME_UNFASTENED
+	set_state(FRAME_UNFASTENED)
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()
-	update_icon()
 	return OP_OK
 
 
 /obj/structure/frame/proc/native_remove_board(datum/act/op/A)
-	state = FRAME_PLACED
+	set_state(FRAME_PLACED)
 	var/obj/structure/frame/frame = src
 	frame.circuit.forceMove(frame.loc)
 	rel_take(frame, nameof(frame.circuit))
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.req_components = null
 	frame.update_desc()
-	update_icon()
 	return OP_OK
 
 
 /obj/structure/frame/proc/native_wire(datum/act/op/A)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	state = FRAME_WIRED
+	set_state(FRAME_WIRED)
 	var/obj/structure/frame/frame = src
 	var/mob/actor = A.actor
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		to_chat(actor, frame.desc)
-	update_icon()
 	return OP_OK
 
 
 /obj/structure/frame/proc/native_unwire(datum/act/op/A)
 	new /obj/item/stack/cable_coil(loc, 5)
-	state = FRAME_FASTENED
+	set_state(FRAME_FASTENED)
 	var/obj/structure/frame/frame = src
 	var/mob/actor = A.actor
 	if(!length(frame.components))
 		to_chat(actor, span_notice("You remove the cables."))
-		update_icon()
 		return OP_OK
 	to_chat(actor, span_notice("You remove the cables and components."))
 	for(var/obj/item/W in frame.components)
 		W.forceMove(frame.loc)
 	frame.check_components()
 	frame.update_desc()
-	update_icon()
 	return OP_OK
 
 
 /obj/structure/frame/proc/native_remove_components(datum/act/op/A)
-	state = FRAME_WIRED
+	set_state(FRAME_WIRED)
 	var/obj/structure/frame/frame = src
 	var/mob/actor = A.actor
 	if(!length(frame.components))
 		to_chat(actor, span_notice("There are no components to remove."))
-		update_icon()
 		return OP_OK
 	to_chat(actor, span_notice("You remove the components."))
 	for(var/obj/item/W in frame.components)
@@ -167,7 +160,6 @@ STAGE_DEF(machine_frame, finished)
 	frame.check_components()
 	frame.update_desc()
 	to_chat(actor, frame.desc)
-	update_icon()
 	return OP_OK
 
 
@@ -196,36 +188,30 @@ STAGE_DEF(machine_frame, finished)
 
 
 /obj/structure/frame/proc/native_unanchor(datum/act/op/A)
-	state = FRAME_PLACED
+	set_state(FRAME_PLACED)
 	set_anchored(FALSE)
-	update_icon()
 	return OP_OK
 
 /obj/structure/frame/proc/native_fasten_board(datum/act/op/A)
-	state = FRAME_FASTENED
-	update_icon()
+	set_state(FRAME_FASTENED)
 	return OP_OK
 
 /obj/structure/frame/proc/native_unfasten_board(datum/act/op/A)
-	state = FRAME_UNFASTENED
-	update_icon()
+	set_state(FRAME_UNFASTENED)
 	return OP_OK
 
 /obj/structure/frame/proc/native_unfasten_cover(datum/act/op/A)
-	state = FRAME_PLACED
-	update_icon()
+	set_state(FRAME_PLACED)
 	return OP_OK
 
 /obj/structure/frame/proc/native_add_glass(datum/act/op/A)
-	state = FRAME_PANELED
+	set_state(FRAME_PANELED)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	update_icon()
 	return OP_OK
 
 /obj/structure/frame/proc/native_remove_glass(datum/act/op/A)
-	state = FRAME_WIRED
+	set_state(FRAME_WIRED)
 	new /obj/item/stack/material/glass(loc, 2)
-	update_icon()
 	return OP_OK
 
 /obj/structure/frame/proc/native_is_machine(datum/act/op/A)

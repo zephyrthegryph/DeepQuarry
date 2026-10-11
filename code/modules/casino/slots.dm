@@ -47,10 +47,10 @@ TRACKED(/obj/machinery/slot_machine, slot_phase)
 	if(!ispowered || isbroken)
 		look.state("slotmachine_off")
 		look.overlay("slotmachine_broken", isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-		look.light_off()
+		look.glow(GLOW_OFF)
 		return
 	look.state("slotmachine[slot_phase ? "_[slot_phase]" : ""]")
-	look.light(2)
+	look.glow(2)
 
 /obj/machinery/slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
@@ -196,10 +196,10 @@ TRACKED(/obj/machinery/station_slot_machine, slot_phase)
 	if(!ispowered || isbroken)
 		look.state("ntslotmachine_off")
 		look.overlay("ntslotmachine_broken", isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-		look.light_off()
+		look.glow(GLOW_OFF)
 		return
 	look.state("ntslotmachine[slot_phase ? "_[slot_phase]" : ""]")
-	look.light(2)
+	look.glow(2)
 
 /obj/machinery/station_slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.

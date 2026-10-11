@@ -287,15 +287,15 @@ CAPABILITIES(/obj/machinery/shield_gen)
 	..()
 	if(broken_now())
 		look.state("broke")
-		look.light_off()
+		look.glow(GLOW_OFF)
 		look.effect(PROC_REF(look_effect_shield_hum_stop))
 	else
 		if (src.active)
 			look.state("generator1")
-			look.light(4, 2, "#00CCFF")
+			look.glow(4, 2, "#00CCFF")
 		else
 			look.state("generator0")
-			look.light_off()
+			look.glow(GLOW_OFF)
 
 /// An effect of the look (the draw sweep): run once the look is applied, not while it is drawn.
 /obj/machinery/shield_gen/proc/look_effect_shield_hum_stop()
