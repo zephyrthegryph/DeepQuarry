@@ -577,5 +577,26 @@
         "receipt": "E:/dq-cache/dmb-folded-source-features/20261011-51a148/3a2919f6d28a46408935ddb3110c3669/receipt.json"
       }
     }
+  },
+  "diagnostic_cohort_921751": {
+    "binary_sha256": "715b4ca718aba41ff05637774769bc494868d5c55a011a93e5c5e415bb86fcc4",
+    "intentional_stop": "E:/dq-cache/dmb-native-iterations/20261011-121716-9d182fe7/intentional-stop.json",
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261011-121716-9d182fe7/receipt.json",
+    "status": "intentionally stopped after identifying quadratic incidence insertion",
+    "observed_progress": {
+      "admission_windows_seconds": 0.116,
+      "phase_wall_seconds": 65.014,
+      "scope": "Partial progress only, not complete compiler benchmark",
+      "total_procedures": 48681,
+      "procedures": 11968,
+      "lowering_windows_seconds": 64.889
+    },
+    "scalable_index": "0d937a6152: ordered maps and reverse removal, validation pending",
+    "cleanup_reaped": true,
+    "cleanup_manifest": "E:/dq-cache/dmb-native-v2/integration-gates/cleanup-obsolete-diagnostic-cohort-cache-20261011.json",
+    "timings_admitted": false,
+    "source_commit": "92175106d40f744f93037be2f32855e4f3897fc2",
+    "admitted_output": false,
+    "proven_fix": "22361423f2: absent variant removal no longer scans prior subscription rosters"
   }
 }
