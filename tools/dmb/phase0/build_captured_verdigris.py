@@ -54,6 +54,29 @@ def validate_resume(receipt, expected):
             raise ValueError('previous build authority mismatch: ' + key)
 
 
+def profile_environment(profile, inherited):
+    removed = {key: value for key, value in inherited.items()
+               if key.startswith('CARGO_PROFILE_') or key in (
+                   'RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_RUSTFLAGS')}
+    values = {'CARGO_PROFILE_RELEASE_OPT_LEVEL': '3',
+              'CARGO_PROFILE_RELEASE_DEBUG': 'full',
+              'CARGO_PROFILE_RELEASE_LTO': 'thin',
+              'CARGO_PROFILE_RELEASE_CODEGEN_UNITS': '16',
+              'CARGO_PROFILE_RELEASE_PANIC': 'unwind',
+              'CARGO_PROFILE_RELEASE_INCREMENTAL': 'false',
+              'CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS': 'false',
+              'CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS': 'false',
+              'CARGO_PROFILE_RELEASE_STRIP': 'none',
+              'CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO': 'packed',
+              'RUSTFLAGS': '', 'CARGO_ENCODED_RUSTFLAGS': '', 'CARGO_BUILD_RUSTFLAGS': ''}
+    if profile == 'diagnostic-unoptimized':
+        values.update(CARGO_PROFILE_RELEASE_OPT_LEVEL='0', CARGO_PROFILE_RELEASE_DEBUG='0',
+                      CARGO_PROFILE_RELEASE_LTO='false')
+    elif profile != 'captured-release':
+        raise ValueError('unsupported captured build profile')
+    return values, removed
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared-root', required=True, type=Path)
@@ -65,6 +88,8 @@ def main():
     parser.add_argument('--rustup-home', type=Path, default=Path('E:/rustup'))
     parser.add_argument('--resume-build-receipt', type=Path)
     parser.add_argument('--resume-build-receipt-sha256')
+    parser.add_argument('--profile', choices=('captured-release', 'diagnostic-unoptimized'),
+                        default='captured-release')
     args = parser.parse_args()
     if os.name != 'nt':
         raise ValueError('Windows owned Job required')
@@ -93,6 +118,7 @@ def main():
         raise ValueError('captured roster and closure differ')
     dependency_environment = {'CARGO_HOME': str(cargo_home), 'RUSTUP_HOME': str(rustup_home),
                               'RUSTUP_AUTO_INSTALL': '0', 'CARGO_NET_OFFLINE': 'true'}
+    profile_env, removed_profile_env = profile_environment(args.profile, os.environ)
     resume_pin = None
     if args.resume_build_receipt:
         previous_path = absolute_nonreparse(args.resume_build_receipt)
@@ -110,6 +136,7 @@ def main():
             'bindings': pin(source / 'code/__defines/verdigris/_bindings.dm'),
             'rustAbi': pin(source / 'verdigris/ffi/src/abi.rs'),
             'job_memory_bytes': 4_000_000_000, 'child_watchdog_seconds': 300,
+            'profile': args.profile, 'profileEnvironment': profile_env,
             'command': [str(cargo), 'build', '--locked', '--offline', '-j1', '--release',
                         '--target', 'i686-pc-windows-msvc', '--package', 'verdigris', '--lib']})
     phases = []
@@ -133,6 +160,7 @@ def main():
     old_job, old_cwd = h._owned_job, Path.cwd()
     old_env = {key: os.environ.get(key) for key in ('CARGO_TARGET_DIR', 'CARGO_BUILD_JOBS',
                'CARGO_HOME', 'RUSTUP_HOME', 'RUSTUP_AUTO_INSTALL', 'CARGO_NET_OFFLINE')}
+    old_env.update({key: os.environ.get(key) for key in set(profile_env) | set(removed_profile_env)})
     command = [str(cargo), 'build', '--locked', '--offline', '-j1', '--release', '--target',
                'i686-pc-windows-msvc', '--package', 'verdigris', '--lib']
     receipt = {'schema': 'captured-verdigris-build-v1', 'command': command,
@@ -149,11 +177,18 @@ def main():
     receipt['dependencyEnvironment'] = dependency_environment
     receipt['previousBuildReceipt'] = resume_pin
     receipt['targetReuse'] = 'authenticated-build-cache-only' if resume_pin else 'fresh'
+    receipt['profile'] = args.profile
+    receipt['profileEnvironment'] = profile_env
+    receipt['clearedInheritedProfileEnvironment'] = removed_profile_env
+    receipt['releasePerformanceBaseline'] = False
     try:
         h._owned_job = job
         os.environ['CARGO_TARGET_DIR'] = str(target)
         os.environ['CARGO_BUILD_JOBS'] = '1'
         os.environ.update(receipt['dependencyEnvironment'])
+        for key in removed_profile_env:
+            os.environ.pop(key, None)
+        os.environ.update(profile_env)
         os.chdir(source / 'verdigris')
         phase = begin_phase('owned_cargo', phases)
         try:

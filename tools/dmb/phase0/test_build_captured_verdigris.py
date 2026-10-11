@@ -1,10 +1,28 @@
 """Source policy only; never invokes Rust or runtime children."""
 import unittest
 from unittest.mock import patch
-from build_captured_verdigris import validate_roster, begin_phase, finish_phase, validate_resume
+from build_captured_verdigris import validate_roster, begin_phase, finish_phase, validate_resume, profile_environment
 
 
 class SourceRoster(unittest.TestCase):
+    def test_profiles_sanitize_inherited_compiler_overrides_and_are_not_interchangeable(self):
+        inherited = {'RUSTFLAGS': '-C opt-level=3', 'CARGO_ENCODED_RUSTFLAGS': 'foreign',
+                     'CARGO_BUILD_RUSTFLAGS': 'foreign', 'CARGO_PROFILE_DEV_DEBUG': '2', 'OTHER': 'keep'}
+        release, cleared = profile_environment('captured-release', inherited)
+        diagnostic, _ = profile_environment('diagnostic-unoptimized', inherited)
+        self.assertEqual(set(cleared), set(inherited) - {'OTHER'})
+        self.assertEqual(diagnostic['CARGO_PROFILE_RELEASE_OPT_LEVEL'], '0')
+        self.assertEqual(diagnostic['CARGO_PROFILE_RELEASE_DEBUG'], '0')
+        self.assertEqual(diagnostic['CARGO_PROFILE_RELEASE_LTO'], 'false')
+        self.assertEqual(diagnostic['CARGO_PROFILE_RELEASE_PANIC'], 'unwind')
+        self.assertEqual(diagnostic['CARGO_PROFILE_RELEASE_CODEGEN_UNITS'], '16')
+        self.assertEqual(diagnostic['CARGO_ENCODED_RUSTFLAGS'], '')
+        previous = {'schema': 'captured-verdigris-build-v1', 'error': 'timeout',
+                    'owned_job_cleanup': {'reaped': True}, 'profile': 'captured-release',
+                    'profileEnvironment': release}
+        with self.assertRaises(ValueError):
+            validate_resume(previous, {'profile': 'diagnostic-unoptimized', 'profileEnvironment': diagnostic})
+
     def test_resume_requires_failed_reaped_exact_authority(self):
         expected = {'targetDirectory': 'E:/owned/target', 'inputsBefore': {'verdigris/Cargo.lock': 'exact'},
                     'dependencyEnvironment': {'CARGO_HOME': 'E:/cargo'}, 'cargo': {'sha256': 'pin'}}
