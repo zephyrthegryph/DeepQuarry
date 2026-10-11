@@ -98,7 +98,7 @@
 +5 menu: Shoes draw knife hand
 +6 menu: Shoes stuff item
 +7 menu: Switch Shoe Layer (refused: You can't do that.)
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Drop onto

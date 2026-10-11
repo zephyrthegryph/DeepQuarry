@@ -13,5 +13,5 @@
 @obj.item.clothing human|/obj/item/card/id
 @obj.item.clothing human|/obj/item/kit
 @obj.item.clothing human|/obj/item/storage
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, kit_customize, kit_customize_last, move_to_top, pick_up_item, pompom_light_self, robot_hat_pickup, toggle_digestable

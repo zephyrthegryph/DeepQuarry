@@ -27,6 +27,6 @@
 +0 menu: Adjust welding mask (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/storage
 +0 menu: Adjust welding mask (refused: You can't do that.)
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 +0 menu: Adjust welding mask (refused: You can't do that.)
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, head_light_self, head_robot_pick_up, head_silicon_wear, head_welding_toggle_verb, kit_customize, kit_customize_last, move_to_top, pick_up_item, robot_hat_pickup, toggle_digestable, welding_mask_flip_self

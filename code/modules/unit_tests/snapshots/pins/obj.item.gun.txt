@@ -95,12 +95,11 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Fit
-+1 menu: Give DNA (refused: You can't do that.)
-+3 menu: Remove DNA (refused: You can't do that.)
-+5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-+6 click: Click: Fit
+human|/obj/item menu: Fit
+human|/obj/item menu: Give DNA (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove DNA (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item click: Click: Fit
 keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable, use_screwdriver

@@ -104,7 +104,7 @@
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
 +7 menu: Toggle Suit Sensors (refused: You can't do that.)
 +8 menu: Under worn hand
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)

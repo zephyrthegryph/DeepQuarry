@@ -8,16 +8,58 @@
 +5 click: Click: Take cell
 @obj.item ai|none
 @obj.item ghost|none
-@obj.item.melee human|/obj/item/tool/screwdriver
-@obj.item.melee human|/obj/item/tool/crowbar
-@obj.item.melee human|/obj/item/tool/wrench
-@obj.item.melee human|/obj/item/tool/wirecutters
-@obj.item.melee human|/obj/item/multitool
-@obj.item.melee human|/obj/item/weldingtool
-@obj.item.melee human|/obj/item/stack/cable_coil
-@obj.item.melee human|/obj/item/stack/material/steel
-@obj.item.melee human|/obj/item/card/id
-@obj.item.melee human|/obj/item/kit
-@obj.item.melee human|/obj/item/storage
+@obj human|/obj/item/tool/screwdriver
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/tool/crowbar
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/tool/wrench
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/tool/wirecutters
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/multitool
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/weldingtool
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/stack/cable_coil
+-click: nothing
++0 menu: Baton item
++3 menu: Take cell
++5 click: Click: Baton item
+@obj human|/obj/item/stack/material/steel
+-click: nothing
++0 menu: Baton item
++2 menu: Take cell
++4 click: Click: Baton item
+@obj human|/obj/item/card/id
+-click: nothing
++0 menu: Baton item
++3 menu: Take cell
++5 click: Click: Baton item
+@obj human|/obj/item/kit
++0 menu: Baton item
++3 menu: Take cell
+@obj human|/obj/item/storage
+-click: Click: Collect
++0 menu: Baton item
++3 menu: Take cell
++5 click: Click: Baton item
 @obj.item.melee human|/obj/item
 keys: baton_item, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, power, stunstaff_toggle_self, take_cell, toggle_digestable

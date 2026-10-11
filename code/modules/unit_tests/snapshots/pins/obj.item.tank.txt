@@ -47,9 +47,8 @@
 +2 menu: Tank item
 +4 click: Click: Tank item
 @obj human|/obj/item/assembly_holder
-@obj.item human|/obj/item
--menu: Use
--click: Click: Use
-+1 menu: Tank item
-+3 click: Click: Tank item
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Tank item
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Tank item
 keys: attach_assembly, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, pressure, self, tank_item, toggle, toggle_digestable, use_welder, use_wirecutter

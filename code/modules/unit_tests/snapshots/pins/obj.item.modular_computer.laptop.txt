@@ -108,7 +108,6 @@ human|/obj/item/card/emag click: Click: Use
 @obj.item human|/obj/item
 -menu: Use
 -click: Click: Use
-+0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
 +3 menu: Interaction item

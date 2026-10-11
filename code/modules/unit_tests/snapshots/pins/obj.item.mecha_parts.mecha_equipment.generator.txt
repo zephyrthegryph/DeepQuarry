@@ -13,5 +13,5 @@
 @obj.item.mecha_parts human|/obj/item/card/id
 @obj.item.mecha_parts human|/obj/item/kit
 @obj.item.mecha_parts human|/obj/item/storage
-@obj.item human|/obj/item
+@obj.item.mecha_parts human|/obj/item
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

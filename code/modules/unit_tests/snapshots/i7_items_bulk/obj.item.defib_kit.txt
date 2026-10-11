@@ -68,6 +68,7 @@ human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
 @obj.item human|/obj/item
+-menu: Alternate use
 -click: Click: Use
 +0 menu: Load
 +4 click: Click: Load

@@ -84,7 +84,7 @@
 +4 menu: Nikki hat unload hand
 +5 menu: Nikki's Hat - Unequip Translocator (refused: You can't do that.)
 +6 menu: Remove translocator
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +2 menu: Nikki hat item
 +3 menu: Nikki hat unload hand

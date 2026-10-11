@@ -62,6 +62,7 @@
 +4 menu: Use
 +5 click: Click: Load
 @obj.item human|/obj/item
+-menu: Alternate use
 -click: Click: Use
 +0 menu: Load
 +4 click: Click: Load

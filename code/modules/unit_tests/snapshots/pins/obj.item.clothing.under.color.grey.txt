@@ -1,115 +1,17 @@
-@obj.item.clothing human|none
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-+10 click: Click: Under worn hand
-@obj.item.clothing robot|none
--click: Click: Use
-+2 menu: Holster (refused: You can't do that.)
-+5 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+6 menu: Roll Up Sleeves (refused: You can't do that.)
-+8 menu: Toggle Suit Sensors (refused: You can't do that.)
-+9 menu: Under worn hand
-+11 click: Click: Under worn hand
+@obj.item.clothing.under human|none
+@obj.item.clothing.under robot|none
 @obj.item ai|none
-@obj.item ghost|none
-+0 menu: Holster (refused: You can't do that.)
-+2 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+3 menu: Roll Up Sleeves (refused: You can't do that.)
-+5 menu: Toggle Suit Sensors (refused: You can't do that.)
-@obj.item.clothing human|/obj/item/tool/screwdriver
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/tool/crowbar
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/tool/wrench
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/tool/wirecutters
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/multitool
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/weldingtool
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/stack/cable_coil
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-+10 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/stack/material/steel
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/card/id
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-+10 click: Click: Under worn hand
-@obj.item.clothing human|/obj/item/kit
-+2 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-@obj.item.clothing human|/obj/item/storage
-+2 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-@obj.item.clothing human|/obj/item
--click: Click: Use
-+1 menu: Holster (refused: You can't do that.)
-+3 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+4 menu: Roll Up Sleeves (refused: You can't do that.)
-+6 menu: Toggle Suit Sensors (refused: You can't do that.)
-+7 menu: Under worn hand
-+9 click: Click: Under worn hand
+@obj.item.clothing.under ghost|none
+@obj.item.clothing.under human|/obj/item/tool/screwdriver
+@obj.item.clothing.under human|/obj/item/tool/crowbar
+@obj.item.clothing.under human|/obj/item/tool/wrench
+@obj.item.clothing.under human|/obj/item/tool/wirecutters
+@obj.item.clothing.under human|/obj/item/multitool
+@obj.item.clothing.under human|/obj/item/weldingtool
+@obj.item.clothing.under human|/obj/item/stack/cable_coil
+@obj.item.clothing.under human|/obj/item/stack/material/steel
+@obj.item.clothing.under human|/obj/item/card/id
+@obj.item.clothing.under human|/obj/item/kit
+@obj.item.clothing.under human|/obj/item/storage
+@obj.item.clothing.under human|/obj/item
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable, under_holster_verb, under_rollsleeves_verb, under_rollsuit_verb, under_toggle_verb, under_worn_hand

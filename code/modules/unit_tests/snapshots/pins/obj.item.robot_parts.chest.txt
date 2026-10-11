@@ -14,5 +14,5 @@
 @obj.item.robot_parts human|/obj/item/kit
 @obj.item.robot_parts human|/obj/item/storage
 @obj.item.robot_parts human|/obj/item/card/emag
-@obj.item human|/obj/item
+@obj.item.robot_parts human|/obj/item
 keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

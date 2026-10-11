@@ -44,7 +44,7 @@
 -click: Click: Collect
 +2 menu: Item applied
 +6 click: Click: Item applied
-@obj.item.clothing human|/obj/item
+@obj.item human|/obj/item
 -click: Click: Use
 +1 menu: Item applied
 +5 click: Click: Item applied

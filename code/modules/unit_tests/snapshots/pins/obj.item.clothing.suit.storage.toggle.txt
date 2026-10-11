@@ -3,7 +3,7 @@
 @obj.item.clothing.suit.storage robot|none
 +5 menu: Toggle Coat Buttons (refused: You can't do that.)
 @obj.item ai|none
-@obj.item.clothing.suit.storage ghost|none
+@obj.item ghost|none
 +1 menu: Toggle Coat Buttons (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/tool/screwdriver
 +4 menu: Toggle Coat Buttons (refused: You can't do that.)
@@ -15,11 +15,11 @@
 +4 menu: Toggle Coat Buttons (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/multitool
 +4 menu: Toggle Coat Buttons (refused: You can't do that.)
-@obj.item.clothing.suit.storage human|/obj/item/weldingtool
+@obj.item.clothing.suit human|/obj/item/weldingtool
 +4 menu: Toggle Coat Buttons (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/stack/cable_coil
 +5 menu: Toggle Coat Buttons (refused: You can't do that.)
-@obj.item.clothing.suit.storage human|/obj/item/stack/material/steel
+@obj.item.clothing.suit human|/obj/item/stack/material/steel
 +4 menu: Toggle Coat Buttons (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/card/id
 +5 menu: Toggle Coat Buttons (refused: You can't do that.)

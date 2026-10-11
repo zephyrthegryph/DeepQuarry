@@ -14,6 +14,13 @@ human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do
 human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler menu: Wire signaler
 human|/obj/item/assembly/signaler click: Click: Wire signaler
+human|/obj/item/card/emag menu: Accessory attached hand
+human|/obj/item/card/emag menu: Alternate use
+human|/obj/item/card/emag menu: Holobadge imprint item
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/card/id menu: Accessory attached hand
 human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Collar tag item

@@ -48,3 +48,7 @@ Merge repair: current master replaced the ledger refresh API; resident-cost sett
 The setter conversion exposed thirteen changed initialization fingerprints. Complete tool/module configurations now run through ordered setup hooks. Malignant and stump identity setters run through preinit capabilities before organ placement; constructor tests cover forced tag/site, engineered growth, dead fallback and stump placement. Malignant's internal random-call order is unchanged, although moving it past ancestor setup may change the global RNG sequence. This does not authorize re-blessing unexplained snapshot changes.
 
 The first combined gate failed compilation and ratchets and ran no runtime tests. Verification remains pending until the repair gate completes.
+
+The second gate compiled with zero DreamMaker errors, but found two DreamChecker return-type diagnostics, one holder-classification lint issue and eight runtime test failures. The look sweep exceeded the runner timeout before a complete JSON result, so this gate is failed and unstamped. Repairs use the real internal organ index and cleanup, checked slot removal, isolated fit overrides, typed ledger API returns, and polymorphic predicate dispatch. No successful full gate is claimed.
+
+Snapshot expansion audit: 392 changed files comprise 150 formerly empty old-code recordings and 242 existing files with identical expanded rows after inheritance factoring. No existing behavior row was re-blessed. The recording producer completed before the later look-sweep timeout; overall verification remains failed.
