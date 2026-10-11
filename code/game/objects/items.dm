@@ -401,16 +401,16 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(isliving(hit_atom) && !hit_atom.is_incorporeal()) //Living mobs handle hit sounds differently.
 		var/volume = get_volume_by_throwforce_and_or_w_class()
 		if (throwforce > 0)
-			if (mob_throw_hit_sound)
-				playsound(hit_atom, mob_throw_hit_sound, volume, TRUE, -1)
-			else if(hitsound)
-				playsound(hit_atom, hitsound, volume, TRUE, -1)
+			if (sounds_of(src).throw_hit)
+				playsound(hit_atom, sounds_of(src).throw_hit, volume, TRUE, -1)
+			else if(sounds_of(src).hit)
+				playsound(hit_atom, sounds_of(src).hit, volume, TRUE, -1)
 			else
 				play_sfx(hit_atom, SFX_WEAPONS_GENHIT, volume = volume, extrarange = -1)
 		else
 			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
-		playsound(src, drop_sound, 30, preference = /datum/preference/toggle/drop_sounds)
+		playsound(src, sounds_of(src).drop, 30, preference = /datum/preference/toggle/drop_sounds)
 
 // apparently called whenever an item is removed from a slot, container, or anything else.
 // TO NOTE:
@@ -485,13 +485,13 @@ MSG_DEF_SELF(item/module_unavailable, "not possible right now")
 	if(user.client)	user.client.screen |= src
 	if(user?.pulling_target() == src) user.stop_pulling()
 	if(dq_item_fits_slot_flags(src, slot))
-		if(equip_sound && !muffled_by_belly(user))
-			playsound(src, equip_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+		if(sounds_of(src).equip && !muffled_by_belly(user))
+			playsound(src, sounds_of(src).equip, 20, preference = /datum/preference/toggle/pickup_sounds)
 		else if(!muffled_by_belly(user))
-			playsound(src, drop_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).drop, 20, preference = /datum/preference/toggle/pickup_sounds)
 	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
-			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
+			playsound(src, sounds_of(src).pickup, 20, preference = /datum/preference/toggle/pickup_sounds)
 	PUBLISH_LEGACY(src, /datum/notice/item_equipped, user, slot)
 	PUBLISH_LEGACY(user, /datum/notice/mob_equipped_item, src, slot)
 	user.on_equipment_changed()
