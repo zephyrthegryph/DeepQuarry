@@ -245,9 +245,8 @@ fn list_negative_declines_authored_foreign_parent_but_source_positive_wins() {
         SymbolId::of("/list"),
         SymbolId::of("missing")
     ));
-    use dm_ir::Resolver;
     assert!(matches!(
-        frontend.snapshot.tree.resolve(ResolveQuery::Proc {
+        dm_ir::Resolver::resolve(frontend.snapshot.tree.as_ref(), ResolveQuery::Proc {
             owner: SymbolId::of("/list"),
             name: SymbolId::of("source_present"),
             verb: false,
