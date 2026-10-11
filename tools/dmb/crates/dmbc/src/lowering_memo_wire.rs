@@ -8,7 +8,9 @@ use dm_ir::{ProcedureIdentity, ProcedureStaticIdentity, ResolveQuery, Resolver, 
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, collections::BTreeMap, sync::Arc};
 const EXECUTABLE_SCHEMA: u32 = 0x0206_001e;
-const FAILURE_SCHEMA: u32 = 0x0206_0017;
+// Common nameof member diagnostics now retain the authored receiver/operator.
+// Prior failure frames can contain selector-only wording under the same key.
+const FAILURE_SCHEMA: u32 = 0x0206_0021;
 #[path = "lowering_memo_failure_wire.rs"]
 mod failure_wire;
 #[path = "lowering_memo_read_wire.rs"]
