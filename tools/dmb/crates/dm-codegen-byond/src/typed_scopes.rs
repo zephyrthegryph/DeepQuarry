@@ -162,3 +162,14 @@ mod tests {
         .is_err());
     }
 }
+
+/// Initializer slices expose issued assignment coordinates, not byte spans
+/// in their borrowed expression ASTs. Related notes belong to the same slice.
+pub(crate) fn assignment_error(mut error: LowerError, occurrence: Span) -> LowerError {
+    let span = crate::LowerSpan { start: occurrence.start, end: occurrence.end };
+    error.span = Some(span);
+    for note in &mut error.related {
+        note.span = span;
+    }
+    error
+}
