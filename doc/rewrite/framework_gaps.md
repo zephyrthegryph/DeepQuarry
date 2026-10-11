@@ -690,3 +690,13 @@ particle catchers). `finds(nameof(var), type, near = NEAR_CARDINAL | NEAR_AROUND
 instance's init is complete (the teleporter station's hub). Both in `code/library/lifeforms/placement.dm`. Found while converting the field:
 `derives()` recomputes inside `param_write()` from `/atom/New()`, before the lifeform plan has run, and fails ("bad index"); the field uses
 `param(apply =)` for its id tag instead.
+
+**The init ratchet counts lines (ratchet-fw, October 2026).** The init lint's `initialize` rule counted `Initialize()` overrides (1005 at the
+switch, 848 of them `initialize` and 157 `world_reads`); an override with twenty jobs and one with one counted the same, and an
+`ALLOW(init/CODE)` took a whole override off the count. The new `init_lines` rule counts each imperative line in every override body, kept or
+not: every statement but the bare parent call and a bare `return`. The baseline was regenerated at the switch with
+`analyze baseline --seed --lint init`: 7517 `init_lines` (a new measure, so it starts at today's count) and 157 `world_reads` (unchanged); no rule
+total was raised. `ALLOW(init/CODE)` still has to name a reason code, but it no longer hides lines. Whole types convert at a time: each job of
+an override goes to a form or to a named `setup(PROC_REF(x))` hook (`name_prefix(prefix)` for the "empty [name]" pattern), and the override
+is deleted with its last line. setup() hooks run when the instance's `Initialize()` chain has returned, before `after_init()`
+(`code/engine/lifeforms/setup.dm`).
