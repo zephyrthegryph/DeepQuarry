@@ -1,0 +1,35 @@
+human|none click: nothing
+robot|none click: nothing
+ai|none click: nothing
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id click: nothing
+keys: active_cloaking, adspam, ai, appendicitis, assist_organ, autosave, autosave2, beast_form, be_event_invis, bluespace_artillery, break_bone, break_legs, brutal_pred, clear_issue, cloaking, cocoon, colormate, damage_organ, darksight, direct_narrate, drop_all, drop_held, drop_organ, drop_specific, dust, elder_smite, equip_item, gib, give_chem, give_item, give_quest, health_scan, hot_dog, item_tf, lightning_strike, list_all, lleill_alchemy, lleill_drain, lleill_energy, lleill_invisibility, lleill_transmute, medical_issue, mob_tf, orbit, paralyse, peppernade, pie_splat, player_panel, popup-box, purge, quick_nif, redspace_abduct, rejuvenate, repair_organ, resize, revert-mob-tf, robot_organ, see_event_invis, set_size, shadekin_attack, shadekin_vore, spicerequest, spicy_air, spin, spont_combustion, squish, stasis, stop-orbits, subtle_message, teleport, terror, terror_aoe, transformation, trash_eater, ui_open, vent_crawl, view_variables, wet_floors
+
