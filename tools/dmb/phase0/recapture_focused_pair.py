@@ -14,6 +14,7 @@ from recapture_iteration_baseline import (verify_source, file_version, write, sh
 from recover_iteration_source import absolute_nonreparse, regular
 import semantic_configuration
 from iteration_structural import authenticate_source_snapshot
+from focused_pair_results import memory_bytes, observed_record, compare
 
 
 def capture(root, output, byond, native, template, pins, defines, launch, deadline):
@@ -118,6 +119,7 @@ def main():
     parser.add_argument('--security', choices=('trusted', 'safe', 'ultrasafe'), required=True)
     parser.add_argument('--define', action='append', default=[])
     parser.add_argument('--focus', action='append', required=True)
+    parser.add_argument('--job-memory-mib', type=int, default=4096)
     parser.add_argument('--seconds', type=int, default=900)
     args = parser.parse_args()
     if os.name != 'nt' or not 1 <= args.seconds <= 900:
@@ -136,11 +138,12 @@ def main():
     args.checkout = absolute_nonreparse(args.checkout)
     args.prepared_root = absolute_nonreparse(args.prepared_root)
     args.output = absolute_nonreparse(args.output)
+    job_bytes = memory_bytes(args.job_memory_mib)
     deadline = time.monotonic() + args.seconds
-    job = OwnedJob(memory_bytes=4_000_000_000)
+    job = OwnedJob(memory_bytes=job_bytes)
     child = None
     report = {'schema': 1, 'status': 'preparing', 'focus': args.focus,
-              'inputClosureAuthenticated': False, 'runtime': 'not run'}
+              'inputClosureAuthenticated': False, 'runtime': 'not run', 'job_memory_bytes': job_bytes}
     try:
         def launch(command, cwd, log, deadline):
             nonlocal child
@@ -173,10 +176,10 @@ def main():
         if args.output.is_dir():
             write(args.output / 'focused-pair-receipt.json', report)
     if report['status'] == 'passed':
-        job = OwnedJob(memory_bytes=4_000_000_000)
+        job = OwnedJob(memory_bytes=job_bytes)
         runtime = {'schema': 1, 'status': 'running', 'focus': args.focus,
                    'sourceRosterAuthenticated': True, 'inputClosureAuthenticated': False,
-                   'implicitCompilerReads': 'unissued', 'acceptedRuntimeBaseline': False}
+                   'implicitCompilerReads': 'unissued', 'acceptedRuntimeBaseline': False, 'job_memory_bytes': job_bytes}
         try:
             for name in ('bun', 'bash', 'dd'):
                 tool = absolute_nonreparse(getattr(args, name))
@@ -208,6 +211,7 @@ def main():
                 command = [sys.executable, str(suite), '--checkout', str(args.checkout),
                            '--output', str(args.output / (backend + '-runtime')), '--backend', backend,
                            '--security', args.security, '--workers', '2', '--seconds', str(remaining),
+                           '--job-memory-bytes', str(job_bytes),
                            '--focused-compiled-output', captures[backend]['capture'],
                            '--focused-compiled-output-sha256', captures[backend]['sha256']]
                 for name in ('bash', 'byond', 'dd'):
@@ -224,6 +228,11 @@ def main():
                 if result['exit_code'] != 0:
                     raise ValueError(backend + ' focused runtime failed')
             verify_source(args.prepared_root / 'source', json.loads((args.prepared_root / 'source-snapshot.json').read_text())['files'], deadline)
+            records = {backend: observed_record(args.output / (backend + '-runtime/build.log'), args.checkout, backend,
+                       getattr(args, backend + '_sha256'), args.focus, deadline) for backend in ('byond', 'native')}
+            runtime['comparison'] = compare(records['byond'], records['native'])
+            if not runtime['comparison']['matches']:
+                raise ValueError('observed focused test records or boot cleanliness differ')
             runtime['status'] = 'passed'
         except Exception as error:
             runtime.update(status='failed', error=str(error))
