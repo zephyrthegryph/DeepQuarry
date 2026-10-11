@@ -212,11 +212,11 @@
 			else
 				t_him = "them"
 
-	if(H.zone_sel.selecting == BP_HEAD)
+	if(hud_of(H)?.zone_sel?.selecting == BP_HEAD)
 		act_message(H, target, MSG_SELF(span_notice("You pat %T% on the head.")), MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
-	else if(H.zone_sel.selecting == BP_R_HAND || H.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(H)?.zone_sel?.selecting == BP_R_HAND || hud_of(H)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(H, target, MSG_SELF(span_notice("You shake %T%'s hand.")), MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
-	else if(H.zone_sel.selecting == "mouth")
+	else if(hud_of(H)?.zone_sel?.selecting == "mouth")
 		act_message(H, target, MSG_SELF(span_notice("You boop %T% on the nose.")), MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
 	else
 		act_message(H, target, MSG_SELF(span_notice("You hug %T% to make [t_him] feel better!")), \

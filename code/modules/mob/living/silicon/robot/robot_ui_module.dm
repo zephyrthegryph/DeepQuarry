@@ -190,7 +190,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui_module)
 		var/tempsize = size_multiplier
 		resize(1)
 		resize(tempsize)
-	if(hands)
+	if(hud_used?.hands)
 		update_hud()
 	sprite_datum.do_equipment_glamour(module)
 	to_chat(src, span_filter_notice("Your icon has been set. You now require a module reset to change it."))

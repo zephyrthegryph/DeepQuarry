@@ -1448,7 +1448,7 @@ MSG_DEF_SELF(injection/means, "Somehow, you forgot your means of injecting. (Sel
 	if(target.reagents && (trait_injection_amount > 0) && !synth)
 		target.reagents.add_reagent(trait_injection_selected, trait_injection_amount)
 	var/ourmsg = "[src] manages to [trait_injection_verb] [target] "
-	switch(zone_sel.selecting)
+	switch(hud_used?.zone_sel?.selecting)
 		if(BP_HEAD)
 			ourmsg += "on the head!"
 		if(BP_TORSO)

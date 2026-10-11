@@ -192,13 +192,13 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 /obj/item/clothing/accessory/stethoscope/use_on_patient(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(stance != I_HELP) //in case it is ever used as a surgery tool
 		return ..()
-	attack(M, user, user.zone_sel?.selecting || BP_TORSO, 1, stance) //default surgery behaviour is just to scan as usual
+	attack(M, user, hud_of(user)?.zone_sel?.selecting || BP_TORSO, 1, stance) //default surgery behaviour is just to scan as usual
 	return 1
 
 /obj/item/clothing/accessory/stethoscope/attack(mob/living/carbon/human/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M) && isliving(user))
 		if(stance == I_HELP)
-			var/body_part = parse_zone(user.zone_sel.selecting)
+			var/body_part = parse_zone(hud_of(user)?.zone_sel?.selecting)
 
 			var/message_holder	//Holds pervy message
 			var/message_holder2	//Hods the nutrition related message.

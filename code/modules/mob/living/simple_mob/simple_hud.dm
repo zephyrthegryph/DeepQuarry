@@ -80,27 +80,27 @@
 	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	pullin.icon = ui_style
-	pullin.icon_state = "pull0"
-	pullin.name = "pull"
-	pullin.screen_loc = ui_pull_resist
-	hud_elements |= pullin
+	rel_set(hud_used, nameof(/datum/hud::pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.pullin?.icon = ui_style
+	hud_used?.pullin?.icon_state = "pull0"
+	hud_used?.pullin?.name = "pull"
+	hud_used?.pullin?.screen_loc = ui_pull_resist
+	hud_elements |= hud_used?.pullin
 
 	//Health status
-	rel_set(src, nameof(healths), new /atom/movable/screen())
-	healths.icon = ui_style
-	healths.icon_state = "health0"
-	healths.name = "health"
-	healths.screen_loc = ui_health
-	hud_elements |= healths
+	rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+	hud_used?.healths?.icon = ui_style
+	hud_used?.healths?.icon_state = "health0"
+	hud_used?.healths?.name = "health"
+	hud_used?.healths?.screen_loc = ui_health
+	hud_elements |= hud_used?.healths
 
-	rel_set(src, nameof(autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
-	autowhisper_display.icon_state = "autowhisper"
-	autowhisper_display.name = "autowhisper"
-	autowhisper_display.screen_loc = "EAST-1:28,CENTER-2:13"
-	hud_elements |= autowhisper_display
+	rel_set(hud_used, nameof(/datum/hud::autowhisper_display), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+	hud_used?.autowhisper_display?.icon = 'icons/mob/screen/minimalist.dmi'
+	hud_used?.autowhisper_display?.icon_state = "autowhisper"
+	hud_used?.autowhisper_display?.name = "autowhisper"
+	hud_used?.autowhisper_display?.screen_loc = "EAST-1:28,CENTER-2:13"
+	hud_elements |= hud_used?.autowhisper_display
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -134,18 +134,18 @@
 	hud_elements |= aw
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
 
-	rel_set(src, nameof(pain), new /atom/movable/screen( null ))
+	rel_set(hud_used, nameof(/datum/hud::pain), new /atom/movable/screen( null ))
 
-	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
-	zone_sel.icon = ui_style
-	zone_sel.color = ui_color
-	zone_sel.alpha = ui_alpha
-	hud_elements |= zone_sel
+	rel_set(hud_used, nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel( null ))
+	hud_used?.zone_sel?.icon = ui_style
+	hud_used?.zone_sel?.color = ui_color
+	hud_used?.zone_sel?.alpha = ui_alpha
+	hud_elements |= hud_used?.zone_sel
 
 	//Component hud elements. Made in /mob/living/create_mob_hud
-	hud_elements |= shadekin_display
-	hud_elements |= xenochimera_danger_display
-	hud_elements |= lleill_display
+	hud_elements |= hud_used?.shadekin_display
+	hud_elements |= hud_used?.xenochimera_danger_display
+	hud_elements |= hud_used?.lleill_display
 
 	//Hand things
 	if(has_hands)
@@ -220,14 +220,14 @@
 		rel_add(HUD, nameof(HUD.adding), using)
 
 		//Throw button
-		rel_set(src, nameof(throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
-		throw_icon.icon = ui_style
-		throw_icon.icon_state = "act_throw_off"
-		throw_icon.name = "throw"
-		throw_icon.screen_loc = ui_drop_throw
-		throw_icon.color = ui_color
-		throw_icon.alpha = ui_alpha
-		hud_elements |= throw_icon
+		rel_set(hud_used, nameof(/datum/hud::throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
+		hud_used?.throw_icon?.icon = ui_style
+		hud_used?.throw_icon?.icon_state = "act_throw_off"
+		hud_used?.throw_icon?.name = "throw"
+		hud_used?.throw_icon?.screen_loc = ui_drop_throw
+		hud_used?.throw_icon?.color = ui_color
+		hud_used?.throw_icon?.alpha = ui_alpha
+		hud_elements |= hud_used?.throw_icon
 
 	extra_huds(HUD, HUD.ui_style, hud_elements)
 

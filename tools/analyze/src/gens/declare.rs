@@ -742,8 +742,9 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         let ty = ty.trim();
         if !is_atom_path(ty) && ty.starts_with("/datum") {
             let mut declared = FORMS.iter().any(|f| !block_calls(&m.args, f).is_empty());
-            for owns in ["owns_one", "owns_many"] {
-                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == "starts").unwrap_or(false))) {
+            // hud_element(..., when = X) is an owns_one with starts = when(X, T).
+            for (owns, key) in [("owns_one", "starts"), ("owns_many", "starts"), ("hud_element", "when")] {
+                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == key).unwrap_or(false))) {
                     declared = true;
                 }
             }

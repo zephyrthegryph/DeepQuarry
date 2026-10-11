@@ -129,9 +129,9 @@
 
 	// 7. Refresh what the dead mob shows and sees.
 	if(!QDELETED(src))
-		if(healths)
-			healths.overlays = null
-			healths.icon_state = "health6"
+		if(hud_used?.healths)
+			hud_used?.healths?.overlays = null
+			hud_used?.healths?.icon_state = "health6"
 		// The HUD, sight and look follow set_stat(DEAD) by themselves (it published nameof(stat)).
 
 	// 8. Antagonist bookkeeping.

@@ -386,7 +386,7 @@ TRACKED(/obj/item/book, unique)
 	set_carved(TRUE)
 
 /obj/item/book/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(user.zone_sel.selecting == O_EYES)
+	if(hud_of(user)?.zone_sel?.selecting == O_EYES)
 		act_message(user, M, MSG_SELF(span_notice(" %U% opens up a book and shows it to %T%.")), \
 			MSG_OTHERS(span_notice("You open up the book and show it to %T%.")))
 		display_content(M)

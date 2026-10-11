@@ -15,15 +15,15 @@
 	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using) // owned by HUD.adding
 
-	rel_set(src, nameof(healths), new /atom/movable/screen())
-	healths.icon = HUD.ui_style
-	healths.icon_state = "health0"
-	healths.name = "health"
-	healths.screen_loc = ui_alien_health
+	rel_set(hud_used, nameof(/datum/hud::healths), new /atom/movable/screen())
+	hud_used?.healths?.icon = HUD.ui_style
+	hud_used?.healths?.icon_state = "health0"
+	hud_used?.healths?.name = "health"
+	hud_used?.healths?.screen_loc = ui_alien_health
 
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += list(healths)
+		client.screen += list(hud_used?.healths)
 		if(length(HUD.adding))
 			client.screen += HUD.adding
 		if(length(HUD.other))
