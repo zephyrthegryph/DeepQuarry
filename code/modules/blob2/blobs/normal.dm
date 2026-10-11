@@ -2,11 +2,11 @@
 	name = "normal blob"
 	base_name = "blob"
 	icon_state = "blob"
-	light_range = 0
 	max_integrity = 25
 	health_regen = 1
 
 CAPABILITIES(/obj/structure/blob/normal)
+	configure(light_glow(range = 0))
 	after_init(0, then(PROC_REF(blob_normal_integrity)))
 
 /obj/structure/blob/normal/proc/blob_normal_integrity(datum/act/timer/A)

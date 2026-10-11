@@ -426,7 +426,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 	if(stat)
 		return 0
 	set_on(1)
-	set_light(light_strength)
+	set_glow(src, GLOW(light_strength, null, null))
 	update_icons()
 	resetTarget()
 	patrol_path = list()
@@ -512,7 +512,7 @@ MSG_DEF_SELF(bot/removing_pai, span_notice("You are attempting to remove the pAI
 /mob/living/bot/proc/turn_off()
 	set_on(0)
 	bot_stop_work() // If ever stuck... reboot!
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	update_icons()
 	update_canmove()
 

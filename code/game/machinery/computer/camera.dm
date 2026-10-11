@@ -6,7 +6,6 @@
 
 	icon_keyboard = "security_key"
 	icon_screen = "cameras"
-	light_color = "#a91515"
 	circuit = /obj/item/circuitboard/security
 
 	var/mapping = 0//For the overview file, interesting bit of code.
@@ -16,6 +15,7 @@
 	var/camera_datum_type = /datum/tgui_module/camera
 
 CAPABILITIES(/obj/machinery/computer/security)
+	configure(light_glow(color = "#a91515"))
 	owns_one(nameof(camera), /datum/tgui_module/camera, starts = PROC_REF(make_camera))
 	op("station_map", menu(), label(".map"), needs(req_adjacent(), req_capable()), then(PROC_REF(interaction_station_map)))
 	op("open_ui_impl", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_open_ui_impl)))
@@ -77,7 +77,6 @@ CAPABILITIES(/obj/machinery/computer/security)
 	icon = 'icons/obj/entertainment_monitor.dmi'
 	icon_state = "screen"
 	icon_screen = null
-	light_color = "#FFEEDB"
 	light_range_on = 2
 	network = list(NETWORK_THUNDER)
 	circuit = /obj/item/circuitboard/security/telescreen/entertainment
@@ -92,6 +91,7 @@ CAPABILITIES(/obj/machinery/computer/security)
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/entertainment, REGISTRY_ENTERTAINMENT_SCREENS)
 
 CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
+	configure(light_glow(color = "#FFEEDB"))
 	owns_one(nameof(radio), starts = /obj/item/radio)
 	click_on(PROC_REF(click_input))
 
@@ -189,8 +189,10 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_keyboard = null
 	icon_screen = "detective_tv"
 	circuit = /obj/item/circuitboard/security/tv
-	light_color = "#3848B3"
 	light_power_on = 0.5
+
+CAPABILITIES(/obj/machinery/computer/security/wooden_tv)
+	configure(light_glow(color = "#3848B3"))
 
 /obj/machinery/computer/security/mining
 	name = "outpost camera monitor"
@@ -199,7 +201,9 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_screen = "mining"
 	network = list(NETWORK_MINE)
 	circuit = /obj/item/circuitboard/security/mining
-	light_color = "#F9BBFC"
+
+CAPABILITIES(/obj/machinery/computer/security/mining)
+	configure(light_glow(color = "#F9BBFC"))
 
 /obj/machinery/computer/security/engineering
 	name = "engineering camera monitor"
@@ -207,7 +211,9 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_keyboard = "power_key"
 	icon_screen = "engie_cams"
 	circuit = /obj/item/circuitboard/security/engineering
-	light_color = "#FAC54B"
+
+CAPABILITIES(/obj/machinery/computer/security/engineering)
+	configure(light_glow(color = "#FAC54B"))
 
 /obj/machinery/computer/security/engineering/get_default_networks()
 	. = GLOB.engineering_networks.Copy()
@@ -254,7 +260,9 @@ CAPABILITIES(/obj/machinery/computer/security/telescreen/entertainment)
 	icon_screen = "mining"
 	network = list(NETWORK_XENOBIO)
 	circuit = /obj/item/circuitboard/security/xenobio
-	light_color = "#F9BBFC"
+
+CAPABILITIES(/obj/machinery/computer/security/xenobio)
+	configure(light_glow(color = "#F9BBFC"))
 
 /obj/machinery/computer/security/telescreen/entertainment/draw(datum/look/look)
 	..()

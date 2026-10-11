@@ -25,8 +25,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	// Pixel stuff centers Narsie.
 	pixel_x = -236
 	pixel_y = -256
-	light_range = 1
-	light_color = "#3e0000"
 
 	current_size = 12
 	consume_range = 12 // How many tiles out do we eat.
@@ -34,6 +32,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	var/cause_hell = 1
 
 CAPABILITIES(/obj/singularity/narsie/large)
+	configure(light_glow(range = 1, color = "#3e0000"))
 	when(nameof(calls_evac), after_init(10 SECONDS, then(PROC_REF(call_evac_after_init))))
 
 /// The first Nar-Sie to rise calls the evacuation (after_init()).
@@ -143,7 +142,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 			T.desc = "something that goes beyond your understanding went this way."
 			T.icon = 'icons/turf/flooring/cult.dmi'
 			T.icon_state = "cult-narsie"
-			T.set_light(1)
+			set_glow(T, GLOW(1, null, null))
 
 /obj/singularity/narsie/proc/narsiewall(turf/T)
 	T.desc = "An opening has been made on that wall, but who can say if what you seek truly lies on the other side?"
@@ -151,7 +150,7 @@ CAPABILITIES(/obj/singularity/narsie/large)
 	T.icon_state = "cult-narsie"
 	T.set_opacity(0)
 	T.set_density(FALSE)
-	set_light(1)
+	set_glow(src, GLOW(1, null, null))
 
 /obj/singularity/narsie/large/consume(const/atom/A) //Has its own consume proc because it doesn't need energy and I don't want BoHs to explode it. --NEO
 //NEW BEHAVIOUR

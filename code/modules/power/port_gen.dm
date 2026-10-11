@@ -999,9 +999,6 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 	layer = ABOVE_MOB_LAYER
 
 /obj/machinery/power/rtg/antimatter_core
-	light_range = 3
-	light_power = 6
-	light_color = "#66FFFF"
 	light_on = TRUE
 
 /obj/machinery/power/rtg/antimatter_core/proc/asplod()
@@ -1021,6 +1018,7 @@ CAPABILITIES(/obj/machinery/power/port_gen/large_altevian)
 		new /obj/effect/bhole(T)
 
 CAPABILITIES(/obj/machinery/power/rtg/antimatter_core)
+	configure(light_glow(range = 3, power = 6, color = "#66FFFF"))
 	extend(/datum/act/hit/blob, instead(then(PROC_REF(blob_shrugged))))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(antimatter_core_blast))))
 

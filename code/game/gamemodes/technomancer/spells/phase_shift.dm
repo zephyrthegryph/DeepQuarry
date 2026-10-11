@@ -15,10 +15,10 @@
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
 
+CAPABILITIES(/obj/item/spell/phase_shift)
+	configure(light_glow(range = 3, power = 2, color = "#FA58F4"))
+
 /obj/item/spell/phase_shift
-	light_range = 3
-	light_power = 2
-	light_color = "#FA58F4"
 	light_on = TRUE
 
 /obj/effect/phase_shift
@@ -29,13 +29,11 @@
 	icon_state = "rift"
 
 /obj/effect/phase_shift
-	light_range = 3
-	light_power = 5
-	light_color = "#FA58F4"
 	light_on = TRUE
 
 // whatever phased inside comes back out on the turf.
 CAPABILITIES(/obj/effect/phase_shift)
+	configure(light_glow(range = 3, power = 5, color = "#FA58F4"))
 	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
 	every(2 SECONDS, then(PROC_REF(phase_shift_step)))
 

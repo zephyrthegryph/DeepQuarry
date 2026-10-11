@@ -715,9 +715,9 @@ TRACKED(/obj/mecha, current_processes)
 		if("Toggle Light")
 			lights = !lights
 			if(lights)
-				set_light(light_range + lights_power)
+				set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
 			else
-				set_light(light_range - lights_power)
+				set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 			occupant_message("Toggled lights [lights?"on":"off"].")
 			src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 			play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)
@@ -1693,8 +1693,8 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user!=occupant)	return
 	lights = !lights
-	if(lights)	set_light(light_range + lights_power)
-	else		set_light(light_range - lights_power)
+	if(lights)	set_glow(src, GLOW(glow_of(src).range + lights_power, null, null))
+	else		set_glow(src, GLOW(glow_of(src).range - lights_power, null, null))
 	src.occupant_message("Toggled lights [lights?"on":"off"].")
 	src.mecha_log_message("Toggled lights [lights?"on":"off"].")
 	play_sfx(src, SFX_MECHA_HEAVYLIGHTSWITCH)

@@ -38,7 +38,7 @@
 		look_redraw_worn(src)
 
 /atom/look_apply_light(range, power, color)
-	set_light(arglist(args))
+	set_glow(src, GLOW(range, power, color))
 
 /atom/look_remove_filter(name)
 	remove_filter(name)

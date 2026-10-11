@@ -174,7 +174,7 @@ init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	atom_integrity = max_i
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	lifecycle_decls_init(src, mapload)
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	caps_init(src, mapload)
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	/*
-init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	if (light_system == COMPLEX_LIGHT && light_power && light_range)
+init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	if (light_system == COMPLEX_LIGHT && glow_of(src).power && glow_of(src).range)
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	update_light()
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	*/
 init_lines	code/game/atom/atoms_initializing_EXPENSIVE.dm	return INITIALIZE_HINT_NORMAL
@@ -1014,7 +1014,7 @@ init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.b
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.icon_state = "medblaster_cmo"
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.base_icon_state = "medblaster_cmo"
 init_lines	code/game/objects/items/weapons/medigun/medigun_backpack.dm	medigun.wielded_item_state = ""
-init_lines	code/game/objects/items/weapons/melee/energy.dm	set_light(lrange, lpower, lcolor)
+init_lines	code/game/objects/items/weapons/melee/energy.dm	set_glow(src, GLOW(lrange, lpower, lcolor))
 init_lines	code/game/objects/items/weapons/melee/shock_maul.dm	update_held_icon()
 init_lines	code/game/objects/items/weapons/picnic_blankets.dm	unfold()
 init_lines	code/game/objects/items/weapons/policetape.dm	if(apply_tape)
@@ -1409,7 +1409,7 @@ init_lines	code/game/turfs/simulated/outdoors/grass.dm	if(animal_type) // runtim
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	new animal_type(src)
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	if(animal_chance && prob(animal_chance) && !check_density())
 init_lines	code/game/turfs/simulated/outdoors/grass.dm	new /mob/living/simple_mob/vore/slug(src)
-init_lines	code/game/turfs/simulated/outdoors/sky.dm	set_light(2, 2, sky_color)
+init_lines	code/game/turfs/simulated/outdoors/sky.dm	set_glow(src, GLOW(2, 2, sky_color))
 init_lines	code/game/turfs/simulated/wall_types.dm	name = true_name
 init_lines	code/game/turfs/simulated/wall_types.dm	if(join_group)
 init_lines	code/game/turfs/simulated/wall_types.dm	auto_join()
@@ -1438,7 +1438,7 @@ init_lines	code/game/turfs/unsimulated/planetary.dm	SSplanets.addTurf(src)
 init_lines	code/game/turfs/unsimulated/sky.dm	if(does_skyfall && !LAZYLEN(skyfall_levels))
 init_lines	code/game/turfs/unsimulated/sky.dm	log_mapping("## ERROR [x],[y],[z], [get_area(src)] doesn't have skyfall_levels defined! Can't skyfall!")
 init_lines	code/game/turfs/unsimulated/sky.dm	if(locate_in_list(orange(src,1), /turf/simulated))
-init_lines	code/game/turfs/unsimulated/sky.dm	set_light(2, 2, color)
+init_lines	code/game/turfs/unsimulated/sky.dm	set_glow(src, GLOW(2, 2, color))
 init_lines	code/game/turfs/weird_turfs.dm	if(prob(5))
 init_lines	code/game/turfs/weird_turfs.dm	add_glow()
 init_lines	code/modules/admin/callproc/callproc.dm	if(GLOB.AdminProcCallHandler && GLOB.AdminProcCallHandler != src)
@@ -2846,7 +2846,7 @@ init_lines	code/modules/power/cell.dm	apply_blueprint_effects()
 init_lines	code/modules/power/cell.dm	enable_material_service()
 init_lines	code/modules/power/cell.dm	c_uid = cell_uid++
 init_lines	code/modules/power/cells/power_cells.dm	var/area/A = get_area(src)
-init_lines	code/modules/power/cells/power_cells.dm	if(!A.lightswitch || !A.light_power)
+init_lines	code/modules/power/cells/power_cells.dm	if(!A.lightswitch || !glow_of(A).power)
 init_lines	code/modules/power/cells/power_cells.dm	set_charge(0) //For naturally depowered areas, we start with no power
 init_lines	code/modules/power/fusion/core/core_control.dm	monitor.core_tag = id_tag
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	var/datum/material/material = get_material_by_name(fuel_type)
@@ -2861,7 +2861,7 @@ init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	if(mat_rad)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_radioactivity(mat_rad)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc += " It is warm to the touch."
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	if(mat_lum)
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_light(mat_lum, mat_lum, material.icon_colour)
+init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_glow(src, GLOW(mat_lum, mat_lum, material.icon_colour))
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	else
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	name = "[fuel_type] fuel rod assembly"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
@@ -2881,7 +2881,7 @@ init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	threshold = 
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	chance = DEFAULT_RADIATION_CHANCE,
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	strength = 20
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	)
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_light(3, 3, "#FCE300")
+init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_glow(src, GLOW(3, 3, "#FCE300"))
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	name = "blitz rod"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc = "A highly unstable, and highly explosive supermatter and phoron fuel rod with a lead shell, created by someone of questionable sanity. This thing has to violate at least a few intergalactic regulations."
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_colour = "#76888F"
@@ -2889,7 +2889,7 @@ init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_type = 
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_glows = TRUE
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	changed(src)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_quantities[fuel_type] = initial_amount
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_light(2, 2, "#FCE300")
+init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_glow(src, GLOW(2, 2, "#FCE300"))
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_control.dm	monitor.fuel_tag = id_tag
 init_lines	code/modules/power/fusion/gyrotron/gyrotron_control.dm	monitor.gyro_tag = id_tag
 init_lines	code/modules/power/fusion/gyrotron/gyrotron_control.dm	monitor.scan_range = scan_range
@@ -2993,7 +2993,7 @@ init_lines	code/modules/power/supermatter/supermatter.dm	message_admins("Broken 
 init_lines	code/modules/power/terminal.dm	var/turf/T = src.loc
 init_lines	code/modules/power/terminal.dm	if(level==1) hide(!T.is_plating())
 init_lines	code/modules/power/tesla/energy_ball.dm	if(!miniball)
-init_lines	code/modules/power/tesla/energy_ball.dm	set_light(10, 7, "#EEEEFF")
+init_lines	code/modules/power/tesla/energy_ball.dm	set_glow(src, GLOW(10, 7, "#EEEEFF"))
 init_lines	code/modules/power/turbine.dm	rel_set(src, nameof(inturf), get_step(src, dir))
 init_lines	code/modules/power/turbine.dm	locate_machinery()
 init_lines	code/modules/power/turbine.dm	if(!turbine())

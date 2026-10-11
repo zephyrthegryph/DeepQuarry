@@ -2,7 +2,6 @@
 	name = "sensors console"
 	icon_keyboard = "teleport_key"
 	icon_screen = "teleport"
-	light_color = "#77fff8"
 	circuit = /obj/item/circuitboard/sensors
 	extra_view = 4
 	var/tmp/obj/machinery/shipsensors/sensors
@@ -12,7 +11,9 @@
 	icon_keyboard = null
 	icon_state = "adv_sensors"
 	icon_screen = "adv_sensors_screen"
-	light_color = "#05A6A8"
+
+CAPABILITIES(/obj/machinery/computer/ship/sensors/adv)
+	configure(light_glow(color = "#05A6A8"))
 
 /obj/machinery/computer/ship/sensors/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
 	if(!(. = ..()))
@@ -33,12 +34,13 @@
 		return
 	if(sensors() && sensors().use_power && sensors().powered())
 		var/sensor_range = round(sensors().range * 1.5) + 1
-		linked().set_light(sensor_range + 0.5)
+		set_glow(linked(), GLOW(sensor_range + 0.5, null, null))
 	else
-		linked().set_light(0)
+		set_glow(linked(), GLOW(0, null, null))
 
 // The sensors window: one op per button; the range is asked in the op (asks()), and applied by its handler.
 CAPABILITIES(/obj/machinery/computer/ship/sensors)
+	configure(light_glow(color = "#77fff8"))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	interface("OvermapShipSensors")
 	without("ui_open")

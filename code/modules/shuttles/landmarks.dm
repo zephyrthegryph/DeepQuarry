@@ -161,11 +161,11 @@ CAPABILITIES(/obj/effect/shuttle_landmark)
 	desc = "Burst transmitter used to broadcast all needed information for shuttle navigation systems. Has a flare attached for marking the spot where you probably shouldn't be standing."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bluflare"
-	light_color = "#3728ff"
 	var/active
 TRACKED(/obj/item/spaceflare, active)
 
 CAPABILITIES(/obj/item/spaceflare)
+	configure(light_glow(color = "#3728ff"))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

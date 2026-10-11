@@ -4,7 +4,6 @@
 	name = "messaging monitor console"
 	desc = "Used to access and maintain data on messaging servers. Allows you to view PDA and request console messages."
 	icon_screen = "comm_logs"
-	light_color = "#00b000"
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
@@ -66,6 +65,7 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 TRACKED(/obj/machinery/computer/message_monitor, emag)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
+	configure(light_glow(color = "#00b000"))
 	ref_one(nameof(linkedServer), /obj/machinery/message_server)
 	extend("disconnect", needs(req(PROC_REF(cool_enough))))
 	after_init(0, then(PROC_REF(link_default_server)))

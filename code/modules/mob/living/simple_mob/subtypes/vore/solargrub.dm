@@ -152,7 +152,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/solargrub)
 
 /mob/living/simple_mob/vore/solargrub/on_death(gibbed)
 	set_anchored(FALSE)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	..()
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 /mob/living/simple_mob/vore/solargrub/life_light(datum/seq_frame/life/F)
 	. = ..()
 	if(. == 0 && !src.is_dead())
-		src.set_light(2.5, 1, COLOR_YELLOW)
+		set_glow(src, GLOW(2.5, 1, COLOR_YELLOW))
 		return 1
 	else if(src.is_dead())
 		src.set_glow_override(FALSE)

@@ -3074,6 +3074,7 @@
 #include "code\modules\library\hardcode_library\religious\PortedBooks.dm"
 #include "code\modules\lighting\emissive_blocker.dm"
 #include "code\modules\lighting\lighting_area.dm"
+#include "code\modules\lighting\glow.dm"
 #include "code\modules\lighting\lighting_atom.dm"
 #include "code\modules\lighting\lighting_corner.dm"
 #include "code\modules\lighting\lighting_fake_sun.dm"

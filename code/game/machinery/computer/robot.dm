@@ -3,7 +3,6 @@
 	desc = "Used to remotely lockdown or detonate linked cyborgs."
 	icon_keyboard = "tech_key"
 	icon_screen = "robot"
-	light_color = "#a97faa"
 	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/circuitboard/robotics
 	var/safety = 1
@@ -117,6 +116,7 @@ MSG_DEF_SELF(robotics/silicon_denied, "Access Denied (silicon detected)")
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/robotics)
+	configure(light_glow(color = "#a97faa"))
 	interface("RoboticsControlConsole")
 	op("arm", ui_act("arm"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_arm)))
 	op("nuke", ui_act("nuke"), needs(req_actor_kind(/mob/living/silicon, not = TRUE, because = MSG(robotics/silicon_denied))), then(PROC_REF(ui_act_nuke)))

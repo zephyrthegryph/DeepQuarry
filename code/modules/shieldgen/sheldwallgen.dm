@@ -244,7 +244,6 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		anchored = TRUE
 		density = TRUE
 		unacidable = TRUE
-		light_range = 3
 		var/needs_power = 0
 		active = 1
 		var/delay = 5
@@ -256,6 +255,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		var/generate_power_usage = 7500	//how much power it takes to start up the shield
 
 CAPABILITIES(/obj/machinery/shieldwall)
+	configure(light_glow(range = 3))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	param(nameof(gen_primary), pos = 1, overrides = TRUE)
 	param(nameof(gen_secondary), pos = 2, apply = PROC_REF(span_generators))

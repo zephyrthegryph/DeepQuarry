@@ -15,7 +15,6 @@
 	projectile_accuracy = -15
 
 	glow_color = "#FF3300"
-	light_color = "#FF3300"
 	glow_range = 4
 	glow_intensity = 4
 
@@ -24,6 +23,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
+	configure(light_glow(color = "#FF3300"))
 	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5))
 

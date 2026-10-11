@@ -5,9 +5,6 @@
 	damage = 0
 	injury_kind = INJURY_BURN
 	nodamage = 1
-	light_range = 2
-	light_power = 0.5
-	light_color = "#55AAFF"
 	hud_state = "plasma_blast"
 	hud_state_empty = "battery_empty"
 
@@ -21,6 +18,7 @@
 	var/sev4_range = 1
 
 CAPABILITIES(/obj/item/projectile/ion)
+	configure(light_glow(range = 2, power = 0.5, color = "#55AAFF"))
 	configure(item_sounds(hit = SFX_WEAPONS_IONRIFLE))
 
 /obj/item/projectile/ion/on_impact(atom/target)
@@ -62,13 +60,13 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	nodamage = 1
 	var/target_temperature = 50
-	light_range = 2
-	light_power = 0.5
-	light_color = "#55AAFF"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	hud_state = "water"
 
 	combustion = FALSE
+
+CAPABILITIES(/obj/item/projectile/temp)
+	configure(light_glow(range = 2, power = 0.5, color = "#55AAFF"))
 
 /obj/item/projectile/temp/on_hit(atom/target, blocked = FALSE)
 	..()
@@ -142,13 +140,13 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	light_range = 2
-	light_power = 0.5
-	light_color = "#33CC00"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
 	combustion = FALSE
 	hud_state = "electrothermal"
+
+CAPABILITIES(/obj/item/projectile/energy/floramut)
+	configure(light_glow(range = 2, power = 0.5, color = "#33CC00"))
 
 /obj/item/projectile/energy/floramut/on_hit(atom/target, blocked = 0)
 	var/mob/living/M = target
@@ -193,12 +191,12 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
 	hud_state = "electrothermal"
+
+CAPABILITIES(/obj/item/projectile/energy/florayield)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/florayield/on_hit(atom/target, blocked = 0)
 	var/mob/living/M = target
@@ -218,12 +216,12 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	light_range = 2
-	light_power = 0.5
-	light_color = "#FFFFFF"
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 	var/lasermod = 0
 	hud_state = "electrothermal"
+
+CAPABILITIES(/obj/item/projectile/energy/floraprune)
+	configure(light_glow(range = 2, power = 0.5, color = "#FFFFFF"))
 
 /obj/item/projectile/energy/floraprune/on_hit(atom/target, blocked = 0)
 	var/mob/living/M = target
@@ -311,14 +309,14 @@ CAPABILITIES(/obj/item/projectile/bullet/gyro)
 	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	pass_flags = PASSTABLE | PASSGRILLE
 	damage = 70
-	light_range = 4
-	light_power = 3
-	light_color = "#3300ff"
 	hud_state = "alloy_spike"
 
 	muzzle_type = /obj/effect/projectile/muzzle/tungsten
 	tracer_type = /obj/effect/projectile/tracer/tungsten
 	impact_type = /obj/effect/projectile/impact/tungsten
+
+CAPABILITIES(/obj/item/projectile/beam/tungsten)
+	configure(light_glow(range = 4, power = 3, color = "#3300ff"))
 
 /obj/item/projectile/beam/tungsten/on_hit(atom/target, blocked = 0)
 	if(isliving(target))

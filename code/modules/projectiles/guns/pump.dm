@@ -35,8 +35,9 @@
 	mob_bonus_damage = 7
 	range = 4
 	icon_state = "phaser_heavy"
-	light_range = 3
-	light_power = 1
 	muzzle_type = /obj/effect/projectile/muzzle/phaser/heavy
 	tracer_type = /obj/effect/projectile/tracer/phaser/heavy
 	impact_type = /obj/effect/projectile/impact/phaser/heavy
+
+CAPABILITIES(/obj/item/projectile/beam/phaser/shotgun)
+	configure(light_glow(range = 3, power = 1))

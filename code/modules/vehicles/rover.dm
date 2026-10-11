@@ -6,8 +6,6 @@
 	desc = "The corporate market model of the UF T-41LV, a SolGov reconnaissance and exploration vehicle, painted in Nanotrasen blue. Trailers can be latched for transporting heavy equipment, though its performance will noticeably degrade with more than one."
 	icon = 'icons/vore/rover_vr.dmi'
 	icon_state = "rover"
-	light_power = 2 // 1 to 2, more light range.
-	light_range = 6 // 3 to 6, more light range.
 	on = 0
 	powered = 1
 	locked = 0
@@ -85,6 +83,7 @@ CAPABILITIES(/obj/vehicle/train/rover/trolley)
 	op("train_limiter_cable", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle load limiter"), then(PROC_REF(interaction_train_limiter_cable)))
 
 CAPABILITIES(/obj/vehicle/train/rover/engine)
+	configure(light_glow(power = 2, range = 6))
 	op("rover_engine_key", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Insert key"), then(PROC_REF(interaction_rover_engine_key)))
 	op("rover_engine_start_engine", menu(), label("Start engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), FALSE, because = MSG(vehicle/already_running))), then(PROC_REF(rover_engine_start_engine)))
 	op("rover_engine_stop_engine", menu(), label("Stop engine"), needs(req_on_holder_turf(), req_capable(), req_is(nameof(on), TRUE, because = MSG(vehicle/already_stopped))), then(PROC_REF(rover_engine_stop_engine)))

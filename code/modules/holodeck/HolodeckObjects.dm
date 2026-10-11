@@ -522,7 +522,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holodeck)
 	after_init(0, then(PROC_REF(init_hologram_light)))
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/init_hologram_light(datum/act/timer/A)
-	set_light(2) //hologram lighting
+	set_glow(src, GLOW(2, null, null)) //hologram lighting
 
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/set_safety(safe)

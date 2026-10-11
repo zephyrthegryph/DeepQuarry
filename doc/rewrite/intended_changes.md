@@ -9,6 +9,13 @@ the domain setters call it. A runtime-loaded map, `vars_write()` and admin VV ro
 cannot name such a var, so the Southern Cross atmospherics omni mixer is `/obj/machinery/atmospherics/omni/mixer/high_power`, restoring
 its 7500 W active draw lost when `uses_power()` landed. `smoothing_junction` (write-only) and `original_atom` (never filled) are deleted.
 
+**Light is the light_glow() trait (lane bv-traits).** `light_range`, `light_power` and `light_color` leave `/atom`: a type's light is
+`configure(light_glow(...))`, `set_light()` is `set_glow(A, GLOW(r, p, c))` and the light system reads `glow_of()`. A light still casts only
+while `light_on`. Southern Cross's `/obj/machinery/light` map edits of `light_color = "#DDFFD3"` are dropped: a fixture's light colour comes
+from its bulb (`refresh_light()`), so they never showed. A runtime-loaded map naming `light_*` goes through `set_trait()`. `fancy_shuttle`
+walls refuse any light (`accepts_glow()`), as their empty `set_light()` did. `/mob/living` `last_glow_*` are gone: Life compares the glow it
+wants with `glow_of()`.
+
 ## Chargers (cell charger, recharger, wall recharger)
 
 Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, written and green on the legacy code first).

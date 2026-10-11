@@ -22,7 +22,7 @@
 	set_density(FALSE)
 	icon_state = "[icon_state]_stump"
 	cut_overlays()
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 
 /obj/structure/flora/tree/bigtree/draw(datum/look/look)
 	..()

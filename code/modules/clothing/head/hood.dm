@@ -152,10 +152,10 @@ CAPABILITIES(/obj/item/clothing/head/hood/winter)
 	name = "brassy winter hood"
 	desc = "A brass-plated winter hood that glows softly, hinting at its divinity."
 	icon_state = "winterhood_ratvar"
-	light_range = 3
-	light_power = 1
-	light_color = "#B18B25" //clockwork slab background top color
 	light_on = TRUE
+
+CAPABILITIES(/obj/item/clothing/head/hood/winter/ratvar)
+	configure(light_glow(range = 3, power = 1, color = "#B18B25"))
 
 /obj/item/clothing/head/hood/winter/narsie
 	name = "runed winter hood"

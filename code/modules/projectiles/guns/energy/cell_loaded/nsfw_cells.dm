@@ -97,11 +97,13 @@ CAPABILITIES(/obj/item/projectile/bullet/stripper)
 	nodamage = 1
 	agony = 5
 	injury_kind = INJURY_PAIN
-	light_color = "#00CC33"
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser_omni
 	tracer_type = /obj/effect/projectile/tracer/laser_omni
 	impact_type = /obj/effect/projectile/impact/laser_omni
+
+CAPABILITIES(/obj/item/projectile/beam/final_option)
+	configure(light_glow(color = "#00CC33"))
 
 /obj/item/projectile/beam/final_option/on_hit(atom/impacted)
 	if(isliving(impacted))

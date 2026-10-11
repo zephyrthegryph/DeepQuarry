@@ -1896,8 +1896,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/lowersternhallway)
@@ -4268,8 +4267,7 @@
 /obj/item/clothing/mask/breath,
 /obj/item/clothing/mask/breath,
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 1
@@ -9503,8 +9501,7 @@
 	pixel_x = 32
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/lowersternhallway)
@@ -10285,8 +10282,7 @@
 /area/expoutpost/starlowermaint)
 "iJM" = (
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 4
@@ -10821,8 +10817,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/medicalbay)
@@ -13247,8 +13242,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/portbowhallway)
@@ -13275,8 +13269,7 @@
 /area/expoutpost/portuppermaint)
 "lnV" = (
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/techfloor/corner{
 	dir = 6
@@ -14957,8 +14950,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/structure/table/steel_reinforced,
 /obj/machinery/recharger,
@@ -15527,8 +15519,7 @@
 /obj/item/clothing/suit/space/void/security,
 /obj/item/clothing/head/helmet/space/void/security,
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloorblack,
 /obj/effect/floor_decal/corner/red/border,
@@ -16119,8 +16110,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/midsternhallway)
@@ -18894,8 +18884,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/eva)
@@ -19810,8 +19799,7 @@
 /area/expoutpost/disposals)
 "qpw" = (
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 4
@@ -24781,8 +24769,7 @@
 	dir = 4
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled,
 /area/expoutpost/techstorage)
@@ -25011,8 +24998,7 @@
 /area/expoutpost/reactoraccess)
 "uuQ" = (
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/machinery/alarm{
 	dir = 1;
@@ -26253,8 +26239,7 @@
 	icon_state = "1-2"
 	},
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /obj/effect/floor_decal/borderfloorblack{
 	dir = 4
@@ -28852,8 +28837,7 @@
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/dark,
 /area/expoutpost/eva)
@@ -30100,8 +30084,7 @@
 	},
 /obj/effect/floor_decal/industrial/outline,
 /obj/machinery/light{
-	dir = 4;
-	light_color = "#DDFFD3"
+	dir = 4
 	},
 /turf/simulated/floor/tiled/white,
 /area/expoutpost/medicalbay)

@@ -227,7 +227,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 			return
 		var/turf/T = get_turf(src)
 		T.visible_message(flavor_text)
-		set_light(2, 0.25, "#E38F46")
+		set_glow(src, GLOW(2, 0.25, "#E38F46"))
 
 /// Lighting source: phoron or fuel in it explodes (source is deleted, returns TRUE); otherwise its
 /// reagents may react from now on. Shared by smokables and the smokable capability.
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
-	set_light(0)
+	set_glow(src, GLOW(0, null, null))
 	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 	set_lit(0)
 	if (type_butt)
@@ -744,14 +744,14 @@ CAPABILITIES(/obj/item/flame/lighter)
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice("After a few attempts, %U% manages to light %T%."))
 
-		set_light(2, 0.5, "#FF9933")
+		set_glow(src, GLOW(2, 0.5, "#FF9933"))
 	else
 		set_lit(FALSE)
 		icon_state = "lighter"
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice("%U% quietly shuts off %T%."))
 
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 /obj/item/flame/lighter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -806,7 +806,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		playsound(src, activation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("Without even breaking stride, %U% flips open and lights %T% in one smooth movement.")))
 
-		set_light(2, 0.5, "#FF9933")
+		set_glow(src, GLOW(2, 0.5, "#FF9933"))
 	else
 		set_lit(FALSE)
 		icon_state = "[base_state]"
@@ -814,7 +814,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		playsound(src, deactivation_sound, 75, 1)
 		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 //Here we add Zippo skins.
@@ -946,7 +946,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 					user.emp_act(EMP_HARMLESS)
 				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however sting themselves on the shielding!"))
 
-		set_light(2)
+		set_glow(src, GLOW(2, null, null))
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
@@ -957,7 +957,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		else
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 
@@ -1010,7 +1010,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 					user.injure(INJURY_ELECTRIC, 5, BP_R_HAND, src)
 				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however burn themselves with the heated phoron field!"))
 
-		set_light(2)
+		set_glow(src, GLOW(2, null, null))
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
@@ -1021,7 +1021,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		else
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 
@@ -1175,7 +1175,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 					chance = URANIUM_IRRADIATION_CHANCE * 2,
 					strength = 300
 				)
-		set_light(5)
+		set_glow(src, GLOW(5, null, null))
 	else
 		set_lit(0)
 		icon_state = "[base_state]"
@@ -1186,7 +1186,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		else
 			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
-		set_light(0)
+		set_glow(src, GLOW(0, null, null))
 	return OP_OK
 
 /obj/item/flame/lighter/supermatter/expsmzippo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
