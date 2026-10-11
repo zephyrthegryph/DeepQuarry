@@ -985,5 +985,17 @@
     "raw_positional_discrepancies_are_not_semantic_bug_counts": true,
     "observed_pressure": "Tier3 compaction29.805s and32.721s; remaining private4.82/4.46GB exceeds soft4GB; semantic session then evicted",
     "scope": "Captured real DeepQuarry prototype profile, compiler-cold fresh processes but not OS-cold disk; native oracle passes, throughput and full runtime gates open"
+  },
+  "latest_b5_focused": {
+    "compiler_commit": "b5e4cc3802d74543820c8fb2d482fef3818efea3",
+    "archive_sha256": "1a32371f6543d43c85393fa306b5568699032f813fea60064b691db6b27bfabb",
+    "build_receipt": "20261011-155224-f1bff218-job-cargo.json",
+    "core_receipt": "20261011-155653-2f738e4d-focused.json",
+    "core_passed": 16,
+    "compiler_receipt": "20261011-155659-07609a5d-focused.json",
+    "compiler_passed": 14,
+    "resolved_export_full_fixture_passed": true,
+    "owners_only_query_preparation_passed": true,
+    "scope": "Focused30 only; no full Rust/DM suite; pressure timing improvements not yet measured;4bf allocation logging not included"
   }
 }
