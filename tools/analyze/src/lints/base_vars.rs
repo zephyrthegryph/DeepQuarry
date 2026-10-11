@@ -7,6 +7,14 @@
 //!   exemptions: an exempt path (`allow_annotations.exempt_path()`, the `list_init_exempt_*` lists
 //!   in `tools/ci/lint_scopes.toml`), a singleton type, or `// ALLOW(instance_list): ...`.
 //!
+//! * `records_data_only` (a ban): a proc defined on `/datum/record` or a subtype other than an accessor
+//!   (`record_accessor_prefixes`, `set_`/`get_`).
+//!
+//! A base var with a home is not counted (doc/rewrite/proposals/base_vars.md): one named by a
+//! `TRACKED(T, v)`/`STAT(T, v, ...)` line or another `base_var_home_macros` declaration on its own
+//! type, or one whose declared type is under a `base_var_home_types` path (the HUD datum, the profile
+//! records, the sparse and cooldown stores). Trait blocks declare no var at all.
+//!
 //! A justified keep of either is `// ALLOW(base_vars): <reason>` (asked for every counted var, as
 //! the Python did, so it keeps both rules at once).
 //!
@@ -55,7 +63,7 @@ static META: Meta = Meta {
             "`// ALLOW(base_vars): <reason>` doesn't count.",
             "Shrink-only: after a sweep, `python tools/ci/base_vars_lint.py --update`.",
         ],
-        banned: &[],
+        banned: &["records_data_only"],
     },
     rules: &[
         RuleMeta {
@@ -63,12 +71,16 @@ static META: Meta = Meta {
             hint: "don't add a var to a base type: make it a capability's state bit / cap_data, a system's private state or a flyweight (or `// ALLOW(base_vars): <reason>`)",
         },
         RuleMeta { name: "list_init", hint: "use `var/list/x` + LAZYADD/LAZYLEN, or `var/static/list/x` for a shared table" },
+        RuleMeta {
+            name: "records_data_only",
+            hint: "a /datum/record holds data fields only: move the proc to the domain that uses the record (accessors `set_x`/`get_x` are fine)",
+        },
     ],
     allow: &["base_vars", "instance_list"],
-    lists: &["list_init_exempt_prefixes", "list_init_exempt_files"],
+    lists: &["list_init_exempt_prefixes", "list_init_exempt_files", "base_var_home_macros", "base_var_home_types", "record_accessor_prefixes"],
 };
 
-const BASE_TYPES: &[&str] = &[
+pub const BASE_TYPES: &[&str] = &[
     "/atom",
     "/atom/movable",
     "/obj",
@@ -102,12 +114,26 @@ struct Facts {
     owners: Vec<(String, u32)>,
     vars: Vec<RVar>,
     singles: Vec<String>,
+    /// `(type, var)` pairs a home macro (`TRACKED(T, v)`, `STAT(T, v, ...)`) names in this file.
+    homes: Vec<(String, String)>,
 }
 
-fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String]) -> Facts {
+/// The `(type, var)` pairs the home macros name in `text`.
+fn homes_in(text: &str, macros: &[String]) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for m in pat!(r"(?m)^[ 	]*([A-Z_]+)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures_iter(text) {
+        if macros.iter().any(|x| x == m.s(1)) {
+            out.push((m.s(2).to_string(), m.s(3).to_string()));
+        }
+    }
+    out
+}
+
+fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String], macros: &[String]) -> Facts {
     let mut out = Facts::default();
     if f.rel.starts_with("code/") {
         let text = f.raw().text.as_str();
+        out.homes = homes_in(f.code().text.as_str(), macros);
         if text.contains("GLOBAL_DATUM_INIT") {
             // The trailing `\x08` is the Python's literal backspace (see dm/singletons.rs).
             let mut set: BTreeSet<String> = BTreeSet::new();
@@ -136,6 +162,7 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String])
     let list_init = pat!(r"=\s*list\(\s*\)\s*(?:$|//|/\*)");
     let empty: HashSet<String> = HashSet::new();
     let raw = f.raw();
+    let homes: HashSet<(String, String)> = out.homes.iter().cloned().collect();
     for (owner, vars) in owners {
         out.owners.push((owner.clone(), vars[0].line as u32));
         for v in &vars {
@@ -145,7 +172,7 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String])
             if crate::dm::sys::kept_recorded(f, v.line, "base_vars") {
                 continue;
             }
-            let base = BASE_TYPES.contains(&owner.as_str());
+            let base = BASE_TYPES.contains(&owner.as_str()) && !homes.contains(&(owner.clone(), v.name.clone()));
             let text = if v.line <= raw.num_lines() { py_strip(raw.line(v.line)) } else { "" };
             // list_init is instance_list's twin and takes its exemptions: a declaration under an
             // exempt path, on a singleton type, or one that carries ALLOW(instance_list) is that
@@ -167,6 +194,9 @@ struct TypedVar {
     rel: String,
     line: u32,
     owner: String,
+    name: String,
+    /// The declared type path (`/datum/hud`), empty for an untyped var.
+    vtype: String,
     base: bool,
     list_init: bool,
 }
@@ -181,7 +211,7 @@ fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
         }
         let owner = ty.get().path.clone();
         let base = BASE_TYPES.contains(&owner.as_str());
-        for (_, tv) in ty.get().vars.iter() {
+        for (name, tv) in ty.get().vars.iter() {
             let Some(decl) = &tv.declaration else { continue };
             // const, static and global (one flag in the model) cost no instance memory.
             if decl.var_type.flags.intersects(VarTypeFlags::STATIC | VarTypeFlags::CONST) {
@@ -190,7 +220,8 @@ fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
             let Some(rel) = sem.file_of(decl.location) else { continue };
             let list_init = matches!(&tv.value.expression, Some(Expression::Base { term, follow }) if follow.is_empty() && matches!(&term.elem, Term::List(args) if args.is_empty()));
             if base || list_init {
-                out.push(TypedVar { rel: rel.to_string(), line: crate::sem::procs::engine_line(&sem.root, rel, decl.location.line), owner: owner.clone(), base, list_init });
+                let vtype = if decl.var_type.type_path.is_empty() { String::new() } else { format!("/{}", decl.var_type.type_path.join("/")) };
+                out.push(TypedVar { rel: rel.to_string(), line: crate::sem::procs::engine_line(&sem.root, rel, decl.location.line), owner: owner.clone(), name: name.to_string(), vtype, base, list_init });
             }
         }
     }
@@ -198,12 +229,36 @@ fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
     out
 }
 
+/// Procs defined on `/datum/record` and its subtypes: `(file, line, proc name)`.
+fn record_procs(sem: &crate::sem::Sem) -> Vec<(String, u32, String)> {
+    let mut out = Vec::new();
+    for ty in sem.objtree.iter_types() {
+        let path = &ty.get().path;
+        if path != "/datum/record" && !path.starts_with("/datum/record/") {
+            continue;
+        }
+        for (name, tp) in ty.get().procs.iter() {
+            for v in tp.value.iter() {
+                if v.code.is_none() {
+                    continue;
+                }
+                let Some(rel) = sem.file_of(v.location) else { continue };
+                out.push((rel.to_string(), crate::sem::procs::engine_line(&sem.root, rel, v.location.line), name.to_string()));
+            }
+        }
+    }
+    out.sort();
+    out
+}
+
 /// The sites from the model, or None without one. ALLOW questions are asked live (recorded for the unused-annotation check).
-fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String], exempt_files: &[String]) -> Option<Vec<(&'static str, String, u32)>> {
+fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String], exempt_files: &[String], homes: &HashSet<(String, String)>) -> Option<Vec<(&'static str, String, u32)>> {
     let all = cx.all_files();
     let key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
-    let vars: Option<Vec<TypedVar>> = incr::cached("base_vars-typed", key, || cx.sem().map(|sem| typed_vars(&sem)));
-    let vars = vars?;
+    let model: Option<(Vec<TypedVar>, Vec<(String, u32, String)>)> = incr::cached("base_vars-typed2", key, || cx.sem().map(|sem| (typed_vars(&sem), record_procs(&sem))));
+    let (vars, records) = model?;
+    let home_types = cx.list("base_var_home_types");
+    let accessor_prefixes = cx.list("record_accessor_prefixes");
     let by_rel: HashMap<&str, &SourceFile> = all.iter().filter(|f| !f.hidden).map(|f| (f.rel.as_str(), *f)).collect();
     let empty: HashSet<String> = HashSet::new();
     let mut out = Vec::new();
@@ -212,7 +267,8 @@ fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String]
         if crate::dm::sys::kept_recorded(f, v.line as usize, "base_vars") {
             continue;
         }
-        if v.base {
+        let housed = homes.contains(&(v.owner.clone(), v.name.clone())) || home_types.iter().any(|h| v.vtype == *h || v.vtype.starts_with(&format!("{}/", h)));
+        if v.base && !housed {
             out.push(("base_var", v.rel.clone(), v.line));
         }
         if v.list_init {
@@ -221,6 +277,12 @@ fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String]
                 out.push(("list_init", v.rel.clone(), v.line));
             }
         }
+    }
+    for (rel, line, name) in records {
+        if accessor_prefixes.iter().any(|p| name.starts_with(p.as_str())) {
+            continue;
+        }
+        out.push(("records_data_only", rel, line));
     }
     Some(out)
 }
@@ -234,8 +296,10 @@ impl Lint for BaseVars {
         let all = cx.all_files();
         let exempt_prefixes = cx.list("list_init_exempt_prefixes");
         let exempt_files = cx.list("list_init_exempt_files");
-        let ctx = incr::ctx_key(&(exempt_prefixes, exempt_files));
-        let facts = recorded_into(out, || incr::keyed("base_vars-facts", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files)));
+        let macros = cx.list("base_var_home_macros");
+        let ctx = incr::ctx_key(&(exempt_prefixes, exempt_files, macros));
+        let facts = recorded_into(out, || incr::keyed("base_vars-facts2", ctx, &all, |f| facts_of(f, exempt_prefixes, exempt_files, macros)));
+        let homes: HashSet<(String, String)> = facts.iter().flat_map(|fa| fa.homes.iter().cloned()).collect();
 
         // `singleton_types()`: the union, minus bare `/datum`.
         let mut globals: BTreeSet<String> = facts.iter().flat_map(|fa| fa.singles.iter().cloned()).collect();
@@ -245,7 +309,7 @@ impl Lint for BaseVars {
         // The `= list()` candidates the instance_list exemptions do not already cover.
         // On the typed tree: the vars each type declares, wherever and however they are written (a multi-var line, a nested
         // block, a macro that declares them), at their real line. The text parse is the fallback without a model.
-        if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files)) {
+        if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files, &homes)) {
             for (rule, rel, line) in sites {
                 out.site_in(rule, &rel, line as usize);
             }

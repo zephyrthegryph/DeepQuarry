@@ -1328,7 +1328,7 @@ M.set_active_power_usage(x)                                          <span class
   <h4 id="base-var-homes">Homes for base-type vars</h4>
   <div class="sig">item_combat(force =, reach =, slot_flags = ...) · item_worn(...) · item_tool(...) · item_throw(...)   <span class="c">// /obj/item trait blocks</span>
 mob_movement(...) · mob_senses(...) · mob_kind(...)                                   <span class="c">// /mob trait blocks</span>
-set_trait(E, /datum/type_trait/x, field = v)        <span class="c">// copy-on-write; publishes the trait's key</span>
+set_trait(E, ENTRY_X, "field", v)        <span class="c">// copy-on-write; publishes the trait's key; VV and the map loader route here</span>
 profile(nameof(appearance), /datum/record/appearance)        <span class="c">// identity and preferences; records hold data fields only</span>
 hud_element(nameof(x), /atom/movable/screen/y, when = PROC_REF(z)) · hud_of(M)?.x    <span class="c">// /datum/hud, owned while a client is attached</span>
 sparse(type, nameof(x), type = T) · sparse_get(A, x) · sparse_set(A, x, v)          <span class="c">// rare per-instance state, one lazy list</span>
