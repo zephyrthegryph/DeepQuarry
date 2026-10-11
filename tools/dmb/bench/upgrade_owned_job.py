@@ -12,6 +12,11 @@ class Io(ctypes.Structure):
 class Extended(ctypes.Structure):
     _fields_ = [("basic", Limits), ("io", Io), ("process_memory", ctypes.c_size_t),
         ("job_memory", ctypes.c_size_t), ("peak_process", ctypes.c_size_t), ("peak_job", ctypes.c_size_t)]
+class ThreadEntry(ctypes.Structure):
+    _fields_ = [("size", wintypes.DWORD), ("usage", wintypes.DWORD),
+        ("thread", wintypes.DWORD), ("owner", wintypes.DWORD),
+        ("base", wintypes.LONG), ("delta", wintypes.LONG), ("flags", wintypes.DWORD)]
+
 class OwnedJob:
     def __init__(self, memory_bytes=4096 * 1024 * 1024):
         if not 1 <= memory_bytes <= 32768 * 1024 * 1024:
@@ -27,6 +32,12 @@ class OwnedJob:
         k.CloseHandle.argtypes = [wintypes.HANDLE]
         k.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
         k.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        # Stable module-level ctypes identity is shared by concurrent resume calls.
+        k.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD,wintypes.DWORD]; k.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+        k.Thread32First.argtypes = [wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
+        k.Thread32Next.argtypes = [wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
+        k.OpenThread.argtypes = [wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]; k.OpenThread.restype = wintypes.HANDLE
+        k.ResumeThread.argtypes = [wintypes.HANDLE]; k.ResumeThread.restype = wintypes.DWORD
         self.handle = k.CreateJobObjectW(None, None)
         if not self.handle: raise ctypes.WinError(ctypes.get_last_error())
         limits = Extended(); limits.basic.flags = 0x2000 | 0x200; limits.job_memory = memory_bytes
@@ -38,16 +49,7 @@ class OwnedJob:
     def resume(self, child):
         # Popen closes the primary thread handle; enumerate the still-suspended
         # child only, then reopen its primary thread for documented ResumeThread.
-        class ThreadEntry(ctypes.Structure):
-            _fields_ = [("size", wintypes.DWORD), ("usage", wintypes.DWORD),
-                ("thread", wintypes.DWORD), ("owner", wintypes.DWORD),
-                ("base", wintypes.LONG), ("delta", wintypes.LONG), ("flags", wintypes.DWORD)]
         k = self.kernel
-        k.CreateToolhelp32Snapshot.argtypes = [wintypes.DWORD,wintypes.DWORD]; k.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
-        k.Thread32First.argtypes = [wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
-        k.Thread32Next.argtypes = [wintypes.HANDLE,ctypes.POINTER(ThreadEntry)]
-        k.OpenThread.argtypes = [wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]; k.OpenThread.restype = wintypes.HANDLE
-        k.ResumeThread.argtypes = [wintypes.HANDLE]; k.ResumeThread.restype = wintypes.DWORD
         snapshot = k.CreateToolhelp32Snapshot(4,0)
         if snapshot == ctypes.c_void_p(-1).value: raise ctypes.WinError(ctypes.get_last_error())
         try:
