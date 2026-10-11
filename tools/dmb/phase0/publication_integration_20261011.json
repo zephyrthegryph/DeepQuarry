@@ -620,5 +620,19 @@
     "paired_exact_diagnostic_cases": 22,
     "compile_error_paired_receipt": "E:/dq-cache/dmb-compile-error-contract/20261011-84677b/a9972ed633b64010819dbb788b1a7511/receipt.json",
     "compile_error_exact_cases": 18
+  },
+  "followup_correctness_source": {
+    "nested_modified_fix": "09a53fa1a3",
+    "relative_global_fix": "ce548d2523",
+    "relative_byond_controls": "E:/dq-cache/dmb-nameof-relative-global/16dc703beb0f4c72a5558767e8f071ca/receipt.json",
+    "failure_schema": "0x0206_0022",
+    "five_package_check_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-125835-e57c5348-job-cargo.json",
+    "five_package_check_passed": true,
+    "query_occurrence_commit": "d7eb1ada49",
+    "retained_export_commit": "a7d86bfff4",
+    "new_compiler_build_status": "running, exact a7 snapshot; no output/runtime validation yet",
+    "six_worktree_projection_bytes": 9001992102,
+    "six_worktree_with_reserve_bytes": 26181861286,
+    "six_worktree_limit": "Requires new current source/BYOND capture; historical source Git commit is unproven. No roots created."
   }
 }
