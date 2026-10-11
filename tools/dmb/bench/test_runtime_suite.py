@@ -89,6 +89,22 @@ class Contracts(unittest.TestCase):
             runner.validate(self.args('--focus', '/datum/unit_test/a', '--seconds', '300',
                 '--focused-compiled-output-sha256', 'd' * 64))
 
+    def test_captured_suite_issues_new_inventory_without_old_prefix_or_plan(self):
+        flags = ['--tier', 'all', '--batch-size', '32', '--suite-compiled-output',
+                 'E:/dq-cache/capture.json', '--suite-compiled-output-sha256', 'd' * 64]
+        args = self.args(*flags)
+        self.assertTrue(runner.validate(args))
+        self.assertEqual(args.seconds, 300)
+        self.assertIn('--suite-compiled-output=' + str(args.suite_compiled_output), runner.command(args, True))
+        for change in [{'suite_compiled_output_sha256': None}, {'focus': ['/datum/unit_test/a']},
+                       {'resume': Path('E:/old.json')}, {'plan_sha256': 'a' * 64}]:
+            invalid = self.args(*flags)
+            for key, value in change.items(): setattr(invalid, key, value)
+            with self.assertRaises(ValueError): runner.validate(invalid)
+        normal = self.args('--tier', 'normal', '--batch-size', '32')
+        runner.validate(normal)
+        self.assertEqual(normal.seconds, 1800)
+
     def test_captured_descriptor_pin_detects_modified_bytes(self):
         with tempfile.TemporaryDirectory() as directory:
             capture = Path(directory) / 'capture.json'

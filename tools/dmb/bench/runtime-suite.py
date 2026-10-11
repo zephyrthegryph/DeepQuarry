@@ -57,7 +57,7 @@ def parser():
         value.add_argument('--' + name + '-exe' if name == 'native' else '--template', type=Path)
         value.add_argument('--' + name + '-sha256')
     value.add_argument('--workers', type=int, default=2)
-    value.add_argument('--seconds', type=int, default=COHORT_SECONDS,
+    value.add_argument('--seconds', type=int,
                        help='owned cohort watchdog, 1..1800 seconds; interrupted worlds are excluded')
     value.add_argument('--security', choices=['trusted', 'safe', 'ultrasafe'], required=True)
     value.add_argument('--focus', action='append', default=[])
@@ -69,6 +69,8 @@ def parser():
     value.add_argument('--plan-sha256')
     value.add_argument('--focused-compiled-output', type=Path)
     value.add_argument('--focused-compiled-output-sha256')
+    value.add_argument('--suite-compiled-output', type=Path)
+    value.add_argument('--suite-compiled-output-sha256')
     value.add_argument('--define', action='append', default=[])
     value.add_argument('--cargo-target', type=Path, help='optional existing owned E:/dq-cache target')
     value.add_argument('--cargo-home', type=Path, help='optional existing owned E:/dq-cache Cargo home')
@@ -76,8 +78,17 @@ def parser():
 
 
 def validate(args):
+    if args.seconds is None:
+        args.seconds = COMPILE_SECONDS if args.suite_compiled_output or args.focused_compiled_output else COHORT_SECONDS
     if not 1 <= args.seconds <= COHORT_SECONDS:
         raise ValueError('cohort seconds must be1..1800')
+    suite_replay = bool(args.suite_compiled_output)
+    if suite_replay != bool(args.suite_compiled_output_sha256):
+        raise ValueError('suite compiled output requires both path and SHA256')
+    if suite_replay and (not args.tier or args.focus or args.focused_compiled_output or args.resume or args.resume_sha256 or args.plan or args.plan_sha256):
+        raise ValueError('captured suite output requires new inventory; no focus/resume/plan')
+    if suite_replay and not HEX.fullmatch(args.suite_compiled_output_sha256 or ''):
+        raise ValueError('captured suite output requires lowercase SHA256')
     replay = bool(args.focused_compiled_output)
     if replay != bool(args.focused_compiled_output_sha256):
         raise ValueError('focused compiled output requires both path and SHA256')
@@ -127,6 +138,9 @@ def command(args, suite):
         if args.focused_compiled_output:
             result += [f'--focused-compiled-output={args.focused_compiled_output}',
                        f'--focused-compiled-output-sha256={args.focused_compiled_output_sha256}']
+    if args.suite_compiled_output:
+        result += [f'--suite-compiled-output={args.suite_compiled_output}',
+                   f'--suite-compiled-output-sha256={args.suite_compiled_output_sha256}']
     return result + ['-D' + define for define in args.define]
 
 
@@ -208,9 +222,9 @@ def main(argv=None):
     receipt_file = args.output / 'receipt.json'
     receipt = {'schema': 1, 'kind': 'bounded_runtime_suite', 'status': 'preparing', 'backend': args.backend,
         'tier': args.tier, 'focus': args.focus, 'command': command(args, suite), 'checkout': str(checkout),
-        'compilation_performed': not bool(args.focused_compiled_output),
-        'historical_same_generation': bool(args.focused_compiled_output),
-        'compile_watchdog_seconds': None if args.focused_compiled_output else min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
+        'compilation_performed': not bool(args.focused_compiled_output or args.suite_compiled_output),
+        'historical_same_generation': bool(args.focused_compiled_output or args.suite_compiled_output),
+        'compile_watchdog_seconds': None if args.focused_compiled_output or args.suite_compiled_output else min(COMPILE_SECONDS, args.seconds), 'dd_watchdog_seconds': 300, 'cohort_watchdog_seconds': args.seconds,
         'inputClosureAuthenticated': False, 'acceptedRuntimeBaseline': False,
         'runner_sha256': hash_file(Path(__file__)), 'log': str(log), 'pins': {}, 'owned_child_cleanup': None}
     write_receipt(receipt_file, receipt)
@@ -232,6 +246,10 @@ def main(argv=None):
         if args.focused_compiled_output:
             args.focused_compiled_output = owned_cache_path(args.focused_compiled_output)
             receipt['pins']['focused_compiled_output'] = pin(args.focused_compiled_output, args.focused_compiled_output_sha256)
+            receipt['command'] = command(args, suite)
+        if args.suite_compiled_output:
+            args.suite_compiled_output = owned_cache_path(args.suite_compiled_output)
+            receipt['pins']['suite_compiled_output'] = pin(args.suite_compiled_output, args.suite_compiled_output_sha256)
             receipt['command'] = command(args, suite)
         for name in ['resume', 'plan']:
             if getattr(args, name):
@@ -265,7 +283,7 @@ def main(argv=None):
             job.resume(child)
             receipt['status'] = 'running'; receipt['root_pid'] = child.pid
             write_receipt(receipt_file, receipt)
-            compilation_complete = bool(args.resume or args.focused_compiled_output)
+            compilation_complete = bool(args.resume or args.focused_compiled_output or args.suite_compiled_output)
             while True:
                 receipt['owned_memory'] = job.memory()
                 if not receipt.get('actual_compilation'):
@@ -294,6 +312,13 @@ def main(argv=None):
         receipt['error'] = str(error)
         if code == 0: code = 70
     finally:
+        if args.suite_compiled_output and receipt['pins'].get('suite_compiled_output'):
+            try:
+                owned_cache_path(args.suite_compiled_output)
+                pin(args.suite_compiled_output, args.suite_compiled_output_sha256)
+            except Exception as error:
+                receipt['captured_output_recheck_error'] = str(error)
+                if code == 0: code = 70
         if args.focused_compiled_output and receipt['pins'].get('focused_compiled_output'):
             try:
                 owned_cache_path(args.focused_compiled_output)

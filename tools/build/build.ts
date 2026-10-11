@@ -69,7 +69,7 @@ import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } fr
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 import { archiveRuntimeLogs, type RuntimeLogArchive } from './lib/runtime_log_archive';
-import { loadFocusedCompiledOutput } from './lib/focused_compiled_run';
+import { loadFocusedCompiledOutput, type CapturedCompiledRun } from './lib/focused_compiled_run';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -479,6 +479,8 @@ export const SuiteResumeSha256Parameter = new Juke.Parameter({ type: 'string', n
 /** Explicit historical generation replay; never current-source compile reuse. */
 export const FocusedCompiledOutputParameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output' });
 export const FocusedCompiledOutputSha256Parameter = new Juke.Parameter({ type: 'string', name: 'focused-compiled-output-sha256' });
+export const SuiteCompiledOutputParameter = new Juke.Parameter({ type: 'string', name: 'suite-compiled-output' });
+export const SuiteCompiledOutputSha256Parameter = new Juke.Parameter({ type: 'string', name: 'suite-compiled-output-sha256' });
 export const ShardsParameter = new Juke.Parameter({ type: 'number' });
 /** `dm-test --exhaustive`: shorthand for `--tier=all`. */
 export const ExhaustiveParameter = new Juke.Parameter({ type: 'boolean' });
@@ -572,7 +574,7 @@ async function compileDerived(dme: string, get: any, defines: string[]): Promise
 type WorldRun = {
   compilation: CompilerProvenance | null;
   compilerReceipt: string;
-  capturedCompiledOutput?: ReturnType<typeof loadFocusedCompiledOutput>['evidence'];
+  capturedCompiledOutput?: CapturedCompiledRun['evidence'];
   runtimeIdentity?: RuntimeIdentity;
   clean: boolean;
   cleanText: string | null;
@@ -779,7 +781,7 @@ async function runIsolatedTestWorld(
   dmVersion: string | null,
   worldParams: Record<string, string>,
   focus: string[] | null,
-  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: ReturnType<typeof loadFocusedCompiledOutput> } = {},
+  options: { watchdogTimeoutMs?: number; sampler?: ProcessSampler; label?: string; linkFrom?: string; compiledOutput?: CompiledOutput; issueInventory?: boolean; exactBatch?: boolean; onPreparedOutput?: (dmb: string) => void; capturedRun?: CapturedCompiledRun } = {},
 ): Promise<IsolatedRun> {
   const compiled = options.compiledOutput ?? currentCompiledOutput(dmbFile, compilerMode() === 'native');
   const compilerReceipt = beginCompilerReceipt('data/compiler-attempts', compiled);
@@ -1668,7 +1670,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
 }
 
 /** Sequential normal suite, issued by the compiled runtime, never a source scanner. */
-async function runSuiteBatches(get: any, batchSize: number, generalized = false): Promise<void> {
+async function runSuiteBatches(get: any, batchSize: number, generalized = false, capturedRun?: CapturedCompiledRun): Promise<void> {
   const tier = resolveTier(get);
   if ((!generalized && tier !== 'normal') || focusedTestNames(get) || get(ShardsParameter) !== undefined && get(ShardsParameter) !== null || get(DomainsParameter)?.length
       || get(AffectedParameter) || get(IncrementalParameter)) throw new Error('batch suites require an unfiltered tier; normal-batches requires normal');
@@ -1677,19 +1679,19 @@ async function runSuiteBatches(get: any, batchSize: number, generalized = false)
     String(get(generalized ? SuiteResumeSha256Parameter : NormalResumeSha256Parameter) ?? ''), batchSize) : null;
   if (resume && resume.plan.tier !== tier) throw new Error('resume tier differs from requested suite');
   if (resume && (JSON.stringify([...TEST_DEFINES, ...get(DefineParameter)]) !== JSON.stringify(resume.checkpoint.compilation.orderedDefines) || compilerMode() !== resume.checkpoint.compilation.requestedBackend || get(DmVersionParameter))) throw new Error('historical resume requires identical ordered defines/backend and no compiler-version override');
-  const output = resume?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
+  const output = resume?.output ?? capturedRun?.output ?? await compileDerived(`${DME_NAME}.test.dme`, get, TEST_DEFINES);
   const id = runIdentity(generalized ? 'suite-batches' : 'normal-batches');
   const evidenceFile = `data/${generalized ? 'suite' : 'normal-suite'}/${id.id}-${randomUUID()}.json`;
   const evidence: { schema: number; status: string; compilation: unknown; nativeOutput?: CompiledOutput; batchSize: number; inventory?: IsolatedRun; plan?: { path: string | null; sha256: string | null; eligibleOrder: string[]; observedOrderDiffers: boolean };
-    batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; error?: string } = {
-    schema: 1, status: 'issuing_inventory', batchSize, compilation: output.provenance ?? null, nativeOutput: output.kind === 'native_pair' ? output : undefined,
+    batches: { requested: string[]; run: IsolatedRun }[]; continuation?: unknown; inputClosureAuthenticated: false; selectionProtocol: string; capturedCompiledOutput?: unknown; compilation_performed: boolean; error?: string } = {
+    schema: 1, status: 'issuing_inventory', batchSize, capturedCompiledOutput: capturedRun?.evidence, compilation_performed: !resume && !capturedRun, compilation: output.provenance ?? null, nativeOutput: output.kind === 'native_pair' ? output : undefined,
     batches: resume ? [...resume.completed] : [], inputClosureAuthenticated: false,
     selectionProtocol: generalized ? 'suite-select-v1' : 'normal-select-v1',
     continuation: resume ? { checkpoint: resume.checkpointPath, sha256: resume.checkpointSha256, scope: 'historical same compiled generation; current source closure is not authenticated' } : undefined };
   writeJson(evidenceFile, evidence);
   try {
     const issued = resume?.inventory ?? await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, null,
-      { compiledOutput: output, issueInventory: true, watchdogTimeoutMs: 300_000, label: `${tier} inventory` });
+      { compiledOutput: output, capturedRun, issueInventory: true, watchdogTimeoutMs: 300_000, label: `${tier} inventory` });
     evidence.inventory = issued; writeJson(evidenceFile, evidence);
     if (!issued.clean || issued.killedByWatchdog || !issued.inventory || !issued.runtimeIdentity) throw new Error(`${tier} runtime inventory admission failed`);
     if (issued.inventory.tier !== tier) throw new Error('runtime issued another suite tier');
@@ -1711,7 +1713,7 @@ async function runSuiteBatches(get: any, batchSize: number, generalized = false)
     for (let index = evidence.batches.length; index < batches.length; index++) {
       const requested = batches[index];
       const run = await runIsolatedTestWorld(`${DME_NAME}.test.dmb`, get(DmVersionParameter), { 'test-tier': tier }, requested,
-        { compiledOutput: output, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
+        { compiledOutput: output, capturedRun, exactBatch: true, onPreparedOutput: resume ? (dmb) => verifyResumeAcquiredPair(resume.checkpoint, dmb) : undefined,
           watchdogTimeoutMs: 300_000, label: `${tier} batch${index + 1}/${batches.length}` });
       evidence.batches.push({ requested, run }); writeJson(evidenceFile, evidence);
       if (!sameSuiteRuntime(run.runtimeIdentity, issued.runtimeIdentity)) throw new Error('DreamDaemon identity/security changed');
@@ -1727,8 +1729,10 @@ async function runSuiteBatches(get: any, batchSize: number, generalized = false)
   } catch (error) {
     evidence.status = 'failed'; evidence.error = String(error); throw error;
   } finally {
-    writeJson(evidenceFile, evidence);
-    if (!resume) await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
+    try { capturedRun?.verifyRetained(); }
+    catch (error) { evidence.status = 'failed'; evidence.error = String(error); throw error; }
+    finally { writeJson(evidenceFile, evidence); }
+    if (!resume && !capturedRun) await removeDerivedArtifacts(`${DME_NAME}.test.dme`);
   }
 }
 
@@ -1747,6 +1751,8 @@ export const DmTestTarget = new Juke.Target({
     SuiteResumeSha256Parameter,
     FocusedCompiledOutputParameter,
     FocusedCompiledOutputSha256Parameter,
+    SuiteCompiledOutputParameter,
+    SuiteCompiledOutputSha256Parameter,
     NormalResumeParameter,
     NormalResumeSha256Parameter,
     NormalPlanParameter,
@@ -1758,7 +1764,7 @@ export const DmTestTarget = new Juke.Target({
     ExhaustiveParameter,
     ProfileTestsParameter,
   ],
-  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) || get(FocusedCompiledOutputParameter) ? [] : [
+  dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) || get(FocusedCompiledOutputParameter) || get(SuiteCompiledOutputParameter) ? [] : [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
@@ -1768,6 +1774,17 @@ export const DmTestTarget = new Juke.Target({
   executes: async ({ get }) => {
     const normalBatches = get(NormalBatchesParameter);
     const suiteBatchCount = get(SuiteBatchesParameter);
+    const suiteCapturedPath = get(SuiteCompiledOutputParameter);
+    const suiteCapturedSha = get(SuiteCompiledOutputSha256Parameter);
+    if (suiteCapturedSha && !suiteCapturedPath) throw new Error('suite-compiled-output-sha256 requires suite-compiled-output');
+    if (suiteCapturedPath && (!suiteCapturedSha || normalBatches == null && suiteBatchCount == null
+        || focusedTestNames(get) || get(FocusedCompiledOutputParameter) || get(FocusedCompiledOutputSha256Parameter)
+        || get(NormalResumeParameter) || get(NormalResumeSha256Parameter) || get(SuiteResumeParameter) || get(SuiteResumeSha256Parameter)
+        || get(NormalPlanParameter) || get(NormalPlanSha256Parameter) || get(DmVersionParameter)
+        || get(WarningParameter).length || get(NoWarningParameter).length)) {
+      throw new Error('Captured suite output requires a fresh batch inventory, without focus/resume/plan/compiler-policy overrides.');
+    }
+    const suiteCapturedRun = suiteCapturedPath ? loadFocusedCompiledOutput(suiteCapturedPath, suiteCapturedSha, compilerMode(), [...TEST_DEFINES, ...get(DefineParameter)]) : undefined;
     const capturedPath = get(FocusedCompiledOutputParameter);
     const capturedSha = get(FocusedCompiledOutputSha256Parameter);
     if (capturedSha && !capturedPath) throw new Error('focused-compiled-output-sha256 requires focused-compiled-output');
@@ -1788,12 +1805,12 @@ export const DmTestTarget = new Juke.Target({
     if (get(NormalPlanParameter) && normalBatches == null && suiteBatchCount == null) throw new Error('normal-plan requires a batch runner');
     if (suiteBatchCount != null) {
       if (!Number.isInteger(suiteBatchCount) || suiteBatchCount < 1 || suiteBatchCount > 32) throw new Error('suite-batches must be1..32');
-      await runSuiteBatches(get, suiteBatchCount, true);
+      await runSuiteBatches(get, suiteBatchCount, true, suiteCapturedRun);
       return;
     }
     if (normalBatches !== null && normalBatches !== undefined) {
       if (!Number.isInteger(normalBatches) || normalBatches < 1 || normalBatches > 32) throw new Error('normal-batches must be1..32');
-      await runSuiteBatches(get, normalBatches);
+      await runSuiteBatches(get, normalBatches, false, suiteCapturedRun);
       return;
     }
     const focus = focusedTestNames(get);

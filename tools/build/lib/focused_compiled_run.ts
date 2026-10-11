@@ -130,3 +130,6 @@ export function loadFocusedCompiledOutput(file: string, expectedSha256: string, 
     verifyRetained() { validate(capture); },
   };
 }
+
+/** Same admitted generation used by a newly runtime-issued suite inventory. */
+export type CapturedCompiledRun = ReturnType<typeof loadFocusedCompiledOutput>;
