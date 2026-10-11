@@ -216,14 +216,14 @@ def rewrite_reads(code, masked):
 def continues_def(lines, j):
     """Whether line j still belongs to the type definition above it: indented, or a blank line or column-0 comment that more
     indented lines follow (a def interrupted by a // section note)."""
-    line = lines[j].rstrip("")
-    if line.startswith("	") or line.startswith(" "):
+    line = lines[j].rstrip("\r")
+    if line.startswith("\t") or line.startswith(" "):
         return True
     if line == "" or line.startswith("//"):
         k = j + 1
-        while k < len(lines) and (lines[k].rstrip("") == "" or lines[k].startswith("//")):
+        while k < len(lines) and (lines[k].rstrip("\r") == "" or lines[k].startswith("//")):
             k += 1
-        return k < len(lines) and lines[k].startswith("	")
+        return k < len(lines) and lines[k].startswith("\t")
     return False
 
 
