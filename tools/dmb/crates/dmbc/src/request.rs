@@ -52,6 +52,7 @@ pub enum Command {
     /// Export only facts already present in an explicitly pinned retained session.
     QueryExport {
         request: PathBuf,
+        limits: crate::daemon::query::semantic_client::ExportLimits,
     },
     Help,
     Gc { project: PathBuf },

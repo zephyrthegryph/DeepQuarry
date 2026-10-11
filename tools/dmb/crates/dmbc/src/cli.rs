@@ -18,10 +18,24 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
             None => false,
             Some("--jsonl") => true,
             Some("--export-jsonl") => {
-                if args.next().is_some() {
-                    return Err("unexpected retained export argument".into());
+                let mut limits = crate::daemon::query::semantic_client::ExportLimits::default();
+                let mut seen = std::collections::BTreeSet::new();
+                while let Some(option) = args.next() {
+                    if !seen.insert(option.clone()) {
+                        return Err("duplicate retained export quota".into());
+                    }
+                    let value: u32 = args
+                        .next()
+                        .ok_or("export quota requires an integer")?
+                        .parse()?;
+                    match option.as_str() {
+                        "--max-items" => limits.max_items = value,
+                        "--max-pages" => limits.max_pages = value,
+                        _ => return Err("unexpected retained export argument".into()),
+                    }
                 }
-                return Ok(Command::QueryExport { request });
+                limits.validate()?;
+                return Ok(Command::QueryExport { request, limits });
             }
             Some(_) => {
                 return Err(

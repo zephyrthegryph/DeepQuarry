@@ -260,3 +260,33 @@ fn retained_export_cli_is_a_pinned_query_route_not_a_build() {
         parse(&["query", "request.json", "--export-jsonl", "--bodies"].map(str::to_owned)).is_err()
     );
 }
+
+#[test]
+fn retained_export_quotas_are_explicit_bounded_and_unique() {
+    let command = parse(
+        &[
+            "query",
+            "request.json",
+            "--export-jsonl",
+            "--max-items",
+            "2000000",
+            "--max-pages",
+            "20000",
+        ]
+        .map(str::to_owned),
+    )
+    .unwrap();
+    assert!(
+        matches!(command, Command::QueryExport { limits, .. } if limits.max_items == 2000000 && limits.max_pages == 20000)
+    );
+    for tail in [
+        vec!["--max-items", "0"],
+        vec!["--max-pages", "131073"],
+        vec!["--max-items", "4294967296"],
+        vec!["--max-items", "1", "--max-items", "2"],
+    ] {
+        let mut args = vec!["query", "request.json", "--export-jsonl"];
+        args.extend(tail);
+        assert!(parse(&args.into_iter().map(str::to_owned).collect::<Vec<_>>()).is_err());
+    }
+}

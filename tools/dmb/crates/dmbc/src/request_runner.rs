@@ -28,8 +28,8 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
         Command::Query { request, jsonl } => {
             dmbc::daemon::query::run_file(&request, jsonl).map(|()| CommandOutcome::Completed)
         }
-        Command::QueryExport { request } => {
-            dmbc::daemon::query::semantic_client::run_export_file(&request)
+        Command::QueryExport { request, limits } => {
+            dmbc::daemon::query::semantic_client::run_export_file(&request, limits)
                 .map(|()| CommandOutcome::Completed)
         }
         Command::Help => {

@@ -20,7 +20,7 @@
 #[path = "retained_export.rs"]
 mod retained_export;
 use super::{QueryRequest, SourceQuery};
-pub use retained_export::run_export_file;
+pub use retained_export::{run_export_file, ExportLimits};
 use std::{
     io,
     time::{Duration, Instant},
@@ -117,9 +117,9 @@ fn visit_catalog_with(
         || !template.queries.is_empty()
         || !template.source_queries.is_empty()
         || !(1..=128).contains(&limits.page_size)
-        || !(1..=4096).contains(&limits.max_pages)
+        || !(1..=131072).contains(&limits.max_pages)
         || limits.max_items == 0
-        || limits.max_items > 524288
+        || limits.max_items > 16777216
         || limits.elapsed.is_zero()
         || limits.elapsed > Duration::from_secs(300)
     {

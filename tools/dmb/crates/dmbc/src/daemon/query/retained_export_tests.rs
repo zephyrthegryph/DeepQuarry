@@ -63,6 +63,10 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
         .collect();
     assert_eq!(rows[0]["schema"], SCHEMA);
     assert_eq!(rows[0]["complete"], false);
+    assert_eq!(rows[0]["aggregate_max_items"], 524288);
+    assert_eq!(rows[0]["aggregate_max_pages"], 4096);
+    assert_eq!(rows[0]["frame_max_bytes"], 524288);
+    assert_eq!(rows[0]["watchdog_seconds"], 300);
     assert_eq!(rows[0]["full_member_metadata_included"], true);
     assert_eq!(
         rows.iter()
@@ -141,4 +145,38 @@ fn retained_export_streams_current_facts_without_full_analysis_claims() {
     ))
     .is_err());
     assert!(bytes.is_empty());
+}
+
+#[test]
+fn export_rejects_invalid_aggregate_before_transport() {
+    let request = QueryRequest {
+        timeout_seconds: None,
+        project: "fixture.dme".into(),
+        defines: Default::default(),
+        engine_template: None,
+        bootstrap_catalog: false,
+        expected_revision: Some("00000000000000000000000000000001".into()),
+        expected_source_revision: Some("00000000000000000000000000000002".into()),
+        queries: vec![],
+        source_queries: vec![],
+    };
+    for limits in [
+        ExportLimits {
+            max_items: 0,
+            max_pages: 1,
+        },
+        ExportLimits {
+            max_items: 1,
+            max_pages: 131073,
+        },
+    ] {
+        let mut output = Vec::new();
+        assert!(
+            export_with_limits(&request, &mut output, limits, |_| panic!(
+                "invalid quota reached transport"
+            ))
+            .is_err()
+        );
+        assert!(output.is_empty());
+    }
 }
