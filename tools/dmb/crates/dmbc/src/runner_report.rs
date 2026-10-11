@@ -14,6 +14,7 @@ pub(super) fn memo_statistics(
 ) -> serde_json::Value {
     use std::sync::atomic::Ordering::Relaxed;
     let (verification_checked, verification_mismatches) = memo.procedure_verification_counts();
+    let (anonymous_checked, anonymous_mismatches) = memo.anonymous_initializer_verification_counts();
     serde_json::json!({
         "policy":format!("{:032x}",memo.policy),
         "host":retention_status,
@@ -55,6 +56,11 @@ pub(super) fn memo_statistics(
                 "mismatches":mismatches
             })
         }),
+        "anonymous_initializer_verification": {
+            "scope":"current_request_one_shot_anonymous_initializer_disk_hits",
+            "checked":anonymous_checked,
+            "mismatches":anonymous_mismatches
+        },
         "link_assignments":memo.link_bindings.as_ref().map(|store| serde_json::json!({
             "scope":"process_local_cumulative",
             "reuses":store.assignment_reuses()
