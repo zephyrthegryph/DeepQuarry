@@ -57,7 +57,7 @@ fn materialized(name: &str) -> (Dmb, Dmb) {
                 .unwrap();
             inventory.entries.push(dm_link::Entry {
                 key: *key,
-                content: Arc::from([]),
+                content: dm_link::EntryContent::Bytes(Arc::from([])),
             });
             inventory.fixed.push((*key, index));
             for symbol in [chain.owner, chain.name] {
