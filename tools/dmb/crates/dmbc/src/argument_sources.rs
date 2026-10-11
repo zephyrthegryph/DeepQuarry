@@ -12,6 +12,8 @@ use dm_syntax::{Item, TokenKind};
 use dm_tree::frontend::ColdFrontend;
 mod header_recipe;
 pub(crate) use header_recipe::current_header_modifier;
+mod failure;
+pub use failure::HelperFailure;
 
 #[derive(Clone)]
 pub struct LoweredHelper {
@@ -238,7 +240,7 @@ pub struct HelperInputs<'a> {
 pub fn lower_helpers<R: Resolver>(
     context: HelperInputs<'_>,
     host: &R,
-) -> Result<Vec<LoweredHelper>, String> {
+) -> Result<Vec<LoweredHelper>, HelperFailure> {
     let HelperInputs {
         frontend,
         parsed,
@@ -288,7 +290,9 @@ pub fn lower_helpers<R: Resolver>(
             host,
             Some(&FixedOrigin),
         )
-        .map_err(|errors| format!("argument source lowering failed: {errors:?}"))?;
+        .map_err(|errors| failure::lowered(
+            frontend, parsed, metadata, owner, absolute, &origin, &expression, errors,
+        ))?;
         // VM argument-source records have an empty formal table, while Arg
         // operands continue to address the owner's original lexical frame.
         code.procedure.argument_names.clear();
@@ -418,10 +422,9 @@ mod view_tests {
     }
 }
 
+const SYNTAX_PREFIX: &str = "/proc/__argument_source_syntax()\n    return ";
 fn syntax_container(expression: &str) -> Result<Item, String> {
-    let mut ast = dm_syntax::parse(&format!(
-        "/proc/__argument_source_syntax()\n    return {expression}\n"
-    ));
+    let mut ast = dm_syntax::parse(&format!("{SYNTAX_PREFIX}{expression}\n"));
     if !ast.diagnostics.is_empty() || ast.items.len() != 1 {
         return Err("unsupported argument source expression syntax".into());
     }

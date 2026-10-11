@@ -528,7 +528,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             },
             host,
         )
-        .map_err(unsupported)?,
+        .map_err(|failure| match failure {
+            crate::argument_sources::HelperFailure::Unsupported(message) => unsupported(message),
+            crate::argument_sources::HelperFailure::Diagnostics(diagnostics) => diagnostics,
+        })?,
         None => Vec::new(),
     };
     Ok(LoweredUnit {
