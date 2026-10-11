@@ -11,7 +11,9 @@
 #    errors), bash tools/ci/check_ratchets.sh, tools/build/build.sh analyze. Any failure stops here. A step that
 #    tools/dq_merge_gates.sh already passed on this exact HEAD (data/merge-gates/<sha>.dm.ok, .ratchets.ok, .analyze.ok; it runs
 #    them alongside the test world) is not run again; DQ_PUSH_FULL=1 runs everything.
-# 4. Checks HEAD and the tree did not change meanwhile, then `git push origin HEAD:master` (never forced). If
+# 4. Refuses unless HEAD, or each parent of the merge, carries a passing lane-ready / merge-gates test stamp
+#    (tools/dq_push_stamp.sh; tools/dq_lane_ready.sh and tools/dq_merge_gates.sh write them).
+#    Checks HEAD and the tree did not change meanwhile, then `git push origin HEAD:master` (never forced). If
 #    master moved, it merges again and rechecks (up to 3 rounds).
 #
 # 5. After the push, refreshes tools/ci/known_failures.txt when a focused run JSON for the pushed head exists (no tests run).
@@ -100,6 +102,10 @@ for round in 1 2 3; do
 
 	[ "$(git rev-parse HEAD)" = "$sha" ] || die "HEAD moved during the checks"
 	if why="$(dirty)"; then die "the tree changed during the checks: $why"; fi
+	# The tests: HEAD (or each parent of a merge, docs/data-only commits on top excepted) must carry a passing lane-ready or
+	# merge-gates stamp (tools/dq_push_stamp.sh, agent_workflow.md section 14). The pre-push hook checks the same.
+	stamp_verdict="$(bash tools/dq_push_stamp.sh "$sha")" || die "$stamp_verdict"
+	echo "== test stamp: $stamp_verdict"
 
 	if [ "${DQ_PUSH_DRY_RUN:-0}" = "1" ]; then
 		echo "dq_push_master: DRY RUN: ${sha:0:12} passed every check (dm, DreamChecker, ratchets, analyze); not pushing"
