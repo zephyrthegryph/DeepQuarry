@@ -73,6 +73,8 @@ pub enum DiagnosticKind {
     Expression,
     /// Recognized syntax reached EOF while a required operand or group close was missing.
     IncompleteExpression,
+    /// A comma-separated leaf inside an indented local var group is illegal.
+    InvalidDeclarationGroup,
     Statement,
     Indentation,
     Unsupported,
@@ -139,6 +141,8 @@ pub enum ItemKind {
     Proc,
     Verb,
     Var,
+    /// A comma-separated leaf inside an indented local var group is illegal.
+    InvalidDeclarationGroup,
     Statement,
     Unknown,
 }

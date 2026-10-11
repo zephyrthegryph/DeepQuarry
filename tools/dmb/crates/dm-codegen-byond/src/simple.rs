@@ -619,6 +619,14 @@ fn compile_with_lookup_mode(
         compiler.modified_fields(fields)
     } else {
         let typed = parse_body_items(body);
+        if let Some(diagnostic) = typed.diagnostics.iter().find(|diagnostic| {
+            diagnostic.kind == dm_syntax::DiagnosticKind::InvalidDeclarationGroup
+        }) {
+            return Err(vec![LowerError {
+                kind: LowerErrorKind::SourceError,
+                ..error(",", &diagnostic.message).at(diagnostic.span)
+            }]);
+        }
         if typed.diagnostics.is_empty() && typed_statements_supported(&typed.statements) {
             compiler.typed_statements(&typed.statements)
         } else {

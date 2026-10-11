@@ -891,3 +891,20 @@ fn authenticated_local_var_block_uses_full_declaration_lowering() {
         link_proc(&separate.code, &Ledger::default()).unwrap().words
     );
 }
+
+#[test]
+fn authenticated_var_block_commas_reject_at_current_comma() {
+    for source in [
+        include_str!("../../../../../fixtures/native/local_declaration_group_diagnostics/group_nested_typed_comma.dm"),
+        include_str!("../../../../../fixtures/native/local_declaration_group_diagnostics/group_side_effect_order.dm"),
+        include_str!("../../../../../fixtures/native/local_declaration_group_diagnostics/group_duplicate_name.dm"),
+    ] {
+        let parsed = dm_syntax::parse(source);
+        let errors = compile_simple_proc(&parsed.items[0].children).unwrap_err();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0].kind, LowerErrorKind::SourceError);
+        assert_eq!(errors[0].reason, ",: expected }");
+        let span = errors[0].span.unwrap();
+        assert_eq!(&source[span.start..span.end], ",");
+    }
+}

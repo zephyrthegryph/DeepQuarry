@@ -592,7 +592,21 @@ fn parse_var_block(
                 });
             }
         } else {
-            parse_var_parts(item, prefix, diagnostics, statements);
+            let parts = split_case_alternatives(header);
+            if parts.len() > 1 {
+                let comma = item.header.find(parts[0]).unwrap_or(0) + parts[0].len();
+                let comma = item.header[comma..].find(',').map(|at| comma + at).unwrap();
+                diagnostics.push(Diagnostic {
+                    span: Span::new(
+                        item.header_span.start + comma,
+                        item.header_span.start + comma + 1,
+                    ),
+                    kind: DiagnosticKind::InvalidDeclarationGroup,
+                    message: ",: expected }".into(),
+                });
+            } else {
+                parse_var_parts(item, prefix, diagnostics, statements);
+            }
         }
     }
 }

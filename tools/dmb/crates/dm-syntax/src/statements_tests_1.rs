@@ -440,29 +440,23 @@ fn local_var_groups_inherit_type_prefix_without_reordering_initializers() {
 }
 
 #[test]
-fn var_block_comma_leaves_share_standalone_split_and_inherited_type() {
-    let source = "/proc/probe()\n    var\n        list\n            first = list(7), second = first.Copy()\n        count = 1, total = count + 2\n";
-    let parsed = crate::parse(source);
-    let body = crate::parse_body_items(&parsed.items[0].children);
-    assert!(body.diagnostics.is_empty(), "{:?}", body.diagnostics);
-    assert_eq!(body.statements.len(), 4);
-    for (statement, (name, expression_text)) in body.statements.iter().zip([
-        ("var/list/first", "list(7)"),
-        ("var/list/second", "first.Copy()"),
-        ("var/count", "1"),
-        ("var/total", "count + 2"),
-    ]) {
-        let crate::StatementKind::Var {
-            declaration,
-            value: Some(expression),
-        } = &statement.kind
-        else {
-            panic!("missing declaration")
-        };
-        assert_eq!(declaration, name);
-        assert_eq!(
-            &source[expression.span.start..expression.span.end],
-            expression_text
-        );
+fn var_block_comma_leaves_are_native_source_errors() {
+    for source in [
+        "/proc/probe()\n    var\n        list\n            first = list(7), second = first.Copy()\n",
+        "/proc/probe()\n    var\n        first = 7, first = 11\n",
+    ] {
+        let parsed = crate::parse(source);
+        let body = crate::parse_body_items(&parsed.items[0].children);
+        assert!(body.statements.is_empty());
+        assert_eq!(body.diagnostics.len(), 1);
+        let diagnostic = &body.diagnostics[0];
+        assert_eq!(diagnostic.kind, crate::DiagnosticKind::InvalidDeclarationGroup);
+        assert_eq!(diagnostic.message, ",: expected }");
+        assert_eq!(&source[diagnostic.span.start..diagnostic.span.end], ",");
     }
+    let parsed =
+        crate::parse("/proc/probe()\n    var/list/first = list(7), second = first.Copy()\n");
+    let body = crate::parse_body_items(&parsed.items[0].children);
+    assert!(body.diagnostics.is_empty());
+    assert_eq!(body.statements.len(), 2);
 }

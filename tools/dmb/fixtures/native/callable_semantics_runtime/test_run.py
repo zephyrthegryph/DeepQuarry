@@ -43,7 +43,7 @@ class ContractTests(unittest.TestCase):
         for encoding in ["utf-8", "utf-16"]:
             result = self.read(contract.EXPECTED, encoding)
             self.assertEqual(result["runtimes"], [])
-            self.assertEqual(len(result["markers"]), 14)
+            self.assertEqual(len(result["markers"]), len(contract.EXPECTED))
 
     def test_equal_but_wrong_values_rejected(self):
         for index, replacement in [(0, "DQ_CALL copy_length 1"),
@@ -69,9 +69,9 @@ class ContractTests(unittest.TestCase):
             self.assertIn("/var/const/callable_fixture_resource = 'contract-resource.txt'", source)
             self.assertIn("file2text(callable_fixture_resource)", source)
             self.assertIn("    var/items[2]", source)
-            self.assertEqual(step["expected"][-1], 10)
+            self.assertEqual(step["expected"][12], 10)
             markers = retained.contract.expected_markers(step["expected"], retained.LABELS, "DQ_CALL")
-            self.assertEqual(len(markers), 14)
+            self.assertEqual(len(markers), len(contract.EXPECTED))
         self.assertIn("return marker + 5", source)
         self.assertIn("var/added = 7", source)
 

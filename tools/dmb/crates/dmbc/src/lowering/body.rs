@@ -198,6 +198,20 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
             },
         );
         if let Some(diagnostic) = statements.parsed().diagnostics.iter().find(|diagnostic| {
+            diagnostic.kind == dm_syntax::DiagnosticKind::InvalidDeclarationGroup
+                && !mask.hides_diagnostic(diagnostic)
+        }) {
+            return Err(vec![LoweringDiagnostic {
+                related: Vec::new(),
+                kind: DiagnosticKind::SourceError,
+                identity: Some(identity),
+                origin: frontend
+                    .location(diagnostic.span.start)
+                    .unwrap_or_else(|| body.source.clone()),
+                message: diagnostic.message.clone(),
+            }]);
+        }
+        if let Some(diagnostic) = statements.parsed().diagnostics.iter().find(|diagnostic| {
             diagnostic.kind == dm_syntax::DiagnosticKind::IncompleteExpression
                 && !mask.hides_diagnostic(diagnostic)
         }) {

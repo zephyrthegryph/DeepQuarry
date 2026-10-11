@@ -7,6 +7,12 @@ use std::{
     ptr,
 };
 type Handle = *mut c_void;
+// Individual nonblocking operations must make progress independently of frame
+// length and pipe quota. Framing stays in protocol::send/receive_bounded.
+const IO_CHUNK: usize = 4096;
+#[cfg(test)]
+#[path = "windows_pipe_frame_tests.rs"]
+mod frame_tests;
 #[repr(C)]
 struct SecurityAttributes {
     length: u32,
@@ -124,7 +130,10 @@ impl io::Read for Stream {
                 std::thread::sleep(std::time::Duration::from_millis(2));
                 continue;
             }
-            match io::Read::read(&mut self.file, bytes) {
+            // Consume only bytes the pipe actually advertised. A large frame
+            // does not turn this nonblocking operation into a full-frame read.
+            let length = bytes.len().min(available as usize).min(IO_CHUNK);
+            match io::Read::read(&mut self.file, &mut bytes[..length]) {
                 Ok(0) => std::thread::sleep(std::time::Duration::from_millis(2)),
                 Err(error) if matches!(error.raw_os_error(), Some(232 | 536)) => {
                     std::thread::sleep(std::time::Duration::from_millis(2))
@@ -141,7 +150,8 @@ impl io::Write for Stream {
         }
         loop {
             self.remaining()?;
-            match io::Write::write(&mut self.file, bytes) {
+            let chunk = &bytes[..bytes.len().min(IO_CHUNK)];
+            match io::Write::write(&mut self.file, chunk) {
                 Ok(0) => std::thread::sleep(std::time::Duration::from_millis(2)),
                 Err(error) if matches!(error.raw_os_error(), Some(232 | 536)) => {
                     std::thread::sleep(std::time::Duration::from_millis(2))

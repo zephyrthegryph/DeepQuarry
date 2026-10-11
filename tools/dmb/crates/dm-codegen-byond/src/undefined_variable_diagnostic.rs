@@ -22,7 +22,38 @@ pub(crate) fn undefined_variable_message(statement: &str, name: &str) -> String 
         && tokens[2..].chunks(2).all(|pair| {
             pair.len() == 2 && pair[0].text(statement) == "." && pair[1].kind == TokenKind::Ident
         });
-    let context = if simple_return {
+    // A direct receiver call reports its callee prefix, without the return
+    // keyword or argument expression. Other expression contexts stay unchanged.
+    let start = usize::from(
+        tokens
+            .first()
+            .is_some_and(|token| token.text(statement) == "return"),
+    );
+    let mut end = start + 1;
+    if tokens
+        .get(start)
+        .is_some_and(|token| token.kind == TokenKind::Ident && token.text(statement) == name)
+    {
+        while tokens
+            .get(end)
+            .is_some_and(|token| token.text(statement) == ".")
+            && tokens
+                .get(end + 1)
+                .is_some_and(|token| token.kind == TokenKind::Ident)
+        {
+            end += 2;
+        }
+    }
+    let receiver_call = end > start + 1
+        && tokens
+            .get(end)
+            .is_some_and(|token| token.text(statement) == "(");
+    let context = if receiver_call {
+        tokens[start..end]
+            .iter()
+            .map(|token| token.text(statement))
+            .collect::<String>()
+    } else if simple_return {
         tokens
             .iter()
             .map(|token| token.text(statement))
@@ -47,6 +78,8 @@ mod tests {
             ("missing = 1", "missing: undefined var"),
             ("return 1 + missing", "missing: undefined var"),
             ("return foo(missing)", "missing: undefined var"),
+            ("return missing.Copy()", "missing.Copy: undefined var"),
+            ("missing.Copy(7)", "missing.Copy: undefined var"),
             ("return \"missing\" + missing", "missing: undefined var"),
         ] {
             assert_eq!(undefined_variable_message(statement, "missing"), expected);
