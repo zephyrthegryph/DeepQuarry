@@ -12,13 +12,23 @@ pub(super) struct StartupParallelFactory<'a> {
 }
 impl InitializerEvaluatorFactory for StartupParallelFactory<'_> {
     fn immutable_initializer_policy_bytes(&self) -> Option<std::sync::Arc<[u8]>> {
-        let ordinary = self.ordinary.factory.immutable_initializer_policy_bytes()?;
-        let mut bytes = b"dmbc-startup-initializer-policy-v1\0".to_vec();
+        self.immutable_initializer_policy_bytes_for_engine(None)
+    }
+    fn immutable_initializer_policy_bytes_for_engine(
+        &self,
+        current: Option<&crate::engine::EngineSnapshot>,
+    ) -> Option<std::sync::Arc<[u8]>> {
+        if let Some(inner) = self.ordinary.engine {
+            if !current.is_some_and(|outer| std::ptr::eq(inner, outer)) { return None; }
+        }
+        let ordinary = self.ordinary.factory
+            .immutable_initializer_policy_bytes_for_engine(self.ordinary.engine)?;
+        let mut bytes = b"dmbc-startup-initializer-policy-v2\0".to_vec();
+        bytes.push(u8::from(self.ordinary.engine.is_some()));
         bytes.extend_from_slice(&(ordinary.len() as u64).to_le_bytes());
         bytes.extend_from_slice(&ordinary);
         Some(bytes.into())
     }
-
     fn recording_policy_identity(&self) -> Option<u128> {
         self.ordinary
             .factory

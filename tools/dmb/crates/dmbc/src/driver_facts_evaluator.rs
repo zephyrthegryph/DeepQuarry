@@ -529,6 +529,15 @@ impl CapturedConstantEvaluator for LexicalAbiEvaluator<'_> {
     }
 }
 impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<'_> {
+    fn immutable_initializer_policy_bytes_for_engine(
+        &self,
+        _current: Option<&EngineSnapshot>,
+    ) -> Option<Arc<[u8]>> {
+        // DriverEvaluator has no hidden engine owner. The supplied engine is
+        // applied by with_recording_evaluator and proved by the transport.
+        self.immutable_initializer_policy_bytes()
+    }
+
     fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.

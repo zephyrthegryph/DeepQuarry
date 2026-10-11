@@ -97,6 +97,16 @@ pub trait InitializerEvaluatorFactory: Sync {
         None
     }
 
+    /// The transport authenticates this exact current engine payload separately.
+    /// Opaque custom stacks cannot assume that it covers their hidden engines.
+    fn immutable_initializer_policy_bytes_for_engine(
+        &self,
+        current: Option<&crate::engine::EngineSnapshot>,
+    ) -> Option<Arc<[u8]>> {
+        if current.is_some() { return None; }
+        self.immutable_initializer_policy_bytes()
+    }
+
     /// Return true only when every resolver-backed evaluation in the operation
     /// uses this supplied recorder. Compatibility factories decline reuse.
     fn with_recording_evaluator(

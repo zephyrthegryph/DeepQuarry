@@ -31,3 +31,29 @@ fn startup_factory_preserves_complete_ordinary_policy_and_declines_unknown() {
     factory.ordinary.factory = &unknown;
     assert!(factory.immutable_initializer_policy_bytes().is_none());
 }
+
+#[test]
+fn startup_portable_stack_requires_exact_authenticated_inner_engine() {
+    let host = Host;
+    let symbols = dm_ir::SymbolTable::default();
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../../fixtures/native_template.bin"), 1).unwrap();
+    let foreign = engine.clone();
+    let ordinary = crate::driver_facts::DriverEvaluator {
+        pure_calls: None, resource_search_context: None, resolver: &host, symbols: &symbols,
+    };
+    let mut factory = StartupParallelFactory {
+        ordinary: ParallelEvaluator { factory: &ordinary, engine: Some(&engine) },
+        resolver: &host, symbols: &symbols, resource_search_context: None,
+    };
+    assert!(factory.immutable_initializer_policy_bytes().is_none());
+    assert!(factory.immutable_initializer_policy_bytes_for_engine(Some(&foreign)).is_none());
+    let same = factory.immutable_initializer_policy_bytes_for_engine(Some(&engine)).unwrap();
+    factory.ordinary.engine = None;
+    let absent = factory.immutable_initializer_policy_bytes_for_engine(Some(&engine)).unwrap();
+    assert_ne!(same, absent, "inner-engine presence changes wrapper semantics");
+    let opaque = Policy(Some(b"opaque exact policy"));
+    factory.ordinary.factory = &opaque;
+    factory.ordinary.engine = Some(&engine);
+    assert!(factory.immutable_initializer_policy_bytes_for_engine(Some(&engine)).is_none());
+}
