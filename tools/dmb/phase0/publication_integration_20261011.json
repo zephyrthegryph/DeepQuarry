@@ -662,6 +662,16 @@
     "byond_structural_admission": "open; complete=false, positional differences not classified semantic bug count",
     "list_index_runtime_receipt": "E:/dq-cache/dmb-list-index-runtime/20261011-a7d86b/929cac15d50341c7a8edfb89a63cee29/receipt.json",
     "list_index_runtime_matches": true,
-    "focused11_status": "running latest real source, two workers, owned6GiB job, compile/runtime child watchdogs; no full runtime baseline"
+    "focused11_status": "passed all 11 selected current-source DM tests, native backend without fallback, trusted mode; full runtime baseline open",
+    "focused11_receipt": "E:/dq-cache/dmb-native-v2/focused11-a7d86b-20261011/receipt.json",
+    "focused11_input_closure_authenticated": false,
+    "focused11_accepted_runtime_baseline": false,
+    "focused11_peak_job_commit_bytes": 4936761344
+  },
+  "compact_retention_implementation": {
+    "procedure_commit": "dfb4073d69",
+    "initializer_pressure_commit": "f3219fc06f",
+    "status": "committed; build and benchmark pending",
+    "scope": "Weak exact issuer witnesses, compact exact ABI, same-core logical pressure pruning; classification96MiB and assembly64MiB caps are not physical memory bounds"
   }
 }
