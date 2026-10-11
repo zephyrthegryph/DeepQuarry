@@ -183,3 +183,116 @@ fn custom_current_receipt_proof_claims_only_after_complete_consumer_admission() 
     assert!(weak.upgrade().is_none());
     assert_eq!(store.admitted_bytes(), 0);
 }
+
+#[test]
+fn bounded_shared_rosters_charge_unique_values_and_never_evict_live_claims() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters_with_limit(2);
+    let first = store.lease();
+    let key: Arc<[u8]> = Arc::from(b"first".as_slice());
+    let value = first
+        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || 11)
+        .unwrap();
+    let second = store.lease();
+    assert!(second
+        .insert_with_owned(
+            Arc::from(b"second".as_slice()),
+            reads(1),
+            vec![],
+            1,
+            || panic!("budget miss must not construct payload")
+        )
+        .is_none());
+    let shared = second
+        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || {
+            panic!("same exact producer must share")
+        })
+        .unwrap();
+    assert!(Arc::ptr_eq(&value, &shared));
+    assert_eq!(store.admitted_bytes(), 2);
+    assert_eq!(store.available_bytes(), 0);
+    drop(first);
+    assert_eq!(store.admitted_bytes(), 2);
+    drop(second);
+    assert_eq!(store.admitted_bytes(), 0);
+    assert_eq!(*value, 11);
+}
+#[test]
+fn bounded_reattachment_declines_if_other_live_roster_consumed_the_budget() {
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters_with_limit(2);
+    let first = store.lease();
+    let key: Arc<[u8]> = Arc::from(b"old".as_slice());
+    let value = first
+        .insert_with_owned(Arc::clone(&key), reads(1), vec![], 2, || 11)
+        .unwrap();
+    let weak = Arc::downgrade(&value);
+    drop(value);
+    let first = std::cell::RefCell::new(Some(first));
+    let pending = store.lease();
+    let competing = store.lease();
+    let hit = pending
+        .visit_explained_accepted(&key, &Host(1), &mut |_| {
+            // Replay holds only the accepted value, not the core mutex. The old
+            // owning lease disappears and another exact live value takes its charge.
+            drop(first.borrow_mut().take());
+            assert!(competing
+                .insert_with_owned(Arc::from(b"new".as_slice()), reads(1), vec![], 2, || 22)
+                .is_some());
+            true
+        })
+        .0;
+    assert!(hit.is_none());
+    assert!(weak.upgrade().is_none());
+    assert_eq!(store.admitted_bytes(), 2);
+    assert!(competing
+        .visit_explained(b"new", &Host(1), &mut |_| true)
+        .0
+        .is_some());
+    drop(pending);
+    drop(competing);
+    assert_eq!(store.admitted_bytes(), 0);
+}
+#[test]
+fn bounded_shared_roster_callbacks_can_admit_in_parallel_outside_core_lock() {
+    use std::{sync::mpsc, time::Duration};
+    let store = ObservedArtifactStore::<u32, u8, u32, u8>::shared_current_rosters_with_limit(2);
+    let first = store.lease();
+    for key in [b"a", b"b"] {
+        first
+            .insert_with_owned(Arc::from(key.as_slice()), reads(1), vec![], 1, || 7)
+            .unwrap();
+    }
+    let (started, observed) = mpsc::channel();
+    std::thread::scope(|scope| {
+        let mut workers = Vec::new();
+        let mut releases = Vec::new();
+        for key in [b"a", b"b"] {
+            let lease = store.lease();
+            let started = started.clone();
+            let (release, gate) = mpsc::channel();
+            releases.push(release);
+            workers.push(scope.spawn(move || {
+                lease
+                    .visit_explained(key, &Host(1), &mut |_| {
+                        started.send(()).unwrap();
+                        gate.recv_timeout(Duration::from_secs(3))
+                            .expect("bounded callback release");
+                        true
+                    })
+                    .0
+                    .is_some()
+            }));
+        }
+        for _ in 0..2 {
+            observed
+                .recv_timeout(Duration::from_secs(2))
+                .expect("both callbacks must enter concurrently");
+        }
+        for release in releases {
+            release.send(()).unwrap();
+        }
+        for worker in workers {
+            assert!(worker.join().unwrap());
+        }
+    });
+    assert_eq!(store.admitted_bytes(), 2);
+}

@@ -9,42 +9,16 @@ type RichLease = dm_session::ObservedArtifactLease<
 pub struct RetainedProcedures {
     pub(crate) values: Arc<LoweringMemo<CachedProcedure>>,
     publication: Arc<dm_session::ArtifactPublication<RichLease>>,
-    pub(super) insertion: Mutex<()>,
 }
 impl Default for RetainedProcedures {
     fn default() -> Self {
         Self {
-            values: LoweringMemo::shared_current_rosters(),
+            values: LoweringMemo::shared_current_rosters_with_limit(RESIDENT_LIMIT),
             publication: Arc::new(Default::default()),
-            insertion: Mutex::new(()),
         }
     }
 }
 impl RetainedProcedures {
-    pub(super) fn can_insert(&self, weight: usize) -> bool {
-        let mut used = 0usize;
-        self.values.visit_storage(|view| {
-            if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
-                used = used.saturating_add(value.retained_weight);
-            }
-        });
-        used.checked_add(weight)
-            .is_some_and(|total| total <= RESIDENT_LIMIT)
-    }
-    fn can_claim(&self, candidate: &Arc<CachedProcedure>) -> bool {
-        let mut used = 0usize;
-        let mut already_owned = false;
-        self.values.visit_storage(|view| {
-            if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
-                used = used.saturating_add(value.retained_weight);
-                already_owned |= Arc::ptr_eq(value, candidate);
-            }
-        });
-        already_owned
-            || used
-                .checked_add(candidate.retained_weight)
-                .is_some_and(|total| total <= RESIDENT_LIMIT)
-    }
     fn begin(&self, publishable: bool) -> dm_session::ArtifactAttempt<RichLease> {
         let lease = self.values.lease();
         if publishable {
@@ -69,7 +43,6 @@ impl ProcedureMemo {
     ) -> Self {
         let mut memo = Self::with_resident(policy, Arc::clone(&owner.values), disk);
         memo.rich_attempt = Some(owner.begin(publishable));
-        memo.rich_owner = Some(owner);
         memo.publishable = publishable;
         memo
     }
@@ -83,19 +56,10 @@ impl ProcedureMemo {
         Option<ResolveQuery>,
     ) {
         if let Some(attempt) = &self.rich_attempt {
-            // Claims can reattach a value if its previous lease vanished during
-            // validation. Serialize that charge with insertion; drops only free.
-            let owner = self.rich_owner.as_ref().expect("request rich owner");
-            let _guard = owner
-                .insertion
-                .lock()
-                .unwrap_or_else(|error| error.into_inner());
+            // Exact host/caller callbacks run outside the generic core lock.
+            // The core atomically budgets a new/reattached physical claim.
             attempt
-                .with_pending(|lease| {
-                    lease.visit_explained_accepted(key, host, &mut |value| {
-                        owner.can_claim(value) && accept(value)
-                    })
-                })
+                .with_pending(|lease| lease.visit_explained_accepted(key, host, accept))
                 .unwrap_or((None, None))
         } else {
             self.values.visit_receipted(key, host, accept)

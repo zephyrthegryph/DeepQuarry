@@ -7,6 +7,14 @@ pub struct ObservedArtifactLease<T, Q, A, D> {
 }
 impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     pub fn shared_current_rosters() -> Arc<Self> {
+        Self::shared_rosters(None)
+    }
+    /// Limit the aggregate charge of all live physical variants. Existing
+    /// successful rosters are never evicted to admit a new pending claim.
+    pub fn shared_current_rosters_with_limit(limit: usize) -> Arc<Self> {
+        Self::shared_rosters(Some(limit))
+    }
+    fn shared_rosters(limit: Option<usize>) -> Arc<Self> {
         Arc::new(Self {
             state: Mutex::new(Resident {
                 buckets: BTreeMap::new(),
@@ -16,11 +24,11 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
                 claims: BTreeMap::new(),
                 incidence: None,
             }),
-            retention: Retention::SharedCurrentRosters,
+            retention: Retention::SharedCurrentRosters(limit),
         })
     }
     pub fn lease(self: &Arc<Self>) -> ObservedArtifactLease<T, Q, A, D> {
-        assert!(matches!(self.retention, Retention::SharedCurrentRosters));
+        assert!(matches!(self.retention, Retention::SharedCurrentRosters(_)));
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         let id = state.next_lease;
         state.next_lease = id
@@ -136,7 +144,7 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
     }
 }
 impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
-    fn claim(&self, key: &[u8], receipt: ObservedArtifact<T, Q, A, D>) -> Arc<T> {
+    fn claim(&self, key: &[u8], receipt: ObservedArtifact<T, Q, A, D>) -> Option<Arc<T>> {
         let mut state = self
             .store
             .state
@@ -146,18 +154,23 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
         let hash = xxhash_rust::xxh3::xxh3_128(key);
         // Another lease can disappear during exact replay outside the lock.
         // The borrowed receipt remains alive and can reattach the SAME variant.
-        let bucket = state
+        let stored_key = state
             .buckets
-            .entry(hash)
-            .or_insert_with(|| Vec::with_capacity(1));
-        let stored_key = bucket
-            .iter()
+            .get(&hash)
+            .into_iter()
+            .flatten()
             .find(|entry| Arc::ptr_eq(&entry.value, &receipt.value) && entry.key.as_ref() == key)
             .map(|entry| Arc::clone(&entry.key));
+        if stored_key.is_none() && !self.permits_charge(state.bytes, receipt.weight) {
+            return None;
+        }
         let key = stored_key.clone().unwrap_or_else(|| Arc::from(key));
         if stored_key.is_none() {
             let incidence_reads = state.incidence.as_ref().map(|_| receipt.reads.clone());
-            let bucket = state.buckets.get_mut(&hash).expect("claimed bucket");
+            let bucket = state
+                .buckets
+                .entry(hash)
+                .or_insert_with(|| Vec::with_capacity(1));
             bucket.push(Variant {
                 key: Arc::clone(&key),
                 reads: receipt.reads,
@@ -173,7 +186,16 @@ impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
         let detached = assign(&mut state, self.id, key, hash, pointer);
         drop(state);
         drop(detached);
-        receipt.value
+        Some(receipt.value)
+    }
+    fn permits_charge(&self, charged: usize, additional: usize) -> bool {
+        match self.store.retention {
+            Retention::SharedCurrentRosters(Some(limit)) => charged
+                .checked_add(additional)
+                .is_some_and(|total| total <= limit),
+            Retention::SharedCurrentRosters(None) => true,
+            _ => unreachable!("lease requires shared current rosters"),
+        }
     }
 }
 /// Cross-owner reuse cannot trust an unqualified process-local version number.
@@ -208,15 +230,15 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (receipt, changed) = self.store.visit_receipted(key, &Exact(host), accept);
-        let accepted = receipt.map(|receipt| {
+        let accepted = receipt.and_then(|receipt| {
             let claim = ObservedArtifact {
                 value: Arc::clone(&receipt.value),
                 reads: receipt.reads.clone(),
                 versions: Arc::clone(&receipt.versions),
                 weight: receipt.weight,
             };
-            self.claim(key, claim);
-            receipt
+            self.claim(key, claim)?;
+            Some(receipt)
         });
         (accepted, changed)
     }
@@ -230,7 +252,7 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
         accept: &mut dyn FnMut(&Arc<T>) -> bool,
     ) -> (Option<ObservedArtifact<T, Q, A, D>>, Option<Q>) {
         let (receipt, changed) = self.store.visit_receipted_with(key, validate, accept);
-        let accepted = receipt.map(|receipt| {
+        let accepted = receipt.and_then(|receipt| {
             self.claim(
                 key,
                 ObservedArtifact {
@@ -239,8 +261,8 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
                     versions: Arc::clone(&receipt.versions),
                     weight: receipt.weight,
                 },
-            );
-            receipt
+            )?;
+            Some(receipt)
         });
         (accepted, changed)
     }
@@ -279,16 +301,23 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord>
             .state
             .lock()
             .unwrap_or_else(|error| error.into_inner());
+        let existing = state
+            .buckets
+            .get(&hash)
+            .into_iter()
+            .flatten()
+            .find(|entry| entry.key == key && entry.reads == reads)
+            .map(|entry| (Arc::clone(&entry.value), Arc::clone(&entry.key)));
+        if existing.is_none() && !self.permits_charge(state.bytes, weight) {
+            return None;
+        }
         let incidence_reads = state.incidence.as_ref().map(|_| reads.clone());
         let bucket = state
             .buckets
             .entry(hash)
             .or_insert_with(|| Vec::with_capacity(1));
-        let (value, key) = if let Some(entry) = bucket
-            .iter()
-            .find(|entry| entry.key == key && entry.reads == reads)
-        {
-            (Arc::clone(&entry.value), Arc::clone(&entry.key))
+        let (value, key) = if let Some(existing) = existing {
+            existing
         } else {
             let value = Arc::new(create());
             bucket.push(Variant {

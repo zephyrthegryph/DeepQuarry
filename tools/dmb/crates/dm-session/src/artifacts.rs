@@ -74,7 +74,7 @@ enum Retention {
     /// The caller supplies the complete current key roster before worker use.
     /// One value per exact key; history is replaced rather than accumulated.
     RetainedCurrentRevision,
-    SharedCurrentRosters,
+    SharedCurrentRosters(Option<usize>),
 }
 impl<T, Q, A, D> Default for ObservedArtifactStore<T, Q, A, D> {
     fn default() -> Self {
@@ -221,7 +221,10 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     pub fn available_bytes(&self) -> usize {
         match self.retention {
             Retention::Budgeted(limit) => limit.saturating_sub(self.admitted_bytes()),
-            Retention::RetainedCurrentRevision | Retention::SharedCurrentRosters => 0,
+            Retention::SharedCurrentRosters(Some(limit)) => {
+                limit.saturating_sub(self.admitted_bytes())
+            }
+            Retention::RetainedCurrentRevision | Retention::SharedCurrentRosters(None) => 0,
         }
     }
 }
