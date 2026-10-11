@@ -47,7 +47,9 @@ TYPE_TABLE(/obj/item/rig/pmc, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENE
 	suit_type = "PMC engineer"
 	icon_state = "pmc_engineergrey_rig"
 	armor_spec = "melee=60;bullet=50;laser=35;energy=15;bomb=30;bio=100;rad=100"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/rig/pmc/engineer)
+	configure(item_protection(siemens = 0))
 
 /obj/item/rig/pmc/engineer/grey/equipped
 

@@ -19,10 +19,10 @@
 	item_state = "puffycoatblue"
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS|LEGS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	item_state_slots = list(slot_r_hand_str = "blue_labcoat", slot_l_hand_str = "blue_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/puffyblue)
+	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/puffypurple
 	name = "purple puffy coat"
@@ -31,10 +31,10 @@
 	item_state = "puffycoatpurple"
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS|LEGS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	item_state_slots = list(slot_r_hand_str = "purple_labcoat", slot_l_hand_str = "purple_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/puffypurple)
+	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/puffyred
 	name = "crimson puffy coat"
@@ -43,10 +43,10 @@
 	item_state = "puffycoatred"
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS|LEGS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.7
 	item_state_slots = list(slot_r_hand_str = "red_labcoat", slot_l_hand_str = "red_labcoat")
+
+CAPABILITIES(/obj/item/clothing/suit/storage/puffyred)
+	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0.7))
 
 /*
  * Costume
@@ -83,8 +83,10 @@
 	name = "cyborg suit"
 	desc = "Suit for a cyborg costume."
 	icon_state = "death"
-	max_heat_protection_temperature = T0C+5200
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/cyborg_suit)
+	configure(item_protection(max_heat = T0C+5200))
 
 /obj/item/clothing/suit/greatcoat
 	name = "great coat"
@@ -154,7 +156,9 @@ TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_O
 	icon_state = "chickensuit"
 	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET
 	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 2.0
+
+CAPABILITIES(/obj/item/clothing/suit/chickensuit)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/monkeysuit
 	name = "Monkey Suit"
@@ -163,7 +167,9 @@ TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_O
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
 	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS|FEET|HANDS
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 2.0
+
+CAPABILITIES(/obj/item/clothing/suit/monkeysuit)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/holidaypriest
 	name = "Holiday Priest"
@@ -227,7 +233,9 @@ TYPE_TABLE(/obj/item/clothing/suit/syndicatefake, suit_storage_spec, list(HOLD_O
 	body_parts_covered = FEET|LOWER_TORSO|UPPER_TORSO|LEGS|ARMS
 	flags_inv = HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	item_state_slots = list(slot_r_hand_str = "classicponcho", slot_l_hand_str = "classicponcho")
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/sumo)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/hackercost
 	name = "classic hacker costume"
@@ -458,7 +466,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	icon = 'icons/inventory/uniform/item.dmi'
 	icon_state = "stripper_p"
 	item_state_slots = list(slot_r_hand_str = "pink_labcoat", slot_l_hand_str = "pink_labcoat")
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/suit/stripper/stripper_pink)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/suit/stripper/stripper_green
 	name = "green skimpy dress"
@@ -466,7 +476,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	icon = 'icons/inventory/uniform/item.dmi'
 	icon_state = "stripper_g"
 	item_state_slots = list(slot_r_hand_str = "green_labcoat", slot_l_hand_str = "green_labcoat")
-	siemens_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/suit/stripper/stripper_green)
+	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/suit/xenos
 	name = "xenos suit"
@@ -475,7 +487,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	item_state_slots = list(slot_r_hand_str = "black_suit", slot_l_hand_str = "black_suit")
 	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS
 	flags_inv = HIDEGLOVES|HIDESHOES|HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	siemens_coefficient = 2.0
+
+CAPABILITIES(/obj/item/clothing/suit/xenos)
+	configure(item_protection(siemens = 2.0))
 
 /obj/item/clothing/suit/jacket
 	name = DEVELOPER_WARNING_NAME
@@ -486,9 +500,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	icon_state = "pufferjacket"
 	item_state_slots = list(slot_r_hand_str = "chainmail", slot_l_hand_str = "chainmail")
 	body_parts_covered = CHEST|ARMS
-	cold_protection = CHEST|ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/jacket/puffer)
+	configure(item_protection(cold_parts = CHEST|ARMS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/jacket/puffer/vest
 	name = "puffer vest"
@@ -496,7 +511,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	icon_state = "puffervest"
 	item_state_slots = list(slot_r_hand_str = "chainmail", slot_l_hand_str = "chainmail")
 	body_parts_covered = CHEST
-	cold_protection = CHEST
+
+CAPABILITIES(/obj/item/clothing/suit/jacket/puffer/vest)
+	configure(item_protection(cold_parts = CHEST))
 
 /obj/item/clothing/suit/storage/miljacket
 	name = "military jacket"
@@ -593,9 +610,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/duster, suit_storage_spec, list(HOLD_
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = UPPER_TORSO|ARMS
-	min_cold_protection_temperature = T0C - 20
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/bomber)
+	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
 
@@ -611,9 +628,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/bomber, suit_storage_spec, lis
 	item_state_slots = list(slot_r_hand_str = "brown_jacket", slot_l_hand_str = "brown_jacket")
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = UPPER_TORSO|ARMS
-	min_cold_protection_temperature = T0C - 20
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/storage/bomber)
+	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 /obj/item/clothing/suit/storage/toggle/leather_jacket
 	name = "leather jacket"
@@ -714,9 +731,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/denim_jacket, suit_storage_spe
 	desc = "A warm, grey sweatshirt."
 	icon_state = "grey_hoodie"
 	item_state_slots = list(slot_r_hand_str = "suit_grey", slot_l_hand_str = "suit_grey")
-	min_cold_protection_temperature = T0C - 20
-	cold_protection = CHEST|ARMS
 	flags_inv = HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/hoodie)
+	configure(item_protection(min_cold = T0C - 20, cold_parts = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/toggle/hoodie/black
 	name = "black hoodie"
@@ -1031,8 +1049,6 @@ TRACKED(/obj/item/clothing/suit/storage/flannel, buttoned)
 	item_state_slots = list(slot_r_hand_str = "labcoat", slot_l_hand_str = "labcoat")
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	armor_spec = "bio=10"
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY))))
@@ -1144,9 +1160,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/toggle/moto_jacket, suit_storage_spec
 	item_state = "talon_pilotjacket"
 	body_parts_covered = UPPER_TORSO|ARMS
 	flags_inv = HIDEHOLSTER
-	cold_protection = UPPER_TORSO|ARMS
-	min_cold_protection_temperature = T0C - 20
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/suit/storage/talonbomberjacket)
+	configure(item_protection(cold_parts = UPPER_TORSO|ARMS, min_cold = T0C - 20, siemens = 0.7))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/talonbomberjacket, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 

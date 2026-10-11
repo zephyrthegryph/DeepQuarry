@@ -11,7 +11,6 @@
 	slowdown = 0.5
 	offline_slowdown = 1.5
 	offline_vision_restriction = 1
-	siemens_coefficient = 0.3
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/eva
 	helm_type = /obj/item/clothing/head/helmet/space/rig/merc
 
@@ -25,6 +24,9 @@
 		/obj/item/rig_module/chem_dispenser/combat,
 		/obj/item/rig_module/fabricator/energy_net
 		)
+
+CAPABILITIES(/obj/item/rig/merc)
+	configure(item_protection(siemens = 0.3))
 
 //Has most of the modules removed
 

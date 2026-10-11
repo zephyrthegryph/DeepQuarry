@@ -5,8 +5,9 @@
 	icon_state = "engspace_suit"
 	item_state = "engspace_suit"
 	armor_spec = "bio=100;rad=100;acid=60"
-	max_pressure_protection = 5   * ONE_ATMOSPHERE // Not very good protection, but if an anomaly starts doing gas stuff you're not screwed
-	min_pressure_protection = 0.4 * ONE_ATMOSPHERE
+
+CAPABILITIES(/obj/item/clothing/suit/bio_suit/anomaly)
+	configure(item_protection(max_pressure = 5   * ONE_ATMOSPHERE, min_pressure = 0.4 * ONE_ATMOSPHERE))
 
 /obj/item/clothing/head/bio_hood/anomaly
 	name = "Anomaly hood"
@@ -14,8 +15,9 @@
 	icon_state = "engspace_helmet"
 	item_state = "engspace_helmet"
 	armor_spec = "bio=100;rad=100;acid=60"
-	max_pressure_protection = 5   * ONE_ATMOSPHERE // Not very good protection, but if an anomaly starts doing gas stuff you're not screwed
-	min_pressure_protection = 0.4 * ONE_ATMOSPHERE
+
+CAPABILITIES(/obj/item/clothing/head/bio_hood/anomaly)
+	configure(item_protection(max_pressure = 5   * ONE_ATMOSPHERE, min_pressure = 0.4 * ONE_ATMOSPHERE))
 
 /obj/item/clothing/suit/space/anomaly
 	name = "Excavation suit"
@@ -38,15 +40,13 @@ TYPE_TABLE(/obj/item/clothing/suit/space/anomaly, suit_storage_spec, list(HOLD_O
 /obj/item/clothing/suit/space/anomaly/heat
 	name = "Heat Adapted Excavation suit"
 	desc = "A pressure resistant excavation suit partially capable of insulating against exotic alien energies and heat."
-	heat_protection = CHEST|LEGS|FEET|ARMS|HANDS
-	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+1000
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 5* ONE_ATMOSPHERE
+
+CAPABILITIES(/obj/item/clothing/suit/space/anomaly/heat)
+	configure(item_protection(heat_parts = CHEST|LEGS|FEET|ARMS|HANDS, max_heat = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE+1000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 5* ONE_ATMOSPHERE))
 
 /obj/item/clothing/head/helmet/space/anomaly/heat
 	name = "Heat Adapted Excavation hood"
 	desc = "A pressure resistant excavation hood partially capable of insulating against exotic alien energies and heat."
-	heat_protection = HEAD
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE+1000
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 5* ONE_ATMOSPHERE
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/anomaly/heat)
+	configure(item_protection(heat_parts = HEAD, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE+1000, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 5* ONE_ATMOSPHERE))

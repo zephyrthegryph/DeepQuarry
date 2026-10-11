@@ -70,8 +70,10 @@
 	icon_state = "brigphysician"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysician"
-	permeability_coefficient = 0.50
 	armor_spec = "melee=10;bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/yw/rank/security/brigphys/skirt
 	desc = "A skirted Brig Physician uniform. It has both security and medical protection."
@@ -80,8 +82,10 @@
 	icon_state = "brigphysicianf"
 	icon_override = 'icons/mob/uniform_yw.dmi'
 	item_state = "brigphysicianf"
-	permeability_coefficient = 0.50
 	armor_spec = "melee=10;bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/yw/rank/security/brigphys/skirt)
+	configure(item_protection(permeability = 0.50))
 
 
 /obj/item/clothing/under/yw/robotics //fancy blueshield suit,

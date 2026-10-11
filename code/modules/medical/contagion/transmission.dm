@@ -81,7 +81,7 @@
 		if(C.has_mutation(mNobreath))
 			return FALSE
 		var/obj/item/clothing/mask = C.get_equipped_item(SLOT_ID_MASK)
-		if(istype(mask) && !prob(mask.permeability_coefficient * 100))
+		if(istype(mask) && !prob(protection_of(mask).permeability * 100))
 			return FALSE
 	return prob(clamp(50 * D.permeability_mod, 0, 100))
 
@@ -133,7 +133,7 @@
 		return TRUE
 	if(head && istype(I, /obj/item/paper))
 		return TRUE
-	return prob((I.permeability_coefficient * 100) - 1)
+	return prob((protection_of(I).permeability * 100) - 1)
 
 /// Shed `D` into the air around its host: every human in range with an
 /// open-air path is exposed (airborne route). `force_spread` widens the range

@@ -10,4 +10,3 @@
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'maps/southern_cross/icons/mob/species/teshari/sc_suit.dmi'
 	)
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE

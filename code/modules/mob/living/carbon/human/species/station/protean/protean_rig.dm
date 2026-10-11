@@ -10,7 +10,6 @@
 	icon_state = "nanomachine_rig"
 	interface_intro = "Protean"
 	armor_spec = "bio=100;rad=100"
-	siemens_coefficient= 1
 	slowdown = 0
 	offline_slowdown = 0
 	seal_delay = 0
@@ -148,6 +147,7 @@ MSG_DEF_SELF(protean_rig/module_class, "The hardsuit already has a module of tha
 MSG_DEF_SELF(protean_rig/installing, "You begin installing %I% into %T%.")
 
 CAPABILITIES(/obj/item/rig/protean)
+	configure(item_protection(siemens = 1))
 	op("protean_rig_hand", hand(), ungated(), then(PROC_REF(protean_rig_hand)))
 	op("protean_rig_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(protean_rig_item)))
 	op("protean_install_module", item(/obj/item/rig_module), priority(OP_PRIORITY_PART), label("Install module"), when(req(PROC_REF(module_offered))), needs(req(PROC_REF(module_class_free), because = MSG(protean_rig/module_class))), begins(MSG(protean_rig/installing)), wait(4 SECONDS), then(PROC_REF(attackby_protean_done)))
@@ -227,7 +227,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_
 /obj/item/clothing/gloves/gauntlets/rig/protean
 	name = "mass"
 	desc = "Glove-shaped clusters of nanomachines."
-	siemens_coefficient= 0
 	sprite_sheets = list(
 		SPECIES_PROTEAN			 = 'icons/mob/hands.dmi',
 		SPECIES_HUMAN			 = 'icons/mob/hands.dmi',
@@ -271,6 +270,9 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/rig/protean, fit_spec, list(REQ_
 	icon = 'icons/inventory/hands/item.dmi'
 	default_worn_icon = 'icons/mob/hands.dmi'
 	icon_state = "nanomachine_rig"
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/protean)
+	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/protean, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW))))
 
@@ -651,8 +653,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 	rigsuit_max_pressure = R.rigsuit_max_pressure
 	for(var/obj/item/piece in list(gloves,helmet,boots,chest))
 		piece.set_armor(R.get_armor())
-		piece.max_pressure_protection = R.rigsuit_max_pressure
-		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
+		piece.set_max_pressure_protection(R.rigsuit_max_pressure)
+		piece.set_max_heat_protection_temperature(protection_of(R).max_heat)
 	wearer()?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
@@ -697,8 +699,8 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))
 			piece.set_armor(get_armor())
-			piece.max_pressure_protection = rigsuit_max_pressure
-			piece.max_heat_protection_temperature = max_heat_protection_temperature
+			piece.set_max_pressure_protection(rigsuit_max_pressure)
+			piece.set_max_heat_protection_temperature(protection_of(src).max_heat)
 			piece.icon_state = src.icon_state
 			piece.icon = initial(piece.icon)
 			piece.default_worn_icon = initial(piece.default_worn_icon)

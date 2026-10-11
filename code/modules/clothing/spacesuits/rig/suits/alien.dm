@@ -15,10 +15,12 @@
 	offline_slowdown = 5
 	vision_restriction = 0  //This is dumb as hell and should be 0 if we want the suit to be even vaguely useful.
 	offline_vision_restriction = 2 //This actually serves as a good weakness for them, making them vulnerable to Ion weapons.
-	siemens_coefficient = 0.75
 	chest_type = /obj/item/clothing/suit/space/rig/breacher
 	helm_type = /obj/item/clothing/head/helmet/space/rig/breacher
 	boot_type = /obj/item/clothing/shoes/magboots/rig/breacher
+
+CAPABILITIES(/obj/item/rig/breacher)
+	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/rig/breacher, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
@@ -29,9 +31,11 @@ TYPE_TABLE(/obj/item/rig/breacher, suit_storage_spec, list(HOLD_ONLY(list(POCKET
 	icon_state = "breacher_rig"
 	armor_spec = "melee=85;bullet=80;laser=80;energy=40;bomb=80;bio=100;rad=60" //Still a tank just not indestructable
 	vision_restriction = 0
-	siemens_coefficient = 0.2
 	slowdown = 6
 	offline_slowdown = 10
+
+CAPABILITIES(/obj/item/rig/breacher/fancy)
+	configure(item_protection(siemens = 0.2))
 
 /obj/item/clothing/head/helmet/space/rig/breacher
 	force = 5
@@ -60,7 +64,6 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	armor_spec = "melee=60;bullet=50;laser=40;energy=15;bomb=30;bio=100;rad=50"
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.2
 	offline_slowdown = 2.5
 
 	air_type = /obj/item/tank/vox
@@ -69,6 +72,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots/rig/breacher, fit_spec, list(REQ_FI
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox
 	chest_type = /obj/item/clothing/suit/space/rig/vox
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox
+
+CAPABILITIES(/obj/item/rig/vox)
+	configure(item_protection(siemens = 0.2))
 
 TYPE_TABLE(/obj/item/rig/vox, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, POCKET_BAYSUIT))))
 
@@ -91,10 +97,12 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/vox, fit_spec, list(REQ_FITS_BODYTY
 
 /obj/item/clothing/gloves/gauntlets/rig/vox
 	name = DEVELOPER_WARNING_NAME
-	siemens_coefficient = 0
 	sprite_sheets = list(
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/vox)
+	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_BODYTYPES(list(SPECIES_VOX))))
 
@@ -173,7 +181,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 	armor_spec = "melee=25;bullet=5;laser=40;energy=45;bomb=50;bio=100;rad=100" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0
 	offline_slowdown = 2.5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -193,12 +200,14 @@ TYPE_TABLE(/obj/item/clothing/gloves/gauntlets/rig/vox, fit_spec, list(REQ_FITS_
 
 	air_type = /obj/item/tank/nitrogen
 
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/vox/ch
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox/ch
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
+
+CAPABILITIES(/obj/item/rig/vox/engineering)
+	configure(item_protection(siemens = 0, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))
 
@@ -210,7 +219,6 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 	armor_spec = "melee=60;bullet=50;laser=40;energy=10;bomb=20;bio=100;rad=50" //CE suit values but shuffled to a tighter focus on the job hazards
 	flags = PHORONGUARD
 	item_flags = THICKMATERIAL
-	siemens_coefficient = 0.5
 	offline_slowdown = 5
 	slowdown = 0
 	emp_protection = 40 //change this to 30 if too high.
@@ -223,11 +231,13 @@ TYPE_TABLE(/obj/item/rig/vox/engineering, suit_storage_spec, list(HOLD_ONLY(list
 
 	air_type = /obj/item/tank/vox
 
-	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/vox/ch
 	boot_type = /obj/item/clothing/shoes/magboots/rig/vox/ch
 	chest_type = /obj/item/clothing/suit/space/rig/vox/ch
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/vox/ch
+
+CAPABILITIES(/obj/item/rig/vox/security)
+	configure(item_protection(siemens = 0.5, max_heat = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/rig/vox/security, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SECURITY, POCKET_SUIT_REGULATORS))))

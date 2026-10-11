@@ -7,4 +7,6 @@
 	name = "ring gag"
 	desc = "What's that? You'll have to speak more clearly."
 	icon_state = "ringgag"
-	gas_transfer_coefficient = 1
+
+CAPABILITIES(/obj/item/clothing/mask/muzzle/ballgag/ringgag)
+	configure(item_protection(gas_transfer = 1))

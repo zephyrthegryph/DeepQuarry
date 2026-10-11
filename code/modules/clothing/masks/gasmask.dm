@@ -7,14 +7,12 @@
 	body_parts_covered = FACE|EYES
 	w_class = ITEMSIZE_NORMAL
 	item_state_slots = list(slot_r_hand_str = "gas_alt", slot_l_hand_str = "gas_alt")
-	gas_transfer_coefficient = 0.01
-	permeability_coefficient = 0.01
-	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
 	armor_spec = "bio=75"
 	resistance_flags = FIRE_PROOF
 
 CAPABILITIES(/obj/item/clothing/mask/gas)
+	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.9))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_RUBBER))
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2O))
@@ -44,13 +42,13 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS
 	name = "face mask"
 	desc = "A compact, durable gas mask that can be connected to an air supply."
 	icon_state = "halfgas"
-	siemens_coefficient = 0.7
 	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
 CAPABILITIES(/obj/item/clothing/mask/gas/half)
+	configure(item_protection(siemens = 0.7))
 	op("half_mask_add_hailer_item", item(/obj/item), label("Half mask add hailer item"), then(PROC_REF(half_mask_add_hailer_item)))
 
 /// Both ingredients must be releasable before fitting a hailer changes either one.
@@ -98,8 +96,9 @@ CAPABILITIES(/obj/item/clothing/mask/gas/half)
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
 	armor_spec = "laser=2;energy=2;bio=90"
 	body_parts_covered = HEAD|FACE|EYES
-	heat_protection = HEAD
-	cold_protection = HEAD
+
+CAPABILITIES(/obj/item/clothing/mask/gas/plaguedoctor)
+	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 
 /obj/item/clothing/mask/gas/plaguedoctor/gold
 	name = "gold plague doctor mask"
@@ -110,8 +109,10 @@ CAPABILITIES(/obj/item/clothing/mask/gas/half)
 	name = "\improper SWAT mask"
 	desc = "A close-fitting tactical mask that can be connected to an air supply."
 	icon_state = "swat"
-	siemens_coefficient = 0.7
 	body_parts_covered = FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/gas/swat)
+	configure(item_protection(siemens = 0.7))
 
 // Vox mask, has special code for eating
 /obj/item/clothing/mask/gas/swat/vox
@@ -161,7 +162,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	name = "tactical mask"
 	desc = "A close-fitting tactical mask that can be connected to an air supply."
 	icon_state = "swat"
-	siemens_coefficient = 0.7
+
+CAPABILITIES(/obj/item/clothing/mask/gas/syndicate)
+	configure(item_protection(siemens = 0.7))
 
 /obj/item/clothing/mask/gas/explorer
 	name = "explorer gas mask"
@@ -169,7 +172,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	icon_state = "explorer"
 	item_state_slots = list(slot_r_hand_str = "gas", slot_l_hand_str = "gas")
 	armor_spec = "melee=10;bullet=5;laser=5;energy=5;bio=50"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/mask/gas/explorer)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/gas/clown_hat
 	name = "clown wig and mask"
@@ -212,7 +217,9 @@ TYPE_TABLE(/obj/item/clothing/mask/gas/zaddat, fit_spec, list(REQ_FITS_BODYTYPES
 	name = "commando mask"
 	icon_state = "fullgas"
 	item_state_slots = list(slot_r_hand_str = "swat", slot_l_hand_str = "swat")
-	siemens_coefficient = 0.2
+
+CAPABILITIES(/obj/item/clothing/mask/gas/commando)
+	configure(item_protection(siemens = 0.2))
 
 /obj/item/clothing/mask/gas/cyborg
 	name = "cyborg visor"

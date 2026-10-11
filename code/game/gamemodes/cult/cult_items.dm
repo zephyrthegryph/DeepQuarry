@@ -54,8 +54,9 @@ CAPABILITIES(/obj/item/melee/cultblade)
 	desc = "A hood worn by the followers of Nar-Sie."
 	flags_inv = HIDEFACE
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
-	min_cold_protection_temperature = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/head/culthood)
+	configure(item_protection(min_cold = SPACE_HELMET_MIN_COLD_PROTECTION_TEMPERATURE, siemens = 0))
 
 /obj/item/clothing/head/culthood/cultify()
 	return
@@ -77,7 +78,9 @@ CAPABILITIES(/obj/item/melee/cultblade)
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=50;bullet=30;laser=50;energy=80;bomb=25;bio=10"
 	flags_inv = HIDEJUMPSUIT
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/suit/cultrobes)
+	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_CULT))))
 
@@ -99,7 +102,9 @@ TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(
 	desc = "A space worthy helmet used by the followers of Nar-Sie."
 	icon_state = "cult_helmet"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/head/helmet/space/cult)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/head/helmet/space/cult/cultify()
 	return
@@ -111,8 +116,10 @@ TYPE_TABLE(/obj/item/clothing/suit/cultrobes, suit_storage_spec, list(HOLD_ONLY(
 	w_class = ITEMSIZE_NORMAL
 	slowdown = 0.5
 	armor_spec = "melee=60;bullet=50;laser=30;energy=80;bomb=30;bio=30;rad=30;cold=60"
-	siemens_coefficient = 0
 	flags_inv = HIDEGLOVES|HIDEJUMPSUIT|HIDETAIL|HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/space/cult)
+	configure(item_protection(siemens = 0))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/cult, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_CULT))))
 

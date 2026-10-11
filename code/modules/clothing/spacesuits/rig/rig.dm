@@ -18,10 +18,6 @@
 
 	// These values are passed on to all component pieces.
 	armor_spec = "melee=40;bullet=5;laser=20;energy=5;bomb=35;bio=100;rad=20"
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE
-	siemens_coefficient = 0.2
-	permeability_coefficient = 0.1
 	unacidable = TRUE
 	preserve_item = 1
 
@@ -104,10 +100,10 @@
 	// Protean
 	var/protean = 0
 	var/obj/item/storage/backpack/rig_storage
-	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/rig)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE, siemens = 0.2, permeability = 0))
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE, powered = FALSE)
 	owns_one(nameof(boots), /obj/item/clothing/shoes)
 	owns_one(nameof(chest), /obj/item/clothing/suit/space/rig)
@@ -296,12 +292,12 @@ TRACKED(/obj/item/rig, carried_by_mob)
 // Seal = 0 unsets protection
 /obj/item/rig/proc/update_airtight(obj/item/piece, seal = 0)
 	if(seal == 1)
-		piece.min_pressure_protection = rigsuit_min_pressure
-		piece.max_pressure_protection = rigsuit_max_pressure
+		piece.set_min_pressure_protection(rigsuit_min_pressure)
+		piece.set_max_pressure_protection(rigsuit_max_pressure)
 		piece.item_flags |= AIRTIGHT
 	else
-		piece.min_pressure_protection = null
-		piece.max_pressure_protection = null
+		piece.set_min_pressure_protection(null)
+		piece.set_max_pressure_protection(null)
 		piece.item_flags &= ~AIRTIGHT
 	return
 

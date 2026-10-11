@@ -81,10 +81,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/chaplain_hoodie, suit_storage_
 	name = "chef's apron"
 	desc = "An apron used by a high class chef."
 	icon_state = "chef"
-	gas_transfer_coefficient = 0.90
-	permeability_coefficient = 0.50
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/chef)
+	configure(item_protection(gas_transfer = 0.90, permeability = 0.50))
 
 //Chef
 
