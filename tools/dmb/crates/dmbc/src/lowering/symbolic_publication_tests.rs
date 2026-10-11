@@ -67,11 +67,13 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
     assert!(first.insert_record(identity(), produced));
     assert!(first.publish_successful());
     drop(first);
-    for (version, answer, observing, expected_hit, expected_calls) in [
-        (Some(7), false, false, true, 0),
-        (Some(8), false, false, true, 1),
-        (None, true, false, false, 1),
-        (Some(7), true, true, false, 1),
+    for (version, answer, observing, expected_hit, expected_calls, expected_edges) in [
+        (Some(7), false, false, true, 0, 1),
+        (Some(8), false, false, true, 1, 1),
+        // A rejected nonobserving leaf is never delivered as admitted evidence.
+        (None, true, false, false, 1, 0),
+        // Observing hosts replay normally, including the rejecting edge.
+        (Some(7), true, true, false, 1, 1),
     ] {
         let next = owner.for_request(false);
         let host = Current {
@@ -107,7 +109,11 @@ fn published_symbolic_candidate_uses_actual_qualified_versions_and_keeps_read_ed
             .flatten();
         assert_eq!(accepted.is_some(), expected_hit);
         assert_eq!(host.calls.load(Ordering::Relaxed), expected_calls);
-        assert_eq!(observer.reads().len(), 1);
+        assert_eq!(
+            observer.reads().len(),
+            expected_edges,
+            "version={version:?}, observing={observing}"
+        );
         // Analysis claims do not supersede or prune the published producer.
         drop(next);
     }
