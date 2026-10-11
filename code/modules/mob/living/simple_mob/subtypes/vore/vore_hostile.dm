@@ -40,9 +40,6 @@
 
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("flashes", "slaps", "smothers", "grapples")
@@ -81,6 +78,7 @@
 	B.escape_stun = 5
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 	op("abyss_lurker_interaction_hand", hand(), then(PROC_REF(abyss_lurker_interaction_hand)))
 
 /// Old attack_hand: touching a willing prey-player makes the lurker target them instead of the normal touch.
@@ -129,9 +127,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	has_eye_glow = TRUE
@@ -167,6 +162,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 
 	var/leap_warmup = 1 SECOND // How long the leap telegraphing is.
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
+
+CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
 	. = ..()
@@ -258,9 +256,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	default_pixel_x = -16
 
 	mob_size = MOB_LARGE
-	mob_bump_flag = HUMAN
-	mob_swap_flags = HEAVY
-	mob_push_flags = HEAVY
 	mob_size = MOB_LARGE
 
 	attacktext = list("splashes against", "slaps", "smothers", "engulfs")
@@ -305,6 +300,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	B.escape_stun = 3
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/gelatinous_cube)
+	configure(mob_movement(bump = HUMAN, swap = HEAVY, push = HEAVY))
 	rolls(nameof(color), PROC_REF(roll_color))
 
 /// Rolled before init (rolls()): random_color(TRUE)'s saturated colour.

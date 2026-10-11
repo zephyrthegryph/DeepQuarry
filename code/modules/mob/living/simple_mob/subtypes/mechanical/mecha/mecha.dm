@@ -45,7 +45,6 @@
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/mecha
-	death_message = "explodes!"
 
 /mob/living/simple_mob/mechanical/mecha/on_death(gibbed)
 	..() // Do everything else first.
@@ -107,6 +106,7 @@
 	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha)
+	configure(mob_kind(death_message = "explodes!"))
 	op("mecha_item", item(/obj/item), then(PROC_REF(mecha_interaction_item)))
 
 /// Old attackby: armour deflection.

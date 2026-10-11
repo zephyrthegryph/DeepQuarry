@@ -636,9 +636,9 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 /datum/species/proc/handle_post_spawn(mob/living/carbon/human/H) //Handles anything not already covered by basic species assignment.
 	add_inherent_verbs(H)
-	H.mob_bump_flag = bump_flag
-	H.mob_swap_flags = swap_flags
-	H.mob_push_flags = push_flags
+	H.set_mob_bump_flag(bump_flag)
+	H.set_mob_swap_flags(swap_flags)
+	H.set_mob_push_flags(push_flags)
 	H.pass_flags = pass_flags
 
 /datum/species/proc/handle_death(mob/living/carbon/human/H) //Handles any species-specific death events (such as dionaea nymph spawns).

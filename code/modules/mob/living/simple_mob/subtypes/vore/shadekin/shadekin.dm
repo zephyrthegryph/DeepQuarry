@@ -7,8 +7,6 @@
 	icon_living = "map_example"
 	faction = FACTION_SHADEKIN
 	ui_icons = 'icons/mob/shadekin_hud.dmi'
-	mob_class = MOB_CLASS_HUMANOID
-	mob_bump_flag = HUMAN
 
 	endurance = 200
 
@@ -74,6 +72,8 @@
 	var/check_timer = 0
 
 CAPABILITIES(/mob/living/simple_mob/shadekin)
+	configure(mob_kind(mob_class = MOB_CLASS_HUMANOID, death_message = "phases to somewhere far away!"))
+	configure(mob_movement(bump = HUMAN))
 	verb_entry(/mob/proc/adjust_hive_range)
 
 /mob/living/simple_mob/shadekin/Initialize(mapload)
@@ -215,7 +215,6 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 	look.overlay(eye_icon_state)
 
 /mob/living/simple_mob/shadekin
-	death_message = "phases to somewhere far away!"
 
 /// They phase back to the dark when killed: a retreat, not a death, unless there is nowhere to go.
 /mob/living/simple_mob/shadekin/replace_death(gibbed)
@@ -230,7 +229,7 @@ CAPABILITIES(/mob/living/simple_mob/shadekin)
 
 	cut_overlays()
 	flick("tp_out",src)
-	act_message(src, null, others = "<b>%U%</b> [death_message]")
+	act_message(src, null, others = "<b>%U%</b> [kind_of(src).death_message]")
 	shadekin.respite_activating = TRUE
 
 	drop_l_hand()

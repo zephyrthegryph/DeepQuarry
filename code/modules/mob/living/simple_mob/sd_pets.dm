@@ -104,5 +104,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/passive/mouse/brown/feivel, preserve_mo
 	devourable = 0
 	digestable = 0
 	faction = FACTION_BAR
-	mob_bump_flag = 32
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
+
+CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
+	configure(mob_movement(bump = 32))

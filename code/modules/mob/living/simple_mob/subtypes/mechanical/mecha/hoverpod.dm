@@ -26,13 +26,13 @@
 	projectile_dispersion = 10
 	projectile_accuracy = -30
 	projectiletype = /obj/item/projectile/beam
-	base_attack_cooldown = 2 SECONDS
 
 	organ_names = /datum/decl/mob_organ_names/hoverpod
 
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/hoverpod)
+	configure(mob_kind(attack_cooldown = 2 SECONDS))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/manned

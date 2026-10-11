@@ -212,7 +212,6 @@
 /mob/living/simple_mob/
 
 /mob/living/simple_mob
-	death_message = "dies!"
 
 /mob/living/simple_mob/on_death(gibbed)
 	. = ..()

@@ -49,7 +49,6 @@
 
 	melee_damage_lower = 7 // About 14 DPS.
 	melee_damage_upper = 7
-	base_attack_cooldown = 10 // One attack a second.
 	attack_injury_kind = INJURY_PIERCE
 	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("bitten")
@@ -85,6 +84,9 @@
 	"silver" = "#fdfbf3", \
 	)
 	can_be_drop_prey = FALSE
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
+	configure(mob_kind(attack_cooldown = 15))
 
 /mob/living/simple_mob/animal/space/carp/Initialize(mapload)
 	. = ..()
@@ -289,7 +291,9 @@
 	meat_type = null
 	vore_icons = FALSE
 
-	mob_class = MOB_CLASS_PHOTONIC // Xeno-taser won't work on this as its not a 'real' carp.
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp/holographic)
+	configure(mob_kind(mob_class = MOB_CLASS_PHOTONIC))
+
 
 // Presumably the holodeck emag code requires this.
 // Pass TRUE to make safe. Pass FALSE to make unsafe.
@@ -370,7 +374,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/carp/puffer)
 
 // === merged from carp_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/space/carp
-	base_attack_cooldown = 15
 
 
 // === merged from carp_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

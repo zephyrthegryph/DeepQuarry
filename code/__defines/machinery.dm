@@ -247,6 +247,12 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The entry kind of item_combat() (code/game/objects/items/item_combat.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_COMBAT "item_combat"
 #define ITEM_COMBAT_KEY "item_combat"
+/// The entry kind of mob_movement() (code/modules/mob/mob_movement_trait.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_MOVEMENT "mob_movement"
+#define MOB_MOVEMENT_KEY "mob_movement"
+/// The entry kind of mob_kind() (code/modules/mob/mob_kind.dm) and the key its run-time writes publish.
+#define ENTRY_MOB_KIND "mob_kind"
+#define MOB_KIND_KEY "mob_kind"
 /// The entry kind of item_thrown() (code/game/objects/items/item_thrown.dm) and the key its run-time writes publish.
 #define ENTRY_ITEM_THROWN "item_thrown"
 #define ITEM_THROWN_KEY "item_thrown"

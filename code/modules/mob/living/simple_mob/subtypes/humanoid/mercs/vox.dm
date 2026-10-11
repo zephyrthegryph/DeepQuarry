@@ -189,7 +189,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/merc/voxpirate/boarder)
 	corpse = /obj/effect/landmark/mobcorpse/vox/suppressor
 	loot_list = list(/obj/item/gun/energy/sonic = 100)
 
-	base_attack_cooldown = 5 // Two attacks a second or so.
 	needs_reload = TRUE
 	reload_max = 30 //Gotta lay down that fire, son.
 

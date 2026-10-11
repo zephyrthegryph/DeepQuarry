@@ -384,7 +384,7 @@ CAPABILITIES(/obj/item/melee/energy/sword/ionic_rapier)
 		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
-		if(target.mob_class & MOB_CLASS_SYNTHETIC)
+		if(kind_of(target).mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
 			target.injure(INJURY_BURN, combat_of(src).force * 6, source = src) // 30 Burn, for 50 total.

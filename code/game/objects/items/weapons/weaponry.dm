@@ -155,9 +155,9 @@ CAPABILITIES(/obj/effect/energy_net)
 	if(M?.buckled_to() == src) //Just src?.buckled_to() someone
 		..()
 		layer = M.layer+1
-		M.can_pull_size = 0
+		M.set_can_pull_size(0)
 	else //Just unbuckled someone
-		M.can_pull_size = initial(M.can_pull_size)
+		M.set_can_pull_size(movement_of_type(M.type).pull_size)
 		consume(src)
 
 /obj/item/energy_net/shrink

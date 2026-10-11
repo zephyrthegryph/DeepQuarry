@@ -18,7 +18,6 @@
 	icon_dead = "drone0"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 
@@ -32,6 +31,9 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 	damage_fatigue_mult = 0 //Candy creatures. They will fight to the bitter end unaffected by their wounds. Also they have 25 health, do they really need slowdown?
+
+CAPABILITIES(/mob/living/simple_mob/vore/candy)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/vore/candy
 	vore_active = 1
@@ -429,7 +431,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	icon_dead = "slainouroboros"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/livingcandy)
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "candy"
 	icon_state = "ouroboros"
@@ -453,6 +454,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	special_attack_cooldown = 7 SECONDS
 
 CAPABILITIES(/mob/living/simple_mob/vore/candy/ouroboros)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	on_notice(/datum/notice/hit/projectile, then(PROC_REF(shed_critter)))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/shed_critter(datum/act/A)

@@ -20,7 +20,6 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/frost/broodling, broodling
 	endurance = 30
 
 	taser_kill = TRUE
-	base_attack_cooldown = 20
 
 	movement_cooldown = -1
 
@@ -130,7 +129,6 @@ TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling, broodl
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling
 	endurance = 30
 
-	base_attack_cooldown = 20
 
 	movement_cooldown = 1.5
 
@@ -173,6 +171,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/broodling)
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/frost/broodling)
 	after_init(2 MINUTES, then(PROC_REF(brood_expire)))
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/electric/broodling)
+	configure(mob_kind(attack_cooldown = 20))
 	after_init(2 MINUTES, then(PROC_REF(brood_expire)))
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/hunter/broodling)
 	after_init(2 MINUTES, then(PROC_REF(brood_expire)))
@@ -187,4 +186,5 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/thermic/broodling)
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling)
 	after_init(2 MINUTES, then(PROC_REF(brood_expire)))
 CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling)
+	configure(mob_kind(attack_cooldown = 20))
 	after_init(2 MINUTES, then(PROC_REF(brood_expire)))

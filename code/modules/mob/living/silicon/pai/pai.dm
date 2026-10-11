@@ -3,15 +3,12 @@
 	icon = 'icons/mob/pai.dmi'
 	icon_state = "pai-repairbot"
 
-	emote_type = 2		// pAIs emotes are heard, not seen, so they can be seen through a container (eg. person)
 	pass_flags = 1
 	mob_size = MOB_SMALL
 	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
 	holder_type = /obj/item/holder/pai
 
-	can_pull_size = ITEMSIZE_SMALL
-	can_pull_mobs = MOB_PULL_SMALLER
 
 	idcard_type = /obj/item/card/id
 	var/idaccessible = 0
@@ -102,6 +99,8 @@
 	vore_capacity_ex = list("stomach" = 1)
 
 CAPABILITIES(/mob/living/silicon/pai)
+	configure(mob_kind(death_message = "fizzles out and clatters to the floor...", emote_type = 2))
+	configure(mob_movement(pull_size = ITEMSIZE_SMALL, pull_mobs = MOB_PULL_SMALLER))
 	ref_one(nameof(hackdoor))
 	every(1 SECOND, then(PROC_REF(hack_tick)), when = nameof(hackdoor))
 	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)

@@ -22,7 +22,9 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor)
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/machinegun
 	projectiletype = /obj/item/projectile/bullet/hivebot
-	base_attack_cooldown = 0 // Extremly rapid fire with rather weak bullets.
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/precusor/machinegun)
+	configure(mob_kind(attack_cooldown = 0))
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/laser
 	projectiletype = /obj/item/projectile/energy/mob/precursor

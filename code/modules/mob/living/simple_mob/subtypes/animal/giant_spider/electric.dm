@@ -29,7 +29,6 @@
 
 	taser_kill = 0 //It -is- the taser.
 
-	base_attack_cooldown = 10
 	projectilesound = SFX_WEAPONS_TASER2
 	projectiletype = /obj/item/projectile/beam/stun/electric_spider
 

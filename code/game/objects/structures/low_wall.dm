@@ -147,7 +147,7 @@ MSG_DEF_SELF(low_wall/assembling_window, span_notice("Assembling window..."))
 				return OP_PASS
 
 			if((isliving(user)) && (Adjacent(user)) && !(user.incapacitated()))
-				if(O.w_class <= user.can_pull_size)
+				if(O.w_class <= movement_of(user).pull_size)
 					O.forceMove(loc)
 					auto_align(I, dq_interaction_click_params(user), TRUE)
 				else

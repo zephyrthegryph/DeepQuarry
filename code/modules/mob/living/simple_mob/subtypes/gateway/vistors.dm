@@ -62,7 +62,6 @@
 	icon_state = "drone0"
 	icon_living = "drone0"
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = "vistor"
 
@@ -88,6 +87,9 @@
 
 	loot_list = list(/obj/item/clothing/suit/armor/protectionbubble = 100
 			)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/should_special_attack(atom/A)
 	var/mob_count = 0				// Are there enough mobs to consider grenading?

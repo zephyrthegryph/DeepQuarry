@@ -11,9 +11,6 @@
 	endurance = 200
 	nutrition = 0
 
-	mob_bump_flag = ROBOT
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY //trundle trundle
 
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -32,7 +29,6 @@
 	var/list/robotdecal_on	// Lazy.
 	var/glowy_enabled = FALSE
 
-	can_be_antagged = TRUE
 
 //Icon stuff
 

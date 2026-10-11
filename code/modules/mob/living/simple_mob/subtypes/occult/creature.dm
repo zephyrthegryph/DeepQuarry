@@ -6,7 +6,6 @@
 	icon_living = "otherthing"
 	icon_dead = "otherthing-dead"
 
-	mob_class = MOB_CLASS_ABERRATION
 
 	faction = FACTION_CREATURE
 
@@ -33,6 +32,9 @@
 	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
+CAPABILITIES(/mob/living/simple_mob/creature)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
+
 // Strong Variant
 /mob/living/simple_mob/creature/strong
 	endurance = 160
@@ -43,7 +45,6 @@
 
 // Cult Variant
 /mob/living/simple_mob/creature/cult
-	mob_class = MOB_CLASS_DEMONIC
 
 	faction = FACTION_CULT
 
@@ -58,6 +59,9 @@
 	minbodytemp = 0
 
 	supernatural = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/creature/cult)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /mob/living/simple_mob/creature/cult/cultify()
 	return

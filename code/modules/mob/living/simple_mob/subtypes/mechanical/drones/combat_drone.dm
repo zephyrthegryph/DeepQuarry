@@ -45,7 +45,6 @@
 	movement_cooldown = 1.5
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
-	base_attack_cooldown = 5
 	projectiletype = /obj/item/projectile/beam/drone
 	projectilesound = SFX_WEAPONS_LASER3
 
@@ -61,6 +60,7 @@
 	var/obj/item/shield_projector/shields = null
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	configure(mob_kind(attack_cooldown = 5, death_message = "suddenly breaks apart."))
 	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/drone)
 
@@ -79,7 +79,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
 	delete_on_death = TRUE
 
 /mob/living/simple_mob/mechanical/combat_drone
-	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/combat_drone/on_death(gibbed)
 	..()

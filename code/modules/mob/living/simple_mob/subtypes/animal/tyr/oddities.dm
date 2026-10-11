@@ -13,7 +13,6 @@
 	projectiletype = /obj/item/projectile/energy/blob/rainbowfly
 	projectile_dispersion = 8
 	projectile_accuracy = -15
-	base_attack_cooldown = 5
 
 	glow_color = "#FF3300"
 	light_color = "#FF3300"
@@ -24,6 +23,9 @@
 	melee_damage_upper = 5
 
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
+
+CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
+	configure(mob_kind(attack_cooldown = 5))
 
 /obj/item/projectile/energy/blob/rainbowfly
 	damage = 10

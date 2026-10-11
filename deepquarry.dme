@@ -730,6 +730,8 @@
 #include "code\datums\geiger_sound.dm"
 #include "code\modules\lighting\overlay_lighting.dm"
 #include "code\datums\reactive_icon_update.dm"
+#include "code\modules\mob\mob_kind.dm"
+#include "code\modules\mob\mob_movement_trait.dm"
 #include "code\modules\mob\remote_view.dm"
 #include "code\modules\mob\living\turfslip.dm"
 #include "code\modules\mob\living\life\dizzy_shake.dm"

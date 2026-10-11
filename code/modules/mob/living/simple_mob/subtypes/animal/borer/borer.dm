@@ -24,7 +24,6 @@
 	mob_size = MOB_TINY // no landmines for you
 
 	universal_understand = TRUE
-	can_be_antagged = TRUE
 
 	holder_type = /obj/item/holder/borer
 

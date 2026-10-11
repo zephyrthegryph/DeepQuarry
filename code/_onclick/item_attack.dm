@@ -268,7 +268,7 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 // Same as above but actually does useful things.
 // W is the item being used in the attack, if any. modifier is if the attack should be longer or shorter than usual, for whatever reason.
 /mob/living/get_attack_speed(obj/item/W)
-	var/speed = base_attack_cooldown
+	var/speed = kind_of(src).attack_cooldown
 	if(W && istype(W))
 		speed = combat_of(W).attack_speed
 	return speed * factor(BF_ATTACK_SPEED)

@@ -101,9 +101,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/list/multicam_screens // REL_LIST (multicam.dm)
 	var/max_multicams = 6
 
-	can_be_antagged = TRUE
 
 CAPABILITIES(/mob/living/silicon/ai)
+	configure(mob_kind(can_be_antagged = TRUE, death_message = "gives one shrill beep before falling lifeless."))
 	// Hardlight nom (vore/eating/silicon.dm): the AI's eye is the actor and has to stay put while the hologram engulfs the prey.
 	op("holo_nom", ai(), takes("prey", "from"), wait(5 SECONDS, keeps = TARGET_PRESENT | STAY), then(PROC_REF(holo_nom_done)))
 	op("ai_status_displays", ai(), label("AI Status"), needs(req_self()), asks(/datum/prompt/choice, fields = list("title" = "AI Status", "question" = "Please, select a status:", "choices" = computed(PROC_REF(status_display_options)), "timeout" = 0), step = "emotion"), then(PROC_REF(ai_status_display_chosen)))

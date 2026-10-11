@@ -5,7 +5,6 @@
 
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
-	mob_class = MOB_CLASS_ABERRATION
 	pilot_type = /mob/living/simple_mob/humanoid/cultist/tesh
 	wreckage = /obj/item/cell/device/weapon/recharge/cult
 
@@ -28,6 +27,9 @@
 		/obj/item/stock_parts/matter_bin = 80,
 		/obj/item/prop/deconstructable/gigacell = 100
 		)
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/occult)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 
 /obj/item/projectile/energy/blood_bullet

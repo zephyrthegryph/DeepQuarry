@@ -9,9 +9,6 @@
 
 	// Generally we don't want simple_mobs to get displaced when bumped into due to it trivializing combat with windup attacks.
 	// Some subtypes allow displacement, like passive animals.
-	mob_bump_flag = HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
@@ -38,8 +35,6 @@
 	var/icon_rest = null			// The iconstate for resting, optional
 	var/has_eye_glow = FALSE		// If true, adds an overlay over the lighting plane for [icon_state]-eyes.
 	var/custom_eye_color = null
-	attack_icon = 'icons/effects/effects.dmi' //Just the default, played like the weapon attack anim
-	attack_icon_state = "slash" //Just the default
 
 	//Mob talking settings
 	universal_speak = 0				// Can all mobs in the entire universe understand this one?
@@ -180,6 +175,8 @@ TRACKED(/mob/living/simple_mob, r_hand_sprite)
 TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
+	configure(mob_kind(death_message = "dies!", attack_icon = 'icons/effects/effects.dmi', attack_icon_state = "slash", attack_cooldown = 10))
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = ~HEAVY))
 	ref_many(nameof(prey_excludes))
 	op("reload", ai(), wait(PROC_REF(reload_wait)), then(PROC_REF(reload_done)))
 	mob_attacks()
@@ -389,7 +386,7 @@ CAPABILITIES(/mob/living/simple_mob)
 	return verb
 
 /mob/living/simple_mob/is_sentient()
-	return mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
+	return kind_of(src).mob_class & (MOB_CLASS_HUMANOID|MOB_CLASS_ANIMAL|MOB_CLASS_SLIME) // Update this if needed.
 
 /mob/living/simple_mob/get_nametag_desc(mob/user)
 	return span_italics("[tt_desc]")
@@ -488,7 +485,6 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 // === merged from simple_mob_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob
 	melee_attack_delay = 1
-	base_attack_cooldown = 10
 	melee_miss_chance = 25
 
 	var/temperature_range = 40			// How close will they get to environmental temperature before their body stops changing its heat

@@ -10,9 +10,6 @@
 	preparing_arrest_sounds = null
 
 	combat_mode = TRUE
-	mob_bump_flag = HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = HEAVY
 
 	used_weapon = /obj/item/gun/energy/taser/xeno
 
@@ -22,6 +19,9 @@
 	botcard_access = list(ACCESS_RESEARCH, ACCESS_ROBOTICS, ACCESS_XENOBIOLOGY, ACCESS_XENOARCH, ACCESS_TOX, ACCESS_TOX_STORAGE, ACCESS_MAINT_TUNNELS)
 	retaliates = FALSE
 	var/xeno_stun_strength = 6
+
+CAPABILITIES(/mob/living/bot/secbot/ed209/slime)
+	configure(mob_movement(bump = HEAVY, swap = ~HEAVY, push = HEAVY))
 
 /mob/living/bot/secbot/ed209/slime/update_icons()
 	if(on && bot_busy())

@@ -38,7 +38,6 @@
 	pass_flags = PASSTABLE
 	density = FALSE
 	friendly = list("pats")
-	can_climb = TRUE
 	climbing_delay = 2.0
 
 	say_list_type = /datum/say_list/mothroach
@@ -46,6 +45,7 @@
 	allow_mind_transfer = TRUE
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
+	configure(mob_movement(can_climb = TRUE))
 	after_init(0, then(PROC_REF(mothroach_name_ready)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

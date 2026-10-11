@@ -35,7 +35,6 @@
 
 	melee_damage_lower = 2
 	melee_damage_upper = 6
-	base_attack_cooldown = 1 SECOND
 	attack_injury_kind = INJURY_PIERCE
 	attacktext = list("gouged")
 
@@ -55,6 +54,9 @@
 	harvest_results = list(
 		/obj/item/stack/material/cloth/diyaab = 10
 		)
+
+CAPABILITIES(/mob/living/simple_mob/animal/sif/diyaab)
+	configure(mob_kind(attack_cooldown = 1 SECOND))
 
 /datum/say_list/diyaab
 	speak = list("Awrr?", "Aowrl!", "Worrl.")

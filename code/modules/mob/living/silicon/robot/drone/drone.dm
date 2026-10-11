@@ -44,13 +44,7 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 	integrated_light_power = 3
 	local_transmit = 1
 
-	can_pull_size = ITEMSIZE_NO_CONTAINER
-	can_pull_mobs = MOB_PULL_SMALLER
 
-	mob_bump_flag = SIMPLE_ANIMAL
-	mob_swap_flags = SIMPLE_ANIMAL
-	mob_push_flags = SIMPLE_ANIMAL
-	mob_always_swap = 1
 
 	mob_size = MOB_SMALL
 
@@ -68,7 +62,6 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 
 	holder_type = /obj/item/holder/drone
 
-	can_be_antagged = FALSE
 
 	var/static/list/shell_types = list("Classic" = "repairbot", "Eris" = "maintbot")
 	var/can_pick_shell = TRUE
@@ -92,9 +85,11 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	module_type = /obj/item/robot_module/drone/construction
 	hat_x_offset = 1
 	hat_y_offset = -12
-	can_pull_mobs = MOB_PULL_SAME
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-constructiondrone")
+
+CAPABILITIES(/mob/living/silicon/robot/drone/construction)
+	configure(mob_movement(pull_mobs = MOB_PULL_SAME))
 
 /mob/living/silicon/robot/drone/mining
 	icon_state = "miningdrone"
@@ -103,9 +98,11 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	module_type = /obj/item/robot_module/drone/mining
 	hat_x_offset = 1
 	hat_y_offset = -12
-	can_pull_mobs = MOB_PULL_SAME
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-miningdrone")
+
+CAPABILITIES(/mob/living/silicon/robot/drone/mining)
+	configure(mob_movement(pull_mobs = MOB_PULL_SAME))
 
 /mob/living/silicon/robot/drone/Initialize(mapload)
 	. = ..(mapload, FALSE)
@@ -239,6 +236,8 @@ CAPABILITY_DEF(drone_shell, CAP_DRONE_SHELL, key = NONE)
 	return
 
 CAPABILITIES(/mob/living/silicon/robot/drone)
+	configure(mob_kind(can_be_antagged = FALSE))
+	configure(mob_movement(pull_size = ITEMSIZE_NO_CONTAINER, pull_mobs = MOB_PULL_SMALLER, bump = SIMPLE_ANIMAL, swap = SIMPLE_ANIMAL, push = SIMPLE_ANIMAL, always_swap = 1))
 	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)

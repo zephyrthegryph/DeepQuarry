@@ -6,7 +6,6 @@
 	var/obj/item/communicator/comm = null
 	var/item_tf = FALSE
 
-	emote_type = 2 //This lets them emote through containers.  The communicator has a image feed of the person calling them so...
 
 /mob/living/voice/Initialize(mapload)
 	add_language(LANGUAGE_GALCOM)
@@ -154,4 +153,5 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/voice)
+	configure(mob_kind(emote_type = 2))
 	ref_one(nameof(comm))

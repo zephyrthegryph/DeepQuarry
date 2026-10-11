@@ -16,8 +16,6 @@
 
 	mob_size = MOB_SMALL
 	pass_flags = PASSTABLE
-	can_pull_size = ITEMSIZE_TINY
-	can_pull_mobs = MOB_PULL_NONE
 	layer = MOB_LAYER
 	density = 0
 	movement_cooldown = 0.75 //roughly a bit faster than a person
@@ -49,6 +47,7 @@
 
 //Hat simulator stolen from slime code.
 CAPABILITIES(/mob/living/simple_mob/animal/passive/armadillo)
+	configure(mob_movement(pull_size = ITEMSIZE_TINY, pull_mobs = MOB_PULL_NONE))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 	op("armadillo_item", item(/obj/item), then(PROC_REF(armadillo_interaction_item)))
 	op("armadillo_hand_grab", hand(), ungated(), stance(I_GRAB), label("Take hat"), then(PROC_REF(armadillo_interaction_hand_grab)))

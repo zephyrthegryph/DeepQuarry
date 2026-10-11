@@ -55,6 +55,18 @@ SPECS = {
         fields={"toolspeed": "speed", "pry": "pry", "rock_climbing": "climbing"},
         skip={"code/game/objects/items/item_tooling.dm"},
     ),
+    "mob_movement": dict(
+        base="/mob", ctor="mob_movement", reader="movement_of", type_reader="movement_of_type",
+        fields={"mob_bump_flag": "bump", "mob_swap_flags": "swap", "mob_push_flags": "push", "mob_always_swap": "always_swap", "makes_dirt": "makes_dirt", "can_climb": "can_climb", "can_pull_size": "pull_size", "can_pull_mobs": "pull_mobs", "no_pull_when_living": "no_pull_when_living"},
+        skip={"code/modules/mob/mob_movement_trait.dm"},
+        skip_refs=r"(^|\.)species$",  # a species' own can_climb and death_message
+    ),
+    "mob_kind": dict(
+        base="/mob", ctor="mob_kind", reader="kind_of", type_reader="kind_of_type",
+        fields={"mob_class": "mob_class", "base_attack_cooldown": "attack_cooldown", "allow_self_surgery": "self_surgery", "inventory_panel_type": "inventory_panel", "can_be_antagged": "can_be_antagged", "use_me": "use_me", "emote_type": "emote_type", "death_message": "death_message", "attack_icon": "attack_icon", "attack_icon_state": "attack_icon_state"},
+        skip={"code/modules/mob/mob_kind.dm"},
+        skip_refs=r"(^|\.)species$",  # a species' own can_climb and death_message
+    ),
     "item_combat": dict(
         base="/obj/item", ctor="item_combat", reader="combat_of", type_reader="combat_of_type",
         fields={"force": "force", "sharp": "sharp", "edge": "edge", "armor_penetration": "armor_penetration",

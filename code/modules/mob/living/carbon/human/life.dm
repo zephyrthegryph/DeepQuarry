@@ -1683,10 +1683,10 @@
 	else //We aren't dead
 		src.sight &= ~(SEE_TURFS|SEE_MOBS|SEE_OBJS)
 
-		if(src.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
-			src.see_invisible = src.see_invisible_default
+		if(see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
+			src.see_invisible = see_invisible_default
 		else
-			src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : src.see_invisible_default
+			src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : see_invisible_default
 
 		// Do this early so certain stuff gets turned off before vision is assigned.
 		var/area/A = get_area(src)
@@ -1703,7 +1703,7 @@
 			if(R && R.word1 == GLOB.cultwords["see"] && R.word2 == GLOB.cultwords["hell"] && R.word3 == GLOB.cultwords["join"])
 				src.see_invisible = SEE_INVISIBLE_CULT
 			else
-				src.see_invisible = src.see_invisible_default
+				src.see_invisible = see_invisible_default
 				src.seer = 0
 
 		if(!src.seedarkness)
@@ -1714,10 +1714,10 @@
 		else
 			src.sight = src.species.get_vision_flags(src)
 			src.see_in_dark = src.species.darksight
-			if(src.see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
-				src.see_invisible = src.see_invisible_default
+			if(see_invisible_default > SEE_INVISIBLE_LEVEL_ONE)
+				src.see_invisible = see_invisible_default
 			else
-				src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : src.see_invisible_default
+				src.see_invisible = src.see_in_dark>2 ? SEE_INVISIBLE_LEVEL_ONE : see_invisible_default
 
 		var/glasses_processed = 0
 		var/obj/item/rig/rig = src.get_rig()
@@ -1748,7 +1748,7 @@
 		if(!glasses_processed && (src.species.get_vision_flags(src) > 0))
 			src.sight |= src.species.get_vision_flags(src)
 		if(!src.seer && !glasses_processed && src.seedarkness)
-			src.see_invisible = src.see_invisible_default
+			src.see_invisible = see_invisible_default
 
 		var/mob/observer/eye/eyeobj = src?.active_eye()
 		if(eyeobj && eyeobj?.eye_owner() != src)

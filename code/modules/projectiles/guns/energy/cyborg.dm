@@ -417,7 +417,7 @@ CAPABILITIES(/obj/item/melee/robotic/blade/ninja)
 		play_sfx(target, SFX_WEAPONS_BLADE1, 2)
 
 		// Make lesser robots really mad at us.
-		if(target.mob_class & MOB_CLASS_SYNTHETIC)
+		if(kind_of(target).mob_class & MOB_CLASS_SYNTHETIC)
 			if((target.ai_brain != null))
 				target.taunt(user)
 			target.injure(INJURY_BURN, combat_of(src).force * 6, hit_zone, src) // 30 Burn, for 50 total.
@@ -583,7 +583,7 @@ CAPABILITIES(/obj/item/melee/robotic/baton/slime)
 	if(!istype(L))
 		return ..()
 
-	if(L.mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
+	if(kind_of(L).mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
 		if(isslime(L))
 			var/mob/living/simple_mob/slime/S = L
 			S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.

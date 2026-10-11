@@ -24,6 +24,9 @@
 	digestable = 0
 	devourable = 0
 
+CAPABILITIES(/mob/living/simple_mob/construct)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC, can_be_antagged = TRUE, death_message = "collapses in a shattered heap."))
+
 /mob/living/simple_mob/mechanical/mecha
 	digestable = 0
 	devourable = 0

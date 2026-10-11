@@ -30,7 +30,7 @@
 		potential_damage = (melee_damage_lower + melee_damage_upper) / 2
 
 		// Treat potential_damage as estimated DPS. If the enemy attacks twice as fast as usual, it will double the number.
-		potential_damage *= 1 SECOND / (base_attack_cooldown + melee_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
+		potential_damage *= 1 SECOND / (kind_of(src).attack_cooldown + melee_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
 	else
 		var/obj/item/projectile/P = new projectiletype(src)
 		if(P.nodamage || P.taser_effect) // Tasers are somewhat less scary.
@@ -43,7 +43,7 @@
 			potential_damage += P.agony / 2
 		spent(P)
 
-		potential_damage *= 1 SECOND / (base_attack_cooldown + ranged_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
+		potential_damage *= 1 SECOND / (kind_of(src).attack_cooldown + ranged_attack_delay + injury_level) // Injury level should affect potential damage, thereby increasing the threat level
 
 	// Special attacks are ultra-specific to the mob so a generic threat assessment isn't really possible.
 

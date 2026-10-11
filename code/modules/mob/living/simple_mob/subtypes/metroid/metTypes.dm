@@ -333,7 +333,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	max_nutrition = 2200
 	nutrition = 0
 
-	makes_dirt = TRUE
 
 	projectiletype	= /obj/item/projectile/energy/metroidacid	//The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -358,6 +357,9 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/gamma, metroid_initial_sound,
 	evo_point = 1200
 	evo_limit = 1500
 	next = "/mob/living/simple_mob/metroid/juvenile/omega"
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/zeta)
+	configure(mob_movement(makes_dirt = TRUE))
 
 TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, SFX_METROID_METROIDZETA)
 
@@ -417,7 +419,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 	faction = "metroids"
 	max_nutrition = 2200
 	nutrition = 0
-	makes_dirt = TRUE
 	projectiletype	= /obj/item/projectile/energy/mob/smalllaser
 	projectilesound = SFX_WEAPONS_FLAMER // The sound I make when I do it
 
@@ -445,6 +446,9 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/zeta, metroid_initial_sound, 
 	next = "/mob/living/simple_mob/metroid/juvenile/queen"
 
 	death_sound_override = SFX_METROID_METROIDOMEGADEATH // We override the death sound to play our custom here
+
+CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/omega)
+	configure(mob_movement(makes_dirt = TRUE))
 
 TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound, SFX_METROID_METROIDOMEGA)
 
@@ -503,7 +507,6 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 	faction = "metroids"
 	max_nutrition = 2200
 	nutrition = 0
-	makes_dirt = TRUE
 	ranged_cooldown_time = 1.5 SECOND
 	projectiletype	= /obj/item/projectile/energy/metroidacid	// The projectiles I shoot
 	projectilesound = SFX_WEAPONS_SLASHMISS // The sound I make when I do it
@@ -532,6 +535,7 @@ TYPE_TABLE(/mob/living/simple_mob/metroid/juvenile/omega, metroid_initial_sound,
 	death_sound_override = SFX_METROID_METROIDQUEENDEATH // We override the death sound to play our custom here
 
 CAPABILITIES(/mob/living/simple_mob/metroid/juvenile/queen)
+	configure(mob_movement(makes_dirt = TRUE))
 	after_init(0, then(PROC_REF(queen_metroid_ready)))
 
 /mob/living/simple_mob/metroid/juvenile/queen/proc/queen_metroid_ready(datum/act/timer/A)

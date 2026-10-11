@@ -1060,7 +1060,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me
-		new_voice.emote_type = 1
+		new_voice.set_emote_type(1)
 	// Let the inhabitor know what happened to them
 	if(istype(src, /obj/item/mindbinder))
 		to_chat(new_voice,span_notice("Your mind has been stored in [src]!"))

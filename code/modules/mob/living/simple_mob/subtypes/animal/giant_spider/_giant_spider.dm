@@ -125,7 +125,6 @@
 	var/warning_warmup = 2 SECONDS // How long the leap telegraphing is.
 	var/warning_sound = SFX_WEAPONS_SPIDERLUNGE
 
-	no_pull_when_living = TRUE
 
 
 TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/giant_spider, broodling_initial_scale, null)
