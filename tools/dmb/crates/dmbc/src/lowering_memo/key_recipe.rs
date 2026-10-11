@@ -189,6 +189,11 @@ impl Layout {
     }
 }
 impl KeyRecipe {
+    /// Compare the producer's existing source slice, without constructing a key.
+    pub(crate) fn source_matches(&self, key: &[u8], source: &[u8]) -> bool {
+        key.get(self.source.clone()) == Some(source)
+    }
+
     pub fn new(key: &[u8], metadata: Arc<dm_ir::ProcedureMetadata>) -> Option<Self> {
         let layout = Layout::parse(key)?;
         if key.get(..PREFIX.len()) != Some(PREFIX)

@@ -44,6 +44,9 @@ impl VerifyPolicy {
             anonymous_initializer_mismatches: AtomicU64::new(0),
         }
     }
+    pub(crate) fn enabled(&self) -> bool {
+        !matches!(self.mode, Mode::Off)
+    }
     pub(crate) fn select(&self) -> bool {
         match self.mode {
             Mode::Off => false,

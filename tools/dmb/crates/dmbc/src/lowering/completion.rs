@@ -212,6 +212,34 @@ pub fn lower_frontend_completed_input_on_execution<
         )| {
             crate::daemon::control::checkpoint()
                 .map_err(|error| internal(body, error.to_string()))?;
+            // Fully qualified unchanged rows bypass key/ABI preparation. Current
+            // origins/helpers are still rebound through the same contribution core.
+            if symbolic && !execution.capture_references && !execution.selections_only {
+                if let (Some(store), Some(roster), Some(candidates), Some(row), Some(memo)) = (
+                    memo.and_then(|memo| memo.symbolic.as_ref()),
+                    local_inputs.as_ref(),
+                    candidate_roster.as_ref(),
+                    *prepared_body,
+                    memo,
+                ) {
+                    if !memo.verification.enabled() {
+                        if let Some(input) = store.lookup_unchanged_local(
+                            roster,
+                            candidates,
+                            memo.policy,
+                            host,
+                            frontend,
+                            row,
+                            execution.bodies,
+                        ) {
+                            memo.counts
+                                .resident_hits
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            return Ok((Some(consume(start + *local_position, Ok(input))), None));
+                        }
+                    }
+                }
+            }
             memo::admit_one_input(
                 frontend,
                 body,

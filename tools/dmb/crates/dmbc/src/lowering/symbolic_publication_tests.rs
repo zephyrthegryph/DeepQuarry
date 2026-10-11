@@ -9,6 +9,7 @@ fn identity() -> UnitIdentity {
 }
 fn record(key: &[u8], reads: Vec<ResolverRead>) -> Record {
     Record {
+        local: None,
         recipe: None,
         key: Arc::from(key),
         reads: reads.into(),

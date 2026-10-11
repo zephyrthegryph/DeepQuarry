@@ -503,6 +503,9 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
     memo.counts
         .recomputed
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let local_certificate = (!capture_references && !selections_only)
+        .then(|| symbolic_input::local_certificate(local_inputs?, current_body, memo.policy))
+        .flatten();
     let current_source = current_body.source();
     Ok(Admission::NeedsLowering(Box::new(move || {
         // Replay validates the stored complete read ledger (or its trusted domain
@@ -592,9 +595,10 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             );
         }
         result.map(|unit| {
-            CompletedInput::lowered(unit).with_admission(
-                admission.map(|a| a.with_metadata(Arc::clone(current_key.metadata))),
-            )
+            CompletedInput::lowered(unit).with_admission(admission.map(|a| {
+                a.with_metadata(Arc::clone(current_key.metadata))
+                    .with_local(local_certificate)
+            }))
         })
     })))
 }

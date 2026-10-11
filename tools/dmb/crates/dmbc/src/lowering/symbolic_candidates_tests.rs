@@ -32,6 +32,7 @@ fn symbolic_request_dispatch_uses_one_current_certificate_and_preserves_local_gu
         assert!(first.insert_record(
             identity,
             Record {
+                local: None,
                 recipe: None,
                 key: Arc::from(bytes),
                 reads: vec![ResolverRead {

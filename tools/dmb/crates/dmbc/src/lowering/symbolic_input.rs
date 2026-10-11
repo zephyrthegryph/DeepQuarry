@@ -42,7 +42,19 @@ struct DeclineCounters {
     capture_excluded: AtomicU64,
     nonreusable_completion: AtomicU64,
 }
+#[path = "symbolic_local.rs"]
+mod local;
+
+pub(super) fn local_certificate(
+    roster: &LocalInputRoster<'_>,
+    row: &PreparedBody<'_>,
+    policy: u128,
+) -> Option<local::Certificate> {
+    local::Certificate::issue(roster, row, policy)
+}
+
 struct Record {
+    local: Option<local::Certificate>,
     recipe: Option<crate::lowering_memo::key_recipe::KeyRecipe>,
     key: Arc<[u8]>,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
@@ -60,6 +72,7 @@ enum RecordValue {
     },
 }
 pub(crate) struct Admission {
+    local: Option<local::Certificate>,
     metadata: Option<Arc<dm_ir::ProcedureMetadata>>,
     store: Option<Arc<SessionSymbolicMemo>>,
     disk: Option<crate::lowering_memo::DiskWriter>,
@@ -69,6 +82,10 @@ pub(crate) struct Admission {
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 impl Admission {
+    pub(super) fn with_local(mut self, local: Option<local::Certificate>) -> Self {
+        self.local = local;
+        self
+    }
     pub(super) fn with_metadata(mut self, metadata: Arc<dm_ir::ProcedureMetadata>) -> Self {
         self.metadata = Some(metadata);
         self
@@ -244,6 +261,7 @@ impl CompletedInput {
             if let Some(store) = admission.store {
                 if value.is_reusable() {
                     let record = Record {
+                        local: admission.local,
                         recipe: admission.metadata.and_then(|metadata| {
                             crate::lowering_memo::key_recipe::KeyRecipe::new(
                                 &admission.key,
@@ -546,6 +564,31 @@ impl SessionSymbolicMemo {
             self.declines.read_changed.fetch_add(1, Ordering::Relaxed);
             return None;
         }
+        self.rebind_record(
+            record,
+            host,
+            frontend,
+            body,
+            prepared,
+            bodies,
+            selections_only,
+            verify,
+            current,
+        )
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn rebind_record<R: Resolver>(
+        &self,
+        record: &Arc<Record>,
+        host: &R,
+        frontend: &ColdFrontend,
+        body: &BodyOccurrence,
+        prepared: &PreparedUnit,
+        bodies: &dm_tree::frontend::BodyArena<'_>,
+        selections_only: bool,
+        verify: bool,
+        current: &PreparedBody<'_>,
+    ) -> Option<CompletedInput> {
         let artifact = match &record.value {
             RecordValue::Selections { facts, abi } => {
                 if !selections_only
@@ -672,6 +715,7 @@ pub(super) fn admission(
         |store| receipt_groups::grouped(&store.receipt_groups, reads.iter().cloned().collect()),
     );
     Some(Admission {
+        local: None,
         metadata: None,
         store,
         disk,
@@ -699,6 +743,7 @@ pub(super) fn disk_admission<R: Resolver>(
         .collect();
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
+        local: None,
         metadata: None,
         store: Some(store),
         disk: None,
@@ -727,6 +772,7 @@ pub(super) fn remember_selections<R: Resolver>(
         return;
     };
     let record = Record {
+        local: None,
         recipe: None,
         key: admission.key,
         reads: admission.reads,
@@ -754,6 +800,7 @@ pub(super) fn accepted_admission(
         accepted.reads.iter().cloned().collect(),
     );
     Some(Admission {
+        local: None,
         metadata: None,
         store: Some(store),
         disk: None,

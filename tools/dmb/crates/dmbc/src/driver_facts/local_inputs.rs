@@ -19,6 +19,28 @@ impl<'a> LocalInputRoster<'a> {
     ) -> Self {
         Self { frontend, units }
     }
+    pub(crate) fn metadata(
+        &self,
+        row: &PreparedBody<'_>,
+    ) -> Option<&std::sync::Arc<dm_ir::ProcedureMetadata>> {
+        if !row.authenticates(self.frontend) {
+            return None;
+        }
+        self.frontend
+            .snapshot
+            .tree
+            .member(row.body().member)?
+            .metadata
+            .procedure
+            .as_ref()
+    }
+    pub(crate) fn graph(&self) -> Option<&std::sync::Arc<dm_tree::frontend::CallableAbiGraph>> {
+        self.frontend
+            .callable_roster()
+            .ok()?
+            .abi()
+            .map(|abi| abi.graph())
+    }
     pub(crate) fn prepared(&self, row: &PreparedBody<'_>) -> Option<PreparedUnit> {
         if !row.authenticates(self.frontend) {
             return None;

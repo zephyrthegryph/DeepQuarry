@@ -112,6 +112,9 @@ impl SessionSymbolicMemo {
                 return;
             }
             census.slice("session_symbolic.keys", &record.key, true);
+            if let Some(local) = &record.local {
+                local.census(census);
+            }
             if let Some(recipe) = &record.recipe {
                 census.procedure_metadata("session_symbolic.key_metadata", &recipe.metadata);
             }
