@@ -897,7 +897,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	pixel_x = 0
 	default_pixel_x = 0
 	teppi_adult = FALSE
-	nutrition = 0 // a baby is born hungry
 	endurance = 50
 	movement_cooldown = 1
 	harm_intent_damage = 5
@@ -1098,3 +1097,6 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/alienanimals/teppi, REGISTRY_TEP
 	skin_color = "#f09ca9"
 	marking_type = "13"
 	horn_type = "0"
+
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/starting_nutrition() // a baby is born hungry
+	return 0

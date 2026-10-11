@@ -4684,7 +4684,7 @@ mapper can notice:
 
 * **Nutrition and hunger rate live in the body's metabolism** (`/datum/body` `food_energy`, `hunger_rate`): read `nutrition_of(L)` /
   `hunger_rate_of(L)`, written by `set_nutrition()` (which publishes MOB_KEY_NUTRITION) and `set_hunger_rate()` (308 sites). A type's
-  starting nutrition is `starting_nutrition()` (14 types overrode the var). A body swapped on a species change keeps the nutrition.
+  starting nutrition is `starting_nutrition()` (20 types overrode the var); a human's 200-400 is drawn by rand() there instead of a `rolls()` entry on the instance stream. A body swapped on a species change keeps the nutrition.
 * **Fear and tiredness are statuses** (STAT_FEAR, STAT_TIREDNESS): their points wear off one per cycle on the status layer instead of
   the human Life step decrementing them; the Life step keeps their effects and republishes MOB_KEY_STATUS each cycle so the HUD bands
   follow the count down.

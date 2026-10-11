@@ -49,7 +49,6 @@ I think I covered everything.
 ///
 
 /mob/living/simple_mob/vore/bigdragon
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	drag_buckle = FALSE
 	name = "large dragon"
 	desc = "A large, intimidating creature reminiscent of the traditional idea of medieval fire breathing lizards."
@@ -965,3 +964,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/export_style, login = TRUE)
 	verb_entry(/mob/living/simple_mob/vore/bigdragon/proc/import_style, login = TRUE)
 
+
+/mob/living/simple_mob/vore/bigdragon/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)
