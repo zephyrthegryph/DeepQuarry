@@ -19,3 +19,7 @@ processes. No new runtime executor or cache is introduced.
 Run either entrypoint with the same explicit native/template/DM/DD pins and an
 owned E:/dq-cache output root as callable_semantics_runtime. Root dispatches the
 bounded execution. No execution is performed by authoring this fixture.
+
+## Executed evidence
+
+On 2026-10-11, native source `00e44b6e7f` and BYOND 516.1687 matched the paired runtime contract, with zero runtime errors: `E:/dq-cache/dmb-static-lifetime-runtime/6fb283d43d1f4fce8b9fba32182946a5/receipt.json`. All four retained revisions also passed, matching fresh DMB/RSC and reference runtime values: `E:/dq-cache/dmb-static-lifetime-retained/f2c4262f6d0a4a3a895dec9b196a5f7f/receipt.json`. Two harness checks passed. This isolates static lifetime behavior; historical power-bridge causality and full-suite parity remain unproved.
