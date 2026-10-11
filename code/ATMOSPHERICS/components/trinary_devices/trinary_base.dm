@@ -21,13 +21,6 @@
 	var/datum/pipe_network/network2
 	var/datum/pipe_network/network3
 
-/obj/machinery/atmospherics/trinary/Initialize(mapload)
-	. = ..()
-
-	atmos_air_set(src, nameof(air1), new /datum/gas_mixture(air1_volume))
-	atmos_air_set(src, nameof(air2), new /datum/gas_mixture(air2_volume))
-	atmos_air_set(src, nameof(air3), new /datum/gas_mixture(air3_volume))
-
 /obj/machinery/atmospherics/trinary/init_dir()
 	initialize_directions = get_initialize_directions_trinary(dir, mirrored, tee)
 
@@ -188,6 +181,9 @@
 	return list(node1_connect, node2_connect, node3_connect)
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary)
+	gas_port(nameof(air1), volume = nameof(air1_volume))
+	gas_port(nameof(air2), volume = nameof(air2_volume))
+	gas_port(nameof(air3), volume = nameof(air3_volume))
 	pipe_device_switch()
 	pipe_device_unwrench()
 	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)

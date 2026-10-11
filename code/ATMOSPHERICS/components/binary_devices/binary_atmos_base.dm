@@ -12,12 +12,6 @@
 	var/datum/pipe_network/network1
 	var/datum/pipe_network/network2
 
-/obj/machinery/atmospherics/binary/Initialize(mapload)
-	. = ..()
-
-	atmos_air_set(src, nameof(air1), new /datum/gas_mixture(air1_volume))
-	atmos_air_set(src, nameof(air2), new /datum/gas_mixture(air2_volume))
-
 /obj/machinery/atmospherics/binary/init_dir()
 	switch(dir)
 		if(NORTH)
@@ -100,5 +94,7 @@
 
 
 CAPABILITIES(/obj/machinery/atmospherics/binary)
+	gas_port(nameof(air1), volume = nameof(air1_volume))
+	gas_port(nameof(air2), volume = nameof(air2_volume))
 	owns_one(nameof(air1), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(air2), on_destroy = ON_DESTROY_PRIVATE_COPY)
