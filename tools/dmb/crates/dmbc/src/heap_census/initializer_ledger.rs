@@ -69,6 +69,7 @@ mod tests {
         let classified = ClassifiedInitializers {
             accepted: Vec::new(),
             writes: vec![ClassifiedWrite {
+                source_features: Default::default(),
                 source_ordinal: 0,
                 write: dm_ir::InitializerWrite {
                     source_site: dm_ir::InitializerSite::Declaration,

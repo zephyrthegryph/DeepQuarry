@@ -242,6 +242,7 @@ fn prepared_metadata_reuse_checks_declarations_symbols_and_current_helper_order(
     };
     assert!(absent.path.is_err());
     let projection = crate::class_projection::ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

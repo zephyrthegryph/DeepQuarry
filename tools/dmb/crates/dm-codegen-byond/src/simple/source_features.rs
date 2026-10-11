@@ -14,6 +14,34 @@ impl SourceFeatures {
         self.native_graphics |= other.native_graphics;
     }
 }
+/// Observe one reference already selected by the constant evaluator. This uses
+/// the same typed selection context as executable expressions; it neither walks
+/// the enclosing expression nor emits a synthetic procedure.
+pub fn observe_reference_source_features(
+    expression: &Expr,
+    bindings: &LowerBindings,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &dyn dm_ir::Resolver,
+) -> Result<SourceFeatures, LowerError> {
+    let lookup = crate::lower_resolver::ProjectResolver {
+        modified_instances: Default::default(),
+        procedure_values: Default::default(),
+        procedure_statics: Default::default(),
+        resolver,
+        symbols,
+        slots: Default::default(),
+        resources: Default::default(),
+        instances: Default::default(),
+        runtime_types: Default::default(),
+        resource_search_context: None,
+    };
+    let mut compiler = super::compiler_context::compiler_context(bindings, Some(&lookup));
+    compiler.source_feature_reference(expression, true, "nameof reference")?;
+    if let Some(error) = compiler.resolver_failure.take() {
+        return Err(error);
+    }
+    Ok(compiler.result.source_features)
+}
 impl Compiler<'_> {
     fn feature_inherits(&self, path: &str, roots: &[&str]) -> Result<bool, LowerError> {
         if let Some(lookup) = self.lookup {

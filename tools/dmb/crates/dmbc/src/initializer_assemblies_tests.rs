@@ -136,6 +136,7 @@ fn ordered_group_and_current_token_roster_answers_are_exact_key_inputs() {
     };
     let owner = SymbolId::of("/");
     let write = |ordinal, name: &str| ClassifiedWrite {
+        source_features: Default::default(),
         source_ordinal: ordinal,
         write: dm_ir::InitializerWrite {
             source_site: dm_ir::InitializerSite::Declaration,

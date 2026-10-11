@@ -94,6 +94,7 @@ fn authored_gender_and_inheritance_match_captured_byond_headers() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

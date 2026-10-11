@@ -39,6 +39,7 @@ fn ordered_metadata_reuses_exact_owners_and_declines_changed_current_authority()
     };
     assert!(Arc::ptr_eq(a, b));
     let mut projection = crate::class_projection::ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

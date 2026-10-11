@@ -91,6 +91,7 @@ fn captured_matrix_headers_and_null_reset_match_full_projection_writer() {
     })
     .collect::<Vec<_>>();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

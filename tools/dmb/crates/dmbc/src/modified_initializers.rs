@@ -591,6 +591,7 @@ mod resource_tests {
         let classified = crate::initializer_policy::ClassifiedInitializers {
             accepted: Vec::new(),
             writes: vec![crate::initializer_policy::ClassifiedWrite {
+                source_features: Default::default(),
                 source_ordinal: 0,
                 write: startup.plan().writes[0].clone(),
                 default: crate::initializer_policy::DefaultValue::Scalar(

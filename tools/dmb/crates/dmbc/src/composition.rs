@@ -799,7 +799,10 @@ fn compose_records_access(
     }
     let final_validation = dm_profile::stage("composition.final_instruction_validation");
     let (external, debug) = final_instructions::validate(&dmb, &feature_images, executor)?;
-    let source_features = final_instructions::source_features(&dmb, &feature_images)?;
+    let mut source_features = final_instructions::source_features(&dmb, &feature_images)?;
+    if let Some((projection, _)) = projection {
+        source_features.union(projection.source_features);
+    }
     drop(feature_images);
     drop(final_validation);
     // All output-stage and final instruction checks are complete. Consuming

@@ -398,6 +398,7 @@ fn earlier_unrelated_write_preserves_fragment_locator_and_real_hit() {
     let mut classified = ClassifiedInitializers {
         accepted: Vec::new(),
         writes: vec![ClassifiedWrite {
+            source_features: Default::default(),
             source_ordinal: 0,
             write: target.clone(),
             default: DefaultValue::Scalar(dm_ir::SemanticValue::Null),

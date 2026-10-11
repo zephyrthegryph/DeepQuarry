@@ -6,6 +6,8 @@ use std::sync::atomic::AtomicU32;
 mod ancestry_receipts_tests;
 #[path = "direct_input_tests.rs"]
 mod direct_input_tests;
+#[path = "folded_features_tests.rs"]
+mod folded_features_tests;
 #[path = "preparation_tests.rs"]
 mod preparation_tests;
 

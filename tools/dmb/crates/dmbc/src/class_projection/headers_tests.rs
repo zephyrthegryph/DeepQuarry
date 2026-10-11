@@ -173,6 +173,7 @@ fn finalize_preserves_runtime_override_token_instead_of_parent_scalar() {
     }
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
@@ -277,6 +278,7 @@ fn authored_ancestor_assignment_overrides_native_subtype_default_even_when_uncha
         "pinned engine must exercise native subtype default"
     );
     let mut projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

@@ -35,6 +35,7 @@ fn retained_parent_projection_preserves_native_header_and_physical_identity() {
     let original = dmb.classes[client_index as usize].clone();
     let count = dmb.classes.len();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
@@ -103,6 +104,7 @@ fn procedure_literal_default_uses_exact_frozen_procedure_table_index() {
     ];
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
@@ -188,6 +190,7 @@ fn opaque_intrinsic_name_and_layer_use_native_records_without_syntax_flags() {
     let name = symbols.intern("name").unwrap();
     let layer = symbols.intern("layer").unwrap();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),
@@ -286,6 +289,7 @@ fn ordinary_source_root_matches_native_datum_parent_prototype() {
         .insert(dm_link::Table::Type, vec![Key::Type(path)]);
     let tables = dm_link::LinkTables::build(inventory).unwrap();
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

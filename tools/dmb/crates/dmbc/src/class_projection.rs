@@ -72,6 +72,7 @@ pub struct ProcedureChain {
 }
 #[derive(Clone, Debug)]
 pub struct ClassProjection {
+    pub(crate) source_features: dm_codegen_byond::SourceFeatures,
     pub(crate) type_construction: Arc<type_construction::TypeConstruction>,
     pub(crate) variable_records: std::sync::OnceLock<Arc<VariableRecordRoster>>,
     /// Current source binding is excluded from retained semantic field payloads.
@@ -166,6 +167,9 @@ pub fn project_classified_with_artifacts(
         Some(ledger.as_slice()),
         artifacts,
     )?;
+    for write in &classified.writes {
+        projection.source_features.union(write.source_features);
+    }
     let mut statics = Vec::new();
     for default in &ledger {
         if let dm_tree::initializers::InitializerOriginKind::ProcedureStatic { identity, .. } =
@@ -324,6 +328,7 @@ fn project_inner(
         None => Arc::new(method_roster::MethodRoster::produce(method_inputs)),
     };
     Ok(ClassProjection {
+        source_features: Default::default(),
         type_construction,
         variable_records: Default::default(),
         field_placements,

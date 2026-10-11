@@ -19,6 +19,7 @@ pub struct PreparedInitializerExpression {
     source: String,
     ast: dm_syntax::Expr,
     authored: Option<SymbolicExpression>,
+    source_features: dm_codegen_byond::SourceFeatures,
 }
 impl PreparedInitializerExpression {
     /// Compatibility syntax supplied by an evaluator; retention verifies it.
@@ -27,6 +28,7 @@ impl PreparedInitializerExpression {
             source,
             ast,
             authored: None,
+            source_features: Default::default(),
         }
     }
     /// Issue syntax directly from the common parser without mutable access.
@@ -42,6 +44,7 @@ impl PreparedInitializerExpression {
             source,
             ast,
             authored: None,
+            source_features: Default::default(),
         }))
     }
     pub fn source(&self) -> &str {
@@ -49,6 +52,12 @@ impl PreparedInitializerExpression {
     }
     pub fn ast(&self) -> &dm_syntax::Expr {
         &self.ast
+    }
+    pub(crate) fn set_source_features(&mut self, features: dm_codegen_byond::SourceFeatures) {
+        self.source_features = features;
+    }
+    pub(crate) fn source_features(&self) -> dm_codegen_byond::SourceFeatures {
+        self.source_features
     }
     pub(crate) fn parse_captured(
         value: &SymbolicExpression,
@@ -103,7 +112,9 @@ pub trait InitializerEvaluatorFactory: Sync {
         &self,
         current: Option<&crate::engine::EngineSnapshot>,
     ) -> Option<Arc<[u8]>> {
-        if current.is_some() { return None; }
+        if current.is_some() {
+            return None;
+        }
         self.immutable_initializer_policy_bytes()
     }
 
@@ -323,6 +334,8 @@ pub enum Phase {
 }
 #[derive(Clone, Debug)]
 pub struct ClassifiedWrite {
+    /// Typed reference facts from scalar evaluation, also retained without code.
+    pub source_features: dm_codegen_byond::SourceFeatures,
     pub source_ordinal: usize,
     pub write: InitializerWrite,
     pub default: DefaultValue,

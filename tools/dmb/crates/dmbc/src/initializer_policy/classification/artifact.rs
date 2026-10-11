@@ -22,6 +22,7 @@ enum RuntimeRecipe {
     },
 }
 pub(crate) struct SemanticClassification {
+    source_features: dm_codegen_byond::SourceFeatures,
     input: Option<ClassificationInput>,
     default: DefaultValue,
     phase: Option<Phase>,
@@ -279,7 +280,7 @@ pub(super) fn key(
     reuse: InitializerReuse<'_>,
     factory_policy: u128,
 ) -> Vec<u8> {
-    let mut key = b"dmbc-initializer-classification-v5-exact-input\0".to_vec();
+    let mut key = b"dmbc-initializer-classification-v6-folded-features\0".to_vec();
     key.extend_from_slice(&reuse.policy.to_le_bytes());
     key.extend_from_slice(&factory_policy.to_le_bytes());
     match reuse.resource_search_context {
@@ -415,6 +416,7 @@ impl SemanticClassification {
         };
         Some(Self {
             input: None,
+            source_features: pending.write.source_features,
             default: pending.write.default.clone(),
             phase: pending.write.phase,
             runtime,
@@ -459,6 +461,7 @@ impl SemanticClassification {
         };
         Some(PendingWrite {
             write: ClassifiedWrite {
+                source_features: self.source_features,
                 source_ordinal: ordinal,
                 write: write.clone(),
                 default: self.default.clone(),

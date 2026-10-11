@@ -521,52 +521,24 @@ fn compile_with_lookup_mode(
     emit_end: bool,
     reference_output: Option<reference_facts::ReferenceRequest<'_>>,
 ) -> Result<SimpleProc, Vec<LowerError>> {
-    let mut compiler = Compiler {
-        result: SimpleProc::default(),
-        reference_capture: if reference_output.is_some() {
-            match typed {
-                Some(TypedInput::Statements(view)) => Some(reference_facts::ReferenceCapture::new(
-                    view,
-                    reference_output
-                        .as_ref()
-                        .and_then(|request| request.body_span),
-                )),
-                _ => None,
-            }
-        } else {
-            None
-        },
-        bindings,
-        lookup,
-        debug,
-        debug_current: None,
-        debug_last: None,
-        statement_span: None,
-        diagnostic_expression_coordinates: false,
-        statement_mask: match typed {
-            Some(TypedInput::Statements(view)) => view.mask(),
+    let mut compiler = compiler_context::compiler_context(bindings, lookup);
+    compiler.reference_capture = if reference_output.is_some() {
+        match typed {
+            Some(TypedInput::Statements(view)) => Some(reference_facts::ReferenceCapture::new(
+                view,
+                reference_output
+                    .as_ref()
+                    .and_then(|request| request.body_span),
+            )),
             _ => None,
-        },
-        discarded_call_root: None,
-        resolver_failure: std::cell::RefCell::new(None),
-        locals: Vec::new(),
-        local_slots: dm_syntax::ScopeMap::default(),
-        local_declarations: HashMap::new(),
-        local_types: dm_syntax::ScopeMap::default(),
-        string_roster: StringRoster::default(),
-        seen_classes: BTreeSet::new(),
-        seen_resources: BTreeSet::new(),
-        next_label: 0,
-        label_try_depths: HashMap::new(),
-        user_labels: HashMap::new(),
-        user_label_iterator_depths: HashMap::new(),
-        label_breaks: HashMap::new(),
-        label_loop_depths: HashMap::new(),
-        label_iterator_depths: HashMap::new(),
-        try_depth: 0,
-        loops: Vec::new(),
-        breaks: Vec::new(),
-        iterator_depth: 0,
+        }
+    } else {
+        None
+    };
+    compiler.debug = debug;
+    compiler.statement_mask = match typed {
+        Some(TypedInput::Statements(view)) => view.mask(),
+        _ => None,
     };
     if let Some(provider) = debug {
         compiler.debug_current = Some(
@@ -937,9 +909,11 @@ struct Compiler<'a> {
     iterator_depth: usize,
 }
 
+#[path = "simple/compiler_context.rs"]
+mod compiler_context;
 #[path = "simple/source_features.rs"]
 mod source_features;
-pub use source_features::SourceFeatures;
+pub use source_features::{observe_reference_source_features, SourceFeatures};
 #[path = "simple/assignments.rs"]
 mod assignments;
 #[path = "simple/predefined_resolution.rs"]

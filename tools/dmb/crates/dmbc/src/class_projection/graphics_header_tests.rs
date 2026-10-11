@@ -2,7 +2,7 @@
 use super::*;
 use crate::class_projection::{project, CapturedFieldEvaluator};
 use dm_ir::{SemanticValue, SymbolicExpression};
-use std::{collections::BTreeMap, path::Path};
+use std::path::Path;
 
 struct Source(String);
 impl dm_preprocess::SourceProvider for Source {
@@ -24,6 +24,14 @@ fn declaration_only_graphics_and_custom_parent_controls_match_pinned_headers() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/translation/graphics_access");
     let seed = Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin")).unwrap();
     assert_eq!(seed.header.flags & 0x40, 0x40);
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let frontend_seed = engine.frontend_seed();
     for name in [
         "declaration_only",
         "datum_custom",
@@ -31,13 +39,17 @@ fn declaration_only_graphics_and_custom_parent_controls_match_pinned_headers() {
         "global_custom",
     ] {
         let text = std::fs::read_to_string(root.join(format!("{name}.dm"))).unwrap();
-        let frontend = dm_tree::frontend::build(
+        let frontend = dm_tree::frontend::build_with_config(
             Path::new("graphics.dme"),
             &Source(text),
-            &BTreeMap::new(),
-            1,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(&frontend_seed),
+                observer: None,
+            },
         )
-        .unwrap();
+        .unwrap_or_else(|error| panic!("{name}: {error:?}"));
         let projection =
             project(&frontend.snapshot, &frontend.emission_order, &NullFields).unwrap();
         let expected =

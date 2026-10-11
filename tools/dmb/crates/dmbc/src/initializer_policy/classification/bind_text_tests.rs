@@ -9,6 +9,7 @@ fn runtime_binding_preserves_current_tokens_ordinals_and_exact_syntax() {
     let source = "list(1, list(2, 3))";
     let expression = Arc::new(dm_syntax::parse_expression(source).expr.unwrap());
     let payload = SemanticClassification {
+        source_features: Default::default(),
         input: None,
         default: DefaultValue::Scalar(SemanticValue::Null),
         phase: None,

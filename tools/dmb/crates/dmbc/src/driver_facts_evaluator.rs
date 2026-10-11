@@ -1,6 +1,8 @@
 use super::*;
 #[path = "driver_constructor_diagnostics.rs"]
 mod constructor_diagnostics;
+#[path = "driver_folded_features.rs"]
+mod folded_features;
 
 /// One immutable resolver must include the selected scalar constant overlay,
 /// engine constants and captured resources. No filesystem access occurs here.
@@ -144,6 +146,16 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
+        self.scalar_ast_in_with_features(owner, ast, procedure, active, None)
+    }
+    fn scalar_ast_in_with_features(
+        &self,
+        owner: SymbolId,
+        ast: &dm_syntax::Expr,
+        procedure: Option<dm_ir::ProcedureIdentity>,
+        active: &RefCell<std::collections::HashSet<ActiveConstant>>,
+        source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
+    ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
                 return Err("modified default requires an explicit type path".into());
@@ -186,7 +198,16 @@ impl DriverEvaluator<'_> {
             return Ok(Some(SemanticValue::ModifiedInstance(Arc::new(descriptor))));
         }
         let failure = RefCell::new(None);
-        let result = dm_tree::constants::evaluate_expr_with_resources_and_calls(
+        let observe_nameof = |expr: &dm_syntax::Expr| {
+            if let Some(features) = source_features {
+                match self.nameof_source_features(owner, procedure, expr) {
+                    Ok(observed) => features.borrow_mut().union(observed),
+                    Err(error) => *failure.borrow_mut() = Some(error),
+                }
+            }
+        };
+        let observer = source_features.map(|_| &observe_nameof as &dyn Fn(&dm_syntax::Expr));
+        let result = dm_tree::constants::evaluate_expr_with_resources_and_calls_and_nameof_observer(
             ast,
             |name| {
                 let unqualified = !name.contains("::");
@@ -454,6 +475,7 @@ impl DriverEvaluator<'_> {
                 }
             },
             self.pure_calls,
+            observer,
         );
         if let Some(error) = failure.into_inner() {
             return Err(error);
@@ -543,7 +565,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
     fn immutable_initializer_policy_bytes(&self) -> Option<Arc<[u8]>> {
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
-        let mut bytes = b"dmbc-driver-initializer-policy-v2;typed-constructor-absence\0".to_vec();
+        let mut bytes = b"dmbc-driver-initializer-policy-v3;folded-source-features\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -561,7 +583,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a906)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a907)
     }
     fn with_recording_evaluator(
         &self,
@@ -712,7 +734,7 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         ),
         String,
     > {
-        let Some(prepared) =
+        let Some(mut prepared) =
             crate::initializer_policy::PreparedInitializerExpression::parse_captured(
                 expression,
                 self.symbols,
@@ -728,14 +750,17 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
         if let Some(reason) = self.constructor_reference_error(write, ast) {
             return Ok((Evaluation::SourceError(reason), Some(prepared)));
         }
+        let source_features = RefCell::new(dm_codegen_byond::SourceFeatures::default());
         let evaluation = self
-            .scalar_ast_in(
+            .scalar_ast_in_with_features(
                 write.lexical_owner,
                 ast,
                 write.lexical_procedure,
                 &RefCell::new(std::collections::HashSet::new()),
+                Some(&source_features),
             )?
             .map_or(Evaluation::Runtime, Evaluation::Scalar);
+        prepared.set_source_features(source_features.into_inner());
         Ok((evaluation, Some(prepared)))
     }
     fn evaluate_ast_write(

@@ -41,8 +41,8 @@ fn classify_pending<'a>(
             let InitializerValue::Expression(value) = &original.value else {
                 return Err(format!("{label} header property requires an authored value").into());
             };
-            let Evaluation::Scalar(value) = evaluator.evaluate_write(original, value)?.checked()?
-            else {
+            let (evaluation, prepared) = evaluator.evaluate_prepared_write(original, value)?;
+            let Evaluation::Scalar(value) = evaluation.checked()? else {
                 return Err(format!("{label} header property requires a captured scalar").into());
             };
             let name = symbols
@@ -51,6 +51,9 @@ fn classify_pending<'a>(
             domain.validate(name, &value)?;
             classified.push(PendingWrite {
                 write: ClassifiedWrite {
+                    source_features: prepared
+                        .as_ref()
+                        .map_or(Default::default(), |value| value.source_features()),
                     source_ordinal: ordinal,
                     write: original.clone(),
                     default: DefaultValue::Scalar(value),
@@ -142,6 +145,7 @@ fn classify_pending<'a>(
                 let default = DefaultValue::Scalar(SemanticValue::Null);
                 classified.push(PendingWrite {
                     write: ClassifiedWrite {
+                        source_features: Default::default(),
                         source_ordinal: ordinal,
                         write,
                         default,
@@ -155,6 +159,7 @@ fn classify_pending<'a>(
                 continue;
             }
         }
+        let mut source_features = dm_codegen_byond::SourceFeatures::default();
         let mut parsed_runtime = None;
         let mut parsed_runtime_source = None;
         let mut pending_key = None;
@@ -165,6 +170,9 @@ fn classify_pending<'a>(
             }
             InitializerValue::Expression(value) => {
                 let (evaluation, prepared) = evaluator.evaluate_prepared_write(&write, value)?;
+                source_features = prepared
+                    .as_ref()
+                    .map_or(Default::default(), |value| value.source_features());
                 match evaluation.checked()? {
                     Evaluation::Scalar(value) if !matches!(value, SemanticValue::List(_)) => {
                         (DefaultValue::Scalar(value), None)
@@ -192,6 +200,7 @@ fn classify_pending<'a>(
                         {
                             classified.push(PendingWrite {
                                 write: ClassifiedWrite {
+                                    source_features,
                                     source_ordinal: ordinal,
                                     write,
                                     default: DefaultValue::Transform(matrix),
@@ -240,6 +249,7 @@ fn classify_pending<'a>(
         };
         classified.push(PendingWrite {
             write: ClassifiedWrite {
+                source_features,
                 source_ordinal: ordinal,
                 write,
                 default,

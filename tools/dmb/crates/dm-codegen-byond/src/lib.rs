@@ -31,7 +31,7 @@ pub use simple::{
     compile_statement_view_with_resolver, compile_statement_view_with_resolver_and_references,
     compile_statement_view_with_resolver_and_references_at, compile_typed_scopes_with_resolver,
     compile_typed_statements_with_resolver, decode_constant_string_literal, nameof_reference,
-    typed_statement_view_supported, typed_statements_supported,
+    observe_reference_source_features, typed_statement_view_supported, typed_statements_supported,
     typed_statements_supported_for_capture, ArgumentMetadata, DebugSourceProvider,
     DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan,
     ProcedureWarning, SharedLowerBindings, SimpleProc, SourceFeatures,

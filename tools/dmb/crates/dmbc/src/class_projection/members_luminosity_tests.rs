@@ -34,6 +34,7 @@ fn authored_baseline_luminosity_and_inherited_selector_match_pinned_byond() {
     dmb.classes.push(record);
     let baseline = f32::from(dmb.classes[area_id as usize].luminosity());
     let projection = ClassProjection {
+        source_features: Default::default(),
         type_construction: Default::default(),
         variable_records: Default::default(),
         field_placements: Default::default(),

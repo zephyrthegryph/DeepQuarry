@@ -132,15 +132,33 @@ pub fn evaluate_expr_with_resources_and_calls(
     resource: impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
 ) -> Result<Option<Constant>, PureCallError> {
+    evaluate_expr_with_resources_and_calls_and_nameof_observer(
+        expression, resolve, decode, nameof, resource, calls, None,
+    )
+}
+/// Observe typed nameof references during the same evaluation traversal,
+/// including unevaluated branches. The observer must not evaluate their values.
+/// Existing adapters retain their original traversal by passing no observer.
+pub fn evaluate_expr_with_resources_and_calls_and_nameof_observer(
+    expression: &Expr,
+    resolve: impl Fn(&str) -> Option<Constant>,
+    decode: impl Fn(&str) -> Option<Vec<u8>>,
+    nameof: impl Fn(&Expr) -> Option<String>,
+    resource: impl Fn(&str) -> Option<crate::SymbolId>,
+    calls: Option<&dyn PureCalls>,
+    observer: Option<&dyn Fn(&Expr)>,
+) -> Result<Option<Constant>, PureCallError> {
     let error = std::cell::RefCell::new(None);
     let value = eval(
-        expression, &resolve, &decode, &nameof, &resource, calls, &error,
+        expression, &resolve, &decode, &nameof, &resource, calls, &error, observer,
     );
     match error.into_inner() {
         Some(error) => Err(error),
         None => Ok(value),
     }
 }
+#[path = "constants_reference_observer.rs"]
+mod reference_observer;
 fn eval(
     expr: &Expr,
     resolve: &impl Fn(&str) -> Option<Constant>,
@@ -149,6 +167,7 @@ fn eval(
     resource: &impl Fn(&str) -> Option<crate::SymbolId>,
     calls: Option<&dyn PureCalls>,
     error: &std::cell::RefCell<Option<PureCallError>>,
+    observer: Option<&dyn Fn(&Expr)>,
 ) -> Option<Constant> {
     use Constant::*;
     let boolean = |value| Number(if value { 1.0 } else { 0.0 });
@@ -157,7 +176,9 @@ fn eval(
         ExprKind::Ident(name) => resolve(name)?,
         ExprKind::TypePath(path) => TypePath(path.clone()),
         ExprKind::StaticMember { object, selector } => {
-            let TypePath(path) = eval(object, resolve, decode, nameof, resource, calls, error)?
+            let TypePath(path) = eval(
+                object, resolve, decode, nameof, resource, calls, error, observer,
+            )?
             else {
                 return None;
             };
@@ -168,16 +189,25 @@ fn eval(
             let [argument] = args.as_slice() else {
                 return None;
             };
+            reference_observer::observe_unevaluated(expr, observer);
             Text(nameof(argument)?)
         }
         ExprKind::Call { callee, args } => {
             let ExprKind::Ident(name) = &callee.kind else {
+                reference_observer::observe_unevaluated(expr, observer);
                 return None;
             };
-            let policy = calls.filter(|policy| policy.accepts(name))?;
+            let Some(policy) = calls.filter(|policy| policy.accepts(name)) else {
+                reference_observer::observe_unevaluated(expr, observer);
+                return None;
+            };
             let arguments = args
                 .iter()
-                .map(|argument| eval(argument, resolve, decode, nameof, resource, calls, error))
+                .map(|argument| {
+                    eval(
+                        argument, resolve, decode, nameof, resource, calls, error, observer,
+                    )
+                })
                 .collect::<Vec<_>>();
             if error.borrow().is_some() {
                 return None;
@@ -215,9 +245,13 @@ fn eval(
                 Number(n)
             }
         }
-        ExprKind::Group(inner) => eval(inner, resolve, decode, nameof, resource, calls, error)?,
+        ExprKind::Group(inner) => eval(
+            inner, resolve, decode, nameof, resource, calls, error, observer,
+        )?,
         ExprKind::Unary { op, value } => {
-            let value = eval(value, resolve, decode, nameof, resource, calls, error)?;
+            let value = eval(
+                value, resolve, decode, nameof, resource, calls, error, observer,
+            )?;
             match op.as_str() {
                 "!" => boolean(!value.truth()),
                 "+" => Number(value.number()?),
@@ -227,22 +261,35 @@ fn eval(
             }
         }
         ExprKind::Binary { op, lhs, rhs } => {
-            let left = eval(lhs, resolve, decode, nameof, resource, calls, error)?;
+            let Some(left) = eval(
+                lhs, resolve, decode, nameof, resource, calls, error, observer,
+            ) else {
+                reference_observer::observe_unevaluated(rhs, observer);
+                return None;
+            };
             if op == "&&" {
                 return if left.truth() {
-                    eval(rhs, resolve, decode, nameof, resource, calls, error)
+                    eval(
+                        rhs, resolve, decode, nameof, resource, calls, error, observer,
+                    )
                 } else {
+                    reference_observer::observe_unevaluated(rhs, observer);
                     Some(left)
                 };
             }
             if op == "||" {
                 return if left.truth() {
+                    reference_observer::observe_unevaluated(rhs, observer);
                     Some(left)
                 } else {
-                    eval(rhs, resolve, decode, nameof, resource, calls, error)
+                    eval(
+                        rhs, resolve, decode, nameof, resource, calls, error, observer,
+                    )
                 };
             }
-            let right = eval(rhs, resolve, decode, nameof, resource, calls, error)?;
+            let right = eval(
+                rhs, resolve, decode, nameof, resource, calls, error, observer,
+            )?;
             // Authored lookup paths are not runtime content identities. Do not
             // fold resource comparisons/arithmetic from path equality.
             if matches!(left, Resource(_)) || matches!(right, Resource(_)) {
@@ -305,20 +352,28 @@ fn eval(
             condition,
             then_value,
             else_value,
-        } => eval(
-            if eval(condition, resolve, decode, nameof, resource, calls, error)?.truth() {
-                then_value
+        } => {
+            let Some(condition) = eval(
+                condition, resolve, decode, nameof, resource, calls, error, observer,
+            ) else {
+                reference_observer::observe_unevaluated(then_value, observer);
+                reference_observer::observe_unevaluated(else_value, observer);
+                return None;
+            };
+            let (selected, skipped) = if condition.truth() {
+                (then_value, else_value)
             } else {
-                else_value
-            },
-            resolve,
-            decode,
-            nameof,
-            resource,
-            calls,
-            error,
-        )?,
-        _ => return None,
+                (else_value, then_value)
+            };
+            reference_observer::observe_unevaluated(skipped, observer);
+            eval(
+                selected, resolve, decode, nameof, resource, calls, error, observer,
+            )?
+        }
+        _ => {
+            reference_observer::observe_unevaluated(expr, observer);
+            return None;
+        }
     };
     if matches!(result, Number(n) if n.is_nan()) {
         None
