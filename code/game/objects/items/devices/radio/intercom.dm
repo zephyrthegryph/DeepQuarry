@@ -94,9 +94,13 @@ CAPABILITIES(/obj/item/radio/intercom)
 
 /obj/item/radio/intercom/omni
 	name = "global announcer"
-/obj/item/radio/intercom/omni/Initialize(mapload)
-	channels = GLOB.radiochannels.Copy()
-	return ..()
+
+CAPABILITIES(/obj/item/radio/intercom/omni)
+	derives(nameof(channels), PROC_REF(all_channels))
+
+/// The global announcer speaks on every channel (derives(), at init).
+/obj/item/radio/intercom/omni/proc/all_channels()
+	return GLOB.radiochannels.Copy()
 
 /obj/item/radio/intercom/department/medbay/starting_channels()
 	return GLOB.default_medbay_channels.Copy()
