@@ -670,6 +670,13 @@ fn lexical_type_namespace_exclusion_preserves_authored_shadows_and_real_lowering
     assert_eq!(host.resolve(Q::VarStorage { owner, name }), M::Missing);
     assert_eq!(host.resolve(Q::GlobalVar(name)), M::Missing);
     assert_eq!(
+        host.resolve(Q::VarStorage {
+            owner,
+            name: SymbolId::of("__IMPLIED_TYPE__")
+        }),
+        M::Missing
+    );
+    assert_eq!(
         host.resolve(Q::HasMemberVar { owner, name }),
         M::Presence(false)
     );
@@ -713,4 +720,12 @@ fn lexical_type_exclusion_checks_root_globals_and_generated_fields() {
             .is_err()
     );
     assert!(verify_lexical_type_namespace(&catalog, &BTreeSet::new()).is_ok());
+    assert!(verify_lexical_type_namespace(
+        &catalog,
+        &BTreeSet::from([SymbolId::of("__IMPLIED_TYPE__")])
+    )
+    .is_err());
+    let implied =
+        serde_json::json!({"Types": [{"Path": "/", "GlobalVariables": {"__IMPLIED_TYPE__": 0}}]});
+    assert!(verify_lexical_type_namespace(&implied, &BTreeSet::new()).is_err());
 }

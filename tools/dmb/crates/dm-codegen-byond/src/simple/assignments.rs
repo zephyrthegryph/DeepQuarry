@@ -506,6 +506,13 @@ impl Compiler<'_> {
             ExprKind::Ident(name) => name == "new",
             ExprKind::Call { callee, args } => matches!(&callee.kind, ExprKind::Ident(name)
                 if name == "new" || (name == "locate" && args.is_empty())),
+            ExprKind::Unary { op, value } if op == "new" => match &value.kind {
+                ExprKind::Ident(name) => name == "__IMPLIED_TYPE__",
+                ExprKind::Call { callee, .. } => {
+                    matches!(&callee.kind, ExprKind::Ident(name) if name == "__IMPLIED_TYPE__")
+                }
+                _ => false,
+            },
             ExprKind::Group(inner) => Self::assignment_needs_target_type(inner),
             ExprKind::Binary { op, lhs, rhs } if op == "||" || op == "&&" => {
                 Self::assignment_needs_target_type(lhs) || Self::assignment_needs_target_type(rhs)
@@ -629,6 +636,32 @@ impl Compiler<'_> {
             self.result.code.items.push(CodeItem::Label(end_label));
             return Ok(());
         }
+        // Explicit implied-type construction uses the same target-type producer
+        // as bare new. Lexical locals, parameters, fields and globals still win.
+        let implied_args = match &expr.kind {
+            ExprKind::Unary { op, value } if op == "new" => match &value.kind {
+                ExprKind::Ident(name) if name == "__IMPLIED_TYPE__" => Some(&[][..]),
+                ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "__IMPLIED_TYPE__") => {
+                    Some(args.as_slice())
+                }
+                _ => None,
+            },
+            _ => None,
+        };
+        let implied_args = if implied_args.is_some()
+            && !self.local_slots.contains_key("__IMPLIED_TYPE__")
+            && !self
+                .bindings
+                .parameters
+                .iter()
+                .any(|name| name == "__IMPLIED_TYPE__")
+            && !self.has_field("__IMPLIED_TYPE__")?
+            && !self.has_visible_global("__IMPLIED_TYPE__")?
+        {
+            implied_args
+        } else {
+            None
+        };
         let inferred_new_args: Option<&[Expr]> = match &expr.kind {
             ExprKind::Ident(name) if name == "new" => Some(&[]),
             ExprKind::Call { callee, args } if matches!(&callee.kind, ExprKind::Ident(name) if name == "new") => {
@@ -636,7 +669,7 @@ impl Compiler<'_> {
             }
             _ => None,
         };
-        if let Some(args) = inferred_new_args {
+        if let Some(args) = inferred_new_args.or(implied_args) {
             let type_name = declaration
                 .strip_prefix("var/")
                 .and_then(|raw| raw.rsplit_once('/'))
@@ -664,16 +697,14 @@ impl Compiler<'_> {
             {
                 self.named_arguments(args, statement)?;
                 self.emit(0xcf, vec![]);
-            } else if let [
-                Expr {
-                    kind:
-                        ExprKind::Call {
-                            callee,
-                            args: list_args,
-                        },
-                    ..
-                },
-            ] = args
+            } else if let [Expr {
+                kind:
+                    ExprKind::Call {
+                        callee,
+                        args: list_args,
+                    },
+                ..
+            }] = args
             {
                 if matches!(&callee.kind, ExprKind::Ident(name) if name == "arglist")
                     && list_args.len() == 1

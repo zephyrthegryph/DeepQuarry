@@ -579,3 +579,22 @@ fn numeric_range_binding_matches_native_iteration_state() {
         ]
     );
 }
+
+#[test]
+fn implied_type_constructor_uses_target_type_and_preserves_local_shadow() {
+    let compile = |body: &str| {
+        let ast = dm_syntax::parse(&format!("/proc/probe()\n{body}"));
+        assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        compile_fixture_proc_with_bindings(&ast.items[0].children, &LowerBindings::default())
+            .unwrap()
+    };
+    let bare = compile("    var/datum/point/value = new(1)\n    return value\n");
+    let implied =
+        compile("    var/datum/point/value = new __IMPLIED_TYPE__(1)\n    return value\n");
+    assert_eq!(bare.code, implied.code);
+    let explicit = compile("    var/__IMPLIED_TYPE__ = /datum/point\n    var/datum/other/value = new __IMPLIED_TYPE__\n    return value\n");
+    let renamed = compile(
+        "    var/chosen = /datum/point\n    var/datum/other/value = new chosen\n    return value\n",
+    );
+    assert_eq!(explicit.code, renamed.code);
+}

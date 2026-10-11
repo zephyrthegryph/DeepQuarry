@@ -705,8 +705,10 @@ fn verify_lexical_type_namespace(
                 let values = values
                     .as_object()
                     .ok_or("native variable domain malformed")?;
-                if values.contains_key("__TYPE__") {
-                    return Err("pinned catalog declares __TYPE__ storage".into());
+                for name in ["__TYPE__", "__IMPLIED_TYPE__"] {
+                    if values.contains_key(name) {
+                        return Err(format!("pinned catalog declares {name} storage"));
+                    }
                 }
             }
         }
@@ -715,18 +717,17 @@ fn verify_lexical_type_namespace(
                 .as_array()
                 .ok_or("native const variable catalog malformed")?
             {
-                if value
-                    .as_str()
-                    .ok_or("native const variable name malformed")?
-                    == "__TYPE__"
-                {
-                    return Err("pinned catalog declares __TYPE__ constant storage".into());
+                let name = value.as_str().ok_or("native const variable name malformed")?;
+                if matches!(name, "__TYPE__" | "__IMPLIED_TYPE__") {
+                    return Err(format!("pinned catalog declares {name} constant storage"));
                 }
             }
         }
     }
-    if physical_names.contains(&SymbolId::of("__TYPE__")) {
-        return Err("pinned generated catalog declares __TYPE__ storage".into());
+    for name in ["__TYPE__", "__IMPLIED_TYPE__"] {
+        if physical_names.contains(&SymbolId::of(name)) {
+            return Err(format!("pinned generated catalog declares {name} storage"));
+        }
     }
     Ok(())
 }

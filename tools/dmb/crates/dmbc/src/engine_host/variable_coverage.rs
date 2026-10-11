@@ -20,6 +20,7 @@ impl VariableCoverage {
             .filter(|name| !providers.intrinsic.contains(name))
             .collect();
         names.insert(SymbolId::of("__TYPE__"));
+        names.insert(SymbolId::of("__IMPLIED_TYPE__"));
         for (name, value) in providers.constants.values.iter() {
             if !providers.intrinsic.contains(name) && constants.values.get(name) == Some(value) {
                 names.insert(*name);

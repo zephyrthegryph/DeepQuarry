@@ -13,7 +13,8 @@ def main():
     spec.loader.exec_module(driver)
     driver.HERE = HERE
     driver.CASES = CASES
-    driver.ORIGINAL_CASES = ORIGINAL_CASES
+    # All observed entry-path regressions are mandatory in the default corpus.
+    driver.ORIGINAL_CASES = CASES
     return driver.main()
 
 if __name__ == "__main__":

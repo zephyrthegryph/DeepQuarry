@@ -188,7 +188,7 @@ impl VariableProviders {
         let ordinary_globals = Arc::new(OrdinaryGlobalNames { excluded });
         // Versioned source policy is bound to the exact template/schema already
         // checked by NamedEngineCoverage::pinned above, never an ambient version.
-        let mut bytes = b"pinned-authored-variable-absence-v6;ordinary-root-global-and-predefined-absence;native-ABI-5161687-schema1;OD1362abc5accbc2037df9b45efa1de13fb1bb677f;dispatcher-SHA256=33cd1daf2c2090b6de58ea5ccecdc28918fb9b71deff84c51cbc693795b5bd38;objecttree-SHA256=2c19b1ea64495e67516b972d57aed171a4044eb0ae7835b4eb84ed2ee80a3440;vars-SHA256=ce372f294699c7c3d39c3a52e306d269800c033edb9f82620faf5fe4d3fc66ce".to_vec();
+        let mut bytes = b"pinned-authored-variable-absence-v7;lexical-implied-type-storage-exclusion;ordinary-root-global-and-predefined-absence;native-ABI-5161687-schema1;OD1362abc5accbc2037df9b45efa1de13fb1bb677f;dispatcher-SHA256=33cd1daf2c2090b6de58ea5ccecdc28918fb9b71deff84c51cbc693795b5bd38;objecttree-SHA256=2c19b1ea64495e67516b972d57aed171a4044eb0ae7835b4eb84ed2ee80a3440;vars-SHA256=ce372f294699c7c3d39c3a52e306d269800c033edb9f82620faf5fe4d3fc66ce".to_vec();
         bytes.extend_from_slice(&engine.interpretation_schema().to_le_bytes());
         for name in &ordinary_globals.excluded {
             bytes.extend_from_slice(&name.bits().to_le_bytes());
