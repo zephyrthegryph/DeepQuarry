@@ -8,8 +8,6 @@
 	anchored = FALSE
 	req_access = list(ACCESS_ENGINE)
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 500
 
 	circuit = /obj/item/circuitboard/fusion_injector
 
@@ -32,6 +30,7 @@ MSG_DEF(fuel_injector/rod_in, "You insert %I% into %T%.", "%U% inserts %I% into 
 TRACKED(/obj/machinery/fusion_fuel_injector, id_tag)
 
 CAPABILITIES(/obj/machinery/fusion_fuel_injector)
+	configure(uses_power(idle = 10, active = 500))
 	registry(REGISTRY_FUEL_INJECTORS, key = nameof(id_tag))
 	rotatable()
 	owns_one(nameof(cur_assembly), /obj/item/fuel_assembly, on_destroy = ON_DESTROY_SPILL)

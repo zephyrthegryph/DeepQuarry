@@ -11,10 +11,7 @@
 	var/state_base = "jukebox"
 	anchored = TRUE
 	density = TRUE
-	power_channel = EQUIP
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 100
 	circuit = /obj/item/circuitboard/jukebox
 	clicksound = SFX_MACHINES_BUTTONBEEP
 	volume = 0.5
@@ -29,6 +26,7 @@
 	var/datum/track/current_track
 
 CAPABILITIES(/obj/machinery/media/jukebox)
+	configure(uses_power(channel = EQUIP, idle = 10, active = 100))
 	default_parts()
 	contributes(STAT_HAS_POWER, nameof(anchored)) // a jukebox that is not bolted down has no power, whatever its area gives
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(playing), wakes_on = list(nameof(playing)))
@@ -382,10 +380,13 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 	return
 /// Draws itself entirely: drop the parent's keyed declarations.
 APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
-DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/media/jukebox/ghost/appearance_overlays()
-	. = list()
-	if(playing)
+/// The ghost jukebox draws nothing of its own: while it plays it pulses (the animation is an effect of the look, run after it is applied).
+/obj/machinery/media/jukebox/ghost/draw(datum/look/look)
+	..()
+	look.effect(PROC_REF(ghost_pulse), playing)
+
+/obj/machinery/media/jukebox/ghost/proc/ghost_pulse(now_playing)
+	if(now_playing)
 		animate(src, alpha = 200, time = 5, loop = -1)
 	else
 		animate(src, alpha = initial(alpha), time = 10)

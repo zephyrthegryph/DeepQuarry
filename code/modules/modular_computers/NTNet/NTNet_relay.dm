@@ -3,8 +3,6 @@
 	name = "NTNet Quantum Relay"
 	desc = "A very complex router and transmitter capable of connecting electronic devices together. Looks fragile."
 	use_power = USE_POWER_ACTIVE
-	active_power_usage = 20000 //20kW, apropriate for machine that keeps massive cross-Zlevel wireless network operational.
-	idle_power_usage = 100
 	icon_state = "ntnet"
 	anchored = TRUE
 	density = TRUE
@@ -23,6 +21,7 @@
 	var/noisy = TRUE
 
 CAPABILITIES(/obj/machinery/ntnet_relay)
+	configure(uses_power(active = 20000, idle = 100))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms, starts = /datum/looping_sound/tcomms)
 	interface("NTNetRelay")

@@ -9,8 +9,6 @@
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	power_channel = LIGHT
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
@@ -38,6 +36,7 @@
 // electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
 CAPABILITIES(/obj/machinery/light_switch)
+	configure(uses_power(idle = 10, channel = LIGHT))
 	powered(POWER_CHANNEL_LIGHTING)
 	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), wait(0), then(PROC_REF(toggle_lights)))
 	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes())
@@ -51,7 +50,7 @@ CAPABILITIES(/obj/machinery/light_switch)
 		look.state("light-p")
 		return
 	look.state("light[on]")
-	look.light(2, 0.1, on ? "#82FF4C" : "#F86060")
+	look.glow(2, 0.1, on ? "#82FF4C" : "#F86060")
 	look.glow("overlay")
 
 /// Within reach it says what it is set to.

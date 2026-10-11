@@ -84,7 +84,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		var/obj/machinery/M = A
 		if(is_type_in_list(M, ignored_machine_types))
 			return
-		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
+		if(!power_of(M).idle && !power_of(M).active && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 			return
 		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 			return

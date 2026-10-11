@@ -172,10 +172,10 @@ CAPABILITIES(/obj/machinery/turretid)
 		look.state("control_off")
 	else if(enabled)
 		look.state(lethal ? "control_kill" : "control_stun")
-		look.light(1.5, 1, lethal ? "#990000" : "#FF9900")
+		look.glow(1.5, 1, lethal ? "#990000" : "#FF9900")
 	else
 		look.state("control_standby")
-		look.light(1.5, 1, "#003300")
+		look.glow(1.5, 1, "#003300")
 
 /// A pulse on an active panel scrambles its targets (the outage is emp_disable()'s, and push_settings() tells the turrets).
 /obj/machinery/turretid/proc/scramble_settings(datum/act/A)

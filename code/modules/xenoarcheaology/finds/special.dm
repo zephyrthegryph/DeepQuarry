@@ -162,7 +162,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/blood/splatter/animated)
 	every(2 SECONDS, then(PROC_REF(animated_blood_step)), when = nameof(target_turf))
 
 // ALLOW(init/INSTANCE_STATE): remembers where it starts so it can leave a trail
-/obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
+/obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload)
 	. = ..()
 	loc_last_process = src.loc
 

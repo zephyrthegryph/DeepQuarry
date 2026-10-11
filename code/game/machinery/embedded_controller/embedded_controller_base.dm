@@ -3,12 +3,16 @@
 	layer = ABOVE_WINDOW_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
 	var/list/valid_actions
 	on = 1
 
+/// TRUE while the program is cycling (its memory's "processing"): work_step() writes it each step, the display shows it.
+/obj/machinery/embedded_controller/var/processing_shown = FALSE
+TRACKED(/obj/machinery/embedded_controller, processing_shown)
+
 CAPABILITIES(/obj/machinery/embedded_controller)
+	configure(uses_power(idle = 10))
 	silicon_ui()
 	started_work(step = PROC_REF(work_step))
 	owns_one(nameof(program), /datum/embedded_program, starts = nameof(program))
@@ -53,7 +57,7 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	if(program)
 		program.periodic_step()
 
-	update_icon()
+	set_processing_shown(!!program?.memory["processing"])
 	if(!program || !program.memory["processing"])
 		return PROCESS_KILL
 
@@ -75,7 +79,6 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 /obj/machinery/embedded_controller/radio
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "airlock_control_standby"
-	power_channel = ENVIRON
 	density = FALSE
 	unacidable = TRUE
 	flags = WALL_ITEM
@@ -86,20 +89,23 @@ CAPABILITIES(/obj/machinery/embedded_controller)
 	var/radio_filter = null
 	var/datum/radio_frequency/radio_connection
 
+CAPABILITIES(/obj/machinery/embedded_controller/radio)
+	configure(uses_power(channel = ENVIRON))
+
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/appearance_overlays()
-	. = list()
-	if(on && program)
-		if(program.memory["processing"])
-			icon_state = "airlock_control_process"
-		else
-			icon_state = "airlock_control_standby"
+/// The state names of the controller's display ("<base>_off", "_standby", "_process").
+/obj/machinery/embedded_controller/radio/var/display_base = "airlock_control"
+
+/// What the controller shows: off without a program or while switched off, else standing by or cycling.
+/obj/machinery/embedded_controller/radio/draw(datum/look/look)
+	..()
+	if(!on || !program)
+		look.state("[display_base]_off")
 	else
-		icon_state = "airlock_control_off"
+		look.state("[display_base]_[processing_shown ? "process" : "standby"]")
 
 
 /obj/machinery/embedded_controller/radio/post_signal(datum/signal/signal, radio_filter = null)

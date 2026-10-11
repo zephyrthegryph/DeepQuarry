@@ -119,10 +119,10 @@ CAPABILITIES(/obj/machinery/power/shield_generator)
 	..()
 	if(running)
 		look.state("generator1")
-		look.light(1, 2, "#66FFFF")
+		look.glow(1, 2, "#66FFFF")
 	else
 		look.state("generator0")
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/machinery/power/shield_generator/Initialize(mapload)
 	. = ..()

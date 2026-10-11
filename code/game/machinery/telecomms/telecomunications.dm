@@ -251,7 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 /obj/machinery/telecomms/current_heat_output()
 	if(!produces_heat || !running || !use_power)
 		return 0
-	return traffic > 0 ? idle_power_usage : idle_power_usage * 0.3
+	return traffic > 0 ? power_of(src).idle : power_of(src).idle * 0.3
 
 /*
 	The receiver idles and receives messages from subspace-compatible radio equipment;
@@ -269,7 +269,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 600
 	machinetype = 1
 	produces_heat = 0
 	circuit = /obj/item/circuitboard/telecomms/receiver
@@ -343,11 +342,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 1600
 	machinetype = 7
 	circuit = /obj/item/circuitboard/telecomms/hub
 	long_range_link = 1
 	netspeed = 40
+
+CAPABILITIES(/obj/machinery/telecomms/hub)
+	configure(uses_power(idle = 1600))
 
 /obj/machinery/telecomms/hub/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 	if(is_freq_listening(signal))
@@ -375,7 +376,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 600
 	machinetype = 8
 	produces_heat = 0
 	circuit = /obj/item/circuitboard/telecomms/relay
@@ -431,7 +431,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 1000
 	machinetype = 2
 	circuit = /obj/item/circuitboard/telecomms/bus
 	netspeed = 40
@@ -481,11 +480,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 600
 	machinetype = 3
 	delay = 5
 	circuit = /obj/item/circuitboard/telecomms/processor
 	var/process_mode = 1 // 1 = Uncompress Signals, 0 = Compress Signals
+
+CAPABILITIES(/obj/machinery/telecomms/processor)
+	configure(uses_power(idle = 600))
 
 /obj/machinery/telecomms/processor/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
 
@@ -517,7 +518,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 300
 	machinetype = 4
 	circuit = /obj/item/circuitboard/telecomms/server
 	var/list/log_entries
@@ -538,6 +538,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 
 CAPABILITIES(/obj/machinery/telecomms/server)
+	configure(uses_power(idle = 300))
 	owns_one(nameof(Compiler), /datum/TCS_Compiler, starts = PROC_REF(make_compiler))
 	owns_one(nameof(server_radio), /obj/item/radio/headset, starts = /obj/item/radio/headset)
 	owns_many(nameof(log_entries))

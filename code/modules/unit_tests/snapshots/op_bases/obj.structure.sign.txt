@@ -1,0 +1,21 @@
+human|/obj/item/pda menu: Hit
+human|/obj/item/pda menu: Move To Top
+human|/obj/item/pda menu: Remove cartridge (refused: You can't do that.)
+human|/obj/item/pda menu: Remove id (refused: You can't do that.)
+human|/obj/item/pda menu: Remove pen (refused: You can't do that.)
+human|/obj/item/pda menu: Reset PDA (refused: You can't do that.)
+human|/obj/item/pda menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pda menu: Use (refused: Access denied.)
+human|/obj/item/pda click: Click: Use
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter

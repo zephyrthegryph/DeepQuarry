@@ -14,8 +14,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	density = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 0
-	active_power_usage = 0
 	var/id = 0
 	/// Power this panel last reported to its controller (was the controller's connected_panels[panel] value).
 	var/controller_supply = 0
@@ -42,10 +40,11 @@ MSG_DEF(solar/glass_off, "You take the glass off the solar panel.", "%U% takes t
 // its exposure (cos^2 of its angle off the sun, 0 past 90 degrees, 0 obscured), summed by the controller into one persistent supply. A crowbar
 // takes the glass off; a hostile swing with anything strikes it.
 CAPABILITIES(/obj/machinery/power/solar)
+	configure(uses_power(idle = 0, active = 0))
 	climb()
 	ref_one(nameof(control), /obj/machinery/power/solar_control)
 	op("remove_glass", tool(TOOL_CROWBAR), label("Take the glass off"), wait(2 SECONDS), says(MSG(solar/glass_off)), then(PROC_REF(glass_removed)))
-	param(nameof(glass_type), pos = 1)
+	param(nameof(glass_type), pos = 1, overrides = TRUE)
 
 // ALLOW(init/INSTANCE_STATE): a panel in reinforced glass is twice as tough
 /obj/machinery/power/solar/Initialize(mapload)
@@ -275,7 +274,6 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 250
 	integrity_failure = 0.5
 	var/id = 0
 	var/cdir = 0
@@ -414,6 +412,7 @@ TRACKED(/obj/machinery/power/solar_control, cdir)
 // every machine service interval the controller keeps its links honest and steps a manual rotation (control_step()). A screwdriver takes it
 // apart into its frame.
 CAPABILITIES(/obj/machinery/power/solar_control)
+	configure(uses_power(idle = 250))
 	membership(joins = REGISTRY_SOLAR_CONTROLS)
 	ref_one(nameof(connected_tracker), /obj/machinery/power/tracker)
 	ref_many(nameof(connected_panels), /obj/machinery/power/solar)
@@ -455,8 +454,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
-		F.state = 3
-		F.icon_state = "computer_3"
+		F.set_state(3)
 		F.set_anchored(TRUE)
 		spent(src, user)
 	else
@@ -467,8 +465,7 @@ CAPABILITIES(/obj/machinery/power/solar_control)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		rel_set(F, nameof(F.circuit), M)
-		F.state = 4
-		F.icon_state = "computer_4"
+		F.set_state(4)
 		F.set_anchored(TRUE)
 		spent(src, user)
 

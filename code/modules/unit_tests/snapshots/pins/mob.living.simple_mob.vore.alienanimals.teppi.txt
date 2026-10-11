@@ -1,172 +1,77 @@
-human|none menu: Disarm
-human|none menu: Grab
-human|none menu: Handle roughly
-human|none menu: Help
-human|none menu: Nutrition heal
-human|none menu: Pet
-human|none menu: Punch
-human|none menu: Remove accessory
-human|none menu: Shove
-human|none menu: Take hold
-human|none click: Click: Pet
-robot|none menu: Disarm
-robot|none menu: Grab
-robot|none menu: Handle roughly
-robot|none menu: Help
-robot|none menu: Nutrition heal
-robot|none menu: Pet
-robot|none menu: Punch
-robot|none menu: Remove accessory
-robot|none menu: Shove
-robot|none menu: Take hold
-robot|none click: Click: Pet
-ai|none click: nothing
-ghost|none menu: Disarm
-ghost|none menu: Grab
-ghost|none menu: Nutrition heal
-ghost|none click: nothing
-human|/obj/item/tool/screwdriver menu: Disarm
-human|/obj/item/tool/screwdriver menu: Grab
-human|/obj/item/tool/screwdriver menu: Handle roughly
-human|/obj/item/tool/screwdriver menu: Hit
-human|/obj/item/tool/screwdriver menu: Hold with
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Nutrition heal
-human|/obj/item/tool/screwdriver menu: Pet
-human|/obj/item/tool/screwdriver menu: Remove accessory
-human|/obj/item/tool/screwdriver menu: Shove with
-human|/obj/item/tool/screwdriver menu: Tend
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Use on
-human|/obj/item/tool/screwdriver click: Click: Tend
-human|/obj/item/tool/crowbar menu: Disarm
-human|/obj/item/tool/crowbar menu: Grab
-human|/obj/item/tool/crowbar menu: Handle roughly
-human|/obj/item/tool/crowbar menu: Hit
-human|/obj/item/tool/crowbar menu: Hold with
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Nutrition heal
-human|/obj/item/tool/crowbar menu: Pet
-human|/obj/item/tool/crowbar menu: Remove accessory
-human|/obj/item/tool/crowbar menu: Shove with
-human|/obj/item/tool/crowbar menu: Tend
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Use on
-human|/obj/item/tool/crowbar click: Click: Tend
-human|/obj/item/tool/wrench menu: Disarm
-human|/obj/item/tool/wrench menu: Grab
-human|/obj/item/tool/wrench menu: Handle roughly
-human|/obj/item/tool/wrench menu: Hit
-human|/obj/item/tool/wrench menu: Hold with
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Nutrition heal
-human|/obj/item/tool/wrench menu: Pet
-human|/obj/item/tool/wrench menu: Remove accessory
-human|/obj/item/tool/wrench menu: Shove with
-human|/obj/item/tool/wrench menu: Tend
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Use on
-human|/obj/item/tool/wrench click: Click: Tend
-human|/obj/item/tool/wirecutters menu: Disarm
-human|/obj/item/tool/wirecutters menu: Grab
-human|/obj/item/tool/wirecutters menu: Handle roughly
-human|/obj/item/tool/wirecutters menu: Hit
-human|/obj/item/tool/wirecutters menu: Hold with
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Nutrition heal
-human|/obj/item/tool/wirecutters menu: Pet
-human|/obj/item/tool/wirecutters menu: Remove accessory
-human|/obj/item/tool/wirecutters menu: Shove with
-human|/obj/item/tool/wirecutters menu: Tend
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Use on
-human|/obj/item/tool/wirecutters click: Click: Tend
-human|/obj/item/multitool menu: Disarm
-human|/obj/item/multitool menu: Grab
-human|/obj/item/multitool menu: Handle roughly
-human|/obj/item/multitool menu: Hit
-human|/obj/item/multitool menu: Hold with
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Nutrition heal
-human|/obj/item/multitool menu: Pet
-human|/obj/item/multitool menu: Remove accessory
-human|/obj/item/multitool menu: Shove with
-human|/obj/item/multitool menu: Tend
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Use on
-human|/obj/item/multitool click: Click: Tend
-human|/obj/item/weldingtool menu: Disarm
-human|/obj/item/weldingtool menu: Grab
-human|/obj/item/weldingtool menu: Handle roughly
-human|/obj/item/weldingtool menu: Hit
-human|/obj/item/weldingtool menu: Hold with
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Nutrition heal
-human|/obj/item/weldingtool menu: Pet
-human|/obj/item/weldingtool menu: Remove accessory
-human|/obj/item/weldingtool menu: Shove with
-human|/obj/item/weldingtool menu: Tend
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Use on
-human|/obj/item/weldingtool click: Click: Tend
-human|/obj/item/stack/cable_coil menu: Disarm
-human|/obj/item/stack/cable_coil menu: Grab
-human|/obj/item/stack/cable_coil menu: Handle roughly
-human|/obj/item/stack/cable_coil menu: Hit
-human|/obj/item/stack/cable_coil menu: Hold with
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Nutrition heal
-human|/obj/item/stack/cable_coil menu: Pet
-human|/obj/item/stack/cable_coil menu: Remove accessory
-human|/obj/item/stack/cable_coil menu: Shove with
-human|/obj/item/stack/cable_coil menu: Tend
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Use on
-human|/obj/item/stack/cable_coil click: Click: Tend
-human|/obj/item/stack/material/steel menu: Disarm
-human|/obj/item/stack/material/steel menu: Grab
-human|/obj/item/stack/material/steel menu: Handle roughly
-human|/obj/item/stack/material/steel menu: Hit
-human|/obj/item/stack/material/steel menu: Hold with
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Nutrition heal
-human|/obj/item/stack/material/steel menu: Pet
-human|/obj/item/stack/material/steel menu: Remove accessory
-human|/obj/item/stack/material/steel menu: Shove with
-human|/obj/item/stack/material/steel menu: Tend
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Use on
-human|/obj/item/stack/material/steel click: Click: Tend
-human|/obj/item/card/id menu: Disarm
-human|/obj/item/card/id menu: Grab
-human|/obj/item/card/id menu: Handle roughly
-human|/obj/item/card/id menu: Hit
-human|/obj/item/card/id menu: Hold with
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Nutrition heal
-human|/obj/item/card/id menu: Pet
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Remove accessory
-human|/obj/item/card/id menu: Shove with
-human|/obj/item/card/id menu: Tend
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Use on
-human|/obj/item/card/id click: Click: Tend
-human|/obj/item menu: Disarm
-human|/obj/item menu: Grab
-human|/obj/item menu: Handle roughly
-human|/obj/item menu: Hit
-human|/obj/item menu: Hold with
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Nutrition heal
-human|/obj/item menu: Pet
-human|/obj/item menu: Remove accessory
-human|/obj/item menu: Shove with
-human|/obj/item menu: Tend
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Use on
-human|/obj/item click: Click: Tend
+@mob human|none
+-click: Click: Help
++2 menu: Handle roughly
++5 menu: Pet
++7 menu: Remove accessory
++10 click: Click: Pet
+@mob robot|none
+-click: Click: Help
++2 menu: Handle roughly
++5 menu: Pet
++7 menu: Remove accessory
++10 click: Click: Pet
+@mob ai|none
+@mob ghost|none
+@mob.living.simple_mob.vore human|/obj/item/tool/screwdriver
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/tool/crowbar
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/tool/wrench
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/tool/wirecutters
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/multitool
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/weldingtool
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/stack/cable_coil
+-click: Click: Pet
++2 menu: Handle roughly
++9 menu: Remove accessory
++11 menu: Tend
++14 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/stack/material/steel
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item/card/id
+-click: Click: Pet
++2 menu: Handle roughly
++9 menu: Remove accessory
++11 menu: Tend
++14 click: Click: Tend
+@mob.living.simple_mob.vore human|/obj/item
+-click: Click: Pet
++2 menu: Handle roughly
++8 menu: Remove accessory
++10 menu: Tend
++13 click: Click: Tend
 human|/obj/item/material/knife menu: Disarm
 human|/obj/item/material/knife menu: Grab
 human|/obj/item/material/knife menu: Handle roughly
@@ -182,4 +87,3 @@ human|/obj/item/material/knife menu: Toggle Digestable (refused: You can't do th
 human|/obj/item/material/knife menu: Use on
 human|/obj/item/material/knife click: Click: Tend
 keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, nutrition_heal, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, teppi_hand_disarm, teppi_hand_grab, teppi_hand_help, teppi_hand_hurt, teppi_item_disarm, teppi_item_grab, teppi_item_help, teppi_item_hurt, teppi_shear_cutter, teppi_shear_knife, teppi_slaughter, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove
-

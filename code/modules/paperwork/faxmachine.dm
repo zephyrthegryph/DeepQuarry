@@ -17,8 +17,6 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 	density = 0
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 200
 	circuit = /obj/item/circuitboard/fax
 
 	var/obj/item/card/id/scan = null
@@ -158,6 +156,7 @@ MSG_DEF_SELF(fax/relays_recalibrating, "The global automated relays are still re
 // The fax's window: the copier's buttons and its own. The paper title and the department are asked in their ops (asks()); sending a
 // default-titled fax to an admin department asks whether to rename it first.
 CAPABILITIES(/obj/machinery/photocopier/faxmachine)
+	configure(uses_power(idle = 30, active = 200))
 	after_init(0, then(PROC_REF(register_department)))
 	interface("Fax")
 	without("ui_open")
@@ -464,7 +463,7 @@ CAPABILITIES(/obj/machinery/photocopier/faxmachine)
 		photocopy(incoming)
 	else if (istype(incoming, /obj/item/paper_bundle))
 		bundlecopy(incoming)
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 
 /obj/machinery/photocopier/faxmachine/proc/send_admin_fax(mob/sender, destination)
 	if(!operable())

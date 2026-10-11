@@ -5,7 +5,6 @@
 	icon_screen = "holocontrol"
 
 	use_power = USE_POWER_IDLE
-	active_power_usage = 8000 //8kW for the scenery + 500W per holoitem
 	var/item_power_usage = 500
 
 	var/tmp/area/linkedholodeck
@@ -186,6 +185,7 @@
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
 CAPABILITIES(/obj/machinery/computer/HolodeckControl)
+	configure(uses_power(active = 8000))
 	started_work(step = PROC_REF(work_step))
 	ref_many(nameof(holographic_objs))
 	ref_many(nameof(holographic_mobs))

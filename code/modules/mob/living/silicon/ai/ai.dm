@@ -363,9 +363,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 */
 /obj/machinery/ai_powersupply
 	name="Power Supply"
-	active_power_usage=50000 // Station AIs use significant amounts of power. This, when combined with charged SMES should mean AI lasts for 1hr without external power.
 	use_power = USE_POWER_ACTIVE
-	power_channel = EQUIP
 	var/mob/living/silicon/ai/powered_ai = null
 	invisibility = INVISIBILITY_MAXIMUM
 
@@ -385,6 +383,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/ai_powersupply)
+	configure(uses_power(active = 50000, channel = EQUIP))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 
 /obj/machinery/ai_powersupply/proc/work_step(datum/act/timer/A)
@@ -1000,13 +999,13 @@ TRACKED(/mob/living/silicon/ai, aiRestorePowerRoutine)
 	look.watch(selected_sprite)
 	if(stat == DEAD)
 		look.state(selected_sprite.dead_icon)
-		look.light(3, 1, selected_sprite.dead_light)
+		look.glow(3, 1, selected_sprite.dead_light)
 	else if(aiRestorePowerRoutine)
 		look.state(selected_sprite.nopower_icon)
-		look.light(1, 1, selected_sprite.nopower_light)
+		look.glow(1, 1, selected_sprite.nopower_light)
 	else
 		look.state(selected_sprite.alive_icon)
-		look.light(1, 1, selected_sprite.alive_light)
+		look.glow(1, 1, selected_sprite.alive_light)
 
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()

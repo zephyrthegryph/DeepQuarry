@@ -34,12 +34,11 @@
 	var/flushing = FALSE	// true if flushing in progress
 	var/flush_every_ticks = 30 //Every 30 ticks it will look whether it is ready to flush
 	var/flush_count = 0 //this var adds 1 once per tick. When it reaches flush_every_ticks it resets and tries to flush.
-	active_power_usage = 2200	//the pneumatic pump power. 3 HP ~ 2200W
-	idle_power_usage = 100
 	var/stat_tracking = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 
 CAPABILITIES(/obj/machinery/disposal)
+	configure(uses_power(active = 2200, idle = 100))
 	silicon_ui()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
@@ -51,7 +50,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	op("engageHandle", ui_act("engageHandle"), then(PROC_REF(ui_act_engagehandle)))
 	op("disengageHandle", ui_act("disengageHandle"), then(PROC_REF(ui_act_disengagehandle)))
 	op("eject", ui_act("eject"), then(PROC_REF(ui_act_eject)))
-	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE)
+	param(nameof(built_from_construct), pos = 1, apply = PROC_REF(take_construct), keep = FALSE, overrides = TRUE)
 	op("use_multitool", tool(TOOL_MULTITOOL), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(multitool_used)))
 	op("use_welder", tool(TOOL_WELDER), priority(OP_PRIORITY_DEFAULT), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
@@ -171,7 +170,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	var/transfer_moles = min(environment.total_moles(), (PUMP_MAX_FLOW_RATE / environment.return_volume()) * environment.total_moles())
 	var/specific_power = vg_specific_power(environment, air_contents) / ATMOS_PUMP_EFFICIENCY
 	if(specific_power > 0)
-		transfer_moles = min(transfer_moles, active_power_usage / specific_power)
+		transfer_moles = min(transfer_moles, power_of(src).active / specific_power)
 	return transfer_moles >= MINIMUM_MOLES_TO_PUMP
 
 /obj/machinery/disposal/singularity_pull(S, current_size)
@@ -667,7 +666,7 @@ TRACKED(/obj/machinery/disposal, occupied)
 	var/power_draw = -1
 	if(env && env.return_temperature() > 0)
 		var/transfer_moles = (PUMP_MAX_FLOW_RATE/env.return_volume())*env.total_moles()	//group_multiplier is divided out here
-		power_draw = pump_gas(src, env, air_contents, transfer_moles, active_power_usage)
+		power_draw = pump_gas(src, env, air_contents, transfer_moles, power_of(src).active)
 
 	if (power_draw > 0)
 		use_power(power_draw)

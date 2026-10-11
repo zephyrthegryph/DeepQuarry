@@ -7,7 +7,6 @@
 	icon_screen = "ai-fixer"
 	light_color = LIGHT_COLOR_PINK
 
-	active_power_usage = 1000
 
 	/// Variable containing transferred AI
 	var/mob/living/silicon/ai/occupier
@@ -60,6 +59,7 @@ MSG_DEF_SELF(aifixer/screws_stuck_beep, "The screws on the screen won't budge an
 	return TRUE
 
 CAPABILITIES(/obj/machinery/computer/aifixer)
+	configure(uses_power(active = 1000))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(restoring), wakes_on = list(nameof(restoring)))
 	extend("disconnect", needs(req(PROC_REF(no_ai_loaded))))
 	interface("AiRestorer")
@@ -107,7 +107,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 		. = TRUE
 
 /obj/machinery/computer/aifixer/proc/Fix()
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	occupier().adjust_backup_charge(5)
 	occupier().mend(TREAT_SYSTEM_RESTORE, 5)
 	occupier().mend(TREAT_WIRING_REPAIR, 5)

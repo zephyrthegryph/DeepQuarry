@@ -23,10 +23,10 @@
 
 CAPABILITIES(/obj/item/spell/radiance)
 	every(2 SECONDS, then(PROC_REF(radiance_step)))
+	look_glow(GLOW(7, 4, "#D9D900"))
 
-/obj/item/spell/radiance/Initialize(mapload, coreless)
+/obj/item/spell/radiance/Initialize(mapload)
 	. = ..()
-	set_light(7, 4, l_color = "#D9D900")
 	log_and_message_admins("has casted [src].")
 
 // admins are told the maintained spell stopped.

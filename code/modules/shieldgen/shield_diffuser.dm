@@ -5,8 +5,6 @@
 	icon_state = "fdiffuser_on"
 	circuit = /obj/item/circuitboard/shield_diffuser
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 25		// Previously 100.
-	active_power_usage = 500	// Previously 2000
 	anchored = TRUE
 	density = FALSE
 	level = 1
@@ -37,6 +35,7 @@ TRACKED(/obj/machinery/shield_diffuser, enabled)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/shield_diffuser)
+	configure(uses_power(idle = 25, active = 500))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(diffuser_has_work), wakes_on = list(nameof(enabled), nameof(alarm)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))

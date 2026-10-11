@@ -47,7 +47,7 @@ CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
 	on_change(STAT_OPERABLE, ANY, then(PROC_REF(reconsider)))
 	op("anchor", tool(TOOL_WRENCH), label("Wrench"), wait(0), says(PROC_REF(anchor_message)), then(PROC_REF(anchor_toggled)))
 
-/obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
+/obj/machinery/atmospherics/pipeturbine/Initialize(mapload)
 	. = ..()
 	atmos_air_set(src, nameof(air_in), new /datum/gas_mixture(200))
 	atmos_air_set(src, nameof(air_out), new /datum/gas_mixture(800))

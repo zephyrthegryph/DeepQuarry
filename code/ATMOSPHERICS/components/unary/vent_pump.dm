@@ -13,7 +13,6 @@
 	name = "Air Vent"
 	desc = "Has a valve and pump attached to it"
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 30000 // 7500 W ~ 10 HP // 30000 W
 
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_SUPPLY //connects to regular and supply pipes
@@ -49,6 +48,7 @@ TRACKED(/obj/machinery/atmospherics/unary/vent_pump, internal_pressure_bound)
 TRACKED(/obj/machinery/atmospherics/unary/vent_pump, pressure_checks)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
+	configure(uses_power(idle = 150))
 	area_air_device(AREA_AIR_VENT, status = PROC_REF(status_fields), commands = list(
 		"purge" = PROC_REF(cmd_purge),
 		"stabalize" = PROC_REF(cmd_stabilize),
@@ -102,9 +102,11 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume
 	name = "Large Air Vent"
-	power_channel = EQUIP
 	power_rating = 45000 // 15 kW ~ 20 HP // 45000
 	vent_volume = ATMOS_DEFAULT_VOLUME_PUMP + 800
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/high_volume)
+	configure(uses_power(channel = EQUIP))
 
 /obj/machinery/atmospherics/unary/vent_pump/high_volume/aux
 	icon_state = "map_vent_aux"
@@ -127,9 +129,11 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump)
 
 /obj/machinery/atmospherics/unary/vent_pump/engine
 	name = "Engine Core Vent"
-	power_channel = ENVIRON
 	power_rating = 30000	//15 kW ~ 20 HP
 	vent_volume = ATMOS_DEFAULT_VOLUME_PUMP + 500 //meant to match air injector
+
+CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/engine)
+	configure(uses_power(channel = ENVIRON))
 
 /obj/machinery/atmospherics/unary/vent_pump/Initialize(mapload)
 	. = ..()

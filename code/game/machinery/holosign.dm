@@ -6,14 +6,15 @@
 	icon_state = "sign_off"
 	plane = MOB_PLANE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 	anchored = TRUE
 	var/lit = 0
 	var/id = null
 	var/on_icon = "sign_on"
 	var/off_icon = "sign_off"
 	var/signlight = "#E9E4AF"
+
+CAPABILITIES(/obj/machinery/holosign)
+	configure(uses_power(idle = 2, active = 4))
 
 /obj/machinery/holosign/proc/toggle()
 	if(!operable())
@@ -25,10 +26,10 @@
 	..()
 	if(!lit)
 		look.state(off_icon)
-		look.light_off()
+		look.glow(GLOW_OFF)
 	else
 		look.state(on_icon)
-		look.light(2, 0.25, signlight)
+		look.glow(2, 0.25, signlight)
 
 /obj/machinery/holosign/power_change()
 	. = ..()

@@ -15,8 +15,6 @@ MSG_DEF_SELF(analyzer/busy, "It's busy right now.")
 	var/decon_mod = 0
 	circuit = /obj/item/circuitboard/destructive_analyzer
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 30
-	active_power_usage = 2500
 	var/rped_recycler_ready = TRUE
 	var/datum/remote_materials/rmat
 
@@ -29,6 +27,7 @@ TRACKED(/obj/machinery/rnd/destructive_analyzer, busy)
 	set_busy(FALSE)
 
 CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
+	configure(uses_power(idle = 30, active = 2500))
 	owns_one(nameof(rmat), /datum/remote_materials, starts = PROC_REF(make_rmat))
 	interface("DestructiveAnalyzer")
 	extend("ui_open", needs(req_is(STAT_DISABLED, FALSE, because = MSG(rnd/disabled))))
@@ -247,7 +246,7 @@ CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
 		return FALSE
 	set_busy(TRUE)
 	after(src, 2.4 SECONDS, PROC_REF(reset_busy))
-	use_power(active_power_usage)
+	use_power(power_of(src).active)
 	// Destroy items inside
 	rel_take(src, nameof(loaded_item)) // destroyed below
 	var/list/destructing = list()

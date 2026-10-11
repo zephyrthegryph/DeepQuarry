@@ -18,7 +18,6 @@
 	name = "Airlock"
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
-	power_channel = ENVIRON
 
 	explosion_resistance = 10
 
@@ -135,6 +134,7 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // ---- what an airlock is, declared ----
 
 CAPABILITIES(/obj/machinery/door/airlock)
+	configure(uses_power(channel = ENVIRON))
 	panel()
 	// twelve wires (fourteen and their own colours with secure electronics), in the airlock's window with its radio; the AI control, ID scan,
 	// safety, shock and bolt wires come with the capabilities that own their state
@@ -240,7 +240,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("remote_lights", remote(), gesture(GESTURE_MIDDLE), when(req_actor_kind(/mob/living/silicon/ai)), label("Toggle the bolt lights"),
 		needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	extend("remote_lights", needs(req_silicon_or_admin(because = MSG(airlock/not_for_you)), req_window_usable(remote = PROC_REF(ai_control_allowed), remote_because = MSG(airlock/not_for_you))))
-	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE)
+	param(nameof(assembly_at_make), pos = 1, apply = PROC_REF(build_from_assembly), keep = FALSE, overrides = TRUE)
 
 
 // ---- power ----

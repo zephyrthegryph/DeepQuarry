@@ -10,9 +10,7 @@
 	can_burn_food = TRUE
 	var/datum/looping_sound/grill/grill_loop
 	circuit = /obj/item/circuitboard/grill
-	active_power_usage = 4 KILOWATTS
 	heating_power = 4000
-	idle_power_usage = 2 KILOWATTS
 
 	optimal_power = 1.2 // Things on the grill cook .6 faster - this is now the fastest appliance to heat and to cook on. BURGERS GO SIZZLE.
 
@@ -29,6 +27,7 @@
 	tgui_id = "CookingGrill"
 
 CAPABILITIES(/obj/machinery/appliance/cooker/grill)
+	configure(uses_power(active = 4 KILOWATTS, idle = 2 KILOWATTS))
 	owns_one(nameof(grill_loop), /datum/looping_sound/grill, starts = /datum/looping_sound/grill)
 	op("part_replace", item(/obj/item), label("Use"), then(PROC_REF(appliance_interaction_part_replace)))
 

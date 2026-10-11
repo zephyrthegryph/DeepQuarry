@@ -233,7 +233,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/reagent_distillery)
 	if(!A || !isarea(A))
 		return
 	if(chan == -1)
-		chan = power_channel
+		chan = power_of(src).channel
 	A.use_power_oneoff(amount, chan)
 
 /// One step of its work (started_work, code/library/machine/started_work.dm): PROCESS_KILL parks it until it is switched on again.

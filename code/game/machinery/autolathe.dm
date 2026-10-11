@@ -19,8 +19,6 @@ MSG_DEF(autolathe/uploading, "You begin to upload %I% into %T%.", "%U% begins to
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 2000
 	clicksound = SFX_KEYBOARD
 	clickvol = 30
 
@@ -53,6 +51,7 @@ STAT(/obj/machinery/autolathe, disabled, ANY)
 STAT(/obj/machinery/autolathe, shocked, ANY)
 
 CAPABILITIES(/obj/machinery/autolathe)
+	configure(uses_power(idle = 10, active = 2000))
 	machine_basics(repair = NONE, frame = board_machine())
 	owns_one(nameof(materials), /datum/material_container, starts = PROC_REF(make_materials))
 	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print, starts = PROC_REF(make_print_sound))

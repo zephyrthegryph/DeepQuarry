@@ -27,12 +27,12 @@
 	if(..() && owner)
 		if(!is_nanoform())
 			// Give them fancy new organs (each takes its place in its limb).
-			new /obj/item/organ/internal/cell(owner,1)
-			new /obj/item/organ/internal/voicebox/robot(owner, 1)
-			new /obj/item/organ/internal/heart/machine(owner,1)
-			new /obj/item/organ/internal/stomach/machine(owner,1)
-			new /obj/item/organ/internal/robotic/heatsink(owner,1)
-			new /obj/item/organ/internal/robotic/diagnostic(owner,1)
+			new /obj/item/organ/internal/cell(owner)
+			new /obj/item/organ/internal/voicebox/robot(owner)
+			new /obj/item/organ/internal/heart/machine(owner)
+			new /obj/item/organ/internal/stomach/machine(owner)
+			new /obj/item/organ/internal/robotic/heatsink(owner)
+			new /obj/item/organ/internal/robotic/diagnostic(owner)
 
 		var/datum/robolimb/R = GLOB.all_robolimbs[model] // company should be set in parent by now
 		if(!R)

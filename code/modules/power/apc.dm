@@ -230,7 +230,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	/// The cover is latched shut while the APC is broken or its cover lock holds a charged cell in.
 	section(cover_rules, "The latch on the APC's cover")
 	latch(SPACE_HATCH, PROC_REF(cover_latched), because = PROC_REF(cover_latch_reason))
-	param(nameof(build_dir), pos = 1)
+	param(nameof(build_dir), pos = 1, overrides = TRUE)
 	param(nameof(building), pos = 2)
 
 /// The angled APC's sprite sits closer to the wall.
@@ -704,11 +704,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 			look.part("channel-[channel]", "[mode]") // a text value: mode 0 is a state too
 			look.glow("channel-[channel]", "[mode]")
 	if(apc_bluescreen())
-		look.light(2, 0.25, "#0000FF")
+		look.glow(2, 0.25, "#0000FF")
 	else if(is_lit(src))
 		look.glow("charge", "[charging]")
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
-		look.light(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
+		look.glow(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
 
 /// One channel's mode (POWERCHAN_*), as the channel var holds it.
 /obj/machinery/power/apc/proc/channel_mode(channel)

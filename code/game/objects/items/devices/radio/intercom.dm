@@ -172,8 +172,7 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 	own_move(board, frame, nameof(frame.circuit)) // from the intercom to the frame (CONTAINED there)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
-	frame.state = 2
-	frame.update_icon()
+	frame.set_state(2)
 	board.atom_deconstruct(TRUE, src)
 	replace_with(src, /obj/item/stack/cable_coil, 5)
 	return OP_OK
@@ -197,15 +196,15 @@ TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/ra
 	..()
 	var/stem = initial(icon_state)
 	if(!on)
-		look.light_off()
+		look.glow(GLOW_OFF)
 		look.state(wiresexposed ? "intercom-p_open" : "intercom-p")
 	else if(wiresexposed)
 		look.state("intercom_open")
-		look.light_off()
+		look.glow(GLOW_OFF)
 	else
 		look.overlay(mutable_appearance(icon, "[stem]_ov"))
 		look.overlay(emissive_appearance(icon, "[stem]_ov"))
-		look.light(2, initial(light_power), initial(light_color))
+		look.glow(2, initial(light_power), initial(light_color))
 
 /obj/item/radio/intercom/proc/remote_microphone(datum/act/op/A)
 	var/mob/user = A.actor

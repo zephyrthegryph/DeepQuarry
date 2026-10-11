@@ -10,6 +10,7 @@
 // directly instead of the legacy HTML body.
 
 CAPABILITIES(/obj/machinery/magnetic_controller)
+	configure(uses_power(idle = 45))
 	on_change(PROC_REF(emagged), ANY, then(PROC_REF(reset_path_repeat)))
 	on_change(nameof(density), ANY, then(PROC_REF(reset_path_repeat)))
 	on_change(nameof(use_power), ANY, then(PROC_REF(reset_path_repeat)))

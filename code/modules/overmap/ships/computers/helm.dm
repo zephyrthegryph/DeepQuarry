@@ -430,6 +430,6 @@ CAPABILITIES(/obj/machinery/computer/ship/navigation)
 	..()
 	if(power_lost() || broken_now())
 		look.state("tele_off")
-		look.light_off()
+		look.glow(GLOW_OFF)
 	else
 		look.state("tele_nav")

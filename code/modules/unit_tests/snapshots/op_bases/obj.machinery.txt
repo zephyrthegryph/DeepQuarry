@@ -1,0 +1,28 @@
+human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
+human|/obj/item/cell menu: Climb
+human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
+human|/obj/item/cell menu: Move To Top
+human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/cell menu: Use
+human|/obj/item/cell click: Click: Use
+human|/obj/item/melee/energy/blade menu: Move To Top
+human|/obj/item/melee/energy/blade menu: Open
+human|/obj/item/melee/energy/blade menu: Slice open
+human|/obj/item/melee/energy/blade menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/melee/energy/blade click: Click: Slice open
+human|/obj/item/reagent_containers menu: Insert container
+human|/obj/item/reagent_containers menu: Move To Top
+human|/obj/item/reagent_containers menu: Take out container
+human|/obj/item/reagent_containers menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/reagent_containers menu: Use
+human|/obj/item/reagent_containers click: Click: Insert container
+human|/obj/item/storage menu: Climb
+human|/obj/item/storage menu: Empty bin (refused: it is empty)
+human|/obj/item/storage menu: Empty into
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage click: Click: Empty into
+human|none click: nothing
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Use
+robot|none click: Click: Use

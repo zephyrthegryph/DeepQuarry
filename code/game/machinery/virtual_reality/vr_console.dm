@@ -30,11 +30,10 @@
 	var/perfect_replica = TRUE
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 15
-	active_power_usage = 200
 	light_color = "#FF0000"
 
 CAPABILITIES(/obj/machinery/vr_sleeper)
+	configure(uses_power(idle = 15, active = 200))
 	default_parts()
 	started_work(step = PROC_REF(work_step), starts = TRUE, gate = PROC_REF(vr_occupied))
 	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad, starts = /datum/effect/effect/system/smoke_spread/bad)

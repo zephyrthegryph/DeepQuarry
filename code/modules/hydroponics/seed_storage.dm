@@ -36,7 +36,6 @@ CAPABILITIES(/datum/seed_pile)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 100
 
 	var/seeds_initialized = 0 // Map-placed ones break if seeds are loaded right at the start of the round, so we do it on the first interaction
 	var/list/datum/seed_pile/piles = list() // ALLOW(instance_list): d: seed piles are filled at init and are the machine's stock
@@ -52,6 +51,7 @@ CAPABILITIES(/datum/seed_pile)
 STAT(/obj/machinery/seed_storage, electrified, TOP, base = 0)
 
 CAPABILITIES(/obj/machinery/seed_storage)
+	configure(uses_power(idle = 100))
 	started_work(step = PROC_REF(work_step))
 	owns_many(nameof(piles), /datum/seed_pile)
 	owns_many(nameof(piles_contra), /datum/seed_pile)

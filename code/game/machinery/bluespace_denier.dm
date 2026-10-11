@@ -12,7 +12,6 @@
 	base_state = "pflash"
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
 
 // if already anchored, setup the proximity check
 
@@ -55,6 +54,7 @@
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.
 
 CAPABILITIES(/obj/machinery/bluespace_denier)
+	configure(uses_power(idle = 2))
 	after_init(10 SECONDS, then(PROC_REF(start_up)))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(denier_emp))))
 	op("use_wrench", tool(TOOL_WRENCH), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(wrench_used)))

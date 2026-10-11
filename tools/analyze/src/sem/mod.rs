@@ -11,8 +11,10 @@
 //! `READS_FROM(...)`, ...) are read from source text by [`decls`]; everything that needs real
 //! structure (what a proc body reads, what a type declares) comes from the AST here.
 
+pub mod actor_tests;
 pub mod ast;
 pub mod checks;
+pub mod ctor_args;
 pub mod handlers;
 pub mod hooks;
 pub mod cli;
@@ -23,6 +25,7 @@ pub mod keys;
 pub mod gen;
 pub mod incremental;
 pub mod oracle;
+pub mod procs;
 pub mod reads;
 
 use std::collections::HashMap;

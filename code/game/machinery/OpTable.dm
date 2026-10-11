@@ -7,8 +7,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 1
-	active_power_usage = 5
 	surgery_cleanliness = 100
 	throwpass = 1
 	var/strapped = 0.0
@@ -25,6 +23,7 @@
 			break
 
 CAPABILITIES(/obj/machinery/optable)
+	configure(uses_power(idle = 1, active = 5))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(victim), wakes_on = list(nameof(victim)))
 	extend(/datum/act/hit/explosion, instead(then(PROC_REF(optable_blast))))
 	op("optable_interaction_hand", hand(), ungated(), then(PROC_REF(optable_interaction_hand)))

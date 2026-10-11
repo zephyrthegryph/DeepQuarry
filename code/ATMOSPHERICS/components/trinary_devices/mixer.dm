@@ -14,7 +14,6 @@
 	name = "Gas mixer"
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 3700	//This also doubles as a measure of how powerful the mixer is, in Watts. 3700 W ~ 5 HP
 
 	var/set_flow_rate = ATMOS_DEFAULT_VOLUME_MIXER
@@ -82,6 +81,7 @@ TRACKED(/obj/machinery/atmospherics/trinary/mixer, node2_concentration)
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate), nameof(node1_concentration), nameof(node2_concentration))
 
 CAPABILITIES(/obj/machinery/atmospherics/trinary/mixer)
+	configure(uses_power(idle = 150))
 	pipe_device_window("AtmosMixer")
 	op("power", ui_act("power"), then(PROC_REF(ui_power_switched)))
 	op("pressure", ui_act("pressure", arg("pressure")), then(PROC_REF(ui_flow_rate_set)))

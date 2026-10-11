@@ -29,16 +29,6 @@ DECLARE_APPEARANCE(/obj/machinery/dq_appearance_probe, "locked", list("1" = list
 /obj/machinery/dq_appearance_probe/bare
 APPEARANCE_NONE(/obj/machinery/dq_appearance_probe/bare)
 
-/// A provider: overlays computed from state, owned by the runtime.
-/obj/structure/dq_appearance_provider
-	var/count = 0
-
-DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_DATUM_A))
-/obj/structure/dq_appearance_provider/appearance_overlays()
-	. = list()
-	for(var/i in 1 to count)
-		. += "dot[i]"
-
 /// A procedural drawer: counts its redraws.
 /obj/structure/dq_appearance_procedural
 	var/redraws = 0
@@ -186,21 +176,3 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 	O.update_icon()
 	TEST_ASSERT_EQUAL(O.icon_state, "probe01other", "the subtype's initial icon_state fills the inherited template")
 
-/// A provider's overlays are swapped by the runtime; a declared channel re-runs it.
-/datum/unit_test/dq_sys_appearance_provider
-
-/datum/unit_test/dq_sys_appearance_provider/Run()
-	appearance_flush()
-	var/obj/structure/dq_appearance_provider/P = allocate(/obj/structure/dq_appearance_provider)
-	P.count = 2
-	P.update_icon()
-	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1") + dq_sys_appearance_overlays(P, "dot2"), 2, "the provider's overlays are drawn")
-	P.count = 1
-	P.update_icon()
-	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot2"), 0, "overlays the provider no longer returns are cut")
-	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot1"), 1, "a kept overlay is drawn once, not stacked")
-	P.count = 3
-	changed(P, CHANGE_DATUM_A)
-	TEST_ASSERT(P.appearance_queued, "a declared channel queues the provider")
-	appearance_flush()
-	TEST_ASSERT_EQUAL(dq_sys_appearance_overlays(P, "dot3"), 1, "the queued refresh re-ran the provider")

@@ -7,8 +7,6 @@
 	on = 1.0
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 
 /obj/machinery/igniter/proc/interaction_toggle(datum/act/op/A)
 	var/mob/user = A.actor
@@ -22,6 +20,7 @@
 /// unpowered until power returns.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/igniter)
+	configure(uses_power(idle = 2, active = 4))
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	op("toggle", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Toggle"), then(PROC_REF(interaction_toggle)))
 
@@ -62,8 +61,6 @@ CAPABILITIES(/obj/machinery/igniter)
 	var/base_state = "migniter"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 4
 
 /obj/machinery/sparker/power_change()
 	. = ..()
@@ -110,6 +107,7 @@ CAPABILITIES(/obj/machinery/igniter)
 	return 1
 
 CAPABILITIES(/obj/machinery/sparker)
+	configure(uses_power(idle = 2, active = 4))
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(sparker_emp))))
 	op("use_screwdriver", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(screwdriver_used)))
 	op("sparker_silicon_trigger", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Ignite"), then(PROC_REF(sparker_silicon_trigger)))

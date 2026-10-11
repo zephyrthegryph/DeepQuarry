@@ -5,8 +5,6 @@
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_filter
 	VAR_PROTECTED/filter_side = -1 // L
 	VAR_PRIVATE/filter_reagent_id = ""
@@ -21,6 +19,7 @@
 TRACKED(/obj/machinery/reagent_refinery/filter, filter_side)
 
 CAPABILITIES(/obj/machinery/reagent_refinery/filter)
+	configure(uses_power(idle = 5, active = 50))
 	after_init(0, then(PROC_REF(apply_default_parts)))
 	climb()
 	op("reagent_filter_use", hand(), priority(OP_PRIORITY_DEFAULT - 1), ungated(), label("Use"), then(PROC_REF(interaction_reagent_filter_use)))

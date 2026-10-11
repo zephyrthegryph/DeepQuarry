@@ -7,8 +7,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 200
 
 	var/print_delay = 150
 	var/print_cost
@@ -168,6 +166,7 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 /// own draw while it runs.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/food_replicator)
+	configure(uses_power(idle = 20, active = 200))
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 	op("part_replacement", item(/obj/item/storage/part_replacer), priority(OP_PRIORITY_DEFAULT - 1), label("Replace parts"), then(TYPE_PROC_REF(/obj/machinery, op_part_replacement)))
 	op("scan", item(/obj/item/reagent_containers/food), priority(OP_PRIORITY_DEFAULT - 1), label("Scan food"), starts(PROC_REF(interaction_scan)), wait(1 SECOND), then(PROC_REF(interaction_scan_timed_done)))

@@ -1023,9 +1023,9 @@ CAPABILITIES(/obj/item/melee/baton/fluff/stunstaff)
 	drawn_state = look.state("[base_icon][wielded][status]")
 	look.held_state(drawn_state)
 	if(status==1)
-		look.light(2, 2, lightcolor)
+		look.glow(2, 2, lightcolor)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/melee/baton/fluff/stunstaff/dropped(mob/user, equipping, slot)
 	..()

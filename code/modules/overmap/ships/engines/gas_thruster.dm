@@ -63,8 +63,6 @@
 	// uncreated_component_parts = list(/obj/item/stock_parts/power/apc/buildable = 1)
 
 	use_power = USE_POWER_OFF
-	power_channel = EQUIP
-	idle_power_usage = 1000
 
 	var/datum/ship_engine/gas_thruster/controller
 	var/thrust_limit = 1		//Value between 1 and 0 to limit the resulting thrust
@@ -78,6 +76,7 @@
 	return 0
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
+	configure(uses_power(channel = EQUIP, idle = 1000))
 	owns_one(nameof(controller), starts = /datum/ship_engine/gas_thruster)
 
 /obj/machinery/atmospherics/unary/engine/Initialize(mapload)
@@ -172,7 +171,7 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/engine)
 	//energy cost - thb all of this is to limit the use of back up batteries
 	var/energy_upgrade = CLAMP(total_component_rating_of_type(/obj/item/stock_parts/capacitor), 0.1, 6)
 	charge_per_burn = initial(charge_per_burn) / energy_upgrade
-	change_power_consumption(initial(idle_power_usage) / energy_upgrade, USE_POWER_IDLE)
+	change_power_consumption(power_of_type(type).idle / energy_upgrade, USE_POWER_IDLE)
 
 //Exhaust effect
 /obj/effect/engine_exhaust

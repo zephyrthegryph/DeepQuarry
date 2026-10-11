@@ -49,7 +49,7 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil)
 	icon_state = "blank"
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
-	param(nameof(seed_at_make), pos = 1)
+	param(nameof(seed_at_make), pos = 1, overrides = TRUE)
 	rolls(nameof(pixel_y), range_of(-5, 5))
 
 /// The seed the soil grows (its constructor param).

@@ -8,8 +8,6 @@
 	var/operating = FALSE
 	var/obj/item/robot_parts/being_built = null
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
-	active_power_usage = 10000
 	var/inserting = FALSE
 
 /// No side effects: whether this stack is steel and we're not already mid-insertion.
@@ -58,6 +56,7 @@ MSG_DEF_SELF(robot_fabricator/busy, "The fabricator is already building a part."
 MSG_DEF_SELF(robot_fabricator/metal, "The fabricator does not have enough metal.")
 
 CAPABILITIES(/obj/machinery/robotic_fabricator)
+	configure(uses_power(idle = 40, active = 10000))
 	interface("AncientDroneFab")
 	extend("ui_open", priority(OP_PRIORITY_DEFAULT - 1), needs(req_operable()))
 	op("build_l_arm", ui_act(), needs(req_is(nameof(operating), FALSE, because = MSG(robot_fabricator/busy)), req_at_least(nameof(metal_amount), 25000, because = MSG(robot_fabricator/metal))), then(PROC_REF(build_l_arm)))

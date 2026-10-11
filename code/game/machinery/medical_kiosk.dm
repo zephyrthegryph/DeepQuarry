@@ -24,9 +24,7 @@
 	desc = "A helpful kiosk for finding out whatever is wrong with you."
 	icon = 'icons/obj/machines/medical_kiosk.dmi'
 	icon_state = "kiosk_off"
-	idle_power_usage = 5
 	bubble_icon = "medical"
-	active_power_usage = 200
 	circuit = /obj/item/circuitboard/medical_kiosk
 	anchored = TRUE
 	density = TRUE
@@ -55,6 +53,7 @@ MSG_DEF_SELF(medical_kiosk/patient_only, "Only a living patient can use this kio
 MSG_DEF_SELF(medical_kiosk/panel_open, "The kiosk's maintenance panel is open.")
 
 CAPABILITIES(/obj/machinery/medical_kiosk)
+	configure(uses_power(idle = 5, active = 200))
 	op("medical_kiosk_interaction_hand", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"),
 		needs(req_adjacent(), req_capable(), req_operable(), req(PROC_REF(kiosk_patient)), req(PROC_REF(kiosk_panel_closed))),
 		claims(CLAIM_TARGET),

@@ -90,11 +90,10 @@ CAPABILITIES(/obj/machinery/embedded_controller/radio/airlock)
 	set_frequency(sanitize_frequency(freq, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 	return TRUE
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/appearance_overlays()
-	. = list()
-	if(panel_open)
-		. += "airlock_control_open"
+/// An airlock controller also shows its open panel.
+/obj/machinery/embedded_controller/radio/airlock/draw(datum/look/look)
+	..()
+	look.overlay("airlock_control_open", panel_open)
 
 //Advanced airlock controller for when you want a more versatile airlock controller - useful for turning simple access control rooms into airlocks
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller
@@ -116,6 +115,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_P
 /obj/machinery/embedded_controller/radio/airlock/access_controller
 	icon = 'icons/obj/airlock_machines.dmi'
 	icon_state = "access_control_standby"
+	display_base = "access_control"
 
 	name = "Access Controller"
 	tag_secure = 1
@@ -123,14 +123,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, TYPE_P
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/embedded_controller/radio/airlock/access_controller/appearance_overlays()
-	. = list()
-	if(on && program)
-		if(program.memory["processing"])
-			icon_state = "access_control_process"
-		else
-			icon_state = "access_control_standby"
-	else
-		icon_state = "access_control_off"
-
+/// The access controller's sprite has no open-panel layer.
+/obj/machinery/embedded_controller/radio/airlock/access_controller/draw(datum/look/look)
+	..()
+	look.hide("airlock_control_open")

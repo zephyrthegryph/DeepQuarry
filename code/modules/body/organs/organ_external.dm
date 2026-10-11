@@ -428,7 +428,7 @@ CAPABILITIES(/obj/item/organ/external)
 /obj/item/organ/external/update_health()
 	recalc_integrity()
 
-/obj/item/organ/external/Initialize(mapload, internal)
+/obj/item/organ/external/Initialize(mapload)
 	. = ..(mapload, 0)
 	if(istype(owner))
 		sync_colour_to_human(owner)
@@ -1114,7 +1114,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			parent_organ.update_damages()
 		else
 			// Born in the victim, the stump takes this limb's place on its parent.
-			var/obj/item/organ/external/stump/stump = new (victim, 0, src)
+			var/obj/item/organ/external/stump/stump = new (victim, null, src)
 			if(is_robotic())
 				stump.robotize()
 			stump.add_wound(W)

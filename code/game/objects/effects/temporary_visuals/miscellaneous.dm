@@ -22,7 +22,7 @@ CAPABILITIES(/obj/effect/temp_visual/decoy)
 	if(customappearance)
 		appearance = customappearance
 
-/obj/effect/temp_visual/decoy/fading/Initialize(mapload, atom/mimiced_atom)
+/obj/effect/temp_visual/decoy/fading/Initialize(mapload)
 	. = ..()
 	animate(src, alpha = 0, time = duration)
 

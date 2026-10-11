@@ -1,6 +1,4 @@
 /obj/machinery/recycling
-	idle_power_usage = 5
-	active_power_usage = 500
 	density = TRUE
 	anchored = TRUE
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -11,6 +9,7 @@
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/recycling)
+	configure(uses_power(idle = 5, active = 500))
 	started_work(step = PROC_REF(work_step))
 	op("feed", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Feed"), needs(req_is(nameof(working), FALSE, because = MSG(recycling/working))), then(PROC_REF(interaction_feed)))
 	default_parts()

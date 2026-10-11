@@ -42,9 +42,6 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 2
-	active_power_usage = 10
-	power_channel = LIGHT
 	max_integrity = 20
 	integrity_failure = 0.5
 	/// What light is currently in the socket. Use bulb() to read it.
@@ -102,6 +99,7 @@ TRACKED(/obj/machinery/light, flickering)
 TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light)
+	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
 	powered(POWER_CHANNEL_LIGHTING)
 	owns_one(nameof(installed_light), /obj/item/light)
@@ -124,7 +122,7 @@ CAPABILITIES(/obj/machinery/light)
 	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed)))
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
-	param(nameof(construct_at_make), pos = 1, keep = FALSE)
+	param(nameof(construct_at_make), pos = 1, keep = FALSE, overrides = TRUE)
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)

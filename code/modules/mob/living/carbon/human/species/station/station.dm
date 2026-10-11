@@ -1987,7 +1987,7 @@
 
 	if(check_alien_ability(150,1,O_RESIN))
 		act_message(src, null, others = span_alium(span_bold("%U% has planted some alien weeds!")))
-		new /obj/effect/alien/weeds/node/weak(get_turf(src), null, "#321D37")	// Aliens.dm for weed node origin.
+		new /obj/effect/alien/weeds/node/weak(get_turf(src))	// Aliens.dm for weed node origin.
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 

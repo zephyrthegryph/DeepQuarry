@@ -162,9 +162,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
 	if(rag)
 		look.watch(rag)
 		look.underlay(look_image('icons/obj/drinks.dmi', rag.rag_lit ? "[rag_underlay]_lit" : rag_underlay))
-		look.light(rag.light_range, rag.light_power, rag.light_color)
+		look.glow(rag.light_range, rag.light_power, rag.light_color)
 	else
-		look.light_off()
+		look.glow(GLOW_OFF)
 
 /obj/item/reagent_containers/food/drinks/bottle/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	var/blocked = ..()

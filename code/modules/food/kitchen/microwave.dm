@@ -22,8 +22,6 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 2000
 	clicksound = SFX_BUTTON
 	clickvol = 30
 	flags = MICROWAVE_FLAGS
@@ -50,6 +48,7 @@
 MSG_DEF(microwave/ejecting, span_notice("You try to open %T% and remove its contents."), span_notice("%U% tries to open %T% and remove its contents."))
 
 CAPABILITIES(/obj/machinery/microwave)
+	configure(uses_power(idle = 5, active = 2000))
 	reagents(100)
 	owns_one(nameof(soundloop), /datum/looping_sound/microwave, starts = /datum/looping_sound/microwave)
 	every(PROC_REF(loop_delay), then(PROC_REF(cook_loop_step)), when = nameof(loop_running))

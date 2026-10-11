@@ -3,6 +3,7 @@ TRACKED(/obj/machinery/atmospherics/unary/freezer, cooling)
 TRACKED(/obj/machinery/atmospherics/unary/freezer, set_temperature)
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
+	configure(uses_power(idle = 5))
 	hose_sockets(list(/datum/hose_connector/input, /datum/hose_connector/output))
 	silicon_ui()
 	reagents(120)
@@ -35,7 +36,6 @@ CAPABILITIES(/obj/machinery/atmospherics/unary/freezer)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 5			// 5 Watts for thermostat related circuitry
 	circuit = /obj/item/circuitboard/unary_atmos/cooler
 
 	/// The share of the Carnot COP its pump achieves (parts and coolant raise it).

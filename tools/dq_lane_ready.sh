@@ -79,6 +79,7 @@ if [ -n "$changed" ]; then
 	[ -z "$other" ] || die "the gates changed tracked files that are not look snapshots (not stamping):
 $other"
 	git add -u code/modules/unit_tests/snapshots
+	git add -- code/modules/unit_tests/snapshots/op_bases 2>/dev/null || true
 	git commit -q -m "Record look keys after the lane-ready run
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" || die "could not commit the recorded look keys"
@@ -89,19 +90,22 @@ head_sha="$(git rev-parse HEAD)"
 ok_file="data/merge-gates/${tested:0:12}.ok"
 passed="$(sed -n 's/^passed=//p' "$ok_file")"
 failed="$(sed -n 's/^failed=//p' "$ok_file")"
+# Failures tools/ci/known_failures.txt lists do not fail the gates; the stamp is ok when nothing else failed (an old .ok: every failure).
+new_failed="$(sed -n 's/^new_failed=//p' "$ok_file")"
+new_failed="${new_failed:-${failed:-0}}"
 tests_json="$(sed -n 's/^tests_json=//p' "$ok_file")"
 mkdir -p data/lane-ready
 stamp_json="$(node -e '
 	const fs = require("fs");
-	const [branch, head, tested, master, testsCsv, coversCsv, passed, failed, testsJson, timingsFile, started] = process.argv.slice(1);
+	const [branch, head, tested, master, testsCsv, coversCsv, passed, failed, testsJson, timingsFile, started, newFailed] = process.argv.slice(1);
 	const timings = {};
 	try { for (const l of fs.readFileSync(timingsFile, "utf8").split(/\r?\n/)) { const m = /^(\S+) (\d+)s/.exec(l); if (m) timings[m[1]] = Number(m[2]); } } catch {}
 	console.log(JSON.stringify({
 		version: 1, branch, branch_commit: head, tested_commit: tested, master_commit: master,
 		tests: testsCsv ? testsCsv.split(",") : [], covers: coversCsv ? coversCsv.split(",") : [],
-		ok: Number(failed) === 0, passed: Number(passed), failed: Number(failed), tests_json: testsJson,
+		ok: Number(newFailed) === 0, passed: Number(passed), failed: Number(failed), new_failed: Number(newFailed), tests_json: testsJson,
 		gate_seconds: timings, created: new Date().toISOString(), host: require("os").hostname(),
-	}));' "$branch" "$head_sha" "$tested" "$master" "$(IFS=,; echo "${list[*]-}")" "$(IFS=,; echo "${covers[*]-}")" "${passed:-0}" "${failed:-0}" "$tests_json" "data/merge-gates/${tested:0:12}.timings" "$t_start")" || die "could not build the stamp"
+	}));' "$branch" "$head_sha" "$tested" "$master" "$(IFS=,; echo "${list[*]-}")" "$(IFS=,; echo "${covers[*]-}")" "${passed:-0}" "${failed:-0}" "$tests_json" "data/merge-gates/${tested:0:12}.timings" "$t_start" "$new_failed")" || die "could not build the stamp"
 printf '%s\n' "$stamp_json" >"data/lane-ready/${branch//\//_}.json"
 git notes --ref=lane-ready add -f -m "$stamp_json" HEAD || die "could not write the stamp note"
 

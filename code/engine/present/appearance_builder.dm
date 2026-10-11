@@ -26,7 +26,7 @@
 	var/list/vis
 	/// A one-shot flick state: played when the look is applied, not part of the key's steady state.
 	var/flick_state
-	/// list(range, power, color) from look.light(), or null for no light from the look.
+	/// list(range, power, color) from look.glow(range, ...), or null for no light from the look.
 	var/list/light_spec
 	/// look.held_state(): the item_state hands draw this item with, or null (unchanged).
 	var/held_state
@@ -161,12 +161,28 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	LAZYADD(overlays, "[name][step]")
 
 /**
- * Draws a part that glows in the dark: the part `name` (with a `value`, the part of that value), emissive. A
- * part of that name already added (look.part()) is upgraded, so a glow never needs the part beside it. `value` is
- * TRUE (or any value) to do it, FALSE or null not to.
+ * Two things glow, and the first argument says which.
+ *
+ * A light: `look.glow(range, power, color)` (numbers first) or `look.glow(GLOW(range, power, color))`. The holder casts that light while
+ * this look holds; the engine applies it when the look is applied (draw() never calls set_light(): a draw writes no state). A look that
+ * names no light (or a range or power of 0) turns off a light an earlier look gave; `look.glow(GLOW_OFF)` is dark even where the type starts lit. The values may come from tracked reads, or from a proc whose reads are declared: `look.glow(scan_light())`.
+ *
+ * An emissive part: `look.glow(name, value)` draws the part `name` (with a `value`, the part of that value) so it shows in the dark. A part
+ * of that name already added (look.part()) is upgraded, so a glow never needs the part beside it. `value` is TRUE (or any value) to do it,
+ * FALSE or null not to; only `when` is true.
  */
-/datum/look/proc/glow(name, value = TRUE, when = TRUE)
+/datum/look/proc/glow(name, value = TRUE, when = TRUE, power = null, color = null)
 	touched = TRUE
+	if(islist(name) || isnum(name))
+		var/list/spec = islist(name) ? name : list(name, isnull(power) ? (value == TRUE ? 1 : value) : power, isnull(color) ? (when == TRUE ? null : when) : color)
+		var/range = spec[1]
+		var/strength = length(spec) >= 2 ? spec[2] : 1
+		if(!range || !strength)
+			if(islist(name))
+				light_spec = list(0, 0, null) // GLOW_OFF: dark even where the type starts lit
+			return
+		light_spec = list(range, strength, length(spec) >= 3 ? spec[3] : null)
+		return
 	if(!when || isnull(name) || isnull(value) || value == 0 || value == "")
 		return
 	var/wanted = (value == TRUE) ? null : "[value]"
@@ -424,6 +440,16 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		I.blend_mode = blend_mode
 	return I
 
+/// A text overlay for look.overlay() (a timer's countdown, a display's lines): `text` as maptext over a box `width` by `height` pixels, built in one call.
+/proc/look_maptext_image(text, width = 32, height = 32, maptext_x = 0, maptext_y = 0)
+	var/image/I = image(icon = null)
+	I.maptext = text
+	I.maptext_width = width
+	I.maptext_height = height
+	I.maptext_x = maptext_x
+	I.maptext_y = maptext_y
+	return I
+
 /datum/look/proc/set_color(value)
 	color = value
 	touched = TRUE
@@ -473,19 +499,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	if(!when || !thing)
 		return
 	LAZYADD(vis, thing) // ALLOW(ownership): vis is the look's per-draw scratch list of shown atoms, rebuilt on every draw; it is not a relation
-
-/// The atom's light while this look holds (the APC's screen glow, a lit airlock). A look that stops
-/// setting it turns the light off: draw() never calls set_light() itself (that would be a side effect).
-/datum/look/proc/light(range, power = 1, color)
-	touched = TRUE
-	if(!range || !power)
-		return
-	light_spec = list(range, power, color)
-
-/// The holder's light is off while this look shows (set_light(0)), even when its type starts lit.
-/datum/look/proc/light_off()
-	touched = TRUE
-	light_spec = list(0, 0, null)
 
 /// A one-shot animation state, played when this look is applied.
 /// The state hands draw this item with (its item_state). The holder's hands are redrawn when it changes. A draw that does
@@ -642,7 +655,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		A.pixel_y = initial(A.pixel_y)
 	if(light_spec)
 		if(!light_spec[1])
-			A.look_apply_light(0) // light_off(): the range only, so the power and colour stay for the next light
+			A.look_apply_light(0) // GLOW_OFF: the range only, so the power and colour stay for the next light
 		else if(light_spec[3])
 			A.look_apply_light(light_spec[1], light_spec[2], light_spec[3])
 		else

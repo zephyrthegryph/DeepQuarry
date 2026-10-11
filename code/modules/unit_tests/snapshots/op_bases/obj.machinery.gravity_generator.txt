@@ -1,0 +1,9 @@
+ai|none menu: Ui open
+ai|none menu: Use
+ai|none click: Click: Ui open
+human|none menu: Ui open
+human|none click: Click: Ui open
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Ui open
+robot|none menu: Use
+robot|none click: Click: Ui open

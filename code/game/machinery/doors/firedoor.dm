@@ -53,9 +53,7 @@
 
 	var/hatch_open = 0
 
-	power_channel = ENVIRON
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
 
 	/// Lazy: 4 cardinal dirs of FIREDOOR_ALERT_* bitflags, null while no direction alerts.
 	var/list/dir_alerts
@@ -175,6 +173,7 @@ MSG_DEF_SELF(firedoor/need_wield, "You need to be wielding that to do that.")
 MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor)
+	configure(uses_power(channel = ENVIRON, idle = 5))
 	owns_many(nameof(air_watches), /datum/native_watch/gas)
 	ref_one(nameof(dependency_air_0), /datum/gas_mixture)
 	gas_level(into = nameof(air_hot_0), reading = CH_GAS_TEMPERATURE, above = convert_c2k(FIREDOOR_MAX_TEMP - 0.01), hysteresis = 0, air = nameof(dependency_air_0))

@@ -30,7 +30,7 @@ const RULES: &[RuleMeta] = &[
     RuleMeta { name: "nameof_unrelated", hint: "name a var of the holder's own type (nameof(var)); another type's var is not this holder's to name" },
     RuleMeta { name: "unkeyed_wire_after", hint: "give the timer a key (after(..., key = \"x\")) or make the pulse a timed hold (wires(), hold(..., lasts =))" },
     RuleMeta { name: "manual_push", hint: "write the state through its setter: the push is generated from what it reads (section 7)" },
-    RuleMeta { name: "output_side_effect", hint: "outputs (ui_data, draw, appearance) say and play nothing, and a look changes no atom (its own or another's): move it to the op or handler that changes the state, or draw it through the look (look.overlay(), look.light(), look.held_state())" },
+    RuleMeta { name: "output_side_effect", hint: "outputs (ui_data, draw, appearance) say and play nothing, and a look changes no atom (its own or another's): move it to the op or handler that changes the state, or draw it through the look (look.overlay(), look.glow(range, power, color), look.held_state())" },
     RuleMeta { name: "undef_then_used", hint: "#undef a file-local define after its last use, or define it in __defines" },
 ];
 
@@ -183,7 +183,7 @@ fn selftest() -> Result<String, String> {
         "\tlook.overlay(\"a\")",                                // 21 the look: fine
         "\tholder.update_inv_l_hand()",                         // 22 output_side_effect: another atom
         "\tloc.update_icon()",                                  // 23 output_side_effect
-        "\tlook.light(2, 1)",                                   // 24 fine
+        "\tlook.glow(2, 1)",                                    // 24 fine
     ];
     let f = SourceFile::from_text("code/x.dm", &fixture.join("\n"));
     let mut v = Vec::new();

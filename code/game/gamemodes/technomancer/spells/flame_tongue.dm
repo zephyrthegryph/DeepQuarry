@@ -16,10 +16,10 @@
 
 CAPABILITIES(/obj/item/spell/flame_tongue)
 	owns_one(nameof(welder), starts = /obj/item/weldingtool/spell)
+	look_glow(GLOW(3, 2, "#FF6A00"))
 
-/obj/item/spell/flame_tongue/Initialize(mapload, coreless)
+/obj/item/spell/flame_tongue/Initialize(mapload)
 	. = ..()
-	set_light(3, 2, l_color = "#FF6A00")
 	visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
 	welder.setWelding(1)
 

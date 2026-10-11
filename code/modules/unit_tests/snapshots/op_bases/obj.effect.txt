@@ -1,0 +1,7 @@
+ai|none click: nothing
+human|/obj/item menu: Disrupt
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item click: Click: Disrupt
+human|none click: nothing
+robot|none click: nothing

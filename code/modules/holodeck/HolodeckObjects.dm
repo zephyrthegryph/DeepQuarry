@@ -423,11 +423,9 @@ CAPABILITIES(/obj/structure/holohoop)
 	unacidable = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 2
-	active_power_usage = 6
-	power_channel = ENVIRON
 
 CAPABILITIES(/obj/machinery/readybutton)
+	configure(uses_power(idle = 2, active = 6, channel = ENVIRON))
 	op("readybutton_silicon_refuse", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(readybutton_silicon_refuse)))
 	op("readybutton_touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Use"), then(PROC_REF(interaction_touch)))
 	op("readybutton_press", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 3), label("Press"), needs(req_bool(PROC_REF(can_press_holds), because = PROC_REF(can_press_refusal))), then(PROC_REF(interaction_press)))

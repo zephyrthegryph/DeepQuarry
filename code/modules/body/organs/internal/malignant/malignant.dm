@@ -18,7 +18,7 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 /obj/item/organ/internal/malignant/var/forcetag
 
 // ALLOW(init/INSTANCE_STATE): a growth is tagged and picks an organic limb to grow in (or the one it is forced to) before its parents' init
-/obj/item/organ/internal/malignant/Initialize(mapload, internal)
+/obj/item/organ/internal/malignant/Initialize(mapload)
 	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
 	if(forcetag)
 		organ_tag = forcetag
@@ -36,17 +36,17 @@ CAPABILITIES(/obj/item/organ/internal/malignant)
 					if(checklimb)
 						// valid limb, check if organic!
 						if(checklimb.status == 0 && !checklimb.is_robotic())
-							return ..(mapload, internal)
+							return ..()
 		else
 			parent_organ = force_location
-			return ..(mapload, internal)
+			return ..()
 		// invalid, spawn as dead...
 		set_status(ORGAN_DEAD)
 	else
 		// engineered ones don't do all of the above
 		if(force_location)
 			parent_organ = force_location
-	return ..(mapload, internal)
+	return ..()
 
 /mob/living/carbon/human/proc/random_malignant_organ( allowtumors = TRUE, allowparasites = TRUE, allowengineered = TRUE)
 	// get a list of valid malignant organs and spawn one

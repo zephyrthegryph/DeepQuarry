@@ -53,6 +53,8 @@
 	/// The starting occupant (owns()/rel_one()/rel_many(starts =)): a type path, a list of paths (or
 	/// list(path = count)) for a list var, or the name of a var holding either. Null: none.
 	var/starts
+	/// owns(on_lost = PROC_REF(x)): the holder's x(thing) when an occupant leaves the var. An entry with one is never interned.
+	var/on_lost
 
 /// Interned: an identical declaration made anywhere in the tree (an ancestor's relations() that every
 /// subtype's per-type list repeats, such as /atom's light_sources and heat_watches) is ONE datum and one
@@ -107,7 +109,7 @@
  *   is made instead, an instance in it makes nothing. A PROC_REF decides everything: it is called with the var's current value and
  *   returns what the var starts with (a type, a list of types, instances it made, or key = instance for an associative owns_many).
  */
-/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE, successor = null, successor_var = null)
+/proc/owns(var_name, policy = OWN_DELETE, policy_proc = null, if_var = null, else_policy = OWN_DELETE, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE, type = null, starts = null, is_list = FALSE, successor = null, successor_var = null, on_lost = null)
 	if(policy == OWN_PRIVATE_COPY)
 		if(!isnull(starts))
 			CRASH("owns([var_name]): OWN_PRIVATE_COPY holds a prototype or a private copy of one; it has no starting occupant")
@@ -130,7 +132,18 @@
 		entry[OWNE_TO] = list(successor, successor_var)
 	if(entry && is_list) // owns_many: own_move()/own_transfer() add to a list that is still null instead of storing the value as a scalar
 		entry[OWNE_LIST] = TRUE
-	return _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
+	var/datum/own_entry/made = _own_entry(var_name, entry, keep_after_destroy, pool_reset, forward, starts)
+	if(!on_lost)
+		return made
+	var/datum/own_entry/with_lost = new // not interned: the handler is the declaring type's own
+	with_lost.var_name = made.var_name
+	with_lost.entry = made.entry
+	with_lost.keep_after_destroy = made.keep_after_destroy
+	with_lost.pool_reset = made.pool_reset
+	with_lost.forward = made.forward
+	with_lost.starts = made.starts
+	with_lost.on_lost = on_lost
+	return with_lost
 
 // There is no shares(): a var holding a registered singleton, a DEF or another flyweight is declared by its type
 // (`var/datum/sys_periodic_def/while_def`). A registry type (REGISTRY_TYPE) or a flyweight type (flyweight_types(),
@@ -296,6 +309,10 @@
 	var/list/watch_vars
 	/// var name -> starting occupant spec (owns(starts =)), made by own_init_starts() at init, or null.
 	var/list/start_vars
+	/// var name -> list(var = value) applied to each starting occupant once built (owns_*(starts_set =)), or null.
+	var/list/start_sets
+	/// var name -> PROC_REF the holder runs with an occupant that left the var (owns_*(on_lost =)), or null.
+	var/list/lost_handlers
 	/// ENGINE_HOOK_*: the engine work the type's compiled declarations (code/engine/declare) ask for at init, or 0.
 	var/engine_hooks = 0
 
@@ -318,8 +335,11 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		for(var/datum/capability/C as anything in caps_of(D))
 			for(var/datum/own_entry/E as anything in C.owned())
 				decl.add(E)
+	var/list/legacy_lost = null
 	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, ownership)))
 		decl.add(E)
+		if(E.on_lost)
+			LAZYSET(legacy_lost, E.var_name, E.on_lost)
 	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, relations)))
 		decl.add(E)
 	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
@@ -366,6 +386,22 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		if(decl.starts[var_name] == STARTS_NONE)
 			continue // a subtype cancelled the occupant an ancestor declared
 		LAZYSET(T.start_vars, var_name, decl.starts[var_name])
+	for(var/var_name in legacy_lost)
+		LAZYSET(T.lost_handlers, var_name, legacy_lost[var_name])
+	// owns_*(starts_set =, on_lost =, starts_after =) of the type's CAPABILITIES lists.
+	var/list/start_after = null
+	for(var/datum/centry/C as anything in table_of(D).items)
+		var/datum/entry/E = C.item
+		if(!istype(E) || (E.kind != ENTRY_OWNS_ONE && E.kind != ENTRY_OWNS_MANY))
+			continue
+		if(E.args["starts_set"])
+			LAZYSET(T.start_sets, E.args["var"], E.args["starts_set"])
+		if(E.args["on_lost"])
+			LAZYSET(T.lost_handlers, E.args["var"], E.args["on_lost"])
+		if(E.args["starts_after"])
+			LAZYSET(start_after, E.args["var"], E.args["starts_after"])
+	if(start_after && T.start_vars)
+		T.start_vars = own_order_starts(D, T.start_vars, start_after)
 	if(T.keyed_key && !(T.keyed_key in D.vars))
 		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
@@ -517,3 +553,27 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/datum/D = value
 	OWN_REPORT("[holder.type].[var_name] is declared [type], refused [isdatum(value) ? "a [D.type]" : "[value]"]")
 	return FALSE
+
+/// The starting occupants in build order: each var after the one its starts_after = names (a cycle, or a name that builds nothing, is reported
+/// and falls back to declaration order).
+/proc/own_order_starts(datum/D, list/starts, list/after)
+	var/list/ordered = list()
+	var/list/visiting = list()
+	for(var/var_name in starts)
+		own_order_visit(D, var_name, starts, after, ordered, visiting)
+	return ordered
+
+/proc/own_order_visit(datum/D, var_name, list/starts, list/after, list/ordered, list/visiting)
+	if(var_name in ordered)
+		return
+	if(visiting[var_name])
+		OWN_REPORT("[D.type]: starts_after makes a cycle through '[var_name]'")
+		return
+	visiting[var_name] = TRUE
+	var/first = after[var_name]
+	if(first)
+		if(first in starts)
+			own_order_visit(D, first, starts, after, ordered, visiting)
+		else
+			OWN_REPORT("[D.type].[var_name]: starts_after = '[first]', which has no starting occupant")
+	ordered[var_name] = starts[var_name]

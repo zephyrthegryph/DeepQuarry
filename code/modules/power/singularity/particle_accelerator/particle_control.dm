@@ -9,8 +9,6 @@
 	anchored = FALSE
 	density = TRUE
 	use_power = USE_POWER_OFF
-	idle_power_usage = 500
-	active_power_usage = 70000 //70 kW per unit of strength
 	active = 0
 	dir = 1
 	var/strength_upper_limit = 2
@@ -24,7 +22,7 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
-	update_active_power_usage(initial(active_power_usage) * (strength + 1))
+	update_active_power_usage(power_of_type(type).active * (strength + 1))
 
 // a running accelerator powers down.
 /obj/machinery/particle_accelerator/control_box/on_destroy(force)
@@ -232,6 +230,7 @@ MSG_DEF_SELF(pa_control/timed_out, "ERROR: Request timed out. Check wire contact
 // hand opens them) and its window works once it is closed and its interface wire is whole. While it runs it makes every emitter of the
 // assembled accelerator emit (emit_step(), every machine service interval) at its strength.
 CAPABILITIES(/obj/machinery/particle_accelerator/control_box)
+	configure(uses_power(idle = 500, active = 70000))
 	ref_many(nameof(connected_parts), /obj/structure/particle_accelerator)
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(emit_step)), when = nameof(active))
 	wires(name = "Particle accelerator control", count = 5, tools = FALSE, at = null, by_hand = TRUE, reach = PROC_REF(wires_exposed_now))

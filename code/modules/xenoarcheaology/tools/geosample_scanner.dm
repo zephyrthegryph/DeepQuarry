@@ -25,8 +25,6 @@
 	icon_state = "analyser"
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 20
-	active_power_usage = 300
 
 	flags = OPENCONTAINER
 
@@ -88,6 +86,7 @@ MSG_DEF_SELF(radiocarbon_spectrometer/scanning, "you can't do that while it's sc
 	return OP_OK
 
 CAPABILITIES(/obj/machinery/radiocarbon_spectrometer)
+	configure(uses_power(idle = 20, active = 300))
 	reagents(100) // COOLANT_MAX (a file-local define the generated table cannot see)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(scanning), wakes_on = list(nameof(scanning)))
 	interface("XenoarchSpectrometer")

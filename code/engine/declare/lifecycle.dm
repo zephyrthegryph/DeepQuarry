@@ -232,6 +232,25 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(ispath(path))
 			D.vars[var_name] = null // ALLOW(api): the type path placeholder is replaced by the owned child
 			lifecycle_decl_adopt_child(D, var_name, starts_construct(path, D, start_args), FALSE)
+	if(T.start_sets)
+		for(var/var_name in T.start_sets)
+			own_apply_starts_set(D, var_name, T.start_sets[var_name])
+
+/// owns_*(starts_set = list(var = value)): each occupant of D.var_name gets each value, through its set_<var>() when it has one.
+/proc/own_apply_starts_set(datum/D, var_name, list/settings)
+	var/value = D.vars[var_name]
+	var/list/children = islist(value) ? value : list(value)
+	for(var/datum/child as anything in children)
+		if(!isdatum(child))
+			continue
+		for(var/key in settings)
+			var/setter = "set_[key]"
+			if(hascall(child, setter))
+				call(child, setter)(settings[key])
+			else if(key in child.vars)
+				child.vars[key] = settings[key] // ALLOW(api): the declared post-build setting of an occupant that has no setter for it
+			else
+				OWN_REPORT("[D.type].[var_name]: starts_set names '[key]', which [child.type] doesn't have")
 
 /// One starting occupant of `path` for holder D: `new path(D, start_args...)`, or, when start_args begins with NO_LOC, `new path(rest...)`.
 /proc/starts_construct(path, datum/D, list/start_args)

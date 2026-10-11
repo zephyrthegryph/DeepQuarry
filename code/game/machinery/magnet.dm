@@ -12,7 +12,6 @@
 	plane = PLATING_PLANE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50
 
 	var/freq = 1449		// radio frequency
 	var/electricity_level = 1 // intensity of the magnetic pull
@@ -112,6 +111,7 @@
 /// every power or break change.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/magnetic_module)
+	configure(uses_power(idle = 50))
 	every(PROC_REF(magnet_delay), then(PROC_REF(magnetic_process)), when = nameof(on))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
 
@@ -167,7 +167,6 @@ CAPABILITIES(/obj/machinery/magnetic_module)
 	density = TRUE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 45
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 0
 	var/list/magnets

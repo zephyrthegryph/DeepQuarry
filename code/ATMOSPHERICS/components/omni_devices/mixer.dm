@@ -12,7 +12,6 @@
 	pipe_state = "omni_mixer"
 
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 3700			//3700 W ~ 5 HP
 
 	/// Port role views, derived from the owned `ports` by rebuild_port_roles().
@@ -130,6 +129,7 @@ TRACKED(/obj/machinery/atmospherics/omni/mixer, set_flow_rate)
 	. += rust_push(nameof(rust_device_rev), nameof(set_flow_rate))
 
 CAPABILITIES(/obj/machinery/atmospherics/omni/mixer)
+	configure(uses_power(idle = 150))
 	ref_one(nameof(output))
 	ref_many(nameof(inputs))
 	pipe_device_window("OmniMixer")

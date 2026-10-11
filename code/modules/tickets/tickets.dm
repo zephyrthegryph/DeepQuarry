@@ -215,7 +215,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 CAPABILITIES(/obj/effect/statclick/ticket_list)
-	param(nameof(current_state), pos = 2)
+	param(nameof(current_state), pos = 2, overrides = TRUE)
 	click_on(PROC_REF(click_input))
 
 /// The native Click's actor and arguments, handed over by the engine (click_on(), code/engine/lifeforms/input.dm).
@@ -672,7 +672,7 @@ CAPABILITIES(/datum/ticket)
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 CAPABILITIES(/obj/effect/statclick/ticket)
-	param(nameof(ticket_datum), pos = 1)
+	param(nameof(ticket_datum), pos = 1, overrides = TRUE)
 	click_on(PROC_REF(click_input))
 
 /obj/effect/statclick/ticket/update()

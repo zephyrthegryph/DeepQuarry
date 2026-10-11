@@ -67,8 +67,6 @@ CAPABILITIES(/datum/dna2/record)
 	anchored = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 50
-	active_power_usage = 300
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	locked = 0
@@ -103,6 +101,7 @@ CAPABILITIES(/datum/dna2/record)
 
 // the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 CAPABILITIES(/obj/machinery/dna_scannernew)
+	configure(uses_power(idle = 50, active = 300))
 	default_parts()
 	blast_contents()
 	op("dna_scanner_interaction_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(dna_scanner_interaction_item)))
@@ -352,8 +351,6 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 	var/selected_menu_key = PAGE_SE
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
-	active_power_usage = 400
 
 /// Old attackby.
 TRACKED(/obj/machinery/computer/scan_consolenew, irradiating)
@@ -368,6 +365,7 @@ MSG_DEF_SELF(dna_console/not_standing, "You need to stand at the console.")
 // of a block injector) are asks() steps of the bufferOption op, shown as the window's modal. Every button wants the scanner connected, the
 // console not irradiating and the user standing on a tile; opening it wants a connected scanner and a user outside it.
 CAPABILITIES(/obj/machinery/computer/scan_consolenew)
+	configure(uses_power(idle = 10, active = 400))
 	silicon_ui()
 	after_init(25 SECONDS, then(PROC_REF(injector_cooldown_finish)))
 	owns_many(nameof(buffers), /datum/transhuman/body_record)

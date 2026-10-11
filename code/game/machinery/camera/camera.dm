@@ -5,8 +5,6 @@
 	icon = 'icons/obj/monitors_vr.dmi' // New Icons
 	icon_state = "camera"
 	use_power = USE_POWER_ACTIVE
-	idle_power_usage = 5
-	active_power_usage = 10
 	plane = MOB_PLANE
 	layer = BELOW_MOB_LAYER
 	max_integrity = 80
@@ -48,6 +46,7 @@ MSG_DEF_SELF(camera/needs_bug, "needs a camera bug")
 MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
+	configure(uses_power(idle = 5, active = 10))
 	op("camera_shred", inputs(hand(), menu()), ungated(), priority(OP_PRIORITY_DEFAULT - 1), hostile(), label("Slash"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(actor_can_shred)))), needs(req_on_origin(ORIGIN_MENU, req(PROC_REF(actor_can_shred), because = MSG(camera/not_possible))), req_adjacent(), req_capable()), then(PROC_REF(interaction_shred)))
 	op("camera_update_coverage", inputs(item(/obj/item), menu()), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable()), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(interaction_update_coverage)))
 	op("camera_paper_show", inputs(item(/obj/item/paper), item(/obj/item/pda)), priority(OP_PRIORITY_DEFAULT - 2), label("Show to camera"), when(req(PROC_REF(paper_show_meant))), then(PROC_REF(interaction_show_paper)))
@@ -55,7 +54,7 @@ CAPABILITIES(/obj/machinery/camera)
 	op("camera_bash", inputs(item(/obj/item), menu()), priority(OP_PRIORITY_DEFAULT - 4), hostile(), label("Attack"), when(cond_any(req_on_origin(ORIGIN_MENU), req(PROC_REF(held_is_bashing)))), needs(req(/obj/item, because = MSG(camera/needs_item)), req_adjacent(), req_capable(), req_on_origin(ORIGIN_MENU, req(PROC_REF(held_is_bashing), because = MSG(camera/not_possible)))), then(PROC_REF(interaction_bash)))
 	op("camera_silicon_look", remote(), priority(OP_PRIORITY_DEFAULT - 1), label("Look through"), then(PROC_REF(camera_silicon_look)))
 	extend(/datum/act/hit/generic, instead(then(PROC_REF(smashed_by))))
-	owns_one(nameof(assembly), /obj/item/camera_assembly, starts = /obj/item/camera_assembly)
+	owns_one(nameof(assembly), /obj/item/camera_assembly, starts = /obj/item/camera_assembly, starts_set = list("state" = 4)) // a built camera's assembly is fully wired
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 	space(SPACE_PANEL, door = nameof(panel_open))
 	wires(name = "Camera", count = 6, randomize = TRUE, tools = FALSE, status_lines = PROC_REF(wire_lights))
@@ -92,7 +91,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		c_tag = "[A ? A.name : "Unknown"] #[rand(111,999)]"
 
 	. = ..()
-	assembly.set_state(4)
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER

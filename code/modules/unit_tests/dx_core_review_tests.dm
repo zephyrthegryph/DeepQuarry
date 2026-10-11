@@ -206,9 +206,9 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_DATUM_A)
 	..()
 	look.state("lamp")
 	if(lit)
-		look.light(2, 1, "#ffcc00")
+		look.glow(2, 1, "#ffcc00")
 
-/// Review 2 H4: look.light() applies with the look and is taken back when the look stops setting it.
+/// Review 2 H4: look.glow() applies with the look and is taken back when the look stops setting it.
 /datum/unit_test/dx_review_look_light/Run()
 	var/obj/cap_fixture/dx_review_light/F = allocate(/obj/cap_fixture/dx_review_light)
 	changed(F)

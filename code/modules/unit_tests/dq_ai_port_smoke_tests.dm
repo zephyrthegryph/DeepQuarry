@@ -73,7 +73,7 @@
 		return
 	if(scenario == SMOKE_MACHINE)
 		var/obj/machinery/M = allocate(/obj/machinery, ai_floor(2))
-		M.idle_power_usage = 10
+		M.set_idle_power_usage(10)
 		TEST_ASSERT_NOTNULL(dq_ai_test_eval(B, /datum/ai_behavior/larva_infest_machine), "[mob_type] does not go for a powered machine")
 		clean_port_arena()
 		return

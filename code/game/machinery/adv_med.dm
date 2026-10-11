@@ -35,8 +35,6 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 	flags = REMOTEVIEW_ON_ENTER
 	circuit = /obj/item/circuitboard/body_scanner
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 60
-	active_power_usage = 10000	//10 kW. It's a big all-body scanner.
 	light_color = "#00FF00"
 	var/obj/machinery/body_scanconsole/console
 	var/printing_text = null
@@ -48,6 +46,7 @@ MSG_DEF(body_scanner/buffered, "You store %T% in your multitool's buffer.", "")
 TRACKED(/obj/machinery/bodyscanner, scan_ratio)
 
 CAPABILITIES(/obj/machinery/bodyscanner)
+	configure(uses_power(idle = 60, active = 10000))
 	blast_contents() // the patient takes the full blast
 	machine_basics(repair = NONE)
 	occupant_pod(OCCUPANT_SLOT_BODY_SCANNER, bare = TRUE)
@@ -240,7 +239,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 		look.overlay(look_overlay_image(icon, "scan_beam", layer = layer + 0.2, plane = plane))
 	look.overlay(look_overlay_image(icon, working ? body_scan_gradient(scan_ratio) : "gradient_gray", layer = layer + 0.3, plane = plane))
 	if(working)
-		look.light(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, body_scan_color(scan_ratio))
+		look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, body_scan_color(scan_ratio))
 
 /// The gradient state a reading tints the scanner with.
 /proc/body_scan_gradient(ratio)
@@ -308,14 +307,14 @@ CAPABILITIES(/obj/machinery/body_scanconsole)
 		return
 	if(isnull(scan_ratio))
 		look.state("scanner_terminal_blue")
-		look.light(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_BLUE)
+		look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_BLUE)
 		return
 	if(scan_ratio == BODY_SCAN_HEALTHY)
 		look.state("scanner_terminal_green")
-		look.light(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_LIME)
+		look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_LIME)
 		return
 	look.state(scan_ratio == BODY_SCAN_DEAD ? "scanner_terminal_dead" : "scanner_terminal_red")
-	look.light(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_RED)
+	look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, COLOR_RED)
 
 #undef BODY_SCAN_EMPTY
 #undef BODY_SCAN_DEAD

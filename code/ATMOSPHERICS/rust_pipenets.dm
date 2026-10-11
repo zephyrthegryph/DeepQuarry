@@ -77,6 +77,7 @@
 	var/list/rust_flow_entities
 
 CAPABILITIES(/obj/machinery/atmospherics)
+	configure(uses_power(idle = 0, active = 0, channel = ENVIRON))
 	blast_contents() // a ventcrawler in the pipes takes the full blast
 	ref_one(nameof(node1))
 	ref_one(nameof(node2))
@@ -85,7 +86,7 @@ CAPABILITIES(/obj/machinery/atmospherics)
 		needs(req(PROC_REF(no_shell))), then(PROC_REF(material_fitted)))
 	// a pipe painter used on anything it cannot paint does nothing (its own op paints a pipe, a tier above)
 	op("painter", item(/obj/item/pipe_painter), wait(0), then(PROC_REF(painter_swallowed)))
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/proc/rust_pipe_port_count()
 	return 0

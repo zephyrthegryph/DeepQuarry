@@ -149,7 +149,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/charge = 0
 	for(var/datum/material/mat as anything in run.needed)
 		charge += run.needed[mat]
-	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * M.active_power_usage)
+	run.charge = ROUND_UP((charge / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * run.coefficient * power_of(M).active)
 	var/obj/item/card/id/card = A.actor?.GetIdCard()
 	run.producer_account = card?.associated_account_number || 0
 	run.department = department || department_for_mob(A.actor) || DEPARTMENT_ENGINEERING
@@ -329,7 +329,7 @@ cap_keys(CAP_FABRICATOR, PRINTING = MSG(fabricator/idle))
 	var/obj/machinery/M = A.holder
 	var/datum/material/mat = fabricator_material(id)
 	// insertion takes 40% of the base power per full stack, and so does taking sheets back out (the base power: better parts draw more for nothing)
-	if(eject_power && !M.use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * initial(M.active_power_usage))))
+	if(eject_power && !M.use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * power_of_type(M.type).active)))
 		M.atom_say("No power to dispense sheets")
 		return OP_REFUSED
 	var/datum/remote_materials/R = M.vars[materials]

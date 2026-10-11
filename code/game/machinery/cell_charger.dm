@@ -19,11 +19,8 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 	icon_state = "ccharger0"
 	anchored = 1
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 5
-	active_power_usage = 60000	//60 kW. (this the power drawn when charging)
 	/// The charge given per machine frame, in watts; the capacitors set it (RefreshParts()).
 	var/efficiency = 60000
-	power_channel = EQUIP
 	/// The cell being charged.
 	var/obj/item/cell/charging
 	/// How full the shown cell looks (0 to 4), or -1 with none: the look reads it, the charge frame writes it.
@@ -34,6 +31,7 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 TRACKED(/obj/machinery/cell_charger, chargelevel)
 
 CAPABILITIES(/obj/machinery/cell_charger)
+	configure(uses_power(idle = 5, active = 60000, channel = EQUIP))
 	default_parts()
 	machine_basics(repair = NONE)
 	anchor(empty = nameof(charging))
@@ -57,7 +55,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 /// Its charge rate follows its capacitors (the machine core calls this when parts change).
 /obj/machinery/cell_charger/RefreshParts()
 	var/rating = get_part_rating(/obj/item/stock_parts/capacitor)
-	efficiency = active_power_usage * (1 + (rating - 1) * 0.5)
+	efficiency = power_of(src).active * (1 + (rating - 1) * 0.5)
 
 // ---- the slot's conditions ----
 

@@ -12,8 +12,6 @@
 	anchored = TRUE
 	density = TRUE
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 40
-	active_power_usage = 300
 
 	var/obj/item/reagent_containers/container = null		// This is the beaker that holds all of the biomass
 
@@ -101,6 +99,7 @@ TRACKED(/obj/machinery/organ_printer, anomalous_organs)
 TRACKED(/obj/machinery/organ_printer, engineered_organs)
 
 CAPABILITIES(/obj/machinery/organ_printer)
+	configure(uses_power(idle = 40, active = 300))
 	op("printer_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(organ_printer_interaction_item)))
 	op("printer_menu", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), needs(req(PROC_REF(can_open_menu))), asks(/datum/prompt/choice, fields = list("title" = "Bioprinter Menu", "question" = "What do you want to do?", "choices" = list("Print Limbs", "Cancel"), "buttons" = TRUE, "timeout" = 0), step = "menu", when = PROC_REF(printer_has_reservoir)), asks(/datum/prompt/choice, fields = list("title" = "Print Choice", "question" = "What would you like to print?", "choices" = computed(PROC_REF(printer_product_choices)), "timeout" = 0), step = "product", when = PROC_REF(printer_choosing_product)), then(PROC_REF(print_choice_made)))
 	op("printer_eject", menu(), priority(OP_PRIORITY_DEFAULT - 1), label("Eject Beaker"), needs(req_adjacent(), req_capable()), then(PROC_REF(organ_printer_eject_beaker)))

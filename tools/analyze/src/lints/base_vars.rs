@@ -161,6 +161,70 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String])
     out
 }
 
+/// A var a type declares, from the model: `(file, line, owner, on a base type, an `= list()` candidate)`.
+#[derive(Serialize, Deserialize, PartialEq)]
+struct TypedVar {
+    rel: String,
+    line: u32,
+    owner: String,
+    base: bool,
+    list_init: bool,
+}
+
+fn typed_vars(sem: &crate::sem::Sem) -> Vec<TypedVar> {
+    use dreammaker::ast::{Expression, Term, VarTypeFlags};
+    let mut out = Vec::new();
+    for ty in sem.objtree.iter_types() {
+        // A var at the top level of a file is a global (one value per world), not an instance var.
+        if ty.get().path.is_empty() {
+            continue;
+        }
+        let owner = ty.get().path.clone();
+        let base = BASE_TYPES.contains(&owner.as_str());
+        for (_, tv) in ty.get().vars.iter() {
+            let Some(decl) = &tv.declaration else { continue };
+            // const, static and global (one flag in the model) cost no instance memory.
+            if decl.var_type.flags.intersects(VarTypeFlags::STATIC | VarTypeFlags::CONST) {
+                continue;
+            }
+            let Some(rel) = sem.file_of(decl.location) else { continue };
+            let list_init = matches!(&tv.value.expression, Some(Expression::Base { term, follow }) if follow.is_empty() && matches!(&term.elem, Term::List(args) if args.is_empty()));
+            if base || list_init {
+                out.push(TypedVar { rel: rel.to_string(), line: crate::sem::procs::engine_line(&sem.root, rel, decl.location.line), owner: owner.clone(), base, list_init });
+            }
+        }
+    }
+    out.sort_by(|a, b| (&a.rel, a.line, &a.owner).cmp(&(&b.rel, b.line, &b.owner)));
+    out
+}
+
+/// The sites from the model, or None without one. ALLOW questions are asked live (recorded for the unused-annotation check).
+fn typed_sites(cx: &Cx, singletons: &HashSet<String>, exempt_prefixes: &[String], exempt_files: &[String]) -> Option<Vec<(&'static str, String, u32)>> {
+    let all = cx.all_files();
+    let key = incr::ctx_key(&all.iter().map(|f| (f.rel.as_str(), f.fkey)).collect::<Vec<_>>());
+    let vars: Option<Vec<TypedVar>> = incr::cached("base_vars-typed", key, || cx.sem().map(|sem| typed_vars(&sem)));
+    let vars = vars?;
+    let by_rel: HashMap<&str, &SourceFile> = all.iter().filter(|f| !f.hidden).map(|f| (f.rel.as_str(), *f)).collect();
+    let empty: HashSet<String> = HashSet::new();
+    let mut out = Vec::new();
+    for v in &vars {
+        let Some(f) = by_rel.get(v.rel.as_str()) else { continue };
+        if crate::dm::sys::kept_recorded(f, v.line as usize, "base_vars") {
+            continue;
+        }
+        if v.base {
+            out.push(("base_var", v.rel.clone(), v.line));
+        }
+        if v.list_init {
+            let exempt = exempt_prefixes.iter().any(|p| v.rel.starts_with(p.as_str())) || exempt_files.iter().any(|e| *e == v.rel);
+            if !exempt && !is_singleton(&v.owner, &empty) && !singletons.contains(&v.owner) && !crate::dm::sys::kept_recorded(f, v.line as usize, "instance_list") {
+                out.push(("list_init", v.rel.clone(), v.line));
+            }
+        }
+    }
+    Some(out)
+}
+
 impl Lint for BaseVars {
     fn meta(&self) -> &Meta {
         &META
@@ -179,6 +243,15 @@ impl Lint for BaseVars {
         let global_set: HashSet<String> = globals.iter().cloned().collect();
 
         // The `= list()` candidates the instance_list exemptions do not already cover.
+        // On the typed tree: the vars each type declares, wherever and however they are written (a multi-var line, a nested
+        // block, a macro that declares them), at their real line. The text parse is the fallback without a model.
+        if let Some(sites) = recorded_into(out, || typed_sites(cx, &global_set, exempt_prefixes, exempt_files)) {
+            for (rule, rel, line) in sites {
+                out.site_in(rule, &rel, line as usize);
+            }
+            return;
+        }
+
         let cand_files: Vec<&SourceFile> = all.iter().copied().zip(&facts).filter(|(_, fa)| fa.vars.iter().any(|v| v.cand)).map(|(f, _)| f).collect();
         let by_rel: HashMap<&str, &Facts> = all.iter().zip(&facts).map(|(f, fa)| (f.rel.as_str(), fa)).collect();
         let key = incr::ctx_key(&globals);

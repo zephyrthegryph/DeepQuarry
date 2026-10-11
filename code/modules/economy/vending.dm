@@ -48,7 +48,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 
 	// Power
 	use_power = USE_POWER_IDLE
-	idle_power_usage = 10
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
@@ -121,6 +120,7 @@ STAT(/obj/machinery/vending, scan_id, TOP, base = TRUE)
 STAT(/obj/machinery/vending, shoot_inventory, ANY)
 
 CAPABILITIES(/obj/machinery/vending)
+	configure(uses_power(idle = 10))
 	machine_basics(repair = NONE)
 	panel()
 	extend("panel.open", wait(0))

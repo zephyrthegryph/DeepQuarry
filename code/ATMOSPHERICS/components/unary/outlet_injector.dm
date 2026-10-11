@@ -11,7 +11,6 @@
 	desc = "Passively injects air into its surroundings. Has a valve attached to it that can control flow rate."
 
 	use_power = USE_POWER_OFF
-	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 15000	//15000 W ~ 20 HP
 
 	var/injecting = 0
@@ -150,6 +149,7 @@ MSG_DEF_SELF(outlet_injector/toggled, "You toggle the injector.")
 MSG_DEF_SELF(outlet_injector/rate_reset, "You set the injector back to its default rate.")
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/outlet_injector)
+	configure(uses_power(idle = 150))
 	// The unary base's ctrl-click power_toggle is never offered on an injector (ctrl_power_offered()); its ctrl-click is
 	// reset_rate. The static clash check cannot see the when(), and reported the two at boot.
 	without("power_toggle")
