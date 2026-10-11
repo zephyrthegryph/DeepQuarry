@@ -16,6 +16,9 @@
 #      tested against, the tests, --covers, the results), a copy in data/lane-ready/, and pushes the notes ref (best effort;
 #      DQ_LANE_NOTES_PUSH=0 keeps it local, which is enough for worktrees of this clone)
 #
+# --reuse-gates completes stamping from existing successful evidence for the unchanged
+# current commit; every requested selector must already occur in that proof. It does
+# not merge, compile or run tests. Use it only after diagnosing a wrapper failure.
 # --tests names the lane's own tests (names or globs as dq_focused_test.sh takes them). --covers adds globs the stamp depends on
 # beyond the files the lane changed and their directories: if master later changes a file under them, the stamp is stale and the
 # merge reruns the lane's tests. Commit nothing after this except changelogs and docs; a later code commit makes the stamp stale.
@@ -28,6 +31,7 @@ tests=()
 covers=()
 pins=1
 merge=1
+reuse_gates=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--tests) shift; read -r -a more <<<"${1:-}"; tests+=("${more[@]}") ;;
@@ -35,6 +39,7 @@ while [ $# -gt 0 ]; do
 		--covers) shift; covers+=("${1:?--covers needs a glob}") ;;
 		--no-pins) pins=0 ;;
 		--no-merge) merge=0 ;;
+		--reuse-gates) reuse_gates=1 ;;
 		-h|--help) sed -n '2,28p' "$0"; exit 0 ;;
 		*) echo "unknown argument: $1" >&2; exit 2 ;;
 	esac
@@ -50,14 +55,20 @@ if ! git diff --quiet || ! git diff --cached --quiet; then die "REFUSED: uncommi
 if git ls-files --others --exclude-standard -- 'code/*.dm' deepquarry.dme | grep -q .; then die "REFUSED: untracked .dm files under code/; add and commit them" 2; fi
 
 t_start=$(date +%s)
-if [ "$merge" -eq 1 ]; then
+if [ "$reuse_gates" -eq 1 ]; then
+	echo "== lane-ready: reusing completed gates for the unchanged current commit"
+elif [ "$merge" -eq 1 ]; then
 	echo "== lane-ready: merging origin/master into $branch"
 	bash tools/dq_merge_master.sh || die "the merge with origin/master did not complete (resolve, commit, rerun)"
 else
 	git fetch -q origin || die "git fetch failed"
 	git merge-base --is-ancestor origin/master HEAD || die "REFUSED: --no-merge, but origin/master has commits $branch does not; rerun without --no-merge" 2
 fi
-master="$(git rev-parse origin/master)"
+if [ "$reuse_gates" -eq 1 ]; then
+	master="$(git merge-base origin/master HEAD)"
+else
+	master="$(git rev-parse origin/master)"
+fi
 git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "the merge left uncommitted changes"; fi
 
@@ -69,11 +80,22 @@ tested="$(git rev-parse HEAD)"
 echo "== lane-ready: gates on ${tested:0:10} (master ${master:0:10}): ${list[*]:-the smoke set}"
 gate_args=(--snapshot-output)
 if [ ${#list[@]} -gt 0 ]; then gate_args+=(--tests "${list[*]}"); fi
-bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
+if [ "$reuse_gates" -eq 0 ]; then
+	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
+fi
 
 # An interrupted gate can return without evidence; absence is never a passing result.
 ok_file="data/merge-gates/${tested:0:12}.ok"
-[ -s "$ok_file" ] && grep -Fxq "$tested" "$ok_file" || die "the gates produced no matching result; nothing was stamped"
+[ -s "$ok_file" ] && grep -Fxq "sha=$tested" "$ok_file" || die "the gates produced no matching result; nothing was stamped"
+if [ "$reuse_gates" -eq 1 ]; then
+	completed_tests=" $(sed -n 's/^tests=//p' "$ok_file") "
+	for selector in "${list[@]}"; do
+		case "$completed_tests" in
+			*" $selector "*) ;;
+			*) die "reused proof does not contain requested selector: $selector" ;;
+		esac
+	done
+fi
 for marker in dm ratchets analyze; do
 	[ "$(cat "data/merge-gates/${tested:0:12}.${marker}.ok" 2>/dev/null)" = "$tested" ] || die "missing $marker evidence; nothing was stamped"
 done
@@ -103,12 +125,12 @@ new_failed="${new_failed:-${failed:-0}}"
 tests_json="$(sed -n 's/^tests_json=//p' "$ok_file")"
 MSYS2_ARG_CONV_EXCL='*' node -e '
 	const fs = require("fs");
-	const [file, passed, failed, newFailed] = process.argv.slice(1);
+	const [file, passed, failed, newFailed, tested] = process.argv.slice(1);
 	if (![passed, failed, newFailed].every(x => /^[0-9]+$/.test(x)) || Number(passed) < 1 || Number(newFailed) !== 0) process.exit(1);
 	let result;
 	try { result = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
-	if (result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
-' "$tests_json" "$passed" "$failed" "$new_failed" || die "missing or inconsistent test evidence; nothing was stamped"
+	if (result.commit !== tested || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
+' "$tests_json" "$passed" "$failed" "$new_failed" "$tested" || die "missing or inconsistent test evidence; nothing was stamped"
 mkdir -p data/lane-ready
 stamp_json="$(MSYS2_ARG_CONV_EXCL='*' node -e '
 	const fs = require("fs");
