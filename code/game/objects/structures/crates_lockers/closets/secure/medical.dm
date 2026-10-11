@@ -1,6 +1,3 @@
-/// One set of scrubs and the matching cap, in a random colour (initial_contents()).
-#define MEDICAL_SCRUBS_ROLL pick_one(list(list(/obj/item/clothing/under/rank/medical/scrubs, /obj/item/clothing/head/surgery/blue),list(/obj/item/clothing/under/rank/medical/scrubs/green, /obj/item/clothing/head/surgery/green),list(/obj/item/clothing/under/rank/medical/scrubs/purple, /obj/item/clothing/head/surgery/purple),list(/obj/item/clothing/under/rank/medical/scrubs/black, /obj/item/clothing/head/surgery/black),list(/obj/item/clothing/under/rank/medical/scrubs/navyblue, /obj/item/clothing/head/surgery/navyblue)))
-
 /obj/structure/closet/secure_closet/medical1
 	name = "medicine closet"
 	desc = "Filled with medical junk."
@@ -54,7 +51,7 @@
 CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 	initial_contents(pick_one(list(/obj/item/storage/backpack/medic, /obj/item/storage/backpack/satchel/med)))
 	initial_contents(/obj/item/storage/backpack/dufflebag/med, chance = 50)
-	initial_contents(MEDICAL_SCRUBS_ROLL)
+	initial_contents(PROC_REF(roll_scrubs))
 
 
 /obj/structure/closet/secure_closet/paramedic
@@ -135,7 +132,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/medical3)
 CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 	initial_contents(pick_one(list(/obj/item/storage/backpack/medic, /obj/item/storage/backpack/satchel/med)))
 	initial_contents(/obj/item/storage/backpack/dufflebag/med, chance = 50)
-	initial_contents(MEDICAL_SCRUBS_ROLL)
+	initial_contents(PROC_REF(roll_scrubs))
 
 
 /obj/structure/closet/secure_closet/animal
@@ -220,5 +217,12 @@ CAPABILITIES(/obj/structure/closet/secure_closet/chief_medical_officer)
 		/obj/item/tank/anesthetic = 3,
 		/obj/item/clothing/mask/breath/medical = 3)
 
-
-#undef MEDICAL_SCRUBS_ROLL
+/// Rolled contents (initial_contents()): one set of scrubs and the matching cap, in a random colour.
+/obj/structure/closet/secure_closet/proc/roll_scrubs(datum/roller/R)
+	var/static/list/sets = list(
+		list(/obj/item/clothing/under/rank/medical/scrubs, /obj/item/clothing/head/surgery/blue),
+		list(/obj/item/clothing/under/rank/medical/scrubs/green, /obj/item/clothing/head/surgery/green),
+		list(/obj/item/clothing/under/rank/medical/scrubs/purple, /obj/item/clothing/head/surgery/purple),
+		list(/obj/item/clothing/under/rank/medical/scrubs/black, /obj/item/clothing/head/surgery/black),
+		list(/obj/item/clothing/under/rank/medical/scrubs/navyblue, /obj/item/clothing/head/surgery/navyblue))
+	return R.choose(sets)

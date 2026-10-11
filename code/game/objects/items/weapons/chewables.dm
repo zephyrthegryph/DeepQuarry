@@ -219,7 +219,6 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 /obj/item/clothing/mask/chewable/candy/proc/flavour_contents()
 	return flavour ? list("[flavour]" = flavour_amount) : null
 
-#define CANDY_FLAVOURS list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)
 
 /obj/item/clothing/mask/chewable/candy/gum
 	name = "chewing gum"
@@ -231,7 +230,7 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy)
 	flavour_amount = 10
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy/gum)
-	rolls(nameof(flavour), pick_one(CANDY_FLAVOURS))
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
 	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
 
 
@@ -309,7 +308,7 @@ CAPABILITIES(/obj/item/storage/box/gum)
 	return ..()
 
 CAPABILITIES(/obj/item/clothing/mask/chewable/candy/lolli)
-	rolls(nameof(flavour), pick_one(CANDY_FLAVOURS))
+	rolls(nameof(flavour), pick_one(list(REAGENT_ID_BANANA, REAGENT_ID_BERRYJUICE, REAGENT_ID_GRAPEJUICE, REAGENT_ID_LEMONJUICE, REAGENT_ID_LIMEJUICE, REAGENT_ID_ORANGEJUICE, REAGENT_ID_WATERMELONJUICE)))
 	configure(reagents(contents_from = PROC_REF(flavour_contents), tint = TRUE))
 	op("stick_on", item(/obj/item/holder), passes(), then(PROC_REF(stuck_on)))
 
@@ -386,5 +385,3 @@ CAPABILITIES(/obj/item/clothing/mask/chewable/candy/pocky)
 /obj/item/clothing/mask/chewable/candy/lolli/ownership()
 	. = ..()
 	. += owns(nameof(victims), policy = OWN_SPILL, is_list = TRUE)
-
-#undef CANDY_FLAVOURS
