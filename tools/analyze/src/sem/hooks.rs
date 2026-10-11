@@ -199,6 +199,21 @@ pub fn discover(decls: &Decls) -> Vec<HandlerRef> {
 }
 
 fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
+    // The non-path observe overload is a legacy key subscription, not an act handler.
+    // Its callback receives a key list; only path triggers use native action parts.
+    let runtime_trigger = if m.name == crate::sem::decls::RUNTIME_OBSERVE {
+        let Some(trigger) = m.args.get(1).filter(|arg| arg.starts_with("/datum/")) else { return };
+        Some(trigger.as_str())
+    } else { None };
+    let mut runtime_parts_start = 0;
+    if runtime_trigger.is_some() {
+        // Only arguments four onward are parts. Source/trigger/listener expressions
+        // may themselves contain forms, but are not this observer's callbacks.
+        for arg in m.args.iter().take(3) {
+            let Some(offset) = m.body[runtime_parts_start..].find(arg) else { return };
+            runtime_parts_start += offset + arg.len();
+        }
+    }
     let (owner, cap_type) = match m.name.as_str() {
         "CAPABILITIES" => (m.args.first().cloned().unwrap_or_default(), String::new()),
         "STAT" => (m.args.first().cloned().unwrap_or_default(), String::new()),
@@ -220,6 +235,7 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
             i += 1;
         }
         let word = &body[start..i];
+        if start < runtime_parts_start { continue; }
         if start > 0 && (is_word(b[start - 1]) || b[start - 1] == b'.') {
             continue;
         }
@@ -292,6 +308,15 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
                     "on_op" => notice = "/datum/notice/op_done".to_string(),
                     _ => {}
                 }
+            }
+        }
+        // Runtime observe is extend(action, parts...) or on_notice(notice, parts...),
+        // selected by its trigger. Requirements still receive the operation query.
+        if let Some(trigger) = runtime_trigger {
+            if matches!(f.kw, "then" | "when" | "instead" | "adjusts" | "adjusts_with") {
+                ctx = if trigger.starts_with("/datum/act/") { Ctx::Action } else { Ctx::Notice };
+                notice = trigger.to_string();
+                if f.kw == "then" { role = Role::Reaction; }
             }
         }
         let condition_value = f.kw == "on_change" && split_args(&body[bs..be]).first().is_some_and(|argument| {
@@ -438,6 +463,39 @@ mod context_tests {
         assert_eq!(handler.role, Role::Requirement);
         assert!(handler.role.reads_covered());
         assert_eq!(handler.line, 2);
+    }
+
+    #[test]
+    fn runtime_observe_preserves_typed_event_effects_and_op_requirements() {
+        let found = handlers("/proc/install()\n\tobserve(host, /datum/notice/ended, listener, then(TYPE_PROC_REF(/datum/probe, heard)))\n\tobserve(host, /datum/act/strike, listener, instead(when(TYPE_PROC_REF(/datum/probe, blocks))), needs(req(TYPE_PROC_REF(/datum/probe, admission))))\n");
+        let heard = found.iter().find(|h| h.proc == "heard").unwrap();
+        assert_eq!(heard.ctx, Ctx::Notice);
+        assert_eq!(heard.notice, "/datum/notice/ended");
+        assert_eq!(heard.role, Role::Reaction);
+        let blocks = found.iter().find(|h| h.proc == "blocks").unwrap();
+        assert_eq!(blocks.ctx, Ctx::Action);
+        assert_eq!(blocks.notice, "/datum/act/strike");
+        let admission = found.iter().find(|h| h.proc == "admission").unwrap();
+        assert_eq!(admission.ctx, Ctx::Op);
+        assert_eq!(admission.role, Role::Requirement);
+    }
+
+    #[test]
+    fn runtime_observe_exact_act_root_uses_notice_delivery() {
+        // observe() only uses action hooks for descendants of /datum/act/action;
+        // the exact /datum/act root takes the notice-delivery branch.
+        let found = handlers("/proc/test()\n\tobserve(source, /datum/act, listener, then(TYPE_PROC_REF(/datum/probe, heard)))\n");
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].ctx, Ctx::Notice);
+        assert_eq!(found[0].notice, "/datum/act");
+        assert_eq!(found[0].role, Role::Reaction);
+    }
+
+    #[test]
+    fn runtime_legacy_key_subscription_is_not_an_act_callback() {
+        let file = SourceFile::from_text("code/content/probe.dm", "/proc/test()\n\tobserve(source, on_change(list(key), TYPE_PROC_REF(/datum/probe, on_key)), listener, TYPE_PROC_REF(/datum/probe, on_key))\n");
+        let tree = Tree::from_files(vec![file]);
+        assert!(discover(&Decls::get(&tree)).is_empty());
     }
 
     #[test]

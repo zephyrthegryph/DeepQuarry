@@ -4720,3 +4720,5 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 ### Acceptance predicate dispatch (codex/acceptance-consumers-1011)
 
 The legacy subject callback evaluator now invokes the actual receiver's override after validating the declared absolute proc path. Previously an /atom/movable slot_loose callback bypassed /mob/living's pinned, buckled and chameleon checks. Closet admission now honors those existing checks. dq_predicate_subject_override covers the dispatch and exact refusal; this is a correction of an existing refusal defect, not permission to re-bless unrelated rows.
+
+The paper look-tree pin drops only the four inherited `/obj/item/paper/cap_fixture` rows. Master commit `6d986cf503` (2026-10-09) removed that unused legacy writable-capability fixture and its include. The current producer confirms the fixture no longer exists; ordinary paper appearance rows are unchanged.

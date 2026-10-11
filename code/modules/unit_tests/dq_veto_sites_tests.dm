@@ -7,6 +7,8 @@
 	var/answer
 	var/blocking = TRUE
 
+TRACKED(/datum/dq_site_listener, blocking)
+
 /datum/dq_site_listener/proc/blocks(datum/act/A)
 	return blocking
 
@@ -119,7 +121,7 @@
 	TEST_ASSERT(act_wanted(H, /datum/act/draw_hud), "a hook on the HUD is asked about")
 	TEST_ASSERT(!H.life_hud_health_icons(), "a hook that takes the health icon over leaves the default undrawn")
 	TEST_ASSERT_EQUAL(listener.asked, 1, "it was asked once")
-	listener.blocking = FALSE
+	listener.set_blocking(FALSE)
 	var/datum/act/draw_hud/hud = ACT_TRY(H, draw_hud)
 	TEST_ASSERT_NOTNULL(hud, "a gate that does not hold lets the HUD go on")
 	act_cancel(hud)

@@ -16,7 +16,9 @@ TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 /datum/dq_native_transfer_query_probe/proc/admission(datum/act/op/A)
 	if(A.holder != src || A.destination != destination || A.target != candidate || A.actor != mover || A.mover != mover || A.slot_id != "s1_picky")
 		return "wrong native admission identities"
-	if(A.source != src || A.activation?.source != src || A.cap != A.activation?.def)
+	// The activation identity is fixed for this borrowed query; hook topology
+	// supplies its lifetime dependency, while allowed/refusal_text remain tracked.
+	if(A.source != src || read_once(A.activation?.source) != src || A.cap != read_once(A.activation?.def))
 		return "wrong native admission activation"
 	return allowed ? null : refusal_text
 
@@ -34,7 +36,7 @@ TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 	var/datum/act/op/query = acceptance_act(box, box, item, null, mover, "s1_picky")
 	var/lease_count = GLOB.act_taken
 	TEST_ASSERT_EQUAL(act_context(query.type, P, query.target, query.actor, query), query, "Receiver rebind preserves the existing query lease")
-	TEST_ASSERT_EQUAL(query.holder, P, "Receiver rebind uses the real listener")
+	TEST_ASSERT_EQUAL(op_subject(query, ON_HOLDER), P, "Receiver rebind uses the real listener")
 	TEST_ASSERT_EQUAL(query.destination, box, "Receiver rebind preserves physical destination")
 	TEST_ASSERT_EQUAL(query.target, item, "Receiver rebind preserves the candidate")
 	TEST_ASSERT_EQUAL(query.mover, mover, "Receiver rebind preserves the mover")
