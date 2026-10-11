@@ -90,10 +90,31 @@ fn pinned_icon_insert_and_map_colors_counts_remain_exact_scalars() {
             .collect();
         let counts: Vec<_> = instructions.iter().map(|item| item.operands[0]).collect();
         assert_eq!(counts, expected);
+        let code = native_code(path);
         for instruction in instructions {
+            // Pinned dmasm 6cec0e9 declares (arg_count: u32, var: Variable).
+            // The template receiver is Field(43); it is not CallPath opcode43.
+            assert_eq!(instruction.operands.len(), 2);
+            assert_eq!(
+                instruction.typed_operands().unwrap(),
+                vec![
+                    crate::bytecode::Operand::Word(instruction.operands[0]),
+                    crate::bytecode::Operand::Variable(crate::operands::Variable::Field(43)),
+                ]
+            );
+            let following = code
+                .iter()
+                .find(|item| item.offset == instruction.offset + 3)
+                .expect("receiver must end immediately before the following Pop");
+            assert_eq!(following.opcode, 0x51);
+            assert!(following.operands.is_empty());
             assert_eq!(fixed_word_role(opcode, 0), FixedWordRole::Scalar);
             assert_eq!(fixed_word_role(opcode, 1), FixedWordRole::Opaque);
-            assert!(contextual_fixed_word_is_scalar(opcode, 0, &instruction.operands));
+            assert!(contextual_fixed_word_is_scalar(
+                opcode,
+                0,
+                &instruction.operands
+            ));
         }
     }
 }

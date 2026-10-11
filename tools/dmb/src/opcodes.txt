@@ -243,7 +243,7 @@ ff ForRangeStep uv
 103 Eval -
 104 DmsPrepare -
 105 IconDrawBox v
-106 IconInsert u
+106 IconInsert uv
 107 UrlEncode -
 108 UrlDecode -
 109 Md5 -
@@ -253,7 +253,7 @@ ff ForRangeStep uv
 10d WinGet -
 10e WinClone -
 10f WinShow -
-110 IconMapColors u
+110 IconMapColors uv
 111 IconScale v
 112 IconCrop v
 113 Rgba -
