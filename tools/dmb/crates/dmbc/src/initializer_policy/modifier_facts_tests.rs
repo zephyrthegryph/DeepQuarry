@@ -62,8 +62,8 @@ fn prepared_modifier_locators_share_exact_inputs_but_replay_changed_semantics() 
         "admission is always request-local"
     );
     let before = captures.load(Ordering::Relaxed);
-    dependency.0.store(16, Ordering::Relaxed);
-    modifier_facts_reused(
+    dependency.0.store(2, Ordering::Relaxed);
+    let current = modifier_facts_reused(
         writes.iter(),
         &symbols,
         &worker,
@@ -73,6 +73,7 @@ fn prepared_modifier_locators_share_exact_inputs_but_replay_changed_semantics() 
         &second,
     )
     .unwrap();
+    assert!(matches!(current.as_slice(), [ModifierFact::Known(2)]));
     assert!(
         captures.load(Ordering::Relaxed) > before,
         "locator reuse cannot bypass actual semantic replay"
