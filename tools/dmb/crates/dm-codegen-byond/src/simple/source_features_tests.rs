@@ -1,6 +1,62 @@
 use super::*;
 use std::path::Path;
 
+#[test]
+fn safe_colon_keeps_dynamic_field_selection_and_null_guards() {
+    let owner = SymbolId::of("/datum");
+    let name = SymbolId::of("value");
+    let reference = SymRef::Var { owner, name };
+    let mut shared = SharedLowerBindings::default();
+    shared.member_globals.insert(
+        "/datum".into(),
+        [("value".into(), reference)].into_iter().collect(),
+    );
+    let bindings = LowerBindings {
+        parameters: vec!["v".into()],
+        parameter_types: [("v".into(), "/datum".into())].into_iter().collect(),
+        shared: Some(Arc::new(shared)),
+        ..Default::default()
+    };
+    for (source, expected, guard) in [
+        ("return v?.value", VariableWord::Global(reference), 317),
+        ("return v?:value", VariableWord::Field(name), 317),
+        ("v?:value = 7", VariableWord::Field(name), 318),
+    ] {
+        let ast = dm_syntax::parse(&format!("/proc/probe(v)\n    {source}\n"));
+        let result = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings)
+            .unwrap_or_else(|error| panic!("{source}: {error:?}"));
+        let instructions: Vec<_> = result
+            .code
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                CodeItem::Instruction(instruction) => Some(instruction),
+                CodeItem::Label(_) => None,
+            })
+            .collect();
+        assert!(
+            instructions
+                .iter()
+                .any(|instruction| instruction.opcode == guard),
+            "{source}"
+        );
+        assert!(
+            instructions.iter().any(|instruction| instruction
+                .operands
+                .contains(&Word::Variable(expected.clone()))),
+            "{source}"
+        );
+        if source.contains("?:") {
+            assert!(
+                !instructions.iter().any(|instruction| instruction
+                    .operands
+                    .contains(&Word::Variable(VariableWord::Global(reference)))),
+                "{source}"
+            );
+        }
+    }
+}
+
 fn pinned(name: &str, family: &str) -> byond_dmb::dmb::Dmb {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/translation")

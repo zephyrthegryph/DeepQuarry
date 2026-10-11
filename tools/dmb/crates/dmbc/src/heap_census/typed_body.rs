@@ -230,7 +230,9 @@ impl HeapCensus {
                         object, selector, ..
                     }
                     | ExprKind::StaticMember { object, selector }
-                    | ExprKind::SafeMember { object, selector } => {
+                    | ExprKind::SafeMember {
+                        object, selector, ..
+                    } => {
                         self.string(owner, selector);
                         boxed(self, owner, object, &mut pending);
                     }

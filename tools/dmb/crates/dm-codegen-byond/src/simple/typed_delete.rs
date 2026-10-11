@@ -25,9 +25,9 @@ impl Compiler<'_> {
             ExprKind::Member {
                 object, selector, ..
             }
-            | ExprKind::SafeMember { object, selector } => {
-                self.delete_member_writable(object, selector, statement)?
-            }
+            | ExprKind::SafeMember {
+                object, selector, ..
+            } => self.delete_member_writable(object, selector, statement)?,
             ExprKind::Ident(name) => match &variable {
                 Some(VariableWord::Global(SymRef::Var { owner, name })) => self
                     .delete_declared_writable(

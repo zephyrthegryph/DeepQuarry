@@ -54,9 +54,14 @@ pub fn materialize_callback_flags(
             continue;
         };
         if let Some(parent) = ty.parent {
-            parents[class] =
+            parents[class] = if parent == SymbolId::of("/") {
+                // The semantic root owns declarations but has no physical class
+                // record. Its children terminate the VM parent chain.
+                NONE
+            } else {
                 u32::try_from(*classes.get(&parent).ok_or(ProjectionError::MissingMember)?)
-                    .map_err(|_| ProjectionError::IncompleteOrder)?;
+                    .map_err(|_| ProjectionError::IncompleteOrder)?
+            };
         }
     }
     let mut header = header_features::HeaderFeatures::default();

@@ -50,7 +50,13 @@ impl Compiler<'_> {
                 return Ok(());
             }
         }
-        if let ExprKind::SafeMember { object, selector } = &target.kind {
+        if let ExprKind::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } = &target.kind
+        {
+            self.source_feature_reference(target, true, statement)?;
             let constant_first = op == "=" && Self::safe_assignment_constant(value);
             if constant_first {
                 self.expression(value, statement)?;
@@ -63,8 +69,12 @@ impl Compiler<'_> {
                 self.expression(value, statement)?;
                 self.emit(opcode::POP_CACHE, vec![]);
             }
-            let variable = self
-                .expression_member_global(object, selector)?
+            let shared = if *via_colon {
+                None
+            } else {
+                self.expression_member_global(object, selector)?
+            };
+            let variable = shared
                 .map(VariableWord::Global)
                 .unwrap_or_else(|| VariableWord::Field(SymbolId::of(selector)));
             if matches!(variable, VariableWord::Field(_)) {

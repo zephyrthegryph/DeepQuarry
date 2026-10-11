@@ -78,7 +78,9 @@ impl Compiler<'_> {
             ExprKind::Member {
                 object, selector, ..
             }
-            | ExprKind::SafeMember { object, selector } => {
+            | ExprKind::SafeMember {
+                object, selector, ..
+            } => {
                 if !matches!(selector.as_str(), "cpu" | "icon" | "overlays" | "underlays") {
                     return Ok(());
                 }

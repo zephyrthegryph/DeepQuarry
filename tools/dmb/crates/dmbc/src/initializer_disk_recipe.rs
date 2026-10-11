@@ -214,12 +214,18 @@ fn expression(out: &mut Vec<u8>, value: &dm_syntax::Expr, depth: usize) -> Optio
             child(out, object)?;
             part(out, selector.as_bytes());
         }
-        StaticMember { object, selector } | SafeMember { object, selector } => {
-            out.push(if matches!(value.kind, StaticMember { .. }) {
-                8
-            } else {
-                9
-            });
+        StaticMember { object, selector } => {
+            out.push(8);
+            child(out, object)?;
+            part(out, selector.as_bytes());
+        }
+        SafeMember {
+            object,
+            selector,
+            via_colon,
+        } => {
+            out.push(9);
+            out.push(u8::from(*via_colon));
             child(out, object)?;
             part(out, selector.as_bytes());
         }

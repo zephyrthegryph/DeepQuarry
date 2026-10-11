@@ -72,7 +72,8 @@ fn materialized(name: &str) -> (Dmb, Dmb) {
         }
     }
     let tables = dm_link::LinkTables::build(inventory).unwrap();
-    super::super::materialize_callback_flags(&mut actual, &projection, &tables).unwrap();
+    super::super::materialize_callback_flags(&mut actual, &projection, &tables)
+        .unwrap_or_else(|error| panic!("{name}: {error:?}"));
     (actual, expected)
 }
 #[test]

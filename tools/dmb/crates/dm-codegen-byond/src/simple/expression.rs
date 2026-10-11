@@ -449,12 +449,20 @@ impl Compiler<'_> {
                 );
                 self.result.code.items.extend(safe_labels);
             }
-            ExprKind::SafeMember { object, selector } => {
+            ExprKind::SafeMember {
+                object,
+                selector,
+                via_colon,
+            } => {
                 self.expression(object, statement)?;
                 let end = self.label();
                 self.emit(317, vec![Word::Branch(end)]);
-                let variable = self
-                    .expression_member_global(object, selector)?
+                let shared = if *via_colon {
+                    None
+                } else {
+                    self.expression_member_global(object, selector)?
+                };
+                let variable = shared
                     .map(VariableWord::Global)
                     .unwrap_or_else(|| VariableWord::Field(SymbolId::of(selector)));
                 if matches!(variable, VariableWord::Field(_)) {

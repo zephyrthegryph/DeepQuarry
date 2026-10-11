@@ -65,8 +65,17 @@ impl Compiler<'_> {
             );
             return Ok(());
         }
-        if let dm_syntax::CallTarget::SafeMember { object, selector } = target_kind {
-            let proc_selector = self.safe_member_call_selector(object, selector, statement)?;
+        if let dm_syntax::CallTarget::SafeMember {
+            object,
+            selector,
+            via_colon,
+        } = target_kind
+        {
+            let proc_selector = if via_colon {
+                self.member_call_selector(object, selector, true, statement)?
+            } else {
+                self.safe_member_call_selector(object, selector, statement)?
+            };
             self.record_call_selection(callee, selector, &proc_selector, true);
             self.expression(object, statement)?;
             let end = self.label();
