@@ -274,19 +274,33 @@ pub(super) fn modifier_facts_reused<'a>(
     reuse: InitializerReuse<'_>,
     keys: &[ModifierKey],
 ) -> Result<Vec<ModifierFact>, ClassificationError> {
+    modifier_facts_reused_in(
+        writes, symbols, evaluator, ordinals, factory, reuse, keys, None,
+    )
+}
+pub(super) fn modifier_facts_reused_in<'a>(
+    writes: impl ExactSizeIterator<Item = &'a InitializerWrite>,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    ordinals: &[usize],
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    keys: &[ModifierKey],
+    admission: Option<&super::current_admission::Admission<'_, '_>>,
+) -> Result<Vec<ModifierFact>, ClassificationError> {
     let host = Host(reuse.resolver);
     collect(writes, Some(ordinals), |write, ordinal| {
         if keys[ordinal].input.as_ref() != write {
             return capture(write, symbols, evaluator, ordinal);
         }
-        if let Some(value) = reuse
-            .store
-            .modifiers
-            .values
-            .visit_current_qualified(&keys[ordinal].bytes, &host, &mut |value| {
-                value.input.as_ref() == write
-            })
-            .0
+        if let Some(value) = super::current_admission::visit(
+            &reuse.store.modifiers.values,
+            &keys[ordinal].bytes,
+            &host,
+            admission,
+            &mut |value| value.input.as_ref() == write,
+        )
+        .0
         {
             let _ = keys[ordinal].admitted.set(Arc::clone(&value.input));
             reuse.store.modifiers.hits.fetch_add(1, Ordering::Relaxed);

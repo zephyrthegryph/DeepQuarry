@@ -1,5 +1,7 @@
 //! Captured initializer classification. Evaluation failure is never converted
 //! into a runtime initializer; the evaluator explicitly distinguishes runtime.
+#[path = "initializer_policy/current_admission.rs"]
+mod current_admission;
 use dm_ir::{
     ExpressionToken, InitializerTarget, InitializerValue, InitializerWrite, SemanticValue,
     SymbolId, SymbolTable, SymbolicExpression,

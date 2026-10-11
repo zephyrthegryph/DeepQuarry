@@ -90,6 +90,14 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
     }
     let reuse = reuse.filter(|_| factory_policy.is_some());
+    // One provider-bound context spans both modifier and value passes. It is
+    // borrowed only by this wave; mutex/cell synchronization comes from the
+    // existing ReceiptAdmission, and observing providers still replay exactly.
+    let admission_host = reuse.map(|reuse| super::super::current_admission::Host(reuse.resolver));
+    let admission = admission_host
+        .as_ref()
+        .map(dm_session::observations::ReceiptAdmission::new);
+
     let preparation = match reuse.filter(|reuse| reuse.store.roster_enabled) {
         Some(reuse) => reuse.store.roster.preparation(writes),
         None => Preparation::new(writes),
@@ -100,7 +108,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     });
     let facts = map_buckets(buckets, evaluator, executor, |_, bucket, worker| {
         if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {
-            return crate::initializer_policy::modifier_facts::modifier_facts_reused(
+            return crate::initializer_policy::modifier_facts::modifier_facts_reused_in(
                 bucket.ordinals.iter().map(|&ordinal| &writes[ordinal]),
                 symbols,
                 worker,
@@ -108,6 +116,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 evaluator,
                 reuse,
                 keys,
+                admission.as_ref(),
             );
         }
         modifier_facts_indexed(
@@ -208,7 +217,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                 .enumerate()
                 .map(|(local, &global)| {
                     ordinal = local;
-                    artifact::classify_one_keyed_grouped(
+                    artifact::classify_one_keyed_grouped_in(
                         &writes[global],
                         symbols,
                         worker,
@@ -222,6 +231,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
                             .as_ref()
                             .map(|keys| keys[global].shared_input()),
                         Some(&tokens),
+                        admission.as_ref(),
                     )
                 })
                 .collect()

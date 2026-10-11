@@ -7,6 +7,7 @@ struct Host {
     opaque: Option<u8>,
     observable: bool,
     queries: Mutex<Vec<u8>>,
+    versions: Mutex<Vec<u8>>,
 }
 impl ObservationHost<u8, Option<u8>, u8> for Host {
     fn observes_answers(&self) -> bool {
@@ -21,6 +22,7 @@ impl ObservationHost<u8, Option<u8>, u8> for Host {
         }
     }
     fn version(&self, domain: &u8) -> Option<u128> {
+        self.versions.lock().unwrap().push(*domain);
         match domain {
             1 => Some(self.version),
             2 => None,
@@ -35,6 +37,7 @@ fn host(version: u128, certified: Option<u8>, opaque: Option<u8>, observable: bo
         opaque,
         observable,
         queries: Mutex::new(Vec::new()),
+        versions: Mutex::new(Vec::new()),
     }
 }
 fn populate(store: &Values) -> Arc<Vec<u8>> {
@@ -133,4 +136,49 @@ fn current_input_decline_and_failed_request_keep_published_owner_live() {
         .unwrap();
     assert!(Arc::ptr_eq(&original, &hit));
     assert!(next.publish_successful());
+}
+
+#[test]
+fn wave_context_shares_current_cells_across_stores_without_provider_mixing() {
+    let classification = Values::current_revision();
+    let modifiers = Values::current_revision();
+    let a = classification.for_request(true);
+    let b = modifiers.for_request(true);
+    populate(&a);
+    populate(&b);
+    assert!(a.publish_successful());
+    assert!(b.publish_successful());
+    let a = classification.for_request(true);
+    let b = modifiers.for_request(true);
+    let provider = host(7, None, None, false);
+    let admission = dm_session::observations::ReceiptAdmission::new(&provider);
+    std::thread::scope(|scope| {
+        let left = scope.spawn(|| a.visit_current_qualified_in(b"key", &admission, &mut |_| true));
+        let right = scope.spawn(|| b.visit_current_qualified_in(b"key", &admission, &mut |_| true));
+        assert!(left.join().unwrap().0.is_some());
+        assert!(right.join().unwrap().0.is_some());
+    });
+    assert_eq!(*provider.versions.lock().unwrap(), vec![1]);
+    assert_eq!(*provider.queries.lock().unwrap(), vec![2, 2]);
+    // A fresh context is issued for the next provider, even with identical
+    // domain and query labels. Previous provider cells cannot enter this API.
+    let changed_provider = host(8, Some(4), None, false);
+    let changed = dm_session::observations::ReceiptAdmission::new(&changed_provider);
+    for store in [&a, &b] {
+        let (hit, query) = store.visit_current_qualified_in(b"key", &changed, &mut |_| true);
+        assert!(hit.is_none());
+        assert_eq!(query, Some(1));
+    }
+    assert_eq!(*changed_provider.versions.lock().unwrap(), vec![1]);
+    assert_eq!(*changed_provider.queries.lock().unwrap(), vec![1, 1]);
+    let observable = host(7, None, None, true);
+    let observed = dm_session::observations::ReceiptAdmission::new(&observable);
+    for store in [&a, &b] {
+        assert!(store
+            .visit_current_qualified_in(b"key", &observed, &mut |_| true)
+            .0
+            .is_some());
+    }
+    assert!(observable.versions.lock().unwrap().is_empty());
+    assert_eq!(*observable.queries.lock().unwrap(), vec![1, 2, 1, 2]);
 }

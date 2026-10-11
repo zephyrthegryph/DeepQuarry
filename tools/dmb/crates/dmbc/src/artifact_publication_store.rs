@@ -125,7 +125,6 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
     /// `visit_explained`; observable hosts always replay every exact answer.
     /// Only complete matching immutable provider-qualified issuer receipts skip
     /// their own domains (including engine overlays, never a bare source stamp).
-    /// This narrow adapter owns admission cells per row, not across a whole wave.
     pub(crate) fn visit_current_qualified<H: ObservationHost<Q, A, D>>(
         &self,
         key: &[u8],
@@ -136,8 +135,22 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
             return self.visit_explained(key, host, accept);
         }
         let admission = dm_session::observations::ReceiptAdmission::new(host);
+        self.visit_current_qualified_in(key, &admission, accept)
+    }
+    /// The borrowed request context is the sole current provider authority; no
+    /// separately supplied host can mix certificates from another provider.
+    pub(crate) fn visit_current_qualified_in<H: ObservationHost<Q, A, D>>(
+        &self,
+        key: &[u8],
+        admission: &dm_session::observations::ReceiptAdmission<'_, Q, A, D, H>,
+        accept: &mut dyn FnMut(&Arc<T>) -> bool,
+    ) -> (Option<Arc<T>>, Option<Q>) {
         let mut validate = |reads: &Receipt<Q, A, D>, versions: &[(D, u128)]| {
-            admission.first_changed_receipted(reads, versions, |_| {})
+            if admission.allows_certificate_reuse() {
+                admission.first_changed_receipted(reads, versions, |_| {})
+            } else {
+                admission.first_changed(reads, |_| {})
+            }
         };
         let (accepted, changed) = match &self.attempt {
             Some(attempt) => attempt

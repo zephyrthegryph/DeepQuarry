@@ -566,6 +566,36 @@ pub(super) fn classify_one_keyed_grouped(
     shared_write: Option<&Arc<InitializerWrite>>,
     tokens: Option<&super::token_owner::RequestTokens>,
 ) -> Result<PendingWrite, ClassificationFailure> {
+    classify_one_keyed_grouped_in(
+        write,
+        symbols,
+        evaluator,
+        fact,
+        ordinal,
+        factory,
+        reuse,
+        prepared_key,
+        receipt_pool,
+        shared_write,
+        tokens,
+        None,
+    )
+}
+#[allow(clippy::too_many_arguments)]
+pub(super) fn classify_one_keyed_grouped_in(
+    write: &InitializerWrite,
+    symbols: &SymbolTable,
+    evaluator: &dyn CapturedInitializerEvaluator,
+    fact: ModifierFact,
+    ordinal: usize,
+    factory: ParallelEvaluator<'_>,
+    reuse: InitializerReuse<'_>,
+    prepared_key: Option<&Arc<[u8]>>,
+    receipt_pool: Option<&ReceiptPool>,
+    shared_write: Option<&Arc<InitializerWrite>>,
+    tokens: Option<&super::token_owner::RequestTokens>,
+    admission: Option<&super::super::current_admission::Admission<'_, '_>>,
+) -> Result<PendingWrite, ClassificationFailure> {
     let Some(factory_policy) = factory.factory.recording_policy_identity() else {
         reuse.store.declined.fetch_add(1, Ordering::Relaxed);
         let mut local = 0;
@@ -606,13 +636,14 @@ pub(super) fn classify_one_keyed_grouped(
                     result.is_none(),
                     "initializer recording factory invoked twice"
                 );
-                if let Some(value) = reuse
-                    .store
-                    .values
-                    .visit_current_qualified(key, &host, &mut |value| {
-                        value.input.as_ref() == Some(&input)
-                    })
-                    .0
+                if let Some(value) = super::super::current_admission::visit(
+                    &reuse.store.values,
+                    key,
+                    &host,
+                    admission,
+                    &mut |value| value.input.as_ref() == Some(&input),
+                )
+                .0
                 {
                     if let Some(mut current) = value.bind(write, symbols, ordinal) {
                         current.accepted = Some(Arc::clone(&value));
