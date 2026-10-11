@@ -121,3 +121,64 @@ fn analysis_attempt_does_not_supersede_in_flight_successful_build() {
     assert!(Arc::ptr_eq(&expected.grid, &current.grid));
     assert_eq!(next.counts.geometry_hits.load(Ordering::Relaxed), 1);
 }
+
+#[test]
+fn one_shot_map_facade_uses_shared_admission_without_legacy_resident_or_spool() {
+    let mut host = crate::runner_host::BuildHost::one_shot();
+    let memo = host.map_memo(1, None, true).unwrap();
+    let weak = Arc::downgrade(memo.retained.as_ref().unwrap());
+    let plan = memo.parse(captured(1)).unwrap();
+    let shifted = memo.parse(captured(9)).unwrap();
+    assert_eq!(shifted.captured.include_occurrence, 9);
+    assert!(Arc::ptr_eq(&plan.model, &shifted.model));
+    let old = memo
+        .project(std::slice::from_ref(&plan), defaults(), &Host(false))
+        .unwrap();
+    let current_host = Host(false);
+    let recorder = RecordingResolver::new(&current_host);
+    let hit = memo
+        .project(std::slice::from_ref(&shifted), defaults(), &recorder)
+        .unwrap();
+    assert!(Arc::ptr_eq(&old.grid, &hit.grid));
+    assert!(
+        !recorder.reads().is_empty(),
+        "hit must replay observer edges"
+    );
+    let changed = memo
+        .project(std::slice::from_ref(&shifted), defaults(), &Host(true))
+        .unwrap();
+    let fresh = crate::map_projection::project(
+        std::slice::from_ref(&shifted),
+        defaults(),
+        &crate::map_projection::ResolverClassifier(&Host(true)),
+    )
+    .unwrap();
+    assert_eq!(changed.dimensions, fresh.dimensions);
+    assert_eq!(changed.grid, fresh.grid);
+    assert_eq!(changed.objects, fresh.objects);
+    assert_eq!(changed.instances.len(), fresh.instances.len());
+    for (actual, expected) in changed.instances.iter().zip(fresh.instances.iter()) {
+        assert_eq!(actual.kind, expected.kind);
+        assert_eq!(actual.atom, expected.atom);
+        assert_eq!(actual.origin, expected.origin);
+    }
+    assert_ne!(old.instances[2].kind, changed.instances[2].kind);
+    let resident = memo.resident.lock().unwrap();
+    assert!(resident.parse.is_empty());
+    assert!(resident.geometry.is_empty());
+    drop(resident);
+    assert!(
+        memo.take_pending().is_empty(),
+        "no disk/publisher must not create records"
+    );
+    assert_eq!(memo.counts.parsed.load(Ordering::Relaxed), 1);
+    assert_eq!(memo.counts.projected.load(Ordering::Relaxed), 2);
+    assert!(memo.publish_successful());
+    drop(memo);
+    assert!(
+        weak.upgrade().is_none(),
+        "one-shot host keeps no map history"
+    );
+    let next = host.map_memo(1, None, true).unwrap();
+    assert_eq!(entries(next.retained.as_ref().unwrap()), 0);
+}

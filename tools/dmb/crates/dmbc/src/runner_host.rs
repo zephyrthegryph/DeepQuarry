@@ -332,9 +332,14 @@ impl BuildHost {
         publishable: bool,
     ) -> Option<crate::map_memo::MapMemo> {
         if self.memo.is_none() {
-            return disk.map(|snapshot| {
-                crate::map_memo::MapMemo::with_lazy_disk(policy, 64 * 1024 * 1024, snapshot)
-            });
+            // The one-shot facade uses the same parse/geometry/output leases,
+            // but the owner belongs only to this request. Disk is transport only.
+            return Some(crate::map_memo::MapMemo::with_resident_for_request(
+                policy,
+                Arc::new(crate::map_memo::RetainedMaps::current_revision()),
+                disk,
+                publishable,
+            ));
         }
         if self
             .maps
@@ -843,7 +848,9 @@ mod tests {
         assert!(!Arc::ptr_eq(&first, &host.maps.as_ref().unwrap().1));
         capture(&mut host, BTreeMap::from([("MODE".into(), "1".into())]));
         assert!(host.maps.is_none());
-        assert!(BuildHost::one_shot().map_memo(1, None, true).is_none());
+        let mut one_shot = BuildHost::one_shot();
+        assert!(one_shot.map_memo(1, None, true).is_some());
+        assert!(one_shot.maps.is_none(), "map ownership is request-local");
     }
     #[test]
     fn map_analysis_does_not_supersede_pending_build_publication() {
