@@ -307,8 +307,6 @@ base_var	code/modules/heat/heat_objects.dm	var/heat_dissipation
 base_var	code/modules/heat/heat_objects.dm	var/tmp/heat_output_now = 0
 base_var	code/modules/keybindings/hover.dm	/mob/var/tmp/atom/hovered_atom_view
 base_var	code/modules/lighting/lighting_atom.dm	var/light_system = STATIC_LIGHT
-base_var	code/modules/lighting/lighting_atom.dm	var/light_power = 1
-base_var	code/modules/lighting/lighting_atom.dm	var/light_color = COLOR_WHITE
 base_var	code/modules/lighting/lighting_atom.dm	var/light_on = FALSE
 base_var	code/modules/lighting/lighting_atom.dm	var/light_flags = NONE
 base_var	code/modules/lighting/lighting_atom.dm	var/tmp/datum/light_source/light
@@ -521,9 +519,6 @@ base_var	code/modules/mob/living/living_defines.dm	var/fire_stack_decay_rate = -
 base_var	code/modules/mob/living/living_defines.dm	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 base_var	code/modules/mob/living/living_defines.dm	var/evasion = 0 // Makes attacks harder to land. Negative numbers increase hit chance.
 base_var	code/modules/mob/living/living_defines.dm	var/force_max_speed = 0 // If 1, the mob runs extremely fast and cannot be slowed.
-base_var	code/modules/mob/living/living_defines.dm	var/last_glow_range = null
-base_var	code/modules/mob/living/living_defines.dm	var/last_glow_intensity = null
-base_var	code/modules/mob/living/living_defines.dm	var/last_glow_color = null
 base_var	code/modules/mob/living/living_defines.dm	var/nest //Not specific, because a Nest may be the prop nest, or blob factory in this case.
 base_var	code/modules/mob/living/living_defines.dm	var/list/hud_list //Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 base_var	code/modules/mob/living/living_defines.dm	var/has_huds = FALSE //Whether or not we should bother initializing the above list

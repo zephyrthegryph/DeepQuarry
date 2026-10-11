@@ -178,7 +178,7 @@ CAPABILITIES(/obj/effect/alien/weeds)
 	setup(PROC_REF(fullUpdateWeedOverlays))
 
 CAPABILITIES(/obj/effect/alien/weeds/node)
-	configure(light_glow(range = NODERANGE, color = "#673972"))
+	configure(light_glow(range = 3, color = "#673972")) // NODERANGE
 	every(2 SECONDS, then(PROC_REF(node_step)))
 
 /obj/effect/alien/weeds/proc/welder_used(datum/act/op/A)
