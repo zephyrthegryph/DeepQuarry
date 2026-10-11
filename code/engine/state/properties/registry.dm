@@ -250,13 +250,15 @@
 /// Instance value of property `id`: the base provider's value, then every
 /// contributor folded in with the property's aggregator.
 /proc/dq_property(datum/thing, id)
-	var/datum/property_registry/registry = dq_property_registry()
-	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
+	return dq_property_registry().read_value(thing, id)
+
+/datum/property_registry/proc/read_value(datum/thing, id)
+	var/datum/property_def/def = LAZYACCESS(defs, id)
 	if(!def)
 		CRASH("unknown property [id]")
-	var/datum/property_provider/base = registry.base_provider(thing.type, id)
+	var/datum/property_provider/base = base_provider(thing.type, id)
 	. = base?.instance_value(thing)
-	for(var/datum/property_provider/contributor as anything in registry.contributors[id])
+	for(var/datum/property_provider/contributor as anything in contributors[id])
 		if(!istype(thing, contributor.applies_to))
 			continue
 		. = dq_property_combine(def.aggregator, ., contributor.contribute(thing))

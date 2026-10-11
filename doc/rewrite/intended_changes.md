@@ -4535,3 +4535,6 @@ by `dq_type_trait/item_protection_declared`, the body slot insulation and clothi
 trait (no instance var to name as its state var). `protection_of(null)` answers the defaults, so a read through an empty slot (`worn?.x`)
 still reads as no protection. The check_grep lints no longer scan generated output (a `CAPABILITIES` line number 310 in `declare.dm` read
 as a body temperature).
+### Holder constructor diagnostic stack lines (requirements-zero-1010-h)
+
+Master commit `d7f737b36b` (2026-10-10 20:23:35 -0500) adds two explanatory lines before the parameter apply handler in `code/engine/lifeforms/params.dm`. The conversion pins for `/obj/item/holder`, `/obj/item/holder/mouse` and `/obj/item/holder/micro` therefore record that handler at line 239 instead of 237. Their existing missing-mob diagnostic, constructor behavior and all interaction rows are unchanged. Only these three diagnostic rows were refreshed from the final focused capture; this is a master-source location change, not a simulation-rule behavior change.
