@@ -32,7 +32,6 @@
 
 /obj/item/stack/tile/Initialize(mapload)
 	. = ..()
-	randpixel_xy()
 	if(craftable)
 		material = get_material_by_name("[default_type]")
 		if(!material)
@@ -45,6 +44,7 @@
 CAPABILITIES(/obj/item/stack/tile)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_AXE, pickup = SFX_ITEMS_PICKUP_AXE))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	rolls(ROLL_PIXEL, PIXEL_JITTER(nameof(randpixel)))
 
 /obj/item/stack/tile/proc/welder_used(datum/act/op/A)
 	var/mob/user = A.actor

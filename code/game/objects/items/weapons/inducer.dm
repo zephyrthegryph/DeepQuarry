@@ -265,6 +265,7 @@ CAPABILITIES(/obj/item/inducer)
 	item_flags = ABSTRACT
 
 	var/mob/living/carbon/human/hume
+	lifecycle_lifetime = 20 SECONDS
 
 CAPABILITIES(/obj/item/cell/standin)
 	param(nameof(hume), pos = 1)
@@ -276,7 +277,6 @@ CAPABILITIES(/obj/item/cell/standin)
 		return INITIALIZE_HINT_QDEL
 	set_charge(hume.nutrition)
 	set_maxcharge(initial(hume.nutrition))
-	expire(20 SECONDS)
 
 
 /obj/item/cell/standin/give(amount)
