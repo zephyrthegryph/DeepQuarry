@@ -228,6 +228,8 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	. = list()
 	var/what = src.args["what"]
 	if(istext(what) && copytext(what, 1, 5) != "cap:")
+		if(istype(A, /datum/act/admission_query))
+			return op_query_read_pairs(A, what)
 		for(var/key in change_read_keys(A.holder, what))
 			. += list(list(A.holder, key))
 

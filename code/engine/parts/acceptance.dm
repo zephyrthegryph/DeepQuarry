@@ -9,21 +9,10 @@
 		CRASH("invalid acceptance mode [mode]")
 	return entry_make(ENTRY_ACCEPTANCE, null, list("channel" = channel, "mode" = mode, "metadata" = metadata ? metadata.Copy() : null), entry_flatten(ENTRY_SLOT_LIST))
 
-/datum/acceptance_context
-	parent_type = /datum/pooled
-	var/datum/holder
-	var/atom/movable/candidate
-	var/mob/wearer
-	var/mob/mover
-	var/slot_id
-	var/list/options
-// Borrowed fields are bounded by one synchronous evaluation and reset by pool_release.
-// No relation publication occurs during requirement evaluation.
-/datum/act/op
-	var/datum/acceptance_context/acceptance
 /datum/act/op/acceptance
+	parent_type = /datum/act/admission_query
 /datum/act/op/acceptance/held_provider()
-	var/obj/object = acceptance?.candidate
+	var/obj/object = target
 	return istype(object) ? object : null
 
 // Override maps hold immutable resolved plan entries, compiled by the library setter.
@@ -115,29 +104,11 @@
 		if(length(pair) == 2 && pair[1] && !QDELETED(pair[1]))
 			. += list(pair.Copy())
 
-// Two pooled synchronous contexts, released together; no ref edges or gameplay publication.
-/proc/acceptance_act(datum/declarer, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, wearer_is_actor = FALSE)
-	var/datum/act/op/acceptance/A = take(/datum/act/op/acceptance)
-	var/datum/acceptance_context/C
-	try
-		C = take(/datum/acceptance_context)
-		A.acceptance = C
-		C.holder = destination
-		C.candidate = candidate
-		C.wearer = wearer
-		C.mover = mover
-		C.slot_id = slot_id
-		C.options = options ? options.Copy() : null
-		A.holder = declarer
-		A.target = candidate
-		A.target_atom = candidate
-		A.actor = wearer_is_actor ? wearer : mover
-	catch(var/exception/fault)
-		acceptance_act_release(A)
-		throw fault
-	return A
+// Direct fields use the existing bounded pooled act contract.
+/proc/acceptance_act(datum/declarer, datum/destination, atom/movable/candidate, mob/wearer = null, mob/mover = null, slot_id = null, list/options = null, wearer_is_actor = FALSE, query_type = /datum/act/op/acceptance)
+	return query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, null, options, query_type)
 
-// One immutable precompiled plan + paired pooled contexts. Every evaluation path releases both.
+// One immutable precompiled plan and one pooled query. Every evaluation path releases it.
 // Consumer needs presence separately because empty suit-storage is NOT unconstrained storage.
 /proc/acceptance_declared(datum/declarer, channel)
 	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(declarer, channel)
@@ -147,7 +118,7 @@
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = acceptance_act(declarer, destination, candidate, wearer, mover, slot_id, options, wearer_is_actor)
+		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
 		op_pure_begin()
 		op_menu_record_reads(declarer.acceptance_override_reads())
 		. = P ? P.check(A) : null
@@ -163,7 +134,7 @@
 	var/datum/act/op/acceptance/A
 	var/previous_pure_depth = GLOB.op_pure_depth
 	try
-		A = acceptance_act(declarer, destination, candidate, wearer, mover, slot_id, options, wearer_is_actor)
+		A = query_admission_query(declarer, candidate, wearer_is_actor ? wearer : mover, wearer, mover, destination, slot_id, channel, options, /datum/act/op/acceptance)
 		op_pure_begin()
 		. = P ? P.read_keys(A) : declarer.acceptance_override_reads()
 	catch(var/exception/fault)
@@ -186,10 +157,5 @@
 	op_pure_end()
 
 /proc/acceptance_act_release(datum/act/op/acceptance/A)
-	if(!A)
-		return
-	var/datum/acceptance_context/C = A.acceptance
-	A.acceptance = null
-	if(C)
-		C.release()
-	A.release()
+	if(A)
+		A.release()

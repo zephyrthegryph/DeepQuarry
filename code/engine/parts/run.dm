@@ -1121,6 +1121,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			pairs += list(pair)
 		return
 	if(isnum(cond) || (istext(cond) && copytext(cond, 1, 5) != "cap:"))
+		if(istext(cond) && istype(A, /datum/act/admission_query))
+			for(var/list/pair as anything in op_query_read_pairs(A, cond))
+				pairs += list(pair)
+			return
 		for(var/key in change_read_keys(A.holder, cond))
 			pairs += list(list(A.holder, key))
 

@@ -48,11 +48,10 @@ CAPABILITIES(/obj/item/dq_acceptance_native/empty)
 	D.set_acceptance_changes(acceptance_inherit(D.acceptance_changes, "dq-acceptance"))
 	TEST_ASSERT(acceptance_declared(D, "dq-acceptance"), "Removing override restores inheritance")
 	var/datum/act/op/acceptance/A = acceptance_act(D, D, I)
-	var/datum/acceptance_context/C = A.acceptance
 	acceptance_act_release(A)
-	TEST_ASSERT_NULL(A.acceptance, "Released act clears context reference")
-	TEST_ASSERT_NULL(C.candidate, "Released context clears borrowed candidate")
-	TEST_ASSERT_NULL(C.holder, "Released context clears borrowed holder")
+	TEST_ASSERT_NULL(A.target, "Released act clears borrowed target")
+	TEST_ASSERT_NULL(A.holder, "Released act clears declaration owner")
+	TEST_ASSERT_NULL(A.destination, "Released act clears destination")
 	TEST_ASSERT(!QDELETED(D) && !QDELETED(I), "Pool release cannot delete borrowed entities")
 
 
@@ -63,34 +62,31 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	acceptance("dq-acceptance-pure", req(PROC_REF(context_reason)))
 	acceptance("dq-acceptance-nested", part_make(/datum/entry/part/req/dq_nested_acceptance))
 /obj/item/dq_acceptance_pure/proc/context_reason(datum/act/op/A)
-	var/datum/acceptance_context/C = A.acceptance
-	if(C.options?["fault"])
+	if(A.query_options?["fault"])
 		CRASH("expected acceptance callback fault")
-	if(A.held_provider() != C.candidate)
+	if(A.held_provider() != A.target)
 		return "held context mismatch"
-	if(C.options?["refuse"])
+	if(A.query_options?["refuse"])
 		return "exact refusal"
 	return null
 // The nested requirement supplies the actual inner plan's dynamic dependencies.
 /datum/entry/part/req/dq_nested_acceptance/check(datum/act/op/A)
-	return acceptance_reason(A.holder, "dq-acceptance-pure", A.acceptance.holder, A.acceptance.candidate)
+	return acceptance_reason(A.holder, "dq-acceptance-pure", A.destination, A.target)
 /datum/entry/part/req/dq_nested_acceptance/holds(datum/act/op/A)
 	return isnull(check(A))
 /datum/entry/part/req/dq_nested_acceptance/refusal(datum/act/op/A)
 	return check(A)
 /datum/entry/part/req/dq_nested_acceptance/read_keys(datum/act/op/A)
-	return acceptance_read_keys(A.holder, "dq-acceptance-pure", A.acceptance.holder, A.acceptance.candidate)
+	return acceptance_read_keys(A.holder, "dq-acceptance-pure", A.destination, A.target)
 
 // Unique pooled subtypes prove genuinely cold allocation independent of other tests.
 /datum/act/op/acceptance/dq_acceptance_cold
-/datum/acceptance_context/dq_acceptance_cold
 
 /datum/unit_test/dq_acceptance_cold_pool/Run()
 	var/obj/item/dq_acceptance_pure/D = allocate(/obj/item/dq_acceptance_pure)
 	var/obj/item/I = allocate(/obj/item)
 	var/datum/entry/part/acceptance_plan/P = acceptance_plan_for(D, "dq-acceptance-pure")
 	TEST_ASSERT_NULL(GLOB.object_pools[/datum/act/op/acceptance/dq_acceptance_cold], "Unique act pool starts genuinely cold")
-	TEST_ASSERT_NULL(GLOB.object_pools[/datum/acceptance_context/dq_acceptance_cold], "Unique context pool starts genuinely cold")
 	var/datum/rx_state/DS = rx_of(D)
 	var/datum/rx_state/IS = rx_of(I)
 	var/holder_generation = DS.act_gen
@@ -98,14 +94,7 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	var/atom/location = I.loc
 	var/violations = length(GLOB.op_pure_violations)
 	op_pure_begin()
-	var/datum/act/op/acceptance/dq_acceptance_cold/A = take(/datum/act/op/acceptance/dq_acceptance_cold)
-	var/datum/acceptance_context/dq_acceptance_cold/C = take(/datum/acceptance_context/dq_acceptance_cold)
-	A.acceptance = C
-	A.holder = D
-	A.target = I
-	A.target_atom = I
-	C.holder = D
-	C.candidate = I
+	var/datum/act/op/acceptance/dq_acceptance_cold/A = acceptance_act(D, D, I, query_type = /datum/act/op/acceptance/dq_acceptance_cold)
 	var/why = P.check(A)
 	acceptance_act_release(A)
 	op_pure_end()
@@ -115,20 +104,16 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 	TEST_ASSERT_EQUAL(I.loc, location, "Admission never transfers custody")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pure_violations), violations, "Cold pool allocation stays within native purity")
 	var/datum/object_pool/AP = GLOB.object_pools[/datum/act/op/acceptance/dq_acceptance_cold]
-	var/datum/object_pool/CP = GLOB.object_pools[/datum/acceptance_context/dq_acceptance_cold]
 	TEST_ASSERT_EQUAL(AP.out, 0, "Cold act returned")
-	TEST_ASSERT_EQUAL(CP.out, 0, "Cold context returned")
-	TEST_ASSERT_NULL(A.acceptance, "Cold released act clears borrowed context")
-	TEST_ASSERT_NULL(C.candidate, "Cold released context clears candidate")
+	TEST_ASSERT_NULL(A.target, "Cold released act clears borrowed context")
+	TEST_ASSERT_NULL(A.target, "Cold released context clears candidate")
 
 /datum/unit_test/dq_acceptance_pooled_purity/Run()
 	var/obj/item/dq_acceptance_pure/D = allocate(/obj/item/dq_acceptance_pure)
 	var/obj/item/I = allocate(/obj/item)
 	var/before_violations = length(GLOB.op_pure_violations)
 	var/datum/object_pool/act_pool = GLOB.object_pools[/datum/act/op/acceptance]
-	var/datum/object_pool/context_pool = GLOB.object_pools[/datum/acceptance_context]
 	var/act_out = act_pool ? act_pool.out : 0
-	var/context_out = context_pool ? context_pool.out : 0
 	// First native acceptance use exercises cold pools when not used earlier; subsequent lap always exercises repeats.
 	for(var/lap in 1 to 2)
 		op_pure_begin()
@@ -152,17 +137,14 @@ CAPABILITIES(/obj/item/dq_acceptance_pure)
 		op_pure_end()
 		TEST_ASSERT(caught, "Actual requirement callback fault propagates")
 		act_pool = GLOB.object_pools[/datum/act/op/acceptance]
-		context_pool = GLOB.object_pools[/datum/acceptance_context]
 		TEST_ASSERT_EQUAL(act_pool.out, act_out, "Every allow/refusal/nested/fault path releases act")
-		TEST_ASSERT_EQUAL(context_pool.out, context_out, "Every allow/refusal/nested/fault path releases context")
 	TEST_ASSERT_EQUAL(length(GLOB.op_pure_violations), before_violations, "Cold/repeated constructors and callback checks publish nothing")
 	TEST_ASSERT(!QDELETED(D) && !QDELETED(I), "Borrowed entities remain alive")
 	var/datum/act/op/acceptance/A = acceptance_act(D, D, I)
-	var/datum/acceptance_context/C = A.acceptance
 	acceptance_act_release(A)
-	TEST_ASSERT_NULL(A.acceptance, "Released act cannot retain context")
-	TEST_ASSERT_NULL(C.candidate, "Released context cannot retain candidate")
-	TEST_ASSERT_NULL(C.holder, "Released context cannot retain destination")
+	TEST_ASSERT_NULL(A.target, "Released act cannot retain target")
+	TEST_ASSERT_NULL(A.target, "Released act cannot retain candidate")
+	TEST_ASSERT_NULL(A.destination, "Released act cannot retain destination")
 
 /obj/item/dq_acceptance_metadata_fault
 	var/probe = 0
@@ -187,9 +169,7 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 	var/previous_expected = GLOB.op_pure_expected
 	var/previous_depth = GLOB.op_pure_depth
 	var/datum/object_pool/AP = GLOB.object_pools[/datum/act/op/acceptance]
-	var/datum/object_pool/CP = GLOB.object_pools[/datum/acceptance_context]
 	var/act_out = AP ? AP.out : 0
-	var/context_out = CP ? CP.out : 0
 	GLOB.op_pure_expected = TRUE
 	// No caller pure bracket: each public query must guard its own metadata callback.
 	for(var/query in 1 to 2)
@@ -208,9 +188,7 @@ CAPABILITIES(/obj/item/dq_acceptance_metadata_fault)
 		TEST_ASSERT(length(GLOB.op_pure_violations) > count_before, "Query's native purity guard detected the actual tracked write")
 		TEST_ASSERT_EQUAL(GLOB.op_pure_depth, previous_depth, "Metadata fault restores exact caller purity depth")
 		AP = GLOB.object_pools[/datum/act/op/acceptance]
-		CP = GLOB.object_pools[/datum/acceptance_context]
 		TEST_ASSERT_EQUAL(AP.out, act_out, "Metadata fault releases borrowed act")
-		TEST_ASSERT_EQUAL(CP.out, context_out, "Metadata fault releases borrowed context")
 	GLOB.op_pure_expected = previous_expected
 	GLOB.op_pure_violations = previous_violations
 	TEST_ASSERT(!QDELETED(D) && !QDELETED(I), "Fault cleanup keeps borrowed entities alive")
@@ -412,3 +390,178 @@ CAPABILITIES(/obj/dq_acceptance_metadata_cleanup/when_fault)
 	GLOB.op_pure_expected = expected_before
 	GLOB.op_pure_violations = violations_before
 	test_driver_end()
+
+/obj/item/dq_acceptance_target_reads
+CAPABILITIES(/obj/item/dq_acceptance_target_reads)
+	acceptance("dq-query-target", req(PROC_REF(target_reason)))
+/obj/item/dq_acceptance_target_reads/proc/target_reason(datum/act/op/A)
+	var/obj/item/dq_acceptance_native/I = A.target
+	return I.acceptance_limit < 1 ? "target limit" : null
+/datum/unit_test/dq_acceptance_typed_query_reads/Run()
+	var/obj/item/dq_acceptance_target_reads/D = allocate(/obj/item/dq_acceptance_target_reads)
+	var/obj/item/dq_acceptance_native/I = allocate(/obj/item/dq_acceptance_native)
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-query-target", D, I), "target limit", "Real target callback refuses before setter")
+	var/list/pairs = acceptance_read_keys(D, "dq-query-target", D, I)
+	var/found = FALSE
+	for(var/list/pair as anything in pairs)
+		if(pair[1] == I && pair[2] == nameof(I.acceptance_limit))
+			found = TRUE
+	TEST_ASSERT(found, "Generated target root resolves actual candidate key")
+	I.set_acceptance_limit(1)
+	TEST_ASSERT_NULL(acceptance_reason(D, "dq-query-target", D, I), "Candidate setter allows without changing declarer")
+	var/list/options = list("refuse" = TRUE)
+	var/datum/act/op/acceptance/A = acceptance_act(D, D, I, options = options)
+	options["refuse"] = FALSE
+	TEST_ASSERT_EQUAL(A.query_options["refuse"], TRUE, "Caller map mutation cannot change invocation options")
+	acceptance_act_release(A)
+	var/caught = FALSE
+	try
+		acceptance_act(D, D, I, options = list("escape" = I))
+	catch(var/exception/fault)
+		caught = TRUE
+	TEST_ASSERT(caught, "World references cannot escape through query options")
+
+/obj/item/dq_acceptance_query_hop
+	var/obj/item/dq_acceptance_native/next
+CAPABILITIES(/obj/item/dq_acceptance_query_hop)
+	ref_one(nameof(next), /obj/item/dq_acceptance_native)
+/obj/item/dq_acceptance_query_hop_reader
+CAPABILITIES(/obj/item/dq_acceptance_query_hop_reader)
+	acceptance("dq-query-hop", req(PROC_REF(hop_reason)))
+/obj/item/dq_acceptance_query_hop_reader/proc/hop_reason(datum/act/op/A)
+	var/obj/item/dq_acceptance_query_hop/I = A.target
+	return I.next && I.next.acceptance_limit < 1 ? "hop limit" : null
+/datum/unit_test/dq_acceptance_typed_query_hop/Run()
+	var/obj/item/dq_acceptance_query_hop_reader/D = allocate(/obj/item/dq_acceptance_query_hop_reader)
+	var/obj/item/dq_acceptance_query_hop/I = allocate(/obj/item/dq_acceptance_query_hop)
+	var/obj/item/dq_acceptance_native/first = allocate(/obj/item/dq_acceptance_native)
+	var/obj/item/dq_acceptance_native/second = allocate(/obj/item/dq_acceptance_native)
+	rel_set(I, nameof(I.next), first)
+	var/list/pairs = acceptance_read_keys(D, "dq-query-hop", D, I)
+	var/membership = FALSE
+	var/first_key = FALSE
+	for(var/list/pair as anything in pairs)
+		membership |= pair[1] == I && pair[2] == nameof(I.next)
+		first_key |= pair[1] == first && pair[2] == nameof(first.acceptance_limit)
+	TEST_ASSERT(membership && first_key, "Generated relation hop watches membership and actual far owner")
+	rel_set(I, nameof(I.next), second)
+	pairs = acceptance_read_keys(D, "dq-query-hop", D, I)
+	var/second_key = FALSE
+	first_key = FALSE
+	for(var/list/pair as anything in pairs)
+		first_key |= pair[1] == first && pair[2] == nameof(first.acceptance_limit)
+		second_key |= pair[1] == second && pair[2] == nameof(second.acceptance_limit)
+	TEST_ASSERT(second_key && !first_key, "Replacement resolves new dependency before notice draining")
+	var/mob/living/carbon/human/wearer = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/mover = allocate(/mob/living/carbon/human)
+	var/datum/act/op/acceptance/A = acceptance_act(D, I, first, wearer, mover, SLOT_HEAD, wearer_is_actor = TRUE)
+	TEST_ASSERT_EQUAL(A.wearer, wearer, "Equipment wearer remains explicit")
+	TEST_ASSERT_EQUAL(A.mover, mover, "Distinct transfer actor remains explicit")
+	TEST_ASSERT_EQUAL(A.actor, wearer, "Compatibility equipment evaluation uses wearer role")
+	TEST_ASSERT_EQUAL(A.destination, I, "Physical destination differs from declarer")
+	TEST_ASSERT_EQUAL(A.target, first, "Candidate is actual action target")
+	acceptance_act_release(A)
+	TEST_ASSERT_NULL(A.wearer, "Release clears borrowed wearer")
+	TEST_ASSERT_NULL(A.mover, "Release clears borrowed mover")
+	TEST_ASSERT_NULL(A.destination, "Release clears borrowed destination")
+
+// Actual SYSTEM_ACCESSOR + tracked singleton setter, without mock publications.
+/obj/item/dq_acceptance_system_query
+CAPABILITIES(/obj/item/dq_acceptance_system_query)
+	acceptance("dq-system-query", req(PROC_REF(system_reason)))
+/obj/item/dq_acceptance_system_query/proc/system_reason(datum/act/op/A)
+	return night_shift_active() ? "night shift active" : null
+/datum/unit_test/dq_acceptance_system_query_dependency/Run()
+	var/obj/item/dq_acceptance_system_query/D = allocate(/obj/item/dq_acceptance_system_query)
+	var/obj/item/I = allocate(/obj/item)
+	var/before = SSnightshift.nightshift_active
+	var/list/old_frame = GLOB.op_menu_read_frame
+	var/list/frame = list(null, FALSE, list())
+	GLOB.op_menu_read_frame = frame
+	var/fault
+	try
+		var/why = acceptance_reason(D, "dq-system-query", D, I)
+		TEST_ASSERT_EQUAL(why, before ? "night shift active" : null, "Actual singleton accessor gives exact reason")
+		var/list/pairs = acceptance_read_keys(D, "dq-system-query", D, I)
+		var/found = FALSE
+		for(var/list/pair as anything in pairs)
+			found |= pair[1] == SSnightshift && pair[2] == nameof(SSnightshift.nightshift_active)
+		TEST_ASSERT(found, "Generated system root watches real singleton/key")
+		TEST_ASSERT(op_menu_dependencies_valid(frame[3]), "Captured real dependency initially validates")
+		SSnightshift.set_nightshift_active(!before)
+		TEST_ASSERT(!op_menu_dependencies_valid(frame[3]), "Real tracked setter invalidates cached query dependency without manual publication")
+		TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-system-query", D, I), !before ? "night shift active" : null, "Re-evaluation reads changed actual singleton")
+	catch(var/exception/error)
+		fault = error
+	SSnightshift.set_nightshift_active(before)
+	GLOB.op_menu_read_frame = old_frame
+	if(fault)
+		throw fault
+
+/obj/item/dq_acceptance_query_members
+	var/list/members
+CAPABILITIES(/obj/item/dq_acceptance_query_members)
+	owns_many(nameof(members), /obj/item/dq_acceptance_native)
+/obj/item/dq_acceptance_query_members_reader
+CAPABILITIES(/obj/item/dq_acceptance_query_members_reader)
+	acceptance("dq-query-members", req(PROC_REF(member_reason)))
+	acceptance("dq-query-map", req(PROC_REF(map_reason)))
+/obj/item/dq_acceptance_query_members_reader/proc/member_reason(datum/act/op/A)
+	var/obj/item/dq_acceptance_query_members/I = A.target
+	for(var/obj/item/dq_acceptance_native/member as anything in I.members)
+		if(member.acceptance_limit < 1)
+			return "member limit"
+	return null
+/obj/item/dq_acceptance_query_members_reader/proc/map_reason(datum/act/op/A)
+	var/obj/item/dq_acceptance_query_members/I = A.target
+	var/obj/item/dq_acceptance_native/member = I.members?["left"]
+	return member && member.acceptance_limit < 1 ? "map limit" : null
+/datum/unit_test/dq_acceptance_query_list_hops/proc/assert_pair(list/pairs, datum/owner, key)
+	for(var/list/pair as anything in pairs)
+		if(pair[1] == owner && pair[2] == key)
+			return
+	TEST_FAIL("Missing actual list dependency [owner.type].[key]")
+/datum/unit_test/dq_acceptance_query_list_hops/Run()
+	var/obj/item/dq_acceptance_query_members_reader/D = allocate(/obj/item/dq_acceptance_query_members_reader)
+	var/obj/item/dq_acceptance_query_members/I = allocate(/obj/item/dq_acceptance_query_members)
+	var/obj/item/dq_acceptance_native/first = allocate(/obj/item/dq_acceptance_native)
+	var/obj/item/dq_acceptance_native/second = allocate(/obj/item/dq_acceptance_native)
+	rel_add(I, nameof(I.members), first)
+	rel_add(I, nameof(I.members), second)
+	var/list/pairs = acceptance_read_keys(D, "dq-query-members", D, I)
+	assert_pair(pairs, I, nameof(I.members))
+	assert_pair(pairs, first, nameof(first.acceptance_limit))
+	assert_pair(pairs, second, nameof(second.acceptance_limit))
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-query-members", D, I), "member limit", "Actual foreach callback refuses")
+	first.set_acceptance_limit(1)
+	second.set_acceptance_limit(1)
+	TEST_ASSERT_NULL(acceptance_reason(D, "dq-query-members", D, I), "Real member setter values allow")
+	var/obj/item/dq_acceptance_native/removed = rel_take(I, nameof(I.members), second)
+	TEST_ASSERT_EQUAL(removed, second, "Real member take removes only selected member")
+	pairs = acceptance_read_keys(D, "dq-query-members", D, I)
+	assert_pair(pairs, I, nameof(I.members))
+	assert_pair(pairs, first, nameof(first.acceptance_limit))
+	for(var/list/pair as anything in pairs)
+		TEST_ASSERT(pair[1] != second, "Removed member no longer contributes dependency")
+	var/obj/item/dq_acceptance_query_members/map_holder = allocate(/obj/item/dq_acceptance_query_members)
+	var/obj/item/dq_acceptance_native/mapped = allocate(/obj/item/dq_acceptance_native)
+	rel_add(map_holder, nameof(map_holder.members), mapped, "left")
+	pairs = acceptance_read_keys(D, "dq-query-map", map_holder, map_holder)
+	assert_pair(pairs, map_holder, nameof(map_holder.members))
+	assert_pair(pairs, mapped, nameof(mapped.acceptance_limit))
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-query-map", map_holder, map_holder), "map limit", "Real keyed member callback refuses")
+	mapped.set_acceptance_limit(1)
+	TEST_ASSERT_NULL(acceptance_reason(D, "dq-query-map", map_holder, map_holder), "Actual keyed member setter permits")
+
+// Physical path nesting differs from DM inheritance; declaration is inherited.
+/obj/item/dq_acceptance_query_nonlexical
+	parent_type = /obj/item/dq_acceptance_target_reads
+/datum/unit_test/dq_acceptance_query_actual_parent/Run()
+	var/obj/item/dq_acceptance_query_nonlexical/D = allocate(/obj/item/dq_acceptance_query_nonlexical)
+	var/obj/item/dq_acceptance_native/I = allocate(/obj/item/dq_acceptance_native)
+	TEST_ASSERT_EQUAL(acceptance_reason(D, "dq-query-target", D, I), "target limit", "Actual inherited requirement executes")
+	var/list/pairs = acceptance_read_keys(D, "dq-query-target", D, I)
+	var/found = FALSE
+	for(var/list/pair as anything in pairs)
+		found |= pair[1] == I && pair[2] == nameof(I.acceptance_limit)
+	TEST_ASSERT(found, "Generated parent row follows actual parent_type instead of slash nesting")

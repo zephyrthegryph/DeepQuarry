@@ -1263,6 +1263,7 @@
 
 #include "dq_acceptance_foundation_tests.dm"
 #include "dq_acceptance_tracking_tests.dm"
+#include "dq_acceptance_old_grouped_tests.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

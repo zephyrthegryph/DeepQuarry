@@ -28,6 +28,7 @@ struct Action {
     /// (declared type text, name) in order, the parent's first.
     fields: Vec<(String, String)>,
     fixed: bool,
+    query: bool,
     notice: String,
     parent: Option<String>,
     rel: String,
@@ -124,10 +125,14 @@ impl Generator for Actions {
                 continue;
             };
             let mut fields = Vec::new();
+            let mut malformed = false;
             let mut fixed = false;
+            let mut query = false;
             let mut notice = None;
             for a in &m.args[1..] {
-                if a == "FIXED" {
+                if a == "QUERY" {
+                    query = true;
+                } else if a == "FIXED" {
                     fixed = true;
                 } else if let Some(n) = split_notice_opt(a) {
                     notice = Some(n);
@@ -135,12 +140,28 @@ impl Generator for Actions {
                     let (ty, nm) = dm_field(a);
                     if RESERVED.contains(&nm.as_str()) && name != "op" {
                         out.diag(&m.rel, m.line, format!("action `{}`: field `{}` is a field every act carries; pick another name", name, nm));
+                        malformed = true;
                         continue;
                     }
                     fields.push((ty, nm));
                 } else {
                     out.diag(&m.rel, m.line, format!("action `{}`: `{}` is neither a typed field, FIXED nor notice =", name, a));
+                    malformed = true;
                 }
+            }
+            if query && malformed {
+                continue;
+            }
+            if query {
+                let allowed = [("mob", "wearer"), ("mob", "mover"), ("datum", "destination"), ("", "slot_id"), ("", "requirement_channel"), ("list", "query_options")];
+                if fields.iter().map(|(_, name)| name).collect::<BTreeSet<_>>().len() != fields.len() || fields.iter().any(|(ty, name)| !allowed.iter().any(|(t, n)| ty == t && name == n)) {
+                    out.diag(&m.rel, m.line, "QUERY fields must match the typed synchronous op admission schema");
+                    continue;
+                }
+            }
+            if query && (fixed || notice.is_some() || name.contains('/')) {
+                out.diag(&m.rel, m.line, "QUERY cannot be FIXED, declare a notice, or inherit an action");
+                continue;
             }
             let parent = name.rfind('/').map(|i| name[..i].to_string());
             let notice = notice.unwrap_or_else(|| format!("/datum/notice/{}", past_tense(&name)));
@@ -151,7 +172,7 @@ impl Generator for Actions {
             if fixed && name.contains('/') {
                 out.diag(&m.rel, m.line, format!("action `{}`: a FIXED action has no subtypes", name));
             }
-            acts.insert(name.clone(), Action { name, fields, fixed, notice, parent, rel: m.rel.clone(), line: m.line });
+            acts.insert(name.clone(), Action { name, fields, fixed, query, notice, parent, rel: m.rel.clone(), line: m.line });
         }
         // A subtype inherits its parent's fields.
         let names: Vec<String> = acts.keys().cloned().collect();
@@ -210,7 +231,7 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
     // The act -> notice registry.
     let mut registry: Vec<(String, String)> = Vec::new();
     for a in list {
-        if !a.fixed && a.name != "op" {
+        if !a.query && !a.fixed && a.name != "op" {
             registry.push((path_of(&a.name), a.notice.clone()));
         }
     }
@@ -230,11 +251,15 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
         if !a.fixed && !is_op {
             out.line(path_of(&a.name));
             if a.parent.is_none() {
-                out.line("	parent_type = /datum/act/action");
+                out.line(if a.query { "	parent_type = /datum/act/op" } else { "	parent_type = /datum/act/action" });
             }
             for (ty, nm) in &own_fields {
-                out.line(var_line(ty, nm));
+                if !a.query { out.line(var_line(ty, nm)); }
             }
+        }
+        if a.query {
+            emit_query(out, a);
+            continue;
         }
         // The notice carries the same fields (a var the tree already declares on that type is not declared twice).
         let elsewhere = declared_elsewhere(cx, &a.notice);
@@ -279,6 +304,43 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
         }
         out.blank();
     }
+}
+
+/// Query constructors only bind private pooled invocation fields; they are not world events.
+fn emit_query(out: &mut GenOut, a: &Action) {
+    let mut params = vec!["datum/holder".to_string(), "atom/movable/target".to_string(), "mob/actor".to_string()];
+    params.extend(a.fields.iter().map(|(t, n)| param(t, n)));
+    params.push(format!("query_type = {}", path_of(&a.name)));
+    out.line(format!("/proc/query_{}({})", proc_name(&a.name), params.join(", ")));
+    out.line(format!("\tRETURN_TYPE({})", path_of(&a.name)));
+    out.line(format!("\tif(!ispath(query_type, {}))", path_of(&a.name)));
+    out.line("\t\tCRASH(\"query binder needs its declared pooled act type\")");
+    out.line("\tif(!holder || !istype(holder, /datum))");
+    out.line("\t\tCRASH(\"query needs a declaration holder\")");
+    for (ty, name) in [("atom/movable", "target"), ("mob", "actor")].into_iter().chain(a.fields.iter().filter(|(ty, _)| !ty.is_empty() && ty != "list").map(|(ty, name)| (ty.as_str(), name.as_str()))) {
+        out.line(format!("\tif(!isnull({}) && !istype({}, /{}))", name, name, ty));
+        out.line("\t\tCRASH(\"query input does not match its declared entity type\")");
+    }
+    // Copy inputs before taking a context, so bad input leaves no pool checkout.
+    for (ty, name) in &a.fields {
+        if ty == "list" {
+            out.line(format!("\tvar/list/copied_{} = op_query_input_copy({})", name, name));
+        }
+    }
+    for name in ["holder", "target", "actor"].into_iter().chain(a.fields.iter().filter(|(ty, _)| !ty.is_empty() && ty != "list").map(|(_, name)| name.as_str())) {
+        out.line(format!("\tif(istype({}, /datum/pooled) || (isdatum({}) && QDELETED({})))", name, name, name));
+        out.line("\t\tCRASH(\"query inputs must be live world entities, not transient contexts\")");
+    }
+    out.line(format!("\tvar/{}/A = take(query_type)", path_of(&a.name).trim_start_matches('/')));
+    out.line("\tA.holder = holder");
+    out.line("\tA.target = target");
+    out.line("\tA.target_atom = target");
+    out.line("\tA.actor = actor");
+    for (ty, name) in &a.fields {
+        out.line(format!("\tA.{} = {}{}", name, if ty == "list" { "copied_" } else { "" }, name));
+    }
+    out.line("\treturn A");
+    out.blank();
 }
 
 /// The vars a notice type already has from a declaration outside the generated file.
@@ -393,4 +455,67 @@ ACTION(poke, atom/x)
         assert_eq!(past_tense("equip"), "equipped");
         assert_eq!(past_tense("unequip"), "unequipped");
     }
+    #[test]
+    fn query_is_pooled_binding_not_event_or_notice() {
+        let (text, diags) = gen("ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requirement_channel, list/query_options, QUERY)\n");
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(text.contains("parent_type = /datum/act/op"));
+        assert!(text.contains("query_admission_query("));
+        assert!(text.contains("take(query_type)"));
+        assert!(text.contains("A.wearer = wearer"));
+        assert!(text.contains("op_query_input_copy(query_options)"));
+        assert!(!text.contains("act_begin("));
+        assert!(!text.contains("act_resolve("));
+        assert!(!text.contains("make_notice()"));
+        assert!(!text.contains("/datum/notice/"));
+        assert!(!text.contains("ALLOW("));
+    }
+
+    const QUERY_SRC: &str = "ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requirement_channel, list/query_options, QUERY)\n";
+
+    #[test]
+    fn query_binding_validates_all_inputs_before_pool_checkout() {
+        let (text, diags) = gen(QUERY_SRC);
+        assert!(diags.is_empty(), "{:?}", diags);
+        let checkout = text.find("take(query_type)").expect("one pooled checkout");
+        assert_eq!(text.matches("take(query_type)").count(), 1);
+        for validation in ["!ispath(query_type", "!holder || !istype(holder, /datum)", "!istype(target, /atom/movable)", "!istype(actor, /mob)", "!istype(wearer, /mob)", "!istype(mover, /mob)", "!istype(destination, /datum)", "op_query_input_copy(query_options", "istype(holder, /datum/pooled)", "istype(target, /datum/pooled)", "istype(actor, /datum/pooled)", "istype(wearer, /datum/pooled)", "istype(mover, /datum/pooled)", "istype(destination, /datum/pooled)"] {
+            assert!(text.find(validation).expect(validation) < checkout, "{} must not leak a checkout on invalid input", validation);
+        }
+        assert!(!text.contains("var/mob/wearer"), "typed inherited field must not be redeclared");
+        for effect in ["act_begin(", "act_resolve(", "notice_publish(", "publish_change(", "PUBLISH(", "METRICS_EVENT(", "make_notice()", "ALLOW("] {
+            assert!(!text.contains(effect), "query constructor cannot execute world effect {}", effect);
+        }
+    }
+
+    #[test]
+    fn query_is_absent_from_normal_event_notice_registry() {
+        let (text, diags) = gen(&format!("{}ACTION(fall, turf/landing)\n", QUERY_SRC));
+        assert!(diags.is_empty(), "{:?}", diags);
+        let registry = text.split("GLOBAL_LIST_INIT(action_notice_types,").nth(1).expect("ordinary action registry").split("))").next().unwrap();
+        assert!(registry.contains("/datum/act/fall = /datum/notice/fell"));
+        assert!(!registry.contains("admission_query"), "queries are not observable actions");
+        assert!(!text.contains("/datum/notice/admission_queried"));
+        assert!(text.contains("act_fall("), "adding queries must preserve ordinary events");
+    }
+
+    #[test]
+    fn invalid_query_schema_never_emits_a_binder() {
+        for (src, diagnostic) in [
+            ("ACTION(bad, mob/actor, mob/wearer, QUERY)", "every act carries"),
+            ("ACTION(bad, 123, mob/wearer, QUERY)", "neither a typed field"),
+            ("ACTION(bad, datum/mystery, QUERY)", "typed synchronous op admission schema"),
+            ("ACTION(bad, mob/destination, QUERY)", "typed synchronous op admission schema"),
+            ("ACTION(bad, mob/wearer, mob/wearer, QUERY)", "typed synchronous op admission schema"),
+            ("ACTION(bad, mob/wearer, QUERY, FIXED)", "QUERY cannot"),
+            ("ACTION(bad, mob/wearer, QUERY, notice = /datum/notice/custom)", "QUERY cannot"),
+            ("ACTION(bad/child, mob/wearer, QUERY)", "QUERY cannot"),
+        ] {
+            let (text, diags) = gen(src);
+            assert!(diags.iter().any(|d| d.contains(diagnostic)), "{}: {:?}", src, diags);
+            assert!(!text.contains("/proc/query_bad"), "invalid schema cannot enter runtime: {}", text);
+            assert!(!text.contains("take(query_type)"), "invalid schema cannot acquire pooled inputs");
+        }
+    }
+
 }
