@@ -25,6 +25,7 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))
 	op("space_suit_patch_item", item(/obj/item/stack/material), then(PROC_REF(space_suit_patch_item)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 // ALLOW(init/INSTANCE_STATE): remembers the name it was given, a map or loadout edit, before breaches rename it
 /obj/item/clothing/suit/space/Initialize(mapload)
@@ -194,22 +195,25 @@ CAPABILITIES(/obj/item/clothing/suit/space)
 
 	return OP_DECLINE
 
-/obj/item/clothing/suit/space/welder_act(mob/user, obj/item/tool)
+/// A welder patches the suit's structural breaches (5 fuel); not while it is worn.
+/obj/item/clothing/suit/space/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(isliving(src.loc))
 		to_chat(user, span_red("How do you intend to patch a hardsuit while someone is wearing it?"))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	if (!damage || ! brute_damage)
 		to_chat(user, "There is no structural damage on \the [src] to repair.")
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	var/obj/item/weldingtool/WT = tool.get_welder()
 	if(!WT.remove_fuel(5))
 		to_chat(user, span_red("You need more welding fuel to repair this suit."))
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 
 	repair_breaches(BRUTE, 3, user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/clothing/suit/space/examine(mob/user)
 	. = ..()

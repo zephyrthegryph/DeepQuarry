@@ -28,6 +28,8 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	op("assembly_self", in_hand(), label("Use"),
 		asks(/datum/prompt/choice, fields = list("question" = "What do you want to interact with?", "title" = "Interaction", "choices" = computed(PROC_REF(input_choices)), "timeout" = 0), step = "k_input"),
 		then(PROC_REF(interaction_self)))
+	op("use_crowbar", tool(TOOL_CROWBAR), wait(0), then(PROC_REF(crowbar_used)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 	op("assembly_item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("assembly_robot_use", remote(), when(req_actor_kind(/mob/living/silicon/robot)), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), then(PROC_REF(assembly_robot_use)))
 	op("assembly_rename", menu(), label("Rename Circuit"), needs(carried()), then(PROC_REF(assembly_rename_op)))
@@ -41,6 +43,7 @@ CAPABILITIES(/obj/item/electronic_assembly)
 	op("open_circuit", ui_act("open_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_open_circuit)))
 	op("remove_circuit", ui_act("remove_circuit", arg("ref", schema_ref(/obj/item/integrated_circuit))), then(PROC_REF(ui_act_remove_circuit)))
 	op("update_component_position", ui_act("update_component_position", arg("ref", schema_ref(/obj/item/integrated_circuit)), arg("x", num()), arg("y", num())), then(PROC_REF(ui_act_update_component_position)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
@@ -494,9 +497,11 @@ CAPABILITIES(/datum/ic_export_view)
 		return OP_DECLINE
 	return OP_PASS
 
-/obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
+/obj/item/electronic_assembly/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(!can_anchor)
-		return FALSE
+		return OP_DECLINE
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You've [anchored ? "" : "un"]secured \the [src] to \the [get_turf(src)]."))
 	if(anchored)
@@ -504,23 +509,28 @@ CAPABILITIES(/datum/ic_export_view)
 	else
 		on_unanchored()
 	playsound(src, tool.usesound, 50, TRUE)
-	return TRUE
+	return OP_OK
 
-/obj/item/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
+/// A crowbar opens or closes the assembly, unless it is locked.
+/obj/item/electronic_assembly/proc/crowbar_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(locked)
 		to_chat(user, span_warning("\The [src] is locked! You cannot open it with a crowbar."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	playsound(src, tool.usesound, 50, TRUE)
 	set_opened(!opened)
 	to_chat(user, span_notice("You [opened ? "opened" : "closed"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/electronic_assembly/screwdriver_act(mob/user, obj/item/tool)
+/// A screwdriver in the opened assembly opens its component window.
+/obj/item/electronic_assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(opened)
 		tgui_interact(user)
-		return ITEM_INTERACT_SUCCESS
+		return OP_OK
 	to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components. Try using a crowbar."))
-	return ITEM_INTERACT_BLOCKING
+	return OP_OK
 
 /// The Rename Circuit menu entry.
 /obj/item/electronic_assembly/proc/assembly_rename_op(datum/act/op/A)

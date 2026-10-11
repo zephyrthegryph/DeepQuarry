@@ -70,6 +70,7 @@ CAPABILITIES(/obj/effect/plant)
 	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 	op("hit_plant", item(/obj/item), then(PROC_REF(interaction_hit_plant)))
+	op("use_wirecutter", tool(TOOL_WIRECUTTER), wait(0), then(PROC_REF(wirecutter_used)))
 	op("touch_plant", hand(), then(PROC_REF(interaction_touch_plant)))
 	rolls(nameof(wall_shift), range_of(12, 14))
 	param(nameof(seed_at_make), pos = 1)
@@ -295,10 +296,13 @@ TRACKED(/obj/effect/plant, wall_shift)
 	check_health()
 	return TRUE
 
-/obj/effect/plant/wirecutter_act(mob/user, obj/item/tool)
-	user.setClickCooldown(user.get_attack_speed(tool))
+/// Wirecutters take a sample of the plant.
+/obj/effect/plant/proc/wirecutter_used(datum/act/op/A)
+	var/mob/user = A.actor
+	user.setClickCooldown(user.get_attack_speed(A.held))
 	SSplants.add_plant(src)
-	return take_plant_sample(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
+	take_plant_sample(user)
+	return OP_OK
 
 //handles being overrun by vines - note that attacker_parent may be null in some cases
 /obj/effect/plant/proc/vine_overrun(datum/seed/attacker_seed, obj/effect/plant/attacker_parent)

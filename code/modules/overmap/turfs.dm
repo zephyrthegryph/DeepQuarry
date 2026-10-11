@@ -50,9 +50,9 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 
 // ALLOW(init/INSTANCE_STATE): names and numbers itself from its overmap coordinates
 /turf/unsimulated/map/Initialize(mapload)
-	. = ..()
 	name = "[x]-[y]"
 	var/list/numbers = list()
+	coord_marks = list()
 
 	if(x == 1 || x == using_map.overmap_size)
 		numbers += list("[round(y/10)]","[round(y%10)]")
@@ -62,20 +62,20 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 		numbers += list("[round(x/10)]","[round(x%10)]")
 
 	for(var/i = 1 to numbers.len)
-		var/image/I = image('icons/effects/numbers.dmi',numbers[i])
-		I.pixel_x = 5*i - 2
-		I.pixel_y = world.icon_size/2 - 3
+		var/px = 5*i - 2
+		var/py = world.icon_size/2 - 3
 		if(y == 1)
-			I.pixel_y = 3
-			I.pixel_x = 5*i + 4
+			py = 3
+			px = 5*i + 4
 		if(y == using_map.overmap_size)
-			I.pixel_y = world.icon_size - 9
-			I.pixel_x = 5*i + 4
+			py = world.icon_size - 9
+			px = 5*i + 4
 		if(x == 1)
-			I.pixel_x = 5*i - 2
+			px = 5*i - 2
 		if(x == using_map.overmap_size)
-			I.pixel_x = 5*i + 2
-		add_overlay(I)
+			px = 5*i + 2
+		coord_marks += list(list(numbers[i], px, py))
+	. = ..()
 	make_z_transparent()
 
 /turf/unsimulated/map/Entered(atom/movable/O, atom/oldloc)
@@ -91,3 +91,12 @@ CAPABILITIES(/turf/unsimulated/map/edge)
 /// Accessor for the wrap_buddy var.
 /turf/unsimulated/map/edge/proc/wrap_buddy() as /turf/unsimulated/map/edge
 	return wrap_buddy
+
+/// The coordinate digits an edge tile shows: list(list(state, pixel_x, pixel_y), ...), worked out at init from where it lies.
+/turf/unsimulated/map/var/list/coord_marks
+
+/// An edge tile of the map shows its coordinates.
+/turf/unsimulated/map/draw(datum/look/look)
+	..()
+	for(var/list/mark in coord_marks)
+		look.overlay(look_overlay_image('icons/effects/numbers.dmi', mark[1], pixel_x = mark[2], pixel_y = mark[3]))

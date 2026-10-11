@@ -38,7 +38,8 @@ human|/obj/item/tool/screwdriver menu: Tip over
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Ui open
 human|/obj/item/tool/screwdriver menu: Use on
-human|/obj/item/tool/screwdriver click: Click: Bot item
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Bot item
 human|/obj/item/tool/crowbar menu: Disarm
 human|/obj/item/tool/crowbar menu: Eject pai blocked (refused: )
@@ -104,7 +105,8 @@ human|/obj/item/weldingtool menu: Tip over
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Ui open
 human|/obj/item/weldingtool menu: Use on
-human|/obj/item/weldingtool click: Click: Bot item
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Bot item
 human|/obj/item/stack/cable_coil menu: Disarm
 human|/obj/item/stack/cable_coil menu: Grab
@@ -190,5 +192,5 @@ human|/obj/item/reagent_containers/glass menu: Toggle Digestable (refused: You c
 human|/obj/item/reagent_containers/glass menu: Ui open
 human|/obj/item/reagent_containers/glass menu: Use on
 human|/obj/item/reagent_containers/glass click: Click: Feed
-keys: absorb_devour, adj_inject, adj_urgency, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, declaretreatment, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, medbot_hand_disarm, medbot_hand_grab, medbot_hand_help, medbot_hand_hurt, medbot_item, medbot_right, medbot_tip, melee_swing, polymorph, power, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, togglevoice, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, use_beaker, ventcrawl_in, vertical_nom, work, yank_out, zmove
+keys: absorb_devour, adj_inject, adj_urgency, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, bot_item, butcher, climb_down, climb_wall, declaretreatment, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, eject, eject_pai, eject_pai_blocked, emag.subvert, emag.use, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, hold, injection, lend_prey_control, medbot_hand_disarm, medbot_hand_grab, medbot_hand_help, medbot_hand_hurt, medbot_item, medbot_right, medbot_tip, melee_swing, polymorph, power, revert_beast_form, shred_limb, silicon_hand, spin, succubus_bite, togglevoice, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, use_beaker, use_screwdriver, use_welder, ventcrawl_in, vertical_nom, work, yank_out, zmove
 

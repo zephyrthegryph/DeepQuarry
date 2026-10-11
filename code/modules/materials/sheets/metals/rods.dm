@@ -39,6 +39,7 @@
 
 CAPABILITIES(/obj/item/stack/rods)
 	op("splint", item(/obj/item/tape_roll), passes(), then(PROC_REF(taped_into_splint)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Tape wound round a rod makes a makeshift splint.
 /obj/item/stack/rods/proc/taped_into_splint(datum/act/op/A)
@@ -51,13 +52,15 @@ CAPABILITIES(/obj/item/stack/rods)
 	src.use(1)
 	return OP_OK
 
-/obj/item/stack/rods/welder_act(mob/user, obj/item/tool)
+/obj/item/stack/rods/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(get_amount() < 2)
 		to_chat(user, span_warning("You need at least two rods to do this."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(0, user))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	var/obj/item/stack/material/steel/new_item = new(user.loc)
 	new_item.add_to_stacks(user)
 	act_message(src, user, others = span_notice("%U% is shaped into metal by %T% with the welding tool."), blind = span_notice("You hear welding."))
@@ -65,7 +68,7 @@ CAPABILITIES(/obj/item/stack/rods)
 	use(2)
 	if(QDELETED(src) && replace)
 		user.put_in_hands(new_item)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/stack/rods/reagents_per_sheet()
 	return REAGENTS_PER_ROD

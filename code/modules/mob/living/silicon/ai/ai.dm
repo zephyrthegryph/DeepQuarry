@@ -136,6 +136,7 @@ CAPABILITIES(/mob/living/silicon/ai)
 	op("track", topic("track", arg("track", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS), arg("trackname", schema_text(MAX_NAME_LEN * 2), optional = TRUE)), needs(req_self()), then(PROC_REF(topic_track)))
 	op("trackbot", topic("trackbot", arg("trackbot", schema_ref(/mob/living/bot), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_trackbot)))
 	op("open", topic("open", arg("open", schema_ref(/mob), optional = TRUE, among = TOPIC_IN_MOBS)), needs(req_self()), then(PROC_REF(topic_open_door)))
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), then(PROC_REF(wrench_used)))
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	for(var/granted_path in GLOB.ai_verbs_default)
@@ -854,12 +855,14 @@ CAPABILITIES(/obj/machinery/ai_powersupply)
 	card.grab_ai(src, user)
 	return TRUE
 
-/mob/living/silicon/ai/wrench_act(mob/user, obj/item/tool)
+/mob/living/silicon/ai/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(user == deployed_shell)
 		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
-		return ITEM_INTERACT_BLOCKING
+		return OP_OK
 	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, start_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
 	set_anchored(!anchored)

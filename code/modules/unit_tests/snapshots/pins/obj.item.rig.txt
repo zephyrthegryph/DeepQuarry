@@ -70,7 +70,8 @@ human|/obj/item/tool/screwdriver menu: Toggle Hardsuit (refused: You can't do th
 human|/obj/item/tool/screwdriver menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/screwdriver click: Click: Rig item
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Engage Module (refused: You can't do that.)
@@ -88,7 +89,8 @@ human|/obj/item/tool/crowbar menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/crowbar click: Click: Rig item
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use crowbar
 human|/obj/item/tool/wrench menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Engage Module (refused: You can't do that.)
@@ -106,7 +108,8 @@ human|/obj/item/tool/wrench menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wrench click: Click: Rig item
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
 human|/obj/item/tool/wirecutters menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Engage Module (refused: You can't do that.)
@@ -124,7 +127,8 @@ human|/obj/item/tool/wirecutters menu: Toggle Hardsuit (refused: You can't do th
 human|/obj/item/tool/wirecutters menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/tool/wirecutters menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/tool/wirecutters click: Click: Rig item
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 human|/obj/item/multitool menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/multitool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Engage Module (refused: You can't do that.)
@@ -142,7 +146,8 @@ human|/obj/item/multitool menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/multitool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/multitool click: Click: Rig item
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
 human|/obj/item/weldingtool menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Engage Module (refused: You can't do that.)
@@ -160,7 +165,8 @@ human|/obj/item/weldingtool menu: Toggle Hardsuit (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Helmet (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Module (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Toggle Visor (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Rig item
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Configure Voice Synthesiser (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Deploy Hardsuit (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Engage Module (refused: You can't do that.)
@@ -293,5 +299,5 @@ human|/obj/item menu: Toggle Module (refused: You can't do that.)
 human|/obj/item menu: Toggle Visor (refused: You can't do that.)
 human|/obj/item click: Click: Rig item
 wires: AI Override, Interface Lock, Interface Shock, Security, System Control
-keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock
+keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, install_module, interact_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, put_on, rig_alter_voice_verb, rig_deploy_suit_verb, rig_engage_module_verb, rig_hardsuit_interface_verb, rig_item, rig_select_module_verb, rig_shock_hand, rig_switch_vision_mode_verb, rig_toggle_boots_verb, rig_toggle_chest_verb, rig_toggle_gauntlets_verb, rig_toggle_helmet_verb, rig_toggle_module_verb, rig_toggle_seals_verb, rig_toggle_vision_verb, seal_suit, tank_settings, toggle_ai_control, toggle_cooling, toggle_digestable, toggle_piece, toggle_seals, toggle_suit_lock, use_crowbar, use_multitool, use_screwdriver, use_welder, use_wirecutter, use_wrench
 

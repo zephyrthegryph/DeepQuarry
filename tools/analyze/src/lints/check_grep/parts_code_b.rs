@@ -134,11 +134,10 @@ pub fn parts() -> Vec<Part> {
         Part::new(
             "objects_ratchet_on_tool_act_overrides",
             "objects: ratchet on tool *_act() overrides",
-            "screwdriver/crowbar/wrench/wirecutter/multitool/welder _act() overrides in code/game/objects or code/game/turfs over the ratchet. Declare op(\"use_x\", tool(TOOL_X), ...) (python tools/codemods/tool_act.py).",
+            "screwdriver/crowbar/wrench/wirecutter/multitool/welder _act() procs are gone (banned everywhere). Declare op(\"use_x\", tool(TOOL_X), ...) (python tools/codemods/tool_act.py).",
             Files::Code,
             line(r"^/[A-Za-z0-9_/]*/(screwdriver|crowbar|wrench|wirecutter|multitool|welder)_act\("),
-        )
-        .flt(vec![Flt::Keep(r"^code/game/(objects|turfs)/".into())]),
+        ),
         Part::new(
             "objects_ratchet_on_damage_reactions",
             "objects: ratchet on DAMAGE_REACTION",

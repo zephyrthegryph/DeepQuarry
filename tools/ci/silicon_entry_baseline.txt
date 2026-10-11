@@ -1,3 +1,2 @@
 # silicon_entry: the legacy ways silicons reach machines. rule<TAB>file<TAB>normalized line. `shortcut` is banned outright.
 # Shrink-only: `analyze baseline --update --lint silicon_entry` drops fixed sites and never adds one.
-siliconaccess	code/modules/power/apc.dm	"siliconUser" = user && (siliconaccess(user) || (isobserver(user) && is_admin(user))),

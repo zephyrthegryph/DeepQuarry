@@ -78,6 +78,7 @@ TRACKED(/obj/item/gun/launcher/crossbow, tension)
 // Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
 // losing the bolt ends it with the notches drawn so far, and the string relaxes.
 CAPABILITIES(/obj/item/gun/launcher/crossbow)
+	op("screwdriver_work", tool(TOOL_SCREWDRIVER), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(screwdriver_worked)))
 	op("draw_string", ai(), needs(req(PROC_REF(draw_holds), because = MSG(req_silent))), wait(2.5 SECONDS, repeats = PROC_REF(draw_more), after_step = PROC_REF(draw_notch)), on_interrupt(PROC_REF(draw_relaxed)))
 
 /obj/item/gun/launcher/crossbow/update_release_force()
@@ -166,7 +167,10 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 		return
 
 
-/obj/item/gun/launcher/crossbow/screwdriver_act(mob/user, obj/item/tool)
+/// Its own screwdriver work, ahead of the gun's DNA lock removal.
+/obj/item/gun/launcher/crossbow/proc/screwdriver_worked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(cell())
 		var/obj/item/C = cell()
 		C.forceMove(get_turf(user))
@@ -175,7 +179,7 @@ CAPABILITIES(/obj/item/gun/launcher/crossbow)
 		rel_clear(src, nameof(cell))
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Old attackby.
 /obj/item/gun/launcher/crossbow/gun_item(datum/act/op/A)
@@ -265,14 +269,18 @@ TRACKED(/obj/item/crossbowframe, buildstate)
 		if(5)
 			. += "It has a steel cable loosely strung across the lath."
 
-/obj/item/crossbowframe/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/crossbowframe/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(buildstate == 5)
 		to_chat(user, span_notice("You secure the crossbow's various parts."))
 		playsound(src, tool.usesound, 50, 1)
 		replace_with(src, /obj/item/gun/launcher/crossbow)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/item/crossbowframe/welder_act(mob/user, obj/item/tool)
+/obj/item/crossbowframe/proc/welder_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	if(buildstate == 1)
 		var/obj/item/weldingtool/T = tool.get_welder()
 		if(T.remove_fuel(0,user))
@@ -280,10 +288,12 @@ TRACKED(/obj/item/crossbowframe, buildstate)
 			playsound(src, tool.usesound, 50, 1)
 			to_chat(user, span_notice("You weld the rods into place."))
 		set_buildstate(buildstate + 1)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 CAPABILITIES(/obj/item/crossbowframe)
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
+	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 /// Old attackby.
 /obj/item/crossbowframe/proc/interaction_item(datum/act/op/A)

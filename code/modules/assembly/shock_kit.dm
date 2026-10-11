@@ -11,31 +11,38 @@
 CAPABILITIES(/obj/item/assembly/shock_kit)
 	owns_one(nameof(part1), /obj/item/clothing/head/helmet)
 	owns_one(nameof(part2), /obj/item/radio/electropack)
+	op("use_wrench", tool(TOOL_WRENCH), wait(0), needs(req(PROC_REF(disassembly_refusal))), then(PROC_REF(wrench_used)))
 
 
-/obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
-	if(!status)
-		if(loc?.release_refusal(src, user))
-			return ITEM_INTERACT_BLOCKING
-		var/turf/T = loc
-		if(ismob(T))
-			T = T.loc
-		part1.forceMove(T)
-		part2.forceMove(T)
-		rel_clear(part1, nameof(part1.master))
-		rel_clear(part2, nameof(part2.master))
-		rel_take(src, nameof(part1))
-		rel_take(src, nameof(part2))
-		consume(src, user)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+/// A secured kit is not taken apart, nor one its holder will not let go of.
+/obj/item/assembly/shock_kit/proc/disassembly_refusal(datum/act/op/A)
+	if(read_once(status))
+		return "it is secured"
+	return read_once(loc?.release_refusal(src, A.actor))
 
-/obj/item/assembly/shock_kit/screwdriver_act(mob/user, obj/item/tool)
+/// The kit comes apart into its two parts.
+/obj/item/assembly/shock_kit/proc/wrench_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/turf/T = loc
+	if(ismob(T))
+		T = T.loc
+	part1.forceMove(T)
+	part2.forceMove(T)
+	rel_clear(part1, nameof(part1.master))
+	rel_clear(part2, nameof(part2.master))
+	rel_take(src, nameof(part1))
+	rel_take(src, nameof(part2))
+	consume(src, user)
+	return OP_OK
+
+/obj/item/assembly/shock_kit/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/tool = A.held
 	status = !status
 	to_chat(user, span_notice("[src] is now [status ? "secured" : "unsecured"]!"))
 	playsound(src, tool.usesound, 50, 1)
 	add_fingerprint(user)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /// Overrides assembly's interaction_self(): trigger both shock kit parts instead of opening the UI.
 /obj/item/assembly/shock_kit/interaction_self(datum/act/op/A)

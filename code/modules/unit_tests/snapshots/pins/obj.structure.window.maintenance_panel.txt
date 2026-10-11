@@ -8,14 +8,14 @@ ai|none click: nothing
 ghost|none menu: Nothing
 ghost|none click: Click: Nothing
 human|/obj/item/tool/screwdriver menu: Bang on
-human|/obj/item/tool/screwdriver menu: Fasten to or free from the floor
 human|/obj/item/tool/screwdriver menu: Hit
 human|/obj/item/tool/screwdriver menu: Knock
 human|/obj/item/tool/screwdriver menu: Maintenance panel interaction item
 human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Fasten to or free from the floor
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Bang on
 human|/obj/item/tool/crowbar menu: Hit
 human|/obj/item/tool/crowbar menu: Knock
@@ -92,5 +92,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-keys: anchor, bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, pry_in, pry_out, swallow, tk_knock, unfasten_frame, weld_repair, weld_toggle, weld_toggle_help
+keys: bang, dismantle, drag_buckle, fasten_frame, item, knock, maintenance_panel_interaction_item, melee_hit, pry_in, pry_out, swallow, tk_knock, unfasten_frame, use_screwdriver, weld_repair, weld_toggle, weld_toggle_help
 

@@ -80,6 +80,7 @@ TRACKED(/obj/item/assembly, secured)
 CAPABILITIES(/obj/item/assembly)
 	op("attach", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 	op("use", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
+	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
 
 /// Old attackby: attach another unsecured assembly.
 /obj/item/assembly/proc/interaction_item(datum/act/op/A)
@@ -92,12 +93,13 @@ CAPABILITIES(/obj/item/assembly)
 			return OP_OK
 	return OP_DECLINE
 
-/obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/assembly/proc/screwdriver_used(datum/act/op/A)
+	var/mob/user = A.actor
 	if(toggle_secure())
 		to_chat(user, span_notice("\The [src] is ready!"))
 	else
 		to_chat(user, span_notice("\The [src] can now be attached!"))
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/item/assembly/examine(mob/user)
 	. = ..()

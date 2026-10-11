@@ -242,6 +242,7 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 	op("hat", item(/obj/item/clothing/head), stance(I_HELP), label("Put on hat"), then(PROC_REF(hat_put_on)))
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
+	op("use_crowbar", tool(TOOL_CROWBAR), priority(OP_PRIORITY_PART + 1), wait(0), needs(req(PROC_REF(sealed_refusal)))) // ahead of the chassis pry: a drone is sealed
 
 /// In help stance, a hat goes on a drone that has none, before the cyborg item handling; one that wears a hat declines.
 /mob/living/silicon/robot/drone/proc/hat_put_on(datum/act/op/A)
@@ -280,9 +281,9 @@ CAPABILITIES(/mob/living/silicon/robot/drone)
 		request_player()
 	return TRUE
 
-/mob/living/silicon/robot/drone/crowbar_act(mob/user, obj/item/tool)
-	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
-	return ITEM_INTERACT_BLOCKING
+/// A drone's case is hermetically sealed: a crowbar never opens it.
+/mob/living/silicon/robot/drone/proc/sealed_refusal(datum/act/op/A)
+	return "\the [src] is hermetically sealed; you can't open the case"
 
 /mob/living/silicon/robot/drone/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!client || stat == DEAD)

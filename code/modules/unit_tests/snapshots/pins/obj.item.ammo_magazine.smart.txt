@@ -23,7 +23,8 @@ human|/obj/item/tool/screwdriver menu: Move To Top
 human|/obj/item/tool/screwdriver menu: Smart item
 human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/screwdriver menu: Use
-human|/obj/item/tool/screwdriver click: Click: Load
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
 human|/obj/item/tool/crowbar menu: Clear Ammo Data (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Load
 human|/obj/item/tool/crowbar menu: Move To Top
@@ -122,5 +123,5 @@ human|/obj/item/cell/device menu: Smart item
 human|/obj/item/cell/device menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell/device menu: Use
 human|/obj/item/cell/device click: Click: Load
-keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable
+keys: clear_data, collect_item, collect_shells, drag_buckle, emag.subvert, emag.use, empty, gen_silicon_item_silicon_equip_module, hand, kit_customize, kit_customize_last, load, move_to_top, pick_up_item, smart_cell_in, smart_cell_out, smart_item, toggle_digestable, use_screwdriver
 

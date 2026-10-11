@@ -52,7 +52,8 @@ human|/obj/item/weldingtool menu: Interaction item
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Set Face
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool click: Click: Interaction item
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
 human|/obj/item/stack/cable_coil menu: Interaction alt
 human|/obj/item/stack/cable_coil menu: Interaction item
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
@@ -93,5 +94,5 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Set Face
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: Click: Interaction item
-keys: collect_item, dice_verb_set_face, drag_buckle, gen_silicon_item_silicon_equip_module, interaction_alt, interaction_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, roll, toggle_digestable
+keys: collect_item, dice_verb_set_face, drag_buckle, gen_silicon_item_silicon_equip_module, interaction_alt, interaction_item, kit_customize, kit_customize_last, move_to_top, pick_up_item, roll, toggle_digestable, use_welder
 
