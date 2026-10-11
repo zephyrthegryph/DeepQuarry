@@ -1,13 +1,13 @@
 /// Charging must report accepted energy and leave full cells at their capacity.
 /datum/unit_test/interim_cell_charge_boundaries/Run()
 	var/obj/item/cell/C = allocate(/obj/item/cell, run_loc_floor_bottom_left)
-	C.charge = C.maxcharge - 10
+	C.set_charge(C.maxcharge - 10)
 	TEST_ASSERT_EQUAL(C.give(25, FALSE), 10, "charging reports only the space available")
 	TEST_ASSERT_EQUAL(C.charge, C.maxcharge, "charging stops at capacity")
 	TEST_ASSERT_EQUAL(C.give(25, FALSE), 0, "a full cell accepts nothing")
 	TEST_ASSERT_EQUAL(C.give(-25, FALSE), 0, "negative charging cannot drain the cell")
 	TEST_ASSERT_EQUAL(C.charge, C.maxcharge, "refused charging preserves charge")
-	C.charge = 0
+	C.set_charge(0)
 	TEST_ASSERT_EQUAL(C.percent(), 0, "an empty cell reports zero percent")
 	TEST_ASSERT_EQUAL(C.use(10, FALSE), 0, "an empty cell cannot deliver power")
 	TEST_ASSERT_EQUAL(C.charge, 0, "failed discharge leaves no negative charge")
