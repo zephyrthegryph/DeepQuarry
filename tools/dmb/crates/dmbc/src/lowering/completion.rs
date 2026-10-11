@@ -204,12 +204,28 @@ pub fn lower_frontend_completed_input_on_execution<
             message,
         }]
     };
+    // Summed worker elapsed time can exceed request wall time under parallelism.
+    // These request-local counters are absent when progress is disabled.
+    let worker_elapsed = execution.progress_enabled.then(|| {
+        (
+            std::sync::atomic::AtomicU64::new(0),
+            std::sync::atomic::AtomicU64::new(0),
+        )
+    });
     let consume = |position: usize, input: Result<CompletedInput, Vec<LoweringDiagnostic>>| {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             input.map(|unit| {
                 let identity = unit.identity();
                 let effective = unit.effective();
-                complete(unit)
+                let started = worker_elapsed.as_ref().map(|_| std::time::Instant::now());
+                let completed = complete(unit);
+                if let (Some(started), Some((_, completion))) = (started, &worker_elapsed) {
+                    completion.fetch_add(
+                        started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                        std::sync::atomic::Ordering::Relaxed,
+                    );
+                }
+                completed
                     .map(|value| CompletedUnit {
                         identity,
                         effective,
@@ -329,7 +345,17 @@ pub fn lower_frontend_completed_input_on_execution<
                 .expect("each pending producer runs once");
             let input = crate::daemon::control::checkpoint()
                 .map_err(|error| internal(bodies.at(*position).0, error.to_string()))
-                .and_then(|_| attempt.finish());
+                .and_then(|_| {
+                    let started = worker_elapsed.as_ref().map(|_| std::time::Instant::now());
+                    let produced = attempt.finish();
+                    if let (Some(started), Some((production, _))) = (started, &worker_elapsed) {
+                        production.fetch_add(
+                            started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                            std::sync::atomic::Ordering::Relaxed,
+                        );
+                    }
+                    produced
+                });
             consume(*position, input)
         });
         for ((position, _), result) in pending.into_iter().zip(produced) {
@@ -349,12 +375,18 @@ pub fn lower_frontend_completed_input_on_execution<
                 || previous.elapsed() >= std::time::Duration::from_secs(2)
             {
                 crate::daemon_eprintln!(
-                    "native procedure lowering completed={}/{} elapsed={:.3}s admission_windows={:.3}s lowering_windows={:.3}s",
+                    "native procedure lowering completed={}/{} elapsed={:.3}s admission_windows={:.3}s lowering_windows={:.3}s production_worker_elapsed_sum={:.3}s completion_worker_elapsed_sum={:.3}s",
                     end,
                     bodies.len(),
                     started.elapsed().as_secs_f64(),
                     admission_elapsed.as_secs_f64(),
-                    lowering_elapsed.as_secs_f64()
+                    lowering_elapsed.as_secs_f64(),
+                    worker_elapsed.as_ref().map_or(0.0, |(production, _)| {
+                        production.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e9
+                    }),
+                    worker_elapsed.as_ref().map_or(0.0, |(_, completion)| {
+                        completion.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e9
+                    })
                 );
                 last_completed = end;
                 last_progress = Some(std::time::Instant::now());
