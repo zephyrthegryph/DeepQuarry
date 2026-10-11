@@ -1,3 +1,9 @@
+## 2026-10-11 paired focused runtime and migration
+
+Real DeepQuarry dq_damage_flavour_bands passed with clean trusted boot for native d993ea1a8b and BYOND 516.1687. Prototype native compile: 140.372 s; full focused wrapper: 278.853 s. BYOND full wrapper: 265.037 s. Wrapper totals include setup, runtime and preservation; these are not comparative compiler benchmarks. Both preserved output receipts remain in E:/dq-cache/dmb-native-v2/damage-focused-*20261011/.
+
+Six nested-map revisions also passed BYOND, retained native and fresh native runtimes; all retained/fresh native DMB/RSC pairs matched. New publication migration is committed but its combined check exposed integration mistakes being corrected. Pinned runtime results do not validate these newer changes. Full runtime baseline, authenticated BYOND structural gate, history/error parity, six-worktree acceptance and real latest incremental timings remain open. E: has about 1.3 GB free; new artifacts are constrained.
+
 ## 2026-10-10 current integration and measured limits
 
 Committed through `2ec3cac345`: shared declaration receipts, immutable cache age eviction, one streamed cache publication per completed request, buffered structural reports, and numeric metadata pressure release. The current workspace/all-target check passes. Shared frozen-frame ownership, an intermediate compiler-artifact pressure tier, frontend stage telemetry, and three captured BYOND default/header corrections are undergoing focused checks; they are not represented by a measured compiler yet.
