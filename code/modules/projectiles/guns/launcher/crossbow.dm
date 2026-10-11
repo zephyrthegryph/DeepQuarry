@@ -269,73 +269,32 @@ TRACKED(/obj/item/crossbowframe, buildstate)
 		if(5)
 			. += "It has a steel cable loosely strung across the lath."
 
-/obj/item/crossbowframe/proc/screwdriver_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(buildstate == 5)
-		to_chat(user, span_notice("You secure the crossbow's various parts."))
-		playsound(src, tool.usesound, 50, 1)
-		replace_with(src, /obj/item/gun/launcher/crossbow)
-	return OP_OK
-
-/obj/item/crossbowframe/proc/welder_used(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/tool = A.held
-	if(buildstate == 1)
-		var/obj/item/weldingtool/T = tool.get_welder()
-		if(T.remove_fuel(0,user))
-			if(!src || !T.isOn()) return ITEM_INTERACT_SUCCESS
-			playsound(src, tool.usesound, 50, 1)
-			to_chat(user, span_notice("You weld the rods into place."))
-		set_buildstate(buildstate + 1)
-	return OP_OK
+MSG_DEF_SELF(crossbow_frame/rods, "You assemble a backbone of rods around the wooden stock.")
+MSG_DEF_SELF(crossbow_frame/welded, "You weld the rods into place.")
+MSG_DEF_SELF(crossbow_frame/mount, "You wire a crude cell mount into the top of the crossbow.")
+MSG_DEF_SELF(crossbow_frame/lath, "You assemble and install a heavy plastic lath onto the crossbow.")
+MSG_DEF_SELF(crossbow_frame/strung, "You string a steel cable across the crossbow's lath.")
+MSG_DEF_SELF(crossbow_frame/secured, "You secure the crossbow's various parts.")
 
 CAPABILITIES(/obj/item/crossbowframe)
-	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
-	op("use_screwdriver", tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(screwdriver_used)))
-	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
+	// the stock, rods, a welded backbone, a cell mount, a plastic lath, the string; the screwdriver finishes it
+	stages(nameof(buildstate),
+		stage_step(0, 1, stack(/obj/item/stack/rods, 3), label("Assemble the rod backbone"), wait(0), says(MSG(crossbow_frame/rods))),
+		stage_step(1, 2, lit_welder(fuel = 0), label("Weld the rods"), wait(0), says(MSG(crossbow_frame/welded)), then(PROC_REF(tool_sounds))),
+		stage_step(2, 3, stack(/obj/item/stack/cable_coil, 5), label("Wire a cell mount"), wait(0), says(MSG(crossbow_frame/mount))),
+		stage_step(3, 4, stack(/obj/item/stack/material/plastic, 3), label("Install a plastic lath"), wait(0), says(MSG(crossbow_frame/lath))),
+		stage_step(4, 5, stack(/obj/item/stack/cable_coil, 5), label("String the cable"), wait(0), says(MSG(crossbow_frame/strung))))
+	op("finish", tool(TOOL_SCREWDRIVER), label("Secure the parts"), when(req_stage(nameof(buildstate), 5)), wait(0), says(MSG(crossbow_frame/secured)), then(PROC_REF(finished)))
 
-/// Old attackby.
-/obj/item/crossbowframe/proc/interaction_item(datum/act/op/A)
-	var/mob/user = A.actor
-	var/obj/item/W = A.held
-	if(istype(W,/obj/item/stack/rods))
-		if(buildstate == 0)
-			var/obj/item/stack/rods/R = W
-			if(R.use(3))
-				to_chat(user, span_notice("You assemble a backbone of rods around the wooden stock."))
-				set_buildstate(buildstate + 1)
-			else
-				to_chat(user, span_notice("You need at least three rods to complete this task."))
-			return OP_PASS
-	else if(istype(W, /obj/item/stack/cable_coil))
-		var/obj/item/stack/cable_coil/C = W
-		if(buildstate == 2)
-			if(C.use(5))
-				to_chat(user, span_notice("You wire a crude cell mount into the top of the crossbow."))
-				set_buildstate(buildstate + 1)
-			else
-				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return OP_PASS
-		else if(buildstate == 4)
-			if(C.use(5))
-				to_chat(user, span_notice("You string a steel cable across the crossbow's lath."))
-				set_buildstate(buildstate + 1)
-			else
-				to_chat(user, span_notice("You need at least five segments of cable coil to complete this task."))
-			return OP_PASS
-	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_PLASTIC)
-		if(buildstate == 3)
-			var/obj/item/stack/material/P = W
-			if(P.use(3))
-				to_chat(user, span_notice("You assemble and install a heavy plastic lath onto the crossbow."))
-				set_buildstate(buildstate + 1)
-			else
-				to_chat(user, span_notice("You need at least three plastic sheets to complete this task."))
-			return OP_PASS
-	else
-		return OP_DECLINE
-	return OP_PASS
+/obj/item/crossbowframe/proc/tool_sounds(datum/act/op/A)
+	playsound(src, A.held.usesound, 50, 1)
+	return OP_OK
+
+/// Secured, the frame is a crossbow.
+/obj/item/crossbowframe/proc/finished(datum/act/op/A)
+	playsound(src, A.held.usesound, 50, 1)
+	replace_with(src, /obj/item/gun/launcher/crossbow)
+	return OP_OK
 
 /// Used for firing superheated rods. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
