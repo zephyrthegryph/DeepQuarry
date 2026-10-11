@@ -60,6 +60,9 @@
 @obj.item human|/obj/item
 -menu: Alternate use
 +0 menu: Grenade interaction hand
-@obj.item human|/obj/item/card/emag
-+0 menu: Grenade interaction hand
+human|/obj/item/card/emag menu: Grenade interaction hand
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 keys: collect_item, det_time_10_30, det_time_1_10, det_time_30_50, det_time_50_1, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, prime, toggle_digestable, use_screwdriver

@@ -29,9 +29,7 @@
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
 @obj.item.clothing human|/obj/item/tool/wirecutters
--menu: Accessory attached hand
--menu: Collar tag item
--click: Click: Accessory attached hand
+-click: Click: Use
 +1 menu: Cut the restrictor
 +2 menu: HALT! (refused: You can't do that.)
 +4 menu: Select gas mask phrase (refused: You can't do that.)
