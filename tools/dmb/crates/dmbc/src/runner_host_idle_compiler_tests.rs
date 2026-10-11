@@ -70,12 +70,16 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
     let tree = Arc::clone(host.semantic.as_ref().unwrap().snapshot_tree().unwrap());
     let old = host.procedure_memo(17, None, true).unwrap();
     let old_facts = host.host_facts().unwrap();
+    let symbolic_owner = Arc::clone(&host.symbolic.as_ref().unwrap().1);
     host.release_idle_compiler_artifacts();
     assert!(Arc::ptr_eq(
         &tree,
         host.semantic.as_ref().unwrap().snapshot_tree().unwrap()
     ));
-    assert!(host.symbolic.is_none());
+    assert!(
+        Arc::ptr_eq(&symbolic_owner, &host.symbolic.as_ref().unwrap().1),
+        "compiler pressure preserves the bounded published symbolic owner"
+    );
     assert!(
         host.abi.is_some(),
         "compact ABI facade retains its explicit engine baseline"
@@ -93,7 +97,12 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
         regenerated.symbolic.as_ref().unwrap()
     ));
     assert!(!Arc::ptr_eq(&old_facts, &host.host_facts().unwrap()));
-    // Escaped old request handles remain detached from the host's new owners.
+    // The published owner survives; each request facade has its own lease.
+    assert!(Arc::ptr_eq(
+        &symbolic_owner,
+        &host.symbolic.as_ref().unwrap().1
+    ));
+    // Escaped rich request handles remain detached from the new rich owner.
     drop(old);
     drop(old_facts);
     let after = compile(&mut host);

@@ -136,31 +136,63 @@ mod tests {
         assert!(weak_facts.upgrade().is_some());
         let second = host.procedure_memo(4, None, true).unwrap();
         assert!(Arc::ptr_eq(&first.values, &second.values));
+        let symbolic_owner = Arc::clone(&host.symbolic.as_ref().unwrap().1);
+        let initializer_owner = Arc::clone(&host.initializers.as_ref().unwrap().1);
+        let startup_owner = Arc::clone(&host.startup.as_ref().unwrap().1);
+        let required_owner = Arc::clone(&host.required_types.as_ref().unwrap().1);
         host.release_idle_artifacts();
         assert!(weak_generation.upgrade().is_some());
         assert!(weak_facts.upgrade().is_some());
         let next = host.procedure_memo(4, None, true).unwrap();
         assert!(!Arc::ptr_eq(&first.values, &next.values));
         assert!(Arc::ptr_eq(
-            first.symbolic.as_ref().unwrap(),
-            next.symbolic.as_ref().unwrap()
+            &symbolic_owner,
+            &host.symbolic.as_ref().unwrap().1
         ));
+        assert!(
+            !Arc::ptr_eq(
+                first.symbolic.as_ref().unwrap(),
+                next.symbolic.as_ref().unwrap()
+            ),
+            "each request owns a distinct pending publication lease"
+        );
         assert!(Arc::ptr_eq(
             first.abi.as_ref().unwrap(),
             next.abi.as_ref().unwrap()
         ));
         assert!(Arc::ptr_eq(
-            first.required_types.as_ref().unwrap(),
-            next.required_types.as_ref().unwrap()
+            &required_owner,
+            &host.required_types.as_ref().unwrap().1
         ));
+        assert!(
+            !Arc::ptr_eq(
+                first.required_types.as_ref().unwrap(),
+                next.required_types.as_ref().unwrap()
+            ),
+            "request facades must not reuse pending publication leases"
+        );
         assert!(Arc::ptr_eq(
-            first.initializers.as_ref().unwrap(),
-            next.initializers.as_ref().unwrap()
+            &initializer_owner,
+            &host.initializers.as_ref().unwrap().1
         ));
+        assert!(
+            !Arc::ptr_eq(
+                first.initializers.as_ref().unwrap(),
+                next.initializers.as_ref().unwrap()
+            ),
+            "request facades must not reuse pending publication leases"
+        );
         assert!(Arc::ptr_eq(
-            first.startup.as_ref().unwrap(),
-            next.startup.as_ref().unwrap()
+            &startup_owner,
+            &host.startup.as_ref().unwrap().1
         ));
+        assert!(
+            !Arc::ptr_eq(
+                first.startup.as_ref().unwrap(),
+                next.startup.as_ref().unwrap()
+            ),
+            "request facades must not reuse pending publication leases"
+        );
         assert!(!Arc::ptr_eq(&prepared, &host.prepared_sources().unwrap()));
         assert!(host.memo.is_some());
         assert!(host.semantic.is_some());
