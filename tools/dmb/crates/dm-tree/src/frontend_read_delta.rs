@@ -20,7 +20,7 @@ impl<'a> FrontendReadHost<'a> {
 }
 impl Resolver for FrontendReadHost<'_> {
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
-        self.revision.snapshot.tree.resolve(query)
+        dm_ir::Resolver::resolve(self.revision.snapshot.tree.as_ref(), query)
     }
     fn observes_reads(&self) -> bool {
         false
@@ -65,6 +65,9 @@ mod tests {
             dm_session::CertificateState::Uncovered
         );
         let query = ResolveQuery::GlobalProc(dm_ir::SymbolId::of("missing"));
-        assert_eq!(host.resolve(query), revision.snapshot.tree.resolve(query));
+        assert_eq!(
+            dm_ir::Resolver::resolve(&host, query),
+            dm_ir::Resolver::resolve(revision.snapshot.tree.as_ref(), query)
+        );
     }
 }
