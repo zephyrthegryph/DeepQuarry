@@ -1,6 +1,4 @@
 /mob/living/simple_mob/vore
-	mob_class = MOB_CLASS_ANIMAL
-	mob_bump_flag = 0
 	can_be_drop_pred = TRUE
 
 /mob/living/simple_mob
@@ -131,5 +129,7 @@
 	gender = newgender
 
 /mob/living/simple_mob/vore/aggressive
-	mob_bump_flag = HEAVY
+
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive)
+	configure(mob_movement(bump = HEAVY))
 

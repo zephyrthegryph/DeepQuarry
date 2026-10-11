@@ -41,10 +41,12 @@
 
 /obj/item/surgical/bone_clamp/alien/magic
 	icon = 'icons/obj/abductor.dmi'
-	toolspeed = 0.75
 	icon_state = "bone_boneclamp"
 	name = "bone bone clamp"
 	desc = "A bone clamp made of bones for fixing bones using bones, it feels strangely adept. In fact, it doesn't really feel like actual bone at all..."
+
+CAPABILITIES(/obj/item/surgical/bone_clamp/alien/magic)
+	configure(item_tooling(speed = 0.75))
 
 // Bath
 

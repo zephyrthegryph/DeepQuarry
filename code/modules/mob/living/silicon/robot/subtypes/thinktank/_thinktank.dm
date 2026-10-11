@@ -26,9 +26,6 @@
 	modtype = "Standard"
 	speak_statement = "chirps"
 
-	mob_bump_flag =   HEAVY
-	mob_swap_flags = ~HEAVY
-	mob_push_flags =  HEAVY
 	mob_size =        MOB_LARGE
 
 	var/has_had_player = FALSE

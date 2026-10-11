@@ -161,16 +161,20 @@ CAPABILITIES(/obj/item/clothing/suit/armor/buffvest)
 	desc = "A strange set of armor made of rocky plates"
 	icon_state = "alien_tank"
 	slowdown = 0
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=25;bullet=25;laser=25;energy=25;bomb=25;bio=25;rad=25" //Should be good enough to mimic the old '12% reduction'.
 	block_chance = 12
+
+CAPABILITIES(/obj/item/clothing/suit/armor/alien/vistor)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/tesla/vistor
 	name = "zapping suit"
 	desc = "A strange set of armor crackling with lighting"
 	slowdown = 0
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=60;bullet=60;laser=60;energy=60"
+
+CAPABILITIES(/obj/item/clothing/suit/armor/tesla/vistor)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/reactive/vistor
 	name = "vibrating suit"

@@ -3,14 +3,10 @@
 	desc = "Deployable mop."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
-	item_flags = DROPDEL | NOSTRIP
-	force = 3
 	anchored = TRUE    // Never spawned outside of inventory, should be fine.
-	throwforce = 1  //Throwing or dropping the item deletes it.
 	throw_speed = 1
 	throw_range = 1
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
-	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
 	var/mob/living/creator
 	var/mopping = 0
 	var/mopcount = 0
@@ -47,6 +43,9 @@ CAPABILITIES(/obj/effect)
 	op("pass_insert_2", item(/obj/item/soap), label("Insert a soap"), passes())
 
 CAPABILITIES(/obj/item/mop_deploy)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
+	configure(item_thrown(force = 1))
+	configure(item_combat(force = 3, attack_verbs = list("mopped", "bashed", "bludgeoned", "whacked")))
 	reagents(5)
 	after_init(1, then(PROC_REF(check_held))) // after the hand that made it has taken it
 	op("self", in_hand(), then(PROC_REF(interaction_self)))

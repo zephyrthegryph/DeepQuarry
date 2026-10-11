@@ -279,7 +279,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 
 /obj/item/projectile/beam/nutrition_gigabeam
 	damage = 40
-	armor_penetration = 90
+
+CAPABILITIES(/obj/item/projectile/beam/nutrition_gigabeam)
+	configure(item_combat(armor_penetration = 90))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/astral_sea_warp(atom/target)
 	if(!target)

@@ -462,19 +462,19 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 		var/washglasses = 1
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			washgloves = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDEGLOVES)
-			washshoes = !(H.get_equipped_item(SLOT_ID_SUIT).flags_inv & HIDESHOES)
+			washgloves = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDEGLOVES)
+			washshoes = !(worn_of(H.get_equipped_item(SLOT_ID_SUIT)).hides & HIDESHOES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			washmask = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEMASK)
-			washglasses = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEYES)
-			washears = !(H.get_equipped_item(SLOT_ID_HEAD).flags_inv & HIDEEARS)
+			washmask = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEMASK)
+			washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEYES)
+			washears = !(worn_of(H.get_equipped_item(SLOT_ID_HEAD)).hides & HIDEEARS)
 
 		if(H.get_equipped_item(SLOT_ID_MASK))
 			if (washears)
-				washears = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEARS)
+				washears = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEARS)
 			if (washglasses)
-				washglasses = !(H.get_equipped_item(SLOT_ID_MASK).flags_inv & HIDEEYES)
+				washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEYES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
@@ -552,7 +552,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	if(protection_of(get_equipped_item(SLOT_ID_GLOVES)).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
 	for(var/obj/item/clothing/clothing in get_worn_clothing())
-		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (clothing.body_parts_covered & HANDS))
+		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (worn_of(clothing).covers & HANDS))
 			return TRUE
 	return FALSE
 

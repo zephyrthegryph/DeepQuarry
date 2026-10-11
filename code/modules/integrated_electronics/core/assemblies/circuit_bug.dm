@@ -5,9 +5,11 @@
 	icon_state = "setup_device_cylinder"
 	layer = TURF_LAYER+0.2 // Appears under many things, but with alt+click, unlike spy bug.
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS
 	max_components = IC_COMPONENTS_BASE
 	max_complexity = 20 // Incredibly low complexity to prevent shenanigans.
+
+CAPABILITIES(/obj/item/electronic_assembly/circuit_bug)
+	configure(item_worn(slots = SLOT_EARS))
 
 /obj/item/electronic_assembly/circuit_bug/examine(mob/user)
 	. = ..()

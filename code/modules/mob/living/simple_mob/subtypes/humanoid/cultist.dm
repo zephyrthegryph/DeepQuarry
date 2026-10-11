@@ -39,7 +39,9 @@
 	icon = 'icons/mob/cultists.dmi'
 	icon_state = "initiate"
 	faction = "cult"
-	mob_class = MOB_CLASS_DEMONIC
+
+CAPABILITIES(/mob/living/simple_mob/humanoid/cultist)
+	configure(mob_kind(mob_class = MOB_CLASS_DEMONIC))
 
 /datum/category_item/catalogue/fauna/cultist/human
 	name = "Cultists - Human"
@@ -72,7 +74,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/human
 	delete_on_death = TRUE
-	death_message = "let's out a maddening laugh as his body crumbles away."
 
 /mob/living/simple_mob/humanoid/cultist/human/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -247,7 +248,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/tesh
 	delete_on_death = TRUE
-	death_message = "let's out a shrill chirp as his body turns to dust."
 
 /mob/living/simple_mob/humanoid/cultist/tesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -293,12 +293,10 @@
 	armor_spec = "melee=70;bullet=60;laser=30;energy=80;bomb=35;bio=100;rad=100" // Better Armor to match lizard brute resist
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	movement_cooldown = 4
-	base_attack_cooldown = 7.5 //Two knives mean double stab.
 
 
 /mob/living/simple_mob/humanoid/cultist/lizard
 	delete_on_death = TRUE
-	death_message = "hisses as he collapses into a pile of bones."
 
 /mob/living/simple_mob/humanoid/cultist/lizard/on_death(gibbed)
 	new /obj/effect/decal/remains/unathi (src.loc)
@@ -346,7 +344,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/caster
 	delete_on_death = TRUE
-	death_message = "melts into a pile of blood and bones."
 
 /mob/living/simple_mob/humanoid/cultist/caster/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -395,7 +392,6 @@
 
 /mob/living/simple_mob/humanoid/cultist/initiate
 	delete_on_death = TRUE
-	death_message = "lets out a horrified scream as his body crumbles away."
 
 /mob/living/simple_mob/humanoid/cultist/initiate/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -436,13 +432,11 @@
 	attacktext = list("slashed", "stabbed")
 	armor_spec = "melee=35;bullet=20;laser=35;energy=60;bomb=20;bio=100;rad=100" //Rebalanced for Robes and Tesh damage
 	attack_sound = SFX_WEAPONS_RAPIDSLICE
-	base_attack_cooldown = 7.5
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
 	delete_on_death = TRUE
-	death_message = "burns away into nothing."
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/on_death(gibbed)
 	new /obj/effect/decal/cleanable/ash (src.loc)
@@ -486,6 +480,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
+	configure(mob_kind(death_message = "shatters into bone and blood like pieces like the now shattered mirror."))
 	op("cultist_elite_item", item(/obj/item), then(PROC_REF(cultist_elite_interaction_item)))
 	immune_to_incapacitation()
 
@@ -494,7 +489,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	var/mob/user = A.actor
 	var/obj/item/O = A.held
 	. = OP_OK
-	if(O.force)
+	if(combat_of(O).force)
 		if(prob(30))
 			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
@@ -518,7 +513,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 
 /mob/living/simple_mob/humanoid/cultist/elite
 	delete_on_death = TRUE
-	death_message = "shatters into bone and blood like pieces like the now shattered mirror."
 
 /mob/living/simple_mob/humanoid/cultist/elite/on_death(gibbed)
 	new /obj/effect/decal/remains/human (src.loc)
@@ -563,14 +557,12 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	armor_spec = "melee=60;bullet=50;laser=50;energy=80;bomb=30;bio=100;rad=100" //Super Armor since Boss Mob
 	attack_sound = SFX_WEAPONS_BLADESLICE
 
-	base_attack_cooldown = 5
 	projectilesound = SFX_WEAPONS_SPIDERLUNGE
 	var/obj/item/shield_projector/shields = null
 
 
 /mob/living/simple_mob/humanoid/cultist/magus
 	delete_on_death = TRUE
-	death_message = "let's out a dark laugh as it collapses into a puddle of blood."
 
 /mob/living/simple_mob/humanoid/cultist/magus/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -578,6 +570,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/elite)
 	ghostize()
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
+	configure(mob_kind(attack_cooldown = 5, death_message = "let's out a dark laugh as it collapses into a puddle of blood."))
 	immune_to_incapacitation()
 	owns_one(nameof(shields), starts = /obj/item/shield_projector/rectangle/automatic/magus)
 
@@ -619,7 +612,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
 
-	base_attack_cooldown = 7.5
 
 	// loot_list = list(/obj/item/material/butterfly/saw = 100, /obj/item/gun/projectile/shotgun/doublebarrel/sawn/alt = 100) // Downstream
 
@@ -630,7 +622,6 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus)
 
 /mob/living/simple_mob/humanoid/cultist/hunter
 	delete_on_death = TRUE
-	death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."
 
 /mob/living/simple_mob/humanoid/cultist/hunter/on_death(gibbed)
 	new /obj/effect/decal/cleanable/blood/gibs (src.loc)
@@ -851,6 +842,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/noodle)
 	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
+	configure(mob_kind(death_message = "let's out a shrill chirp as his body turns to dust."))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -891,6 +883,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/tesh)
 	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "burns away into nothing."))
 	immune_to_incapacitation()
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
@@ -921,22 +914,27 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/castertesh)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/human)
+	configure(mob_kind(death_message = "let's out a maddening laugh as his body crumbles away."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/lizard)
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "hisses as he collapses into a pile of bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/caster)
+	configure(mob_kind(death_message = "melts into a pile of blood and bones."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/initiate)
+	configure(mob_kind(death_message = "lets out a horrified scream as his body crumbles away."))
 	immune_to_incapacitation()
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/hunter)
+	configure(mob_kind(attack_cooldown = 7.5, death_message = "laughs as he melts away. His laughs echo through the air even after only a dense red goo remains."))
 	immune_to_incapacitation()

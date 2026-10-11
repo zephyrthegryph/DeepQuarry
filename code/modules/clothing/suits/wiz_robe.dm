@@ -3,10 +3,10 @@
 	desc = "Strange-looking hat-wear that most certainly belongs to a real magic user."
 	icon_state = "wizard"
 	//Not given any special protective value since the magic robes are full-body protection --NEO
-	body_parts_covered = 0
 	wizard_garb = 1
 
 CAPABILITIES(/obj/item/clothing/head/wizard)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/red
@@ -21,15 +21,17 @@ CAPABILITIES(/obj/item/clothing/head/wizard/red)
 	name = "wizard hat"
 	desc = "It has WIZZARD written across it in sequins. Comes with a cool beard."
 	icon_state = "wizard-fake"
-	body_parts_covered = HEAD|FACE
 
 CAPABILITIES(/obj/item/clothing/head/wizard/fake)
+	configure(item_worn(covers = HEAD|FACE))
 	configure(item_protection(siemens = 1))
 
 /obj/item/clothing/head/wizard/fake/realistic
 	desc = "A cool-looking 'magic' hat."
 	icon_state = "wizard"
-	body_parts_covered = HEAD
+
+CAPABILITIES(/obj/item/clothing/head/wizard/fake/realistic)
+	configure(item_worn(covers = HEAD))
 
 /obj/item/clothing/head/wizard/fake/realistic/colorable
 	desc = "A cool-looking 'magic' hat."
@@ -47,9 +49,9 @@ CAPABILITIES(/obj/item/clothing/head/wizard/marisa)
 	name = "Magus Helm"
 	desc = "A mysterious helmet that hums with an unearthly power"
 	icon_state = "magus"
-	body_parts_covered = HEAD|FACE|EYES
 
 CAPABILITIES(/obj/item/clothing/head/wizard/magus)
+	configure(item_worn(covers = HEAD|FACE|EYES))
 	configure(item_protection(siemens = 0.8))
 
 /obj/item/clothing/head/wizard/amp
@@ -74,10 +76,10 @@ CAPABILITIES(/obj/item/clothing/head/wizard/cap)
 	desc = "A magnificant, gem-lined robe that seems to radiate power."
 	icon_state = "wizard"
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=20;bio=20;rad=20"
-	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	wizard_garb = 1
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe)
+	configure(item_worn(hides = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER))
 	configure(item_protection(gas_transfer = 0.01, permeability = 0.01, siemens = 0.8))
 
 TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_WIZARD))))
@@ -96,13 +98,17 @@ TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(li
 	name = "Magus Robe"
 	desc = "A set of armoured robes that seem to radiate a dark power"
 	icon_state = "magusblue"
-	body_parts_covered = CHEST|ARMS|HANDS|LEGS|FEET
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe/magusblue)
+	configure(item_worn(covers = CHEST|ARMS|HANDS|LEGS|FEET))
 
 /obj/item/clothing/suit/wizrobe/magusred
 	name = "Magus Robe"
 	desc = "A set of armoured robes that seem to radiate a dark power"
 	icon_state = "magusred"
-	body_parts_covered = CHEST|ARMS|HANDS|LEGS|FEET
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe/magusred)
+	configure(item_worn(covers = CHEST|ARMS|HANDS|LEGS|FEET))
 
 /obj/item/clothing/suit/wizrobe/psypurple
 	name = "purple robes"
@@ -114,8 +120,9 @@ TYPE_TABLE(/obj/item/clothing/suit/wizrobe, suit_storage_spec, list(HOLD_ONLY(li
 	desc = "A heavy threaded twead gray jacket. For a different sort of Gentleman."
 	icon_state = "gentlecoat"
 	item_state_slots = list(slot_r_hand_str = "greatcoat", slot_l_hand_str = "greatcoat")
-	body_parts_covered = CHEST|ARMS
-	flags_inv = HIDETIE|HIDEHOLSTER
+
+CAPABILITIES(/obj/item/clothing/suit/wizrobe/gentlecoat)
+	configure(item_worn(covers = CHEST|ARMS, hides = HIDETIE|HIDEHOLSTER))
 
 /obj/item/clothing/suit/wizrobe/fake
 	name = "wizard robe"
@@ -140,8 +147,8 @@ CAPABILITIES(/obj/item/clothing/head/wizard/marisa/fake)
 	name = "Witch Robe"
 	desc = "Magic is all about the spell power, ZE!"
 	icon_state = "marisa"
-	body_parts_covered = CHEST|ARMS|LEGS
 	armor_spec = ""
 
 CAPABILITIES(/obj/item/clothing/suit/wizrobe/marisa/fake)
+	configure(item_worn(covers = CHEST|ARMS|LEGS))
 	configure(item_protection(siemens = 1.0))

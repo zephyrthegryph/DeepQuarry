@@ -1,7 +1,6 @@
 /mob/living
 	see_invisible = SEE_INVISIBLE_LIVING
 
-	var/mob_class = null	// A mob's "class", e.g. human, mechanical, animal, etc. Used for certain projectile effects. See __defines/mob.dm for available classes.
 
 	var/hud_updateflag = 0
 
@@ -11,14 +10,9 @@
 	var/max_nutrition = MAX_NUTRITION
 
 
-	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
 
 
 	var/now_pushing = null
-	var/mob_bump_flag = 0
-	var/mob_swap_flags = 0
-	var/mob_push_flags = 0
-	var/mob_always_swap = 0
 
 
 	var/tod = null // Time of death
@@ -45,13 +39,10 @@
 	var/list/hud_list		//Holder for health hud, status hud, wanted hud, etc (not like inventory slots)
 	var/has_huds = FALSE	//Whether or not we should bother initializing the above list
 
-	var/makes_dirt = TRUE	//FALSE if the mob shouldn't be making dirt on the ground when it walks
 
 
-	var/allow_self_surgery = FALSE	// Used to determine if the mob can perform surgery on itself.
 
 
-	var/inventory_panel_type = /datum/inventory_panel
 	var/datum/inventory_panel/inventory_panel
 
 	var/static/list/fear_message_self = list(
@@ -102,7 +93,6 @@
 	var/custom_whisper = null
 
 /mob
-	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 	var/eggs = 0
 

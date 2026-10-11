@@ -193,50 +193,60 @@ CAPABILITIES(/obj/item/projectile/arc/vial)
 /obj/item/projectile/arc/vial/frostvial
 	icon_state = "blue_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizpoison/frost
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/frostvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/frostvial, vial_chems, list(REAGENT_ID_FROSTOIL))
 
 /obj/item/projectile/arc/vial/poisonvial
 	icon_state = "green_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizpoison
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/poisonvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/poisonvial, vial_chems, list(REAGENT_ID_TOXIN))
 
 /obj/item/projectile/arc/vial/firevial
 	icon_state = "red_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizfire
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/firevial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/firevial, vial_chems, list(REAGENT_ID_SACID))
 
 /obj/item/projectile/arc/vial/lightingvial
 	icon_state = "orange_vial"
 	damage = 10
-	armor_penetration = 0
 	splatter_volume = 60
 	modifier_type_to_apply = /datum/body_effect/wizfire/lighting
 	modifier_duration = 15 SECONDS
 	splatter = TRUE
+
+CAPABILITIES(/obj/item/projectile/arc/vial/lightingvial)
+	configure(item_combat(armor_penetration = 0))
 TYPE_TABLE(/obj/item/projectile/arc/vial/lightingvial, vial_chems, list(REAGENT_ID_SHREDDINGNANITES))
 
 /obj/item/projectile/energy/nuclearblast
 	name = "nuclear blast"
 	icon_state = "plasma"
 	damage = 25
-	armor_penetration = 50
 	agony = 50
 	speed = 24.0
 	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 120 SECONDS
 	flash_strength = 15
+
+CAPABILITIES(/obj/item/projectile/energy/nuclearblast)
+	configure(item_combat(armor_penetration = 50))

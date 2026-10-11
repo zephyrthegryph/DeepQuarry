@@ -25,7 +25,6 @@
 	name = "area modification item"
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
-	attack_verb = list("attacked", "bapped", "hit")
 	in_use = FALSE
 	preserve_item = 1
 	var/uses_charges = 0 					// If the area editor has limited uses.
@@ -59,6 +58,7 @@
 TRACKED(/obj/item/areaeditor, charges)
 
 CAPABILITIES(/obj/item/areaeditor)
+	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
 	// the old attack_self: read it
 	op("read", in_hand(), label("Read"), then(PROC_REF(read_editor)))
 	// another editor tops up a limited one's charges (a master refills it; a limited one gives the number asked)
@@ -194,11 +194,11 @@ CAPABILITIES(/obj/item/areaeditor)
 	desc = "A blueprint detailing the various internal wiring of machinery around the station."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "blueprints"
-	attack_verb = list("attacked", "bapped", "hit")
 	preserve_item = 1
 	var/legend = 1
 
 CAPABILITIES(/obj/item/wire_reader)
+	configure(item_combat(attack_verbs = list("attacked", "bapped", "hit")))
 	op("read_wires", in_hand(), label("Read"), then(PROC_REF(interaction_read_wires)))
 	op("view_wireset", topic("view_wireset", arg("view_wireset", schema_text(MAX_NAME_LEN), optional = TRUE)), then(PROC_REF(topic_view_wireset)))
 	op("view_legend", topic("view_legend"), then(PROC_REF(topic_view_legend)))

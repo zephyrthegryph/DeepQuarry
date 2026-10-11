@@ -98,11 +98,11 @@ CAPABILITIES(/obj/item/clothing/gloves/duty)
 	name = "tactical gloves"
 	icon_state = "work"
 	item_state = "wgloves"
-	force = 5
 	punch_force = 3
 	armor_spec = "melee=30;bullet=10;laser=10;energy=15;bomb=20"
 
 CAPABILITIES(/obj/item/clothing/gloves/tactical)
+	configure(item_combat(force = 5))
 	configure(item_protection(siemens = 0.75, permeability = 0.05))
 
 /obj/item/clothing/gloves/vox
@@ -165,12 +165,12 @@ TYPE_TABLE(/obj/item/clothing/gloves/vox, fit_spec, list(REQ_FITS_BODYTYPES(list
 	icon_state = "wedring_g"
 	item_state = "wedring_g"
 	var/partnername = ""
-	body_parts_covered = null
 	special_handling = TRUE
 
 TRACKED(/obj/item/clothing/gloves/weddingring, partnername)
 
 CAPABILITIES(/obj/item/clothing/gloves/weddingring)
+	configure(item_worn(covers = TRAIT_NONE))
 	op("engrave", in_hand(), label("Engrave"),
 		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
 

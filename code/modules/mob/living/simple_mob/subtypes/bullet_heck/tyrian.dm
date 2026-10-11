@@ -44,10 +44,12 @@
 	endurance = 3300 //TG has megafauna with 2500 HP. Yet to see folks call those overly tanky. Tyr gun can deal 504 with a full clip of the single shot mode. Wanting longer fights, and this are meant for groups of three
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments
-	mob_class = MOB_CLASS_ABERRATION
 	endurance = 2100
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 	movement_cooldown = 40
+
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments)
+	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 //Watch the ground. No seriously, 2/3s of it is glowing red
 //phase 1 is rather simple, simple lines, bomb drop, limit the area, then another bomb drop

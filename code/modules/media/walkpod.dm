@@ -24,9 +24,9 @@
 	var/obj/item/headpods/deployed_headpods
 
 	w_class = ITEMSIZE_COST_SMALL
-	slot_flags = SLOT_BELT
 
 CAPABILITIES(/obj/item/walkpod)
+	configure(item_worn(slots = SLOT_BELT))
 	ref_one(nameof(listener))
 	every(2 SECONDS, then(PROC_REF(walkpod_step)), when = nameof(listener))
 	op("self", in_hand(), priority(OP_PRIORITY_DEFAULT - 1), then(PROC_REF(interaction_self)))
@@ -281,7 +281,9 @@ MSG_DEF_SELF(walkpod/headpods_deployed, "the HeadPods are already deployed")
 	icon_state = "headpods"
 	item_state = "headphones_on"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_HEAD
+
+CAPABILITIES(/obj/item/headpods)
+	configure(item_worn(slots = SLOT_HEAD))
 
 
 /// Current track playing (a relation view: null once it is deleted).

@@ -113,7 +113,7 @@
 	var/mob/living/carbon/human/H = p2_actor(T)
 	var/obj/item/frame/frame = allocate(/obj/item/frame, T)
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
-	W.toolspeed = 0
+	W.set_toolspeed(0)
 	touch(H, frame, W)
 	TEST_ASSERT(QDELETED(frame), "the frame is taken apart")
 	var/sheets = 0
@@ -132,7 +132,7 @@
 	var/obj/item/frame/frame = allocate(/obj/item/frame, T)
 	H.put_in_inactive_hand(frame)
 	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
-	W.toolspeed = 0
+	W.set_toolspeed(0)
 	H.put_in_active_hand(W)
 	test_click(H, frame, W)
 	p2_settle()

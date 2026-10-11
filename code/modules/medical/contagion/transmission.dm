@@ -116,12 +116,12 @@
 			return clothing_passes(H.get_equipped_item(SLOT_ID_UNIFORM))
 		if(BP_L_HAND, BP_R_HAND)
 			var/obj/item/suit = H.get_equipped_item(SLOT_ID_SUIT)
-			if(isobj(suit) && (suit.body_parts_covered & HANDS) && !clothing_passes(suit))
+			if(isobj(suit) && (worn_of(suit).covers & HANDS) && !clothing_passes(suit))
 				return FALSE
 			return clothing_passes(H.get_equipped_item(SLOT_ID_GLOVES))
 		if(BP_L_FOOT, BP_R_FOOT)
 			var/obj/item/suit = H.get_equipped_item(SLOT_ID_SUIT)
-			if(isobj(suit) && (suit.body_parts_covered & FEET) && !clothing_passes(suit))
+			if(isobj(suit) && (worn_of(suit).covers & FEET) && !clothing_passes(suit))
 				return FALSE
 			return clothing_passes(H.get_equipped_item(SLOT_ID_SHOES))
 	return TRUE

@@ -17,8 +17,8 @@
 	TEST_ASSERT(user.equip_to_slot_if_possible(core, SLOT_ID_BACK), "actual actor wears its real core on its back")
 	TEST_ASSERT(user.equip_to_slot_if_possible(shield, SLOT_ID_SUIT), "actual actor wears its initialized shield armor")
 	projectile.agony = 20
-	projectile.sharp = TRUE
-	projectile.edge = TRUE
+	projectile.set_sharp(TRUE)
+	projectile.set_edge(TRUE)
 	projectile.embed_chance = 50
 	var/damage_before = projectile.damage
 	TEST_ASSERT_EQUAL(shield.handle_shield(user, 20, projectile), 0, "actual inactive shield returns the original damage-handling result")
@@ -33,8 +33,8 @@
 	TEST_ASSERT_EQUAL(core.energy, 9250, "actual twenty-damage shielding spends exactly seven hundred fifty real core energy")
 	TEST_ASSERT_EQUAL(projectile.damage, damage_before - 15, "actual shielding removes exactly fifteen projectile damage")
 	TEST_ASSERT_EQUAL(projectile.agony, 5, "actual shielding removes seventy-five percent of projectile agony")
-	TEST_ASSERT_EQUAL(projectile.sharp, FALSE, "actual shielding makes the real projectile blunt")
-	TEST_ASSERT_EQUAL(projectile.edge, FALSE, "actual shielding clears the real projectile cutting edge")
+	TEST_ASSERT_EQUAL(combat_of(projectile).sharp, FALSE, "actual shielding makes the real projectile blunt")
+	TEST_ASSERT_EQUAL(combat_of(projectile).edge, FALSE, "actual shielding clears the real projectile cutting edge")
 	TEST_ASSERT_EQUAL(projectile.embed_chance, 0, "actual shielding prevents the real projectile embedding")
 	TEST_ASSERT(shield.active, "actual successful shielding leaves its emitter active")
 	TEST_ASSERT_EQUAL(core.pay_energy(core.energy), 1, "actual core payment drains its remaining energy")

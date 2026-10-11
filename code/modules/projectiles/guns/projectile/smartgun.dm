@@ -15,7 +15,6 @@ MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMO
 	w_class = ITEMSIZE_LARGE
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/smartgun	//Only used for chameleon guns
-	slot_flags = SLOT_BACK
 	accuracy = -15
 	one_handed_penalty = 50
 
@@ -59,6 +58,7 @@ TRACKED(/obj/item/gun/projectile/smartgun, closed)
 TRACKED(/obj/item/gun/projectile/smartgun, cycling)
 
 CAPABILITIES(/obj/item/gun/projectile/smartgun)
+	configure(item_worn(slots = SLOT_BACK))
 	op("ready", hand(), answers(INTENT_TOGGLE), label("Ready or unready rifle"), then(PROC_REF(readiness_toggled)))
 
 /obj/item/gun/projectile/smartgun/proc/readiness_toggled(datum/act/op/A)
@@ -124,12 +124,14 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
 	icon_state = "smartguncase"
 	randpixel = 10
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 
 	leaves_residue = FALSE
 	caliber = "smartgun"
 	projectile_type = /obj/item/projectile/bullet/smartgun
+
+CAPABILITIES(/obj/item/ammo_casing/smartgun)
+	configure(item_worn(slots = SLOT_BELT))
 
 /**
  * The magazine that holds the items of ammo
@@ -139,7 +141,6 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	desc = "A holder for smartgun rails for the S.M.A.R.T. rifle."
 	icon = 'icons/obj/guns/projectile/smartgun_32.dmi'
 	icon_state = "smartgunmag"
-	slot_flags = SLOT_BELT
 	MATERIAL_BULK(MAT_STEEL, 500)
 	w_class = ITEMSIZE_SMALL
 
@@ -148,3 +149,6 @@ CAPABILITIES(/obj/item/gun/projectile/smartgun)
 	max_ammo = 5
 	ammo_type = /obj/item/ammo_casing/smartgun
 	multiple_sprites = TRUE
+
+CAPABILITIES(/obj/item/ammo_magazine/smartgun)
+	configure(item_worn(slots = SLOT_BELT))

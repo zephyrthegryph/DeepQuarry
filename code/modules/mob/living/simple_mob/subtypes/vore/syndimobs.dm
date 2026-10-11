@@ -201,6 +201,9 @@
 	var/explosion_delay_lower	= 0 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 1 SECONDS	// Upper bound.
 
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate)
+	configure(mob_kind(attack_cooldown = 8))
+
 
 	loot_list = list(/obj/item/gun/projectile/automatic/z8 = 1)
 
@@ -208,7 +211,6 @@
 	projectilesound = SFX_WEAPONS_SERDY_TYPE901
 	projectile_dispersion = 3
 	projectile_accuracy = -15
-	base_attack_cooldown = 8
 	reload_max = 30
 
 	say_list_type = /datum/say_list/merc
@@ -254,8 +256,10 @@
 	projectile_dispersion = 12
 	projectile_accuracy = -25
 	random_skin = 0
-	base_attack_cooldown = 0.3
 	reload_max = 50
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/lmg)
+	configure(mob_kind(attack_cooldown = 0.3))
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/smg
 	name = "mercenary commando"
@@ -271,8 +275,10 @@
 	projectile_dispersion = 1
 	projectile_accuracy = -10
 	random_skin = 0
-	base_attack_cooldown = 0.1
 	reload_max = 15
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/smg)
+	configure(mob_kind(attack_cooldown = 0.1))
 /*
 /mob/living/simple_mob/vore/wolftaur/syndicate/awp
 	name = "mercenary commando sniper"
@@ -288,9 +294,11 @@
 	projectile_dispersion = 0
 	projectile_accuracy = 50
 	random_skin = 0
-	base_attack_cooldown = 30
 	ranged_attack_delay = 2.5
 	reload_max = 5
+
+CAPABILITIES(/mob/living/simple_mob/vore/wolftaur/syndicate/awp)
+	configure(mob_kind(attack_cooldown = 30))
 \*
 */
 

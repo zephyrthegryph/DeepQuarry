@@ -5,9 +5,6 @@
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
 	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // owned: the loaded cartridge, kept in the e-cig's contents
 	w_class = ITEMSIZE_TINY
-	slot_flags = SLOT_EARS | SLOT_MASK
-	attack_verb = list("attacked", "poked", "battered")
-	body_parts_covered = 0
 	var/brightness_on = 1
 	chem_volume = 0 //ecig has no storage on its own but has reagent container created by parent obj
 	item_state = "ecigoff"
@@ -31,6 +28,8 @@
 SETTER(/obj/item/clothing/mask/smokable/ecig, active)
 
 CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
+	configure(item_worn(slots = SLOT_EARS | SLOT_MASK, covers = 0))
+	configure(item_combat(attack_verbs = list("attacked", "poked", "battered")))
 	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge, starts = nameof(cartridge_type))
 	every(2 SECONDS, then(PROC_REF(ecig_step)), when = nameof(active))
 	on_change(nameof(ec_cartridge), ANY, then(PROC_REF(cartridge_changed)))

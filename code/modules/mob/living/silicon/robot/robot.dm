@@ -10,9 +10,6 @@
 	icon_state = "robot"
 	endurance = 200
 
-	mob_bump_flag = ROBOT
-	mob_swap_flags = ~HEAVY
-	mob_push_flags = ~HEAVY //trundle trundle
 
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
@@ -31,7 +28,6 @@
 	var/list/robotdecal_on	// Lazy.
 	var/glowy_enabled = FALSE
 
-	can_be_antagged = TRUE
 
 //Icon stuff
 
@@ -807,7 +803,7 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	if(istype(W, /obj/item/borg/upgrade))
 		apply_upgrade(W, user)
 		return TRUE
-	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && W.force > 0)
+	if(!(istype(W, /obj/item/robotanalyzer) || istype(W, /obj/item/healthanalyzer)) && combat_of(W).force > 0)
 		fx_sparks(src, 5, FALSE)
 	return FALSE
 

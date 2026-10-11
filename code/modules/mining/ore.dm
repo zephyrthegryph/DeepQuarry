@@ -40,7 +40,9 @@ CAPABILITIES(/obj/item/ore)
 	name = ORE_SAND
 	icon_state = "ore_glass"
 	material = ORE_SAND
-	slot_flags = SLOT_HOLSTER
+
+CAPABILITIES(/obj/item/ore/glass)
+	configure(item_worn(slots = SLOT_HOLSTER))
 
 // POCKET SAND!
 /obj/item/ore/glass/throw_impact(atom/hit_atom)

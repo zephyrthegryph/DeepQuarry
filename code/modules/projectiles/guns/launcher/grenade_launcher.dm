@@ -4,7 +4,6 @@
 	icon_state = "riotgun"
 	item_state = "riotgun"
 	w_class = ITEMSIZE_HUGE //.
-	force = 10
 
 	fire_sound = SFX_WEAPONS_GRENADE_LAUNCHER
 	fire_sound_text = "a metallic thunk"
@@ -90,6 +89,7 @@
 	return ..()
 
 CAPABILITIES(/obj/item/gun/launcher/grenade)
+	configure(item_combat(force = 10))
 	op("interaction_hand", hand(), then(PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
@@ -117,9 +117,11 @@ CAPABILITIES(/obj/item/gun/launcher/grenade)
 	name = "underslung grenade launcher"
 	desc = "Not much more than a tube and a firing mechanism, this grenade launcher is designed to be fitted to a rifle."
 	w_class = ITEMSIZE_NORMAL
-	force = 5
 	max_grenades = 0
 	underslung = TRUE
+
+CAPABILITIES(/obj/item/gun/launcher/grenade/underslung)
+	configure(item_combat(force = 5))
 
 //load and unload directly into chambered
 /obj/item/gun/launcher/grenade/underslung/load(obj/item/grenade/G, mob/user)

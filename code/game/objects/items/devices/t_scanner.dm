@@ -6,7 +6,6 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "t-ray0"
 	item_state = "t-ray"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_STEEL, 150)
 
@@ -25,6 +24,7 @@ TRACKED(/obj/item/t_scanner, on)
 	look.state("t-ray[on]")
 
 CAPABILITIES(/obj/item/t_scanner)
+	configure(item_worn(slots = SLOT_BELT))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	// Scans underfloor objects while switched on.
 	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))

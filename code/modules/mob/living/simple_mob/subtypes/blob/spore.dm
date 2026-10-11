@@ -32,6 +32,7 @@
 	can_pain_emote = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/blob/spore)
+	configure(mob_kind(death_message = "bursts!"))
 	param(nameof(factory), /obj/structure/blob/factory, pos = 1)
 
 /datum/say_list/spore
@@ -62,7 +63,6 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 
 /mob/living/simple_mob/blob/spore
 	delete_on_death = TRUE
-	death_message = "bursts!"
 
 /mob/living/simple_mob/blob/spore/on_death(gibbed)
 	. = ..()

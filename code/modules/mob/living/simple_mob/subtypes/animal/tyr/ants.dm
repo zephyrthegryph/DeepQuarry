@@ -426,12 +426,12 @@ CAPABILITIES(/obj/effect/ant_structure)
 	var/obj/item/W = held
 	user.setClickCooldown(user.get_attack_speed(W))
 
-	if(LAZYLEN(W.attack_verb))
-		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been [pick(W.attack_verb)] with %I%[(user ? " by %T%." : ".")]")), item = W)
+	if(LAZYLEN(combat_of(W).attack_verbs))
+		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been [pick(combat_of(W).attack_verbs)] with %I%[(user ? " by %T%." : ".")]")), item = W)
 	else
 		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been attacked with %I%[(user ? " by %T%." : ".")]")), item = W)
 
-	var/damage = W.force / 4.0
+	var/damage = combat_of(W).force / 4.0
 
 	if(W.has_tool_quality(TOOL_WELDER))
 		var/obj/item/weldingtool/WT = W.get_welder()

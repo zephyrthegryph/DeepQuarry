@@ -137,10 +137,10 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		if(!check_has_mouth())
 			to_chat(H, span_danger("They don't have a mouth, you cannot perform CPR!"))
 			return FALSE
-		if((H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((H.get_equipped_item(SLOT_ID_HEAD) && (worn_of(H.get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (H.get_equipped_item(SLOT_ID_MASK) && (worn_of(H.get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove your mask!"))
 			return FALSE
-		if((get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)))
+		if((get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).covers & FACE)) || (get_equipped_item(SLOT_ID_MASK) && (worn_of(get_equipped_item(SLOT_ID_MASK)).covers & FACE)))
 			to_chat(H, span_notice("Remove [src]'s mask!"))
 			return FALSE
 

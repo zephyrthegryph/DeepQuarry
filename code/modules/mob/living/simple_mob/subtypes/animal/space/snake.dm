@@ -132,7 +132,6 @@
 
 	endurance = 20
 
-	makes_dirt = FALSE
 
 	vore_default_mode = DM_HOLD
 
@@ -173,6 +172,7 @@
 		..()
 
 CAPABILITIES(/mob/living/simple_mob/animal/passive/snake/python/noodle)
+	configure(mob_movement(makes_dirt = FALSE))
 	op("noodle_item", item(/obj/item), then(PROC_REF(noodle_interaction_item)))
 
 /// Old attackby: snake snacks.

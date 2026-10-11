@@ -37,7 +37,7 @@
 	else
 		T = allocate(/obj/item/tool/wrench, floor)
 		equip(H, T)
-	T.toolspeed = tool_speed
+	T.set_toolspeed(tool_speed)
 	var/list/old_outputs = contents_of(floor, /obj/item/stack/material/plasteel)
 	var/datum/work = begin_core_pin(H, C, T)
 	TEST_ASSERT_EQUAL(C.state, initial_state, "The real click cannot advance the core immediately")

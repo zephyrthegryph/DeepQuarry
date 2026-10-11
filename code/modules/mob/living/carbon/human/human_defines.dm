@@ -76,15 +76,11 @@
 	var/list/flavor_texts	// Lazy.
 	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 
-	mob_bump_flag = HUMAN
-	mob_push_flags = ~HEAVY
-	mob_swap_flags = ~HEAVY
 
 	var/identifying_gender // In case the human identifies as another gender than it's biological
 
 	var/step_count = 0 // Track how many footsteps have been taken to know when to play footstep sounds
 
-	can_be_antagged = TRUE
 
 // Used by mobs in virtual reality to point back to the "real" mob the client belongs to.
 	var/mob/living/carbon/human/vr_holder = null
@@ -92,7 +88,6 @@
 	var/mob/living/carbon/human/vr_link = null
 
 
-	inventory_panel_type = /datum/inventory_panel/human
 	butchery_loot = list(/obj/item/stack/animalhide/human = 1)
 
 	// Horray Furries!

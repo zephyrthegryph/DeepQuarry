@@ -16,8 +16,6 @@
 	endurance = 25
 	movement_cooldown = 1.7
 	pass_flags = PASSTABLE
-	makes_dirt = FALSE	// Floats, mostly.
-	mob_class = MOB_CLASS_SLIME //This needs to be updated in simple_mob.dm and _defines/mobs.dm
 
 	response_help = "pets"
 
@@ -38,7 +36,6 @@
 
 	melee_damage_lower = 10
 	melee_damage_upper = 15
-	base_attack_cooldown = 10 // One attack a second.
 	attack_sound = SFX_METROID_METROIDATTACK
 	attacktext = list("suckulated")
 	speak_emote = list("chirps")
@@ -73,6 +70,8 @@
 		play_sfx(src, arrival_sound)
 
 CAPABILITIES(/mob/living/simple_mob/metroid)
+	configure(mob_kind(mob_class = MOB_CLASS_SLIME, attack_cooldown = 10))
+	configure(mob_movement(makes_dirt = FALSE))
 	after_init(0, then(PROC_REF(screech_on_arrival)))
 	verb_entry(/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 

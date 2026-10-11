@@ -135,10 +135,10 @@
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "seccloak"
 	color = "#F13C00"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10"
 
 CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
+	configure(item_worn(covers = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 	configure(item_protection(cold_parts = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS))
 
 /obj/item/clothing/suit/armor/firecloak/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
@@ -158,10 +158,12 @@ CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
 	desc = "A slender, fancy and sharply pointed sword, wisps of fire swirling around it."
 	icon_state = "rapier"
 	item_state = "rapier"
-	slot_flags = SLOT_BELT
 	applies_material_colour = 0
 	force_divisor = 0.50
 	color = "#F13C00"
+
+CAPABILITIES(/obj/item/material/sword/rapier/solar)
+	configure(item_worn(slots = SLOT_BELT))
 
 /obj/item/material/sword/rapier/solar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()
@@ -177,11 +179,13 @@ CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
 	item_state = "ziplas"
 	color = "#0000CC"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_BELT|SLOT_BACK
 	charge_cost = 300 //You got 5 shot
 	battery_lock = 1
 	projectile_type = /obj/item/projectile/icicle //But it hurts a lot
 	cell_type = /obj/item/cell/device/weapon
+
+CAPABILITIES(/obj/item/gun/energy/icelauncher)
+	configure(item_worn(slots = SLOT_BELT|SLOT_BACK))
 
 /obj/item/clothing/shoes/boots/frost
 	name = "frost boots"
@@ -189,10 +193,10 @@ CAPABILITIES(/obj/item/clothing/suit/armor/firecloak)
 	icon_state = "winterboots"
 	color = "#0000CC"
 	snow_speed = -1
-	rock_climbing = TRUE
-	item_flags = NOSLIP
 
 CAPABILITIES(/obj/item/clothing/shoes/boots/frost)
+	configure(item_tooling(climbing = TRUE))
+	configure(item_worn(flags = NOSLIP))
 	configure(item_protection(cold_parts = FEET, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, heat_parts = FEET, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
 
 //Turtle
@@ -203,9 +207,11 @@ CAPABILITIES(/obj/item/clothing/shoes/boots/frost)
 	force_divisor = 0.40 //
 	dulled_divisor = 0.80	//Still metal on a stick
 	w_class = ITEMSIZE_LARGE
-	slot_flags = SLOT_BACK
 	force_wielded = 25
 	applies_material_colour = 1
+
+CAPABILITIES(/obj/item/material/twohanded/sledgehammer/gravity)
+	configure(item_worn(slots = SLOT_BACK))
 
 /obj/item/material/twohanded/sledgehammer/gravity/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	. = ..()

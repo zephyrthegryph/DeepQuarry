@@ -8,35 +8,42 @@
 	stun = 0 // Guaranteed stuns from a gun bad.
 	weaken = 0 // Guaranteed stuns from a gun bad.
 	penetrating = 5
-	armor_penetration = 70
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic)
+	configure(item_combat(armor_penetration = 70))
 
 /obj/item/projectile/bullet/magnetic/slug
 	name = "slug"
 	icon_state = "gauss_silenced"
 	damage = 75
-	armor_penetration = 90
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/slug)
+	configure(item_combat(armor_penetration = 90))
 
 /obj/item/projectile/bullet/magnetic/flechette
 	name = "flechette"
 	icon_state = "flechette"
 	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 20
-	armor_penetration = 100
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/flechette/small
 	name = "small flechette"
 	icon_state = "flechette"
 	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 12
-	armor_penetration = 100
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette/small)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/flechette/hunting
 	name = "shredder slug"
-	armor_penetration = 30
 	mob_bonus_damage = 40
 	hud_state = "alloy_spike"
 
@@ -49,18 +56,22 @@
 	injury_kind = INJURY_BLUNT
 	injury_kinds = alist(INJURY_BURN = 1/3, INJURY_BLUNT = 2/3)
 	embed_chance = 0
-	armor_penetration = 40
 	penetrating = 1
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/magnetic/heated/weak
 	icon_state = "gauss_silenced"
 	damage = 15
 	agony = 5
 	embed_chance = 0
-	armor_penetration = 30
 	penetrating = 0
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/heated/weak)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/bullet/magnetic/fuelrod
 	name = "fuel rod"
@@ -73,7 +84,6 @@
 	flammability = 0 //Deuterium and Tritium are both held in water, but the object moving so quickly will ignite the target.
 	penetrating = 2
 	embed_chance = 0
-	armor_penetration = 40
 	range = 20
 	hud_state = "rocket_he"
 
@@ -81,6 +91,9 @@
 	var/detonate_travel = 0 //Will this fuelrod explode when it reaches maximum distance?
 	var/detonate_mob = 0 //Will this fuelrod explode when it hits a mob?
 	var/energetic_impact = 0 //Does this fuelrod cause a bright flash on impact with a mob?
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod)
+	configure(item_combat(armor_penetration = 40))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/on_hit(atom/target, blocked = 0, def_zone = null) //Future-proofing. Special effects for impact.
 	if(isliving(target))
@@ -120,9 +133,11 @@
 	icon_state = "fuel-tritium"
 	damage = 40
 	flammability = -1
-	armor_penetration = 50
 	penetrating = 3
 	hud_state = "rocket_ap"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod/tritium)
+	configure(item_combat(armor_penetration = 50))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/phoron
 	name = "blazing fuel rod"
@@ -130,11 +145,13 @@
 	damage = 35
 	incendiary = 2
 	flammability = 2
-	armor_penetration = 60
 	penetrating = 5
 	irradiate = 20
 	detonate_mob = 1
 	hud_state = "rocket_fire"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod/phoron)
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/supermatter
 	name = "painfully incandescent fuel rod"
@@ -143,7 +160,6 @@
 	incendiary = 2
 	flammability = 4
 	weaken = 2
-	armor_penetration = 100
 	penetrating = 100 //Theoretically, this shouldn't stop flying for a while, unless someone lines it up with a wall or fires it into a mountain.
 	irradiate = 120
 	range = 75
@@ -152,6 +168,9 @@
 	detonate_mob = 1
 	energetic_impact = 1
 	hud_state = "rocket_thermobaric"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod/supermatter)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/supermatter/on_hit(atom/target, blocked = 0, def_zone = null) //You cannot touch the supermatter without disentigrating. Assumedly, this is true for condensed rods of it flying at relativistic speeds.
 	if(istype(target,/turf/simulated/wall) || isliving(target))
@@ -167,13 +186,13 @@
 	icon_state = "purpleemitter"
 	damage = 20
 	incendiary = 1
-	armor_penetration = 20
 	penetrating = 0
 	irradiate = 20
 	range = 6
 	hud_state = "plasma_rifle_blast"
 
 CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
+	configure(item_combat(armor_penetration = 20))
 	param(nameof(range_mod), pos = 1, apply = PROC_REF(extend_range))
 
 /// Extra range the gun gives the bore (its constructor param).
@@ -206,8 +225,10 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
 	icon_state = "flechette"
 	fire_sound = SFX_WEAPONS_RAPIDSLICE
 	damage = 15
-	armor_penetration = 60 // Now that stun's gone from the parent type, we can boost this back up.
 	hud_state = "alloy_spike"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/flechette/rapid)
+	configure(item_combat(armor_penetration = 60))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/blitz
 	name = "blitz rod"
@@ -219,7 +240,6 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
 	flammability = 4
 	weaken = 40
 	penetrating = 1
-	armor_penetration = 100
 	irradiate = 120
 	range = 75
 	searing = 1
@@ -227,6 +247,9 @@ CAPABILITIES(/obj/item/projectile/bullet/magnetic/bore)
 	detonate_mob = 1
 	energetic_impact = 1
 	hud_state = "rocket_thermobaric"
+
+CAPABILITIES(/obj/item/projectile/bullet/magnetic/fuelrod/blitz)
+	configure(item_combat(armor_penetration = 100))
 
 /obj/item/projectile/bullet/magnetic/fuelrod/blitz/on_impact(atom/A)
 	if(isturf(loc))

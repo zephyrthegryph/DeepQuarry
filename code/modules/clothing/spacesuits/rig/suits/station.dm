@@ -457,8 +457,10 @@ TYPE_TABLE(/obj/item/rig/zero, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GEN
 	icon_state = "null_rig"
 	sprite_sheets = ALL_SPRITE_SHEETS_SUIT_MOB
 	sprite_sheets_obj = SPECIES_SPRITE_SHEETS_SUIT_ITEM
-	body_parts_covered = CHEST|LEGS|FEET|ARMS|HANDS // like a voidsuit
 	slowdown = 0
+
+CAPABILITIES(/obj/item/clothing/suit/space/rig/zero)
+	configure(item_worn(covers = CHEST|LEGS|FEET|ARMS|HANDS))
 
 // Medical rig from bay
 /obj/item/rig/baymed

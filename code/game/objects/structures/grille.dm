@@ -136,7 +136,7 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 		damage = between(0, (damage - Proj.damage)*(Proj.obj_damage_type() == BRUTE? 0.4 : 1), 10) //if the bullet passes through then the grille avoids most of the damage
 
 	if(damage > 0)
-		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, Proj.armor_penetration, Proj.dir)
+		var/datum/damage_packet/packet = damage_packet(Proj, Proj.firer, null, null, DAMAGE_PACKET_PROJECTILE, combat_of(Proj).armor_penetration, Proj.dir)
 		receive_split(packet, Proj.injury_kind, Proj.injury_kinds, damage * 0.2)
 
 /obj/structure/grille/proc/interaction_item(datum/act/op/A)
@@ -156,9 +156,9 @@ MSG_DEF_SELF(grille/placing_window, span_notice("You start placing the window.")
 		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 1.6)
 		switch(W.obj_damage_type())
 			if(BURN)
-				receive_weapon_hit(W, user, W.force, INJURY_BURN)
+				receive_weapon_hit(W, user, combat_of(W).force, INJURY_BURN)
 			if(BRUTE)
-				receive_weapon_hit(W, user, W.force * 0.1)
+				receive_weapon_hit(W, user, combat_of(W).force * 0.1)
 	return TRUE
 
 /obj/structure/grille/proc/window_placed(datum/act/op/A)

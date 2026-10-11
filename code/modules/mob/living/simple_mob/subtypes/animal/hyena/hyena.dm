@@ -46,7 +46,6 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	melee_damage_lower = 6 // hyenas go for the legs/lower bits
 	melee_damage_upper = 12 // not as high damage, but faster bites. nomnomnom <3
 	attack_injury_kind = INJURY_CUT
-	base_attack_cooldown = 2
 	attacktext = list("bit", "nipped", "chomped", "clawed", "scratched", "lewded")
 	attack_sound = SFX_WEAPONS_BITE // placeholder till I find a better bite
 
@@ -148,6 +147,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
 CAPABILITIES(/mob/living/simple_mob/animal/hyena)
+	configure(mob_kind(attack_cooldown = 2))
 	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 /// The hat it wears, drawn over the legacy provider's state (look.hat() reads the hat's own sprite and hears it change).

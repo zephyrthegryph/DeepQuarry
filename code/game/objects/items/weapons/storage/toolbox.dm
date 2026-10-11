@@ -9,16 +9,15 @@
 	item_state_slots = list(slot_r_hand_str = "toolbox_red", slot_l_hand_str = "toolbox_red")
 	center_of_mass_x = 16
 	center_of_mass_y= 11
-	force = 10
-	throwforce = 10
 	throw_speed = 1
 	throw_range = 7
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
-	attack_verb = list("robusted")
 	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
 
 CAPABILITIES(/obj/item/storage/toolbox)
+	configure(item_thrown(force = 10))
+	configure(item_combat(force = 10, attack_verbs = list("robusted")))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_TOOLBOX, pickup = SFX_ITEMS_PICKUP_TOOLBOX))
 	configure(storage(max_size = ITEMSIZE_NORMAL))
 
@@ -79,7 +78,6 @@ CAPABILITIES(/obj/item/storage/toolbox/electrical)
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "syndicate"
 	item_state_slots = list(slot_r_hand_str = "toolbox_syndi", slot_l_hand_str = "toolbox_syndi")
-	force = 14
 	starts_with = list(
 		/obj/item/clothing/gloves/yellow,
 		/obj/item/tool/screwdriver,
@@ -89,6 +87,9 @@ CAPABILITIES(/obj/item/storage/toolbox/electrical)
 		/obj/item/tool/wirecutters,
 		/obj/item/multitool
 	)
+
+CAPABILITIES(/obj/item/storage/toolbox/syndicate)
+	configure(item_combat(force = 14))
 
 /obj/item/storage/toolbox/syndicate/powertools
 	starts_with = list(
@@ -143,10 +144,10 @@ CAPABILITIES(/obj/item/storage/toolbox/electrical)
 	desc = "A little lunchbox. This one is the colors of the rainbow!"
 	w_class = ITEMSIZE_NORMAL
 	var/filled = FALSE
-	attack_verb = list("lunched")
 
 
 CAPABILITIES(/obj/item/storage/toolbox/lunchbox)
+	configure(item_combat(attack_verbs = list("lunched")))
 	configure(storage(max_size = ITEMSIZE_SMALL))
 	initial_contents(PROC_REF(roll_lunch), when = nameof(filled))
 

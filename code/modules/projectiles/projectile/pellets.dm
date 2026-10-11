@@ -58,7 +58,6 @@
 //Explosive grenade projectile, borrowed from fragmentation grenade code.
 /obj/item/projectile/bullet/pellet/fragment
 	damage = 10
-	armor_penetration = 30
 	range_step = 2 //projectiles lose a fragment each time they travel this distance. Can be a non-integer.
 
 	base_spread = 0 //causes it to be treated as a shrapnel explosion instead of cone
@@ -68,13 +67,20 @@
 	no_attack_log = 1
 	muzzle_type = null
 
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment)
+	configure(item_combat(armor_penetration = 30))
+
 /obj/item/projectile/bullet/pellet/fragment/strong
 	damage = 15
-	armor_penetration = 20
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/strong)
+	configure(item_combat(armor_penetration = 20))
 
 /obj/item/projectile/bullet/pellet/fragment/weak
 	damage = 4
-	armor_penetration = 40
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/weak)
+	configure(item_combat(armor_penetration = 40))
 
 // Tank rupture fragments
 /obj/item/projectile/bullet/pellet/fragment/tank
@@ -85,22 +91,28 @@
 	base_spread = 0 //causes it to be treated as a shrapnel explosion instead of cone
 	spread_step = 20
 
-	armor_penetration = 20
 
 	silenced = 1
 	no_attack_log = 1
 	muzzle_type = null
 	pellets = 3
 
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/tank)
+	configure(item_combat(armor_penetration = 20))
+
 /obj/item/projectile/bullet/pellet/fragment/tank/small
 	name = "small metal fragment"
 	damage = 6
-	armor_penetration = 5
 	pellets = 5
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/tank/small)
+	configure(item_combat(armor_penetration = 5))
 
 /obj/item/projectile/bullet/pellet/fragment/tank/big
 	name = "large metal fragment"
 	damage = 17
-	armor_penetration = 10
 	range_step = 5 //controls damage falloff with distance. projectiles lose a "pellet" each time they travel this distance. Can be a non-integer.
 	pellets = 1
+
+CAPABILITIES(/obj/item/projectile/bullet/pellet/fragment/tank/big)
+	configure(item_combat(armor_penetration = 10))

@@ -178,9 +178,11 @@ CAPABILITIES(/obj/item/projectile/arc)
 	icon_state = "declone"
 	damage = 20
 	injury_kind = INJURY_CORROSIVE
-	armor_penetration = 30
 	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	arc_height_multiplier = 0.5
+
+CAPABILITIES(/obj/item/projectile/arc/spore)
+	configure(item_combat(armor_penetration = 30))
 
 /obj/item/projectile/arc/spore/on_impact(turf/T)
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))

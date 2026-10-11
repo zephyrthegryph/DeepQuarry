@@ -74,6 +74,9 @@
 	vore_default_item_mode = IM_DIGEST
 	can_be_drop_prey = FALSE
 
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/skeleton)
+	configure(mob_kind(death_message = "falls down and stops moving..."))
+
 /mob/living/simple_mob/vore/alienanimals/skeleton/alt
 	icon_state = "altskeleton"
 	icon_living = "altskeleton"
@@ -97,7 +100,6 @@
 	B.escapechance = 25
 
 /mob/living/simple_mob/vore/alienanimals/skeleton
-	death_message = "falls down and stops moving..."
 
 /mob/living/simple_mob/vore/alienanimals/skeleton/on_death(gibbed)
 	. = ..()

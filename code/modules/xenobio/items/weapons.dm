@@ -6,15 +6,17 @@
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
 	icon_state = "slimebaton"
 	item_state = "slimebaton"
-	slot_flags = SLOT_BELT
-	force = 9
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
 
+CAPABILITIES(/obj/item/melee/baton/slime)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 9))
+
 /obj/item/melee/baton/slime/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M) && status) // Is it on?
-		if(M.mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
+		if(kind_of(M).mob_class & MOB_CLASS_SLIME) // Are they some kind of slime? (Prommies might pass this check someday).
 			if(isslime(M))
 				var/mob/living/simple_mob/slime/S = M
 				S.slimebatoned(user, 5) // Feral and xenobio slimes will react differently to this.
@@ -85,7 +87,7 @@ REMOVAL
 /obj/item/projectile/beam/stun/xeno/on_hit(atom/target, blocked = 0, def_zone = null)
 	if(isliving(target))
 		var/mob/living/L = target
-		if(L.mob_class & MOB_CLASS_SLIME)
+		if(kind_of(L).mob_class & MOB_CLASS_SLIME)
 			if(isslime(L))
 				var/mob/living/simple_mob/slime/S = L
 				S.slimebatoned(firer, round(agony/2))

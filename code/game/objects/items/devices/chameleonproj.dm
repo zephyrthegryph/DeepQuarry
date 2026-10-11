@@ -2,9 +2,7 @@
 	name = "chameleon projector"
 	icon = 'icons/obj/device.dmi'
 	icon_state = "shield0"
-	slot_flags = SLOT_BELT
 	item_state = "electronic"
-	throwforce = 5.0
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
@@ -17,6 +15,8 @@
 
 
 CAPABILITIES(/obj/item/chameleon)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_thrown(force = 5.0))
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))
 	owns_one(nameof(active_dummy), /obj/effect/dummy/chameleon)
 	op("disguise", in_hand(), label("Toggle chameleon disguise"), then(PROC_REF(projector_activation_requested)))

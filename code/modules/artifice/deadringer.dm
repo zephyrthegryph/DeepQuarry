@@ -4,7 +4,6 @@
 	icon = 'icons/obj/deadringer.dmi'
 	icon_state = "deadringer"
 	w_class = ITEMSIZE_SMALL
-	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
 	var/tmp/mob/living/carbon/human/corpse
@@ -18,6 +17,7 @@ TRACKED(/obj/item/deadringer, activated)
 TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (its every()).
 CAPABILITIES(/obj/item/deadringer)
+	configure(item_worn(slots = SLOT_ID | SLOT_BELT | SLOT_TIE))
 	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
 	op("self", in_hand(), label("Use"), then(PROC_REF(interaction_self)))
 

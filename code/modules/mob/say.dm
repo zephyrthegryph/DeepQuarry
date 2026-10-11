@@ -46,8 +46,8 @@
 	message = sanitize_or_reflect(message,src) //Reflect too-long messages (within reason)
 
 	client?.stop_thinking()
-	if(use_me)
-		custom_emote(emote_type, message)
+	if(kind_of(src).use_me)
+		custom_emote(kind_of(src).emote_type, message)
 	else
 		emote(message)
 
@@ -306,7 +306,7 @@
 		return
 
 	client?.stop_thinking()
-	if(use_me)
+	if(kind_of(src).use_me)
 		emote_vr("me",4,message)
 	else
 		emote_vr(message)
@@ -324,14 +324,14 @@
 		return
 
 	client?.stop_thinking()
-	if(use_me)
+	if(kind_of(src).use_me)
 		emote_vr("me",4,message,TRUE)
 	else
 		emote_vr(message)
 
 /// `picked_mode` and `picked` carry the answers of earlier questions (the mode, the belly or person picked) when a prompt re-enters this.
 /mob/proc/custom_emote_vr(m_type=1,message = null,mode_selection = FALSE, picked_mode, datum/picked) //This would normally go in emote.dm
-	if(stat || !use_me && usr == src)
+	if(stat || !kind_of(src).use_me && usr == src)
 		to_chat(src, "You are unable to emote.")
 		return
 

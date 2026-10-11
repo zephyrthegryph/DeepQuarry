@@ -735,9 +735,9 @@ TRACKED(/mob/living/simple_mob/vore/alienanimals/teppi, teppi_adult)
 			sheartime *= 2
 		if(K.dulled)
 			sheartime *= 3
-		if(!K.sharp)
+		if(!combat_of(K).sharp)
 			sheartime *= 2
-		if(K.edge)
+		if(combat_of(K).edge)
 			sheartime *= 0.5
 	else
 		sheartime *= 2

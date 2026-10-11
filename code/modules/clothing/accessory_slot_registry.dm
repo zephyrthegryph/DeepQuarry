@@ -52,7 +52,7 @@
 /datum/accessory_stat_modifier/proc/apply(obj/item/clothing/clothing)
 	if(!istype(clothing))
 		return
-	clothing.force += force_delta
+	clothing.set_force(combat_of(clothing).force + (force_delta))
 	clothing.slowdown += slowdown_delta
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta)))
@@ -65,7 +65,7 @@
 /datum/accessory_stat_modifier/proc/revert(obj/item/clothing/clothing)
 	if(!istype(clothing))
 		return
-	clothing.force -= force_delta
+	clothing.set_force(combat_of(clothing).force - (force_delta))
 	clothing.slowdown -= slowdown_delta
 	if(LAZYLEN(armor_delta))
 		clothing.set_armor(clothing.get_armor().add(dq_armor(armor_delta).scaled(-1)))

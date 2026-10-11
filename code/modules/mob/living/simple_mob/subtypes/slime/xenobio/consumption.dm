@@ -119,7 +119,7 @@
 	if(harmless)
 		to_chat(src, "I am pacified... I cannot eat...")
 		return FALSE
-	if(L.mob_class & MOB_CLASS_SLIME)
+	if(kind_of(L).mob_class & MOB_CLASS_SLIME)
 		to_chat(src, "I cannot feed on other slimes...")
 		return FALSE
 	if(HAS_SYNTHETIC_BIOLOGY(L))

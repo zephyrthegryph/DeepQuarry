@@ -33,7 +33,6 @@
 	COOLDOWN_DECLARE(throw_cooldown)
 	var/atom/movable/focus
 	var/mob/living/host
-	item_flags = DROPDEL | NOSTRIP
 
 /obj/item/tk_grab/dropped(mob/user, equipping, slot)
 	..()
@@ -49,6 +48,7 @@
 	return
 
 CAPABILITIES(/obj/item/tk_grab)
+	configure(item_worn(flags = DROPDEL | NOSTRIP))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /// Old attack_self.

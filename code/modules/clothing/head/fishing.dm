@@ -11,7 +11,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		slot_head_str = 'icons/inventory/head/mob_fishing.dmi'
 		)
-	body_parts_covered = 0
 	var/slogan = ""
 	/// -1 until rolled, so a rolled size always differs from the initial value and is saved.
 	var/hatsize = -1
@@ -20,6 +19,7 @@
 	var/colourtype
 
 CAPABILITIES(/obj/item/clothing/head/fishing)
+	configure(item_worn(covers = 0))
 	configure(item_protection(siemens = 0.9))
 
 // ALLOW(init/INSTANCE_STATE): rolls its slogan and draws it

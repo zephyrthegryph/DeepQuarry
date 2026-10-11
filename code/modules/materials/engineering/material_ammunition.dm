@@ -12,7 +12,7 @@
 	color = material.icon_colour
 	if(BB)
 		BB.damage = max(1, round(BB.damage * clamp(0.75 + material.density / 240 + material.hardness / 400, 0.75, 1.25)))
-		BB.armor_penetration = max(0, BB.armor_penetration + round((material.hardness - material.brittleness * 0.35) / 12))
+		BB.set_armor_penetration(max(0, combat_of(BB).armor_penetration + round((material.hardness - material.brittleness * 0.35) / 12)))
 	material.dq_apply_material_behaviors(BB)
 
 /obj/item/ammo_casing/proc/set_forged_materials(datum/material/core, datum/material/jacket, datum/material/case_material, datum/material/primer)
@@ -20,7 +20,7 @@
 	if(!BB)
 		return
 	if(jacket)
-		BB.armor_penetration += clamp(round((jacket.hardness + jacket.fracture_toughness - jacket.brittleness) / 20) - 5, -5, 12)
+		BB.set_armor_penetration(combat_of(BB).armor_penetration + (clamp(round((jacket.hardness + jacket.fracture_toughness - jacket.brittleness) / 20) - 5, -5, 12)))
 	if(case_material)
 		BB.accuracy += clamp(round((case_material.elasticity + case_material.heat_resistance - case_material.brittleness) / 25) - 3, -6, 6)
 	if(primer)

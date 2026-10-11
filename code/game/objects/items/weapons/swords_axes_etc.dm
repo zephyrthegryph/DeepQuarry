@@ -14,8 +14,6 @@
 	desc = "Murder device."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
-	slot_flags = SLOT_BELT
-	force = 10
 
 /obj/item/melee/classic_baton
 	name = "police baton"
@@ -23,21 +21,21 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "baton"
 	item_state = "classic_baton"
-	slot_flags = SLOT_BELT
-	force = 10
 
 CAPABILITIES(/obj/item/melee/classic_baton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 10))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 
 /obj/item/melee/classic_baton/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You club yourself over the head."))
-		user.status_at_least(STAT_WEAKENED, 3 * force)
+		user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
-			H.injure(injury_kind, 2*force, BP_HEAD, src)
+			H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 		else
-			user.injure(injury_kind, 2*force, source = src)
+			user.injure(injury_kind, 2*combat_of(src).force, source = src)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
@@ -48,14 +46,14 @@ CAPABILITIES(/obj/item/melee/classic_baton)
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "telebaton0"
 	item_state = "telebaton0"
-	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
-	force = 3
 	var/on = 0
 
 TRACKED(/obj/item/melee/telebaton, on)
 
 CAPABILITIES(/obj/item/melee/telebaton)
+	configure(item_worn(slots = SLOT_BELT))
+	configure(item_combat(force = 3))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_CROWBAR, pickup = SFX_ITEMS_PICKUP_CROWBAR))
 	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))
 
@@ -70,8 +68,8 @@ CAPABILITIES(/obj/item/melee/telebaton)
 		icon_state = "telebaton1"
 		item_state = icon_state
 		w_class = ITEMSIZE_NORMAL
-		force = 15//quite robust
-		attack_verb = list("smacked", "struck", "slapped")
+		set_force(15)//quite robust
+		set_attack_verb(list("smacked", "struck", "slapped"))
 	else
 		act_message(user, null, MSG_SELF(span_notice("You collapse the baton.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their telescopic baton.")), \
@@ -79,8 +77,8 @@ CAPABILITIES(/obj/item/melee/telebaton)
 		icon_state = "telebaton0"
 		item_state = icon_state
 		w_class = ITEMSIZE_SMALL
-		force = 3//not so robust now
-		attack_verb = list("hit", "punched")
+		set_force(3)//not so robust now
+		set_attack_verb(list("hit", "punched"))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -106,11 +104,11 @@ CAPABILITIES(/obj/item/melee/telebaton)
 	if(on)
 		if(CLUMSY_FAIL_CHANCE(user))
 			to_chat(user, span_warning("You club yourself over the head."))
-			user.status_at_least(STAT_WEAKENED, 3 * force)
+			user.status_at_least(STAT_WEAKENED, 3 * combat_of(src).force)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
-				H.injure(injury_kind, 2*force, BP_HEAD, src)
+				H.injure(injury_kind, 2*combat_of(src).force, BP_HEAD, src)
 			else
-				user.injure(injury_kind, 2*force, source = src)
+				user.injure(injury_kind, 2*combat_of(src).force, source = src)
 			return ITEM_INTERACT_SUCCESS
 	return ..()
