@@ -1,6 +1,9 @@
 //! Idle ownership transitions, independent of incoming connection activity.
 use super::*;
 
+#[path = "service_housekeeping_allocations.rs"]
+mod allocations;
+
 const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
 const SESSION_IDLE: Duration = Duration::from_secs(600);
 const RELEASES_PER_PASS: usize = 4;
@@ -81,16 +84,18 @@ impl Shared {
                 let removed = slots.remove(&key);
                 drop(slots);
                 let before = transport::private_bytes();
+                let requested_before = allocations::requested_live();
                 let started = Instant::now();
                 // Pool joins and artifact destructors never run under slot roster lock.
                 drop(host);
                 drop(removed);
                 drop(slot);
                 super::super::emit_stderr(format_args!(
-                    "dmbd idle release tier=session project={} pressure={pressured} private-before={before:?} private-after={:?} seconds={:.6}",
+                    "dmbd idle release tier=session project={} pressure={pressured} private-before={before:?} private-after={:?} seconds={:.6} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
                     transport::private_bytes(),
-                    started.elapsed().as_secs_f64()
+                    started.elapsed().as_secs_f64(),
+                    allocations::requested_live()
                 ));
                 continue;
             }
@@ -99,16 +104,21 @@ impl Shared {
             if next == 4 {
                 // Preserve the queued Slot and its cancellation/serialization
                 // state; replace only idle compiler ownership outside roster lock.
+                let before = transport::private_bytes();
+                let requested_before = allocations::requested_live();
                 self.reset_host(&mut host);
                 super::super::emit_stderr(format_args!(
-                    "dmbd idle release tier=queued-session project={} pressure={pressured}",
-                    key.manifest.display()
+                    "dmbd idle release tier=queued-session project={} pressure={pressured} private-before={before:?} private-after={:?} rust-requested-live-before={requested_before} rust-requested-live-after={}",
+                    key.manifest.display(),
+                    transport::private_bytes(),
+                    allocations::requested_live()
                 ));
                 continue;
             }
             host.release_idle_executor();
             if next >= 2 {
                 let before = transport::private_bytes();
+                let requested_before = allocations::requested_live();
                 let started = Instant::now();
                 if next == 3 {
                     host.release_idle_compiler_artifacts();
@@ -116,10 +126,11 @@ impl Shared {
                     host.release_idle_artifacts();
                 }
                 super::super::emit_stderr(format_args!(
-                    "dmbd artifact release tier={next} project={} private-before={before:?} private-after={:?} seconds={:.6}",
+                    "dmbd artifact release tier={next} project={} private-before={before:?} private-after={:?} seconds={:.6} rust-requested-live-before={requested_before} rust-requested-live-after={}",
                     key.manifest.display(),
                     transport::private_bytes(),
-                    started.elapsed().as_secs_f64()
+                    started.elapsed().as_secs_f64(),
+                    allocations::requested_live()
                 ));
             }
             super::super::emit_stderr(format_args!(
