@@ -517,7 +517,9 @@ fn check_replay_features(
                 }
             }
         }
-        let query = ResolveQuery::GlobalVar(SymbolId::of("sidecar_negative_control"));
+        // Disk certificates must use a persistent domain: named global scalar
+        // issuers are process-local and intentionally rejected by this schema.
+        let query = ResolveQuery::Resource(SymbolId::of("sidecar_negative_control"));
         let missing = dm_ir::ResolvedMeaning::Missing;
         let make_payload = || {
             let mut payload = decode(&bytes).unwrap();
