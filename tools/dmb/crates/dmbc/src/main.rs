@@ -62,10 +62,10 @@ fn main_inner() {
         if let Ok(dmbc::request::Command::Build(request)) = dmbc::cli::parse(&arguments) {
             if !request.no_daemon {
                 let result = dmbc::daemon::route(*request).and_then(|outcome| {
-                    if let Some(path) = compile_result.as_deref() {
-                        dmbc::output_cli::write_compile(path, &outcome)?;
-                    }
-                    Ok(outcome)
+                    dmbc::output_cli::finish_command(
+                        compile_result.as_deref(),
+                        dmbc::request::CommandOutcome::Build(outcome),
+                    )
                 });
                 if let Err(error) = result {
                     eprintln!("{error}");

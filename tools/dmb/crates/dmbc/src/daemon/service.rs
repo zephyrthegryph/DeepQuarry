@@ -32,6 +32,7 @@ enum RequestCommand {
     Analyze,
     AnalyzeBodies,
     AnalyzeResolved,
+    PrepareQuery,
     Compile,
 }
 impl From<crate::request::BuildCommand> for RequestCommand {
@@ -41,6 +42,7 @@ impl From<crate::request::BuildCommand> for RequestCommand {
             BuildCommand::Analyze => Self::Analyze,
             BuildCommand::AnalyzeBodies => Self::AnalyzeBodies,
             BuildCommand::AnalyzeResolved => Self::AnalyzeResolved,
+            BuildCommand::PrepareQuery => Self::PrepareQuery,
             BuildCommand::Compile => Self::Compile,
         }
     }

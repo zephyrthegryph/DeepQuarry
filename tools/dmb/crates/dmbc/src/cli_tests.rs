@@ -290,3 +290,33 @@ fn retained_export_quotas_are_explicit_bounded_and_unique() {
         assert!(parse(&args.into_iter().map(str::to_owned).collect::<Vec<_>>()).is_err());
     }
 }
+
+#[test]
+fn query_preparation_carries_ordinary_configuration_without_analysis_modes() {
+    let arguments = [
+        "prepare-query",
+        "project.dme",
+        "--exact-inputs",
+        "--no-cache",
+        "--engine-template",
+        "template.bin",
+        "--bootstrap-catalog",
+        "-DFLAG=7",
+        "--workers",
+        "1",
+    ]
+    .map(str::to_owned);
+    let Command::Build(request) = crate::cli::parse(&arguments).unwrap() else {
+        panic!("build request")
+    };
+    assert_eq!(request.command, BuildCommand::PrepareQuery);
+    assert!(request.exact_inputs && request.no_cache && request.bootstrap_catalog);
+    assert_eq!(request.defines.get("FLAG").map(String::as_str), Some("7"));
+    assert_eq!(request.workers, 1);
+    for option in ["--resolved", "--bodies"] {
+        assert!(
+            crate::cli::parse(&["prepare-query".into(), "project.dme".into(), option.into()])
+                .is_err()
+        );
+    }
+}

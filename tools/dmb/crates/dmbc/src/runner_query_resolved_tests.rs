@@ -190,3 +190,86 @@ fn resident_selected_model_uses_same_producer_after_frontend_release() {
         io::ErrorKind::NotFound
     );
 }
+
+#[test]
+fn explicit_query_preparation_issues_host_without_lowering_invalid_body() {
+    struct Unlowered;
+    impl dm_preprocess::SourceProvider for Unlowered {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/datum/probe\n    var/value = 7\n    proc/read()\n        return formerly_missing()\n".into())
+        }
+    }
+    let mut host = crate::runner_host::BuildHost::one_shot();
+    let engine = host
+        .engine(
+            "project.dme".into(),
+            Default::default(),
+            true,
+            include_bytes!("../../../fixtures/native_template.bin").to_vec(),
+        )
+        .unwrap();
+    let frontend = dm_tree::frontend::FrontendRevision::new(
+        dm_tree::frontend::build_with_config(
+            Path::new("project.dme"),
+            &Unlowered,
+            &Default::default(),
+            dm_tree::frontend::FrontendConfig {
+                workers: 1,
+                engine: Some(engine.frontend_seed()),
+                observer: None,
+            },
+        )
+        .unwrap(),
+    );
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let state = Arc::new(std::sync::Mutex::new(super::super::QueryState::default()));
+    let mut attempt = super::super::QueryAttempt::new(Arc::clone(&state), true);
+    attempt.capture(&frontend);
+    let result = crate::request_runner::runner_analysis::prepare_query(
+        &frontend,
+        Some(&engine),
+        None,
+        &executor,
+        None,
+        123,
+        &mut attempt,
+        true,
+    )
+    .unwrap();
+    let crate::request::BuildOutcome::QueryPrepared {
+        semantic_revision,
+        source_revision,
+        retained,
+    } = result
+    else {
+        panic!("preparation outcome")
+    };
+    assert!(retained);
+    assert_eq!(
+        semantic_revision,
+        format!("{:032x}", frontend.snapshot.tree.identity())
+    );
+    assert_eq!(
+        source_revision,
+        format!(
+            "{:032x}",
+            dm_analysis::tree_export::source_revision(&frontend)
+        )
+    );
+    // No full-model emission or body lowering was needed to issue the host.
+    attempt.finish_analyzed();
+    let state = state.lock().unwrap();
+    let snapshot = state.snapshot.as_ref().unwrap();
+    let mut output = Vec::new();
+    snapshot
+        .write_resolved_queries(
+            &[crate::daemon::query::QueryItem {
+                subject: Some("current owner".into()),
+                query: dm_ir::ResolveQuery::RuntimeType(frontend.snapshot.tree.types()[0].path),
+            }],
+            &frontend.snapshot.tree,
+            &mut output,
+        )
+        .unwrap();
+    assert!(!output.is_empty());
+}

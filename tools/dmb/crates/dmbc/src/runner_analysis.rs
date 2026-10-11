@@ -73,3 +73,65 @@ pub(super) fn finish(
         seconds: total.elapsed().as_secs_f64(),
     })
 }
+
+/// Explicit preparation carries the ordinary BuildRequest source configuration.
+/// It emits no model and never lowers procedures or publishes executable artifacts.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_query(
+    frontend: &dm_tree::frontend::FrontendRevision,
+    engine_capture: Option<&Arc<crate::runner_host::RetainedEngine>>,
+    host_facts: Option<&runner_facts::RetainedHostFacts>,
+    executor: &dm_exec::BuildExecutor,
+    procedure_memo: Option<&crate::lowering_memo::ProcedureMemo>,
+    memo_policy: u128,
+    query_attempt: &mut crate::runner_host::query_snapshot::QueryAttempt,
+    retained: bool,
+) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    dmbc::daemon::control::checkpoint()?;
+    let engine = engine_capture.ok_or("query preparation requires pinned engine")?;
+    let (resolver, _) = runner_facts::prepare_retained(frontend, engine, host_facts)?;
+    let links = engine.link_overlay()?;
+    let fallback = crate::lowering_memo::ProcedureMemo::new(memo_policy);
+    let memo = procedure_memo.unwrap_or(&fallback);
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let (startup, prepared) = crate::analysis_export::prepare_query_owners(
+        frontend,
+        &engine.snapshot,
+        &resolver,
+        &links.inventory.spellings,
+        executor,
+        memo,
+        &bodies,
+    )?;
+    if !prepared.prepared.diagnostics.is_empty() {
+        let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
+        crate::diagnostics::write_lowering_diagnostics(
+            &mut dmbc::daemon::stderr_writer(),
+            &diagnostics,
+        )?;
+        return Err(crate::request_failure::RequestFailure {
+            kind: crate::diagnostics::failure_kind(
+                diagnostics.iter().map(|diagnostic| diagnostic.kind),
+            ),
+            message: "query preparation requires complete current ABI owners".into(),
+        }
+        .into());
+    }
+    query_attempt.capture_analysis_host(
+        frontend,
+        resolver,
+        Arc::clone(prepared.prepared.units_owner()),
+        startup.facts(),
+    )?;
+    Ok(BuildOutcome::QueryPrepared {
+        semantic_revision: format!("{:032x}", frontend.snapshot.tree.identity()),
+        source_revision: format!(
+            "{:032x}",
+            dm_analysis::tree_export::source_revision(frontend)
+        ),
+        retained,
+    })
+}

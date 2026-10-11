@@ -19,6 +19,8 @@ pub enum BuildCommand {
     AnalyzeBodies,
     /// Explicit compiler-selected references with current ABI and source issuance.
     AnalyzeResolved,
+    /// Explicit nonpublishing current source/host preparation for pinned queries.
+    PrepareQuery,
     Compile,
 }
 
@@ -64,6 +66,11 @@ pub enum Command {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum BuildOutcome {
+    QueryPrepared {
+        semantic_revision: String,
+        source_revision: String,
+        retained: bool,
+    },
     Published {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         publication_proof: Option<crate::publication_proof::NativePublicationProof>,

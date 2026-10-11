@@ -82,7 +82,8 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     let mut command = match command.as_str() {
         "analyze" => BuildCommand::Analyze,
         "compile" => BuildCommand::Compile,
-        _ => return Err("expected analyze or compile".into()),
+        "prepare-query" => BuildCommand::PrepareQuery,
+        _ => return Err("expected analyze, compile or prepare-query".into()),
     };
     let mut project = None;
     let mut defines = BTreeMap::new();

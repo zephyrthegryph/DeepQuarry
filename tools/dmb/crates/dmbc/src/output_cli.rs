@@ -105,6 +105,21 @@ pub fn finish_command(
     path: Option<&Path>,
     outcome: CommandOutcome,
 ) -> Result<CommandOutcome, Box<dyn std::error::Error>> {
+    if let CommandOutcome::Build(BuildOutcome::QueryPrepared {
+        semantic_revision,
+        source_revision,
+        retained,
+    }) = &outcome
+    {
+        // Only emitted after the ordinary runner's captured-input restat.
+        serde_json::to_writer(&mut crate::daemon::stdout_writer(), &serde_json::json!({
+            "row":"query_prepared", "schema":"dm-query-preparation-v1",
+            "semantic_revision":semantic_revision, "source_revision":source_revision,
+            "retained":retained, "complete":false,
+            "coverage":"current frontend/startup/ABI host owners; executable body facts are lazy; no output publication"
+        })).map_err(io::Error::other)?;
+        crate::daemon::stdout_writer().write_all(b"\n")?;
+    }
     if let Some(path) = path {
         let CommandOutcome::Build(build) = &outcome else {
             return Err("a compile receipt requires a compile command".into());

@@ -33,10 +33,11 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
                 .map(|()| CommandOutcome::Completed)
         }
         Command::Help => {
-            dmbc::daemon_println!("dmbc analyze|compile [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+            dmbc::daemon_println!("dmbc analyze|compile|prepare-query [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
             dmbc::daemon_println!(
                 "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl|--export-jsonl]"
             );
+            dmbc::daemon_println!("prepare-query uses the ordinary source configuration, emits current revision pins without compiling bodies or publishing output; retained queries require a daemon, and pressure may make prepared owners unavailable.");
             dmbc::daemon_println!("compile publishes a new immutable output pair and installs PROJECT.dmb/.rsc; unsupported semantics fail before publication.");
             Ok(CommandOutcome::Completed)
         }
@@ -76,13 +77,14 @@ pub fn run_build_with_host(
     runner_freshness::run(request, |request| run_build_attempt(request, host))
 }
 #[path = "runner_analysis.rs"]
-mod runner_analysis;
+pub(crate) mod runner_analysis;
 #[path = "runner_output_digest.rs"]
 mod output_digest;
 fn run_build_attempt(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
+    let retains_query_owners = host.retains_artifacts();
     let mut query_attempt = crate::runner_host::query_snapshot::QueryAttempt::new(
         host.query_state(),
         host.retains_artifacts(),
@@ -133,7 +135,7 @@ fn run_build_attempt(
     // reusable frontend; supply DM_VERSION/DM_BUILD explicitly when needed.
     let executable = matches!(
         command,
-        BuildCommand::Compile | BuildCommand::AnalyzeResolved
+        BuildCommand::Compile | BuildCommand::AnalyzeResolved | BuildCommand::PrepareQuery
     );
     let embedded_engine = executable && engine_template.is_none();
     if embedded_engine {
@@ -1012,6 +1014,20 @@ fn run_build_attempt(
             session_hit: false,
             seconds: total.elapsed().as_secs_f64(),
         });
+    }
+    if command == BuildCommand::PrepareQuery {
+        let outcome = runner_analysis::prepare_query(
+            &frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
+            procedure_memo.as_ref(), memo_policy, &mut query_attempt, retains_query_owners,
+        )?;
+        // Preparation is not output publication, but its pins still require the
+        // ordinary captured-input freshness barrier before becoming current.
+        runner_freshness::admit_captured(&inputs_capture, None, &input_provider, generated_paths)?;
+        input_provider.finish()?;
+        inputs_capture.finish_prepared()?;
+        dmbc::daemon::control::checkpoint()?;
+        query_attempt.finish_analyzed();
+        return Ok(outcome);
     }
     runner_analysis::finish(&frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
         procedure_memo.as_ref(), memo_policy, command, &mut query_attempt, total)

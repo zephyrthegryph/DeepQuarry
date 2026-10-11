@@ -88,6 +88,45 @@ pub(crate) fn write_resolved_selected<R: dm_ir::Resolver>(
         |_, _| Ok(()),
     )
 }
+/// SAME startup/ABI preparation used by ordinary selected analysis; no body lowering.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn prepare_query_owners<'a, R: dm_ir::Resolver>(
+    frontend: &'a dm_tree::frontend::FrontendRevision,
+    engine: &crate::engine::EngineSnapshot,
+    resolver: &R,
+    spellings: &[(dm_ir::SymbolId, std::sync::Arc<[u8]>)],
+    executor: &dm_exec::BuildExecutor,
+    memo: &crate::lowering_memo::ProcedureMemo,
+    bodies: &BodyArena<'a>,
+) -> Result<
+    (
+        crate::startup::CapturedStartup<'a>,
+        crate::driver_facts::PreparedPinnedSourceAbi,
+    ),
+    Box<dyn std::error::Error>,
+> {
+    let startup = crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
+        frontend,
+        spellings,
+        executor,
+        bodies,
+        memo.startup.as_deref(),
+    )?;
+    let startup = startup.view_revision(frontend)?;
+    crate::daemon::control::checkpoint()?;
+    let prepared =
+        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
+            frontend,
+            engine,
+            resolver,
+            &startup,
+            None,
+            executor,
+            memo.abi.as_deref(),
+        )?;
+    Ok((startup, prepared))
+}
+
 /// Transfer only actual immutable preparation owners after successful analysis.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
@@ -114,25 +153,9 @@ pub(crate) fn write_resolved_selected_with_owners<R: dm_ir::Resolver>(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,
     );
-    let startup = crate::startup::capture_revision_facts_with_executor_and_bodies_and_artifacts(
-        frontend,
-        spellings,
-        executor,
-        &bodies,
-        memo.startup.as_deref(),
+    let (startup, prepared) = prepare_query_owners(
+        frontend, engine, resolver, spellings, executor, memo, &bodies,
     )?;
-    let startup = startup.view_revision(frontend)?;
-    crate::daemon::control::checkpoint()?;
-    let prepared =
-        crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
-            frontend,
-            engine,
-            resolver,
-            &startup,
-            None,
-            executor,
-            memo.abi.as_deref(),
-        )?;
     crate::daemon::control::checkpoint()?;
     if !prepared.prepared.diagnostics.is_empty() {
         let diagnostics = crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)?;
