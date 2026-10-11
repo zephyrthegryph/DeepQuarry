@@ -39,6 +39,22 @@ pub(super) fn memo_statistics(
                 "mismatches":mismatches
             })
         }),
+        "modified_initializer_fragment_verification":memo.initializer_fragments.as_ref().map(|store| {
+            let (checked,mismatches)=store.modified_fragment_verification_counts();
+            serde_json::json!({
+                "scope":"current_request_modified_initializer_fragment_hits",
+                "checked":checked,
+                "mismatches":mismatches
+            })
+        }),
+        "initializer_assembly_verification":memo.initializer_assemblies.as_ref().map(|store| {
+            let (checked,mismatches)=store.assembly_verification_counts();
+            serde_json::json!({
+                "scope":"current_request_initializer_assembly_hits",
+                "checked":checked,
+                "mismatches":mismatches
+            })
+        }),
         "link_assignments":memo.link_bindings.as_ref().map(|store| serde_json::json!({
             "scope":"process_local_cumulative",
             "reuses":store.assignment_reuses()
