@@ -13,7 +13,7 @@
 
 /// Variable dictating if we are in the process of restoring the occupier AI
 /obj/machinery/computer/aifixer/var/restoring = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/aifixer, restoring, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/aifixer, restoring)
 
 /obj/machinery/computer/aifixer/proc/can_use_card(datum/act/op/A)
 	if(!operable())

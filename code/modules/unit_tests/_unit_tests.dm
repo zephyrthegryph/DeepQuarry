@@ -1262,6 +1262,9 @@
 #include "dq_requirement_machine_selection_tests.dm"
 #include "dq_medical_native_slot_tests.dm"
 
+#include "dq_machine_native_bridges_tests.dm"
+#include "dq_machine_native_appearance_tests.dm"
+#include "dq_machine_condition_native_reads_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

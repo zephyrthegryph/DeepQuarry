@@ -9,7 +9,7 @@
 	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
 	var/cur_command
 
-TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/door/airlock, cur_command)
 
 /obj/machinery/door/airlock/proc/command_step(datum/act/A)
 	if (power_systems_on())

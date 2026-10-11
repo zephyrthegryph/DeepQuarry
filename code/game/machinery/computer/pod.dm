@@ -15,7 +15,7 @@
 /obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
 /obj/machinery/computer/pod/var/timing = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/pod, timing, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/pod, timing)
 /datum/scheduler_field_definition/obj/machinery/computer/pod/timing
 	of = /obj/machinery/computer/pod
 	field = "timing"

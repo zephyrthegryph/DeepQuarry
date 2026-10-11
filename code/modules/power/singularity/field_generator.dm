@@ -278,7 +278,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 #undef FIELD_GEN_MAX_POWER
 #undef FIELD_GEN_WARMUP_STAGE
 
-TRACKED_BRIDGED(/obj/machinery/field_generator, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/field_generator, state)
 
 /obj/machinery/field_generator/floor_weld_state()
 	return state

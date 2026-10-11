@@ -4757,3 +4757,21 @@ the answer). No behaviour change intended.
 The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
 30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
 behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).
+
+## Machine state bridge retirement (codex/machine-channels-1011)
+
+Ninety-three machinery and power field declarations stop publishing an extra
+legacy channel. Their real tracked field keys continue to publish, including
+menu, work and derived-state invalidation. Composed machine-condition readers
+name the actual stat keys generated from their stat definitions.
+
+The jukebox and casino jukebox use native draws over their real playing, panel,
+emag and power/intact state. Sprite selection and layer precedence are intended
+to remain unchanged. The ghost jukebox retains its independent virtual sprite
+and effects. The inherited legacy machine appearance subscription is removed
+only with that complete native appearance closure. No pin rows have been
+re-blessed in this preparation.
+
+EMP membership and numeric grid-target dependency contracts remain pending;
+this batch retains their channel delivery, field maps and defines. It does not
+substitute a composed operability value for masked EMP source membership.

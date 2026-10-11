@@ -236,4 +236,4 @@ CAPABILITIES(/obj/machinery/space_heater)
 #undef DEFAULT_MAX_TEMP
 #undef DEFAULT_HEATING_POWER
 
-TRACKED_BRIDGED(/obj/machinery/space_heater, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/space_heater, state)

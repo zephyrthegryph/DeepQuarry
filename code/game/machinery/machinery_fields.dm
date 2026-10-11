@@ -6,106 +6,106 @@
 
 // on: instance storage belongs to the machine families that use it.
 /obj/machinery/access_button/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/access_button, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/access_button, on)
 /obj/machinery/air_sensor/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/air_sensor, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/air_sensor, on)
 /obj/machinery/airlock_sensor/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/airlock_sensor, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/airlock_sensor, on)
 /obj/machinery/cablelayer/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/cablelayer, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/cablelayer, on)
 /obj/machinery/embedded_controller/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/embedded_controller, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/embedded_controller, on)
 /obj/machinery/exonet_node/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/exonet_node, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/exonet_node, on)
 /obj/machinery/floodlight/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/floodlight, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/floodlight, on)
 /obj/machinery/floor_light/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/floor_light, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/floor_light, on)
 /obj/machinery/floorlayer/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/floorlayer, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/floorlayer, on)
 /obj/machinery/igniter/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/igniter, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/igniter, on)
 /obj/machinery/ion_engine/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/ion_engine, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/ion_engine, on)
 /obj/machinery/light/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/light, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/light, on)
 /obj/machinery/light_switch/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/light_switch, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/light_switch, on)
 /obj/machinery/magnetic_module/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/magnetic_module, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/magnetic_module, on)
 /obj/machinery/mech_sensor/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/mech_sensor, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/mech_sensor, on)
 /obj/machinery/pda_multicaster/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/pda_multicaster, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/pda_multicaster, on)
 /obj/machinery/pipelayer/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/pipelayer, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/pipelayer, on)
 /obj/machinery/pump/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/pump, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/pump, on)
 /obj/machinery/shower/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/shower, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shower, on)
 /obj/machinery/atmospherics/portables_connector/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/atmospherics/portables_connector, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/atmospherics/portables_connector, on)
 /obj/machinery/gravity_generator/main/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/gravity_generator/main, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/gravity_generator/main, on)
 /obj/machinery/portable_atmospherics/powered/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/portable_atmospherics/powered, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/portable_atmospherics/powered, on)
 /obj/machinery/power/breakerbox/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/breakerbox, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/breakerbox, on)
 /obj/machinery/power/thermoregulator/var/on = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/thermoregulator, on, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/thermoregulator, on)
 /datum/scheduler_field_definition/obj/machinery/on
 	of = /obj/machinery
 	field = "on"
 	channel = CHANGE_MACHINE_SETTINGS
 // active: instance storage belongs to the machine families that use it.
 /obj/machinery/botany/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/botany, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/botany, active)
 /obj/machinery/button/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/button, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/button, active)
 /obj/machinery/field_generator/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/field_generator, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/field_generator, active)
 /obj/machinery/giga_drill/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/giga_drill, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/giga_drill, active)
 /obj/machinery/keycard_auth/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/keycard_auth, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/keycard_auth, active)
 /obj/machinery/message_server/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/message_server, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/message_server, active)
 /obj/machinery/particle_accelerator/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/particle_accelerator, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/particle_accelerator, active)
 /obj/machinery/pointdefense/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/pointdefense, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/pointdefense, active)
 /obj/machinery/shield_capacitor/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/shield_capacitor, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shield_capacitor, active)
 /obj/machinery/shield_gen/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/shield_gen, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shield_gen, active)
 /obj/machinery/shieldgen/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/shieldgen, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shieldgen, active)
 /obj/machinery/shieldwall/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/shieldwall, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shieldwall, active)
 /obj/machinery/shieldwallgen/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/shieldwallgen, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shieldwallgen, active)
 /obj/machinery/suit_cycler/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/suit_cycler, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/suit_cycler, active)
 /obj/machinery/vending/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/vending, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/vending, active)
 /obj/machinery/computer/HolodeckControl/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/HolodeckControl, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/HolodeckControl, active)
 /obj/machinery/mineral/processing_unit/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/mineral/processing_unit, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/mineral/processing_unit, active)
 /obj/machinery/mining/drill/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/mining/drill, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/mining/drill, active)
 /obj/machinery/power/emitter/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/emitter, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/emitter, active)
 /obj/machinery/power/hydromagnetic_trap/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/hydromagnetic_trap, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/hydromagnetic_trap, active)
 /obj/machinery/power/port_gen/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/port_gen, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/port_gen, active)
 /obj/machinery/power/rad_collector/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/rad_collector, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/rad_collector, active)
 /obj/machinery/power/singularity_beacon/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/power/singularity_beacon, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/singularity_beacon, active)
 /obj/machinery/door/airlock/uranium/var/active = FALSE
-TRACKED_BRIDGED(/obj/machinery/door/airlock/uranium, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/door/airlock/uranium, active)
 /datum/scheduler_field_definition/obj/machinery/active
 	of = /obj/machinery
 	field = "active"
@@ -116,64 +116,64 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock/uranium, active, CHANGE_MACHINE_SETT
 	channel = CHANGE_MACHINE_SETTINGS
 // mode: instance storage belongs to the machine families that use it.
 /obj/machinery/ai_status_display/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/ai_status_display, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/ai_status_display, mode)
 /obj/machinery/alarm/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/alarm, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/alarm, mode)
 /obj/machinery/chem_master/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/chem_master, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/chem_master, mode)
 /obj/machinery/disposal/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/disposal, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/disposal, mode)
 /obj/machinery/iv_drip/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/iv_drip, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/iv_drip, mode)
 /obj/machinery/status_display/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/status_display, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/status_display, mode)
 /obj/machinery/computer/card/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/computer/card, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/card, mode)
 /obj/machinery/computer/cryopod/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/computer/cryopod, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/cryopod, mode)
 /obj/machinery/computer/guestpass/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/computer/guestpass, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/guestpass, mode)
 /obj/machinery/power/thermoregulator/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/power/thermoregulator, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/thermoregulator, mode)
 /obj/machinery/power/smes/batteryrack/var/mode = 0
-TRACKED_BRIDGED(/obj/machinery/power/smes/batteryrack, mode, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/smes/batteryrack, mode)
 /datum/scheduler_field_definition/obj/machinery/mode
 	of = /obj/machinery
 	field = "mode"
 	channel = CHANGE_MACHINE_SETTINGS
 // locked: instance storage belongs to the machine families that use it.
 /obj/machinery/ai_slipper/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/ai_slipper, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/ai_slipper, locked)
 /obj/machinery/bodyscanner/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/bodyscanner, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/bodyscanner, locked)
 /obj/machinery/cash_register/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/cash_register, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/cash_register, locked)
 /obj/machinery/clonepod/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/clonepod, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/clonepod, locked)
 /obj/machinery/dna_scannernew/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/dna_scannernew, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/dna_scannernew, locked)
 /obj/machinery/navbeacon/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/navbeacon, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/navbeacon, locked)
 /obj/machinery/shield_capacitor/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/shield_capacitor, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/shield_capacitor, locked)
 /obj/machinery/shield_gen/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/shield_gen, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/shield_gen, locked)
 /obj/machinery/shieldgen/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/shieldgen, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/shieldgen, locked)
 /obj/machinery/shieldwallgen/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/shieldwallgen, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/shieldwallgen, locked)
 /obj/machinery/smartfridge/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/smartfridge, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/smartfridge, locked)
 /obj/machinery/suit_cycler/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/suit_cycler, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/suit_cycler, locked)
 /obj/machinery/suspension_gen/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/suspension_gen, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/suspension_gen, locked)
 /obj/machinery/computer/rdconsole_tg/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/computer/rdconsole_tg, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/computer/rdconsole_tg, locked)
 /obj/machinery/deployable/barrier/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/deployable/barrier, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/deployable/barrier, locked)
 /obj/machinery/door/unpowered/var/locked = FALSE
-TRACKED_BRIDGED(/obj/machinery/door/unpowered, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/door/unpowered, locked)
 
 /// Machine conditions are stats held by sources (code/contracts/ids/stats.dm):
 ///   has_power      false while the area's channel is dark (area_gives_power(): the grid's reading) or SRC_GRID holds it (set_grid_power(), a shim)
@@ -189,19 +189,19 @@ TRACKED_BRIDGED(/obj/machinery/door/unpowered, locked, CHANGE_MACHINE_MODE)
 	field = "stat"
 	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
 
-READS_AS(/obj/machinery/proc/power_lost, MACHINE_KEY_STAT)
+READS_AS(/obj/machinery/proc/power_lost, stat:[STAT_HAS_POWER])
 /obj/machinery/proc/power_lost()
 	return !stat_value(src, STAT_HAS_POWER)
 
-READS_AS(/obj/machinery/proc/broken_now, MACHINE_KEY_STAT)
+READS_AS(/obj/machinery/proc/broken_now, stat:[STAT_INTACT])
 /obj/machinery/proc/broken_now()
 	return !stat_value(src, STAT_INTACT)
 
-READS_AS(/obj/machinery/proc/under_maintenance, MACHINE_KEY_STAT)
+READS_AS(/obj/machinery/proc/under_maintenance, stat:[STAT_IN_MAINTENANCE])
 /obj/machinery/proc/under_maintenance()
 	return !!stat_value(src, STAT_IN_MAINTENANCE)
 
-READS_AS(/obj/machinery/proc/switched_off, MACHINE_KEY_STAT)
+READS_AS(/obj/machinery/proc/switched_off, stat:[STAT_SWITCHED_ON])
 /obj/machinery/proc/switched_off()
 	return !stat_value(src, STAT_SWITCHED_ON)
 
@@ -211,7 +211,6 @@ READS_AS(/obj/machinery/proc/emp_held, MACHINE_KEY_STAT)
 	return emp_disabled(src)
 
 /// Anything wrong at all: no power, broken, in maintenance, switched off or pulsed.
-READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
 /obj/machinery/proc/has_condition()
 	return power_lost() || broken_now() || under_maintenance() || switched_off() || emp_held()
 
@@ -271,7 +270,7 @@ READS_AS(/obj/machinery/proc/has_condition, MACHINE_KEY_STAT)
 /// Powered and working: powered, whole, not in maintenance, and no pulse holding it down.
 /// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,
 /// CanUseTopic), not "the machine works".
-READS_AS(/obj/machinery/proc/operable, MACHINE_KEY_STAT)
+READS_AS(/obj/machinery/proc/operable, stat:[STAT_OPERABLE])
 /obj/machinery/proc/operable()
 	return !!stat_value(src, STAT_OPERABLE)
 
@@ -323,7 +322,6 @@ TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
 /// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a
 /// change to any of them re-runs update_icon() on the presentation lane (once per frame) and no
 /// setter is followed by a manual update_icon(). Declared appearances add the fields they read.
-APPEARANCE_WATCH(/obj/machinery, list("stat", "on", "active", "state", "mode", "locked", "emagged", "use_power", "anchored", "density"))
 /// Vehicles draw their condition bits.
 APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 
@@ -340,13 +338,13 @@ APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 	return FALSE
 
 /obj/machinery/mineral/var/speed_process = FALSE
-TRACKED_BRIDGED(/obj/machinery/mineral, speed_process, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/mineral, speed_process)
 
 /obj/machinery/mineral/high_gear_enabled()
 	return speed_process
 
 /obj/machinery/conveyor/var/speed_process = FALSE
-TRACKED_BRIDGED(/obj/machinery/conveyor, speed_process, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/conveyor, speed_process)
 
 /obj/machinery/conveyor/high_gear_enabled()
 	return speed_process
@@ -380,6 +378,5 @@ TRACKED_BRIDGED(/obj/machinery/conveyor, speed_process, CHANGE_MACHINE_SETTINGS)
 			cap_set(src, CAP_EMAGGED, FALSE)
 	else
 		cap_set(src, CAP_EMAGGED, value)
-	tracked_bridged_changed(src, "emagged")
 	return TRUE
 SETTER(/obj/machinery, emagged)

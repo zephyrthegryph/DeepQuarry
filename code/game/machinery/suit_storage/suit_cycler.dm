@@ -2,7 +2,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 /// If this is > 0, the cycler is decontaminating whatever is inside it (steps left).
 /obj/machinery/suit_cycler/var/irradiating = 0
-TRACKED_BRIDGED(/obj/machinery/suit_cycler, irradiating, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/suit_cycler, irradiating)
 /datum/scheduler_field_definition/obj/machinery/suit_cycler/irradiating
 	of = /obj/machinery/suit_cycler
 	field = "irradiating"

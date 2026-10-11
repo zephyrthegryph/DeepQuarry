@@ -334,5 +334,5 @@ CAPABILITIES(/obj/random/cutout)
 	if(emagged == value)
 		return FALSE
 	emagged = value
-	tracked_bridged_changed(src, "emagged")
+	tracked_changed(src, nameof(emagged))
 	return TRUE

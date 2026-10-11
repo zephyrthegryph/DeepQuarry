@@ -34,7 +34,7 @@ FIRE ALARM
 
 /// TRUE while the fire alarm's lockdown countdown runs.
 /obj/machinery/firealarm/var/timing = 0
-TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/firealarm, timing)
 /datum/scheduler_field_definition/obj/machinery/firealarm/timing
 	of = /obj/machinery/firealarm
 	field = "timing"

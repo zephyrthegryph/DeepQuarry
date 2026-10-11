@@ -315,7 +315,7 @@ CAPABILITIES(/obj/machinery/power/emitter)
 	anchored = TRUE
 	state = FLOOR_WELD_WELDED
 
-TRACKED_BRIDGED(/obj/machinery/power/emitter, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/power/emitter, state)
 
 /obj/machinery/power/emitter/floor_weld_state()
 	return state
