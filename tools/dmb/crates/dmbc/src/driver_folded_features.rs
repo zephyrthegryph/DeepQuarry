@@ -5,6 +5,7 @@ impl DriverEvaluator<'_> {
         &self,
         owner: SymbolId,
         procedure: Option<dm_ir::ProcedureIdentity>,
+        lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
         expression: &dm_syntax::Expr,
     ) -> Result<dm_codegen_byond::SourceFeatures, String> {
         let mut bindings = dm_codegen_byond::LowerBindings {
@@ -63,11 +64,48 @@ impl DriverEvaluator<'_> {
                 return Err("folded reference lexical signature missing".into());
             }
         }
-        dm_codegen_byond::observe_reference_source_features(
+        let locals = if let Some(identity) = lexical_static {
+            if Some(identity.procedure) != procedure {
+                return Err("folded reference static context mismatch".into());
+            }
+            let query = ResolveQuery::ProcedureStatic {
+                procedure: identity.procedure,
+                name: identity.name,
+            };
+            let ResolvedMeaning::ProcedureStatic(declaration) = self.resolver.resolve(query) else {
+                return Err("folded reference lexical declaration is not captured".into());
+            };
+            if declaration.identity != identity {
+                return Err("folded reference lexical declaration identity mismatch".into());
+            }
+            declaration
+                .lexical_locals
+                .iter()
+                .map(|(name, path)| {
+                    Ok((
+                        self.symbols
+                            .text(*name)
+                            .ok_or("folded lexical local spelling unavailable")?
+                            .to_owned(),
+                        path.map(|path| {
+                            self.symbols
+                                .text(path)
+                                .map(str::to_owned)
+                                .ok_or("folded lexical local type spelling unavailable")
+                        })
+                        .transpose()?,
+                    ))
+                })
+                .collect::<Result<Vec<_>, String>>()?
+        } else {
+            Vec::new()
+        };
+        dm_codegen_byond::observe_reference_source_features_with_lexical_locals(
             expression,
             &bindings,
             self.symbols,
             self.resolver,
+            &locals,
         )
         .map_err(|error| format!("folded reference feature proof: {error:?}"))
     }

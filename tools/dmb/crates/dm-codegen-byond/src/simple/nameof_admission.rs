@@ -3,6 +3,37 @@
 mod members;
 use super::*;
 impl Compiler<'_> {
+    fn admit_nameof_lexical_type(
+        &self,
+        meaning: &dm_ir::SelectedMeaning,
+        name: &str,
+        statement: &str,
+    ) -> Result<(), LowerError> {
+        let path = match meaning {
+            dm_ir::SelectedMeaning::Local(_) => self.local_types.get(name).map(String::as_str),
+            dm_ir::SelectedMeaning::Argument(_) => {
+                self.bindings.parameter_types.get(name).map(String::as_str)
+            }
+            _ => None,
+        };
+        let (Some(path), Some(lookup)) = (path, self.lookup) else {
+            return Ok(());
+        };
+        let query = dm_ir::ResolveQuery::Type(SymbolId::of(path));
+        match self.semantic(lookup.answer(query))? {
+            dm_ir::ResolvedMeaning::Symbol(actual) if actual == SymbolId::of(path) => Ok(()),
+            dm_ir::ResolvedMeaning::Missing => Err(LowerError {
+                kind: LowerErrorKind::SourceError,
+                ..error(
+                    statement,
+                    &crate::lower_diagnostics::undefined_type_message(statement, name, path),
+                )
+            }),
+            _ => self.semantic(Err(
+                lookup.error(query, "nameof lexical type is not positively captured")
+            )),
+        }
+    }
     pub(super) fn admit_nameof_reference(
         &mut self,
         expression: &Expr,
@@ -11,7 +42,8 @@ impl Compiler<'_> {
         match &expression.kind {
             ExprKind::Group(inner) => return self.admit_nameof_reference(inner, statement),
             ExprKind::Ident(name) => {
-                self.variable_meaning(name, statement)?;
+                let meaning = self.variable_meaning(name, statement)?;
+                self.admit_nameof_lexical_type(&meaning, name, statement)?;
             }
             ExprKind::TypePath(path) => {
                 let Some(lookup) = self.lookup else {
@@ -119,6 +151,43 @@ mod tests {
                 _ => dm_ir::ResolvedMeaning::Missing,
             }
         }
+    }
+    #[test]
+    fn issued_lexical_locals_shadow_globals_and_require_current_declared_type() {
+        let mut symbols = dm_ir::SymbolTable::default();
+        for name in ["local", "/datum/actually_absent"] {
+            symbols.intern(name).unwrap();
+        }
+        let expression = dm_syntax::parse_expression("local").expr.unwrap();
+        let host = Host {
+            opaque: false,
+            queries: Default::default(),
+        };
+        let bindings = LowerBindings::default();
+        assert!(observe_reference_source_features_with_lexical_locals(
+            &expression,
+            &bindings,
+            &symbols,
+            &host,
+            &[("local".into(), None)]
+        )
+        .is_ok());
+        assert!(host.queries.lock().unwrap().is_empty());
+        let error = observe_reference_source_features_with_lexical_locals(
+            &expression,
+            &bindings,
+            &symbols,
+            &host,
+            &[("local".into(), Some("/datum/actually_absent".into()))],
+        )
+        .unwrap_err();
+        assert_eq!(error.kind, LowerErrorKind::SourceError);
+        assert_eq!(
+            *host.queries.lock().unwrap(),
+            [dm_ir::ResolveQuery::Type(SymbolId::of(
+                "/datum/actually_absent"
+            ))]
+        );
     }
     #[test]
     fn nameof_current_reference_admission_rejects_missing_and_preserves_opaque_queries() {

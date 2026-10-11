@@ -23,6 +23,23 @@ pub fn observe_reference_source_features(
     symbols: &dm_ir::SymbolTable,
     resolver: &dyn dm_ir::Resolver,
 ) -> Result<SourceFeatures, LowerError> {
+    observe_reference_source_features_with_lexical_locals(
+        expression,
+        bindings,
+        symbols,
+        resolver,
+        &[],
+    )
+}
+/// The supplied locals must be issued from the same current parsed lexical scope.
+/// They license names only; no local runtime values or bytecode operands are read.
+pub fn observe_reference_source_features_with_lexical_locals(
+    expression: &Expr,
+    bindings: &LowerBindings,
+    symbols: &dm_ir::SymbolTable,
+    resolver: &dyn dm_ir::Resolver,
+    locals: &[(String, Option<String>)],
+) -> Result<SourceFeatures, LowerError> {
     let lookup = crate::lower_resolver::ProjectResolver {
         modified_instances: Default::default(),
         procedure_values: Default::default(),
@@ -36,6 +53,14 @@ pub fn observe_reference_source_features(
         resource_search_context: None,
     };
     let mut compiler = super::compiler_context::compiler_context(bindings, Some(&lookup));
+    for (index, (name, declared_type)) in locals.iter().enumerate() {
+        let index = u32::try_from(index)
+            .map_err(|_| error("nameof reference", "too many lexical locals"))?;
+        compiler.local_slots.insert(name.clone(), index);
+        if let Some(path) = declared_type {
+            compiler.local_types.insert(name.clone(), path.clone());
+        }
+    }
     compiler.admit_nameof_reference(expression, "nameof reference")?;
     if let Some(error) = compiler.resolver_failure.take() {
         return Err(error);

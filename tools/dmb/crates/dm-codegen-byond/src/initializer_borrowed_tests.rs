@@ -12,6 +12,7 @@ impl Resolver for StaticHost {
                     declared_type: None,
                     modifiers: 1,
                     declared_array: None,
+                    lexical_locals: std::sync::Arc::from([]),
                     initializer: InitializerValue::NoAuthoredValue,
                 }))
             }
@@ -93,7 +94,7 @@ fn authored_ast_is_borrowed_with_independent_occurrence_and_exact_old_code() {
     let occurrence = Span::new(7, 7);
     let view = AssignmentView {
         source_site: dm_ir::InitializerSite::Declaration,
-                target: &target,
+        target: &target,
         lexical_owner: procedure.owner,
         value: &value,
         occurrence,
@@ -138,7 +139,7 @@ fn failed_expression_uses_exact_old_initializer_occurrence() {
     let error = lower_assignment_views(
         &[AssignmentView {
             source_site: dm_ir::InitializerSite::Declaration,
-                target: &target,
+            target: &target,
             lexical_owner: procedure.owner,
             value: &value,
             occurrence,

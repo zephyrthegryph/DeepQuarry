@@ -37,6 +37,7 @@ pub(super) fn answer(c: &mut HeapCensus, value: &ResolvedMeaning) {
         }
         ResolvedMeaning::ProcedureStatic(value) => {
             if c.arc_object(owner, value) {
+                c.slice(owner, &value.lexical_locals, true);
                 if let Some(array) = &value.declared_array {
                     c.array(owner, array)
                 }

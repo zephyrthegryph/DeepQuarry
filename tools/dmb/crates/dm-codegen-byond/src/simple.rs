@@ -915,7 +915,10 @@ mod compiler_context;
 mod nameof_admission;
 #[path = "simple/source_features.rs"]
 mod source_features;
-pub use source_features::{observe_reference_source_features, SourceFeatures};
+pub use source_features::{
+    observe_reference_source_features, observe_reference_source_features_with_lexical_locals,
+    SourceFeatures,
+};
 #[path = "simple/assignments.rs"]
 mod assignments;
 #[path = "simple/predefined_resolution.rs"]

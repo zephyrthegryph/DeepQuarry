@@ -193,6 +193,7 @@ fn procedure_static_uses_exact_slot_tuple_and_parameter_shadowing() {
                     declared_type: None,
                     modifiers: 1,
                     declared_array: None,
+                    lexical_locals: std::sync::Arc::from([]),
                     initializer: dm_ir::InitializerValue::NoAuthoredValue,
                 }))
             }

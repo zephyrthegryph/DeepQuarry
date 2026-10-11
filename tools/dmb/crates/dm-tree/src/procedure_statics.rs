@@ -9,6 +9,8 @@ use std::{collections::HashSet, sync::Arc};
 
 #[path = "procedure_static_duplicates.rs"]
 mod duplicates;
+#[path = "procedure_static_lexical.rs"]
+mod lexical;
 pub use duplicates::{duplicate_static_declaration, DuplicateStaticDeclaration};
 
 #[path = "procedure_static_inventory.rs"]
@@ -255,7 +257,7 @@ fn capture_statement_declarations(
         executable_body: Vec::new(),
     };
     let mut names = HashSet::new();
-    walk(procedure, &parsed.statements, &mut plan, &mut names)?;
+    walk(procedure, &parsed.statements, &mut plan, &mut names, &[])?;
     if plan
         .origins
         .iter()
@@ -273,7 +275,10 @@ fn walk(
     statements: &[Statement],
     plan: &mut StaticPlan,
     names: &mut HashSet<dm_ir::SymbolId>,
+    outer_locals: &[(dm_ir::SymbolId, Option<dm_ir::SymbolId>)],
 ) -> Result<(), String> {
+    let mut locals = outer_locals.to_vec();
+    let mut local_owner: Option<Arc<[(dm_ir::SymbolId, Option<dm_ir::SymbolId>)]>> = None;
     for statement in statements {
         match &statement.kind {
             StatementKind::Var { declaration, value } => {
@@ -305,6 +310,8 @@ fn walk(
                     }
                 }
                 if modifiers & 11 == 0 {
+                    locals.push(lexical::local(declaration, &mut plan.symbols)?);
+                    local_owner = None;
                     continue;
                 }
                 let name = plan
@@ -357,6 +364,9 @@ fn walk(
                     modifiers,
                     declared_array: array,
                     initializer,
+                    lexical_locals: Arc::clone(
+                        local_owner.get_or_insert_with(|| Arc::from(locals.clone())),
+                    ),
                 });
                 plan.origins.push(StaticOrigin {
                     span: statement.span,
@@ -369,13 +379,13 @@ fn walk(
                 else_branch,
                 ..
             } => {
-                walk(procedure, then_branch, plan, names)?;
-                walk(procedure, else_branch, plan, names)?;
+                walk(procedure, then_branch, plan, names, &locals)?;
+                walk(procedure, else_branch, plan, names, &locals)?;
             }
             StatementKind::While { body, .. }
             | StatementKind::DoWhile { body, .. }
             | StatementKind::Spawn { body, .. }
-            | StatementKind::Label { body, .. } => walk(procedure, body, plan, names)?,
+            | StatementKind::Label { body, .. } => walk(procedure, body, plan, names, &locals)?,
             StatementKind::For { control, body } => {
                 let declarations: Vec<&str> = match control {
                     dm_syntax::ForControl::All { declaration } => vec![declaration],
@@ -399,21 +409,34 @@ fn walk(
                 }) {
                     return Err("shared for-control declaration is not supported".into());
                 }
-                walk(procedure, body, plan, names)?;
+                let mut loop_locals = locals.clone();
+                for declaration in declarations {
+                    if declaration.trim_start().starts_with("var") {
+                        loop_locals.push(lexical::local(declaration, &mut plan.symbols)?);
+                    }
+                }
+                walk(procedure, body, plan, names, &loop_locals)?;
             }
             StatementKind::Switch {
                 cases, else_branch, ..
             } => {
                 for case in cases {
-                    walk(procedure, &case.body, plan, names)?;
+                    walk(procedure, &case.body, plan, names, &locals)?;
                 }
-                walk(procedure, else_branch, plan, names)?;
+                walk(procedure, else_branch, plan, names, &locals)?;
             }
             StatementKind::Try {
-                body, catch_body, ..
+                body,
+                catch_body,
+                catch_binding,
+                ..
             } => {
-                walk(procedure, body, plan, names)?;
-                walk(procedure, catch_body, plan, names)?;
+                walk(procedure, body, plan, names, &locals)?;
+                let mut catch_locals = locals.clone();
+                if let Some(declaration) = catch_binding {
+                    catch_locals.push(lexical::local(declaration, &mut plan.symbols)?);
+                }
+                walk(procedure, catch_body, plan, names, &catch_locals)?;
             }
             _ => (),
         }

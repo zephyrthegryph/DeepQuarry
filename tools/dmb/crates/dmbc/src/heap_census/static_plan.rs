@@ -23,6 +23,7 @@ impl HeapCensus {
         self.vec_payload("startup", &procedure.origins);
         self.items("startup.executable_bodies", &procedure.executable_body);
         for declaration in &procedure.declarations {
+            self.slice("startup.lexical_locals", &declaration.lexical_locals, true);
             match &declaration.initializer {
                 dm_ir::InitializerValue::Expression(expression) => {
                     self.expression("startup", expression)

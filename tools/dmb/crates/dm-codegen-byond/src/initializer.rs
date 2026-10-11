@@ -659,6 +659,7 @@ mod tests {
                                 declared_type: None,
                                 modifiers: 1,
                                 declared_array: None,
+                                lexical_locals: std::sync::Arc::from([]),
                                 initializer: InitializerValue::NoAuthoredValue,
                             },
                         ))

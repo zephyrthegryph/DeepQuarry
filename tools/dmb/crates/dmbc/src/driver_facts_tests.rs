@@ -895,3 +895,69 @@ fn inherited_source_layout_retains_exact_prepared_owner_without_copying_payloads
     drop(layouts);
     assert!(weak.upgrade().is_none());
 }
+
+#[test]
+fn actual_stored_nameof_uses_current_parameters_and_captured_prior_locals() {
+    struct Text;
+    impl dm_preprocess::SourceProvider for Text {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok("/proc/probe(argument)\n    var/local = 1\n    var/static/parameter_name = nameof(argument)\n    var/static/local_name = nameof(local)\n    return local\n".into())
+        }
+    }
+    let frontend = dm_tree::frontend::build_with_config(
+        Path::new("project.dme"),
+        &Text,
+        &Default::default(),
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: None,
+            observer: None,
+        },
+    )
+    .unwrap();
+    let identity = *unit_members(&frontend).unwrap().keys().next().unwrap();
+    let procedure = dm_ir::ProcedureIdentity {
+        owner: identity.owner,
+        name: identity.name,
+        verb: identity.namespace == Namespace::Verb,
+        occurrence: identity.occurrence,
+    };
+    let parsed = dm_syntax::parse(
+        &dm_preprocess::SourceProvider::read(&Text, Path::new("project.dme")).unwrap(),
+    );
+    let plan = dm_tree::procedure_statics::capture(procedure, &parsed.items[0].children).unwrap();
+    let mut symbols = frontend.snapshot.tree.symbols().clone();
+    symbols.merge_from(&plan.symbols).unwrap();
+    let resolver = dm_tree::procedure_statics::StaticResolver::from_plans(
+        frontend.snapshot.tree.as_ref(),
+        std::iter::once((procedure, &plan)),
+    )
+    .unwrap();
+    let evaluator = DriverEvaluator {
+        pure_calls: None,
+        resource_search_context: None,
+        resolver: &resolver,
+        symbols: &symbols,
+    };
+    for declaration in &plan.declarations {
+        let write = dm_ir::InitializerWrite {
+            source_site: dm_ir::InitializerSite::Declaration,
+            target: dm_ir::InitializerTarget::ProcedureStatic(declaration.identity),
+            lexical_owner: procedure.owner,
+            lexical_procedure: Some(procedure),
+            value: declaration.initializer.clone(),
+            declared_array: declaration.declared_array.clone(),
+            declaration_flags: Some(declaration.modifiers),
+        };
+        let (value, _) = evaluator.evaluate_prepared_write(&write, &symbols).unwrap();
+        let expected = if declaration.identity.name == SymbolId::of("parameter_name") {
+            "argument"
+        } else {
+            "local"
+        };
+        assert!(
+            matches!(value, Evaluation::Scalar(SemanticValue::Text(ref text)) if text.as_ref() == expected.as_bytes()),
+            "{expected}: {value:?}"
+        );
+    }
+}

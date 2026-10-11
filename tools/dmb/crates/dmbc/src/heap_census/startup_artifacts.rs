@@ -6,6 +6,7 @@ fn declarations(census: &mut HeapCensus, rows: &Arc<[Arc<dm_ir::ProcedureStaticD
     census.slice("startup.static_declarations", rows, true);
     for declaration in rows.iter() {
         if census.arc_object("startup.static_declaration", declaration) {
+            census.slice("startup.lexical_locals", &declaration.lexical_locals, true);
             if let Some(array) = &declaration.declared_array {
                 census.array("startup.static_array", array);
             }
@@ -161,6 +162,7 @@ pub(super) fn inventory(
     census.unknown("startup.static_inventory", &format!("private procedure HashSet backing: {len} entries, {capacity} capacity; declaration/certificate BTreeMap node backing unavailable"));
     for declaration in inventory.declarations() {
         if census.arc_object("startup.static_declaration", declaration) {
+            census.slice("startup.lexical_locals", &declaration.lexical_locals, true);
             if let Some(array) = &declaration.declared_array {
                 census.array("startup.static_array", array);
             }

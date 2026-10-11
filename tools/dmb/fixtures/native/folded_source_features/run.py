@@ -2,6 +2,8 @@ import importlib.util
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CASES = ('global_cpu', 'global_graphics', 'constant_cpu', 'constant_graphics', 'skipped_cpu', 'skipped_graphics')
+CASES += ('nameof_present_type', 'nameof_missing_type', 'nameof_present_proc', 'nameof_missing_proc', 'nameof_present_member', 'nameof_missing_member', 'nameof_present_ident', 'nameof_missing_ident')
+
 def main():
     path = HERE.parent / 'loop_local_diagnostics' / 'run.py'
     spec = importlib.util.spec_from_file_location('folded_feature_probe', path)

@@ -146,7 +146,7 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
     ) -> Result<Option<SemanticValue>, String> {
-        self.scalar_ast_in_with_features(owner, ast, procedure, active, None)
+        self.scalar_ast_in_with_features(owner, ast, procedure, active, None, None)
     }
     fn scalar_ast_in_with_features(
         &self,
@@ -155,6 +155,7 @@ impl DriverEvaluator<'_> {
         procedure: Option<dm_ir::ProcedureIdentity>,
         active: &RefCell<std::collections::HashSet<ActiveConstant>>,
         source_features: Option<&RefCell<dm_codegen_byond::SourceFeatures>>,
+        lexical_static: Option<dm_ir::ProcedureStaticIdentity>,
     ) -> Result<Option<SemanticValue>, String> {
         if let dm_syntax::ExprKind::ObjectInitializer { object, fields } = &ast.kind {
             let dm_syntax::ExprKind::TypePath(path) = &object.kind else {
@@ -168,7 +169,8 @@ impl DriverEvaluator<'_> {
             let feature_failure = RefCell::new(None);
             let observe_nameof = |expression: &dm_syntax::Expr| {
                 if let Some(features) = source_features {
-                    match self.nameof_source_features(owner, procedure, expression) {
+                    match self.nameof_source_features(owner, procedure, lexical_static, expression)
+                    {
                         Ok(current) => features.borrow_mut().union(current),
                         Err(error) => *feature_failure.borrow_mut() = Some(error),
                     }
@@ -214,7 +216,7 @@ impl DriverEvaluator<'_> {
         let failure = RefCell::new(None);
         let observe_nameof = |expr: &dm_syntax::Expr| {
             if let Some(features) = source_features {
-                match self.nameof_source_features(owner, procedure, expr) {
+                match self.nameof_source_features(owner, procedure, lexical_static, expr) {
                     Ok(observed) => features.borrow_mut().union(observed),
                     Err(error) => *failure.borrow_mut() = Some(error),
                 }
@@ -580,7 +582,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
         // Bump this implementation domain whenever initializer evaluation
         // semantics change, independently of process-local recording tokens.
         let mut bytes =
-            b"dmbc-driver-initializer-policy-v5;nameof-current-reference-admission\0".to_vec();
+            b"dmbc-driver-initializer-policy-v6;nameof-current-lexical-scope\0".to_vec();
         match self.pure_calls {
             None => bytes.push(0),
             Some(calls) => {
@@ -598,7 +600,7 @@ impl crate::initializer_policy::InitializerEvaluatorFactory for DriverEvaluator<
             None => 0,
             Some(calls) => calls.immutable_policy_identity()?,
         };
-        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a909)
+        Some(pure ^ 0x6a21_31c9_842a_9181_032c_bbec_672d_a910)
     }
     fn with_recording_evaluator(
         &self,
@@ -773,6 +775,10 @@ impl CapturedInitializerEvaluator for DriverEvaluator<'_> {
                 write.lexical_procedure,
                 &RefCell::new(std::collections::HashSet::new()),
                 Some(&source_features),
+                match write.target {
+                    dm_ir::InitializerTarget::ProcedureStatic(identity) => Some(identity),
+                    _ => None,
+                },
             )?
             .map_or(Evaluation::Runtime, Evaluation::Scalar);
         prepared.set_source_features(source_features.into_inner());

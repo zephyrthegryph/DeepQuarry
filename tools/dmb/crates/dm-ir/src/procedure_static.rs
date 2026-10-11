@@ -42,10 +42,12 @@ pub struct ProcedureStaticDeclaration {
     pub modifiers: u32,
     pub declared_array: Option<Arc<ArrayDeclaration>>,
     pub initializer: InitializerValue,
+    /// Exact ordinary locals visible when this stored declaration was captured.
+    pub lexical_locals: Arc<[(SymbolId, Option<SymbolId>)]>,
 }
 impl ProcedureStaticDeclaration {
     pub fn canonical_bytes(&self) -> Vec<u8> {
-        let mut bytes = b"dm-procedure-static-declaration-v1\0".to_vec();
+        let mut bytes = b"dm-procedure-static-declaration-v2-lexical-locals\0".to_vec();
         bytes.extend_from_slice(&self.identity.canonical_bytes());
         bytes.extend_from_slice(&self.modifiers.to_le_bytes());
         match self.declared_type {
@@ -64,6 +66,14 @@ impl ProcedureStaticDeclaration {
             Some(array) => {
                 bytes.push(1);
                 part(&mut bytes, &array.canonical_bytes());
+            }
+        }
+        bytes.extend_from_slice(&(self.lexical_locals.len() as u64).to_le_bytes());
+        for (name, declared_type) in self.lexical_locals.iter() {
+            bytes.extend_from_slice(&name.bits().to_le_bytes());
+            bytes.push(u8::from(declared_type.is_some()));
+            if let Some(path) = declared_type {
+                bytes.extend_from_slice(&path.bits().to_le_bytes());
             }
         }
         match &self.initializer {

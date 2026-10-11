@@ -2,6 +2,8 @@ import importlib.util
 from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CASES = ('modified_cpu', 'modified_graphics', 'modified_skipped_cpu', 'parameter_cpu')
+CASES += ('static_parameter_shadow_cpu', 'static_local_shadow_graphics', 'static_present_local_ident', 'static_missing_local_ident')
+
 def main():
     path = HERE.parent / 'loop_local_diagnostics' / 'run.py'
     spec = importlib.util.spec_from_file_location('modified_feature_probe', path)
