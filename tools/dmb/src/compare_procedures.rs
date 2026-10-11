@@ -13,7 +13,7 @@ pub(super) struct NormalArgument {
 pub(super) fn argument(dmb: &memo::NormalizationContext<'_>, arg: &ProcArgument) -> NormalArgument {
     let expression = dmb
         .argument_source_proc_id(arg)
-        .and_then(|id| proc_path(dmb, id));
+        .and_then(|id| dmb.reference_path(id));
     NormalArgument {
         name: dmb
             .variables
@@ -147,7 +147,7 @@ pub(super) fn instruction(
     };
     if let Some(index) = proc_operand {
         if let Some(NormalOperand::Word(id)) = operands.get(index) {
-            if let Some(path) = proc_path(dmb, *id) {
+            if let Some(path) = dmb.reference_path(*id) {
                 operands[index] = NormalOperand::Proc(Some(path));
             }
         }

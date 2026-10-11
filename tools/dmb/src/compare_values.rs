@@ -92,7 +92,7 @@ fn value_uncached(dmb: &memo::NormalizationContext<'_>, value: Value) -> NormalV
                 initializer,
             )
         }
-        ValueKind::ProcPath => NormalValue::Proc(proc_path(dmb, value.id())),
+        ValueKind::ProcPath => NormalValue::Proc(dmb.reference_path(value.id())),
         ValueKind::Resource => NormalValue::Resource(
             dmb.resources
                 .get(value.id() as usize)
@@ -136,7 +136,7 @@ pub(super) fn variable(dmb: &memo::NormalizationContext<'_>, input: &Variable) -
                 .get(*id as usize)
                 .and_then(|proc| optional_proc_string(dmb, proc.strings[1]))
                 .map_or_else(
-                    || NormalVariable::StaticProc(proc_path(dmb, *id)),
+                    || NormalVariable::StaticProc(dmb.reference_path(*id)),
                     |display| NormalVariable::DynamicProc(Some(display)),
                 )
         }
@@ -147,7 +147,7 @@ pub(super) fn variable(dmb: &memo::NormalizationContext<'_>, input: &Variable) -
                 .get(*id as usize)
                 .and_then(|proc| optional_proc_string(dmb, proc.strings[1]))
                 .map_or_else(
-                    || NormalVariable::StaticVerb(proc_path(dmb, *id)),
+                    || NormalVariable::StaticVerb(dmb.reference_path(*id)),
                     |display| NormalVariable::DynamicVerb(Some(display)),
                 )
         }

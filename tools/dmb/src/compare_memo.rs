@@ -8,6 +8,7 @@ pub(super) struct NormalizationContext<'a> {
     owner: &'a Dmb,
     instances: RefCell<BTreeMap<u32, NormalValue>>,
     assignments: RefCell<BTreeMap<u32, Option<Assignments>>>,
+    verbs: BTreeSet<u32>,
 }
 impl<'a> NormalizationContext<'a> {
     pub(super) fn new(owner: &'a Dmb) -> Self {
@@ -15,7 +16,33 @@ impl<'a> NormalizationContext<'a> {
             owner,
             instances: Default::default(),
             assignments: Default::default(),
+            verbs: owner
+                .classes
+                .iter()
+                .flat_map(|class| {
+                    owner
+                        .lists
+                        .get(class.verb_list_id() as usize)
+                        .into_iter()
+                        .flatten()
+                        .copied()
+                })
+                .collect(),
         }
+    }
+    pub(super) fn reference_path(&self, id: u32) -> Option<Vec<u8>> {
+        let raw = proc_path(self.owner, id)?;
+        let explicit_verb = raw.windows(6).any(|part| part == b"/verb/");
+        let mut name = canonical_proc_path(raw);
+        if (explicit_verb || self.verbs.contains(&id))
+            && !name.windows(6).any(|part| part == b"/verb/")
+        {
+            // Grouping removes physical markers. Typed references must retain
+            // actual verb namespace, including bare native bound paths.
+            let slash = name.iter().rposition(|byte| *byte == b'/')?;
+            name.splice(slash + 1..slash + 1, b"verb/".iter().copied());
+        }
+        Some(name)
     }
     pub(super) fn instance(&self, id: u32, compute: impl FnOnce() -> NormalValue) -> NormalValue {
         if let Some(value) = self.instances.borrow().get(&id) {
@@ -45,6 +72,10 @@ impl Deref for NormalizationContext<'_> {
         self.owner
     }
 }
+
+#[cfg(test)]
+#[path = "compare_proc_reference_tests.rs"]
+mod reference_tests;
 
 #[cfg(test)]
 mod tests {
