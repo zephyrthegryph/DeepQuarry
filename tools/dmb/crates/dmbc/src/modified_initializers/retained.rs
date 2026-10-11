@@ -5,6 +5,37 @@ pub(super) struct Lowered {
     pub code: crate::InitializerCode,
     pub encoding: Option<Arc<crate::symbolic::InitializerEncoding>>,
 }
+/// Ephemeral current roots; never retained by the fragment owner.
+pub(super) struct CurrentFields<'a> {
+    fields: &'a [(String, dm_syntax::Expr)],
+    calls: Option<&'a dyn dm_tree::constants::PureCalls>,
+    roots: HashMap<usize, Arc<dm_syntax::Expr>>,
+}
+impl<'a> CurrentFields<'a> {
+    pub(super) fn new(
+        fields: &'a [(String, dm_syntax::Expr)],
+        calls: Option<&'a dyn dm_tree::constants::PureCalls>,
+    ) -> Self {
+        Self {
+            fields,
+            calls,
+            roots: HashMap::new(),
+        }
+    }
+    pub(super) fn root(&mut self, index: usize) -> Option<Arc<dm_syntax::Expr>> {
+        if let Some(root) = self.roots.get(&index) {
+            return Some(Arc::clone(root));
+        }
+        let field = self.fields.get(index)?;
+        let root = Arc::new(prepare_value(&field.1, self.calls).ok()?);
+        self.roots.insert(index, Arc::clone(&root));
+        Some(root)
+    }
+    #[cfg(test)]
+    pub(super) fn prepared_indexes(&self) -> impl Iterator<Item = usize> + '_ {
+        self.roots.keys().copied()
+    }
+}
 
 pub(super) fn lower<R: Resolver>(
     symbol: SymRef,
@@ -25,20 +56,25 @@ pub(super) fn lower<R: Resolver>(
         crate::initializer_lowering::receipts::Binding::modified(symbol, descriptor, policy)
     });
     let proof_host = ResourceProofHost { host, descriptor };
-    let fields = descriptor
-        .fields()
-        .iter()
-        .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
-        .collect::<Result<Vec<_>, String>>()?;
     if let (Some(store), Some(binding)) = (fragments, &binding) {
         current_keys.push(Arc::clone(&binding.key));
-        if let Some((code, encoding)) = store.modified(binding, &fields, symbols, &proof_host) {
+        // This request-local root memo is populated only after exact admission,
+        // and only for field indexes named by nested expression recipes.
+        let mut roots = CurrentFields::new(descriptor.fields(), calls);
+        if let Some((code, encoding)) =
+            store.modified(binding, symbols, &proof_host, |index| roots.root(index))
+        {
             return Ok(Lowered {
                 code,
                 encoding: Some(encoding),
             });
         }
     }
+    let fields = descriptor
+        .fields()
+        .iter()
+        .map(|(name, value)| Ok((name.clone(), prepare_value(value, calls)?)))
+        .collect::<Result<Vec<_>, String>>()?;
     let recorder = crate::lowering_memo::RecordingResolver::new(&proof_host);
     let code = Arc::new(
         dm_codegen_byond::initializer::lower_modified_assignments(

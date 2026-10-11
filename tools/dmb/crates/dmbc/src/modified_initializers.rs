@@ -683,9 +683,35 @@ mod resource_tests {
             first.artifacts[0].code.code_owner(),
             second.artifacts[0].code.code_owner()
         ));
+        let fresh_current = collect_with_defaults(
+            std::iter::empty(),
+            &shifted,
+            &symbols,
+            &Host { content: 99 },
+            None,
+        )
+        .unwrap();
         assert_eq!(
             second.artifacts[0].debug_origins,
-            Arc::new(shifted[0].2.clone())
+            fresh_current.artifacts[0].debug_origins
+        );
+        assert!(second.artifacts[0]
+            .debug_origins
+            .entries
+            .iter()
+            .all(
+                |origin| origin.semantic_path.as_ref() == "included/current.dm"
+                    && origin.line == 41
+            ));
+        assert_eq!(
+            dm_codegen_byond::encoder::freeze_proc(&second.artifacts[0].code.procedure.code)
+                .unwrap()
+                .code()
+                .canonical_bytes(),
+            dm_codegen_byond::encoder::freeze_proc(&fresh_current.artifacts[0].code.procedure.code)
+                .unwrap()
+                .code()
+                .canonical_bytes()
         );
         assert_eq!(
             dm_codegen_byond::encoder::freeze_proc(&first.artifacts[0].code.procedure.code)
@@ -720,13 +746,20 @@ mod resource_tests {
             resource_context: Some(7),
         });
         assert!(retained
-            .modified(
-                &changed_input,
-                defaults[0].1.descriptor.fields(),
-                &symbols,
-                &Host { content: 99 }
-            )
+            .modified(&changed_input, &symbols, &Host { content: 99 }, |_| panic!(
+                "rejected input must not prepare fields"
+            ),)
             .is_none());
+        let leaf_input = crate::initializer_lowering::receipts::Binding::modified(
+            symbol,
+            &defaults[0].1.descriptor,
+            None,
+        );
+        assert!(retained
+            .modified(&leaf_input, &symbols, &Host { content: 99 }, |_| panic!(
+                "leaf hit must not prepare fields"
+            ))
+            .is_some());
         let output = collect_with_defaults(
             std::iter::empty(),
             &defaults,

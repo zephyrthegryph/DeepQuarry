@@ -7,9 +7,9 @@ impl InitializerFragments {
     pub(crate) fn modified<R: Resolver>(
         &self,
         key: &receipts::Binding,
-        fields: &[(String, dm_syntax::Expr)],
         symbols: &dm_ir::SymbolTable,
         host: &R,
+        mut root: impl FnMut(usize) -> Option<Arc<dm_syntax::Expr>>,
     ) -> Option<(
         crate::InitializerCode,
         Arc<crate::symbolic::InitializerEncoding>,
@@ -32,7 +32,10 @@ impl InitializerFragments {
             .recipes
             .iter()
             .zip(&value.root_indexes)
-            .map(|(recipe, index)| recipe.reissue(&fields.get(*index)?.1, &recorder, symbols))
+            .map(|(recipe, index)| {
+                let current = root(*index)?;
+                recipe.reissue(&current, &recorder, symbols)
+            })
             .collect::<Option<std::collections::BTreeMap<_, _>>>()?;
         if captured
             .keys()

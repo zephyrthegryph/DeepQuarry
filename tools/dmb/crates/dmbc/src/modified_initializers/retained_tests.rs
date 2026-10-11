@@ -18,10 +18,12 @@ impl Resolver for Host {
 
 fn seed(padding: usize, amount: u32) -> (SymRef, CapturedModifiedInstance, DebugOrigins) {
     let text = format!(
-        "{}/obj/outer{{child=/obj/inner{{amount={amount}}}}}",
+        "{}/obj/outer{{child=/obj/inner{{amount={amount}}};zz_unused=9}}",
         " ".repeat(padding)
     );
-    let expression = dm_syntax::parse_expression(&text).expr.unwrap();
+    let parsed = dm_syntax::parse_expression(&text);
+    assert!(parsed.errors.is_empty(), "{:#?}", parsed.errors);
+    let expression = parsed.expr.unwrap();
     let dm_syntax::ExprKind::ObjectInitializer { fields, .. } = &expression.kind else {
         panic!("object")
     };
@@ -34,12 +36,13 @@ fn seed(padding: usize, amount: u32) -> (SymRef, CapturedModifiedInstance, Debug
         None,
     )
     .unwrap();
+    assert_eq!(descriptor.fields().len(), 2);
     let reference = SymRef::Instance(SymbolId::of(&descriptor.alias()));
     (
         reference,
         CapturedModifiedInstance {
             descriptor,
-            field_origins: vec![Some(0)],
+            field_origins: vec![Some(0); 2],
             origin: Some(0),
             source_span: Some(expression.span),
         },
@@ -63,7 +66,14 @@ fn code_bytes(artifact: &InitializationArtifact) -> Vec<u8> {
 #[test]
 fn nested_modified_replay_reissues_current_fields_and_preserves_fifo_and_fresh_code() {
     let mut symbols = SymbolTable::default();
-    for text in ["/", "/obj/outer", "/obj/inner", "child", "amount"] {
+    for text in [
+        "/",
+        "/obj/outer",
+        "/obj/inner",
+        "child",
+        "amount",
+        "zz_unused",
+    ] {
         symbols.intern(text).unwrap();
     }
     let host = Host { inner_exists: true };
@@ -96,6 +106,26 @@ fn nested_modified_replay_reissues_current_fields_and_preserves_fifo_and_fresh_c
     )
     .unwrap();
     assert_eq!(store.hits.load(std::sync::atomic::Ordering::Relaxed), 2);
+    let binding = crate::initializer_lowering::receipts::Binding::modified(
+        current[0].0,
+        &current[0].1.descriptor,
+        None,
+    );
+    let mut roots = retained::CurrentFields::new(current[0].1.descriptor.fields(), None);
+    assert_eq!(roots.prepared_indexes().count(), 0);
+    let mut requested = Vec::new();
+    assert!(store
+        .modified(&binding, &symbols, &host, |index| {
+            requested.push(index);
+            roots.root(index)
+        })
+        .is_some());
+    assert_eq!(requested, [0]);
+    assert_eq!(roots.prepared_indexes().collect::<Vec<_>>(), [0]);
+    let first_root = roots.root(0).unwrap();
+    let repeated_root = roots.root(0).unwrap();
+    assert!(Arc::ptr_eq(&first_root, &repeated_root));
+    assert_eq!(roots.prepared_indexes().collect::<Vec<_>>(), [0]);
     let fresh = collect_with_defaults(std::iter::empty(), &current, &symbols, &host, None).unwrap();
     for (actual, expected) in reused.artifacts.iter().zip(&fresh.artifacts) {
         assert_eq!(actual.identity, expected.identity);
