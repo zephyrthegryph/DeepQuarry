@@ -119,7 +119,7 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 
 /// Used on a person: it will wipe them (a wait) unless it burns or the mouth is aimed at.
 /obj/item/reagent_containers/glass/rag/proc/rub_wipes(mob/user)
-	return !rag_lit && user.zone_sel.selecting != O_MOUTH && !!reagents.total_volume
+	return !rag_lit && hud_of(user)?.zone_sel?.selecting != O_MOUTH && !!reagents.total_volume
 
 /obj/item/reagent_containers/glass/rag/proc/rub_wait(datum/act/A)
 	var/datum/act/op/O = A
@@ -142,7 +142,7 @@ MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U
 		user.do_attack_animation(src)
 		target.ignite_mob()
 		return OP_OK
-	if(user.zone_sel.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
+	if(hud_of(user)?.zone_sel?.selecting == O_MOUTH) //Check player target location, provided the rag is not on fire. Then check if mouth is exposed.
 		if(!ishuman(target)) //Added this since player species process reagents in majority of cases.
 			to_chat(user, span_warning("You can't smother this creature."))
 			return OP_REFUSED

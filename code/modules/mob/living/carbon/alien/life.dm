@@ -124,10 +124,10 @@
 
 /mob/living/carbon/alien/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
-	src.healths.icon_state = vitality_health_band(src)
+	hud_used?.healths?.icon_state = vitality_health_band(src)
 
 /mob/living/carbon/alien/life_environment_due()
 	return TRUE

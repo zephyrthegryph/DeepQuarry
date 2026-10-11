@@ -213,27 +213,27 @@
 	. = ..()
 	if(!.)
 		return
-	if(src.borer_chem_display)
-		src.borer_chem_display.invisibility = INVISIBILITY_NONE
+	if(hud_used?.borer_chem_display)
+		hud_used?.borer_chem_display?.invisibility = INVISIBILITY_NONE
 		switch(src.chemicals)
 			if(0 to 9)
-				src.borer_chem_display.icon_state = "ling_chems0e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems0e"
 			if(10 to 19)
-				src.borer_chem_display.icon_state = "ling_chems10e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems10e"
 			if(20 to 29)
-				src.borer_chem_display.icon_state = "ling_chems20e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems20e"
 			if(30 to 39)
-				src.borer_chem_display.icon_state = "ling_chems30e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems30e"
 			if(40 to 49)
-				src.borer_chem_display.icon_state = "ling_chems40e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems40e"
 			if(50 to 59)
-				src.borer_chem_display.icon_state = "ling_chems50e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems50e"
 			if(60 to 69)
-				src.borer_chem_display.icon_state = "ling_chems60e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems60e"
 			if(70 to 79)
-				src.borer_chem_display.icon_state = "ling_chems70e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems70e"
 			if(80 to INFINITY)
-				src.borer_chem_display.icon_state = "ling_chems80e"
+				hud_used?.borer_chem_display?.icon_state = "ling_chems80e"
 
 /mob/living/simple_mob/animal/borer/proc/detatch()
 	var/mob/living/carbon/human/host = src?.borer_host()
@@ -325,10 +325,10 @@
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
 	// Chem hud
-	rel_set(src, nameof(borer_chem_display), new /atom/movable/screen/borer/chems())
-	borer_chem_display.screen_loc = ui_ling_chemical_display
-	borer_chem_display.icon_state = "ling_chems"
-	hud_elements |= borer_chem_display
+	rel_set(hud_used, nameof(/datum/hud::borer_chem_display), new /atom/movable/screen/borer/chems())
+	hud_used?.borer_chem_display?.screen_loc = ui_ling_chemical_display
+	hud_used?.borer_chem_display?.icon_state = "ling_chems"
+	hud_elements |= hud_used?.borer_chem_display
 
 /mob/living/simple_mob/animal/borer/UnarmedAttack(atom/A, proximity)
 	if(ismob(loc))

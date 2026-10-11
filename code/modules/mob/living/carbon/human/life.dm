@@ -164,16 +164,16 @@
 	var/pressure_adjustment_coefficient = 1 // Assume no protection at first.
 
 	// Check suit
-	if(get_equipped_item(SLOT_ID_SUIT) && get_equipped_item(SLOT_ID_SUIT).max_pressure_protection != null && get_equipped_item(SLOT_ID_SUIT).min_pressure_protection != null)
+	if(get_equipped_item(SLOT_ID_SUIT) && protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure != null && protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure != null)
 		pressure_adjustment_coefficient = 0
 		// Pressure is too high
-		if(get_equipped_item(SLOT_ID_SUIT).max_pressure_protection < pressure)
+		if(protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure < pressure)
 			// Protection scales down from 100% at the boundary to 0% at 10% in excess of the boundary
-			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_SUIT).max_pressure_protection) / (get_equipped_item(SLOT_ID_SUIT).max_pressure_protection/10))
+			pressure_adjustment_coefficient += round((pressure - protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure) / (protection_of(get_equipped_item(SLOT_ID_SUIT)).max_pressure/10))
 
 		// Pressure is too low
-		if(get_equipped_item(SLOT_ID_SUIT).min_pressure_protection > pressure)
-			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_SUIT).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_SUIT).min_pressure_protection/10))
+		if(protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure > pressure)
+			pressure_adjustment_coefficient += round((protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure - pressure) / (protection_of(get_equipped_item(SLOT_ID_SUIT)).min_pressure/10))
 
 		// Handles breaches in your space suit. 10 suit damage equals a 100% loss of pressure protection.
 		if(istype(get_equipped_item(SLOT_ID_SUIT),/obj/item/clothing/suit/space))
@@ -186,15 +186,15 @@
 		pressure_adjustment_coefficient = 1
 
 	// Check hat
-	if(get_equipped_item(SLOT_ID_HEAD) && get_equipped_item(SLOT_ID_HEAD).max_pressure_protection != null && get_equipped_item(SLOT_ID_HEAD).min_pressure_protection != null)
+	if(get_equipped_item(SLOT_ID_HEAD) && protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure != null && protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure != null)
 		// Pressure is too high
-		if(get_equipped_item(SLOT_ID_HEAD).max_pressure_protection < pressure)
+		if(protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure < pressure)
 			// Protection scales down from 100% at the boundary to 0% at 20% in excess of the boundary
-			pressure_adjustment_coefficient += round((pressure - get_equipped_item(SLOT_ID_HEAD).max_pressure_protection) / (get_equipped_item(SLOT_ID_HEAD).max_pressure_protection/20))
+			pressure_adjustment_coefficient += round((pressure - protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure) / (protection_of(get_equipped_item(SLOT_ID_HEAD)).max_pressure/20))
 
 		// Pressure is too low
-		if(get_equipped_item(SLOT_ID_HEAD).min_pressure_protection > pressure)
-			pressure_adjustment_coefficient += round((get_equipped_item(SLOT_ID_HEAD).min_pressure_protection - pressure) / (get_equipped_item(SLOT_ID_HEAD).min_pressure_protection/20))
+		if(protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure > pressure)
+			pressure_adjustment_coefficient += round((protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure - pressure) / (protection_of(get_equipped_item(SLOT_ID_HEAD)).min_pressure/20))
 
 	else
 		// Missing key protection
@@ -578,8 +578,8 @@
 
 		if(internal)
 			return internal.remove_air_volume(volume_needed)
-		else if(internals)
-			internals.icon_state = "internal0"
+		else if(hud_used?.internals)
+			hud_used?.internals?.icon_state = "internal0"
 	return null
 
 
@@ -1043,8 +1043,8 @@
 	var/exposure = (ONE_ATMOSPHERE - adjusted_pressure) / ONE_ATMOSPHERE
 	var/obj/item/suit = src.get_equipped_item(SLOT_ID_SUIT)
 	var/obj/item/helmet = src.get_equipped_item(SLOT_ID_HEAD)
-	if(suit?.min_pressure_protection && helmet?.min_pressure_protection)
-		exposure *= max(suit.min_pressure_protection, helmet.min_pressure_protection) / ONE_ATMOSPHERE
+	if(protection_of(suit).min_pressure && protection_of(helmet).min_pressure)
+		exposure *= max(protection_of(suit).min_pressure, protection_of(helmet).min_pressure) / ONE_ATMOSPHERE
 	src.body?.add_restriction(src, BF_GAS_EXCHANGE, clamp(1 - exposure, 0.1, 1), 4 SECONDS)
 
 /// MED-6: at its set point, with no heat source of its own, the body has nothing to regulate.
@@ -1612,11 +1612,11 @@
 
 /mob/living/carbon/human/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
 	if(src.stat == DEAD || (src.status_flags & FAKEDEATH)) //Dead
-		src.healths.icon_state = "health7"	//DEAD healthmeter
+		hud_used?.healths?.icon_state = "health7"	//DEAD healthmeter
 		src.health_doll_key = null
 		return
 
@@ -1624,7 +1624,7 @@
 		return
 
 	if(src.factor(BF_ANALGESIA) > 100)
-		src.healths.icon_state = "health_numb"
+		hud_used?.healths?.icon_state = "health_numb"
 		src.health_doll_key = null
 		return
 
@@ -1652,7 +1652,7 @@
 		return
 	src.health_doll_key = key
 
-	var/mutable_appearance/healths_ma = new(src.healths)
+	var/mutable_appearance/healths_ma = new(hud_used?.healths)
 	healths_ma.icon_state = "blank"
 	healths_ma.overlays = null
 	healths_ma.plane = PLANE_PLAYER_HUD
@@ -1670,7 +1670,7 @@
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
 	healths_ma.add_overlay(health_images)
-	src.healths.appearance = healths_ma
+	hud_used?.healths?.appearance = healths_ma
 
 /// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
 /mob/living/carbon/human/var/tmp/health_doll_key
@@ -1819,7 +1819,7 @@
 /mob/living/carbon/human/proc/life_changeling_due()
 	if(is_changeling(src))
 		return TRUE
-	return src.mind && src.hud_used && src.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
+	return src.mind && src.hud_used && hud_used?.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
 
 /mob/living/carbon/human/proc/life_changeling_rewake()
 	return 30 SECONDS
@@ -1829,47 +1829,47 @@
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)
 		if(src.mind && src.hud_used)
-			src.ling_chem_display.invisibility = INVISIBILITY_ABSTRACT
+			hud_used?.ling_chem_display?.invisibility = INVISIBILITY_ABSTRACT
 		return
 	else
 		comp.regenerate()
 		if(src.hud_used)
-			src.ling_chem_display.invisibility = INVISIBILITY_NONE
+			hud_used?.ling_chem_display?.invisibility = INVISIBILITY_NONE
 			switch(comp.chem_storage)
 				if(1 to 50)
 					switch(comp.chem_charges)
 						if(0 to 9)
-							src.ling_chem_display.icon_state = "ling_chems0"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems0"
 						if(10 to 19)
-							src.ling_chem_display.icon_state = "ling_chems10"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems10"
 						if(20 to 29)
-							src.ling_chem_display.icon_state = "ling_chems20"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems20"
 						if(30 to 39)
-							src.ling_chem_display.icon_state = "ling_chems30"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems30"
 						if(40 to 49)
-							src.ling_chem_display.icon_state = "ling_chems40"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems40"
 						if(50)
-							src.ling_chem_display.icon_state = "ling_chems50"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems50"
 				if(51 to 80) //This is a crappy way of checking for engorged sacs...
 					switch(comp.chem_charges)
 						if(0 to 9)
-							src.ling_chem_display.icon_state = "ling_chems0e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems0e"
 						if(10 to 19)
-							src.ling_chem_display.icon_state = "ling_chems10e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems10e"
 						if(20 to 29)
-							src.ling_chem_display.icon_state = "ling_chems20e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems20e"
 						if(30 to 39)
-							src.ling_chem_display.icon_state = "ling_chems30e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems30e"
 						if(40 to 49)
-							src.ling_chem_display.icon_state = "ling_chems40e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems40e"
 						if(50 to 59)
-							src.ling_chem_display.icon_state = "ling_chems50e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems50e"
 						if(60 to 69)
-							src.ling_chem_display.icon_state = "ling_chems60e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems60e"
 						if(70 to 79)
-							src.ling_chem_display.icon_state = "ling_chems70e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems70e"
 						if(80)
-							src.ling_chem_display.icon_state = "ling_chems80e"
+							hud_used?.ling_chem_display?.icon_state = "ling_chems80e"
 
 /// MED-6: no traumatic shock building and none to recover from.
 /mob/living/carbon/human/proc/life_shock_due()

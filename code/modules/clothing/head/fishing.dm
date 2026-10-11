@@ -11,7 +11,6 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		slot_head_str = 'icons/inventory/head/mob_fishing.dmi'
 		)
-	siemens_coefficient = 0.9
 	body_parts_covered = 0
 	var/slogan = ""
 	/// -1 until rolled, so a rolled size always differs from the initial value and is saved.
@@ -19,6 +18,9 @@
 	/// The hue rolled with the slogan. The look is derived from these three (apply_look()), so a
 	/// hat restored from saved state looks like the one that was saved instead of re-rolling.
 	var/colourtype
+
+CAPABILITIES(/obj/item/clothing/head/fishing)
+	configure(item_protection(siemens = 0.9))
 
 // ALLOW(init/INSTANCE_STATE): rolls its slogan and draws it
 /obj/item/clothing/head/fishing/Initialize(mapload)

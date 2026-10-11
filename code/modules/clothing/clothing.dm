@@ -1,6 +1,5 @@
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
-	siemens_coefficient = 0.9
 	resistance_flags = FLAMMABLE
 
 	var/list/accessories
@@ -141,7 +140,7 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 			if(C.handle_low_temperature(tempcheck))
 				. = TRUE
 
-	if(min_cold_protection_temperature && min_cold_protection_temperature <= tempcheck)
+	if(protection_of(src).min_cold && protection_of(src).min_cold <= tempcheck)
 		. = TRUE
 
 /obj/item/clothing/proc/handle_high_temperature(tempcheck = T20C)
@@ -151,19 +150,19 @@ DECLARE_SHARED_CACHE_EX(item_stain_images, GLOBAL_PROC_REF(build_item_stain_imag
 			if(C.handle_high_temperature(tempcheck))
 				. = TRUE
 
-	if(max_heat_protection_temperature && max_heat_protection_temperature >= tempcheck)
+	if(protection_of(src).max_heat && protection_of(src).max_heat >= tempcheck)
 		. = TRUE
 
 // Returns the relative flag-vars for covered protection.
 /obj/item/clothing/proc/get_cold_protection_flags()
-	. = cold_protection
+	. = protection_of(src).cold_parts
 
 	if(LAZYLEN(accessories))
 		for(var/obj/item/clothing/C in accessories)
 			. |= C.get_cold_protection_flags()
 
 /obj/item/clothing/proc/get_heat_protection_flags()
-	. = heat_protection
+	. = protection_of(src).heat_parts
 
 	if(LAZYLEN(accessories))
 		for(var/obj/item/clothing/C in accessories)
@@ -317,7 +316,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 	gender = PLURAL //Carn: for grammarically correct text-parsing
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/hands/item.dmi'
-	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
 	var/obj/item/cell/cell = 0 // owned: the installed power cell, kept in the gloves' contents
@@ -330,8 +328,6 @@ CAPABILITIES(/obj/item/clothing/ears)
 	var/overgloves = 0							//Used by gauntlets and arm_guards
 	var/punch_force = 0							//How much damage do these gloves add to a punch?
 	var/punch_injury_kind						//What punches in these gloves inflict (INJURY_*); null = the punch's own kind.
-	heat_protection = HANDS
-	cold_protection = HANDS
 	body_parts_covered = HANDS
 	slot_flags = SLOT_GLOVES
 	attack_verb = list("challenged")
@@ -348,6 +344,7 @@ CAPABILITIES(/obj/item/clothing/ears)
 		|ACCESSORY_SLOT_WRIST)
 
 CAPABILITIES(/obj/item/clothing/gloves)
+	configure(item_protection(siemens = 0.9, heat_parts = HANDS, cold_parts = HANDS))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_GLOVES, pickup = SFX_ITEMS_PICKUP_GLOVES))
 	owns_one(nameof(gloves), /obj/item/clothing/gloves)
 	owns_one(nameof(ring), /obj/item/clothing/accessory)
@@ -430,13 +427,13 @@ CAPABILITIES(/obj/item/clothing/gloves)
 	w_class = ITEMSIZE_TINY
 	icon = 'icons/inventory/hands/item.dmi'
 	gender = NEUTER
-	siemens_coefficient = 1
 	glove_level = 1
 	fingerprint_chance = 100
 	punch_force = 2
 	body_parts_covered = 0
 
 CAPABILITIES(/obj/item/clothing/gloves/ring)
+	configure(item_protection(siemens = 1))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_RING, pickup = SFX_ITEMS_PICKUP_RING))
 
 ///////////////////////////////////////////////////////////////////////
@@ -451,8 +448,6 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 		slot_r_hand_str = 'icons/mob/items/righthand_hats.dmi',
 		)
 	body_parts_covered = HEAD
-	heat_protection = HEAD
-	cold_protection = HEAD
 	slot_flags = SLOT_HEAD
 	w_class = ITEMSIZE_SMALL
 	blood_sprite_state = "helmetblood"
@@ -469,6 +464,7 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 	helmet_handling = TRUE
 
 CAPABILITIES(/obj/item/clothing/head)
+	configure(item_protection(heat_parts = HEAD, cold_parts = HEAD))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_HAT, pickup = SFX_ITEMS_PICKUP_HAT))
 	op("head_light_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Head light self"), then(PROC_REF(head_light_self)))
 	op("head_robot_pick_up", remote(), when(req(/mob/living/silicon/robot, of = ON_ACTOR)), priority(OP_PRIORITY_DEFAULT - 1), label("Pick up hat"), then(PROC_REF(head_robot_pick_up)))
@@ -557,8 +553,6 @@ CAPABILITIES(/obj/item/clothing/head)
 		slot_l_hand_str = 'icons/mob/items/lefthand_masks.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand_masks.dmi',
 		)
-	heat_protection = FALSE //No heat protection anywhere
-	cold_protection = FALSE //No heat protection anywhere
 	slot_flags = SLOT_MASK
 	body_parts_covered = HEAD|FACE|EYES
 	blood_sprite_state = "maskblood"
@@ -585,6 +579,7 @@ CAPABILITIES(/obj/item/clothing/head)
 	var/list/say_verbs
 
 CAPABILITIES(/obj/item/clothing/mask)
+	configure(item_protection(heat_parts = FALSE, cold_parts = FALSE))
 	configure(item_sounds(drop = SFX_GENERIC_DROP, pickup = SFX_GENERIC_PICKUP))
 
 
@@ -607,10 +602,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 		)
 	desc = "Comfortable-looking shoes."
 	gender = PLURAL //Carn: for grammarically correct text-parsing
-	siemens_coefficient = 0.9
 	body_parts_covered = FEET
-	heat_protection = FEET
-	cold_protection = FEET
 	slot_flags = SLOT_FEET
 	blood_sprite_state = "shoeblood"
 
@@ -627,7 +619,6 @@ CAPABILITIES(/obj/item/clothing/mask)
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
-	permeability_coefficient = 0.50
 	slowdown = SHOES_SLOWDOWN
 	force = 2
 	var/overshoes = 0
@@ -644,6 +635,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 MSG_DEF_SELF(shoes/layer_locked, "It cannot be worn above your suit.")
 
 CAPABILITIES(/obj/item/clothing/shoes)
+	configure(item_protection(siemens = 0.9, heat_parts = FEET, cold_parts = FEET, permeability = 0.50))
 	configure(item_sounds(drop = SFX_ITEMS_DROP_SHOES, pickup = SFX_ITEMS_PICKUP_SHOES))
 	// A micro climbing out of the shoes (container_resist()): they are inside them, so what is kept is that the shoes stay where they were and the micro stays put.
 	op("micro_climb_out", ai(), needs(req_capable()), wait(5 SECONDS, keeps = HELD | TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(micro_climbed_out)))
@@ -656,17 +648,11 @@ CAPABILITIES(/obj/item/clothing/shoes)
 	op("shoes_shake_out_self", in_hand(), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes shake out self"), then(PROC_REF(shoes_shake_out_self)))
 	op("shoes_stuff_item", item(/obj/item), priority(OP_PRIORITY_DEFAULT - 2), label("Shoes stuff item"), then(PROC_REF(shoes_stuff_item)))
 	op("shoes_toggle_layer_verb", menu(), label("Switch Shoe Layer"), needs(carried(), req_not(req_is(nameof(shoes_under_pants), -1), because = MSG(shoes/layer_locked))), then(PROC_REF(shoes_toggle_layer_verb)))
-	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req_bool(PROC_REF(pred_holding_knife_holds), because = PROC_REF(pred_holding_knife_refusal))), then(PROC_REF(shoes_draw_knife_verb)))
+	op("shoes_draw_knife_verb", menu(), label("Draw Boot Knife"), needs(carried(), req(PROC_REF(pred_holding_knife_holds))), then(PROC_REF(shoes_draw_knife_verb)))
 
-/// Requirement (was REQ_ON pred_holding_knife): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/clothing/shoes/proc/pred_holding_knife_holds(datum/act/op/A)
-	var/answer = pred_holding_knife(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_holding_knife refuses: the legacy check text, else the clause reason.
-/obj/item/clothing/shoes/proc/pred_holding_knife_refusal(datum/act/op/A)
-	var/answer = pred_holding_knife(A.actor, src, A.held)
-	return istext(answer) ? answer : "there is no knife in it"
+	return holding ? null : "there is no knife in it"
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -685,10 +671,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	var/mob/user = A.actor
 	if(isliving(user))
 		draw_knife(user)
-
-/// Requirement: a knife is tucked in these shoes.
-/obj/item/clothing/shoes/proc/pred_holding_knife(mob/actor, atom/target, obj/item/held)
-	return !!holding
 
 /obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	if(user.stat || user.restrained() || user.incapacitated())
@@ -921,11 +903,8 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/suit/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/suit/mob_werebeast.dmi')
-	max_heat_protection_temperature = T0C+100
 	armor_spec = ""
 	slot_flags = SLOT_OCLOTHING
-	heat_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
-	cold_protection = ARMS|LEGS|CHEST //At a minimum. Some might be more covering or less covering!
 	var/blood_overlay_type = "suit"
 	blood_sprite_state = "suitblood" //Defaults to the suit's blood overlay, so that some blood renders instead of no blood.
 
@@ -940,7 +919,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	actions_types = list()
 
 	var/taurized = FALSE
-	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	preserve_item = 1
 
@@ -958,6 +936,7 @@ TRACKED(/obj/item/clothing/suit, hood_up)
 TRACKED(/obj/item/clothing/suit, toggleicon)
 
 CAPABILITIES(/obj/item/clothing/suit)
+	configure(item_protection(max_heat = T0C+100, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST, siemens = 0.9))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	owns_one(nameof(hood), /obj/item/clothing/head)
 
@@ -1077,10 +1056,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 		)
 	name = "under"
 	body_parts_covered = ARMS|LEGS|ARMS
-	permeability_coefficient = 0.90
 	slot_flags = SLOT_ICLOTHING
-	heat_protection = ARMS|LEGS|CHEST
-	cold_protection = ARMS|LEGS|CHEST
 	armor_spec = ""
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
@@ -1139,24 +1115,21 @@ MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")
 
 CAPABILITIES(/obj/item/clothing/under)
+	configure(item_protection(permeability = 0.90, heat_parts = ARMS|LEGS|CHEST, cold_parts = ARMS|LEGS|CHEST))
 	configure(item_sounds(equip = SFX_ITEMS_JUMPSUIT_EQUIP))
 	op("under_worn_hand", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Under worn hand"), then(PROC_REF(under_worn_hand)))
 	op("under_toggle_verb", menu(), label("Toggle Suit Sensors"), needs(carried()), then(PROC_REF(under_toggle_verb)))
 	op("under_rollsuit_verb", menu(), label("Roll Down Jumpsuit"), needs(carried(), req_not(req_is(nameof(rolled_down), -1), because = MSG(under/no_roll_down))), then(PROC_REF(under_rollsuit_verb)))
 	op("under_rollsleeves_verb", menu(), label("Roll Up Sleeves"), needs(carried(), req_not(req_is(nameof(rolled_sleeves), -1), because = MSG(under/no_roll_sleeves))), then(PROC_REF(under_rollsleeves_verb)))
-	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req_bool(PROC_REF(pred_has_holster_holds), because = PROC_REF(pred_has_holster_refusal))), then(PROC_REF(under_holster_verb)))
+	op("under_holster_verb", menu(), label("Holster"), needs(carried(), req(PROC_REF(pred_has_holster_holds))), then(PROC_REF(under_holster_verb)))
 
 
 
-/// Requirement (was REQ_ON pred_has_holster): the legacy check answers TRUE to pass.
+/// Native requirement: return null or the component refusal.
 /obj/item/clothing/under/proc/pred_has_holster_holds(datum/act/op/A)
-	var/answer = pred_has_holster(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why pred_has_holster refuses: the legacy check text, else the clause reason.
-/obj/item/clothing/under/proc/pred_has_holster_refusal(datum/act/op/A)
-	var/answer = pred_has_holster(A.actor, src, A.held)
-	return istext(answer) ? answer : "it has no holster"
+	for(var/obj/item/clothing/accessory/holster/H in accessories)
+		return null
+	return "it has no holster"
 
 
 /// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
@@ -1166,12 +1139,6 @@ CAPABILITIES(/obj/item/clothing/under)
 /// Requirement: the sleeves can be rolled (replaces removing the verb at Initialize).
 /obj/item/clothing/under/proc/pred_can_roll_sleeves(mob/actor, atom/target, obj/item/held)
 	return rolled_sleeves != -1
-
-/// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
-/obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
-	for(var/obj/item/clothing/accessory/holster/H in accessories)
-		return TRUE
-	return FALSE
 
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
 /obj/item/clothing/under/proc/under_holster_verb(datum/act/op/A)
@@ -1377,8 +1344,8 @@ CAPABILITIES(/obj/item/clothing/under)
 	if(rolled_down)
 		body_parts_covered = initial(body_parts_covered)
 		body_parts_covered &= ~(UPPER_TORSO|ARMS)
-		heat_protection &= ~(UPPER_TORSO|ARMS)
-		cold_protection &= ~(UPPER_TORSO|ARMS)
+		protection_of(src).heat_parts &= ~(UPPER_TORSO|ARMS)
+		protection_of(src).cold_parts &= ~(UPPER_TORSO|ARMS)
 		if(icon_exists(rolled_down_icon, worn_state))
 			icon_override = rolled_down_icon
 			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1388,8 +1355,8 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You roll down your [src]."))
 	else
 		body_parts_covered = initial(body_parts_covered)
-		heat_protection = initial(heat_protection)
-		cold_protection = initial(cold_protection)
+		set_heat_protection(protection_of_type(type).heat_parts)
+		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1414,8 +1381,8 @@ CAPABILITIES(/obj/item/clothing/under)
 	rolled_sleeves = !rolled_sleeves
 	if(rolled_sleeves)
 		body_parts_covered &= ~(ARMS)
-		heat_protection &= ~(ARMS)
-		cold_protection &= ~(ARMS)
+		protection_of(src).heat_parts &= ~(ARMS)
+		protection_of(src).cold_parts &= ~(ARMS)
 		if(icon_exists(rolled_down_sleeves_icon, worn_state))
 			icon_override = rolled_down_sleeves_icon
 			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
@@ -1424,8 +1391,8 @@ CAPABILITIES(/obj/item/clothing/under)
 		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
 		body_parts_covered = initial(body_parts_covered)
-		heat_protection = initial(heat_protection)
-		cold_protection = initial(cold_protection)
+		set_heat_protection(protection_of_type(type).heat_parts)
+		set_cold_protection(protection_of_type(type).cold_parts)
 		if(icon_override == rolled_down_sleeves_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)

@@ -1,0 +1,5 @@
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Rename food (refused: You can't cook!)
+ghost|none menu: Set transfer amount
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none click: nothing

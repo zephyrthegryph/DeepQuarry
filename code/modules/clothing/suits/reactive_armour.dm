@@ -171,7 +171,6 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 /obj/item/clothing/suit/armor/reactive/tesla
 	name = "reactive tesla armor"
 	desc = "An experimental suit of armor with sensitive detectors hooked up to a huge capacitor grid, with emitters strutting out of it. Zap."
-	siemens_coefficient = -1
 	cooldown_message = span_danger("The tesla capacitors on the reactive tesla armor are still recharging! The armor merely emits some sparks.")
 	emp_message = span_warning("The tesla capacitors beep ominously for a moment.")
 	clothing_traits = list(TRAIT_TESLA_SHOCKIMMUNE)
@@ -179,6 +178,9 @@ CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
 	var/zap_power = 2.5e4
 	/// How far to the zaps we give off go?
 	var/zap_range = 20
+
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive/tesla)
+	configure(item_protection(siemens = -1))
 
 /obj/item/clothing/suit/armor/reactive/tesla/cooldown_activation(mob/living/carbon/human/owner)
 	fx_sparks(src, 1)

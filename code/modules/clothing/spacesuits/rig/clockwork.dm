@@ -10,7 +10,6 @@
 	offline_slowdown = 4
 	offline_vision_restriction = 1
 	emp_protection = 40
-	siemens_coefficient= 0.75
 	rigsuit_max_pressure = 8 * ONE_ATMOSPHERE
 	rigsuit_min_pressure = 0
 
@@ -28,6 +27,9 @@
 
 	req_access = list()
 	req_one_access = list()
+
+CAPABILITIES(/obj/item/rig/ch/clockwork)
+	configure(item_protection(siemens = 0.75))
 
 TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_MINING, POCKET_ENGINEERING, POCKET_HEAVYTOOLS, POCKET_BAYSUIT,  /obj/item/storage/backpack, /obj/item/ratvarian_spear \
 		))))
@@ -50,7 +52,9 @@ TYPE_TABLE(/obj/item/rig/ch/clockwork, suit_storage_spec, list(HOLD_ONLY(list(PO
 	icon_state = "clockwork_rig"
 
 	desc = "Heavy, shock-resistant gauntlets with brass reinforcement."
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/gloves/gauntlets/rig/ch/clockwork)
+	configure(item_protection(siemens = 0))
 
 /obj/item/clothing/shoes/magboots/rig/ch/clockwork
 	name = "treads"

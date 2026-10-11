@@ -5,14 +5,13 @@
 	item_state = "ertsuit"
 	armor_spec = "melee=65;bullet=55;laser=55;energy=15;bomb=50;bio=100;rad=100;cold=60"
 	slowdown = 0.5
-	siemens_coefficient = 0.5
 	default_worn_icon = 'icons/inventory/suit/mob.dmi'
 	w_class = ITEMSIZE_NORMAL //the mark vii packs itself down when not in use, thanks future-materials
 	breach_threshold = 16 //Extra Thicc
 	resilience = 0.05 //Military Armor
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15* ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
+
+CAPABILITIES(/obj/item/clothing/suit/space/void/responseteam)
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
@@ -67,7 +66,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 
 // Overrides the voidsuit screwdriver so people can't remove the helmet: it offers boots, tank and cooling unit.
 /obj/item/clothing/suit/space/void/responseteam/has_removable_component(datum/act/op/A)
-	return !!(boots || tank || cooler)
+	return (!!(boots || tank || cooler)) ? null : MSG(void/nothing_installed)
 
 /obj/item/clothing/suit/space/void/responseteam/removable_components(datum/act/A)
 	var/list/choices = list()
@@ -82,19 +81,16 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/responseteam, suit_storage_spec, l
 	icon_state = "erthelmet"
 	item_state = "erthelmet"
 	armor_spec = "melee=60;bullet=50;laser=30;energy=15;bomb=30;bio=100;rad=100;cold=60"
-	siemens_coefficient = 0.5
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
 	var/away_planes = null
 	plane_slots = list(SLOT_ID_HEAD)
 	var/hud_active = 1
 	var/activation_sound = SFX_ITEMS_NIF_CLICK
-	min_pressure_protection = 0 * ONE_ATMOSPHERE
-	max_pressure_protection = 15* ONE_ATMOSPHERE
-	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/responseteam, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI,SPECIES_ALTEVIAN))))
 
 CAPABILITIES(/obj/item/clothing/head/helmet/space/void/responseteam)
+	configure(item_protection(siemens = 0.5, min_pressure = 0 * ONE_ATMOSPHERE, max_pressure = 15* ONE_ATMOSPHERE, max_heat = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000))
 	op("responseteam_toggle_verb", menu(), label("Toggle Mark 7 Suit HUD"), needs(carried()), then(PROC_REF(responseteam_toggle_verb)))
 
 /// Old verb "Toggle Mark 7 Suit HUD".

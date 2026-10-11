@@ -6,4 +6,6 @@
 /obj/item/clothing/suit/storage/toggle/bomber/pilot
 	name = "pilot jacket"
 	desc = "A thick, blue bomber jacket."
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
+
+CAPABILITIES(/obj/item/clothing/suit/storage/toggle/bomber/pilot)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))

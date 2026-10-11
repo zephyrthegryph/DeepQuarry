@@ -136,11 +136,11 @@ CAPABILITIES(/obj/item/clothing/mask/smokable)
 	configure(item_sounds(drop = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF))
 	reagents(nameof(chem_volume))
 	every(2 SECONDS, then(PROC_REF(smokable_step)), when = nameof(lit))
-	op("item_applied", item(/obj/item), passes(), when(req_bool(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
+	op("item_applied", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_applied)))
 
 /// A click with the held item on itself is the in-hand use, not an item applied to it.
 /obj/item/clothing/mask/smokable/proc/held_is_another(datum/act/op/A)
-	return A.held != src
+	return (A.held != src) ? null : /datum/msg/req_failed
 
 /// What it shows now, as a suffix of its base state: burning, partly smoked (a pipe stays as it is), or as new.
 /obj/item/clothing/mask/smokable/proc/state_suffix()
@@ -762,7 +762,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -969,7 +969,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1033,7 +1033,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		add_attack_logs(user,M,"Lit on fire with [src]")
 		return ITEM_INTERACT_SUCCESS
 
-	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if(istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if(M == user)
 			cig.attackby(src, user)
@@ -1196,7 +1196,7 @@ CAPABILITIES(/obj/item/flame/lighter)
 		M.ignite_mob()
 		add_attack_logs(user, M, "Lit on fire with [src]")
 
-	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && user.zone_sel.selecting == O_MOUTH && lit)
+	if (istype(M.get_equipped_item(SLOT_ID_MASK), /obj/item/clothing/mask/smokable/cigarette) && hud_of(user)?.zone_sel?.selecting == O_MOUTH && lit)
 		var/obj/item/clothing/mask/smokable/cigarette/cig = M.get_equipped_item(SLOT_ID_MASK)
 		if (M == user)
 			cig.attackby(src, user)

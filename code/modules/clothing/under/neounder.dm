@@ -348,7 +348,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_red_skirt
 	name = "red security skirt"
@@ -357,7 +359,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_red_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red
 	name = "warden's red suit"
@@ -366,7 +370,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_red_skirt
 	name = "warden's red skirt"
@@ -375,7 +381,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_red_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red
 	name = "head of security's red jumpsuit"
@@ -384,7 +392,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_red_skirt
 	name = "head of security's red skirt"
@@ -393,7 +403,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_red_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred
 	name = "head of security's red turtleneck"
@@ -402,7 +414,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackred_skirt
 	name = "head of security's red skirtleneck"
@@ -411,7 +425,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackred_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade
 	name = "head of security's red parade uniform"
@@ -420,7 +436,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_fem
 	name = "head of security's femme red parade uniform"
@@ -429,7 +447,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_fem)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_blue
 	name = "blue security jumpsuit"
@@ -438,7 +458,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit
 	name = "white security suit"
@@ -447,7 +469,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_suit_blue
 	name = "blue security suit"
@@ -456,7 +480,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_suit_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_warden_blue
 	name = "warden's blue suit"
@@ -465,7 +491,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_warden_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blue
 	name = "head of security's blue suit"
@@ -474,7 +502,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue
 	name = "head of security's blue turtleneck"
@@ -483,7 +513,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_blackblue_skirt
 	name = "head of security's blue skirtleneck"
@@ -492,7 +524,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_blackblue_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue
 	name = "head of security's blue parade uniform"
@@ -501,7 +535,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_hos_parade_blue_fem
 	name = "head of security's femme blue parade uniform"
@@ -510,7 +546,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_hos_parade_blue_fem)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red
 	name = "red security turtleneck"
@@ -519,7 +557,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_red_skirt
 	name = "red security skirtleneck"
@@ -528,7 +568,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_red_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue
 	name = "blue security turtleneck"
@@ -537,7 +579,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt
 	name = "blue security skirtleneck"
@@ -546,7 +590,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_sec_turtle_blue_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections
 	name = "corrections officer suit"
@@ -555,7 +601,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_corrections_skirt
 	name = "corrections officer skirt"
@@ -564,7 +612,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_corrections_skirt)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_runner
 	name = "runner's turtleneck"
@@ -573,7 +623,9 @@ this file deals with uniforms/under. */
 	rolled_sleeves = -1
 	rolled_down = -1
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_runner)
+	configure(item_protection(siemens = 0.9))
 
 // Cargo
 
@@ -840,8 +892,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_med"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_med)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_skirt
 	name = "doctor's jumpskirt"
@@ -849,8 +903,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_med_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_med_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo
 	name = "CMO's jumpsuit"
@@ -858,8 +914,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_cmo"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_skirt
 	name = "CMO's jumpskirt"
@@ -867,8 +925,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_cmo_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle
 	name = "CMO's turtleneck"
@@ -876,8 +936,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_cmo_turtle"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_cmo_turtle_skirt
 	name = "CMO's turtleskirt"
@@ -885,8 +947,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_cmo_turtle_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_cmo_turtle_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro
 	name = "virologist's jumpsuit"
@@ -894,8 +958,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_viro"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_viro)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_viro_skirt
 	name = "virologist's jumpskirt"
@@ -903,8 +969,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_viro_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_viro_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem
 	name = "chemist's jumpsuit"
@@ -912,8 +980,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_chem"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chem)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_chem_skirt
 	name = "chemist's jumpskirt"
@@ -921,8 +991,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_chem_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_chem_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para
 	name = "paramedic's jumpsuit"
@@ -930,8 +1002,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_para"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_para)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_skirt
 	name = "paramedic's jumpskirt"
@@ -939,8 +1013,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_para_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_para_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light
 	name = "paramedic's light jumpsuit"
@@ -948,8 +1024,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_para_light"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_para_light_skirt
 	name = "paramedic's light jumpskirt"
@@ -957,8 +1035,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_para_light_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_para_light_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma
 	name = "pharmacist's jumpsuit"
@@ -966,8 +1046,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_pharma"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_pharma_skirt
 	name = "pharmacist's jumpskirt"
@@ -975,8 +1057,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_pharma_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_pharma_skirt)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark
 	name = "dark medical jumpsuit"
@@ -984,8 +1068,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_med_dark"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_med_dark_skirt
 	name = "dark medical jumpskirt"
@@ -993,8 +1079,10 @@ this file deals with uniforms/under. */
 	icon_state = "neo_med_dark_skirt"
 	rolled_sleeves = -1
 	rolled_down = -1
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_med_dark_skirt)
+	configure(item_protection(permeability = 0.50))
 
 // Neo Gorkas
 
@@ -1039,15 +1127,19 @@ this file deals with uniforms/under. */
 	name = "security officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. For officers who expect to be patrolling in harsh conditions. It has a tag denoting it's made by Total Gear & Co."
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec)
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/sec)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/hos
 	name = "head of security's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Favoured by the Head of Security who wants to stay dry no matter what. It has a tag denoting it's made by Total Gear & Co."
 	armor_spec = "melee=10"
-	siemens_coefficient = 0.9
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/sec,/obj/item/clothing/accessory/gorka/rank)
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/hos)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/under/rank/neo_gorka/cargo
 	name = "cargo tech's gorka"
@@ -1084,13 +1176,17 @@ this file deals with uniforms/under. */
 /obj/item/clothing/under/rank/neo_gorka/med
 	name = "medical staff gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. A popular choice among paramedical personnel. It has a tag denoting it's made by Total Gear & Co."
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med)
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/med)
+	configure(item_protection(permeability = 0.50))
 
 /obj/item/clothing/under/rank/neo_gorka/cmo
 	name = "chief medical officer's gorka"
 	desc = "A rugged weather-resistant uniform made of ripstop fabric. Why worry about stains when everything slides right off? It has a tag denoting it's made by Total Gear & Co."
-	permeability_coefficient = 0.50
 	armor_spec = "bio=10"
 	starting_accessories = list(/obj/item/clothing/accessory/gorka/department/med,/obj/item/clothing/accessory/gorka/rank)
+
+CAPABILITIES(/obj/item/clothing/under/rank/neo_gorka/cmo)
+	configure(item_protection(permeability = 0.50))

@@ -29,7 +29,7 @@
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(!affecting)
 			balloon_alert(user, "no body part there to work on!")
@@ -257,7 +257,7 @@ CAPABILITIES(/obj/item/stack/medical)
 
 	if (ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(affecting.open)
 			balloon_alert(user, "the [affecting.name] is cut open!")
@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/stack/medical/bruise_pack)
 
 	if (ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(affecting.open)
 			balloon_alert(user, "the [affecting.name] is cut open!")
@@ -322,7 +322,7 @@ CAPABILITIES(/obj/item/stack/medical/bruise_pack)
 
 	if (ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(affecting.open)
 			user.balloon_alert(user, "the [affecting.name] is cut open!")
@@ -380,7 +380,7 @@ CAPABILITIES(/obj/item/stack/medical/ointment)
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(affecting.open)
 			balloon_alert(user, "the [affecting.name] is cut open!")
@@ -410,7 +410,7 @@ CAPABILITIES(/obj/item/stack/medical/ointment)
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 
 		if(affecting.open)
 			user.balloon_alert(user, "the [affecting.name] is cut open!")
@@ -468,7 +468,7 @@ TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, 
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		var/obj/item/organ/external/affecting = H.get_organ(user.zone_sel.selecting)
+		var/obj/item/organ/external/affecting = H.get_organ(hud_of(user)?.zone_sel?.selecting)
 		var/limb = affecting.name
 		if(!(affecting.organ_tag in TYPE_TABLE_GET(src, splint_organs)))
 			balloon_alert(user, "you can't use \the [src] to apply a splint there!")

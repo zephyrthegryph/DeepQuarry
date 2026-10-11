@@ -100,7 +100,7 @@
 					log_vore("[attacker] attempted to feed [G?.grab_target()] to [user] ([user.type]) but it failed.")
 
 			///// If user clicked on their grabbed target
-			else if((src == G?.grab_target()) && (stance == I_GRAB) && (attacker.zone_sel.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
+			else if((src == G?.grab_target()) && (stance == I_GRAB) && (hud_of(attacker)?.zone_sel?.selecting == BP_TORSO) && (is_vore_predator(G?.grab_target())))
 				if(istype(victim) && !victim.client && !victim.ai_brain) //Check whether the victim is: A carbon mob, has no client, but has a ckey. This should indicate an SSD player.
 					log_and_message_admins("attempted to force feed themselves to [key_name_admin(G?.grab_target())] whilst they were AFK ([G?.grab_target() ? ADMIN_JMP(victim) : "null"])", attacker)
 				if(!victim.feeding)
@@ -166,7 +166,7 @@
 		if(stance != I_HELP)
 			return FALSE
 
-		var/hit_zone = attacker.zone_sel.selecting
+		var/hit_zone = hud_of(attacker)?.zone_sel?.selecting
 
 		var/obj/item/organ/external/affecting = get_organ(hit_zone)
 		if(!affecting || affecting.is_stump())

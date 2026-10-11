@@ -549,10 +549,10 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 		return TRUE
 	if(has_trait(src, TRAIT_RESISTHEAT) || has_trait(src, TRAIT_RESISTHEATHANDS))
 		return TRUE
-	if(get_equipped_item(SLOT_ID_GLOVES)?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
+	if(protection_of(get_equipped_item(SLOT_ID_GLOVES)).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
 	for(var/obj/item/clothing/clothing in get_worn_clothing())
-		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))
+		if(protection_of(clothing).max_heat >= BURNING_ITEM_MINIMUM_TEMPERATURE && (protection_of(clothing).heat_parts & HANDS) && (clothing.body_parts_covered & HANDS))
 			return TRUE
 	return FALSE
 

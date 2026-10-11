@@ -301,13 +301,13 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 /datum/body_effect/redsight/on_start(mob/living/L)
 	L.see_invisible = 60
 	L.set_see_invisible_default(60)
-	L.vis_enabled += VIS_GHOSTS
+	hud_of(L)?.vis_enabled += VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/redsight/on_end(mob/living/L, expired)
 	L.set_see_invisible_default(initial(L.see_invisible_default))
 	L.see_invisible = L.see_invisible_default
-	L.vis_enabled -= VIS_GHOSTS
+	hud_of(L)?.vis_enabled -= VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/redsight/can_apply(mob/living/L)

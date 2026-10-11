@@ -2,49 +2,44 @@
 @obj robot|none
 @obj.item ai|none
 @obj.item ghost|none
-@obj.item.toy human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
-@obj.item.toy human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
-@obj.item.toy human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
-@obj.item.toy human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
-@obj.item.toy human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
-@obj.item.toy human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Pick up
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Pick up
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Pick up
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Pick up
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Pick up
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Pick up
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Pick up
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Pick up
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Pick up
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Pick up
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Pick up
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Pick up
 @obj.item.toy human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +2 menu: Pick up
 +4 click: Click: Pick up
-@obj.item.toy human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+1 menu: Pick up
-+3 click: Click: Pick up
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Pick up
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Pick up
 @obj.item.toy human|/obj/item/card/id
--menu: Use
--click: Click: Use
+-menu: Item
+-menu: Name Plushie (refused: You can't do that.)
+-click: Click: Item
 +1 menu: Pick up
 +4 click: Click: Pick up
 @obj.item.toy human|/obj/item/kit

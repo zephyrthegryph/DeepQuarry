@@ -254,29 +254,29 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
 /mob/living/silicon/proc/toggle_sensor_mode() // to make borgs use omni starts here - Tank, clueless bird
 	if(sensor_type)
-		if(plane_holder)
+		if(hud_used?.plane_holder)
 			//Enable the planes, its basically just AR-Bs
-			plane_holder.set_vis(VIS_CH_ID,TRUE)
-			plane_holder.set_vis(VIS_CH_WANTED,TRUE)
-			plane_holder.set_vis(VIS_CH_IMPLOYAL,TRUE) //antag related so prob not useful but leaving them in
-			plane_holder.set_vis(VIS_CH_IMPTRACK,TRUE)
-			plane_holder.set_vis(VIS_CH_IMPCHEM,TRUE)
-			plane_holder.set_vis(VIS_CH_STATUS_R,TRUE)
-			plane_holder.set_vis(VIS_CH_HEALTH_VR,TRUE)
-			plane_holder.set_vis(VIS_CH_BACKUP,TRUE) //backup stuff from silicon_vr is here now
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,TRUE) //antag related so prob not useful but leaving them in
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,TRUE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,TRUE) //backup stuff from silicon_vr is here now
 			return TRUE
 
 	else
-		if(plane_holder)
+		if(hud_used?.plane_holder)
 			//Disable the planes
-			plane_holder.set_vis(VIS_CH_ID,FALSE)
-			plane_holder.set_vis(VIS_CH_WANTED,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPLOYAL,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPTRACK,FALSE)
-			plane_holder.set_vis(VIS_CH_IMPCHEM,FALSE)
-			plane_holder.set_vis(VIS_CH_STATUS_R,FALSE)
-			plane_holder.set_vis(VIS_CH_HEALTH_VR,FALSE)
-			plane_holder.set_vis(VIS_CH_BACKUP,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_ID,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_WANTED,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPLOYAL,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPTRACK,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_IMPCHEM,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR,FALSE)
+			hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP,FALSE)
 			return FALSE
 
 //hudmode = sensor_type //This is checked in examine.dm on humans, so they can see medical/security records depending on mode

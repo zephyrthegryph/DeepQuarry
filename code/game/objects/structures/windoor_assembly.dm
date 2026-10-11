@@ -95,7 +95,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
 	owns_one(nameof(electronics), /obj/item)
 	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
-	op("rename_robot", hand(), label("Rename"), when(req_bool(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
 	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped)))
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down))))
 	param(nameof(start_dir), pos = 1)
@@ -111,7 +111,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 /// Drones and engineering borgs next to it rename it.
 /obj/structure/windoor_assembly/proc/robot_may_rename(datum/act/op/A)
 	var/mob/living/silicon/robot/user = A.actor
-	return istype(user) && user.module?.names_assemblies
+	return (istype(user) && user.module?.names_assemblies) ? null : MSG(req_failed)
 
 /obj/structure/windoor_assembly/proc/secured_down(datum/act/op/A)
 	to_chat(A.actor, span_notice("You've secured the windoor assembly!"))

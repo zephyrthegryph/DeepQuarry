@@ -68,12 +68,6 @@ human|/obj/item/shovel menu: Take a present
 human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/shovel menu: Use
 human|/obj/item/shovel click: Click: Use
-human|/obj/item/stack menu: Hit
-human|/obj/item/stack menu: Move To Top
-human|/obj/item/stack menu: Repair (refused: )
-human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack menu: Use
-human|/obj/item/stack click: Click: Repair
 human|/obj/item/stack/cable_coil menu: Hit
 human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top

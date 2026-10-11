@@ -1,17 +1,11 @@
-@obj.item.clothing human|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+@obj.item.clothing.mask human|none
 +1 menu: HALT! (refused: You can't do that.)
 +4 menu: Select gas mask phrase (refused: You can't do that.)
 +5 menu: Select phrase
-+8 click: Click: Use
-@obj.item.clothing robot|none
--menu: Accessory attached hand
--click: Click: Accessory attached hand
+@obj.item.clothing.mask robot|none
 +2 menu: HALT! (refused: You can't do that.)
 +5 menu: Select gas mask phrase (refused: You can't do that.)
 +6 menu: Select phrase
-+9 click: Click: Use
 @obj.item ai|none
 @obj.item ghost|none
 +0 menu: HALT! (refused: You can't do that.)

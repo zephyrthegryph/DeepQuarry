@@ -32,15 +32,15 @@
 	if(client && hud_used)
 		switch(instability)
 			if(0 to 10)
-				wiz_instability_display.icon_state = "instability-1"
+				hud_used?.wiz_instability_display?.icon_state = "instability-1"
 			if(10 to 30)
-				wiz_instability_display.icon_state = "instability0"
+				hud_used?.wiz_instability_display?.icon_state = "instability0"
 			if(30 to 50)
-				wiz_instability_display.icon_state = "instability1"
+				hud_used?.wiz_instability_display?.icon_state = "instability1"
 			if(50 to 100)
-				wiz_instability_display.icon_state = "instability2"
+				hud_used?.wiz_instability_display?.icon_state = "instability2"
 			if(100 to 200)
-				wiz_instability_display.icon_state = "instability3"
+				hud_used?.wiz_instability_display?.icon_state = "instability3"
 
 // Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.

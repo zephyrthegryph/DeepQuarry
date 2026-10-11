@@ -345,7 +345,7 @@ TRACKED(/obj/machinery/magnetic_controller, path_stopped)
 MSG_DEF_SELF(magnet/path_unavailable, "The magnetic controller is not working.")
 
 /obj/machinery/magnetic_controller/proc/path_prompt_ready(datum/act/op/A)
-	return A.actor && operable()
+	return (A.actor && operable()) ? null : MSG(magnet/path_unavailable)
 
 /obj/machinery/magnetic_controller/proc/path_prompt_default(datum/act/op/A)
 	return path

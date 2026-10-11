@@ -644,31 +644,31 @@ GLOBAL_LIST_INIT(organ_rel_size, list(
 //Recalculates what planes this mob can see using their plane_holder, for humans this is checking slots, for others, could be whatever.
 /mob/proc/recalculate_vis()
 	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // vision gear toggled: the sight reaction re-reads it
-	if(!plane_holder || !vis_enabled)
+	if(!hud_used?.plane_holder || !hud_used?.vis_enabled)
 		return
 	var/stomach_vision = client?.prefs.read_preference(/datum/preference/toggle/tummy_sprites)
-	if(stomach_vision && !(VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,TRUE)
-		vis_enabled += VIS_CH_STOMACH
-	else if(!stomach_vision && (VIS_CH_STOMACH in vis_enabled))
-		plane_holder.set_vis(VIS_CH_STOMACH,FALSE)
-		vis_enabled -= VIS_CH_STOMACH
+	if(stomach_vision && !(VIS_CH_STOMACH in hud_used?.vis_enabled))
+		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,TRUE)
+		hud_used?.vis_enabled += VIS_CH_STOMACH
+	else if(!stomach_vision && (VIS_CH_STOMACH in hud_used?.vis_enabled))
+		hud_used?.plane_holder?.set_vis(VIS_CH_STOMACH,FALSE)
+		hud_used?.vis_enabled -= VIS_CH_STOMACH
 
 	if(vantag_hud)
-		if(!(VIS_CH_VANTAG in vis_enabled))
-			plane_holder.set_vis(VIS_CH_VANTAG,TRUE)
-			vis_enabled += VIS_CH_VANTAG
+		if(!(VIS_CH_VANTAG in hud_used?.vis_enabled))
+			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,TRUE)
+			hud_used?.vis_enabled += VIS_CH_VANTAG
 	else
-		if(VIS_CH_VANTAG in vis_enabled)
-			plane_holder.set_vis(VIS_CH_VANTAG,FALSE)
-			vis_enabled -= VIS_CH_VANTAG
+		if(VIS_CH_VANTAG in hud_used?.vis_enabled)
+			hud_used?.plane_holder?.set_vis(VIS_CH_VANTAG,FALSE)
+			hud_used?.vis_enabled -= VIS_CH_VANTAG
 
 	if(soulgem?.flag_check(SOULGEM_SEE_SR_SOULS))
-		plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
-		vis_enabled += VIS_SOULCATCHER
+		hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, TRUE)
+		hud_used?.vis_enabled += VIS_SOULCATCHER
 	else
-		plane_holder.set_vis(VIS_SOULCATCHER, FALSE)
-		vis_enabled -= VIS_SOULCATCHER
+		hud_used?.plane_holder?.set_vis(VIS_SOULCATCHER, FALSE)
+		hud_used?.vis_enabled -= VIS_SOULCATCHER
 	return
 
 //Icon is used to occlude things like huds from the faulty byond context menu.

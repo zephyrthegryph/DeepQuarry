@@ -14,7 +14,7 @@
 
 /datum/tgui_module/crew_monitor/proc/ui_in_range(datum/act/op/A)
 	var/turf/T = get_turf(A.actor)
-	return T && (T.z in using_map.player_levels)
+	return (T && (T.z in using_map.player_levels)) ? null : MSG(crew_monitor/out_of_range)
 
 MSG_DEF_SELF(crew_monitor/out_of_range, "Unable to establish a connection: You're too far away from the station!")
 
@@ -25,7 +25,7 @@ MSG_DEF_SELF(crew_monitor/out_of_range, "Unable to establish a connection: You'r
 CAPABILITIES(/datum/tgui_module/crew_monitor)
 	interface("CrewMonitor")
 	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range))))
+	extend(TAG_UI, needs(req(PROC_REF(ui_in_range), because = MSG(crew_monitor/out_of_range))))
 	op("track", ui_act("track", arg("track", schema_ref(/mob/living/carbon/human))), needs(req_actor_kind(/mob/living/silicon/ai, because = /datum/msg/req_silent)), then(PROC_REF(ui_act_track)))
 	op("setZLevel", ui_act("setZLevel", arg("mapZLevel", num())), then(PROC_REF(ui_act_setzlevel)))
 

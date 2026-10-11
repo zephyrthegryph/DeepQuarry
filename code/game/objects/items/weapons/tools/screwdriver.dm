@@ -57,7 +57,7 @@ CAPABILITIES(/obj/item/tool/screwdriver)
 /obj/item/tool/screwdriver/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M) || stance == I_HELP)
 		return ..()
-	if(user.zone_sel.selecting != O_EYES && user.zone_sel.selecting != BP_HEAD)
+	if(hud_of(user)?.zone_sel?.selecting != O_EYES && hud_of(user)?.zone_sel?.selecting != BP_HEAD)
 		return ..()
 	if(CLUMSY_HARM_CHANCE(user))
 		M = user

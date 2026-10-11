@@ -1,0 +1,15 @@
+@obj.structure human|none
+@obj.structure robot|none
+@obj.structure ai|none
+@obj.structure.ghost_pod ghost|none
+@obj.structure.ghost_pod human|/obj/item/tool/screwdriver
+@obj.structure.ghost_pod human|/obj/item/tool/crowbar
+@obj.structure.ghost_pod human|/obj/item/tool/wrench
+@obj.structure.ghost_pod human|/obj/item/tool/wirecutters
+@obj.structure.ghost_pod human|/obj/item/multitool
+@obj.structure.ghost_pod human|/obj/item/weldingtool
+@obj.structure.ghost_pod human|/obj/item/stack/cable_coil
+@obj.structure.ghost_pod human|/obj/item/stack/material/steel
+@obj.structure.ghost_pod human|/obj/item/card/id
+@obj.structure.ghost_pod human|/obj/item
+keys: critter, drag_buckle, melee_hit

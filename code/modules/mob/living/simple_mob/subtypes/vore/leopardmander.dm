@@ -74,10 +74,10 @@ CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
 	if(!riding_datum)
 		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1 // 2 on Downstream
-	plane_holder.set_vis(VIS_CH_HEALTH_VR, 1)
-	plane_holder.set_vis(VIS_CH_ID, 1)
-	plane_holder.set_vis(VIS_CH_STATUS_R, 1)
-	plane_holder.set_vis(VIS_CH_BACKUP, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_HEALTH_VR, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_ID, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_STATUS_R, 1)
+	hud_used?.plane_holder?.set_vis(VIS_CH_BACKUP, 1)
 
 
 /mob/living/simple_mob/vore/leopardmander/load_default_bellies()

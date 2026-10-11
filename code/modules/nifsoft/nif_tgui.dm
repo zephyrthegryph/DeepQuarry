@@ -36,12 +36,12 @@ CAPABILITIES(/obj/item/nif)
 	op("pry_open", tool(TOOL_SCREWDRIVER), label("Pry open"), when(req_is(nameof(open), 0)), wait(4 SECONDS), then(PROC_REF(pry_open_done)), says(MSG(nif/pried_open)))
 	op("reseal", tool(TOOL_SCREWDRIVER), label("Re-seal"), when(req_is(nameof(open), 3)), priority(OP_PRIORITY_PART + 1), wait(3 SECONDS), then(PROC_REF(reseal_done)), says(MSG(nif/resealed)))
 	// the legacy screwdriver_act / multitool_act refused every other state and ended the click: so do these (a screwdriver does not fall through to a hit)
-	op("screwdriver_blocked", tool(TOOL_SCREWDRIVER), when(PROC_REF(screwdriver_blocked)), priority(OP_PRIORITY_PART + 2), needs(req_bool(PROC_REF(never), silent = TRUE)))
-	op("multitool_blocked", tool(TOOL_MULTITOOL), when(PROC_REF(multitool_blocked)), priority(OP_PRIORITY_PART + 1), needs(req_bool(PROC_REF(never), silent = TRUE)))
+	op("screwdriver_blocked", tool(TOOL_SCREWDRIVER), when(PROC_REF(screwdriver_blocked)), priority(OP_PRIORITY_PART + 2), needs(req(PROC_REF(never), silent = TRUE)))
+	op("multitool_blocked", tool(TOOL_MULTITOOL), when(PROC_REF(multitool_blocked)), priority(OP_PRIORITY_PART + 1), needs(req(PROC_REF(never), silent = TRUE)))
 	op("reset_circuits", tool(TOOL_MULTITOOL), label("Reset the circuits"), when(req_is(nameof(open), 2)), wait(8 SECONDS), then(PROC_REF(reset_circuits_done)), says(MSG(nif/reset)))
 	// Special Promethean surgery: a NIF stuffed into another slime body's chest.
 	op("stuff_in", at_target(/mob/living/carbon/human), when(PROC_REF(stuffable)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Stuff it in"),
-		needs(req_adjacent(), req_bool(PROC_REF(stuff_in_unclothed), because = PROC_REF(stuff_in_clothed_text)), req_bool(PROC_REF(stuff_in_torso), because = PROC_REF(stuff_in_torso_text))),
+		needs(req_adjacent(), req(PROC_REF(stuff_in_unclothed)), req(PROC_REF(stuff_in_torso))),
 		begins(PROC_REF(stuffing_text)), wait(20 SECONDS), then(PROC_REF(stuff_in_done)))
 
 /**
@@ -238,4 +238,4 @@ CAPABILITIES(/obj/item/nif)
 
 /// A requirement that never holds: the blocked click is refused without a word, as the legacy tool act ended it.
 /obj/item/nif/proc/never(datum/act/op/A)
-	return FALSE
+	return /datum/msg/req_silent

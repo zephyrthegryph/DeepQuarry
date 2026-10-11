@@ -40,9 +40,11 @@ human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do 
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters click: Click: Use
 human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Threaten to push the button! (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Transfer
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wrench click: Click: Transfer
 human|/obj/item/weldingtool menu: Move To Top
 human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use

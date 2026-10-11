@@ -10,8 +10,8 @@
 	desc = "The latest in sure footing technology."
 	icon_state = "swat"
 	item_flags = NOSLIP
-	siemens_coefficient = 0.6
 	slowdown = -1
 
-	min_cold_protection_temperature = SHOE_MIN_COLD_PROTECTION_TEMPERATURE
-	max_heat_protection_temperature = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE
+CAPABILITIES(/obj/item/clothing/shoes/boots/speed)
+	configure(item_protection(siemens = 0.6, min_cold = SHOE_MIN_COLD_PROTECTION_TEMPERATURE, max_heat = SHOE_MAX_HEAT_PROTECTION_TEMPERATURE))
+

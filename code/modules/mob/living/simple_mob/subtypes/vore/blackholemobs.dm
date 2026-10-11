@@ -698,7 +698,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
-				if(L.zone_sel.selecting == BP_GROIN)
+				if(hud_of(L)?.zone_sel?.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return
 				act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))

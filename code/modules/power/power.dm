@@ -288,7 +288,7 @@ CAPABILITIES(/obj/machinery/power)
 			return
 		if(H.get_equipped_item(SLOT_ID_GLOVES))
 			var/obj/item/clothing/gloves/G = H.get_equipped_item(SLOT_ID_GLOVES)
-			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
+			if(protection_of(G).siemens == 0)	return 0		//to avoid spamming with insulated glvoes on
 	//Checks again. If we are still here subject will be shocked, trigger standard 20 tick warning
 	//Since this one is longer it will override the original one.
 	if(region)

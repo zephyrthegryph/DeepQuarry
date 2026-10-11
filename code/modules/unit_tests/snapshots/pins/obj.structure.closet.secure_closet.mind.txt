@@ -1,17 +1,51 @@
-@obj.structure.closet human|none
-@obj.structure.closet robot|none
+human|none menu: Toggle Lock
+human|none click: Click: Toggle Lock
+robot|none menu: Toggle Lock
+robot|none menu: Use
+robot|none click: Click: Toggle Lock
 @obj.structure ai|none
 @obj.structure.closet ghost|none
+-menu: Toggle Open
++0 menu: Toggle Lock
 @obj.structure.closet human|/obj/item/tool/screwdriver
 @obj.structure.closet human|/obj/item/tool/crowbar
+-menu: Toggle Open
+-click: nothing
++3 menu: Toggle Lock
++4 click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/tool/wrench
+-menu: Toggle Open
++4 menu: Toggle Lock
 @obj.structure.closet human|/obj/item/tool/wirecutters
 @obj.structure.closet human|/obj/item/multitool
+-menu: Toggle Open
+-click: nothing
++3 menu: Toggle Lock
++4 click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/weldingtool
+-menu: Toggle Open
++3 menu: Toggle Lock
 @obj.structure.closet human|/obj/item/stack/cable_coil
+-menu: Toggle Open
+-click: nothing
++4 menu: Toggle Lock
++5 click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/stack/material/steel
+-menu: Toggle Open
+-click: nothing
++3 menu: Toggle Lock
++4 click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/card/id
+-menu: Toggle Open
+-click: nothing
++3 menu: Toggle
++5 menu: Toggle Lock
++6 click: Click: Toggle
 @obj.structure.closet human|/obj/item
+-menu: Toggle Open
+-click: nothing
++3 menu: Toggle Lock
++4 click: Click: Toggle Lock
 @obj human|/obj/item/storage/laundry_basket
 -menu: Toggle Open
 -click: Click: Empty into

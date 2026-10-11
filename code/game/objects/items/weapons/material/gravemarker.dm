@@ -70,7 +70,7 @@
 	..()
 
 CAPABILITIES(/obj/item/material/gravemarker)
-	op("self", in_hand(), needs(req_bool(PROC_REF(on_turf), silent = TRUE), req_bool(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
+	op("self", in_hand(), needs(req(PROC_REF(on_turf), silent = TRUE), req(PROC_REF(spot_free), because = MSG(gravemarker/occupied))),
 		begins(MSG(gravemarker/placing)), wait(1 SECOND), then(PROC_REF(place_done)))
 	op("carve", tool(TOOL_SCREWDRIVER), label("Carve"), wait(0),
 		asks(/datum/prompt/text, fields = list("title" = "Gravestone Naming", "question" = computed(PROC_REF(name_question)), "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "encode" = FALSE, "timeout" = 0), step = "name"),
@@ -83,11 +83,11 @@ MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
 
 /// Requirement: the actor stands on a turf.
 /obj/item/material/gravemarker/proc/on_turf(datum/act/op/A)
-	return read_once(isturf(A.actor.loc)) // where the actor stands is asked when the click is made
+	return (read_once(isturf(A.actor.loc))) ? null : /datum/msg/req_silent // where the actor stands is asked when the click is made
 
 /// Requirement: no marker stands where the actor does.
 /obj/item/material/gravemarker/proc/spot_free(datum/act/op/A)
-	return !read_once(locate(/obj/structure/gravemarker, A.actor.loc)) // what stands where the actor does is asked when the click is made
+	return (!read_once(locate(/obj/structure/gravemarker, A.actor.loc))) ? null : MSG(gravemarker/occupied) // what stands where the actor does is asked when the click is made
 
 /obj/item/material/gravemarker/proc/place_done(datum/act/op/A)
 	var/mob/user = A.actor

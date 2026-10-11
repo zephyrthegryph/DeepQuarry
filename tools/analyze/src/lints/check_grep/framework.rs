@@ -163,7 +163,8 @@ impl Files {
     pub fn matches(&self, f: &SourceFile) -> bool {
         let ext = f.ext();
         match self {
-            Files::Code => ext == "dm" && !f.hidden && f.rel.starts_with("code/"),
+            // generated output (code/engine/_generated, code/_generated) is never committed: its line numbers and text are not the source's
+            Files::Code => ext == "dm" && !f.hidden && f.rel.starts_with("code/") && !f.rel.contains("/_generated/"),
             Files::CodeX515 => ext == "dm" && !f.hidden && f.rel.starts_with("code/") && f.rel.rsplit('/').next() != Some("__byond_version_compat.dm"),
             Files::Maps => ext == "dmm" && !f.hidden && f.rel.starts_with("maps/"),
             Files::Under(paths, exts) => {

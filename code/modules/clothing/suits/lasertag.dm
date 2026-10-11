@@ -12,7 +12,6 @@
 	item_state_slots = list(slot_r_hand_str = "tdomni", slot_l_hand_str = "tdomni")
 	blood_overlay_type = "armor"
 	body_parts_covered = UPPER_TORSO
-	siemens_coefficient = 3.0
 	description_fluff = "Laser tag armor can have its health and 'healing' time adjusted. Additionally, DonkSoft brand darts are compatible with laser tag vests, proving a projectile based alternative!"
 	description_antag = "Laser tag armor can be emagged, causing the user to not only have a heart attack when eliminated, but also take massive damage based on the amount of 'lives' the vest had."
 
@@ -44,6 +43,7 @@ TYPE_TABLE(/obj/item/clothing/suit/lasertag, suit_storage_spec, list(HOLD_ONLY(l
 	. += "It regenerates one hit every [time_to_heal*0.1] seconds."
 
 CAPABILITIES(/obj/item/clothing/suit/lasertag)
+	configure(item_protection(siemens = 3.0))
 	op("lasertag_adjust_health_verb", menu(), label("Adjust Suit Health"), needs(carried()), then(PROC_REF(lasertag_adjust_health_verb)))
 	op("lasertag_adjust_heal_time_verb", menu(), label("Adjust Healing Timer"), needs(carried()), then(PROC_REF(lasertag_adjust_heal_time_verb)))
 	every(2 SECONDS, then(PROC_REF(lasertag_step)), when = nameof(tag_worn))

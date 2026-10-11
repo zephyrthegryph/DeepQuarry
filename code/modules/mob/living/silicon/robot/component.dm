@@ -373,6 +373,7 @@ CAPABILITIES(/datum/carried_afflictions)
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 
 CAPABILITIES(/obj/item)
+	item_protection(heat_parts = 0, cold_parts = 0, gas_transfer = 1, permeability = 1, siemens = 1) // what it protects from: a type trait (code/game/objects/items.dm)
 	item_sounds(hit = SFX_SWING_HIT, pickup = SFX_GENERIC_PICKUP, drop = SFX_GENERIC_DROP) // what it sounds like: a type trait (code/game/objects/items.dm)
 	// an item on a floor or in a hand is picked up, put down or used, not struck by another; its own ops answer before any blow
 	without("melee_hit")
@@ -383,8 +384,8 @@ CAPABILITIES(/obj/item)
 	owns_many(nameof(possessed_voice))
 	// Every item's defaults: a kit customises it (ahead of the rest, last on a suit that may refuse it), an empty
 	// hand picks it up, a pickup-mode bag collects it, a cyborg equips it from its module, and two menu entries.
-	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req_bool(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
-	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req_bool(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_PART), when(req(PROC_REF(kit_goes_first))), then(PROC_REF(interaction_kit_customize)))
+	op("kit_customize_last", item(/obj/item/kit), label("Customise"), priority(OP_PRIORITY_DEFAULT - 1), when(req(PROC_REF(kit_goes_last))), then(PROC_REF(interaction_kit_customize)))
 	op("move_to_top", menu(), label("Move To Top"), needs(req_adjacent(), req_capable()), then(PROC_REF(move_to_top_effect)))
 	op("toggle_digestable", menu(), label("Toggle Digestable"), needs(req_adjacent(), req_capable(), carried()), then(PROC_REF(toggle_digestable_effect)))
 	op("pick_up_item", hand(), label("Pick up"), when(req_empty_hand()), priority(OP_PRIORITY_DEFAULT - 10), then(PROC_REF(interaction_pick_up_item)))

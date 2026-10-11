@@ -484,8 +484,8 @@ impl Generator for Declare {
 /// static entries with their own lines, in order; a type that declares none has no row.
 fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, statics: &BTreeSet<String>) {
     out.doc("declared_static_blocks(): type -> list(file, line, entries) for the entries of the static kinds (STATIC_ENTRY), read without an instance.");
-    out.line("/proc/declared_static_blocks()");
-    out.line("	. = list()");
+    // Rows go into numbered part procs of at most 150 rows (one proc of every row is past DM's proc size limit).
+    let mut rows: Vec<Vec<String>> = Vec::new();
     if !statics.is_empty() {
         let mut lists: Vec<&Marker> = cx.markers("CAPABILITIES").collect();
         lists.sort_by(|a, b| (a.args.first(), &a.rel, a.line).cmp(&(b.args.first(), &b.rel, b.line)));
@@ -504,17 +504,34 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
                 continue;
             }
             let test_only = crate::sem::gen::test_only(&m.rel);
+            let mut row: Vec<String> = Vec::new();
             if test_only {
-                out.line(crate::sem::gen::TEST_GUARD);
+                row.push(crate::sem::gen::TEST_GUARD.to_string());
             }
-            out.line(format!("	// CAPABILITIES({}) at {}:{}", ty, m.rel, m.line));
-            out.line(format!("	.[{}] = list({}, {}, list({}))", ty.trim(), quote(&m.rel), m.line, parts.join(", ")));
+            row.push(format!("	// CAPABILITIES({}) at {}:{}", ty, m.rel, m.line));
+            row.push(format!("	into[{}] = list({}, {}, list({}))", ty.trim(), quote(&m.rel), m.line, parts.join(", ")));
             if test_only {
-                out.line("#endif");
+                row.push("#endif".to_string());
             }
+            rows.push(row);
         }
     }
+    let chunks: Vec<&[Vec<String>]> = rows.chunks(150).collect();
+    out.line("/proc/declared_static_blocks()");
+    out.line("	. = list()");
+    for i in 0..chunks.len() {
+        out.line(format!("	declared_static_blocks_part{}(.)", i + 1));
+    }
     out.blank();
+    for (i, chunk) in chunks.iter().enumerate() {
+        out.line(format!("/proc/declared_static_blocks_part{}(list/into)", i + 1));
+        for row in chunk.iter() {
+            for l in row {
+                out.line(l.clone());
+            }
+        }
+        out.blank();
+    }
 }
 
 /// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
@@ -725,8 +742,9 @@ fn lifeform_type_extras(cx: &GenCx, out: &mut GenOut, in_half: &dyn Fn(&str) -> 
         let ty = ty.trim();
         if !is_atom_path(ty) && ty.starts_with("/datum") {
             let mut declared = FORMS.iter().any(|f| !block_calls(&m.args, f).is_empty());
-            for owns in ["owns_one", "owns_many"] {
-                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == "starts").unwrap_or(false))) {
+            // hud_element(..., when = X) is an owns_one with starts = when(X, T).
+            for (owns, key) in [("owns_one", "starts"), ("owns_many", "starts"), ("hud_element", "when")] {
+                if block_calls(&m.args, owns).iter().any(|a| a.iter().any(|x| split_opt(x).map(|(k, _)| k == key).unwrap_or(false))) {
                     declared = true;
                 }
             }

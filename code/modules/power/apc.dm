@@ -244,7 +244,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		stage(STAGE_APC_BOARD, item(/obj/item/module/power_control), put_in(SLOT_CONSTRUCTION),
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, board_seated)), protrudes(because = MSG(apc/board_first))),
 		stage(STAGE_APC_WIRED, stack(/obj/item/stack/cable_coil, 10),
-			needs(req_bool(TYPE_PROC_REF(/obj/machinery/power/apc, floor_exposed), because = MSG(apc/floor_blocks))),
+			needs(req(TYPE_PROC_REF(/obj/machinery/power/apc, floor_exposed), because = MSG(apc/floor_blocks))),
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_wired)),
 			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)), protrudes(because = MSG(apc/board_first)),
 			undo = list(tool(TOOL_WIRECUTTER))),
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// needs: the floor plating in front of the frame is off.
 /obj/machinery/power/apc/proc/floor_exposed(datum/act/A)
 	var/turf/T = loc
-	return !istype(T) || T.is_plating()
+	return (!istype(T) || T.is_plating()) ? null : MSG(apc/floor_blocks)
 
 /// The power control board went in: the frame boots.
 /obj/machinery/power/apc/proc/board_seated(datum/act/op/A)

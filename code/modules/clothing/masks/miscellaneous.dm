@@ -4,7 +4,6 @@
 	icon_state = "muzzle"
 	body_parts_covered = FACE
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.90
 	voicechange = 1
 	say_messages = list("Mmfph!", "Mmmf mrrfff!", "Mmmf mnnf!")
 	say_verbs = list("mumbles", "says")
@@ -19,6 +18,7 @@
 
 // Clumsy folks can't take the mask off themselves.
 CAPABILITIES(/obj/item/clothing/mask/muzzle)
+	configure(item_protection(gas_transfer = 0.90))
 	op("muzzle_worn_hand", hand(), then(PROC_REF(muzzle_worn_hand)))
 
 /// Old attack_hand.
@@ -36,8 +36,6 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = FACE
 	item_flags = FLEXIBLEMATERIAL
-	gas_transfer_coefficient = 0.90
-	permeability_coefficient = 0.01
 	armor_spec = "bio=60"
 	var/hanging = 0
 
@@ -45,13 +43,13 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 	if(user.canmove && !user.stat)
 		src.hanging = !src.hanging
 		if (src.hanging)
-			gas_transfer_coefficient = 1
+			set_gas_transfer_coefficient(1)
 			body_parts_covered = body_parts_covered & ~FACE
 			set_armor(dq_armor_none())
 			icon_state = "steriledown"
 			to_chat(user, "You pull the mask below your chin.")
 		else
-			gas_transfer_coefficient = initial(gas_transfer_coefficient)
+			set_gas_transfer_coefficient(protection_of_type(type).gas_transfer)
 			body_parts_covered = initial(body_parts_covered)
 			icon_state = initial(icon_state)
 			set_armor(null)
@@ -60,6 +58,7 @@ CAPABILITIES(/obj/item/clothing/mask/muzzle)
 		worn_protection_changed()
 
 CAPABILITIES(/obj/item/clothing/mask/surgical)
+	configure(item_protection(gas_transfer = 0.90, permeability = 0.01))
 	op("surgical_toggle_verb", menu(), label("Adjust mask"), needs(carried()), then(PROC_REF(surgical_toggle_verb)))
 
 /// Old verb "Adjust mask".
@@ -109,7 +108,9 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	body_parts_covered = FACE
 	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.90
+
+CAPABILITIES(/obj/item/clothing/mask/bluescarf)
+	configure(item_protection(gas_transfer = 0.90))
 
 /obj/item/clothing/mask/redscarf
 	name = "red scarf"
@@ -118,7 +119,9 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	body_parts_covered = FACE
 	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.90
+
+CAPABILITIES(/obj/item/clothing/mask/redscarf)
+	configure(item_protection(gas_transfer = 0.90))
 
 /obj/item/clothing/mask/greenscarf
 	name = "green scarf"
@@ -127,7 +130,9 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	body_parts_covered = FACE
 	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.90
+
+CAPABILITIES(/obj/item/clothing/mask/greenscarf)
+	configure(item_protection(gas_transfer = 0.90))
 */
 /obj/item/clothing/mask/ninjascarf
 	name = "ninja scarf"
@@ -136,8 +141,9 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	body_parts_covered = FACE
 	item_flags = FLEXIBLEMATERIAL
 	w_class = ITEMSIZE_SMALL
-	gas_transfer_coefficient = 0.90
-	siemens_coefficient = 0
+
+CAPABILITIES(/obj/item/clothing/mask/ninjascarf)
+	configure(item_protection(gas_transfer = 0.90, siemens = 0))
 
 /obj/item/clothing/mask/pig
 	name = "pig mask"
@@ -145,8 +151,10 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	icon_state = "pig"
 	flags_inv = HIDEFACE|BLOCKHAIR
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/pig)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/shark
 	name = "shark mask"
@@ -154,8 +162,10 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	icon_state = "shark"
 	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/shark)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/dolphin
 	name = "dolphin mask"
@@ -163,8 +173,10 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	icon_state = "dolphin"
 	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/dolphin)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/goblin
 	name = "goblin mask"
@@ -172,8 +184,10 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	icon_state = "goblin"
 	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/goblin)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/demon
 	name = "demon mask"
@@ -181,8 +195,10 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	icon_state = "demon"
 	flags_inv = HIDEFACE
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	body_parts_covered = HEAD|FACE|EYES
+
+CAPABILITIES(/obj/item/clothing/mask/demon)
+	configure(item_protection(siemens = 0.9))
 
 /obj/item/clothing/mask/horsehead
 	name = "horse head mask"
@@ -191,10 +207,12 @@ CAPABILITIES(/obj/item/clothing/mask/surgical)
 	flags_inv = HIDEFACE|BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
 	w_class = ITEMSIZE_SMALL
-	siemens_coefficient = 0.9
 	// The horse mask does not change voices by default; wizard spells enable and replace these tables.
 	say_messages = list("NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!")
 	say_verbs = list("whinnies", "neighs", "says")
+
+CAPABILITIES(/obj/item/clothing/mask/horsehead)
+	configure(item_protection(siemens = 0.9))
 /* //Lost to time.
 /obj/item/clothing/mask/nock_scarab
 	name = "nock mask (blue, scarab)"

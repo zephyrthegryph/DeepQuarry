@@ -192,9 +192,9 @@
 /datum/unit_test/dq_contagion_protection/Run()
 	var/datum/affliction_trigger/contagion/trigger = contagion_trigger()
 	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves)
-	G.permeability_coefficient = 0
+	G.set_permeability_coefficient(0)
 	TEST_ASSERT(!trigger.clothing_passes(G), "impermeable gloves should block contact exposure")
-	G.permeability_coefficient = 2
+	G.set_permeability_coefficient(2)
 	TEST_ASSERT(trigger.clothing_passes(G), "fully permeable clothing should let exposure through")
 	TEST_ASSERT(trigger.clothing_passes(null), "no clothing is no protection")
 

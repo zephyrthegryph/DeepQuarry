@@ -224,16 +224,16 @@ CAPABILITIES(/datum/xenochimera)
 	update_xenochimera_hud(danger, feral_state)
 
 /datum/xenochimera/proc/update_xenochimera_hud(danger, feral)
-	if(owner.xenochimera_danger_display)
-		owner.xenochimera_danger_display.invisibility = INVISIBILITY_NONE
+	if(hud_of(owner)?.xenochimera_danger_display)
+		hud_of(owner)?.xenochimera_danger_display?.invisibility = INVISIBILITY_NONE
 		if(danger && feral)
-			owner.xenochimera_danger_display.icon_state = "danger11"
+			hud_of(owner)?.xenochimera_danger_display?.icon_state = "danger11"
 		else if(danger && !feral)
-			owner.xenochimera_danger_display.icon_state = "danger10"
+			hud_of(owner)?.xenochimera_danger_display?.icon_state = "danger10"
 		else if(!danger && feral)
-			owner.xenochimera_danger_display.icon_state = "danger01"
+			hud_of(owner)?.xenochimera_danger_display?.icon_state = "danger01"
 		else
-			owner.xenochimera_danger_display.icon_state = "danger00"
+			hud_of(owner)?.xenochimera_danger_display?.icon_state = "danger00"
 
 	return
 

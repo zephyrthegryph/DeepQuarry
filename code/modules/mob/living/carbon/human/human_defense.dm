@@ -316,7 +316,7 @@ emp_act
 /// A sequencer on a robotic limb sabotages it (the emag capability in CAPABILITIES(/mob/living/carbon/human), code/library/mob/hands.dm).
 /mob/living/carbon/human/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
-	var/obj/item/organ/external/affecting = get_organ(user?.zone_sel?.selecting)
+	var/obj/item/organ/external/affecting = get_organ(hud_of(user)?.zone_sel?.selecting)
 	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
 		return OP_DECLINE
@@ -357,7 +357,7 @@ emp_act
 		var/zone
 		if (isliving(thrower))
 			var/mob/living/L = thrower
-			zone = check_zone(L.zone_sel.selecting)
+			zone = check_zone(hud_of(L)?.zone_sel?.selecting)
 		else
 			zone = ran_zone(BP_TORSO,75)	//Hits a random part of the body, geared towards the chest
 
@@ -533,7 +533,7 @@ emp_act
 		var/through = weights[part]
 		for(var/obj/item/clothing/C in worn)
 			if(C.body_parts_covered & part)
-				through *= C.permeability_coefficient
+				through *= protection_of(C).permeability
 		. += through
 
 // This is for preventing harm by being covered in water, which only prometheans need to deal with.

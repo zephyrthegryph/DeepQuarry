@@ -201,14 +201,14 @@
 	dq_give_zone_sel(H)
 	var/obj/item/tourniquet/Q = allocate(/obj/item/tourniquet, run_loc_floor_bottom_left)
 	H.put_in_active_hand(Q)
-	H.zone_sel.selecting = BP_TORSO
+	hud_of(H)?.zone_sel.selecting = BP_TORSO
 	test_click(H, P, Q)
 	TEST_ASSERT_EQUAL(H.balloon_text, "a tourniquet goes on an arm or a leg!", "the torso refusal is a balloon")
 	TEST_ASSERT_EQUAL(length(op_pendings_of(H)), 0, "and nothing waits")
-	H.zone_sel.selecting = BP_L_ARM
+	hud_of(H)?.zone_sel.selecting = BP_L_ARM
 	var/obj/item/organ/external/arm = P.get_organ(BP_L_ARM)
 	test_click(H, P, Q)
 	TEST_ASSERT_EQUAL(length(op_pendings_of(H)), 1, "an arm starts the cinch")
-	H.zone_sel.selecting = BP_TORSO // aiming elsewhere meanwhile changes nothing: the limb was fixed when it began
+	hud_of(H)?.zone_sel.selecting = BP_TORSO // aiming elsewhere meanwhile changes nothing: the limb was fixed when it began
 	test_time(4 SECONDS)
 	TEST_ASSERT(arm.tourniquet == Q, "the tourniquet went on the arm that was aimed at")

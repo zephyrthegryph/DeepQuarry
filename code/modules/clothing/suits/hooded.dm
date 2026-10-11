@@ -7,8 +7,10 @@
 	name = DEVELOPER_WARNING_NAME
 	body_parts_covered = CHEST|ARMS
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
-	cold_protection = CHEST|ARMS
 	actions_types = list(/datum/action/item_action/toggle_hood)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume)
+	configure(item_protection(cold_parts = CHEST|ARMS))
 
 /obj/item/clothing/suit/storage/hooded/costume/siffet
 	name = "siffet costume"
@@ -23,7 +25,9 @@
 	icon_state = "carp_casual"
 	item_state_slots = list(slot_r_hand_str = "carp_casual", slot_l_hand_str = "carp_casual") //Does not exist -S2-
 	hoodtype = /obj/item/clothing/head/hood/carp_hood
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE	//Space carp like space, so you should too
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/costume/carp)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 /obj/item/clothing/suit/storage/hooded/costume/ian	//It's Ian, rub his bell- oh god what happened to his inside parts?
 	name = "corgi costume"
@@ -42,9 +46,10 @@
 	item_state_slots = list(slot_r_hand_str = "coatwinter", slot_l_hand_str = "coatwinter")
 	body_parts_covered = CHEST|ARMS|LEGS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS|LEGS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	hoodtype = /obj/item/clothing/head/hood/winter
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/wintercoat)
+	configure(item_protection(cold_parts = CHEST|ARMS|LEGS, min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS))))
 
@@ -286,11 +291,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/wintercoat/miner, suit_storage
 	item_state = "explorer"
 	flags = THICKMATERIAL
 	body_parts_covered = CHEST|LEGS|ARMS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
-	cold_protection = CHEST|LEGS|ARMS
 	hoodtype = /obj/item/clothing/head/hood/explorer
-	siemens_coefficient = 0.9
 	armor_spec = "melee=30;bullet=20;laser=20;energy=20;bomb=35;bio=75;rad=35" // Inferior to sec vests in bullet/laser but better for environmental protection.
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/explorer)
+	configure(item_protection(min_cold = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE, cold_parts = CHEST|LEGS|ARMS, siemens = 0.9))
 
 TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/explorer, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_MINING, POCKET_EXPLO))))
 
@@ -373,9 +378,11 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/raincoat, suit_storage_spec, l
 	icon_override = 'icons/obj/clothing/knights_vr.dmi'
 	hoodtype = /obj/item/clothing/head/hood/galahad
 	armor_spec = "melee=80;bullet=50;laser=10"
-	siemens_coefficient = 2
 	actions_types = list(/datum/action/item_action/toggle_knight_headgear)
 	resistance_flags = FIRE_PROOF
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight)
+	configure(item_protection(siemens = 2))
 
 /obj/item/clothing/suit/storage/hooded/knight/galahad
 	name = "crusader's armor"
@@ -396,7 +403,9 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/raincoat, suit_storage_spec, l
 	hoodtype = /obj/item/clothing/head/hood/robin
 	armor_spec = "melee=70;bullet=40;laser=10"
 	slowdown = -1
-	siemens_coefficient = 3
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/knight/robin)
+	configure(item_protection(siemens = 3))
 
 // Weaker variants for the redgate
 
@@ -461,8 +470,10 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/raincoat, suit_storage_spec, l
 	name = DEVELOPER_WARNING_NAME
 	body_parts_covered = CHEST
 	flags_inv = HIDETIE|HIDEHOLSTER
-	cold_protection = CHEST
 	actions_types = list(/datum/action/item_action/toggle_hood)
+
+CAPABILITIES(/obj/item/clothing/suit/storage/hooded/foodcostume)
+	configure(item_protection(cold_parts = CHEST))
 
 /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog	//Belly filler uniform :^).
 	name = "hotdog costume"
@@ -487,8 +498,6 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/hooded/raincoat, suit_storage_spec, l
 	item_state_slots = list(slot_r_hand_str = "grey_hoodie", slot_l_hand_str = "grey_hoodie")
 	body_parts_covered = CHEST|ARMS|LEGS
 	flags_inv = HIDEHOLSTER
-	cold_protection = CHEST|ARMS|LEGS
-	min_cold_protection_temperature = SPACE_SUIT_MIN_COLD_PROTECTION_TEMPERATURE
 	hoodtype = /obj/item/clothing/head/hood/hoodie
 
 // CC Winter Coat

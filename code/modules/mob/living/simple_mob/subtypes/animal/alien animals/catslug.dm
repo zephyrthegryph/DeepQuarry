@@ -178,7 +178,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on the head.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on the head.")))
@@ -186,7 +186,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -194,7 +194,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused nibbles at %T%'s hand experimentally.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You boop %T% on the nose.")), \
 			MSG_OTHERS(span_notice("%U% boops %T%'s nose.")))
@@ -202,7 +202,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub their prodded snoot.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -354,7 +354,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -362,7 +362,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -370,7 +370,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -378,7 +378,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy, accidently pressing a few of the buttons on their chestpiece in the process... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))
@@ -455,7 +455,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 		lay_down()
 		ai_brain.go_wake()
 		return
-	if(M.zone_sel.selecting == BP_HEAD)
+	if(hud_of(M)?.zone_sel?.selecting == BP_HEAD)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You pat %T% on their helmet.")), \
 			MSG_OTHERS(span_notice("%U% pats %T% on their helmet.")))
@@ -463,7 +463,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U% purrs and leans into %T%'s hand.")))
-	else if(M.zone_sel.selecting == BP_R_HAND || M.zone_sel.selecting == BP_L_HAND)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_R_HAND || hud_of(M)?.zone_sel?.selecting == BP_L_HAND)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You shake %T%'s hand.")), \
 			MSG_OTHERS(span_notice("%U% shakes %T%'s hand.")))
@@ -471,7 +471,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s looks a little confused and bonks their helmet's faceplate against %T%'s hand experimentally, attempting to nibble at it.")))
-	else if(M.zone_sel.selecting == "mouth")
+	else if(hud_of(M)?.zone_sel?.selecting == "mouth")
 		act_message(M, src, \
 			MSG_SELF(span_notice("You attempt to boop %T% on the nose, stopped only by that helmet they wear.")), \
 			MSG_OTHERS(span_notice("%U% attempts to boop %T%'s nose, defeated only by the helmet they wear.")))
@@ -479,7 +479,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom)
 			return
 		if(prob(10))
 			act_message(src, M, null, MSG_OTHERS(span_notice("%U%'s eyes widen as they stare at %T%. After a moment they rub at the faint mark %T%'s digit left upon the surface of their helmet's faceplate.")))
-	else if(M.zone_sel.selecting == BP_GROIN)
+	else if(hud_of(M)?.zone_sel?.selecting == BP_GROIN)
 		act_message(M, src, \
 			MSG_SELF(span_notice("You rub %T%'s tummy... You feel the danger.")), \
 			MSG_OTHERS(span_notice("%U% rubs %T%'s tummy...")))

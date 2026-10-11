@@ -139,10 +139,10 @@
 		src.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
 											// has a "invisible" value of 15
 
-	if(src.plane_holder)
-		src.plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
-		src.plane_holder.set_vis(VIS_MESONS,seemeson)
-		src.plane_holder.set_vis(VIS_JANHUD,seejanhud)
+	if(hud_used?.plane_holder)
+		hud_used?.plane_holder?.set_vis(VIS_FULLBRIGHT,fullbright)
+		hud_used?.plane_holder?.set_vis(VIS_MESONS,seemeson)
+		hud_used?.plane_holder?.set_vis(VIS_JANHUD,seejanhud)
 
 	// Call parent to handle signals
 	..()
@@ -182,10 +182,10 @@
 
 /mob/living/silicon/robot/life_hud_health_icons()
 	. = ..()
-	if(!. || !src.healths)
+	if(!. || !hud_used?.healths)
 		return
 
-	src.healths.icon_state = vitality_health_band(src)
+	hud_used?.healths?.icon_state = vitality_health_band(src)
 
 /mob/living/silicon/robot/proc/update_cell()
 	if(cell)
