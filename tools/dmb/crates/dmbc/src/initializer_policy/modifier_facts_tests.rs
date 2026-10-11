@@ -57,6 +57,21 @@ fn modifier_locator_replays_full_inputs_and_shares_classification_write_owner() 
         &candidates,
     )
     .unwrap();
+    let compact = store.modifiers.compact_for_pressure(1024 * 1024);
+    assert_eq!(compact.retained_entries, 2);
+    assert!(compact.charged_bytes > 2 * std::mem::size_of::<ModifierArtifact>());
+    let before = captures.load(Ordering::Relaxed);
+    modifier_facts_reused(
+        roster.iter(),
+        &symbols,
+        &worker,
+        &[0, 1],
+        factory,
+        reuse,
+        &candidates,
+    )
+    .unwrap();
+    assert_eq!(captures.load(Ordering::Relaxed), before);
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     super::super::classification::parallel::classify_with_reuse(
         &roster,
@@ -77,11 +92,9 @@ fn modifier_locator_replays_full_inputs_and_shares_classification_write_owner() 
     store.visit_storage(|view| {
         if let dm_session::ArtifactStorageView::Entry { value, .. } = view {
             let input = value.input_write().expect("classified exact input");
-            assert!(
-                modifier_owners
-                    .iter()
-                    .any(|write| Arc::ptr_eq(write, input))
-            );
+            assert!(modifier_owners
+                .iter()
+                .any(|write| Arc::ptr_eq(write, input)));
             shared_count += 1;
         }
     });

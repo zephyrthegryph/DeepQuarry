@@ -98,6 +98,25 @@ pub(crate) fn compact_weight(
     compact_charge(census, 0)
 }
 
+pub(crate) fn compact_modifier_weight(
+    key: &Arc<[u8]>,
+    reads: &dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
+    versions: &Arc<[(dm_ir::ReadDomain, u128)]>,
+    value: &Arc<crate::initializer_policy::modifier_facts::ModifierArtifact>,
+) -> Option<usize> {
+    let mut census = HeapCensus::new("compact_initializer_modifier_charge");
+    census.slice("compact.key", key, true);
+    census.receipt("compact.reads", reads);
+    census.slice("compact.versions", versions, true);
+    for read in reads.iter() {
+        super::resident_weight::answer(&mut census, &read.answer);
+    }
+    if census.arc_object("initializer_modifiers.payload", value) {
+        census.shared_initializer_write("initializer_modifiers.inputs", &value.input);
+    }
+    compact_charge(census, 0)
+}
+
 /// Conservative logical charge; repeated shared owners may be charged again.
 /// Private store/lease/index envelopes are charged per entry, not called exact.
 pub(crate) fn compact_charge(census: HeapCensus, private: usize) -> Option<usize> {

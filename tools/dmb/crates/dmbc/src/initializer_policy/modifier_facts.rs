@@ -166,8 +166,11 @@ impl Default for ModifierArtifacts {
     }
 }
 impl ModifierArtifacts {
-    pub(crate) fn evict_for_pressure(&self) {
-        self.values.evict_all_claims();
+    pub(crate) fn compact_for_pressure(&self, bytes: usize) -> dm_session::PressurePrune {
+        self.values.prune_for_pressure(
+            bytes,
+            crate::heap_census::initializer_artifacts::compact_modifier_weight,
+        )
     }
     pub(super) fn for_request(&self, publishable: bool) -> Self {
         Self {

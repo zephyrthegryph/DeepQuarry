@@ -104,13 +104,19 @@ impl InitializerArtifacts {
         self.roster.clear();
         self.roster_publication
             .with_published(|roster| roster.clear());
-        // Placement identities no longer pin removed semantic payloads. Modifier
-        // facts are cheap to reconstruct and their input/key graph is released.
-        self.modifiers.evict_for_pressure();
-        self.values.prune_for_pressure(
-            bytes,
+        // Both stores share this aggregate logical cap. Every surviving modifier
+        // retains its exact input and receipt; unknown nested owners decline.
+        let mut report = self.values.prune_for_pressure(
+            bytes.saturating_sub(bytes / 4),
             crate::heap_census::initializer_artifacts::compact_weight,
-        )
+        );
+        let modifiers = self
+            .modifiers
+            .compact_for_pressure(bytes.saturating_sub(report.charged_bytes));
+        report.charged_bytes += modifiers.charged_bytes;
+        report.retained_entries += modifiers.retained_entries;
+        report.evicted_entries += modifiers.evicted_entries;
+        report
     }
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         let previous = self

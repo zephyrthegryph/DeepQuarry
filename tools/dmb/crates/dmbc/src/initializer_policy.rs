@@ -667,7 +667,7 @@ pub(crate) enum ModifierFact {
     Known(u32),
     MutableInstance,
 }
-mod modifier_facts;
+pub(crate) mod modifier_facts;
 use modifier_facts::{modifier_facts, modifier_facts_indexed};
 /// Capture modifier dependencies once, exposing every missing boundary before
 /// evaluating values. Classification then consumes these immutable answers.

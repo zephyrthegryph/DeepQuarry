@@ -65,6 +65,8 @@ impl<T, Q: Clone, A: Clone, D: Clone> ObservedArtifactStore<T, Q, A, D> {
             &Arc<T>,
         ) -> Option<usize>,
     ) -> PressurePrune {
+        // Receipt::clone shares immutable Flat/Groups Arc backing; no answer or
+        // query array is copied here. Only per-entry handles are allocated.
         let snapshot: Vec<_> = {
             let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
             state
