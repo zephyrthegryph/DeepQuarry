@@ -68,7 +68,7 @@
     "source_commit": "4e66f8ff4a8f8a1a65abd5ef8d178430a684ee4c",
     "native_compilation_seconds": 122.728,
     "initializer_seconds": 23.677,
-    "procedure_lowering_seconds": 26.680,
+    "procedure_lowering_seconds": 26.68,
     "peak_owned_job_commit_bytes": 4823846912,
     "focused_tests_passed": 1,
     "receipt": "tools/dmb/bench/receipts/runtime-20261011-inventory-fresh-4e66.json",
@@ -157,5 +157,28 @@
     "failure_fix": "fbd440c3db",
     "nonmatching_fixture_filter_guard": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-070518-2e9baefd-focused.json",
     "performance_acceptance": false
+  },
+  "frozen_migration_validation_154ee49": {
+    "source_commit": "154ee49d18bdeecb3476dae7f0fd5dfe7eab6b97",
+    "build_receipt": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080446-8937a1aa-job-cargo.json",
+    "build_passed": true,
+    "focused_receipts": [
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080713-2b54d351-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080732-63736739-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080737-f7b70e66-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080758-3661f3f1-focused.json",
+      "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-080804-a30067d1-focused.json"
+    ],
+    "focused_passed": 31,
+    "focused_failed": 4,
+    "fixes_committed_pending_rerun": [
+      "57b434487e",
+      "2a278b3f07",
+      "654715b420"
+    ],
+    "limitations": [
+      "No acceptance of later bulk coordinator, physical containment or local-input issuer changes from these receipts.",
+      "Not a compiler timing or full runtime parity gate."
+    ]
   }
 }
