@@ -7,6 +7,12 @@ impl dm_ir::Resolver for TypedGlobal {
         let owner = SymbolId::of("/");
         let path = SymbolId::of("/datum/declared_alias");
         match query {
+            Q::GlobalVar(n) if n == name && self.0 == 3 => {
+                R::Value(dm_ir::SemanticValue::NumberBits(7.0f32.to_bits()))
+            }
+            Q::Constant { owner: o, name: n } if o == owner && n == name && self.0 == 3 => {
+                R::Value(dm_ir::SemanticValue::NumberBits(7.0f32.to_bits()))
+            }
             Q::GlobalVar(n) if n == name => R::Member {
                 owner,
                 name,
@@ -22,7 +28,7 @@ impl dm_ir::Resolver for TypedGlobal {
                 name,
             },
             Q::DeclaredVarType { owner: o, name: n } if o == owner && n == name => {
-                R::DeclaredType(Some(path))
+                R::DeclaredType((self.0 != 4).then_some(path))
             }
             Q::RuntimeType(p) if p == path => match self.0 {
                 0 => R::Missing,
@@ -71,6 +77,14 @@ fn body_read_validates_selected_declared_type_with_current_span_and_alias_author
     assert!(opaque
         .iter()
         .all(|e| e.kind == LowerErrorKind::UnsupportedModel));
+    assert!(
+        compile(&TypedGlobal(3)).is_ok(),
+        "scalar globals keep their ordinary constant producer"
+    );
+    assert!(
+        compile(&TypedGlobal(4)).is_ok(),
+        "known untyped slot must not require RuntimeType authority"
+    );
 }
 struct Answers(bool);
 impl dm_ir::Resolver for Answers {
