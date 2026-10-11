@@ -418,10 +418,19 @@ fn walk(
                         owner: owner_id,
                         name: intern(
                             symbols,
-                            parts.last().copied().ok_or_else(|| Error {
-                                span: item.header_span,
-                                message: "field allocation name absent".into(),
-                            })?,
+                            // Array extents belong to the declaration, not to
+                            // its field symbol; use the adapter's name grammar.
+                            parts
+                                .last()
+                                .copied()
+                                .ok_or_else(|| Error {
+                                    span: item.header_span,
+                                    message: "field allocation name absent".into(),
+                                })?
+                                .split('[')
+                                .next()
+                                .unwrap()
+                                .trim(),
                             item.header_span,
                         )?,
                         formal: ns_kind == Some(NamespaceKind::Var) || item.kind == ItemKind::Var,

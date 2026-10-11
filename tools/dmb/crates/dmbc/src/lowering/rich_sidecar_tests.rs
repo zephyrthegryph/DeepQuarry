@@ -145,7 +145,9 @@ fn resident_rich_sidecars_rebind_shifted_include_occurrence_and_match_fresh() {
         memo.counts
             .resident_hits
             .load(std::sync::atomic::Ordering::Relaxed)
-            > 0
+            > 0,
+        "current memo admission: {:?}",
+        memo.explain()
     );
     assert_ne!(
         old.origin.source.include_occurrence,
