@@ -137,7 +137,7 @@ CAPABILITIES(/datum/task/timed)
 				return "target moved"
 			if(max_distance && get_dist(user, A) > max_distance)
 				return "too far away"
-		if(target_zone && user.zone_sel?.selecting != target_zone)
+		if(target_zone && hud_of(user)?.zone_sel?.selecting != target_zone)
 			return "aim changed"
 	if(!timed_check())
 		return "interrupted"

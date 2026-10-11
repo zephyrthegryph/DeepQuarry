@@ -77,10 +77,13 @@ CAPABILITIES(/datum/plane_holder)
 
 	PM.set_visibility(state)
 	var/plane = PM.plane
-	if(state && !(plane in my_mob.planes_visible))
-		LAZYADD(my_mob.planes_visible, plane)
-	else if(!state && (plane in my_mob.planes_visible))
-		LAZYREMOVE(my_mob.planes_visible, plane)
+	var/datum/hud/hud = hud_of(my_mob)
+	if(!hud)
+		return
+	if(state && !(plane in hud.planes_visible))
+		LAZYADD(hud.planes_visible, plane)
+	else if(!state && (plane in hud.planes_visible))
+		LAZYREMOVE(hud.planes_visible, plane)
 
 /datum/plane_holder/proc/set_desired_alpha(which = null, new_alpha)
 	ASSERT(which)

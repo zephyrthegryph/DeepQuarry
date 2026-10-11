@@ -1644,7 +1644,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		if(!user)
 			target_zone = pick(BP_TORSO,BP_TORSO,BP_TORSO,BP_L_LEG,BP_R_LEG,BP_L_ARM,BP_R_ARM,BP_HEAD)
 		else
-			target_zone = user.zone_sel.selecting
+			target_zone = hud_of(user)?.zone_sel?.selecting
 
 	var/obj/item/organ/external/affecting = get_organ(target_zone)
 	var/fail_msg

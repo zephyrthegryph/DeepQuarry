@@ -38,26 +38,7 @@
 	**/
 	VAR_FINAL/incapacitated = NONE
 
-	var/tmp/atom/movable/screen/hands = null
-	var/tmp/atom/movable/screen/pullin = null
-	var/tmp/atom/movable/screen/purged = null
-	var/tmp/atom/movable/screen/internals = null
-	var/tmp/atom/movable/screen/healths = null
-	var/tmp/atom/movable/screen/throw_icon = null
-	var/tmp/atom/movable/screen/pain = null
-	var/tmp/atom/movable/screen/gun/item/item_use_icon = null
-	var/tmp/atom/movable/screen/gun/radio/radio_use_icon = null
-	var/tmp/atom/movable/screen/gun/move/gun_move_icon = null
-	var/tmp/atom/movable/screen/gun/mode/gun_setting_icon = null
-	var/tmp/atom/movable/screen/ling/chems/ling_chem_display = null
-	var/tmp/atom/movable/screen/borer/chems/borer_chem_display = null
-	var/tmp/atom/movable/screen/wizard/energy/wiz_energy_display = null
-	var/tmp/atom/movable/screen/wizard/instability/wiz_instability_display = null
-	var/tmp/atom/movable/screen/autowhisper_display = null
 
-	var/tmp/datum/plane_holder/plane_holder = null
-	var/list/vis_enabled = null		// List of vision planes that should be graphically visible (list of their VIS_ indexes).
-	var/list/planes_visible = null	// List of atom planes that are logically visible/interactable (list of actual plane numbers).
 
 	//spells hud icons - this interacts with add_spell and remove_spell
 	var/tmp/list/atom/movable/screen/movable/spell_master/spell_masters = null
@@ -69,7 +50,6 @@
 	I'll make some notes on where certain variable defines should probably go.
 	Changing this around would probably require a good look-over the pre-existing code.
 	*/
-	var/tmp/atom/movable/screen/zone_sel/zone_sel = null
 
 	var/use_me = 1 //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 	var/damageoverlaytemp = 0
@@ -265,9 +245,6 @@ CAPABILITIES(/mob)
 	ref_one(nameof(control_object)) // the object an admin possesses
 	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
-	ref_one(nameof(autowhisper_display))
-	ref_one(nameof(pullin))
-	ref_one(nameof(throw_icon))
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
 	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
@@ -286,28 +263,11 @@ CAPABILITIES(/mob)
 	every(1 DECISECONDS, then(PROC_REF(jittery_shake_tick)), when = nameof(jittery_shaking))
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
-	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
 	owns_one(nameof(dna), /datum/dna)
-	owns_one(nameof(gun_move_icon), /atom/movable/screen/gun/move)
-	owns_one(nameof(gun_setting_icon), /atom/movable/screen/gun/mode)
-	owns_one(nameof(hands), /atom/movable/screen)
-	owns_one(nameof(healths), /atom/movable/screen)
 	owns_one(nameof(hud_used), /datum/hud)
-	owns_one(nameof(internals), /atom/movable/screen)
-	owns_one(nameof(item_use_icon), /atom/movable/screen/gun/item)
-	owns_one(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
-	owns_one(nameof(lleill_display), /atom/movable/screen/lleill)
 	owns_one(nameof(machine_shim), /datum/using_machine_shim)
-	owns_one(nameof(pain), /atom/movable/screen)
-	owns_one(nameof(plane_holder), /datum/plane_holder)
-	owns_one(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
 	owns_one(nameof(remote_view), /datum/remote_view)
-	owns_one(nameof(shadekin_display), /atom/movable/screen/shadekin)
 	owns_one(nameof(vorePanel), /datum/vore_look)
-	owns_one(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
-	owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
-	owns_one(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
-	owns_one(nameof(zone_sel), /atom/movable/screen/zone_sel)
 	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
 	owns_many(nameof(vore_organs))
 	owns_many(nameof(alerts))
@@ -373,10 +333,6 @@ CAPABILITIES(/mob)
 
 	var/disconnect_time = null		//Time of client loss, set by Logout(), for timekeeping
 
-	var/tmp/atom/movable/screen/shadekin/shadekin_display = null
-	// the lleill glamour display (an /atom/movable/screen/lleill, see owns_one above; the var keeps the looser shadekin screen type, the glamour screen is not a shadekin one
-	var/tmp/atom/movable/screen/shadekin/lleill_display = null
-	var/tmp/atom/movable/screen/xenochimera/danger_level/xenochimera_danger_display = null
 
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.

@@ -32,11 +32,17 @@ CAPABILITIES(/obj/dq_combat_probe)
 	LAZYADD(done, "dq_combat_needs_peace")
 	return OP_OK
 
+/// A test mob's client HUD: test mobs have no client, so none was built at login. Makes an empty one (the mob owns it as hud_used).
+/proc/dq_test_hud(mob/M) as /datum/hud
+	if(!M.hud_used)
+		new /datum/hud(M)
+	return M.hud_used
+
 /// Test mobs have no HUD; unarmed attacks read the targeted zone from one.
 /datum/unit_test/proc/dq_give_zone_sel(mob/M)
-	if(!M.zone_sel)
-		rel_set(M, nameof(/mob::zone_sel), new /atom/movable/screen/zone_sel())
-		M.zone_sel.set_selecting(BP_TORSO)
+	if(!hud_of(M)?.zone_sel)
+		rel_set(dq_test_hud(M), nameof(/datum/hud::zone_sel), new /atom/movable/screen/zone_sel())
+		hud_of(M)?.zone_sel.set_selecting(BP_TORSO)
 
 /// An attacker and a target on adjacent open tiles, the attacker facing it.
 /datum/unit_test/proc/dq_combat_pair(target_type)

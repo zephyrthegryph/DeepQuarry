@@ -164,6 +164,6 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 
 /mob/living/carbon/human/proc/ninja_internals_check()
 	if(internal)
-		internals.icon_state = "internal1"
+		hud_used?.internals?.icon_state = "internal1"
 	else
 		to_chat(src, span_danger("You forgot to turn on your internals! Quickly, toggle the valve!"))
