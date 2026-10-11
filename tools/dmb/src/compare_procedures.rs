@@ -1,4 +1,6 @@
 use super::*;
+#[path = "compare_procedures_alignment.rs"]
+mod alignment;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct NormalArgument {
@@ -214,42 +216,83 @@ pub(super) fn compare_code_options(
         report.observe_bytecode(name, left.len(), right.len());
     }
     out.check(name, "bytecode.instruction_count", left.len(), right.len());
-    for (index, (a_instruction, b_instruction)) in left.iter().zip(right.iter()).enumerate() {
+    let normalized = |context: &memo::NormalizationContext<'_>,
+                      input: &[bytecode::Instruction],
+                      offsets: &BTreeMap<usize, usize>| {
+        input
+            .iter()
+            .map(|item| {
+                let mut value = instruction(context, item)?;
+                normalize_instruction_targets(&mut value, offsets);
+                Ok(value)
+            })
+            .collect::<Result<Vec<_>, bytecode::DecodeError>>()
+    };
+    let (left, right) = match (
+        normalized(a, &left, &left_offsets),
+        normalized(b, &right, &right_offsets),
+    ) {
+        (Ok(left), Ok(right)) => (left, right),
+        (left, right) => {
+            out.add(name, "bytecode.operands.decode", left.err(), right.err());
+            return;
+        }
+    };
+    let aligned = alignment::align(&left, &right);
+    if !aligned.complete {
+        out.add(
+            name,
+            "bytecode.alignment.incomplete",
+            "bounded fallback",
+            "edit/work budget exceeded",
+        );
+    }
+    let mut paired = BTreeMap::new();
+    if aligned.complete {
+        for &(a, b) in &aligned.rows {
+            if let (Some(a), Some(b)) = (a, b) {
+                paired.insert(a, b);
+            }
+        }
+        paired.insert(left.len(), right.len());
+    }
+    for (index, (ai, bi)) in aligned.rows.into_iter().enumerate() {
         if out.full() {
             break;
         }
-        let (Ok(mut a_instruction), Ok(mut b_instruction)) =
-            (instruction(a, a_instruction), instruction(b, b_instruction))
-        else {
-            out.add(
+        match (ai, bi) {
+            (Some(ai), Some(bi)) => {
+                let mut av = left[ai].clone();
+                let bv = &right[bi];
+                let edges_valid = if aligned.complete {
+                    alignment::map_targets(&mut av, |target| paired.get(&target).copied())
+                } else {
+                    true
+                };
+                let mut checked_right = bv.clone();
+                let right_edges_valid = alignment::map_targets(&mut checked_right, Some);
+                if !edges_valid || !right_edges_valid || av != *bv {
+                    out.add(
+                        name,
+                        &format!("bytecode[{index}].paired[{ai},{bi}]"),
+                        av,
+                        bv,
+                    );
+                }
+            }
+            (Some(ai), None) => out.add(
                 name,
-                &format!("bytecode[{index}].operands"),
-                &a_instruction.operands,
-                &b_instruction.operands,
-            );
-            continue;
-        };
-        for (normalized, targets) in [
-            (&mut a_instruction, &left_offsets),
-            (&mut b_instruction, &right_offsets),
-        ] {
-            normalize_instruction_targets(normalized, targets);
-        }
-        if a_instruction.opcode != b_instruction.opcode {
-            out.add(
+                &format!("bytecode[{index}].deleted[{ai}]"),
+                Some(&left[ai]),
+                None::<&NormalInstruction>,
+            ),
+            (None, Some(bi)) => out.add(
                 name,
-                &format!("bytecode[{index}].opcode"),
-                a_instruction.opcode,
-                b_instruction.opcode,
-            );
-        }
-        if a_instruction.operands != b_instruction.operands {
-            out.add(
-                name,
-                &format!("bytecode[{index}].operands"),
-                a_instruction.operands,
-                b_instruction.operands,
-            );
+                &format!("bytecode[{index}].inserted[{bi}]"),
+                None::<&NormalInstruction>,
+                Some(&right[bi]),
+            ),
+            _ => unreachable!(),
         }
     }
 }
