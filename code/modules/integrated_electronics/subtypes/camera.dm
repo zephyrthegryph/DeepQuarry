@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
 	var/see_dark = FALSE
 
 CAPABILITIES(/obj/machinery/camera/intcircuit)
-	param(nameof(network_id), pos = 1)
+	param(nameof(network_id), pos = 1, overrides = TRUE)
 	param(nameof(see_dark), pos = 2)
 
 /// The network a circuit camera is made on (its constructor param).

@@ -124,7 +124,7 @@
 	cast_sound = null			// Sound file played when this is used.
 	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
-/obj/item/spell/unrestricted/Initialize(mapload, coreless)
+/obj/item/spell/unrestricted/Initialize(mapload)
 	. = ..()
 	if(isliving(loc))
 		rel_set(src, nameof(owner), loc)

@@ -20,7 +20,7 @@ TRACKED(/obj/item/organ/external/stump, stump_joined)
 /obj/item/organ/external/stump/var/tmp/obj/item/organ/external/stump_of
 
 // ALLOW(init/INSTANCE_STATE): a stump takes the place, joint and damage of the limb it replaces, robotic when both are
-/obj/item/organ/external/stump/Initialize(mapload, internal)
+/obj/item/organ/external/stump/Initialize(mapload)
 	var/obj/item/organ/external/limb = stump_of
 	if(istype(limb))
 		organ_tag = limb.organ_tag
@@ -28,7 +28,7 @@ TRACKED(/obj/item/organ/external/stump, stump_joined)
 		amputation_point = limb.amputation_point
 		joint = limb.joint
 		parent_organ = limb.parent_organ
-	. = ..(mapload, internal)
+	. = ..()
 	if(istype(limb))
 		set_max_damage(limb.max_damage)
 		if((limb.is_robotic()) && (!parent || (parent.is_robotic())))

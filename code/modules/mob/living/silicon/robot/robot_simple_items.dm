@@ -68,7 +68,7 @@ CAPABILITIES(/obj/item/robotic_multibelt)
 	return module
 
 //'Alterate Tools' means we do special tool handling in Init
-/obj/item/robotic_multibelt/Initialize(mapload, custom_handling = FALSE)
+/obj/item/robotic_multibelt/Initialize(mapload)
 	. = ..()
 	generate_tools()
 

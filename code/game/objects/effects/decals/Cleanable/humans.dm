@@ -49,7 +49,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 		invisibility = INVISIBILITY_MAXIMUM
 		amount = 0
 
-/obj/effect/decal/cleanable/blood/Initialize(mapload, _age)
+/obj/effect/decal/cleanable/blood/Initialize(mapload)
 	. = ..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL

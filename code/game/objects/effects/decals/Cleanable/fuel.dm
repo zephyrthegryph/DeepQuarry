@@ -10,7 +10,7 @@
 	persistent = FALSE
 
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
-	param(nameof(amount), pos = 1)
+	param(nameof(amount), pos = 1, overrides = TRUE)
 	param(nameof(quiet_spill), pos = 2)
 
 /// A spill that tells no admins (its constructor param).
@@ -61,7 +61,7 @@ CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel)
 	anchored = FALSE
 
 CAPABILITIES(/obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel)
-	param(nameof(dir), pos = 2)
+	param(nameof(dir), pos = 2, overrides = TRUE)
 
 // ALLOW(init/INSTANCE_STATE): flamethrower fuel ignites its tile
 /obj/effect/decal/cleanable/liquid_fuel/flamethrower_fuel/Initialize(mapload)

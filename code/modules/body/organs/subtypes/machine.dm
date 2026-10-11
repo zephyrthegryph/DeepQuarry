@@ -6,7 +6,7 @@
 	parent_organ = BP_TORSO
 	vital = TRUE
 
-/obj/item/organ/internal/cell/Initialize(mapload, internal)
+/obj/item/organ/internal/cell/Initialize(mapload)
 	robotize()
 	. = ..()
 
@@ -49,8 +49,8 @@ CAPABILITIES(/obj/item/organ/internal/mmi_holder)
 /obj/item/organ/internal/mmi_holder/var/tmp/obj/item/mmi/installed_mmi
 
 // ALLOW(init/INSTANCE_STATE): a body's MMI holder holds the MMI it is installed with, or a new brain
-/obj/item/organ/internal/mmi_holder/Initialize(mapload, internal)
-	. = ..(mapload, internal)
+/obj/item/organ/internal/mmi_holder/Initialize(mapload)
+	. = ..()
 	if(!ishuman(owner) || ismannequin(owner))
 		return
 	if(installed_mmi)

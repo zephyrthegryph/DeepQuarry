@@ -106,6 +106,9 @@ merge-and-push chain once pushed past DreamChecker errors and broke master; don'
 `tools/hooks/pre-push` refuses any push to master that did not come from the script
 (`bash tools/hooks/install_pre_push.sh` installs it for every worktree).
 
+It also refuses a HEAD without a passing test stamp (section 14): run `dq_lane_ready.sh` on a lane, or `dq_merge_gates.sh` on a
+merge batch, before `dq_push_master.sh`.
+
 ## 6. Interaction snapshots are per-type files
 
 `doc/rewrite/snapshot_pins.md`. The i7 snapshots keep their rows in
@@ -293,6 +296,24 @@ then runs `python3 tools/dq_pin_factor.py`, which factors them; commit the pin f
 the old format still passes (plain rows are read as before); run `python3 tools/dq_pin_factor.py` once to factor them before the lane-ready
 run. On a merge conflict in a pin file, take master's file (`git show origin/master:<path> > <path>`, never checkout) and re-bless the type; never hand-merge the `@`/`-`/`+` lines.
 
+## 14. The push gate needs a test stamp (October 2026, `tooling-fix`)
+
+`tools/dq_push_master.sh` and `tools/hooks/pre-push` refuse a push unless the pushed commit carries a passing test stamp, checked by
+`bash tools/dq_push_stamp.sh <commit>` (prints `STAMPED: ...` or `UNSTAMPED: ...`). A commit passes when:
+
+- it carries a lane-ready note (`refs/notes/lane-ready`, written by `dq_lane_ready.sh`) or a merge-gates note (`refs/notes/merge-gates`,
+  written by `dq_merge_gates.sh` when its test world ran) on exactly that commit, with `"ok":true`;
+- it is already in `origin/master`;
+- it is a merge and every parent passes: the push script's own merge of `origin/master` into a stamped lane, or a merge batch of
+  stamped lanes (`dq_merge_gates.sh` also stamps the batch's merge commit itself);
+- it has one parent that passes and changes only docs, changelogs, `*.md`, `tools/ci/known_failures.txt` or the look keys (what
+  `dq_lane_ready.sh` allows after a stamp, and the data-only commits the push script adds).
+
+A stamp is ok when nothing failed that `tools/ci/known_failures.txt` does not list: the gates now record `new_failed=` beside `failed=`, the
+lane-ready note carries both, and `dq_lane_check.sh` judges `new_failed`. `dq_merge_gates.sh --no-tests` writes no stamp. The hook runs the
+checker from the pushing worktree, so a worktree that predates it pushes as before; reinstall the hook after merging
+(`cp tools/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"`).
+
 ## 15. Ratchet lints on the typed tree (October 2026, `tooling-fix`)
 
 `silicon_entry`, `init`, `decl`, `base_vars` and `requirement_bool` now find their sites on the analyzer's semantic model
@@ -309,3 +330,20 @@ run. On a merge conflict in a pin file, take master's file (`git show origin/mas
 - Line numbers are the engine's (universal newlines): `sem::procs::engine_line()` maps the parser's numbering, which differs after a
   lone carriage return.
 - When the model cannot be built the lints fall back to the old text rules, so a parse failure never passes a site silently.
+
+## 16. Constructor arguments are checked (October 2026, `tooling-fix`)
+
+The `lifeforms` lint now judges positional constructors on the typed tree (`tools/analyze/src/sem/ctor_args.rs`; final_api section 6,
+"param() and make()"):
+
+- `ctor_dead_arg`: `new /T(loc, x, ...)` (or `var/T/v = new(loc, x, ...)`) where no `param(..., pos = N)` of `/T` takes position N and no
+  `New()`/`Initialize()` of `/T` or an ancestor reads it. Drop the argument, or declare the param it was meant for. A literal `null` is no
+  argument.
+- `ctor_forward_only`: an override whose trailing extra parameters only reach `..()`; drop them (`..()` passes the caller's arguments).
+- `param_pos_override`: a subtype's `param(..., pos = N)` that takes over a position an ancestor maps needs `overrides = TRUE`
+  (`param_overrides_nothing` rejects one that overrides nothing).
+
+All four are hard errors. `python3 tools/dx/codemods/ctor_args.py --apply` rewrites the sites the lint reports (dead trailing arguments
+removed, a dead one before a live one written `null`, forward-only parameters dropped with an exact `..(params)` becoming `..()`, and
+`overrides = TRUE` added); anything it cannot do exactly it prints as residue. The first run removed 22 dead arguments, 37 forward-only
+parameter lists and marked 33 position takeovers.

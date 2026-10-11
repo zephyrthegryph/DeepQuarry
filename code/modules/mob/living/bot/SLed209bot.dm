@@ -87,6 +87,6 @@ CAPABILITIES(/obj/item/secbot_assembly/ed209_assembly/slime)
 /obj/item/secbot_assembly/ed209_assembly/slime/finished(datum/act/op/A)
 	to_chat(A.actor, span_notice("You complete the ED-209."))
 	var/turf/where = get_turf(src)
-	new /mob/living/bot/secbot/ed209/slime(where, created_name, lasercolor)
+	new /mob/living/bot/secbot/ed209/slime(where)
 	consume(src, A.actor)
 	return OP_OK

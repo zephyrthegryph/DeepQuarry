@@ -12,7 +12,7 @@ CAPABILITIES(/obj/item/tool/transforming)
 	owns_one(nameof(welder), /obj/item/weldingtool)
 	op("switch", in_hand(), label("Change tool mode"), then(PROC_REF(mode_switched)))
 
-/obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
+/obj/item/tool/transforming/Initialize(mapload)
 	. = ..()
 	if(TOOL_WELDER in possible_tooltypes)
 		rel_set(src, nameof(welder), new weldertype(src)) // ALLOW(decl): only when a welder mode is possible

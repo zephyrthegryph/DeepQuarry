@@ -17,7 +17,9 @@
 // a given value is checked against it, and a refused one is reported and replaced by the default. `default =` is a constant or PROC_REF(x)
 // of the holder, used when nothing gave a value (the map, make(), a positional argument). `required = TRUE` reports an instance made without
 // one. `pos = N` maps the N-th constructor argument after the location (new T(loc, a, b): a is pos 1) to the param, so a caller not yet moved
-// to make() keeps working; the codemod moves the callers it can see.
+// to make() keeps working; the codemod moves the callers it can see. A subtype that maps a position an ancestor already maps says so with
+// `overrides = TRUE` (`analyze` rejects a silent takeover, and an `overrides = TRUE` that takes over nothing). `analyze` also rejects a
+// `new /T(loc, x, ...)` whose argument at a position no param(pos =) of /T takes and no New()/Initialize() of /T reads (a dead argument).
 //
 // make() is generated (analyze gen declare writes it into code/engine/_generated/declare.dm): its named parameters are every name a param()
 // declares anywhere, so DM and DreamChecker check each call, and `analyze` checks that the made type declares each name it is given and every
@@ -40,7 +42,7 @@
 // an Initialize() that remains read it; when Initialize() has returned (an atom) or the init ran (a plain datum), the var goes back to its
 // compiled default, so the instance holds no reference to it.
 
-/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE)
+/proc/param(var_name, schema = null, default = null, required = FALSE, pos = null, apply = null, keep = TRUE, overrides = FALSE)
 	if(!istext(var_name))
 		declare_report("param(): the var is nameof(var), got [var_name]")
 		return null
@@ -49,7 +51,7 @@
 	if(!isnull(apply) && !istext(apply))
 		declare_report("param([var_name]): apply = is PROC_REF(x), got [apply]")
 		apply = null
-	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep))
+	return entry_make(ENTRY_PARAM, "param:[var_name]", list("var" = var_name, "schema" = schema, "default" = default, "required" = !!required, "pos" = pos, "apply" = apply, "keep" = !!keep, "overrides" = !!overrides))
 
 /proc/built_from(var_name)
 	return entry_make(ENTRY_BUILT_FROM, "built_from", list("var" = var_name))

@@ -35,7 +35,7 @@ CAPABILITIES(/obj/machinery/power/generator/generated_station)
 	piping_layer = PIPING_LAYER_SUPPLY
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/air/full/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/pipe/tank/generated_station_scrub
 	dir = WEST
@@ -43,39 +43,39 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/air/full/generated_station)
 	piping_layer = PIPING_LAYER_SCRUBBER
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/tank/generated_station_scrub)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/supply/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/simple/hidden/scrubbers/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/supply/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/manifold/hidden/scrubbers/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/supply/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 CAPABILITIES(/obj/machinery/atmospherics/pipe/cap/hidden/scrubbers/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/unary/vent_pump/on/generated_station
 	dir = WEST
 	piping_layer = PIPING_LAYER_SUPPLY
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_pump/on/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station
 	dir = EAST
 	piping_layer = PIPING_LAYER_SCRUBBER
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station)
-	param(nameof(dir), pos = 1)
+	param(nameof(dir), pos = 1, overrides = TRUE)
 
 /datum/generated_station_utility_topology
 	var/station_id

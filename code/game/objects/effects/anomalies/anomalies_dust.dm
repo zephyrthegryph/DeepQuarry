@@ -13,7 +13,7 @@
 	COOLDOWN_DECLARE(pulse_cooldown)
 	var/pulse_delay = 5 SECONDS
 
-/obj/effect/anomaly/dust/Initialize(mapload, new_lifespan, drops_core)
+/obj/effect/anomaly/dust/Initialize(mapload)
 	. = ..()
 
 	animate(src, transform = matrix()*0.85, time = 3, loop = -1)

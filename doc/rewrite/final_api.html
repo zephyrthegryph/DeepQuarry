@@ -1285,15 +1285,16 @@ rolls_fix_seed(seed)                                                       <span
   </div>
 
   <h4>2. param() and make(): named, typed constructor arguments</h4>
-  <div class="sig">param(nameof(var), schema = null, default = null, required = FALSE, pos = null)   <span class="c">// schema: int(), num(), schema_text(), schema_ref(T), enum(), or a type path</span>
+  <div class="sig">param(nameof(var), schema = null, default = null, required = FALSE, pos = null, overrides = FALSE)   <span class="c">// schema: int(), num(), schema_text(), schema_ref(T), enum(), or a type path</span>
 built_from(nameof(var))                                                         <span class="c">// the parts a make(..., parts =) hands over</span>
 make(type, at = null, by = null, parts = null, name = value...)                 <span class="c">// generated: its named params are every name a param() declares</span>
 make_args(name = value...)                                                      <span class="c">// the same, as a starts_args value</span></div>
   <div class="prose">
     <ul>
       <li>A param is set before init: <code>make()</code> passes a record that <code>/atom/New()</code> (a datum's <code>New()</code>) applies before anything of the type runs. A given value is checked against its schema; a refused one is reported and falls back. <code>default =</code> (a constant or <code>PROC_REF</code>) fills one nothing gave; <code>required = TRUE</code> reports an instance made without one.</li>
-      <li><code>pos = N</code> maps the N-th constructor argument after the location to the param, so a caller still writing <code>new /T(loc, a)</code> keeps working while the codemod moves the callers it can see to <code>make()</code>.</li>
-      <li><strong>Checked.</strong> DM checks each <code>make()</code> name against the union; the <code>lifeforms</code> lint checks it against the made type (<code>make_unknown_param</code>, <code>make_missing_required</code>, <code>make_parts_without_built_from</code>).</li>
+      <li><code>pos = N</code> maps the N-th constructor argument after the location to the param, so a caller still writing <code>new /T(loc, a)</code> keeps working while the codemod moves the callers it can see to <code>make()</code>. A subtype that maps a position an ancestor already maps writes <code>overrides = TRUE</code>; a takeover without it (<code>param_pos_override</code>) and an <code>overrides = TRUE</code> that takes over nothing (<code>param_overrides_nothing</code>) are errors.</li>
+      <li><strong>No dead arguments.</strong> <code>new /T(loc, a, ...)</code> (or <code>var/T/x = new(loc, a, ...)</code>) is rejected when an argument sits at a position no <code>param(pos = N)</code> of <code>/T</code> takes and no <code>New()</code>/<code>Initialize()</code> of <code>/T</code> or an ancestor reads (<code>ctor_dead_arg</code>; a literal <code>null</code> is no argument). An override whose trailing extra parameters only reach <code>..()</code> drops them (<code>ctor_forward_only</code>): <code>..()</code> passes the caller's arguments by itself. <code>tools/dx/codemods/ctor_args.py</code> does both and adds <code>overrides = TRUE</code>; the typed analysis is <code>tools/analyze/src/sem/ctor_args.rs</code>.</li>
+      <li><strong>Checked.</strong> DM checks each <code>make()</code> name against the union; the <code>lifeforms</code> lint checks it against the made type (<code>make_unknown_param</code>, <code>make_missing_required</code>, <code>make_parts_without_built_from</code>) and checks positional constructors (<code>ctor_dead_arg</code>, <code>ctor_forward_only</code>, <code>param_pos_override</code>, <code>param_overrides_nothing</code>).</li>
     </ul>
   </div>
 

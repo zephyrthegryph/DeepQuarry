@@ -300,7 +300,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/stunted, spiderling_grow_as, list(/mob/
 
 TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob/living/simple_mob/animal/giant_spider/nurse/queen))
 
-/obj/effect/spider/spiderling/princess/Initialize(mapload, atom/parent)
+/obj/effect/spider/spiderling/princess/Initialize(mapload)
 	. = ..()
 	amount_grown = 50
 

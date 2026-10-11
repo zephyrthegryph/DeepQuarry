@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(queen_amount, 0) //We only gonna want 1 queen in the world.
 	..()
 	if(prob(20))
 		act_message(src, null, null, MSG_OTHERS(span_notice("%U% dropped some toy!")))
-		new /obj/item/toy/figure/bounty_hunter(loc, src)
+		new /obj/item/toy/figure/bounty_hunter(loc)
 
 
 

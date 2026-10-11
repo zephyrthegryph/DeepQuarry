@@ -146,7 +146,7 @@
 
 // --- Lifecycle ------------------------------------------------------------------------------
 
-/mob/living/silicon/robot/Initialize(mapload, is_decoy)
+/mob/living/silicon/robot/Initialize(mapload)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
 	global.observe(src, /datum/notice/living_shield_injury, src, then(PROC_REF(absorb_injury_with_shield)))
