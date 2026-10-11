@@ -15,7 +15,7 @@ impl Root {
 impl Drop for Root { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
 fn demand(root: &Path, text: &str) -> ResourceDemand {
     discover_demand(&DirectivePlan { project_dir: root.into(), file_dirs: vec!["late".into()], ..Default::default() },
-        &ExpandedRegions { text: format!("/proc/p()\n    return '{text}'\n"), ..Default::default() }, &[], &[]).unwrap()
+        &ExpandedRegions { text: format!("/proc/p()\n    return '{text}'\n").into(), ..Default::default() }, &[], &[]).unwrap()
 }
 fn limits() -> CoverageLimits { CoverageLimits { candidate_reads: 32, source_payload_bytes: 1024 } }
 fn raw_policy() -> CapturePolicy { CapturePolicy { certified_raw_extensions: BTreeSet::from(["txt".into()]) } }
