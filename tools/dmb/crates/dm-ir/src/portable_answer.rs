@@ -1,7 +1,10 @@
 //! Lossless source-neutral answer transport; never an admission certificate.
+#[path = "portable_answer_value.rs"]
+mod value;
 use crate::{ResolveQuery, ResolvedMeaning, SymbolId};
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub enum PortableResolvedAnswer {
+    Value(value::PortableValue),
     Missing,
     Unsupported(ResolveQuery),
     Presence(bool),
@@ -28,6 +31,7 @@ pub enum PortableResolvedAnswer {
 impl PortableResolvedAnswer {
     pub fn capture(answer: &ResolvedMeaning) -> Option<Self> {
         Some(match answer {
+            ResolvedMeaning::Value(v) => Self::Value(value::PortableValue::capture(v)?),
             ResolvedMeaning::Missing => Self::Missing,
             ResolvedMeaning::Unsupported(q) => Self::Unsupported(*q),
             ResolvedMeaning::Presence(v) => Self::Presence(*v),
@@ -64,7 +68,11 @@ impl PortableResolvedAnswer {
         })
     }
     pub fn restore(&self) -> ResolvedMeaning {
+        if let Self::Value(value) = self {
+            return ResolvedMeaning::Value(value.restore());
+        }
         match *self {
+            Self::Value(_) => unreachable!("handled portable value"),
             Self::Missing => ResolvedMeaning::Missing,
             Self::Unsupported(q) => ResolvedMeaning::Unsupported(q),
             Self::Presence(v) => ResolvedMeaning::Presence(v),
