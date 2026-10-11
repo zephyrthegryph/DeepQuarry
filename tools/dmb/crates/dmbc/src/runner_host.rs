@@ -807,8 +807,22 @@ mod tests {
     fn one_shot_without_disk_has_no_expansion_memo_or_retained_procedure_owner() {
         let mut host = BuildHost::one_shot();
         assert!(host.expansion_memo(None).is_none());
-        capture(&mut host, BTreeMap::new());
+        let no_engine = host.procedure_memo(1, None, true).unwrap();
+        assert!(no_engine.abi.as_ref().unwrap().engine_owner().is_none());
+        let engine = capture(&mut host, BTreeMap::new());
         let request = host.procedure_memo(1, None, true).unwrap();
+        let abi = request.abi.as_ref().unwrap();
+        assert!(Arc::ptr_eq(
+            abi.engine_owner().unwrap(),
+            &engine.abi_engine_owner(),
+        ));
+        let next_request = host.procedure_memo(1, None, true).unwrap();
+        assert!(!Arc::ptr_eq(abi, next_request.abi.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(
+            abi.engine_owner().unwrap(),
+            next_request.abi.as_ref().unwrap().engine_owner().unwrap(),
+        ));
+        assert!(host.abi.is_none(), "one-shot ABI owner belongs to the request");
         assert!(request.initializer_fragments.is_some());
         assert!(request.initializer_assemblies.is_some());
         assert!(host.procedures.is_none());
