@@ -31,7 +31,7 @@ TRACKED(/datum/dq_native_transfer_query_probe, refusal_text)
 	rel_set(P, nameof(P.candidate), item)
 	rel_set(P, nameof(P.mover), mover)
 	observe(box, /datum/act/insert, P, needs(req(TYPE_PROC_REF(/datum/dq_native_transfer_query_probe, admission))))
-	var/datum/act/op/acceptance/query = acceptance_act(box, box, item, null, mover, "s1_picky")
+	var/datum/act/op/query = acceptance_act(box, box, item, null, mover, "s1_picky")
 	var/lease_count = GLOB.act_taken
 	TEST_ASSERT_EQUAL(act_context(query.type, P, query.target, query.actor, query), query, "Receiver rebind preserves the existing query lease")
 	TEST_ASSERT_EQUAL(query.holder, P, "Receiver rebind uses the real listener")

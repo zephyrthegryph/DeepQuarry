@@ -32,7 +32,11 @@ CAPABILITIES(/obj/dq_native_slot_accepts)
 	var/old_reason = GLOB.act_last_reason
 	TEST_ASSERT(move_into(H, "dq-native-slot", I, M), "Native requirement permits real transfer")
 	TEST_ASSERT_EQUAL(I.loc, H, "Real insertion changes custody")
-	TEST_ASSERT(I in dq_ledger(H).slots["dq-native-slot"], "Actual ledger slot contains candidate")
+	var/datum/ledger/after_insert = dq_ledger(H)
+	var/list/insert_record = after_insert.entries[I]
+	TEST_ASSERT_NOTNULL(insert_record, "Actual physical insertion has a ledger record; holder ledger stable=[after_insert == L], tracked=[after_insert.tracked]")
+	TEST_ASSERT_EQUAL(insert_record[LEDGER_E_SLOT], "dq-native-slot", "Actual insertion preserves requested slot id")
+	TEST_ASSERT(I in after_insert.slots["dq-native-slot"], "Actual ledger slot contains candidate; recorded=[insert_record[LEDGER_E_SLOT]], slots=[english_list(after_insert.slots)]")
 	H2.set_admission_ready(TRUE)
 	TEST_ASSERT(move_into(H2, "dq-native-slot", I, M), "Real transfer to another holder removes candidate from old slot")
 	TEST_ASSERT_EQUAL(I.loc, H2, "Real removal/adoption updates custody")

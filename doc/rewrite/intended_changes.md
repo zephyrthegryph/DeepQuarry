@@ -4716,3 +4716,7 @@ with one through `slot(SLOT_HIDDEN_UPLINK, starts =)`.
 * **A dark maw keeps the belly selected when it opened** through a setup hook, reading the current one until then; the swoopie's vacuum is
   hooked to its belly in a setup hook instead of Initialize().
 * `spont_belly_*` stay vars: they hold belly names chosen in the vore preferences (the vore_prefs profile record's lane).
+
+### Acceptance predicate dispatch (codex/acceptance-consumers-1011)
+
+The legacy subject callback evaluator now invokes the actual receiver's override after validating the declared absolute proc path. Previously an /atom/movable slot_loose callback bypassed /mob/living's pinned, buckled and chameleon checks. Closet admission now honors those existing checks. dq_predicate_subject_override covers the dispatch and exact refusal; this is a correction of an existing refusal defect, not permission to re-bless unrelated rows.

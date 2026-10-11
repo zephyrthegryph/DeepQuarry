@@ -200,7 +200,8 @@
 	TEST_ASSERT_EQUAL(G.organ_tag, "dq_forced_growth", "forced tag is applied before placement")
 	TEST_ASSERT_EQUAL(G.parent_organ, BP_L_ARM, "forced limb overrides random choice")
 	TEST_ASSERT_EQUAL(G.owner, H, "real constructor places growth in host")
-	TEST_ASSERT_EQUAL(H.organs_by_name["dq_forced_growth"], G, "body identity index records forced tag")
+	TEST_ASSERT_EQUAL(G.loc, arm, "growth custody is the forced containing limb")
+	TEST_ASSERT_EQUAL(arm.slot_lookup(SLOT_ID_PART_ORGANS, "dq_forced_growth"), G, "actual internal-organ slot index records forced tag")
 	TEST_ASSERT_EQUAL(G.status, 0, "forced organic growth remains live")
 
 /datum/unit_test/dq_organ_preinit_identity/engineered/Run()
@@ -218,6 +219,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/limb = H.get_organ(BP_L_HAND)
 	TEST_ASSERT(limb && limb.owner == H, "real host has hand to replace")
+	own(limb) // detached production child remains tracked for teardown, even on an early assertion failure
 	var/tag = limb.organ_tag
 	var/parent_tag = limb.parent_organ
 	var/max_damage = limb.max_damage
@@ -234,3 +236,7 @@
 	TEST_ASSERT_EQUAL(S.joint, joint, "joint copy retained")
 	TEST_ASSERT_EQUAL(S.max_damage, max_damage, "damage cap copied after parent")
 	TEST_ASSERT(S.is_stump(), "actual stump contract retained")
+	qdel(limb)
+	TEST_ASSERT(QDELETED(limb), "detached original hand is genuinely deleted")
+	TEST_ASSERT_EQUAL(S.owner, H, "deleting detached original leaves stump in host")
+	TEST_ASSERT_EQUAL(H.organs_by_name[tag], S, "original cleanup preserves actual stump body index")
