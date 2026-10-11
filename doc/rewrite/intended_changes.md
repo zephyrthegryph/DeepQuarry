@@ -4439,7 +4439,7 @@ stream (a converted `rand()`/`pick()`/`prob()` no longer draws from the world RN
 * **The legacy emergency closet keeps its own contents.** Its `starts_with` was overwritten by the random kit in Initialize(); the kit is now a
   roll, which a declared list suppresses (as a map edit of `starts_with` does).
 * **The booze bible holds its beer and cash.** It assigned `starts_with` after the storage had already read it, so it started empty.
-* **Weeds, crayon-free boxes and similar: a map edit wins over a roll.** Rolled vars (a gift's wrapping, a pizza voucher's slogan, a drone
+* **A map edit wins over a roll.** Rolled vars (a gift's wrapping, a pizza voucher's slogan, a drone
   circuit's name, a dragon plushie's phrase, a lipstick's colour) keep a mapper's value instead of being overwritten.
 * **`/obj/structure/largecrate` makes its `starts_with` through `initial_contents(nameof(starts_with))`** (in nullspace, then moved in) and
   keeps the var set afterwards.
