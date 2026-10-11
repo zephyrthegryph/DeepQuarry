@@ -453,3 +453,22 @@ mod tests {
         }
     }
 }
+
+/// Exact current-bound diagnostic comparison, including every secondary origin.
+pub(crate) fn verification_diagnostics_equal(
+    a: &[LoweringDiagnostic],
+    b: &[LoweringDiagnostic],
+) -> bool {
+    a.len() == b.len()
+        && a.iter().zip(b).all(|(a, b)| {
+            a.kind == b.kind
+                && a.identity == b.identity
+                && a.origin == b.origin
+                && a.message == b.message
+                && a.related.len() == b.related.len()
+                && a.related
+                    .iter()
+                    .zip(&b.related)
+                    .all(|(a, b)| a.origin == b.origin && a.message == b.message)
+        })
+}

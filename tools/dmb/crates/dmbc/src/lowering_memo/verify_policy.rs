@@ -16,6 +16,8 @@ pub(crate) struct VerifyPolicy {
     tickets: AtomicU64,
     pub checked: AtomicU64,
     pub mismatches: AtomicU64,
+    pub anonymous_initializer_checked: AtomicU64,
+    pub anonymous_initializer_mismatches: AtomicU64,
 }
 impl VerifyPolicy {
     pub(crate) fn from_environment() -> Self {
@@ -38,6 +40,8 @@ impl VerifyPolicy {
             tickets: AtomicU64::new(0),
             checked: AtomicU64::new(0),
             mismatches: AtomicU64::new(0),
+            anonymous_initializer_checked: AtomicU64::new(0),
+            anonymous_initializer_mismatches: AtomicU64::new(0),
         }
     }
     pub(crate) fn select(&self) -> bool {
@@ -76,11 +80,22 @@ mod tests {
 }
 
 impl super::ProcedureMemo {
-    /// Scope is procedure hits only; other stage memos are not yet verified.
+    /// These counters cover procedure hits only; initializer counters are separate.
     pub fn procedure_verification_counts(&self) -> (u64, u64) {
         (
             self.verification.checked.load(Ordering::Relaxed),
             self.verification.mismatches.load(Ordering::Relaxed),
+        )
+    }
+    /// Request-scoped legacy anonymous initializer disk-hit verification.
+    pub fn anonymous_initializer_verification_counts(&self) -> (u64, u64) {
+        (
+            self.verification
+                .anonymous_initializer_checked
+                .load(Ordering::Relaxed),
+            self.verification
+                .anonymous_initializer_mismatches
+                .load(Ordering::Relaxed),
         )
     }
     #[cfg(test)]

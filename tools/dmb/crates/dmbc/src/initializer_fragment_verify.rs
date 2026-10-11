@@ -7,16 +7,22 @@ fn ledger(
         Item = dm_session::Observation<receipts::Query, receipts::Answer, receipts::Domain>,
     >,
 ) -> Option<BTreeMap<receipts::Query, (receipts::Domain, Vec<u8>)>> {
+    canonical_ledger(reads.into_iter().filter_map(|read| match read.answer {
+        receipts::Answer::Input(_) => None,
+        receipts::Answer::Semantic(answer) => {
+            Some((read.query, read.domain, answer.canonical_bytes()))
+        }
+    }))
+}
+/// Exact query/domain/answer comparison shared by typed and anonymous initializer hits.
+pub(crate) fn canonical_ledger<Q: Ord, D: Eq + Clone>(
+    reads: impl IntoIterator<Item = (Q, D, Vec<u8>)>,
+) -> Option<BTreeMap<Q, (D, Vec<u8>)>> {
     let mut result = BTreeMap::new();
-    for read in reads {
-        let answer = match read.answer {
-            // Input authority is checked separately with full Eq, never encoded hash identity.
-            receipts::Answer::Input(_) => continue,
-            receipts::Answer::Semantic(answer) => answer.canonical_bytes(),
-        };
-        let answer = (read.domain, answer);
+    for (query, domain, answer) in reads {
+        let answer = (domain, answer);
         if result
-            .insert(read.query, answer.clone())
+            .insert(query, answer.clone())
             .is_some_and(|old| old != answer)
         {
             return None;

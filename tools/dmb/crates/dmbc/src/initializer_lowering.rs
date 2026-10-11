@@ -812,103 +812,19 @@ fn lower_group<R: Resolver>(
             }
         }
     } else if let Some(memo) = memo {
-        let mut key = b"dmbc-anonymous-declaration-v3-sized-continuations\0".to_vec();
-        key.extend_from_slice(&memo.policy.to_le_bytes());
-        key.extend_from_slice(
-            &serde_json::to_vec(&resource_search_context).map_err(|error| error.to_string())?,
-        );
-        for &write_index in &group.writes {
-            let write = classified
-                .writes
-                .get(write_index)
-                .ok_or("initializer group write missing")?;
-            let bytes = write.write.canonical_bytes();
-            key.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-            key.extend_from_slice(&bytes);
-            match write
-                .runtime_value
-                .as_ref()
-                .ok_or("initializer runtime value missing")?
-            {
-                RuntimeValue::Expression(_) => key.push(0),
-                RuntimeValue::SizedArray(dimensions)
-                | RuntimeValue::SizedArrayExplicit { dimensions, .. } => {
-                    key.push(
-                        if matches!(
-                            write.runtime_value,
-                            Some(RuntimeValue::SizedArrayExplicit { .. })
-                        ) {
-                            2
-                        } else {
-                            1
-                        },
-                    );
-                    key.extend_from_slice(&(dimensions.len() as u64).to_le_bytes());
-                    for dimension in dimensions.iter() {
-                        key.extend_from_slice(&dimension.to_le_bytes());
-                    }
-                }
-            }
-        }
-        for origin in &debug.origins.entries {
-            key.extend_from_slice(&(origin.semantic_path.len() as u64).to_le_bytes());
-            key.extend_from_slice(origin.semantic_path.as_bytes());
-        }
-        // Stored reads (including mandatory ancestry/override facts) are
-        // validated by the lookup. A hit does not build a second recorder.
-        let replay = memo.lookup_anonymous(&key, host, debug.origins.entries.len());
-        if let Some(errors) = replay.errors {
-            if errors.iter().all(|error| {
-                error
-                    .span
-                    .is_none_or(|span| span.start <= span.end && span.end < write_ordinals.len())
-            }) {
-                return Err(map_error(
-                    dm_codegen_byond::initializer::InitializerError::Lowering(errors),
-                ));
-            }
-        }
-        if let Some(code) = replay.code {
-            code
-        } else {
-            let recorder = crate::lowering_memo::RecordingResolver::new(host);
-            for &write_index in &group.writes {
-                let write = classified
-                    .writes
-                    .get(write_index)
-                    .ok_or("initializer group write missing")?;
-                recorder.resolve(dm_ir::ResolveQuery::Ancestry(write.write.lexical_owner));
-                if let Some(identity) = write.write.lexical_procedure {
-                    recorder.record_occurrence(identity);
-                }
-            }
-            let code = dm_codegen_byond::initializer::lower_with_value_continuations(
-                &assignment_views,
-                context(),
-                &recorder,
-                value_continuations.clone(),
-            )
-            .map_err(|error| {
-                if let dm_codegen_byond::initializer::InitializerError::Lowering(errors) = &error {
-                    if errors.iter().all(|error| {
-                        error.span.is_none_or(|span| {
-                            span.start <= span.end && span.end < write_ordinals.len()
-                        })
-                    }) {
-                        memo.remember_failure(
-                            &key,
-                            None,
-                            &recorder.reads(),
-                            errors,
-                            &recorder.domain_receipts(),
-                        );
-                    }
-                }
-                map_error(error)
-            })?;
-            memo.remember_executable(&key, &recorder.reads(), &code, &recorder.domain_receipts());
-            code
-        }
+        anonymous::lower(
+            memo,
+            classified,
+            group,
+            host,
+            resource_search_context,
+            &debug.origins,
+            &write_ordinals,
+            &assignment_views,
+            value_continuations.clone(),
+            context,
+            &map_error,
+        )?
     } else {
         // Cold oracle path performs no cache key, serialization, extra
         // ancestry reads or recording allocation.
@@ -948,6 +864,9 @@ fn lower_group<R: Resolver>(
         encoding,
     })
 }
+
+#[path = "initializer_anonymous.rs"]
+mod anonymous;
 
 #[path = "initializer_recipe_handoff.rs"]
 mod recipe_handoff;

@@ -479,6 +479,15 @@ impl ProcedureMemo {
         host: &R,
         debug_count: usize,
     ) -> crate::lowering_memo_wire::AnonymousLookup {
+        self.lookup_anonymous_verified(key, host, debug_count, false)
+    }
+    pub(crate) fn lookup_anonymous_verified<R: Resolver>(
+        &self,
+        key: &[u8],
+        host: &R,
+        debug_count: usize,
+        verify: bool,
+    ) -> crate::lowering_memo_wire::AnonymousLookup {
         let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return Default::default();
         };
@@ -490,7 +499,7 @@ impl ProcedureMemo {
             };
             let outcome = {
                 let _profile = dm_profile::item("lowering.disk_validate_replay");
-                candidates.anonymous(key, host, debug_count)
+                candidates.anonymous_verified(key, host, debug_count, verify)
             };
             let admitted = outcome.code.is_some() || outcome.errors.is_some();
             if admitted {
@@ -503,7 +512,7 @@ impl ProcedureMemo {
             view.is_some(),
             outcome.code.is_some() || outcome.errors.is_some()
         );
-        if outcome.code.is_some() || outcome.errors.is_some() {
+        if !verify && (outcome.code.is_some() || outcome.errors.is_some()) {
             self.counts.disk_hits.fetch_add(1, Ordering::Relaxed);
         }
         outcome
