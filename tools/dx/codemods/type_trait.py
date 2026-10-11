@@ -130,6 +130,15 @@ def mask_strings(code):
     i = 0
     while i < len(code):
         c = code[i]
+        if in_str and depth and c in "\"'":
+            # a string inside an embedded expression: blank it whole
+            j = i + 1
+            while j < len(code) and code[j] != c:
+                j += 2 if code[j] == "\\" else 1
+            for k in range(i + 1, min(j, len(code))):
+                out[k] = "\0"
+            i = j + 1
+            continue
         if in_str:
             if c == "\\":
                 out[i] = "\0"

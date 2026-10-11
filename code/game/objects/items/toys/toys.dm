@@ -3021,7 +3021,9 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/mob/toy_worn.dmi',
 		slot_head_str = 'icons/mob/toy_worn.dmi')
 
+CAPABILITIES(/obj/item/toy/plushie/teshari/strix)
 	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
+
 /obj/item/toy/plushie/teshari/strix/can_rename(datum/act/op/A)
 	return "You cannot rename Strix Hades, you hug him anyway."
 
@@ -3038,7 +3040,9 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 		slot_back_str = 'icons/vore/custom_onmob_yw.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_yw.dmi')
 
+CAPABILITIES(/obj/item/toy/plushie/teshari/eili)
 	configure(item_worn(slots = SLOT_BACK | SLOT_HEAD))
+
 /obj/item/toy/plushie/teshari/eili/can_rename(datum/act/op/A)
 	return "You cannot rename Eili, you hug her anyway."
 
