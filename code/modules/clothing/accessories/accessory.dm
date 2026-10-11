@@ -225,7 +225,7 @@ CAPABILITIES(/obj/item/clothing/accessory/maid_arms)
 									if(H.size_multiplier < 0.5)
 										beat_size = pick("quiet ", "hushed " ,"low " ,"hushed ")
 									message_holder = pick("You can hear disparate heartbeats as well.", "You can hear a different [beat_size]heartbeat too.", "It sounds like there is more than one heartbeat." ,"You can pick up a [beat_size]heatbeat along with everything else.")
-							if(M.nutrition > 900)	//dead
+							if(nutrition_of(M) > 900)	//dead
 								message_holder2 = pick("Your listening is troubled by the occasional deep groan of their body.", "There is some moderate bubbling in the background.", "They seem to have a healthy metabolism as well.")
 
 							var/obj/item/organ/internal/heart/heart = M.organ_in(O_HEART)
@@ -1094,7 +1094,7 @@ CAPABILITIES(/datum/prompt/text/collar_tag)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
@@ -1207,7 +1207,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/modified)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return
@@ -1288,7 +1288,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning)
 		var/mob/living/carbon/human/H = M
 		if(!istype(H))
 			return
-		if(!H.resizable)
+		if(!H.vore_prefs.resizable)
 			act_message(H, null, MSG_SELF(span_notice("The space around you distorts but nothing happens to you.")), \
 				MSG_OTHERS(span_warning("The space around %U% compresses for a moment but then nothing happens.")))
 			return

@@ -86,7 +86,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/mob/living/user = A.actor
 	if(client || !user.client || !ai_brain || !isliving(user))
 		return OP_DECLINE
-	if(!user.devourable || !user.allowmobvore || !user.can_be_drop_prey)
+	if(!user.vore_prefs.devourable || !user.vore_prefs.allowmobvore || !user.vore_prefs.can_be_drop_prey)
 		return OP_DECLINE
 	ai_brain?.give_target(user, TRUE)
 	return TRUE
@@ -151,9 +151,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	vore_pounce_falloff = 0
 	vore_pounce_maxhealth = 100
 	vore_standing_too = TRUE
-	can_be_drop_prey = FALSE
-	can_be_drop_pred = TRUE
-	throw_vore = TRUE
 	unacidable = TRUE
 
 	special_attack_min_range = 2
@@ -164,6 +161,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker)
 	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "can_be_drop_pred" = TRUE, "throw_vore" = TRUE))
 	configure(mob_movement(bump = HEAVY, swap = HEAVY, push = HEAVY))
 
 /mob/living/simple_mob/vore/vore_hostile/leaper/load_default_bellies()
@@ -186,7 +184,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/vore_hostile/leaper)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || !L.vore_prefs.can_be_drop_prey || !L.vore_prefs.throw_vore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()

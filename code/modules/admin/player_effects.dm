@@ -249,7 +249,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/mob/living/simple_mob/shadekin/shadekin = new kin_type(Tt)
 	shadekin.real_name = shadekin.name
 	shadekin.init_vore(TRUE)
-	shadekin.can_be_drop_pred = TRUE
+	shadekin.vore_prefs.can_be_drop_pred = TRUE
 	shadekin.set_dir(SOUTH)
 	shadekin.ability_flags |= 0x1
 	shadekin.phase_out(get_turf(shadekin)) //Homf
@@ -290,15 +290,15 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
-	Tar.set_fear(200)
+	Tar.status_set(STAT_FEAR, 200)
 
 /datum/eventkit/player_effects/proc/ui_act_terror_aoe(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
 	if(!istype(Tar))
 		return
 	for(var/mob/living/carbon/human/L in orange(Tar.client.view, Tar))
-		L.set_fear(200)
-	Tar.set_fear(200)
+		L.status_set(STAT_FEAR, 200)
+	Tar.status_set(STAT_FEAR, 200)
 
 /// The loops and direction are asked only for a speed that spins.
 /datum/eventkit/player_effects/proc/spin_speed_ok(datum/act/op/A)

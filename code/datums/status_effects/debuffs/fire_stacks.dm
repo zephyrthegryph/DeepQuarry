@@ -113,22 +113,20 @@
  */
 
 /datum/status_effect/fire_handler/proc/cache_stacks()
-	owner.fire_stacks = 0
-	var/was_on_fire = owner.on_fire
-	owner.on_fire = FALSE
-	for(var/datum/status_effect/fire_handler/possible_fire in owner.status_effects)
-		owner.fire_stacks += possible_fire.stacks * possible_fire.stack_modifier
+	// The mob's burning is a stat this effect holds while lit (STAT_ON_FIRE); its stacks are summed on read (fire_stacks_of()).
+	var/was_on_fire = !!stat_value(owner, STAT_ON_FIRE)
+	var/lit = FALSE
+	for(var/datum/status_effect/fire_handler/fire_stacks/our_fire in owner.status_effects)
+		if(our_fire.on_fire && !QDELETED(our_fire))
+			lit = TRUE
+	if(lit)
+		hold(owner, STAT_ON_FIRE, TRUE, SRC_FIRE_STACKS)
+	else
+		release(owner, STAT_ON_FIRE, SRC_FIRE_STACKS)
 
-		if(!istype(possible_fire, /datum/status_effect/fire_handler/fire_stacks))
-			continue
-
-		var/datum/status_effect/fire_handler/fire_stacks/our_fire = possible_fire
-		if(our_fire.on_fire)
-			owner.on_fire = TRUE
-
-	if(was_on_fire && !owner.on_fire)
+	if(was_on_fire && !lit)
 		owner.clear_alert(ALERT_FIRE)
-	else if(!was_on_fire && owner.on_fire)
+	else if(!was_on_fire && lit)
 		owner.throw_alert(ALERT_FIRE, /atom/movable/screen/alert/fire)
 	owner.update_fire()
 	update_particles()
@@ -153,7 +151,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 	owns_one(nameof(moblight), /obj/effect/dummy/lighting_obj)
 
 /datum/status_effect/fire_handler/fire_stacks/get_examine_text()
-	if(owner.on_fire)
+	if(stat_value(owner, STAT_ON_FIRE))
 		return
 
 	return "[owner.p_They()] [owner.p_are()] covered in something flammable."
@@ -170,7 +168,7 @@ CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
 		return TRUE
 
 	var/decay_multiplier = 1 // has_trait(owner, TRAIT_HUSK) ? 2 : 1 // husks decay twice as fast
-	adjust_stacks(owner.fire_stack_decay_rate * decay_multiplier * seconds_between_ticks)
+	adjust_stacks(owner.fire_stack_decay_rate() * decay_multiplier * seconds_between_ticks)
 
 	if(stacks <= 0)
 		spent(src)

@@ -25,7 +25,6 @@
 	melee_damage_upper = 12
 	melee_miss_chance = 0
 	melee_attack_delay = 1.5
-	// DQEdit — dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	heat_resist = 1.0
 	cold_resist = 1.0
@@ -39,6 +38,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
+	configure(mob_movement(hovering = TRUE))
 	op("spacecritter_interaction_item", item(/obj/item), then(PROC_REF(spacecritter_interaction_item)))
 
 /// Old attackby: the evolve key evolves, the feed item duplicates; anything else is a normal hit.
@@ -133,6 +133,9 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	heating_power = 150000
 	size_multiplier = 1.5
 
+CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
+	configure(mob_movement(hovering = TRUE))
+
 /mob/living/simple_mob/vore/spacecritter/livingice //dark blue slime but more chilly. Dies to lasers or slighly toasty rooms
 	name = "living icicle"
 	desc = "A strange creature, a crab like creature seemingly made of ice"
@@ -142,7 +145,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter)
 	icon_dead = "livingice-dead"
 	minbodytemp = 0			// Minimum "okay" temperature in kelvin
 	maxbodytemp = 300			// Maximum of above
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	heat_resist = 0.2
 	cold_resist = 1.0
 

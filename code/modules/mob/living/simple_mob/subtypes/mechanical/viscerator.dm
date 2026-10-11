@@ -25,7 +25,6 @@
 	icon = 'icons/mob/critter.dmi'
 	icon_state = "viscerator_attack"
 	icon_living = "viscerator_attack"
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	faction = FACTION_SYNDICATE
 	endurance = 15
@@ -45,6 +44,7 @@
 
 
 CAPABILITIES(/mob/living/simple_mob/mechanical/viscerator)
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(attack_cooldown = 5, death_message = "is smashed into pieces!"))
 	configure(mob_movement(swap = 0, push = 0))
 	after_init(0, then(PROC_REF(viscerator_swarm_ready)))

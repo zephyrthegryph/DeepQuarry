@@ -191,6 +191,12 @@ GLOBAL_LIST_INIT(modulo_angle_to_dir, list(NORTH,NORTHEAST,EAST,SOUTHEAST,SOUTH,
 		hex = copytext(hex, 2)
 	return list(hex2rgb_r(hex), hex2rgb_g(hex), hex2rgb_b(hex))
 
+/// `colour` ("#rrggbb") with channel `channel` (1 red, 2 green, 3 blue) set to `value`, rounded and clamped to 0-255.
+/proc/colour_set_channel(colour, channel, value)
+	var/list/channels = hex2rgb(colour)
+	channels[channel] = clamp(round(value), 0, 255)
+	return rgb(channels[1], channels[2], channels[3])
+
 // The three procs below require that the '#' part of the hex be stripped, which hex2rgb() does automatically.
 /proc/hex2rgb_r(hex)
 	var/hex_to_work_on = copytext(hex,1,3)

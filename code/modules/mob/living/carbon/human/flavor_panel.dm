@@ -59,7 +59,7 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 		parts += list(list(
 			"key" = k,
 			"label" = labels[k],
-			"preview" = TextPreview(LAZYACCESS(host.flavor_texts, k)),
+			"preview" = TextPreview(LAZYACCESS(host.bio.flavor_texts, k)),
 		))
 	data["parts"] = parts
 	return data

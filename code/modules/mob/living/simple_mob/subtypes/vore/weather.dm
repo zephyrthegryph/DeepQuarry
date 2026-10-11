@@ -31,7 +31,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 	faction = FACTION_ECLIPSE
 	size_multiplier = 2
 	var/regenration_rate = -15
@@ -39,6 +38,9 @@
 	loot_list = list(/obj/item/personal_shield_generator/belt/fossiltank  = 100,
 		/obj/item/prop/tyrlore/fossiltank = 100,
 		)
+
+CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
@@ -125,7 +127,6 @@
 	vore_standing_too = TRUE
 	unacidable = TRUE
 	grab_resist = 100
-	devourable = FALSE
 
 	faction = FACTION_TYR_ANT
 
@@ -145,6 +146,7 @@ TRACKED(/mob/living/simple_mob/vore/boss_jellyfish, chain_number)
 /mob/living/simple_mob/vore/boss_jellyfish/var/atom/chain_target
 
 CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = FALSE))
 	every(4 SECONDS, then(PROC_REF(chain_attack)), when = nameof(chain_number))
 
 /// A dash or a puddle summon at the target (its every() runs while attacks remain in the chain).
@@ -183,12 +185,12 @@ CAPABILITIES(/mob/living/simple_mob/vore/boss_jellyfish)
 /mob/living/simple_mob/vore/boss_jellyfish/apply_melee_effects(atom/A) //Not a real threat unless multiple hits. It acts a timer for special traits.
 	if(isliving(A))
 		var/mob/living/L = A
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
-	if(nutrition > 500)
+	if(nutrition_of(src) > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		after(src, 4 SECONDS, PROC_REF(sniper_shot), with = list(A))
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks

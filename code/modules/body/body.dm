@@ -88,9 +88,16 @@
 	/// clock_now(CLOCK_BIO) when regeneration was last read into the snapshot, or null.
 	var/tmp/regeneration_read_at
 
+	// --- Metabolism ---
+	/// Stored food energy, [0, owner's max_nutrition]. Written only by the owner's set_nutrition(); read nutrition_of(owner).
+	var/food_energy = 0
+	/// How fast the body burns it (a species sets it; DEFAULT_HUNGER_FACTOR otherwise).
+	var/hunger_rate = DEFAULT_HUNGER_FACTOR
+
 /datum/body/New(mob/living/new_owner)
 	..()
 	rel_set(src, nameof(owner), new_owner)
+	food_energy = new_owner ? new_owner.starting_nutrition() : 0
 	if(physiology_type)
 		rel_set(src, nameof(physiology), new physiology_type(src))
 

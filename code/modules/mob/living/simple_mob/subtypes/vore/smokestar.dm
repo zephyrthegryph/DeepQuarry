@@ -12,10 +12,8 @@
 	endurance = 200
 	movement_cooldown = 0
 	melee_attack_delay = 1.5 SECOND
-	can_be_drop_prey = TRUE
 	unsuitable_atoms_damage = 0
 	melee_miss_chance = 0
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	pass_flags = PASSTABLE
 
 	melee_damage_lower = 8
@@ -24,6 +22,8 @@
 	armor_spec = "melee=30;bullet=30;laser=30;energy=30;bomb=30;bio=100;rad=100"
 
 CAPABILITIES(/mob/living/simple_mob/vore/smokestar)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = TRUE))
+	configure(mob_movement(hovering = TRUE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 
 /*

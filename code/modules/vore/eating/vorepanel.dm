@@ -243,7 +243,7 @@ CAPABILITIES(/datum/vore_look)
 		return data
 
 	// General Data
-	data["persist_edit_mode"] = host().persistend_edit_mode
+	data["persist_edit_mode"] = host().vore_prefs.persistend_edit_mode
 
 	// Inisde Data
 	data["inside"] = get_inside_data(host())
@@ -377,7 +377,7 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_editmode_persistence(datum/act/op/A)
-	host().persistend_edit_mode = !host().persistend_edit_mode
+	host().vore_prefs.persistend_edit_mode = !host().vore_prefs.persistend_edit_mode
 	return TRUE
 
 /datum/vore_look/proc/ui_act_newbelly(datum/act/op/A, val)
@@ -480,187 +480,187 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_taste_flavor(datum/act/op/A, val)
-	host().vore_taste = sanitize(val, FLAVOR_MAX, FALSE, TRUE, FALSE)
+	host().vore_prefs.vore_taste = sanitize(val, FLAVOR_MAX, FALSE, TRUE, FALSE)
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_smell_flavor(datum/act/op/A, val)
-	host().vore_smell = sanitize(val, FLAVOR_MAX, FALSE, TRUE, FALSE)
+	host().vore_prefs.vore_smell = sanitize(val, FLAVOR_MAX, FALSE, TRUE, FALSE)
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_dropnom_pred(datum/act/op/A)
-	host().can_be_drop_pred = !host().can_be_drop_pred
+	host().vore_prefs.can_be_drop_pred = !host().vore_prefs.can_be_drop_pred
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.can_be_drop_pred = host().can_be_drop_pred
+		host().client.prefs_vr.can_be_drop_pred = host().vore_prefs.can_be_drop_pred
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_dropnom_prey(datum/act/op/A)
-	host().can_be_drop_prey = !host().can_be_drop_prey
+	host().vore_prefs.can_be_drop_prey = !host().vore_prefs.can_be_drop_prey
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.can_be_drop_prey = host().can_be_drop_prey
+		host().client.prefs_vr.can_be_drop_prey = host().vore_prefs.can_be_drop_prey
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_afk_pred(datum/act/op/A)
-	host().can_be_afk_pred = !host().can_be_afk_pred
+	host().vore_prefs.can_be_afk_pred = !host().vore_prefs.can_be_afk_pred
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.can_be_afk_pred = host().can_be_afk_pred
+		host().client.prefs_vr.can_be_afk_pred = host().vore_prefs.can_be_afk_pred
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_afk_prey(datum/act/op/A)
-	host().can_be_afk_prey = !host().can_be_afk_prey
+	host().vore_prefs.can_be_afk_prey = !host().vore_prefs.can_be_afk_prey
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.can_be_afk_prey = host().can_be_afk_prey
+		host().client.prefs_vr.can_be_afk_prey = host().vore_prefs.can_be_afk_prey
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_latejoin_vore(datum/act/op/A)
-	host().latejoin_vore = !host().latejoin_vore
+	host().vore_prefs.latejoin_vore = !host().vore_prefs.latejoin_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.latejoin_vore = host().latejoin_vore
+		host().client.prefs_vr.latejoin_vore = host().vore_prefs.latejoin_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_latejoin_prey(datum/act/op/A)
-	host().latejoin_prey = !host().latejoin_prey
+	host().vore_prefs.latejoin_prey = !host().vore_prefs.latejoin_prey
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.latejoin_prey = host().latejoin_prey
+		host().client.prefs_vr.latejoin_prey = host().vore_prefs.latejoin_prey
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_allow_spontaneous_tf(datum/act/op/A)
-	host().allow_spontaneous_tf = !host().allow_spontaneous_tf
+	host().vore_prefs.allow_spontaneous_tf = !host().vore_prefs.allow_spontaneous_tf
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.allow_spontaneous_tf = host().allow_spontaneous_tf
+		host().client.prefs_vr.allow_spontaneous_tf = host().vore_prefs.allow_spontaneous_tf
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_digest(datum/act/op/A)
-	host().digestable = !host().digestable
+	host().vore_prefs.digestable = !host().vore_prefs.digestable
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.digestable = host().digestable
+		host().client.prefs_vr.digestable = host().vore_prefs.digestable
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_allowtemp(datum/act/op/A)
-	host().allowtemp = !host().allowtemp
+	host().vore_prefs.allowtemp = !host().vore_prefs.allowtemp
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.allowtemp = host().allowtemp
+		host().client.prefs_vr.allowtemp = host().vore_prefs.allowtemp
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_global_privacy(datum/act/op/A)
-	host().eating_privacy_global = !host().eating_privacy_global
+	host().vore_prefs.eating_privacy_global = !host().vore_prefs.eating_privacy_global
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.eating_privacy_global = host().eating_privacy_global
+		host().client.prefs_vr.eating_privacy_global = host().vore_prefs.eating_privacy_global
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_death_privacy(datum/act/op/A)
-	host().vore_death_privacy = !host().vore_death_privacy
+	host().vore_prefs.vore_death_privacy = !host().vore_prefs.vore_death_privacy
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.vore_death_privacy = host().vore_death_privacy
+		host().client.prefs_vr.vore_death_privacy = host().vore_prefs.vore_death_privacy
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_mimicry(datum/act/op/A)
-	host().allow_mimicry = !host().allow_mimicry
+	host().vore_prefs.allow_mimicry = !host().vore_prefs.allow_mimicry
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.allow_mimicry = host().allow_mimicry
+		host().client.prefs_vr.allow_mimicry = host().vore_prefs.allow_mimicry
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_devour(datum/act/op/A)
-	host().devourable = !host().devourable
+	host().vore_prefs.devourable = !host().vore_prefs.devourable
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.devourable = host().devourable
+		host().client.prefs_vr.devourable = host().vore_prefs.devourable
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_resize(datum/act/op/A)
-	host().resizable = !host().resizable
+	host().vore_prefs.resizable = !host().vore_prefs.resizable
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.resizable = host().resizable
+		host().client.prefs_vr.resizable = host().vore_prefs.resizable
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_feed(datum/act/op/A)
-	host().feeding = !host().feeding
+	host().vore_prefs.feeding = !host().vore_prefs.feeding
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.feeding = host().feeding
+		host().client.prefs_vr.feeding = host().vore_prefs.feeding
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_absorbable(datum/act/op/A)
-	host().absorbable = !host().absorbable
+	host().vore_prefs.absorbable = !host().vore_prefs.absorbable
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.absorbable = host().absorbable
+		host().client.prefs_vr.absorbable = host().vore_prefs.absorbable
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_leaveremains(datum/act/op/A)
-	host().digest_leave_remains = !host().digest_leave_remains
+	host().vore_prefs.digest_leave_remains = !host().vore_prefs.digest_leave_remains
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.digest_leave_remains = host().digest_leave_remains
+		host().client.prefs_vr.digest_leave_remains = host().vore_prefs.digest_leave_remains
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_mobvore(datum/act/op/A)
-	host().allowmobvore = !host().allowmobvore
+	host().vore_prefs.allowmobvore = !host().vore_prefs.allowmobvore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.allowmobvore = host().allowmobvore
+		host().client.prefs_vr.allowmobvore = host().vore_prefs.allowmobvore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_steppref(datum/act/op/A)
-	host().step_mechanics_pref = !host().step_mechanics_pref
+	host().vore_prefs.step_mechanics_pref = !host().vore_prefs.step_mechanics_pref
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.step_mechanics_pref = host().step_mechanics_pref
+		host().client.prefs_vr.step_mechanics_pref = host().vore_prefs.step_mechanics_pref
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_pickuppref(datum/act/op/A)
-	host().pickup_pref = !host().pickup_pref
+	host().vore_prefs.pickup_pref = !host().vore_prefs.pickup_pref
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.pickup_pref = host().pickup_pref
+		host().client.prefs_vr.pickup_pref = host().vore_prefs.pickup_pref
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_strippref(datum/act/op/A)
-	host().strip_pref = !host().strip_pref
+	host().vore_prefs.strip_pref = !host().vore_prefs.strip_pref
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.strip_pref = host().strip_pref
+		host().client.prefs_vr.strip_pref = host().vore_prefs.strip_pref
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_contaminate_pref(datum/act/op/A)
-	host().contaminate_pref = !host().contaminate_pref
+	host().vore_prefs.contaminate_pref = !host().vore_prefs.contaminate_pref
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.contaminate_pref = host().contaminate_pref
+		host().client.prefs_vr.contaminate_pref = host().vore_prefs.contaminate_pref
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_allow_mind_transfer(datum/act/op/A)
-	host().allow_mind_transfer = !host().allow_mind_transfer
+	host().vore_prefs.allow_mind_transfer = !host().vore_prefs.allow_mind_transfer
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.allow_mind_transfer = host().allow_mind_transfer
+		host().client.prefs_vr.allow_mind_transfer = host().vore_prefs.allow_mind_transfer
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_healbelly(datum/act/op/A)
-	host().permit_healbelly = !host().permit_healbelly
+	host().vore_prefs.permit_healbelly = !host().vore_prefs.permit_healbelly
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.permit_healbelly = host().permit_healbelly
+		host().client.prefs_vr.permit_healbelly = host().vore_prefs.permit_healbelly
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_fx(datum/act/op/A)
-	host().show_vore_fx = !host().show_vore_fx
+	host().vore_prefs.show_vore_fx = !host().vore_prefs.show_vore_fx
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.show_vore_fx = host().show_vore_fx
+		host().client.prefs_vr.show_vore_fx = host().vore_prefs.show_vore_fx
 	if (isbelly(host().loc))
 		var/obj/belly/B = host().loc
 		B.vore_fx(host())
@@ -673,15 +673,15 @@ CAPABILITIES(/datum/vore_look)
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_noisy(datum/act/op/A)
-	host().noisy = !host().noisy
+	host().vore_prefs.noisy = !host().vore_prefs.noisy
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_set_max_voreoverlay_alpha(datum/act/op/A, val)
 	var/new_alpha = CLAMP(val, 0, 255)
-	host().max_voreoverlay_alpha = new_alpha
+	host().vore_prefs.max_voreoverlay_alpha = new_alpha
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.max_voreoverlay_alpha = host().max_voreoverlay_alpha
+		host().client.prefs_vr.max_voreoverlay_alpha = host().vore_prefs.max_voreoverlay_alpha
 	if (isbelly(host().loc))
 		var/obj/belly/B = host().loc
 		B.vore_fx(host())
@@ -690,23 +690,23 @@ CAPABILITIES(/datum/vore_look)
 // liquid belly code
 
 /datum/vore_look/proc/ui_act_toggle_liq_rec(datum/act/op/A)
-	host().receive_reagents = !host().receive_reagents
+	host().vore_prefs.receive_reagents = !host().vore_prefs.receive_reagents
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.receive_reagents = host().receive_reagents
+		host().client.prefs_vr.receive_reagents = host().vore_prefs.receive_reagents
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_liq_giv(datum/act/op/A)
-	host().give_reagents = !host().give_reagents
+	host().vore_prefs.give_reagents = !host().vore_prefs.give_reagents
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.give_reagents = host().give_reagents
+		host().client.prefs_vr.give_reagents = host().vore_prefs.give_reagents
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_liq_apply(datum/act/op/A)
-	host().apply_reagents = !host().apply_reagents
+	host().vore_prefs.apply_reagents = !host().vore_prefs.apply_reagents
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.apply_reagents = host().apply_reagents
+		host().client.prefs_vr.apply_reagents = host().vore_prefs.apply_reagents
 	unsaved_changes = TRUE
 	return TRUE
 
@@ -719,92 +719,92 @@ CAPABILITIES(/datum/vore_look)
 //Belch code
 
 /datum/vore_look/proc/ui_act_toggle_noisy_full(datum/act/op/A)
-	host().noisy_full = !host().noisy_full
+	host().vore_prefs.noisy_full = !host().vore_prefs.noisy_full
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_drop_vore(datum/act/op/A)
-	host().drop_vore = !host().drop_vore
+	host().vore_prefs.drop_vore = !host().vore_prefs.drop_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.drop_vore = host().drop_vore
+		host().client.prefs_vr.drop_vore = host().vore_prefs.drop_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_slip_vore(datum/act/op/A)
-	host().slip_vore = !host().slip_vore
+	host().vore_prefs.slip_vore = !host().vore_prefs.slip_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.slip_vore = host().slip_vore
+		host().client.prefs_vr.slip_vore = host().vore_prefs.slip_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_stumble_vore(datum/act/op/A)
-	host().stumble_vore = !host().stumble_vore
+	host().vore_prefs.stumble_vore = !host().vore_prefs.stumble_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.stumble_vore = host().stumble_vore
+		host().client.prefs_vr.stumble_vore = host().vore_prefs.stumble_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_throw_vore(datum/act/op/A)
-	host().throw_vore = !host().throw_vore
+	host().vore_prefs.throw_vore = !host().vore_prefs.throw_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.throw_vore = host().throw_vore
+		host().client.prefs_vr.throw_vore = host().vore_prefs.throw_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_phase_vore(datum/act/op/A)
-	host().phase_vore = !host().phase_vore
+	host().vore_prefs.phase_vore = !host().vore_prefs.phase_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.phase_vore = host().phase_vore
+		host().client.prefs_vr.phase_vore = host().vore_prefs.phase_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_food_vore(datum/act/op/A)
-	host().food_vore = !host().food_vore
+	host().vore_prefs.food_vore = !host().vore_prefs.food_vore
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.food_vore = host().food_vore
+		host().client.prefs_vr.food_vore = host().vore_prefs.food_vore
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_consume_liquid_belly(datum/act/op/A)
-	host().consume_liquid_belly = !host().consume_liquid_belly
+	host().vore_prefs.consume_liquid_belly = !host().vore_prefs.consume_liquid_belly
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.consume_liquid_belly = host().consume_liquid_belly
+		host().client.prefs_vr.consume_liquid_belly = host().vore_prefs.consume_liquid_belly
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_digest_pain(datum/act/op/A)
-	host().digest_pain = !host().digest_pain
+	host().vore_prefs.digest_pain = !host().vore_prefs.digest_pain
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_switch_selective_mode_pref(datum/act/op/A, val)
 	var/new_selective_preference = val
-	if(new_selective_preference == host().selective_preference)
+	if(new_selective_preference == host().vore_prefs.selective_preference)
 		return FALSE
-	host().selective_preference = new_selective_preference
+	host().vore_prefs.selective_preference = new_selective_preference
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.selective_preference = host().selective_preference
+		host().client.prefs_vr.selective_preference = host().vore_prefs.selective_preference
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_switch_strip_mode_pref(datum/act/op/A, val)
 	var/new_size_strip_pref = val
 	new_size_strip_pref = clamp(new_size_strip_pref, SIZESTRIP_NONE, SIZESTRIP_ALL)
-	if(new_size_strip_pref == host().size_strip_preference)
+	if(new_size_strip_pref == host().vore_prefs.size_strip_preference)
 		return FALSE
-	host().size_strip_preference = new_size_strip_pref
+	host().vore_prefs.size_strip_preference = new_size_strip_pref
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.size_strip_preference = host().size_strip_preference
+		host().client.prefs_vr.size_strip_preference = host().vore_prefs.size_strip_preference
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_nutrition_ex(datum/act/op/A)
-	host().nutrition_message_visible = !host().nutrition_message_visible
+	host().vore_prefs.nutrition_message_visible = !host().vore_prefs.nutrition_message_visible
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_weight_ex(datum/act/op/A)
-	host().weight_message_visible = !host().weight_message_visible
+	host().vore_prefs.weight_message_visible = !host().vore_prefs.weight_message_visible
 	unsaved_changes = TRUE
 	return TRUE
 
@@ -815,7 +815,7 @@ CAPABILITIES(/datum/vore_look)
 	var/newcolor = sanitize_hexcolor(lowertext(val))
 	if(!newcolor)
 		return FALSE
-	host().vore_sprite_color[belly_choice] = newcolor
+	host().vore_prefs.vore_sprite_color[belly_choice] = newcolor
 	host().update_icons_body()
 	unsaved_changes = TRUE
 	return TRUE
@@ -824,10 +824,10 @@ CAPABILITIES(/datum/vore_look)
 	var/belly_choice = attribute
 	if(!(belly_choice in host().vore_icon_bellies))
 		return FALSE
-	if(!host().vore_sprite_multiply[belly_choice])
-		host().vore_sprite_multiply[belly_choice] = TRUE
+	if(!host().vore_prefs.vore_sprite_multiply[belly_choice])
+		host().vore_prefs.vore_sprite_multiply[belly_choice] = TRUE
 	else
-		host().vore_sprite_multiply[belly_choice] = !host().vore_sprite_multiply[belly_choice]
+		host().vore_prefs.vore_sprite_multiply[belly_choice] = !host().vore_prefs.vore_sprite_multiply[belly_choice]
 	host().update_icons_body()
 	unsaved_changes = TRUE
 	return TRUE
@@ -836,94 +836,94 @@ CAPABILITIES(/datum/vore_look)
 /datum/vore_look/proc/ui_act_set_belly_rub(datum/act/op/A, val)
 	var/rub_target = html_encode(val)
 	if(rub_target == "Current Selected")
-		host().belly_rub_target = null
+		host().vore_prefs.belly_rub_target = null
 	else
-		host().belly_rub_target = rub_target
+		host().vore_prefs.belly_rub_target = rub_target
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.belly_rub_target = host().belly_rub_target
+		host().client.prefs_vr.belly_rub_target = host().vore_prefs.belly_rub_target
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_no_latejoin_vore_warning(datum/act/op/A)
-	host().no_latejoin_vore_warning = !host().no_latejoin_vore_warning
+	host().vore_prefs.no_latejoin_vore_warning = !host().vore_prefs.no_latejoin_vore_warning
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_vore_warning = host().no_latejoin_vore_warning
-	if(host().no_latejoin_vore_warning_persists)
+		host().client.prefs_vr.no_latejoin_vore_warning = host().vore_prefs.no_latejoin_vore_warning
+	if(host().vore_prefs.no_latejoin_vore_warning_persists)
 		unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_no_latejoin_prey_warning(datum/act/op/A)
-	host().no_latejoin_prey_warning = !host().no_latejoin_prey_warning
+	host().vore_prefs.no_latejoin_prey_warning = !host().vore_prefs.no_latejoin_prey_warning
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_prey_warning = host().no_latejoin_prey_warning
-	if(host().no_latejoin_prey_warning_persists)
+		host().client.prefs_vr.no_latejoin_prey_warning = host().vore_prefs.no_latejoin_prey_warning
+	if(host().vore_prefs.no_latejoin_prey_warning_persists)
 		unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_adjust_no_latejoin_vore_warning_time(datum/act/op/A, new_pred_time)
-	host().no_latejoin_vore_warning_time = new_pred_time
+	host().vore_prefs.no_latejoin_vore_warning_time = new_pred_time
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_vore_warning_time = host().no_latejoin_vore_warning_time
-	if(host().no_latejoin_vore_warning_persists)
+		host().client.prefs_vr.no_latejoin_vore_warning_time = host().vore_prefs.no_latejoin_vore_warning_time
+	if(host().vore_prefs.no_latejoin_vore_warning_persists)
 		unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_adjust_no_latejoin_prey_warning_time(datum/act/op/A, new_prey_time)
-	host().no_latejoin_prey_warning_time = new_prey_time
+	host().vore_prefs.no_latejoin_prey_warning_time = new_prey_time
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_prey_warning_time = host().no_latejoin_prey_warning_time
-	if(host().no_latejoin_prey_warning_persists)
+		host().client.prefs_vr.no_latejoin_prey_warning_time = host().vore_prefs.no_latejoin_prey_warning_time
+	if(host().vore_prefs.no_latejoin_prey_warning_persists)
 		unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_no_latejoin_vore_warning_persists(datum/act/op/A)
-	host().no_latejoin_vore_warning_persists = !host().no_latejoin_vore_warning_persists
+	host().vore_prefs.no_latejoin_vore_warning_persists = !host().vore_prefs.no_latejoin_vore_warning_persists
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_vore_warning_persists = host().no_latejoin_vore_warning_persists
+		host().client.prefs_vr.no_latejoin_vore_warning_persists = host().vore_prefs.no_latejoin_vore_warning_persists
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_no_latejoin_prey_warning_persists(datum/act/op/A)
-	host().no_latejoin_prey_warning_persists = !host().no_latejoin_prey_warning_persists
+	host().vore_prefs.no_latejoin_prey_warning_persists = !host().vore_prefs.no_latejoin_prey_warning_persists
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.no_latejoin_prey_warning_persists = host().no_latejoin_prey_warning_persists
+		host().client.prefs_vr.no_latejoin_prey_warning_persists = host().vore_prefs.no_latejoin_prey_warning_persists
 	unsaved_changes = TRUE
 	return TRUE
 //Soulcatcher prefs
 
 /datum/vore_look/proc/ui_act_toggle_soulcatcher_allow_capture(datum/act/op/A)
-	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_CAPTURE
+	host().vore_prefs.soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_CAPTURE
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+		host().client.prefs_vr.soulcatcher_pref_flags = host().vore_prefs.soulcatcher_pref_flags
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_soulcatcher_allow_transfer(datum/act/op/A)
-	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TRANSFER
+	host().vore_prefs.soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TRANSFER
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+		host().client.prefs_vr.soulcatcher_pref_flags = host().vore_prefs.soulcatcher_pref_flags
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_soulcatcher_allow_takeover(datum/act/op/A)
-	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TAKEOVER
+	host().vore_prefs.soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TAKEOVER
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+		host().client.prefs_vr.soulcatcher_pref_flags = host().vore_prefs.soulcatcher_pref_flags
 	unsaved_changes = TRUE
 	return TRUE
 
 /datum/vore_look/proc/ui_act_toggle_soulcatcher_allow_deletion(datum/act/op/A)
-	var/current_number = global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION) + global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION_INSTANT)
+	var/current_number = global_flag_check(host().vore_prefs.soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION) + global_flag_check(host().vore_prefs.soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION_INSTANT)
 	switch(current_number)
 		if(0)
-			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION
+			host().vore_prefs.soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION
 		if(1)
-			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION_INSTANT
+			host().vore_prefs.soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION_INSTANT
 		if(2)
-			host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION)
-			host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION_INSTANT)
+			host().vore_prefs.soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION)
+			host().vore_prefs.soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION_INSTANT)
 	if(host().client.prefs_vr)
-		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+		host().client.prefs_vr.soulcatcher_pref_flags = host().vore_prefs.soulcatcher_pref_flags
 	unsaved_changes = TRUE
 	return TRUE
 
@@ -934,7 +934,7 @@ CAPABILITIES(/datum/vore_look)
 		var/mob/living/living_host = host()
 		if(new_size == living_host.size_multiplier)
 			return FALSE
-		if(living_host.nutrition >= VORE_RESIZE_COST)
+		if(nutrition_of(living_host) >= VORE_RESIZE_COST)
 			living_host.adjust_nutrition(-VORE_RESIZE_COST)
 			living_host.resize(new_size, uncapped = living_host.has_large_resize_bounds(), ignore_prefs = TRUE)
 	return TRUE
@@ -1370,7 +1370,7 @@ CAPABILITIES(/datum/vore_look)
 	var/list/viable_candidates = list()
 	for(var/mob/living/candidate in range(1, host()))
 		if(istype(candidate) && !(candidate == host()))
-			if(length(candidate.vore_organs) && candidate.feeding && !candidate.no_vore)
+			if(length(candidate.vore_organs) && candidate.vore_prefs.feeding && !candidate.no_vore)
 				viable_candidates += candidate
 	if(!viable_candidates.len)
 		to_chat(user, span_notice("There are no viable candidates around you!"))
@@ -1417,7 +1417,7 @@ CAPABILITIES(/datum/vore_look)
 	if(!istype(H))
 		return FALSE
 
-	if(!H.allow_spontaneous_tf)
+	if(!H.vore_prefs.allow_spontaneous_tf)
 		to_chat(user,span_warning("Your target can't be transformed!"))
 		return FALSE
 
@@ -1525,11 +1525,11 @@ CAPABILITIES(/datum/vore_look)
 	var/mob/living/ourtarget = target
 	var/list/process_options = list()
 
-	if(ourtarget.digestable)
+	if(ourtarget.vore_prefs.digestable)
 		process_options += "Digest"
 		process_options += "Break Bone"
 
-	if(ourtarget.absorbable)
+	if(ourtarget.vore_prefs.absorbable)
 		process_options += "Absorb"
 
 	process_options += "Knockout" //Can't think of any mechanical prefs that would restrict this. Even if they are already asleep, you may want to make it permanent.
@@ -1671,9 +1671,9 @@ CAPABILITIES(/datum/vore_look)
 
 	switch(type)
 		if(GENERAL_EXAMINE_NUTRI)
-			host().nutrition_messages = messages
+			host().vore_prefs.nutrition_messages = messages
 		if(GENERAL_EXAMINE_WEIGHT)
-			host().weight_messages = messages
+			host().vore_prefs.weight_messages = messages
 
 /// The original act_ask answer re-enters the current interactive UI's typed row.
 /datum/prompt/choice/vore_reload_preferences

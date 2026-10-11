@@ -102,11 +102,11 @@
 		var/mob/living/thrown_mob = hitby
 
 		//If we don't allow mobvore and the thrown mob is an NPC animal, stop here.
-		if(!source.allowmobvore && isanimal(thrown_mob) && !thrown_mob.ckey)
+		if(!source.vore_prefs.allowmobvore && isanimal(thrown_mob) && !thrown_mob.ckey)
 			return
 
 		//If we're an NPC animal and the person thrown into us doesn't allow mobvore, stop here.
-		if(!thrown_mob.allowmobvore && isanimal(source) && !source.ckey)
+		if(!thrown_mob.vore_prefs.allowmobvore && isanimal(source) && !source.ckey)
 			return
 
 		// PERSON BEING HIT: CAN BE DROP PRED, ALLOWS THROW VORE.

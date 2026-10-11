@@ -162,7 +162,7 @@
 
 /datum/species/protean/handle_post_spawn(mob/living/carbon/human/H)
 	..()
-	H.synth_color = TRUE
+	H.looks.set_synth_color(TRUE)
 
 /datum/species/protean/equip_survival_gear(mob/living/carbon/human/H)
 	..()
@@ -171,7 +171,7 @@
 	var/obj/item/clothing/accessory/permit/nanotech/permit = new()
 	permit.set_name(H.real_name)
 
-	if(H.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
+	if(H.bio.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
 		H.equip_to_slot_or_del(permit, SLOT_ID_HAND_L)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_HAND_R)
 	else

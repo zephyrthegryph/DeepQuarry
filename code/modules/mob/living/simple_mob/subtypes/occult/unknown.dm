@@ -38,7 +38,6 @@
 
 	loot_list = list(/obj/item/nif/glitch = 100)
 
-	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
 
 /obj/item/projectile/energy/slow_orb

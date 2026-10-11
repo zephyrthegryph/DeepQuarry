@@ -722,7 +722,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(COOLDOWN_FINISHED(src, recent_squish) && istype(pred))
 		COOLDOWN_START(src, recent_squish, 4 SECONDS)
 		for(var/mob/living/M in contents)
-			if(pred.step_mechanics_pref && M.step_mechanics_pref)
+			if(pred.vore_prefs.step_mechanics_pref && M.vore_prefs.step_mechanics_pref)
 				src.handle_inshoe_stepping(pred, M)
 			else if (prob(1)) // Same old inshoe mechanics
 				var/emote = DEFAULTPICK(inside_emotes, null)
@@ -735,7 +735,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	if(!istype(prey)) return
 	if(!pred.canmove || pred?.buckled_to()) return //We can't be stepping on anyone if src?.buckled_to() or incapable of moving
 	if(pred in src?.buckled_mob_list()) return
-	if(pred.flying) return //If we're flying, can't really step.
+	if(stat_value(pred, STAT_FLYING)) return //If we're stat_value(src, STAT_FLYING), can't really step.
 
 	// I kept interactions very similar to normal steppies, and removed some attack logs unless harm intent:
 	// I_HELP: No painful description, messages only sent to prey. Similar to inshoe steppies from before.
@@ -1410,7 +1410,7 @@ CAPABILITIES(/obj/item/clothing/under/rank)
 		var/mob/living/carbon/human/H = user
 
 		// if digitigrade-use flag is set
-		if(H.digitigrade)
+		if(H.looks.digitigrade)
 
 			// Don't reset if already set
 			if(!fit_for_digi)

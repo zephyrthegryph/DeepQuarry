@@ -1,5 +1,4 @@
 /mob/living/simple_mob/vore/leopardmander
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 	name = "leopardmander"
 	desc = "A huge salamander-like drake. They are best known for their rarity, their voracity, their very potent paralyzing venom, and their healing stomach. This one is white."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/leopardmander)
@@ -48,7 +47,6 @@
 
 	nom_mob = TRUE
 
-	can_be_drop_prey = FALSE
 	species_sounds = "Canine" // Argue about whether it should have canine or feline later
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
@@ -66,6 +64,7 @@
 	value = CATALOGUER_REWARD_HARD
 
 CAPABILITIES(/mob/living/simple_mob/vore/leopardmander)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0, "devourable" = 0, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 
@@ -246,3 +245,6 @@ CAPABILITIES(/obj/random/mob/leopardmander)
 			/mob/living/simple_mob/vore/leopardmander = 89,
 			/mob/living/simple_mob/vore/leopardmander/blue = 10,
 			/mob/living/simple_mob/vore/leopardmander/exotic = 1)))
+
+/mob/living/simple_mob/vore/leopardmander/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

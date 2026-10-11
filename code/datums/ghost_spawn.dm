@@ -242,15 +242,15 @@ CAPABILITIES(/datum/tgui_module/ghost_spawn_menu)
 		if(!player.no_vore && (get_z(player) in using_map.station_levels))
 			if(ishuman(player))
 				var/mob/living/carbon/human/H = player
-				if(H.latejoin_vore)
+				if(H.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 			else if(issilicon(player))
 				var/mob/living/silicon/S = player
-				if(!isAI(S) && S.latejoin_vore)
+				if(!isAI(S) && S.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 			if(isanimal(player))
 				var/mob/living/simple_mob/SM = player
-				if(SM.vore_active && SM.latejoin_vore)
+				if(SM.vore_active && SM.vore_prefs.latejoin_vore)
 					vorespawn_active = TRUE
 		compiled_spawn_data += list(REF(player) = list("player" = player.name, "soulcatcher" = soulcatcher_active, "soulcatcher_vore" = soulcatcher_vore_active, "vorespawn" = vorespawn_active))
 	return compiled_spawn_data

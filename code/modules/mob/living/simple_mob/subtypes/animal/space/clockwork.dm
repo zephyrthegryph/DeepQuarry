@@ -39,7 +39,8 @@
 	var/turns_since_scan = 0
 	var/mob/flee_target
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/clockwork)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
 /mob/living/simple_mob/clockwork/life_special_due()
 	return TRUE

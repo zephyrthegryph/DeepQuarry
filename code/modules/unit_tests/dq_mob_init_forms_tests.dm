@@ -36,7 +36,7 @@
 
 	var/mob/living/simple_mob/vore/bigdragon/dragon = allocate(/mob/living/simple_mob/vore/bigdragon, T)
 	TEST_ASSERT(dragon.overlay_colors["Body"] != "#FFFFFF" || dragon.under, "a dragon rolls its look")
-	TEST_ASSERT_EQUAL(dragon.nutrition, dragon.max_nutrition, "and spawns fed")
+	TEST_ASSERT_EQUAL(nutrition_of(dragon), dragon.max_nutrition, "and spawns fed")
 
 	var/mob/living/simple_mob/vore/zorgoia/goia = allocate(/mob/living/simple_mob/vore/zorgoia, T)
 	TEST_ASSERT_EQUAL(goia.goia_overlays["main"], "zorgoia_main", "a zorgoia rolls its overlay table")
@@ -54,12 +54,12 @@
 	TEST_ASSERT(istype(H.reagents, /datum/reagents/metabolism/bloodstream), "a carbon's reagents are its bloodstream")
 	TEST_ASSERT_EQUAL(H.bloodstr, H.reagents, "and bloodstr names it")
 	TEST_ASSERT(istype(H.ingested, /datum/reagents/metabolism/ingested) && istype(H.touching, /datum/reagents/metabolism/touch), "it has a stomach and a skin")
-	TEST_ASSERT(H.nutrition >= 200 && H.nutrition <= 400, "a human starts with 200-400 nutrition ([H.nutrition])")
+	TEST_ASSERT(nutrition_of(H) >= 200 && nutrition_of(H) <= 400, "a human starts with 200-400 nutrition ([nutrition_of(H)])")
 	TEST_ASSERT(length(H.hide_underwear), "every underwear category starts shown")
 
 	var/mob/living/carbon/human/skrell/S = allocate(/mob/living/carbon/human/skrell, T)
 	TEST_ASSERT_EQUAL(S.species?.name, SPECIES_SKRELL, "a species subtype is made as its species")
-	TEST_ASSERT_EQUAL(S.h_style, "Skrell Short Tentacles", "with its hair")
+	TEST_ASSERT_EQUAL(S.looks.hair_style, "Skrell Short Tentacles", "with its hair")
 
 	var/mob/living/carbon/human/monkey/punpun/P = allocate(/mob/living/carbon/human/monkey/punpun, T)
 	TEST_ASSERT_EQUAL(P.name, "Pun Pun", "Pun Pun is named over its species' name")

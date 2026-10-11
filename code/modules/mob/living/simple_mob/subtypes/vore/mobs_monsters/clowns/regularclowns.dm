@@ -5,7 +5,9 @@
 
 	say_list_type = /datum/say_list/clown
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/clowns)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /datum/say_list/clown
 	speak = list("HONK", "Honk!", "Henk!")

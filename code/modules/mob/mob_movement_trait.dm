@@ -4,9 +4,9 @@
 
 STATIC_ENTRY(mob_movement)
 
-/proc/mob_movement(bump = null, swap = null, push = null, always_swap = null, makes_dirt = null, can_climb = null, pull_size = null, pull_mobs = null, no_pull_when_living = null)
+/proc/mob_movement(bump = null, swap = null, push = null, always_swap = null, makes_dirt = null, can_climb = null, pull_size = null, pull_mobs = null, no_pull_when_living = null, softfall = null, hovering = null, parachuting = null)
 	RETURN_TYPE(/datum/entry)
-	return entry_make(ENTRY_MOB_MOVEMENT, null, list("bump" = bump, "swap" = swap, "push" = push, "always_swap" = always_swap, "makes_dirt" = makes_dirt, "can_climb" = can_climb, "pull_size" = pull_size, "pull_mobs" = pull_mobs, "no_pull_when_living" = no_pull_when_living))
+	return entry_make(ENTRY_MOB_MOVEMENT, null, list("softfall" = softfall, "hovering" = hovering, "parachuting" = parachuting, "bump" = bump, "swap" = swap, "push" = push, "always_swap" = always_swap, "makes_dirt" = makes_dirt, "can_climb" = can_climb, "pull_size" = pull_size, "pull_mobs" = pull_mobs, "no_pull_when_living" = no_pull_when_living))
 
 /datum/type_trait/mob_movement
 	var/bump = 0	// what this mob counts as when bumping (HUMAN, MONKEY, ...)
@@ -18,6 +18,9 @@ STATIC_ENTRY(mob_movement)
 	var/pull_size = ITEMSIZE_NO_CONTAINER	// the largest w_class it can pull
 	var/pull_mobs = MOB_PULL_LARGER	// which mobs it can pull
 	var/no_pull_when_living = FALSE	// can be pulled only when dead
+	var/softfall = FALSE	// survives falls between levels
+	var/hovering = FALSE	// floats over the floor (no falling, no step triggers)
+	var/parachuting = FALSE	// drifts down when it falls
 
 /datum/type_trait/mob_movement/copy_values(datum/type_trait/mob_movement/into)
 	into.bump = bump
@@ -29,6 +32,9 @@ STATIC_ENTRY(mob_movement)
 	into.pull_size = pull_size
 	into.pull_mobs = pull_mobs
 	into.no_pull_when_living = no_pull_when_living
+	into.softfall = softfall
+	into.hovering = hovering
+	into.parachuting = parachuting
 
 /datum/entry_engine/type_trait/mob_movement
 	kind = ENTRY_MOB_MOVEMENT

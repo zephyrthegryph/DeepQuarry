@@ -280,9 +280,9 @@
 			act_message(user, src, MSG_SELF(span_infoplain("You check %T%'s pulse.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " checks %T%'s pulse.")))
 		after(src, 1.5 SECONDS, PROC_REF(pulse_check_result), with = list(user))
 
-	if(fire_stacks)
+	if(fire_stacks_of(src))
 		. += "[p_Theyre()] covered in some liquid."
-	if(on_fire)
+	if(stat_value(src, STAT_ON_FIRE))
 		. += span_warning("[p_Theyre()] on fire!.")
 
 	. += examine_ssd_lines()
@@ -442,63 +442,63 @@
 
 
 /mob/living/carbon/human/proc/examine_weight()
-	if(!show_pudge() || !weight_message_visible) //Some clothing or equipment can hide this.
+	if(!show_pudge() || !vore_prefs.weight_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	var/message = ""
 	var/weight_examine = round(weight)
 	switch(weight_examine)
 		if(0 to 74)
-			message = weight_messages[1]
+			message = vore_prefs.weight_messages[1]
 		if(75 to 99)
-			message = weight_messages[2]
+			message = vore_prefs.weight_messages[2]
 		if(100 to 124)
-			message = weight_messages[3]
+			message = vore_prefs.weight_messages[3]
 		if(125 to 174)
-			message = weight_messages[4]
+			message = vore_prefs.weight_messages[4]
 		if(175 to 224)
-			message = weight_messages[5]
+			message = vore_prefs.weight_messages[5]
 		if(225 to 274)
-			message = weight_messages[6]
+			message = vore_prefs.weight_messages[6]
 		if(275 to 325)
-			message = weight_messages[7]
+			message = vore_prefs.weight_messages[7]
 		if(325 to 374)
-			message = weight_messages[8]
+			message = vore_prefs.weight_messages[8]
 		if(375 to 474)
-			message = weight_messages[9]
+			message = vore_prefs.weight_messages[9]
 		else
-			message = weight_messages[10]
+			message = vore_prefs.weight_messages[10]
 	if(message)
 		message = span_notice("[message]")
 	return message //Credit to Aronai for helping me actually get this working!
 
 /mob/living/carbon/human/proc/examine_nutrition()
-	if(!show_pudge() || !nutrition_message_visible) //Some clothing or equipment can hide this.
+	if(!show_pudge() || !vore_prefs.nutrition_message_visible) //Some clothing or equipment can hide this.
 		return ""
 	if(nutrition_hidden) // Chomp Edit
 		return ""
 	var/message = ""
-	var/nutrition_examine = round(nutrition)
+	var/nutrition_examine = round(nutrition_of(src))
 	switch(nutrition_examine)
 		if(0 to 49)
-			message = nutrition_messages[1]
+			message = vore_prefs.nutrition_messages[1]
 		if(50 to 99)
-			message = nutrition_messages[2]
+			message = vore_prefs.nutrition_messages[2]
 		if(100 to 499)
-			message = nutrition_messages[3]
+			message = vore_prefs.nutrition_messages[3]
 		if(500 to 999) // Fat.
-			message = nutrition_messages[4]
+			message = vore_prefs.nutrition_messages[4]
 		if(1000 to 1399)
-			message = nutrition_messages[5]
+			message = vore_prefs.nutrition_messages[5]
 		if(1400 to 1934) // One person fully digested.
-			message = nutrition_messages[6]
+			message = vore_prefs.nutrition_messages[6]
 		if(1935 to 3004) // Two people.
-			message = nutrition_messages[7]
+			message = vore_prefs.nutrition_messages[7]
 		if(3005 to 4074) // Three people.
-			message = nutrition_messages[8]
+			message = vore_prefs.nutrition_messages[8]
 		if(4075 to 5124) // Four people.
-			message = nutrition_messages[9]
+			message = vore_prefs.nutrition_messages[9]
 		if(5125 to INFINITY) // More.
-			message = nutrition_messages[10]
+			message = vore_prefs.nutrition_messages[10]
 	if(message)
 		message = span_notice("[message]")
 	return message

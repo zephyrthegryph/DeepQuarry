@@ -7,7 +7,6 @@
 	// Health lives in the body (/datum/body, code/modules/body/) — there are no
 	// damage pools on the mob. See doc/body_architecture.md.
 
-	var/nutrition = 400
 	var/max_nutrition = MAX_NUTRITION
 
 
@@ -20,11 +19,6 @@
 	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
 	var/tmp/revival_in_progress = FALSE
 
-	/// Helper vars for quick access to firestacks, these should be updated every time firestacks are adjusted
-	var/on_fire = 0
-	var/fire_stacks
-	/// Rate at which fire stacks should decay from this mob
-	var/fire_stack_decay_rate = -0.05
 
 	var/failed_last_breath = 0 //This is used to determine if the mob failed a breath. If they did fail a brath, they will attempt to breathe each tick, otherwise just once per 4 ticks.
 
@@ -49,10 +43,7 @@
 
 
 
-	var/flying = 0				// Allows flight
 	var/datum/inventory_panel/inventory_panel
-	var/tiredness = 0					//For vore draining
-	var/fear = 0 						//For fear effects and phobias
 
 	var/static/list/fear_message_self = list(
 									"Your heart is racing, it feels like it's going burst from your chest.",
@@ -94,13 +85,7 @@
 /mob/living
 	var/custom_link = null
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|KEEP_TOGETHER|LONG_GLIDE
-	var/hunger_rate = DEFAULT_HUNGER_FACTOR
 	var/private_notes = null
-//custom say verbs
-	var/custom_say = null
-	var/custom_ask = null
-	var/custom_exclaim = null
-	var/custom_whisper = null
 
 /mob
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
@@ -113,9 +98,6 @@
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living, hand)
-TRACKED(/mob/living, tiredness)
-TRACKED(/mob/living, fear)
-TRACKED(/mob/living, on_fire)
 TRACKED(/mob/living, see_invisible_default)
 /// The HUD-list bits (who sees what above this mob's head): flag_hud_update() sets them and publishes MOB_KEY_HUD_FLAGS.
 PUBLISHED_BY(/mob/living, hud_updateflag, MOB_KEY_HUD_FLAGS)
@@ -146,3 +128,31 @@ sparse(/mob/living, custom_cold, type = list)
 
 /proc/set_nest(mob/living/L, atom/nest)
 	return link_set_one(L, LK_NEST, nest)
+
+
+/// Flight: TRUE while anything holds the mob aloft (wings, a flying ability, a dragon's charge). Read stat_value(L, STAT_FLYING); write set_flying().
+STAT(/mob/living, flying, ANY, virtual = TRUE)
+SOURCE_DEF(flight)
+
+/// Starts (TRUE) or stops (FALSE) the mob's own flight, the SRC_FLIGHT hold on STAT_FLYING.
+/proc/set_flying(mob/living/L, on)
+	if(on)
+		hold(L, STAT_FLYING, TRUE, SRC_FLIGHT)
+	else
+		release(L, STAT_FLYING, SRC_FLIGHT)
+	return on
+
+/// Burning: TRUE while one of the mob's fire-stack status effects is lit (its SRC_FIRE_STACKS hold). Read stat_value(L, STAT_ON_FIRE).
+STAT(/mob/living, on_fire, ANY, virtual = TRUE)
+SOURCE_DEF(fire_stacks)
+
+/// The mob's fire stacks: the sum over its fire-handler status effects (wet stacks count negative). Nothing caches it on the mob.
+/proc/fire_stacks_of(mob/living/L)
+	READS_FROM(L)
+	. = 0
+	for(var/datum/status_effect/fire_handler/F in L?.status_effects)
+		. += F.stacks * F.stack_modifier
+
+/// Fire stacks this mob sheds per second while it burns (negative). Silicons shed theirs faster.
+/mob/living/proc/fire_stack_decay_rate()
+	return -0.05

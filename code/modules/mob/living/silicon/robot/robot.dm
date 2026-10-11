@@ -9,7 +9,6 @@
 	icon = 'icons/mob/robots.dmi'
 	icon_state = "robot"
 	endurance = 200
-	nutrition = 0
 
 
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
@@ -610,9 +609,9 @@
 		var/list/_robot_flavor = client.prefs.read_preference(/datum/preference/flavour_texts_robot)
 		var/module_flavour = LAZYACCESS(_robot_flavor, modtype)
 		if(module_flavour && (module_flavour != " " || module_flavour != ".")) // Skip module flavor if " " or "."
-			flavor_text = module_flavour
+			bio.flavor_text = module_flavour
 		else
-			flavor_text = LAZYACCESS(_robot_flavor, "Default")
+			bio.flavor_text = LAZYACCESS(_robot_flavor, "Default")
 		//and meta info
 		identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 		identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
@@ -1151,13 +1150,13 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 			grab_vore_interact(H)
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
-	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
+	if(is_vore_predator(H) && H.vore_prefs.devourable && src.vore_prefs.feeding && src.vore_prefs.devourable)
 		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Feed or Eat", question = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"), buttons = TRUE, timeout = 0)
 		return
-	if(is_vore_predator(H) && src.devourable)
+	if(is_vore_predator(H) && src.vore_prefs.devourable)
 		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Eat?", question = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"), buttons = TRUE, timeout = 0)
 		return
-	if(H.devourable && src.feeding)
+	if(H.vore_prefs.devourable && src.vore_prefs.feeding)
 		open_request(src, /datum/prompt/choice, PROC_REF(grab_vore_chosen), answerer = H, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Feed?", question = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"), buttons = TRUE, timeout = 0)
 
 /mob/living/silicon/robot/proc/grab_vore_chosen(datum/act/request/A)
@@ -1166,10 +1165,10 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 	var/mob/living/carbon/human/H = A.request.answerer
 	switch(A.answer.value)
 		if("Eat")
-			if(is_vore_predator(H) && devourable)
+			if(is_vore_predator(H) && vore_prefs.devourable)
 				feed_grabbed_to_self(H, src)
 		if("Feed")
-			if(H.devourable && feeding)
+			if(H.vore_prefs.devourable && vore_prefs.feeding)
 				H.feed_self_to_grabbed(H, src)
 
 //Robots take half damage from basic attacks.
@@ -1769,3 +1768,7 @@ TRACKED(/mob/living/silicon/robot, lockdown)
 				to_chat(src, span_filter_notice("You refill the extinguisher using your water reserves."))
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
+
+
+/mob/living/silicon/robot/starting_nutrition()
+	return 0

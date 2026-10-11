@@ -34,8 +34,6 @@
 
 	say_list_type = /datum/say_list/horse
 
-	can_be_drop_prey = FALSE
-	allow_mind_transfer = TRUE
 
 /mob/living/simple_mob/vore/horse/big
 	name = "horse"
@@ -68,6 +66,7 @@
 	vore_capacity = 2
 
 CAPABILITIES(/mob/living/simple_mob/vore/horse)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE, "allow_mind_transfer" = TRUE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

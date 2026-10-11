@@ -10,8 +10,8 @@
 		to_chat(src, span_warning("You can't mess with your hair right now!"))
 		return
 
-	if(h_style)
-		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
+	if(looks.hair_style)
+		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[looks.hair_style]
 		if(!(hair_style.flags & HAIR_TIEABLE))
 			to_chat(src, span_warning("Your hair isn't long enough to tie."))
 			return
@@ -26,8 +26,8 @@
 	if(!A.answer)
 		return
 	var/selected_string = A.answer.value
-	if(selected_string && h_style != selected_string)
-		h_style = selected_string
+	if(selected_string && looks.hair_style != selected_string)
+		looks.set_hair_style(selected_string)
 		regenerate_icons()
 		act_message(src, null, others = span_notice("%U% pauses a moment to style their hair."))
 	else
@@ -237,7 +237,7 @@
 	output += "Internal Temperature: [convert_k2c(body_temperature())] Degrees Celsius\n"
 
 	if(HAS_SYNTHETIC_BIOLOGY(src))
-		output += "Current Battery Charge: [nutrition]\n"
+		output += "Current Battery Charge: [nutrition_of(src)]\n"
 
 		var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)
 		if(toxDam)
@@ -321,7 +321,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 
 /// Requirement: enough biomass to regrow with.
 /mob/living/carbon/human/proc/regenerate_fed(datum/act/op/A)
-	return (nutrition >= 250) ? null : /datum/msg/req_failed
+	return (nutrition_of(src) >= 250) ? null : /datum/msg/req_failed
 
 /// Requirement: no regeneration already runs.
 /mob/living/carbon/human/proc/regenerate_idle(datum/act/op/A)

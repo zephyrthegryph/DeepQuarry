@@ -58,7 +58,6 @@
 	mount_offset_y = 30
 
 
-	allow_mind_transfer = TRUE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/aggressive/deathclaw
@@ -69,9 +68,9 @@
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/deathclaw)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

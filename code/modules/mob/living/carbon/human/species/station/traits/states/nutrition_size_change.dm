@@ -16,9 +16,9 @@
 /datum/trait_state/nutrition_size_change/life_tick()
 	if(QDELETED(owner))
 		return
-	if(owner.nutrition <= 0 && grow_mode == GROWMODE_SHRINK && owner.size_multiplier > RESIZE_TINY)
+	if(nutrition_of(owner) <= 0 && grow_mode == GROWMODE_SHRINK && owner.size_multiplier > RESIZE_TINY)
 		owner.set_nutrition(0.1)
-	if(owner.nutrition <= 0)
+	if(nutrition_of(owner) <= 0)
 		return
 	// Time to change size!
 	var/nutrition_multiplier = get_nutrition_multiplier()
@@ -28,9 +28,9 @@
 		owner.resize(owner.size_multiplier-0.01, animate = FALSE, uncapped = owner.has_large_resize_bounds()) //Bringing this code in line with micro and macro shrooms
 
 /datum/trait_state/nutrition_size_change/proc/get_nutrition_multiplier()
-	if(owner.nutrition > 1000 && grow_mode == GROWMODE_GROW) //Removing the strict check against normal max/min size to support dorms/VR oversizing
+	if(nutrition_of(owner) > 1000 && grow_mode == GROWMODE_GROW) //Removing the strict check against normal max/min size to support dorms/VR oversizing
 		return GROW_MULTIPLIER
-	else if(owner.nutrition < 50 && grow_mode == GROWMODE_SHRINK)
+	else if(nutrition_of(owner) < 50 && grow_mode == GROWMODE_SHRINK)
 		return SHRINK_MULTIPLIER
 
 #undef GROWMODE_SHRINK

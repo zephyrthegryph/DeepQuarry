@@ -507,7 +507,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 	box.calibrate_size()
 
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(box, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(box, SLOT_ID_IN_BACKPACK)

@@ -37,7 +37,9 @@
 
 	var/scare_chance = 15
 
-	can_be_drop_prey = FALSE
+CAPABILITIES(/mob/living/simple_mob/animal/space/bats)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+
 
 /mob/living/simple_mob/animal/space/bats/apply_melee_effects(atom/A)
 	if(isliving(A))

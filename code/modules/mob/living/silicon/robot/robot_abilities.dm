@@ -79,7 +79,7 @@ CAPABILITY_DEF(robot_utility, CAP_ROBOT_UTILITY, key = NONE)
 	return OP_OK
 
 /mob/living/silicon/robot/proc/has_excess_nutrition(datum/act/op/A)
-	return (nutrition > 1000) ? null : /datum/msg/req_failed
+	return (nutrition_of(src) > 1000) ? null : /datum/msg/req_failed
 
 /mob/living/silicon/robot/proc/ability_purge_nutrition(datum/act/op/A)
 	set_nutrition(1000)

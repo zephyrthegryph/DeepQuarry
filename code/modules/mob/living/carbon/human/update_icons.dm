@@ -221,13 +221,13 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	robobody_count = 0
 
 	var/g = (gender == MALE ? "male" : "female")
-	var/icon_key = "[species.get_race_key(src)][g][s_tone][r_skin][g_skin][b_skin]"
-	icon_key += lip_style ? "[lip_style]" : "nolips"
+	var/icon_key = "[species.get_race_key(src)][g][looks.skin_tone][looks.skin_color]"
+	icon_key += looks.lip_style ? "[looks.lip_style]" : "nolips"
 	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
 	if(eyes)
 		icon_key += "[eyes.eye_rgb()]"
 	else
-		icon_key += "[r_eyes], [g_eyes], [b_eyes]"
+		icon_key += "[looks.eyes_color]"
 	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
 	if(head && !istype(head, /obj/item/organ/external/stump))
 		if(species.selects_bodytype != SELECTS_BODYTYPE_FALSE)
@@ -285,7 +285,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		. += "_t"
 	if(istype(tail_style, /datum/sprite_accessory/tail/taur) && tail_style.clip_mask)
 		. += tail_style.clip_mask_state
-	if(digitigrade && (part.organ_tag in list(BP_R_LEG, BP_L_LEG, BP_R_FOOT, BP_L_FOOT)))
+	if(looks.digitigrade && (part.organ_tag in list(BP_R_LEG, BP_L_LEG, BP_R_FOOT, BP_L_FOOT)))
 		. += "_digi"
 
 /// A taur tail's leg "cookie cutter" (preserved areas inverted): list(icon, x offset, y offset), or null.
@@ -391,7 +391,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	//Bloody feet
 	if(feet_blood_DNA)
-		var/image/bloodsies = image(icon = digitigrade ? 'icons/mob/human_races/masks/blood_digitigrade.dmi' : species.get_blood_mask(src), icon_state = "shoeblood", layer = BODY_LAYER+BLOOD_LAYER)
+		var/image/bloodsies = image(icon = looks.digitigrade ? 'icons/mob/human_races/masks/blood_digitigrade.dmi' : species.get_blood_mask(src), icon_state = "shoeblood", layer = BODY_LAYER+BLOOD_LAYER)
 		bloodsies.color = feet_blood_color
 		both.add_overlay(bloodsies)
 
@@ -412,7 +412,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			if(hide_underwear[category])
 				continue
 			var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, category)
-			var/image/wear = UWI.generate_image(all_underwear_metadata[category], layer = BODY_LAYER+UNDERWEAR_LAYER, digitigrade = digitigrade)
+			var/image/wear = UWI.generate_image(all_underwear_metadata[category], layer = BODY_LAYER+UNDERWEAR_LAYER, digitigrade = looks.digitigrade)
 			overlays_standing[UNDERWEAR_LAYER] += wear
 
 		apply_layer(UNDERWEAR_LAYER)
@@ -438,17 +438,17 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	//base icons
 	var/icon/face_standing = icon(icon = 'icons/mob/human_face.dmi', icon_state = "bald_s")
 
-	if(f_style)
-		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[f_style]
+	if(looks.facial_style)
+		var/datum/sprite_accessory/facial_hair_style = GLOB.facial_hair_styles_list[looks.facial_style]
 		if(facial_hair_style && facial_hair_style.species_allowed && (src.species.get_bodytype(src) in facial_hair_style.species_allowed))
 			var/icon/facial_s = new/icon("icon" = facial_hair_style.icon, "icon_state" = "[facial_hair_style.icon_state]_s")
 			if(facial_hair_style.do_colouration)
-				facial_s.Blend(rgb(r_facial, g_facial, b_facial), facial_hair_style.color_blend_mode)
+				facial_s.Blend(looks.facial_color, facial_hair_style.color_blend_mode)
 
 			face_standing.Blend(facial_s, ICON_OVERLAY)
 
-	if(h_style)
-		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[h_style]
+	if(looks.hair_style)
+		var/datum/sprite_accessory/hair/hair_style = GLOB.hair_styles_list[looks.hair_style]
 		if(get_equipped_item(SLOT_ID_HEAD) && (worn_of(get_equipped_item(SLOT_ID_HEAD)).hides & BLOCKHEADHAIR))
 			if(hair_style && !(hair_style.flags & HAIR_VERY_SHORT))
 				hair_style = GLOB.hair_styles_list["Short Hair"]
@@ -458,11 +458,11 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			var/icon/hair_s = new/icon("icon" = hair_style.icon, "icon_state" = "[hair_style.icon_state]_s")
 			var/icon/hair_s_add = new/icon("icon" = hair_style.icon_add, "icon_state" = "[hair_style.icon_state]_s")
 			if(hair_style.do_colouration)
-				if(grad_style)
-					grad_s = new/icon("icon" = 'icons/mob/hair_gradients.dmi', "icon_state" = GLOB.hair_gradients[grad_style])
+				if(looks.grad_style)
+					grad_s = new/icon("icon" = 'icons/mob/hair_gradients.dmi', "icon_state" = GLOB.hair_gradients[looks.grad_style])
 					grad_s.Blend(hair_s, ICON_AND)
-					grad_s.Blend(rgb(r_grad, g_grad, b_grad), ICON_MULTIPLY)
-				hair_s.Blend(rgb(r_hair, g_hair, b_hair), ICON_MULTIPLY)
+					grad_s.Blend(looks.grad_color, ICON_MULTIPLY)
+				hair_s.Blend(looks.hair_color, ICON_MULTIPLY)
 				hair_s.Blend(hair_s_add, ICON_ADD)
 				if(!isnull(grad_s))
 					hair_s.Blend(grad_s, ICON_OVERLAY)
@@ -534,7 +534,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/icon/eyes_icon = new/icon(head_organ.eye_icon_location, head_organ.eye_icon)
 	if(!findtext(head_organ.eye_icon, regex("-colored")))
 		if(species.dispersed_eyes) // Set so all species who would lack eye organs still have glowing eyes colored correctly
-			eyes_icon.Blend(rgb(r_eyes, g_eyes, b_eyes))
+			eyes_icon.Blend(looks.eyes_color)
 		else if(eyes)
 			eyes_icon.Blend(eyes.eye_rgb(), ICON_ADD)
 		else
@@ -1011,7 +1011,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 //TODO: Is this the appropriate place for this, and not on species...?
 /mob/living/carbon/human/proc/get_tail_icon()
-	var/icon_key = "[species.get_race_key(src)][r_skin][g_skin][b_skin][r_hair][g_hair][b_hair]"
+	var/icon_key = "[species.get_race_key(src)][looks.skin_color][looks.hair_color]"
 	var/icon/tail_icon = GLOB.tail_icon_cache[icon_key]
 	if(!tail_icon)
 		//generate a new one
@@ -1019,12 +1019,12 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(!species_tail_anim && species.icobase_tail) species_tail_anim = species.icobase //Allow override of file for non-animated tails
 		if(!species_tail_anim) species_tail_anim = 'icons/effects/species.dmi'
 		tail_icon = new/icon(species_tail_anim)
-		tail_icon.Blend(rgb(r_skin, g_skin, b_skin), species.color_mult ? ICON_MULTIPLY : ICON_ADD)
+		tail_icon.Blend(looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
 		// The following will not work with animated tails.
 		var/use_species_tail = species.get_tail_hair(src)
 		if(use_species_tail)
 			var/icon/hair_icon = icon('icons/effects/species.dmi', "[species.get_tail(src)]_[use_species_tail]")
-			hair_icon.Blend(rgb(r_hair, g_hair, b_hair), species.color_mult ? ICON_MULTIPLY : ICON_ADD)				//Check for species color_mult
+			hair_icon.Blend(looks.hair_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)				//Check for species color_mult
 			tail_icon.Blend(hair_icon, ICON_OVERLAY)
 		GLOB.tail_icon_cache[icon_key] = tail_icon
 
@@ -1148,7 +1148,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	remove_layer(FIRE_LAYER)
 
-	if(!on_fire)
+	if(!stat_value(src, STAT_ON_FIRE))
 		return
 
 	overlays_standing[FIRE_LAYER] = image(icon = 'icons/mob/OnFire.dmi', icon_state = get_fire_icon_state(), layer = BODY_LAYER+FIRE_LAYER)
@@ -1199,7 +1199,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	//If you are FBP with wing style and didn't set a custom one
 	if(synthetic && synthetic.includes_wing && !wing_style && !wings_hidden)
 		var/icon/wing_s = new/icon("icon" = synthetic.icon, "icon_state" = "wing") //I dunno. If synths have some custom wing?
-		wing_s.Blend(rgb(src.r_skin, src.g_skin, src.b_skin), species.color_mult ? ICON_MULTIPLY : ICON_ADD)
+		wing_s.Blend(src.looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
 		var/image/working = image(wing_s)
 		working.overlays += em_block_image_generic(working) // Leaving this as overlays +=
 		return working
@@ -1296,7 +1296,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	var/datum/robolimb/model = robolimb_model()
 	if(istype(model) && model.includes_tail && !tail_style && !tail_hidden)
 		var/icon/tail_s = new/icon("icon" = synthetic.icon, "icon_state" = "tail")
-		tail_s.Blend(rgb(src.r_skin, src.g_skin, src.b_skin), species.color_mult ? ICON_MULTIPLY : ICON_ADD)
+		tail_s.Blend(src.looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
 		return image(tail_s)
 
 	//If you have a custom tail selected
@@ -1353,7 +1353,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /mob/living/proc/stop_flying()
 	if(QDESTROYING(src))
 		return
-	flying = FALSE
+	set_flying(src, FALSE)
 	return 1
 
 /mob/living/carbon/human/stop_flying()
@@ -1379,7 +1379,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(!(get_equipped_item(SLOT_ID_SUIT) && worn_of(get_equipped_item(SLOT_ID_SUIT)).hides & HIDETAIL))
 		var/vs_fullness = vore_fullness_ex["stomach"]
 		var/icon/vorebelly_s = new/icon(icon = 'icons/mob/vore/Bellies.dmi', icon_state = "[species.vore_belly_default_variant]Belly[vs_fullness][struggle_anim_stomach ? "" : " idle"]")
-		vorebelly_s.Blend(vore_sprite_color["stomach"], vore_sprite_multiply["stomach"] ? ICON_MULTIPLY : ICON_ADD)
+		vorebelly_s.Blend(vore_prefs.vore_sprite_color["stomach"], vore_prefs.vore_sprite_multiply["stomach"] ? ICON_MULTIPLY : ICON_ADD)
 		var/image/working = image(vorebelly_s)
 		working.overlays += em_block_image_generic(working)
 		return working
@@ -1412,7 +1412,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		var/loaf_alt = lying && tail_style.belly_variant_when_loaf
 		var/fullness_icons = min(tail_style.fullness_icons, vs_fullness)
 		var/icon/vorebelly_s = new/icon(icon = tail_style.bellies_icon_path, icon_state = "Taur[tail_style.vore_tail_sprite_variant]-Belly-[fullness_icons][loaf_alt ? " loaf" : (struggle_anim_taur ? "" : " idle")]")
-		vorebelly_s.Blend(vore_sprite_color["taur belly"], vore_sprite_multiply["taur belly"] ? ICON_MULTIPLY : ICON_ADD)
+		vorebelly_s.Blend(vore_prefs.vore_sprite_color["taur belly"], vore_prefs.vore_sprite_multiply["taur belly"] ? ICON_MULTIPLY : ICON_ADD)
 		var/image/working = image(vorebelly_s)
 		working.pixel_x = -16
 		if(tail_style.em_block)
@@ -1443,7 +1443,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		if(flavourtext)
 			// migrated flavor_texts
 			var/list/_flavor_texts = client.prefs.read_preference(/datum/preference/flavor_texts)
-			flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
+			bio.flavor_texts = islist(_flavor_texts) ? _flavor_texts.Copy() : list()
 		if(oocnotes)
 			identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
 			identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)

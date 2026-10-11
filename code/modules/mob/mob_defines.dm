@@ -53,7 +53,6 @@
 	var/sec_record = ""
 	var/gen_record = ""
 	var/exploit_record = ""
-	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
@@ -215,6 +214,10 @@
 	var/is_slipping = FALSE
 
 CAPABILITIES(/mob)
+	// Who the character says they are (profile_records.dm).
+	profile(nameof(bio), /datum/record/identity)
+	// The player's vore preferences (code/modules/vore/eating/vore_profile.dm).
+	profile(nameof(vore_prefs), /datum/record/vore_prefs)
 	mob_movement() // how it moves and is moved: a type trait (code/modules/mob/mob_movement_trait.dm)
 	mob_kind() // what kind of mob it is: a type trait (code/modules/mob/mob_kind.dm)
 	// Base-type cooldowns live in the mob's cooldown table (cooldown_start/cooldown_ready), not in vars.
@@ -228,7 +231,6 @@ CAPABILITIES(/mob)
 	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
 	ref_many(nameof(spell_list))
 	ref_many(nameof(actions))
-	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	on_notice(/datum/notice/belly_changed, then(PROC_REF(belly_changed)))
 	// Pulling an embedded object out (mob.dm): the one pulling stays next to the body for three seconds.
 	op("yank_out", ai(), needs(req_capable()), takes("selection", "self"), wait(3 SECONDS), then(PROC_REF(yank_out_done)))

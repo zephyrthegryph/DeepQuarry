@@ -40,7 +40,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
@@ -132,9 +132,9 @@ CAPABILITIES(/obj/item/projectile/energy/plasma/vepr/inversion)
 	vore_pounce_chance = 0 // Beat them into crit before eating.
 	vore_icons = SA_ICON_LIVING
 
-	can_be_drop_prey = FALSE
 
 CAPABILITIES(/mob/living/simple_mob/humanoid/cultist/magus/rift)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE) // TGPanel
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE) // TGPanel
 

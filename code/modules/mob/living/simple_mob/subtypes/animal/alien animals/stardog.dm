@@ -92,7 +92,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 /// Old attack_hand: pick someone out of the fur. Offered while there is someone to pick (the target list is the asks() step's choices).
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_possible(datum/act/op/A)
 	var/mob/living/user = A.actor
-	return (read_once(istype(user) && user.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
+	return (read_once(istype(user) && user.vore_prefs.pickup_pref && user.pickup_active && length(fur_pick_targets()))) ? null : /datum/msg/req_failed // preferences and who stands in the fur are asked when the click is made
 
 /// The players standing in the fur who may be picked up.
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_targets()
@@ -102,7 +102,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 			continue
 		if(!(isliving(player) && istype(player.loc,/turf/simulated/floor/outdoors/fur) && player.client))
 			continue
-		if(player.resizable && player.pickup_pref)
+		if(player.vore_prefs.resizable && player.vore_prefs.pickup_pref)
 			possible_targets |= player
 	return possible_targets
 
@@ -133,13 +133,13 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	if(src.admin_override)
 		src.affinity = 9999
 		src.set_nutrition(9999)
-	if(src.devourable)	//This will cause problems probably so please do not eat the dog
-		src.devourable = FALSE
-		src.digestable = FALSE
+	if(src.vore_prefs.devourable)	//This will cause problems probably so please do not eat the dog
+		src.vore_prefs.devourable = FALSE
+		src.vore_prefs.digestable = FALSE
 	if(src.ckey && src.control_node)
-		if(src.nutrition <= 200)
+		if(nutrition_of(src) <= 200)
 			src.adjust_affinity(-10)
-		else if(src.nutrition < 500)
+		else if(nutrition_of(src) < 500)
 			src.adjust_affinity(-3)
 		else
 			src.adjust_affinity(-1)
@@ -192,7 +192,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/adjust_affinity(amount)
 	if(amount > 0)
-		var/multiplier = nutrition / 250
+		var/multiplier = nutrition_of(src) / 250
 		affinity += (amount * multiplier)
 	if(amount < 0)
 		affinity += amount
@@ -337,7 +337,7 @@ MSG_DEF(stardog/fur_look, span_notice("You look through %T%'s fur..."), span_war
 	set name = "Transition"
 	set desc = "Attempt to go to the location you have arrived at, or return to space!"
 	set category = VERB_CAT_ABILITIES_STARDOG
-	if(nutrition <= 500)
+	if(nutrition_of(src) <= 500)
 		to_chat(src, span_warning("You're too hungry..."))
 		return
 	if(istype(loc, /turf/unsimulated/map))
@@ -1120,7 +1120,7 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	var/mob/living/L = null
 	if(isliving(AM))
 		L = AM
-		if(check_prefs && (!L.devourable || !L.allowmobvore))
+		if(check_prefs && (!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore))
 			return
 		if(check_keys && !L.ckey)
 			return
@@ -1301,7 +1301,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 		return TRUE
 	if(isliving(digest_target))
 		var/mob/living/L = digest_target
-		if(L.unacidable || !L.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
+		if(L.unacidable || !L.vore_prefs.digestable || L?.buckled_to() || dq_get_hovering(L) || L.throwing || L.is_incorporeal())
 			return FALSE
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
@@ -1321,7 +1321,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			rel_set(src, nameof(linked_mob), s.parent) //dogge
 
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
-		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)
+		damage += clamp(((500 - nutrition_of(linked_mob)) / 100), 1 , 5)
 	var/list/stuff = list()
 	for(var/thing in contents_of(src))
 		if(can_digest(thing))
@@ -1346,7 +1346,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 					continue
 				H.drop_from_inventory(W)
 			if(linked_mob)
-				var/how_much = H.mob_size + H.nutrition
+				var/how_much = H.mob_size + nutrition_of(H)
 				if(!H.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
@@ -1369,7 +1369,7 @@ CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
 			L.unacidable = TRUE	//Don't touch this one again, we're gonna delete it in a second
 			L.release_vore_contents()
 			if(linked_mob)
-				var/how_much = L.mob_size + L.nutrition
+				var/how_much = L.mob_size + nutrition_of(L)
 				if(!L.ckey)
 					how_much = how_much / 10	//Braindead mobs are worth less
 				linked_mob.adjust_nutrition(how_much)
@@ -1539,5 +1539,5 @@ CAPABILITIES(/obj/structure/auto_flesh_door)
 
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
-	return !occupant.digest_pain
+	return !occupant.vore_prefs.digest_pain
 

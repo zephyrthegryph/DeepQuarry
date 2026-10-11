@@ -27,13 +27,15 @@
 
 	say_list_type = /datum/say_list/turkey
 
-	allow_mind_transfer = TRUE
 
 	vore_active = 1
 	vore_bump_chance = 10
 	vore_bump_emote	= "greedily leaps at"
 	vore_default_mode = DM_HOLD
 	vore_icons = SA_ICON_LIVING
+
+CAPABILITIES(/mob/living/simple_mob/vore/turkey)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE))
 
 /datum/say_list/turkey
 	speak = list("GOBBLEGOBBLE!","Gobble?","Gobblegobble...")

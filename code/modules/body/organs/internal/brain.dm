@@ -236,7 +236,8 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 	//Match the core to the Promethean's starting color.
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
-		color = rgb(min(H.r_skin + 40, 255), min(H.g_skin + 40, 255), min(H.b_skin + 40, 255))
+		var/list/skin = hex2rgb(H.looks.skin_color)
+		color = rgb(min(skin[1] + 40, 255), min(skin[2] + 40, 255), min(skin[3] + 40, 255))
 
 /obj/item/organ/internal/brain/slime/proc/reviveBody()
 	// The core hosts the promethean's mind; the new body is grown from the

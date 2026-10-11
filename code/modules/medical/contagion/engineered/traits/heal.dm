@@ -256,8 +256,8 @@
 
 	var/mob/living/carbon/human/H = A.host
 
-	if(H.fire_stacks < 0)
-		H.adjust_fire_stacks(min(absorption_coeff, -H.fire_stacks))
+	if(fire_stacks_of(H) < 0)
+		H.adjust_fire_stacks(min(absorption_coeff, -fire_stacks_of(H)))
 		. += power
 	if(H.ingested.has_reagent(REAGENT_ID_HOLYWATER))
 		H.ingested.remove_reagent(REAGENT_ID_HOLYWATER, 0.5 * absorption_coeff)

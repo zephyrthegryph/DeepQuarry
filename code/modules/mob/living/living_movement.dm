@@ -153,7 +153,7 @@ default behaviour is:
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
-		if(step_mechanics_pref && tmob.step_mechanics_pref)
+		if(vore_prefs.step_mechanics_pref && tmob.vore_prefs.step_mechanics_pref)
 			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
 			if(handle_micro_bump_other(tmob, 1, stance)) return
@@ -180,7 +180,7 @@ default behaviour is:
 	now_pushing = FALSE
 	. = ..()
 	if (!istype(AM, /atom/movable) || AM.anchored)
-		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || flying)
+		if(((has_status(STAT_CONFUSED) || is_blind()) && stat == CONSCIOUS && prob(50) && m_intent==I_RUN) || stat_value(src, STAT_FLYING))
 			AM.stumble_into(src)
 		return
 	if (!now_pushing)
@@ -319,7 +319,7 @@ default behaviour is:
 		return
 	else if(lastarea?.get_gravity() == 0)
 		inertial_drift()
-	else if(flying)
+	else if(stat_value(src, STAT_FLYING))
 		inertial_drift()
 		make_floating(1)
 	else if(!isspace(loc))

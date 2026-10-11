@@ -67,7 +67,7 @@
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
-	if(!L.devourable || !L.allowmobvore || L.unacidable)
+	if(!L.vore_prefs.devourable || !L.vore_prefs.allowmobvore || L.unacidable)
 		return FALSE
 
 	ai_busy_begin()
@@ -679,7 +679,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/handle_hungry()
-	if(nutrition <= OBELISK_LURE)
+	if(nutrition_of(src) <= OBELISK_LURE)
 		for(var/mob/living/carbon/human/H in oview(6, src))
 			if(!istype(H) || !isliving(H) || H.stat == DEAD)
 				continue

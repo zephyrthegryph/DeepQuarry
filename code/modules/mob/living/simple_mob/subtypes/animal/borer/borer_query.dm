@@ -7,6 +7,7 @@
 	var/mob/living/carbon/human/borer_host_mob
 
 CAPABILITIES(/mob/living/simple_mob/animal/borer)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(can_be_antagged = TRUE))
 	ref_one(nameof(borer_host_mob), /mob/living/carbon/human, on_unlink = PROC_REF(host_lost))
 	immune_to_incapacitation()

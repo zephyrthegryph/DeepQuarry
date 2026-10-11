@@ -40,7 +40,7 @@
 	var/obj/item/nif/implant = software.nif()
 	var/obj/interim_nif_size_click/probe = allocate(/obj/interim_nif_size_click, run_loc_floor_bottom_left)
 	rel_set(probe, nameof(probe.software), software)
-	var/nutrition = human.nutrition
+	var/nutrition = nutrition_of(human)
 	var/power = implant.power_usage
 	var/bystander_size = bystander.size_multiplier
 	TEST_ASSERT(human.size_multiplier != 1.5, "the real desired size differs from the owner's current size")
@@ -50,7 +50,7 @@
 	TEST_ASSERT(istype(ask), "actual activation produces a typed native number request")
 	TEST_ASSERT_EQUAL(ask.answerer, human, "the real implant owner answers despite an unrelated native click actor")
 	TEST_ASSERT_EQUAL(ask.subject, implant, "the prompt captures the actual original implant")
-	TEST_ASSERT_EQUAL(human.nutrition, nutrition - 2, "parent activation charges the real owner exactly once before asking")
+	TEST_ASSERT_EQUAL(nutrition_of(human), nutrition_of(src) - 2, "parent activation charges the real owner exactly once before asking")
 	TEST_ASSERT_EQUAL(implant.power_usage, power + 2, "actual parent activation registers its real active power cost")
 	test_time(0.1 SECONDS)
 	TEST_ASSERT_EQUAL(software.active, FALSE, "the real scheduled pulse deactivates without waiting for an answer")
@@ -58,7 +58,7 @@
 	test_answer(human, 150)
 	TEST_ASSERT_EQUAL(human.size_multiplier, 1.5, "the actual number answer reaches resize after parent activation has completed")
 	TEST_ASSERT_EQUAL(bystander.size_multiplier, bystander_size, "the unrelated ambient actor never resizes")
-	TEST_ASSERT_EQUAL(human.nutrition, nutrition - 2, "answering does not repeat activation or charge nutrition again")
+	TEST_ASSERT_EQUAL(nutrition_of(human), nutrition_of(src) - 2, "answering does not repeat activation or charge nutrition_of(src) again")
 	TEST_ASSERT_NULL(software.size_prompt, "the completed actual prompt is detached")
 	software.activate()
 	var/datum/prompt/number/cancelled = SSrequests.open_for(human)

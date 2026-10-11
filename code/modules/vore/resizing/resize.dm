@@ -9,7 +9,7 @@
 		if((movement_of(src).always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
 			return
 		if(!(stance == I_HELP || target.restrained()))
-			if(src.step_mechanics_pref && target.step_mechanics_pref)
+			if(src.vore_prefs.step_mechanics_pref && target.vore_prefs.step_mechanics_pref)
 				target.handle_micro_bump_other(src, 0, stance)
 			else
 				target.handle_micro_bump_other(src, 1, stance)
@@ -18,8 +18,6 @@
 // Adding needed defines to /mob/living
 // Note: Polaris had this on /mob/living/carbon/human We need it higher up for animals and stuff.
 /mob
-	var/step_mechanics_pref = TRUE		// Allow participation in macro-micro step mechanics
-	var/pickup_pref = TRUE				// Allow participation in macro-micro pickup mechanics
 	var/center_offset = 0.5				// Center offset for uneven scaling symmetry.
 	var/offset_override = TRUE			// Pref toggle for center offset.
 
@@ -190,15 +188,15 @@
 		update_transform() //Lame way
 
 /mob/living/carbon/human/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = FALSE, allow_stripping = FALSE) // Disable aura_animation. Too expensive for something you can't even see.
-	if(!resizable && !ignore_prefs)
+	if(!vore_prefs.resizable && !ignore_prefs)
 		return 1
 	var/previous_scale = size_multiplier
 	. = ..()
 	var/size_difference = previous_scale - size_multiplier
 	if((allow_stripping == TRUE) && ((size_difference >= 0.3) || (size_difference <= -0.3)))
-		if(size_strip_preference == SIZESTRIP_ITEMS)
+		if(vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 			drop_all_clothing(FALSE)
-		else if(size_strip_preference == SIZESTRIP_ALL)
+		else if(vore_prefs.size_strip_preference == SIZESTRIP_ALL)
 			drop_all_clothing(TRUE)
 	if(LAZYLEN(hud_list) && has_huds)
 		var/new_y_offset = vis_height * (size_multiplier - 1)
@@ -247,7 +245,7 @@
 /mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE, stance = I_HELP) //second one is for the Grabber, only exists for animals to self-grab; `stance` is M's (the scooper's) stance
 	if(src == M)
 		return FALSE
-	if(!(pickup_pref && M.pickup_pref && M.pickup_active))
+	if(!(vore_prefs.pickup_pref && M.vore_prefs.pickup_pref && M.pickup_active))
 		return FALSE
 	if(stance != I_HELP)
 		return FALSE
@@ -301,7 +299,7 @@
 			src_message = "You carefully step over [tmob]."
 			tmob_message = "[src] steps over you carefully!"
 			var/mob/living/carbon/human/H = src
-			if(H.flying)
+			if(stat_value(H, STAT_FLYING))
 				return TRUE //Silently pass without a message.
 			if(istaurtail(H.tail_style))
 				var/datum/sprite_accessory/tail/taur/tail = H.tail_style
@@ -334,10 +332,10 @@
 /mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0, stance = I_HURT) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
-	if(flying)
+	if(stat_value(src, STAT_FLYING))
 		return
 	//If the prey is flying, don't smush them.
-	if(tmob.flying)
+	if(stat_value(tmob, STAT_FLYING))
 		return
 	//We can't be stepping on anyone
 	if(!canmove || src?.buckled_to())
@@ -416,7 +414,7 @@
 	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
 		if(stance == I_GRAB)
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
-			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.pickup_pref && prey.pickup_pref))
+			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.vore_prefs.pickup_pref && prey.vore_prefs.pickup_pref))
 				message_pred = "You step down onto [prey], squishing them and forcing them down to the ground!"
 				message_prey = "[pred] steps down and squishes you with their foot, forcing you down to the ground!"
 				if(tail)

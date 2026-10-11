@@ -41,8 +41,6 @@
 
 	say_list_type = /datum/say_list/panther
 
-	allow_mind_transfer = TRUE
-	can_be_drop_prey = FALSE
 	species_sounds = "Feline"
 	pain_emote_1p = list("yowl", "growl")
 	pain_emote_3p = list("yowls", "growls")
@@ -54,6 +52,7 @@
 	vore_icons = SA_ICON_LIVING | SA_ICON_REST
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/panther)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("allow_mind_transfer" = TRUE, "can_be_drop_prey" = FALSE))
 	verb_entry(/mob/living/simple_mob/proc/animal_mount, login = TRUE)
 	verb_entry(/mob/living/proc/toggle_rider_reins, login = TRUE)
 

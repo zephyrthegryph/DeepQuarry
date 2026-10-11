@@ -107,7 +107,7 @@ CAPABILITIES(/datum/hallucinations)
 		if(41 to 65)
 			event_strange_sound()
 		if(66 to 70)
-			if(prob(20) && our_human.nutrition < 100)
+			if(prob(20) && nutrition_of(our_human) < 100)
 				event_hunger() // Hungi, meant for xenochi but this is too funny to pass up
 			else
 				event_flash_monsters()

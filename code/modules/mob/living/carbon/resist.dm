@@ -7,7 +7,7 @@
 	return TRUE
 
 /mob/living/carbon/proc/resist_fire_done()
-	if(fire_stacks <= 0)
+	if(fire_stacks_of(src) <= 0)
 		act_message(src, null, MSG_SELF(span_notice("You extinguish yourself.")), MSG_OTHERS(span_danger("%U% has successfully extinguished themselves!")))
 		extinguish_mob()
 	return TRUE

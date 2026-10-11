@@ -153,7 +153,7 @@
 	var/obj/item/storage/toolbox/lunchbox/L = new boxtype(get_turf(H))
 	new /obj/item/reagent_containers/food/snacks/candy/proteinbar(L)
 	new /obj/item/tool/prybar/red(L)
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
 		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
@@ -189,10 +189,10 @@
 	after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_flesh_colour(mob/living/carbon/human/H)
-	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
+	return (H ? H.looks.skin_color : ..())
 
 /datum/species/shapeshifter/promethean/get_additional_examine_text(mob/living/carbon/human/H)
 
@@ -343,9 +343,9 @@
 			regen_wounds = FALSE // Low pressure: the body holds wounds together rather than sealing them.
 
 	var/starve_mod = 1
-	if(H.nutrition <= 50)
+	if(nutrition_of(H) <= 50)
 		starve_mod = 0.5 // Severe starvation. Healing past this point hurts badly.
-	else if(H.nutrition <= 150)
+	else if(nutrition_of(H) <= 150)
 		starve_mod = 0.75
 	var/amount = S.heal_rate * starve_mod
 
@@ -377,7 +377,7 @@
 
 /// Over half the body soaked through.
 /proc/promethean_is_soaked(mob/living/carbon/human/H)
-	return H.fire_stacks < 0 && H.get_water_protection() <= 0.5
+	return fire_stacks_of(H) < 0 && H.get_water_protection() <= 0.5
 
 /// Water dissolves a promethean's gel. Grows while soaked, fades once dry, and
 /// stops regeneration while present.

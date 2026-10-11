@@ -103,19 +103,19 @@
 	var/obj/belly/B = vore_selected_of(pred)
 
 	TEST_ASSERT_NULL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "a willing prey should be devourable")
-	prey.devourable = FALSE
+	prey.vore_prefs.devourable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_devour, pred, prey), "They aren't able to be devoured.", "devour refusal reason")
 	TEST_ASSERT(!pred.begin_instant_nom(pred, prey, pred, B), "an unwilling prey must not be eaten")
 	TEST_ASSERT(prey.loc != B, "an unwilling prey must stay out")
-	prey.devourable = TRUE
+	prey.vore_prefs.devourable = TRUE
 
-	prey.digestable = FALSE
+	prey.vore_prefs.digestable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_digest, pred, prey), "they don't allow digestion", "digest refusal reason")
-	prey.absorbable = FALSE
+	prey.vore_prefs.absorbable = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_absorb, pred, prey), "they don't allow absorption", "absorb refusal reason")
-	prey.permit_healbelly = FALSE
+	prey.vore_prefs.permit_healbelly = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_heal, pred, prey), "they don't allow healing bellies", "heal refusal reason")
-	prey.strip_pref = FALSE
+	prey.vore_prefs.strip_pref = FALSE
 	TEST_ASSERT_EQUAL(vore_consent_refusal(/datum/predicate/vore_strip, pred, prey), "they don't allow stripping", "strip refusal reason")
 
 	// A refused mode holds: an indigestible prey takes no digestion damage.
@@ -141,8 +141,8 @@
 	prey_f.set_nutrition(500)
 	vore_test_cycles(BS, 4, 6)
 	vore_test_cycles(BF, 12, 2)
-	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "drain totals differ: [prey_s.nutrition] over 4x6 s, [prey_f.nutrition] over 12x2 s")
-	TEST_ASSERT(abs(prey_s.nutrition - 500 * (0.95 ** 4)) < 0.01, "drain should take 5% per 6 s: [prey_s.nutrition]")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - nutrition_of(prey_f)) < 0.01, "drain totals differ: [nutrition_of(prey_s)] over 4x6 s, [nutrition_of(prey_f)] over 12x2 s")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - 500 * (0.95 ** 4)) < 0.01, "drain should take 5% per 6 s: [nutrition_of(prey_s)]")
 
 	// Shrink: 1% of size per baseline cycle.
 	slow = vore_test_pair()
@@ -169,7 +169,7 @@
 	prey_f.set_nutrition(400)
 	vore_test_cycles(BS, 1, 12)
 	vore_test_cycles(BF, 2, 6)
-	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "a late cycle should catch up: [prey_s.nutrition] vs [prey_f.nutrition]")
+	TEST_ASSERT(abs(nutrition_of(prey_s) - nutrition_of(prey_f)) < 0.01, "a late cycle should catch up: [nutrition_of(prey_s)] vs [nutrition_of(prey_f)]")
 
 /// A belly on `pair`'s pred in `mode` with the prey inside.
 /datum/unit_test/proc/vore_rate_belly(list/pair, mode)
@@ -205,7 +205,7 @@
 	var/mob/living/carbon/human/absorbee = pair[2]
 	absorbee.set_nutrition(110)
 	vore_test_cycles(B, 10)
-	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition [absorbee.nutrition])")
+	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition_of(src) [nutrition_of(absorbee)])")
 	B.release_all_contents(TRUE, TRUE)
 	TEST_ASSERT(!absorbee.absorbed, "release should unabsorb")
 

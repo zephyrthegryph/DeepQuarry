@@ -62,12 +62,12 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	dd_insertObjectList(GLOB.outfits_decls, src)
 
 /datum/decl/hierarchy/outfit/proc/pre_equip(mob/living/carbon/human/H)
-	switch(H.headset)
+	switch(H.bio.headset)
 		if(1) l_ear = headset
 		if(2) l_ear = headset_alt
 		if(3) l_ear = headset_earbud
 	if(flags & OUTFIT_HAS_BACKPACK)
-		switch(H.backbag)
+		switch(H.bio.backbag)
 			if(2) back = backpack
 			if(3) back = satchel_one
 			if(4) back = satchel_two

@@ -765,9 +765,9 @@ SYSTEM_DEF(job)
 				if(!isliving(current_client.mob))
 					continue
 				var/mob/living/current_mob = current_client.mob
-				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.no_latejoin_vore_warning))
+				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_vore_warning))
 					continue
-				if(!current_mob.latejoin_vore)
+				if(!current_mob.vore_prefs.latejoin_vore)
 					continue
 				if(!(current_mob.z in using_map.vorespawn_levels))
 					continue
@@ -811,7 +811,7 @@ SYSTEM_DEF(job)
 
 				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
 				// The pred is asked; with the no-warning pref, not answering in time lets them in.
-				var/confirm = rerun_ask_on(joiner, pred, "pred_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to spawn absorbed as your [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to spawn into your [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = pred.no_latejoin_vore_warning ? "Yes" : null, timeout = (pred.no_latejoin_vore_warning && pred.no_latejoin_vore_warning_time > 0) ? pred.no_latejoin_vore_warning_time SECONDS : 0, buttons = TRUE)
+				var/confirm = rerun_ask_on(joiner, pred, "pred_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to spawn absorbed as your [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to spawn into your [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = pred.vore_prefs.no_latejoin_vore_warning ? "Yes" : null, timeout = (pred.vore_prefs.no_latejoin_vore_warning && pred.vore_prefs.no_latejoin_vore_warning_time > 0) ? pred.vore_prefs.no_latejoin_vore_warning_time SECONDS : 0, buttons = TRUE)
 				if(isnull(confirm))
 					to_chat(spawn_client, span_boldwarning("[pred] has received your spawn request. Please wait."))
 					log_admin("[key_name(spawn_client)] has requested to vore spawn into [key_name(pred)]")
@@ -849,9 +849,9 @@ SYSTEM_DEF(job)
 				if(!isliving(current_client.mob))
 					continue
 				var/mob/living/current_mob = current_client.mob
-				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.no_latejoin_prey_warning))
+				if(current_mob.stat == UNCONSCIOUS || current_mob.stat == DEAD || (current_mob.client.is_afk(10 MINUTES) && !current_mob.vore_prefs.no_latejoin_prey_warning))
 					continue
-				if(!current_mob.latejoin_prey)
+				if(!current_mob.vore_prefs.latejoin_prey)
 					continue
 				if(!(current_mob.z in using_map.vorespawn_levels))
 					continue
@@ -881,7 +881,7 @@ SYSTEM_DEF(job)
 
 				var/spawner_name = spawn_client.prefs.read_preference(/datum/preference/name/real_name)
 				// The prey is asked; with the no-warning pref, not answering in time lets it happen.
-				var/confirm = rerun_ask_on(joiner, prey, "prey_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to televore and instantly absorb you with their [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to televore you into their [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = prey.no_latejoin_prey_warning ? "Yes" : null, timeout = (prey.no_latejoin_prey_warning && prey.no_latejoin_prey_warning_time > 0) ? prey.no_latejoin_prey_warning_time SECONDS : 0, buttons = TRUE)
+				var/confirm = rerun_ask_on(joiner, prey, "prey_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/prompt/choice, question = absorb_choice ? "[spawner_name] is attempting to televore and instantly absorb you with their [vore_spawn_gut]. Let them?" : "[spawner_name] is attempting to televore you into their [vore_spawn_gut]. Let them?", title = "Confirm", choices = list("No", "Yes"), cancel_answer = prey.vore_prefs.no_latejoin_prey_warning ? "Yes" : null, timeout = (prey.vore_prefs.no_latejoin_prey_warning && prey.vore_prefs.no_latejoin_prey_warning_time > 0) ? prey.vore_prefs.no_latejoin_prey_warning_time SECONDS : 0, buttons = TRUE)
 				if(isnull(confirm))
 					to_chat(spawn_client, span_boldwarning("[prey] has received your spawn request. Please wait."))
 					log_admin("[key_name(spawn_client)] has requested to pred spawn onto [key_name(prey)]")

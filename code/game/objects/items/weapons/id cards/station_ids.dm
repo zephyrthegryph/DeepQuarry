@@ -74,7 +74,7 @@ CAPABILITIES(/obj/item/card/id)
 
 /mob/living/carbon/human/set_id_info(obj/item/card/id/id_card)
 	..()
-	id_card.age = age
+	id_card.age = bio.age
 	if(species.name == SPECIES_HANNER)
 		id_card.species = "[custom_species ? "[custom_species]" : species.name]"
 	else

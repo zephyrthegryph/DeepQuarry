@@ -22,12 +22,10 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	icon_living = "space_jellyfish"
 	icon_dead = "space_jellyfish_dead"
 	has_eye_glow = TRUE
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 	density = FALSE
 
 	faction = FACTION_JELLYFISH
 	endurance = 100
-	nutrition = 150
 	pass_flags = PASSTABLE
 	movement_cooldown = 1
 
@@ -71,7 +69,6 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	vore_default_contamination_flavor = "Wet"
 	vore_default_contamination_color = "grey"
 	vore_default_item_mode = IM_DIGEST
-	can_be_drop_prey = FALSE
 
 	/// world.time before which it can't reproduce again.
 	var/reproduce_after = 0
@@ -101,13 +98,15 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 	if(isliving(A))
 		var/mob/living/L = A
 		var/leech = rand(1,100)
-		if(L.nutrition)
+		if(nutrition_of(L))
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 		if(prob(25))
 			L.injure(INJURY_PAIN, leech, source = src, affliction = /datum/affliction/venom/cnidarian_sting)
 
 CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
+	configure(mob_movement(hovering = TRUE))
 	param(nameof(budded_from), pos = 1, apply = PROC_REF(join_swarm), keep = FALSE)
 
 /// The jellyfish this one budded from (its constructor param).
@@ -125,7 +124,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/on_death(gibbed)
 	. = ..()
-	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition)
+	new /obj/item/reagent_containers/food/snacks/jellyfishcore(loc, nutrition_of(src))
 
 // the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/lifecycle_dematerialize()
@@ -151,7 +150,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/space_jellyfish)
 		return
 	if(GLOB.jellyfish_count >= GLOB.max_jellyfish)
 		return
-	if(nutrition < 500)
+	if(nutrition_of(src) < 500)
 		return
 	if(prob(10))
 		new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc, src)
@@ -178,3 +177,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/jellyfishcore)
 /// A core also holds the nutriment of the jellyfish it came from (its snack nutriment, declared on every snack, plus that much again).
 /obj/item/reagent_containers/food/snacks/jellyfishcore/nutriment_units()
 	return ..() + nutriment_amt + inherited_nutriment
+
+/mob/living/simple_mob/vore/alienanimals/space_jellyfish/starting_nutrition()
+	return 150

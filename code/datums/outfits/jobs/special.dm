@@ -55,5 +55,5 @@
 
 /datum/decl/hierarchy/outfit/job/mime/post_equip(mob/living/carbon/human/H)
 	..()
-	if(H.backbag == 1)
+	if(H.bio.backbag == 1)
 		H.equip_to_slot_or_del(new /obj/item/pen/crayon/mime(H), SLOT_ID_HAND_L)

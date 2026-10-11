@@ -4565,6 +4565,32 @@ borg's jaws, the photocopier's copy) go through `set_<var>()` and give that item
 * **Machines that refreshed their parts again after `default_parts()`** (bomb tester, DNA scanner, honey extractor, built abductor RTGs) refresh
   once; the teleporter hub, microwave, smartfridge and biogenerator use `default_parts()`.
 
+## Profile records (rewrite/bv-profiles, base_vars stage 4)
+
+Character data moved off the base types into owned records (`code/engine/declare/profiles.dm`): `H.looks`
+(`/datum/record/appearance`), `M.bio` (`/datum/record/identity`) and `M.vore_prefs` (`/datum/record/vore_prefs`).
+
+* **Colours are `"#rrggbb"` strings.** The r_/g_/b_ triples of hair, gradient, facial hair, eyes, skin and synth parts are one field each.
+  `change_hair_color()`, `change_eye_color()`, `change_skin_color()` and the others take a colour, not three channels. A colour picked in a
+  prompt keeps the case it came in (`"#FF0000"` is not rewritten to `"#ff0000"`); BYOND draws both the same. Icon cache keys hold the string
+  instead of three numbers. `dq_profile_human_look_pin` proves the drawn human is pixel-identical (five fingerprints recorded on the old tree:
+  human, digitigrade tajaran, unathi, a DNA copy, a colour copy).
+* **Rezadone and slime colour shifts** walk the channels in a loop: the same `prob()` calls in the same order, each channel of skin, hair and
+  beard changed as before.
+* **The identity record is on `/mob`, not only on humans**: robots, drones, simple mobs and pAIs read and write flavour text, nicknames and say
+  verbs, which lived on `/mob` and `/mob/living`.
+* **Shapeshifting into another human (`transform_into_other_human`) copies the whole looks record**, so the lipstick and digitigrade legs come
+  along with the colours and styles (the old copy proc took colours and styles only and set digitigrade by hand). `copy_colours_from()` is deleted.
+* **The dead ringer's corpse copies its wearer's looks record** (eyes, gradient and synth colours too, not only hair, beard and skin).
+* **Vore preference copies copy the lists.** `VORE_PREF_TRANSFER` handed the nutrition and weight message lists and the vore sprite colour
+  lists over by reference, so a mob and its saved preferences (or a mob and its tf form) shared them; `record_copy()`, `record_export()` and
+  `record_import()` copy them. The macro is deleted.
+* **137 mob types' vore toggle overrides** (`digestable = 0`, `can_be_drop_prey = FALSE`, ...) are `profile(nameof(vore_prefs), ..., fields =
+  list(...))` in their CAPABILITIES blocks, applied when the record is built (before the type's `Initialize()` runs, as the overrides were).
+* **No savefile migration.** The character save already held colours as `"#rrggbb"` strings and the vore save holds the same keys; neither
+  format changed. `dq_profile_pref_save_roundtrip` and `dq_profile_vore_prefs_roundtrip` load real (headless test account) saves, apply them to
+  the records and write them back.
+
 ## Item protection as a type trait (rewrite/look-traits, gap 5)
 
 `heat_protection`, `cold_protection`, `max_heat_protection_temperature`, `min_cold_protection_temperature`, `max_pressure_protection`,
@@ -4711,3 +4737,22 @@ The pins' robot actor now has a fixed serial (`Default Cyborg-1`): its name reac
 subtype overrides keep chaining to it). The `incapacitated` var is deleted: nothing wrote it (`incapacitated()` is a proc that computes
 the answer). No behaviour change intended.
 Constructor runtime rows in the pins keep the runtime's message and drop its `%//%` source locations, which moved with unrelated edits (the holder rows' `params.dm`/`holder.dm` lines).
+
+## Live mob state into its domains (base_vars lane B, bv-hud)
+
+* **Nutrition and hunger rate live in the body's metabolism** (`/datum/body` `food_energy`, `hunger_rate`): read `nutrition_of(L)` /
+  `hunger_rate_of(L)`, written by `set_nutrition()` (which publishes MOB_KEY_NUTRITION) and `set_hunger_rate()` (308 sites). A type's
+  starting nutrition is `starting_nutrition()` (20 types overrode the var); a human's 200-400 is drawn by rand() there instead of a `rolls()` entry on the instance stream. A body swapped on a species change keeps the nutrition.
+* **Fear and tiredness are statuses** (STAT_FEAR, STAT_TIREDNESS): their points wear off one per cycle on the status layer instead of
+  the human Life step decrementing them; the Life step keeps their effects and republishes MOB_KEY_STATUS each cycle so the HUD bands
+  follow the count down.
+* **Flying is a stat** (STAT_FLYING, ANY): the mob's own flight is the SRC_FLIGHT hold, written by `set_flying()`.
+* **Burning is a stat** (STAT_ON_FIRE) held by the fire-stack status effect while lit; fire stacks are summed from the effects on read
+  (`fire_stacks_of()`), and the decay rate is `fire_stack_decay_rate()` (silicons -0.55). The mob no longer caches either.
+* `exploit_addons` / `exploit_for` are deleted: written, never read.
+
+## Softfall, hovering and parachuting type defaults are trait fields (base_vars lane B, bv-hud)
+
+The GLOB type tables `dq_softfall_by_type`, `dq_hovering_by_type` and `dq_parachuting_by_type` become fields of the `mob_movement()` trait:
+30 types declare `configure(mob_movement(softfall =, hovering =, parachuting =))`, and the sparse per-instance overrides still win. No
+behaviour change intended (a subtype inherits its ancestor's value as the table lookup did).

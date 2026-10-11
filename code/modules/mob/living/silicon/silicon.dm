@@ -30,12 +30,14 @@
 	var/sensor_type = 0 // add - silicon omni "is sensor on or nah"
 
 	var/hudmode = null
-	fire_stack_decay_rate = -0.55
 	var/idcard_type = /obj/item/card/id/synthetic
 	// footsteps (footstep() in its CAPABILITIES)
 	footstep_type = FOOTSTEP_MOB_SHOE
 	footstep_volume = 1
 	footstep_e_range = -6
+
+/mob/living/silicon/fire_stack_decay_rate()
+	return -0.55
 
 CAPABILITIES(/mob/living/silicon)
 	immune_to(STAT_DIZZY)
@@ -300,14 +302,14 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 	set desc = "Sets an extended description of your character's features."
 	set category = VERB_CAT_IC_SETTINGS
 
-	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = flavor_text, multiline = TRUE, timeout = 0)
+	open_request(src, /datum/prompt/text, PROC_REF(silicon_flavor_entered), answerer = src, title = "Flavour text", question = "Please enter your new flavour text.", default = bio.flavor_text, multiline = TRUE, timeout = 0)
 
 /mob/living/silicon/proc/silicon_flavor_entered(datum/act/request/A)
 	if(!A.answer)
 		return
 	var/new_flavortext = strip_html_simple(A.answer.value)
 	if(new_flavortext)
-		flavor_text = new_flavortext
+		bio.flavor_text = new_flavortext
 
 /mob/living/silicon/binarycheck()
 	return 1

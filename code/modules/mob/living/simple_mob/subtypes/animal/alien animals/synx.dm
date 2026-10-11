@@ -455,7 +455,6 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 //lo- procs adjusted to mobs.
 
 /mob/living/simple_mob/animal/synx
-	nutrition = MAX_NUTRITION // spawns fed (its max_nutrition)
 
 /mob/living/simple_mob/animal/synx/proc/sonar_ping()
 	set name = "Listen In"
@@ -1006,3 +1005,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/synx)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/randomspeech)
 	verb_entry(/mob/living/simple_mob/animal/synx/proc/set_style)
 
+
+/mob/living/simple_mob/animal/synx/starting_nutrition()
+	return MAX_NUTRITION // spawns fed (its max_nutrition)

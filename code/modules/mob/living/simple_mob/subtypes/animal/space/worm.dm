@@ -56,7 +56,6 @@
 	var/open_maw = FALSE	// Are we trying to eat things?
 	var/segment_dir = 0	// The directions of the links around this segment, from where its neighbours stand.
 
-	can_be_drop_prey = FALSE
 
 /mob/living/simple_mob/animal/space/space_worm/head
 	name = "space worm"
@@ -67,7 +66,6 @@
 
 	endurance = 300
 
-	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
 
 	melee_damage_lower = 10
 	melee_damage_upper = 25
@@ -78,6 +76,9 @@
 	animate_movement = SLIDE_STEPS
 
 	var/segment_count = 6
+
+CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
+	configure(mob_movement(hovering = TRUE))
 
 /mob/living/simple_mob/animal/space/space_worm/head/severed
 	segment_count = 0
@@ -472,6 +473,7 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 
 /// Immune to incapacitation by nature (stun, weakness, paralysis).
 CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 	configure(mob_kind(mob_class = MOB_CLASS_ABERRATION))
 	immune_to_incapacitation()
 	// The maw's jobs (AttemptToEat()): each frees the worm's AI again however it ends.

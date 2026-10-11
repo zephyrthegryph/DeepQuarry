@@ -11,7 +11,6 @@
 	var/generate_gender = FALSE
 	var/generate_id_gender = FALSE
 
-	h_style = "Bald"
 
 	var/to_wear_helmet = /obj/item/clothing/head/welding
 	var/to_wear_glasses = /obj/item/clothing/glasses/threedglasses
@@ -34,6 +33,7 @@
 
 // Its outfit: each to_wear_* var names what it starts wearing in that slot (null: nothing), so a subtype only changes the vars.
 CAPABILITIES(/mob/living/carbon/human/ai_controlled)
+	profile(nameof(looks), /datum/record/appearance, fields = list("hair_style" = "Bald"))
 	wears(nameof(to_wear_uniform), SLOT_ID_UNIFORM)
 	wears(nameof(to_wear_suit), SLOT_ID_SUIT)
 	wears(nameof(to_wear_shoes), SLOT_ID_SHOES)

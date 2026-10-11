@@ -1,8 +1,9 @@
 /mob/living/simple_mob/animal/passive/fox/syndicate/aipet
 	name = "R3N4-ULT"
 	desc = "A curiously devious robotic fox!"
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/fox/syndicate/aipet)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /datum/category_item/catalogue/fauna/catslug/tulidaan
 	name = "Alien Wildlife - Catslug - Tulidaan"
@@ -26,9 +27,11 @@
 	icon_living = "tulidaan"
 	icon_rest = "tulidaan_rest"
 	icon_dead = "tulidaan_dead"
-	digestable = 0
 	catalogue_data = list(/datum/category_item/catalogue/fauna/catslug/tulidaan)
 	holder_type = /obj/item/holder/catslug/tulidaan
+
+CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/tulidaan)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 
 /obj/item/holder/catslug/tulidaan
 	item_state = "tulidaan"
@@ -36,21 +39,26 @@
 /mob/living/simple_mob/animal/passive/mouse/jerboa/leggy
 	name = "Leggy"
 	desc = "Don't make fun, they have a condition."
-	digestable = 0
 	keep_parent_data = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/jerboa/leggy)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 
 /mob/living/simple_mob/animal/passive/mouse/brown/feivel
 	name = "Feivel"
 	desc = "Heading out west wasn't far enough, so he's going to space!"
-	digestable = 0
 	keep_parent_data = TRUE
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mouse/brown/feivel)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 
 /mob/living/simple_mob/animal/passive/cat/jones
 	name = "Jones"
 	desc = "A polite, well groomed patchy colored feline. Doesn't like his cat carrier."
-	devourable = 0
-	digestable = 0
 	holder_type = /obj/item/holder/cat/jones
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/jones)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /obj/item/holder/cat/jones
 	item_state = "cat2"
@@ -59,32 +67,37 @@
 /mob/living/simple_mob/animal/passive/dog/void_puppy/nulle
 	name = "Nulle"
 	desc = "A guiding light through the black!"
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/dog/void_puppy/nulle)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /mob/living/simple_mob/animal/passive/tindalos/twigs
 	name = "Twigs"
 	desc = "Its eyes gleam with untold knowings..."
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/tindalos/twigs)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /mob/living/simple_mob/animal/passive/bird/azure_tit/iceman
 	name = "Iceman"
 	desc = "You wanna know who the best is? That's him. Iceman. Ice cold, no mistakes."
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/bird/azure_tit/iceman)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /mob/living/simple_mob/animal/passive/mimepet/gregory
 	name = "Gregory XXVI Esq."
 	desc = "It looks very distinguished."
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/animal/passive/mimepet/gregory)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /mob/living/simple_mob/vore/fennec/bridgette
 	name = "Bridgette"
 	desc = "Bridgette the brig fox! She glares at you like you did something wrong!"
-	devourable = 0
-	digestable = 0
+
+CAPABILITIES(/mob/living/simple_mob/vore/fennec/bridgette)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 
 /datum/category_item/catalogue/fauna/otie/cocoa
 	name = "Creature - Otie - Cocoa"
@@ -99,10 +112,9 @@
 /mob/living/simple_mob/vore/otie/red/chubby/cocoa
 	name = "Cocoa"
 	desc = "A good boi, eats the scraps when you're not looking."
-	devourable = 0
-	digestable = 0
 	faction = FACTION_BAR
 	catalogue_data = list(/datum/category_item/catalogue/fauna/otie/cocoa)
 
 CAPABILITIES(/mob/living/simple_mob/vore/otie/red/chubby/cocoa)
+	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("devourable" = 0, "digestable" = 0))
 	configure(mob_movement(bump = 32))

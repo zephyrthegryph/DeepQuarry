@@ -332,12 +332,12 @@ CAPABILITIES(/obj/structure/gargoyle)
 		var/mob/living/L = source
 		if(can_throw_vore(gargoyle, L))
 			var/drop_prey_temp = FALSE
-			if(gargoyle.can_be_drop_prey)
+			if(gargoyle.vore_prefs.can_be_drop_prey)
 				drop_prey_temp = TRUE
-				gargoyle.can_be_drop_prey = FALSE //Making sure the original gargoyle body is not the one getting throwvored instead.
+				gargoyle.vore_prefs.can_be_drop_prey = FALSE//Making sure the original gargoyle body is not the one getting throwvored instead.
 			gargoyle.hitby(L, throwingdatum)
 			if(drop_prey_temp)
-				gargoyle.can_be_drop_prey = TRUE
+				gargoyle.vore_prefs.can_be_drop_prey = TRUE
 			return
 	return ..()
 
