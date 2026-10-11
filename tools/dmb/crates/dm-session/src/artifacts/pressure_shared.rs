@@ -44,7 +44,12 @@ fn additions(
 impl<T, Q: Clone, A: Clone, D: Copy + Ord> ObservedArtifactStore<T, Q, A, D> {
     /// Deduplicate shared exposed allocations transactionally. Unknown footprints
     /// decline. Callback walks one borrowed current payload outside the lock.
-    /// Scratch descriptors are bounded by `limit`; no whole strong payload roster.
+    /// The callback must expose immutable backing whose identity and size cannot
+    /// change while its current payload/receipt remains resident. Interior-
+    /// mutable or otherwise unproven backing must decline with `None`.
+    /// Allocation-vector capacity is bounded by `limit`; weak roster and tree
+    /// bookkeeping add scratch overhead. This is not a physical scratch bound
+    /// and does not retain a whole strong payload roster.
     /// Entry weights remain standalone conservative charges, so subsequent
     /// ordinary eviction cannot leave surviving shared backing undercharged.
     pub fn prune_for_pressure_shared(
