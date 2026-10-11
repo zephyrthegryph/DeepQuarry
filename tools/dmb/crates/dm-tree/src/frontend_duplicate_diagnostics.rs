@@ -79,6 +79,14 @@ pub(super) fn resolve(
             if current.path.as_path() != source.path.as_path() {
                 return None;
             }
+            // A repeated include shares physical bytes, but not its logical
+            // encounter. Use the current provenance occurrence's actual region.
+            let region = mapping.plan.regions.iter().find(|region| {
+                region.occurrence == occurrence
+                    && region.source_span.start <= origin.span.start as usize
+                    && (origin.span.start as usize) < region.source_span.end
+            })?;
+            location.encounter_ordinal = region.encounter_ordinal;
             location.include_occurrence = occurrence;
             location.include_chain = mapping.include_chain(occurrence);
             location.path = current.path.clone();

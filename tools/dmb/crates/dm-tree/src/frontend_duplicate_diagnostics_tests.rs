@@ -101,3 +101,74 @@ fn inherited_assignment_between_declarations_keeps_actual_definition_location() 
         ]
     );
 }
+
+#[test]
+fn cached_absent_parent_field_does_not_hide_new_redeclaration_or_publish_failure() {
+    let legal = "/datum/base\n/datum/child\n    parent_type = /datum/base\n    var/value = 2\n";
+    let invalid = "/datum/base\n    var/value = 1\n/datum/child\n    parent_type = /datum/base\n    var/value = 2\n";
+    let mut state = RetainedSemanticTree::new();
+    let original = check(legal, Some(&mut state)).unwrap();
+    let published = original.snapshot.tree.clone();
+    let fresh = check(invalid, None).unwrap_err();
+    let retained = check(invalid, Some(&mut state)).unwrap_err();
+    assert_eq!(messages(&retained), messages(&fresh));
+    assert!(
+        Arc::ptr_eq(state.snapshot_tree().unwrap(), &published),
+        "failed declaration candidate must not replace successful semantic authority"
+    );
+    let moved = check(&format!("// current attempt\n{invalid}"), Some(&mut state)).unwrap_err();
+    assert_eq!(
+        messages(&moved),
+        vec![
+            (6, "value: duplicate definition"),
+            (3, "value: previous definition")
+        ]
+    );
+    assert!(Arc::ptr_eq(state.snapshot_tree().unwrap(), &published));
+    let recovered = check(legal, Some(&mut state)).unwrap();
+    assert!(Arc::ptr_eq(&recovered.snapshot.tree, &published));
+}
+#[test]
+fn cached_parent_chain_change_rejects_current_declaration() {
+    let initial = "/datum/a\n    var/value = 1\n/datum/b\n/datum/child\n    parent_type = /datum/b\n    var/value = 2\n";
+    let changed = initial.replace("parent_type = /datum/b", "parent_type = /datum/a");
+    let mut state = RetainedSemanticTree::new();
+    check(initial, Some(&mut state)).unwrap();
+    let retained = check(&changed, Some(&mut state)).unwrap_err();
+    let fresh = check(&changed, None).unwrap_err();
+    assert_eq!(messages(&retained), messages(&fresh));
+    assert_eq!(
+        messages(&retained),
+        vec![
+            (6, "value: duplicate definition"),
+            (2, "value: previous definition")
+        ]
+    );
+}
+
+#[test]
+fn repeated_include_duplicate_locations_keep_distinct_current_encounters() {
+    struct Included;
+    impl SourceProvider for Included {
+        fn read(&self, path: &Path) -> Result<String, String> {
+            match path.file_name().and_then(|name| name.to_str()) {
+                Some("variables.dme") => Ok("#include \"same.dm\"\n#include \"same.dm\"\n".into()),
+                Some("same.dm") => Ok("/datum/example\n    var/static/value = 1\n".into()),
+                _ => Err("unknown fixture input".into()),
+            }
+        }
+    }
+    let errors = build(Path::new("variables.dme"), &Included, &BTreeMap::new(), 1).unwrap_err();
+    assert_eq!(
+        messages(&errors),
+        vec![
+            (2, "value: duplicate definition"),
+            (2, "value: previous definition")
+        ]
+    );
+    let first = errors[0].location.as_ref().unwrap();
+    let second = errors[1].location.as_ref().unwrap();
+    assert_ne!(first.include_occurrence, second.include_occurrence);
+    assert_ne!(first.encounter_ordinal, second.encounter_ordinal);
+    assert_ne!(first.include_chain, second.include_chain);
+}
