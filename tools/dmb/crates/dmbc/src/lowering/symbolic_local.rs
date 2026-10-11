@@ -13,6 +13,9 @@ pub(in crate::lowering) struct Certificate {
     code: Arc<dm_tree::frontend::BodyCodeIdentity>,
 }
 #[cfg(test)]
+#[path = "symbolic_local_modified_tests.rs"]
+mod modified_tests;
+#[cfg(test)]
 #[path = "symbolic_local_tests.rs"]
 mod tests;
 
@@ -127,9 +130,6 @@ impl SessionSymbolicMemo {
                     leases.records.claim_current(
                         candidate,
                         |_, record| {
-                            if !record.modified_recipes.is_empty() {
-                                return false;
-                            }
                             let Some(prepared) = record
                                 .local
                                 .as_ref()
@@ -137,6 +137,8 @@ impl SessionSymbolicMemo {
                             else {
                                 return false;
                             };
+                            // Modified descriptors are reissued against the current parsed
+                            // body by the same admission path as ordinary candidates.
                             completed = self.rebind_record(
                                 record,
                                 host,
