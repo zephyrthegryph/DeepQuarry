@@ -271,10 +271,13 @@ impl StartupArtifacts {
             return self.fresh_inventory(plans);
         };
         let inventory = Arc::clone(receipt.storage().1);
-        self.values
-            .insert_with_owned(Arc::from(INVENTORY_KEY), Vec::new(), Vec::new(), 0, || {
-                Artifact::Inventory(receipt)
-            });
+        self.values.insert_fresh_with_owned(
+            Arc::from(INVENTORY_KEY),
+            Vec::new(),
+            Vec::new(),
+            0,
+            || Artifact::Inventory(receipt),
+        );
         self.inventory_recomputed.fetch_add(1, Ordering::Relaxed);
         Ok(inventory)
     }

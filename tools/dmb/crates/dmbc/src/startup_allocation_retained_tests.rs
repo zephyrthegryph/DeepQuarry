@@ -209,3 +209,6 @@ fn retained_array_allocation_and_final_receipts_match_fresh_semantic_changes() {
         }
     }
 }
+
+#[path = "startup_allocation_fresh_tests.rs"]
+mod fresh_publication;

@@ -34,7 +34,7 @@ impl StartupArtifacts {
         &self,
         receipt: Arc<AllocationReceipt>,
     ) -> Arc<AllocationReceipt> {
-        let owner = self.values.insert_with_owned(
+        let owner = self.values.insert_fresh_with_owned(
             Arc::from(ALLOCATION_KEY),
             Vec::new(),
             Vec::new(),
@@ -78,7 +78,7 @@ impl StartupArtifacts {
                 None,
             );
         }
-        let owner = self.values.insert_with_owned(
+        let owner = self.values.insert_fresh_with_owned(
             Arc::from(FINAL_KEY),
             ledger.reads(),
             ledger.domain_receipts(),

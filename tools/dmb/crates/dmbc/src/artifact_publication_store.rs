@@ -183,6 +183,18 @@ impl<T: Send + Sync, Q: Clone + Ord, A: Clone + Eq, D: Clone + Ord> PublicationS
                 .insert_with_receipt(key, reads, versions, weight, create),
         }
     }
+    /// Fresh post-miss producer output whose exact inputs live in its payload.
+    /// A short locator and unchanged read ledger cannot certify those inputs.
+    pub(crate) fn insert_fresh_with_owned(
+        &self,
+        key: Arc<[u8]>,
+        reads: Vec<Observation<Q, A, D>>,
+        versions: Vec<(D, u128)>,
+        weight: usize,
+        create: impl FnOnce() -> T,
+    ) -> Option<Arc<T>> {
+        self.insert_current_qualified_with(key, reads.into(), versions.into(), weight, create)
+    }
     /// Original accepted receipt; caller may compare it with an independent producer.
     pub(crate) fn lookup_accepted<H: ObservationHost<Q, A, D>>(
         &self,

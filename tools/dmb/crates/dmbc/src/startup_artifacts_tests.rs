@@ -230,3 +230,6 @@ fn changed_static_body_and_deleted_procedure_replace_current_roster_without_sour
         "deleted current key must be pruned"
     );
 }
+
+#[path = "startup_inventory_fresh_tests.rs"]
+mod fresh_inventory;
