@@ -104,6 +104,26 @@ def main():
         references = re.findall(r"^reference\[(\d+)\]=(\d+) path=(.*)$", audit, re.MULTILINE)
         if len(references) != int(count[1]):
             raise ValueError("incomplete helper inventory")
+        bindings = {}
+        for owner in ("earlier", "argument_count", "argument_first"):
+            locator = inspect(["proc-code", str(dmb), "/proc/" + owner], "owner-code-" + owner)
+            match = re.search(r"^proc#(\d+) /proc/" + owner + r"$", locator, re.MULTILINE)
+            if not match:
+                raise ValueError("owning procedure identity unavailable")
+            record = inspect(["proc", str(dmb), match[1]], "owner-record-" + owner)
+            formal_list = re.search(r"code_locals_args: \[\d+, \d+, (\d+)\]", record)
+            if not formal_list:
+                raise ValueError("owning formal list unavailable")
+            formals = ast.literal_eval(inspect(["list", str(dmb), formal_list[1]], "owner-args-" + owner).strip())
+            if not isinstance(formals, list) or len(formals) % 4 or not all(type(word) is int and 0 <= word <= 0xffffffff for word in formals):
+                raise ValueError("invalid owning formal rows")
+            for argument in range(len(formals) // 4):
+                source = formals[argument * 4 + 1]
+                if source & 255 == 64:
+                    bindings.setdefault(source >> 8, []).append((owner, argument))
+        if sum(map(len, bindings.values())) != 3:
+            raise ValueError("actual owning selectors did not issue three helper bindings")
+        evidence["owning_bindings"] = bindings
         for ordinal, proc_id, path in references:
             text = inspect(["proc", str(dmb), proc_id], "proc-" + ordinal)
             match = re.search(r"code_locals_args: \[\d+, \d+, (\d+)\]", text)
@@ -122,13 +142,15 @@ def main():
                     raise ValueError("helper formal name unavailable")
                 rows.append({"name": name[1], "type_flags": type_flags, "value_source": source, "reserved": reserved})
             evidence["helpers"].append({"reference": int(ordinal), "proc_id": int(proc_id), "path": path,
-                                         "list_id": list_id, "raw_formals": words, "formals": rows})
+                                         "list_id": list_id, "raw_formals": words, "formals": rows,
+                                         "owning_parameters": bindings.get(int(ordinal), [])})
         if h.sha(dmb) != before or h.sha(inspector) != args.inspector_sha256:
             raise ValueError("metadata input/tool changed")
         # Metadata differences are retained independently of runtime equivalence.
         receipt["helper_metadata_equal"] = None
         if "byond" in receipt["helper_metadata"] and "native" in receipt["helper_metadata"]:
-            normalize = lambda rows: [row["formals"] for row in rows["helpers"]]
+            normalize = lambda rows: sorted((tuple(owner), row["formals"])
+                for row in rows["helpers"] for owner in row["owning_parameters"])
             receipt["helper_metadata_equal"] = normalize(receipt["helper_metadata"]["byond"]) == normalize(evidence)
         return []
 
