@@ -4807,3 +4807,10 @@ Previously, unrelated earlier fields could displace an actual draw dependency as
 master moved base state. L6/MG42 cover-open probe coverage is restored through
 their real setters. Unknown-plan fallback ordering and its limit are unchanged.
 This is coverage repair, not an intended change to either gun's appearance.
+
+Native constructor rolls are now seeded by the type before each fresh appearance
+allocation, just as the fixture already seeds BYOND randomness. The native round
+seed and stream serial are scoped and restored at teardown. Fresh and reused
+probes therefore inspect the same initialized instance state regardless of prior
+allocations. This repairs fixture determinism; it does not change production
+randomization or authorize blessing an unexplained appearance difference.
