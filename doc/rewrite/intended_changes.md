@@ -4775,3 +4775,6 @@ re-blessed in this preparation.
 EMP membership and numeric grid-target dependency contracts remain pending;
 this batch retains their channel delivery, field maps and defines. It does not
 substitute a composed operability value for masked EMP source membership.
+### Machine channel maps and power-mode delivery (2026-10-11)
+
+Remove twenty obsolete machine scheduler-field mappings after their legacy appearance and work subscribers have been converted. Generic atom and vehicle mappings remain. Native relation, tracked-variable and composed-stat keys continue to deliver changes. `set_use_power()` publishes its genuine tracked key once; its equality guard and immediate area-demand recomputation remain. Airlock mode forwarding had no remaining subscriber: removing that channel-only helper preserves electrification, power-outage release, bolt sounds and autoclose effects. Tests assert actual native-key delivery, area demand and bolt hold/release behavior rather than the retired channel bits. No appearance or click pin changes are intended by this cohort.

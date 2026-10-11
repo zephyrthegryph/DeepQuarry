@@ -16,10 +16,6 @@
 
 /obj/machinery/computer/pod/var/timing = FALSE
 TRACKED(/obj/machinery/computer/pod, timing)
-/datum/scheduler_field_definition/obj/machinery/computer/pod/timing
-	of = /obj/machinery/computer/pod
-	field = "timing"
-	channel = CHANGE_MACHINE_SETTINGS
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
 /obj/machinery/computer/pod/relations()
 	. = ..()

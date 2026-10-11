@@ -167,7 +167,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	on_change(nameof(bolted), ANY, then(PROC_REF(bolts_moved)))
 	on_change(nameof(main_power_out), ANY, then(PROC_REF(main_power_changed)))
 	on_change(nameof(backup_power_out), ANY, then(PROC_REF(power_changed)))
-	on_change(nameof(electrified), ANY, then(PROC_REF(publish_door_mode)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(airlock_emp)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 	every(1 SECOND, then(PROC_REF(command_step)), when = nameof(cur_command))
@@ -292,17 +291,12 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	if(electrified && all_power_lost())
 		release(src, STAT_ELECTRIFIED, SRC_ALL)
 	resume_autoclose_if_possible()
-	publish_door_mode()
 
 /obj/machinery/door/airlock/power_change() //putting this is obj/machinery/door itself makes non-airlock doors turn invisible for some reason
 	. = ..()
 	if(power_lost())
 		release(src, STAT_ELECTRIFIED, SRC_ALL) // the door lights run on an internal battery; the current does not
 	resume_autoclose_if_possible()
-
-/// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
-/obj/machinery/door/airlock/proc/publish_door_mode(datum/act/A)
-	changed(src, CHANGE_MACHINE_MODE)
 
 // ---- electrification ----
 
@@ -415,7 +409,6 @@ CAPABILITIES(/obj/machinery/door/airlock)
 			autoclose_cancel()
 	else
 		resume_autoclose_if_possible()
-	publish_door_mode()
 
 /// The bolt button: raising this actor's own hold needs power (dropping one never does).
 /obj/machinery/door/airlock/proc/actor_may_move_bolts(datum/act/op/A)

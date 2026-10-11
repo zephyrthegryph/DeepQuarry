@@ -53,10 +53,6 @@ TRACKED(/obj/machinery/portable_atmospherics/powered, on)
 TRACKED(/obj/machinery/power/breakerbox, on)
 /obj/machinery/power/thermoregulator/var/on = FALSE
 TRACKED(/obj/machinery/power/thermoregulator, on)
-/datum/scheduler_field_definition/obj/machinery/on
-	of = /obj/machinery
-	field = "on"
-	channel = CHANGE_MACHINE_SETTINGS
 // active: instance storage belongs to the machine families that use it.
 /obj/machinery/botany/var/active = FALSE
 TRACKED(/obj/machinery/botany, active)
@@ -106,14 +102,6 @@ TRACKED(/obj/machinery/power/rad_collector, active)
 TRACKED(/obj/machinery/power/singularity_beacon, active)
 /obj/machinery/door/airlock/uranium/var/active = FALSE
 TRACKED(/obj/machinery/door/airlock/uranium, active)
-/datum/scheduler_field_definition/obj/machinery/active
-	of = /obj/machinery
-	field = "active"
-	channel = CHANGE_MACHINE_SETTINGS
-/datum/scheduler_field_definition/obj/machinery/state
-	of = /obj/machinery
-	field = "state"
-	channel = CHANGE_MACHINE_SETTINGS
 // mode: instance storage belongs to the machine families that use it.
 /obj/machinery/ai_status_display/var/mode = 0
 TRACKED(/obj/machinery/ai_status_display, mode)
@@ -137,10 +125,6 @@ TRACKED(/obj/machinery/computer/guestpass, mode)
 TRACKED(/obj/machinery/power/thermoregulator, mode)
 /obj/machinery/power/smes/batteryrack/var/mode = 0
 TRACKED(/obj/machinery/power/smes/batteryrack, mode)
-/datum/scheduler_field_definition/obj/machinery/mode
-	of = /obj/machinery
-	field = "mode"
-	channel = CHANGE_MACHINE_SETTINGS
 // locked: instance storage belongs to the machine families that use it.
 /obj/machinery/ai_slipper/var/locked = FALSE
 TRACKED(/obj/machinery/ai_slipper, locked)
@@ -182,12 +166,6 @@ TRACKED(/obj/machinery/door/unpowered, locked)
 ///   switched_on    false while SRC_SWITCH holds it (the machine's own switch: set_switched_on())
 /// and a pulse is a timed SRC_EMP hold on STAT_OPERABLE (emp_disable()). STAT_OPERABLE is the machine working. The named readers below say each in
 /// one word. There is no `stat` var on a machine: watchers use on_change(STAT_OPERABLE) and the "stat" key is only what the conditions publish.
-/// The channels the conditions raise, as the look's watch list names them ("stat"). The machine has no var of that name any more: the field is only the
-/// channel mask the conditions' announcements raise.
-/datum/scheduler_field_definition/obj/machinery/stat
-	of = /obj/machinery
-	field = "stat"
-	channel = CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
 
 READS_AS(/obj/machinery/proc/power_lost, stat:[STAT_HAS_POWER])
 /obj/machinery/proc/power_lost()
@@ -274,27 +252,19 @@ READS_AS(/obj/machinery/proc/operable, stat:[STAT_OPERABLE])
 /obj/machinery/proc/operable()
 	return !!stat_value(src, STAT_OPERABLE)
 
-/// Anchoring: set_anchored() (atoms_movable.dm) is the setter and raises the family channel.
+/// Anchoring: set_anchored() publishes the real anchored key; no scheduler channel is needed.
 /datum/scheduler_field_definition/atom/movable/anchored
 	of = /atom/movable
 	field = "anchored"
 	channel = 0
-/datum/scheduler_field_definition/obj/machinery/anchored
-	of = /obj/machinery
-	field = "anchored"
-	channel = CHANGE_MACHINE_ANCHORED
 
-/// Density: set_density() (_atom.dm) is the setter; a machine hears CHANGE_MACHINE_SETTINGS.
+/// Density: set_density() publishes the real density key; no scheduler channel is needed.
 /datum/scheduler_field_definition/atom/density
 	of = /atom
 	field = "density"
 	channel = 0
-/datum/scheduler_field_definition/obj/machinery/density
-	of = /obj/machinery
-	field = "density"
-	channel = CHANGE_MACHINE_SETTINGS
 
-/// Vehicles keep their own condition bits (BROKEN, ...), same API as machines.
+/// Vehicles still keep their own legacy condition bits (BROKEN, ...).
 /obj/vehicle/var/stat = 0
 TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
 
@@ -311,18 +281,7 @@ TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
 	field = "stat"
 	channel = CHANGE_EXPLICIT
 
-/// Power mode (USE_POWER_OFF/IDLE/ACTIVE): set_use_power() (machinery_power.dm) is the setter and
-/// moves the area's tally between the type's idle_power_usage and active_power_usage rows, so the
-/// draw always follows the field.
-/datum/scheduler_field_definition/obj/machinery/use_power
-	of = /obj/machinery
-	field = "use_power"
-	channel = CHANGE_MACHINE_SETTINGS
-
-/// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a
-/// change to any of them re-runs update_icon() on the presentation lane (once per frame) and no
-/// setter is followed by a manual update_icon(). Declared appearances add the fields they read.
-/// Vehicles draw their condition bits.
+/// Vehicles still redraw their legacy condition bits through the declared appearance watcher.
 APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 
 /// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
@@ -348,21 +307,6 @@ TRACKED(/obj/machinery/conveyor, speed_process)
 
 /obj/machinery/conveyor/high_gear_enabled()
 	return speed_process
-
-/datum/scheduler_field_definition/obj/machinery/locked
-	of = /obj/machinery
-	field = "locked"
-	channel = CHANGE_MACHINE_MODE
-
-/datum/scheduler_field_definition/obj/machinery/emagged
-	of = /obj/machinery
-	field = "emagged"
-	channel = CHANGE_MACHINE_SETTINGS
-
-/datum/scheduler_field_definition/obj/machinery/speed_process
-	of = /obj/machinery
-	field = "speed_process"
-	channel = CHANGE_MACHINE_SETTINGS
 
 /// Both native emag keys and the legacy generic bit are genuine subversion storage.
 /obj/machinery/proc/emagged(datum/act/eval/A = null)

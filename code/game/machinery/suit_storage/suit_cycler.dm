@@ -3,10 +3,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 /// If this is > 0, the cycler is decontaminating whatever is inside it (steps left).
 /obj/machinery/suit_cycler/var/irradiating = 0
 TRACKED(/obj/machinery/suit_cycler, irradiating)
-/datum/scheduler_field_definition/obj/machinery/suit_cycler/irradiating
-	of = /obj/machinery/suit_cycler
-	field = "irradiating"
-	channel = CHANGE_MACHINE_SETTINGS
 /// Shocks the hand at it: the shock wire cut (until mended) or pulsed (30 s); live only while operable (shock_live()).
 STAT(/obj/machinery/suit_cycler, electrified, TOP, base = 0)
 /// Derived field: a UV cycle is running.

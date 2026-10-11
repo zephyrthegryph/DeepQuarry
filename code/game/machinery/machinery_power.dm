@@ -211,11 +211,8 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 	if(use_power == new_use_power)
 		return
 	use_power = new_use_power
-	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
-	// Raised after the write: watchers (declared periodic work) read the new value. use_power is the power
-	// capability's tracked draw mode (G8): the change publishes nameof(use_power) to its readers, and the area's demand stat
-	// that sums it recomputes before this returns.
-	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
+	// The tracked draw mode publishes its own key once, and its area-demand contribution recomputes before this returns.
+	tracked_changed(src, nameof(use_power))
 	return TRUE
 
 /// Sets the channel the machine draws on; the draw moves between the area's channel demands with it.

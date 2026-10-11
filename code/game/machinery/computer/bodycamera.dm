@@ -18,10 +18,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 
 /// What it shows (the wearer, or whatever holds them) and the bodycam feeding it; it follows them while both are set.
 /obj/machinery/computer/security/telescreen/bodycamera/var/atom/showing
-/datum/scheduler_field_definition/obj/machinery/computer/security/telescreen/bodycamera/showing
-	of = /obj/machinery/computer/security/telescreen/bodycamera
-	field = "showing"
-	channel = CHANGE_MACHINE_SETTINGS
 /obj/machinery/computer/security/telescreen/bodycamera/var/obj/item/clothing/accessory/bodycam/the_camera
 /// Runs while it shows something. The camera view clearing alone (its bodycam destroyed) is handled
 /// in the step, which then stops showing, so the pinboard and `showing` are cleaned up too.
