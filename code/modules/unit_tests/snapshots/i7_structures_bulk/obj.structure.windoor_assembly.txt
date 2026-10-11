@@ -57,11 +57,8 @@
 -click: Click: Use
 +0 menu: Flip Windoor Assembly
 +4 click: nothing
-human|/obj/item/airlock_electronics menu: Flip Windoor Assembly
-human|/obj/item/airlock_electronics menu: Hit
-human|/obj/item/airlock_electronics menu: Move To Top
-human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/airlock_electronics click: nothing
+@obj human|/obj/item/airlock_electronics
++0 menu: Flip Windoor Assembly
 @obj.structure human|/obj/item/pen
 -menu: Use
 -click: Click: Use

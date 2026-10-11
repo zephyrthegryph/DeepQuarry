@@ -18,5 +18,10 @@
 +5 click: Click: Repair
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-@obj.structure human|/obj/item/stack
+@obj human|/obj/item/stack
+-menu: Pad (refused: You cannot pad that with that.)
+-click: Click: Pad
++2 menu: Repair (refused: )
++4 menu: Use
++5 click: Click: Repair
 keys: drag_buckle, melee_hit, repair, repair_or_hit

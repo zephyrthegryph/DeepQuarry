@@ -158,11 +158,11 @@ CAPABILITIES(/obj/item/areaeditor)
 // The editor works only in the active hand of someone able to use it.
 /obj/item/areaeditor/topic_usable(datum/act/op/A)
 	. = ..()
-	if(!.)
+	if(.)
 		return
 	var/mob/user = A.actor
 	if(user.restrained() || user.stat || user.get_active_hand() != src)
-		return FALSE
+		return MSG(op/topic_gate)
 
 /obj/item/areaeditor/proc/topic_create_area(datum/act/op/op_act)
 	var/mob/user = op_act.actor

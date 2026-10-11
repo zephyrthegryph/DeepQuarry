@@ -14,7 +14,7 @@
 	return data
 
 CAPABILITIES(/datum/tgui_module/cardmod)
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("IdentificationComputer")
 	op("mode", ui_act("mode", arg("mode_target", num(0, 1))), then(PROC_REF(ui_act_mode)))
 	op("print", ui_act("print"), then(PROC_REF(ui_act_print)))
@@ -120,7 +120,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 
 /// The program runs on a computer: anything else is silently not answered.
 /datum/tgui_module/cardmod/proc/ui_gate(datum/act/op/A)
-	return istype(host(), /datum/computer_file/program/card_mod) && istype(tgui_host(), /obj/item/modular_computer)
+	return (istype(host(), /datum/computer_file/program/card_mod) && istype(tgui_host(), /obj/item/modular_computer)) ? null : /datum/msg/req_silent
 
 /// The "Custom" assignment asks for a text first; the others are picked from the list.
 /datum/tgui_module/cardmod/proc/assign_is_custom(datum/act/op/A)

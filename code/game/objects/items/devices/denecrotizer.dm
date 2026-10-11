@@ -44,9 +44,6 @@ TRACKED(/mob/living/simple_mob, ghostjoin)
 
 /// Requirement: this ghost may inhabit us (not banned, nobody in us yet, preferences that allow a captured mob).
 /mob/living/simple_mob/proc/can_ghost_join(datum/act/op/A)
-	return isnull(ghost_join_refusal(src, A.actor))
-
-/mob/living/simple_mob/proc/ghost_join_reason(datum/act/op/A)
 	return ghost_join_refusal(src, A.actor)
 
 /// Why the ghost `D` may not take `M` over, or null.

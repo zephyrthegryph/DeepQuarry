@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/stack)
 	interface("MaterialStack", state = nameof(GLOB.tgui_hands_state), input = in_hand())
 	op("make", ui_act("make", arg("multiplier", num()), arg("ref", schema_ref(/datum/stack_recipe))), then(PROC_REF(ui_act_make)))
 	op("consolidate", item(/obj/item/gripper), passes(), then(PROC_REF(consolidated)))
-	op("combine", item(/obj/item/stack), passes(), when(req_bool(PROC_REF(held_is_another))), then(PROC_REF(combined)))
+	op("combine", item(/obj/item/stack), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(combined)))
 	op("split", hand(), ungated(), label("Split"), then(PROC_REF(split_asked)))
 	// A recipe takes its build time (none: at once); the stack is claimed meanwhile, and what the recipe asked for comes from produce_recipe().
 	op("build", ai(), claims(CLAIM_TARGET), takes("recipe", "required", "produced"), wait(PROC_REF(build_time), keeps = TARGET_PRESENT | ALIVE | STAY), then(PROC_REF(produce_recipe_done)))
@@ -450,7 +450,7 @@ CAPABILITIES(/obj/item/stack)
 
 /// A stack clicked with itself in the hand is the in-hand use, not a stack held against another.
 /obj/item/stack/proc/held_is_another(datum/act/op/A)
-	return A.held != src
+	return (A.held != src) ? null : /datum/msg/req_failed
 
 /// A stack held against this one: this one pours into it.
 /obj/item/stack/proc/combined(datum/act/op/A)

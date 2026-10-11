@@ -32,7 +32,7 @@
 
 CAPABILITIES(/datum/newscaster_panel)
 	ref_one(nameof(holder), /datum/admins)
-	extend(TAG_UI, needs(req_bool(PROC_REF(ui_gate), silent = TRUE)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_gate), silent = TRUE)))
 	interface("AdminNewscaster", title = "Admin Newscaster", rights = R_ADMIN|R_EVENT)
 	op("set_screen", ui_act("set_screen", arg("screen", schema_text(4096))), then(PROC_REF(ui_act_set_screen)))
 	op("refresh", ui_act("refresh"), then(PROC_REF(ui_act_refresh)))
@@ -140,7 +140,7 @@ CAPABILITIES(/datum/newscaster_panel)
 
 /// A panel whose admin is gone answers nothing (silently).
 /datum/newscaster_panel/proc/ui_gate(datum/act/op/A)
-	return !!holder()
+	return (!!holder()) ? null : /datum/msg/req_silent
 
 /datum/newscaster_panel/proc/ui_act_set_screen(datum/act/op/A, screen_arg)
 	var/mob/user = A.actor

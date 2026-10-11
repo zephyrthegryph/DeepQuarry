@@ -2,46 +2,14 @@
 @obj.item.clothing robot|none
 @obj.item ai|none
 @obj.item ghost|none
-@obj.item.clothing human|/obj/item/tool/screwdriver
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/tool/crowbar
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/tool/wrench
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/tool/wirecutters
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/multitool
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/weldingtool
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/stack/cable_coil
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+7 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item/stack/material/steel
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
+@obj.item.clothing.accessory.badge human|/obj/item/tool/screwdriver
+@obj.item.clothing.accessory.badge human|/obj/item/tool/crowbar
+@obj.item.clothing.accessory.badge human|/obj/item/tool/wrench
+@obj.item.clothing.accessory.badge human|/obj/item/tool/wirecutters
+@obj.item.clothing.accessory.badge human|/obj/item/multitool
+@obj.item.clothing.accessory.badge human|/obj/item/weldingtool
+@obj.item.clothing.accessory.badge human|/obj/item/stack/cable_coil
+@obj.item.clothing.accessory.badge human|/obj/item/stack/material/steel
 @obj.item.clothing human|/obj/item/card/id
 -menu: Collar tag item
 -click: Click: Accessory attached hand
@@ -55,11 +23,7 @@
 -click: Click: Accessory attached hand
 +3 menu: Holobadge imprint item
 +7 click: Click: Holobadge imprint item
-@obj.item.clothing human|/obj/item
--menu: Collar tag item
--click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item
-+6 click: Click: Holobadge imprint item
+@obj.item.clothing.accessory.badge human|/obj/item
 @obj.item human|/obj/item/card/emag
 +0 menu: Accessory attached hand
 +1 menu: Alternate use

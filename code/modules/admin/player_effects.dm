@@ -37,7 +37,7 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("spicy_air", ui_act("spicy_air"), then(PROC_REF(ui_act_spicy_air)))
 	op("hot_dog", ui_act("hot_dog"), then(PROC_REF(ui_act_hot_dog)))
 	op("mob_tf", ui_act("mob_tf"), asks(/datum/prompt/choice, fields = list("title" = "Choose Beast Form", "question" = "Which form would you like to take?", "choices" = computed(PROC_REF(living_types)))), then(PROC_REF(ui_act_mob_tf)))
-	op("item_tf", ui_act("item_tf"), needs(req_bool(PROC_REF(item_tf_ready), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Typepath", "question" = "Enter full or partial typepath.", "max_len" = MAX_TGUI_INPUT), step = "path"), asks(/datum/prompt/choice, fields = list("title" = "Typepath", "question" = "Which one?", "choices" = computed(PROC_REF(typepath_matches))), step = "pick", when = PROC_REF(typepath_ambiguous)), then(PROC_REF(ui_act_item_tf)))
+	op("item_tf", ui_act("item_tf"), needs(req(PROC_REF(item_tf_ready), silent = TRUE)), asks(/datum/prompt/text, fields = list("title" = "Typepath", "question" = "Enter full or partial typepath.", "max_len" = MAX_TGUI_INPUT), step = "path"), asks(/datum/prompt/choice, fields = list("title" = "Typepath", "question" = "Which one?", "choices" = computed(PROC_REF(typepath_matches))), step = "pick", when = PROC_REF(typepath_ambiguous)), then(PROC_REF(ui_act_item_tf)))
 	op("elder_smite", ui_act("elder_smite"), then(PROC_REF(ui_act_elder_smite)))
 	op("wet_floors", ui_act("wet_floors"), asks(/datum/prompt/choice, fields = list("title" = "Reagent", "question" = "Which reagent do you want to place on the floors around them?", "choices" = list("Water", "Space Lube", "Other", "Cancel")), step = "reagent"), asks(/datum/prompt/choice, fields = list("title" = "Chemicals", "question" = "Which chemical would you like to use?", "choices" = computed(PROC_REF(reagent_types))), step = "chem", when = PROC_REF(wet_floors_other)), then(PROC_REF(ui_act_wet_floors)))
 
@@ -82,7 +82,7 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("list_all", ui_act("list_all"), then(PROC_REF(ui_act_list_all)))
 	op("give_item", ui_act("give_item"), then(PROC_REF(ui_act_give_item)))
 	op("equip_item", ui_act("equip_item"), then(PROC_REF(ui_act_equip_item)))
-	op("quick_nif", ui_act("quick_nif"), needs(req_bool(PROC_REF(nif_target_ok), because = PROC_REF(nif_target_refusal))), asks(/datum/prompt/choice, fields = list("title" = "Quick NIF", "question" = "Pick the NIF type", "choices" = computed(PROC_REF(nif_choices))), when = PROC_REF(nif_needs_pick)), then(PROC_REF(ui_act_quick_nif)))
+	op("quick_nif", ui_act("quick_nif"), needs(req(PROC_REF(nif_target_ok))), asks(/datum/prompt/choice, fields = list("title" = "Quick NIF", "question" = "Pick the NIF type", "choices" = computed(PROC_REF(nif_choices))), when = PROC_REF(nif_needs_pick)), then(PROC_REF(ui_act_quick_nif)))
 
 	section(admin, "The admin tools of the Player Effects panel: size, teleport, gib, narrate, AI control, quests, orbits")
 	op("resize", ui_act("resize"), then(PROC_REF(ui_act_resize)))
@@ -95,7 +95,7 @@ CAPABILITIES(/datum/eventkit/player_effects)
 	op("player_panel", ui_act("player_panel"), then(PROC_REF(ui_act_player_panel)))
 	op("view_variables", ui_act("view_variables"), then(PROC_REF(ui_act_view_variables)))
 	op("orbit", ui_act("orbit"), then(PROC_REF(ui_act_orbit)))
-	op("ai", ui_act("ai"), needs(req_bool(PROC_REF(ai_target_ok), because = PROC_REF(ai_target_refusal))), asks(/datum/prompt/text, fields = list("title" = "AI faction", "question" = "Please input AI faction", "default" = "neutral"), step = "faction"), asks(/datum/prompt/choice, fields = list("title" = "AI combat mode", "question" = "Please choose AI combat mode", "choices" = list(I_HURT, I_HELP)), step = "stance"), asks(/datum/prompt/yes_no, fields = list("title" = "Wake mob?", "question" = "Make mob wake up? This is needed for carbon mobs."), step = "wake"), then(PROC_REF(ui_act_ai)))
+	op("ai", ui_act("ai"), needs(req(PROC_REF(ai_target_ok))), asks(/datum/prompt/text, fields = list("title" = "AI faction", "question" = "Please input AI faction", "default" = "neutral"), step = "faction"), asks(/datum/prompt/choice, fields = list("title" = "AI combat mode", "question" = "Please choose AI combat mode", "choices" = list(I_HURT, I_HELP)), step = "stance"), asks(/datum/prompt/yes_no, fields = list("title" = "Wake mob?", "question" = "Make mob wake up? This is needed for carbon mobs."), step = "wake"), then(PROC_REF(ui_act_ai)))
 	op("cloaking", ui_act("cloaking"), then(PROC_REF(ui_act_cloaking)))
 	op("give_quest", ui_act("give_quest"), needs(req(PROC_REF(has_target))), asks(/datum/prompt/choice, fields = list("title" = "Quest!", "question" = "Do you want to give a random quest or a personalised one?", "choices" = list("Random", "Personalised", "Cancel")), step = "kind"), asks(/datum/prompt/text, fields = list("title" = "Quest!!!", "question" = "What is their quest?"), step = "quest", when = PROC_REF(quest_personalised)), then(PROC_REF(ui_act_give_quest)))
 	op("rejuvenate", ui_act("rejuvenate"), then(PROC_REF(ui_act_rejuvenate)))
@@ -366,7 +366,7 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 
 /datum/eventkit/player_effects/proc/item_tf_ready(datum/act/op/A)
 	var/mob/living/M = target()
-	return istype(M) && M.ckey
+	return (istype(M) && M.ckey) ? null : /datum/msg/req_silent
 
 /// The types whose path contains the text of the first question.
 /datum/eventkit/player_effects/proc/typepath_matches(datum/act/op/A)
@@ -809,13 +809,9 @@ GLOBAL_LIST_INIT(shadekin_smite_types, list(
 /// The target can take a NIF: a head, and none yet.
 /datum/eventkit/player_effects/proc/nif_target_ok(datum/act/op/A)
 	var/mob/living/carbon/human/Tar = target()
-	return istype(Tar) && Tar.get_organ(BP_HEAD) && !Tar.nif
-
-/datum/eventkit/player_effects/proc/nif_target_refusal(datum/act/op/A)
-	var/mob/living/carbon/human/Tar = target()
-	if(istype(Tar) && Tar.get_organ(BP_HEAD))
-		return /datum/msg/player_effects/nif_present
-	return /datum/msg/player_effects/nif_unsuitable
+	if(!istype(Tar) || !Tar.get_organ(BP_HEAD))
+		return /datum/msg/player_effects/nif_unsuitable
+	return Tar.nif ? /datum/msg/player_effects/nif_present : null
 
 MSG_DEF_SELF(player_effects/nif_unsuitable, "Target is unsuitable.")
 MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
@@ -963,10 +959,9 @@ MSG_DEF_SELF(player_effects/nif_present, "Target already has a NIF.")
 /// A living mob nobody plays.
 /datum/eventkit/player_effects/proc/ai_target_ok(datum/act/op/A)
 	var/mob/living/L = target()
-	return istype(L) && !L.client && !L.teleop
-
-/datum/eventkit/player_effects/proc/ai_target_refusal(datum/act/op/A)
-	return isliving(target()) ? /datum/msg/player_effects/ai_player : /datum/msg/player_effects/ai_not_living
+	if(!istype(L))
+		return /datum/msg/player_effects/ai_not_living
+	return L.client || L.teleop ? /datum/msg/player_effects/ai_player : null
 
 MSG_DEF_SELF(player_effects/ai_not_living, "This can only be used on instances of type /mob/living")
 MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")

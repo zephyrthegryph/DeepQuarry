@@ -1,17 +1,8 @@
 // Special Operations Shuttle console — structured TGUI.
 
-/// Requirement (was REQ_* lets_in): the legacy check answers TRUE to pass.
+/// The console requires its actor to have access, preserving the original refusal.
 /obj/machinery/computer/specops_shuttle/proc/lets_in_holds(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return !istext(answer) && !!answer
-
-/// Why lets_in_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/machinery/computer/specops_shuttle/proc/lets_in_refusal(datum/act/op/A)
-	var/answer = lets_in(A.actor, src, A.held)
-	return istext(answer) ? answer : "access denied"
-
-/obj/machinery/computer/specops_shuttle/proc/lets_in(mob/actor, atom/target, obj/item/held)
-	return allowed(actor)
+	return allowed(A.actor) ? null : "access denied"
 
 /obj/machinery/computer/specops_shuttle/proc/interaction_open_ui_impl(datum/act/op/A)
 	var/mob/user = A.actor
@@ -25,7 +16,7 @@ CAPABILITIES(/obj/machinery/computer/specops_shuttle)
 	without("ui_open")
 	op("send_to_dock", ui_act("send_to_dock"), then(PROC_REF(ui_act_send_to_dock)))
 	op("send_to_station", ui_act("send_to_station"), then(PROC_REF(ui_act_send_to_station)))
-	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req_bool(PROC_REF(lets_in_holds), because = PROC_REF(lets_in_refusal))), then(PROC_REF(interaction_open_ui_impl)))
+	op("open_ui_impl", hand(), priority(OP_PRIORITY_DEFAULT - 1), label("Use"), needs(req(PROC_REF(lets_in_holds))), then(PROC_REF(interaction_open_ui_impl)))
 
 /// /obj/machinery/computer/specops_shuttle's window data.
 /obj/machinery/computer/specops_shuttle/ui_data(datum/act/eval/A)

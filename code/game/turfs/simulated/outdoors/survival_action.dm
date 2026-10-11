@@ -97,4 +97,4 @@ MSG_DEF(tree/searching_sticks, "You search %T% for loose sticks...", "%U% search
 MSG_DEF_SELF(tree/no_sticks, span_notice("You don't see any loose sticks..."))
 
 /obj/structure/flora/tree/proc/has_sticks(datum/act/op/A)
-	return sticks
+	return (sticks) ? null : MSG(tree/no_sticks)
