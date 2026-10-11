@@ -29,6 +29,30 @@ impl AbiPolicy for LocalPolicy {
 }
 
 #[test]
+fn prepared_symbolic_namespace_matches_current_effective_rows_and_rejects_foreign_owner() {
+    for source in [
+        "/datum/a/proc/p()\n    return 1\n/datum/a/p()\n    return 2\n/datum/a/verb/v()\n    return 3\n",
+        "\n/datum/added\n    var/field = 1\n/proc/new_body()\n    return 9\n/datum/a/proc/p()\n    return 4\n",
+    ] {
+        let frontend = frontend(source);
+        let roster = PreparedBodyRoster::issue(&frontend).ok().unwrap();
+        let bindings = roster.source_bindings(&frontend).unwrap();
+        assert!(std::ptr::eq(bindings, roster.source_bindings(&frontend).unwrap()));
+        let mut expected: std::collections::BTreeSet<_> = frontend.snapshot.tree.types()
+            .iter().map(|node| dm_ir::SymRef::Type(node.path)).collect();
+        for source in source_unit_roster(&frontend).unwrap().into_iter().filter(|source| source.effective) {
+            let identity = source.identity;
+            expected.insert(match identity.namespace {
+                Namespace::Proc => dm_ir::SymRef::Proc { owner: identity.owner, name: identity.name, occurrence: identity.occurrence },
+                Namespace::Verb => dm_ir::SymRef::Verb { owner: identity.owner, name: identity.name, occurrence: identity.occurrence },
+            });
+        }
+        assert_eq!(bindings, &expected);
+        assert!(roster.source_bindings(&self::frontend(source)).is_none());
+    }
+}
+
+#[test]
 fn prepared_rows_keep_exact_current_order_identity_and_key_after_structural_edits() {
     for source in [
         "/datum/a/proc/p()\n    return 1\n/datum/a/p()\n    return 2\n/datum/a/verb/v()\n    return 3\n",

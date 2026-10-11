@@ -655,38 +655,15 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     let roster = prepared_roster
         .or(owned_roster.as_ref())
         .expect("current prepared body roster");
-    let mut source_bindings: std::collections::BTreeSet<_> = frontend
-        .snapshot
-        .tree
-        .types()
-        .iter()
-        .map(|node| dm_ir::SymRef::Type(node.path))
-        .collect();
-    for source in roster
-        .ordered()
-        .map(|row| row.source())
-        .filter(|source| source.effective)
-    {
-        let identity = source.identity;
-        source_bindings.insert(match identity.namespace {
-            crate::lowering::Namespace::Proc => dm_ir::SymRef::Proc {
-                owner: identity.owner,
-                name: identity.name,
-                occurrence: identity.occurrence,
-            },
-            crate::lowering::Namespace::Verb => dm_ir::SymRef::Verb {
-                owner: identity.owner,
-                name: identity.name,
-                occurrence: identity.occurrence,
-            },
-        });
-    }
+    let source_bindings = roster
+        .source_bindings(frontend)
+        .expect("current prepared symbolic namespace");
     let freeze_detail =
         std::env::var_os("DMB_PROFILE_FREEZE_DETAIL").is_some_and(|value| value == "1");
     let complete = |unit: crate::lowering::CompletedInput| {
         unit.prepare(
             plan.symbols.as_ref(),
-            &source_bindings,
+            source_bindings,
             links.references,
             freeze_detail,
         )
@@ -701,14 +678,14 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         crate::lowering::LoweringExecution::new(executor, &bodies)
             .with_prepared_roster(&roster)
             .with_disk_replay_bindings(crate::lowering::DiskReplayBindings {
-                source: &source_bindings,
+                source: source_bindings,
                 external: links.references,
             }),
         true,
         &complete,
     );
-    // Completion has consumed all rich units and its borrowed binding roster.
-    drop(source_bindings);
+    // Completion has consumed all rich units; the prepared roster owns the
+    // immutable current symbolic namespace until this request finishes.
     let lowering = stage.elapsed();
     if !batch.diagnostics.is_empty() {
         return Err(ColdError::Lowering(batch.diagnostics));
