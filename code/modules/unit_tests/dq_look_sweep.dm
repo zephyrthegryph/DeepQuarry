@@ -146,6 +146,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 /datum/unit_test/proc/dq_look_scope_globals()
 	set_global(nameof(GLOB.narsie_cometh), GLOB.narsie_cometh)
 	set_global(nameof(GLOB.queen_amount), GLOB.queen_amount)
+	set_global(nameof(GLOB.round_seed), GLOB.round_seed)
+	set_global(nameof(GLOB.roll_serial), GLOB.roll_serial)
 	var/static/list/cache_keys = list(nameof(GLOB.chamelion_jumpsuit_choices), nameof(GLOB.chamelion_head_choices), nameof(GLOB.chamelion_suit_choices), nameof(GLOB.chamelion_shoe_choices), nameof(GLOB.chamelion_back_choices), nameof(GLOB.chamelion_glove_choices), nameof(GLOB.chamelion_mask_choices), nameof(GLOB.chamelion_belt_choices), nameof(GLOB.chamelion_accessory_choices))
 	for(var/key in cache_keys)
 		var/list/prior = GLOB.vars[key]
@@ -163,6 +165,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	set_global(nameof(GLOB.chamelion_head_choices), null)
 	var/narsie_before = GLOB.narsie_cometh
 	var/queens_before = GLOB.queen_amount
+	var/seed_before = GLOB.round_seed
+	var/serial_before = GLOB.roll_serial
 	var/list/archive_before = GLOB.archive_diseases
 	var/datum/unit_test/dq_look_scope_probe/probe = allocate(/datum/unit_test/dq_look_scope_probe)
 	var/datum/unit_test_block/block = probe.test_block
@@ -173,6 +177,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	GLOB.chamelion_head_choices = list("Generated choice" = /obj/item/clothing/head)
 	GLOB.narsie_cometh = !narsie_before
 	GLOB.queen_amount = queens_before + 1
+	rolls_fix_seed(seed_before + 1)
+	GLOB.roll_serial = serial_before + 1
 	TEST_ASSERT_EQUAL(length(existing), 1, "The borrowed cache contents never receive the scoped addition")
 	TEST_ASSERT(GLOB.archive_diseases != archive_before, "Archive scope uses a private catalogue while borrowing existing templates")
 	lifeform_end(probe, END_SCOPE)
@@ -181,6 +187,8 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	TEST_ASSERT_NULL(GLOB.chamelion_head_choices, "Real teardown restores an originally null lazy cache")
 	TEST_ASSERT_EQUAL(GLOB.narsie_cometh, narsie_before, "Real teardown restores the apocalypse counter")
 	TEST_ASSERT_EQUAL(GLOB.queen_amount, queens_before, "Real teardown restores the queen count")
+	TEST_ASSERT_EQUAL(GLOB.round_seed, seed_before, "Real teardown restores the exact native round seed")
+	TEST_ASSERT_EQUAL(GLOB.roll_serial, serial_before, "Real teardown restores the exact native roll serial")
 	TEST_ASSERT_EQUAL(GLOB.archive_diseases, archive_before, "Real teardown restores the borrowed archive identity")
 
 /datum/unit_test/dq_look_sweep_scope_restores_globals/proc/release_look_scope_probe(datum/unit_test/probe, datum/unit_test_block/block)
@@ -290,6 +298,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 
 /// The var names of the base type `base`: what a probe leaves alone.
 /datum/unit_test/proc/dq_look_state_base_vars(base, turf/T)
+	rolls_fix_seed(dq_test_seed_for("[base]"))
 	var/atom/A = allocate(base, T)
 	. = list()
 	for(var/name in A.vars)
@@ -311,6 +320,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	log_test("look pin: making [type]")
 	rand_seed(dq_test_seed_for("[type]"))
 	try
+		rolls_fix_seed(dq_test_seed_for("[type]"))
 		var/turf/made = spot.ChangeTurf(type)
 		if(QDELETED(made))
 			. = list("deleted itself on creation")
@@ -320,6 +330,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	catch(var/exception/e)
 		. = list("runtime: [dq_look_state_error(e)]")
 	var/turf/restored = locate(spot.x, spot.y, spot.z)
+	rolls_fix_seed(dq_test_seed_for("[old_type]"))
 	restored.ChangeTurf(old_type)
 	dq_look_settle()
 
@@ -335,6 +346,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	var/list/names = list()
 	var/runtime
 	try
+		rolls_fix_seed(dq_test_seed_for("[type]"))
 		subject = dq_snapshot_allocate(type, T)
 		if(QDELETED(subject))
 			res.made = list("deleted itself on creation")
@@ -437,6 +449,9 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 	. = list()
 	rand_seed(dq_test_seed_for("[type]/[name]=[value]"))
 	try
+		// Native initialization is identical to the made/reused instance; the
+		// BYOND mutation seed above still belongs to this individual probe.
+		rolls_fix_seed(dq_test_seed_for("[type]"))
 		var/atom/target = dq_snapshot_allocate(type, T)
 		if(QDELETED(target))
 			return
@@ -634,6 +649,45 @@ TRACKED(/obj/dq_look_late_dependency, late_read)
 		dq_look_settle()
 		var/list/restored = dq_look_pin_lines(G)
 		TEST_ASSERT_EQUAL(jointext(restored, "\n"), jointext(before, "\n"), "Actual cover setter restores the native look [type]")
+
+
+// Instance-only real native rolls and a tracked look input exercise fresh/reuse parity.
+/obj/item/dq_roll_probe/dq_look_native
+	abstract_type = /obj/item/dq_roll_probe/dq_look_native
+	var/probe_on = FALSE
+TRACKED(/obj/item/dq_roll_probe/dq_look_native, probe_on)
+/obj/item/dq_roll_probe/dq_look_native/draw(datum/look/look)
+	..()
+	look.state("[shade]-[size]-[probe_on]")
+
+/datum/unit_test/dq_look_sweep_native_roll_parity/Run()
+	dq_look_scope_globals()
+	var/type = /obj/item/dq_roll_probe/dq_look_native
+	var/turf/T = test_floor()
+	var/list/base_vars = dq_look_state_base_vars(/obj, T)
+	var/list/plan = list("[type]" = list("probe_on"))
+	var/datum/dq_look_result/reused = new
+	var/datum/dq_look_result/fresh = new
+	var/datum/dq_look_result/reordered = new
+	dq_look_unit(type, T, base_vars, plan, reused, TRUE, TRUE)
+	TEST_ASSERT_EQUAL(GLOB.round_seed, dq_test_seed_for("[type]"), "Actual sweep fixes the native seed to the type's base")
+	TEST_ASSERT(length(reused.probe_rows), "Real tracked state changes actually produce look-difference rows")
+	// Intervening native allocations consume a different seed and serial; they
+	// cannot change this type's later base or any of its fresh probe realizations.
+	rolls_fix_seed(dq_test_seed_for("intervening native object"))
+	var/obj/e3_source/container = allocate(/obj/e3_source, T)
+	var/obj/item/dq_roll_probe/intervening = allocate(/obj/item/dq_roll_probe, container)
+	TEST_ASSERT(GLOB.roll_serial > 0, "Actual non-map native roll allocation consumes its stream serial")
+	lifeform_end(intervening, END_SCOPE)
+	dq_look_unit(type, T, base_vars, plan, fresh, TRUE, TRUE, TRUE)
+	TEST_ASSERT_EQUAL(jointext(fresh.made, "\n"), jointext(reused.made, "\n"), "Intervening native rolls leave the made look identical")
+	TEST_ASSERT_EQUAL(jointext(fresh.probe_rows, "\n"), jointext(reused.probe_rows, "\n"), "Fresh probe instances use the same native realization as the reused base")
+	rolls_fix_seed(dq_test_seed_for("another intervening order"))
+	GLOB.roll_serial = 12345
+	dq_look_unit(type, T, base_vars, plan, reordered, TRUE, TRUE)
+	TEST_ASSERT_EQUAL(jointext(reordered.made, "\n"), jointext(reused.made, "\n"), "Different prior seed and serial do not affect the repeated native look")
+	TEST_ASSERT_EQUAL(jointext(reordered.probe_rows, "\n"), jointext(reused.probe_rows, "\n"), "Repeated reuse preserves actual native state-probe rows")
+	TEST_ASSERT(!length(reused.impure) && !length(fresh.impure) && !length(reordered.impure), "Every actual setter roundtrip returns its native look to the base")
 
 #undef DQ_LOOK_TREE_DIR
 #undef DQ_LOOK_STATE_DIR
