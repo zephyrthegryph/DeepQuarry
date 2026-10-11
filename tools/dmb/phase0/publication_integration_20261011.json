@@ -877,6 +877,25 @@
       "published_owner_fixtures": "600aab43e5",
       "current_static_query_resolver": "05ec496691",
       "resolved_query_api": "b97c6ee272"
+    },
+    "final_reconciliation_focused": {
+      "source_commit": "59589e885f67fd2bf84aef67686eebd820bfe79f",
+      "core_build_receipt": "20261011-151459-3b35c896-job-cargo.json",
+      "core_test_receipts": [
+        "20261011-151534-648e1041-focused.json",
+        "20261011-151545-ed5527e7-focused.json"
+      ],
+      "core_passed": 13,
+      "core_failed": 0,
+      "compiler_build_receipt": "20261011-151100-9c1dfa67-job-cargo.json",
+      "compiler_receipts": [
+        "20261011-151441-452bd154-focused.json",
+        "20261011-151541-fb962a9d-focused.json"
+      ],
+      "compiler_passed": 11,
+      "compiler_failed": 1,
+      "query_export_failure": "Ordinary AnalyzeResolved selected producer still lacked startup static overlay; returned no selected rows; fixed5de36d7c11, rerun pending",
+      "scope": "Focused correctness only; no real benchmark or full runtime baseline"
     }
   },
   "focused_pair_policy": {
@@ -886,5 +905,14 @@
     ],
     "focused_tests_passed": 5,
     "scope": "Synthetic exact runtime parity vs passing acceptance; no real DeepQuarry runtime claim"
+  },
+  "argument_source_frame_capture": {
+    "receipt": "E:/dq-cache/dmb-argument-source-contract/b76f49cec19c4679a78d7024caa95535/receipt.json",
+    "compiler_commit": "400ae2720a401610d859cdfc118e8fcc811f9ff3",
+    "complete": true,
+    "metadata_equal": false,
+    "observed": "Three BYOND helpers each retain preceding first parameter with flags/source zero; native formal rows empty",
+    "runtime_limitation": "Direct calls matched but did not execute argument-source helpers; runtime semantics unproved",
+    "next": "Capture first/third argument helpers and typed/default/source earlier parameter rows before emission fix"
   }
 }
