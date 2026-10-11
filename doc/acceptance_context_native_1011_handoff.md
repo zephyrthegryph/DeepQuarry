@@ -25,3 +25,20 @@ The admin-holder lint falsely counted the new typed query's borrowed holder fiel
 The repair gate on 8495891878 passed production compilation (0 errors, 43 warnings), test compilation (0 errors, 59 warnings), DreamChecker (0 diagnostics), ratchets and a clean boot. It passed 38 focused tests and failed five; no stamp was issued. Both dq_requirement_protocol_pin and dq_conversion_pin passed. All 140 concrete old-table recording inputs now contain rows. An expansion audit found 140 new recordings, 173 factor-only rewrites and zero behavior differences in existing pins. Production acceptance tables remain unchanged.
 
 The five residual failures were diagnosed before further edits: the test size requirement lacked its refusal reason; the deliberate metadata setter fault re-entered its own watched probe; plain-reference replacement published an intermediate null; generated list-hop names used DM interpolation instead of literal brackets; and wrapped_species_form omitted HOLDER_HOOK_INIT. Repairs preserve paired/unlink-callback relation behavior; broader atomic paired retargeting is a separate framework gap. Failure-only runtime verification is pending.
+# Latest repair verification
+
+The merged `987ed4b826` run passed production compilation (zero errors),
+DreamChecker (zero diagnostics) and ratchets. Its focused world recorded 21 passes
+and 18 failures, with 12 boot runtimes. No lane-ready stamp was issued.
+
+The dominant failure was a mismatch between the lazy derives recursion guard and
+the newly merged lifecycle teardown: teardown subtracted from a null list. The
+repair uses the same lazy removal contract and the regression checks the empty
+guard before destroying a real derived holder. Two independent failures were an
+unescaped literal list-hop suffix and a UI-only fixture that never entered the
+context menu. The latter now asserts a real menu row before injecting its fault;
+its fault-propagation and cleanup assertions are retained.
+
+The next verification list contains the 18 failed selectors; lane-ready adds its
+mandatory smoke and incremental-pin checks. Results remain pending. No pin rows
+were blessed for these failures.
