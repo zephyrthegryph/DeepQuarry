@@ -1154,26 +1154,8 @@ init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	alreadythere.alpha
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	if (alreadyfound)
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	return INITIALIZE_HINT_QDEL
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	alpha = calcalpha
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	icon_state += "-old"
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	if(prob(65))
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	rel_add(src, nameof(viruses), new_disease)
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	set_basecolor(get_random_colour(rand(0, 1)))
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	if(prob(75))
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	rel_add(src, nameof(viruses), new_disease)
 init_lines	code/game/objects/effects/decals/Cleanable/misc.dm	dry()
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	switch(spill_reagentid) //To ensure that if people spill some liquids, it wont cause issues with spawning, like spilling blood. Also allow for spilling of certain things to
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	if("blood")
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	if("water") //Dont recall if we have a water puddle system, but keeping this blacklisted, would be silly with dried water puddles.
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	name = "[spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	dryname = "dried [spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	desc = "It's a puddle of [spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	drydesc = "It's a dried puddle of [spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	set_basecolor(spill_color)
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	custombasename = "[spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	custombasedesc = "It's a puddle of [spill_name]"
-init_lines	code/game/objects/effects/decals/Cleanable/vore.dm	custombasecolor = basecolor
 init_lines	code/game/objects/effects/decals/cleanable.dm	if(!mapload || !CONFIG_GET(flag/persistence_ignore_mapload))
 init_lines	code/game/objects/effects/decals/cleanable.dm	SSpersistence.track_value(src, /datum/persistent/filth)
 init_lines	code/game/objects/effects/effect_system.dm	play_sfx(src, SFX_SPARKS, 2)
@@ -1268,18 +1250,9 @@ init_lines	code/game/objects/items/devices/communicator/communicator.dm	exonet.m
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 init_lines	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 init_lines	code/game/objects/items/devices/defib.dm	make_tethered(paddle_path)
-init_lines	code/game/objects/items/devices/e_beacon.dm	for(var/i in 1 to length(levels_for_distress))
-init_lines	code/game/objects/items/devices/e_beacon.dm	var/current = levels_for_distress[i]
-init_lines	code/game/objects/items/devices/e_beacon.dm	if(isnum(current))
-init_lines	code/game/objects/items/devices/e_beacon.dm	continue
-init_lines	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
-init_lines	code/game/objects/items/devices/e_beacon.dm	if(!levels_for_distress)
-init_lines	code/game/objects/items/devices/e_beacon.dm	levels_for_distress = list(1)
 init_lines	code/game/objects/items/devices/flipper.dm	emag_target(src)
 init_lines	code/game/objects/items/devices/flipper.dm	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
-init_lines	code/game/objects/items/devices/flipper.dm	desc = "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 init_lines	code/game/objects/items/devices/flipper.dm	setEmotion(4)
-init_lines	code/game/objects/items/devices/gps.dm	name = "global positioning system ([gps_tag])"
 init_lines	code/game/objects/items/devices/gps.dm	update_holder()
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	if(has_weapon)
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	if(ispath(active_weapon))
@@ -1289,8 +1262,6 @@ init_lines	code/game/objects/items/devices/personal_shield_generator.dm	else
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 init_lines	code/game/objects/items/devices/personal_shield_generator.dm	rel_set(src, nameof(power_supply), shield_generator()?.bcell)
-init_lines	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
-init_lines	code/game/objects/items/devices/pipe_painter.dm	LAZYADD(modes, "[C]")
 init_lines	code/game/objects/items/devices/pipe_painter.dm	set_mode(pick(modes))
 init_lines	code/game/objects/items/devices/radio/headset.dm	recalculateChannels(TRUE, register = FALSE)
 init_lines	code/game/objects/items/devices/radio/intercom.dm	var/area/A = get_area(src)
@@ -6767,8 +6738,6 @@ world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
-world_reads	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
-world_reads	code/game/objects/items/devices/pipe_painter.dm	for(var/C in GLOB.pipe_colors)
 world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/structures/lattice.dm	for (var/dir in GLOB.cardinal)

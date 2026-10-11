@@ -6,11 +6,17 @@
 /obj/item/paicard/flipper
 	name 		= "Vix"
 
+CAPABILITIES(/obj/item/paicard/flipper)
+	derives(nameof(desc), PROC_REF(named_desc))
+
+/// Its blurb names it (derives(), at init).
+/obj/item/paicard/flipper/proc/named_desc()
+	return "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
+
 /obj/item/paicard/flipper/Initialize(mapload)
 	emag_target(src)
 	rel_set(src, nameof(pai), new /mob/living/silicon/pai/flipper(src))
 	. = ..()
-	desc = "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 	setEmotion(4)
 
 // Mob
