@@ -1,13 +1,13 @@
 //! Real frontend/startup/host fixtures, deliberately separate from key fixtures.
 use super::*;
 use std::path::Path;
-struct Text(&'static str);
-impl dm_preprocess::SourceProvider for Text {
+struct Text<'a>(&'a str);
+impl dm_preprocess::SourceProvider for Text<'_> {
     fn read(&self, _: &Path) -> Result<String, String> {
         Ok(self.0.into())
     }
 }
-pub(super) fn frontend(source: &'static str, engine: &EngineSnapshot) -> ColdFrontend {
+pub(super) fn frontend(source: &str, engine: &EngineSnapshot) -> ColdFrontend {
     let seed = engine.frontend_seed();
     dm_tree::frontend::build_with_config(
         Path::new("abi-retained.dme"),
