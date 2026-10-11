@@ -30,7 +30,7 @@ TRACKED(/obj/item/flame/candle, wax)
 
 CAPABILITIES(/obj/item/flame/candle)
 	op("snuff", in_hand(), then(PROC_REF(snuffed)))
-	op("light_from", item(/obj/item), passes(), when(req_bool(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
+	op("light_from", item(/obj/item), passes(), when(req(PROC_REF(offers_flame))), then(PROC_REF(lit_from)))
 	op("use_welder", tool(TOOL_WELDER), wait(0), costs(RES_FUEL, 0), then(PROC_REF(welder_used)))
 
 
@@ -39,8 +39,8 @@ CAPABILITIES(/obj/item/flame/candle)
 	var/obj/item/W = A.held
 	if(istype(W, /obj/item/flame/lighter) || istype(W, /obj/item/flame/match) || istype(W, /obj/item/flame/candle))
 		var/obj/item/flame/F = W
-		return !!F.lit
-	return FALSE
+		return (!!F.lit) ? null : /datum/msg/req_failed
+	return /datum/msg/req_failed
 
 /// A burning flame lights the candle, and the click goes on to the ordinary attack.
 /obj/item/flame/candle/proc/lit_from(datum/act/op/A)

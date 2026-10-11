@@ -39,13 +39,13 @@ TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 	return OP_OK
 
 CAPABILITIES(/obj/item/bedsheet)
-	op("use_item", item(/obj/item), when(req_bool(PROC_REF(held_is_sharp))), begins(MSG(bedsheet/cutting)), wait(5 SECONDS), then(PROC_REF(cut_up)))
+	op("use_item", item(/obj/item), when(req(PROC_REF(held_is_sharp))), begins(MSG(bedsheet/cutting)), wait(5 SECONDS), then(PROC_REF(cut_up)))
 	op("lay_out", in_hand(), label("Lay out"), then(PROC_REF(bedsheet_self)))
 
 MSG_DEF(bedsheet/cutting, span_notice("You begin cutting up %T% with %I%."), span_infoplain(span_bold("%U%") + " begins cutting up %T% with %I%."))
 
 /obj/item/bedsheet/proc/held_is_sharp(datum/act/op/A)
-	return is_sharp(A.held)
+	return (is_sharp(A.held)) ? null : MSG(req_failed)
 
 /obj/item/bedsheet/proc/cut_up(datum/act/op/A)
 	return cut_into_rags(A.actor)

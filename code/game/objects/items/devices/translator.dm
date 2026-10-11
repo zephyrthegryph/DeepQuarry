@@ -18,7 +18,7 @@ TRACKED(/obj/item/universal_translator, langset_static)
 
 CAPABILITIES(/obj/item/universal_translator)
 	op("enable", in_hand(), label("Enable translator"), when(cond_not(nameof(translation_enabled))),
-		needs(carried(), req_bool(PROC_REF(language_supported), because = PROC_REF(language_refusal))),
+		needs(carried(), req(PROC_REF(language_supported))),
 		asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0),
 		then(PROC_REF(language_picked)))
 	op("disable", in_hand(), label("Disable translator"), when(nameof(translation_enabled)), then(PROC_REF(disabled)))
@@ -37,15 +37,12 @@ CAPABILITIES(/obj/item/universal_translator)
 /// Before opening a choice there is no answer; the final requirement checks the chosen shared language definition.
 /obj/item/universal_translator/proc/language_supported(datum/act/op/A)
 	if(!A.answer)
-		return TRUE
+		return null
 	var/datum/prompt/choice/picked = A.answer
 	var/datum/language/language = picked.value // ALLOW(reads): the closed request stores its accepted answer once before this final requirement runs
 	if(!istype(language))
-		return FALSE
-	return !(language.flags & (NONVERBAL | HIVEMIND)) && language.machine_understands
-
-/obj/item/universal_translator/proc/language_refusal(datum/act/op/A)
-	return span_warning("\The [src] cannot output that language.")
+		return span_warning("\The [src] cannot output that language.")
+	return (!(language.flags & (NONVERBAL | HIVEMIND)) && language.machine_understands) ? null : span_warning("\The [src] cannot output that language.")
 
 /obj/item/universal_translator/proc/language_picked(datum/act/op/A)
 	var/datum/prompt/choice/picked = A.answer

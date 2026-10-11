@@ -1,0 +1,168 @@
+human|none menu: Disassemble Rifle (refused: You can't do that.)
+human|none menu: Give DNA (refused: You can't do that.)
+human|none menu: Move To Top
+human|none menu: Pick up
+human|none menu: Remove DNA (refused: You can't do that.)
+human|none menu: Toggle Digestable (refused: You can't do that.)
+human|none menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|none menu: Unload
+human|none menu: Use Scope (refused: You can't do that.)
+human|none click: Click: Unload
+robot|none menu: Disassemble Rifle (refused: You can't do that.)
+robot|none menu: Equip (refused: not possible right now)
+robot|none menu: Give DNA (refused: You can't do that.)
+robot|none menu: Move To Top
+robot|none menu: Pick up
+robot|none menu: Remove DNA (refused: You can't do that.)
+robot|none menu: Toggle Digestable (refused: You can't do that.)
+robot|none menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+robot|none menu: Unload
+robot|none menu: Use Scope (refused: You can't do that.)
+robot|none click: Click: Unload
+ai|none menu: Equip (refused: not possible right now)
+ai|none click: nothing
+ghost|none menu: Disassemble Rifle (refused: You can't do that.)
+ghost|none menu: Give DNA (refused: You can't do that.)
+ghost|none menu: Move To Top (refused: You can't reach that.)
+ghost|none menu: Remove DNA (refused: You can't do that.)
+ghost|none menu: Toggle Digestable (refused: You can't reach that.)
+ghost|none menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+ghost|none menu: Use Scope (refused: You can't do that.)
+ghost|none click: nothing
+human|/obj/item/tool/screwdriver menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Fit
+human|/obj/item/tool/screwdriver menu: Give DNA (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Unload
+human|/obj/item/tool/screwdriver menu: Use Scope (refused: You can't do that.)
+human|/obj/item/tool/screwdriver click: Click: Fit
+human|/obj/item/tool/crowbar menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Fit
+human|/obj/item/tool/crowbar menu: Give DNA (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Unload
+human|/obj/item/tool/crowbar menu: Use Scope (refused: You can't do that.)
+human|/obj/item/tool/crowbar click: Click: Fit
+human|/obj/item/tool/wrench menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Fit
+human|/obj/item/tool/wrench menu: Give DNA (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Unload
+human|/obj/item/tool/wrench menu: Use Scope (refused: You can't do that.)
+human|/obj/item/tool/wrench click: Click: Fit
+human|/obj/item/tool/wirecutters menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Fit
+human|/obj/item/tool/wirecutters menu: Give DNA (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Unload
+human|/obj/item/tool/wirecutters menu: Use Scope (refused: You can't do that.)
+human|/obj/item/tool/wirecutters click: Click: Fit
+human|/obj/item/multitool menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/multitool menu: Fit
+human|/obj/item/multitool menu: Give DNA (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/multitool menu: Unload
+human|/obj/item/multitool menu: Use Scope (refused: You can't do that.)
+human|/obj/item/multitool click: Click: Fit
+human|/obj/item/weldingtool menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Fit
+human|/obj/item/weldingtool menu: Give DNA (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Unload
+human|/obj/item/weldingtool menu: Use Scope (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Fit
+human|/obj/item/stack/cable_coil menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Fit
+human|/obj/item/stack/cable_coil menu: Give DNA (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Unload
+human|/obj/item/stack/cable_coil menu: Use Scope (refused: You can't do that.)
+human|/obj/item/stack/cable_coil click: Click: Fit
+human|/obj/item/stack/material/steel menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Fit
+human|/obj/item/stack/material/steel menu: Give DNA (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Unload
+human|/obj/item/stack/material/steel menu: Use Scope (refused: You can't do that.)
+human|/obj/item/stack/material/steel click: Click: Fit
+human|/obj/item/card/id menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/card/id menu: Fit
+human|/obj/item/card/id menu: Give DNA (refused: You can't do that.)
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/card/id menu: Unload
+human|/obj/item/card/id menu: Use Scope (refused: You can't do that.)
+human|/obj/item/card/id click: Click: Fit
+human|/obj/item/kit menu: Customise
+human|/obj/item/kit menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/kit menu: Fit
+human|/obj/item/kit menu: Give DNA (refused: You can't do that.)
+human|/obj/item/kit menu: Move To Top
+human|/obj/item/kit menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/kit menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/kit menu: Unload
+human|/obj/item/kit menu: Use Scope (refused: You can't do that.)
+human|/obj/item/kit click: Click: Customise
+human|/obj/item/storage menu: Collect
+human|/obj/item/storage menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/storage menu: Fit
+human|/obj/item/storage menu: Give DNA (refused: You can't do that.)
+human|/obj/item/storage menu: Move To Top
+human|/obj/item/storage menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/storage menu: Unload
+human|/obj/item/storage menu: Use Scope (refused: You can't do that.)
+human|/obj/item/storage click: Click: Fit
+human|/obj/item/card/emag menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item/card/emag menu: Fit
+human|/obj/item/card/emag menu: Give DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Move To Top
+human|/obj/item/card/emag menu: Remove DNA (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/emag menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item/card/emag menu: Unload
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use Scope (refused: You can't do that.)
+human|/obj/item/card/emag click: Click: Use
+human|/obj/item menu: Disassemble Rifle (refused: You can't do that.)
+human|/obj/item menu: Fit
+human|/obj/item menu: Give DNA (refused: You can't do that.)
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Remove DNA (refused: You can't do that.)
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle DNA Samples Allowance (refused: You can't do that.)
+human|/obj/item menu: Unload
+human|/obj/item menu: Use Scope (refused: You can't do that.)
+human|/obj/item click: Click: Fit
+keys: bolt_work, chamber_round, collapsible_sniper_verb_take_down, collect_item, drag_buckle, emag.subvert, emag.use, feed_rounds, gen_silicon_item_silicon_equip_module, gun_hand, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, heavysniper_verb_scope, kit_customize, kit_customize_last, move_to_top, pick_up_item, suicide, toggle_digestable
+

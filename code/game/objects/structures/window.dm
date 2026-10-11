@@ -271,7 +271,7 @@ CAPABILITIES(/obj/structure/window)
 	op("tk_knock", tk(), label("Knock"), then(PROC_REF(interaction_tk)))
 	// weld repair: a lit welder in the help stance mends a damaged window
 	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair the window"), priority(OP_PRIORITY_PART + 10), wait(4 SECONDS), costs(RES_FUEL, 1),
-		needs(req_welder_lit(), req_bool(PROC_REF(is_damaged), because = MSG(window/undamaged))), begins(MSG(start/interaction/window_repair)), says(MSG(interaction/window_repair)), then(PROC_REF(weld_repair)))
+		needs(req_welder_lit(), req(PROC_REF(is_damaged), because = MSG(window/undamaged))), begins(MSG(start/interaction/window_repair)), says(MSG(interaction/window_repair)), then(PROC_REF(weld_repair)))
 
 /// A window a player built (its constructor param).
 /obj/structure/window/var/constructed = FALSE

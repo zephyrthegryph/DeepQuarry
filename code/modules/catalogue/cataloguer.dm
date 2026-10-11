@@ -357,18 +357,16 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /// Old object verbs.
 CAPABILITIES(/obj/item/cataloguer/compact)
-	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req_bool(PROC_REF(can_toggle_compact_holds), because = PROC_REF(can_toggle_compact_refusal))), then(PROC_REF(compact_toggle_effect_op)))
+	op("compact_toggle_effect", menu(), label("Toggle Cataloguer"), needs(carried(), req(PROC_REF(can_toggle_compact_holds))), then(PROC_REF(compact_toggle_effect_op)))
 
 /// Requirement (was REQ_* can_toggle_compact): the legacy check answers TRUE to pass.
 /obj/item/cataloguer/compact/proc/can_toggle_compact_holds(datum/act/op/A)
 	var/answer = can_toggle_compact(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_toggle_compact_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/cataloguer/compact/proc/can_toggle_compact_refusal(datum/act/op/A)
-	var/answer = can_toggle_compact(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /// The compact_toggle_effect op: the verb's effect, as the old resolver ran it.
 /obj/item/cataloguer/compact/proc/compact_toggle_effect_op(datum/act/op/A)
 	compact_toggle_effect(A.actor, A.held)

@@ -38,7 +38,7 @@ MSG_DEF_SELF(lipstick/closed, "Twist it open first.")
 CAPABILITIES(/obj/item/lipstick)
 	op("twist", in_hand(), label("Twist lipstick"), then(PROC_REF(twisted)))
 	op("apply", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Apply lipstick"),
-		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req_bool(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))),
+		needs(req_adjacent(), req_is(nameof(open), TRUE, because = MSG(lipstick/closed)), req(PROC_REF(clean_lips))),
 		then(PROC_REF(application_started), early = TRUE), wait(PROC_REF(application_delay)), then(PROC_REF(lipstick_applied)))
 
 /obj/item/lipstick/proc/twisted(datum/act/op/A)
@@ -49,12 +49,9 @@ CAPABILITIES(/obj/item/lipstick)
 
 /obj/item/lipstick/proc/clean_lips(datum/act/op/A)
 	if(!ishuman(A.target))
-		return FALSE
+		return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 	var/mob/living/carbon/human/H = A.target
-	return !H.lip_style
-
-/obj/item/lipstick/proc/lip_refusal(datum/act/op/A)
-	return span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
+	return (!H.lip_style) ? null : span_notice(ishuman(A.target) ? "You need to wipe off the old lipstick first!" : "Where are the lips on that?")
 
 /obj/item/lipstick/proc/application_delay(datum/act/op/A)
 	return A.target == A.actor ? 0 : 2 SECONDS

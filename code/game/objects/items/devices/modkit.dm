@@ -22,7 +22,7 @@ TRACKED(/obj/item/modkit, parts)
 CAPABILITIES(/obj/item/modkit)
 	examine_line(PROC_REF(refit_description))
 	op("refit", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Refit hardsuit"),
-		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req_bool(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), then(PROC_REF(refitted)))
+		when(PROC_REF(has_refit_parts)), needs(req_adjacent(), req(PROC_REF(refit_allowed))), then(PROC_REF(refitted)))
 	op("discard_spent", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Discard spent kit"),
 		when(cond_not(PROC_REF(has_refit_parts))), needs(req_adjacent()), then(PROC_REF(spent_discarded)))
 
@@ -30,10 +30,6 @@ CAPABILITIES(/obj/item/modkit)
 	return !!parts
 
 /obj/item/modkit/proc/refit_allowed(datum/act/op/A)
-	return isnull(refit_refusal(A))
-
-/// All eligibility checks run before refitting changes the original target or spends kit parts.
-/obj/item/modkit/proc/refit_refusal(datum/act/op/A)
 	if(!target_species)
 		return "This kit has no target species."
 	if(!istype(A.target, /obj/item/clothing))
@@ -57,6 +53,7 @@ CAPABILITIES(/obj/item/modkit)
 		return span_warning("[I] must be safely placed on the ground for modification.")
 	return null
 
+/// All eligibility checks run before refitting changes the original target or spends kit parts.
 /obj/item/modkit/proc/refitted(datum/act/op/A)
 	var/obj/item/clothing/O = A.target
 	if(O.usesound)

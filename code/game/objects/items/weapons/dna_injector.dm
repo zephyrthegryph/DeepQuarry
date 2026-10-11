@@ -24,7 +24,7 @@ MSG_DEF(dnainjector/injecting, null, span_danger("%U% is trying to inject %T% wi
 CAPABILITIES(/obj/item/dnainjector)
 	owns_one(nameof(buf), /datum/dna2/record)
 	op("inject", at_target(/mob/living), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Inject"),
-		needs(req_adjacent(), req_bool(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))
+		needs(req_adjacent(), req(PROC_REF(advanced_user), silent = TRUE)), begins(MSG(dnainjector/injecting)), wait(5 SECONDS), then(PROC_REF(injected)))
 
 TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 
@@ -148,7 +148,7 @@ TYPE_TABLE_DECLARE(/obj/item/dnainjector, injector_random_selector, null)
 	return uses
 
 /obj/item/dnainjector/proc/advanced_user(datum/act/op/A)
-	return read_once(A.actor.IsAdvancedToolUser())
+	return (read_once(A.actor.IsAdvancedToolUser())) ? null : /datum/msg/req_silent
 
 /obj/item/dnainjector/proc/injected(datum/act/op/A)
 	var/mob/living/M = A.target

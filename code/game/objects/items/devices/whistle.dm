@@ -19,9 +19,9 @@ TRACKED(/obj/item/hailer, insults)
 CAPABILITIES(/obj/item/hailer)
 	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
 	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
-	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req_bool(PROC_REF(unfried), because = PROC_REF(settings_refusal))),
+	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req_capable(), req(PROC_REF(unfried), because = "the hailer is fried, the tiny input screen just shows a waving ASCII penis")),
 		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Please enter new message (leave blank to reset).")), then(PROC_REF(message_picked)))
-	emag(list(needs(req_bool(PROC_REF(unfried), because = PROC_REF(emag_refusal))), then(PROC_REF(overloaded))), repeatable = TRUE)
+	emag(list(needs(req(PROC_REF(unfried), because = "The hailer is fried. You can't even fit the sequencer into the input slot.")), then(PROC_REF(overloaded))), repeatable = TRUE)
 
 /obj/item/hailer/proc/set_hailer_message()
 	set name = "Set Hailer Message"
@@ -30,13 +30,7 @@ CAPABILITIES(/obj/item/hailer)
 	perform_op(usr, src, "set_message", null, ORIGIN_VERB)
 
 /obj/item/hailer/proc/unfried(datum/act/op/A)
-	return isnull(insults)
-
-/obj/item/hailer/proc/settings_refusal(datum/act/op/A)
-	return "the hailer is fried, the tiny input screen just shows a waving ASCII penis"
-
-/obj/item/hailer/proc/emag_refusal(datum/act/op/A)
-	return "The hailer is fried. You can't even fit the sequencer into the input slot."
+	return (isnull(insults)) ? null : "the hailer is fried, the tiny input screen just shows a waving ASCII penis"
 
 /obj/item/hailer/proc/message_picked(datum/act/op/A)
 	var/datum/prompt/text/ask = A.answer

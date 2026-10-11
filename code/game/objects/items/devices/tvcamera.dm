@@ -253,13 +253,10 @@ TRACKED(/obj/item/TVAssembly, buildstep)
 
 CAPABILITIES(/obj/item/TVAssembly)
 	// the old attackby: the construction steps (a camera module or tape recorder must be free to take)
-	op("build", item(/obj/item), label("Build"), needs(req_bool(PROC_REF(can_insert_device), because = PROC_REF(insert_device_refusal))), then(PROC_REF(interaction_item)))
+	op("build", item(/obj/item), label("Build"), needs(req(PROC_REF(can_insert_device))), then(PROC_REF(interaction_item)))
 
 /// Requirement: a matching construction ingredient can be taken from where it is.
 /obj/item/TVAssembly/proc/can_insert_device(datum/act/op/A)
-	return isnull(insert_device_refusal(A))
-
-/obj/item/TVAssembly/proc/insert_device_refusal(datum/act/op/A)
 	var/obj/item/held = A.held
 	if((buildstep == 0 && istype(held, /obj/item/robot_parts/robot_component/camera)) || (buildstep == 1 && istype(held, /obj/item/taperecorder)))
 		return A.actor.release_refusal(held, A.actor)

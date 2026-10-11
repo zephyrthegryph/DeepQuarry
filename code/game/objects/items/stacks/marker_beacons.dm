@@ -30,7 +30,7 @@ TRACKED(/obj/item/stack/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/item/stack/marker_beacon)
 	without("ui_open")
-	op("place", in_hand(), label("Place"), needs(req_bool(PROC_REF(can_place), because = PROC_REF(place_refusal))), then(PROC_REF(marker_beacon_self)))
+	op("place", in_hand(), label("Place"), needs(req(PROC_REF(can_place))), then(PROC_REF(marker_beacon_self)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 
 MSG_DEF_SELF(marker_beacon/no_space, "You need more space to place a marker beacon here.")
@@ -61,19 +61,13 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 /// Placing needs open floor with no beacon on it already.
 /obj/item/stack/marker_beacon/proc/can_place(datum/act/op/A)
 	var/mob/user = A.actor
-	// ALLOW(reads): where the user stands is read when the beacon is placed, never from a cached menu
-	if(!isturf(user.loc))
-		return FALSE
-	// ALLOW(reads): the same read of where the user stands, for the beacons already on that tile
-	return !locate_within(user.loc, /obj/structure/marker_beacon)
+	if(!isturf(user.loc)) // ALLOW(reads): where the user stands is read when the beacon is placed, never from a cached menu
+		return /datum/msg/marker_beacon/no_space
+	if(locate_within(user.loc, /obj/structure/marker_beacon)) // ALLOW(reads): the same read of where the user stands, for the beacons already on that tile
+		return /datum/msg/marker_beacon/already_there
+	return null
 
 /// Why it cannot be placed: no floor to stand on, or a beacon already there.
-/obj/item/stack/marker_beacon/proc/place_refusal(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!isturf(user.loc))
-		return /datum/msg/marker_beacon/no_space
-	return /datum/msg/marker_beacon/already_there
-
 /// Using the stack in the hand places a beacon.
 /obj/item/stack/marker_beacon/proc/marker_beacon_self(datum/act/op/A)
 	var/mob/user = A.actor
@@ -122,8 +116,8 @@ MSG_DEF_SELF(marker_beacon/already_there, "There is already a marker beacon here
 TRACKED(/obj/structure/marker_beacon, picked_color)
 
 CAPABILITIES(/obj/structure/marker_beacon)
-	op("pick_up", hand(), ungated(), needs(req_bool(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
-	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req_bool(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
+	op("pick_up", hand(), ungated(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_by_hand)))
+	op("pick_up_into", item(/obj/item/stack/marker_beacon), passes(), needs(req(PROC_REF(removable), silent = TRUE)), begins(MSG(marker_beacon/picking_up)), wait(PROC_REF(remove_wait)), then(PROC_REF(picked_up_into_stack)))
 	op("recolor", hand(), gesture(GESTURE_ALT), label("Color"), then(PROC_REF(recolor_asked)))
 	param(nameof(color_at_make), pos = 1, apply = PROC_REF(light_beacon))
 
@@ -157,7 +151,7 @@ MSG_DEF_SELF(marker_beacon/picking_up, span_notice("You start picking %T% up..."
 
 /// Requirement: a permanent beacon stays.
 /obj/structure/marker_beacon/proc/removable(datum/act/op/A)
-	return !read_once(perma) // a beacon is permanent from the day it is made
+	return (!read_once(perma)) ? null : /datum/msg/req_silent // a beacon is permanent from the day it is made
 
 /// How long picking the beacon up takes.
 /obj/structure/marker_beacon/proc/remove_wait(datum/act/op/A)

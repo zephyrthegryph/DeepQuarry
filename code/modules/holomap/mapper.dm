@@ -51,7 +51,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 	owns_many(nameof(icon_image_cache))
 	owns_many(nameof(map_image_cache))
 	op("hand", hand(), label("Use"), then(PROC_REF(interaction_hand)))
-	op("self", in_hand(), label("Use"), needs(req_bool(PROC_REF(can_use_mapper_holds), because = PROC_REF(can_use_mapper_refusal))), then(PROC_REF(interaction_self)))
+	op("self", in_hand(), label("Use"), needs(req(PROC_REF(can_use_mapper_holds))), then(PROC_REF(interaction_self)))
 	op("item", item(/obj/item), label("Use"), then(PROC_REF(interaction_item)))
 
 /obj/item/mapping_unit/deathsquad
@@ -137,13 +137,11 @@ CAPABILITIES(/obj/item/mapping_unit)
 /// Requirement (was REQ_* can_use_mapper): the legacy check answers TRUE to pass.
 /obj/item/mapping_unit/proc/can_use_mapper_holds(datum/act/op/A)
 	var/answer = can_use_mapper(A.actor, src, A.held)
-	return !istext(answer) && !!answer
+	if(!istext(answer) && answer)
+		return null
+	return req_refusal_value(answer, /datum/msg/req_failed)
 
 /// Why can_use_mapper_holds refuses: the legacy check's text, else the clause's own reason.
-/obj/item/mapping_unit/proc/can_use_mapper_refusal(datum/act/op/A)
-	var/answer = can_use_mapper(A.actor, src, A.held)
-	return istext(answer) ? answer : /datum/msg/req_failed
-
 /obj/item/mapping_unit/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(user.stat != CONSCIOUS)

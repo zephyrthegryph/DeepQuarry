@@ -75,7 +75,7 @@ CAPABILITIES(/obj/structure/safe)
 	op("decrement", ui_act("decrement"), then(PROC_REF(ui_act_decrement)))
 	op("increment", ui_act("increment"), then(PROC_REF(ui_act_increment)))
 	op("retrieve", ui_act("retrieve", arg("ref")), then(PROC_REF(ui_act_retrieve)))
-	extend(TAG_UI, needs(req_bool(PROC_REF(user_is_human), because = MSG(safe/not_human))))
+	extend(TAG_UI, needs(req(PROC_REF(user_is_human), because = MSG(safe/not_human))))
 	rolls(nameof(tumbler_1_pos), range_of(0, 72))
 	rolls(nameof(tumbler_1_open), range_of(0, 72))
 	rolls(nameof(tumbler_2_pos), range_of(0, 72))
@@ -85,7 +85,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 
 /// Only a human works the dial.
 /obj/structure/safe/proc/user_is_human(datum/act/op/A)
-	return ishuman(A.actor)
+	return (ishuman(A.actor)) ? null : MSG(safe/not_human)
 
 /obj/structure/safe/ui_data(datum/act/eval/A)
 	var/list/data = list()
