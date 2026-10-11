@@ -550,7 +550,7 @@ CAPABILITIES(/datum/cap_data/wires)
 		var/why = A.space_reason(def.at, AUTH_PHYSICAL, user)
 		if(why)
 			return why
-	if(!isnull(combat_of(def).reach) && !change_condition(A, combat_of(def).reach))
+	if(!isnull(def?.reach) && !change_condition(A, def.reach))
 		return /datum/msg/wires/out_of_reach
 	return null
 
@@ -577,7 +577,7 @@ CAPABILITIES(/datum/cap_data/wires)
 		return list()
 	. = W.def?.at ? H.space_read_keys(W.def.at) : list()
 	var/list/keys = list()
-	present_condition_reads(H, combat_of(W.def).reach, keys)
+	present_condition_reads(H, W.def?.reach, keys)
 	for(var/key in keys)
 		. += list(list(H, key))
 
