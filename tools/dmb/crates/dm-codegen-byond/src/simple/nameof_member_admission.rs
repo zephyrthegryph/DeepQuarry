@@ -77,7 +77,7 @@ mod tests {
                     dm_ir::ResolvedMeaning::Symbol(path)
                 }
                 dm_ir::ResolveQuery::HasMemberVar { name, .. } => {
-                    dm_ir::ResolvedMeaning::Bool(name == SymbolId::of("known"))
+                    dm_ir::ResolvedMeaning::Presence(name == SymbolId::of("known"))
                 }
                 dm_ir::ResolveQuery::DeclaredVarType { .. } => {
                     dm_ir::ResolvedMeaning::DeclaredType(None)

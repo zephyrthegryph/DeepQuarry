@@ -17,7 +17,7 @@ impl Resolver for FeatureHost {
                     .into_iter()
                     .any(|text| name == SymbolId::of(text)) =>
             {
-                ResolvedMeaning::Bool(true)
+                ResolvedMeaning::Presence(true)
             }
             ResolveQuery::Ancestry(owner) if self.opaque.load(Ordering::Relaxed) => {
                 ResolvedMeaning::Unsupported(ResolveQuery::Ancestry(owner))
