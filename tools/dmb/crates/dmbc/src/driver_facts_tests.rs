@@ -949,7 +949,9 @@ fn actual_stored_nameof_uses_current_parameters_and_captured_prior_locals() {
             declared_array: declaration.declared_array.clone(),
             declaration_flags: Some(declaration.modifiers),
         };
-        let (value, _) = evaluator.evaluate_prepared_write(&write, &symbols).unwrap();
+        let (value, _) = evaluator
+            .evaluate_prepared_write(&write, write.value.as_ref().unwrap())
+            .unwrap();
         let expected = if declaration.identity.name == SymbolId::of("parameter_name") {
             "argument"
         } else {
@@ -957,7 +959,7 @@ fn actual_stored_nameof_uses_current_parameters_and_captured_prior_locals() {
         };
         assert!(
             matches!(value, Evaluation::Scalar(SemanticValue::Text(ref text)) if text.as_ref() == expected.as_bytes()),
-            "{expected}: {value:?}"
+            "stored nameof did not resolve the current lexical name {expected}"
         );
     }
 }
