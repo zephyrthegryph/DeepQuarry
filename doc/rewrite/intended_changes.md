@@ -5149,3 +5149,19 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+## Hydroponics alert probe coverage after master merge (2026-10-12)
+
+Class: `/obj/machinery/portable_atmospherics/hydroponics`. The full state-pin run on
+0455b24744 captured six additional rows: waterlevel 0/1/2 shows over_lowwater3,
+and nutrilevel 0/1/2 shows over_lownutri3, on the same lighting-above plane.
+The tray draw and setter source are unchanged from the previously stamped hygiene
+branch. Master 4ad5a73018 removed inherited numeric machinery.power_subscriber,
+changing the bounded fallback probe candidates; master 3030da36be installed
+native generated draw dependencies including waterlevel and nutrilevel. The
+fallback plan is still `*`. These are coverage rows for existing thresholds
+(water <= 10, nutrients <= 2), not a new appearance or balance change. Both
+master changes are recorded here; the precise contribution of candidate order
+versus native invalidation is not isolated by this run. Only these six fresh
+rows from that exact commit's completed run are refreshed. All pre-existing
+rows, including soil rows, are preserved.
