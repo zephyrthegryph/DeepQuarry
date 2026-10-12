@@ -198,10 +198,11 @@
 	TEST_ASSERT(p2_door_electrified(D), "electrified until released")
 	p2_door_set_power(D, FALSE)
 	settle()
-	TEST_ASSERT(p2_door_electrified(D), "pinned: losing area power leaves the electrification set (the shock cannot land without power)")
+	// Any flip of has_power reaches the door's power_change() now (its on_change hook), the manual override's hold too: the current drops.
+	TEST_ASSERT(!p2_door_electrified(D), "losing its power ends the electrification")
 	p2_door_set_power(D, TRUE)
 	settle()
-	TEST_ASSERT(p2_door_electrified(D), "and it is live again with the power back")
+	TEST_ASSERT(!p2_door_electrified(D), "and it does not come back with the power")
 	p2_door_ui(AI, D, "disrupt-main")
 	test_time(11 SECONDS)
 	p2_door_ui(AI, D, "shock-perm")

@@ -525,6 +525,9 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	// Moles of the other gases a simple mob's environment limits name (OXYGEN, PLASMA and CARBON_DIOXIDE above).
 	NITROGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_NITROGEN],
 	METHANE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_METHANE],
+	// A combined band: oxygen and CO2 partial pressures summed. A skin breather (alraune) lives on either, so its
+	// breath fails only when the two together fall under its minimum.
+	O2_CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN) + c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
 }}
 const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 

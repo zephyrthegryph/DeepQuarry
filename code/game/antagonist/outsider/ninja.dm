@@ -88,7 +88,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 	var/ninja_name = pick(GLOB.ninja_names)
 	var/mob/living/carbon/human/H = player.current
 	if(istype(H))
-		H.real_name = "[ninja_title] [ninja_name]"
+		H.set_real_name("[ninja_title] [ninja_name]")
 		H.name = H.real_name
 	player.name = H.name
 

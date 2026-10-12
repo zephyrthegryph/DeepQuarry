@@ -26,10 +26,6 @@
 /mob/living/proc/life_type_pre(datum/seq_frame/life/F)
 	return
 
-/// The root is a no-op; a variant's pre code runs every cycle.
-/mob/living/proc/life_type_pre_due()
-	return FALSE
-
 /// Code a mob subtype ran after ..() in its old Life() override. A variant starts with `..()`,
 /// which runs its parent's post code, then runs its own; code that only runs for a living mob
 /// checks `ctx.fact("alive")`.
@@ -260,12 +256,9 @@
 	FOR_CONTENTS(var/obj/item/grab/G, src)
 		G.periodic_step()
 
-/// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
+/// Busy while pulling or grabbing. Gravity is re-read on Moved and when the ground changes (MOB_KEY_GROUND).
 /mob/living/proc/life_movement_due()
 	return src?.pulling_target() || (locate_in_list(src, /obj/item/grab))
-
-/mob/living/proc/life_movement_rewake()
-	return src.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
 /// disabilities and addictions systems skip this cycle.
@@ -586,3 +579,14 @@ TRACKED(/mob, ear_damage)
 /mob/living/simple_mob/var/purge = 0
 TRACKED(/mob/living/simple_mob, purge)
 
+// ---------------------------------------------------------------- identity
+
+/// Something this movable shows of its carrier's identity changed (the name on an ID or a PDA): the living mob carrying
+/// it, however deep, hears MOB_KEY_IDENTITY (its visible name step reads it). Called by those setters only.
+/atom/movable/proc/identity_changed_on_holder()
+	var/atom/A = loc
+	while(A && !isturf(A))
+		if(isliving(A))
+			PUBLISH_CHANGE(A, MOB_KEY_IDENTITY)
+			return
+		A = A.loc

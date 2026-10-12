@@ -176,3 +176,7 @@
 
 /// A type trait argument (code/engine/declare/type_traits.dm) that sets the value to null: an argument left null is inherited instead.
 #define TRAIT_NONE "__trait_none__"
+
+/// The key a construction graph's stage change publishes on its holder (engine_key_changed(E, "graph:[cap_id]"), code/engine/declare/graph.dm),
+/// for an accessor that reads the stage: READS_AS(proc, CONSTRUCTION_GRAPH_KEY).
+#define CONSTRUCTION_GRAPH_KEY "graph:3"

@@ -33,9 +33,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/tyr/rainbow_fly)
 
 TYPE_TABLE(/obj/item/projectile/energy/blob/rainbowfly, blob_projectile_chems, list(REAGENT_ID_CRYPTOBIOLIN))
 
-/mob/living/simple_mob/animal/tyr/rainbow_fly/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/tyr/rainbow_fly/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.painbow_aura()

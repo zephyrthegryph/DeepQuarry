@@ -52,7 +52,7 @@
 		var/mob/living/carbon/human/H = src
 		H.identifying_gender = chosen_dna.identifying_gender
 		H.bio.flavor_texts = chosen_dna.flavour_texts ? chosen_dna.flavour_texts.Copy() : null
-	real_name = chosen_dna.name
+	set_real_name(chosen_dna.name)
 	UpdateAppearance()
 	domutcheck(src, null)
 	UpdateAppearance()

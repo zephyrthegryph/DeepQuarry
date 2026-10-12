@@ -770,7 +770,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = person(T)
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, get_step(T, EAST))
-	other.real_name = "Mimic Target"
+	other.set_real_name("Mimic Target")
 	other.name = "Mimic Target"
 	var/obj/item/glamour_face/face = allocate(/obj/item/glamour_face, T)
 	hci_click(H, face, face)

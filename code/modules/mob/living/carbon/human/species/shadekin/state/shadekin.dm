@@ -297,7 +297,7 @@
 /datum/shadekin/proc/ui_act_toggle_voice(datum/act/op/A)
 	var/mob/user = A.actor
 	var/new_voice_hide = !hide_voice_in_phase
-	hide_voice_in_phase = !hide_voice_in_phase
+	set_hide_voice_in_phase(!hide_voice_in_phase)
 	user.write_preference_directly(/datum/preference/toggle/living/shadekin_hide_voice_in_phase, new_voice_hide, WRITE_PREF_MANUAL, save_to_played_slot = TRUE)
 
 /// The voice answer of GetVoice(): phase-shifted shadekin who hide their voice are "Something". The handler's value is the voice (the act's reply).
@@ -365,3 +365,25 @@ CAPABILITIES(/datum/shadekin)
 
 /datum/shadekin/full/ability_capabilities()
 	return list(shadekin_phase(), shadekin_utility(), shadekin_dark())
+
+/// Phased in or out: the owner's visible name answer (on_get_visible_name()) changes with it (MOB_KEY_IDENTITY).
+/datum/shadekin/proc/set_in_phase(value)
+	if(TRACKED_UNCHANGED(in_phase, value))
+		return FALSE
+	in_phase = value
+	tracked_changed(src, nameof(in_phase))
+	if(owner)
+		PUBLISH_CHANGE(owner, MOB_KEY_IDENTITY)
+	return TRUE
+SETTER(/datum/shadekin, in_phase)
+
+/// Whether phasing hides the name: the owner's visible name answer follows it (MOB_KEY_IDENTITY).
+/datum/shadekin/proc/set_hide_voice_in_phase(value)
+	if(TRACKED_UNCHANGED(hide_voice_in_phase, value))
+		return FALSE
+	hide_voice_in_phase = value
+	tracked_changed(src, nameof(hide_voice_in_phase))
+	if(owner)
+		PUBLISH_CHANGE(owner, MOB_KEY_IDENTITY)
+	return TRUE
+SETTER(/datum/shadekin, hide_voice_in_phase)

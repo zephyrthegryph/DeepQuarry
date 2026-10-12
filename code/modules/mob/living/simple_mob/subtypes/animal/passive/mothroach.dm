@@ -74,7 +74,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/mothroach)
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_name_ready(datum/act/timer/A)
 
 
-	real_name = name
+	set_real_name(name)
 
 /// Old attack_hand: the normal touch, then a scream.
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(datum/act/op/A, stance)
