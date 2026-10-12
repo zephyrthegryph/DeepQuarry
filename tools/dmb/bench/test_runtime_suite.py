@@ -37,7 +37,15 @@ class Contracts(unittest.TestCase):
     def args(self, *extra):
         return runner.parser().parse_args(['--checkout', 'E:/work', '--output', 'E:/dq-cache/new', '--backend', 'byond',
             '--bash-exe', 'C:/bash.exe', '--bash-sha256', 'a' * 64, '--byond-exe', 'D:/dm.exe', '--byond-sha256', 'b' * 64,
-            '--dd-exe', 'D:/dreamdaemon.exe', '--dd-sha256', 'c' * 64, '--security', 'trusted', *extra])
+            '--dd-exe', 'D:/dd.exe', '--dd-sha256', 'c' * 64, '--security', 'trusted', *extra])
+
+    def test_runtime_requires_console_sibling_and_rejects_gui_or_other_installation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            runner.validate_console_daemon(root / 'dm.exe', root / 'dd.exe')
+            for invalid in (root / 'dreamdaemon.exe', root / 'other' / 'dd.exe'):
+                with self.assertRaisesRegex(ValueError, 'console dd.exe'):
+                    runner.validate_console_daemon(root / 'dm.exe', invalid)
 
     def test_owned_memory_cap_remains_explicit_and_bounded(self):
         flags = ('--focus', '/datum/unit_test/a')

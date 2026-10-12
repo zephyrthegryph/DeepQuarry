@@ -11,9 +11,20 @@ export async function resolveDreamDaemonExecutable(
   namedVersion: string | null | undefined,
   lookup: (version?: string | null) => Promise<string>,
   platform: string = process.platform,
+  explicitExecutable: string | undefined = process.env.DQ_DD_EXE,
 ): Promise<string> {
   const dmPath = await lookup(namedVersion);
   const baseDir = path.dirname(dmPath);
-  const executable = platform === 'win32' ? 'dreamdaemon.exe' : 'DreamDaemon';
-  return baseDir === '.' ? executable : path.join(baseDir, executable);
+  const executable = platform === 'win32' ? 'dd.exe' : 'DreamDaemon';
+  const sibling = baseDir === '.' ? executable : path.join(baseDir, executable);
+  if (explicitExecutable) {
+    const expected = path.resolve(sibling);
+    const actual = path.resolve(explicitExecutable);
+    const equal = platform === 'win32' ? actual.toLowerCase() === expected.toLowerCase() : actual === expected;
+    if (!path.isAbsolute(explicitExecutable) || baseDir === '.' || !equal) {
+      throw new Error('Explicit DreamDaemon must be the selected DreamMaker console sibling');
+    }
+    return actual;
+  }
+  return sibling;
 }

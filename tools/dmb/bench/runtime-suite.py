@@ -25,6 +25,11 @@ COHORT_SECONDS = 1800
 JOB_BYTES = 4_000_000_000
 
 
+def validate_console_daemon(dm, dd):
+    if os.path.normcase(str(dd.resolve())) != os.path.normcase(str(dm.resolve().parent / 'dd.exe')):
+        raise ValueError('DD must be the pinned DreamMaker sibling console dd.exe')
+
+
 def owned_cache_path(value, cache_root=Path('E:/dq-cache')):
     """Resolve containment and reject existing reparse ancestors before creation.
 
@@ -273,8 +278,7 @@ def main(argv=None):
         for name in ['bash', 'byond', 'dd']:
             receipt['pins'][name] = pin(getattr(args, name + '_exe'), getattr(args, name + '_sha256'))
         # Runtime lookup is the pinned DreamMaker's sibling, never a PATH fallback.
-        if os.path.normcase(str(args.dd_exe.resolve())) != os.path.normcase(str(args.byond_exe.resolve().parent / 'dreamdaemon.exe')):
-            raise ValueError('DD must be the pinned DreamMaker sibling dreamdaemon.exe')
+        validate_console_daemon(args.byond_exe, args.dd_exe)
         if args.backend == 'native':
             receipt['pins']['native'] = pin(args.native_exe, args.native_sha256)
             receipt['pins']['template'] = pin(args.template, args.template_sha256)
@@ -298,7 +302,7 @@ def main(argv=None):
         env = strict_environment(os.environ)
         cargo_target = owned_cache_path(args.cargo_target or args.output / 'cargo-target')
         cargo_home = owned_cache_path(args.cargo_home or args.output / 'cargo-home')
-        env.update(DQ_COMPILER=args.backend, DM_EXE=str(args.byond_exe), DQ_DD_SECURITY=args.security,
+        env.update(DQ_COMPILER=args.backend, DM_EXE=str(args.byond_exe), DQ_DD_EXE=str(args.dd_exe), DQ_DD_SECURITY=args.security,
             DQ_DD_WATCHDOG_MINUTES='5', DQ_FOCUS_TIMEOUT_MINUTES='5', BUN_RUNTIME_TRANSPILER_CACHE_PATH='0',
             MSYS2_ARG_CONV_EXCL='--focus=',
             CARGO_BUILD_JOBS='1', CARGO_TARGET_DIR=str(cargo_target), CARGO_HOME=str(cargo_home), DQ_ICON_WORKERS='4')
