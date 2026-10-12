@@ -33,9 +33,10 @@ CAPABILITIES(/obj/structure/tanning_rack)
 
 /obj/structure/tanning_rack/draw(datum/look/look)
 	..()
-	// Read through the declared relation, so the look follows the leather's
-	// tracked wetness as well as replacement of the leather on this rack.
+	// The relation tracks replacement; watching its current leather makes the
+	// rack also redraw when that leather's tracked wetness changes.
 	var/obj/item/stack/wetleather/leather = drying
+	look.watch(leather)
 	if(leather)
 		if(leather.wetness)
 			look.overlay("leather_wet")
