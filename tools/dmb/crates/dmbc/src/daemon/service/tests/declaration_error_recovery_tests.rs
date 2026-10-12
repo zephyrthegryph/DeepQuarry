@@ -26,7 +26,7 @@ fn missing_initializer_type_preserves_published_rosters_and_new_type_recovery_ma
     assert!(
         old_assemblies
             .iter()
-            .any(|(name, count)| name.contains("assembly") && *count > 0),
+            .any(|(name, count)| name == "initializer_assemblies.index" && *count > 0),
         "fixture must publish an actual runtime initializer assembly"
     );
     for shift in [0, 3] {
