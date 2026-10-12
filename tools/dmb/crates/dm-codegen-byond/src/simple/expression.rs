@@ -19,6 +19,14 @@ impl Compiler<'_> {
             }
             return Ok(());
         }
+        if let Some(bytes) = fold_literal_string_expression(expr) {
+            let id = self.intern_format_template(bytes);
+            self.emit(
+                opcode::PUSH_VAL,
+                vec![Word::Value(ValueWord::String(id))],
+            );
+            return Ok(());
+        }
         match &expr.kind {
             ExprKind::ObjectInitializer { object, fields } => {
                 let ExprKind::TypePath(path) = &object.kind else {

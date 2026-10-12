@@ -68,6 +68,42 @@ pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, Stri
 mod literal_registration;
 pub use literal_registration::visit_constant_string_literals;
 
+/// Fold only literal string concatenations through the authoritative scalar
+/// evaluator. This admits no name, call, allocation, resource or conditional
+/// branch; broader folding requires recorded semantic reads and runtime parity.
+pub(super) fn fold_literal_string_expression(expr: &Expr) -> Option<Vec<u8>> {
+    fn literal_tree(expr: &Expr) -> bool {
+        match &expr.kind {
+            ExprKind::Literal(_) => true,
+            ExprKind::Group(inner) => literal_tree(inner),
+            ExprKind::Binary { op, lhs, rhs } if op == "+" => {
+                literal_tree(lhs) && literal_tree(rhs)
+            }
+            _ => false,
+        }
+    }
+    let mut root = expr;
+    while let ExprKind::Group(inner) = &root.kind {
+        root = inner;
+    }
+    if !matches!(&root.kind, ExprKind::Binary { op, .. } if op == "+")
+        || !literal_tree(root)
+    {
+        return None;
+    }
+    match dm_ir::constants::evaluate_expr_with_resources(
+        root,
+        |_| None,
+        |raw| decode_constant_string_literal(raw).ok().flatten(),
+        |_| None,
+        |_| None,
+    )? {
+        dm_ir::constants::Constant::Text(text) => Some(text.into_bytes()),
+        dm_ir::constants::Constant::EncodedText(bytes) => Some(bytes),
+        _ => None,
+    }
+}
+
 /// One shared literal parser for emission and source registration. Expression
 /// nodes exist only for this literal's interpolation leaves, never a whole body.
 fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {

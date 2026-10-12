@@ -2,6 +2,36 @@
 use super::*;
 
 #[test]
+fn literal_string_concat_uses_shared_scalar_evaluator_and_emits_one_value() {
+    let ast = dm_syntax::parse("/proc/constant()\n    return \"z_\" + \"first\"\n");
+    let compiled = compile_simple_proc(&ast.items[0].children).unwrap();
+    let mut ledger = Ledger::default();
+    ledger.bind(reference(Table::String, "z_first"), 439).unwrap();
+    let linked = link_proc(&compiled.code, &ledger).unwrap();
+    // Pinned compile-only folded_string_order BYOND control emits this body.
+    assert_eq!(linked.words, [0x60, 6, 439, 0x12, 0]);
+    assert_eq!(
+        fold_literal_string_expression(&parse_expression("(@\"z_\" + (\"first\"))").expr.unwrap()),
+        Some(b"z_first".to_vec())
+    );
+    for source in [
+        "value + \"first\"",
+        "\"[value]\" + \"first\"",
+        "list(1) + list(2)",
+        "new /datum + \"first\"",
+        "call() + \"first\"",
+        "(1 / 0) + \"first\"",
+        "(0 ? call() : \"z_\") + \"first\"",
+        "nameof(value) + \"first\"",
+    ] {
+        assert!(
+            fold_literal_string_expression(&parse_expression(source).expr.unwrap()).is_none(),
+            "runtime-dependent or unobserved expression must remain unfurled: {source}"
+        );
+    }
+}
+
+#[test]
 fn procedure_and_verb_namespaces_are_native_strings() {
     let native = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
         "../../../../../fixtures/native_compiler/proc_namespace.native.bin"
