@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "source_commit": "d18b73c5c37b502806bc9923eef71bb9d00338f1",
+  "source_archive_sha256": "02f0f9b62cbc666c2220b50e7a83b7f259767750e3bf0b9065c47b56a487bdfc",
+  "scope": "two bounded current source/cached helper visibility fixtures; not full runtime or performance acceptance",
+  "status": "passed",
+  "selected_tests": 2,
+  "receipts": [
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-205948-2fa26299-job-cargo.json",
+      "sha256": "8dc27fc827865230eb246c355c66f25a501aac802020fe87d5d5bdcb206c1d62",
+      "receipt": {
+        "command": [
+          "E:/cargo/bin/cargo.exe",
+          "test",
+          "--lib",
+          "--no-run",
+          "--locked",
+          "--offline",
+          "-j1",
+          "-p",
+          "dmbc",
+          "--no-default-features",
+          "--config",
+          "profile.test.package.dm-ir.debug=0",
+          "--config",
+          "profile.test.package.dmbc.debug=0",
+          "--config",
+          "profile.test.package.dmbc.codegen-units=256"
+        ],
+        "exit_code": 0,
+        "seconds": 197.73400000000038,
+        "memory_cap": 4000000000,
+        "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-205948-2fa26299-job-cargo.log",
+        "error": null,
+        "cleanup": {
+          "reaped": true,
+          "error": null,
+          "memory": {
+            "configured_job_memory_bytes": 3999997952,
+            "peak_job_commit_bytes": 2960760832,
+            "peak_process_commit_bytes": 2934575104,
+            "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+          }
+        },
+        "scope": "bounded correctness build; not a compiler performance benchmark"
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-210321-da169e92-focused.json",
+      "sha256": "2e9e0d76e724bd81369499a7a137a0d7b7cdd2deafb82741b9a87a8db7e73bb4",
+      "receipt": {
+        "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-fa1f0987474bcdc2.exe",
+        "binary_sha256": "03e220687dc69f53c6207eb90f6b57369b801b0366e3bec2963341b1eff4647b",
+        "scope": "focused fixture execution, not full suite or runtime parity",
+        "rows": [
+          {
+            "filter": "argument_sources::visible_formals::tests",
+            "selected": [
+              "argument_sources::visible_formals::tests::actual_helper_lexical_selection_rejects_later_formal_at_current_signature",
+              "argument_sources::visible_formals::tests::cached_typed_and_restored_argument_receipts_preserve_visibility_bounds"
+            ],
+            "exit": 0,
+            "seconds": 0.375,
+            "stdout": "\nrunning 2 tests\ntest argument_sources::visible_formals::tests::actual_helper_lexical_selection_rejects_later_formal_at_current_signature ... ok\ntest argument_sources::visible_formals::tests::cached_typed_and_restored_argument_receipts_preserve_visibility_bounds ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 933 filtered out; finished in 0.36s\n\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ]
+}
