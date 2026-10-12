@@ -11,3 +11,9 @@ Fixed disposal flush_complete() assigning a shadowing local rather than the hold
 Master fa9f430b95 moved light fields into light_glow traits. Repaired the hit producer to observe glow_of() and exclude opaque trait allocation only after capturing the actual light values. Added a falsifiable setter/observation regression. Existing hit goldens were preserved.
 
 Verification: normal lane-ready, 29 passed / 0 failed; production compile and DreamChecker clean; analyzer and ratchets passed. Both dq_requirement_protocol_pin and dq_conversion_pin passed, as did dq_hit_pin and dq_hit_public_glow. The earlier 31/32 run passed the vehicle/disposal/edge repairs; its sole hit-producer failure was repaired before this successful gate. No full suite run.
+## Master merge verification (2026-10-12)
+
+Merged master 17f0997c4d, preserving both analyzer changes. Fixed draw_untracked without baseline changes: public emag observation reads native state directly, and the reconstitutor template is tracked. Added public emag-state and real reconstitutor setter/redraw coverage.
+
+Fresh lane-ready stamp: 59b04b9b57. 34 tests passed, zero failed; production compile, DreamChecker (zero diagnostics), analyzer and ratchets passed. No full suite. Both mandatory requirement and conversion pins passed.
+
