@@ -149,7 +149,6 @@
 
 /mob/living/silicon/proc/lawsync()
 	laws_sanity_check()
-	laws.sort_laws()
 
 // Ripped out from events.
 /mob/living/silicon/proc/generate_ion_law(exclude_crew_names = FALSE)

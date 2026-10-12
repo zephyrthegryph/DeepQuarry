@@ -10,6 +10,15 @@
 /datum/ai_law/proc/get_index()
 	return index
 
+/datum/ai_law/inherent/get_index()
+	var/datum/holder = owner_of(src)
+	if(istype(holder, /datum/ai_laws))
+		var/datum/ai_laws/laws = holder
+		var/position = laws.inherent_laws.Find(src)
+		if(position)
+			return position
+	return index
+
 /datum/ai_law/ion/get_index()
 	return ionnum()
 
@@ -26,8 +35,6 @@
 	var/list/datum/ai_law/inherent_laws = list() // ALLOW(instance_list): d: per law set; every silicon has inherent laws
 	var/list/datum/ai_law/supplied_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
 	var/list/datum/ai_law/ion/ion_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
-	/// Derived order of the laws this set owns: a relation list view, rebuilt by sort_laws().
-	var/list/datum/ai_law/sorted_laws
 
 	var/state_zeroth = 0
 	var/list/state_ion = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
@@ -35,7 +42,6 @@
 	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
 
 CAPABILITIES(/datum/ai_laws)
-	ref_many(nameof(sorted_laws))
 	owns_one(nameof(zeroth_law), /datum/ai_law/zero)
 	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
 	owns_many(nameof(inherent_laws), /datum/ai_law)
@@ -47,38 +53,33 @@ CAPABILITIES(/datum/ai_laws)
 	sort_laws()
 
 /* General ai_law functions */
+/// A fresh borrowed view: querying never changes law custody or stored indices.
 /datum/ai_laws/proc/all_laws()
-	sort_laws()
-	return sorted_laws || list()
+	var/list/ordered = list()
+	for(var/law in ion_laws)
+		ordered += law
+	if(zeroth_law)
+		ordered += zeroth_law
+	var/position = 0
+	for(var/datum/ai_law/law in inherent_laws)
+		position++
+		if(length(supplied_laws) < position || !istype(supplied_laws[position], /datum/ai_law))
+			ordered += law
+	for(var/datum/ai_law/law in supplied_laws)
+		ordered += law
+	return ordered
 
 /datum/ai_laws/proc/laws_to_state()
-	sort_laws()
-	var/list/statements = new()
-	for(var/datum/ai_law/law in sorted_laws)
+	var/list/statements = list()
+	for(var/datum/ai_law/law in all_laws())
 		if(get_state_law(law))
 			statements += law
-
 	return statements
 
+/// The unchanged constructor still calls this pure query; its init lane can
+/// remove that redundant call later. No cached relation is created or retained.
 /datum/ai_laws/proc/sort_laws()
-	if(length(sorted_laws))
-		return
-
-	for(var/ion_law in ion_laws)
-		rel_add(src, nameof(sorted_laws), ion_law)
-
-	if(zeroth_law)
-		rel_add(src, nameof(sorted_laws), zeroth_law)
-
-	var/index = 1
-	for(var/datum/ai_law/inherent_law in inherent_laws)
-		inherent_law.index = index++
-		if(length(supplied_laws) < inherent_law.index || !istype(supplied_laws[inherent_law.index], /datum/ai_law))
-			rel_add(src, nameof(sorted_laws), inherent_law)
-
-	for(var/datum/ai_law/AL in supplied_laws)
-		if(istype(AL))
-			rel_add(src, nameof(sorted_laws), AL)
+	return all_laws()
 
 /datum/ai_laws/proc/sync(mob/living/silicon/S, full_sync = 1)
 	// Add directly to laws to avoid log-spam
@@ -123,7 +124,6 @@ CAPABILITIES(/datum/ai_laws)
 		rel_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
 	else
 		rel_clear(src, nameof(zeroth_law_borg))
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_ion_law(law)
 	if(!law)
@@ -138,7 +138,6 @@ CAPABILITIES(/datum/ai_laws)
 	if(state_ion.len < length(ion_laws))
 		state_ion += 1
 
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_inherent_law(law)
 	if(!law)
@@ -153,7 +152,6 @@ CAPABILITIES(/datum/ai_laws)
 	if(state_inherent.len < length(inherent_laws))
 		state_inherent += 1
 
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_supplied_law(number, law)
 	if(!law)
@@ -179,7 +177,6 @@ CAPABILITIES(/datum/ai_laws)
 	if(state_supplied.len < length(supplied_laws))
 		state_supplied += 1
 
-	rel_clear(src, nameof(sorted_laws))
 
 /****************
 *	Remove Laws	*
@@ -213,7 +210,6 @@ CAPABILITIES(/datum/ai_laws)
 		own_remove(src, var_name, law)
 		for(index, index < state.len, index++)
 			state[index] = state[index+1]
-	rel_clear(src, nameof(sorted_laws))
 
 /****************
 *	Clear Laws	*
@@ -224,20 +220,16 @@ CAPABILITIES(/datum/ai_laws)
 
 /datum/ai_laws/proc/clear_ion_laws()
 	rel_clear(src, nameof(ion_laws))
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_inherent_laws()
 	rel_clear(src, nameof(inherent_laws))
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_supplied_laws()
 	rel_clear(src, nameof(supplied_laws))
-	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/get_formatted_laws()
-	sort_laws()
 	var/list/law_block = list()
-	for(var/datum/ai_law/law in sorted_laws)
+	for(var/datum/ai_law/law in all_laws())
 		if(law == zeroth_law_borg)
 			continue
 		if(law == zeroth_law)
@@ -247,8 +239,7 @@ CAPABILITIES(/datum/ai_laws)
 	return examine_block(law_block.Join("\n"))
 
 /datum/ai_laws/proc/show_laws(who)
-	sort_laws()
-	for(var/datum/ai_law/law in sorted_laws)
+	for(var/datum/ai_law/law in all_laws())
 		if(law == zeroth_law_borg)
 			continue
 		if(law == zeroth_law)
@@ -311,11 +302,3 @@ CAPABILITIES(/datum/ai_laws)
 	var/index = laws.Find(law)
 	if(index)
 		state[index] = do_state
-
-
-
-/datum/ai_laws/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L

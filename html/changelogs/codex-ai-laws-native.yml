@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "AI law displays update immediately when a zero law or supplied replacement is removed."

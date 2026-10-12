@@ -211,6 +211,7 @@
 #include "dq_gas_arena_leak_tests.dm"
 #include "dq_gas_watch_fire_tests.dm"
 #include "dq_gas_level_tests.dm"
+#include "dq_ai_laws_native_tests.dm"
 #include "dq_station_alert_tests.dm"
 #include "dq_type_trait_tests.dm"
 #include "dq_type_trait_writes.dm"

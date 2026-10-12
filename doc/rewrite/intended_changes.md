@@ -4826,3 +4826,7 @@ acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combinat
 * **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
 * **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
 * **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
+
+## Native AI law ordered queries
+
+The lawset now returns a fresh borrowed ordered view instead of retaining sorted_laws under CHANGE_EXPLICIT. Ordering remains ion, zero, unmasked inherent and supplied. Inherent display indices come from their current owned-list position, without mutating laws during a read. Clearing a zero law and deleting a supplied replacement now update the next query immediately; the old cache omitted invalidation on those two paths. Editing a returned view cannot corrupt subsequent queries. The unchanged constructor still calls the existing pure sort_laws query until the init lane removes that redundant call. No snapshot rows were re-blessed for this change.

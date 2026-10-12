@@ -29,8 +29,7 @@ CAPABILITIES(/obj/item/aiModule)
 	. = ..()
 	if(!laws)
 		return
-	laws.sort_laws()
-	for(var/datum/ai_law/law in laws.sorted_laws)
+	for(var/datum/ai_law/law in laws.all_laws())
 		if(law == laws.zeroth_law_borg)
 			continue
 		if(law == laws.zeroth_law)
