@@ -69,7 +69,7 @@ impl Generator for Reads {
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
         let mut capability_keys = BTreeSet::new();
         let defines = Decls::get(cx.tree).defines.iter().cloned().collect();
-        if !handlers.is_empty() {
+        if !handlers.is_empty() || cx.markers("READ_LOOKUP").next().is_some() {
             if let Some(sem) = cx.sem() {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
@@ -111,6 +111,7 @@ impl Generator for Reads {
                     v.sort();
                     rows.insert(id, v);
                 }
+                extend_lookup_outputs(&mut rows, &sem, &eng, out);
                 let graph = DepGraph::from_derives(&sem, &eng);
                 match graph.ranks() {
                     Ok(r) => ranks = r,
@@ -181,6 +182,30 @@ impl Generator for Reads {
         out.doc("Chunked read rows; one global initializer assembles the complete table.");
         out.line(read_table_initializer(&entries));
         emit_lookup_methods(out, &rows, &crate::sem::gen::test_only_types(cx.tree));
+    }
+}
+
+/// Actual implicit output definitions need lookup metadata even without a declared callback.
+/// Ordinary output reads/diagnostics stay with their existing generators; only declared
+/// lookup descriptors and structured lookup-contract failures are handled here.
+fn extend_lookup_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem::Sem, eng: &ReadsEngine<'_>, out: &mut GenOut) {
+    let outputs = crate::sem::procs::proc_defs(sem, &["draw", "ui_data", "tgui_data", "hidden_verbs", "push_to_rust", "should_run"]);
+    let mut seen = BTreeSet::new();
+    for output in outputs {
+        if output.owner == "/" || OPAQUE.iter().any(|prefix| output.rel.starts_with(prefix)) { continue; }
+        let id = format!("{}::{}", output.owner, output.name);
+        if !seen.insert(id.clone()) || rows.contains_key(&id) { continue; }
+        let set = eng.analyze_handler(&output.owner, &output.name, "/datum/act/eval");
+        for diagnostic in &set.lookup_diags {
+            out.diag(&diagnostic.rel, diagnostic.line, format!("{}: {}", diagnostic.rule, diagnostic.msg));
+        }
+        let mut lookups: Vec<Row> = set.reads.iter()
+            .filter(|read| matches!(&read.kind, ReadKind::Lookup(_)))
+            .map(|read| (read.root.clone(), read.kind.clone(), read.var.clone(), read.hops.clone(), read.owner.clone()))
+            .collect();
+        if lookups.is_empty() { continue; }
+        lookups.sort();
+        rows.insert(id, lookups);
     }
 }
 
@@ -363,6 +388,89 @@ mod tests {
         let mut field = literal.clone();
         field.field = "avail".into();
         assert_ne!(literal.key(), field.key(), "supply and load are distinct actual producers");
+    }
+
+    #[test]
+    fn standalone_and_declared_outputs_get_real_lookup_metadata_and_invalid_contracts_fail() {
+        use crate::tree::{SourceFile, Tree};
+        use crate::sem::Sem;
+        use crate::sem::decls::Decls;
+        use crate::sem::reads::{Annotations, ReadsEngine};
+        let root = std::env::temp_dir().join(format!("dq-output-lookup-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let source = r#"#define READ_LOOKUP(P,A...)
+#define TRACKED(T,V)
+/datum/grid
+    var/avail = 0
+TRACKED(/datum/grid, avail)
+READ_LOOKUP(/proc/grid_lookup, registry = GLOBAL_PROC_REF(grid_registry), key = GLOBAL_PROC_REF(grid_key), argument = 1, result = /datum/grid)
+/proc/grid_registry()
+    return null
+/proc/grid_key(id)
+    return id
+/proc/grid_lookup(id)
+    return null
+/datum/act/eval
+/datum/fixture
+    var/grid_id = 1
+TRACKED(/datum/fixture, grid_id)
+/datum/fixture/proc/ready(datum/act/eval/A)
+    var/datum/grid/G = grid_lookup(grid_id)
+    return G.avail >= 100
+/datum/fixture/proc/draw(datum/act/eval/A)
+    var/datum/grid/G = grid_lookup(grid_id)
+    return G.avail
+/datum/fixture/proc/ui_data(datum/act/eval/A)
+    var/datum/grid/G = grid_lookup(grid_id)
+    return list("avail" = G.avail)
+/datum/standalone
+    var/grid_id = 2
+TRACKED(/datum/standalone, grid_id)
+/datum/standalone/proc/supply()
+    var/datum/grid/G = grid_lookup(grid_id)
+    return G.avail
+/datum/standalone/proc/draw(datum/act/eval/A)
+    return supply()
+/datum/standalone/proc/ui_data(datum/act/eval/A)
+    return list("avail" = supply())
+/datum/invalid_output
+    var/grid_id = 3
+TRACKED(/datum/invalid_output, grid_id)
+/datum/invalid_output/proc/draw(datum/act/eval/A)
+    var/datum/grid/G = grid_lookup(grid_id + 1)
+    return G.avail
+/proc/unannotated_unrelated_global()
+    return 42
+/datum/irrelevant/proc/draw()
+    return unannotated_unrelated_global()
+"#;
+        std::fs::write(root.join("code/content/probe.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", source)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations);
+        let ready = eng.analyze_handler("/datum/fixture", "ready", "/datum/act/eval");
+        let mut rows = std::collections::BTreeMap::new();
+        rows.insert("/datum/fixture::ready".to_string(), ready.reads.iter().map(|read| (read.root.clone(),read.kind.clone(),read.var.clone(),read.hops.clone(),read.owner.clone())).collect());
+        let mut out = crate::sem::gen::GenOut::default();
+        super::extend_lookup_outputs(&mut rows, &sem, &eng, &mut out);
+        for name in ["draw", "ui_data"] {
+            assert!(rows[&format!("/datum/fixture::{name}")].iter().any(|read| matches!(&read.1, ReadKind::Lookup(bound) if bound.field == "avail")));
+        }
+        assert!(!rows.contains_key("/datum/irrelevant::draw"), "unrelated output types must not trigger a global scan");
+        for name in ["draw", "ui_data"] {
+            assert!(rows[&format!("/datum/standalone::{name}")].iter().any(|read| matches!(&read.1, ReadKind::Lookup(bound) if bound.field == "avail")));
+        }
+        assert!(out.diags.iter().any(|diagnostic| diagnostic.msg.contains("lookup grid_lookup argument")), "invalid standalone lookup argument must fail generation");
+        assert!(!out.diags.iter().any(|diagnostic| diagnostic.msg.contains("unannotated_unrelated_global")), "ordinary unrelated output diagnostics remain outside this generator");
+        super::emit_lookup_methods(&mut out, &rows, &BTreeSet::new());
+        assert!(out.text().contains("/datum/fixture/generated_lookup_output_reads()"));
+        assert!(out.text().contains("/datum/standalone/generated_lookup_output_reads()"));
+        assert!(out.text().contains(". += drawn_from(\"lookup_read_"));
+        assert!(out.text().contains(". += ui_from(\"lookup_read_"));
+        std::fs::remove_dir_all(root).unwrap();
     }
 
 }

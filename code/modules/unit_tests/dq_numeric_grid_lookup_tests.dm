@@ -116,6 +116,14 @@ CAPABILITIES(/obj/dq_lookup_grid_fixture)
 	TEST_ASSERT(length(specs), "the actual requirement's numeric lookup has no generated dependency")
 	var/datum/power_grid/grid = power_grid_lookup(id)
 	lookup_reads_prepare(holder)
+	var/datum/lookup_read_scope/scope = holder.rx?.lookup_scope
+	log_test("LOOKUP BINDING: pure=[GLOB.op_pure_depth] output=[GLOB.derived_evaluating] holder=[REF(holder)] grid_id=[holder.grid_id] grid=[REF(grid)] scope=[REF(scope)] definitions=[json_encode(specs)] grid_observed=[json_encode(grid.rx?.observed)]")
+	for(var/entry in scope?.bindings)
+		var/datum/lookup_read_binding/binding = istype(entry, /datum/lookup_read_binding) ? entry : scope.bindings[entry]
+		if(!istype(binding))
+			log_test("LOOKUP BINDING: invalid real scope entry [entry]")
+			continue
+		log_test("LOOKUP BINDING: key=[entry] reader=[binding.reader_ref] root=[binding.root_ref] rebinding=[binding.rebinding] spec=[json_encode(binding.spec)] watches=[json_encode(binding.watching)] resolved_reader=[REF(resolve_handle(binding.reader_ref))] resolved_root=[REF(resolve_handle(binding.root_ref))]")
 	TEST_ASSERT(grid.rx?.observed?[nameof(grid.avail)] > 0, "holder lifecycle did not bind its actual selected grid field")
 	lifeform_end(holder, END_SCOPE)
 	TEST_ASSERT(!(grid.rx?.observed?[nameof(grid.avail)]), "ending the holder leaked its selected grid-field watcher")

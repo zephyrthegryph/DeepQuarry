@@ -150,6 +150,8 @@ pub struct ReadSet {
     /// Where each read was first seen: (file, line).
     pub sites: BTreeMap<Read, (String, u32)>,
     pub diags: Vec<Diag>,
+    /// Failures of declared numeric lookup contracts, also present in diags.
+    pub lookup_diags: Vec<Diag>,
     pub effects: Vec<Effect>,
     /// `type::proc` bodies the walk followed (for the graph and for incremental invalidation).
     pub followed: BTreeSet<String>,
@@ -566,11 +568,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if let Some(text) = r.root.strip_prefix("lookup:") {
             let binding: LookupBound = serde_json::from_str(text).expect("internal lookup descriptor");
             if !r.hops.is_empty() {
-                self.diag("dynamic_read", rel, line, "nested relations after a lookup need their own declared provider".to_string());
+                self.lookup_diag("dynamic_read", rel, line, "nested relations after a lookup need their own declared provider".to_string());
                 return;
             }
             if r.kind == ReadKind::Var && !(self.eng.is_tracked(&r.owner, &r.var) || self.eng.is_stat(&r.owner, &r.var) || self.eng.is_relation(&r.owner, &r.var) || self.eng.is_derived(&r.owner, &r.var) || self.eng.sem.var_decl(&r.owner, &r.var).map(|v| v.is_const).unwrap_or(false)) {
-                self.diag("dynamic_read", rel, line, format!("lookup result {}.{} is not tracked or a declared read producer", r.owner, r.var));
+                self.lookup_diag("dynamic_read", rel, line, format!("lookup result {}.{} is not tracked or a declared read producer", r.owner, r.var));
                 return;
             }
             let lookup = LookupRead { binding, field: r.var };
@@ -592,6 +594,14 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !self.out.diags.iter().any(|d| d.rule == rule && d.rel == rel && d.line == line && d.msg == msg) {
             self.out.diags.push(Diag { rule, rel: rel.to_string(), line, msg });
         }
+    }
+
+    fn lookup_diag(&mut self, rule: &'static str, rel: &str, line: u32, msg: String) {
+        let diagnostic = Diag { rule, rel: rel.to_string(), line, msg: msg.clone() };
+        if !self.out.lookup_diags.contains(&diagnostic) {
+            self.out.lookup_diags.push(diagnostic);
+        }
+        self.diag(rule, rel, line, msg);
     }
 
     /// Walks one proc body with `this` as src. `bind` are the evaluated args for its params.
@@ -985,7 +995,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         let Some(sig) = sig else {
             if v.tracked() && sem.ty(&ty).is_some() && sem.proc_ref(&ty, name).is_none() && !is_builtin_name(name) {
-                self.diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                if matches!(v.root, Root::Lookup(_)) {
+                    self.lookup_diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                } else {
+                    self.diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                }
             }
             return Val::local(None);
         };
@@ -1142,16 +1156,16 @@ impl<'a, 'e> Walk<'a, 'e> {
                 _ => None,
             });
             let Some(argument) = argument else {
-                self.diag("dynamic_read", &rel, line, format!("lookup {name} argument is not a literal or a tracked root/relation field; declare a provider for getter/index expressions"));
+                self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} argument is not a literal or a tracked root/relation field; declare a provider for getter/index expressions"));
                 return Val::local(None);
             };
             if matches!(&argument, LookupArgument::Path { root, .. } if root == "context") {
-                self.diag("dynamic_read", &rel, line, format!("lookup {name} uses a scalar act-context argument with no entity binding lifetime"));
+                self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} uses a scalar act-context argument with no entity binding lifetime"));
                 return Val::local(None);
             }
             for provider in [decl.registry.as_str(), decl.identity_key.as_str(), name] {
                 if self.eng.sem.global_proc(provider).is_none() {
-                    self.diag("dynamic_read", &rel, line, format!("lookup {name} declares missing global provider {provider}"));
+                    self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} declares missing global provider {provider}"));
                     return Val::local(None);
                 }
             }
