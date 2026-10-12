@@ -30,6 +30,10 @@
 // Description: Sets the HUD icon to the correct state.
 /mob/living/carbon/human/proc/instability_update_hud()
 	if(client && hud_used)
+		if(!hud_used.wiz_instability_display)
+			if(!instability)
+				return // no meter until there is something to show
+			instability_hud_make()
 		switch(instability)
 			if(0 to 10)
 				hud_used?.wiz_instability_display?.icon_state = "instability-1"
@@ -41,6 +45,13 @@
 				hud_used?.wiz_instability_display?.icon_state = "instability2"
 			if(100 to 200)
 				hud_used?.wiz_instability_display?.icon_state = "instability3"
+
+/// The instability meter on the HUD, made the first time this mob has instability (the human HUD does not start with one).
+/mob/living/carbon/human/proc/instability_hud_make()
+	var/atom/movable/screen/wizard/instability/meter = new()
+	meter.screen_loc = ui_wiz_instability_display
+	rel_set(hud_used, nameof(/datum/hud::wiz_instability_display), meter)
+	client?.screen |= meter
 
 // Instability system: makes instability decay.  instability_effects() handles the bad effects for having instability.  It will also hold back
 // from causing bad effects more than one every ten seconds, to prevent sudden death from angry RNG.

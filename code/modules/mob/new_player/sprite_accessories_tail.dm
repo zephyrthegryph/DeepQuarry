@@ -33,9 +33,9 @@
 	///ADDITIONALLY, IF YOU ADD A SPECIAL VWAG, YOU NEED TO INCLUDE ani_state, extra_overlay_w, and extra_overlay2_w INTO icon_loaf TOO!
 	var/can_loaf = FALSE
 	var/loaf_offset = 0
-	// Dirs in which the tail renders behind the body (lower layer); other dirs put it
-	// on the middle layer. Defaults to facing toward/away (north/south) — see get_tail_layer().
-	var/list/lower_layer_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	// Dirs in which the tail renders under the clothing (lower layer); other dirs put it over
+	// the uniform (TAIL_UPPER_LAYER). Facing north the tail hangs over the pants — see get_tail_layer().
+	var/list/lower_layer_dirs = list(SOUTH, WEST, EAST) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/icon_loaf = null
 
 	// Taur Vore
@@ -1335,6 +1335,7 @@
 	icon_state = "altevian"
 	do_colouration = 1
 	color_blend_mode = ICON_MULTIPLY
+	lower_layer_dirs = list(SOUTH, WEST)
 
 /datum/sprite_accessory/tail/shark_finless
 	name = "shark tail, finless (colorable)"
