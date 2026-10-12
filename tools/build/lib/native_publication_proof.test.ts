@@ -12,6 +12,16 @@ const proof = { schema_version: 1, kind: 'native_publication_inputs', native_inp
   document_bytes: 512, document_xxh3_128: '2'.repeat(32), snapshot_bytes: 128,
   snapshot_xxh3_128: '3'.repeat(32) };
 
+test('publication transport preserves core resource coverage without shared admission', () => {
+  const resource = { schema_version: 1, physical_observed_demand_admitted: true,
+    shared_input_closure_complete: false, coverage: { candidate_reads: 2, source_payload_bytes: 400, resource_aliases: 1 }, decline_reason: null };
+  const parsed = parseNativePublicationProof({ ...proof, resource_journal_admission: resource }, pair, store);
+  expect(parsed?.resource_journal_admission).toEqual(resource);
+  expect(parsed?.shared_input_closure_complete).toBe(false);
+  expect(() => parseNativePublicationProof({ ...proof,
+    resource_journal_admission: { ...resource, shared_input_closure_complete: true } }, pair, store)).toThrow();
+});
+
 test('optional native proof retains native-only scope and exact generation', () => {
   expect(parseNativePublicationProof(undefined, pair, store)).toBeUndefined();
   expect(parseNativePublicationProof(proof, pair, store)).toEqual(proof);
