@@ -122,8 +122,9 @@ TRACKED(/obj/machinery/dq_native_appearance_probe, label)
 /obj/machinery/dq_native_appearance_probe/bare
 	abstract_type = /obj/machinery/dq_native_appearance_probe/bare
 
-/obj/machinery/dq_native_appearance_probe/bare/draw(look)
-	return
+/obj/machinery/dq_native_appearance_probe/bare/draw(datum/look/look)
+	..()
+	look.reset()
 
 /datum/unit_test/dq_sys_appearance_mask/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)

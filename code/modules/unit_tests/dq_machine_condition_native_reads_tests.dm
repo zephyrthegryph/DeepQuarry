@@ -29,8 +29,8 @@
 	var/exited = 0
 
 CAPABILITIES(/obj/machinery/firealarm/dq_condition_edge_probe)
-	on_change(PROC_REF(broken_now), ENTER, then(PROC_REF(broken_entered)))
-	on_change(PROC_REF(broken_now), EXIT, then(PROC_REF(broken_exited)))
+	on_change(cond_not(STAT_INTACT), ENTER, then(PROC_REF(broken_entered)))
+	on_change(cond_not(STAT_INTACT), EXIT, then(PROC_REF(broken_exited)))
 
 /obj/machinery/firealarm/dq_condition_edge_probe/proc/broken_entered(datum/act/A)
 	entered++

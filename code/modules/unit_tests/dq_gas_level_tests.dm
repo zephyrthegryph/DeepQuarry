@@ -292,6 +292,8 @@ CAPABILITIES(/obj/test_gas_level_holder)
 /// The real animation timers must reset the tracked handle, not the local
 /// flush-disposal action of the same name; the fallback still expels custody.
 /datum/unit_test/dq_disposal_flush_complete_resets_handle/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	set_global(nameof(GLOB.disposals_flush_shift_roundstat), GLOB.disposals_flush_shift_roundstat)
 	var/turf/simulated/floor/T = gas_level_test_room()
 	T.return_air().clear()

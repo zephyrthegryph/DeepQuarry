@@ -272,8 +272,7 @@ TRACKED(/obj/vehicle, stat)
 	field = "stat"
 	channel = 0
 
-/// Vehicles still redraw their legacy condition bits through the declared appearance watcher.
-APPEARANCE_WATCH(/obj/vehicle, list("stat"))
+// Vehicle looks are native draws of their actual visual fields; none reads these legacy movement bits.
 
 /// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
 /// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
