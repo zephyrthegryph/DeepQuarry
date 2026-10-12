@@ -1,3 +1,4 @@
 # Investigation tools
 
-These are one-off format investigations. They remain runnable with `cargo run --example NAME -- ARGS` through explicit Cargo entries. Use `dmb-inspect` for supported workflows.
+One-off BYOND format investigations over compiled `.dmb` files. Run with
+`cargo run -p dmb-opendream --example NAME -- ARGS`. Use `dmb-inspect` for supported workflows.
