@@ -1,0 +1,34 @@
+{
+  "scope": "Focused correctness evidence and failed real-project cohort; not full runtime or performance acceptance",
+  "source_commit": "2138b77724e96d6951cab9a7f3b73df8b6647d15",
+  "compiler_sha256": "2aa6b3e5c4b68bcfb501c28724411a3012d5615cf440479b784baf828e1f25d1",
+  "profile": "Counted diagnostic: dmbc opt0, tree/codegen opt2, LTO disabled",
+  "focused_passes": 27,
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-011657-40431bec-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-012215-21b16aef-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-012218-2e175d7d-focused.json"
+  ],
+  "paired_runtime_controls": {
+    "initializer_order": "E:/dq-cache/dmb-order-controls-2138/ea3de08f02f74bc883aff75f8d006ecf/receipt.json",
+    "initializer_order_result": "All five controls completed and matched BYOND, with no runtime errors",
+    "formal_name_order": "E:/dq-cache/dmb-formal-control-2138/3266bf3de45b4fa5b9e4dde3c96de6bf/receipt.json",
+    "formal_name_order_result": "Completed and matched BYOND"
+  },
+  "corrected_operand_interpretation": "World initialization global operands are VarIDs, not footer positions. The existing production operand binding was correct; the regression assertion was corrected using captured BYOND output.",
+  "real_project_cohort": {
+    "receipt": "E:/dq-cache/dmb-native-iterations/20261012-014905-543a5683/receipt.json",
+    "status": "failed before any measured daemon row",
+    "fresh_native_oracles_completed": 4,
+    "measured_iteration_rows": 0,
+    "cause": "Benchmark readiness still guessed the legacy stable named pipe; the compiler now uses compiler-generation endpoints",
+    "owned_children_reaped": true,
+    "followup": "Expose read-only endpoint metadata from the compiler, migrate benchmark consumers, and validate a tiny actual daemon route before repeating the real cohort"
+  },
+  "limitations": [
+    "Current diagnostic profile does not establish release compilation timings",
+    "Full runtime baseline remains deferred to Phase 5",
+    "Local, folded and unreachable string chronology still needs paired runtime coverage",
+    "Whole-program BYOND structural parity, memory gates and real-project incremental acceptance remain open"
+  ]
+}
