@@ -18,7 +18,6 @@
 	// Age, background, records, flavour text and kit choices: the bio profile record on /mob
 	// (/datum/record/identity, code/modules/mob/profile_records.dm).
 
-	var/voice = ""	//Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 
 
 

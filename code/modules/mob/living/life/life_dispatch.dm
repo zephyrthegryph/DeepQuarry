@@ -75,9 +75,6 @@
 			return life_chemicals(F)
 		if("life_random_events")
 			return life_random_events(F)
-		if("life_voice")
-			var/mob/living/carbon/human/M = src
-			return M.life_voice(F)
 		if("life_stasis_sleep")
 			var/mob/living/carbon/human/M = src
 			return M.life_stasis_sleep(F)
@@ -237,9 +234,6 @@
 			return life_chemicals_rewake()
 		if("life_random_events_due")
 			return life_random_events_due()
-		if("life_voice_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_voice_rewake()
 		if("life_stasis_sleep_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_stasis_sleep_due()

@@ -46,7 +46,7 @@
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
 		. += seq_step(PROC_REF(life_bot_core), after = LIFE_TAIL)
-		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_voice", "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
+		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/carbon/life_steps()
 	. = ..()
@@ -54,12 +54,12 @@
 		. += seq_step(PROC_REF(life_breathing), after = list(LIFE_INPUT, "life_light"), when = list("placed", "alive"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_AIR), should_run = PROC_REF(life_breathing_due), rewake = PROC_REF(life_breathing_rewake), woken_by = LIFE_BREATHING_WOKEN_BY)
 		. += seq_step(PROC_REF(life_addictions), after = list(LIFE_MIND, "life_disabilities"), when = list("placed", "status_ok"), reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_addictions_due), rewake = PROC_REF(life_addictions_rewake), woken_by = list(MOB_KEY_HEALTH = "reagent changes (on_reagent_change(): body invalidate)"))
 		. += seq_step(PROC_REF(life_germs), after = LIFE_TAIL, reads = list(MOB_KEY_HEALTH), once = TRUE, rewake = PROC_REF(life_germs_rewake), woken_by = list(MOB_KEY_HEALTH = "body invalidate", LIFE_WOKEN_BY_TIME = "germs creep up toward the ambient level"))
-		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_voice", "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
+		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/dominated_brain/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_voice", "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
+		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/simple_mob/life_steps()
 	. = ..()
@@ -69,7 +69,7 @@
 		. += seq_step(PROC_REF(life_supernatural), after = LIFE_TAIL, when = "alive", reads = LIFE_STATUS_READS, should_run = PROC_REF(life_supernatural_due), woken_by = list(MOB_KEY_STATUS = "status setters; the purge setter"))
 		. += seq_step(PROC_REF(life_guts), after = list(LIFE_TAIL, "life_special"), when = "alive", should_run = PROC_REF(life_guts_due), woken_by = list(LIFE_WOKEN_BY_POLL = "organ objects given to a simple mob (nothing publishes it)"))
 		. += seq_step(PROC_REF(life_simple_healing), after = list(LIFE_TAIL, "life_guts"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_simple_healing_due), woken_by = list(MOB_KEY_HEALTH = "injure; feeding"))
-		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_voice", "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
+		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/voice/life_steps()
 	. = ..()
@@ -99,8 +99,7 @@
 		. += seq_step(PROC_REF(life_random_events), after = LIFE_BODY, when = list("placed", "!in_stasis", "alive"), reads = LIFE_STATUS_READS, should_run = PROC_REF(life_random_events_due), woken_by = list(MOB_KEY_STATUS = "status setters"))
 		. += seq_step(PROC_REF(life_chemicals), after = list(LIFE_BODY, "life_afk"), when = list("placed", "!in_stasis"), reads = list(MOB_KEY_HEALTH, MOB_KEY_NUTRITION), should_run = PROC_REF(life_chemicals_due), rewake = PROC_REF(life_chemicals_rewake), woken_by = LIFE_CHEMICALS_WOKEN_BY + list(MOB_KEY_NUTRITION = "set_nutrition() (digestion noises past their levels)"))
 		. += seq_step(PROC_REF(life_status), after = LIFE_BODY, when = "placed", reads = list(MOB_KEY_HEALTH, MOB_KEY_EQUIPMENT) + LIFE_STATUS_READS, should_run = PROC_REF(life_status_due), rewake = PROC_REF(life_status_rewake), woken_by = list(MOB_KEY_HEALTH = "injure/mend and body invalidate; set_stat", MOB_KEY_STATUS = "status setters (sleep, blindness, drowsiness, fear, tiredness)", MOB_KEY_EQUIPMENT = "equipment (blindfolds, rig visors)", LIFE_WOKEN_BY_POLL = "Login/Logout (SSD); fear and tiredness drain by time while they last"))
-		. += seq_step(PROC_REF(life_voice), after = LIFE_TAIL, reads = list(MOB_KEY_HEALTH, MOB_KEY_LOC, MOB_KEY_EQUIPMENT), once = TRUE, rewake = PROC_REF(life_voice_rewake), woken_by = list(MOB_KEY_EQUIPMENT = "equipment", MOB_KEY_HEALTH = "body invalidate; set_stat", MOB_KEY_LOC = "Moved", LIFE_WOKEN_BY_POLL = "voice changers, changeling mimicry and disguises toggle from scattered sites"))
-		. += seq_step(PROC_REF(life_stasis_sleep), after = list(LIFE_TAIL, "life_voice"), reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_stasis_sleep_due), woken_by = list(MOB_KEY_HEALTH = "factor changes (body invalidate)"))
+		. += seq_step(PROC_REF(life_stasis_sleep), after = LIFE_TAIL, reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_stasis_sleep_due), woken_by = list(MOB_KEY_HEALTH = "factor changes (body invalidate)"))
 		. += seq_step(PROC_REF(life_fall), after = list(LIFE_TAIL, "life_stasis_sleep"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT) + LIFE_STATUS_READS, once = TRUE, rewake = PROC_REF(life_fall_rewake), woken_by = list(MOB_KEY_LOC = "Moved", MOB_KEY_EQUIPMENT = "equipment (jetpacks, magboots)", MOB_KEY_STATUS = "status setters", LIFE_WOKEN_BY_POLL = "a floor removed from under a standing player"))
 		. += seq_step(PROC_REF(life_changeling), after = list(LIFE_TAIL, "life_fall"), when = list("!in_stasis", "alive"), should_run = PROC_REF(life_changeling_due), rewake = PROC_REF(life_changeling_rewake), woken_by = list(LIFE_WOKEN_BY_POLL = "becoming a changeling; a login's HUD (nothing publishes them)"))
 		. += seq_step(PROC_REF(life_thermoregulation), after = list(LIFE_TAIL, "life_changeling"), when = list("!in_stasis", "alive"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_BODY_HEAT, MOB_KEY_HEALTH), should_run = PROC_REF(life_thermoregulation_due), rewake = PROC_REF(life_thermoregulation_rewake), woken_by = list(MOB_KEY_LOC = "Moved", MOB_KEY_EQUIPMENT = "equipment", MOB_KEY_BODY_HEAT = "the body heat watch (the body leaves its comfort band around the set point)", MOB_KEY_HEALTH = "factor changes (BF_TEMPERATURE fevers and chills), set_stat"))

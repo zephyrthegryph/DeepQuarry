@@ -74,17 +74,6 @@
 		hud_updateflag = (1 << TOTAL_HUDS) - 1
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
-/// The voice others hear.
-/mob/living/carbon/human/proc/life_voice(datum/seq_frame/life/F)
-	src.voice = src.GetVoice()
-
-/// Event-driven: equipment (masks, voice changers, rigs), the body, stat and moving (belly
-/// absorb) wake it. Voice changers, changeling mimicry and disguises toggle from scattered
-/// sites, so a slow timer backs the events up.
-
-/mob/living/carbon/human/proc/life_voice_rewake()
-	return 10 SECONDS
-
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /mob/living/carbon/human/proc/life_stasis_sleep(datum/seq_frame/life/F)
 	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
