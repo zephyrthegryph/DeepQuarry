@@ -8,7 +8,7 @@ use std::{
     io,
     path::PathBuf,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Arc, Condvar, Mutex,
     },
     time::{Duration, Instant},
@@ -182,6 +182,34 @@ impl Shared {
     fn under_memory_pressure(&self, bytes: u64) -> bool {
         bytes >= self.soft_private_bytes
     }
+    fn over_hard_ceiling(&self, bytes: u64) -> bool {
+        bytes >= soft_memory::hard(self.soft_private_bytes).unwrap_or(u64::MAX)
+    }
+    /// Return freed pages to the OS before any pressure decision. Freed-but-
+    /// committed allocator pages (transient composition/encode peaks, exited
+    /// worker heaps) count as private bytes yet hold no retained data, and an
+    /// idle process never runs the allocator's delayed purge by itself.
+    fn reclaim_allocator(&self, before: Option<u64>) -> Option<u64> {
+        let started = Instant::now();
+        let commit_before = dm_profile::allocator_commit_bytes();
+        dm_profile::reclaim_unused_allocator_pages();
+        let mut after = transport::private_bytes();
+        let mut joined_workers = false;
+        if after.is_some_and(|bytes| self.under_memory_pressure(bytes)) {
+            // Idle pool workers keep their own thread heaps; joining them
+            // abandons those heaps so a second collection can purge them.
+            self.executors.trim(Instant::now(), true);
+            dm_profile::reclaim_unused_allocator_pages();
+            after = transport::private_bytes();
+            joined_workers = true;
+        }
+        super::emit_stderr(format_args!(
+            "dmbd allocator reclaim private-before={before:?} private-after={after:?} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} seconds={:.6}",
+            dm_profile::allocator_commit_bytes(),
+            started.elapsed().as_secs_f64()
+        ));
+        after
+    }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
         *host = crate::runner_host::BuildHost::with_daemon_owners(
             Arc::clone(&self.engines),
@@ -287,19 +315,36 @@ impl Shared {
         Ok(Permit(Arc::clone(self), workers))
     }
     fn trim(&self) {
-        let pressured =
-            transport::private_bytes().is_some_and(|bytes| self.under_memory_pressure(bytes));
-        self.housekeep(Instant::now(), pressured);
+        let running = *self.running.lock().unwrap_or_else(|e| e.into_inner());
+        let mut bytes = transport::private_bytes();
+        let finished = BUILDS_FINISHED.load(Ordering::Acquire);
+        let stale = finished != BUILDS_RECLAIMED.load(Ordering::Acquire);
+        // Reclaim off the request path, only between builds; resample after.
+        if running == 0
+            && (stale || bytes.is_some_and(|bytes| self.under_memory_pressure(bytes)))
+        {
+            BUILDS_RECLAIMED.store(finished, Ordering::Release);
+            bytes = self.reclaim_allocator(bytes);
+        }
+        let hard = bytes.is_some_and(|bytes| self.over_hard_ceiling(bytes));
+        // A running build's transient peak is not retained state: only the
+        // hard ceiling may act during one.
+        let soft = hard
+            || running == 0 && bytes.is_some_and(|bytes| self.under_memory_pressure(bytes));
+        self.housekeep(Instant::now(), soft, hard);
         // Host releases above have finished; no slot/host lock is held here.
         self.engines.prune_idle();
-        self.executors.trim(Instant::now(), pressured);
+        self.executors.trim(Instant::now(), soft);
     }
 }
+static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
+static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
 struct Permit(Arc<Shared>, usize);
 impl Drop for Permit {
     fn drop(&mut self) {
         let mut running = self.0.running.lock().unwrap_or_else(|e| e.into_inner());
         *running -= 1;
+        BUILDS_FINISHED.fetch_add(1, Ordering::AcqRel);
         *self.0.workers.lock().unwrap_or_else(|e| e.into_inner()) -= self.1;
         drop(running);
         self.0.capacity.notify_all();
@@ -315,9 +360,10 @@ pub(super) fn serve() -> io::Result<()> {
     let max_workers = admission_limits::max_workers()?;
     let soft_private_bytes = soft_memory::startup()?;
     super::emit_stderr(format_args!(
-        "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit={soft_private_bytes}",
+        "dmbd start pid={} max-builds=3 max-workers={} soft-private-limit={soft_private_bytes} hard-private-limit={}",
         std::process::id(),
-        max_workers
+        max_workers,
+        soft_memory::hard(soft_private_bytes)?
     ));
     let compiler = super::compiler_identity()?;
     let mut listeners = super::generation_listeners::Listeners::new(compiler)?;

@@ -9,7 +9,7 @@ fn queued_host_can_release_all_tiers_without_losing_slot_or_daemon_owners() {
     let deadline = admission_deadline::AdmissionDeadline::new(Instant::now());
     let _serial = slot.lock_request_until(&deadline).unwrap();
     for tier in [2, 3, 4] {
-        shared.housekeep(Instant::now(), true);
+        shared.housekeep(Instant::now(), true, true);
         assert_eq!(slot.idle_tier.load(Ordering::Acquire), tier);
     }
     let roster = shared.slots.lock().unwrap();
@@ -23,7 +23,7 @@ fn pressure_never_releases_a_currently_borrowed_host() {
     let shared = shared();
     let slot = shared.slot("E:/fixture/active.dme".into(), &BTreeMap::new(), None);
     let _host = slot.host.lock().unwrap();
-    for _ in 0..4 { shared.housekeep(Instant::now(), true); }
+    for _ in 0..4 { shared.housekeep(Instant::now(), true, true); }
     assert_eq!(slot.idle_tier.load(Ordering::Acquire), 0);
     assert_eq!(shared.slots.lock().unwrap().len(), 1);
 }
