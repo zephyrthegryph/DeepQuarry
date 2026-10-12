@@ -9,8 +9,6 @@
 	var/ready_notifications = 0
 	var/unlinks = 0
 	var/inside_batch_linked = FALSE
-	var/datum/relation_edge/observed_edge
-	var/active_notifications = 0
 	var/datum/dq_edge_native_policy/policy
 	var/datum/relation_edge/setup_edge
 	var/datum/dq_edge_native_target/setup_target
@@ -19,16 +17,10 @@ TRACKED(/datum/dq_edge_native_source, keep_link)
 TRACKED(/datum/dq_edge_native_source, left)
 TRACKED(/datum/dq_edge_native_source, right)
 CAPABILITIES(/datum/dq_edge_native_source)
-	ref_one(nameof(observed_edge), /datum/relation_edge)
 	ref_one(nameof(policy), /datum/dq_edge_native_policy)
 	on_change(nameof(ready), ANY, then(PROC_REF(ready_changed)))
-	on_change(PROC_REF(observed_active), ANY, then(PROC_REF(active_changed)))
 /datum/dq_edge_native_source/proc/ready_changed(datum/act/A)
 	ready_notifications++
-/datum/dq_edge_native_source/proc/observed_active()
-	return observed_edge?.active
-/datum/dq_edge_native_source/proc/active_changed(datum/act/A)
-	active_notifications++
 /datum/dq_edge_native_source/proc/whole_snapshot(datum/dq_edge_native_target/T)
 	set_left(2)
 	// Even an explicit drain cannot expose the incomplete publication batch.
@@ -71,6 +63,16 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	var/datum/dq_edge_native_source/S = A.source
 	var/datum/dq_edge_native_target/T = A.target
 	return (S.keep_link && T.keep_link && S.left == S.right && S.right == T.right) ? null : "Endpoint cannot retain link"
+// Observe the actual native producer key, without a computed cross-object getter.
+/datum/relation_edge/dq_native_observed
+	var/active_notifications = 0
+CAPABILITIES(/datum/relation_edge/dq_native_observed)
+	on_change(nameof(active), ANY, then(PROC_REF(active_changed)))
+/datum/relation_edge/dq_native_observed/proc/active_changed(datum/act/A)
+	active_notifications++
+/datum/relation_definition/dq_edge_native/make_edge()
+	return new /datum/relation_edge/dq_native_observed
+
 /datum/relation_definition/dq_edge_native
 	source_single = TRUE
 	conflict = OM_REL_REPLACE
@@ -122,20 +124,19 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	begin_fixture()
 	var/datum/dq_edge_native_source/S = allocate(/datum/dq_edge_native_source)
 	var/datum/dq_edge_native_target/T = allocate(/datum/dq_edge_native_target)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
 	TEST_ASSERT(istype(E), "The actual graph must establish a real edge")
 	TEST_ASSERT(E.active, "Both ready endpoints initially activate the edge")
 	TEST_ASSERT_NOTNULL(E.read_scope, "The graph edge must own a real native dependency scope")
 	TEST_ASSERT_EQUAL(length(E.read_scope.watching), 2, "Actual keys must group into exactly the two endpoint producers")
-	TEST_ASSERT(S in E.read_scope.dependency_sources && T in E.read_scope.dependency_sources, "The scope must track both actual endpoint lifetimes")
-	rel_set(S, nameof(S.observed_edge), E)
+	TEST_ASSERT((S in E.read_scope.dependency_sources) && (T in E.read_scope.dependency_sources), "The scope must track both actual endpoint lifetimes")
 	test_drain()
-	var/before_active = S.active_notifications
+	var/before_active = E.active_notifications
 	var/before = S.ready_notifications
 	TEST_ASSERT(S.set_ready(FALSE), "A real source mutation must change its registered field")
 	test_drain()
 	TEST_ASSERT(!E.active, "The source's native key must deactivate the existing edge")
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active + 1, "An actual active-state flip must publish to its real observer")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active + 1, "An actual active-state flip must publish to its real observer")
 	TEST_ASSERT_EQUAL(link_of(S, /datum/relation_definition/dq_edge_native), T, "Active refusal must not unlink a held edge")
 	TEST_ASSERT_EQUAL(S.ready_notifications, before + 1, "The real source key publishes once")
 	TEST_ASSERT(!S.set_ready(FALSE), "An unchanged setter must be a genuine no-op")
@@ -144,14 +145,14 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	T.set_ready(FALSE)
 	test_drain()
 	TEST_ASSERT(!E.active, "An independent input mutation may preserve the same inactive result")
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active + 1, "An unchanged predicate result must not republish active state")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active + 1, "An unchanged predicate result must not republish active state")
 	T.set_ready(TRUE)
 	test_drain()
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active + 1, "Still-inactive re-evaluation must not notify the active observer")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active + 1, "Still-inactive re-evaluation must not notify the active observer")
 	S.set_ready(TRUE)
 	test_drain()
 	TEST_ASSERT(E.active, "Source recovery must reactivate the edge")
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active + 2, "Actual recovery must publish its active-state change")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active + 2, "Actual recovery must publish its active-state change")
 	T.set_ready(FALSE)
 	test_drain()
 	TEST_ASSERT(!E.active, "The target's independent native key must deactivate the edge")
@@ -163,7 +164,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	begin_fixture()
 	var/datum/dq_edge_native_source/S = allocate(/datum/dq_edge_native_source)
 	var/datum/dq_edge_native_target/T = allocate(/datum/dq_edge_native_target)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
 	TEST_ASSERT(istype(E) && E.active, "The initial complete snapshot must permit a real edge")
 	test_drain()
 	state_batch(S, TYPE_PROC_REF(/datum/dq_edge_native_source, whole_snapshot), list(T))
@@ -218,7 +219,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	begin_fixture()
 	var/datum/dq_edge_native_source/S = allocate(/datum/dq_edge_native_source)
 	var/datum/dq_edge_native_target/T = allocate(/datum/dq_edge_native_target)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
 	TEST_ASSERT(istype(E) && E.active, "Target teardown fixture must establish an active edge")
 	var/datum/relation_edge_read_scope/target_scope = E.read_scope
 	TEST_ASSERT_NOTNULL(target_scope, "Target teardown fixture must have native dependency bindings")
@@ -259,7 +260,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	var/datum/dq_edge_native_policy/old_policy = allocate(/datum/dq_edge_native_policy)
 	var/datum/dq_edge_native_policy/new_policy = allocate(/datum/dq_edge_native_policy)
 	rel_set(S, nameof(S.policy), old_policy)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native/with_policy)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native/with_policy)
 	TEST_ASSERT(istype(E) && E.active, "An actual third-party policy must permit the real edge")
 	TEST_ASSERT(old_policy in E.read_scope.dependency_sources, "The scope must bind the actual policy producer lifetime")
 	old_policy.set_ready(FALSE)
@@ -268,7 +269,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	rel_set(S, nameof(S.policy), new_policy)
 	test_drain()
 	TEST_ASSERT(E.active, "Retargeting the actual relation key must activate from the new policy")
-	TEST_ASSERT(!(old_policy in E.read_scope.dependency_sources) && new_policy in E.read_scope.dependency_sources, "Rebinding must stop retaining the old policy producer")
+	TEST_ASSERT(!(old_policy in E.read_scope.dependency_sources) && (new_policy in E.read_scope.dependency_sources), "Rebinding must stop retaining the old policy producer")
 	old_policy.set_ready(TRUE)
 	old_policy.set_ready(FALSE)
 	qdel(old_policy)
@@ -285,32 +286,31 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	begin_fixture()
 	var/datum/dq_edge_native_source/S = allocate(/datum/dq_edge_native_source)
 	var/datum/dq_edge_native_target/T = allocate(/datum/dq_edge_native_target)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
 	TEST_ASSERT(istype(E) && E.active, "The actual graph must establish a permitted edge")
 	var/datum/relation_edge_read_scope/original = E.read_scope
 	var/datum/relation_edge_read_scope/dq_delivery_counter/probe = allocate(/datum/relation_edge_read_scope/dq_delivery_counter)
 	rel_set(E, nameof(E.read_scope), probe)
 	rel_set(probe, nameof(probe.edge), E)
 	relation_edge_refresh(E)
-	rel_set(S, nameof(S.observed_edge), E)
 	test_drain()
 	TEST_ASSERT(QDELETED(original), "Replacing the owned scope must release the actual old bindings")
 	TEST_ASSERT_EQUAL(length(probe.watching), 2, "The actual counter scope must bind exactly the two producer groups")
 	var/before = probe.deliveries
-	var/before_active = S.active_notifications
+	var/before_active = E.active_notifications
 	state_batch(S, TYPE_PROC_REF(/datum/dq_edge_native_source, whole_snapshot), list(T))
 	test_drain()
 	TEST_ASSERT_EQUAL(probe.deliveries, before + 2, "Two producer groups deliver two real callbacks, coalescing each producer's changed keys")
 	TEST_ASSERT(E.active, "Both callbacks must evaluate the same complete permitted snapshot")
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active, "Re-evaluating an unchanged result must not publish active state")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active, "Re-evaluating an unchanged result must not publish active state")
 	TEST_ASSERT_EQUAL(S.unlinks, 0, "A partial snapshot must never run unlink consequences")
 	before = probe.deliveries
-	before_active = S.active_notifications
+	before_active = E.active_notifications
 	state_batch(S, TYPE_PROC_REF(/datum/dq_edge_native_source, whole_snapshot_and_disable), list(T))
 	test_drain()
 	TEST_ASSERT_EQUAL(probe.deliveries, before + 2, "Multiple changed keys on each endpoint still coalesce per producer/listener")
 	TEST_ASSERT(!E.active, "Both callbacks must evaluate the same complete inactive snapshot")
-	TEST_ASSERT_EQUAL(S.active_notifications, before_active + 1, "The two complete evaluations produce only the one actual active-state flip")
+	TEST_ASSERT_EQUAL(E.active_notifications, before_active + 1, "The two complete evaluations produce only the one actual active-state flip")
 	TEST_ASSERT_EQUAL(link_of(S, /datum/relation_definition/dq_edge_native), T, "Inactive snapshots must retain a still-held edge")
 	TEST_ASSERT_EQUAL(S.unlinks, 0, "Completed inactive snapshots must not invent a holds_while refusal")
 
@@ -320,7 +320,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	set_global(nameof(GLOB.pool_poison), FALSE)
 	var/datum/dq_edge_native_source/S = allocate(/datum/dq_edge_native_source)
 	var/datum/dq_edge_native_target/T = allocate(/datum/dq_edge_native_target)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native)
 	TEST_ASSERT(istype(E) && E.active, "The fault fixture must first establish a real permitted edge")
 	test_drain()
 	var/datum/requirement_definition/fault_requirement = definition_check_get(/datum/requirement_definition/dq_edge_native_fault)
@@ -444,7 +444,7 @@ TRACKED(/datum/dq_edge_native_policy, ready)
 	var/datum/scheduler_record/target_record = scheduler_record_of(T)
 	var/source_listeners = length(S.rx?.listeners)
 	var/target_listeners = length(T.rx?.listeners)
-	var/datum/relation_edge/E = relation_link(S, T, /datum/relation_definition/dq_edge_native/with_view)
+	var/datum/relation_edge/dq_native_observed/E = relation_link(S, T, /datum/relation_definition/dq_edge_native/with_view)
 	TEST_ASSERT(istype(E), "Initial holds refusal preserves the public edge-shaped return")
 	TEST_ASSERT_NULL(E.source, "The refused initial edge must already detach its source")
 	TEST_ASSERT_NULL(E.target, "The refused initial edge must already detach its target")
