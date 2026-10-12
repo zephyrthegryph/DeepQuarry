@@ -19,7 +19,22 @@ BENCH = HERE.parents[2] / "bench"
 EXPECTED_BINDINGS = {
     "earlier": (1,), "argument_count": (1,), "argument_first": (1,),
     "first_source": (0,), "third_source": (1, 2),
+    "current_source": (0,), "dynamic_source": (0,),
 }
+EXPECTED_FORMALS = {
+    ("earlier", 1): ["first"], ("argument_count", 1): ["first"],
+    ("argument_first", 1): ["first"], ("first_source", 0): [],
+    ("third_source", 1): ["first"], ("third_source", 2): ["first", "second"],
+    ("current_source", 0): ["value"], ("dynamic_source", 0): [],
+}
+
+
+def validate_helper_formals(bindings, rows):
+    for owner in bindings:
+        expected = EXPECTED_FORMALS[tuple(owner)]
+        if [row["name"] for row in rows] != expected or any(
+                row["type_flags"] != 0 or row["value_source"] != 0 or row["reserved"] != 0 for row in rows):
+            raise ValueError("helper formal metadata differs from pinned BYOND control: " + str(owner))
 
 
 def load(file, name):
@@ -44,7 +59,7 @@ def observations(file):
             errors[match[1]] += 1
     if not markers or markers[-1] != "DQ_ARGFRAME finished":
         raise ValueError("fixture did not finish")
-    for prefix in ("earlier", "count", "first", "first_source", "third_source", "calls"):
+    for prefix in ("earlier", "count", "first", "first_source", "third_source", "current_source", "dynamic_source", "calls"):
         if sum(line.startswith("DQ_ARGFRAME " + prefix + " ") for line in markers) != 1:
             raise ValueError("missing/duplicate owning frame observation")
     return {"markers": markers, "runtimes": dict(sorted(errors.items()))}
@@ -149,6 +164,7 @@ def main():
                 if not name:
                     raise ValueError("helper formal name unavailable")
                 rows.append({"name": name[1], "type_flags": type_flags, "value_source": source, "reserved": reserved})
+            validate_helper_formals(bindings.get(int(ordinal), []), rows)
             evidence["helpers"].append({"reference": int(ordinal), "proc_id": int(proc_id), "path": path,
                                          "list_id": list_id, "raw_formals": words, "formals": rows,
                                          "owning_parameters": bindings.get(int(ordinal), [])})

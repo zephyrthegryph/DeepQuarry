@@ -30,6 +30,12 @@ var/global/source_frame_calls = 0
 /proc/third_source(first = 7 as num, second in observe_frame("second", first, args.len, args[1]), third in observe_frame("third", second, args.len, args[1]))
     return third
 
+/proc/current_source(value as num in observe_frame("current", value, args.len, args[1]))
+    return value
+
+/proc/dynamic_source(value as num in observe_frame("dynamic", args[1], args.len, args[1]))
+    return value
+
 /world/New()
     ..()
     world.log << "DQ_ARGFRAME earlier [earlier(7, 7)]"
@@ -37,6 +43,8 @@ var/global/source_frame_calls = 0
     world.log << "DQ_ARGFRAME first [argument_first(7, 7)]"
     world.log << "DQ_ARGFRAME first_source [first_source(7)]"
     world.log << "DQ_ARGFRAME third_source [third_source(7, 7, 7)]"
+    world.log << "DQ_ARGFRAME current_source [current_source(7)]"
+    world.log << "DQ_ARGFRAME dynamic_source [dynamic_source(7)]"
     world.log << "DQ_ARGFRAME calls [source_frame_calls]"
     world.log << "DQ_ARGFRAME finished"
     shutdown()
