@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Maintenance vendor purchases preserve the machine access policy."

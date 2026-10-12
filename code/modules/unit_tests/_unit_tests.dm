@@ -610,6 +610,7 @@
 #include "dq_keeps_dead_cleanup_more_tests.dm"
 #include "dq_keeps_dead_cleanup_batch2_tests.dm"
 #include "dq_obj_access_denied_tests.dm"
+#include "dq_maint_vendor_access_tests.dm"
 #include "dq_eg2_wait_tests.dm"
 #include "dq_timed_forms_tests.dm"
 #include "dq_fwk_forms_tests.dm"

@@ -126,15 +126,21 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	if(attempted_entry.per_round_cap > 0 && attempted_entry.getPurchasedCount() >= attempted_entry.per_round_cap)
 		purchase_failed(user, "Out of Stock")
 		return FALSE
-	if(LAZYLEN(attempted_entry.required_access)) //access check
-		req_one_access = attempted_entry.required_access
-		if(!allowed(user))
-			purchase_failed(user, "Access Denied")
-			req_one_access = list()
-			return FALSE
-		req_one_access = list()
+	var/access_refusal = purchase_access_refusal(user, attempted_entry)
+	if(access_refusal)
+		purchase_failed(user, access_refusal)
+		return FALSE
 
 	return TRUE
+
+/// Entry admission checks the actor's actual credential without replacing the
+/// machine's access policy. Required entry access remains any-of; the machine's
+/// req_access remains all-of, matching the former temporary-policy check.
+/obj/machinery/maint_vendor/proc/purchase_access_refusal(mob/user, datum/maint_recycler_vendor_entry/entry)
+	if(!LAZYLEN(entry.required_access))
+		return null
+	var/obj/item/card/id/credential = user?.GetIdCard()
+	return has_access(req_access, entry.required_access, credential?.GetAccess()) ? null : "Access Denied"
 
 //product display. screen is distinct.
 /obj/machinery/maint_vendor/draw(datum/look/look)
