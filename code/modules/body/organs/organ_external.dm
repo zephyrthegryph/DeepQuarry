@@ -1453,7 +1453,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
 	rel_add(src, nameof(implants), W)
-	owner.embedded_flag = 1
+	owner.set_embedded_flag(1)
 	grant(owner, granted_verb(/mob/proc/yank_out_object), owner)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 	W.add_blood(owner)

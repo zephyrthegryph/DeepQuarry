@@ -126,3 +126,5 @@ TRACKED(/mob/living/carbon/human, vantag_pref)
 /// Limbs and organs attach and detach through the body (body/parts/attach.dm invalidates it): MOB_KEY_HEALTH.
 PUBLISHED_BY(/mob/living/carbon/human, organs, MOB_KEY_HEALTH)
 
+/// The phobias step reads them.
+TRACKED(/mob/living/carbon/human, phobias)

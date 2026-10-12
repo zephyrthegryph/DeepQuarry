@@ -2253,3 +2253,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	. = ..()
 	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
+
+/// The status step reads it (embedded objects roll damage on movement).
+TRACKED(/mob/living/carbon/human, embedded_flag)

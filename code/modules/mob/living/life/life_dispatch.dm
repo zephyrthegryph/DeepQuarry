@@ -241,9 +241,6 @@
 		if("life_changeling_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_changeling_due()
-		if("life_changeling_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_changeling_rewake()
 		if("life_thermoregulation_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_thermoregulation_due()
@@ -271,21 +268,12 @@
 		if("life_heartbeat_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_heartbeat_due()
-		if("life_heartbeat_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_heartbeat_rewake()
 		if("life_nif_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_nif_due()
-		if("life_nif_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_nif_rewake()
 		if("life_phobias_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_phobias_due()
-		if("life_phobias_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_phobias_rewake()
 		if("life_npc_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_npc_due()

@@ -1254,9 +1254,10 @@
 			return TRUE
 	return FALSE
 
-/// Raw fear / tiredness writes and slow drift are caught by the rewake.
+/// Fear and tiredness keep it awake while they last (life_status_due()); their writers are status setters, login and
+/// logout wake every step. This is only the safety resample.
 /mob/living/carbon/human/life_status_rewake()
-	return src.stat == DEAD ? 0 : 5 SECONDS
+	return src.stat == DEAD ? 0 : LIFE_SAFETY_RESAMPLE
 
 /// P2-F1: the status update, split into one proc per concern below.
 /mob/living/carbon/human/life_status_update_status()
@@ -1382,7 +1383,7 @@
 		return
 	var/list/visible = src.get_visible_implants(0)
 	if(!length(visible) || !src.embedded_needs_process())
-		src.embedded_flag = 0
+		src.set_embedded_flag(0)
 
 /// Eyes: a rig visor, the vision organ, disabilities and blindfolds.
 /mob/living/carbon/human/proc/life_status_update_sight()
@@ -1830,9 +1831,6 @@
 		return TRUE
 	return src.mind && src.hud_used && hud_used?.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
 
-/mob/living/carbon/human/proc/life_changeling_rewake()
-	return 30 SECONDS
-
 /// Updates the number of stored chemicals for powers.
 /mob/living/carbon/human/proc/life_changeling(datum/seq_frame/life/F)
 	var/datum/changeling/comp = is_changeling(src)
@@ -1954,7 +1952,7 @@
 		src.status_at_least(STAT_WEAKENED, 20)
 
 /mob/living/carbon/human/proc/life_pulse(datum/seq_frame/life/F)
-	src.pulse = life_pulse_compute()
+	src.set_pulse(life_pulse_compute())
 
 /// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body
 /// (MOB_KEY_HEALTH) or set_stat().
@@ -2041,9 +2039,6 @@
 	if(!src.client || src.pulse == PULSE_NONE)
 		return FALSE
 	return src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || istype(get_turf(src), /turf/space)
-
-/mob/living/carbon/human/proc/life_heartbeat_rewake()
-	return 4 SECONDS
 
 /// Heartbeat sound for fast pulses, shock or space.
 /mob/living/carbon/human/proc/life_heartbeat(datum/seq_frame/life/F)
@@ -2313,9 +2308,6 @@
 /// MED-6: no NIF, nothing to run.
 /mob/living/carbon/human/proc/life_nif_due()
 	return src.nif
-
-/mob/living/carbon/human/proc/life_nif_rewake()
-	return 30 SECONDS
 
 /// Our call for the NIF to do whatever.
 /mob/living/carbon/human/proc/life_nif(datum/seq_frame/life/F)
