@@ -2,6 +2,50 @@ use super::*;
 use crate::{link_proc, Ledger};
 
 #[test]
+fn dynamic_switch_scratch_slot_cannot_replace_authored_lexical_binding() {
+    for name in ["__dmb_switch_1", "ordinary"] {
+        let source = format!(
+            "/proc/probe(selector, alternative)\n  var/{name} = 41\n  switch(selector)\n    if(alternative)\n      {name} = 42\n  return {name}\n"
+        );
+        let parsed = dm_syntax::parse(&source);
+        let bindings = LowerBindings {
+            parameters: vec!["selector".into(), "alternative".into()],
+            ..Default::default()
+        };
+        // Cover the typed production path and the lossless compatibility path.
+        for typed in [None, Some(TypedInput::Lossless)] {
+            let compiled = compile_with_lookup(
+                &parsed.items[0].children,
+                typed,
+                &bindings,
+                None,
+                None,
+            )
+            .unwrap();
+            assert_eq!(compiled.local_count, 2);
+            let last_read = compiled.code.items.iter().rev().find_map(|item| match item {
+                CodeItem::Instruction(instruction) if instruction.opcode == opcode::GET_VAR => {
+                    Some(&instruction.operands)
+                }
+                _ => None,
+            }).unwrap();
+            assert_eq!(last_read, &[Word::Variable(VariableWord::Local(0))]);
+            let stores: Vec<_> = compiled.code.items.iter().filter_map(|item| match item {
+                CodeItem::Instruction(instruction) if instruction.opcode == opcode::SET_VAR => {
+                    Some(instruction.operands.clone())
+                }
+                _ => None,
+            }).collect();
+            assert_eq!(stores, [
+                vec![Word::Variable(VariableWord::Local(0))],
+                vec![Word::Variable(VariableWord::Local(1))],
+                vec![Word::Variable(VariableWord::Local(0))],
+            ]);
+        }
+    }
+}
+
+#[test]
 fn constant_string_and_null_tables_preserve_executable_debug_sources() {
     struct Debug;
     impl DebugSourceProvider for Debug {

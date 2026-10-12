@@ -254,11 +254,9 @@ impl Compiler<'_> {
                     parenthesized(text).ok_or_else(|| error(text, "malformed switch selector"))?;
                 let slot = self.locals.len() as u32;
                 let temp = format!("__dmb_switch_{slot}");
-                if self.local_slots.contains_key(&temp) {
-                    return Err(error(text, "switch temporary conflicts with local"));
-                }
-                self.locals.push(temp.clone());
-                self.local_slots.insert(temp, slot);
+                // Scratch locals have physical slots but no authored lexical
+                // binding, even when a user chose the same diagnostic name.
+                self.locals.push(temp);
                 self.expression_text(selector, text)?;
                 self.emit(
                     opcode::SET_VAR,

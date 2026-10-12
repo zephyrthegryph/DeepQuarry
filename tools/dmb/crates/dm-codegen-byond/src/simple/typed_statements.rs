@@ -761,8 +761,9 @@ impl Compiler<'_> {
                     }
                     let slot = self.locals.len() as u32;
                     let name = format!("__dmb_switch_{slot}");
-                    self.locals.push(name.clone());
-                    self.local_slots.insert(name, slot);
+                    // Frame-only scratch slot: inserting its diagnostic name
+                    // into lexical lookup would overwrite an authored local.
+                    self.locals.push(name);
                     self.expression(selector, &statement.raw_header)?;
                     self.emit(
                         opcode::SET_VAR,
