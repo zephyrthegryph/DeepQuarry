@@ -263,6 +263,17 @@ window "mapwindow"
 		anchor2 = -1,-1
 		is-visible = false
 		inner-background-color = #00000000
+	// The interaction menu (code/datums/interactions/menu.dm): the right-click
+	// popup. A mapwindow child like the tooltip, sized to its rows and placed at
+	// the cursor by InteractionMenu.tsx; hidden until a right-click opens it.
+	elem "interaction_menu"
+		type = BROWSER
+		pos = 0,0
+		size = 8,8
+		anchor1 = -1,-1
+		anchor2 = -1,-1
+		is-visible = false
+		inner-background-color = #00000000
 
 window "outputwindow"
 	elem "outputwindow"

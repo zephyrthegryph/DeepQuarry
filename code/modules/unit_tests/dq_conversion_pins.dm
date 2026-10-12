@@ -379,6 +379,14 @@ CAPABILITIES(/obj/dq_pin_rejected_constructor)
 		var/list/after_atoms = dq_pin_fixture_atoms()
 		TEST_ASSERT_EQUAL(length(after_atoms - baseline_atoms), 0, "failed constructors leave no new fixture atoms")
 
+/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from rand(1, 999) at init, and that name reaches refusal
+/// text, so the rows would follow how much of the RNG earlier tests drew.
+/datum/unit_test/proc/dq_pin_robot(turf/T)
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	R.ident = 1
+	R.updatename(R.modtype)
+	return R
+
 /// Pin-only normalization: no gameplay refusal or constructor diagnostic is suppressed.
 /proc/dq_pin_stable_rows(type, list/rows)
 	. = list()
@@ -411,11 +419,3 @@ CAPABILITIES(/obj/dq_pin_rejected_constructor)
 	TEST_ASSERT_EQUAL(where[1], moved[1], "Only diagnostic source line is volatile")
 	var/list/fault = dq_pin_stable_rows(/obj/item/holder, list("runtime while making it: different constructor fault.%//%\[\"code/engine/lifeforms/params.dm\",251]%//%"))
 	TEST_ASSERT_NOTEQUAL(where[1], fault[1], "Constructor fault text remains substantive")
-
-/// The pins' robot actor with a fixed serial: a robot names itself "Default Cyborg-N" from rand(1, 999) at init, and that name reaches refusal
-/// text, so the rows would follow how much of the RNG earlier tests drew.
-/datum/unit_test/proc/dq_pin_robot(turf/T)
-	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
-	R.ident = 1
-	R.updatename(R.modtype)
-	return R

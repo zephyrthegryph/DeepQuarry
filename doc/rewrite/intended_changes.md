@@ -4728,6 +4728,9 @@ mapper can notice:
 * **Metroid arrival screeches** play when the metroid's init is complete (`after_init(0)`) instead of inside it.
 * **The squirrel's autumn pounce chance** stays 20 in its winter coat; the coat goes on after init (`after_init(0)`), as the big squirrel's did.
 
+### stages()/use_tool_wait merge (2026-10-11)
+
+Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
 ## Acceptance prerequisite pin refresh (2026-10-11)
 
 The robot and robot/platform conversion-pin key rows now include the eight `robot_utility.*` ops declared by master `8b3e4f9ed9`. Platform also includes `platform_cargo.eject_cargo`, declared by master `babfc5a10a`. Only these two key rows changed; clicks and menu rows are unchanged. The pin comparison discards random default Cyborg serials only in VR-capsule refusal text and numeric source locations only in constructor traceback segments, retaining the complete refusal/fault text and source paths. These are capture stability repairs, not gameplay changes.
@@ -4735,9 +4738,6 @@ The robot and robot/platform conversion-pin key rows now include the eight `robo
 ## Acceptance foundation: master rotation rows (2026-10-11)
 
 Master `81e61e24e9` (2026-10-10 23:39 -0500) replaces Initialize-granted rotation verbs with native `rotatable()` on `/obj/item/pipe` and `/obj/structure/smoletrack`. Their pins now list Rotate Clockwise, Rotate Counter Clockwise and Turn Around and the three native rotation keys. `/obj/machinery/pipedispenser`, its `/disposal` subtype and `/obj/machinery/pipelayer` also expose these menu choices through the held pipe. These five classes alone are refreshed; existing plain-click rows and refusal text remain unchanged. The acceptance landing did not add or rank these operations. Commit provenance was checked with pickaxe on the indented declaration and the exact master source diff.
-### stages()/use_tool_wait merge (2026-10-11)
-
-Re-blessed for master's init-mob (8b3e4f9ed9), which landed without updating these pins: the robot platform's keys gain `platform_cargo.eject_cargo` and the `robot_utility.*` ops, and `dq_reagents_start_snapshot` gains the possessed mob's miasma grenade fill beakers. The gravemarker and bookcase tests drive their tool ops through the op context (use_tool_wait.py made them timed ops).
 
 ## Base-type references as sparse links and slots (base_vars lane B, bv-hud)
 
@@ -4802,3 +4802,4 @@ behaviour change intended (a subtype inherits its ancestor's value as the table 
   tool in hand and the actor next to the thing while it waits, and is refused when its requirement fails at the answer.
 rf-toolact4 merge: the pins follow master's rotatable() change (pipe, cannon frame, pipe dispensers and pipe layer list Rotate Clockwise / Counter Clockwise / Turn Around through the shared rows), including `dq_requirement_fifth_pin`.
 rf-toolact4: `dq_requirement_protocol_pin` follows the nuke's control-panel stages (open_panel/close_panel replace the generic tool keys) and the fixed robot serial; the robot rows of the factored pins regroup.
+acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combination with rf-toolact4's grenade stages (the locked manhack grenade and chem grenade rows come back unfactored, the camera assembly loses its Alternate use row, the sechailer's wirecutter click) and the protoblob holder row without source lines.

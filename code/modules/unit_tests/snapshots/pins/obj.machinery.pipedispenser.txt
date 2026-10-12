@@ -51,8 +51,5 @@ human|none click: Click: Ui open
 +2 menu: Ui open
 +3 click: Click: Ui open
 @obj human|/obj/item/pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
 @obj human|/obj/item/pipe_meter
 keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, put_back, put_back_meter, p_layer, robot_remote_blocked, silicon_hand, ui_open

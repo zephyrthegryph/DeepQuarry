@@ -1,8 +1,16 @@
-/// The screentip for `target`: its name. Null for nothing to show.
+/// The screentip for `target`: what Click and Alt-click would do to it (the op engine's screentip_for()), under its name.
+/// Null when no op answers either gesture: a bare name is not a screentip, so nothing is shown.
 /proc/interaction_screentip_text(mob/user, atom/target, obj/item/held)
 	if(!user || !target)
 		return null
-	return capitalize(target.name)
+	var/list/parts = list()
+	for(var/gesture in list(GESTURE_CLICK, GESTURE_ALT))
+		var/line = screentip_for(user, target, held, gesture)
+		if(line)
+			parts += line
+	if(!length(parts))
+		return null
+	return "[capitalize(target.name)]\n[jointext(parts, "\n")]"
 
 // ---------------------------------------------------------------------------
 // Screentips: one screen object per client, updated when the hovered atom or
