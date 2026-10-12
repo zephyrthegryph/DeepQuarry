@@ -264,7 +264,9 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
         M::Presence(false)
     );
     // The pinned receiver catalog certifies New as a proc, so its opposite
-    // verb namespace is absent. An uncaptured spelling is still unknown.
+    // verb namespace is absent. This frontend also carries the admitted native
+    // hierarchy and complete source namespace: an absent non-native spelling
+    // is an exact negative even though the runtime alias inventory is partial.
     assert_eq!(
         host.resolve(Q::Proc {
             owner,
@@ -278,7 +280,7 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
         name: dm_ir::SymbolId::of("never_captured_callable"),
         verb: true,
     };
-    assert_eq!(host.resolve(query), M::Unsupported(query));
+    assert_eq!(host.resolve(query), M::Missing);
 
     let evaluator = crate::driver_facts::DriverEvaluator {
         pure_calls: None,
