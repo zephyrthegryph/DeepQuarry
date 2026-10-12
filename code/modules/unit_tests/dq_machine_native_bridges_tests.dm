@@ -1,5 +1,4 @@
-// Source-only native-key regression draft against master ad04; not run. Requires existing dq_b4_probe helper.
-// Wire into _unit_tests.dm only behind UNIT_TESTS when root reviews.
+// Native tracked-key regressions using the actual publication observer.
 /datum/unit_test/dq_machine_native_bridge_keys/Run()
 	var/obj/machinery/ai_slipper/S = allocate(/obj/machinery/ai_slipper, test_floor())
 	S.set_cooldown_on(FALSE)
@@ -108,3 +107,19 @@
 	rx_drain()
 	TEST_ASSERT(!stat_value(D, STAT_BOLTED), "Releasing that source raises the bolts")
 	TEST_ASSERT_EQUAL(P.hits, 2, "Bolt release publishes its real state key")
+
+/datum/unit_test/dq_vehicle_condition_native_key/Run()
+	var/obj/vehicle/V = allocate(/obj/vehicle, test_floor())
+	V.set_stat(0)
+	var/datum/dq_b4_key_probe/P = dq_b4_probe(V, nameof(V.stat))
+	V.stat_add(BROKEN)
+	rx_drain()
+	TEST_ASSERT(V.has_stat(BROKEN), "The actual vehicle records broken condition")
+	TEST_ASSERT_EQUAL(P.hits, 1, "Vehicle condition publishes its real tracked key")
+	V.stat_add(BROKEN)
+	rx_drain()
+	TEST_ASSERT_EQUAL(P.hits, 1, "Repeated condition does not publish an unchanged value")
+	V.stat_remove(BROKEN)
+	rx_drain()
+	TEST_ASSERT(!V.has_stat(BROKEN), "Actual repair removes the vehicle condition")
+	TEST_ASSERT_EQUAL(P.hits, 2, "Repair publishes the same tracked key")
