@@ -170,6 +170,29 @@ CAPABILITIES(/datum/lookup_read_scope)
 			add_read(walk, name)
 			argument = walk.vars[name]
 			walk = isdatum(argument) ? argument : null
+		if(resolved && spec["argument_proc"])
+			if(!walk || QDELING(walk))
+				resolved = FALSE
+			else if(!istype(walk, spec["argument_owner"]))
+				rebinding = FALSE
+				CRASH("lookup argument receiver does not match its declared provider type")
+			else
+				for(var/key in spec["argument_keys"])
+					add_read(walk, key)
+				var/previous_pure_depth = GLOB.op_pure_depth
+				op_pure_begin()
+				try
+					argument = call(walk, own_proc_name(spec["argument_proc"]))()
+				catch(var/exception/fault)
+					GLOB.op_pure_depth = previous_pure_depth
+					rebinding = FALSE
+					throw fault
+				op_pure_end()
+				if(isnull(argument))
+					resolved = FALSE
+				else if(!isnum(argument))
+					rebinding = FALSE
+					CRASH("lookup argument provider returned a nonnumeric value")
 	if(!resolved)
 		rebinding = FALSE
 		return // do not watch an invented null registry identity for an absent relation path

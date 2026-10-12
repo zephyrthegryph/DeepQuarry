@@ -41,6 +41,7 @@ pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_mess
 pub enum LookupArgument {
     Literal(String),
     Path { root: String, path: Vec<String> },
+    Provider { root: String, path: Vec<String>, owner: String, proc: String, keys: Vec<String> },
 }
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LookupBound {
@@ -68,6 +69,12 @@ pub struct LookupDeclaration {
     pub identity_key: String,
     pub argument: usize,
     pub result: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct LookupArgumentProvider {
+    pub keys: Vec<String>,
+    pub invalid: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -174,6 +181,7 @@ pub struct Annotations {
     /// global proc name -> the param names it reads from (empty = reads nothing).
     pub reads_from: HashMap<String, Vec<String>>,
     pub lookups: HashMap<String, LookupDeclaration>,
+    pub lookup_arguments: HashMap<(String, String), LookupArgumentProvider>,
     /// Relations declared in `relations()` bodies (`rel_one(nameof(x), ...)` / `rel_many(...)`): type -> vars.
     pub relations: HashMap<String, HashSet<String>>,
     /// `SYSTEM_ACCESSOR(system, proc, nameof(var))`: proc -> (system, var).
@@ -275,6 +283,77 @@ impl Annotations {
                 let params = m.args.iter().filter(|x| !x.is_empty()).cloned().collect();
                 if owner == "/" {
                     a.reads_from.insert(name, params);
+                }
+            }
+        }
+        // Validate provider bodies before enabling their scalar lookup role. Ordinary opaque getters remain rejected.
+        let mut providers = Vec::new();
+        for marker in decls.markers_named("READ_LOOKUP_ARGUMENT") {
+            let Some(path) = marker.args.first() else { continue };
+            let Some((owner, name)) = path.rsplit_once("/proc/") else { continue };
+            let reads = marker.args.iter().skip(1).find_map(|argument| {
+                let compact = argument.replace(' ', "");
+                compact.strip_prefix("reads=list(").and_then(|value| value.strip_suffix(')')).map(str::to_string)
+            }).unwrap_or_default();
+            let keys: Vec<_> = reads.split(',').filter(|key| !key.is_empty()).map(|key| {
+                key.strip_prefix("nameof(").and_then(|value| value.strip_suffix(')')).unwrap_or(key).trim_matches('"').to_string()
+            }).collect();
+            let engine = ReadsEngine::new(sem, decls, &a);
+            let mut invalid = None;
+            if keys.is_empty() || keys.iter().any(|key| sem.var_decl(owner, key).is_none() || !engine.is_tracked(owner, key)) {
+                invalid = Some("lookup argument provider requires declared tracked receiver fields".to_string());
+            }
+            let candidates: Vec<_> = sem.type_paths().into_iter().filter(|ty| sem.is_subtype(ty, owner)).collect();
+            if candidates.is_empty() || sem.proc_ref(owner, name).is_none() {
+                invalid = Some("lookup argument provider names a missing type or accessor".to_string());
+            }
+            for ty in candidates {
+                let Some(proc) = sem.proc_ref(&ty, name) else { continue };
+                if !proc.get().parameters.is_empty() {
+                    invalid = Some("lookup argument providers must take no arguments".to_string());
+                    break;
+                }
+                let body = engine.analyze(&ty, name);
+                if !body.effects.is_empty() || !body.diags.is_empty() {
+                    invalid = Some(format!("lookup argument provider {ty}::{name} is impure or has unvalidated reads"));
+                    break;
+                }
+                let volatile = body.followed.iter().any(|followed| {
+                    let Some((followed_owner, followed_name)) = followed.rsplit_once("::") else { return true };
+                    let Some(followed_proc) = sem.proc_ref(followed_owner, followed_name) else { return true };
+                    let mut volatile = false;
+                    if let Some(code) = followed_proc.get().code.as_ref() {
+                        super::ast::walk_block(code, &mut |expression, _| {
+                            if let Expression::Base { term, .. } = expression {
+                                volatile |= match &term.elem {
+                                    Term::Ident(name) => matches!(name.as_str(), "GLOB" | "world" | "usr" | "args"),
+                                    // Provider dependencies must be complete, including inputs
+                                    // hidden from the ordinary read walker by read_once().
+                                    Term::Call(name, _) => matches!(name.as_str(), "rand" | "randtext" | "prob" | "roll" | "read_once"),
+                                    Term::Pick(_) | Term::NewImplicit { .. } | Term::NewPrefab { .. } | Term::NewMiniExpr { .. } | Term::Input { .. } | Term::ExternalCall { .. } => true,
+                                    _ => false,
+                                };
+                            }
+                        });
+                    }
+                    volatile
+                });
+                if volatile {
+                    invalid = Some(format!("lookup argument provider {ty}::{name} hides reads, consumes volatile state or allocates outside its declared fields"));
+                    break;
+                }
+                if body.reads.iter().any(|read| read.root != "holder" || !read.hops.is_empty() || !keys.contains(&read.var)) {
+                    invalid = Some(format!("lookup argument provider {ty}::{name} reads outside its declared receiver fields"));
+                    break;
+                }
+            }
+            providers.push(((owner.to_string(), name.to_string()), LookupArgumentProvider { keys, invalid }));
+        }
+        for (key, provider) in providers {
+            match a.lookup_arguments.entry(key) {
+                std::collections::hash_map::Entry::Vacant(entry) => { entry.insert(provider); }
+                std::collections::hash_map::Entry::Occupied(mut entry) => {
+                    entry.get_mut().invalid = Some("duplicate lookup argument provider declaration".to_string());
                 }
             }
         }
@@ -1104,6 +1183,23 @@ impl<'a, 'e> Walk<'a, 'e> {
             let o = &p.ty().get().path;
             if o.is_empty() { "/".to_string() } else { o.clone() }
         };
+        // A declared argument provider is evaluated by the runtime, not replaced with a raw field value.
+        if let Some((provider_owner, provider)) = self.lookup_argument_for(&ty, name) {
+            if let Some(reason) = &provider.invalid {
+                self.lookup_diag("dynamic_read", &rel, line, reason.clone());
+                return Val::local(None);
+            }
+            if !args.is_empty() {
+                self.lookup_diag("dynamic_read", &rel, line, "lookup argument providers take no call arguments".to_string());
+                return Val::local(None);
+            }
+            for key in &provider.keys {
+                let read = Read { root: v.root_name(), hops: v.hops.clone(), var: key.clone(), owner: ty.clone(), kind: ReadKind::Var, hop_ok: v.hop_ok };
+                self.add_read(read, &rel, line);
+            }
+            let argument = LookupArgument::Provider { root: v.root_name(), path: v.hops.clone(), owner: provider_owner, proc: name.to_string(), keys: provider.keys.clone() };
+            return Val { ty: None, root: Root::Scalar(argument), hops: Vec::new(), hop_ok: true, list: false };
+        }
         // READS_AS: an accessor stands for its key; not followed.
         if let Some(k) = self.reads_as_for(&ty, name) {
             let mut hops = v.hops.clone();
@@ -1116,6 +1212,17 @@ impl<'a, 'e> Walk<'a, 'e> {
         let _ = owner;
         self.run_proc(p, v, &argv, false);
         Val::local(None)
+    }
+
+    fn lookup_argument_for(&self, ty: &str, name: &str) -> Option<(String, &'e LookupArgumentProvider)> {
+	    let mut current = Some(ty.to_string());
+	    while let Some(owner) = current {
+	        if let Some(provider) = self.eng.ann.lookup_arguments.get(&(owner.clone(), name.to_string())) {
+	            return Some((owner, provider));
+	        }
+	        current = self.eng.sem.parent_of(&owner).filter(|parent| parent != &owner && parent != "/");
+	    }
+	    None
     }
 
     fn reads_as_for(&self, ty: &str, name: &str) -> Option<&'e (String, Option<String>)> {
@@ -1171,7 +1278,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                 self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} argument is not a literal or a tracked root/relation field; declare a provider for getter/index expressions"));
                 return Val::local(None);
             };
-            if matches!(&argument, LookupArgument::Path { root, .. } if root == "context") {
+            if matches!(&argument, LookupArgument::Path { root, .. } | LookupArgument::Provider { root, .. } if root == "context") {
                 self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} uses a scalar act-context argument with no entity binding lifetime"));
                 return Val::local(None);
             }
@@ -1420,6 +1527,172 @@ mod global_accessor_tests {
             assert!(reads.diags.iter().any(|d| d.rule == "dynamic_read"), "{name} must diagnose instead of promising an invalid subscription");
         }
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn declared_lookup_argument_evaluates_a_provider_and_rejects_impure_uncovered_volatile_or_overridden_inputs() {
+        let root = std::env::temp_dir().join(format!("dq-lookup-provider-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code")).unwrap();
+        let source = r#"
+#define READ_LOOKUP(P,A...)
+#define READ_LOOKUP_ARGUMENT(P,A...)
+#define TRACKED(T,V)
+#define CAPABILITIES(T) T/proc/__entries()
+#define ref_one(A...) return
+/datum/numeric_arg
+    var/raw = 1
+TRACKED(/datum/numeric_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/numeric_arg/proc/id, reads = list(nameof(raw)))
+/datum/numeric_arg/proc/id()
+    return raw * 10 + 1
+/datum/numeric_arg/child/id()
+    return raw * 100 + 7
+/datum/impure_arg
+    var/raw = 1
+TRACKED(/datum/impure_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/impure_arg/proc/id, reads = list(nameof(raw)))
+/datum/impure_arg/proc/id()
+    raw += 1
+    return raw
+/datum/uncovered_arg
+    var/raw = 1
+    var/extra = 1
+TRACKED(/datum/uncovered_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/uncovered_arg/proc/id, reads = list(nameof(raw)))
+/datum/uncovered_arg/proc/id()
+    return extra
+/datum/uncovered_arg/proc/change_extra()
+    extra += 1
+/datum/volatile_arg
+    var/raw = 1
+TRACKED(/datum/volatile_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/volatile_arg/proc/id, reads = list(nameof(raw)))
+/datum/volatile_arg/proc/id()
+    return raw + world.time
+/datum/override_arg
+    var/raw = 1
+TRACKED(/datum/override_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/override_arg/proc/id, reads = list(nameof(raw)))
+/datum/override_arg/proc/id()
+    return raw
+/datum/override_arg/bad
+    var/extra = 1
+/datum/override_arg/bad/id()
+    extra += 1
+    return extra
+/proc/read_once(value)
+    return value
+/datum/hidden_arg
+    var/raw = 1
+    var/hidden = 2
+TRACKED(/datum/hidden_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/hidden_arg/proc/id, reads = list(nameof(raw)))
+/datum/hidden_arg/proc/id()
+    return read_once(hidden)
+/datum/hidden_helper_arg
+    var/raw = 1
+    var/hidden = 2
+TRACKED(/datum/hidden_helper_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/hidden_helper_arg/proc/id, reads = list(nameof(raw)))
+/datum/hidden_helper_arg/proc/id()
+    return hidden_value()
+/datum/hidden_helper_arg/proc/hidden_value()
+    return read_once(hidden)
+/datum/hidden_override_arg
+    var/raw = 1
+    var/hidden = 2
+TRACKED(/datum/hidden_override_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/hidden_override_arg/proc/id, reads = list(nameof(raw)))
+/datum/hidden_override_arg/proc/id()
+    return raw
+/datum/hidden_override_arg/bad/id()
+    return hidden_value()
+/datum/hidden_override_arg/proc/hidden_value()
+    return read_once(hidden)
+/datum/random_text_arg
+    var/raw = 1
+TRACKED(/datum/random_text_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/random_text_arg/proc/id, reads = list(nameof(raw)))
+/datum/random_text_arg/proc/id()
+    return text2num(randtext("1", "2"))
+/datum/random_helper_arg
+    var/raw = 1
+TRACKED(/datum/random_helper_arg, raw)
+READ_LOOKUP_ARGUMENT(/datum/random_helper_arg/proc/id, reads = list(nameof(raw)))
+/datum/random_helper_arg/proc/id()
+    return raw
+/datum/random_helper_arg/bad/id()
+    return random_value()
+/datum/random_helper_arg/proc/random_value()
+    return text2num(randtext("1", "2"))
+/datum/provider_value
+    var/value = 1
+TRACKED(/datum/provider_value, value)
+READ_LOOKUP(/proc/provider_lookup, registry = GLOBAL_PROC_REF(provider_registry), key = GLOBAL_PROC_REF(provider_key), argument = 1, result = /datum/provider_value)
+/proc/provider_registry()
+    return null
+/proc/provider_key(id)
+    return id
+/proc/provider_lookup(id)
+    return null
+/datum/provider_probe
+    var/datum/numeric_arg/arg
+    var/datum/impure_arg/impure
+    var/datum/uncovered_arg/uncovered
+    var/datum/volatile_arg/volatile
+    var/datum/override_arg/overridden
+    var/datum/hidden_arg/hidden
+    var/datum/hidden_helper_arg/hidden_helper
+    var/datum/hidden_override_arg/hidden_override
+    var/datum/random_text_arg/random_text
+    var/datum/random_helper_arg/random_helper
+CAPABILITIES(/datum/provider_probe)
+    ref_one(nameof(arg))
+    ref_one(nameof(impure))
+    ref_one(nameof(uncovered))
+    ref_one(nameof(volatile))
+    ref_one(nameof(overridden))
+    ref_one(nameof(hidden))
+    ref_one(nameof(hidden_helper))
+    ref_one(nameof(hidden_override))
+    ref_one(nameof(random_text))
+    ref_one(nameof(random_helper))
+/datum/provider_probe/proc/positive()
+    return provider_lookup(arg.id()).value
+/datum/provider_probe/proc/impure_case()
+    return provider_lookup(impure.id()).value
+/datum/provider_probe/proc/uncovered_case()
+    return provider_lookup(uncovered.id()).value
+/datum/provider_probe/proc/volatile_case()
+    return provider_lookup(volatile.id()).value
+/datum/provider_probe/proc/override_case()
+    return provider_lookup(overridden.id()).value
+/datum/provider_probe/proc/hidden_case()
+    return provider_lookup(hidden.id()).value
+/datum/provider_probe/proc/hidden_helper_case()
+    return provider_lookup(hidden_helper.id()).value
+/datum/provider_probe/proc/hidden_override_case()
+    return provider_lookup(hidden_override.id()).value
+/datum/provider_probe/proc/random_text_case()
+    return provider_lookup(random_text.id()).value
+/datum/provider_probe/proc/random_helper_override_case()
+    return provider_lookup(random_helper.id()).value
+"#;
+        std::fs::write(root.join("code/probe.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/probe.dm", source)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let declarations = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &declarations);
+        let engine = ReadsEngine::new(&sem, &declarations, &annotations);
+        let positive = engine.analyze("/datum/provider_probe", "positive");
+        assert!(positive.diags.is_empty(), "{:?}", positive.diags);
+        assert!(positive.reads.iter().any(|read| matches!(&read.kind, ReadKind::Lookup(bound) if bound.binding.argument == (LookupArgument::Provider { root: "holder".into(), path: vec!["arg".into()], owner: "/datum/numeric_arg".into(), proc: "id".into(), keys: vec!["raw".into()] }))));
+        for name in ["impure_case", "uncovered_case", "volatile_case", "override_case", "hidden_case", "hidden_helper_case", "hidden_override_case", "random_text_case", "random_helper_override_case"] {
+            let rejected = engine.analyze("/datum/provider_probe", name);
+            assert!(!rejected.lookup_diags.is_empty(), "{name} must reject an unsafe provider");
+        }
+        let _ = std::fs::remove_dir_all(root);
     }
 
 }

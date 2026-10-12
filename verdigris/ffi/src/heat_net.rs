@@ -364,6 +364,7 @@ pub(crate) fn step(now: f64, first_dt: f64) {
 }
 
 /// Advances the heat network alone by `seconds` (the unit-test kernel clock, which does not pace the native world). Returns nothing.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_net_advance")]
 fn heat_net_advance(seconds: ByondValue) -> Result<ByondValue> {
     step_dt(f(&seconds)?.max(0.0));
@@ -735,6 +736,7 @@ fn one_off(rs: &[Res], f: impl FnOnce(&mut Cache, &mut Books) -> f64) -> f64 {
 /// simulation (an external source, `source` a `HEAT_SOURCE_*`); with
 /// `to_kind` `HEAT_TARGET_NONE` they leave it (an external sink). Either way
 /// it is booked. Returns the joules actually moved.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_move")]
 fn heat_move(
     from_kind: ByondValue,
@@ -774,6 +776,7 @@ fn heat_move(
 /// reservoirs in one conserved operation (1: both end at the mixed
 /// temperature, as if they were one body). Returns the joules moved from
 /// the first to the second.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_equalize")]
 fn heat_equalize(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, fraction: ByondValue) -> Result<ByondValue> {
     let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);
@@ -795,6 +798,7 @@ fn heat_equalize(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_re
 /// conserved operation: the exact pair solution (never past equilibrium),
 /// as a one-off for a sample that covers a stretch of time. Returns the
 /// joules moved from the first to the second.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_conduct")]
 fn heat_conduct(
     a_kind: ByondValue,
@@ -824,6 +828,7 @@ fn heat_conduct(
 /// computed here and settled into the mixture, booked under
 /// `HEAT_SOURCE_REACTION`. Returns the joules released (negative: absorbed),
 /// or null for an unknown kind (nothing applied).
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/gas_reaction_apply")]
 fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue, aux: ByondValue, deltas: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation)]
@@ -854,6 +859,7 @@ fn gas_reaction_apply(mixture: ByondValue, kind: ByondValue, extent: ByondValue,
 /// Brings a reservoir to `temperature` K by an external, booked source
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_move_to_temperature")]
 fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondValue, source: ByondValue) -> Result<ByondValue> {
     let res = Res::from_dm(&kind, &r)?;
@@ -894,6 +900,7 @@ fn heat_move_to_temperature(kind: ByondValue, r: ByondValue, temperature: ByondV
 /// external, booked source: a reaction that changed a gas's composition and
 /// released or consumed `joules - before` (`HEAT_SOURCE_REACTION`). Returns
 /// the joules added.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_set_energy")]
 fn heat_set_energy(kind: ByondValue, r: ByondValue, joules: ByondValue, source: ByondValue) -> Result<ByondValue> {
     let res = Res::from_dm(&kind, &r)?;
@@ -925,6 +932,7 @@ fn gas_mixture(r: Res) -> Option<MixRef> {
 /// them to a common temperature flows from the hotter to the colder, and
 /// `efficiency` of it (capped at Carnot, `1 - T_cold/T_hot`) leaves as
 /// electrical work, booked out. Returns the work, J.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/heat_engine_once")]
 fn heat_engine_once(a_kind: ByondValue, a_ref: ByondValue, b_kind: ByondValue, b_ref: ByondValue, efficiency: ByondValue) -> Result<ByondValue> {
     let (a, b) = (Res::from_dm(&a_kind, &a_ref)?, Res::from_dm(&b_kind, &b_ref)?);

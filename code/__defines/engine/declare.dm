@@ -102,6 +102,9 @@
 #define HOLDER_HOOK_PREINIT (1<<0)
 #define HOLDER_HOOK_INIT (1<<1)
 #define HOLDER_HOOK_DESTROY (1<<2)
+/// An effectful dependency preparer runs at the committed relation write, before readers can evaluate its new target.
+#define HOLDER_HOOK_RELATION (1<<9)
+#define ENGINE_HOOK_RELATION HOLDER_HOOK_RELATION
 #define ENGINE_HOOK_PREINIT HOLDER_HOOK_PREINIT
 #define ENGINE_HOOK_INIT HOLDER_HOOK_INIT
 #define ENGINE_HOOK_DESTROY HOLDER_HOOK_DESTROY

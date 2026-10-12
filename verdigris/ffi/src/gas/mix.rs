@@ -20,7 +20,7 @@
 //! DM handles never meet reactor subscriber ids.
 
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use byondapi::prelude::*;
 use eyre::{Result, bail, eyre};
@@ -256,6 +256,12 @@ struct Mixes {
     /// watched pipe handle whose region moved (`refresh_pipe_mirrors`): the network's own change tracking, not the
     /// writer, keeps the mirror current.
     pipe_seen: HashMap<u32, u64>,
+    /// Synchronous numeric pressure subscribers: live subscription -> (mixture id, actual last committed kPa).
+    pressure_readers: HashMap<Subscriber, (u32, f32)>,
+    /// Reverse demand index: an uninterested gas write does not scan every numeric subscriber.
+    pressure_by_id: HashMap<u32, HashSet<Subscriber>>,
+    /// Separate transport from normal gas wakes. A binding drains final values only after all its writes finish.
+    pressure_commits: HashMap<Subscriber, (u32, Option<f32>)>,
 }
 
 impl Default for Mixes {
@@ -274,6 +280,9 @@ impl Default for Mixes {
             written: Vec::new(),
             written_mark: vec![false; layout.chunk_count()],
             pipe_seen: HashMap::new(),
+            pressure_readers: HashMap::new(),
+            pressure_by_id: HashMap::new(),
+            pressure_commits: HashMap::new(),
         }
     }
 }
@@ -309,8 +318,21 @@ pub(crate) fn reset_watches() {
         m.written = fresh.written;
         m.written_mark = fresh.written_mark;
         m.pipe_seen = fresh.pipe_seen;
+        // Numeric subscriptions belong to live producers, independent of ordinary frame watch ids.
+        // Main mixtures survive a world rebuild; restore exactly their demand reference counts.
+        for (&id, subscribers) in &m.pressure_by_id {
+            m.watched.insert(id, u32::try_from(subscribers.len()).expect("subscriber count fits u32"));
+        }
     });
     forget_turf_mark();
+    let numeric_ids: Vec<_> = with_mixes(|m| m.pressure_by_id.keys().copied().collect());
+    for id in numeric_ids {
+        let Some(r) = MixRef::from_id(id) else { continue };
+        if let Some(mixture) = load(r) {
+            with_mixes(|m| set_probe(m, id, cell_of_mixture(&mixture)));
+        }
+        pressure_committed(r); // retire unavailable pipe/turf identities before subsequent slot reuse
+    }
 }
 
 /// Frees every live main slot not in `keep`, returning how many were freed.
@@ -365,6 +387,7 @@ pub fn alloc(mix: Mixture) -> Result<u32> {
 
 /// Frees a main-owned slot and its dependency watches.
 pub fn free(i: u32) {
+    pressure_retire(i);
     let subs: Vec<Subscriber> = with_mixes(|m| {
         m.dirty
             .iter()
@@ -512,6 +535,88 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
         }
     }
     mirror(r, after);
+    pressure_committed(r);
+}
+
+/// Subscribe to the actual committed numeric value, sharing the existing watched-handle refresh cohort.
+/// The subscription token is a live DM producer handle, not the reusable gas arena id.
+pub fn pressure_subscribe(id: u32, subscriber: Subscriber) -> Option<f32> {
+    pressure_unsubscribe(subscriber);
+    let r = MixRef::from_id(id)?;
+    let mixture = load(r)?;
+    let pressure = mixture.return_pressure();
+    with_mixes(|m| {
+        m.pressure_readers.insert(subscriber, (id, pressure));
+        m.pressure_by_id.entry(id).or_default().insert(subscriber);
+        *m.watched.entry(id).or_default() += 1;
+        set_probe(m, id, cell_of_mixture(&mixture));
+    });
+    Some(pressure)
+}
+
+/// Drop this numeric consumer without consuming or changing any ordinary watch's subscription.
+pub fn pressure_unsubscribe(subscriber: Subscriber) {
+    with_mixes(|m| {
+        m.pressure_commits.remove(&subscriber);
+        if let Some((id, _)) = m.pressure_readers.remove(&subscriber) {
+            if let Some(subscribers) = m.pressure_by_id.get_mut(&id) {
+                subscribers.remove(&subscriber);
+                if subscribers.is_empty() {
+                    m.pressure_by_id.remove(&id);
+                }
+            }
+            if let Some(count) = m.watched.get_mut(&id) {
+                *count -= 1;
+                if *count == 0 {
+                    m.watched.remove(&id);
+                }
+            }
+        }
+    });
+}
+
+/// Called only after native storage is committed. Reads the stored result, not the mutation's tentative value.
+pub fn pressure_committed(r: MixRef) {
+    let id = r.id();
+    let demanded = with_mixes(|m| m.pressure_by_id.contains_key(&id));
+    if !demanded {
+        return;
+    }
+    let Some(mixture) = load(r) else {
+        pressure_retire(id);
+        return;
+    };
+    let pressure = mixture.return_pressure();
+    with_mixes(|m| {
+        let subscribers: Vec<_> = m.pressure_by_id.get(&id).into_iter().flatten().copied().collect();
+        for subscriber in subscribers {
+            if let Some((_, previous)) = m.pressure_readers.get_mut(&subscriber) {
+                if previous.to_bits() == pressure.to_bits() {
+                    continue;
+                }
+                *previous = pressure;
+                m.pressure_commits.insert(subscriber, (id, Some(pressure)));
+            }
+        }
+    });
+}
+
+/// Retire the native identity before reuse. Old records retain their old subscription token.
+pub fn pressure_retire(id: u32) {
+    let subscribers: Vec<Subscriber> = with_mixes(|m| m.pressure_by_id.get(&id).into_iter().flatten().copied().collect());
+    for subscriber in subscribers {
+        pressure_unsubscribe(subscriber);
+        with_mixes(|m| { m.pressure_commits.insert(subscriber, (id, None)); });
+    }
+}
+
+/// Takes only numeric commits. Ordinary gas watches, frame wakes and reactor queues are untouched.
+pub fn take_pressure_commits() -> Vec<(Subscriber, u32, Option<f32>)> {
+    with_mixes(|m| {
+        let mut records: Vec<_> = m.pressure_commits.drain().map(|(sub, (id, value))| (sub, id, value)).collect();
+        records.sort_by_key(|record| record.0);
+        records
+    })
 }
 
 /// Writes a mirror only when it changes. `CowStore::set` copies the whole
@@ -864,6 +969,13 @@ fn take_wakes() -> Vec<Wake> {
             .inc();
     }
     let pipes = refresh_pipe_mirrors();
+    // These values came from the same committed pinned view as native getters.
+    // A submitted turf Delta never reaches this path until its worker view commits.
+    for (id, _) in fresh.iter().chain(pipes.iter()) {
+        if let Some(r) = MixRef::from_id(*id) {
+            pressure_committed(r);
+        }
+    }
     let evaluated = std::time::Instant::now();
     let deps = with_mixes(|m| {
         for (h, c) in pipes {
@@ -1248,6 +1360,121 @@ pub const GAS_OBSERVATION_STRIDE: usize = 16;
 mod tests {
     use super::*;
     use vg_gas::gas::ids::GAS_OXYGEN;
+
+    #[test]
+    fn numeric_pressure_commits_are_immediate_final_values_and_leave_other_watches_alone() {
+        let id = alloc(tank(4.0)).unwrap();
+        let r = MixRef::Main(id);
+        let initial = pressure_subscribe(id, 910_001).unwrap();
+        watch_dirty(id, 910_002, GAS_CHANGE_PRESSURE);
+        let before = load(r).unwrap();
+        let mut after = before.clone();
+        after.set_temperature(before.get_temperature() * 2.0);
+        store(r, &before, &after);
+        let final_pressure = load(r).unwrap().return_pressure();
+        assert_ne!(initial, final_pressure);
+        assert_eq!(take_pressure_commits(), vec![(910_001, id, Some(final_pressure))]);
+        assert!(with_mixes(|m| m.dirty.contains_key(&910_002)), "numeric drain preserves the ordinary subscriber");
+        assert!(take_pressure_commits().is_empty(), "numeric commit is delivered once");
+        store(r, &after, &after);
+        assert!(take_pressure_commits().is_empty(), "unchanged storage has no numeric commit");
+        pressure_unsubscribe(910_001);
+        unwatch_dirty(910_002);
+        free(id);
+    }
+
+    #[test]
+    fn numeric_pressure_queue_samples_both_sides_after_transfer_and_latest_value_only() {
+        let a = alloc(tank(4.0)).unwrap();
+        let b = alloc(tank(1.0)).unwrap();
+        pressure_subscribe(a, 910_011).unwrap();
+        pressure_subscribe(b, 910_012).unwrap();
+        let ra = MixRef::Main(a);
+        let rb = MixRef::Main(b);
+        let before_a = load(ra).unwrap();
+        let before_b = load(rb).unwrap();
+        let mut after_a = before_a.clone();
+        let mut after_b = before_b.clone();
+        after_a.set_moles(GAS_OXYGEN, 2.0);
+        after_b.set_moles(GAS_OXYGEN, 3.0);
+        store(ra, &before_a, &after_a);
+        store(rb, &before_b, &after_b);
+        let mut final_a = after_a.clone();
+        final_a.set_temperature(after_a.get_temperature() * 2.0);
+        store(ra, &after_a, &final_a);
+        assert_eq!(take_pressure_commits(), vec![
+            (910_011, a, Some(load(ra).unwrap().return_pressure())),
+            (910_012, b, Some(load(rb).unwrap().return_pressure())),
+        ]);
+        pressure_unsubscribe(910_011);
+        pressure_unsubscribe(910_012);
+        free(a);
+        free(b);
+    }
+
+    #[test]
+    fn numeric_pressure_retirement_is_not_reused_by_the_next_arena_occupant() {
+        let id = alloc(tank(4.0)).unwrap();
+        pressure_subscribe(id, 910_021).unwrap();
+        free(id);
+        let replacement = alloc(tank(9.0)).unwrap();
+        assert_eq!(replacement, id, "this test exercises actual free-slot reuse");
+        let r = MixRef::Main(replacement);
+        let before = load(r).unwrap();
+        let mut after = before.clone();
+        after.set_temperature(before.get_temperature() * 2.0);
+        store(r, &before, &after);
+        assert_eq!(take_pressure_commits(), vec![(910_021, id, None)], "the prior subscription sees retirement, never the new occupant");
+        free(replacement);
+    }
+
+    #[test]
+    fn numeric_pressure_demand_survives_watch_reset_and_unsubscribes_exactly() {
+        let id = alloc(tank(4.0)).unwrap();
+        pressure_subscribe(id, 910_031).unwrap();
+        pressure_subscribe(id, 910_032).unwrap();
+        assert_eq!(with_mixes(|m| m.pressure_by_id.get(&id).map(HashSet::len)), Some(2));
+        reset_watches();
+        assert_eq!(with_mixes(|m| m.watched.get(&id).copied()), Some(2), "reset preserves both real numeric consumers");
+        pressure_unsubscribe(910_031);
+        assert_eq!(with_mixes(|m| m.watched.get(&id).copied()), Some(1));
+        let r = MixRef::Main(id);
+        let before = load(r).unwrap();
+        let mut after = before.clone();
+        after.set_temperature(before.get_temperature() * 2.0);
+        store(r, &before, &after);
+        assert_eq!(take_pressure_commits(), vec![(910_032, id, Some(load(r).unwrap().return_pressure()))]);
+        pressure_unsubscribe(910_032);
+        assert!(!with_mixes(|m| m.pressure_by_id.contains_key(&id)), "the final removal deletes the reverse demand key");
+        assert!(!with_mixes(|m| m.watched.contains_key(&id)));
+        free(id);
+    }
+
+    #[test]
+    fn numeric_turf_pressure_waits_for_the_actual_committed_worker_view() {
+        let corners = watched_room();
+        let r = MixRef::Turf(corners[0]);
+        let id = r.id();
+        let initial = pressure_subscribe(id, 910_041).unwrap();
+        let before = load(r).unwrap();
+        let mut after = before.clone();
+        after.set_temperature(before.get_temperature() * 2.0);
+        store(r, &before, &after);
+        assert_eq!(load(r).unwrap().return_pressure(), initial, "a command submission is not a committed native getter value");
+        assert!(take_pressure_commits().is_empty(), "uncommitted turf commands publish no pressure");
+        with_world(|w| {
+            w.step_blocking();
+            Ok(())
+        }).unwrap();
+        split_wakes();
+        let committed = load(r).unwrap().return_pressure();
+        assert_ne!(initial, committed, "the real worker committed a pressure change");
+        assert_eq!(take_pressure_commits(), vec![(910_041, id, Some(committed))], "the numeric source agrees with the getter's committed view");
+        pressure_unsubscribe(910_041);
+        for (index, _) in corners.iter().enumerate() {
+            unwatch_dirty(100 + u32::try_from(index).unwrap());
+        }
+    }
 
     fn tank(moles: f32) -> Mixture {
         let mut m = Mixture::from_vol(70.0);

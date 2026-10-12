@@ -27,6 +27,8 @@ fn gas_idx_from_value(value: &ByondValue) -> Result<gas::GasIDX> {
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
 /// datum's own slot is freed.
+/// @dm-gas-commit
+/// @dm-gas-identity src
 #[auxmacros::bind("/datum/gas_mixture/proc/__bind_handle")]
 fn bind_handle(mut src: ByondValue, handle: ByondValue) -> Result<ByondValue> {
     let Some(target) = MixRef::from_f32(handle.get_number()?) else {
@@ -81,8 +83,43 @@ fn unwatch_dirty_gas_mixture(handle: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// Effectful preparation: subscribe a live native-watch handle to actual committed pressure. Returns initial kPa, or null for an absent mixture.
+#[auxmacros::bind("/proc/gas_numeric_pressure_subscribe")]
+fn gas_numeric_pressure_subscribe(id: ByondValue, handle: ByondValue) -> Result<ByondValue> {
+    let id = crate::world::whole(&id, "gas mixture identity")?;
+    let subscriber = crate::world::whole(&handle, "native pressure subscriber")?;
+    Ok(mix::pressure_subscribe(id, subscriber).map_or_else(ByondValue::null, ByondValue::from))
+}
+
+/// Effectful teardown: detach only this numeric subscriber; other gas watches are untouched.
+#[auxmacros::bind("/proc/gas_numeric_pressure_unsubscribe")]
+fn gas_numeric_pressure_unsubscribe(handle: ByondValue) -> Result<ByondValue> {
+    mix::pressure_unsubscribe(crate::world::whole(&handle, "native pressure subscriber")?);
+    Ok(ByondValue::null())
+}
+
+/// Dedicated committed numeric transport: subscriber, mixture identity, present, actual kPa. No ordinary frame/gas wakes are consumed.
+#[auxmacros::bind("/proc/take_gas_numeric_pressure_commits")]
+#[allow(clippy::cast_precision_loss)]
+fn take_gas_numeric_pressure_commits() -> Result<ByondValue> {
+    let mut values = Vec::new();
+    for (subscriber, id, pressure) in mix::take_pressure_commits() {
+        values.extend([
+            ByondValue::from(subscriber as f32),
+            ByondValue::from(id as f32),
+            ByondValue::from(if pressure.is_some() { 1.0f32 } else { 0.0f32 }),
+            pressure.map_or_else(ByondValue::null, ByondValue::from),
+        ]);
+    }
+    let list = ByondValue::new_list()?;
+    list.write_list(&values)?;
+    Ok(list)
+}
+
 /// Gives a new `/datum/gas_mixture` a main-owned slot sized from its
 /// `initial_volume`, and writes the handle into it.
+/// @dm-gas-commit
+/// @dm-gas-identity src
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_register")]
 fn register_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
     let volume = src.read_number_id(byond_string!("initial_volume"))?;
@@ -94,6 +131,7 @@ fn register_gasmixture_hook(mut src: ByondValue) -> Result<ByondValue> {
 /// Frees every main-owned slot whose datum is not in `mixtures` (a list of
 /// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns
 /// the number of slots freed. See [`mix::retain`].
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/gas_retain_mixtures")]
 fn gas_retain_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
     let keep: std::collections::HashSet<u32> = mixtures
@@ -109,6 +147,7 @@ fn gas_retain_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
 
 /// Frees a mixture's main-owned slot. Turf and pipe gas outlive their datums
 /// (the cell and the region own it).
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/__gasmixture_unregister")]
 fn unregister_gasmixture_hook(src: ByondValue) -> Result<ByondValue> {
     if let Ok(MixRef::Main(slot)) = MixRef::of(&src) {
@@ -132,6 +171,7 @@ fn heat_cap_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (min_heat_cap). Sets the mix's minimum heat capacity.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/set_min_heat_capacity")]
 fn min_heat_cap_hook(src: ByondValue, arg_min: ByondValue) -> Result<ByondValue> {
     let min = arg_min.get_number()?;
@@ -172,6 +212,7 @@ fn thermal_energy_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture). Merges the gas from the giver into src, without modifying the giver mix.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/merge")]
 fn merge_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
     with_mixes_mut(&src, &giver, |src_mix, giver_mix| {
@@ -181,6 +222,7 @@ fn merge_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, ratio). Takes the given ratio of gas from src and puts it into the argument mixture. Ratio is a number between 0 and 1.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/__remove_ratio")]
 fn remove_ratio_hook(
     src: ByondValue,
@@ -195,6 +237,7 @@ fn remove_ratio_hook(
 }
 
 /// Args: (mixture, amount). Takes the given amount of gas from src and puts it into the argument mixture. Amount is amount of substance in moles.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/__remove")]
 fn remove_hook(src: ByondValue, into: ByondValue, amount_arg: ByondValue) -> Result<ByondValue> {
     let amount = amount_arg.get_number().unwrap_or_default();
@@ -205,6 +248,7 @@ fn remove_hook(src: ByondValue, into: ByondValue, amount_arg: ByondValue) -> Res
 }
 
 /// Arg: (mixture). Makes src into a copy of the argument mixture.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/copy_from")]
 fn copy_from_hook(src: ByondValue, giver: ByondValue) -> Result<ByondValue> {
     with_mixes_mut(&src, &giver, |src_mix, giver_mix| {
@@ -276,6 +320,7 @@ fn read_mixtures(mixtures: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/set_temperature")]
 fn set_temperature_hook(src: ByondValue, arg_temp: ByondValue) -> Result<ByondValue> {
     let v = arg_temp.get_number()?;
@@ -302,6 +347,7 @@ fn partial_heat_capacity(src: ByondValue, gas_id: ByondValue) -> Result<ByondVal
 }
 
 /// Args: (volume). Sets the volume of the gas.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/set_volume")]
 fn set_volume_hook(src: ByondValue, vol_arg: ByondValue) -> Result<ByondValue> {
     let volume = vol_arg.get_number()?;
@@ -320,6 +366,7 @@ fn get_moles_hook(src: ByondValue, gas_id: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/set_moles")]
 fn set_moles_hook(src: ByondValue, gas_id: ByondValue, amt_val: ByondValue) -> Result<ByondValue> {
     let vf = amt_val.get_number()?;
@@ -335,6 +382,7 @@ fn set_moles_hook(src: ByondValue, gas_id: ByondValue, amt_val: ByondValue) -> R
     })
 }
 /// Args: (gas_id, moles). Adjusts the given gas's amount by the given amount, e.g. (GAS_O2, -0.1) will remove 0.1 moles of oxygen from the mixture.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/adjust_moles")]
 fn adjust_moles_hook(
     src: ByondValue,
@@ -349,6 +397,7 @@ fn adjust_moles_hook(
 }
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/adjust_moles_temp")]
 fn adjust_moles_temp_hook(
     src: ByondValue,
@@ -376,6 +425,7 @@ fn adjust_moles_temp_hook(
 }
 
 /// Args: (gas_id_1, amount_1, gas_id_2, amount_2, ...). As adjust_moles, but with variadic arguments.
+/// @dm-gas-commit
 #[auxmacros::bind_raw_args("/datum/gas_mixture/proc/adjust_multi")]
 fn adjust_multi_hook() -> Result<ByondValue> {
     if args.len() % 2 == 0 {
@@ -405,6 +455,7 @@ fn adjust_multi_hook() -> Result<ByondValue> {
 }
 
 /// Args: (amount). Adds the given amount to each gas.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/add")]
 fn add_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
     let vf = num_val.get_number().unwrap_or_default();
@@ -415,6 +466,7 @@ fn add_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (amount). Subtracts the given amount from each gas.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/subtract")]
 fn subtract_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
     let vf = num_val.get_number().unwrap_or_default();
@@ -425,6 +477,7 @@ fn subtract_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (coefficient). Multiplies all gases by this amount.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/multiply")]
 fn multiply_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
     let vf = num_val.get_number().unwrap_or(1.0);
@@ -435,6 +488,7 @@ fn multiply_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (coefficient). Divides all gases by this amount.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/divide")]
 fn divide_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
     let vf = num_val.get_number().unwrap_or(1.0).recip();
@@ -445,6 +499,7 @@ fn divide_hook(src: ByondValue, num_val: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, flag, amount). Takes `amount` from src that have the given `flag` and puts them into the given `mixture`. Returns: 0 if gas didn't have any with that flag, 1 if it did.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/__remove_by_flag")]
 fn remove_by_flag_hook(
     src: ByondValue,
@@ -481,6 +536,7 @@ fn get_by_flag_hook(src: ByondValue, flag_val: ByondValue) -> Result<ByondValue>
 }
 
 /// Args: (mixture, ratio, gas_list). Takes gases given by `gas_list` and moves `ratio` amount of those gases from `src` into `mixture`.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/scrub_into")]
 fn scrub_into_hook(
     src: ByondValue,
@@ -506,6 +562,7 @@ fn scrub_into_hook(
 }
 
 /// Marks the mix as immutable, meaning it will never change. This cannot be undone.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/mark_immutable")]
 fn mark_immutable_hook(src: ByondValue) -> Result<ByondValue> {
     with_mix_mut(&src, |mix| {
@@ -515,6 +572,7 @@ fn mark_immutable_hook(src: ByondValue) -> Result<ByondValue> {
 }
 
 /// Clears the gas mixture my removing all of its gases.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/clear")]
 fn clear_hook(src: ByondValue) -> Result<ByondValue> {
     with_mix_mut(&src, |mix| {
@@ -534,6 +592,7 @@ fn compare_hook(src: ByondValue, other: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/adjust_heat")]
 fn adjust_heat_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
     with_mix_mut(&src, |mix| {
@@ -543,6 +602,7 @@ fn adjust_heat_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, amount). Takes the `amount` given and transfers it from `src` to `mixture`.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/transfer_to")]
 fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Result<ByondValue> {
     with_mixes_mut(&src, &other, |our_mix, other_mix| {
@@ -556,6 +616,7 @@ fn transfer_hook(src: ByondValue, other: ByondValue, moles: ByondValue) -> Resul
 /// mixing temperature), never more than `max_moles` (`null` or <= 0: no cap)
 /// and only the gases in `gases_mask` (a `1 << gas_id` bitset, 0: all).
 /// Returns the moles moved. Replaces the DM `gas_pressure_calculate` solvers.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_transfer_to_pressure")]
 fn transfer_to_pressure(
     src: ByondValue,
@@ -605,6 +666,7 @@ fn moles_to_pressure(
 
 /// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/auxmos_batch_transfer")]
 fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
     // `values()` walks the numbered positions directly (handle 0 is valid).
@@ -650,6 +712,7 @@ fn batch_transfer_hook(operations: ByondValue) -> Result<ByondValue> {
 
 /// Flat operation list: pipe mixture, environment mixture, exposed pipe
 /// volume. Returns one boolean residual per exposed face.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/auxmos_batch_mingle")]
 fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
     let values = operations
@@ -717,6 +780,7 @@ fn batch_mingle_hook(operations: ByondValue) -> Result<ByondValue> {
 }
 
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/transfer_ratio_to")]
 fn transfer_ratio_hook(
     src: ByondValue,
@@ -730,6 +794,7 @@ fn transfer_ratio_hook(
 }
 
 /// Args: (mixture). Makes `src` a copy of `mixture`, with volumes taken into account.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/equalize_with")]
 fn equalize_with_hook(src: ByondValue, total: ByondValue) -> Result<ByondValue> {
     with_mixes_mut(&src, &total, |src_gas, total_gas| {
@@ -779,6 +844,7 @@ fn oxidation_power_hook(src: ByondValue, temp: ByondValue) -> Result<ByondValue>
 }
 
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/equalize_all_gases_in_list")]
 fn equalize_all_hook(gas_list: ByondValue) -> Result<ByondValue> {
     let mut refs = gas_list
@@ -824,6 +890,7 @@ fn hook_max_gas_mixes() -> Result<ByondValue> {
     Ok((mix::counts().1 as f32).into())
 }
 /// Returns: true. Parses gas strings like "o2=2500;plasma=5000;TEMP=370" and turns src mixes into the parsed gas mixture, invalid patterns will be ignored
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/__auxtools_parse_gas_string")]
 fn parse_gas_string(src: ByondValue, string: ByondValue) -> Result<ByondValue> {
     let actual_string = string.get_string()?;
@@ -864,6 +931,7 @@ fn parse_gas_string(src: ByondValue, string: ByondValue) -> Result<ByondValue> {
 /// gas movement (a caller-owned pair of `DeviceFlow` rows does that).
 /// Returns `list(total_transfer_moles, filterable_moles,
 /// unfilterable_moles, power_draw)`, or `null` when nothing should move.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_filter_transfer")]
 fn filter_transfer(
     source: ByondValue,
@@ -924,6 +992,7 @@ fn filter_transfer(
 /// [`filter_transfer`]. Returns `list(total_transfer_moles,
 /// power_draw, source_1_moles, source_2_moles, ...)` in `sources`' own
 /// iteration order, or `null` when nothing should move.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_mix_transfer")]
 fn mix_transfer(
     sources: ByondValue,
@@ -986,6 +1055,7 @@ fn mix_transfer(
 /// output's mask matches. Returns `list(total_transfer_moles, power_draw,
 /// clean_moles, output_1_moles, output_2_moles, ...)` in `outputs`' own
 /// iteration order, or `null` when nothing should move.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_filter_transfer_multi")]
 fn filter_transfer_multi(
     source: ByondValue,
@@ -1073,6 +1143,7 @@ pub const PUMP_PLAN: i32 = 2;
 /// active pump that only plans (the caller queues the move).
 /// Returns `list(moles, power_draw, flow_volume)`, or `null` when nothing
 /// should move (`pump_gas()`'s `-1`).
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_pump")]
 fn pump(
     source: ByondValue,
@@ -1122,6 +1193,7 @@ fn pump(
 /// Args: (source, sink, mask, requested, available_power, efficiency).
 /// Returns `list(moles, power_draw, flow_volume)`, or `null` when the budget
 /// allows nothing (the trace of a nearly-clean mix still moves).
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_scrub")]
 fn scrub(
     source: ByondValue,
@@ -1227,6 +1299,7 @@ fn pipe_contact(
 /// last two are ignored) and it gains what `air` loses; otherwise the last
 /// two describe the other body (a wall's solid). Returns the joules that
 /// left `air` (the caller credits a wall's heat cell).
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_thermal_exchange")]
 fn thermal_exchange(
     air: ByondValue,

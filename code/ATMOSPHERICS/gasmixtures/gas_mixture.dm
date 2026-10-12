@@ -342,6 +342,9 @@ GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant 
 ///Copies variables from sample, moles multiplicated by partial
 ///Returns: TRUE if we are mutable, FALSE otherwise
 /datum/gas_mixture/proc/copy_from_ratio(datum/gas_mixture/sample, partial = 1)
+	return state_batch(src, PROC_REF(copy_from_ratio_committed), list(sample, partial))
+
+/datum/gas_mixture/proc/copy_from_ratio_committed(datum/gas_mixture/sample, partial)
 	vg_copy_from_hook(src, sample)
 	if(partial != 1)
 		vg_multiply_hook(src, partial)

@@ -270,6 +270,7 @@ fn pipe_clear() -> Result<ByondValue> {
 /// prior_count, volume, ports..., prior_region_handles...` (`volume < 0`:
 /// the region is gone) -- the exact wire shape `rust_apply_pipe_topology`
 /// already parses.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/vg_pipe_commit")]
 fn pipe_commit() -> Result<ByondValue> {
     let mut released: Vec<(MixRef, PipeGas)> = Vec::new();
@@ -306,6 +307,7 @@ fn pipe_commit() -> Result<ByondValue> {
             });
             let Some(slot) = slot else { continue };
             if t.retired {
+                mix::pressure_retire(MixRef::Pipe(slot).id());
                 out.extend([handle(slot), 0.0, 0.0, -1.0]);
                 continue;
             }

@@ -33,6 +33,7 @@ pub const MARKERS: &[&str] = &[
     "SOURCE_DEF",
     "READS_AS",
     "READ_LOOKUP",
+    "READ_LOOKUP_ARGUMENT",
     "READS_FROM",
     "STATIC_ENTRY",
 ];

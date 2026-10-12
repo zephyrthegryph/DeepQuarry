@@ -66,6 +66,8 @@
 #define READS_AS(proc, key, args...)
 /// Pure numeric lookup provider; analyzer requires registry/key procs and explicit result type.
 #define READ_LOOKUP(proc, args...)
+/// A zero-argument pure numeric accessor used as a lookup argument. Its declared reads are validated and runtime calls the actual accessor.
+#define READ_LOOKUP_ARGUMENT(proc, args...)
 /// First line of a global helper that a condition, requirement or output calls: the helper is followed through the arguments
 /// it names. READS_FROM(C) follows C; READS_FROM() says the helper reads no entity state. An unannotated global call in a handler
 /// is a build error (sem/reads, unannotated_global).

@@ -43,6 +43,7 @@ CAPABILITIES(/obj/machinery/disposal)
 	silicon_ui()
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
 	owns_one(nameof(air_contents), /datum/gas_mixture)
+	gas_numeric_read(air = nameof(air_contents))
 	owns_many(nameof(intake_watches), /datum/native_watch/gas)
 	interface("DisposalBin")
 	without("ui_open")
@@ -129,7 +130,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/wake_for_state_change()
 	clear_gas_dependency()
-	changed(src, CHANGE_MACHINE_SETTINGS)
 	work_start(src)
 
 // The intake subscription is keyed by the mixture of the turf we sit on; after a
@@ -515,7 +515,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	data["isAI"] = isAI(user)
 	data["mode"] = mode
-	data["pressure"] = round(clamp(100* air_contents.return_pressure() / (SEND_PRESSURE), 0, 100),1)
+	data["pressure"] = round(clamp(100 * gas_numeric_pressure(air_contents) / SEND_PRESSURE, 0, 100), 1)
 
 	return data
 

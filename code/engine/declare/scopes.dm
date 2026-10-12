@@ -56,18 +56,24 @@
 
 /// Runs the capability's lifecycle hook for holder with a reused evaluation context (A.holder and A.cap set, A.mapload while the
 /// map loads).
-/datum/capability/proc/run_holder_hook(datum/holder, mapload, which)
+/datum/capability/proc/run_holder_hook(datum/holder, mapload, which, relation_var = null)
 	var/datum/act/eval/A = take(/datum/act/eval)
 	A.holder = holder // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 	A.cap = src
 	A.mapload = mapload
-	switch(which)
-		if(HOLDER_HOOK_PREINIT)
-			on_holder_preinit(A)
-		if(HOLDER_HOOK_INIT)
-			on_holder_init(A)
-		if(HOLDER_HOOK_DESTROY)
-			on_holder_destroy(A)
+	try
+		switch(which)
+			if(HOLDER_HOOK_PREINIT)
+				on_holder_preinit(A)
+			if(HOLDER_HOOK_INIT)
+				on_holder_init(A)
+			if(HOLDER_HOOK_DESTROY)
+				on_holder_destroy(A)
+			if(HOLDER_HOOK_RELATION)
+				on_holder_relation_changed(A, relation_var)
+	catch(var/exception/fault)
+		A.release()
+		throw fault
 	A.release()
 
 /datum/act/eval
@@ -90,6 +96,21 @@
 
 /datum/capability/proc/on_holder_destroy(datum/act/eval/A)
 	return
+
+/// Prepare a real relation-dependent producer synchronously; this is not a deferred on_change reaction.
+/datum/capability/proc/on_holder_relation_changed(datum/act/eval/A, relation_var)
+	return
+
+/proc/engine_holder_relation_changed(datum/holder, relation_var)
+	if(!GLOB?.om_reg || !holder || QDELING(holder))
+		return
+	var/datum/type_table/T = type_table_cache()[holder.type]
+	if(!(T?.hook_flags & ENGINE_HOOK_RELATION))
+		return
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
+		var/datum/capability/def = C.item
+		if(def.holder_hooks & HOLDER_HOOK_RELATION)
+			def.run_holder_hook(holder, FALSE, HOLDER_HOOK_RELATION, relation_var)
 
 // ---- relation scope: species_capabilities() ----
 

@@ -213,13 +213,14 @@ fn dm_text(value: &str) -> String {
     format!("\"{}\"", value.replace('\\', "\\\\").replace('"', "\\\""))
 }
 fn lookup_descriptor(read: &LookupRead) -> String {
-    let (root, path, literal, is_literal) = match &read.binding.argument {
-        LookupArgument::Literal(value) => ("holder".to_string(), Vec::new(), value.clone(), "TRUE"),
-        LookupArgument::Path { root, path } => (root.clone(), path.clone(), "null".to_string(), "FALSE"),
+    let (root, path, literal, is_literal, provider) = match &read.binding.argument {
+        LookupArgument::Literal(value) => ("holder".to_string(), Vec::new(), value.clone(), "TRUE", String::new()),
+        LookupArgument::Path { root, path } => (root.clone(), path.clone(), "null".to_string(), "FALSE", String::new()),
+        LookupArgument::Provider { root, path, owner, proc, keys } => (root.clone(), path.clone(), "null".to_string(), "FALSE", format!(", \"argument_owner\" = {owner}, \"argument_proc\" = TYPE_PROC_REF({owner}, {proc}), \"argument_keys\" = list({})", keys.iter().map(|key| dm_text(key)).collect::<Vec<_>>().join(", "))),
     };
-    format!("list(\"key\" = {}, \"registry\" = GLOBAL_PROC_REF({}), \"identity_key\" = GLOBAL_PROC_REF({}), \"lookup\" = GLOBAL_PROC_REF({}), \"root\" = {}, \"path\" = list({}), \"literal\" = {}, \"is_literal\" = {}, \"field\" = {})",
+    format!("list(\"key\" = {}, \"registry\" = GLOBAL_PROC_REF({}), \"identity_key\" = GLOBAL_PROC_REF({}), \"lookup\" = GLOBAL_PROC_REF({}), \"root\" = {}, \"path\" = list({}), \"literal\" = {}, \"is_literal\" = {}, \"field\" = {}{})",
         dm_text(&read.key()), read.binding.registry, read.binding.identity_key, read.binding.lookup,
-        dm_text(&root), path.iter().map(|p| dm_text(p)).collect::<Vec<_>>().join(", "), literal, is_literal, dm_text(&read.field))
+        dm_text(&root), path.iter().map(|p| dm_text(p)).collect::<Vec<_>>().join(", "), literal, is_literal, dm_text(&read.field), provider)
 }
 fn emit_lookup_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>) {
     let mut owners: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
@@ -388,6 +389,22 @@ mod tests {
         let mut field = literal.clone();
         field.field = "avail".into();
         assert_ne!(literal.key(), field.key(), "supply and load are distinct actual producers");
+    }
+
+    #[test]
+    fn lookup_argument_provider_encodes_actual_accessor_and_tracked_receiver_dependencies() {
+        use crate::sem::reads::{LookupArgument, LookupBound, LookupRead};
+        let read = LookupRead { binding: LookupBound {
+            registry: "registry".into(), identity_key: "identity".into(), lookup: "lookup".into(),
+            argument: LookupArgument::Provider { root: "holder".into(), path: vec!["mixture".into()],
+                owner: "/datum/mixture".into(), proc: "numeric_id".into(), keys: vec!["native_handle".into()] },
+        }, field: "pressure".into() };
+        let text = super::lookup_descriptor(&read);
+        assert!(text.contains("\"path\" = list(\"mixture\")"));
+        assert!(text.contains("\"argument_owner\" = /datum/mixture"));
+        assert!(text.contains("\"argument_proc\" = TYPE_PROC_REF(/datum/mixture, numeric_id)"));
+        assert!(text.contains("\"argument_keys\" = list(\"native_handle\")"));
+        assert!(!text.contains("\"path\" = list(\"mixture\", \"native_handle\")"), "the getter must run rather than substitute its raw field");
     }
 
     #[test]

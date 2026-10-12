@@ -248,6 +248,7 @@ fn update_reactions() -> Result<ByondValue> {
 }
 
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
+/// @dm-gas-commit
 #[auxmacros::bind("/datum/gas_mixture/proc/react")]
 fn react_hook(src: ByondValue, holder: ByondValue) -> Result<ByondValue> {
     let mut ret = 0;

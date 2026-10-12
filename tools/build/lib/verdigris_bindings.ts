@@ -1056,13 +1056,30 @@ export function render(root: string): {
   }
   dm += '\n// Binds.\n';
   for (const b of binds) {
+    const gasCommit = b.docs.includes('@dm-gas-commit');
+    const identityDocs = b.docs.filter((doc) => doc.startsWith('@dm-gas-identity '));
+    const identityArgument = identityDocs[0]?.slice('@dm-gas-identity '.length).trim();
+    if (identityDocs.length > 1 || (identityArgument && (!gasCommit || !b.args?.includes(identityArgument)))) {
+      throw new Error(`${b.file}: invalid committed gas identity metadata for ${b.name}`);
+    }
     const returnDocs = b.docs.filter((doc) => doc.startsWith('@dm-health returns '));
     if (returnDocs.length > 1) throw new Error(`${b.file}: duplicate DM return metadata for ${b.name}`);
     const returnType = returnDocs[0]?.slice('@dm-health returns '.length).trim();
     if (returnDocs.length && !returnType) throw new Error(`${b.file}: empty DM return type for ${b.name}`);
-    dm += `\n${docBlock(b.docs.filter((doc) => !doc.startsWith('@dm-health returns ')))}// ${b.path} (${b.file})\n`;
+    dm += `\n${docBlock(b.docs.filter((doc) => !doc.startsWith('@dm-health returns ') && !doc.startsWith('@dm-gas-')))}// ${b.path} (${b.file})\n`;
     if (returnType) dm += `// dm-health: returns ${returnType}\n`;
     if (b.args === null) {
+      if (gasCommit) {
+        dm += `/proc/vg_${b.name}(...)
+\treturn gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_${b.name}), args)
+
+/proc/__vg_committed_${b.name}(...)
+\tvar/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+\tVG_COUNT_FFI_CALL
+\treturn call_ext(__f)(arglist(args))
+`;
+        continue;
+      }
       dm += `/proc/vg_${b.name}(...)
 	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
 	VG_COUNT_FFI_CALL
@@ -1070,6 +1087,18 @@ export function render(root: string): {
 `;
     } else {
       const a = b.args.join(', ');
+      if (gasCommit) {
+        dm += `/proc/vg_${b.name}(${a})
+\treturn gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_${b.name}), list(${a}))
+
+/proc/__vg_committed_${b.name}(${a})
+\tvar/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
+\tVG_COUNT_FFI_CALL
+${identityArgument ? `\tvar/datum/gas_mixture/native_identity_mixture = ${identityArgument}\n\tvar/prior_native_identity = native_identity_mixture?._extools_pointer_gasmixture\n` : ''}\t. = call_ext(__f)(${a})
+${identityArgument ? `\tgas_numeric_flush_binding_commits()\n\tif(native_identity_mixture && !QDELETED(native_identity_mixture))\n\t\tnative_identity_mixture.set__extools_pointer_gasmixture(native_identity_mixture._extools_pointer_gasmixture, prior_native_identity, TRUE)\n` : ''}\treturn .
+`;
+        continue;
+      }
       dm += `/proc/vg_${b.name}(${a})
 	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
 	VG_COUNT_FFI_CALL

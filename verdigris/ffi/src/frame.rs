@@ -118,6 +118,7 @@ fn frame_force_devices() -> Result<ByondValue> {
 /// last frame (`0`: no pacing, just drain: a test that ran steps by hand),
 /// `budget` how many normal/background wakes to take (urgent ones are never
 /// limited). Returns the outbox page.
+/// @dm-gas-commit
 #[auxmacros::bind("/proc/frame")]
 fn frame(elapsed: ByondValue, budget: ByondValue) -> Result<ByondValue> {
     let elapsed = whole(&elapsed, "elapsed")?;
