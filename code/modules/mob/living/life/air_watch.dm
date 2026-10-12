@@ -115,7 +115,7 @@
 /proc/air_watch_normalise(list/levels, spacing)
 	var/list/sorted = list()
 	for(var/level in levels)
-		if(isnum(level) && level > 0)
+		if(isnum(level) && level > 0 && level < INFINITY)
 			sorted += level
 	sortTim(sorted, GLOBAL_PROC_REF(cmp_numeric_asc))
 	. = list()
