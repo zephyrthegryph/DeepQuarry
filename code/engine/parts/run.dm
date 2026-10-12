@@ -303,6 +303,7 @@
 /// The reason Require refuses the op now, or null: the implicit req_capable() of a physical binding, the bay, needs(), the require half of costs
 /// and the pre-checks of the actions the effects start. Nothing is reserved and nothing is written.
 /proc/op_require_reason(datum/act/op/A, datum/op_plan/P, datum/entry/part/bind/B)
+	lookup_reads_prepare(A.holder, A)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try
@@ -463,6 +464,7 @@ CAPABILITIES(/datum/pending_op)
 	ref_one(nameof(request), /datum/request, on_other_deleted = OTHER_CLEAR) // the open question: it ends first when its owner (this record) is deleted, so it must not hold it back
 	owns_one(nameof(progbar), /datum/progress_view)
 	owns_one(nameof(cog), /datum/cog_view)
+	owns_one(nameof(lookup_scope), /datum/lookup_read_scope)
 
 /datum/pending_op
 	var/datum/holder
@@ -969,6 +971,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 /datum/pending_op
 	var/list/watching
+	var/datum/lookup_read_scope/lookup_scope
+	/// TRUE while a re-check runs, so a read published by the re-check itself does not start another.
 	var/rechecking = FALSE
 	var/watch_ready = FALSE
 	var/list/watch_extra
@@ -976,6 +980,11 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 // Every published read has one registration, regardless of how many conditions read it.
 /datum/pending_op/proc/watch_reconcile(datum/act/op/A)
+	if(!lookup_scope)
+		var/datum/lookup_read_scope/scope = new
+		rel_set(src, nameof(lookup_scope), scope)
+	// Binding allocation is bookkeeping, completed before pure read collection.
+	lookup_reads_prepare(A.holder, A, lookup_scope)
 	var/list/next = list()
 	var/list/reads
 	var/previous_pure_depth = GLOB.op_pure_depth
@@ -1063,6 +1072,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	watch_extra_add(chosen, OP_KEEP_MOVED)
 
 /datum/pending_op/proc/watch_end()
+	if(lookup_scope)
+		rel_clear(src, nameof(lookup_scope))
 	for(var/index in watch_index)
 		var/list/pair = watch_index[index]
 		var/datum/D = pair[1]
@@ -1128,7 +1139,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			for(var/list/pair as anything in op_query_read_pairs(A, cond))
 				pairs += list(pair)
 			return
-		for(var/key in change_read_keys(A.holder, cond))
+		for(var/key in change_read_keys(A.holder, cond, A))
 			pairs += list(list(A.holder, key))
 
 /// All steps answered: the last checks, then Do.

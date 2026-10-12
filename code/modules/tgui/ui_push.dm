@@ -94,6 +94,7 @@ SYSTEM_DEF(ui_push)
 		return FALSE
 	if(owed & UI_PUSH_DATA)
 		GLOB.ui_push_count++
+		prepare_lookup_reads()
 		var/eval_depth_output = GLOB.derived_evaluating
 		DERIVED_EVAL_BEGIN
 		try

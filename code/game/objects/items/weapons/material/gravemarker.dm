@@ -38,7 +38,7 @@
 	playsound(src, sounds_of(A.held).use, 50, TRUE)
 
 /obj/item/material/gravemarker/proc/wrench_begins(datum/act/op/A)
-	return msg_text("You start carving 	he [src.name].", "[A.actor] starts carving 	he [src.name].")
+	return msg_text("You start carving \the [src.name].", "[A.actor] starts carving \the [src.name].")
 
 /obj/item/material/gravemarker/proc/wrench_duration(datum/act/op/A)
 	return material.hardness
@@ -47,7 +47,7 @@
 	var/mob/user = A.actor
 	var/datum/material/refund_material = material
 	var/turf/location = get_turf(src)
-	var/marker_name = "	he [src]"
+	var/marker_name = "\the [src]"
 	if(!consume(src, user))
 		return
 	refund_material.place_dismantled_product(location)

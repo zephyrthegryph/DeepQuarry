@@ -266,7 +266,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
 	look_from(nameof(icon_state), living = "*", dead = "*_dead", rest = "*_rest")
 
 /mob/living/simple_mob/animal/passive/cat/proc/name_question(datum/act/A)
-	return "Give 	he [name] a name"
+	return "Give \the [name] a name"
 
 /mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/act/op/A)
 	var/mob/user = A.actor
@@ -276,7 +276,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/passive/cat)
 	if(length(tmp_name) > 50)
 		to_chat(user, span_notice("The name can be at most 50 characters long."))
 	else
-		to_chat(user, span_notice("You name 	he [name]. Meow!"))
+		to_chat(user, span_notice("You name \the [name]. Meow!"))
 		name = tmp_name
 		named = TRUE
 	return OP_OK
