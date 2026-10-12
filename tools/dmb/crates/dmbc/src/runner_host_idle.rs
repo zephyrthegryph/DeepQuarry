@@ -24,7 +24,9 @@ impl BuildHost {
         self.required_types = None;
         self.link_bindings = None;
         self.generation = None;
-        self.host_facts = None;
+        if let Some(facts) = &self.host_facts {
+            facts.release_prepared_for_pressure();
+        }
         self.maps = None;
         if let Some((_, owner)) = &self.symbolic {
             eprintln!("dmbd compact symbolic procedures begin");
@@ -128,6 +130,8 @@ impl BuildHost {
     pub(crate) fn release_idle_compact_symbolic(&mut self) {
         self.emit_idle_census("before-compact-symbolic-release");
         self.symbolic = None;
+        // Catalog issuers survive only while their symbolic receipt consumer does.
+        self.host_facts = None;
         dm_profile::reclaim_unused_allocator_pages();
         self.emit_idle_census("after-compact-symbolic-release");
     }

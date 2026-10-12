@@ -25,6 +25,8 @@ mod catalogs;
 mod engine_providers;
 #[path = "runner_facts_callable_fallback.rs"]
 mod fallback;
+#[path = "runner_facts_pressure.rs"]
+mod pressure;
 #[path = "runner_facts_scalars.rs"]
 mod scalars;
 #[path = "runner_facts_variable_coverage.rs"]

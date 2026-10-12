@@ -96,7 +96,7 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
         old.symbolic.as_ref().unwrap(),
         regenerated.symbolic.as_ref().unwrap()
     ));
-    assert!(!Arc::ptr_eq(&old_facts, &host.host_facts().unwrap()));
+    assert!(Arc::ptr_eq(&old_facts, &host.host_facts().unwrap()));
     // The published owner survives; each request facade has its own lease.
     assert!(Arc::ptr_eq(
         &symbolic_owner,
