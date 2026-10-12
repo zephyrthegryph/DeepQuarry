@@ -95,14 +95,13 @@
 // --- Wakes first, resampling only as a fallback (doc/rewrite/life_on_om.md §5) ------------------
 // A sleeping step is woken by the change of what it reads (its `reads`, listed with their producers in `woken_by`).
 // A rewake no shorter than LIFE_SAFETY_RESAMPLE is only a safety net behind those wakes; a shorter one is allowed only
-// for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by
+// for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by. There
+// is no polling: every input is tracked state, a published key or a declared relation
 // (life_om/steps_declare_their_wakes checks it).
 /// The safety re-check behind a step's wakes: a missed wake costs at most this long.
 #define LIFE_SAFETY_RESAMPLE (2 MINUTES)
 /// The woken_by entry of a step whose rewake is its work (it drifts with time), not a stand-in for a missing wake.
 #define LIFE_WOKEN_BY_TIME "time"
-/// The woken_by entry of a step whose short rewake stands in for an input no producer publishes yet (a known gap, named).
-#define LIFE_WOKEN_BY_POLL "poll"
 /// A carbon breathing stage idle in steady air: woken by its air watch, moving, equipment; this is the fallback.
 #define BREATH_STEADY_RESAMPLE LIFE_SAFETY_RESAMPLE
 /// A human environment stage idle in comfortable air: woken by its air watch and body heat watch; this is the fallback.

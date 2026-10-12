@@ -127,9 +127,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/sif/leech)
 				do_infest(src, A)
 				ai_busy_end()
 
-/mob/living/simple_mob/animal/sif/leech/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/sif/leech/life_special(datum/seq_frame/life/F)
 	if(prob(5))
 		src.randomized_reagent = pick(src.produceable_chemicals)

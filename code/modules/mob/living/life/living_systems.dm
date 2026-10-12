@@ -26,10 +26,6 @@
 /mob/living/proc/life_type_pre(datum/seq_frame/life/F)
 	return
 
-/// The root is a no-op; a variant's pre code runs every cycle.
-/mob/living/proc/life_type_pre_due()
-	return FALSE
-
 /// Code a mob subtype ran after ..() in its old Life() override. A variant starts with `..()`,
 /// which runs its parent's post code, then runs its own; code that only runs for a living mob
 /// checks `ctx.fact("alive")`.

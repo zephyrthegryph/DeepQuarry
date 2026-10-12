@@ -247,14 +247,13 @@
 /datum/unit_test/life_om/breath_hazard/proc/metabolised()
 	return H.bloodstr.get_reagent_amount(REAGENT_ID_INAPROVALINE) < 10 // the dose
 
-/// Every Life step that can sleep declares what wakes it (woken_by: its reads and their producers). A rewake shorter
-/// than LIFE_SAFETY_RESAMPLE is the mechanism only for work that drifts with time (LIFE_WOKEN_BY_TIME) or a known
-/// unpublished input (LIFE_WOKEN_BY_POLL); the hazard steps have no such gap.
+/// Every Life step that can sleep declares what wakes it (woken_by: its reads and their producers). Nothing polls: the
+/// only entry that is not a read is LIFE_WOKEN_BY_TIME, with its reason, and a rewake shorter than LIFE_SAFETY_RESAMPLE
+/// is allowed only for such work that drifts with time.
 /datum/unit_test/life_om/steps_declare_their_wakes
 
 /datum/unit_test/life_om/steps_declare_their_wakes/run_life()
-	var/static/list/no_gaps = list("life_breathing", "life_environment", "life_thermoregulation", "life_radiation", "life_chemicals", "life_medical", "life_weight", "life_addictions")
-	var/list/mobs = list(allocate(/mob/living/carbon/human), allocate(/mob/living/simple_mob/animal/passive/mouse), allocate(/mob/living/simple_mob/animal/passive/fish))
+	var/list/mobs = list(allocate(/mob/living/carbon/human), allocate(/mob/living/simple_mob/animal/passive/mouse), allocate(/mob/living/simple_mob/animal/passive/fish), 		allocate(/mob/living/simple_mob/animal/passive/cat), allocate(/mob/living/simple_mob/slime/xenobio), allocate(/mob/living/carbon/alien/larva), allocate(/mob/living/carbon/brain))
 	for(var/mob/living/L as anything in mobs)
 		life_test_place(L)
 		var/datum/seq_state/state = life_test_state(L)
@@ -270,17 +269,20 @@
 				continue
 			var/list/woken_by = S.woken_by
 			for(var/key in woken_by)
-				if(key == LIFE_WOKEN_BY_TIME || key == LIFE_WOKEN_BY_POLL)
+				if(key == LIFE_WOKEN_BY_TIME)
+					var/reason = woken_by[key]
+					if(!istext(reason) || length(reason) < 15)
+						TEST_FAIL("[where] declares time without saying what drifts with it")
+					if(!S.rewake)
+						TEST_FAIL("[where] declares time but has no rewake to follow it")
 					continue
 				if(!(key in S.reads))
-					TEST_FAIL("[where]: woken_by names [key], which is not among its reads")
-			if((S.key in no_gaps) && woken_by[LIFE_WOKEN_BY_POLL])
-				TEST_FAIL("[where] waits for a poll ([woken_by[LIFE_WOKEN_BY_POLL]]); its inputs must wake it")
+					TEST_FAIL("[where]: woken_by names [key], which is neither among its reads nor time (nothing may poll)")
 			if(!S.rewake)
 				continue
 			var/delay = isnum(S.rewake) ? S.rewake : call(L, S.rewake)()
-			if(delay > 0 && delay < LIFE_SAFETY_RESAMPLE && !woken_by[LIFE_WOKEN_BY_TIME] && !woken_by[LIFE_WOKEN_BY_POLL])
-				TEST_FAIL("[where] re-checks every [delay / 10] s, under the [LIFE_SAFETY_RESAMPLE / 10] s safety resample, without declaring time or a poll gap as the reason")
+			if(delay > 0 && delay < LIFE_SAFETY_RESAMPLE && !woken_by[LIFE_WOKEN_BY_TIME])
+				TEST_FAIL("[where] re-checks every [delay / 10] s, under the [LIFE_SAFETY_RESAMPLE / 10] s safety resample, without declaring work that drifts with time")
 
 #undef LIFE_HAZARD_LIMIT
 

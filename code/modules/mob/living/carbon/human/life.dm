@@ -27,10 +27,6 @@
 //	                       heartbeat, NIF, phobias, NPC       (when = list("!in_stasis", "alive"))
 //	species components, visible name, pulse
 
-/// The code before ..() in the old human Life().
-/mob/living/carbon/human/life_type_pre_due()
-	return TRUE
-
 /mob/living/carbon/human/life_type_pre(datum/seq_frame/life/F)
 	if (src.transforming)
 		return F.abort()

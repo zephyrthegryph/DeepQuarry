@@ -633,9 +633,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/bigdragon/friendly/maintpred)
 ///		AI handling stuff
 ///
 
-/mob/living/simple_mob/vore/bigdragon/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/bigdragon/life_special(datum/seq_frame/life/F)
 	if(!src.noenrage)
 		if(!src.enraged)

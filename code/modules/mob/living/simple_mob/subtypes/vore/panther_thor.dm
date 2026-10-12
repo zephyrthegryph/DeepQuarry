@@ -81,9 +81,6 @@
 
 
 // Cloaks the spider automatically, if possible.
-/mob/living/simple_mob/vore/aggressive/panther/thor/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/aggressive/panther/thor/life_special(datum/seq_frame/life/F)
 	if(!dq_get_cloaked(src) && src.can_cloak())
 		src.cloak()

@@ -71,9 +71,6 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 	var/dead_state = slime_dead_state()
 	look.life_state(src, slime_living_state(), dead_state, dead_state)
 
-/mob/living/simple_mob/slime/xenobio/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		after(src, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))

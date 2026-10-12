@@ -78,9 +78,6 @@ CAPABILITIES(/obj/item/projectile/icicle)
 /obj/item/projectile/icicle/get_structure_damage()
 	return damage / 2 // They're really deadly against mobs, but less effective against solid things.
 
-/mob/living/simple_mob/slime/feral/dark_blue/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/feral/dark_blue/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.cold_aura()

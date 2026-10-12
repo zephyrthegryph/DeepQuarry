@@ -77,9 +77,6 @@
 /mob/living/simple_mob/proc/life_special(datum/seq_frame/life/F)
 	return
 
-/mob/living/simple_mob/proc/life_special_due()
-	return FALSE
-
 /// Idle while the air is survivable and the body has nothing for it to treat. Its air watch wakes it
 /// when the air crosses one of its limits (MOB_KEY_AIR); the rewake is a fallback.
 /mob/living/simple_mob/life_environment_due()

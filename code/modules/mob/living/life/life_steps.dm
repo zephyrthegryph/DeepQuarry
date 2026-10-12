@@ -6,8 +6,8 @@
 // change channels that wake a sleeping step, `should_run =` says it has work, `rewake =` wakes it anyway after a
 // delay. `woken_by =` lists, for each read, who raises it (read key = producers): a step that sleeps is woken the
 // moment an input changes, and a rewake under LIFE_SAFETY_RESAMPLE is allowed only for work that drifts with time
-// (LIFE_WOKEN_BY_TIME) or an input no producer publishes yet (LIFE_WOKEN_BY_POLL, a known gap):
-// life_om/steps_declare_their_wakes checks it. A later declaration of the same step on a subtype replaces the parent's. A step runs only for the Life set
+// (LIFE_WOKEN_BY_TIME, with the reason): life_om/steps_declare_their_wakes checks it. A step whose work runs every frame
+// (an aura, regeneration, a type's pre work) declares no should_run: it never sleeps. A later declaration of the same step on a subtype replaces the parent's. A step runs only for the Life set
 // (life_set) it serves: preview dummies and delisted mobs keep none of the living steps.
 
 /// Breathing (carbons, fish): the air watch hears its air cross a level it acts on; moving re-arms it on the new turf.
@@ -67,19 +67,19 @@
 		. += seq_step(PROC_REF(life_environment), after = list(LIFE_BODY, "life_chemicals"), when = list("placed", "!in_stasis"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_AIR, MOB_KEY_BODY_HEAT, MOB_KEY_HEALTH), should_run = PROC_REF(life_environment_due), rewake = PROC_REF(life_environment_rewake), woken_by = LIFE_ENVIRONMENT_WOKEN_BY + list(MOB_KEY_HEALTH = "injure (afflictions)"))
 		. += seq_step(PROC_REF(life_simple_vitals), after = LIFE_TAIL, reads = list(MOB_KEY_HEALTH), once = TRUE, woken_by = list(MOB_KEY_HEALTH = "injure, mend, body invalidate (health); set_stat"))
 		. += seq_step(PROC_REF(life_supernatural), after = LIFE_TAIL, when = "alive", reads = LIFE_STATUS_READS, should_run = PROC_REF(life_supernatural_due), woken_by = list(MOB_KEY_STATUS = "status setters; the purge setter"))
-		. += seq_step(PROC_REF(life_guts), after = list(LIFE_TAIL, "life_special"), when = "alive", should_run = PROC_REF(life_guts_due), woken_by = list(LIFE_WOKEN_BY_POLL = "organ objects given to a simple mob (nothing publishes it)"))
+		. += seq_step(PROC_REF(life_guts), after = list(LIFE_TAIL, "life_special"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_guts_due), woken_by = list(MOB_KEY_HEALTH = "an organ adopted or released (adopt_subtree()/release_subtree() invalidate the body)"))
 		. += seq_step(PROC_REF(life_simple_healing), after = list(LIFE_TAIL, "life_guts"), when = "alive", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_simple_healing_due), woken_by = list(MOB_KEY_HEALTH = "injure; feeding"))
 		. += seq_step(PROC_REF(life_type_post), after = list(LIFE_TAIL, "life_weight", "life_visible_name"), should_run = PROC_REF(life_type_post_due), rewake = PROC_REF(life_type_post_rewake), woken_by = list(LIFE_WOKEN_BY_TIME = "a type's own periodic tail work (its rewake)"))
 
 /mob/living/voice/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 
 /mob/living/carbon/alien/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 		. += seq_step(PROC_REF(life_alien_growth), after = list(LIFE_TAIL, "life_germs"), reads = list(MOB_KEY_HEALTH))
 
 /mob/living/carbon/brain/life_steps()
@@ -91,7 +91,7 @@
 /mob/living/carbon/human/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 		. += seq_step(PROC_REF(life_breathing), after = list(LIFE_INPUT, "life_light"), when = list("placed", "!in_stasis", "alive"), reads = list(MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_AIR), should_run = PROC_REF(life_breathing_due), rewake = PROC_REF(life_breathing_rewake), woken_by = LIFE_BREATHING_WOKEN_BY)
 		. += seq_step(PROC_REF(life_mutations), after = list(LIFE_INPUT, "life_breathing"), when = list("placed", "!in_stasis", "alive"), reads = LIFE_STATUS_READS, should_run = PROC_REF(life_mutations_due), woken_by = list(MOB_KEY_STATUS = "status setters"))
 		if(life_radiation_applies())
@@ -146,82 +146,82 @@
 /mob/living/simple_mob/clockwork/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/slime/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/ysbryd/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 
 /mob/living/carbon/brain/caught_soul/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 
 /mob/living/simple_mob/animal/borer/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/blob/spore/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/homunculus/evil/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT, should_run = PROC_REF(life_type_pre_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's own pre work: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_type_pre), after = LIFE_INPUT)
 
 /mob/living/simple_mob/mechanical/mecha/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/mechanical/mining_drone/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/metroid/juvenile/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/bigdragon/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/demonAI/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/fossiltank/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/giant_spider/lurker/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/giant_spider/nurse/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/passive/cat/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/passive/fish/life_steps()
 	. = ..()
@@ -231,119 +231,119 @@
 /mob/living/simple_mob/animal/sif/frostfly/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/sif/kururak/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/sif/leech/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/sif/savik/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/sif/tymisian/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/space/bear/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/space/goose/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/space/space_worm/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/tyr/rainbow_fly/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/mechanical/cyber_horror/tajaran/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/mechanical/ward/monitor/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/candy/bluecabold/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/candy/orangecabold/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/candy/purplecabold/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/candy/yellowcabold/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/spacecritter/livingice/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/mechanical/hivebot/support/commander/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/mechanical/hivebot/support/logistics/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")
 
 /mob/living/simple_mob/vore/aggressive/panther/thor/life_steps()
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
-		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive", should_run = PROC_REF(life_special_due), woken_by = list(LIFE_WOKEN_BY_POLL = "a type's special behaviour: its due() reads state no producer publishes"))
+		. += seq_step(PROC_REF(life_special), after = list(LIFE_TAIL, "life_supernatural"), when = "alive")

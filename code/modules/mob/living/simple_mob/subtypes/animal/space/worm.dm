@@ -90,9 +90,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/space_worm/head)
 /mob/living/simple_mob/animal/space/space_worm/head/long
 	segment_count = 10
 
-/mob/living/simple_mob/animal/space/space_worm/head/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/space/space_worm/head/life_special(datum/seq_frame/life/F)
 	..()
 	src.update_body_faction()
@@ -160,9 +157,6 @@ TRACKED(/mob/living/simple_mob/animal/space/space_worm, segment_dir)
 
 	if(previous)
 		previous.death()
-
-/mob/living/simple_mob/animal/space/space_worm/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/animal/space/space_worm/life_special(datum/seq_frame/life/F)
 	..()

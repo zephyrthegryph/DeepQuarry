@@ -204,9 +204,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/mob/living/simple_mob/vore/candy/bluecabold/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/candy/bluecabold/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.buff_aura()
@@ -256,9 +253,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	melee_damage_lower = 8
 	melee_damage_upper = 15
 
-/mob/living/simple_mob/vore/candy/yellowcabold/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/candy/yellowcabold/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.buff_aura()
@@ -280,9 +274,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 	melee_damage_lower = 7
 	melee_damage_upper = 12
 
-/mob/living/simple_mob/vore/candy/orangecabold/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/candy/orangecabold/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.buff_aura()
@@ -303,9 +294,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/candy/marshmellowserpent)
 
 	melee_damage_lower = 7
 	melee_damage_upper = 12
-
-/mob/living/simple_mob/vore/candy/purplecabold/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/vore/candy/purplecabold/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

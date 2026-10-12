@@ -224,8 +224,6 @@
 		if("life_simple_healing_due")
 			var/mob/living/simple_mob/M = src
 			return M.life_simple_healing_due()
-		if("life_type_pre_due")
-			return life_type_pre_due()
 		if("life_chemicals_due")
 			return life_chemicals_due()
 		if("life_chemicals_rewake")
@@ -283,7 +281,4 @@
 		if("life_robot_senses_due")
 			var/mob/living/silicon/robot/M = src
 			return M.life_robot_senses_due()
-		if("life_special_due")
-			var/mob/living/simple_mob/M = src
-			return M.life_special_due()
 	return call(src, name)()

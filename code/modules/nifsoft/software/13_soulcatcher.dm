@@ -326,9 +326,6 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 		reenter_soulcatcher()
 	..()
 
-/mob/living/carbon/brain/caught_soul/life_type_pre_due()
-	return TRUE
-
 /mob/living/carbon/brain/caught_soul/life_type_pre(datum/seq_frame/life/F)
 	if(!src.mind || !src.key)
 		spent(src)
