@@ -345,7 +345,7 @@ TRACKED(/obj/item/dq_lookup_probe, grid_id)
 
 CAPABILITIES(/obj/item/dq_lookup_probe)
 	op("target_grid", at_target(/obj/dq_lookup_grid_fixture), label("Use target grid"), needs(req(PROC_REF(target_ready))), then(PROC_REF(used)))
-	op("held_grid", at_target(/obj/dq_lookup_grid_fixture), label("Use held grid"), needs(req(PROC_REF(held_ready))), then(PROC_REF(used)))
+	op("held_grid", at_target(/obj/dq_lookup_grid_fixture), label("Use held grid"), priority(above("target_grid")), needs(req(PROC_REF(held_ready))), then(PROC_REF(used)))
 
 /obj/item/dq_lookup_probe/proc/target_ready(datum/act/action/A)
 	var/obj/dq_lookup_grid_fixture/target = A.target

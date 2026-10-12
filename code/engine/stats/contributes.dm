@@ -223,16 +223,13 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 	var/list/table = GLOB.generated_reads_table
 	if(!length(table))
 		return keys
-	var/path = "[E.type]"
+	var/path = E.type
 	var/row
-	while(length(path))
+	while(path)
 		row = table["[path]::[proc_name]"]
 		if(row)
 			break
-		var/slash = findlasttext(path, "/")
-		if(slash <= 1)
-			break
-		path = copytext(path, 1, slash)
+		path = type2parent(path)
 	if(!row)
 		return keys
 	var/list/names = GLOB.generated_read_names
