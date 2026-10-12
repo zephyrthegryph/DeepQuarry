@@ -103,19 +103,27 @@ fn prepare<'a, R: Resolver>(
 }
 #[test]
 fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() {
-    let engine = crate::runner_host::EnginePayload::capture(
-        include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
-        1,
-        true,
-        0,
-    )
-    .unwrap();
+    let mut session = crate::runner_host::BuildHost::default();
+    let engine = session
+        .engine(
+            "modified-local.dme".into(),
+            Default::default(),
+            true,
+            include_bytes!("../../../../fixtures/native_template.bin").to_vec(),
+        )
+        .unwrap();
+    // Ordinary one-shot prepare creates new catalog issuers every time, so even
+    // equal answers are not unchanged-domain certificates. Exercise the actual
+    // retained session producer used by this local-candidate fast path.
+    let host_facts = session.host_facts().unwrap();
     let executor = dm_exec::BuildExecutor::new(1).unwrap();
     let mut state = dm_tree::frontend::RetainedSemanticTree::default();
-    let artifacts = crate::driver_facts::AbiArtifacts::with_engine_owner(Arc::clone(&engine));
+    let artifacts = crate::driver_facts::AbiArtifacts::with_engine_owner(engine.abi_engine_owner());
     let owner = SessionSymbolicMemo::current_revision();
     let front = build(&mut state, SOURCE, &engine, &executor);
-    let (host, _) = crate::request_runner::runner_facts::prepare(&front, &engine.snapshot).unwrap();
+    let (host, _) =
+        crate::request_runner::runner_facts::prepare_retained(&front, &engine, Some(&host_facts))
+            .unwrap();
     let startup = crate::startup::capture(&front).unwrap();
     let abi =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
@@ -141,8 +149,12 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
     assert!(first.publish_successful());
     for text in [SOURCE.to_string(), format!("\n\n{SOURCE}")] {
         let current = build(&mut state, &text, &engine, &executor);
-        let (host, _) =
-            crate::request_runner::runner_facts::prepare(&current, &engine.snapshot).unwrap();
+        let (host, _) = crate::request_runner::runner_facts::prepare_retained(
+            &current,
+            &engine,
+            Some(&host_facts),
+        )
+        .unwrap();
         let startup = crate::startup::capture(&current).unwrap();
         let abi =
             crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
@@ -178,7 +190,8 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
                     record.versions.iter().any(|(domain, version)| {
                         *domain == read.domain && host.domain_version(*domain) == Some(*version)
                     }),
-                    "each descriptor read needs its issued current domain version"
+                    "descriptor read {:?} needs its issued current version {:?}; producer versions: {:?}",
+                    read.query, host.domain_version(read.domain), record.versions
                 );
             }
         });
@@ -211,7 +224,8 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
     let removed = SOURCE.replace("/obj/inner\n    var/amount\n", "");
     let current = build(&mut state, &removed, &engine, &executor);
     let (host, _) =
-        crate::request_runner::runner_facts::prepare(&current, &engine.snapshot).unwrap();
+        crate::request_runner::runner_facts::prepare_retained(&current, &engine, Some(&host_facts))
+            .unwrap();
     assert!(!matches!(
         host.resolve(dm_ir::ResolveQuery::RuntimeType(SymbolId::of("/obj/inner"))),
         dm_ir::ResolvedMeaning::Symbol(_)
