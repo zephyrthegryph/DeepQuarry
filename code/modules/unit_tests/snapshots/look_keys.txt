@@ -9496,9 +9496,9 @@
 /obj/item/gun/magnetic	3ece4970cc58eb99	*
 /obj/item/gun/magnetic/fuelrod	046cb8d90cd7ec15	*
 /obj/item/gun/magnetic/gasthrower	84d0fff52bfc5f52	*
-/obj/item/gun/magnetic/matfed	af519b38718fa3aa	*
-/obj/item/gun/magnetic/matfed/phoronbore	34a70e0e2f4af687	*
-/obj/item/gun/magnetic/matfed/phoronbore/loaded	f258f5b66ac84615	*
+/obj/item/gun/magnetic/matfed	0ddd3034fbee425b	*
+/obj/item/gun/magnetic/matfed/phoronbore	473df3fd22ce986c	*
+/obj/item/gun/magnetic/matfed/phoronbore/loaded	3eff6841510c99ba	*
 /obj/item/gun/magnetic/railgun	22ffa0adf4c6ce56	*
 /obj/item/gun/magnetic/railgun/automatic	6a882dbace307377	*
 /obj/item/gun/magnetic/railgun/flechette	326a6fcaa74f75d6	*
