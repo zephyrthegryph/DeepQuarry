@@ -60,7 +60,7 @@ The reference machinery itself (relation tables, handles, the lifecycle transact
 tests are exempt by path. The baseline (`tools/ci/stored_refs_baseline.txt`) is shrink-only:
 `analyze baseline --update --lint stored_refs` after each wave. No new `ALLOW(stored_refs)`.
 
-Seeded 2026-10-12: 1,768 sites (var 1,391, list 377).
+Seeded 2026-10-12: 1,768 sites (var 1,391, list 377); 1,737 after generated output was exempted (var 1,374, list 363).
 
 ## The GC sweep test
 

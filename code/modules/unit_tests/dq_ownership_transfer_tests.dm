@@ -242,8 +242,8 @@
 	TEST_ASSERT(move_into(M, nameof(M.beaker), W, H, log = LOG_GAME), "the transfer lands")
 	var/list/record = GLOB.dispatch_last_record
 	TEST_ASSERT(islist(record), "the transfer was dispatched")
-	TEST_ASSERT_EQUAL(record["user"], H, "by the actor")
-	TEST_ASSERT_EQUAL(record["target"], M, "on the holder")
+	TEST_ASSERT_EQUAL(resolve_handle(record["user"]), H, "by the actor")
+	TEST_ASSERT_EQUAL(resolve_handle(record["target"]), M, "on the holder")
 	TEST_ASSERT_EQUAL(record["action"], "insert", "as an insert")
 	TEST_ASSERT_EQUAL(record["log"], LOG_GAME, "with the log line asked for")
 	// No actor: nothing is dispatched, the transfer still lands.
