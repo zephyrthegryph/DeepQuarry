@@ -376,11 +376,14 @@ fn pinned_cold_startup_interleaves_globals_class_and_distinct_procedure_statics(
             _ => None,
         })
         .collect::<Vec<_>>();
+    // Pinned BYOND cold_forward_call_footer_reference.json proc70 emits
+    // SetVar [65499,177..181]: Global addresses VarIDs, not footer ordinals.
+    // Footer order and distinct positions/records are checked separately above.
     assert_eq!(
         slots,
         selected
             .iter()
-            .map(|(slot, _, _)| *slot)
+            .map(|(_, _, variable)| *variable)
             .collect::<Vec<_>>()
     );
 }
