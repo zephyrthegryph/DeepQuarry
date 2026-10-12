@@ -691,17 +691,22 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		var/area/A = get_area(spot)
 		return A.sound_env
 
+/// The slots on the toggled ("other") inventory bar: hidden_inventory_update() shows and hides exactly these.
+GLOBAL_LIST_INIT(hud_toggled_slots, list(SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_GLOVES, SLOT_ID_EYES, SLOT_ID_UNIFORM, SLOT_ID_SUIT, SLOT_ID_MASK))
+
 /mob/proc/position_hud_item(obj/item/item, slot)
 	if(!istype(hud_used) || !slot || !LAZYLEN(hud_used.slot_info))
 		return
 
+	// Slot ids are text ("head", "pocket_r"): an ordering test (slot > SLOT_ID_POCKET_R) compares spellings, not the bar a slot sits in, and
+	// showed a hat, gloves, glasses, a mask or headsets equipped while the bar was folded (the job outfit, on joining).
 	//They may have hidden their entire hud but the hands
-	if(!hud_used.hud_shown && slot > SLOT_ID_HAND_R)
+	if(!hud_used.hud_shown && slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)
 		item.screen_loc = null
 		return
 
 	//They may have hidden the icons in the bottom left with the hide button
-	if(!hud_used.inventory_shown && slot > SLOT_ID_POCKET_R)
+	if(!hud_used.inventory_shown && (slot in GLOB.hud_toggled_slots))
 		item.screen_loc = null
 		return
 
