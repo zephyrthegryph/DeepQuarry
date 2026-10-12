@@ -2,3 +2,4 @@ author: "Codex"
 delete-after: true
 changes:
   - bugfix: "Clean up temporary disease copies after reagent transfers and saved-state operations."
+  - bugfix: "Restore the legacy standard-rifle count in exploration weapon cabinets."

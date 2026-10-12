@@ -463,7 +463,7 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 				continue
 			found += name
 	for(var/name in subject.vars)
-		if(name in base_vars || name in found)
+		if((name in base_vars) || (name in found))
 			continue
 		if(islist(plan_entry) && !(name in plan_entry))
 			continue

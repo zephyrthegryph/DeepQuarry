@@ -54,4 +54,23 @@
 		qdel(P)
 		dq_look_reset(T)
 
+/datum/unit_test/dq_look_base_fields_not_probed/Run()
+	dq_look_scope_globals()
+	var/turf/T = test_floor()
+	var/list/base_vars = dq_look_state_base_vars(/mob, T)
+	TEST_ASSERT("vg_entity" in base_vars, "Native identity is declared on the real mob base; it is not a content appearance input")
+	for(var/type in list(/mob/living/silicon/robot/drone/jan, /mob/living/silicon/robot/drone/min))
+		dq_look_reset(T)
+		var/atom/subject = dq_snapshot_allocate(type, T)
+		var/list/names = dq_look_probe_names(subject, base_vars, "*", list())
+		var/list/illegal = list()
+		for(var/name in names)
+			if(name in base_vars)
+				illegal += name
+		// Destroy before asserting: these are real native-bound drones, and an
+		// assertion must not leave their entity or children alive.
+		qdel(subject)
+		dq_look_reset(T)
+		TEST_ASSERT_EQUAL(length(illegal), 0, "Unknown plans exclude every actual base field[type]: [jointext(illegal, ", ")]")
+		TEST_ASSERT(!("vg_entity" in names), "Unknown-plan exploration never writes a Rust identity handle[type]")
 #endif

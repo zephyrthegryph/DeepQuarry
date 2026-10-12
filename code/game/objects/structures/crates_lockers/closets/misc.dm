@@ -24,7 +24,7 @@
 
 /obj/structure/closet/secure_closet/guncabinet/rifle
 	name = "rifle cabinet"
-	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG) //CHOMP explo keep
+	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG)
 
 	starts_with = list(
 		/obj/item/ammo_magazine/clip/c762/hunter = 9,
@@ -36,14 +36,14 @@ CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
 /// Rolled before init (rolls(), code/engine/lifeforms/rolls.dm): what the old Initialize() drew from the world RNG.
 /obj/structure/closet/secure_closet/guncabinet/rifle/proc/roll_starts_with(datum/roller/R)
 	. = list()
-	if(R.chance(85))
-		. += /obj/item/gun/projectile/shotgun/pump/rifle
-	else
-		. += /obj/item/gun/projectile/shotgun/pump/rifle/lever
+	var/path = R.chance(85) ? /obj/item/gun/projectile/shotgun/pump/rifle : /obj/item/gun/projectile/shotgun/pump/rifle/lever
+	// The old starts_with += path appended the key again. Each occurrence
+	// inherited its associated count, so a standard rifle added two, not one.
+	.[path] = dq_latent_spawn_count(starts_with?[path])
 
 /obj/structure/closet/secure_closet/guncabinet/phase
-	name = "explorer weapon cabinet" //CHOMP explo keep
-	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG) //CHOMP explo keep
+	name = "explorer weapon cabinet"
+	req_one_access = list(ACCESS_EXPLORER,ACCESS_BRIG)
 
 	starts_with = list(
 		/obj/item/gun/energy/locked/phasegun = 2,
@@ -55,7 +55,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/guncabinet/rifle)
  * Explorer
  */
 /obj/structure/closet/secure_closet/explorer
-	name = "explorer locker" //CHOMP explo keep
+	name = "explorer locker"
 	req_access = list(ACCESS_EXPLORER)
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/expedition/explorer
 
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/explorer)
  */
 /obj/structure/closet/secure_closet/pathfinder
 	name = "pathfinder locker"
-	req_access = list(ACCESS_PATHFINDER) //CHOMP explo keep
+	req_access = list(ACCESS_PATHFINDER)
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/expedition/pathfinder
 
 	starts_with = list(
@@ -215,7 +215,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/sar)
 	starts_with = list(
 		/obj/item/storage/backpack/parachute,
 		/obj/item/material/knife/tacknife/survival,
-		/obj/item/gun/energy/locked/frontier/holdout, //CHOMP explo keep
+		/obj/item/gun/energy/locked/frontier/holdout,
 		/obj/item/clothing/head/pilot_vr,
 		/obj/item/clothing/under/rank/pilot1/no_webbing,
 		/obj/item/clothing/suit/storage/toggle/bomber/pilot,

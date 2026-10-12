@@ -4988,3 +4988,9 @@ The fixture now seeds native rolls by exact type before creation. These scoped r
 
 Only34 listed diagnostic rows are refreshed. Shared clothing/reagent files retain unrelated held classes.
 
+
+### Rifle cabinet count parity and safe appearance probes
+
+The real old `starts_with += path` repeats an associative standard-rifle key whose count is two. Its latent consumer therefore spawns four standard rifles on that branch. Master `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d` converted the extra entry to a plain one-item roll, producing three instead. The native roll now returns the actual inherited count for the selected path, preserving four standard rifles or two standard rifles plus one lever rifle. The regression observes real constructor/ledger contents and compares both branches with the actual legacy latent count consumer. Cabinet pins remain held until this repaired behavior passes.
+
+The historical-probe coverage change must preserve the existing base-field exclusion. Independently parenthesized membership checks restore that exclusion; a real-drone regression rejects every inherited base field, including the Rust entity identity. Native handles are not numeric appearance inputs and must not be rewritten as 0/1/2.
