@@ -226,7 +226,7 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 		return capture(producer.vars[field])
 	var/hop = path[position]
 	var/list/indexed = islist(hop) ? hop : null
-	var/each = !indexed && copytext(hop, max(1, length(hop) - 1)) == "[]"
+	var/each = !indexed && istext(hop) && copytext(hop, max(1, length(hop) - 1)) == "\[\]"
 	var/name = indexed ? indexed["name"] : (each ? copytext(hop, 1, length(hop) - 1) : hop)
 	if(!(name in producer.vars))
 		if(conservative)
@@ -245,6 +245,11 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 			var/list/selection = index_selector(selector)
 			states += list(capture(selection[2]))
 			if(!selection[1] || isnull(selection[2]) || !members)
+				return states
+			// Reads include untaken branches. A positional lookup beyond the
+			// current collection is a missing member, not a bounds exception.
+			var/selected_key = selection[2]
+			if(isnum(selected_key) && (selected_key < 1 || selected_key > length(members) || selected_key != round(selected_key)))
 				return states
 			var/selected = members[selection[2]]
 			var/datum/selected_member = isdatum(selected) ? selected : null

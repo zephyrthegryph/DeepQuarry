@@ -77,7 +77,7 @@ CAPABILITIES(/datum/dq_lazy_memo_fixture)
 	memo("value", PROC_REF(compute_value))
 	memo("result", PROC_REF(compute_result))
 	memo("cycle", PROC_REF(compute_cycle))
-	on_change("memo:value", then(PROC_REF(observed)))
+	on_change("memo:value", ANY, then(PROC_REF(observed)))
 
 /datum/dq_lazy_memo_fixture/proc/compute_value(datum/act/eval/A)
 	var/total = local_value + (source ? source.amount : 0)
