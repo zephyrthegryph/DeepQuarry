@@ -257,7 +257,7 @@ READS_AS(/obj/machinery/proc/operable, stat:[STAT_OPERABLE])
 
 /// Vehicles still keep their own legacy condition bits (BROKEN, ...).
 /obj/vehicle/var/stat = 0
-TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
+TRACKED(/obj/vehicle, stat)
 
 /obj/vehicle/proc/stat_add(bits)
 	return set_stat(stat | bits)
@@ -270,7 +270,7 @@ TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
 /datum/scheduler_field_definition/obj/vehicle/stat
 	of = /obj/vehicle
 	field = "stat"
-	channel = CHANGE_EXPLICIT
+	channel = 0
 
 /// Vehicles still redraw their legacy condition bits through the declared appearance watcher.
 APPEARANCE_WATCH(/obj/vehicle, list("stat"))
