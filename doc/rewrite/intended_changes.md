@@ -5045,3 +5045,54 @@ Master 882a289c38 (2026-10-11 00:12 -0500) moves human appearance to its profile
 ### Prompt requirement recheck fixture (2026-10-11)
 
 The tracked-test migration uses the real setter in an atomic state-publication cohort for dq_prompt_interrupt/an_answer_re_runs_the_requirements. The prompt must remain open before publication, and its answer must refuse the already changed value. This preserves the refusal assertion and tests the real ordering contract without an unpublished raw write. The unrelated lost-power interruption test still checks cancellation after normal publication.
+
+### Hygiene appearance coverage: exact cause classes (2026-10-11)
+
+## Restored native slime appearance probe coverage
+
+The look-state producer now excludes real base fields before its bounded leaf-field probe list. Commit 5e052e1c3a35d325876270f6be8b675ecad3218d corrected the low-precedence `in` expression; this exposes the existing slime `shiny` input rather than changing gameplay. The58 new rows correspond to the already-present shiny overlay in slime.dm:128-136 (historical source commit 2df5e9fe0ec8ee54c554917e1ffbd29645dd457d). The actual leaf-field regression toggles shine through the real producer; no silent fallback coverage is claimed.
+
+## Rifle cabinet native starting-content parity
+
+Commit 5e052e1c3a35d325876270f6be8b675ecad3218d preserves the actual old associative `starts_with += path` consumer: the standard branch produces four standard rifles, and the lever branch produces two standard rifles plus one lever. The native cabinet draw reads real slot contents and displays at most three gun overlays (guncabinet.dm:12-29), so the4 opened-state rows now remove three projectile overlays rather than two. The dedicated parity fixture inspects actual constructor ledger kinds against the old consumer and cleans custody before assertion. Final gate must rerun it. The preserved3feb gate log contains neither its selector nor a PASS line and ended without finalJSON after watchdog termination; it cannot provide passing evidence.
+
+The12 test-only lever appearance rows are excluded from these refreshes. Its own exact abstract_type declaration fixes sweep discovery without blessing test fixtures as production content.
+
+Tree-pin changes: 31 exact semantic rows, no type-order refresh
+
+code/modules/unit_tests/snapshots/look_trees/mob.living.silicon.robot.txt
+Cause: 0e147c0b42; production rolls 8b3e4f9ed9 (own-fixture/native-stream)
+Jan drone native roll_shell chooses Classic repairbot and matching eyes under scoped per-type stream; prior Eris maintbot sample was incidental.
+Exact rows: 4
+
+code/modules/unit_tests/snapshots/look_trees/mob.living.simple_mob.txt
+Cause: c7bfb74d61 (master/new-content-type)
+New real map glitterfly/tidy subtype replaces map makes_dirt mutation with configure(mob_movement(makes_dirt=FALSE)); Southern Cross-7 references it. Eight constructor tree rows are genuine newly covered production type.
+Exact rows: 8
+
+code/modules/unit_tests/snapshots/look_trees/obj.item.rig.txt
+Cause: a3a41a0aa4 (master/ownership-bugfix)
+Nikki ownership chest now declares actual cape type; real instance constructs instead of old OWN runtime. Four appearance rows replace runtime.
+Exact rows: 5
+
+code/modules/unit_tests/snapshots/look_trees/obj.machinery.embedded_controller.radio.txt
+Cause: 0fff38c020 (master/native-draw)
+Real draw chooses off when no program; old provider mutated atom.icon_state after parent base overlay had captured standby, producing stale golden overlay/state.
+Exact rows: 4
+
+code/modules/unit_tests/snapshots/look_trees/obj.structure.closet.secure_closet.guncabinet.txt
+Cause: 5e052e1c3a (own-fix/constructor-parity)
+The dedicated regression asserts that a legacy associative selected key adds its existing count again; the native repair restores that starting count and must pass the final gate. Selected seeded cabinet projectile count rises 2 to3. Exclude test-only lever rows, fix exact abstract_type instead.
+Exact rows: 2
+
+code/modules/unit_tests/snapshots/look_trees/obj.structure.frame.txt
+Cause: 0fff38c020 (master/native-draw)
+Real frame draw applies frame_type icon_override and get_icon_state before composition; old mutable provider emitted stale stock_parts machine_0 overlay, including wrong computer state.
+Exact rows: 4
+
+code/modules/unit_tests/snapshots/look_trees/obj.structure.toilet.txt
+Cause: 0e147c0b42; production rolls e2a95fa9d9 (own-fixture/native-stream)
+Prison toilet existing native rolls(open,range_of(0,1)) now samples lid-up under deterministic per-type seed; matching state/overlay210 replaces incidental200. No production lid choice change.
+Exact rows: 4
+
+Excluded: all seven /guncabinet/rifle/dq_parity/lever rows. Exact test-only subtype abstract declaration is fixed separately; these rows are never golden candidates.

@@ -2613,6 +2613,14 @@
 /mob/living/simple_mob/animal/sif/glitterfly overlay: icons/misc/buildmode.dmi:ais_1:39
 /mob/living/simple_mob/animal/sif/glitterfly overlay: icons/misc/buildmode.dmi:ai_0:39
 /mob/living/simple_mob/animal/sif/glitterfly overlay: icons/misc/win32.dmi::-100
+/mob/living/simple_mob/animal/sif/glitterfly/tidy icon: icons/mob/animal.dmi
+/mob/living/simple_mob/animal/sif/glitterfly/tidy state: butterfly
+/mob/living/simple_mob/animal/sif/glitterfly/tidy dir: 2
+/mob/living/simple_mob/animal/sif/glitterfly/tidy color: #d6a0c2
+/mob/living/simple_mob/animal/sif/glitterfly/tidy overlay: ::8:#000000
+/mob/living/simple_mob/animal/sif/glitterfly/tidy overlay: icons/misc/buildmode.dmi:ais_1:39
+/mob/living/simple_mob/animal/sif/glitterfly/tidy overlay: icons/misc/buildmode.dmi:ai_0:39
+/mob/living/simple_mob/animal/sif/glitterfly/tidy overlay: icons/misc/win32.dmi::-100
 /mob/living/simple_mob/animal/sif/glitterfly/rare icon: icons/mob/animal.dmi
 /mob/living/simple_mob/animal/sif/glitterfly/rare state: butterfly
 /mob/living/simple_mob/animal/sif/glitterfly/rare dir: 2

@@ -10,6 +10,7 @@
 	var/branch_standard = TRUE
 
 /obj/structure/closet/secure_closet/guncabinet/rifle/dq_parity/lever
+	abstract_type = /obj/structure/closet/secure_closet/guncabinet/rifle/dq_parity/lever
 	branch_standard = FALSE
 
 /obj/structure/closet/secure_closet/guncabinet/rifle/dq_parity/roll_starts_with(datum/roller/R)

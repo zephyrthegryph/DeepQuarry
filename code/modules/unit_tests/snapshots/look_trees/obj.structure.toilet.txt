@@ -11,9 +11,9 @@
 /obj/structure/toilet/teleplumbed dir: 2
 /obj/structure/toilet/teleplumbed overlay: icons/obj/watercloset.dmi:toilet00:8:#000000
 /obj/structure/toilet/prison icon: icons/obj/watercloset.dmi
-/obj/structure/toilet/prison state: toilet200
+/obj/structure/toilet/prison state: toilet210
 /obj/structure/toilet/prison dir: 2
-/obj/structure/toilet/prison overlay: icons/obj/watercloset.dmi:toilet200:8:#000000
+/obj/structure/toilet/prison overlay: icons/obj/watercloset.dmi:toilet210:8:#000000
 /obj/structure/toilet/item icon: icons/obj/watercloset.dmi
 /obj/structure/toilet/item state: toilet10
 /obj/structure/toilet/item dir: 2
