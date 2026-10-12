@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "scope": "Tiny pinned compile-only member and folded-string registration comparison; relative order and typed value observation only, no runtime or full parity acceptance.",
-  "native_commit": "3edee41c96",
+  "native_commit": "3ede538f96",
   "native_sha256": "2ac708dac16636a05f32d0d3d2ed0c3212cbfee88229439ffd121aacd66b067e",
   "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
   "observations": {
