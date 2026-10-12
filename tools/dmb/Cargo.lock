@@ -72,8 +72,6 @@ dependencies = [
  "dm-exec",
  "dm-profile",
  "md5",
- "serde",
- "serde_json",
  "xxhash-rust",
 ]
 
@@ -312,6 +310,19 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "serde",
+ "xxhash-rust",
+]
+
+[[package]]
+name = "dmb-opendream"
+version = "0.1.0"
+dependencies = [
+ "byond-dmb",
+ "dm-exec",
+ "dm-profile",
+ "md5",
+ "serde",
+ "serde_json",
  "xxhash-rust",
 ]
 
