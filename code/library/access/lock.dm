@@ -94,6 +94,25 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 	var/list/needs = access_needs(holder, null, null)
 	return !!access_credential(holder, A.actor, src.args["in_hand"] ? A.held : null, needs[1], needs[2], src.args["types"])
 
+/datum/entry/part/req/credential/read_keys(datum/act/op/A)
+	. = list()
+	if(!A.holder)
+		return
+	if(hascall(A.holder, "__setter_req_access"))
+		. += list(list(A.holder, "req_access"))
+	if(hascall(A.holder, "__setter_req_one_access"))
+		. += list(list(A.holder, "req_one_access"))
+
+// req_access() targets an object; it must invalidate for the same registered policy fields as credential requirements.
+/datum/req/access/read_keys(datum/act/op/A)
+	. = list()
+	if(!A.target)
+		return
+	if(hascall(A.target, "__setter_req_access"))
+		. += list(list(A.target, "req_access"))
+	if(hascall(A.target, "__setter_req_one_access"))
+		. += list(list(A.target, "req_one_access"))
+
 /// req_unlocked_for_actor(): the holder's lock is open, or the actor works a locked machine anyway (a silicon, an admin ghost).
 /proc/req_unlocked_for_actor(id = null)
 	return part_make(/datum/entry/part/req/unlocked_for_actor, list("id" = id))

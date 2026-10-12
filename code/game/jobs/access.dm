@@ -3,12 +3,55 @@
 /obj/var/list/req_access
 /obj/var/list/req_one_access
 
+// Only these migrated families register access dependencies. Other objects retain their existing untracked policy.
+SETTER(/obj/machinery/computer, req_access)
+SETTER(/obj/machinery/computer, req_one_access)
+SETTER(/obj/structure/closet, req_access)
+SETTER(/obj/structure/closet, req_one_access)
+
+/obj/proc/set_req_access(list/value)
+	var/list/replacement = value?.Copy()
+	if(length(replacement) && is_access_id_list(replacement))
+		replacement = string_list(replacement)
+	if(TRACKED_UNCHANGED(req_access, replacement))
+		return FALSE
+	req_access = replacement
+	if(hascall(src, "__setter_req_access"))
+		tracked_changed(src, nameof(req_access))
+	return TRUE
+
+/obj/proc/set_req_one_access(list/value)
+	var/list/replacement = value?.Copy()
+	if(length(replacement) && is_access_id_list(replacement))
+		replacement = string_list(replacement)
+	if(TRACKED_UNCHANGED(req_one_access, replacement))
+		return FALSE
+	req_one_access = replacement
+	if(hascall(src, "__setter_req_one_access"))
+		tracked_changed(src, nameof(req_one_access))
+	return TRUE
+
 /// Swaps req_access and req_one_access for the shared copy with the same contents.
 /obj/proc/intern_access_lists()
 	if(length(req_access) && is_access_id_list(req_access))
-		req_access = string_list(req_access)
+		set_req_access(req_access)
 	if(length(req_one_access) && is_access_id_list(req_one_access))
-		req_one_access = string_list(req_one_access)
+		set_req_one_access(req_one_access)
+
+// Concrete overrides preserve the subtype root for generated requirement dependencies, including empty policies.
+/obj/machinery/computer/check_access_list(list/L)
+	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
+		return TRUE
+	if(!LAZYLEN(L))
+		return FALSE
+	return has_access(req_access, req_one_access, L)
+
+/obj/structure/closet/check_access_list(list/L)
+	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
+		return TRUE
+	if(!LAZYLEN(L))
+		return FALSE
+	return has_access(req_access, req_one_access, L)
 
 /proc/is_access_id_list(list/L)
 	for(var/entry in L)

@@ -28,11 +28,12 @@ CAPABILITIES(/datum/access_viewer)
 	if(!set_id)
 		return FALSE
 	// Copy first: access lists are shared between objects (intern_access_lists()).
-	req_thing.req_access = req_thing.req_access ? req_thing.req_access.Copy() : list()
-	if(set_id in req_thing.req_access)
-		req_thing.req_access -= set_id
+	var/list/replacement = req_thing.req_access ? req_thing.req_access.Copy() : list()
+	if(set_id in replacement)
+		replacement -= set_id
 	else
-		req_thing.req_access += set_id
+		replacement += set_id
+	req_thing.set_req_access(replacement)
 	return TRUE
 
 /datum/access_viewer/proc/ui_act_req_one(datum/act/op/A, set_id_arg)
@@ -42,11 +43,12 @@ CAPABILITIES(/datum/access_viewer)
 	var/set_id = set_id_arg
 	if(!set_id)
 		return FALSE
-	req_thing.req_one_access = req_thing.req_one_access ? req_thing.req_one_access.Copy() : list()
-	if(set_id in req_thing.req_one_access)
-		req_thing.req_one_access -= set_id
+	var/list/replacement = req_thing.req_one_access ? req_thing.req_one_access.Copy() : list()
+	if(set_id in replacement)
+		replacement -= set_id
 	else
-		req_thing.req_one_access += set_id
+		replacement += set_id
+	req_thing.set_req_one_access(replacement)
 	return TRUE
 
 /datum/access_viewer/tgui_static_data(mob/user)

@@ -105,8 +105,8 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 
 	for(var/obj/machinery/computer/shuttle_control/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(istype(C, /obj/machinery/computer/shuttle_control/research) || istype(C, /obj/machinery/computer/shuttle_control/mining))
-			C.req_access = list()
-			C.req_one_access = list()
+			C.set_req_access(list())
+			C.set_req_one_access(list())
 	after(src, 5 MINUTES, PROC_REF(universe_collapses))
 
 /datum/universal_state/supermatter_cascade/proc/universe_collapses()

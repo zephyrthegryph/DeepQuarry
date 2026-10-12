@@ -313,7 +313,7 @@
 /datum/ui_pin/admin_host/telecomms_traffic/script(turf/T)
 	make_user(T)
 	var/obj/machinery/computer/telecomms/traffic/console = test.allocate(/obj/machinery/computer/telecomms/traffic, T)
-	console.req_access = null // the access gate is not what is pinned
+	console.set_req_access(null) // the access gate is not what is pinned
 	console.network = "dqpin_net"
 	var/turf/beside = locate(T.x + 1, T.y, T.z)
 	var/obj/machinery/telecomms/server/box = test.allocate(/obj/machinery/telecomms/server, beside)

@@ -1,98 +1,58 @@
 human|none menu: Climb
 human|none menu: Insert beaker (refused: not possible right now)
-human|none menu: Ui open
-human|none click: Click: Ui open
+human|none menu: Open controls
+human|none click: Click: Open controls
 @obj.machinery.computer robot|none
 -click: Click: Use
 +2 menu: Insert beaker (refused: not possible right now)
-+3 menu: Ui open
-+5 click: Click: Ui open
++3 menu: Open controls
++5 click: Click: Open controls
 @obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 @obj.machinery.computer ghost|none
 +1 menu: Insert beaker (refused: not possible right now)
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
--menu: Use screwdriver
 +2 menu: Insert beaker (refused: not possible right now)
-+3 menu: Move To Top
-+4 menu: Toggle Digestable (refused: You can't do that.)
-+5 menu: Ui open
-+6 menu: Use item
++3 menu: Open controls
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
--menu: Use crowbar
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
--menu: Use wrench
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Unsecure
-+6 menu: Use item
++2 menu: Open controls
++3 menu: Unsecure
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
--menu: Use wirecutters
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
--menu: Use multitool
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
--menu: Use welding tool
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
--menu: Use cable coil
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Make Cable Restraints (refused: You can't do that.)
-+3 menu: Move To Top
-+4 menu: Toggle Digestable (refused: You can't do that.)
-+5 menu: Ui open
-+6 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
--menu: Use steel sheet
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+5 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/card/id
 -menu: Use
--menu: Use identification card
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Read ID Card (refused: You can't do that.)
-+4 menu: Toggle Digestable (refused: You can't do that.)
-+5 menu: Ui open
-+6 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item
 -menu: Use
 +1 menu: Insert beaker (refused: not possible right now)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
++2 menu: Open controls
 @obj human|/obj/item/gripper
 keys: climb.climb, climb.climb_menu, create_culture_bottle, create_vaccine_bottle, destroy_eject_beaker, disconnect, drag_buckle, eject_beaker, empty_beaker, insert_beaker, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, print_release_form, rename_disease, robot_remote_blocked, silicon_hand, ui_open, use_gripper, use_item
