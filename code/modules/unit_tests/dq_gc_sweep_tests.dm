@@ -67,8 +67,10 @@
 		if(extra <= allowed)
 			continue
 		TEST_FAIL("[label] ([D.type]) is still referenced after qdel() ([extra - allowed] reference(s) beyond its family's baseline of [allowed]): it would hard-delete")
+#ifdef REFERENCE_TRACKING
 		if(searches_left-- > 0)
 			D.find_references(max(extra, 1))
+#endif
 
 /// How many subjects wait in the check queue with a reference besides the queue's own and this proc's var.
 /datum/unit_test/dq_gc_sweep/proc/dq_gc_sweep_held(list/deleted)
