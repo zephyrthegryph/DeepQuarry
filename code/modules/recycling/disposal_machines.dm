@@ -719,7 +719,7 @@ TRACKED(/obj/machinery/disposal, occupied)
 	flushing = FALSE
 
 	// now reset disposal state
-	flush = FALSE
+	set_flush(FALSE)
 	if(mode == DISPOSALMODE_CHARGED)	// if was ready,
 		set_mode(DISPOSALMODE_CHARGING) // switch to charging
 

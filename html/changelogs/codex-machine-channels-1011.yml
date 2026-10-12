@@ -1,5 +1,5 @@
-author: Codex
+author: "Codex"
 delete-after: true
 changes:
-  - bugfix: Machine menus follow masked EMP source changes.
-  - code_imp: Machine condition and settings readers use native state delivery.
+  - bugfix: "Disposal bins reset the flush handle when their animation completes."
+  - refactor: "Machine settings invalidate readers through their tracked state."

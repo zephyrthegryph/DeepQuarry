@@ -288,3 +288,37 @@ CAPABILITIES(/obj/test_gas_level_holder)
 	holder.watched_air = null
 	gas_level_rearm_all(holder)
 	TEST_ASSERT(!holder.hot, "a holder with no mixture stayed hot")
+
+/// The real animation timers must reset the tracked handle, not the local
+/// flush-disposal action of the same name; the fallback still expels custody.
+/datum/unit_test/dq_disposal_flush_complete_resets_handle/Run()
+	set_global(nameof(GLOB.disposals_flush_shift_roundstat), GLOB.disposals_flush_shift_roundstat)
+	var/turf/simulated/floor/T = gas_level_test_room()
+	T.return_air().clear()
+	var/obj/machinery/disposal/D = allocate(/obj/machinery/disposal, T)
+	var/obj/item/I = allocate(/obj/item, T)
+	I.forceMove(D)
+	D.set_mode(2) // DISPOSALMODE_CHARGED is private to disposal_machines.dm.
+	D.set_flush(TRUE)
+	D.air_contents.clear()
+	D.air_contents.adjust_moles(/datum/gas/oxygen, 5)
+	var/datum/gas_mixture/reservoir = D.air_contents
+	work_stop(D) // Run the actual animation timers, without a competing work step.
+	D.flush()
+	test_time(1 SECOND)
+	TEST_ASSERT(D.flushing && D.flush, "The real startup animation keeps the pulled handle until completion")
+	test_time(0.5 SECONDS)
+	var/handle_cleared = !D.flush
+	var/animation_finished = !D.flushing
+	var/charging = D.mode == 1 // DISPOSALMODE_CHARGING.
+	var/item_expelled = I.loc != D && !(I in D.slot_contents(CONTAINER_SLOT_DISPOSAL))
+	var/new_reservoir = D.air_contents != reservoir && D.air_contents.total_moles() == 0
+	var/old_reservoir_consumed = QDELETED(reservoir)
+	var/gas_expelled = T.return_air().total_moles() > 0
+	qdel(I)
+	qdel(D)
+	TEST_ASSERT(handle_cleared, "Completion resets the actual tracked flush handle, even though its action local is named flush")
+	TEST_ASSERT(animation_finished && charging, "Completion ends its animation and restores charged mode to charging")
+	TEST_ASSERT(item_expelled, "The unhandled real flush still releases the item's bin custody")
+	TEST_ASSERT(new_reservoir && old_reservoir_consumed, "Completion replaces the emptied owned reservoir without leaking the original")
+	TEST_ASSERT(gas_expelled, "Fallback expulsion transfers reservoir gas to the real test-room air")
