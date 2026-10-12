@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "source_commit": "de898e62e84389eb2eb8d52b2b9b74ddca43701c",
+  "source_archive_sha256": "e59ebb7dcc7983a8a26b5ddb3cef01688057d8e30965fcb255ad0fc1f73fd8a3",
+  "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123508-2a4a101d-job-cargo.json",
+  "build_seconds": 191.6680495,
+  "build_peak_owned_commit_bytes": 3082698752,
+  "build_reaped": true,
+  "passed": {
+    "catalog_pressure_and_changed_dependencies": {"count": 1, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123932-802d4bdf-focused.json"},
+    "exact_key_layout_publication_and_local_reissue": {"count": 9, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123959-05ed2f15-focused.json"},
+    "switch_scratch_lexical_collision_both_lowering_paths": {"count": 1, "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-123959-1835ed9c-focused.json"}
+  },
+  "issues_found_and_preserved": [
+    "Initial stack-prefix implementation incorrectly assumed 16-byte SymbolIds, causing copy_from_slice panic; fixed to original 8-byte symbol encoding in de898e62e8",
+    "End-to-end pressure fixture still asserts host_facts is absent at tier 3 despite the new retained-catalog contract; fixture update pending",
+    "Two mistaken short test selectors selected no fixtures; subsequent full module selectors verified nonempty execution"
+  ],
+  "scope": "Focused Rust checks, not full runtime or release performance acceptance",
+  "performance": "No measured performance claim for these later changes"
+}
