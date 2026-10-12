@@ -17176,7 +17176,6 @@
 /obj/machinery/door_timer/tactical_pet_storage	b542fca8a641fa89	brig_doors,brig_flashers,circuit,component_parts,dir_at_make,id,maintenance_flags,panel_open,power_area,power_forced,shown_seconds,targets,timer_duration,timing,use_power
 /obj/machinery/doorbell_chime	76555f0c51bc3717	circuit,component_parts,dir_at_make,id_tag,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/doppler_array	59f5a387bb4badb8	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
-/obj/machinery/dq_hold_membership_fixture	216c2c91629c65f3	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/drone_fabricator	10e43ed8678d589c	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/drone_fabricator/derelict	dffac679a2225d5d	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/drone_fabricator/mining	3a47059a8736d562	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
@@ -17203,7 +17202,6 @@
 /obj/machinery/firealarm/alarms_hidden	4ada185800f56ffc	alarms_hidden,causality,circuit,component_parts,critalarm,detecting,dir_at_make,engalarm,firewarn,maintenance_flags,panel_open,power_area,power_forced,seclevel,soundloop,timing,use_power,working
 /obj/machinery/firealarm/angled	08a20300fb348522	alarms_hidden,causality,circuit,component_parts,critalarm,detecting,dir_at_make,engalarm,firewarn,maintenance_flags,panel_open,power_area,power_forced,seclevel,soundloop,timing,use_power,working
 /obj/machinery/firealarm/angled/hidden	3a3aa2dd4ebc8147	alarms_hidden,causality,circuit,component_parts,critalarm,detecting,dir_at_make,engalarm,firewarn,maintenance_flags,panel_open,power_area,power_forced,seclevel,soundloop,timing,use_power,working
-/obj/machinery/firealarm/dq_condition_edge_probe	90b904033b643f59	alarms_hidden,causality,circuit,component_parts,critalarm,detecting,dir_at_make,engalarm,firewarn,maintenance_flags,panel_open,power_area,power_forced,seclevel,soundloop,timing,use_power,working
 /obj/machinery/firework_launcher	41a936ff04fa6ed5	circuit,component_parts,dir_at_make,loaded_star,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/fitness	4b5d8407f8657349	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
 /obj/machinery/fitness/heavy	ac342017f8e01dd9	circuit,component_parts,dir_at_make,maintenance_flags,panel_open,power_area,power_forced,use_power
