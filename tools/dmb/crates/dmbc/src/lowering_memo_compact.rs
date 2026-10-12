@@ -179,6 +179,8 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for BoundedVec<T> {
 use crate::lowering_memo_wire::read_wire::ReadWire;
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Payload<'a> {
+    #[serde(skip)]
+    verified_answers: typed::VerifiedAnswers,
     #[serde(borrow)]
     pub(crate) key: Cow<'a, [u8]>,
     pub(crate) identity: ProcedureIdentity,
@@ -226,6 +228,7 @@ pub(crate) fn encode<'a>(
             .collect(),
     );
     let payload = Payload {
+        verified_answers: Default::default(),
         typed_answers,
         key: Cow::Borrowed(key),
         identity: ProcedureIdentity {
@@ -262,22 +265,10 @@ pub(crate) fn encode<'a>(
     dm_wire::encode_bounded(SCHEMA, &payload, MAX_RECORD).ok()
 }
 pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
-    let value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
+    let mut value: Payload<'_> = dm_wire::decode_borrowed(SCHEMA, bytes, MAX_RECORD)?;
     crate::lowering_memo_wire::validate_versions(&value.versions.0)?;
-    if value.typed_answers.0.len() != value.reads.0.len()
-        || value
-            .typed_answers
-            .0
-            .iter()
-            .zip(&value.reads.0)
-            .any(|(typed, read)| {
-                typed
-                    .as_ref()
-                    .is_some_and(|answer| !answer.matches_canonical(&read.answer))
-            })
-    {
-        return Err("malformed compact typed answer sidecar".into());
-    }
+    value.verified_answers =
+        typed::VerifiedAnswers::preflight(&value.typed_answers.0, &value.reads.0)?;
     if !mandatory_declaration_reads(value.identity, &value.reads.0) {
         return Err("missing/malformed compact declaration receipt".into());
     }
@@ -380,10 +371,11 @@ impl Payload<'_> {
         let matching = dm_session::observations::certified_domains(&self.versions.0, |d| {
             provider.domain_version(*d)
         });
-        for (read, typed) in self.reads.0.iter().zip(&self.typed_answers.0) {
-            let answer = typed::hydrate_canonical(
+        for (index, read) in self.reads.0.iter().enumerate() {
+            let answer = self.verified_answers.hydrate(
+                index,
                 read.query,
-                typed.as_ref(),
+                &read.answer,
                 matching.contains(&read.query.domain()),
                 provider,
             );
