@@ -1,7 +1,7 @@
 use std::{
     fs, io,
     os::unix::{
-        fs::{FileTypeExt, MetadataExt, PermissionsExt},
+        fs::{DirBuilderExt, FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt},
         net::{UnixListener, UnixStream},
     },
     path::PathBuf,
@@ -46,6 +46,9 @@ pub(in crate::daemon) struct Endpoint(PathBuf);
 pub(in crate::daemon) struct Listener {
     socket: UnixListener,
     path: PathBuf,
+    identity: (u64, u64),
+    // Persistent control files are never removed. The OS releases this lease.
+    _lease: fs::File,
 }
 unsafe extern "C" {
     fn getuid() -> u32;
@@ -53,32 +56,76 @@ unsafe extern "C" {
 impl Endpoint {
     pub(in crate::daemon) fn current() -> io::Result<Self> {
         let uid = unsafe { getuid() };
-        let directory =
-            std::env::temp_dir().join(super::namespace::current_name(&format!("dmbd-{uid}"))?);
+        Self::named(super::namespace::current_name(&format!("dmbd-{uid}"))?, uid)
+    }
+    pub(in crate::daemon) fn generation(compiler: u128) -> io::Result<Self> {
+        let uid = unsafe { getuid() };
+        Self::named(
+            super::namespace::current_generation_name(&format!("dmbd-{uid}"), compiler)?,
+            uid,
+        )
+    }
+    pub(in crate::daemon) fn discovery() -> io::Result<Self> {
+        let uid = unsafe { getuid() };
+        Self::named(
+            super::namespace::current_discovery_name(&format!("dmbd-{uid}"))?,
+            uid,
+        )
+    }
+    fn named(name: String, uid: u32) -> io::Result<Self> {
+        let directory = std::env::temp_dir().join(name);
         match fs::symlink_metadata(&directory) {
-            Ok(metadata) => {
-                if !metadata.is_dir()
-                    || metadata.uid() != uid
-                    || metadata.permissions().mode() & 0o077 != 0
-                {
-                    return Err(io::Error::new(
-                        io::ErrorKind::PermissionDenied,
-                        "daemon runtime directory is not private",
-                    ));
+            Ok(_) => {}
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                // Create with private mode atomically. Concurrent clients may
+                // discover this generation at the same time; validate the
+                // winning directory rather than failing or relaxing its mode.
+                match fs::DirBuilder::new().mode(0o700).create(&directory) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+                    Err(error) => return Err(error),
                 }
             }
-            Err(e) if e.kind() == io::ErrorKind::NotFound => {
-                fs::create_dir(&directory)?;
-                fs::set_permissions(&directory, fs::Permissions::from_mode(0o700))?;
-            }
             Err(e) => return Err(e),
+        }
+        let metadata = fs::symlink_metadata(&directory)?;
+        if !metadata.is_dir() || metadata.uid() != uid || metadata.permissions().mode() & 0o077 != 0
+        {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "daemon runtime directory is not private",
+            ));
         }
         Ok(Self(directory.join("compiler.sock")))
     }
 }
 pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
-    if endpoint.0.exists() {
-        if !fs::symlink_metadata(&endpoint.0)?.file_type().is_socket() {
+    use fs2::FileExt;
+    let lease_path = endpoint.0.with_extension("lock");
+    if let Ok(metadata) = fs::symlink_metadata(&lease_path) {
+        if !metadata.is_file() || metadata.uid() != unsafe { getuid() } {
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "daemon endpoint lease is not an owned regular file",
+            ));
+        }
+    }
+    let lease = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .truncate(false)
+        .mode(0o600)
+        .open(lease_path)?;
+    lease.try_lock_exclusive().map_err(|error| {
+        if error.kind() == io::ErrorKind::WouldBlock {
+            io::Error::new(io::ErrorKind::AddrInUse, "daemon endpoint lease is held")
+        } else {
+            error
+        }
+    })?;
+    if let Ok(metadata) = fs::symlink_metadata(&endpoint.0) {
+        if !metadata.file_type().is_socket() || metadata.uid() != unsafe { getuid() } {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "daemon endpoint is not a socket",
@@ -91,14 +138,26 @@ pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
                     "daemon already running",
                 ));
             }
-            Err(_) => fs::remove_file(&endpoint.0)?,
+            Err(error)
+                if matches!(
+                    error.kind(),
+                    io::ErrorKind::ConnectionRefused | io::ErrorKind::NotFound
+                ) =>
+            {
+                fs::remove_file(&endpoint.0)?
+            }
+            Err(error) => return Err(error),
         }
     }
     let socket = UnixListener::bind(&endpoint.0)?;
     fs::set_permissions(&endpoint.0, fs::Permissions::from_mode(0o600))?;
+    socket.set_nonblocking(true)?;
+    let metadata = fs::symlink_metadata(&endpoint.0)?;
     Ok(Listener {
         socket,
         path: endpoint.0.clone(),
+        identity: (metadata.dev(), metadata.ino()),
+        _lease: lease,
     })
 }
 pub(in crate::daemon) fn connect(endpoint: &Endpoint) -> io::Result<Stream> {
@@ -106,12 +165,29 @@ pub(in crate::daemon) fn connect(endpoint: &Endpoint) -> io::Result<Stream> {
 }
 impl Listener {
     pub(in crate::daemon) fn accept(&self) -> io::Result<Stream> {
-        self.socket.accept().map(|(stream, _)| Stream::new(stream))
+        loop {
+            if let Some(stream) = self.try_accept()? {
+                return Ok(stream);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+    }
+    pub(in crate::daemon) fn try_accept(&self) -> io::Result<Option<Stream>> {
+        match self.socket.accept() {
+            Ok((stream, _)) => Ok(Some(Stream::new(stream))),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(None),
+            Err(error) => Err(error),
+        }
     }
 }
 impl Drop for Listener {
     fn drop(&mut self) {
-        let _ = fs::remove_file(&self.path);
+        // Never unlink a successor. The endpoint OS lease is still held here.
+        if fs::symlink_metadata(&self.path).is_ok_and(|metadata| {
+            metadata.file_type().is_socket() && (metadata.dev(), metadata.ino()) == self.identity
+        }) {
+            let _ = fs::remove_file(&self.path);
+        }
     }
 }
 
@@ -132,6 +208,32 @@ pub(in crate::daemon) fn set_timeout(
 #[cfg(test)]
 mod deadline_tests {
     use super::*;
+    #[test]
+    fn endpoint_lease_and_inode_guard_do_not_delete_a_successor_or_lock() {
+        let identity = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let endpoint = Endpoint::generation(identity).unwrap();
+        let owner = listener(&endpoint).unwrap();
+        assert_eq!(
+            listener(&endpoint).err().unwrap().kind(),
+            io::ErrorKind::AddrInUse
+        );
+        fs::remove_file(&endpoint.0).unwrap();
+        let successor = UnixListener::bind(&endpoint.0).unwrap();
+        drop(owner);
+        assert!(
+            endpoint.0.exists(),
+            "old listener must not remove a different socket inode"
+        );
+        assert!(
+            endpoint.0.with_extension("lock").exists(),
+            "control lock files are never removed"
+        );
+        drop(successor);
+        fs::remove_file(&endpoint.0).unwrap();
+    }
     #[test]
     fn silent_peer_cannot_hold_request_forever() {
         use std::io::{Read, Write};

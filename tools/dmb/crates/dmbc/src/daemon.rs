@@ -6,6 +6,7 @@ use std::{
 };
 mod build_admission;
 pub mod control;
+mod generation_listeners;
 mod lifecycle_deadline;
 mod protocol;
 pub mod query;
@@ -158,8 +159,8 @@ pub fn route(
             }
         }
     }
-    let endpoint = transport::Endpoint::current()?;
     let identity = compiler_identity()?;
+    let endpoint = transport::Endpoint::generation(identity)?;
     let mut started = false;
     let mut lifecycle = lifecycle_deadline::LifecycleDeadline::new(std::time::Instant::now());
     loop {
@@ -205,13 +206,20 @@ pub fn route(
                             .into(),
                     );
                 }
-                protocol::Reply::Hello { .. } => {
+                protocol::Reply::Hello {
+                    version,
+                    compiler,
+                    retiring: true,
+                } if version == protocol::VERSION && compiler == identity => {
+                    // Explicit retirement of THIS identical compiler must drain
+                    // before restarting its same endpoint. Different generations
+                    // never enter this wait; each has a separate listener.
                     lifecycle.retiring(std::time::Instant::now())?;
                     started = false;
                     protocol::send(&mut stream, &protocol::Request::Retire)?;
                     let _ = protocol::receive::<protocol::Reply>(&mut stream);
                 }
-                _ => return Err("invalid daemon handshake".into()),
+                _ => return Err("invalid compiler-generation daemon handshake".into()),
             }
         } else if !allow_lifecycle {
             return Err("required existing daemon is unavailable; autostart disabled".into());
@@ -221,6 +229,13 @@ pub fn route(
             if listener_absent(&error) {
                 lifecycle.unavailable(std::time::Instant::now())?;
                 if !started {
+                    // Discovery is advisory lifecycle control, never the build
+                    // destination. An old busy listener cannot block the new
+                    // generation from starting or change its request semantics.
+                    if let Err(error) = retire_discovered(identity, remaining) {
+                        eprintln!("native daemon: previous generation retirement unavailable: {error}; starting requested generation");
+                    }
+                    lifecycle.remaining(std::time::Instant::now())?;
                     start()?;
                     started = true;
                 }
@@ -228,6 +243,46 @@ pub fn route(
         }
         let remaining = lifecycle.remaining(std::time::Instant::now())?;
         std::thread::sleep(Duration::from_millis(100).min(remaining));
+    }
+}
+fn retire_discovered(identity: u128, remaining: Duration) -> io::Result<()> {
+    let discovery = transport::Endpoint::discovery()?;
+    let connection = transport::connect(&discovery);
+    let connection = match connection {
+        Err(error) if listener_absent(&error) => {
+            transport::connect(&transport::Endpoint::current()?)
+        }
+        result => result,
+    };
+    let mut stream = match connection {
+        Ok(stream) => stream,
+        Err(error) if listener_absent(&error) => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    transport::set_timeout(&mut stream, remaining.min(Duration::from_secs(3)))?;
+    protocol::send(
+        &mut stream,
+        &protocol::Request::Hello {
+            version: protocol::VERSION,
+            compiler: identity,
+        },
+    )?;
+    match protocol::receive::<protocol::Reply>(&mut stream)? {
+        protocol::Reply::Hello { compiler, .. } if compiler != identity => {
+            protocol::send(&mut stream, &protocol::Request::Retire)?;
+            match protocol::receive::<protocol::Reply>(&mut stream)? {
+                protocol::Reply::Retiring => Ok(()),
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "old daemon did not acknowledge retirement",
+                )),
+            }
+        }
+        protocol::Reply::Hello { .. } => Ok(()),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid discovery daemon handshake",
+        )),
     }
 }
 fn listener_absent(error: &io::Error) -> bool {

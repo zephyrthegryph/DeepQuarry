@@ -110,10 +110,10 @@ pub fn execute(mut request: QueryRequest) -> Result<QueryReply, Box<dyn std::err
             *engine = cwd.join(&*engine);
         }
     }
-    let endpoint = super::transport::Endpoint::current()?;
+    let compiler = super::compiler_identity()?;
+    let endpoint = super::transport::Endpoint::generation(compiler)?;
     let mut stream = super::transport::connect(&endpoint)?;
     super::transport::set_timeout(&mut stream, std::time::Duration::from_secs(20))?;
-    let compiler = super::compiler_identity()?;
     super::protocol::send(
         &mut stream,
         &super::protocol::Request::Hello {

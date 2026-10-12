@@ -308,13 +308,13 @@ pub(super) fn serve() -> io::Result<()> {
         std::process::id(),
         max_workers
     ));
-    let endpoint = transport::Endpoint::current()?;
-    let listener: transport::Listener = transport::listener(&endpoint)?;
+    let compiler = super::compiler_identity()?;
+    let mut listeners = super::generation_listeners::Listeners::new(compiler)?;
     let shared = Arc::new(Shared {
         engines: Arc::new(Default::default()),
         executors: Arc::new(Default::default()),
         procedures: Arc::new(Default::default()),
-        compiler: super::compiler_identity()?,
+        compiler,
         retiring: AtomicBool::new(false),
         slots: Mutex::new(BTreeMap::new()),
         running: Mutex::new(0),
@@ -324,34 +324,30 @@ pub(super) fn serve() -> io::Result<()> {
         capacity: Condvar::new(),
         connections: AtomicUsize::new(0),
     });
-    let (send, receive) = std::sync::mpsc::sync_channel(16);
-    std::thread::Builder::new()
-        .name("dmbd-accept".into())
-        .spawn(move || loop {
-            let result = listener.accept();
-            let failed = result.is_err();
-            if send.send(result).is_err() || failed {
-                break;
-            }
-        })?;
     let mut activity = Instant::now();
     let mut housekeeping = housekeeping::Deadline::new(activity);
     loop {
         if housekeeping.due(Instant::now()) {
             shared.trim();
         }
-        if shared.retiring.load(Ordering::Acquire)
+        let retiring = shared.retiring.load(Ordering::Acquire);
+        let incoming = listeners.poll(retiring, Instant::now())?;
+        if retiring
             && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
+            && shared.connections.load(Ordering::Acquire) == 0
         {
             return Ok(());
         }
         if activity.elapsed() >= Duration::from_secs(7200)
             && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
+            && shared.connections.load(Ordering::Acquire) == 0
         {
             return Ok(());
         }
-        match receive.recv_timeout(Duration::from_secs(1)) {
-            Ok(Ok(stream)) => {
+        match incoming {
+            Some(incoming) => {
+                let stream = incoming.stream;
+                let discovery = incoming.discovery;
                 activity = Instant::now();
                 if shared.connections.fetch_add(1, Ordering::AcqRel) >= 16 {
                     shared.connections.fetch_sub(1, Ordering::AcqRel);
@@ -370,18 +366,16 @@ pub(super) fn serve() -> io::Result<()> {
                     .stack_size(dm_exec::COMPILER_STACK_BYTES)
                     .spawn(move || {
                         let _connection = Connection(Arc::clone(&shared));
-                        if let Err(error) = handle(stream, &shared) {
+                        if let Err(error) = handle(stream, &shared, discovery) {
                             super::emit_stderr(format_args!("daemon request: {error}"));
                         }
                     })?;
             }
-            Ok(Err(error)) => return Err(error),
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-            Err(_) => return Err(io::Error::other("daemon listener stopped")),
+            None => std::thread::sleep(Duration::from_millis(5)),
         }
     }
 }
-fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()> {
+fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) -> io::Result<()> {
     transport::set_timeout(&mut stream, Duration::from_secs(20))?;
     let Request::Hello { version, compiler } = protocol::receive(&mut stream)? else {
         return Err(io::Error::other("daemon handshake required"));
@@ -402,6 +396,14 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             protocol::send(&mut stream, &Reply::Retiring)
         }
         Request::Query(request) => {
+            if discovery {
+                return protocol::send(
+                    &mut stream,
+                    &Reply::Rejected(crate::request_failure::RequestFailure::invalid_request(
+                        "queries require the compiler-generation endpoint",
+                    )),
+                );
+            }
             if version != protocol::VERSION
                 || compiler != shared.compiler
                 || shared.retiring.load(Ordering::Acquire)
@@ -449,10 +451,18 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
                     })?;
                 // Lazy executable/body queries obey the same global worker budget.
                 // Acquire before the host lock, matching ordinary build admission.
-                let executable = request.source_queries.iter().any(|query| matches!(query,
-                    super::query::SourceQuery::SelectedReferences { .. } |
-                    super::query::SourceQuery::BodyModel { .. }));
-                let _permit = if executable { Some(shared.acquire_until(1, &admission)?) } else { None };
+                let executable = request.source_queries.iter().any(|query| {
+                    matches!(
+                        query,
+                        super::query::SourceQuery::SelectedReferences { .. }
+                            | super::query::SourceQuery::BodyModel { .. }
+                    )
+                });
+                let _permit = if executable {
+                    Some(shared.acquire_until(1, &admission)?)
+                } else {
+                    None
+                };
                 let host = slot.host.try_lock().map_err(|_| {
                     io::Error::new(
                         io::ErrorKind::WouldBlock,
@@ -484,6 +494,14 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
             }
         }
         Request::Build(request) => {
+            if discovery {
+                return protocol::send(
+                    &mut stream,
+                    &Reply::Rejected(crate::request_failure::RequestFailure::invalid_request(
+                        "builds require the compiler-generation endpoint",
+                    )),
+                );
+            }
             if version != protocol::VERSION
                 || compiler != shared.compiler
                 || shared.retiring.load(Ordering::Acquire)
@@ -584,12 +602,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>) -> io::Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[path = "six_session_contract_tests.rs"]
-    mod six_session_contract;
     #[path = "panic_reset_tests.rs"]
     mod panic_reset;
     #[path = "pressure_tests.rs"]
     mod pressure;
+    #[path = "six_session_contract_tests.rs"]
+    mod six_session_contract;
     fn shared() -> Arc<Shared> {
         Arc::new(Shared {
             engines: Arc::new(Default::default()),
@@ -605,6 +623,55 @@ mod tests {
             capacity: Condvar::new(),
             connections: AtomicUsize::new(0),
         })
+    }
+    #[test]
+    fn discovery_cannot_admit_a_build_or_capture_its_missing_project() {
+        let identity = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let endpoint = transport::Endpoint::generation(identity).unwrap();
+        let listener = transport::listener(&endpoint).unwrap();
+        let owner = shared();
+        let server = std::thread::spawn(move || handle(listener.accept().unwrap(), &owner, true));
+        let mut client = transport::connect(&endpoint).unwrap();
+        transport::set_timeout(&mut client, Duration::from_secs(2)).unwrap();
+        protocol::send(
+            &mut client,
+            &Request::Hello {
+                version: protocol::VERSION,
+                compiler: 1,
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            protocol::receive::<Reply>(&mut client).unwrap(),
+            Reply::Hello { compiler: 1, .. }
+        ));
+        let arguments = [
+            "compile",
+            "missing-discovery-fixture.dme",
+            "--no-cache",
+            "--workers",
+            "1",
+        ]
+        .map(String::from);
+        let crate::request::Command::Build(request) = crate::cli::parse(&arguments).unwrap() else {
+            panic!("fixture compile request missing");
+        };
+        protocol::send(&mut client, &Request::Build(*request)).unwrap();
+        let Reply::Rejected(failure) = protocol::receive::<Reply>(&mut client).unwrap() else {
+            panic!("discovery must reject build before production");
+        };
+        assert_eq!(
+            failure.kind,
+            crate::request_failure::FailureKind::InvalidRequest
+        );
+        assert_eq!(
+            failure.message,
+            "builds require the compiler-generation endpoint"
+        );
+        server.join().unwrap().unwrap();
     }
     #[test]
     fn custom_memory_policy_is_shared_by_admission_and_trim() {

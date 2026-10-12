@@ -181,7 +181,7 @@ pub(in crate::daemon) struct Endpoint {
 }
 pub(in crate::daemon) struct Listener {
     endpoint: Endpoint,
-    first: std::sync::atomic::AtomicBool,
+    pending: std::sync::Mutex<File>,
 }
 fn wide(text: &str) -> Vec<u16> {
     text.encode_utf16().chain(Some(0)).collect()
@@ -238,11 +238,40 @@ impl Endpoint {
             sid,
         })
     }
+    pub(in crate::daemon) fn generation(compiler: u128) -> io::Result<Self> {
+        let sid = user_sid()?;
+        Ok(Self {
+            name: wide(&super::namespace::current_generation_name(
+                &format!(r"\\.\pipe\dmbd-{sid}"),
+                compiler,
+            )?),
+            sid,
+        })
+    }
+    pub(in crate::daemon) fn discovery() -> io::Result<Self> {
+        let sid = user_sid()?;
+        Ok(Self {
+            name: wide(&super::namespace::current_discovery_name(&format!(
+                r"\\.\pipe\dmbd-{sid}"
+            ))?),
+            sid,
+        })
+    }
 }
 pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
+    let pending = pipe_instance(endpoint, true).map_err(|error| {
+        if error.raw_os_error() == Some(5) {
+            io::Error::new(
+                io::ErrorKind::AddrInUse,
+                "daemon endpoint already has a listener",
+            )
+        } else {
+            error
+        }
+    })?;
     Ok(Listener {
         endpoint: endpoint.clone(),
-        first: std::sync::atomic::AtomicBool::new(true),
+        pending: std::sync::Mutex::new(pending),
     })
 }
 pub(in crate::daemon) fn connect(endpoint: &Endpoint) -> io::Result<Stream> {
@@ -295,47 +324,83 @@ pub(in crate::daemon) fn connect(endpoint: &Endpoint) -> io::Result<Stream> {
 
 impl Listener {
     pub(in crate::daemon) fn accept(&self) -> io::Result<Stream> {
-        unsafe {
-            let mut descriptor = ptr::null_mut();
-            let sddl = wide(&format!("D:P(A;;GA;;;{})", self.endpoint.sid));
-            if ConvertStringSecurityDescriptorToSecurityDescriptorW(
-                sddl.as_ptr(),
-                1,
-                &mut descriptor,
-                ptr::null_mut(),
-            ) == 0
-            {
-                return Err(io::Error::last_os_error());
+        loop {
+            if let Some(stream) = self.try_accept()? {
+                return Ok(stream);
             }
-            let security = SecurityAttributes {
-                length: std::mem::size_of::<SecurityAttributes>() as u32,
-                descriptor,
-                inherit: 0,
-            };
-            let first = self.first.swap(false, std::sync::atomic::Ordering::AcqRel);
-            let handle = CreateNamedPipeW(
-                self.endpoint.name.as_ptr(),
-                3 | if first { 0x00080000 } else { 0 },
-                8,
-                255,
-                65536,
-                65536,
-                0,
-                &security,
-            );
-            LocalFree(descriptor);
-            if handle as isize == -1 {
-                return Err(io::Error::last_os_error());
-            }
-            if ConnectNamedPipe(handle, ptr::null_mut()) == 0
-                && io::Error::last_os_error().raw_os_error() != Some(535)
-            {
-                let error = io::Error::last_os_error();
-                CloseHandle(handle);
-                return Err(error);
-            }
-            Stream::new(File::from_raw_handle(handle))
+            std::thread::sleep(std::time::Duration::from_millis(2));
         }
+    }
+    pub(in crate::daemon) fn try_accept(&self) -> io::Result<Option<Stream>> {
+        let mut pending = self
+            .pending
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if unsafe { ConnectNamedPipe(pending.as_raw_handle(), ptr::null_mut()) } != 0 {
+            // PIPE_NOWAIT success means available for a client, not connected.
+            // Only ERROR_PIPE_CONNECTED certifies an accepted stream.
+            return Ok(None);
+        }
+        match io::Error::last_os_error().raw_os_error() {
+            Some(535) => {}               // Client connected before this poll.
+            Some(536) => return Ok(None), // PIPE_NOWAIT listener is pending.
+            Some(232) => {
+                // Client left before request admission.
+                let next = pipe_instance(&self.endpoint, false)?;
+                drop(std::mem::replace(&mut *pending, next));
+                return Ok(None);
+            }
+            _ => return Err(io::Error::last_os_error()),
+        }
+        // Reserve the next instance BEFORE transferring the accepted stream.
+        // There is no empty name window in which a second listener can take over.
+        let next = pipe_instance(&self.endpoint, false)?;
+        let accepted = std::mem::replace(&mut *pending, next);
+        Stream::new(accepted).map(Some)
+    }
+}
+fn pipe_instance(endpoint: &Endpoint, first: bool) -> io::Result<File> {
+    unsafe {
+        let mut descriptor = ptr::null_mut();
+        let sddl = wide(&format!("D:P(A;;GA;;;{})", endpoint.sid));
+        if ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            sddl.as_ptr(),
+            1,
+            &mut descriptor,
+            ptr::null_mut(),
+        ) == 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        let security = SecurityAttributes {
+            length: std::mem::size_of::<SecurityAttributes>() as u32,
+            descriptor,
+            inherit: 0,
+        };
+        let handle = CreateNamedPipeW(
+            endpoint.name.as_ptr(),
+            3 | if first { 0x00080000 } else { 0 },
+            8 | 1, // PIPE_REJECT_REMOTE_CLIENTS | PIPE_NOWAIT.
+            255,
+            65536,
+            65536,
+            0,
+            &security,
+        );
+        LocalFree(descriptor);
+        if handle as isize == -1 {
+            return Err(io::Error::last_os_error());
+        }
+        // Prime the nonblocking instance so clients can connect before the
+        // service's next poll; accepted streams remain separate handles.
+        if ConnectNamedPipe(handle, ptr::null_mut()) == 0
+            && !matches!(io::Error::last_os_error().raw_os_error(), Some(535 | 536))
+        {
+            let error = io::Error::last_os_error();
+            CloseHandle(handle);
+            return Err(error);
+        }
+        Ok(File::from_raw_handle(handle))
     }
 }
 
