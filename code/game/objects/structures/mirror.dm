@@ -163,6 +163,6 @@ MSG_DEF_SELF(mirror/adding_glass, span_notice("You start to add the glass to the
 	if(!newname || newname == "")
 		var/datum/language/L = GLOB.all_languages[vox.species.default_language]
 		newname = L.get_random_name()
-	vox.real_name = newname
+	vox.set_real_name(newname)
 	vox.name = vox.real_name
 	GLOB.raiders.update_access(vox)

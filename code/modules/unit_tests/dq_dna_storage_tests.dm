@@ -80,7 +80,7 @@
 	D.ResetUI()
 	D.ResetSE()
 	D.unique_enzymes = md5("dq_dna_clone_is_identical")
-	D.real_name = "Test Clone Source"
+	D.set_real_name("Test Clone Source")
 	D.custom_heat = list("It's warm.")
 	D.custom_cold = list("It's cold.")
 	D.species_traits = list("test_trait")

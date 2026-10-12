@@ -37,7 +37,7 @@
 /mob/living/carbon/brain/on_identity_bound()
 	..()
 	if(identity().real_name)
-		real_name = identity().real_name
+		set_real_name(identity().real_name)
 		name = real_name
 	if(identity().get_dna())
 		rel_set(src, nameof(dna), identity().get_dna().Clone())

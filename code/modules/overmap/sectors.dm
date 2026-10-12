@@ -86,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	else
 		real_appearance = image(icon, src, icon_state)
 		real_appearance.override = TRUE
-		real_name = name
+		set_real_name(name)
 		name = unknown_name
 		icon_state = unknown_state
 		color = null

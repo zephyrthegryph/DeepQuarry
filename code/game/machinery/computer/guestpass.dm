@@ -286,7 +286,7 @@ CAPABILITIES(/obj/machinery/computer/guestpass)
 
 		var/obj/item/card/id/guest/pass = new(src.loc)
 		pass.temp_access = LAZYCOPY(accesses)
-		pass.registered_name = giv_name
+		pass.set_registered_name(giv_name)
 		EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
 		pass.reason = reason
 		pass.name = "guest pass #[number]"

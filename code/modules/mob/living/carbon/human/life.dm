@@ -145,10 +145,7 @@
 	//Update our name based on whether our face is obscured/disfigured
 	src.name = src.get_visible_name()
 
-/// Event-driven like the voice system, with the same slow timer behind it.
-
-/mob/living/carbon/human/proc/life_visible_name_rewake()
-	return 10 SECONDS
+/// Event-driven: everything get_visible_name() reads publishes (life_steps.dm woken_by).
 
 // Calculate how vulnerable the human is to the current pressure.
 // Returns 0 (equals 0 %) if sealed in an undamaged suit that's rated for the pressure, 1 if unprotected (equals 100%).

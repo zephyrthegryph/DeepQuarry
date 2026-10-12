@@ -67,7 +67,7 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 /datum/antagonist/wizard/update_antag_mob(datum/mind/wizard)
 	..()
 	wizard.store_memory(span_bold("Remember:") + " do not forget to prepare your spells.")
-	wizard.current.real_name = "[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]"
+	wizard.current.set_real_name("[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]")
 	wizard.current.name = wizard.current.real_name
 
 /datum/antagonist/wizard/equip(mob/living/carbon/human/wizard_mob)

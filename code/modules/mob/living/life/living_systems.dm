@@ -586,3 +586,14 @@ TRACKED(/mob, ear_damage)
 /mob/living/simple_mob/var/purge = 0
 TRACKED(/mob/living/simple_mob, purge)
 
+// ---------------------------------------------------------------- identity
+
+/// Something this movable shows of its carrier's identity changed (the name on an ID or a PDA): the living mob carrying
+/// it, however deep, hears MOB_KEY_IDENTITY (its visible name step reads it). Called by those setters only.
+/atom/movable/proc/identity_changed_on_holder()
+	var/atom/A = loc
+	while(A && !isturf(A))
+		if(isliving(A))
+			PUBLISH_CHANGE(A, MOB_KEY_IDENTITY)
+			return
+		A = A.loc

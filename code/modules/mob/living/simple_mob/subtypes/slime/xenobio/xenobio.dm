@@ -127,7 +127,7 @@ TRACKED(/mob/living/simple_mob/slime/xenobio, consuming)
 	if(harmless) // Docile slimes are generally named, so we shouldn't mess with it.
 		return
 	name = "[slime_color] [is_adult ? "adult" : "baby"] [initial(name)] ([number])"
-	real_name = name
+	set_real_name(name)
 
 //body lives in code/modules/combat_ai/ports/slime_mob_overrides.dm where it
 // reads /datum/slime_state instead of the deleted ai_holder.

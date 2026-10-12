@@ -375,7 +375,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper)
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_named(datum/act/request/A)
 	if(A.answer && A.answer.value)
-		avatar().real_name = A.answer.value
+		avatar().set_real_name(A.answer.value)
 		avatar().name = A.answer.value
 
 /obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)

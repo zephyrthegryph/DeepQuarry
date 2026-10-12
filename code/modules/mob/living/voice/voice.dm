@@ -22,7 +22,7 @@
 		if(speaker.client && speaker.client.prefs)
 			var/datum/preferences/p = speaker.client.prefs
 			name = p.read_preference(/datum/preference/name/real_name)
-			real_name = name
+			set_real_name(name)
 			gender = p.read_preference(/datum/preference/choiced/gender/identifying)
 
 			for(var/language in p.read_preference(/datum/preference/alternate_languages)) // migrated

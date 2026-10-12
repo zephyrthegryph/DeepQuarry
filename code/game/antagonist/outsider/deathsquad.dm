@@ -71,7 +71,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 
 	player.name = "[syndicate_commando_rank] [syndicate_commando_name]"
 	player.current.name = player.name
-	player.current.real_name = player.current.name
+	player.current.set_real_name(player.current.name)
 
 	var/mob/living/carbon/human/H = player.current
 	if(istype(H))

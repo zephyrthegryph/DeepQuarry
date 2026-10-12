@@ -259,7 +259,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
 	brainmob.name = brainmob.mind.name
-	brainmob.real_name = brainmob.mind.name
+	brainmob.set_real_name(brainmob.mind.name)
 
 	//If we caught our owner, special settings.
 	if(M == nif().human)
@@ -464,7 +464,7 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name
-	real_name = brainmob.real_name	//And the OTHER name
+	set_real_name(brainmob.real_name) //And the OTHER name
 
 	forceMove(get_turf(parent_human()))
 	dq_add_recursive_move(parent_human())

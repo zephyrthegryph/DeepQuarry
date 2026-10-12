@@ -753,7 +753,7 @@ CAPABILITIES(/obj/item/organ/external)
 		var/fix_verb = "patches"
 		if(damage_amount > repair_amount)
 			fix_verb = "finishes patching"
-			disfigured = FALSE //Prevents some edgecases where you can repair despite hitting disfigurement thresholds, they're fully healed at this point anyways.
+			set_disfigured(FALSE) //Prevents some edgecases where you can repair despite hitting disfigurement thresholds, they're fully healed at this point anyways.
 		if(user == src.owner)
 			act_message(user, null, others = span_infoplain(span_bold("%U%") + " [fix_verb] [damage_desc] on %THEIR% [src.name] with [tool]."))
 		else
@@ -1532,7 +1532,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			owner.visible_message(span_danger("\The [owner]'s [name] melts away, turning into mangled mess!"),	\
 			span_danger("Your [name] melts away!"),	\
 			span_danger("You hear a sickening sizzle."))
-	disfigured = 1
+	set_disfigured(TRUE)
 
 /obj/item/organ/external/proc/jostle_bone(force)
 	if(!is_fractured()) //intact bones stay still
@@ -1680,3 +1680,14 @@ Note that amputating the affected organ does in fact remove the infection from t
 #undef LIMB_DISMEMBER_SPARED
 #undef LIMB_DISMEMBER_DROPPED
 
+
+/// Scarred beyond recognition or mended: the owner's visible name follows it (MOB_KEY_IDENTITY).
+/obj/item/organ/external/proc/set_disfigured(value)
+	if(TRACKED_UNCHANGED(disfigured, value))
+		return FALSE
+	disfigured = value
+	tracked_changed(src, nameof(disfigured))
+	if(owner)
+		PUBLISH_CHANGE(owner, MOB_KEY_IDENTITY)
+	return TRUE
+SETTER(/obj/item/organ/external, disfigured)

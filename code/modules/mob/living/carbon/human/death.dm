@@ -97,7 +97,7 @@
 		if(B.host_brain.mind)
 			move_player_mind(B.host_brain.mind, src, "returned to own dead body from borer [B]")
 			B.host_brain.name = "host brain"
-			B.host_brain.real_name = "host brain"
+			B.host_brain.set_real_name("host brain")
 
 		revoke(src, granted_verb(/mob/living/carbon/proc/release_control), B)
 

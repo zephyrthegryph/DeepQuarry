@@ -55,6 +55,13 @@
 #define MOB_KEY_BODY_HEAT "mob_body_heat"
 /// The mob's radiation dose changed (add_radiation(), purge_radiation(), clear_radiation()). The radiation step reads it.
 #define MOB_KEY_RADIATION "mob_radiation"
+/// What others see of who the mob is changed outside its own vars: a face disfigured or mended, the name on a worn ID or
+/// PDA, a disguise (shadekin phase) toggled. Published by those setters (identity_changed_on_holder()); the real name
+/// is its own tracked key (nameof(real_name)).
+#define MOB_KEY_IDENTITY "mob_identity"
+/// The ground under the mob changed: its turf (or the one below it) was replaced, or its area's gravity switched
+/// (ChangeTurf(), /area/gravitychange()). Falling and the gravity read in movement follow it.
+#define MOB_KEY_GROUND "mob_ground"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
 #define ATOM_KEY_LOC "atom_loc"
 

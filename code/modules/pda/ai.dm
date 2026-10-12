@@ -14,7 +14,7 @@
 	special_handling = TRUE
 
 /obj/item/pda/ai/proc/set_name_and_job(newname as text, newjob as text, newrank as null|text)
-	owner = newname
+	set_owner(newname)
 	ownjob = newjob
 	if(newrank)
 		ownrank = newrank

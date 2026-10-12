@@ -224,7 +224,7 @@ CAPABILITIES(/obj/machinery/computer/card)
 	return (!!sanitizeName(A.args["reg"])) ? null : MSG(card_console/bad_name)
 
 /obj/machinery/computer/card/proc/ui_act_reg(datum/act/op/A, reg)
-	modify.registered_name = sanitizeName(reg)
+	modify.set_registered_name(sanitizeName(reg))
 	return OP_OK
 
 /obj/machinery/computer/card/proc/ui_act_account(datum/act/op/A, account)

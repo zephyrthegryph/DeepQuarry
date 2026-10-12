@@ -294,9 +294,6 @@
 		if("life_npc_rewake")
 			var/mob/living/carbon/human/M = src
 			return M.life_npc_rewake()
-		if("life_visible_name_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_visible_name_rewake()
 		if("life_robot_senses_due")
 			var/mob/living/silicon/robot/M = src
 			return M.life_robot_senses_due()
