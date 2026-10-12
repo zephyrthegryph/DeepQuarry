@@ -86,7 +86,7 @@
 	. = ..()
 	if(life_set & LIFE_SET_LIVING)
 		. += seq_step(PROC_REF(life_chemicals), after = list(LIFE_BODY, "life_afk"), when = "placed", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_chemicals_due), rewake = PROC_REF(life_chemicals_rewake), woken_by = LIFE_CHEMICALS_WOKEN_BY)
-		. += seq_step(PROC_REF(life_status), after = LIFE_BODY, when = "placed", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_status_due), rewake = PROC_REF(life_status_rewake), woken_by = list(MOB_KEY_HEALTH = "injure/mend (refresh_host_status), brain removal/insertion, MMI emp_act", LIFE_WOKEN_BY_TIME = "tissue drift"))
+		. += seq_step(PROC_REF(life_status), after = LIFE_BODY, when = "placed", reads = list(MOB_KEY_HEALTH), should_run = PROC_REF(life_status_due), rewake = PROC_REF(life_status_rewake), woken_by = list(MOB_KEY_HEALTH = "injure/mend (refresh_host_status), brain removal/insertion, MMI emp_act", LIFE_WOKEN_BY_TIME = "a loose brain's tissue drifts without a body"))
 
 /mob/living/carbon/human/life_steps()
 	. = ..()
