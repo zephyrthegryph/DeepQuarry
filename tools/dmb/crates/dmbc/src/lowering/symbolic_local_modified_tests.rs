@@ -49,7 +49,10 @@ fn prepare<'a, R: Resolver>(
         .materialize(&crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared).unwrap())
         .into();
     let recorder = crate::lowering_memo::RecordingResolver::new(host);
-    let arena = dm_tree::frontend::BodyArena::new(front);
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        front,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
     let capture = RefCell::new(MemoCapture::default());
     let unit = lower_one_captured(
         front,
@@ -198,7 +201,10 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
         let request = owner.for_request(false);
         let admission = RequestAdmission::new(&host);
         let candidates = request.candidate_roster(&admission).unwrap();
-        let arena = dm_tree::frontend::BodyArena::new(&current);
+        let arena = dm_tree::frontend::BodyArena::new_typed(
+            &current,
+            dm_codegen_byond::typed_statements_supported_for_capture,
+        );
         owner.visit_records(|record| {
             let debug =
                 crate::lowering_memo::rebase_debug(&current, row.body(), &record.relative_debug)
@@ -292,7 +298,10 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
     let request = owner.for_request(false);
     let admission = RequestAdmission::new(&host);
     let candidates = request.candidate_roster(&admission).unwrap();
-    let arena = dm_tree::frontend::BodyArena::new(&current);
+    let arena = dm_tree::frontend::BodyArena::new_typed(
+        &current,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
     assert!(request
         .lookup_unchanged_local(&licensed, &candidates, 7, &host, &current, row, &arena)
         .is_none());
