@@ -33,18 +33,21 @@
 	var/list/all_policy = V.req_access
 	var/list/one_policy = V.req_one_access
 	var/mob/living/carbon/human/denied = credential_user(/obj/item/card/id/dq_vendor_denied, T)
-	TEST_ASSERT_EQUAL(denied.GetIdCard()?.type, /obj/item/card/id/dq_vendor_denied, "The denied actor actually wears its credential")
+	var/obj/item/card/id/denied_card = denied.GetIdCard()
+	TEST_ASSERT_EQUAL(denied_card?.type, /obj/item/card/id/dq_vendor_denied, "The denied actor actually wears its credential")
 	TEST_ASSERT_EQUAL(V.purchase_access_refusal(denied, entry), "Access Denied", "Machine access alone does not supply any required entry access")
 	TEST_ASSERT_EQUAL(V.req_access, all_policy, "Denied admission leaves the exact all-access policy unchanged")
 	TEST_ASSERT_EQUAL(V.req_one_access, one_policy, "Denied admission leaves the exact one-access policy unchanged")
 	var/mob/living/carbon/human/allowed = credential_user(/obj/item/card/id/dq_vendor_allowed, T)
-	TEST_ASSERT_EQUAL(allowed.GetIdCard()?.type, /obj/item/card/id/dq_vendor_allowed, "The allowed actor actually wears its credential")
+	var/obj/item/card/id/allowed_card = allowed.GetIdCard()
+	TEST_ASSERT_EQUAL(allowed_card?.type, /obj/item/card/id/dq_vendor_allowed, "The allowed actor actually wears its credential")
 	TEST_ASSERT_NULL(V.purchase_access_refusal(allowed, entry), "Actual all-access plus one entry credential admits without requiring the holder's unrelated one-access list")
 	TEST_ASSERT_EQUAL(V.req_access, all_policy, "Allowed admission retains the exact all-access list")
 	TEST_ASSERT_EQUAL(V.req_one_access, one_policy, "Allowed admission retains the exact one-access list")
 	TEST_ASSERT(ACCESS_SECURITY in V.req_one_access, "The holder's preexisting restriction was not silently cleared")
 	var/mob/living/carbon/human/missing_all = credential_user(/obj/item/card/id/dq_vendor_missing_all, T)
-	TEST_ASSERT_EQUAL(missing_all.GetIdCard()?.type, /obj/item/card/id/dq_vendor_missing_all, "The final actor actually wears its entry-only credential")
+	var/obj/item/card/id/entry_card = missing_all.GetIdCard()
+	TEST_ASSERT_EQUAL(entry_card?.type, /obj/item/card/id/dq_vendor_missing_all, "The final actor actually wears its entry-only credential")
 	TEST_ASSERT_EQUAL(V.purchase_access_refusal(missing_all, entry), "Access Denied", "An entry credential does not bypass the machine's mandatory all-access list")
 
 #endif
