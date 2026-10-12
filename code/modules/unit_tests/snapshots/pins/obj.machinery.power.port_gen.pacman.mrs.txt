@@ -1,18 +1,18 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.power.port_gen human|/obj/item/tool/screwdriver
 @obj.machinery.power.port_gen human|/obj/item/tool/crowbar
 @obj.machinery.power.port_gen human|/obj/item/tool/wrench
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
-@obj human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
 @obj.machinery.power human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
 @obj human|/obj/item/storage/part_replacer
-@obj.machinery.power.port_gen human|/obj/item/card/emag
-@obj human|/obj/item/stack/material
+@obj.machinery.power human|/obj/item/card/emag
+@obj.machinery human|/obj/item/stack/material
 keys: add_fuel, anchor.toggle, cable_place, drag_buckle, eject, emag.subvert, emag.use, higher_power, lower_power, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, toggle_power, ui_open, use_crowbar, use_screwdriver

@@ -1,52 +1,52 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.material human|/obj/item/tool/screwdriver
 @obj.item.material human|/obj/item/tool/crowbar
 -click: Click: Repair
-+1 menu: Plate item
++3 menu: Use crowbar
 +4 click: Click: Plate item
 @obj.item.material human|/obj/item/tool/wrench
 -click: Click: Repair
-+1 menu: Plate item
++3 menu: Use wrench
 +4 click: Click: Plate item
 @obj.item.material human|/obj/item/tool/wirecutters
 -click: Click: Repair
-+1 menu: Plate item
-+4 menu: Use wirecutter
++3 menu: Use wirecutter
++4 menu: Use wirecutters
 +5 click: Click: Plate item
 @obj.item.material human|/obj/item/multitool
 -click: Click: Repair
-+1 menu: Plate item
++3 menu: Use multitool
 +4 click: Click: Plate item
 @obj.item.material human|/obj/item/weldingtool
 -click: Click: Repair
-+1 menu: Plate item
-+4 menu: Use welder
++3 menu: Use welder
++4 menu: Use welding tool
 +5 click: Click: Plate item
 @obj.item.material human|/obj/item/stack/cable_coil
 -click: Click: Repair
-+2 menu: Plate item
-+5 click: Click: Plate item
++3 menu: Use cable coil
++4 click: Click: Plate item
 @obj.item.material human|/obj/item/stack/material/steel
 -click: Click: Repair
-+1 menu: Plate item
++3 menu: Use steel sheet
 +4 click: Click: Plate item
 @obj.item.material human|/obj/item/card/id
 -click: Click: Repair
-+1 menu: Plate item
-+5 click: Click: Plate item
++3 menu: Use identification card
++4 click: Click: Plate item
 @obj.item.material human|/obj/item/kit
 -click: Click: Customise
-+2 menu: Plate item
++4 menu: Use item
 +5 click: Click: Plate item
 @obj.item.material human|/obj/item/storage
 -click: Click: Repair
-+2 menu: Plate item
++4 menu: Use storage
 +5 click: Click: Plate item
 @obj.item.material human|/obj/item
 -click: Click: Repair
-+1 menu: Plate item
++3 menu: Use item
 +4 click: Click: Plate item
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, material_interaction_item, move_to_top, pick_up_item, plate_item, repair, sharpen, toggle_digestable, use_welder, use_wirecutter

@@ -1,64 +1,63 @@
 @obj.item.grenade human|none
 @obj.item.grenade robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
-+4 menu: Use screwdriver
-+5 click: Click: Assembly item
++0 menu: Grenade interaction hand
++3 menu: Use screwdriver
++4 click: Click: Assembly item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use crowbar
 +4 click: Click: Assembly item
 @obj human|/obj/item/tool/wrench
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use wrench
 +4 click: Click: Assembly item
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use wirecutters
 +4 click: Click: Assembly item
 @obj human|/obj/item/multitool
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use multitool
 +4 click: Click: Assembly item
 @obj human|/obj/item/weldingtool
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use welding tool
 +4 click: Click: Assembly item
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
-+5 click: Click: Assembly item
++0 menu: Grenade interaction hand
++3 menu: Use cable coil
++4 click: Click: Assembly item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
++0 menu: Grenade interaction hand
++3 menu: Use steel sheet
 +4 click: Click: Assembly item
 @obj human|/obj/item/card/id
 -click: nothing
-+0 menu: Assembly item
-+1 menu: Grenade interaction hand
-+5 click: Click: Assembly item
++0 menu: Grenade interaction hand
++3 menu: Use identification card
++4 click: Click: Assembly item
 @obj human|/obj/item/kit
-+0 menu: Assembly item
-+2 menu: Grenade interaction hand
++1 menu: Grenade interaction hand
++4 menu: Use item
 @obj human|/obj/item/storage
 -click: Click: Collect
-+0 menu: Assembly item
-+2 menu: Grenade interaction hand
++1 menu: Grenade interaction hand
++4 menu: Use storage
 +5 click: Click: Assembly item
-human|/obj/item menu: Assembly item
 human|/obj/item menu: Grenade interaction hand
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
 human|/obj/item click: Click: Assembly item
 keys: assemble, assembly_item, collect_item, det_time_10_30, det_time_1_10, det_time_30_50, det_time_50_1, drag_buckle, gen_silicon_item_silicon_equip_module, grenade_interaction_hand, kit_customize, kit_customize_last, move_to_top, pick_up_item, stage_1_2, stage_2_1, toggle_digestable, use_screwdriver

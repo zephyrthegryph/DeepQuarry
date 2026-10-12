@@ -5,97 +5,71 @@
 @turf human|/obj/item/tool/screwdriver
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/tool/crowbar
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/multitool
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
-+1 menu: Cut through the outer plating
-+2 menu: Graffiti
-+7 menu: Wall item
-+8 click: Click: Cut through the outer plating
++0 menu: Cut through the outer plating
++1 menu: Graffiti
++4 click: Click: Cut through the outer plating
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+7 menu: Wall item
-+8 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
++0 menu: Graffiti
++3 click: Click: Wall item
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+7 menu: Wall item
-+8 click: Click: Wall item
-human|/obj/item/shovel menu: Crawl
++0 menu: Graffiti
++3 click: Click: Wall item
 human|/obj/item/shovel menu: Graffiti
-human|/obj/item/shovel menu: Move To Top
-human|/obj/item/shovel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/shovel menu: Touch
-human|/obj/item/shovel menu: Turf item
-human|/obj/item/shovel menu: Wall item
+human|/obj/item/shovel menu: Use shovel
 human|/obj/item/shovel click: Click: Wall item
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
-+1 menu: Graffiti
-+6 menu: Wall item
-+7 click: Click: Wall item
-human|/obj/item/melee/energy/blade menu: Crawl
++0 menu: Graffiti
++3 click: Click: Wall item
 human|/obj/item/melee/energy/blade menu: Cut through the outer plating
 human|/obj/item/melee/energy/blade menu: Graffiti
-human|/obj/item/melee/energy/blade menu: Move To Top
-human|/obj/item/melee/energy/blade menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/melee/energy/blade menu: Touch
-human|/obj/item/melee/energy/blade menu: Turf item
-human|/obj/item/melee/energy/blade menu: Wall item
+human|/obj/item/melee/energy/blade menu: Use energy blade
 human|/obj/item/melee/energy/blade click: Click: Cut through the outer plating
-human|/obj/item/pickaxe menu: Crawl
 human|/obj/item/pickaxe menu: Cut through the outer plating
 human|/obj/item/pickaxe menu: Graffiti
-human|/obj/item/pickaxe menu: Move To Top
-human|/obj/item/pickaxe menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pickaxe menu: Touch
-human|/obj/item/pickaxe menu: Turf item
-human|/obj/item/pickaxe menu: Wall item
+human|/obj/item/pickaxe menu: Use pickaxe
 human|/obj/item/pickaxe click: Click: Cut through the outer plating
-human|/obj/item/pickaxe/plasmacutter menu: Crawl
 human|/obj/item/pickaxe/plasmacutter menu: Cut through the outer plating
 human|/obj/item/pickaxe/plasmacutter menu: Graffiti
-human|/obj/item/pickaxe/plasmacutter menu: Move To Top
-human|/obj/item/pickaxe/plasmacutter menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pickaxe/plasmacutter menu: Touch
-human|/obj/item/pickaxe/plasmacutter menu: Turf item
-human|/obj/item/pickaxe/plasmacutter menu: Wall item
+human|/obj/item/pickaxe/plasmacutter menu: Use plasma cutter
 human|/obj/item/pickaxe/plasmacutter click: Click: Cut through the outer plating
 keys: burn_rot, crawl_drag, cut_grille, cut_plain, cut_plain_blade, cut_plain_pickaxe, dig, dig_grave, graffiti, light_thermite, loosen_bolts, mend_grille, pry_cover, pry_sheath, screw_lines, silicon_hand, slice_cover, slice_cover_cutter, slice_rods, slice_rods_cutter, turf_crawl, turf_item, turf_touch, unscrew_lines, wall_dissolve, wall_graffiti, wall_item, wall_touch, weld_repair

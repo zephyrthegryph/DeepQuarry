@@ -12,7 +12,7 @@
 +5 menu: Set Valve Pressure (refused: You can't do that.)
 +8 menu: Use
 +9 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +3 menu: Set Valve Pressure (refused: You can't do that.)
@@ -54,8 +54,8 @@
 @obj.item.gun human|/obj/item/stack/cable_coil
 -menu: Unload
 -menu: Use Scope (refused: You can't do that.)
-+5 menu: Set Valve Pressure (refused: You can't do that.)
-+8 menu: Use
++4 menu: Set Valve Pressure (refused: You can't do that.)
++7 menu: Use
 @obj.item.gun human|/obj/item/stack/material/steel
 -menu: Unload
 -menu: Use Scope (refused: You can't do that.)
@@ -64,8 +64,8 @@
 @obj.item.gun human|/obj/item/card/id
 -menu: Unload
 -menu: Use Scope (refused: You can't do that.)
-+5 menu: Set Valve Pressure (refused: You can't do that.)
-+8 menu: Use
++4 menu: Set Valve Pressure (refused: You can't do that.)
++7 menu: Use
 @obj.item.gun human|/obj/item/kit
 -menu: Unload
 -menu: Use Scope (refused: You can't do that.)

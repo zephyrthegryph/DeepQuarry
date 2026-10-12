@@ -8,7 +8,7 @@
 +1 menu: Hide
 +5 menu: Use
 +6 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Hide (refused: You can't reach that.)
 @obj.item.assembly human|/obj/item/tool/screwdriver

@@ -2,66 +2,47 @@ human|none menu: Trade
 human|none click: Click: Trade
 robot|none menu: Trade
 robot|none click: Click: Trade
-ai|none click: nothing
+@obj ai|none
+-menu: Equip (refused: not possible right now)
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+5 menu: Trade
-+6 click: Click: Interaction trader item
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+5 menu: Trade
-+6 click: Click: Interaction trader item
-@obj human|/obj/item
--click: nothing
-+0 menu: Hit
-+1 menu: Interaction trader item
-+4 menu: Trade
-+5 click: Click: Interaction trader item
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Interaction trader item
+human|/obj/item/tool/screwdriver menu: Trade
+human|/obj/item/tool/screwdriver click: Click: Interaction trader item
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Interaction trader item
+human|/obj/item/tool/crowbar menu: Trade
+human|/obj/item/tool/crowbar click: Click: Interaction trader item
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Interaction trader item
+human|/obj/item/tool/wrench menu: Trade
+human|/obj/item/tool/wrench click: Click: Interaction trader item
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Interaction trader item
+human|/obj/item/tool/wirecutters menu: Trade
+human|/obj/item/tool/wirecutters click: Click: Interaction trader item
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Interaction trader item
+human|/obj/item/multitool menu: Trade
+human|/obj/item/multitool click: Click: Interaction trader item
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Interaction trader item
+human|/obj/item/weldingtool menu: Trade
+human|/obj/item/weldingtool click: Click: Interaction trader item
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Interaction trader item
+human|/obj/item/stack/cable_coil menu: Trade
+human|/obj/item/stack/cable_coil click: Click: Interaction trader item
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Interaction trader item
+human|/obj/item/stack/material/steel menu: Trade
+human|/obj/item/stack/material/steel click: Click: Interaction trader item
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Interaction trader item
+human|/obj/item/card/id menu: Trade
+human|/obj/item/card/id click: Click: Interaction trader item
+human|/obj/item menu: Hit
+human|/obj/item menu: Interaction trader item
+human|/obj/item menu: Trade
+human|/obj/item click: Click: Interaction trader item
 keys: drag_buckle, melee_hit, trader_hand, trader_item

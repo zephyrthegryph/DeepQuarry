@@ -2,7 +2,7 @@
 +0 menu: Color
 @obj.item.stack robot|none
 +0 menu: Color
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack human|/obj/item/tool/screwdriver
 +0 menu: Color

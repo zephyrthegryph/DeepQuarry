@@ -2,7 +2,7 @@
 +2 menu: Threaten to push the button! (refused: You can't do that.)
 @obj robot|none
 +3 menu: Threaten to push the button! (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 @obj.item.assembly human|/obj/item/tool/screwdriver

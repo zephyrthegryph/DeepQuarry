@@ -1,6 +1,6 @@
 @obj.item.clothing.glasses human|none
 @obj.item.clothing.glasses robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.glasses ghost|none
 @obj.item.clothing.glasses human|/obj/item/tool/screwdriver
 @obj.item.clothing.glasses human|/obj/item/tool/crowbar

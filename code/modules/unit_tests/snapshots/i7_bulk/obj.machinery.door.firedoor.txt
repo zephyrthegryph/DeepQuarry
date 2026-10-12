@@ -3,7 +3,7 @@ human|none menu: Use
 human|none click: Click: Use
 @obj.machinery robot|none
 +1 menu: Remote use
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Remote use
 +2 click: Click: Remote use

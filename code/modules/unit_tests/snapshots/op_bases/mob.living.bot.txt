@@ -1,7 +1,7 @@
-ai|none menu: Ui open
+ai|none menu: Open controls
 ai|none menu: Use
-ai|none click: Click: Ui open
+ai|none click: Click: Open controls
 ghost|none menu: Disarm
 ghost|none menu: Grab
-ghost|none menu: Ui open
+ghost|none menu: Open controls
 ghost|none click: nothing

@@ -4,7 +4,7 @@
 @obj.item.clothing robot|none
 +0 menu: Adjust Healing Timer (refused: You can't do that.)
 +1 menu: Adjust Suit Health (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Adjust Healing Timer (refused: You can't do that.)
 +1 menu: Adjust Suit Health (refused: You can't do that.)
@@ -49,7 +49,7 @@
 @obj.item.clothing human|/obj/item/storage
 +0 menu: Adjust Healing Timer (refused: You can't do that.)
 +1 menu: Adjust Suit Health (refused: You can't do that.)
-@obj.item human|/obj/item
+@obj human|/obj/item
 +0 menu: Adjust Healing Timer (refused: You can't do that.)
 +1 menu: Adjust Suit Health (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/card/emag

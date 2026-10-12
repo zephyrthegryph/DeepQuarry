@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +4 menu: Use
 +5 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -34,22 +34,22 @@
 +3 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +2 menu: Use
 +3 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/kit
 +3 menu: Use
 @obj human|/obj/item/storage
 -click: Click: Collect
 +3 menu: Use
 +4 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 keys: cancel_healing, celleject, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, rem_bin, rem_cap, rem_laser, rem_mani, rem_smodule, toggle_digestable, toggle_maintenance

@@ -4,7 +4,7 @@
 @obj robot|none
 +3 menu: Scan for Anomalies (refused: You can't do that.)
 +4 menu: Swap Functionality (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Scan for Anomalies (refused: You can't do that.)
 +2 menu: Swap Functionality (refused: You can't do that.)
@@ -27,14 +27,14 @@
 +1 menu: Scan for Anomalies (refused: You can't do that.)
 +2 menu: Swap Functionality (refused: You can't do that.)
 @obj human|/obj/item/stack/cable_coil
-+2 menu: Scan for Anomalies (refused: You can't do that.)
-+3 menu: Swap Functionality (refused: You can't do that.)
++1 menu: Scan for Anomalies (refused: You can't do that.)
++2 menu: Swap Functionality (refused: You can't do that.)
 @obj human|/obj/item/stack/material/steel
 +1 menu: Scan for Anomalies (refused: You can't do that.)
 +2 menu: Swap Functionality (refused: You can't do that.)
 @obj human|/obj/item/card/id
-+2 menu: Scan for Anomalies (refused: You can't do that.)
-+3 menu: Swap Functionality (refused: You can't do that.)
++1 menu: Scan for Anomalies (refused: You can't do that.)
++2 menu: Swap Functionality (refused: You can't do that.)
 @obj human|/obj/item/kit
 +2 menu: Scan for Anomalies (refused: You can't do that.)
 +3 menu: Swap Functionality (refused: You can't do that.)

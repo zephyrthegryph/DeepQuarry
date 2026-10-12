@@ -6,76 +6,51 @@ human|none click: Click: Toggle
 +1 menu: Climb
 +2 menu: Toggle
 +4 click: Click: Toggle
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 menu: Use wrench
-+5 click: Click: Use wrench
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Climb
-+3 menu: Toggle
-+5 click: Click: Toggle
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Climb
-+3 menu: Toggle
-+5 menu: Toggle lock
-+6 click: Click: Toggle lock
-@obj human|/obj/item
--click: nothing
-+0 menu: Climb
-+2 menu: Toggle
-+4 click: Click: Toggle
-@obj human|/obj/item/pda
--menu: Toggle (refused: Access denied.)
--menu: Ui open
--click: Click: Toggle
-+0 menu: Climb
-+6 menu: Toggle
-+8 menu: Toggle lock
-+9 click: Click: Toggle lock
-@obj.machinery human|/obj/item/cell
--click: Click: Use
-+3 menu: Insert cell
-+5 menu: Toggle
-+8 click: Click: Insert cell
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Toggle
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use screwdriver
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Toggle
+human|/obj/item/tool/crowbar click: Click: Toggle
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Toggle
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Toggle
+human|/obj/item/tool/wirecutters click: Click: Toggle
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Toggle
+human|/obj/item/multitool click: Click: Toggle
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Toggle
+human|/obj/item/weldingtool click: Click: Toggle
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Toggle
+human|/obj/item/stack/cable_coil click: Click: Toggle
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Toggle
+human|/obj/item/stack/material/steel click: Click: Toggle
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id menu: Toggle lock
+human|/obj/item/card/id click: Click: Toggle lock
+human|/obj/item menu: Climb
+human|/obj/item menu: Toggle
+human|/obj/item click: Click: Toggle
+human|/obj/item/pda menu: Climb
+human|/obj/item/pda menu: Toggle
+human|/obj/item/pda menu: Toggle lock
+human|/obj/item/pda click: Click: Toggle lock
+human|/obj/item/cell menu: Climb
+human|/obj/item/cell menu: Insert cell
+human|/obj/item/cell menu: Toggle
+human|/obj/item/cell click: Click: Insert cell
 @obj.machinery human|/obj/item/card/emag
--menu: Use item
-+2 menu: Toggle
+-menu: Use cryptographic sequencer
++1 menu: Toggle
 keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, shieldgen_insert_cell, shieldgen_repair, shieldgen_toggle, shieldgen_toggle_lock, silicon_hand, use_screwdriver, use_wrench

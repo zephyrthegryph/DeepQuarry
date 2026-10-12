@@ -2,7 +2,7 @@
 +2 menu: Gaiter remove mask alt
 @obj.item.clothing.accessory robot|none
 +3 menu: Gaiter remove mask alt
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.clothing.accessory human|/obj/item/tool/screwdriver
 -menu: Collar tag item

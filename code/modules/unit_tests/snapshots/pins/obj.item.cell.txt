@@ -6,7 +6,7 @@
 +0 menu: Charge with your body (refused: not in your hand)
 +1 menu: Drain its charge (refused: not in your hand)
 +6 menu: Use (refused: needs an item)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Charge with your body (refused: not in your hand)
 +1 menu: Drain its charge (refused: not in your hand)
@@ -51,8 +51,8 @@
 -click: nothing
 +0 menu: Charge with your body (refused: not in your hand)
 +1 menu: Drain its charge (refused: not in your hand)
-+5 menu: Use
-+6 click: Click: Use
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Charge with your body (refused: not in your hand)
@@ -63,8 +63,8 @@
 -click: nothing
 +0 menu: Charge with your body (refused: not in your hand)
 +1 menu: Drain its charge (refused: not in your hand)
-+5 menu: Use
-+6 click: Click: Use
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/kit
 +0 menu: Charge with your body (refused: not in your hand)
 +2 menu: Drain its charge (refused: not in your hand)
@@ -73,7 +73,7 @@
 +0 menu: Charge with your body (refused: not in your hand)
 +2 menu: Drain its charge (refused: not in your hand)
 +5 menu: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 +0 menu: Charge with your body (refused: not in your hand)
 +1 menu: Drain its charge (refused: not in your hand)

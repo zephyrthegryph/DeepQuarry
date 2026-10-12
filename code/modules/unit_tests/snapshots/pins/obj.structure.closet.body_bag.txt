@@ -3,18 +3,9 @@
 @obj.structure ai|none
 @obj.structure.closet ghost|none
 @obj.structure.closet human|/obj/item/tool/screwdriver
--menu: Toggle Lock
--click: Click: Toggle Lock
-+3 menu: Toggle Open
-+4 click: nothing
 @obj.structure.closet human|/obj/item/tool/crowbar
 @obj.structure.closet human|/obj/item/tool/wrench
 @obj.structure.closet human|/obj/item/tool/wirecutters
--menu: Toggle Lock
--click: Click: Toggle Lock
-+0 menu: Cut the tag off
-+4 menu: Toggle Open
-+5 click: Click: Cut the tag off
 @obj.structure.closet human|/obj/item/multitool
 @obj.structure.closet human|/obj/item/weldingtool
 @obj.structure.closet human|/obj/item/stack/cable_coil
@@ -22,5 +13,5 @@
 @obj.structure.closet human|/obj/item/card/id
 @obj.structure.closet human|/obj/item
 @obj human|/obj/item/storage/laundry_basket
-@obj.structure.closet human|/obj/item/pen
+@obj.structure human|/obj/item/pen
 keys: anchor.toggle, break_out, cut_apart, cut_label, devour, door, drag_buckle, empty_basket, fold, label, melee_hit, set_down, silicon_hand, stuff, stuff_grab, weld_shut.toggle

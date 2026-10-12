@@ -12,14 +12,12 @@ human|/obj/item/assembly/signaler menu: Add signaler
 human|/obj/item/assembly/signaler menu: Adjust helmet visor (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Alternate use
 human|/obj/item/assembly/signaler menu: Move To Top
-human|/obj/item/assembly/signaler menu: Threaten to push the button! (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/assembly/signaler menu: Use
 human|/obj/item/assembly/signaler click: Click: Add signaler
 human|/obj/item/card/id menu: Adjust helmet visor (refused: You can't do that.)
 human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
 human|/obj/item/card/id click: Click: Use
@@ -38,7 +36,6 @@ human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Adjust helmet visor (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Alternate use
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Use

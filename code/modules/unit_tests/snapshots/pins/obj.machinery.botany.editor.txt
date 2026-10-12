@@ -1,6 +1,6 @@
 @obj.machinery.botany human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.botany human|/obj/item/tool/screwdriver
 @obj.machinery.botany human|/obj/item/tool/crowbar

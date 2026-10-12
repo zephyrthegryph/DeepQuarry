@@ -6,7 +6,7 @@
 -menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 -menu: Toggle Helmet (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.suit.space ghost|none
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 -menu: Toggle Helmet (refused: You can't do that.)
@@ -40,25 +40,21 @@ human|/obj/item/multitool click: Click: Use
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 -menu: Toggle Helmet (refused: You can't do that.)
 -menu: Voidsuit install item
-@obj.item.clothing.suit.space human|/obj/item/stack/cable_coil
--menu: Eject tank (refused: There is no tank or cooling unit inserted.)
--menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
--menu: Toggle Helmet (refused: You can't do that.)
--menu: Voidsuit install item
--click: Click: Voidsuit install item
-+5 click: Click: Use
+human|/obj/item/stack/cable_coil menu: Alternate use
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
 @obj.item.clothing.suit.space human|/obj/item/stack/material/steel
 -menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 -menu: Toggle Helmet (refused: You can't do that.)
 -menu: Voidsuit install item
-@obj.item.clothing.suit.space human|/obj/item/card/id
--menu: Eject tank (refused: There is no tank or cooling unit inserted.)
--menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
--menu: Toggle Helmet (refused: You can't do that.)
--menu: Voidsuit install item
--click: Click: Voidsuit install item
-+5 click: Click: Use
+human|/obj/item/card/id menu: Alternate use
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
 @obj.item.clothing.suit.space human|/obj/item/kit
 -menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
@@ -74,7 +70,7 @@ human|/obj/item menu: Move To Top
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-@obj.item human|/obj/item/stack/material
+@obj human|/obj/item/stack/material
 -menu: Eject tank (refused: There is no tank or cooling unit inserted.)
 -menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
 -menu: Toggle Helmet (refused: You can't do that.)

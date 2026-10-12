@@ -1,59 +1,56 @@
-human|none menu: Climb
-human|none menu: Use
-human|none click: Click: Use
-@obj.machinery.computer.arcade robot|none
--menu: Ui open
--click: Click: Ui open
-+3 click: Click: Use
-ai|none menu: Use
-ai|none click: Click: Use
+@obj.machinery.computer human|none
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
-@obj.machinery.computer.arcade human|/obj/item/tool/screwdriver
--menu: Pay
--menu: Ui open
-+4 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/tool/crowbar
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/tool/wrench
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/tool/wirecutters
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/multitool
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/weldingtool
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/stack/cable_coil
--menu: Pay
--menu: Ui open
-+4 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/stack/material/steel
--menu: Pay
--menu: Ui open
-+3 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/card/id
--menu: Pay
--menu: Ui open
-+4 menu: Use
-@obj.machinery.computer.arcade human|/obj/item
--menu: Pay
--menu: Ui open
-+3 menu: Use
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item menu: Climb
+human|/obj/item menu: Use
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
 @obj human|/obj/item/gripper
-@obj human|/obj/item/stack/arcadeticket
--menu: Pay
--menu: Ui open
-+4 menu: Use
-@obj.machinery.computer.arcade human|/obj/item/card/emag
--menu: Pay
--menu: Ui open
+human|/obj/item/stack/arcadeticket menu: Climb
+human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have enough for that.)
+human|/obj/item/stack/arcadeticket menu: Use
+human|/obj/item/stack/arcadeticket menu: Use arcade tickets
+human|/obj/item/stack/arcadeticket click: Click: Use item
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
 keys: blackhole_around, blackhole_continue, climb.climb, climb.climb_menu, continue, disconnect, drag_buckle, emag.subvert, emag.use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, menu, new_game, redeem_tickets, robot_remote_blocked, silicon_hand, use, use_gripper, use_item

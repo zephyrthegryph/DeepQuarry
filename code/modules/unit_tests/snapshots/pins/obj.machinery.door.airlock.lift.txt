@@ -4,84 +4,96 @@
 +1 menu: Hold the door open
 +2 menu: Open (refused: Access denied.)
 +3 menu: Ring the bell
-@obj.machinery.door.airlock robot|none
-@obj.machinery.door.airlock ai|none
+robot|none menu: Blocked (refused: not possible right now)
+robot|none menu: Open controls
+robot|none menu: Open or close
+robot|none menu: Toggle bolts
+robot|none menu: Toggle electrification
+robot|none click: Click: Open controls
+ai|none menu: Open controls
+ai|none menu: Open or close
+ai|none menu: Toggle bolts
+ai|none menu: Toggle electrification
+ai|none menu: Toggle the bolt lights
+ai|none click: Click: Open controls
 @obj ghost|none
 @obj.machinery.door human|/obj/item/tool/screwdriver
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 +0 menu: Hammer on the door
 +1 menu: Hold the door open
-+4 menu: Open (refused: Access denied.)
-+5 menu: Ring the bell
++3 menu: Ring the bell
 @obj.machinery.door human|/obj/item/tool/crowbar
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
-@obj.machinery.door human|/obj/item/tool/wrench
--menu: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+4 menu: Ring the bell
-@obj.machinery.door human|/obj/item/tool/wirecutters
--menu: Open
--click: Click: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+4 menu: Ring the bell
-+6 click: Click: Cut wires
-@obj.machinery.door human|/obj/item/multitool
--menu: Open
--click: Click: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+4 menu: Ring the bell
-+6 click: Click: Pulse wires
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
+human|/obj/item/tool/wrench menu: Hammer on the door
+human|/obj/item/tool/wrench menu: Hold the door open
+human|/obj/item/tool/wrench menu: Open (refused: Access denied.)
+human|/obj/item/tool/wrench menu: Ring the bell
+human|/obj/item/tool/wrench click: Click: Open
+human|/obj/item/tool/wirecutters menu: Hammer on the door
+human|/obj/item/tool/wirecutters menu: Hold the door open
+human|/obj/item/tool/wirecutters menu: Open (refused: Access denied.)
+human|/obj/item/tool/wirecutters menu: Ring the bell
+human|/obj/item/tool/wirecutters click: Click: Cut wires
+human|/obj/item/multitool menu: Hammer on the door
+human|/obj/item/multitool menu: Hold the door open
+human|/obj/item/multitool menu: Open (refused: Access denied.)
+human|/obj/item/multitool menu: Ring the bell
+human|/obj/item/multitool click: Click: Pulse wires
 @obj.machinery.door human|/obj/item/weldingtool
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
-@obj.machinery.door human|/obj/item/stack/cable_coil
--menu: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+4 menu: Open (refused: Access denied.)
-+5 menu: Ring the bell
-@obj.machinery.door human|/obj/item/stack/material/steel
--menu: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+4 menu: Ring the bell
-@obj.machinery.door human|/obj/item/card/id
--menu: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+5 menu: Ring the bell
-@obj.machinery.door human|/obj/item
--menu: Open
-+0 menu: Hammer on the door
-+1 menu: Hold the door open
-+3 menu: Open (refused: Access denied.)
-+4 menu: Ring the bell
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
+human|/obj/item/stack/cable_coil menu: Hammer on the door
+human|/obj/item/stack/cable_coil menu: Hold the door open
+human|/obj/item/stack/cable_coil menu: Open (refused: Access denied.)
+human|/obj/item/stack/cable_coil menu: Ring the bell
+human|/obj/item/stack/cable_coil click: Click: Open
+human|/obj/item/stack/material/steel menu: Hammer on the door
+human|/obj/item/stack/material/steel menu: Hold the door open
+human|/obj/item/stack/material/steel menu: Open (refused: Access denied.)
+human|/obj/item/stack/material/steel menu: Ring the bell
+human|/obj/item/stack/material/steel click: Click: Open
+human|/obj/item/card/id menu: Hammer on the door
+human|/obj/item/card/id menu: Hold the door open
+human|/obj/item/card/id menu: Open (refused: Access denied.)
+human|/obj/item/card/id menu: Ring the bell
+human|/obj/item/card/id click: Click: Open
+human|/obj/item menu: Hammer on the door
+human|/obj/item menu: Hold the door open
+human|/obj/item menu: Open (refused: Access denied.)
+human|/obj/item menu: Ring the bell
+human|/obj/item click: Click: Open
 @obj.machinery.door human|/obj/item/stack/material/plasteel
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
 @obj human|/obj/item/taperoll
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
 @obj.machinery human|/obj/item/assembly/signaler
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
+-menu: Threaten to push the button! (refused: You can't do that.)
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
 @obj human|/obj/item/pai_cable
+-menu: Move To Top
 -menu: Open
-+3 menu: Open (refused: Access denied.)
-@obj.machinery.door human|/obj/item/card/emag
--menu: Open
--menu: Use
--click: Click: Use
-+0 menu: Emag refused (refused: This door is internally controlled.)
-+4 menu: Open (refused: Access denied.)
-+7 click: Click: Emag refused
+-menu: Toggle Digestable (refused: You can't do that.)
++2 menu: Open (refused: Access denied.)
+human|/obj/item/card/emag menu: Emag refused (refused: This door is internally controlled.)
+human|/obj/item/card/emag menu: Hammer on the door
+human|/obj/item/card/emag menu: Hold the door open
+human|/obj/item/card/emag menu: Open (refused: Access denied.)
+human|/obj/item/card/emag menu: Ring the bell
+human|/obj/item/card/emag click: Click: Emag refused
 wires: AI Control, Bolt Lights, Door Bolts, Door State, Door Timing, Electrification, ID Scan, Primary Backup Power, Primary Power, Safety, Secondary Backup Power, Secondary Power
 keys: bolt_toggle, break_in, deice, deice_tool, disrupt_backup, disrupt_main, doorbell, doors.close, doors.open, drag_buckle, emag_refused, emergency_toggle, hammer, hold_open, idscan_toggle, light_toggle, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_close, pai_cable, panel.open, pry, pry_weapon, reinforce, remote_lights, remote_shock, remove_electronics, repair, robot_remote_blocked, safe_toggle, shock_perm, shock_restore, shock_temp, signaler, speed_toggle, strike, tape, tear, ui_open, unreinforce, weld_plasteel, weld_shut.toggle, wires.cut, wires.pulse, wires_window

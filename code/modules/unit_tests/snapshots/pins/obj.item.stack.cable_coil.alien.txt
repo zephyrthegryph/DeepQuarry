@@ -7,12 +7,12 @@
 -menu: Split
 -click: Click: Split
 +1 menu: Make Cable Restraints (refused: You can't do that.)
-+5 menu: Ui open
-+6 click: Click: Ui open
-@obj.item ai|none
++3 menu: Open controls
++6 click: Click: Open controls
+@obj ai|none
 -click: nothing
-+1 menu: Ui open
-+2 click: Click: Ui open
++1 menu: Open controls
++2 click: Click: Open controls
 @obj.item ghost|none
 +0 menu: Make Cable Restraints (refused: You can't do that.)
 @obj.item.stack human|/obj/item/tool/screwdriver
@@ -47,6 +47,7 @@ human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.
 human|/obj/item/weldingtool click: nothing
 @obj.item.stack human|/obj/item/stack/cable_coil
 -menu: Split
++1 menu: Make Cable Restraints (refused: You can't do that.)
 @obj.item.stack human|/obj/item/stack/material/steel
 -menu: Split
 +1 menu: Make Cable Restraints (refused: You can't do that.)
@@ -54,7 +55,7 @@ human|/obj/item/weldingtool click: nothing
 -menu: Split
 -click: Click: Split
 +0 menu: Make Cable Restraints (refused: You can't do that.)
-+4 click: nothing
++3 click: nothing
 @obj.item.stack human|/obj/item/kit
 -menu: Split
 +1 menu: Make Cable Restraints (refused: You can't do that.)

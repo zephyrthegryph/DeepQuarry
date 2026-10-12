@@ -1,6 +1,6 @@
 @obj.machinery.computer human|none
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
@@ -13,8 +13,8 @@
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
 -click: Click: Use item
-+2 menu: Set ident tag
-+5 click: Click: Set ident tag
++1 menu: Set ident tag
++3 click: Click: Set ident tag
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
 @obj.machinery.computer human|/obj/item/stack/cable_coil

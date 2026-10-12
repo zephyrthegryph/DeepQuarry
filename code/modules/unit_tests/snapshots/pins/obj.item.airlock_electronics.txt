@@ -1,9 +1,9 @@
 @obj human|none
 @obj robot|none
 -click: Click: Pick up
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.item ai|none
++2 menu: Open controls
++5 click: Click: Open controls
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar

@@ -2,7 +2,7 @@
 +2 menu: Threaten to push the button! (refused: You can't do that.)
 @obj robot|none
 +3 menu: Threaten to push the button! (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 @obj.item.assembly human|/obj/item/tool/screwdriver
@@ -32,20 +32,22 @@
 +3 menu: Transfer
 +5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/stack/cable_coil
+-menu: Make Cable Restraints (refused: You can't do that.)
 -click: Click: Use
-+2 menu: Threaten to push the button! (refused: You can't do that.)
-+4 menu: Transfer
-+6 click: Click: Transfer
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 +3 menu: Transfer
 +5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/card/id
+-menu: Read ID Card (refused: You can't do that.)
 -click: Click: Use
-+2 menu: Threaten to push the button! (refused: You can't do that.)
-+4 menu: Transfer
-+6 click: Click: Transfer
++1 menu: Threaten to push the button! (refused: You can't do that.)
++3 menu: Transfer
++5 click: Click: Transfer
 @obj.item.assembly human|/obj/item/kit
 -click: Click: Customise
 +2 menu: Threaten to push the button! (refused: You can't do that.)

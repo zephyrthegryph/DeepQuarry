@@ -2,7 +2,7 @@
 -menu: Rename food
 @obj.item.reagent_containers robot|none
 -menu: Rename food
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers ghost|none
 -menu: Rename food (refused: You can't cook!)
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver

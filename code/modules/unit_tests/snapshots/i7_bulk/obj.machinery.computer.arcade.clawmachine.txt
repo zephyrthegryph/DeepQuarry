@@ -1,6 +1,14 @@
-@obj.machinery.computer.arcade human|none
-@obj.machinery.computer.arcade robot|none
-@obj.machinery.computer.arcade ai|none
+human|none menu: Climb
+human|none menu: Ui open
+human|none click: Click: Ui open
+@obj.machinery.computer robot|none
+-click: Click: Use
++2 menu: Ui open
++4 click: Click: Ui open
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Ui open
++2 click: Click: Ui open
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.arcade human|/obj/item/tool/screwdriver
 @obj.machinery.computer.arcade human|/obj/item/tool/crowbar

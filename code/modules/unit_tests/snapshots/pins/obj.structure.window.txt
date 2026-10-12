@@ -11,7 +11,7 @@ robot|none click: Click: Knock
 +0 menu: Bang on
 +1 menu: Fasten to or free from the floor
 +3 menu: Knock
-+7 click: Click: Fasten to or free from the floor
++5 click: Click: Fasten to or free from the floor
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Bang on
 +2 menu: Knock
@@ -28,8 +28,8 @@ robot|none click: Click: Knock
 -click: Click: Use
 +0 menu: Bang on
 +2 menu: Knock
-+4 menu: Repair the window (refused: It is already in good condition.)
-+7 click: Click: Repair the window
++3 menu: Repair the window (refused: It is already in good condition.)
++5 click: Click: Repair the window
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Bang on
 +2 menu: Knock

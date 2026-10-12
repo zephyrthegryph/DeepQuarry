@@ -2,15 +2,53 @@
 @obj.structure.simple_door robot|none
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure.simple_door human|/obj/item/tool/screwdriver
-@obj.structure.simple_door human|/obj/item/tool/crowbar
-@obj.structure.simple_door human|/obj/item/tool/wrench
-@obj.structure.simple_door human|/obj/item/tool/wirecutters
-@obj.structure.simple_door human|/obj/item/multitool
-@obj.structure.simple_door human|/obj/item/weldingtool
-@obj.structure.simple_door human|/obj/item/stack/cable_coil
-@obj.structure.simple_door human|/obj/item/stack/material/steel
-@obj.structure.simple_door human|/obj/item/card/id
-@obj.structure.simple_door human|/obj/item
-@obj.structure.simple_door human|/obj/item/pickaxe
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wrench
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/tool/wirecutters
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use welder
++6 click: Click: Use welder
+@obj.structure human|/obj/item/stack/cable_coil
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Tear at
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/stack/material/steel
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Tear at
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item
++1 menu: Move To Top
++2 menu: Tear at
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj human|/obj/item/pickaxe
++2 menu: Move To Top
++3 menu: Tear at
++4 menu: Toggle Digestable (refused: You can't do that.)
 keys: dig, drag_buckle, melee_hit, resin_hand, silicon_open, tear, use_welder

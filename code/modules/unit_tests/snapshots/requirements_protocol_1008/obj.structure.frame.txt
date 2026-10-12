@@ -16,59 +16,81 @@
 +3 menu: Turn Around
 @obj.structure human|/obj/item/tool/screwdriver
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 +8 menu: Wrench into place
 +9 click: Click: Wrench into place
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
 +0 menu: Climb
 +1 menu: Cut frame apart
++3 menu: Move To Top
 +4 menu: Rotate Clockwise
 +5 menu: Rotate Counter Clockwise
++6 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Turn Around
 +9 click: Click: Cut frame apart
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Climb
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
 +4 menu: Rotate Clockwise
 +5 menu: Rotate Counter Clockwise
++6 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Turn Around
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj.structure human|/obj/item/card/id
 +0 menu: Climb
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
 +4 menu: Rotate Clockwise
 +5 menu: Rotate Counter Clockwise
++6 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Turn Around
 @obj.structure human|/obj/item
 +0 menu: Climb
++2 menu: Move To Top
 +3 menu: Rotate Clockwise
 +4 menu: Rotate Counter Clockwise
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Turn Around
 @obj human|/obj/item/circuitboard
 @obj.structure human|/obj/item/stack/material

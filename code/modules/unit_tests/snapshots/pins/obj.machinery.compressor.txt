@@ -1,28 +1,20 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+1 menu: Open maintenance panel
-+3 click: Click: Open maintenance panel
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Deconstruct (refused: the maintenance panel is closed)
-+3 click: Click: Deconstruct
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Unsecure
-+3 click: Click: Unsecure
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Set ident tag
-+3 click: Click: Set ident tag
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench click: Click: Unsecure
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Set ident tag
+human|/obj/item/multitool click: Click: Set ident tag
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
 @obj human|/obj/item/storage/part_replacer
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, set_ident, silicon_hand

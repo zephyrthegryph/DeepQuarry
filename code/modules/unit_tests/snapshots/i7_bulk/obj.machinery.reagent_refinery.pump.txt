@@ -5,46 +5,90 @@
 +5 menu: Use
 +6 click: Click: Use
 @obj.machinery.reagent_refinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.reagent_refinery ghost|none
 @obj.machinery.reagent_refinery human|/obj/item/tool/screwdriver
++1 menu: Move To Top
++5 menu: Set transfer amount
++6 menu: Toggle Digestable (refused: You can't do that.)
 +8 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/crowbar
++2 menu: Move To Top
++5 menu: Set transfer amount
++6 menu: Toggle Digestable (refused: You can't do that.)
 +8 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/wrench
++1 menu: Move To Top
++5 menu: Set transfer amount
++6 menu: Toggle Digestable (refused: You can't do that.)
 +8 menu: Use
 @obj.machinery.reagent_refinery human|/obj/item/tool/wirecutters
 -click: nothing
++1 menu: Move To Top
++4 menu: Set transfer amount
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/multitool
 -click: nothing
++1 menu: Move To Top
++4 menu: Set transfer amount
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/weldingtool
 -click: nothing
++1 menu: Move To Top
++4 menu: Set transfer amount
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/stack/cable_coil
 -click: nothing
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++5 menu: Set transfer amount
++6 menu: Toggle Digestable (refused: You can't do that.)
 +8 menu: Use
 +9 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/stack/material/steel
 -click: nothing
++1 menu: Move To Top
++4 menu: Set transfer amount
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/card/id
 -click: nothing
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++5 menu: Set transfer amount
++6 menu: Toggle Digestable (refused: You can't do that.)
 +8 menu: Use
 +9 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item
 -click: nothing
++1 menu: Move To Top
++4 menu: Set transfer amount
++5 menu: Toggle Digestable (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
 @obj.machinery.reagent_refinery human|/obj/item/reagent_containers/glass
++2 menu: Move To Top
++3 menu: Open or close the lid
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
-@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/glass2
+@obj human|/obj/item/reagent_containers/food/drinks/glass2
++2 menu: Move To Top
++3 menu: Rename food
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
-@obj.machinery.reagent_refinery human|/obj/item/reagent_containers/food/drinks/shaker
+@obj human|/obj/item/reagent_containers/food/drinks/shaker
++2 menu: Move To Top
++3 menu: Rename food
++6 menu: Set transfer amount
++7 menu: Toggle Digestable (refused: You can't do that.)
 +9 menu: Use
 keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, reagent_pump_use, reagent_refinery_drain, reagent_refinery_set_transfer_amount, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, use_wrench

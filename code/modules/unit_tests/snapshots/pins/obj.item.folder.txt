@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -28,21 +28,21 @@
 +3 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +2 menu: Use
 +3 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/kit
 +3 menu: Use
 @obj human|/obj/item/storage
 +3 menu: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 @obj human|/obj/item/pen
 -menu: Rename

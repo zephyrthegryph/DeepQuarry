@@ -1,16 +1,16 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 ghost|none menu: Follow the link
 ghost|none click: Click: Follow the link
-@obj human|/obj/item/tool/screwdriver
-@obj human|/obj/item/tool/crowbar
-@obj human|/obj/item/tool/wrench
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/wrench
+@obj.machinery human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
 keys: drag_buckle, ghost_follow, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

@@ -18,7 +18,7 @@
 +8 menu: Shuffle
 +10 menu: Use
 +11 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Deal
 +1 menu: Deal Multiple Cards
@@ -31,10 +31,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use screwdriver
 +10 click: Click: Use
 @obj human|/obj/item/tool/crowbar
 -click: nothing
@@ -42,10 +42,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use crowbar
 +10 click: Click: Use
 @obj human|/obj/item/tool/wrench
 -click: nothing
@@ -53,10 +53,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use wrench
 +10 click: Click: Use
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
@@ -64,10 +64,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use wirecutters
 +10 click: Click: Use
 @obj human|/obj/item/multitool
 -click: nothing
@@ -75,10 +75,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use multitool
 +10 click: Click: Use
 @obj human|/obj/item/weldingtool
 -click: nothing
@@ -86,10 +86,10 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use welding tool
 +10 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
@@ -97,21 +97,21 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+7 menu: Search for Cards
-+8 menu: Shuffle
-+10 menu: Use
-+11 click: Click: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use cable coil
++10 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alt
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
-+9 menu: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use steel sheet
 +10 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
@@ -119,36 +119,36 @@
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+7 menu: Search for Cards
-+8 menu: Shuffle
-+10 menu: Use
-+11 click: Click: Use
++5 menu: Search for Cards
++6 menu: Shuffle
++8 menu: Use
++9 menu: Use identification card
++10 click: Click: Use
 @obj human|/obj/item/kit
 +0 menu: Alt
 +2 menu: Deal
 +3 menu: Deal Multiple Cards
 +4 menu: Draw
-+5 menu: Item
-+7 menu: Search for Cards
-+8 menu: Shuffle
-+10 menu: Use
++6 menu: Search for Cards
++7 menu: Shuffle
++9 menu: Use
++10 menu: Use item
 @obj human|/obj/item/storage
 +0 menu: Alt
 +2 menu: Deal
 +3 menu: Deal Multiple Cards
 +4 menu: Draw
-+5 menu: Item
-+7 menu: Search for Cards
-+8 menu: Shuffle
-+10 menu: Use
-@obj.item human|/obj/item
++6 menu: Search for Cards
++7 menu: Shuffle
++9 menu: Use
++10 menu: Use storage
+@obj human|/obj/item
 -menu: Alternate use
 +0 menu: Alt
 +1 menu: Deal
 +2 menu: Deal Multiple Cards
 +3 menu: Draw
-+4 menu: Item
-+6 menu: Search for Cards
-+7 menu: Shuffle
++5 menu: Search for Cards
++6 menu: Shuffle
++9 menu: Use item
 keys: alt, collect_item, deck_verb_deal, deck_verb_deal_multi, deck_verb_draw, deck_verb_search, deck_verb_shuffle, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable

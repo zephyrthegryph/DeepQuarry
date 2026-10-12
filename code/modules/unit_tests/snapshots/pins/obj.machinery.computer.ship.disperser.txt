@@ -1,6 +1,6 @@
 @obj.machinery.computer human|none
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer.ship ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 @obj.machinery.computer human|/obj/item/tool/crowbar

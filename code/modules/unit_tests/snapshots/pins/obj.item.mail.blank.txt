@@ -2,7 +2,7 @@
 +2 menu: Take out
 @obj robot|none
 +3 menu: Take out
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -36,9 +36,9 @@
 +4 click: Click: Put inside
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Put inside
-+3 menu: Take out
-+5 click: Click: Put inside
++1 menu: Put inside
++2 menu: Take out
++4 click: Click: Put inside
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Put inside
@@ -47,8 +47,8 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +1 menu: Put inside
-+3 menu: Take out
-+5 click: Click: Put inside
++2 menu: Take out
++4 click: Click: Put inside
 @obj human|/obj/item/kit
 +2 menu: Put inside
 +3 menu: Take out
@@ -57,12 +57,9 @@
 +2 menu: Put inside
 +3 menu: Take out
 +5 click: Click: Put inside
-human|/obj/item/destTagger menu: Move To Top
-human|/obj/item/destTagger menu: Put inside
-human|/obj/item/destTagger menu: Tag
-human|/obj/item/destTagger menu: Take out
-human|/obj/item/destTagger menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/destTagger click: Click: Tag
+@obj human|/obj/item/destTagger
++1 menu: Put inside
++3 menu: Take out
 @obj human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename

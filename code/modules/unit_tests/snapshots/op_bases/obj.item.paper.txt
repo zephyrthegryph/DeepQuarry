@@ -16,7 +16,6 @@ human|/obj/item click: Click: Use
 human|/obj/item/card/id menu: Create Area (refused: You can't do that.)
 human|/obj/item/card/id menu: Fold into a plane
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rename paper (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Use
@@ -38,7 +37,6 @@ human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Use
 human|/obj/item/stack/cable_coil menu: Create Area (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Fold into a plane
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Rename paper (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)

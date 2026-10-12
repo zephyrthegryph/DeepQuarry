@@ -10,84 +10,64 @@ robot|none menu: Try to pop
 robot|none click: Click: Poke
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+4 menu: Poke
-+5 menu: Punch
-+7 menu: Try to pop
-+8 click: Click: Poke
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+7 menu: Try to pop
-+8 click: Click: Poke
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Bat
-+3 menu: Poke
-+4 menu: Punch
-+6 menu: Try to pop
-+7 click: Click: Poke
+human|/obj/item/tool/screwdriver menu: Bat
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Poke
+human|/obj/item/tool/screwdriver menu: Punch
+human|/obj/item/tool/screwdriver menu: Try to pop
+human|/obj/item/tool/screwdriver click: Click: Poke
+human|/obj/item/tool/crowbar menu: Bat
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Poke
+human|/obj/item/tool/crowbar menu: Punch
+human|/obj/item/tool/crowbar menu: Try to pop
+human|/obj/item/tool/crowbar click: Click: Poke
+human|/obj/item/tool/wrench menu: Bat
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Poke
+human|/obj/item/tool/wrench menu: Punch
+human|/obj/item/tool/wrench menu: Try to pop
+human|/obj/item/tool/wrench click: Click: Poke
+human|/obj/item/tool/wirecutters menu: Bat
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Poke
+human|/obj/item/tool/wirecutters menu: Punch
+human|/obj/item/tool/wirecutters menu: Try to pop
+human|/obj/item/tool/wirecutters click: Click: Poke
+human|/obj/item/multitool menu: Bat
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Poke
+human|/obj/item/multitool menu: Punch
+human|/obj/item/multitool menu: Try to pop
+human|/obj/item/multitool click: Click: Poke
+human|/obj/item/weldingtool menu: Bat
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Poke
+human|/obj/item/weldingtool menu: Punch
+human|/obj/item/weldingtool menu: Try to pop
+human|/obj/item/weldingtool click: Click: Poke
+human|/obj/item/stack/cable_coil menu: Bat
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Poke
+human|/obj/item/stack/cable_coil menu: Punch
+human|/obj/item/stack/cable_coil menu: Try to pop
+human|/obj/item/stack/cable_coil click: Click: Poke
+human|/obj/item/stack/material/steel menu: Bat
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Poke
+human|/obj/item/stack/material/steel menu: Punch
+human|/obj/item/stack/material/steel menu: Try to pop
+human|/obj/item/stack/material/steel click: Click: Poke
+human|/obj/item/card/id menu: Bat
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Poke
+human|/obj/item/card/id menu: Punch
+human|/obj/item/card/id menu: Try to pop
+human|/obj/item/card/id click: Click: Poke
+human|/obj/item menu: Bat
+human|/obj/item menu: Hit
+human|/obj/item menu: Poke
+human|/obj/item menu: Punch
+human|/obj/item menu: Try to pop
+human|/obj/item click: Click: Poke
 keys: bat, drag_buckle, melee_hit, poke, pop, punch
