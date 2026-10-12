@@ -56,7 +56,7 @@ fn string_allocation_captures_only_first_root_body_including_unreachable_literal
 #[test]
 fn string_allocation_preserves_first_occurrence_in_overridden_root_chain() {
     let inventory = capture(
-        "/proc/first()\n    return \"a_second\"\n/proc/first()\n    return \"z_first\"\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
+        "/proc/first()\n    return \"a_second\"\n/first()\n    return \"z_first\"\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
     );
     let Event::FirstRootCallable {
         callable,
