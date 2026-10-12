@@ -4830,3 +4830,56 @@ acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combinat
 ## Generated-station incremental work state (2026-10-12)
 
 The generated-station plan's hull_coordinates, hull_corners and seal_open are live incremental work state, not derived caches. Removing their CHANGE_EXPLICIT cache registrations prevents an unrelated publication from clearing a partially completed hull map or pressure-seal queue while leaving its cursor intact. Existing mutable map/list identity and traversal order remain unchanged. The borrowed hull-corner list now declares ref_many over actual tile intents owned by the plan; clearing that view preserves tile custody. Focused source tests use the actual step methods with a yielding checkpoint and assert preserved state plus successful continuation. Verification is pending; no snapshot refresh is proposed.
+## Requirement pins after master menu fixes (2026-10-12)
+
+Master `f5007aa10f` (2026-10-12 01:18 CDT, integrated by `f208564b45`)
+changed the menu producer. Its specialized requirement goldens were only
+re-factored, leaving the old behavior rows. The generated-plan lane refreshes
+29 fresh requirement captures from run `20261012T072134_264b48922c` only:
+
+| Cause class | Source on master | Result |
+|---|---|---|
+| Generated window label | `code/engine/parts/part.dm`, `f5007aa10f` | `Ui open` becomes `Open controls`, including click labels. |
+| Held item's self-menu filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Held-item own-menu rows no longer appear in the target menu. |
+| Drag-only input filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Drag actions such as recharger insertion no longer appear as plain-menu actions. |
+| Silent refusals and duplicate labels | `code/engine/parts/resolve.dm`, `f5007aa10f` | Suppressed or duplicate rows disappear, preserving the current producer's ordered result. |
+| Unlabelled catch-all presentation | `code/engine/parts/resolve.dm`, `f5007aa10f` | Internal item operation names use the current `Use held item` label. |
+| Existing VR-sleeper serial stabilization | `dq_pin_stable_rows`, `9b8f69f7e7` (2026-10-11) | Four literal serial rows use the already-existing canonical placeholder; gameplay refusal text is unchanged. |
+
+The audit expands inherited rows before comparing them: 285 diagnostic groups,
+1,154 removed and 418 added expanded semantic rows, zero unproved differences.
+Capture timestamps and both file hashes were checked before promotion. Every
+non-target file rewritten by factoring preserves its exact expanded rows.
+`dq_conversion_pin` passed and its captures were excluded. No resolver or
+interface production code was changed by this lane.
+
+Affected requirement-pin classes:
+- `/obj/item/floor_light`
+- `/obj/machinery/bomb_tester`
+- `/obj/machinery/cablelayer`
+- `/obj/machinery/camera`
+- `/obj/machinery/computer/aifixer`
+- `/obj/machinery/computer/aiupload`
+- `/obj/machinery/computer/arcade/clawmachine`
+- `/obj/machinery/computer/borgupload`
+- `/obj/machinery/computer/guestpass`
+- `/obj/machinery/computer/pandemic`
+- `/obj/machinery/computer/pod/old/syndicate`
+- `/obj/machinery/computer/prison_shuttle`
+- `/obj/machinery/computer/skills`
+- `/obj/machinery/computer/supplycomp`
+- `/obj/machinery/cryopod`
+- `/obj/machinery/floor_light`
+- `/obj/machinery/food_replicator`
+- `/obj/machinery/gear_painter`
+- `/obj/machinery/nuclearbomb`
+- `/obj/machinery/organ_printer`
+- `/obj/machinery/particle_smasher`
+- `/obj/machinery/partslathe`
+- `/obj/machinery/recharge_station`
+- `/obj/machinery/robotic_fabricator`
+- `/obj/machinery/suit_cycler`
+- `/obj/machinery/suit_storage_unit`
+- `/obj/machinery/vr_sleeper/alien`
+- `/obj/machinery/vr_sleeper`
+- `/obj/structure/frame`
