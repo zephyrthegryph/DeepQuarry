@@ -117,11 +117,19 @@
 		return TRUE
 	if(B.factors?[BF_ALLERGY] > 0)
 		return TRUE
+	// A metric past its trigger: the affliction's severity follows the value continuously, so it is re-read every cycle.
+	if(src.radiation || src.accumulated_rads >= 100)
+		return TRUE
+	var/normal = src.dq_normal_body_temperature()
+	var/body_temp = src.body_temperature()
+	if(body_temp <= normal - DQ_COLD_EXPOSURE_KELVIN || body_temp >= normal + DQ_HEAT_EXPOSURE_KELVIN)
+		return TRUE
 	return src.oxygen_debt() >= MEDICAL_STAGE_ISCHEMIA_DEBT
 
-/// The metric triggers read body temperature and radiation, which many places write raw.
+/// The metric triggers read body temperature and radiation: the body heat watch and the radiation writers invalidate
+/// the body's metrics (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/human/proc/life_medical_rewake()
-	return 5 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /mob/living/carbon/human/proc/life_medical(datum/seq_frame/life/F)
 	if(src.has_allergies())
@@ -329,8 +337,9 @@
 /mob/living/carbon/human/life_radiation_due()
 	return src.radiation || src.accumulated_rads || act_wanted(src, /datum/act/live_radiation)
 
+/// The dose is written only through the radiation writers, which publish MOB_KEY_RADIATION. This is the fallback.
 /mob/living/carbon/human/life_radiation_rewake()
-	return 5 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /mob/living/carbon/human/life_radiation(datum/seq_frame/life/F)
 	. = ..()
@@ -601,6 +610,7 @@
 		src.body?.set_breath_quality(1)
 		return
 
+	src.set_breath_hazard(FALSE)
 	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath_moles)
@@ -675,16 +685,18 @@
 	var/exhale_type = src.species.exhale_type
 	if(!exhale_type)
 		return
-	var/safe_exhaled_max = 10
+	var/safe_exhaled_max = BREATH_EXHALED_MAX
 	// To be clear, this isn't how much they're exhaling -- it's the amount of the species exhale gas in the breath.
 	var/exhaled_pp = (LINDA_GAS_AMT(breath, exhale_type)/breath_moles)*breath_pressure
 	if(exhaled_pp > safe_exhaled_max)
+		src.set_breath_hazard(TRUE)
 		if (prob(15))
 			var/word = pick("extremely dizzy","short of breath","faint","confused")
 			to_chat(src, span_danger("You feel [word]."))
 		// Hypercapnia: the exhaled gas crowds out the breath.
 		return 0.4
 	if(exhaled_pp > safe_exhaled_max * 0.7)
+		src.set_breath_hazard(TRUE)
 		if (!prob(1))
 			var/word = pick("dizzy","short of breath","faint","momentarily confused")
 			to_chat(src, span_warning("You feel [word]."))
@@ -693,6 +705,7 @@
 		// Mild hypercapnia: the breath worsens as the exhaled gas nears its limit.
 		return 1 - 0.5 * ratio
 	if(exhaled_pp > safe_exhaled_max * 0.6)
+		src.set_breath_hazard(TRUE)
 		if(prob(0.3))
 			var/word = pick("a little dizzy","short of breath")
 			to_chat(src, span_warning("You feel [word]."))
@@ -703,12 +716,14 @@
 	. = 1
 	if(src.species.breath_type == GAS_CH4)
 		return
-	var/safe_toxins_min = 0.05
-	var/safe_toxins_max = 0.2
+	var/safe_toxins_min = BREATH_TOXINS_MIN
+	var/safe_toxins_max = BREATH_TOXINS_MAX
 	var/poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
 	var/methane_pp = (poison_methane/breath_moles)*breath_pressure
-	if(methane_pp > safe_toxins_min && prob(5))
-		to_chat(src,span_warning("You smell rotten eggs."))
+	if(methane_pp > safe_toxins_min)
+		src.set_breath_hazard(TRUE)
+		if(prob(5))
+			to_chat(src,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)
 		. = 1 - clamp(methane_pp / (safe_toxins_max * 20), 0.1, 0.8)
 		if(prob(20))
@@ -830,8 +845,9 @@
 	var/environment_steady = FALSE
 
 /// Idle after an exchange that found comfortable air on a turf (the pressure inside the warning
-/// band, the air within 20 K of the body, the body inside its comfort band). Only the mob's own
-/// state is read, so the air is re-sampled by the rewake; moving and equipment wake it sooner.
+/// band, the air within 20 K of the body, the body inside its comfort band). Its air watch wakes it
+/// when the air leaves those bands (MOB_KEY_AIR), its body heat watch when the body temperature does
+/// (MOB_KEY_BODY_HEAT); moving and equipment wake it too. The rewake is a fallback.
 /// Species and traits with their own environment effects stay awake.
 /mob/living/carbon/human/life_environment_due()
 	var/static/list/active_environment_species = typecacheof(list(
@@ -1065,13 +1081,15 @@
 /mob/living/carbon/human/proc/thermal_setpoint()
 	return species.body_temperature + factor(BF_TEMPERATURE)
 
-/// Body temperature is written raw by the environment, reagents and afflictions.
+/// Body temperature lives in Rust and is changed by the environment, reagents and afflictions: the body heat watch
+/// wakes this step when it leaves the comfort band around the set point (MOB_KEY_BODY_HEAT). This is the fallback.
 /mob/living/carbon/human/proc/life_thermoregulation_rewake()
-	return 4 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /// Body temperature adjusts itself (self-regulation): metabolism is the body's own power, W, held until the next run (the old per-run
 /// temperature steps, as the power that makes them over LIFE_ENVIRONMENT_SECONDS).
 /mob/living/carbon/human/proc/life_thermoregulation(datum/seq_frame/life/F)
+	src.body_heat_watch_arm() // the set point may have moved (a fever)
 	var/per_kelvin = src.body_heat_capacity() / LIFE_ENVIRONMENT_SECONDS // W that make one kelvin per run
 	var/watts = 0
 	// We produce heat naturally.
@@ -1878,8 +1896,9 @@
 /mob/living/carbon/human/proc/life_shock_due()
 	return src.shock_stage > 0 || src.traumatic_shock >= 80
 
+/// Pain and shock come through injure/mend and the body (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/human/proc/life_shock_rewake()
-	return 10 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /// Traumatic shock stages from pain.
 /mob/living/carbon/human/proc/life_shock(datum/seq_frame/life/F)
@@ -2289,8 +2308,9 @@
 	var/losing = src.weight_loss && nutrition_of(src) <= MAX_NUTRITION_TO_LOSE && src.weight > MIN_MOB_WEIGHT
 	return gaining || losing
 
+/// Nutrition is written through set_nutrition() (MOB_KEY_NUTRITION). This is the fallback (weight preferences).
 /mob/living/carbon/human/proc/life_weight_rewake()
-	return 10 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /// Weight gain and loss from nutrition.
 /mob/living/carbon/human/proc/life_weight(datum/seq_frame/life/F)

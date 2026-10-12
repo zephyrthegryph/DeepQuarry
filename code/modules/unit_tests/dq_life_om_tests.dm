@@ -93,6 +93,14 @@
 /proc/life_test_asleep(mob/living/L, key)
 	return seq_step_asleep(L, LIFE_SEQ, key)
 
+/// Deciseconds until step `key`'s rewake fires on `L`, or 0 when none is pending.
+/proc/life_test_rewake_in(mob/living/L, key)
+	var/datum/seq_state/state = life_test_state(L)
+	var/datum/seq_step/S = state?.table.by_key?[key]
+	if(!S || !S.pos || length(state.rewake_at) < S.pos || isnull(state.rewake_at[S.pos]))
+		return 0
+	return max(state.rewake_at[S.pos] - seq_rewake_now(L), 0.1)
+
 /// Steps of `L` that are awake.
 /proc/life_test_awake(mob/living/L)
 	. = list()
@@ -110,9 +118,17 @@
 /proc/life_test_clock_end()
 	test_driver_end()
 
-/// Lets `seconds` of test time pass: every kernel phase, drain and sweep that falls due.
+/// Lets `seconds` of test time pass: every kernel phase, drain and sweep that falls due. A second at a time, each followed
+/// by the change-reaction drain: the live scheduler runs it every tick on its presentation lane, but the test scheduler
+/// (manual time) leaves the world's presentation queues alone, so an on_change() reaction (vision, HUD) published with no
+/// refresh queued beside it waited for some unrelated refresh to drain it.
 /proc/life_test_advance(seconds)
-	test_time(seconds * 10)
+	var/left = seconds
+	while(left > 0)
+		var/step = min(left, 1)
+		test_time(step * 10)
+		rx_drain()
+		left -= step
 
 // --- Test-only contributed steps (added per mob with seq_extra_add(); never in a table otherwise) ---------------------
 

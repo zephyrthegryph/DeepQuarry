@@ -84,6 +84,9 @@
 	var/list/hop_rels
 	/// "[stat id]" -> its rank: one above the highest rank of any stat it reads on the entity (0 when it reads none).
 	var/list/ranks
+	/// "[stat id]" -> what the stat reads that nothing publishes (code/engine/_generated/deps.dm), or no entry when every input is tracked. A stat
+	/// with an entry recomputes on every read; any other caches its value on first read (stat_value()). Built with the type, never written after.
+	var/list/untracked
 
 /proc/contributes(stat_id, value = null, priority = PRIORITY_DEFAULT, reason = null, key = null, list/reads = null)
 	return entry_make("contributes", key, list("stat" = stat_id, "value" = value, "priority" = priority, "reason" = reason, "reads" = reads))
@@ -169,6 +172,10 @@
 			var/datum/stat_contrib/pseudo = new
 			pseudo.stat_id = def.id
 			pseudo.reads = def.formula_reads
+			if(istext(def.formula))
+				pseudo.value_kind = CV_PROC
+				pseudo.value_spec = def.formula
+				pseudo.reads = stat_reads_union(pseudo.reads, stat_generated_reads(E, def.formula))
 			stat_index_inputs(E, I, pseudo, def.id)
 	I.init_needed = length(I.contribs) > 0 || length(I.ct_entries) > 0
 	for(var/datum/stat_def/def as anything in I.defs)
@@ -178,6 +185,7 @@
 		GLOB.stat_type_index[E.type] = FALSE
 		return FALSE
 	stat_check_contribs(E, I, T)
+	stat_untracked_propagate(I)
 	stat_build_ranks(I)
 	for(var/datum/stat_contrib/ct as anything in I.ct_entries)
 		GLOB.stat_input_keys[ct.rel] = TRUE
@@ -210,8 +218,9 @@
 	else
 		contrib.value_kind = CV_CONST
 	contrib.value_spec = spec
-	if(contrib.value_kind == CV_PROC && !length(contrib.reads))
-		contrib.reads = stat_generated_reads(E, spec)
+	if(contrib.value_kind == CV_PROC)
+		// The generated reads are the inputs; a hand-written reads = list(...) only adds to them (it can no longer hide one).
+		contrib.reads = stat_reads_union(contrib.reads, stat_generated_reads(E, spec))
 	return contrib
 
 GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read it (state_changed() asks before it calls the stat layer)
@@ -257,15 +266,28 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 /// (or contributes_to entry) to recompute when it changes.
 /proc/stat_index_inputs(datum/E, datum/stat_type_info/I, datum/stat_contrib/contrib, stat_id)
 	var/list/keys = list()
+	var/list/untracked = list()
 	if(contrib.value_kind)
-		stat_collect_condition_inputs(E, contrib.value_kind, contrib.value_spec, keys)
+		stat_collect_condition_inputs(E, contrib.value_kind, contrib.value_spec, keys, untracked)
 	for(var/datum/entry/W as anything in contrib.whens)
-		stat_collect_tree_inputs(E, W.args["cond"], keys)
+		stat_collect_tree_inputs(E, W.args["cond"], keys, untracked)
 		for(var/read in W.args["reads"])
 			keys += list(read)
 	for(var/read in contrib.reads)
 		keys += list(read)
+	if(stat_id && length(untracked))
+		stat_note_untracked(I, stat_id, untracked)
 	for(var/key in keys)
+		// A read through a list relation ("parts[].x") has no one target to follow: the stat cannot see it change.
+		if(istext(key) && findtext(key, "\[]"))
+			if(stat_id)
+				stat_note_untracked(I, stat_id, list(key))
+			continue
+		// A hop starts at a var of the holder; one that does not (a generated read through a local the walk typed) cannot be indexed.
+		if(istext(key) && findtext(key, ".") && findtext(key, "sys:") != 1 && !(copytext(key, 1, findtext(key, ".")) in E.vars))
+			if(stat_id)
+				stat_note_untracked(I, stat_id, list(key))
+			continue
 		// A var that is itself a declared stat of this type is read as that stat (so ranks and settling follow it).
 		if(istext(key) && !findtext(key, ".") && !findtext(key, ":"))
 			var/datum/stat_def/named = stat_def_named(key)
@@ -273,24 +295,29 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 				key = stat_ref_key(named.id)
 		stat_register_input(E, I, key, stat_id, contrib)
 
-/// Adds the inputs of one value spec to `keys`.
-/proc/stat_collect_condition_inputs(datum/E, kind, spec, list/keys)
+/// Adds the inputs of one value spec to `keys`, and what of it nothing publishes to `untracked`.
+/proc/stat_collect_condition_inputs(datum/E, kind, spec, list/keys, list/untracked)
 	switch(kind)
 		if(CV_VAR)
 			keys += list(spec)
+			stat_leaf_untracked(E, spec, untracked)
 		if(CV_STAT)
 			keys += list(stat_ref_key(spec))
 		if(CV_CAPKEY)
 			keys += list("capkey:[spec]")
+		if(CV_PROC)
+			stat_proc_untracked(E, spec, untracked)
 		if(CV_TREE)
-			stat_collect_tree_inputs(E, spec, keys)
+			stat_collect_tree_inputs(E, spec, keys, untracked)
 
-/// The inputs of a condition tree or a leaf (a var name, a stat or key id, cond_not/all/any of those, a PROC_REF whose reads are declared).
-/proc/stat_collect_tree_inputs(datum/E, cond, list/keys)
+/// The inputs of a condition tree or a leaf (a var name, a stat or key id, cond_not/all/any of those, a PROC_REF: its generated reads).
+/proc/stat_collect_tree_inputs(datum/E, cond, list/keys, list/untracked)
 	if(islist(cond))
 		var/list/tree = cond
+		if(tree[1] == "config")
+			return // a config switch is fixed for the round
 		for(var/i in 2 to length(tree))
-			stat_collect_tree_inputs(E, tree[i], keys)
+			stat_collect_tree_inputs(E, tree[i], keys, untracked)
 		return
 	if(isnum(cond))
 		if(stat_def_of(cond))
@@ -298,8 +325,93 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 		else if(cond >= CAPKEY_ID_BASE)
 			keys += list("capkey:[cond]")
 		return
-	if(istext(cond) && (cond in E.vars))
+	if(!istext(cond))
+		return
+	if(cond in E.vars)
 		keys += list(cond)
+		stat_leaf_untracked(E, cond, untracked)
+		return
+	// A holder proc: what the build generated for it is what it reads.
+	for(var/read in stat_generated_reads(E, cond))
+		keys += list(read)
+	stat_proc_untracked(E, cond, untracked)
+
+/// `a` with every read of `b` it lacks (`a` itself when `b` is empty).
+/proc/stat_reads_union(list/a, list/b)
+	if(!length(b))
+		return a
+	. = a ? a.Copy() : list()
+	for(var/read in b)
+		if(!(read in .))
+			. += list(read)
+
+/// The row "<type>::<key>" of a generated table for E's type or the nearest ancestor that has one, or null.
+/proc/stat_generated_row(list/table, datum/E, key)
+	if(!length(table))
+		return null
+	var/path = E.type
+	while(path)
+		var/row = table["[path]::[key]"]
+		if(row)
+			return row
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return null
+
+/// Adds to `untracked` what holder proc `proc_name` of E reads that nothing publishes (code/engine/_generated/deps.dm). A proc the build has no
+/// reads for at all (no declaration it analyzes names it) counts as unknown.
+/proc/stat_proc_untracked(datum/E, proc_name, list/untracked)
+	if(!islist(untracked))
+		return
+	var/list/row = stat_generated_row(GLOB.generated_untracked_reads, E, proc_name)
+	if(row)
+		untracked += row
+		return
+	if(!stat_generated_row(GLOB.generated_reads_table, E, proc_name))
+		untracked += "?no generated reads: [proc_name]"
+
+/// Adds var `var_name` to `untracked` when a declaration of E's type (or an ancestor) names it as a stat input and nothing publishes it.
+/proc/stat_leaf_untracked(datum/E, var_name, list/untracked)
+	if(!islist(untracked) || !length(GLOB.generated_untracked_leaves))
+		return
+	var/path = E.type
+	while(path)
+		var/list/names = GLOB.generated_untracked_leaves["[path]"]
+		if(names && (var_name in names))
+			untracked += var_name
+			return
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+
+/// Records that stat `stat_id` of the type reads `what`, which nothing publishes.
+/proc/stat_note_untracked(datum/stat_type_info/I, stat_id, list/what)
+	if(!I.untracked)
+		I.untracked = list()
+	var/list/known = I.untracked["[stat_id]"]
+	if(!known)
+		known = list()
+		I.untracked["[stat_id]"] = known
+	known |= what
+
+/// A stat that reads an untracked stat on the same entity is untracked too: its cached value would follow a value nobody publishes.
+/proc/stat_untracked_propagate(datum/stat_type_info/I)
+	if(!length(I.untracked))
+		return
+	for(var/pass in 1 to length(I.defs) + 1)
+		var/grew = FALSE
+		for(var/read_key in I.stat_readers)
+			if(!I.untracked[read_key])
+				continue
+			for(var/reader in I.stat_readers[read_key])
+				if(!I.untracked["[reader]"])
+					stat_note_untracked(I, reader, list("stat:[read_key]"))
+					grew = TRUE
+		if(!grew)
+			break
+
+/// TRUE when every input of stat `def` on E's type publishes, so a value computed from them stays right until one does.
+/proc/stat_inputs_tracked(datum/stat_type_info/I, datum/stat_def/def)
+	return !I || !I.untracked?[def.skey]
 
 /// The input key of another stat read on the same entity.
 /proc/stat_ref_key(stat_id)

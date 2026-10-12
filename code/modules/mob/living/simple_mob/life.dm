@@ -80,8 +80,8 @@
 /mob/living/simple_mob/proc/life_special_due()
 	return FALSE
 
-/// Idle while the air is survivable and the body has nothing for it to treat. Air that
-/// changes in place (a breach) is caught by a slow timer: atmos has no per-mob signal yet.
+/// Idle while the air is survivable and the body has nothing for it to treat. Its air watch wakes it
+/// when the air crosses one of its limits (MOB_KEY_AIR); the rewake is a fallback.
 /mob/living/simple_mob/life_environment_due()
 	if(src.is_incorporeal() || !src.loc)
 		return FALSE
@@ -93,7 +93,7 @@
 	return environment && !src.environment_is_safe(environment)
 
 /mob/living/simple_mob/life_environment_rewake()
-	return 15 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /// TRUE when exchange() would change nothing: temperature within the mob's range and every
 /// gas inside its bounds. Read-only; shared by the sleep rule and the hibernation audit.

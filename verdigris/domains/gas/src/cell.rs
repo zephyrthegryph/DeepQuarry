@@ -232,6 +232,16 @@ impl GasCell {
 		temperature_of(&self.moles, self.energy, self.temperature)
 	}
 
+	/// The partial pressure of gas `id` (kPa) from the cached pressure and total: its share of the moles times the pressure.
+	#[must_use]
+	pub fn partial_pressure(&self, id: usize) -> f32 {
+		if self.total > 0.0 {
+			self.moles[id] / self.total * self.pressure
+		} else {
+			0.0
+		}
+	}
+
 	/// The live pressure in `volume` litres.
 	#[must_use]
 	pub fn pressure_in(&self, volume: f32) -> f32 {
@@ -502,6 +512,19 @@ vg_core::channels! { pub mod gas_ch for TurfGas {
 	PLASMA: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_PLASMA],
 	CARBON_DIOXIDE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_CARBON_DIOXIDE],
 	COMPOSITION: Vector(22)<Moles> hysteresis 0.05 => |c, o| o.copy_from_slice(&c.moles),
+	// Partial pressures (kPa) of the gases a breather's lungs and skin react to: what a breather's band watch
+	// (code/modules/mob/living/carbon/breath_watch.dm) follows, so a turf reports only the crossings of the levels
+	// its breathers care about. Appended after COMPOSITION: the channels above keep their ids (CH_GAS_* in DM).
+	O2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_OXYGEN),
+	N2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROGEN),
+	CO2_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_CARBON_DIOXIDE),
+	PLASMA_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_PLASMA),
+	N2O_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_NITROUS_OXIDE),
+	CH4_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_METHANE),
+	FUEL_KPA: Scalar<Kpa> hysteresis 0.01 => |c, o| o[0] = c.partial_pressure(crate::gas::ids::GAS_VOLATILE_FUEL),
+	// Moles of the other gases a simple mob's environment limits name (OXYGEN, PLASMA and CARBON_DIOXIDE above).
+	NITROGEN: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_NITROGEN],
+	METHANE: Scalar<Moles> hysteresis 0.05 => |c, o| o[0] = c.moles[crate::gas::ids::GAS_METHANE],
 }}
 const _: () = assert!(N == 22, "gas_ch::COMPOSITION's width is the gas count");
 

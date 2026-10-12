@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "16aae2dc81f4ab76"
+#define VERDIGRIS_ABI "6dd3f2785f0a46a7"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -2440,6 +2440,20 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_watch_band_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(code, sub, lane, cell, ch, levels, hysteresis)
+
+/// `om_world_when` bands on several channels of one cell, as one watch: wakes
+/// when any of `chs` moves into a different band of its own increasing list in
+/// `levels` (the same position). `starts` holds each channel's band as the
+/// watcher read it itself (how many of its levels are at or under the value):
+/// the watch starts there, so only a move out of it wakes, never the
+/// registration. `hysteresis`
+/// < 0 takes each channel's. A breather's air watch (one per breather, on its
+/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+// /proc/world_watch_bands (verdigris/ffi/src/sched.rs)
+/proc/vg_world_watch_bands(code, sub, lane, cell, chs, levels, starts, hysteresis)
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_watch_bands_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(code, sub, lane, cell, chs, levels, starts, hysteresis)
 
 /// `om_world_on_change`: wakes when any channel in `mask` of `cell` moves past its
 /// hysteresis. Returns the token.

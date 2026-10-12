@@ -215,6 +215,9 @@
 /mob/living/proc/life_environment(datum/seq_frame/life/F)
 	if(F.environment())
 		life_environment_exchange(F.environment())
+	// What wakes this step (and breathing) once it sleeps: the air it now stands in, and its body temperature.
+	src.air_watch_arm()
+	src.body_heat_watch_arm()
 
 /// Handle temperature/pressure differences between body and environment.
 /mob/living/proc/life_environment_exchange(datum/gas_mixture/environment)
