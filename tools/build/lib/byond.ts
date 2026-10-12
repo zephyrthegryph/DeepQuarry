@@ -10,7 +10,8 @@ import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
 import { acquiredWorldArguments, resolveDreamDaemonExecutable } from './byond_runtime';
 import { compilerMode, selectedCompiler } from './compiler_selection';
-import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './native_pair';
+import { currentCompiledOutput, rememberCompiledOutput, withCompiledOutput, NativeAcquisitionError, assertDirectoryChain, type CompiledOutput } from './native_pair';
+import { copyWritableRuntimePair } from './runtime_pair_copy';
 import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary, type HostedLibraryIdentity } from './runtime_library';
 
 /** Cached path to DM compiler */
@@ -574,16 +575,37 @@ export async function DreamDaemon(
   // BYOND defaults its world directory to the DMB directory, independently of
   // the spawned process cwd. Acquiring a pair must preserve the caller's world
   // directory for config, focus files, logs and other runtime libraries.
-  const hostedArgs = acquiredWorldArguments(args, options.dmbFile, output.kind === 'native_pair');
+  const privateConventional = Boolean(options.runtimeLibrary) && output.kind !== 'native_pair';
+  const hostedArgs = acquiredWorldArguments(args, options.dmbFile, output.kind === 'native_pair' || privateConventional);
   return withCompiledOutput(output, Juke.exec, async dmbFile => {
+    let privateDirectory: string | undefined;
+    if (privateConventional) {
+      const root = path.resolve(process.env.DQ_NATIVE_RUN_ROOT ?? 'E:/dq-cache/dmb-build-integration');
+      if (!root.toLowerCase().startsWith('e:\\dq-cache\\')) throw new CompilerProvenanceError('Captured runtime directory must be owned below E:/dq-cache');
+      let ancestor = root;
+      while (!fs.existsSync(ancestor)) ancestor = path.dirname(ancestor);
+      assertDirectoryChain(ancestor);
+      fs.mkdirSync(root, { recursive: true });
+      assertDirectoryChain(root);
+      privateDirectory = fs.mkdtempSync(path.join(root, 'captured-byond-'));
+      copyWritableRuntimePair({ dmb: dmbFile, rsc: dmbFile.replace(/\.dmb$/i, '.rsc') }, path.join(privateDirectory, 'world'));
+      dmbFile = path.join(privateDirectory, 'world.dmb');
+    }
     options.onPreparedOutput?.(dmbFile);
     const hosted = { ...options, dmbFile, compiledOutput: output };
     try { return await runHostedWorld(hosted, hostedArgs); }
     finally {
-      if (output.kind === 'native_pair' && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
+      if ((output.kind === 'native_pair' || privateConventional) && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
         const destination = options.daemonLog ?? options.dmbFile.replace(/\.dmb$/, '.log');
         try { fs.copyFileSync(hosted.daemonLog, destination); }
         catch (error) { Juke.logger.warn(`Native daemon log preserved at ${hosted.daemonLog}: ${error}`); }
+      }
+      if (privateDirectory) {
+        for (const name of ['world.dmb', 'world.rsc', 'world.dyn.rsc', 'world.log']) {
+          fs.rmSync(path.join(privateDirectory, name), { force: true });
+        }
+        // Unknown additional evidence stays owned in this private directory.
+        try { fs.rmdirSync(privateDirectory); } catch { /* Preserve nonempty runtime evidence. */ }
       }
     }
   });
