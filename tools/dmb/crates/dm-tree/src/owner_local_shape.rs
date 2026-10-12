@@ -10,8 +10,12 @@ use std::{
     collections::BTreeMap,
     sync::atomic::{AtomicUsize, Ordering},
 };
+mod shared;
 #[cfg(test)]
 mod validation_tests;
+use shared::LocalShapeValues;
+#[cfg(test)]
+mod shared_tests;
 #[derive(Clone, Copy, Debug)]
 pub struct LocalMember {
     pub key: DeclarationKey,
@@ -41,15 +45,16 @@ impl LocalValidationFailure {
     }
 }
 pub(crate) type LocalOwners = BTreeMap<SymbolId, Arc<LocalOwner>>;
-type Store = ObservedArtifactStore<LocalOwner, SourceQuery, SourceAnswer, SourceDomain>;
+pub(crate) type LocalShapeStore =
+    ObservedArtifactStore<LocalOwner, SourceQuery, SourceAnswer, SourceDomain>;
 pub(crate) struct RetainedOwnerShapes {
-    store: Store,
+    store: LocalShapeValues,
     hits: AtomicUsize,
 }
 impl Default for RetainedOwnerShapes {
     fn default() -> Self {
         Self {
-            store: Store::current_revision(),
+            store: LocalShapeValues::Local(LocalShapeStore::current_revision()),
             hits: AtomicUsize::new(0),
         }
     }
@@ -82,6 +87,18 @@ pub enum LocalShapeStorageView<'a> {
     },
 }
 impl RetainedOwnerShapes {
+    pub(crate) fn with_shared(owner: Arc<crate::SharedNormalizedDeclarations>) -> Self {
+        Self {
+            store: LocalShapeValues::shared(owner),
+            hits: AtomicUsize::new(0),
+        }
+    }
+    pub(crate) fn fresh(&self) -> Self {
+        Self {
+            store: self.store.fresh(),
+            hits: AtomicUsize::new(0),
+        }
+    }
     pub(crate) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }

@@ -99,6 +99,7 @@ impl RetainedNormalization {
             callables: crate::owner_callable::RetainedCallableOwners::with_shared(Arc::clone(
                 &owner,
             )),
+            local: crate::owner_local_shape::RetainedOwnerShapes::with_shared(Arc::clone(&owner)),
             values: NormalizedValues::shared(owner),
             ..Self::default()
         }
@@ -107,6 +108,7 @@ impl RetainedNormalization {
         Self {
             values: self.values.fresh(),
             callables: self.callables.fresh(),
+            local: self.local.fresh(),
             ..Self::default()
         }
     }
