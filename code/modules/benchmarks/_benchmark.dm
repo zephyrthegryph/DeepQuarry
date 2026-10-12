@@ -35,6 +35,8 @@
 	var/window_world_wakes = 0
 	/// The machine world service's cumulative step time at the window start (it is no subsystem).
 	var/window_machines_ms = 0
+	var/window_stat_evals = 0
+	var/window_stat_read_computes = 0
 	var/window_om_deadlines = 0
 
 /// The scenario body. Call fail() to abort with a reason.
@@ -104,6 +106,8 @@
 	window_subsystem_fires = list()
 	window_world_wakes = GLOB.om_live_sched?.world_wakes
 	window_machines_ms = kernel().work_cost_of(SSmachines.type)["total_ms"]
+	window_stat_evals = GLOB.stat_evals
+	window_stat_read_computes = GLOB.stat_read_computes
 
 	window_om_deadlines = benchmark_om_deadline_count()
 	window_system_fires = kernel_system_fire_counts()
@@ -128,6 +132,9 @@
 	// FFI call counts are load-independent (same work happens regardless of
 	// how fast the machine gets through it), unlike the timings above.
 	count_metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
+	// Stat work: recomputes after an input changed, and reads that composed a value nothing had cached (code/engine/stats/recompute.dm).
+	count_metric("[prefix]_stat_evals", GLOB.stat_evals - window_stat_evals, "evals")
+	count_metric("[prefix]_stat_read_computes", GLOB.stat_read_computes - window_stat_read_computes, "computes")
 	var/list/subsystems = list()
 	var/total_work_items = 0
 	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...), by name.

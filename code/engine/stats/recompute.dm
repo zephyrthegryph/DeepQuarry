@@ -24,6 +24,7 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
 /proc/stat_call(datum/holder, proc_name)
@@ -51,6 +52,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	var/datum/stat_record/rec = E.rx?.stats
 	if(rec?.virtual && (def.skey in rec.virtual))
 		return rec.virtual[def.skey]
+	GLOB.stat_read_computes++
 	return stat_compute(E, def, I || null, rec)
 
 /// Writes a stat's settled value where it lives.
