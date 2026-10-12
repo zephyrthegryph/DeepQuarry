@@ -123,6 +123,7 @@ CAPABILITIES(/datum/asset)
 	owns_many(nameof(url_items), /datum/asset_url_entry)
 	owns_many(nameof(url_children), /datum/asset_child_entry)
 	ref_one(nameof(url_transport), /datum/asset_transport)
+	memo(ASSET_URL_MAPPING_ROWS, PROC_REF(compute_url_mapping_rows))
 	memo(ASSET_URL_MAPPING_JSON, PROC_REF(compute_url_mapping_json))
 	memo(ASSET_URL_MESSAGE, PROC_REF(compute_url_message))
 
@@ -180,12 +181,22 @@ CAPABILITIES(/datum/asset_child_entry)
 		rel_add(src, nameof(url_items), entry, asset_name)
 
 /datum/asset/proc/compute_url_message(datum/act/eval/A)
-	return TGUI_CREATE_MESSAGE("asset/mappings", json_decode(memo_value(src, ASSET_URL_MAPPING_JSON)))
+	return TGUI_CREATE_MESSAGE_JSON("asset/mappings", memo_value(src, ASSET_URL_MAPPING_JSON))
+
+/datum/asset/proc/compute_url_mapping_json(datum/act/eval/A)
+	var/list/mappings = list()
+	for(var/list/row as anything in json_decode(memo_value(src, ASSET_URL_MAPPING_ROWS)))
+		var/list/one_mapping = list()
+		one_mapping[row[1]] = row[2]
+		mappings += one_mapping
+	return json_encode(mappings)
 
 /// Each child is a real scalar memo dependency, so nested groups do not rely
 /// on a finite expansion of recursive helper reads.
-/datum/asset/proc/compute_url_mapping_json(datum/act/eval/A)
-	var/list/mappings = list()
+/datum/asset/proc/compute_url_mapping_rows(datum/act/eval/A)
+	// JSON objects lose repeated keys when decoded. Ordered pairs retain the
+	// original list += positions and final-value precedence across children.
+	var/list/rows = list()
 	for(var/asset_name in url_items)
 		var/datum/asset_url_entry/entry = url_items[asset_name]
 		if(QDELETED(entry))
@@ -193,15 +204,15 @@ CAPABILITIES(/datum/asset_child_entry)
 		var/datum/asset_cache_item/I = entry.item
 		if(QDELETED(I) || QDELETED(url_transport))
 			continue
-		mappings[entry.mapping_name] = url_transport.url_for_item(entry.mapping_name, I)
+		rows += list(list(entry.mapping_name, url_transport.url_for_item(entry.mapping_name, I)))
 	for(var/datum/asset_child_entry/entry in url_children)
 		if(QDELETED(entry))
 			continue
 		var/datum/asset/child = entry.child
 		if(QDELETED(child))
 			continue
-		mappings += json_decode(memo_value(child, ASSET_URL_MAPPING_JSON))
-	return json_encode(mappings)
+		rows += json_decode(memo_value(child, ASSET_URL_MAPPING_ROWS))
+	return json_encode(rows)
 
 /datum/asset/proc/register()
 	return

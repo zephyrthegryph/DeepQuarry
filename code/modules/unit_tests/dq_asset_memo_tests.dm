@@ -233,6 +233,11 @@
 	var/repeated = G.get_serialized_url_mappings()
 	TEST_ASSERT_EQUAL(length(G.url_children), 3, "Repeated actual child positions are preserved")
 	TEST_ASSERT_EQUAL(repeated, TGUI_CREATE_MESSAGE("asset/mappings", G.get_url_mappings()), "Repeated-child precedence matches the original consumer")
+	var/datum/asset/group/dq_native_memo/outer = allocate(/datum/asset/group/dq_native_memo)
+	var/datum/asset_child_entry/nested_entry = allocate(/datum/asset_child_entry)
+	rel_set(nested_entry, nameof(nested_entry.child), G)
+	rel_add(outer, nameof(outer.url_children), nested_entry)
+	TEST_ASSERT_EQUAL(memo_value(outer, ASSET_URL_MESSAGE), TGUI_CREATE_MESSAGE("asset/mappings", G.get_url_mappings()), "Nested groups retain repeated key positions instead of decoding them away")
 
 /datum/unit_test/dq_asset_memo/staging_cycle_recovery/Run()
 	var/datum/asset/simple/dq_native_memo/S = prepare_fixture()

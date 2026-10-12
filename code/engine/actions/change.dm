@@ -47,6 +47,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 		return
 	if(!istext(cond))
 		return
+	if(memo_read_declared(E, cond))
+		return list(cond)
 	if(findtext(cond, "."))
 		return list(copytext(cond, 1, findtext(cond, ".")))
 	if(cond in E.vars)
@@ -68,6 +70,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	if(isnum(cond))
 		return stat_def_of(cond) ? stat_value(E, cond) : cap_key_get(E, cond)
 	if(istext(cond))
+		if(memo_read_declared(E, cond))
+			return memo_value(E, copytext(cond, 6))
 		if(findtext(cond, "."))
 			return change_walk(E, cond)
 		if(cond in E.vars)
@@ -76,6 +80,8 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 
 /// A condition (a var, an id, a tree, a proc of the holder) evaluated now. A proc gets a pooled eval context.
 /proc/change_condition(datum/E, cond)
+	if(istext(cond) && memo_read_declared(E, cond))
+		return memo_value(E, copytext(cond, 6))
 	if(istext(cond) && !(cond in E.vars) && !findtext(cond, "."))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = E // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

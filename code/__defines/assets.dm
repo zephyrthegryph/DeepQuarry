@@ -22,3 +22,4 @@
 
 #define ASSET_URL_MESSAGE "asset_url_message"
 #define ASSET_URL_MAPPING_JSON "asset_url_mapping_json"
+#define ASSET_URL_MAPPING_ROWS "asset_url_mapping_rows"

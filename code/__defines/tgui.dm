@@ -49,6 +49,11 @@
 	"%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(json_encode(payload))]%7d" \
 )
 
+/// Preserve an already encoded payload, including BYOND's repeated object keys.
+#define TGUI_CREATE_MESSAGE_JSON(type, payload_json) ( \
+	"%7b%22type%22%3a%22[type]%22%2c%22payload%22%3a[url_encode(payload_json)]%7d" \
+)
+
 /// Though not the maximum renderable ByondUis within tgui, this is the maximum that the server will manage per-UI
 #define TGUI_MANAGED_BYONDUI_LIMIT 10
 
