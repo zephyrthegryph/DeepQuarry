@@ -30,7 +30,10 @@ impl BuildHost {
             eprintln!("dmbd compact symbolic procedures begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(192 * 1024 * 1024);
-            eprintln!("dmbd compact symbolic procedures {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact symbolic procedures {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         // Preserve only fully charged source-neutral initializer nodes. This is
         // a logical retention cap, not a claim about process private memory.
@@ -38,25 +41,37 @@ impl BuildHost {
             eprintln!("dmbd compact initializer classification begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(96 * 1024 * 1024);
-            eprintln!("dmbd compact initializer classification {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact initializer classification {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         if let Some((_, owner)) = &self.startup {
             eprintln!("dmbd compact startup begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
-            eprintln!("dmbd compact startup {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact startup {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         if let Some((_, owner)) = &self.abi {
             eprintln!("dmbd compact ABI payloads begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
-            eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact ABI payloads (shared engine excluded) {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         if let Some((_, owner)) = &self.initializer_assemblies {
             eprintln!("dmbd compact initializer assembly begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
-            eprintln!("dmbd compact initializer assembly {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact initializer assembly {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         // Payload-free resource/demand proofs remain with the semantic owner.
         if self.memo.is_some() {
@@ -96,18 +111,25 @@ impl BuildHost {
         self.emit_idle_census("after-compiler-release");
     }
 
-    /// Drop remaining output/ABI payloads before sacrificing central source and
-    /// semantic ownership. Classification/preparation survives this first step.
+    /// Drop auxiliary output/ABI payloads before sacrificing the already
+    /// bounded compact symbolic receipt core or central source ownership.
     pub(crate) fn release_idle_optional_images(&mut self) {
         self.emit_idle_census("before-optional-images-release");
         self.release_idle_executor();
         self.rich_generation = self.rich_generation.saturating_add(1);
-        self.symbolic = None;
         self.startup = None;
         self.abi = None;
         self.initializer_assemblies = None;
         dm_profile::reclaim_unused_allocator_pages();
         self.emit_idle_census("after-optional-images-release");
+    }
+    /// Detach the compact procedure receipt core only after a subsequent actual
+    /// private-memory sample still requires pressure release. No cap is raised.
+    pub(crate) fn release_idle_compact_symbolic(&mut self) {
+        self.emit_idle_census("before-compact-symbolic-release");
+        self.symbolic = None;
+        dm_profile::reclaim_unused_allocator_pages();
+        self.emit_idle_census("after-compact-symbolic-release");
     }
     /// Last optional tier: only actual private-memory resampling can decide
     /// whether detachment suffices. Never replace source/tree/query issuers here.
@@ -142,7 +164,10 @@ impl BuildHost {
             eprintln!("dmbd compact initializer assembly begin");
             let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
-            eprintln!("dmbd compact initializer assembly {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
+            eprintln!(
+                "dmbd compact initializer assembly {report:?} wall_seconds={:.6}",
+                compact_started.elapsed().as_secs_f64()
+            );
         }
         self.link_bindings = None;
         self.maps = None;

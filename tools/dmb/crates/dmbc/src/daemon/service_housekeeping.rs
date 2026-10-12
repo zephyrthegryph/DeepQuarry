@@ -25,13 +25,16 @@ impl Deadline {
 
 // Named lifecycle stages; pressure is resampled by the ordinary next pass.
 const OPTIONAL_IMAGES: usize = 4;
-const REMAINING_OPTIONAL: usize = 5;
-const SESSION_RELEASE: usize = 6;
+const COMPACT_SYMBOLIC: usize = 5;
+const REMAINING_OPTIONAL: usize = 6;
+const SESSION_RELEASE: usize = 7;
 fn target(age: Duration, pressured: bool, previous: usize) -> usize {
     if age >= SESSION_IDLE || pressured && previous >= REMAINING_OPTIONAL {
         SESSION_RELEASE
-    } else if pressured && previous >= OPTIONAL_IMAGES {
+    } else if pressured && previous >= COMPACT_SYMBOLIC {
         REMAINING_OPTIONAL
+    } else if pressured && previous >= OPTIONAL_IMAGES {
+        COMPACT_SYMBOLIC
     } else if pressured && previous >= 3 {
         OPTIONAL_IMAGES
     } else if pressured && previous >= 2 {
@@ -130,6 +133,8 @@ impl Shared {
                 let started = Instant::now();
                 if next == OPTIONAL_IMAGES {
                     host.release_idle_optional_images();
+                } else if next == COMPACT_SYMBOLIC {
+                    host.release_idle_compact_symbolic();
                 } else if next == REMAINING_OPTIONAL {
                     host.release_idle_remaining_optional();
                 } else if next == 3 {
@@ -149,6 +154,8 @@ impl Shared {
                 "dmbd idle release tier={} project={} pressure={pressured}",
                 if next == OPTIONAL_IMAGES {
                     "optional-images"
+                } else if next == COMPACT_SYMBOLIC {
+                    "compact-symbolic"
                 } else if next == REMAINING_OPTIONAL {
                     "remaining-optional"
                 } else if next == 3 {
