@@ -160,12 +160,14 @@ fn borrowed_disk_failure_admission_keeps_exact_keys_and_negative_reads() {
                 host,
                 &prepared,
             )
+            .errors
+            .is_some()
     };
-    assert!(replay(&current, &Host(true)).errors.is_some());
-    assert!(replay(&current, &Host(false)).errors.is_none());
+    assert!(replay(&current, &Host(true)));
+    assert!(!replay(&current, &Host(false)));
     let changed = CurrentKey {
         source: b"return present()",
         ..current
     };
-    assert!(replay(&changed, &Host(true)).errors.is_none());
+    assert!(!replay(&changed, &Host(true)));
 }
