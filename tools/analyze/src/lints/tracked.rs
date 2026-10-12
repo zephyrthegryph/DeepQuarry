@@ -576,9 +576,14 @@ fn test_path(rel: &str) -> bool {
 // All direct declarations of a fixture type must be in the test tree. A test
 // subtype of a production type is fine; declaring a production type as a test
 // fixture is not. Track only setters, not derived-only or STAT-composed fields.
+fn authored_fault_source(rel: &str) -> bool {
+    !rel.starts_with("code/engine/_generated/") && !rel.starts_with("code/_generated/")
+}
+
 fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String, String)>, Vec<(String, usize, String)>) {
     let mut declared: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for f in files {
+        if !authored_fault_source(&f.rel) { continue; }
         for (_, line) in f.code().numbered() {
             if let Some(m) = pat_match!(r"^(/[\w/]+)\s*$").captures(line) {
                 declared.entry(m.s(1).to_owned()).or_default().insert(f.rel.clone());
@@ -588,7 +593,7 @@ fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String,
     // A production proc/var override also establishes production ownership,
     // even when its file has no bare type declaration.
     for f in files {
-        if test_path(&f.rel) { continue; }
+        if test_path(&f.rel) || !authored_fault_source(&f.rel) { continue; }
         for proc in parse_procs(f.code()) {
             declared.entry(proc.owner.to_owned()).or_default().insert(f.rel.clone());
         }
@@ -748,6 +753,14 @@ mod fault_contract_tests {
     }
     #[test] fn overwritten_evidence_rejected() {
         assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("\tTEST_ASSERT(F", "\tmissed = fake_result()\n\tTEST_ASSERT(F")).is_empty());
+    }
+    #[test] fn generated_fixture_override_preserves_authored_ownership() {
+        let generated = source("code/engine/_generated/test_fixture.dm", "#if defined(UNIT_TESTS)\n/datum/fixture/proc/work()\n\treturn\n#endif\n");
+        let test = source("code/modules/unit_tests/probe.dm", "/datum/fixture\n\tvar/heat\nTRACKED(/datum/fixture, heat)\nTEST_FAULT_FIXTURE(/datum/fixture, heat)\n");
+        let mut tracked = Tracked::new(); fault_setter_fields(&test, &mut tracked);
+        let (markers, invalid) = fault_markers(&[&generated, &test], &tracked);
+        assert_eq!(markers.len(), 1); assert!(invalid.is_empty());
+        assert!(!invalid_faults(&source("code/engine/_generated/bad.dm", GOOD), &markers).is_empty());
     }
     #[test] fn production_proc_override_registration_rejected() {
         let production = source("code/game/object.dm", "/datum/fixture/proc/work()\n\treturn\n");
