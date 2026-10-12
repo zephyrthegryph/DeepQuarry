@@ -15,7 +15,7 @@
 /// Both native state and the legacy generic capability bit are genuine subversion storage.
 /proc/is_emagged(atom/A)
 	READS_FROM(A)
-	return !!(capability_bits(A) & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
+	return !!(capability_bits(A) & CAP_EMAGGED) || emag_emagged(A) // the native accessor returns FALSE when this capability is absent
 MSG_DEF_SELF(emag/no_charge, "That has no uses left.")
 MSG_DEF_SELF(emag/already, "It is already subverted.")
 MSG_DEF(emag/done, "You subvert %T% with %I%.", "%U% subverts %T% with %I%.")

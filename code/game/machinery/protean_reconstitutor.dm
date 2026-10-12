@@ -30,6 +30,8 @@
 	//component vars
 	circuit = /obj/item/circuitboard/protean_reconstitutor
 
+TRACKED(/obj/machinery/protean_reconstitutor, state_base)
+
 // This board declares no req_components, so its default parts are declared
 // here instead of read off the board (roadmap C6): still resolved lazily
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
