@@ -88,15 +88,9 @@
 
 	H = dq_hd_body(got, "styled")
 	dq_profile_dress(H, 0)
-	dq_hd_set(H, "r_tail", 200)
-	dq_hd_set(H, "g_tail", 90)
-	dq_hd_set(H, "b_tail", 30)
-	dq_hd_set(H, "r_wing", 30)
-	dq_hd_set(H, "g_wing", 90)
-	dq_hd_set(H, "b_wing", 200)
-	dq_hd_set(H, "r_ears", 90)
-	dq_hd_set(H, "g_ears", 200)
-	dq_hd_set(H, "b_ears", 30)
+	H.looks.set_tail_color(rgb(200, 90, 30))
+	H.looks.set_wing_color(rgb(30, 90, 200))
+	H.looks.set_ears_color(rgb(90, 200, 30))
 	dq_hd_set(H, "tail_style", GLOB.tail_styles_list[/datum/sprite_accessory/tail/squirrel])
 	dq_hd_set(H, "wing_style", GLOB.wing_styles_list[/datum/sprite_accessory/wing/moth])
 	dq_hd_set(H, "ear_style", GLOB.ear_styles_list[/datum/sprite_accessory/ears/taj_ears])
@@ -157,3 +151,56 @@
 		"teshari" = "south=7e8c2fba53f0a20731d2f296e02ddde5 north=0fb0fb0845eb875b1916671dde6a0db3 east=6c589c6462b76f02e831de3801a5ae30 west=1153ba0ac52c9cb864c5010ed3cd87ff plane -100 x1 plane 15 x1 plane 16 x1 plane 17 x1 plane 18 x1 plane 19 x1 plane 20 x1 plane 21 x1 plane 22 x1 plane 23 x1 plane 24 x1 plane 26 x1 plane 27 x1 plane 28 x1 plane 29 x1 plane 8 x1",
 		"spacesuit" = "south=e1af2848399cf854834c794b043358ba north=8691556a6520afaabf2c1aa26e54c5b3 east=b1ef516e66d545e1757c62cdb50fc025 west=a05c7c5fe74108dfa46e5625336c0331 plane -100 x1 plane 15 x1 plane 16 x1 plane 17 x1 plane 18 x1 plane 19 x1 plane 20 x1 plane 21 x1 plane 22 x1 plane 23 x1 plane 24 x1 plane 26 x1 plane 27 x1 plane 28 x1 plane 29 x1 plane 8 x1",
 	)
+
+/// The flat picture of H facing south: what a redraw changes.
+/datum/unit_test/proc/dq_hd_picture(mob/living/carbon/human/H)
+	appearance_flush()
+	return md5(icon2base64(getFlatIcon(H, SOUTH)))
+
+/// Putting a uniform on redraws the human with it and taking it off redraws it without, nobody calls a redraw.
+/datum/unit_test/dq_human_draw_equip_unequip_redraws
+
+/datum/unit_test/dq_human_draw_equip_unequip_redraws/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "equip")
+	var/bare = dq_hd_picture(H)
+	var/obj/item/clothing/under/color/grey/uniform = new(H)
+	H.equip_to_slot_or_del(uniform, SLOT_ID_UNIFORM)
+	TEST_ASSERT(H.look_layers()[UNIFORM_LAYER], "the uniform has a layer once worn")
+	var/dressed = dq_hd_picture(H)
+	TEST_ASSERT(dressed != bare, "wearing a uniform changes the drawn human")
+	H.drop_from_inventory(uniform)
+	TEST_ASSERT(!H.look_layers()[UNIFORM_LAYER], "the layer is gone once it is off")
+	TEST_ASSERT_EQUAL(dq_hd_picture(H), bare, "taking it off draws the bare human again")
+
+/// A tail is drawn under the uniform from the south and over it from the north.
+/datum/unit_test/dq_human_draw_tail_layers_against_uniform
+
+/datum/unit_test/dq_human_draw_tail_layers_against_uniform/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "tail")
+	dq_hd_set(H, "tail_style", GLOB.tail_styles_list[/datum/sprite_accessory/tail/squirrel])
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+	H.set_dir(SOUTH)
+	var/list/south = H.look_layers()
+	TEST_ASSERT(south[TAIL_LOWER_LAYER], "facing south the tail is on the lower layer")
+	TEST_ASSERT(!south[TAIL_UPPER_LAYER], "and not on the upper one")
+	TEST_ASSERT(TAIL_LOWER_LAYER < UNIFORM_LAYER, "the lower tail layer sits under the uniform")
+	var/south_picture = dq_hd_picture(H)
+	H.set_dir(NORTH)
+	var/list/north = H.look_layers()
+	TEST_ASSERT(north[TAIL_UPPER_LAYER], "facing north the tail is on the upper layer")
+	TEST_ASSERT(!north[TAIL_LOWER_LAYER], "and not on the lower one")
+	TEST_ASSERT(TAIL_UPPER_LAYER > UNIFORM_LAYER, "the upper tail layer sits over the uniform")
+	TEST_ASSERT(dq_hd_picture(H) != south_picture, "the facing changes the drawn human")
+
+/// An injury draws its overlay and healing it takes the overlay off.
+/datum/unit_test/dq_human_draw_damage_overlay_follows_injury
+
+/datum/unit_test/dq_human_draw_damage_overlay_follows_injury/Run()
+	var/mob/living/carbon/human/H = dq_hd_body(list(), "damage")
+	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "an unhurt human has no damage overlay")
+	var/unhurt = dq_hd_picture(H)
+	H.injure(INJURY_BURN, 60, BP_TORSO, flags = INJURE_SILENT)
+	TEST_ASSERT(H.look_layers()[MOB_DAM_LAYER], "a burn on the torso draws a damage overlay")
+	TEST_ASSERT(dq_hd_picture(H) != unhurt, "and the drawn human shows it")
+	H.fully_heal()
+	TEST_ASSERT(!H.look_layers()[MOB_DAM_LAYER], "healing takes the overlay off")

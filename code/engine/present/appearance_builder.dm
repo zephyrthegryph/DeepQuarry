@@ -522,7 +522,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The change key: equal keys draw equally (the flick is part of it, so a new flick re-applies).
 /datum/look/proc/change_key()
-	var/list/parts = list(icon_state, "[icon]", color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
+	var/list/parts = list(icon_state, look_icon_key(icon), color, alpha, invisibility, transform ? jointext(list(transform.a, transform.b, transform.c, transform.d, transform.e, transform.f), ",") : null, dir, plane, layer, isnull(offset_x) ? null : "[offset_x],[offset_y]", flick_state, light_spec ? jointext(light_spec, ",") : null, held_state, identity_name, identity_desc)
 	var/list/overlay_keys = list()
 	for(var/entry in overlays)
 		overlay_keys += look_part_key(entry)
@@ -557,17 +557,45 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /proc/look_part_key(entry)
 	if(istext(entry))
 		return entry
+	if(istype(entry, /icon))
+		return look_icon_key(entry)
 	if(isimage(entry) || istype(entry, /mutable_appearance))
 		var/image/I = entry
-		. = "{[I.icon]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
+		. = "{[look_icon_key(I.icon)]:[I.icon_state]:[I.color]:[I.alpha]:[I.layer]:[I.plane]:[I.dir]:[I.pixel_x],[I.pixel_y],[I.pixel_w],[I.pixel_z]:[I.blend_mode]"
 		// A transform and a maptext are part of the key only when the image has one, so the keys of the images that set neither stay as they were.
 		var/matrix/M = I.transform
 		if(M && !(M.a == 1 && M.b == 0 && M.c == 0 && M.d == 0 && M.e == 1 && M.f == 0))
 			. += ":t[M.a],[M.b],[M.c],[M.d],[M.e],[M.f]"
 		if(length(I.maptext))
 			. += ":m[I.maptext],[I.maptext_x],[I.maptext_y],[I.maptext_width],[I.maptext_height]"
+		// What an image carries inside it is part of what it shows: a worn item's blood and accessories, a clip mask's filter.
+		if(length(I.overlays))
+			var/list/inner = list()
+			for(var/sub in I.overlays)
+				inner += look_part_key(new /mutable_appearance(sub))
+			. += ":o([jointext(inner, ",")])"
+		if(length(I.underlays))
+			var/list/under = list()
+			for(var/sub in I.underlays)
+				under += look_part_key(new /mutable_appearance(sub))
+			. += ":u([jointext(under, ",")])"
+		if(length(I.filters))
+			var/list/filter_keys = list()
+			for(var/dm_filter/F as anything in I.filters)
+				filter_keys += "[F.type]=[look_icon_key(F.icon)]"
+			. += ":f([jointext(filter_keys, ",")])"
 		return . + "}"
 	return "[entry]"
+
+/// The key of an icon: a file by its name; an icon made at runtime (a body, a tinted tail) by an id that is never reused, so two different
+/// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
+/proc/look_icon_key(icon)
+	if(isnull(icon) || isfile(icon) || istext(icon))
+		return "[icon]"
+	if(istype(icon, /icon))
+		var/icon/runtime_icon = icon
+		return SHARED_CACHE_UID(runtime_icon)
+	return "[icon]"
 
 #define LOOK_SET_ICON (1<<0)
 #define LOOK_SET_ICON_STATE (1<<1)

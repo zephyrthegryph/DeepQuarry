@@ -56,8 +56,7 @@ CAPABILITIES(/obj/item/melee/umbrella)
 	item_state = icon_state
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
-		H.update_inv_l_hand(0)
-		H.update_inv_r_hand()
+		changed(src)
 
 CAPABILITIES(/obj/item/melee/umbrella/random)
 	rolls(nameof(color), PROC_REF(roll_color))

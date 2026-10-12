@@ -281,7 +281,6 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		if(!G.active)
 			act_message(M, src, others = span_danger("%U% pulls the pin from %T%'s [G.name]!"))
 			G.activate(M)
-			update_inv_wear_mask()
 		else
 			to_chat(M, span_warning("\The [G] is already primed! Run!"))
 		return

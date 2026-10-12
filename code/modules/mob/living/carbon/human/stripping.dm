@@ -8,7 +8,7 @@
 		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
 	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
-	update_underwear(1)
+	underwear_edited()
 	act_message(user, src, others = span_danger("%U% [hide_underwear[UWC.name] ? "takes off" : "puts on"] %T%'s [UWC.display_name]."))
 
 MSG_DEF(strip/pockets, null, span_danger("%U% is trying to empty %T%'s pockets!"))
@@ -177,7 +177,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, strip_slots, list(SLOT_ID_HAND_L, S
 	add_attack_logs(user,src,"Stripped [tie.name] off [suit.name]")
 	tie.on_removed(user)
 	own_take_member(suit, nameof(suit.accessories), tie)
-	update_inv_w_uniform()
 
 // Empty out everything in the target's pockets.
 /mob/living/carbon/human/proc/empty_pockets(mob/living/user)

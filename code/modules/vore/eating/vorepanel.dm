@@ -816,7 +816,6 @@ CAPABILITIES(/datum/vore_look)
 	if(!newcolor)
 		return FALSE
 	host().vore_prefs.vore_sprite_color[belly_choice] = newcolor
-	host().update_icons_body()
 	unsaved_changes = TRUE
 	return TRUE
 
@@ -828,7 +827,6 @@ CAPABILITIES(/datum/vore_look)
 		host().vore_prefs.vore_sprite_multiply[belly_choice] = TRUE
 	else
 		host().vore_prefs.vore_sprite_multiply[belly_choice] = !host().vore_prefs.vore_sprite_multiply[belly_choice]
-	host().update_icons_body()
 	unsaved_changes = TRUE
 	return TRUE
 //vore sprites color

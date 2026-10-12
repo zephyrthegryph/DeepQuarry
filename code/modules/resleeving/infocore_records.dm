@@ -330,7 +330,6 @@ CAPABILITIES(/datum/transhuman/body_record)
 	H.UpdateAppearance()
 	H.sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 	H.sync_organ_dna()
-	H.regenerate_icons()
 	H.initialize_vessel()
 
 /datum/transhuman/body_record/proc/internal_producebody_misc(mob/living/carbon/human/H)
@@ -387,7 +386,7 @@ CAPABILITIES(/datum/transhuman/body_record)
 		H.client.prefs.vanity_copy_to(H,FALSE,TRUE,TRUE,FALSE,TRUE)
 		for(var/category in H.all_underwear) // No undies
 			H.hide_underwear[category] = TRUE
-		H.update_underwear()
+		H.underwear_edited()
 
 	return H
 

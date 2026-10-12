@@ -1,15 +1,13 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_holo_sword_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_l_hand()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_holo_sword_holder/draw(datum/look/look)
 	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_r_hand()
 	right_redraws++
-	return ..()
+	..()
 
 /// A synthetic native click supplies ambient usr while observing the real appearance output.
 /obj/item/holo/esword/interim_holder_appearance

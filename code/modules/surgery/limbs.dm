@@ -90,8 +90,6 @@
 		E.set_status(E.status & ~ORGAN_CUT_AWAY)
 		for(var/obj/item/organ/external/child in E.children)
 			child.set_status(child.status & ~ORGAN_CUT_AWAY)
-	target.update_icons_body(FALSE)
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] attached [E] ([E.type]) to [key_name(target)], carrying [length(E.afflictions_here())] afflictions")
 
 /// A failed attachment injures the stump it was being fitted to.
@@ -122,8 +120,6 @@
 	for(var/obj/item/organ/external/child in part.children)
 		child.set_status(child.status & ~ORGAN_CUT_AWAY)
 		to_chat(user, span_notice("You attach [target]'s [child.name] as well."))
-	target.update_icons_body()
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] connected [key_name(target)]'s [part]")
 
 /datum/surgical_step/limb/mechanize
@@ -159,8 +155,6 @@
 		new_limb.robotize(L.model_info)
 		if(L.sabotaged)
 			new_limb.sabotaged = 1
-	target.update_icons_body(FALSE)
-	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] mechanized [key_name(target)] with [L]")
 	consume(L, user)
 
@@ -225,7 +219,6 @@
 /datum/surgical_step/dehusk/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	target.remove_mutation(HUSK)
 	target.set_status_flags(target.status_flags & ~DISFIGURED)
-	target.update_icons_body()
 	log_game("SURGERY: [key_name(user)] dehusked [key_name(target)]")
 
 /// The jagged scalpel's one purpose: tearing an artery open.

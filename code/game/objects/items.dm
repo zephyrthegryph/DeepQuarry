@@ -130,8 +130,6 @@ TRACKED(/obj/item, gurgled_color)
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)
-		m.update_inv_r_hand()
-		m.update_inv_l_hand()
 		// Through doMove(), so the mob's containment ledger sees the exit and its slot
 		// hooks run (a raw loc write left body parts stuck in their slots).
 		moveToNullspace()
@@ -229,14 +227,9 @@ TRACKED(/obj/item, gurgled_color)
 
 	return FALSE
 
-//Checks if the item is being held by a mob, and if so, updates the held icons
+/// The item's held sprite changed (state nothing publishes): the holder, which watches what it holds, draws it again.
 /obj/item/proc/update_held_icon()
-	if(isliving(src.loc))
-		var/mob/living/M = src.loc
-		if(M.get_equipped_item(SLOT_ID_HAND_L) == src)
-			M.update_inv_l_hand()
-		else if(M.get_equipped_item(SLOT_ID_HAND_R) == src)
-			M.update_inv_r_hand()
+	changed(src)
 
 /obj/item/proc/move_to_top_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -749,14 +742,12 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		PUBLISH_LEGACY(H, /datum/notice/unittest_data, list("set_slot",slot_name,icon2use,state2use,inhands,type,H.species?.name))
 	#endif
 
-	//Generate the base onmob icon
-	var/icon/standing_icon = icon(icon = icon2use, icon_state = state2use)
-
-	if(!inhands)
-		apply_custom(standing_icon)		//Pre-image overridable proc to customize the thing
-		apply_addblends(icon2use,standing_icon)		//Some items have ICON_ADD blend shaders
-
-	var/image/standing = image(standing_icon)
+	//Generate the base onmob icon: the sheet's own state, or a copy when an ICON_ADD shader blends into it (one copy per sheet, state and shader)
+	var/image/standing
+	if(!inhands && addblends && icon2use)
+		standing = image(worn_addblend_icon(icon2use, state2use, addblends))
+	else
+		standing = image(icon = icon2use, icon_state = state2use)
 	standing.alpha = alpha
 	standing.color = color
 	standing.layer = layer2use
@@ -848,16 +839,15 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	//2: your default
 	return BODY_LAYER+default_layer
 
-//Apply the addblend blends onto the icon
-/obj/item/proc/apply_addblends(source_icon, icon/standing_icon)
+/// A worn sprite with an ICON_ADD shader blended in, built once per sheet, state and shader.
+DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_icon), SC_NEVER)
 
-	//If we have addblends, blend them onto the provided icon
-	if(addblends && standing_icon && source_icon)
-		var/addblend_icon = icon("icon" = source_icon, "icon_state" = addblends)
-		standing_icon.Blend(addblend_icon, ICON_ADD)
+/proc/worn_addblend_icon(source_icon, state, addblends)
+	return CACHED_KEY(worn_addblend_icons, "[look_icon_key(source_icon)]|[state]|[addblends]", source_icon, state, addblends)
 
-//STUB
-/obj/item/proc/apply_custom(icon/standing_icon)
+/proc/build_worn_addblend_icon(source_icon, state, addblends)
+	var/icon/standing_icon = icon(icon = source_icon, icon_state = state)
+	standing_icon.Blend(icon("icon" = source_icon, "icon_state" = addblends), ICON_ADD)
 	return standing_icon
 
 //STUB

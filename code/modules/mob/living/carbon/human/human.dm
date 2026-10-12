@@ -65,7 +65,6 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, initial_species_copy, FALSE)
 		sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 		sync_organ_dna()
 	initialize_vessel()
-	regenerate_icons()
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
@@ -1018,7 +1017,6 @@ CAPABILITIES(/datum/morph_review)
 		looks.set_hair_color(new_hair)
 	if(new_eyes)
 		looks.set_eyes_color(new_eyes)
-		update_eyes()
 	if(new_h_style)
 		looks.set_hair_style(new_h_style)
 	if(new_f_style)
@@ -1030,7 +1028,6 @@ CAPABILITIES(/datum/morph_review)
 			gender = FEMALE
 		if("Neutral")
 			gender = NEUTER
-	regenerate_icons()
 	check_dna()
 	act_message(src, null, MSG_SELF(span_notice("You change your appearance!")), \
 		MSG_OTHERS(span_notice("%U% morphs and changes %THEIR% appearance!")), \
@@ -1284,8 +1281,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	//if this blood isn't already in the list, add it
 	if(istype(M))
 		add_blooddna(M.dna,M)
-	hand_blood_color = dq_get_blood_color(src)
-	update_bloodied()
+	set_hand_blood_color(dq_get_blood_color(src))
 	grant(src, granted_verb(/mob/living/carbon/human/proc/bloody_doodle), src)
 	return 1 //we applied blood to the item
 
@@ -1302,7 +1298,6 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 	//Always do hands (or whatever's on our hands)
 	if(get_equipped_item(SLOT_ID_GLOVES))
 		get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
-		update_inv_gloves()
 		get_equipped_item(SLOT_ID_GLOVES).germ_level = 0
 	else
 		bloody_hands = 0
@@ -1310,14 +1305,12 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 
 	if(get_equipped_item(SLOT_ID_SHOES))
 		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
-		update_inv_shoes()
 		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
 		LAZYCLEARLIST(feet_blood_DNA)
-		feet_blood_DNA = null
-		feet_blood_color = null
+		set_feet_blood_DNA(null)
+		set_feet_blood_color(null)
 
-	update_bloodied()
 
 /mob/living/carbon/human/get_visible_implants(class = 0)
 
@@ -1495,7 +1488,6 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	update_hud()
 
 	//A slew of bits that may be affected by our species change
-	regenerate_icons()
 
 	if(species)
 		return 1
@@ -1860,12 +1852,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if(is_in_hands(W))
 		return 1
 	if(put_in_active_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else if(put_in_inactive_hand(W))
-		update_inv_l_hand()
-		update_inv_r_hand()
 		return 1
 	else
 		return ..()
@@ -1897,7 +1885,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
 	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
-	update_underwear(1)
+	underwear_edited()
 	to_chat(src, span_notice("You [hide_underwear[UWC.name] ? "take off" : "put on"] your [UWC.display_name]."))
 
 /mob/living/carbon/human/verb/pull_punches()
@@ -2136,15 +2124,13 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	set name = "Show/Hide Headset"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle headset worn icon visibility."
-	hide_headset = !hide_headset
-	update_inv_ears()
+	set_hide_headset(!hide_headset)
 
 /mob/living/carbon/human/verb/hide_glasses()
 	set name = "Show/Hide Glasses"
 	set category = VERB_CAT_IC_SETTINGS
 	set desc = "Toggle glasses worn icon visibility."
-	hide_glasses = !hide_glasses
-	update_inv_glasses()
+	set_hide_glasses(!hide_glasses)
 
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()
@@ -2252,4 +2238,12 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/ownership()
 	. = ..()
 	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
+	// The chosen sprite accessories and the prosthetic model: shared definitions the look reads through (written with rel_set(), so a
+	// change redraws the human).
+	. += rel_one(nameof(tail_style), /datum/sprite_accessory/tail)
+	. += rel_one(nameof(wing_style), /datum/sprite_accessory/wing)
+	. += rel_one(nameof(ear_style), /datum/sprite_accessory/ears)
+	. += rel_one(nameof(ear_secondary_style), /datum/sprite_accessory/ears)
+	. += rel_one(nameof(hair_accessory_style_static), /datum/sprite_accessory/hair_accessory)
+	. += rel_one(nameof(synthetic), /datum/robolimb)
 // Each side effect is created for this human and kept only here and by its finish() timer.

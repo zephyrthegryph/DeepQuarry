@@ -113,13 +113,16 @@ CAPABILITIES(/obj/structure/gargoyle)
 
 	var/list/body_layers = HUMAN_BODY_LAYERS
 	var/list/other_layers = HUMAN_OTHER_LAYERS
-	for (var/i = 1; i <= length(H.overlays_standing); i++)
+	var/list/layers = H.look_layers()
+	for(var/i in 1 to TOTAL_LAYERS)
 		if(i in other_layers)
 			continue
 		if(discard_clothes && !(i in body_layers))
 			continue
-		if(istype(H.overlays_standing[i], /image) && (i in body_layers))
-			var/image/old_image = H.overlays_standing[i]
+		if(isnull(layers[i]))
+			continue
+		if(istype(layers[i], /image) && (i in body_layers))
+			var/image/old_image = layers[i]
 			var/image/new_image = image(old_image)
 			if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
 				tail_image = new_image
@@ -127,8 +130,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 			new_image.layer = old_image.layer
 			add_overlay(new_image)
 		else
-			if(!isnull(H.overlays_standing[i]))
-				add_overlay(H.overlays_standing[i])
+			add_overlay(layers[i])
 
 	initial_sleep = H.status_units(STAT_SLEEPING)
 	initial_blind = H.status_units(STAT_BLINDED)
@@ -221,9 +223,9 @@ CAPABILITIES(/obj/structure/gargoyle)
 		gargoyle.transform = transform
 		gargoyle.pixel_x = pixel_x
 		gargoyle.pixel_y = pixel_y
-		gargoyle.is_shifted = initial_is_shifted
+		gargoyle.set_is_shifted(initial_is_shifted)
 		gargoyle.set_dir(dir)
-		gargoyle.lying = initial_lying
+		gargoyle.set_lying(initial_lying)
 		gargoyle.lying_prev = initial_lying_prev
 		gargoyle.toggle_tail(wagging, FALSE)
 		gargoyle.toggle_wing(flapping, FALSE)

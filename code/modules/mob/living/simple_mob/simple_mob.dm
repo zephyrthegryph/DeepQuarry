@@ -29,8 +29,6 @@ TRACKED(/mob/living/simple_mob, has_hands)
 	var/hand_form = "hands"			// Used in IsHumanoidToolUser. 'Your X are not fit-'.
 	var/list/hud_gears				// Slots to show on the hud (typically none)
 	var/ui_icons					// Icon file path to use for the HUD, otherwise generic icons are used
-	var/image/r_hand_sprite				// If they have hands,
-	var/image/l_hand_sprite				// they could use some icons.
 	var/player_msg					// Message to print to players about 'how' to play this mob on login.
 
 	//Mob icon/appearance settings
@@ -175,8 +173,6 @@ TRACKED(/mob/living/simple_mob, icon_dead)
 TRACKED(/mob/living/simple_mob, icon_rest)
 TRACKED(/mob/living/simple_mob, spitting)
 TRACKED(/mob/living/simple_mob, pouncing)
-TRACKED(/mob/living/simple_mob, r_hand_sprite)
-TRACKED(/mob/living/simple_mob, l_hand_sprite)
 
 CAPABILITIES(/mob/living/simple_mob)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digest_leave_remains" = TRUE, "strip_pref" = FALSE, "can_be_drop_pred" = TRUE, "can_be_drop_prey" = TRUE))

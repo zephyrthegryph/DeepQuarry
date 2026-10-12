@@ -1048,7 +1048,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return FALSE
 	if(pixel_y <= (default_pixel_y + 16))
 		pixel_y++
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shiftsouth()
 	set hidden = TRUE
@@ -1056,7 +1056,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return FALSE
 	if(pixel_y >= (default_pixel_y - 16))
 		pixel_y--
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shiftwest()
 	set hidden = TRUE
@@ -1064,7 +1064,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return FALSE
 	if(pixel_x >= (default_pixel_x - 16))
 		pixel_x--
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/shifteast()
 	set hidden = TRUE
@@ -1072,7 +1072,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		return FALSE
 	if(pixel_x <= (default_pixel_x + 16))
 		pixel_x++
-		is_shifted = TRUE
+		set_is_shifted(TRUE)
 
 /mob/verb/planeup()
 	set hidden = TRUE
@@ -1085,7 +1085,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	plane += 1		//Increase the plane
 	if(plane == MOB_PLANE)	//Return to normal
 		layer = MOB_LAYER
-	is_shifted = TRUE
+	set_is_shifted(TRUE)
 
 /mob/verb/planedown()
 	set hidden = TRUE
@@ -1098,7 +1098,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	plane -= 1		//Decrease the plane
 	if(plane == MOB_PLANE)	//Return to normal
 		layer = MOB_LAYER
-	is_shifted = TRUE
+	set_is_shifted(TRUE)
 
 // End VOREstation edit
 

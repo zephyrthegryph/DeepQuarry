@@ -258,7 +258,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if (successful)
 		markings_len -= 1
 		update_dna()
-		update_icons_body()
 		return TRUE
 	return FALSE
 
@@ -274,7 +273,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	if (success)
 		markings_len += 1
 		update_dna()
-		update_icons_body()
 	return success
 
 /mob/living/carbon/human/proc/change_priority_of_marking(datum/sprite_accessory/marking/mark_datum, move_down, swap = TRUE) //move_down should be true/false
@@ -301,7 +299,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 				moveElement(O.markings, index, index+(move_down ? 2 : -1))
 	if (success)
 		update_dna()
-		update_icons_body()
 	return TRUE
 
 /mob/living/carbon/human/proc/change_priority_marking_to_priority(priority, to_priority)
@@ -321,7 +318,6 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			O.markings[mark_datum.name]["color"] = mark_color
 	if (success)
 		update_dna()
-		update_icons_body()
 	return success
 
 /mob/living/carbon/human/proc/get_prioritised_markings()
@@ -431,48 +427,29 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 
 	dna?.ResetUIFrom(src)
 	force_update_limbs()
-	regenerate_icons()
 
 /// Ears, tail and wings with their colours.
 /mob/living/carbon/human/proc/copy_appendages_from(mob/living/carbon/human/character)
-	ear_style = character.ear_style
-	r_ears = character.r_ears
-	b_ears = character.b_ears
-	g_ears = character.g_ears
-	r_ears2 = character.r_ears2
-	b_ears2 = character.b_ears2
-	g_ears2 = character.g_ears2
-	r_ears3 = character.r_ears3
-	b_ears3 = character.b_ears3
-	g_ears3 = character.g_ears3
-	a_ears = character.a_ears
+	rel_set(src, nameof(ear_style), character.ear_style)
+	looks.set_ears_color(character.looks.ears_color)
+	looks.set_ears_color2(character.looks.ears_color2)
+	looks.set_ears_color3(character.looks.ears_color3)
+	looks.set_ears_alpha(character.looks.ears_alpha)
 
-	ear_secondary_style = character.ear_secondary_style
-	ear_secondary_colors = character.ear_secondary_colors
+	rel_set(src, nameof(ear_secondary_style), character.ear_secondary_style)
+	set_ear_secondary_colors(character.ear_secondary_colors)
 
-	tail_style = character.tail_style
-	r_tail = character.r_tail
-	b_tail = character.b_tail
-	g_tail = character.g_tail
-	r_tail2 = character.r_tail2
-	b_tail2 = character.b_tail2
-	g_tail2 = character.g_tail2
-	r_tail3 = character.r_tail3
-	b_tail3 = character.b_tail3
-	g_tail3 = character.g_tail3
-	a_tail = character.a_tail
+	rel_set(src, nameof(tail_style), character.tail_style)
+	looks.set_tail_color(character.looks.tail_color)
+	looks.set_tail_color2(character.looks.tail_color2)
+	looks.set_tail_color3(character.looks.tail_color3)
+	looks.set_tail_alpha(character.looks.tail_alpha)
 
-	wing_style = character.wing_style
-	r_wing = character.r_wing
-	b_wing = character.b_wing
-	g_wing = character.g_wing
-	r_wing2 = character.r_wing2
-	b_wing2 = character.b_wing2
-	g_wing2 = character.g_wing2
-	r_wing3 = character.r_wing3
-	b_wing3 = character.b_wing3
-	g_wing3 = character.g_wing3
-	a_wing = character.a_wing
+	rel_set(src, nameof(wing_style), character.wing_style)
+	looks.set_wing_color(character.looks.wing_color)
+	looks.set_wing_color2(character.looks.wing_color2)
+	looks.set_wing_color3(character.looks.wing_color3)
+	looks.set_wing_alpha(character.looks.wing_alpha)
 
 /// Robotize our limbs to match `character`'s: its prosthetic models, else the DSI body for
 /// `bodytype`. Parents go before children so a limb is never robotized under an organic parent.
@@ -503,7 +480,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	weight			= character.weight
 	weight_gain		= character.weight_gain
 	weight_loss		= character.weight_loss
-	fuzzy				= character.fuzzy
+	set_fuzzy(character.fuzzy)
 	offset_override	= character.offset_override
 	voice_freq		= character.voice_freq
 	if (species && character.species)

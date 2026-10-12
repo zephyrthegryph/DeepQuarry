@@ -78,7 +78,7 @@
 	can_randomize = FALSE
 
 /datum/preference/toggle/human/fuzzy/apply_to_human(mob/living/carbon/human/target, value)
-	target.fuzzy = value
+	target.set_fuzzy(value)
 
 
 /datum/preference/toggle/human/offset_override

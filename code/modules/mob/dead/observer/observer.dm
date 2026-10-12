@@ -101,7 +101,7 @@ CAPABILITIES(/mob/observer)
 		// Unclear why this isn't being grabbed by appearance.
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			add_overlay(H.overlays_standing) // ALLOW(decl): copies the body's overlays
+			add_overlay(H.look_layer_images()) // ALLOW(decl): copies the body's overlays
 		default_pixel_x = M.default_pixel_x
 		default_pixel_y = M.default_pixel_y
 	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))

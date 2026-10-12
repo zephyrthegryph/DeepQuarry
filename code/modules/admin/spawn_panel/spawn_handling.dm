@@ -120,7 +120,7 @@
 		if(spawn_params["atom_icon_size"])
 			if(ismob(created_atom))
 				var/mob/living/created_mob = created_atom
-				created_mob.size_multiplier = spawn_params["atom_icon_size"] / 100
+				created_mob.set_size_multiplier(spawn_params["atom_icon_size"] / 100)
 
 		if(atom_dir)
 			created_atom.set_dir(atom_dir)

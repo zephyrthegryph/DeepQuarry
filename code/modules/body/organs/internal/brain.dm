@@ -274,7 +274,6 @@ CAPABILITIES(/obj/item/organ/internal/brain/slime)
 			E.removed()
 			dissolved(E) // the limb melts away to regrow
 			E = null
-	H.regenerate_icons()
 	host.release_mind(H, "promethean core revival")
 	for(var/effect_type in identity.genetic_effects)
 		H.apply_body_effect(effect_type)

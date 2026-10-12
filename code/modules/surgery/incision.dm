@@ -51,7 +51,6 @@
 	var/obj/item/organ/external/E = location
 	if(istype(E))
 		E.open = SURGERY_DEPTH_CLOSED
-		E.owner?.update_surgery()
 
 /// Open (or re-open) the site to `new_depth`. `site_sterility` is the
 /// cleanliness of the surface; the site keeps the dirtiest it has seen.
@@ -67,7 +66,6 @@
 	var/obj/item/organ/external/E = location
 	if(istype(E))
 		E.open = depth
-		E.owner?.update_surgery()
 
 /// Does the open site bleed? Organic parts of bodies with blood, unclamped.
 /datum/affliction/surgical_incision/proc/is_bleeding()

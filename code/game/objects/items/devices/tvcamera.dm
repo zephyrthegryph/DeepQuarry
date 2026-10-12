@@ -102,7 +102,7 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 		show_tvs(loc)
 		update_feed()
 
-/// The look: lit while it streams; the hand or belt that carries it redraws with it (look_redraw_worn()).
+/// The look: lit while it streams; the hand or belt that carries it watches its look and redraws with it.
 /obj/item/tvcamera/draw(datum/look/look)
 	..()
 	look.state(streaming ? "camcorder_on" : "camcorder")

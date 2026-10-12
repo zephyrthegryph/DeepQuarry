@@ -21,11 +21,7 @@
 			all_underwear_metadata[undergarment_class.name]["[GLOB.gear_tweak_free_color_choice]"] = new_fullness[undergarment_class.name + "-color"]
 		if(UWI && UWI.name != "None" && hide_underwear[undergarment_class.name] != new_fullness[undergarment_class.name])
 			hide_underwear[undergarment_class.name] = new_fullness[undergarment_class.name]
-			update_underwear(1)
-	if(vore_fullness_ex["stomach"] != previous_stomach_fullness)
-		update_vore_belly_sprite()
-	if(vore_fullness_ex["taur belly"] != previous_taur_fullness)
-		update_vore_tail_sprite()
+	underwear_edited() // the loop above edits the underwear lists in place
 
 /mob/living/carbon/human/vs_animate(belly_to_animate)
 	if(belly_to_animate == "stomach")

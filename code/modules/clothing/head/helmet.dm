@@ -328,7 +328,7 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 // Costume Versions Here
@@ -392,5 +392,5 @@ CAPABILITIES(/obj/item/clothing/head/helmet/combat/bedevere_costume)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()

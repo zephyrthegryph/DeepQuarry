@@ -1,21 +1,20 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_energy_shield_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_energy_shield_holder/update_inv_l_hand()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_energy_shield_holder/draw(datum/look/look)
 	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_energy_shield_holder/update_inv_r_hand()
 	right_redraws++
-	return ..()
+	..()
 
 /// Draws the real look and applies it, observing the overlays it lays.
 /obj/item/shield/energy/interim_holder_appearance
 	var/list/observed_overlays
 
 /obj/item/shield/energy/interim_holder_appearance/proc/observe()
+	appearance_flush() // the queued draws run: the holder hears its item's change
 	var/datum/look/look = new
 	draw(look)
 	observed_overlays = look.overlays ? look.overlays.Copy() : list()

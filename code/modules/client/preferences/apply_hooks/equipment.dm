@@ -26,3 +26,4 @@
 		LAZYSET(target.all_underwear, underwear_category_name, underwear_category.items_by_name[underwear_item_name])
 		if(all_underwear_metadata[underwear_category_name])
 			target.all_underwear_metadata[underwear_category_name] = all_underwear_metadata[underwear_category_name]
+	target.underwear_edited()

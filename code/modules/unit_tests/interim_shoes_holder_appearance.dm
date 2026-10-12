@@ -2,9 +2,10 @@
 /mob/living/carbon/human/interim_shoe_appearance_holder
 	var/shoe_redraws = 0
 
-/mob/living/carbon/human/interim_shoe_appearance_holder/update_inv_shoes()
+/// The wearer's look is one draw: a redraw of it is a redraw of its shoes.
+/mob/living/carbon/human/interim_shoe_appearance_holder/draw(datum/look/look)
 	shoe_redraws++
-	return ..()
+	..()
 
 /obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance
 	var/list/observed_overlays

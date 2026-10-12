@@ -972,7 +972,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if (!(status & ORGAN_DEAD))
 			set_status(status | ORGAN_DEAD)
 			to_chat(owner, span_notice("You can't feel your [name] anymore..."))
-			owner.update_icons_body()
+			changed(src)
 			for (var/obj/item/organ/external/child in children)
 				child.germ_level += 110 //Burst of infection from a parent organ becoming necrotic
 
@@ -1423,11 +1423,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(src.is_robotic())
 		return
 	src.set_status(src.status | ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/unmutate()
 	src.set_status(src.status & ~ORGAN_MUTATED)
-	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/get_damage()	//returns total damage
 	return (get_trauma() + get_burn())	//could use max_damage?
@@ -1500,7 +1498,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		expire(0.1 SECONDS)
 
-	victim.update_icons_body()
+	changed(src)
 	return TRUE
 
 /// Drops what `victim` wears on this limb, which is about to be severed.
@@ -1659,13 +1657,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/digitize(company, skip_prosthetics = FALSE, keep_organs = FALSE)
 	robotize(company, skip_prosthetics, keep_organs)
 
-/// A tick after a limb comes off, the body's icons catch up.
+/// A tick after a limb comes off, the body's icons catch up (a human's draw follows its parts by itself).
 /proc/droplimb_refresh_icons(mob/living/victim)
-	if(ishuman(victim))
-		var/mob/living/carbon/human/H = victim
-		H.UpdateDamageIcon()
-		H.update_icons_body()
-	else
+	if(!ishuman(victim))
 		victim.update_icons()
 
 #undef LIMB_SPILL_SHARP_BRUTE

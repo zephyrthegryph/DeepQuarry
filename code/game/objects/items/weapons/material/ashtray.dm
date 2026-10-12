@@ -105,8 +105,7 @@ CAPABILITIES(/obj/item/material/ashtray)
 				to_chat(user, "You place [cig] in [src] without even smoking it. Why would you do that?")
 
 		act_message(user, src, others = "%U% places [W] in %T%.")
-		user.update_inv_l_hand()
-		user.update_inv_r_hand()
+		changed(src)
 		add_fingerprint(user)
 		sync_butts()
 	else

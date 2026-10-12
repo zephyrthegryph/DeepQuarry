@@ -31,6 +31,17 @@ SPECS = {
         known_refs={"owner", "human", "character", "H", "target_human", "temp_human", "target", "M", "new_character", "mannequin"},
         skip={"code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/living/carbon/human/profile_records.dm"},
     ),
+    "appearance_extras": dict(
+        holder="/mob/living/carbon/human", rec="looks", record="/datum/record/appearance",
+        triples={"ears": "ears_color", "ears2": "ears_color2", "ears3": "ears_color3", "tail": "tail_color", "tail2": "tail_color2",
+                 "tail3": "tail_color3", "wing": "wing_color", "wing2": "wing_color2", "wing3": "wing_color3"},
+        singles={"a_ears": "ears_alpha", "a_ears2": "ears_alpha2", "a_tail": "tail_alpha", "a_wing": "wing_alpha"},
+        tracked=True,
+        ambiguous=set(),
+        known_refs={"owner", "human", "character", "H", "target_human", "temp_human", "target", "M", "new_character", "mannequin",
+                    "src", "user", "C", "L", "body", "buddy", "Dummy"},
+        skip={"code/modules/mob/living/carbon/human/human_defines.dm", "code/modules/mob/living/carbon/human/profile_records.dm"},
+    ),
     "identity": dict(
         holder="/mob", rec="bio", record="/datum/record/identity",
         singles={n: n for n in ("age", "home_system", "birthplace", "citizenship", "personal_faction", "religion", "antag_faction",

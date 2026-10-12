@@ -7,6 +7,8 @@
  * capabilities) only has to touch this file.
  */
 
+TRACKED(/mob, mutations)
+
 /// Returns TRUE if this mob currently has the given mutation.
 /mob/proc/has_mutation(mut)
 	return mut && LAZYFIND(mutations, mut) ? TRUE : FALSE
@@ -17,6 +19,7 @@
 	if(!mut)
 		return
 	LAZYADD(mutations, mut)
+	tracked_changed(src, nameof(mutations)) // a list edited in place: the look and other readers follow it
 	update_mutation_immunities(mut)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(mut == TK)
@@ -27,6 +30,7 @@
 	if(!mut)
 		return
 	LAZYREMOVE(mutations, mut)
+	tracked_changed(src, nameof(mutations))
 	update_mutation_immunities(mut)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
 	if(mut == TK)

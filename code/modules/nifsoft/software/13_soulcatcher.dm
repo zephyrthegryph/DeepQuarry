@@ -475,7 +475,6 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 		var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
 		mannequin.delete_inventory(TRUE)
 		brainmob.client.prefs.dress_preview_mob(mannequin)
-		mannequin.regenerate_icons()
 
 		var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
 		icon = new_icon

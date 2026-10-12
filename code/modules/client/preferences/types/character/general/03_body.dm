@@ -59,9 +59,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/tail_color1/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_tail = hex2num(copytext(value, 2, 4))
-	target.g_tail = hex2num(copytext(value, 4, 6))
-	target.b_tail = hex2num(copytext(value, 6, 8))
+	target.looks.set_tail_color(value)
 
 /datum/preference/color/human/tail_color2
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -70,9 +68,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/tail_color2/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_tail2 = hex2num(copytext(value, 2, 4))
-	target.g_tail2 = hex2num(copytext(value, 4, 6))
-	target.b_tail2 = hex2num(copytext(value, 6, 8))
+	target.looks.set_tail_color2(value)
 
 /datum/preference/color/human/tail_color3
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -81,9 +77,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/tail_color3/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_tail3 = hex2num(copytext(value, 2, 4))
-	target.g_tail3 = hex2num(copytext(value, 4, 6))
-	target.b_tail3 = hex2num(copytext(value, 6, 8))
+	target.looks.set_tail_color3(value)
 
 /datum/preference/numeric/human/tail_alpha
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -94,7 +88,7 @@
 	maximum = 255
 
 /datum/preference/numeric/human/tail_alpha/apply_to_human(mob/living/carbon/human/target, value)
-	target.a_tail = value
+	target.looks.set_tail_alpha(value)
 
 /datum/preference/numeric/human/tail_alpha/create_default_value()
 	return 255 //nada.
@@ -106,9 +100,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/wing_color1/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_wing = hex2num(copytext(value, 2, 4))
-	target.g_wing = hex2num(copytext(value, 4, 6))
-	target.b_wing = hex2num(copytext(value, 6, 8))
+	target.looks.set_wing_color(value)
 
 /datum/preference/color/human/wing_color2
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -117,9 +109,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/wing_color2/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_wing2 = hex2num(copytext(value, 2, 4))
-	target.g_wing2 = hex2num(copytext(value, 4, 6))
-	target.b_wing2 = hex2num(copytext(value, 6, 8))
+	target.looks.set_wing_color2(value)
 
 /datum/preference/color/human/wing_color3
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -128,9 +118,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/wing_color3/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_wing3 = hex2num(copytext(value, 2, 4))
-	target.g_wing3 = hex2num(copytext(value, 4, 6))
-	target.b_wing3 = hex2num(copytext(value, 6, 8))
+	target.looks.set_wing_color3(value)
 
 /datum/preference/numeric/human/wing_alpha
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -144,7 +132,7 @@
 	return 255 //no randomization here.
 
 /datum/preference/numeric/human/wing_alpha/apply_to_human(mob/living/carbon/human/target, value)
-	target.a_wing = value
+	target.looks.set_wing_alpha(value)
 
 
 /datum/preference/color/human/ears_color1
@@ -154,9 +142,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/ears_color1/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_ears = hex2num(copytext(value, 2, 4))
-	target.g_ears = hex2num(copytext(value, 4, 6))
-	target.b_ears = hex2num(copytext(value, 6, 8))
+	target.looks.set_ears_color(value)
 
 /datum/preference/color/human/ears_color2
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -165,9 +151,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/ears_color2/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_ears2 = hex2num(copytext(value, 2, 4))
-	target.g_ears2 = hex2num(copytext(value, 4, 6))
-	target.b_ears2 = hex2num(copytext(value, 6, 8))
+	target.looks.set_ears_color2(value)
 
 /datum/preference/color/human/ears_color3
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -176,9 +160,7 @@
 	can_randomize = FALSE
 
 /datum/preference/color/human/ears_color3/apply_to_human(mob/living/carbon/human/target, value)
-	target.r_ears3 = hex2num(copytext(value, 2, 4))
-	target.g_ears3 = hex2num(copytext(value, 4, 6))
-	target.b_ears3 = hex2num(copytext(value, 6, 8))
+	target.looks.set_ears_color3(value)
 
 /datum/preference/numeric/human/ears_alpha
 	category = PREFERENCE_CATEGORY_MANUALLY_RENDERED
@@ -192,10 +174,10 @@
 	savefile_key = "secondary_ears_alpha"
 
 /datum/preference/numeric/human/ears_alpha/secondary/apply_to_human(mob/living/carbon/human/target, value)
-	target.a_ears2 = value;
+	target.looks.set_ears_alpha2(value;)
 
 /datum/preference/numeric/human/ears_alpha/apply_to_human(mob/living/carbon/human/target, value)
-	target.a_ears = value
+	target.looks.set_ears_alpha(value)
 
 /datum/preference/numeric/human/ears_alpha/create_default_value()
 	return 255 //no randomization here.

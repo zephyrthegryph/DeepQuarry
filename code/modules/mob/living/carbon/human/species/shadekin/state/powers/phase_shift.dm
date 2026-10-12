@@ -178,7 +178,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
-		incorporeal_move = initial(incorporeal_move)
+		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
 		set_can_pull_size(movement_of_type(type).pull_size)
 		set_can_pull_mobs(movement_of_type(type).pull_mobs)
@@ -311,7 +311,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	alpha = 127
 
 	canmove = original_canmove
-	incorporeal_move = TRUE
+	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	if(SK)
 		SK.doing_phase = FALSE

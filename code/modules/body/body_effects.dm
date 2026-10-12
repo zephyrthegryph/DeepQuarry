@@ -296,8 +296,6 @@
 			record_genetic_effect(path, TRUE)
 		if(def.changes_icon_scale())
 			update_transform()
-		if(def.mob_overlay_state)
-			update_modifier_visuals()
 		if(def.client_color)
 			update_client_color()
 		if(LAZYLEN(def.filter_parameters))
@@ -398,8 +396,6 @@
 		return
 	if(def.changes_icon_scale())
 		update_transform()
-	if(def.mob_overlay_state)
-		update_modifier_visuals()
 	if(def.client_color)
 		update_client_color()
 	if(LAZYLEN(def.filter_parameters))

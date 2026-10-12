@@ -3416,6 +3416,7 @@
 #include "code\modules\mob\living\carbon\human\say.dm"
 #include "code\modules\mob\living\carbon\human\stripping.dm"
 #include "code\modules\mob\living\carbon\human\unarmed_attack.dm"
+#include "code\modules\mob\living\carbon\human\human_look.dm"
 #include "code\modules\mob\living\carbon\human\update_icons.dm"
 #include "code\modules\mob\living\carbon\human\ai_controlled\ai_controlled.dm"
 #include "code\modules\mob\living\carbon\human\species\species.dm"

@@ -247,4 +247,3 @@
 	. = ..()
 	if(. && (species.tail || tail_style))
 		//update_tail_showing() this is already called by update_inv_wear_suit
-		update_inv_wear_suit()

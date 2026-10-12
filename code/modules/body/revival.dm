@@ -87,7 +87,6 @@
 	remove_mutation(HUSK)
 	set_status_flags(status_flags & ~DISFIGURED)
 	can_defib = TRUE
-	update_icons_body()
 
 /// Vore reform: the stored body comes back fully restored, never refused. Rebuild what would
 /// refuse (REVIVE_RESTORE), revive through the one path, then heal to rejuvenate level.
