@@ -1,0 +1,4 @@
+author: "claude"
+delete-after: true
+changes:
+  - code_imp: "Stats now cache on first read when the build proves their inputs tracked; idle machines stop recomputing power and operable stats."

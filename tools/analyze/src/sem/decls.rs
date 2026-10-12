@@ -45,6 +45,9 @@ pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "STATE_GR
 /// `name()` gets those entries, so what reads a block (op keys, handlers, UI types, op order) reads the proc's entries the same way.
 /// `args[0]` is the proc's name, the rest are the list's entries; `body` is the text inside `list(...)`.
 pub const ENTRY_PROC: &str = "ENTRY_PROC";
+/// A capability datum's `entries()` whose first statement is `return list(...)`: the entries a capability gives its holder. Only handler
+/// discovery reads it (`sem::hooks`), so a `TYPE_PROC_REF(/holder, x)` a capability names is analyzed like one a CAPABILITIES block names.
+pub const CAP_ENTRIES: &str = "CAP_ENTRIES";
 /// Runtime observe calls carry the same typed requirement parts as declarations.
 pub const RUNTIME_OBSERVE: &str = "RUNTIME_OBSERVE";
 
@@ -513,6 +516,23 @@ fn entry_proc(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t:
     out.push(Marker { name: ENTRY_PROC.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
 }
 
+/// The CAP_ENTRIES marker of a capability datum's `entries()` whose first statement is `return list(...)`.
+#[allow(clippy::too_many_arguments)]
+fn cap_entries(stripped: &str, starts: &Arc<Vec<u32>>, ln0: usize, line: &str, t: &str, ty: String, head_line: u32, rel: &str, out: &mut Vec<Marker>) {
+    let Some(rest) = t.strip_prefix("return") else { return };
+    let rest = rest.trim_start();
+    let Some(after) = rest.strip_prefix("list") else { return };
+    if !after.trim_start().starts_with('(') {
+        return;
+    }
+    let open = starts[ln0] as usize + (line.len() - rest.len()) + rest.find('(').unwrap();
+    let Some(close) = matching_paren(stripped, open) else { return };
+    let body = stripped[open + 1..close].to_string();
+    let mut args = vec![ty];
+    args.extend(split_args(&body));
+    out.push(Marker { name: CAP_ENTRIES.to_string(), rel: rel.to_string(), line: head_line, args, body, body_offset: open + 1, line_starts: starts.clone() });
+}
+
 fn scan_file(f: &SourceFile) -> FileDecls {
     let text = f.text();
     let stripped = strip_comments_keep_strings(text);
@@ -528,14 +548,20 @@ fn scan_file(f: &SourceFile) -> FileDecls {
     let mut entries_of: Option<String> = None;
     // A global proc (name, header line) whose first statement has not been seen yet: an entry proc when it is `return list(entries)`.
     let mut proc_head: Option<(String, u32)> = None;
+    // A capability datum's entries() (type, header line) whose first statement has not been seen yet.
+    let mut cap_head: Option<(String, u32)> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
             proc_head = pat_match!(r"^/proc/(\w+)\([^)]*\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
+            cap_head = pat_match!(r"^(/datum/capability/[\w/]+?)/(?:proc/)?entries\(\)\s*$").captures(line).map(|m| (m.s(1).to_string(), ln));
         } else if !t.is_empty() && !t.starts_with('#') {
             if let Some((name, head_line)) = proc_head.take() {
                 entry_proc(&stripped, &starts, ln0, line, t, name, head_line, &f.rel, &mut fd.markers);
+            }
+            if let Some((ty, head_line)) = cap_head.take() {
+                cap_entries(&stripped, &starts, ln0, line, t, ty, head_line, &f.rel, &mut fd.markers);
             }
         }
         if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {

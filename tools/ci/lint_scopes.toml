@@ -119,6 +119,10 @@ ui_hosts = [
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+[lint.untracked_inputs]
+# Test fixtures read untracked state on purpose (dq_generated_deps_tests.dm proves an untracked stat is never cached).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/tests/"]
+
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
