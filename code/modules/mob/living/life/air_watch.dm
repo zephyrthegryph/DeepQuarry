@@ -106,6 +106,7 @@
 /// The mixture a living mob inside this atom breathes and stands in, kept (so a watch on it stays valid), or null when there
 /// is none to watch: made up per breath, picked at random, or a container that hasn't said (the default).
 /atom/proc/air_watch_source(mob/living/L)
+	RETURN_TYPE(/datum/gas_mixture)
 	return null
 
 /turf/air_watch_source(mob/living/L)
