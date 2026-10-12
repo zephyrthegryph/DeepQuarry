@@ -73,6 +73,7 @@ pub(super) fn compile<R: Resolver>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use dm_ir::SymbolId;
     struct Source<'a>(&'a str);
     impl dm_preprocess::SourceProvider for Source<'_> {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {
