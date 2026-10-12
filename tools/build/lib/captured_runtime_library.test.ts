@@ -2,7 +2,7 @@ import { expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { verifyCapturedRuntimeLibrary } from './captured_runtime_library';
+import { verifyCapturedRuntimeLibrary, issueIndependentRuntimeCopies } from './captured_runtime_library';
 
 test('captured library requires complete current source/build/pair-independent ABI evidence', () => {
   fs.mkdirSync('E:/dq-cache', { recursive: true });
@@ -39,6 +39,21 @@ test('captured library requires complete current source/build/pair-independent A
       return { buildReceipt: pin(receiptFile), sourcePin, library, pair: { dmb: library, rsc: library } };
     };
     expect(verifyCapturedRuntimeLibrary(proof())).toBe(library.path);
+    fs.linkSync(cargo.path, path.join(root, 'cargo-proxy.exe'));
+    fs.linkSync(library.path, path.join(root, 'cargo-library-artifact.dll'));
+    expect(() => verifyCapturedRuntimeLibrary(proof())).toThrow('Unsafe captured runtime input');
+    const privateRoot = path.join(root, 'private'); fs.mkdirSync(privateRoot);
+    const originalProof = proof();
+    const independentCopies = issueIndependentRuntimeCopies(originalProof.buildReceipt, privateRoot);
+    expect(fs.statSync(independentCopies.cargo.path).nlink).toBe(1);
+    expect(fs.statSync(independentCopies.library.path).nlink).toBe(1);
+    expect(fs.statSync(library.path).nlink).toBe(2);
+    expect(verifyCapturedRuntimeLibrary({ ...originalProof, independentCopies })).toBe(independentCopies.library.path);
+    expect(() => issueIndependentRuntimeCopies(originalProof.buildReceipt, privateRoot)).toThrow();
+    fs.writeFileSync(independentCopies.library.path, 'changed private DLL');
+    expect(() => verifyCapturedRuntimeLibrary({ ...originalProof, independentCopies })).toThrow();
+    fs.unlinkSync(path.join(root, 'cargo-proxy.exe'));
+    fs.unlinkSync(path.join(root, 'cargo-library-artifact.dll'));
     receipt.inputsAfter = {};
     expect(() => verifyCapturedRuntimeLibrary(proof())).toThrow();
     receipt.inputsAfter = files; receipt.abi = 'beef';

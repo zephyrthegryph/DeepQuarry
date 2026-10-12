@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import Juke from '../../build/juke/index.js';
-import { parseCompileResult, conventionalOutput, withCompiledOutput } from '../../build/lib/native_pair';
+import { parseCompileResult, conventionalOutput, withCompiledOutput, assertDirectoryChain } from '../../build/lib/native_pair';
 import { beginCompilerReceipt, byondProvenance, nativeProvenance, observedExecutable } from '../../build/lib/compiler_provenance';
 import { captureFocusedCompiledOutput } from '../../build/lib/focused_compiled_run';
+import { issueIndependentRuntimeCopies } from '../../build/lib/captured_runtime_library';
 
-const [directory, expected, runtimeBuildReceipt, runtimeBuildSha] = process.argv.slice(2);
+const [directory, expected, runtimeBuildReceipt, runtimeBuildSha, newCaptureDirectory] = process.argv.slice(2);
 if (Boolean(runtimeBuildReceipt) !== Boolean(runtimeBuildSha)) throw new Error('runtime build receipt pins must be paired');
 if (!directory || !/^[0-9a-f]{64}$/.test(expected ?? '')) throw new Error('capture directory and receipt SHA256 required');
 const root = path.resolve(directory);
@@ -26,12 +27,19 @@ if (version.file_version !== '5.0.516.1687') throw new Error('unsupported captur
 const evidence = JSON.parse(fs.readFileSync(path.join(root, 'configuration-evidence.json'), 'utf8'));
 const defines: string[] = receipt.orderedDefines;
 if (!Array.isArray(defines) || defines.some(value => typeof value !== 'string')) throw new Error('ordered defines missing');
+const captureRoot = newCaptureDirectory ? path.resolve(newCaptureDirectory) : root;
+if (newCaptureDirectory) {
+  if (!captureRoot.toLowerCase().startsWith('e:\\dq-cache\\') || captureRoot === root
+      || captureRoot.toLowerCase().startsWith(path.resolve(receipt.sourceRoot).toLowerCase() + path.sep)) throw new Error('New capture namespace must be outside captured source');
+  assertDirectoryChain(path.dirname(captureRoot));
+  fs.mkdirSync(captureRoot);
+}
 for (const backend of ['byond', 'native'] as const) {
   const result = evidence.find((row: any) => row.producer === backend);
   if (!result || result.exit_code !== 0 || result.timeout !== false || result.reaped !== true) throw new Error('unsuccessful captured compiler');
   const identity = observedExecutable(result.command[0]);
   if (identity.sha256 !== result.compiler_sha256) throw new Error('captured compiler executable changed');
-  const owned = path.join(root, backend + '-runtime-capture');
+  const owned = path.join(captureRoot, backend + '-runtime-capture');
   fs.mkdirSync(owned);
   let output;
   if (backend === 'byond') {
@@ -62,7 +70,8 @@ for (const backend of ['byond', 'native'] as const) {
       if (hash(runtimeBuildReceipt) !== runtimeBuildSha) throw new Error('runtime build receipt changed');
       const build = JSON.parse(fs.readFileSync(runtimeBuildReceipt, 'utf8'));
       library = { buildReceipt: pinFile(runtimeBuildReceipt), sourcePin: pinFile(receipt.pin),
-        library: build.library, pair: { dmb: pinFile(dmb), rsc: pinFile(rsc) } };
+        library: build.library, pair: { dmb: pinFile(dmb), rsc: pinFile(rsc) },
+        independentCopies: issueIndependentRuntimeCopies(pinFile(runtimeBuildReceipt), owned) };
     }
     const capture = captureFocusedCompiledOutput(attempt.file, output, dmb, rsc, library);
     const file = path.join(owned, 'capture.json');

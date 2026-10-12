@@ -7,15 +7,37 @@ export type LibraryPin = { path: string; sha256: string; bytes: number };
 export type CapturedRuntimeLibrary = {
   buildReceipt: LibraryPin; sourcePin: LibraryPin; library: LibraryPin;
   pair: { dmb: LibraryPin; rsc: LibraryPin };
+  independentCopies?: { cargo: LibraryPin; library: LibraryPin };
 };
-function checked(pin: LibraryPin): Buffer {
+function checked(pin: LibraryPin, allowProducerLinks = false): Buffer {
   if (!path.isAbsolute(pin.path) || !/^[0-9a-f]{64}$/.test(pin.sha256)) throw new Error('Invalid captured runtime pin');
   assertDirectoryChain(path.dirname(pin.path));
   const stat = fs.lstatSync(pin.path);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size !== pin.bytes || stat.size > 64 * 1024 * 1024) throw new Error('Unsafe captured runtime input');
+  if (!stat.isFile() || stat.isSymbolicLink() || (!allowProducerLinks && stat.nlink !== 1) || stat.size !== pin.bytes || stat.size > 64 * 1024 * 1024) throw new Error('Unsafe captured runtime input');
   const bytes = fs.readFileSync(pin.path);
   if (createHash('sha256').update(bytes).digest('hex') !== pin.sha256) throw new Error('Captured runtime input changed');
   return bytes;
+}
+/** Copies only authenticated producer bytes into new independent private leaves. */
+export function issueIndependentRuntimeCopies(buildReceipt: LibraryPin, directory: string): { cargo: LibraryPin; library: LibraryPin } {
+  const build = JSON.parse(checked(buildReceipt).toString('utf8'));
+  assertDirectoryChain(directory);
+  const copy = (pin: LibraryPin, name: string): LibraryPin => {
+    checked(pin, true);
+    const destination = path.join(directory, name);
+    fs.copyFileSync(pin.path, destination, fs.constants.COPYFILE_EXCL);
+    const issued = { path: destination, sha256: pin.sha256, bytes: pin.bytes };
+    checked(issued);
+    checked(pin, true);
+    return issued;
+  };
+  return { cargo: copy(build.cargo, 'captured-cargo.exe'), library: copy(build.library, 'verdigris.dll') };
+}
+function independent(pin: LibraryPin, copy?: LibraryPin): Buffer {
+  if (!copy) return checked(pin);
+  if (copy.path === pin.path || copy.sha256 !== pin.sha256 || copy.bytes !== pin.bytes) throw new Error('Independent producer copy differs');
+  checked(pin, true);
+  return checked(copy);
 }
 export function verifyCapturedRuntimeLibrary(proof: CapturedRuntimeLibrary): string {
   const build = JSON.parse(checked(proof.buildReceipt).toString('utf8'));
@@ -43,7 +65,7 @@ export function verifyCapturedRuntimeLibrary(proof: CapturedRuntimeLibrary): str
       || !command.includes('-j1') || !command.includes('--release')
       || command[command.indexOf('--target') + 1] !== 'i686-pc-windows-msvc'
       || command[command.indexOf('--package') + 1] !== 'verdigris' || !command.includes('--lib')) throw new Error('Captured runtime was not built by the ordinary bounded Cargo route');
-  checked(build.cargo);
+  independent(build.cargo, proof.independentCopies?.cargo);
   const dmAbi = checked(build.bindings).toString('utf8');
   const rustAbi = checked(build.rustAbi).toString('utf8');
   if (dmAbi.match(/^#define VERDIGRIS_ABI "([0-9a-f]+)"/m)?.[1] !== build.abi
@@ -65,7 +87,7 @@ export function verifyCapturedRuntimeLibrary(proof: CapturedRuntimeLibrary): str
     if (source.configuration_evidence.includes(evidence)) configurations = JSON.parse(bytes.toString('utf8'));
   }
   if (!configurations || !['byond', 'native'].every(backend => configurations!.some(row => row.producer === backend && path.resolve(row.cwd ?? '') === path.resolve(build.sourceRoot)))) throw new Error('Runtime build and captured compiler source roots differ');
-  const dll = checked(proof.library);
+  const dll = independent(proof.library, proof.independentCopies?.library);
   if (path.basename(proof.library.path).toLowerCase() !== 'verdigris.dll' || !dll.includes(Buffer.from(build.abi, 'ascii'))) throw new Error('Captured runtime ABI mismatch');
-  return proof.library.path;
+  return proof.independentCopies?.library.path ?? proof.library.path;
 }
