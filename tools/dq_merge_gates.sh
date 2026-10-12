@@ -75,19 +75,16 @@ for ref in $lanes; do
 	fi
 	lane_tips="$lane_tips${lane_tips:+,}$tip"
 done
-# A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk here, into the merge commit when HEAD is
-# an unpushed merge, instead of a separate repair commit. `analyze baseline --update` never adds a site or raises a ceiling.
-if bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
+# A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk into the merge commit, instead of a separate
+# repair commit. Only when HEAD is an unpushed merge commit (the merge worktree's batch): a lane-ready run or any other HEAD keeps
+# its sha, which its caller already recorded. `analyze baseline --update` never adds a site or raises a ceiling.
+if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null 	&& bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
 	"$bin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are" >&2
 	if ! git diff --quiet -- tools/ci; then
-		echo "dq_merge_gates: shrank ratchet baselines after the merge:"
+		echo "dq_merge_gates: shrank ratchet baselines into the merge commit:"
 		git diff --stat -- tools/ci | tail -n 5
 		git add -- tools/ci
-		if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
-			git commit -q --amend --no-edit
-		else
-			git commit -q -m "Shrink ratchet baselines after the merge" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
-		fi
+		git commit -q --amend --no-edit
 	fi
 fi
 bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys regeneration failed" >&2; exit 1; }
