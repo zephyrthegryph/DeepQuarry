@@ -79,14 +79,14 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
             .unwrap();
     let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared).unwrap();
     let key: Arc<[u8]> = current.materialize(&tail).into();
-    certificate = certificate.bind_key(&key);
+    certificate = certificate.bind_key(&key.clone().into());
     let mut record = Record {
         local: Some(certificate.clone()),
         recipe: crate::lowering_memo::key_recipe::KeyRecipe::new(
             &key,
             Arc::clone(current.metadata),
         ),
-        key,
+        key: key.into(),
         reads: Vec::<ResolverRead>::new().into(),
         versions: Arc::from([]),
         value: RecordValue::Selections {
@@ -119,7 +119,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
         .position(|bytes| bytes == b"return x")
         .unwrap();
     bytes[at + 7] = b'y';
-    let original_key = Arc::clone(&record.key);
+    let original_key = record.key.clone();
     record.key = bytes.into();
     assert!(certificate.matches(&licensed, row, 7, &record).is_none());
     record.key = original_key;
@@ -165,7 +165,7 @@ fn local_proof_uses_actual_shared_inputs_and_declines_changed_source_policy_or_o
                 &record.key,
                 Arc::clone(current.metadata)
             ),
-            key: Arc::clone(&record.key),
+            key: record.key.clone(),
             reads: record.reads.clone(),
             versions: Arc::clone(&record.versions),
             value: RecordValue::Executable(value.shared_artifact()),

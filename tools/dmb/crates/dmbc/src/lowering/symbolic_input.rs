@@ -11,10 +11,10 @@ mod receipt_groups;
 mod retained;
 pub(super) use receipt_groups::RequestAdmission;
 pub use retained::SymbolicRetentionStats;
-#[path = "symbolic_partial_admission.rs"]
-mod partial_admission;
 #[path = "symbolic_candidates.rs"]
 mod candidates;
+#[path = "symbolic_partial_admission.rs"]
+mod partial_admission;
 #[path = "symbolic_publication.rs"]
 mod symbolic_publication;
 pub(super) use candidates::RequestCandidates;
@@ -55,10 +55,14 @@ pub(super) fn local_certificate(
     local::Certificate::issue(roster, row, policy)
 }
 
+#[path = "symbolic_shared_key.rs"]
+mod shared_key;
+use shared_key::SharedKey;
+
 struct Record {
     local: Option<local::Certificate>,
     recipe: Option<crate::lowering_memo::key_recipe::KeyRecipe>,
-    key: Arc<[u8]>,
+    key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     value: RecordValue,
@@ -79,7 +83,7 @@ pub(crate) struct Admission {
     metadata: Option<Arc<dm_ir::ProcedureMetadata>>,
     store: Option<Arc<SessionSymbolicMemo>>,
     disk: Option<crate::lowering_memo::DiskWriter>,
-    key: Arc<[u8]>,
+    key: SharedKey,
     reads: dm_session::Receipt<dm_ir::ResolveQuery, dm_ir::ResolvedMeaning, dm_ir::ReadDomain>,
     versions: Arc<[(dm_ir::ReadDomain, u128)]>,
     relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
@@ -94,7 +98,7 @@ impl Admission {
         self
     }
     pub(super) fn shared_key(&self) -> Arc<[u8]> {
-        Arc::clone(&self.key)
+        self.key.raw_owner()
     }
 }
 /// Fields are private: only the ordinary lowerer or exact memo validator issues it.
@@ -552,7 +556,8 @@ impl SessionSymbolicMemo {
         let changed = if reads_validated {
             false
         } else {
-            let matching = partial_admission::matching_domains(&record.versions, host, request_admission);
+            let matching =
+                partial_admission::matching_domains(&record.versions, host, request_admission);
             let fully_certified = !host.observes_reads()
                 && record.reads.iter().all(|read| {
                     read.domain == read.query.domain() && matching.contains(&read.domain)
@@ -613,7 +618,7 @@ impl SessionSymbolicMemo {
                 metadata: Some(Arc::clone(key.metadata)),
                 store: None,
                 disk: None,
-                key: Arc::clone(&record.key),
+                key: record.key.clone(),
                 reads: receipt_groups::grouped(&self.receipt_groups, observer.reads()),
                 versions: observer.domain_receipts().into(),
                 relative_debug: record.relative_debug.clone(),
@@ -765,7 +770,7 @@ pub(super) fn admission(
         metadata: None,
         store,
         disk,
-        key,
+        key: key.into(),
         reads,
         versions,
         relative_debug,

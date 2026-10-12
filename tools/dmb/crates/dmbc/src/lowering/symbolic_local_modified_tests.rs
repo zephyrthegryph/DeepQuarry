@@ -77,12 +77,16 @@ fn prepare<'a, R: Resolver>(
         "actual producer must capture modified recipes"
     );
     let record = Record {
-        local: Some(Certificate::issue(licensed, row, 7).unwrap().bind_key(&key)),
+        local: Some(
+            Certificate::issue(licensed, row, 7)
+                .unwrap()
+                .bind_key(&key.clone().into()),
+        ),
         recipe: crate::lowering_memo::key_recipe::KeyRecipe::new(
             &key,
             Arc::clone(current.metadata),
         ),
-        key,
+        key: key.into(),
         reads: recorder.reads().into(),
         versions: Arc::from([]),
         value: RecordValue::Executable(value.shared_artifact()),

@@ -9,7 +9,7 @@ pub(in crate::lowering) struct Certificate {
     identity: UnitIdentity,
     policy: u128,
     termination: u8,
-    key: Option<Arc<[u8]>>,
+    key: Option<SharedKey>,
     code: std::sync::Weak<dm_tree::frontend::BodyCodeIdentity>,
 }
 #[cfg(test)]
@@ -44,8 +44,8 @@ impl Certificate {
             key: None,
         })
     }
-    pub(super) fn bind_key(mut self, key: &Arc<[u8]>) -> Self {
-        self.key = Some(Arc::clone(key));
+    pub(super) fn bind_key(mut self, key: &SharedKey) -> Self {
+        self.key = Some(key.clone());
         self
     }
     fn matches(
@@ -80,7 +80,7 @@ impl Certificate {
                 && self
                     .key
                     .as_ref()
-                    .is_some_and(|key| Arc::ptr_eq(key, &record.key)))
+                    .is_some_and(|key| key.same_backing(&record.key)))
                 && !record
                     .recipe
                     .as_ref()?
@@ -111,7 +111,7 @@ impl Certificate {
             shell(census, graph);
         }
         if let Some(key) = &self.key {
-            census.slice("procedure.local_key", key.as_ref(), true);
+            census.slice("procedure.local_key", key.owner(), true);
         }
     }
 }

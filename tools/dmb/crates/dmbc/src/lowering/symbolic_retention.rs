@@ -120,7 +120,7 @@ fn census_record(record: &std::sync::Arc<super::Record>, mut census: &mut HeapCe
     if !census.arc_object("session_symbolic.records", record) {
         return;
     }
-    census.slice("session_symbolic.keys", &record.key, true);
+    census.slice("session_symbolic.keys", record.key.owner(), true);
     if let Some(local) = &record.local {
         local.census(census);
     }

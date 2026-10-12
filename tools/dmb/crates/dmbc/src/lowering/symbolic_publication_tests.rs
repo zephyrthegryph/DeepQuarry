@@ -11,7 +11,7 @@ fn record(key: &[u8], reads: Vec<ResolverRead>) -> Record {
     Record {
         local: None,
         recipe: None,
-        key: Arc::from(key),
+        key: Arc::<[u8]>::from(key).into(),
         reads: reads.into(),
         versions: Arc::from([]),
         value: RecordValue::Selections {
@@ -216,4 +216,60 @@ fn request_facades_share_actual_session_counters_and_sealed_insert_declines() {
     assert_eq!(next.admitted.load(Ordering::Relaxed), 2);
     assert_eq!(owner.retention_stats().successful_admissions, 2);
     assert_eq!(owner.decline_stats().read_changed, 1);
+}
+
+#[test]
+fn published_locator_and_raw_key_share_one_owner_without_collapsing_body_variants() {
+    let owner = SessionSymbolicMemo::current_revision();
+    let request = owner.for_request(true);
+    assert!(request.insert_record(identity(), record(b"first exact body", vec![])));
+    assert!(request.insert_record(identity(), record(b"second exact body", vec![])));
+    assert!(request.publish_successful());
+    let first = selected(&owner, b"first exact body").unwrap();
+    let second = selected(&owner, b"second exact body").unwrap();
+    assert_ne!(first.key, second.key);
+    assert!(!first.key.same_backing(&second.key));
+    let mut entries = 0;
+    owner
+        .publication
+        .as_ref()
+        .unwrap()
+        .values
+        .visit_storage(|view| {
+            if let dm_session::ArtifactStorageView::Entry { key, value, .. } = view {
+                entries += 1;
+                assert!(Arc::ptr_eq(key, value.key.owner()));
+                assert_eq!(key.as_ref(), locator(identity(), &value.key));
+                assert!(value.key.for_locator(identity()).same_backing(&value.key));
+                let mut census = crate::heap_census::HeapCensus::new("shared_locator_test");
+                census.slice("core_locator", key, true);
+                census.slice("record_key", value.key.owner(), true);
+                // This exact exposed allocation union is neither index charge nor
+                // allocator/private memory; the full locator bytes are counted once.
+                assert_eq!(
+                    census.finish().unique_known_capacity_bytes,
+                    key.len() as u64
+                );
+            }
+        });
+    assert_eq!(entries, 2);
+    // Another request's equivalent producer does not replace the immutable
+    // published variant or manufacture a second retained locator allocation.
+    let next = owner.for_request(true);
+    assert!(next.insert_record(identity(), record(b"first exact body", vec![])));
+    assert!(next.publish_successful());
+    let selected_again = selected(&owner, b"first exact body").unwrap();
+    assert!(Arc::ptr_eq(&first, &selected_again));
+    assert!(first.key.same_backing(&selected_again.key));
+    let mut different = identity();
+    different.occurrence = 1;
+    let moved = first.key.for_locator(different);
+    assert_eq!(moved.as_ref(), first.key.as_ref());
+    assert!(!moved.same_backing(&first.key));
+    assert_ne!(moved.owner().as_ref(), first.key.owner().as_ref());
+    drop(request);
+    drop(next);
+    drop(owner);
+    assert_eq!(first.key.as_ref(), b"first exact body");
+    assert_eq!(second.key.as_ref(), b"second exact body");
 }

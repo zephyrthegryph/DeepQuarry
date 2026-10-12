@@ -42,7 +42,7 @@ fn record() -> Arc<super::super::super::Record> {
     Arc::new(super::super::super::Record {
         local: None,
         recipe: None,
-        key: Arc::from([1u8, 2, 3]),
+        key: Arc::<[u8]>::from([1u8, 2, 3]).into(),
         reads: Vec::new().into(),
         versions: Arc::from([]),
         value: super::super::super::RecordValue::Executable(contribution.shared_artifact()),
@@ -54,7 +54,7 @@ fn record() -> Arc<super::super::super::Record> {
 #[test]
 fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
     let record = record();
-    let key = Arc::clone(&record.key);
+    let key = Arc::clone(record.key.owner());
     let weight = charge(&key, &record, usize::MAX).expect("all immutable payloads are exposed");
     assert!(weight > 0);
     let memo = SessionSymbolicMemo::current_revision();
@@ -94,7 +94,7 @@ fn pressure_keeps_actual_compact_code_and_rejects_undercharged_budget() {
 #[test]
 fn debug_payload_capacity_is_charged_before_retention() {
     let mut record = record();
-    let key = Arc::clone(&record.key);
+    let key = Arc::clone(record.key.owner());
     let before = charge(&key, &record, usize::MAX).unwrap();
     Arc::get_mut(&mut record)
         .unwrap()
@@ -138,7 +138,7 @@ fn unknown_nested_payload_still_declines_pressure_retention() {
 #[test]
 fn compact_charge_matches_diagnostic_capacity_and_declines_before_pointer_growth() {
     let record = record();
-    let key = Arc::clone(&record.key);
+    let key = Arc::clone(record.key.owner());
     let expected = {
         let mut census = HeapCensus::new("diagnostic");
         census.slice("compact_symbolic.locator", &key, true);
@@ -163,7 +163,7 @@ fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
     let second = Arc::new(super::super::super::Record {
         local: None,
         recipe: None,
-        key: Arc::from([4u8, 5, 6]),
+        key: Arc::<[u8]>::from([4u8, 5, 6]).into(),
         reads: first.reads.clone(),
         versions: Arc::clone(&first.versions),
         value: match &first.value {
@@ -176,8 +176,8 @@ fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
         required_types: Arc::clone(&first.required_types),
         modified_recipes: Arc::clone(&first.modified_recipes),
     });
-    let a = shared_charge(&first.key, &first, usize::MAX).unwrap();
-    let b = shared_charge(&second.key, &second, usize::MAX).unwrap();
+    let a = shared_charge(first.key.owner(), &first, usize::MAX).unwrap();
+    let b = shared_charge(second.key.owner(), &second, usize::MAX).unwrap();
     let left: std::collections::BTreeMap<_, _> =
         a.iter().map(|item| (item.address, item.bytes)).collect();
     let shared: usize = b
@@ -193,13 +193,13 @@ fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
     let standalone_a: usize = a.iter().map(|item| item.bytes).sum();
     assert_eq!(
         standalone_a,
-        charge(&first.key, &first, usize::MAX).unwrap()
+        charge(first.key.owner(), &first, usize::MAX).unwrap()
     );
     assert!(
         shared < standalone_a,
         "record and current debug buffers remain unique"
     );
-    assert!(shared_charge(&first.key, &first, 0).is_none());
+    assert!(shared_charge(first.key.owner(), &first, 0).is_none());
 }
 
 #[test]
@@ -223,7 +223,7 @@ fn pressure_prunes_dead_weak_receipt_locators_and_preserves_escaped_live_leaf() 
     let dead_witness = Arc::downgrade(&dead);
     for (index, leaf) in [live.clone(), dead].into_iter().enumerate() {
         let mut current = Arc::try_unwrap(record()).ok().unwrap();
-        current.key = Arc::from(vec![index as u8]);
+        current.key = vec![index as u8].into();
         current.reads = dm_session::Receipt::from(leaf);
         assert!(request.insert_record(
             crate::lowering::UnitIdentity {

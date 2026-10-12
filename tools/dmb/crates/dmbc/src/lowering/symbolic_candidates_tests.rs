@@ -35,7 +35,7 @@ fn symbolic_request_dispatch_uses_one_current_certificate_and_preserves_local_gu
             Record {
                 local: None,
                 recipe: None,
-                key: Arc::from(bytes),
+                key: Arc::<[u8]>::from(bytes).into(),
                 reads: vec![ResolverRead {
                     query,
                     domain: query.domain(),

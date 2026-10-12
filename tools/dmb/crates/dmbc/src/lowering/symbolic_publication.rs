@@ -125,7 +125,7 @@ impl SessionSymbolicMemo {
     pub(super) fn insert_record_rebinding(
         &self,
         identity: UnitIdentity,
-        record: Record,
+        mut record: Record,
         previous: Option<&Arc<Record>>,
     ) -> bool {
         if record
@@ -136,7 +136,9 @@ impl SessionSymbolicMemo {
             return false;
         }
         if let Some(attempt) = &self.attempt {
-            let key = locator(identity, &record.key);
+            record.key = record.key.for_locator(identity);
+            record.local = record.local.take().map(|local| local.bind_key(&record.key));
+            let key = Arc::clone(record.key.owner());
             let reads = record.reads.clone();
             let versions = Arc::clone(&record.versions);
             // Current-roster symbolic retention has no byte admission policy;
