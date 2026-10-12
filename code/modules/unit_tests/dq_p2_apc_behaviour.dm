@@ -179,9 +179,9 @@
 		F.install_flooring(p2_flooring)
 	p2_area.set_requires_power(p2_area_requires)
 	p2_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	p2_area.power_light = p2_area_light
-	p2_area.power_equip = p2_area_equip
-	p2_area.power_environ = p2_area_environ
+	p2_area.set_power_light(p2_area_light)
+	p2_area.set_power_equip(p2_area_equip)
+	p2_area.set_power_environ(p2_area_environ)
 	test_driver_end()
 
 /datum/unit_test/dq_p2_apc/proc/run_gate()
@@ -1501,6 +1501,7 @@
 	var/was_night = SSnightshift.nightshift_active
 	if(!(A.z in using_map.station_levels))
 		using_map.station_levels += A.z
+	A.update_station_night() // the test map's levels changed under the APC: it reads them where it stands
 	p2_apc_station_night(FALSE)
 	p2_settle()
 	TEST_ASSERT(!A.area.lights_nightshift, "by day the area is bright")
@@ -1521,5 +1522,6 @@
 	TEST_ASSERT(A.area.lights_nightshift, "an APC set to always dims it by day")
 	A.set_nightshift_setting(NIGHTSHIFT_AUTO)
 	using_map.station_levels = levels
+	A.update_station_night()
 	p2_apc_station_night(was_night)
 	p2_settle()
