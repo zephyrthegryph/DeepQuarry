@@ -184,8 +184,6 @@
 			return life_ambience_rewake()
 		if("life_movement_due")
 			return life_movement_due()
-		if("life_movement_rewake")
-			return life_movement_rewake()
 		if("life_physiology_due")
 			return life_physiology_due()
 		if("life_physiology_rewake")

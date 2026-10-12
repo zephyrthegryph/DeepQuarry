@@ -120,6 +120,14 @@
 	if(tell_universe)
 		GLOB.universe.OnTurfChange(W)
 
+	// The ground changed under whoever stands here or on the turf above: their falling and gravity follow it.
+	for(var/mob/living/L in W)
+		PUBLISH_CHANGE(L, MOB_KEY_GROUND)
+	var/turf/above = GetAbove(W)
+	if(above)
+		for(var/mob/living/L in above)
+			PUBLISH_CHANGE(L, MOB_KEY_GROUND)
+
 	if(SSair)
 		SSair.mark_for_update(W)
 

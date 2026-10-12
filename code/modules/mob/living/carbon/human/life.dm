@@ -87,11 +87,13 @@
 /mob/living/carbon/human/proc/life_fall(datum/seq_frame/life/F)
 	src.fall()
 
-/// Event-driven: moving wakes it. A floor removed from under a standing player is caught by
-/// the rewake.
-
+/// Event-driven: moving, equipment, status and the ground changing (MOB_KEY_GROUND) wake it. Only a flier hovering over
+/// open space has per-frame work (flight tires it), so only it comes back on the next frame.
 /mob/living/carbon/human/proc/life_fall_rewake()
-	return src.client ? 10 SECONDS : 0
+	if(!stat_value(src, STAT_FLYING) || !isturf(src.loc))
+		return 0
+	var/turf/T = src.loc
+	return T.CanZPass(src, DOWN) ? LIFE_CYCLE : 0
 
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /// MED-6: nothing to do while no trigger domain is dirty, no side effect runs, no allergen

@@ -260,12 +260,9 @@
 	FOR_CONTENTS(var/obj/item/grab/G, src)
 		G.periodic_step()
 
-/// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
+/// Busy while pulling or grabbing. Gravity is re-read on Moved and when the ground changes (MOB_KEY_GROUND).
 /mob/living/proc/life_movement_due()
 	return src?.pulling_target() || (locate_in_list(src, /obj/item/grab))
-
-/mob/living/proc/life_movement_rewake()
-	return src.client ? 30 SECONDS : 0
 
 /// Status & health update: are we dead or alive, conscious or not. When it returns false the
 /// disabilities and addictions systems skip this cycle.
