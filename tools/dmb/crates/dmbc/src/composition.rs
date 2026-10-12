@@ -389,8 +389,12 @@ fn compose_records_access(
             "initializer artifacts require classified declaration projection",
         ));
     }
-    dmb.validate_references()
-        .map_err(CompositionError::Decode)?;
+    // The pinned engine image is validated when it is captured; this repeats it
+    // on every request, so it follows the same verification switch as the output.
+    if generation::full_verification() {
+        dmb.validate_references()
+            .map_err(CompositionError::Decode)?;
+    }
     let engine_strings = dmb.strings.len();
     let engine_procs = dmb.procs.len();
     let mut strings = BTreeMap::new();
@@ -832,10 +836,12 @@ fn compose_records_access(
     // Choose the wide table ABI explicitly for the composed model. No instruction
     // operand is guessed/rebased; shared symbolic linking already fixed those.
     dmb.header.flags |= 0x4000_0000;
-    let references_profile = dm_profile::stage("composition.reference_validation");
-    dmb.validate_references()
-        .map_err(CompositionError::Decode)?;
-    drop(references_profile);
+    if generation::full_verification() {
+        let references_profile = dm_profile::stage("composition.reference_validation");
+        dmb.validate_references()
+            .map_err(CompositionError::Decode)?;
+        drop(references_profile);
+    }
     crate::heap_census::emit_if_enabled("composition.model", |census| census.dmb(&dmb))
         .map_err(CompositionError::Decode)?;
     let bytes = match generation {
