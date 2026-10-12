@@ -319,6 +319,17 @@ def compile_one(executable, project, manifest, workers, semantic, artifacts, log
                     "complete_evidence": result[name + "_evidence"],
                 }
             result[name] = value
+    # A successful unchanged request refreshes last-run evidence but deliberately
+    # keeps the preceding compilation profile. Never present that old profile's
+    # recomputation counters or stage durations as work done by this request.
+    if result.get("last_run", {}).get("session_hit") is True:
+        result.pop("compiler_stats", None)
+        previous = result.pop("compiler_stats_evidence", None)
+        if previous is not None:
+            result["previous_compiler_stats_evidence"] = previous
+        result["compiler_stats_scope"] = "previous_compilation_excluded_from_unchanged_request"
+    elif "compiler_stats" in result:
+        result["compiler_stats_scope"] = "completed_compilation"
     if mode != "fresh" and (daemon is None or daemon.poll() is not None or not endpoint.probe(daemon)):
         raise RuntimeError("owned daemon changed during request; replacement left untouched")
     if result["exit"] != 0:
