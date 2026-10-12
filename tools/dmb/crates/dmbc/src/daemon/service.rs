@@ -17,6 +17,8 @@ use std::{
 mod admission_deadline;
 #[path = "admission_limits.rs"]
 mod admission_limits;
+#[path = "service_generation_admission.rs"]
+mod generation_admission;
 #[path = "service_housekeeping.rs"]
 mod housekeeping;
 #[cfg(test)]
@@ -238,6 +240,15 @@ impl Shared {
         deadline: &admission_deadline::AdmissionDeadline,
         private_bytes: impl Fn() -> Option<u64>,
     ) -> io::Result<Permit> {
+        self.acquire_with_admission_until_observing(workers, deadline, false, private_bytes)
+    }
+    fn acquire_with_admission_until_observing(
+        self: &Arc<Self>,
+        workers: usize,
+        deadline: &admission_deadline::AdmissionDeadline,
+        accepted_before_retirement: bool,
+        private_bytes: impl Fn() -> Option<u64>,
+    ) -> io::Result<Permit> {
         let workers = workers.max(1);
         if workers > self.max_workers {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, format!(
@@ -256,7 +267,7 @@ impl Shared {
             || *self.workers.lock().unwrap_or_else(|e| e.into_inner()) + workers > self.max_workers
             || *active > 0
                 && private_bytes().is_some_and(|bytes| self.under_memory_pressure(bytes)))
-            && !self.retiring.load(Ordering::Acquire)
+            && (accepted_before_retirement || !self.retiring.load(Ordering::Acquire))
         {
             control::checkpoint()?;
             let remaining = deadline.remaining(Instant::now())?;
@@ -268,7 +279,7 @@ impl Shared {
         }
         control::checkpoint()?;
         deadline.remaining(Instant::now())?;
-        if self.retiring.load(Ordering::Acquire) {
+        if self.retiring.load(Ordering::Acquire) && !accepted_before_retirement {
             return Err(io::Error::other("daemon retiring"));
         }
         *active += 1;
@@ -332,16 +343,7 @@ pub(super) fn serve() -> io::Result<()> {
         }
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
-        if retiring
-            && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
-            && shared.connections.load(Ordering::Acquire) == 0
-        {
-            return Ok(());
-        }
-        if activity.elapsed() >= Duration::from_secs(7200)
-            && *shared.running.lock().unwrap_or_else(|e| e.into_inner()) == 0
-            && shared.connections.load(Ordering::Acquire) == 0
-        {
+        if shared.exit_ready(incoming.is_some(), activity.elapsed()) {
             return Ok(());
         }
         match incoming {
@@ -391,8 +393,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
     match protocol::receive(&mut stream)? {
         Request::Retire => {
             super::emit_stderr(format_args!("dmbd retiring: draining running builds"));
-            shared.retiring.store(true, Ordering::Release);
-            shared.capacity.notify_all();
+            shared.retire();
             protocol::send(&mut stream, &Reply::Retiring)
         }
         Request::Query(request) => {
@@ -526,6 +527,15 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             }
             transport::set_timeout(&mut stream, Duration::from_secs(600))?;
             let path = std::fs::canonicalize(&request.project)?;
+            let accepted = match shared.accept_request() {
+                Ok(accepted) => accepted,
+                Err(error) => {
+                    return protocol::send(
+                        &mut stream,
+                        &Reply::Rejected(crate::request_failure::RequestFailure::from_error(&error)),
+                    );
+                }
+            };
             let key = RequestKey::of(&request, &path);
             let slot = shared.slot(path, &request.defines, Some(&request));
             let token = control::Cancellation::default();
@@ -546,7 +556,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     )
                 }
             };
-            let _permit = match shared.acquire_until(request.workers, &admission) {
+            let _permit = match shared.acquire_accepted_until(&accepted, request.workers, &admission) {
                 Ok(permit) => permit,
                 Err(error) => {
                     return protocol::send(
