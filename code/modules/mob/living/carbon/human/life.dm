@@ -841,7 +841,7 @@
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
 	))
-	if(!src.environment_steady || !isturf(src.loc) || src.alerts?["pressure"])
+	if(!src.environment_steady || !src.air_watched() || src.alerts?["pressure"])
 		return TRUE
 	if(LAZYLEN(src.species.env_traits) || is_type_in_typecache(src.species, active_environment_species))
 		return TRUE

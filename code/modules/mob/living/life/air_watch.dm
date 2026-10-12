@@ -7,6 +7,11 @@
 // air_changed_here(): MOB_KEY_AIR, the breath and the environment exchange are due again. A change that crosses no level
 // changes nothing these steps would do, so it wakes nothing. The watch follows the mob: the steps that read the air
 // re-arm it when they run (they run after every move: MOB_KEY_LOC), and the key below skips the re-arm when nothing moved.
+// A human's environment exchange averages the temperature of the air around it (its plume), so its watch also holds a
+// band on each atmos-adjacent turf's temperature (one watch, a cell per channel). Inside a container the watch is on the
+// air the container gives the mob (air_watch_source()): a closet passes its turf's air through, a sealed pod its own; a
+// container whose air is made up per breath (a belly) or picked at random (a mech cabin) has none, and the steps that
+// read the air stay awake there.
 //
 // The body heat watch: body temperature lives in Rust (heat_mobs.dm) and drifts with the room through the body's
 // couplings. A band watch on the body (heat_watch_band()) at the levels the body's steps act on (the comfort band around
@@ -40,16 +45,19 @@
 /// Points this mob's air watch at the air it stands in now. Cheap when nothing changed: the steps that read the air call
 /// it every time they run.
 /mob/living/proc/air_watch_arm()
-	var/turf/T = src.loc
-	var/datum/gas_mixture/air = isturf(T) ? T.return_air() : null
-	var/id = (air && !istype(air, /datum/gas_mixture/immutable)) ? air.arena_id() : null
+	var/datum/gas_mixture/air = src.loc?.air_watch_source(src)
+	var/id = air?.arena_id()
 	if(isnull(id))
-		air_watch_clear() // off a turf (a container wakes the steps that read its air itself: they stay awake there) or in still air
+		air_watch_clear() // no air to watch here (made up per breath, or still air): the steps that read the air stay awake (air_watched())
 		return
 	var/datum/body/B = src.body
 	if(!B)
 		return
-	var/key = "[id]|[air_watch_levels_key()]"
+	var/list/around = air_watch_around()
+	var/list/around_ids = list()
+	for(var/datum/gas_mixture/other as anything in around)
+		around_ids += other.arena_id()
+	var/key = "[id]|[jointext(around_ids, ",")]|[air_watch_levels_key()]"
 	if(key == B.air_watch_key && B.air_watch)
 		return
 	air_watch_clear()
@@ -60,6 +68,7 @@
 	var/list/chs = list()
 	var/list/cuts = list()
 	var/list/starts = list()
+	var/list/cells = list()
 	for(var/ch_text in levels)
 		var/ch = text2num(ch_text)
 		var/list/normal = air_watch_normalise(levels[ch_text], air_watch_spacing(ch))
@@ -68,9 +77,70 @@
 		chs += ch
 		cuts += list(normal)
 		starts += air_watch_band_of(air_watch_reading(air, ch), normal)
+		cells += id
+	// The plume: each neighbour's temperature at the levels of this mob's own air temperature. While every one of them is
+	// inside a band, so is their mean (what the environment exchange reads); a mean that leaves it moves one of them out.
+	var/list/temperature_levels = levels["[CH_GAS_TEMPERATURE]"]
+	if(length(around) && length(temperature_levels))
+		var/list/normal_t = air_watch_normalise(temperature_levels, air_watch_spacing(CH_GAS_TEMPERATURE))
+		for(var/datum/gas_mixture/other as anything in around)
+			chs += CH_GAS_TEMPERATURE
+			cuts += list(normal_t)
+			starts += air_watch_band_of(other.return_temperature(), normal_t)
+			cells += other.arena_id()
 	if(!length(chs))
 		return
-	rel_set(B, nameof(B.air_watch), world_watch_when(src, COND_BANDS(WORLD_GAS_HANDLE(air), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
+	rel_set(B, nameof(B.air_watch), world_watch_when(src, COND_BANDS(list(VG_GAS_HANDLES, cells), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
+
+/// The air around this mob that its steps read besides its own (mixtures with an arena id), or an empty list.
+/mob/living/proc/air_watch_around()
+	return list()
+
+/// Whether the air this mob's steps read is watched: FALSE in a container whose air can't be watched (made up per breath,
+/// picked at random), where the steps that read the air stay awake.
+/mob/living/proc/air_watched()
+	return src.loc && !isnull(src.loc.air_watch_source(src)?.arena_id())
+
+// ---------------------------------------------------------------- where the air comes from
+
+/// The mixture a living mob inside this atom breathes and stands in, kept (so a watch on it stays valid), or null when there
+/// is none to watch: made up per breath, picked at random, or a container that hasn't said (the default).
+/atom/proc/air_watch_source(mob/living/L)
+	return null
+
+/turf/air_watch_source(mob/living/L)
+	var/datum/gas_mixture/air = return_air()
+	return (air && !istype(air, /datum/gas_mixture/immutable)) ? air : null
+
+/// A mob carried inside another (a holder in its hands) breathes its carrier's air.
+/mob/living/air_watch_source(mob/living/L)
+	return loc?.air_watch_source(L)
+
+/// Closets, lockers and body bags pass their turf's air through (return_air() and return_air_for_internal_lifeform()).
+/obj/structure/closet/air_watch_source(mob/living/L)
+	return loc?.air_watch_source(L)
+
+/// A grave makes up a breath of underground air every time.
+/obj/structure/closet/grave/air_watch_source(mob/living/L)
+	return null
+
+/// A freezer crate hands out a chilled copy of the air.
+/obj/structure/closet/crate/freezer/air_watch_source(mob/living/L)
+	return null
+
+/// A stasis bag with a tank breathes the tank, which can be swapped.
+/obj/structure/closet/body_bag/cryobag/air_watch_source(mob/living/L)
+	return tank ? null : ..()
+
+/// A carried small mob breathes its carrier's air.
+/obj/item/holder/air_watch_source(mob/living/L)
+	return loc?.air_watch_source(L)
+
+/obj/structure/drop_pod/air_watch_source(mob/living/L)
+	return air
+
+/obj/structure/transit_tube_pod/air_watch_source(mob/living/L)
+	return air_contents
 
 /mob/living/proc/air_watch_clear()
 	var/datum/body/B = src.body
@@ -102,6 +172,8 @@
 		var/total = air.total_moles()
 		return total > 0 ? air.get_moles(gas) / total * air.return_pressure() : 0
 	switch(ch)
+		if(CH_GAS_O2_CO2_KPA)
+			return air_watch_reading(air, CH_GAS_O2_KPA) + air_watch_reading(air, CH_GAS_CO2_KPA)
 		if(CH_GAS_NITROGEN)
 			return air.get_moles(/datum/gas/nitrogen)
 		if(CH_GAS_METHANE)
@@ -162,7 +234,15 @@
 	. = list()
 	if(src.breathes())
 		var/breath_type = S.breath_type || GAS_O2
-		if(S.minimum_breath_pressure > 0)
+		var/datum/breath_profile/profile = src.breath_profile()
+		if(profile && !profile.uses_lungs)
+			// The skin lives on oxygen and CO2 together (skin_exchange()): one band on their sum, and CO2's own levels for
+			// the photosynthesis share and the plant's CO2 alert.
+			if(S.minimum_breath_pressure > 0)
+				air_watch_add(., CH_GAS_O2_CO2_KPA, list(S.minimum_breath_pressure))
+				air_watch_add(., CH_GAS_CO2_KPA, list(S.minimum_breath_pressure * 0.25, S.minimum_breath_pressure * 0.5, S.minimum_breath_pressure * 0.75, S.minimum_breath_pressure))
+			air_watch_add(., CH_GAS_CO2_KPA, list(BREATH_EXHALED_MAX * 0.7))
+		else if(S.minimum_breath_pressure > 0)
 			air_watch_add(., air_watch_gas_channel(breath_type), list(S.minimum_breath_pressure))
 		if(S.exhale_type)
 			air_watch_add(., air_watch_gas_channel(S.exhale_type), list(BREATH_EXHALED_MAX * 0.6, BREATH_EXHALED_MAX * 0.7, BREATH_EXHALED_MAX))
@@ -182,6 +262,19 @@
 /// The body temperature the environment levels are relative to, rounded to a kelvin (a change of it re-arms the watch).
 /mob/living/carbon/human/proc/air_watch_body_reference()
 	return round(src.body_temperature(), 1)
+
+/// The atmos-adjacent turfs' air the plume temperature averages (life_environment_plume_temperature()).
+/mob/living/carbon/human/air_watch_around()
+	. = list()
+	var/turf/T = src.loc
+	if(!isturf(T))
+		return
+	for(var/turf/N as anything in vg_atmos_adjacent_turfs(T))
+		if(N.z != T.z || !N.heat_has_air())
+			continue
+		var/datum/gas_mixture/air = N.return_air()
+		if(air && !istype(air, /datum/gas_mixture/immutable) && !isnull(air.arena_id()))
+			. += air
 
 /mob/living/carbon/human/air_watch_levels_key()
 	return "[src.species?.type]|[src.breathes()]|[air_watch_body_reference()]"

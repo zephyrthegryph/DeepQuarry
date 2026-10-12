@@ -133,6 +133,13 @@
 #define BREATH_TOXINS_MIN 0.05
 /// A poison gas past this poisons (toxin in the blood) or displaces the breath (methane).
 #define BREATH_TOXINS_MAX 0.2
+/// Toxin injury per kPa of poison gas in a breath past BREATH_TOXINS_MAX, for each breath (one a Life frame while the breath
+/// is hazardous): 2 kPa of phoron burns about 6 a breath, from the first one.
+#define BREATH_POISON_INJURY_PER_KPA 3
+/// The least toxin injury a poisonous breath does.
+#define BREATH_POISON_INJURY_MIN 1
+/// The most toxin injury one poisonous breath does (about 20 kPa of phoron and up).
+#define BREATH_POISON_INJURY_MAX 20
 /// Nitrous oxide past this makes the breather giggle.
 #define BREATH_N2O_GIGGLE 0.15
 /// Nitrous oxide past this paralyses.
