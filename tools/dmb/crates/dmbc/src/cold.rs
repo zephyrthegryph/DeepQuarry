@@ -614,6 +614,8 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     measurement.complete();
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;
+    crate::class_inventory::contribute_source_strings(frontend, &bodies, &mut inventory)
+        .map_err(ColdError::Initializer)?;
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
     let owned_roster = if prepared_roster.is_none() {
@@ -759,8 +761,6 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;
-    crate::class_inventory::contribute_source_strings(frontend, &mut inventory)
-        .map_err(ColdError::Initializer)?;
     measurement.complete();
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);

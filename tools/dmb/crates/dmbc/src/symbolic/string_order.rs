@@ -20,9 +20,10 @@ pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> R
             return Err("first root string registration differs from current frozen source".into());
         }
         let mut strings = Vec::new();
-        // The lexical roster is authoritative for literals, including folded
-        // and unreachable ones. Captured frame/operand names supplement it;
-        // code reachability can never remove a captured literal registration.
+        // The chronological source roster is authoritative for formal/local
+        // names and literal leaves, including folded/unreachable ones. Frozen
+        // frame/operand names only supplement names absent from that roster;
+        // code reachability can never remove a captured registration.
         for name in unit
             .lowered
             .frame

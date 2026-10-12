@@ -6,9 +6,11 @@ use dm_link::{
 };
 use dm_tree::{allocation_ledger::AllocationKind, frontend::ColdFrontend};
 use std::{collections::HashSet, sync::Arc};
+mod callable;
 
 pub(crate) fn contribute_source_strings(
     frontend: &ColdFrontend,
+    bodies: &dm_tree::frontend::BodyArena<'_>,
     inventory: &mut LinkInventory,
 ) -> Result<(), String> {
     if inventory.string_registration.is_some() {
@@ -110,7 +112,18 @@ pub(crate) fn contribute_source_strings(
                 registration.events.push(Event::FirstRootCallable {
                     callable: crate::symbolic::unit_key(identity.identity),
                     declaration: occurrence.declaration.0,
-                    strings: candidate_literals(input.source(), &names)?.into(),
+                    strings: {
+                        // A demand may borrow a previously parsed owner; the
+                        // BodyArena's separate profile counts actual parses.
+                        let _profile =
+                            dm_profile::item("string_registration.first_root_body_demand");
+                        bodies
+                            .with_parsed(occurrence, |parsed| {
+                                callable::registrations(frontend, &input, parsed, &names)
+                            })
+                            .map_err(|error| error.message)??
+                            .into()
+                    },
                     source,
                 });
             }
@@ -126,8 +139,19 @@ pub(crate) fn contribute_source_strings(
 /// are never read. Nested interpolation literals use the same parsed expression
 /// visitor and cooked decoder as emission, without evaluating any branches.
 fn candidate_literals(text: &str, names: &HashSet<SymbolId>) -> Result<Vec<SymbolId>, String> {
-    let mut strings = Vec::new();
     let mut seen = HashSet::new();
+    Ok(candidate_literals_at(text, names, 0)?
+        .into_iter()
+        .filter_map(|(_, id)| seen.insert(id).then_some(id))
+        .collect())
+}
+
+fn candidate_literals_at(
+    text: &str,
+    names: &HashSet<SymbolId>,
+    base: usize,
+) -> Result<Vec<(usize, SymbolId)>, String> {
+    let mut strings = Vec::new();
     let mut error = None;
     let diagnostics = dm_syntax::visit_tokens(text, |token| {
         if token.kind != dm_syntax::TokenKind::String || error.is_some() {
@@ -136,8 +160,13 @@ fn candidate_literals(text: &str, names: &HashSet<SymbolId>) -> Result<Vec<Symbo
         if let Err(reason) =
             dm_codegen_byond::visit_constant_string_literals(token.text(text), |bytes| {
                 let id = SymbolId::of_bytes(bytes);
-                if names.contains(&id) && seen.insert(id) {
-                    strings.push(id);
+                if names.contains(&id) {
+                    match base.checked_add(token.span.start) {
+                        Some(at) => strings.push((at, id)),
+                        None => {
+                            error = Some("string registration source coordinate overflow".into())
+                        }
+                    }
                 }
             })
         {

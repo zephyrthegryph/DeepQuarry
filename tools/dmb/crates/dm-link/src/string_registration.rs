@@ -26,7 +26,9 @@ pub enum StringRegistrationEvent {
         source: StringRegistrationSource,
     },
     /// Exact first root proc occurrence, even if a later override is effective.
-    /// Captured literals survive folding/dead-code removal in its frozen code.
+    /// Current formal/local names and literal leaves in authored byte order.
+    /// These survive folding/dead-code removal in its frozen code; frame names
+    /// cannot be appended as an all-before/all-after-literals ordering shortcut.
     FirstRootCallable {
         callable: Key,
         declaration: u32,

@@ -246,6 +246,15 @@ impl<'a> ParameterDiagnosticSource<'a> {
             .map(|index| parameter_span(self.header, self.metadata, index))
             .transpose()
     }
+    /// Exact current occurrence coordinates, including repeated formal names.
+    /// Source consumers must not replace an earlier formal with rposition's
+    /// later diagnostic spelling match when deriving authored registration.
+    pub(crate) fn declaration_at(
+        &self,
+        index: usize,
+    ) -> Result<dm_codegen_byond::LowerSpan, String> {
+        parameter_span(self.header, self.metadata, index)
+    }
 }
 pub struct HelperInputs<'a> {
     pub frontend: &'a ColdFrontend,

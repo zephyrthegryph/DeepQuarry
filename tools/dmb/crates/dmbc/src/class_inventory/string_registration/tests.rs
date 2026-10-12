@@ -16,7 +16,11 @@ fn capture(source: &'static str) -> LinkInventory {
     )
     .unwrap();
     let mut inventory = LinkInventory::default();
-    contribute_source_strings(&frontend, &mut inventory).unwrap();
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        &frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    contribute_source_strings(&frontend, &bodies, &mut inventory).unwrap();
     inventory
 }
 
@@ -131,4 +135,66 @@ fn string_allocation_captures_nested_literals_in_current_first_root_even_unselec
         Event::FirstRootCallable { strings, .. }
             if strings.as_ref() == [SymbolId::of("a_second"), SymbolId::of("type_value")])
     );
+}
+
+fn first_root_strings(source: &'static str) -> Vec<SymbolId> {
+    capture(source)
+        .string_registration
+        .unwrap()
+        .events
+        .into_iter()
+        .find_map(|event| match event {
+            Event::FirstRootCallable { strings, .. } => Some(strings.to_vec()),
+            _ => None,
+        })
+        .unwrap()
+}
+
+#[test]
+fn string_allocation_formal_and_local_names_precede_later_literals_from_current_body() {
+    for source in [
+        "/proc/first(z_first)\n    return \"a_second\"\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
+        "/proc/first()\n    var/z_first = 7\n    return \"a_second\"\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
+    ] {
+        assert_eq!(first_root_strings(source), [SymbolId::of("z_first"), SymbolId::of("a_second")]);
+    }
+}
+
+#[test]
+fn string_allocation_literal_before_local_is_not_reordered_by_complete_frame_names() {
+    assert_eq!(first_root_strings(
+        "/proc/first()\n    var/temporary = \"a_second\"\n    var/z_first = 7\n    return z_first\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
+    ), [SymbolId::of("a_second"), SymbolId::of("z_first")]);
+}
+
+#[test]
+fn string_allocation_loop_and_catch_declarations_interleave_with_literals() {
+    assert_eq!(first_root_strings(
+        "/proc/first()\n    for(var/z_first in list(\"a_second\"))\n        try\n            throw 7\n        catch(var/type_value)\n            return type_value\n/datum/orderholder\n    var/z_first = 1\n    var/type_value = 2\n    var/a_second = 3\n",
+    ), [SymbolId::of("z_first"), SymbolId::of("a_second"), SymbolId::of("type_value")]);
+}
+
+#[test]
+fn string_allocation_uses_the_same_parsed_slot_consumed_by_lowering() {
+    let frontend = dm_tree::frontend::build(Path::new("probe.dme"), &Source(
+        "/proc/first()\n    var/z_first = 7\n    return \"a_second\"\n/datum/orderholder\n    var/z_first = 1\n    var/a_second = 2\n",
+    ), &Default::default(), 1).unwrap();
+    let bodies = dm_tree::frontend::BodyArena::new_typed(
+        &frontend,
+        dm_codegen_byond::typed_statements_supported_for_capture,
+    );
+    let body = &frontend.bodies[0];
+    let before = bodies
+        .with_parsed(body, |parsed| {
+            Arc::as_ptr(&parsed.shared_statement_body().unwrap()) as usize
+        })
+        .unwrap();
+    let mut inventory = LinkInventory::default();
+    contribute_source_strings(&frontend, &bodies, &mut inventory).unwrap();
+    let consumed = bodies.take_parsed(body).unwrap();
+    assert_eq!(
+        Arc::as_ptr(&consumed.shared_statement_body().unwrap()) as usize,
+        before
+    );
+    assert!(bodies.take_parsed(body).is_err());
 }

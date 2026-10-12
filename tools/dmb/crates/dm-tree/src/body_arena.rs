@@ -160,6 +160,9 @@ impl<'frontend> BodyArena<'frontend> {
 
     fn ensure_parsed(&self, slot: &mut BodyState<'frontend>, occurrence: &BodyOccurrence) {
         if matches!(slot, BodyState::Unparsed) {
+            // Counts actual lazy parse executions, independently of consumers
+            // demanding a body or reusing an already prepared statement owner.
+            let _profile = dm_profile::item("frontend.body_arena_parse");
             #[cfg(test)]
             self.parses
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
