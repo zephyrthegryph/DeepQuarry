@@ -55,6 +55,9 @@
 			if(WORLD_COND_BAND)
 				var/list/handle = condition[2]
 				W.token = vg_world_watch_band(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5])
+			if(WORLD_COND_BANDS)
+				var/list/handle = condition[2]
+				W.token = vg_world_watch_bands(handle[1], W.handle, rust_lane, handle[2], condition[3], condition[4], condition[5])
 			if(WORLD_COND_DIFFERENCE)
 				var/list/handle_a = condition[2]
 				var/list/handle_b = condition[3]

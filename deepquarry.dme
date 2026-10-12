@@ -3320,6 +3320,7 @@
 #include "code\modules\mob\living\default_language.dm"
 #include "code\modules\mob\living\inventory.dm"
 #include "code\modules\mob\living\life.dm"
+#include "code\modules\mob\living\life\air_watch.dm"
 #include "code\modules\mob\living\life\living_systems.dm"
 #include "code\modules\mob\living\life\statuses.dm"
 #include "code\modules\mob\living\life\life_om.dm"

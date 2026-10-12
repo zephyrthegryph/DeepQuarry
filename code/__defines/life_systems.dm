@@ -46,9 +46,15 @@
 #define MOB_KEY_NUTRITION "mob_nutrition"
 /// A mob picked up, dropped or swapped what it holds in its hands (a window that needs a held tool re-checks its status).
 #define MOB_KEY_HANDS "mob_hands"
-/// The air on the mob's turf changed in place (gas arrived or left: the turf's gas overlays changed, turf_air_changed()).
-/// The breathing step reads it, so a gas filling a room wakes the breathers standing in it.
+/// The air the mob stands in crossed a level that matters to it (its air watch, air_watch.dm: oxygen, toxins, N2O, CO2,
+/// temperature or pressure moved into another band). The breathing
+/// and environment steps read it, so a gas filling a room, the oxygen draining or the room heating wakes the breathers in it.
 #define MOB_KEY_AIR "mob_air"
+/// The mob's body temperature crossed a level that matters to it (its body heat watch, air_watch.dm): the comfort band
+/// around its set point, the discomfort and harm levels. Thermoregulation, environment and medical read it.
+#define MOB_KEY_BODY_HEAT "mob_body_heat"
+/// The mob's radiation dose changed (add_radiation(), purge_radiation(), clear_radiation()). The radiation step reads it.
+#define MOB_KEY_RADIATION "mob_radiation"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
 #define ATOM_KEY_LOC "atom_loc"
 
@@ -79,12 +85,22 @@
 #define LIFE_MAX_CATCHUP 2
 /// Frames in a row that must end with every step asleep before a mob parks.
 #define LIFE_PARK_AFTER 2
-// --- Steady-state resampling (idle rules with a rewake behind them; w5 human sleep rules) ------
-/// A carbon breathing stage idle in steady air re-samples it this often (air can change in place).
-#define BREATH_STEADY_RESAMPLE (30 SECONDS)
-/// A human environment stage idle in comfortable air re-samples it this often.
-#define ENVIRONMENT_STEADY_RESAMPLE (15 SECONDS)
-/// A human chemicals stage with nothing to metabolise wakes this often to charge hunger.
+// --- Wakes first, resampling only as a fallback (doc/rewrite/life_on_om.md §5) ------------------
+// A sleeping step is woken by the change of what it reads (its `reads`, listed with their producers in `woken_by`).
+// A rewake no shorter than LIFE_SAFETY_RESAMPLE is only a safety net behind those wakes; a shorter one is allowed only
+// for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by
+// (life_om/steps_declare_their_wakes checks it).
+/// The safety re-check behind a step's wakes: a missed wake costs at most this long.
+#define LIFE_SAFETY_RESAMPLE (2 MINUTES)
+/// The woken_by entry of a step whose rewake is its work (it drifts with time), not a stand-in for a missing wake.
+#define LIFE_WOKEN_BY_TIME "time"
+/// The woken_by entry of a step whose short rewake stands in for an input no producer publishes yet (a known gap, named).
+#define LIFE_WOKEN_BY_POLL "poll"
+/// A carbon breathing stage idle in steady air: woken by its air watch, moving, equipment; this is the fallback.
+#define BREATH_STEADY_RESAMPLE LIFE_SAFETY_RESAMPLE
+/// A human environment stage idle in comfortable air: woken by its air watch and body heat watch; this is the fallback.
+#define ENVIRONMENT_STEADY_RESAMPLE LIFE_SAFETY_RESAMPLE
+/// A human chemicals stage with nothing to metabolise wakes this often to charge hunger (time-driven: hunger drifts).
 #define NUTRITION_RESAMPLE (30 SECONDS)
 /// At most this many Life cycles of hunger are charged at once after a nap.
 #define NUTRITION_CATCHUP_CYCLES 50
@@ -102,3 +118,22 @@
 #else
 #define LIFE_PROFILE_STRIDE 0
 #endif
+
+// --- Breath levels (kPa of a gas in the breath; the same as in the air breathed) --------------------
+// The breath code acts on them and a breather's air watch (air_watch.dm) wakes on crossing them: one list.
+/// The species' exhaled gas past this crowds out the breath (hypercapnia); 0.6 and 0.7 of it warn and start to worsen it.
+#define BREATH_EXHALED_MAX 10
+/// A poison gas (the species' poison_type, methane) past this is smelt or burns.
+#define BREATH_TOXINS_MIN 0.05
+/// A poison gas past this poisons (toxin in the blood) or displaces the breath (methane).
+#define BREATH_TOXINS_MAX 0.2
+/// Nitrous oxide past this makes the breather giggle.
+#define BREATH_N2O_GIGGLE 0.15
+/// Nitrous oxide past this paralyses.
+#define BREATH_N2O_PARALYSE 1
+/// Nitrous oxide past this puts the breather to sleep.
+#define BREATH_N2O_SLEEP 5
+/// Kelvin below the species' normal body temperature where cold exposure (hypothermia) begins (the medical metric trigger).
+#define DQ_COLD_EXPOSURE_KELVIN 20
+/// Kelvin above it where heat exposure (heatstroke) begins.
+#define DQ_HEAT_EXPOSURE_KELVIN 5

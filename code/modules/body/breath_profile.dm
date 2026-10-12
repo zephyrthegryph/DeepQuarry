@@ -70,13 +70,14 @@
 
 /// Poison gas (the species' poison_type) in the breath: toxin in the blood and an alert.
 /mob/living/carbon/human/proc/breathe_poison(datum/gas_mixture/breath, poison_type, breath_moles, breath_pressure)
-	var/safe_toxins_min = 0.05
-	var/safe_toxins_max = 0.2
+	var/safe_toxins_min = BREATH_TOXINS_MIN
+	var/safe_toxins_max = BREATH_TOXINS_MAX
 	var/poison = LINDA_GAS_AMT(breath, poison_type)
 	var/toxins_pp = (poison / breath_moles) * breath_pressure
 	if(toxins_pp > safe_toxins_min)
+		breath_hazard = TRUE
 		var/phoron_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
-		if(phoron_pp > 0.05 && prob(3))
+		if(phoron_pp > BREATH_TOXINS_MIN && prob(3))
 			to_chat(src, span_warning("Something burns as you breathe."))
 	if(toxins_pp > safe_toxins_max)
 		var/ratio = (poison / safe_toxins_max) * 10
@@ -92,9 +93,11 @@
 	var/n2o = LINDA_GAS_AMT(breath, GAS_N2O)
 	if(!n2o)
 		return
-	var/SA_para_min = 1
-	var/SA_sleep_min = 5
+	var/SA_para_min = BREATH_N2O_PARALYSE
+	var/SA_sleep_min = BREATH_N2O_SLEEP
 	var/SA_pp = (n2o / breath_moles) * breath_pressure
+	if(SA_pp > BREATH_N2O_GIGGLE)
+		breath_hazard = TRUE
 	// Enough to make us paralysed for a bit
 	if(SA_pp > SA_para_min)
 		// 3 gives them one second to wake up and run away a bit!
@@ -104,7 +107,7 @@
 		if(SA_pp > SA_sleep_min)
 			status_at_least(STAT_SLEEPING, 5)
 	// There is sleeping gas in their lungs, but only a little, so give them a bit of a warning
-	else if(SA_pp > 0.15)
+	else if(SA_pp > BREATH_N2O_GIGGLE)
 		if(prob(20))
 			emote(pick("giggle", "laugh"))
 	breath.adjust_gas(GAS_N2O, -n2o / 6, update = 0) //update after
@@ -170,9 +173,10 @@
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 		return
 	H.clear_alert("pressure")
+	H.breath_hazard = FALSE
 
 	var/datum/species/S = H.species
-	var/safe_exhaled_max = 10
+	var/safe_exhaled_max = BREATH_EXHALED_MAX
 	var/min_pressure = S.minimum_breath_pressure
 	var/breath_pressure = (breath_total * R_IDEAL_GAS_EQUATION * breath.return_temperature()) / BREATH_VOLUME
 	var/inhaling = LINDA_GAS_AMT(breath, intake_gas)

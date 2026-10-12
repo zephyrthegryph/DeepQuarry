@@ -384,8 +384,53 @@ fn world_watch_band(
         unit: chans[ch_id.index()].unit,
         levels,
         hysteresis: self::hysteresis(&hysteresis)?,
+        quiet: false,
     };
     watch(&code, &sub, &lane, &cond)
+}
+
+/// `om_world_when` bands on several channels of one cell, as one watch: wakes
+/// when any of `chs` moves into a different band of its own increasing list in
+/// `levels` (the same position). Quiet at registration: the watcher has just
+/// read the state itself, so only a later crossing wakes it. `hysteresis`
+/// < 0 takes each channel's. A breather's air watch (one per breather, on its
+/// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+#[auxmacros::bind("/proc/world_watch_bands")]
+fn world_watch_bands(
+    code: ByondValue,
+    sub: ByondValue,
+    lane: ByondValue,
+    cell: ByondValue,
+    chs: ByondValue,
+    levels: ByondValue,
+    hysteresis: ByondValue,
+) -> Result<ByondValue> {
+    let chans = channels(whole(&code, "code")?)?;
+    let cell = cell_arg(&cell)?;
+    let hyst = self::hysteresis(&hysteresis)?;
+    let chs = chs.get_list_values()?;
+    let lists = levels.get_list_values()?;
+    if chs.len() != lists.len() || chs.is_empty() {
+        bail!("world_watch_bands: {} channels, {} level lists", chs.len(), lists.len());
+    }
+    let mut bands = Vec::with_capacity(chs.len());
+    for (ch, list) in chs.iter().zip(&lists) {
+        let ch_id = channel(&chans, ch)?;
+        let levels = list
+            .get_list_values()?
+            .iter()
+            .map(|v| Ok(v.get_number()?))
+            .collect::<Result<Vec<f32>>>()?;
+        bands.push(Cond::Band {
+            cell,
+            ch: ch_id,
+            unit: chans[ch_id.index()].unit,
+            levels,
+            hysteresis: hyst,
+            quiet: true,
+        });
+    }
+    watch(&code, &sub, &lane, &Cond::Any(bands))
 }
 
 /// `om_world_when` difference: `a - b` (or `|a - b|` with `abs`) on channel

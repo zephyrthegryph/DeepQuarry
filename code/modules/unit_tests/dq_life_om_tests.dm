@@ -93,6 +93,14 @@
 /proc/life_test_asleep(mob/living/L, key)
 	return seq_step_asleep(L, LIFE_SEQ, key)
 
+/// Deciseconds until step `key`'s rewake fires on `L`, or 0 when none is pending.
+/proc/life_test_rewake_in(mob/living/L, key)
+	var/datum/seq_state/state = life_test_state(L)
+	var/datum/seq_step/S = state?.table.by_key?[key]
+	if(!S || !S.pos || length(state.rewake_at) < S.pos || isnull(state.rewake_at[S.pos]))
+		return 0
+	return max(state.rewake_at[S.pos] - seq_rewake_now(L), 0.1)
+
 /// Steps of `L` that are awake.
 /proc/life_test_awake(mob/living/L)
 	. = list()
@@ -1078,8 +1086,11 @@
 	TEST_ASSERT_EQUAL(H.see_in_dark, 77, "walking around doesn't recompute sight")
 	H.see_in_dark = 8
 	H.remove_mutation(XRAY)
+	var/queued_after_remove = life_test_rx_queued(H, "life_vision_changed")
+	var/readers = READERS(H, MOB_KEY_CONDITIONS)
 	life_test_advance(1)
-	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away")
+	log_world("npc_vision: queued [queued_after_remove] readers [readers] sight [H.sight]")
+	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away (still has it: [H.has_mutation(XRAY)], mutations [json_encode(H.mutations)], see_in_dark [H.see_in_dark], wanted [H.life_vision_wanted()])")
 	H.death()
 	life_test_advance(1)
 	TEST_ASSERT(H.sight & SEE_TURFS, "the dead see everything (stat raises the vision channel)")

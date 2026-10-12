@@ -20,7 +20,7 @@
 //! |---|---|
 //! | `Changed(cell, mask)` | a listed channel moves more than its declared hysteresis from the baseline (the value at the last fire). Vector channels compare per component; enum channels fire on any change. The reason is the mask of channels that moved. Never fires at registration. |
 //! | `Threshold(cell, level)` | `Above` enters at `v >= limit` and leaves at `v < limit - h`; `Below` enters at `v <= limit` and leaves at `v > limit + h`. Fires on entering (and, with `Edge::Both`, on leaving). If the condition already holds at registration, the first evaluation fires. |
-//! | `Band(cell, ch, levels)` | the band (the number of levels `<= v`) changes. Moving up takes effect at the level; moving down needs `v < level - h`. Always fires once at registration, to report the starting band. |
+//! | `Band(cell, ch, levels)` | the band (the number of levels `<= v`) changes. Moving up takes effect at the level; moving down needs `v < level - h`. Fires once at registration, to report the starting band, unless `quiet` (then the first evaluation only takes the band). |
 //! | `Difference(a, b, level, abs)` | `a - b` (or `|a - b|`) crosses `level` exactly as a `Threshold` would. |
 //! | `ThresholdSet(cell, ch)` | any of its entries crosses (each entry is a `Threshold` with a payload and generation). Every crossing emits an [`EventKind::ThresholdCrossed`] event plus one wake. Entries are added and removed by command without touching the others. |
 //! | `Any([..])` | any child fires; the reasons are merged. |
@@ -135,6 +135,8 @@ pub enum Cond {
         /// Strictly increasing, and further apart than the hysteresis.
         levels: Vec<f32>,
         hysteresis: Option<f32>,
+        /// Takes the starting band silently instead of reporting it (a watcher that has just read the state itself).
+        quiet: bool,
     },
     Difference {
         a: u32,
@@ -375,6 +377,7 @@ fn compile(
             unit,
             levels,
             hysteresis,
+            quiet,
         } => {
             check_cell(*cell, cells)?;
             let info = scalar_channel(chans, *ch, *unit)?;
@@ -403,6 +406,7 @@ fn compile(
                 levels: levels.clone().into_boxed_slice(),
                 hyst,
                 band: None,
+                quiet: *quiet,
             }
         }
         Cond::Difference { a, b, level, abs } => {
@@ -558,6 +562,7 @@ enum Node {
         levels: Box<[f32]>,
         hyst: f32,
         band: Option<usize>,
+        quiet: bool,
     },
     Difference {
         a: u32,
@@ -687,6 +692,7 @@ impl Node {
                 levels,
                 hyst,
                 band,
+                quiet,
             } => {
                 let v = r.scalar(*cell, *ch);
                 if !v.is_finite() {
@@ -703,8 +709,11 @@ impl Node {
                     }
                 };
                 if *band != Some(next) {
+                    let first = band.is_none();
                     *band = Some(next);
-                    fired.add(reason::CONDITION | ch.bit(), *cell);
+                    if !(first && *quiet) {
+                        fired.add(reason::CONDITION | ch.bit(), *cell);
+                    }
                 }
             }
             Self::Difference { a, b, abs, t } => {

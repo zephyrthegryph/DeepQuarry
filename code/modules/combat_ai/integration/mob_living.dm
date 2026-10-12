@@ -40,6 +40,9 @@ CAPABILITIES(/mob/living)
 	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
 	ref_one(nameof(internal))
 	owns_one(nameof(ai_brain), /datum/ai_brain)
+	// Life's wake sources on the air and the body temperature (code/modules/mob/living/life/air_watch.dm).
+	owns_one(nameof(air_watch), /datum/native_watch/world)
+	owns_one(nameof(body_heat_watch), /datum/native_watch/heat)
 	on_change(STAT_AI_AUTHORITY, ANY, then(PROC_REF(ai_authority_changed)))
 	on_change(STAT_RELEVANCE, ANY, then(PROC_REF(ai_relevance_changed)))
 	owns_one(nameof(aiming), /obj/aiming_overlay)
