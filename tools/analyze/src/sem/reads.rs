@@ -162,6 +162,9 @@ pub struct ReadSet {
     pub effects: Vec<Effect>,
     /// `type::proc` bodies the walk followed (for the graph and for incremental invalidation).
     pub followed: BTreeSet<String>,
+    /// Procs in an opaque (engine-internal) directory the walk reached but did not enter, with the call site: what they read is
+    /// invisible to the graph, so a consumer that calls one cannot prove its inputs complete (`gen deps`, `untracked_inputs`).
+    pub opaque: BTreeMap<String, (String, u32)>,
 }
 
 impl ReadSet {
@@ -368,6 +371,8 @@ struct Walk<'a, 'e> {
     /// Inside `read_once(...)`: reads are evaluated but neither recorded nor subscribed.
     mute: u32,
     memo: bool,
+    /// The file of the body being walked (the call site of an opaque crossing).
+    rel: String,
 }
 
 impl<'a> ReadsEngine<'a> {
@@ -384,7 +389,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false, rel: String::new() };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -396,7 +401,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false, rel: String::new() };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -406,7 +411,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_memo(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some("/datum/act/eval".to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: true };
+        let mut w = Walk { eng: self, ctx_override: Some("/datum/act/eval".to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: true, rel: String::new() };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -660,6 +665,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !self.eng.opaque_dirs.is_empty() {
             let rel = self.eng.sem.rel(value.location);
             if self.eng.opaque_dirs.iter().any(|d| rel.starts_with(d.as_str())) {
+                if self.depth > 0 && self.mute == 0 {
+                    let key = format!("{}::{}", owner, p.name());
+                    let site = (self.rel.clone(), self.line);
+                    self.out.opaque.entry(key).or_insert(site);
+                }
                 return;
             }
         }
@@ -685,9 +695,11 @@ impl<'a, 'e> Walk<'a, 'e> {
             fr.locals.insert(prm.name.clone(), v);
         }
         collect_narrowing(code, &mut fr.narrow);
+        let outer_rel = std::mem::replace(&mut self.rel, fr.rel.clone());
         self.depth += 1;
         self.block(&mut fr, code);
         self.depth -= 1;
+        self.rel = outer_rel;
     }
 
     fn block(&mut self, fr: &mut Frame<'a>, b: &Block) {

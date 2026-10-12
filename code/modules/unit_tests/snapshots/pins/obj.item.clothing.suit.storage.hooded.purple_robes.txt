@@ -2,7 +2,7 @@
 +5 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage robot|none
 +6 menu: Toggle Eyes (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +2 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/tool/screwdriver
@@ -18,11 +18,11 @@
 @obj.item.clothing.suit human|/obj/item/weldingtool
 +5 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/stack/cable_coil
-+6 menu: Toggle Eyes (refused: You can't do that.)
++5 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit human|/obj/item/stack/material/steel
 +5 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/card/id
-+6 menu: Toggle Eyes (refused: You can't do that.)
++5 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/kit
 +6 menu: Toggle Eyes (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/storage

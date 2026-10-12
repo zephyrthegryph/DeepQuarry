@@ -12,7 +12,7 @@
 +6 menu: Toggle Shield (refused: You can't do that.)
 +7 menu: Use
 +8 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +2 menu: Toggle Gun (refused: You can't do that.)
 +3 menu: Toggle Shield (refused: You can't do that.)
@@ -63,10 +63,10 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
++3 menu: Toggle Gun (refused: You can't do that.)
++4 menu: Toggle Shield (refused: You can't do that.)
++5 menu: Use
++6 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alternate use
@@ -77,10 +77,10 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alternate use
-+4 menu: Toggle Gun (refused: You can't do that.)
-+5 menu: Toggle Shield (refused: You can't do that.)
-+6 menu: Use
-+7 click: Click: Use
++3 menu: Toggle Gun (refused: You can't do that.)
++4 menu: Toggle Shield (refused: You can't do that.)
++5 menu: Use
++6 click: Click: Use
 @obj human|/obj/item/kit
 +0 menu: Alternate use
 +4 menu: Toggle Gun (refused: You can't do that.)
@@ -93,7 +93,7 @@
 +5 menu: Toggle Shield (refused: You can't do that.)
 +6 menu: Use
 +7 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 +3 menu: Toggle Gun (refused: You can't do that.)
 +4 menu: Toggle Shield (refused: You can't do that.)
 keys: alt, collect_item, destroy_cell, drag_buckle, gen_silicon_item_silicon_equip_module, hand, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, recolor, remove_cell, toggle_digestable, toggle_shield_effect, weapon_toggle_effect

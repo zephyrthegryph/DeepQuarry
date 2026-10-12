@@ -4,7 +4,7 @@
 @obj robot|none
 +0 menu: Click
 +4 menu: Toggle blade
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 +0 menu: Click
@@ -26,13 +26,13 @@
 +2 menu: Toggle blade
 @obj human|/obj/item/stack/cable_coil
 +0 menu: Click
-+3 menu: Toggle blade
++2 menu: Toggle blade
 @obj human|/obj/item/stack/material/steel
 +0 menu: Click
 +2 menu: Toggle blade
 @obj human|/obj/item/card/id
 +0 menu: Click
-+3 menu: Toggle blade
++2 menu: Toggle blade
 @obj human|/obj/item/kit
 +0 menu: Click
 +3 menu: Toggle blade

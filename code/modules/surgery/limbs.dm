@@ -194,7 +194,7 @@
 	return part.disfigured
 
 /datum/surgical_step/reconstruct_face/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	part.disfigured = FALSE
+	part.set_disfigured(FALSE)
 	log_game("SURGERY: [key_name(user)] reconstructed [key_name(target)]'s face")
 
 /// Rebuild husked tissue: scaffold, relocate flesh and regrow vessels in one

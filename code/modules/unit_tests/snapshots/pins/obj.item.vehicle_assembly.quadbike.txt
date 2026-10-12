@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -13,10 +13,10 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-human|/obj/item/stack/material/plastic menu: Build wheeled (refused: You don't have enough for that.)
-human|/obj/item/stack/material/plastic menu: Move To Top
-human|/obj/item/stack/material/plastic menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/plastic click: Click: Build wheeled
+@obj human|/obj/item/stack/material/plastic
+-click: nothing
++0 menu: Build wheeled (refused: You don't have enough for that.)
++3 click: Click: Build wheeled
 @obj human|/obj/item/stock_parts/console_screen
 @obj human|/obj/item/stock_parts/spring
 @obj human|/obj/item/cell

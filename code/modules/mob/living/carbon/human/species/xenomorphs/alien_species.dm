@@ -108,7 +108,7 @@
 		H.mind.special_role = JOB_ALIEN
 
 	alien_number++ //Keep track of how many aliens we've had so far.
-	H.real_name = "xenomorph [caste_name] ([alien_number])"
+	H.set_real_name("xenomorph [caste_name] ([alien_number])")
 	H.name = H.real_name
 
 	..()
@@ -306,10 +306,10 @@
 	..()
 	// Make sure only one official queen exists at any point.
 	if(!alien_queen_exists(1,H))
-		H.real_name = "xenomorph queen ([alien_number])"
+		H.set_real_name("xenomorph queen ([alien_number])")
 		H.name = H.real_name
 	else
-		H.real_name = "xenomorph princess ([alien_number])"
+		H.set_real_name("xenomorph princess ([alien_number])")
 		H.name = H.real_name
 
 /datum/hud_data/alien

@@ -500,7 +500,7 @@ CAPABILITIES(/obj/machinery/transhuman/resleever)
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences
 	if(!occupant.original_player)
-		occupant.real_name = occupant.mind.name
+		occupant.set_real_name(occupant.mind.name)
 		occupant.name = occupant.real_name
 		occupant.dna.real_name = occupant.real_name
 

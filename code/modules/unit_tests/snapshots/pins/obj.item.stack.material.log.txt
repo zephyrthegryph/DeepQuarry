@@ -1,14 +1,14 @@
 @obj.item.stack human|none
 @obj.item.stack robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack.material human|/obj/item/tool/screwdriver
 @obj.item.stack.material human|/obj/item/tool/crowbar
 @obj.item.stack.material human|/obj/item/tool/wrench
 @obj.item.stack human|/obj/item/tool/wirecutters
 -click: Click: Split
-+0 menu: Log cut
-+4 menu: Use
++3 menu: Use
++4 menu: Use wirecutters
 +5 click: Click: Log cut
 @obj.item.stack.material human|/obj/item/multitool
 @obj.item.stack human|/obj/item/weldingtool

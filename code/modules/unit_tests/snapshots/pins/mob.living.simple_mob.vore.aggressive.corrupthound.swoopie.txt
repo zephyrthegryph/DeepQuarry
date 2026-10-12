@@ -9,61 +9,61 @@
 @mob.living.simple_mob.vore human|/obj/item/tool/screwdriver
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/tool/crowbar
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/tool/wrench
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/tool/wirecutters
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/multitool
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/weldingtool
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/stack/cable_coil
 -menu: Pet
 -click: Click: Pet
-+8 menu: Take Vac-Pack
-+10 menu: Toggle Vac-Pack
-+12 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/stack/material/steel
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item/card/id
 -menu: Pet
 -click: Click: Pet
-+8 menu: Take Vac-Pack
-+10 menu: Toggle Vac-Pack
-+12 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 @mob.living.simple_mob.vore human|/obj/item
 -menu: Pet
 -click: Click: Pet
-+7 menu: Take Vac-Pack
-+9 menu: Toggle Vac-Pack
-+11 click: Click: Use on
++6 menu: Take Vac-Pack
++7 menu: Toggle Vac-Pack
++9 click: Click: Use on
 keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, nutrition_heal, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, swoopie_hand_disarm, swoopie_hand_grab, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

@@ -113,7 +113,7 @@
 /// Dispatching a UI action directly has no ambient usr: it must use the supplied actor.
 /datum/unit_test/interim_airlock_electronics_login_actor/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
-	actor.real_name = "Explicit Electronics Configurator"
+	actor.set_real_name("Explicit Electronics Configurator")
 	actor.name = actor.real_name
 	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
 	TEST_ASSERT(electronics.locked, "Electronics must initially be locked")
@@ -125,7 +125,7 @@
 
 /datum/unit_test/interim_airlock_wire_electrify_actor/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
-	actor.real_name = "Explicit Wire Operator"
+	actor.set_real_name("Explicit Wire Operator")
 	actor.name = actor.real_name
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
 	dq_machine_clear(door)

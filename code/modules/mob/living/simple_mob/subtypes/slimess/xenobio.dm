@@ -293,9 +293,6 @@
 	water_resist = 10 //I heard putting this higher makes them heal.
 
 
-/mob/living/simple_mob/slime/xenobio/oceanic/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/oceanic/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.ocean_aura()
@@ -389,9 +386,6 @@
 		/mob/living/simple_mob/slime/xenobio/sepia,
 		/mob/living/simple_mob/slime/xenobio/nuclear
 		)
-
-/mob/living/simple_mob/slime/xenobio/nuclear/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/nuclear/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -526,9 +520,6 @@
 		)
 
 
-/mob/living/simple_mob/slime/xenobio/nightmare/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/nightmare/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.nightmare_aura()
@@ -645,9 +636,6 @@
 			/mob/living/simple_mob/slime/xenobio/plague,
 			/mob/living/simple_mob/slime/xenobio/sound
 		)
-
-/mob/living/simple_mob/slime/xenobio/sound/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/sound/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

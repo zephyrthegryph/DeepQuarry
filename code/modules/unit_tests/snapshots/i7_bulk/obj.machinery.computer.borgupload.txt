@@ -7,7 +7,7 @@ human|none click: Click: Select cyborg
 +2 menu: Install module (refused: needs a AI module)
 +3 menu: Select cyborg
 +5 click: Click: Select cyborg
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 -click: nothing
 +1 menu: Install module (refused: needs a AI module)
@@ -15,47 +15,91 @@ human|none click: Click: Select cyborg
 +3 click: Click: View
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
+-menu: Use screwdriver
 +2 menu: Install module (refused: needs a AI module)
++3 menu: Move To Top
 +4 menu: Select cyborg
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
+-menu: Use crowbar
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
+-menu: Use wrench
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
+-menu: Use wirecutters
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
+-menu: Use multitool
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
+-menu: Use welding tool
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
+-menu: Use cable coil
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Make Cable Restraints (refused: You can't do that.)
++3 menu: Move To Top
 +4 menu: Select cyborg
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
+-menu: Use steel sheet
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 @obj.machinery.computer human|/obj/item/card/id
 -menu: Use
+-menu: Use identification card
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
++3 menu: Read ID Card (refused: You can't do that.)
 +4 menu: Select cyborg
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 @obj.machinery.computer human|/obj/item
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aiModule
 -menu: Access Computer's Internals
 -menu: Select AI
+-menu: Use AI module
++2 menu: Move To Top
 +3 menu: Select cyborg
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Use item
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, install_module, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, observer_view, robot_remote_blocked, select_borg, silicon_hand, use_gripper, use_item

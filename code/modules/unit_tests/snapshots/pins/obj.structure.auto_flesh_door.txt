@@ -6,64 +6,44 @@ robot|none menu: Knock
 robot|none click: Click: Knock
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+6 click: Click: Knock
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+6 click: Click: Knock
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Hammer on
-+2 menu: Knock
-+5 click: Click: Knock
+human|/obj/item/tool/screwdriver menu: Hammer on
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Knock
+human|/obj/item/tool/screwdriver click: Click: Knock
+human|/obj/item/tool/crowbar menu: Hammer on
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Knock
+human|/obj/item/tool/crowbar click: Click: Knock
+human|/obj/item/tool/wrench menu: Hammer on
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Knock
+human|/obj/item/tool/wrench click: Click: Knock
+human|/obj/item/tool/wirecutters menu: Hammer on
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Knock
+human|/obj/item/tool/wirecutters click: Click: Knock
+human|/obj/item/multitool menu: Hammer on
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Knock
+human|/obj/item/multitool click: Click: Knock
+human|/obj/item/weldingtool menu: Hammer on
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Knock
+human|/obj/item/weldingtool click: Click: Knock
+human|/obj/item/stack/cable_coil menu: Hammer on
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Knock
+human|/obj/item/stack/cable_coil click: Click: Knock
+human|/obj/item/stack/material/steel menu: Hammer on
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Knock
+human|/obj/item/stack/material/steel click: Click: Knock
+human|/obj/item/card/id menu: Hammer on
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Knock
+human|/obj/item/card/id click: Click: Knock
+human|/obj/item menu: Hammer on
+human|/obj/item menu: Hit
+human|/obj/item menu: Knock
+human|/obj/item click: Click: Knock
 keys: drag_buckle, flesh_door_hand_disarm, flesh_door_hand_grab, flesh_door_hand_help, flesh_door_hand_hurt, melee_hit

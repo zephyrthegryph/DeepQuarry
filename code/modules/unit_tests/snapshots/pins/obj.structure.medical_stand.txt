@@ -11,85 +11,64 @@ robot|none click: Click: Medical stand interaction hand
 @obj ghost|none
 +0 menu: Set IV transfer amount
 +1 menu: Toggle IV Mode (refused: You can't do that.)
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 menu: Use wrench
-+8 click: Click: Use wrench
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+2 menu: Medical stand interaction hand
-+3 menu: Medical stand interaction item
-+5 menu: Set IV transfer amount
-+7 menu: Toggle IV Mode
-+8 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+5 menu: Set IV transfer amount
-+7 menu: Toggle IV Mode
-+8 click: Click: Medical stand interaction item
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+1 menu: Medical stand interaction hand
-+2 menu: Medical stand interaction item
-+4 menu: Set IV transfer amount
-+6 menu: Toggle IV Mode
-+7 click: Click: Medical stand interaction item
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Medical stand interaction hand
+human|/obj/item/tool/screwdriver menu: Set IV transfer amount
+human|/obj/item/tool/screwdriver menu: Toggle IV Mode
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Medical stand interaction item
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Medical stand interaction hand
+human|/obj/item/tool/crowbar menu: Set IV transfer amount
+human|/obj/item/tool/crowbar menu: Toggle IV Mode
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Medical stand interaction item
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Medical stand interaction hand
+human|/obj/item/tool/wrench menu: Set IV transfer amount
+human|/obj/item/tool/wrench menu: Toggle IV Mode
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Medical stand interaction hand
+human|/obj/item/tool/wirecutters menu: Set IV transfer amount
+human|/obj/item/tool/wirecutters menu: Toggle IV Mode
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Medical stand interaction item
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Medical stand interaction hand
+human|/obj/item/multitool menu: Set IV transfer amount
+human|/obj/item/multitool menu: Toggle IV Mode
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Medical stand interaction item
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Medical stand interaction hand
+human|/obj/item/weldingtool menu: Set IV transfer amount
+human|/obj/item/weldingtool menu: Toggle IV Mode
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Medical stand interaction item
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Medical stand interaction hand
+human|/obj/item/stack/cable_coil menu: Set IV transfer amount
+human|/obj/item/stack/cable_coil menu: Toggle IV Mode
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Medical stand interaction item
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Medical stand interaction hand
+human|/obj/item/stack/material/steel menu: Set IV transfer amount
+human|/obj/item/stack/material/steel menu: Toggle IV Mode
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Medical stand interaction item
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Medical stand interaction hand
+human|/obj/item/card/id menu: Set IV transfer amount
+human|/obj/item/card/id menu: Toggle IV Mode
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Medical stand interaction item
+human|/obj/item menu: Hit
+human|/obj/item menu: Medical stand interaction hand
+human|/obj/item menu: Set IV transfer amount
+human|/obj/item menu: Toggle IV Mode
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Medical stand interaction item
 keys: drag_buckle, insert_needle, medical_stand_interaction_hand, medical_stand_interaction_item, melee_hit, place_mask, remove_mask, remove_needle, set_iv_transfer, silicon_hand, toggle_iv_mode, use_wrench

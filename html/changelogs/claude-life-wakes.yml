@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - bugfix: "Breathers react within seconds to phoron, N2O, CO2, oxygen loss, heat, cold and pressure hazards in their room, not after a 15-30 second re-check."
+  - bugfix: "Radiation doses and injected reagents take effect on the next Life cycle."

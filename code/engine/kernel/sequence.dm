@@ -1093,6 +1093,17 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 			break
 	F.release()
 
+/// A step's woken_by as text: a list reads "key: producers; ...", text as itself.
+/proc/seq_woken_by_text(woken_by)
+	if(!woken_by)
+		return "undeclared"
+	if(!islist(woken_by))
+		return "[woken_by]"
+	var/list/parts = list()
+	for(var/key in woken_by)
+		parts += "[key]: [woken_by[key]]"
+	return jointext(parts, "; ")
+
 /// Logs a missed wake, fails the unit test run (unless `expected`), and wakes the step. Returns the message.
 /datum/sequence/proc/report_missed(datum/E, datum/seq_step/S, expected = FALSE)
 	var/datum/seq_state/state = SEQ_STATE_OF(E, idx)
@@ -1102,7 +1113,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	changed = seq_snapshot_diff(E, state, S)
 #endif
 	var/where = state.parked ? "parked since [DisplayTimeText(world.time - state.parked_at)] ago" : "awake, some steps asleep"
-	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [S.woken_by || "undeclared"]. A producer changed what it reads without publishing it (publish_change() / state_changed())."
+	var/message = "MOB_HIBERNATE_AUDIT: MISSED WAKE [E] ([E.type]) in [name], [where]: step [S.key] has work but slept.[changed ? " Changed without a publish: [changed]." : ""] Woken by: [seq_woken_by_text(S.woken_by)]. A producer changed what it reads without publishing it (publish_change() / state_changed())."
 	log_runtime(message)
 	log_world(message)
 #if defined(UNIT_TESTS)

@@ -2,7 +2,7 @@
 +1 menu: Customize Shroud (refused: You can't do that.)
 @obj.item.clothing.suit.space robot|none
 +1 menu: Customize Shroud (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.suit.space ghost|none
 +0 menu: Customize Shroud (refused: You can't do that.)
 @obj.item.clothing.suit.space human|/obj/item/tool/screwdriver
@@ -31,6 +31,6 @@
 +2 menu: Customize Shroud (refused: You can't do that.)
 @obj.item.clothing.suit.space human|/obj/item
 +1 menu: Customize Shroud (refused: You can't do that.)
-@obj.item human|/obj/item/stack/material
+@obj human|/obj/item/stack/material
 +1 menu: Customize Shroud (refused: You can't do that.)
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, space_suit_patch_item, toggle_digestable, use_welder, voidsuit_eject_tank_alt, voidsuit_install_item, voidsuit_remove_component, void_eject_tank_verb, void_toggle_helmet_verb, zaddat_custom_suit_verb

@@ -8,7 +8,7 @@
 +4 menu: Toggle AR Glasses Shading (refused: You can't do that.)
 +5 menu: Toggle AR Heads-Up Display (refused: You can't do that.)
 +7 menu: Toggle projector (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.glasses ghost|none
 -menu: Switch Eyepatch (refused: You can't do that.)
 +1 menu: Toggle AR Glasses Shading (refused: You can't do that.)
@@ -46,9 +46,9 @@
 +5 menu: Toggle projector (refused: You can't do that.)
 @obj.item.clothing.glasses human|/obj/item/stack/cable_coil
 -menu: Switch Eyepatch (refused: You can't do that.)
-+3 menu: Toggle AR Glasses Shading (refused: You can't do that.)
-+4 menu: Toggle AR Heads-Up Display (refused: You can't do that.)
-+6 menu: Toggle projector (refused: You can't do that.)
++2 menu: Toggle AR Glasses Shading (refused: You can't do that.)
++3 menu: Toggle AR Heads-Up Display (refused: You can't do that.)
++5 menu: Toggle projector (refused: You can't do that.)
 @obj.item.clothing.glasses human|/obj/item/stack/material/steel
 -menu: Switch Eyepatch (refused: You can't do that.)
 +2 menu: Toggle AR Glasses Shading (refused: You can't do that.)
@@ -56,9 +56,9 @@
 +5 menu: Toggle projector (refused: You can't do that.)
 @obj.item.clothing.glasses human|/obj/item/card/id
 -menu: Switch Eyepatch (refused: You can't do that.)
-+3 menu: Toggle AR Glasses Shading (refused: You can't do that.)
-+4 menu: Toggle AR Heads-Up Display (refused: You can't do that.)
-+6 menu: Toggle projector (refused: You can't do that.)
++2 menu: Toggle AR Glasses Shading (refused: You can't do that.)
++3 menu: Toggle AR Heads-Up Display (refused: You can't do that.)
++5 menu: Toggle projector (refused: You can't do that.)
 @obj.item.clothing.glasses human|/obj/item/kit
 -menu: Switch Eyepatch (refused: You can't do that.)
 +3 menu: Toggle AR Glasses Shading (refused: You can't do that.)

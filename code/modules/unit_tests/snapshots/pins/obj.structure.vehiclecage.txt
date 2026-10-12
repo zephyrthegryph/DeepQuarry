@@ -5,29 +5,19 @@ robot|none click: Click: Use
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/tool/crowbar
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
-+1 menu: Load vehicle
-+3 menu: Take apart
-+6 click: Click: Take apart
++1 menu: Take apart
++3 click: Click: Take apart
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
 +0 menu: Cut apart
-+2 menu: Load vehicle
-+6 click: Click: Cut apart
++3 click: Click: Cut apart
 @obj.structure human|/obj/item/multitool
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/weldingtool
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/stack/cable_coil
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/stack/material/steel
-+1 menu: Load vehicle
 @obj.structure human|/obj/item/card/id
-+1 menu: Load vehicle
 @obj.structure human|/obj/item
-+1 menu: Load vehicle
 keys: cut_bolts, drag, drag_buckle, hand, melee_hit, unbolt

@@ -1,6 +1,6 @@
 @obj.item.clothing.accessory human|none
 @obj.item.clothing.accessory robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.clothing.accessory.badge human|/obj/item/tool/screwdriver
 @obj.item.clothing.accessory.badge human|/obj/item/tool/crowbar
@@ -13,8 +13,8 @@
 @obj.item.clothing.accessory human|/obj/item/card/id
 -menu: Collar tag item
 -click: Click: Accessory attached hand
-+2 menu: Holobadge imprint item (refused: The holobadge rejects your insufficient access rights.)
-+7 click: Click: Holobadge imprint item
++5 menu: Use identification card (refused: The holobadge rejects your insufficient access rights.)
++6 click: Click: Holobadge imprint item
 @obj.item.clothing.accessory.badge human|/obj/item/kit
 @obj.item.clothing.accessory.badge human|/obj/item/storage
 @obj.item.clothing.accessory.badge human|/obj/item

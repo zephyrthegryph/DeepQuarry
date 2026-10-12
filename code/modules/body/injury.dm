@@ -239,6 +239,7 @@
 	var/before = radiation
 	radiation = max(radiation - amount, 0)
 	accumulated_rads = max(accumulated_rads - amount, 0)
+	radiation_changed()
 	return before - radiation
 
 /// P2-S12: the one writer that puts acute radiation INTO a mob. Callers apply
@@ -248,6 +249,8 @@
 		return 0
 	var/before = radiation
 	radiation = min(radiation + amount, RADIATION_CAP)
+	if(radiation != before)
+		radiation_changed()
 	return radiation - before
 
 /// P2-S12: natural decay owned by the radiation model: acute dose falls by
@@ -255,11 +258,23 @@
 /mob/proc/decay_radiation(amount, to_accumulated = 0)
 	radiation = max(radiation - amount, 0)
 	accumulated_rads = clamp(accumulated_rads + to_accumulated, 0, RADIATION_CAP)
+	radiation_changed()
 
 /// P2-S12: clear all radiation (restoration, rejuvenate, changeling panacea).
 /mob/proc/clear_radiation()
+	if(!radiation && !accumulated_rads)
+		return
 	radiation = 0
 	accumulated_rads = 0
+	radiation_changed()
+
+/// The dose changed (every radiation writer above calls it): the radiation step and the medical metric triggers hear it.
+/mob/proc/radiation_changed()
+	PUBLISH_CHANGE(src, MOB_KEY_RADIATION)
+
+/mob/living/radiation_changed()
+	body?.invalidate(BODY_DIRTY_METRICS)
+	..()
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.

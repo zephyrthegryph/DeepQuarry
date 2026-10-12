@@ -35,9 +35,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/bear)
 	emote_hear = list("rawrs","grumbles","grawls", "growls", "roars")
 
 // Is it time to be mad?
-/mob/living/simple_mob/animal/space/bear/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/space/bear/life_special(datum/seq_frame/life/F)
 	if(((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_FIGHT)) && !is_working() && isturf(src.loc))
 		if(src.vitality() <= 0.5) // At half health, and fighting someone currently.

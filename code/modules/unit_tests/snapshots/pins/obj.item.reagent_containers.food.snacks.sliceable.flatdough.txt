@@ -1,6 +1,6 @@
 @obj.item.reagent_containers human|none
 @obj.item.reagent_containers robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers ghost|none
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
 -click: nothing
@@ -29,12 +29,12 @@
 @obj.item.reagent_containers human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Hide it inside
-+5 click: Click: Hide it inside
++4 click: Click: Hide it inside
 @obj.item.reagent_containers human|/obj/item/stack/material/steel
 @obj.item.reagent_containers human|/obj/item/card/id
 -click: nothing
 +0 menu: Hide it inside
-+5 click: Click: Hide it inside
++4 click: Click: Hide it inside
 @obj.item.reagent_containers human|/obj/item/kit
 +1 menu: Hide it inside
 @obj.item.reagent_containers human|/obj/item/storage

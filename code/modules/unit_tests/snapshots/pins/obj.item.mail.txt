@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -13,8 +13,5 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-human|/obj/item/destTagger menu: Move To Top
-human|/obj/item/destTagger menu: Tag
-human|/obj/item/destTagger menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/destTagger click: Click: Tag
+@obj human|/obj/item/destTagger
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, tag, toggle_digestable, unwrap

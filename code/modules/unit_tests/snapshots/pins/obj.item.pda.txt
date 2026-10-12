@@ -5,7 +5,7 @@
 +5 menu: Remove pen (refused: You can't do that.)
 +6 menu: Reset PDA (refused: You can't do that.)
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Remove cartridge (refused: You can't do that.)
 +2 menu: Remove id (refused: You can't do that.)
@@ -14,105 +14,105 @@
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use screwdriver
 +8 click: Click: Item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use crowbar
 +8 click: Click: Item
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use wrench
 +8 click: Click: Item
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use wirecutters
 +8 click: Click: Item
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use multitool
 +8 click: Click: Item
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use welding tool
 +8 click: Click: Item
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+4 menu: Remove cartridge (refused: You can't do that.)
-+5 menu: Remove id (refused: You can't do that.)
-+6 menu: Remove pen (refused: You can't do that.)
-+7 menu: Reset PDA (refused: You can't do that.)
-+9 click: Click: Item
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use cable coil
++8 click: Click: Item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Remove cartridge (refused: You can't do that.)
-+4 menu: Remove id (refused: You can't do that.)
-+5 menu: Remove pen (refused: You can't do that.)
-+6 menu: Reset PDA (refused: You can't do that.)
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use steel sheet
 +8 click: Click: Item
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+4 menu: Remove cartridge (refused: You can't do that.)
-+5 menu: Remove id (refused: You can't do that.)
-+6 menu: Remove pen (refused: You can't do that.)
-+7 menu: Reset PDA (refused: You can't do that.)
-+9 click: Click: Item
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Use identification card
++8 click: Click: Item
 @obj human|/obj/item/kit
 +0 menu: Alt
-+2 menu: Item
-+4 menu: Remove cartridge (refused: You can't do that.)
-+5 menu: Remove id (refused: You can't do that.)
-+6 menu: Remove pen (refused: You can't do that.)
-+7 menu: Reset PDA (refused: You can't do that.)
++3 menu: Remove cartridge (refused: You can't do that.)
++4 menu: Remove id (refused: You can't do that.)
++5 menu: Remove pen (refused: You can't do that.)
++6 menu: Reset PDA (refused: You can't do that.)
++8 menu: Use item
 @obj human|/obj/item/storage
 +0 menu: Alt
-+2 menu: Item
-+4 menu: Remove cartridge (refused: You can't do that.)
-+5 menu: Remove id (refused: You can't do that.)
-+6 menu: Remove pen (refused: You can't do that.)
-+7 menu: Reset PDA (refused: You can't do that.)
++3 menu: Remove cartridge (refused: You can't do that.)
++4 menu: Remove id (refused: You can't do that.)
++5 menu: Remove pen (refused: You can't do that.)
++6 menu: Reset PDA (refused: You can't do that.)
++8 menu: Use storage
 human|/obj/item menu: Alt
-human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove cartridge (refused: You can't do that.)
 human|/obj/item menu: Remove id (refused: You can't do that.)
 human|/obj/item menu: Remove pen (refused: You can't do that.)
 human|/obj/item menu: Reset PDA (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
 human|/obj/item click: Click: Item
 keys: alt, Authenticate, collect_item, drag_buckle, Eject, gen_silicon_item_silicon_equip_module, Home, item, kit_customize, kit_customize_last, move_to_top, pda_self, pda_verb_remove_cartridge, pda_verb_remove_id, pda_verb_remove_pen, pda_verb_reset, pick_up_item, Retro, Ringtone, StartProgram, threaten_eat, toggle_digestable, TouchSounds

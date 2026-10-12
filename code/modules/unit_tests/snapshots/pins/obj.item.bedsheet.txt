@@ -2,13 +2,13 @@
 +3 menu: Turn Around
 @obj robot|none
 +4 menu: Turn Around
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +2 menu: Turn Around
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +2 menu: Turn Around
-+3 menu: Use item
++3 menu: Use screwdriver
 +4 click: Click: Use item
 @obj human|/obj/item/tool/crowbar
 +2 menu: Turn Around
@@ -17,18 +17,18 @@
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +2 menu: Turn Around
-+3 menu: Use item
++3 menu: Use wirecutters
 +4 click: Click: Use item
 @obj human|/obj/item/multitool
 +2 menu: Turn Around
 @obj human|/obj/item/weldingtool
 +2 menu: Turn Around
 @obj human|/obj/item/stack/cable_coil
-+3 menu: Turn Around
++2 menu: Turn Around
 @obj human|/obj/item/stack/material/steel
 +2 menu: Turn Around
 @obj human|/obj/item/card/id
-+3 menu: Turn Around
++2 menu: Turn Around
 @obj human|/obj/item/kit
 +3 menu: Turn Around
 @obj human|/obj/item/storage

@@ -287,4 +287,4 @@
 	if(!new_name)
 		return
 	name = sanitizeName(new_name, allow_numbers = TRUE)
-	real_name = name
+	set_real_name(name)

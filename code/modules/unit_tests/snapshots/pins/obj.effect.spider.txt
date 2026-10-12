@@ -2,34 +2,29 @@
 @obj.effect robot|none
 @obj.effect ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
+@obj.effect human|/obj/item/tool/screwdriver
 +0 menu: Hit
-@obj human|/obj/item/tool/crowbar
+@obj.effect human|/obj/item/tool/crowbar
 +0 menu: Hit
-@obj human|/obj/item/tool/wrench
+@obj.effect human|/obj/item/tool/wrench
 +0 menu: Hit
-@obj human|/obj/item/tool/wirecutters
+@obj.effect human|/obj/item/tool/wirecutters
 +0 menu: Hit
-@obj human|/obj/item/multitool
+@obj.effect human|/obj/item/multitool
 +0 menu: Hit
-@obj human|/obj/item/weldingtool
--click: nothing
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Use welder
+human|/obj/item/weldingtool click: Click: Use welder
+@obj.effect human|/obj/item/stack/cable_coil
 +0 menu: Hit
-+3 menu: Use welder
-+4 click: Click: Use welder
-@obj human|/obj/item/stack/cable_coil
+@obj.effect human|/obj/item/stack/material/steel
 +0 menu: Hit
-@obj human|/obj/item/stack/material/steel
-+0 menu: Hit
-@obj human|/obj/item/card/id
+@obj.effect human|/obj/item/card/id
 +0 menu: Hit
 @obj human|/obj/item/mop_deploy
 +0 menu: Hit
 @obj human|/obj/item/soap
 +1 menu: Hit
-@obj.effect human|/obj/item
--menu: Disrupt
--click: Click: Disrupt
-+0 menu: Hit
-+3 click: nothing
+human|/obj/item menu: Hit
+human|/obj/item click: nothing
 keys: drag_buckle, melee_hit, pass_insert, pass_insert_2, use_welder

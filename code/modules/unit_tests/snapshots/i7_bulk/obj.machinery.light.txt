@@ -5,24 +5,44 @@ human|none click: Click: Remove bulb
 +1 menu: Remove bulb
 +2 menu: Toggle emergency lights
 +4 click: Click: Remove bulb
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Flicker
 +1 menu: Toggle emergency lights
 +3 click: Click: Toggle emergency lights
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
-@obj human|/obj/item/tool/crowbar
-@obj human|/obj/item/tool/wrench
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
--click: nothing
-+2 menu: Tune
-+3 click: Click: Tune
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/wrench
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Tune
+human|/obj/item/multitool click: Click: Tune
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/card/id
++0 menu: Move To Top
++1 menu: Read ID Card (refused: You can't do that.)
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/light
 keys: drag_buckle, hit, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_casing, remote_flicker, remove, robot_remote_blocked, silicon_hand, toggle_emergency, tune

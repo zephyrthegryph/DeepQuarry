@@ -2,93 +2,93 @@
 -menu: Nutrition heal
 -click: Click: Help
 +0 menu: Boop shut
-+4 menu: Pat
-+8 menu: Ui open
++4 menu: Open controls
++5 menu: Pat
 +9 click: Click: Pat
 @mob robot|none
 -menu: Nutrition heal
 -click: Click: Help
 +0 menu: Boop shut
-+4 menu: Pat
-+8 menu: Ui open
++4 menu: Open controls
++5 menu: Pat
 +9 click: Click: Pat
-ai|none menu: Ui open
-ai|none click: Click: Ui open
+ai|none menu: Open controls
+ai|none click: Click: Open controls
 @mob.living.silicon ghost|none
 @mob.living human|/obj/item/tool/screwdriver
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob.living human|/obj/item/tool/crowbar
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob.living human|/obj/item/tool/wrench
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob.living human|/obj/item/tool/wirecutters
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob.living human|/obj/item/multitool
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob.living human|/obj/item/weldingtool
 -menu: Nutrition heal
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob human|/obj/item/stack/cable_coil
 -click: Click: Use on
 +0 menu: Boop shut
-+7 menu: Pat
-+10 menu: Ui open
-+11 menu: Use
-+13 click: Click: Pat
++5 menu: Open controls
++6 menu: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob human|/obj/item/stack/material/steel
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 @mob human|/obj/item/card/id
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+10 menu: Ui open
-+11 menu: Use
-+13 click: Click: Use
++8 menu: Use
++10 click: Click: Use
 @mob human|/obj/item
 -click: Click: Use on
 +0 menu: Boop shut
++5 menu: Open controls
 +6 menu: Pat
-+9 menu: Ui open
-+10 menu: Use
-+12 click: Click: Pat
++8 menu: Use
++10 click: Click: Pat
 keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, image, injection, lend_prey_control, melee_swing, pai_access, pai_access_closed, pai_boop_disarm, pai_hit, pai_pat_help, polymorph, purchase, revert_beast_form, shred_limb, software, spin, succubus_bite, touch_disarm, touch_grab, touch_help, touch_hurt, ui_open, ventcrawl_in, vertical_nom, yank_out, zmove

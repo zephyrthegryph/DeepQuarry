@@ -5,42 +5,24 @@ robot|none click: Click: Enter
 @obj.effect ai|none
 ghost|none menu: Go through
 ghost|none click: Click: Go through
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Enter
-+4 click: Click: Enter
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Enter
-+3 click: Click: Enter
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Enter
-+4 click: Click: Enter
+human|/obj/item/tool/screwdriver menu: Enter
+human|/obj/item/tool/screwdriver click: Click: Enter
+human|/obj/item/tool/crowbar menu: Enter
+human|/obj/item/tool/crowbar click: Click: Enter
+human|/obj/item/tool/wrench menu: Enter
+human|/obj/item/tool/wrench click: Click: Enter
+human|/obj/item/tool/wirecutters menu: Enter
+human|/obj/item/tool/wirecutters click: Click: Enter
+human|/obj/item/multitool menu: Enter
+human|/obj/item/multitool click: Click: Enter
+human|/obj/item/weldingtool menu: Enter
+human|/obj/item/weldingtool click: Click: Enter
+human|/obj/item/stack/cable_coil menu: Enter
+human|/obj/item/stack/cable_coil click: Click: Enter
+human|/obj/item/stack/material/steel menu: Enter
+human|/obj/item/stack/material/steel click: Click: Enter
+human|/obj/item/card/id menu: Enter
+human|/obj/item/card/id click: Click: Enter
 @obj human|/obj/item/mop_deploy
 +0 menu: Enter
 @obj human|/obj/item/soap

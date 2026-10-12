@@ -280,12 +280,14 @@ pub(crate) fn map_cells(
             unit,
             levels,
             hysteresis,
+            start,
         } => Cond::Band {
             cell: f(*cell)?,
             ch: *ch,
             unit: *unit,
             levels: levels.clone(),
             hysteresis: *hysteresis,
+            start: *start,
         },
         Cond::Difference { a, b, level, abs } => Cond::Difference {
             a: f(*a)?,

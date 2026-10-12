@@ -7,7 +7,7 @@ human|none click: Click: Select cyborg
 +2 menu: Install module (refused: needs a AI module)
 +3 menu: Select cyborg
 +5 click: Click: Select cyborg
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 -click: nothing
 +1 menu: Install module (refused: needs a AI module)
@@ -16,46 +16,46 @@ human|none click: Click: Select cyborg
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
 +2 menu: Install module (refused: needs a AI module)
-+4 menu: Select cyborg
++3 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+4 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item/card/id
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+4 menu: Select cyborg
++2 menu: Select cyborg
 @obj.machinery.computer human|/obj/item
 -menu: Use
 +1 menu: Install module (refused: needs a AI module)
-+3 menu: Select cyborg
++2 menu: Select cyborg
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aiModule
 -menu: Access Computer's Internals
 -menu: Select AI
-+3 menu: Select cyborg
++2 menu: Select cyborg
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, install_module, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, observer_view, robot_remote_blocked, select_borg, silicon_hand, use_gripper, use_item

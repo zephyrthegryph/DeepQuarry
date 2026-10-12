@@ -6,7 +6,7 @@
 +4 menu: Roll Sleeves (refused: You can't do that.)
 +7 menu: Toggle Shirt Buttons (refused: You can't do that.)
 +8 menu: Toggle Shirt Tucking (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Roll Sleeves (refused: You can't do that.)
 +3 menu: Toggle Shirt Buttons (refused: You can't do that.)
@@ -36,17 +36,17 @@
 +6 menu: Toggle Shirt Buttons (refused: You can't do that.)
 +7 menu: Toggle Shirt Tucking (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/stack/cable_coil
-+3 menu: Roll Sleeves (refused: You can't do that.)
-+7 menu: Toggle Shirt Buttons (refused: You can't do that.)
-+8 menu: Toggle Shirt Tucking (refused: You can't do that.)
++2 menu: Roll Sleeves (refused: You can't do that.)
++6 menu: Toggle Shirt Buttons (refused: You can't do that.)
++7 menu: Toggle Shirt Tucking (refused: You can't do that.)
 @obj.item.clothing.suit human|/obj/item/stack/material/steel
 +2 menu: Roll Sleeves (refused: You can't do that.)
 +6 menu: Toggle Shirt Buttons (refused: You can't do that.)
 +7 menu: Toggle Shirt Tucking (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/card/id
-+3 menu: Roll Sleeves (refused: You can't do that.)
-+7 menu: Toggle Shirt Buttons (refused: You can't do that.)
-+8 menu: Toggle Shirt Tucking (refused: You can't do that.)
++2 menu: Roll Sleeves (refused: You can't do that.)
++6 menu: Toggle Shirt Buttons (refused: You can't do that.)
++7 menu: Toggle Shirt Tucking (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/kit
 +3 menu: Roll Sleeves (refused: You can't do that.)
 +7 menu: Toggle Shirt Buttons (refused: You can't do that.)

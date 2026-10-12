@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Airlock controller windows (cycling, advanced, access) open again instead of blank."
+  - bugfix: "The right-click menu lists each choice once (walls had two Touch lines) and no longer shows the held item's own entries, drag-only ops or silently refused guard ops on every target."
+  - qol: "Menu lines for windows read 'Open controls'; a held item's fallback use reads 'Use <item>'."

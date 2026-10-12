@@ -113,7 +113,7 @@ CAPABILITIES(/datum/ghosttrap)
 	var/mob/target = context.answer.answerer
 	var/newname = sanitizeSafe(context.answer.value, MAX_NAME_LEN)
 	if (newname != "")
-		target.real_name = newname
+		target.set_real_name(newname)
 		target.name = target.real_name
 	SStgui.update_uis(src)
 

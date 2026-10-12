@@ -294,8 +294,9 @@ TYPE_TABLE(/mob/living/silicon/ai, special_mentions, list("AI"))
 
 	if(ishuman(speaker))
 		var/mob/living/carbon/human/H = speaker
-		if(H.voice)
-			speaker_name = H.voice
+		var/voice = H.GetVoice()
+		if(voice)
+			speaker_name = voice
 
 	if(vname)
 		speaker_name = vname

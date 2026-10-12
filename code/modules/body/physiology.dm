@@ -76,6 +76,9 @@ CAPABILITIES(/datum/body)
 	owns_one(nameof(physiology), /datum/physiology)
 	owns_many(nameof(afflictions))
 	owns_many(nameof(supports))
+	// Life's wake sources on its mob's air and body temperature (code/modules/mob/living/life/air_watch.dm).
+	owns_one(nameof(air_watch), /datum/native_watch/world)
+	owns_one(nameof(body_heat_watch), /datum/native_watch/heat)
 
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
@@ -294,6 +297,9 @@ CAPABILITIES(/datum/body)
 	EXPIRY_TMP_DECLARE(last_breath_at)
 	/// The air on the owner's turf changed since its last breath (a visible gas arrived or left): breathing must not idle.
 	var/tmp/air_stale = FALSE
+	/// The last breath carried a gas that acts on every breath (a poison, N2O, methane, the exhaled gas building up):
+	/// breathing stays awake and keeps breathing on its cadence while it does. Set by the breath exchange.
+	var/tmp/breath_hazard = FALSE
 	/// Circulating blood volume, fraction of normal (Blood system).
 	var/blood_fraction = 1
 	/// Debt band last logged.

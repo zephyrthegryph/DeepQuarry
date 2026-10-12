@@ -2,60 +2,55 @@ human|none menu: Climb
 human|none click: nothing
 @obj.machinery robot|none
 +1 menu: Climb
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj.machinery.atmospherics human|/obj/item/tool/screwdriver
--menu: Toggle
--click: Click: Toggle
+@obj.machinery human|/obj/item/tool/screwdriver
 +0 menu: Climb
-+3 click: nothing
-@obj.machinery.atmospherics human|/obj/item/tool/crowbar
--menu: Toggle
--click: Click: Toggle
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/crowbar
 +0 menu: Climb
-+3 click: nothing
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench menu: Climb
 human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: nothing
-@obj.machinery.atmospherics human|/obj/item/tool/wirecutters
--menu: Toggle
--click: Click: Toggle
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Climb
-+3 click: nothing
-@obj.machinery.atmospherics human|/obj/item/multitool
--menu: Toggle
--click: Click: Toggle
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/multitool
 +0 menu: Climb
-+3 click: nothing
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.atmospherics human|/obj/item/weldingtool
 -menu: Toggle
 -click: Click: Toggle
 +0 menu: Climb
 +2 menu: Seal (refused: It has no crack to seal.)
 +4 click: Click: Seal
-@obj.machinery.atmospherics human|/obj/item/stack/cable_coil
--menu: Toggle
--click: Click: Toggle
+@obj.machinery human|/obj/item/stack/cable_coil
 +0 menu: Climb
-+4 click: nothing
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.atmospherics human|/obj/item/stack/material/steel
 -menu: Toggle
 -click: Click: Toggle
 +0 menu: Climb
 +1 menu: Fit engineered material
 +4 click: Click: Fit engineered material
-@obj.machinery.atmospherics human|/obj/item/card/id
--menu: Toggle
--click: Click: Toggle
+@obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-+4 click: nothing
-@obj.machinery.atmospherics human|/obj/item
--menu: Toggle
--click: Click: Toggle
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item
 +0 menu: Climb
-+3 click: nothing
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.atmospherics human|/obj/item/stack/material
 -menu: Toggle
 -click: Click: Toggle

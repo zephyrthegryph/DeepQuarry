@@ -4,17 +4,6 @@
 /// mob's own cadence, independent of how often the atmos subsystem fires.
 /mob/living/carbon/var/breath_cycle = 0
 
-/// The air on this mob's turf changed in place (set_visuals(): a visible gas arrived or left).
-/mob/living/proc/air_changed_here()
-	return
-
-/mob/living/carbon/air_changed_here()
-	var/datum/physiology/P = src.body?.physiology
-	if(!P)
-		return
-	P.air_stale = TRUE
-	PUBLISH_CHANGE(src, MOB_KEY_AIR)
-
 /// A scheduled breath is taken every this many Life cycles.
 #define BREATH_CYCLE_PERIOD 4
 
@@ -27,23 +16,26 @@
 	src.breath_cycle = (src.breath_cycle + 1) % BREATH_CYCLE_PERIOD
 	var/datum/physiology/P = src.body?.physiology
 	var/breath_due = !src.breath_cycle || (P && ELAPSED_SINCE(src, P.last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
-	if(breath_due || P?.air_stale || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
+	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
+	if(breath_due || P?.air_stale || P?.breath_hazard || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
 		if(P)
 			P.last_breath_at = EXPIRY_NOW(src, CLOCK_OWN)
 			P.air_stale = FALSE
 		life_breathing_breathe()
+	src.air_watch_arm()
 
 #undef BREATH_CYCLE_PERIOD
 
 /// Breathing can't stop, but in steady air a breath changes nothing: the physiology holds the
 /// last breath quality between breaths. Idle while the last breath was full quality from the
-/// turf's air (no internals, no losebreath, not critical, no breath alerts). Moving and
-/// equipment (masks, internals) wake it (MOB_KEY_LOC, MOB_KEY_EQUIPMENT); a visible gas arriving
-/// on the turf wakes it (MOB_KEY_AIR, physiology air_stale); invisible changes are re-sampled by the rewake.
+/// turf's air (no internals, no losebreath, not critical, no breath alerts, no gas in it that acts
+/// on every breath). Moving and equipment (masks, internals) wake it (MOB_KEY_LOC, MOB_KEY_EQUIPMENT);
+/// its air watch wakes it the moment the turf's air crosses a level the breath acts on (MOB_KEY_AIR,
+/// physiology air_stale: oxygen, CO2, phoron, N2O, methane, temperature, pressure). The rewake is a fallback.
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || src.failed_last_breath || src.internal || !src.air_watched())
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
@@ -149,3 +141,9 @@
 /mob/living/carbon/proc/life_breathing_exhale(datum/gas_mixture/breath)
 	if(breath)
 		src.loc.assume_air(breath) //by default, exhale
+
+/// Records whether the last breath carried a gas that acts on every breath (physiology breath_hazard).
+/mob/living/carbon/proc/set_breath_hazard(value)
+	var/datum/physiology/P = src.body?.physiology
+	if(P)
+		P.breath_hazard = value

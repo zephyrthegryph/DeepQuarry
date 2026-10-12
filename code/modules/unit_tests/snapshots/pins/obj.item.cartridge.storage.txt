@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +4 menu: Use
 +5 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -40,9 +40,9 @@
 +4 click: Click: Store
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Store
-+4 menu: Use
-+5 click: Click: Store
++1 menu: Store
++3 menu: Use
++4 click: Click: Store
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Store
@@ -50,16 +50,16 @@
 +4 click: Click: Store
 @obj human|/obj/item/card/id
 -click: nothing
-+2 menu: Store
-+4 menu: Use
-+5 click: Click: Store
++1 menu: Store
++3 menu: Use
++4 click: Click: Store
 @obj human|/obj/item/kit
 +2 menu: Store
 +4 menu: Use
 @obj human|/obj/item/storage
 +2 menu: Store
 +4 menu: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +1 menu: Store

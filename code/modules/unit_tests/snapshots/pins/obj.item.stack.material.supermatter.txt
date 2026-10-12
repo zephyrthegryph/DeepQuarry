@@ -1,6 +1,6 @@
 @obj.item.stack human|none
 @obj.item.stack robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack.material human|/obj/item/tool/screwdriver
 +1 menu: Pick up
@@ -16,7 +16,7 @@
 @obj.item.stack human|/obj/item/weldingtool
 +1 menu: Pick up
 @obj.item.stack.material human|/obj/item/stack/cable_coil
-+3 menu: Pick up
++2 menu: Pick up
 @obj.item.stack.material human|/obj/item/stack/material/steel
 +2 menu: Pick up
 @obj.item.stack.material human|/obj/item/card/id

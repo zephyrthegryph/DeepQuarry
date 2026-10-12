@@ -11,7 +11,7 @@
 +3 menu: Interaction hand
 +7 menu: Use
 +8 click: Click: Interaction hand
-@obj.item ai|none
+@obj ai|none
 -click: nothing
 +1 menu: Use
 +2 click: Click: Use
@@ -26,90 +26,88 @@
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
-+6 menu: Use screwdriver
-+7 click: Click: Use screwdriver
++5 menu: Use screwdriver
++6 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
++5 menu: Use crowbar
 +6 click: Click: Interaction hand
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
-+6 menu: Use wrench
-+7 click: Click: Use wrench
++5 menu: Use wrench
++6 click: Click: Use wrench
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
++5 menu: Use wirecutters
 +6 click: Click: Interaction hand
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
++5 menu: Use multitool
 +6 click: Click: Interaction hand
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
-+5 menu: Repair (refused: %T% does not require repairs.)
++4 menu: Repair (refused: %T% does not require repairs.)
++6 menu: Use welding tool
 +7 click: Click: Repair
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
-+7 click: Click: Interaction hand
++5 menu: Use cable coil
++6 click: Click: Interaction hand
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
++5 menu: Use steel sheet
 +6 click: Click: Interaction hand
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
-+7 click: Click: Interaction hand
++5 menu: Use identification card
++6 click: Click: Interaction hand
 @obj human|/obj/item/kit
 +0 menu: Alternate use
 +2 menu: Forced Shutdown
 +3 menu: Interaction hand
-+4 menu: Interaction item
++6 menu: Use item
 @obj human|/obj/item/storage
 +0 menu: Alternate use
 +2 menu: Forced Shutdown
 +3 menu: Interaction hand
-+4 menu: Interaction item
++6 menu: Use storage
 human|/obj/item/card/emag menu: Alternate use
 human|/obj/item/card/emag menu: Forced Shutdown
 human|/obj/item/card/emag menu: Interaction hand
-human|/obj/item/card/emag menu: Interaction item
 human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
 human|/obj/item/card/emag click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Use
 -click: Click: Use
 +1 menu: Forced Shutdown
 +2 menu: Interaction hand
-+3 menu: Interaction item
++5 menu: Use item
 +6 click: Click: Interaction hand
 keys: alt, collect_item, computer_emergency_shutdown, computer_verb_eject_id, computer_verb_eject_usb, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, interaction_hand, interaction_hand_pai, interaction_item, interaction_self, kit_customize, kit_customize_last, modular_computer_ghost_nothing, modular_computer_ghost_power, modular_computer_ghost_view, modular_computer_silicon_use, move_to_top, PC_Eject_Disk, PC_exit, PC_killprogram, PC_minimize, PC_runprogram, PC_setautorun, PC_shutdown, pick_up_item, toggle_digestable, use_screwdriver, use_wrench, weld_repair

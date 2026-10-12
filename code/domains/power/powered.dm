@@ -9,10 +9,6 @@
 
 MSG_DEF_SELF(power/unpowered, "It is unpowered.")
 
-/// The machine has power for its controls (the NOPOWER bit power_change() keeps, until phase 4 turns it into the area channel read).
-/obj/machinery/proc/power_available(datum/act/A)
-	return cap_powered()
-
 /obj/machinery/proc/power_unavailable(datum/act/A)
 	return !cap_powered()
 
@@ -22,7 +18,8 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/lib/powered, key = NONE,
 
 /datum/capability/lib/powered/entries()
 	return list(
-		contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, power_available), reason = MSG(power/unpowered), reads = list("stat")),
+		// The stat itself, not a proc that reads it through cap_powered(): the stat layer then knows the input and caches operable (deps.dm).
+		contributes(STAT_OPERABLE, STAT_HAS_POWER, reason = MSG(power/unpowered)),
 		look_layer(LOOK_DARK, when = TYPE_PROC_REF(/obj/machinery, power_unavailable), reads = list("stat")),
 		examine_line(MSG(power/unpowered), when = TYPE_PROC_REF(/obj/machinery, power_unavailable), reads = list("stat")))
 
