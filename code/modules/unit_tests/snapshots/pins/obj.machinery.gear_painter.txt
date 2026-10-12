@@ -45,22 +45,10 @@ human|/obj/item/card/id click: Click: Open controls
 human|/obj/item menu: Open controls
 human|/obj/item menu: Remove item
 human|/obj/item click: Click: Open controls
-human|/obj/item/clothing menu: Insert
-human|/obj/item/clothing menu: Open controls
-human|/obj/item/clothing menu: Remove item
-human|/obj/item/clothing click: Click: Open controls
-human|/obj/item/storage/backpack menu: Insert
-human|/obj/item/storage/backpack menu: Open controls
-human|/obj/item/storage/backpack menu: Remove item
-human|/obj/item/storage/backpack click: Click: Open controls
-human|/obj/item/storage/belt menu: Insert
-human|/obj/item/storage/belt menu: Open controls
-human|/obj/item/storage/belt menu: Remove item
-human|/obj/item/storage/belt click: Click: Open controls
-human|/obj/item/toy menu: Insert
-human|/obj/item/toy menu: Open controls
-human|/obj/item/toy menu: Remove item
-human|/obj/item/toy click: Click: Open controls
+@obj human|/obj/item/clothing
+@obj human|/obj/item/storage/backpack
+@obj human|/obj/item/storage/belt
+@obj human|/obj/item/toy
 human|/obj/item/stack/material menu: Insert
 human|/obj/item/stack/material menu: Open controls
 human|/obj/item/stack/material menu: Remove item

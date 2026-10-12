@@ -73,4 +73,10 @@
 +3 menu: Ui open
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aicard
+-menu: Open controls
+-menu: Use intelliCore
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
++6 menu: Use item
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, PRG_beginReconstruction, robot_remote_blocked, silicon_hand, ui_open, use, use_card, use_gripper, use_item

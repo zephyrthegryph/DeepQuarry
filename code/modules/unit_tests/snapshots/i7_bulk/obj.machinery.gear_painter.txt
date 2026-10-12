@@ -68,9 +68,34 @@ human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item menu: Ui open
 human|/obj/item click: Click: Ui open
 @obj human|/obj/item/clothing
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Ui open
++5 click: Click: Ui open
 @obj human|/obj/item/storage/backpack
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Ui open
++5 click: Click: Ui open
 @obj human|/obj/item/storage/belt
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Move To Top
++3 menu: Switch Belt Layer (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
++5 menu: Ui open
++6 click: Click: Ui open
 @obj human|/obj/item/toy
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
++4 menu: Ui open
++5 click: Click: Ui open
 human|/obj/item/stack/material menu: Insert
 human|/obj/item/stack/material menu: Move To Top
 human|/obj/item/stack/material menu: Remove item
