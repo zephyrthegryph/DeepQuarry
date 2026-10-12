@@ -218,25 +218,23 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 
 /// The reads E5's generator recorded for holder proc `proc_name` of E's type (or an ancestor), as input keys: "var", "rel.var", "a.b.var",
 /// "sys:system.var". A read through an actor, held item or target is not an input of the holder and is left out.
-/proc/stat_generated_reads(datum/E, proc_name)
+/proc/stat_generated_reads(datum/E, proc_name, datum/act/A = null, datum/lookup_read_scope/scope = null)
+	var/list/keys = lookup_reads_for(E, proc_name, A, scope)
 	var/list/table = GLOB.generated_reads_table
 	if(!length(table))
-		return null
-	var/path = "[E.type]"
+		return keys
+	var/path = E.type
 	var/row
-	while(length(path))
+	while(path)
 		row = table["[path]::[proc_name]"]
 		if(row)
 			break
-		var/slash = findlasttext(path, "/")
-		if(slash <= 1)
-			break
-		path = copytext(path, 1, slash)
+		var/datum/typed = path
+		path = initial(typed.parent_type)
 	if(!row)
-		return null
+		return keys
 	var/list/names = GLOB.generated_read_names
 	var/list/roots = GLOB.generated_read_roots
-	var/list/keys = list()
 	var/list/rows = row
 	for(var/i in 2 to length(rows))
 		var/list/read = rows[i]

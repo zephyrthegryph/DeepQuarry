@@ -123,6 +123,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/publish_change(datum/E, key)
 	if(!E || QDELING(E) || !islist(GLOB?.rx_tables))
 		return
+	lookup_reads_published(E, key)
 	var/datum/rx_table/T = GLOB.rx_tables[E.type]
 	if(isnull(T))
 		T = rx_table_build(E)
@@ -365,6 +366,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
+	lookup_reads_source_gone(D)
 	var/datum/type_table/engine_table = type_table_cache()[D.type]
 	if(engine_table?.hook_flags & ENGINE_HOOK_DESTROY)
 		engine_holder_destroy(D)
@@ -387,6 +389,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	for(var/datum/rx_listener/L as anything in S.listening?.Copy())
 		rx_listener_remove(L)
 	GLOB.rx_pending -= D
+	if(S.lookup_scope)
+		rel_clear(S, nameof(S.lookup_scope))
 	if(S.containment_ledger)
 		rel_clear(S, nameof(S.containment_ledger))
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation

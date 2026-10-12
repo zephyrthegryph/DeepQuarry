@@ -7,3 +7,12 @@
 		return FALSE
 	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
 	return TRUE
+
+/// The domain's stable lookup provider. Registry identity persists across repair.
+/datum/system/machines/proc/power_grid_registry()
+	RETURN_TYPE(/datum/power_grid_registry)
+	return power_grids
+
+/// Preserve the existing public collection API: callers receive numeric IDs.
+/proc/machines_power_grids()
+	return SSmachines.power_grid_registry().ids()
