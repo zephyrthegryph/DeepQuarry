@@ -45,7 +45,8 @@ fn optional_detachment_preserves_current_source_query_and_classification_until_l
         .source_revision;
     let tree = Arc::clone(host.semantic.as_ref().unwrap().snapshot_tree().unwrap());
     let memo = host.procedure_memo(17, None, true).unwrap();
-    let (resolver, _) = crate::request_runner::runner_facts::prepare(&frontend, &engine).unwrap();
+    let (resolver, _) =
+        crate::request_runner::runner_facts::prepare(&frontend, &engine.snapshot).unwrap();
     struct NoDefaults;
     impl crate::class_projection::TypeValuePolicy for NoDefaults {
         fn tag(&self, _: dm_ir::SymbolId) -> Result<u8, crate::class_projection::ProjectionError> {
