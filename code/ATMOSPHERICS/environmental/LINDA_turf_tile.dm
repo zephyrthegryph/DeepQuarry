@@ -254,7 +254,16 @@ CAPABILITIES(/turf/open)
 			vis_contents += new_overlay_types
 
 	UNSETEMPTY(new_overlay_types)
+	var/air_changed = length(atmos_overlay_types) != length(new_overlay_types) || (length(new_overlay_types) && length(new_overlay_types - atmos_overlay_types))
 	src.atmos_overlay_types = new_overlay_types
+	if(air_changed)
+		turf_air_changed()
+
+/// A visible gas arrived on or left this turf: the mobs standing here hear it (MOB_KEY_AIR), so their
+/// sleeping breathing and environment steps take the new air now instead of on their resample timer.
+/turf/open/proc/turf_air_changed()
+	for(var/mob/living/L in src)
+		L.air_changed_here()
 
 /proc/typecache_of_gases_with_no_overlays()
 	. = list()

@@ -4,13 +4,34 @@
 /// mob's own cadence, independent of how often the atmos subsystem fires.
 /mob/living/carbon/var/breath_cycle = 0
 
+/// Biological time (CLOCK_OWN) of this mob's last scheduled breath.
+/mob/living/carbon/var/tmp/last_breath_at = 0
+
+/// The air on this mob's turf changed since its last breath (a gas arrived or left): breathing must not idle.
+/mob/living/carbon/var/tmp/breath_air_stale = FALSE
+
+/// The air on this mob's turf changed in place (set_visuals(): a visible gas arrived or left).
+/mob/living/proc/air_changed_here()
+	return
+
+/mob/living/carbon/air_changed_here()
+	src.breath_air_stale = TRUE
+	PUBLISH_CHANGE(src, MOB_KEY_AIR)
+
 /// A scheduled breath is taken every this many Life cycles.
 #define BREATH_CYCLE_PERIOD 4
 
 //Start of a breath chain, calls breathe()
+// The cadence is time, not runs of this step: the step sleeps in steady air and a wake (its
+// rewake, the air changing, moving) must take a breath when one is due. Counting runs made a
+// sleeping breather take one breath per BREATH_CYCLE_PERIOD wakes (every two minutes), so a room
+// filling with phoron, N2O or CO2 went unnoticed.
 /mob/living/carbon/life_breathing(datum/seq_frame/life/F)
 	src.breath_cycle = (src.breath_cycle + 1) % BREATH_CYCLE_PERIOD
-	if(!src.breath_cycle || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
+	var/breath_due = !src.breath_cycle || ELAPSED(src, last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE
+	if(breath_due || src.breath_air_stale || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
+		EXPIRY_STAMP(src, last_breath_at, CLOCK_OWN)
+		src.breath_air_stale = FALSE
 		life_breathing_breathe()
 
 #undef BREATH_CYCLE_PERIOD
@@ -18,12 +39,12 @@
 /// Breathing can't stop, but in steady air a breath changes nothing: the physiology holds the
 /// last breath quality between breaths. Idle while the last breath was full quality from the
 /// turf's air (no internals, no losebreath, not critical, no breath alerts). Moving and
-/// equipment (masks, internals) wake it (MOB_KEY_LOC, MOB_KEY_EQUIPMENT); air that
-/// changes in place is re-sampled by the rewake.
+/// equipment (masks, internals) wake it (MOB_KEY_LOC, MOB_KEY_EQUIPMENT); a visible gas arriving
+/// on the turf wakes it (MOB_KEY_AIR, breath_air_stale); invisible changes are re-sampled by the rewake.
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
+	if(src.breath_air_stale || src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
