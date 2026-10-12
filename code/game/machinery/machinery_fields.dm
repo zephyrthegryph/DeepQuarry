@@ -327,14 +327,6 @@ APPEARANCE_WATCH(/obj/machinery, list("stat", "on", "active", "state", "mode", "
 /// Vehicles draw their condition bits.
 APPEARANCE_WATCH(/obj/vehicle, list("stat"))
 
-/// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
-/// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
-/datum/scheduler_field_definition/atom/get_integrity
-	of = /atom
-	field = "get_integrity"
-	derived = TRUE
-	inputs = list(CHANGE_INTEGRITY)
-
 /// TRUE: a machine in high gear (the mining and conveyor lines read it; their work runs at the same interval either way).
 /obj/machinery/proc/high_gear_enabled()
 	return FALSE

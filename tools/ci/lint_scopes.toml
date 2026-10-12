@@ -1062,6 +1062,7 @@ banned = [
   "OM_FIELD_TYPED = a plain var and TRACKED(T, v)",
   "OM_FLAG_FIELD_BITS = a plain var and TRACKED(T, v), or cap_keys(...)",
   "CHANGE_MOB_STAT = deleted: Life steps and reactions read the mob stat key (nameof(/mob::stat))",
+  "CHANGE_INTEGRITY = get_integrity() reads ATOM_INTEGRITY_KEY, published once by update_integrity()",
   "CHANGE_MOB_HEALTH = deleted: Life steps and reactions read the MOB_KEY_HEALTH key",
   "CHANGE_MOB_LOC = deleted: Life steps and reactions read the MOB_KEY_LOC key",
   "CHANGE_MOB_HANDS = deleted: Life steps and reactions read the MOB_KEY_HANDS key",

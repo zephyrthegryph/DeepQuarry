@@ -4880,3 +4880,16 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+## Native integrity publication (2026-10-12)
+
+The atom integrity setter keeps its existing ATOM_INTEGRITY_KEY publication and
+rule update; its duplicate legacy channel is retired. get_integrity() declares
+that native key, so menus, requirements and damage looks invalidate from the
+actual number. CHANGE_INTEGRITY and its obsolete scheduler-field descriptor
+are deleted and banned. The hit producer no longer names that retired bit.
+Class /obj/effect/energy_field: eight old refresh_bits CHANGE_INTEGRITY -> 0
+telemetry rows are expected to disappear; actual hit damage, health, custody,
+redraw and reactions remain covered by the unchanged public-state rows. No
+other hit-pin change is authorized by this cause. The new live-key regression
+asserts warmed redraw, one notification per mutation and no unchanged wake.
