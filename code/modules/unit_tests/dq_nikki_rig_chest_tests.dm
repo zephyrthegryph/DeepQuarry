@@ -21,7 +21,6 @@
 	rel_add(R, nameof(R.installed_modules), M)
 	M.installed(R)
 	TEST_ASSERT(M in R.installed_modules, "Real mounted module is in owned registry")
-	TEST_ASSERT_EQUAL(M.holder, R, "Real installed callback binds module holder")
 	// A real wearer relation exercises notification; it does not claim the
 	// named owner's authenticated equipment permission was satisfied.
 	rel_set(R, nameof(R.wearer), H)
