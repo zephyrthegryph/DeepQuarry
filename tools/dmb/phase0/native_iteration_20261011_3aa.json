@@ -129,7 +129,8 @@
         "BYOND_byte_parity": "not_asserted",
         "runtime_parity": "not_run",
         "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\0\\session-0\\structural\\structural-summary.json"
-      }
+      },
+      "compiler_stats_scope": "Current compilation diagnostic metrics"
     },
     {
       "kind": "unchanged",
@@ -236,7 +237,8 @@
         "BYOND_byte_parity": "not_asserted",
         "runtime_parity": "not_run",
         "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\1\\session-0\\structural\\structural-summary.json"
-      }
+      },
+      "compiler_stats_scope": "Cached preceding compilation metrics on unchanged fast path; only launch-through-reap wall is a new timing"
     },
     {
       "kind": "body",
@@ -347,7 +349,8 @@
         "BYOND_byte_parity": "not_asserted",
         "runtime_parity": "not_run",
         "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\2\\session-0\\structural\\structural-summary.json"
-      }
+      },
+      "compiler_stats_scope": "Current compilation diagnostic metrics"
     },
     {
       "kind": "structural",
@@ -458,7 +461,8 @@
         "BYOND_byte_parity": "not_asserted",
         "runtime_parity": "not_run",
         "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\3\\session-0\\structural\\structural-summary.json"
-      }
+      },
+      "compiler_stats_scope": "Current compilation diagnostic metrics"
     }
   ],
   "daemon_cleanup": {
