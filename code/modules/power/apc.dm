@@ -515,8 +515,13 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/disconnect_from_network()
 	return FALSE
 
+/// A placed APC (its terminal made by init()) joins the grid as its own node at the terminal's cell once its entity is bound, which also
+/// seats its cell's charge in the power domain (connect_to_network()). Nothing else connects a mapped APC: without this its node never
+/// joined a region and Rust ran it on a cell it was never given (0 J), so every area on the map stayed dark. A frame built by hand has no
+/// terminal until its cable goes in (terminal_wired() connects it then).
 /obj/machinery/power/apc/power_autoconnect()
-	return
+	if(terminal && isturf(loc))
+		connect_to_network(FALSE)
 
 /// Sends this APC's settings and cell state to the Rust power domain (generated accessors,
 /// verdigris/domains/power/src/components.rs). The framework runs it once per frame after any state it
