@@ -96,6 +96,14 @@ impl SessionSymbolicMemo {
         })
     }
     pub(super) fn share_current_code(&self, value: &mut crate::symbolic::PreparedContribution) {
+        // Rebound contributions retain the record's immutable artifact Arc;
+        // share_code has always declined those exact owners without a claim.
+        // Test that same eligibility before the publication read guard, so every
+        // resident completion does not enter an otherwise empty lease callback.
+        // Fresh uniquely-owned artifacts still use the ordinary generic lease.
+        if !value.can_share_code() {
+            return;
+        }
         if let Some(attempt) = &self.attempt {
             attempt.with_pending(|leases| {
                 if let Some(lease) = &leases.code {
@@ -188,6 +196,9 @@ impl SessionSymbolicMemo {
     }
 }
 
+#[cfg(test)]
+#[path = "symbolic_code_admission_tests.rs"]
+mod code_admission_tests;
 #[cfg(test)]
 #[path = "symbolic_publication_tests.rs"]
 mod tests;

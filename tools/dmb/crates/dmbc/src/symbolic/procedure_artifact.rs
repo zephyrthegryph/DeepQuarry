@@ -312,6 +312,11 @@ impl Contribution {
             },
         }
     }
+    /// Exact eligibility of this same physical-sharing stage. Shared or weakly
+    /// witnessed artifacts cannot be mutated by Arc::get_mut below.
+    pub(super) fn can_share_code(&mut self) -> bool {
+        Arc::get_mut(&mut self.artifact).is_some()
+    }
     pub(super) fn share_code(&mut self, lease: &super::shared_procedure_code::Lease) {
         // Reused artifacts already have an admitted physical owner. Never mutate
         // another contribution's current facade or image state.

@@ -179,6 +179,10 @@ impl PreparedContribution {
         }
     }
 
+    /// The physical-sharing stage mutates only an exclusively owned artifact.
+    pub(crate) fn can_share_code(&mut self) -> bool {
+        self.contribution.can_share_code()
+    }
     /// Retain the immutable payload without retaining source/debug provenance
     /// or any current output table assignment.
     pub(crate) fn share_code(&mut self, lease: &super::shared_procedure_code::Lease) {
