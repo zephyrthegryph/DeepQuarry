@@ -99,12 +99,47 @@ fn forward_root_and_source_owner_writes_share_current_encounter_order() {
     use crate::initializer_policy::{
         ClassifiedInitializers, ClassifiedWrite, DefaultValue, Phase, RuntimeGroup, RuntimeValue,
     };
-    let frontend = dm_tree::frontend::build(
+    let engine = crate::engine::EngineSnapshot::from_bytes(
+        include_bytes!("../../../fixtures/native_template.bin"),
+        1,
+    )
+    .unwrap()
+    .with_bootstrap_catalog()
+    .unwrap();
+    let seed = engine.frontend_seed();
+    let frontend = dm_tree::frontend::build_with_config(
         std::path::Path::new("forward.dme"),
         &ForwardSource,
         &Default::default(),
-        1,
+        dm_tree::frontend::FrontendConfig {
+            workers: 1,
+            engine: Some(&seed),
+            observer: None,
+        },
     )
+    .unwrap();
+    let mut symbols = frontend.snapshot.tree.symbols().clone();
+    let constants = crate::engine_host::ConstantCatalog::native_516_1687(&mut symbols).unwrap();
+    let runtime = crate::engine_host::RuntimeAliasCatalog::new(
+        engine.identity(),
+        &symbols,
+        Vec::new(),
+        frontend
+            .snapshot
+            .tree
+            .types()
+            .iter()
+            .map(|node| node.path)
+            .collect(),
+        crate::engine_host::Completeness::Partial,
+    )
+    .unwrap();
+    let host = crate::engine_host::EngineResolverHost::new(
+        Arc::clone(&frontend.snapshot.tree),
+        constants,
+        runtime,
+    )
+    .with_pinned_callables(&engine, &frontend)
     .unwrap();
     let declaration = dm_tree::initializers::capture_declaration_plan(
         &frontend.snapshot,
@@ -137,9 +172,7 @@ fn forward_root_and_source_owner_writes_share_current_encounter_order() {
             writes: (0..plan.writes.len()).collect(),
         }],
     };
-    roster
-        .order_runtime(plan, &mut classified, frontend.snapshot.tree.as_ref())
-        .unwrap();
+    roster.order_runtime(plan, &mut classified, &host).unwrap();
     let names: Vec<_> = classified.groups[0]
         .writes
         .iter()
