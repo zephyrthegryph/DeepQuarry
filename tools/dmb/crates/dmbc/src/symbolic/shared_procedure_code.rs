@@ -41,27 +41,34 @@ impl dm_session::ObservationHost<(), CodeOwner, ()> for Current {
     }
 }
 const KEY_TAG: &[u8] = b"frozen-procedure-owner-v1";
-pub(crate) const MAIN_KEY_BYTES: usize = KEY_TAG.len() + 16 + 16 + 1 + 4 + 1;
+// SymbolId::bits() is u64; UnitIdentity::occurrence and helper numbers are u32.
+// These are the original little-endian field widths, not hash-digest widths.
+const SYMBOL_KEY_BYTES: usize = std::mem::size_of::<u64>();
+const OCCURRENCE_KEY_BYTES: usize = std::mem::size_of::<u32>();
+pub(crate) const MAIN_KEY_BYTES: usize =
+    KEY_TAG.len() + SYMBOL_KEY_BYTES * 2 + 1 + OCCURRENCE_KEY_BYTES + 1;
 /// Exact ordinary locator prefix, without an allocation on candidate dispatch.
 pub(crate) fn main_key(identity: UnitIdentity) -> [u8; MAIN_KEY_BYTES] {
     let mut bytes = [0; MAIN_KEY_BYTES];
     let mut at = KEY_TAG.len();
     bytes[..at].copy_from_slice(KEY_TAG);
-    bytes[at..at + 16].copy_from_slice(&identity.owner.bits().to_le_bytes());
-    at += 16;
-    bytes[at..at + 16].copy_from_slice(&identity.name.bits().to_le_bytes());
-    at += 16;
+    bytes[at..at + SYMBOL_KEY_BYTES].copy_from_slice(&identity.owner.bits().to_le_bytes());
+    at += SYMBOL_KEY_BYTES;
+    bytes[at..at + SYMBOL_KEY_BYTES].copy_from_slice(&identity.name.bits().to_le_bytes());
+    at += SYMBOL_KEY_BYTES;
     bytes[at] = match identity.namespace {
         crate::lowering::Namespace::Proc => 0,
         crate::lowering::Namespace::Verb => 1,
     };
     at += 1;
-    bytes[at..at + 4].copy_from_slice(&identity.occurrence.to_le_bytes());
+    bytes[at..at + OCCURRENCE_KEY_BYTES].copy_from_slice(&identity.occurrence.to_le_bytes());
     // Final helper-present byte is zero for the main procedure.
     bytes
 }
 pub(crate) fn key(identity: UnitIdentity, helper: Option<u32>) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(MAIN_KEY_BYTES + usize::from(helper.is_some()) * 4);
+    let mut bytes = Vec::with_capacity(
+        MAIN_KEY_BYTES + usize::from(helper.is_some()) * std::mem::size_of::<u32>(),
+    );
     bytes.extend_from_slice(&main_key(identity));
     if let Some(argument) = helper {
         bytes[MAIN_KEY_BYTES - 1] = 1;
@@ -176,6 +183,15 @@ mod tests {
                     expected.extend_from_slice(&argument.to_le_bytes());
                 }
                 assert_eq!(key(identity, helper), expected);
+                assert_eq!(
+                    expected.len(),
+                    MAIN_KEY_BYTES
+                        + if helper.is_some() {
+                            std::mem::size_of::<u32>()
+                        } else {
+                            0
+                        }
+                );
                 if helper.is_none() {
                     assert_eq!(main_key(identity).as_slice(), expected);
                 }
