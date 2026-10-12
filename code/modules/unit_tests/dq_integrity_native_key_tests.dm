@@ -1,4 +1,4 @@
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 // Include inside the unit-test manifest guard. No constructor or base vars change.
 /obj/dq_integrity_key_probe
 	abstract_type = /obj/dq_integrity_key_probe
