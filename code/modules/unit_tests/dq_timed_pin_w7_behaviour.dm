@@ -2075,6 +2075,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal/run_pin()
+	scope_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
 	test_menu(M, M, "nutrition_heal")
@@ -2089,6 +2090,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_cancel_on_move/run_pin()
+	scope_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(200)
 	test_menu(M, M, "nutrition_heal")
@@ -2103,6 +2105,7 @@
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_too_hungry
 
 /datum/unit_test/dq_timed_pin_w7/v_nutrition_heal_too_hungry/run_pin()
+	scope_contagion_archive()
 	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
 	M.set_nutrition(5)
 	test_chat_clear()

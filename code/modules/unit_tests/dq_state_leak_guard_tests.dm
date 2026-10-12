@@ -77,3 +77,38 @@
 	var/reason = release_unit_test_block(block, probe)
 	if(reason)
 		Fail(reason)
+
+// Instance-only probe exercises the real wrapper and normal scope teardown.
+/datum/unit_test/dq_state_leak_guard/counter_probe
+	abstract_type = /datum/unit_test/dq_state_leak_guard/counter_probe
+
+/datum/unit_test/dq_state_leak_guard/counter_probe/Run()
+	GLOB.coalesce_runs++
+	// Simulate the last observation being before a real wall-clock rollover.
+	GLOB.rollovercheck_last_timeofday = world.timeofday + 1 SECOND
+	GLOB.rollover_safety_date = world.realtime - 13 HOURS
+	update_midnight_rollover()
+
+/datum/unit_test/dq_state_leak_guard/counter_scope/Run()
+	var/coalesce_before = GLOB.coalesce_runs
+	var/midnight_before = GLOB.midnight_rollovers
+	var/last_before = GLOB.rollovercheck_last_timeofday
+	var/safety_before = GLOB.rollover_safety_date
+	var/datum/unit_test/dq_state_leak_guard/counter_probe/probe = allocate(/datum/unit_test/dq_state_leak_guard/counter_probe)
+	var/datum/unit_test_block/block = probe.test_block
+	defer_cleanup(src, PROC_REF(release_counter_probe), probe, block)
+	probe.RunWrapped()
+	TEST_ASSERT_EQUAL(GLOB.coalesce_runs, coalesce_before + 1, "Real wrapper allows the fixture's diagnostic counter change")
+	TEST_ASSERT_EQUAL(GLOB.midnight_rollovers, midnight_before + 1, "Actual clock helper observes the simulated rollover")
+	lifeform_end(probe, END_SCOPE)
+	TEST_ASSERT_EQUAL(GLOB.coalesce_runs, coalesce_before, "Normal teardown restores exact prior coalesce diagnostic")
+	TEST_ASSERT_EQUAL(GLOB.midnight_rollovers, midnight_before, "Normal teardown restores exact prior midnight count")
+	TEST_ASSERT_EQUAL(GLOB.rollovercheck_last_timeofday, last_before, "Clock observation is restored with its count")
+	TEST_ASSERT_EQUAL(GLOB.rollover_safety_date, safety_before, "Clock safety timestamp retains its original value")
+
+/datum/unit_test/dq_state_leak_guard/counter_scope/proc/release_counter_probe(datum/unit_test/probe, datum/unit_test_block/block)
+	if(!QDELETED(probe))
+		lifeform_end(probe, END_SCOPE)
+	var/reason = release_unit_test_block(block, probe)
+	if(reason)
+		Fail(reason)

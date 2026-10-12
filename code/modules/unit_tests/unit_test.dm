@@ -511,6 +511,12 @@ GLOBAL_VAR(dq_test_select_names)
 	return hash || 1
 
 /datum/unit_test/proc/RunWrapped()
+	// These production diagnostics may change while a fixture drives real work or
+	// the wall clock. Keep its exact entry values through normal teardown.
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	set_global(nameof(GLOB.midnight_rollovers), GLOB.midnight_rollovers)
+	set_global(nameof(GLOB.rollovercheck_last_timeofday), GLOB.rollovercheck_last_timeofday)
+	set_global(nameof(GLOB.rollover_safety_date), GLOB.rollover_safety_date)
 	// Run() starts inside RunUnitTest()'s own call stack (INVOKE_ASYNC only
 	// detaches at the first sleep). Uncaught, a runtime before that sleep
 	// unwinds RunUnitTest() and RunUnitTests() too -- and RunUnitTests() runs
@@ -1024,9 +1030,8 @@ GLOBAL_VAR(dq_test_select_names)
 		"vars" = TRUE, "type" = TRUE, "parent_type" = TRUE, "tag" = TRUE, "current_test" = TRUE, "failed_any_test" = TRUE,
 		"total_runtimes" = TRUE, "total_runtimes_skipped" = TRUE, "boot_noise_count" = TRUE, "boot_unclean" = TRUE,
 		// Cumulative profiling counts, not Boolean world state (including their first 0 -> 1).
-		"act_taken" = TRUE, "coalesce_runs" = TRUE,
+		"act_taken" = TRUE,
 		// Real world clock progress; fixtures never restore or backdate this counter.
-		"midnight_rollovers" = TRUE,
 		"act_last_reason" = TRUE, "act_last_outcome" = TRUE, "e0_proofs_passed" = TRUE, "e0_proofs_pending" = TRUE, "e0_proofs_failed" = TRUE,
 	)
 	return ignored
