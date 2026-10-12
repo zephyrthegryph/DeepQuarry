@@ -303,6 +303,7 @@ fn main() -> ExitCode {
         "base-vars-dead" => dq_analyze::base_vars_dead::run(&args.flags, &root),
         "gen" => dq_analyze::sem::cli::gen(&args.flags, &root),
         "codemod" => dq_analyze::codemod::cli(&args.flags, &root),
+        "fix" => dq_analyze::lints::tracked::fix_cli(&args.flags, &root),
         "fixture" => dq_analyze::sem::cli::fixture(&args.flags, &root),
         "frontend-diff" => {
             use dq_analyze::frontend::{self, Frontend};
