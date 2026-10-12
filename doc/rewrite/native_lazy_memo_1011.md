@@ -16,7 +16,7 @@ and unwind evaluation guards.
 Asset preparation remains outside the pure computation: it realizes pending
 spritesheets and stages real transport, item and ordered child references.
 Owned mapping records preserve aliases; child-position records preserve both
-order and repeated children. Only URL JSON and the formatted message are cached.
+order and repeated children. Scalar ordered mapping rows, URL JSON and the formatted message are cached.
 Configuration changes pass through the assets system API. No revision counter
 stands in for the real inputs.
 
@@ -27,10 +27,20 @@ bypass ordinary VV restrictions while invoking registered setters; unregistered
 fields keep the raw update path. This makes privileged identity edits invalidate
 the same real memo dependencies as normal setters.
 
-Verification is pending. The focused selectors are `dq_lazy_memo`,
-`dq_asset_memo`, `dq_requirement_protocol_pin` and `dq_conversion_pin`, plus
-the lane-ready smoke and incremental appearance checks. This document does not
-claim compilation, test results or a lane-ready stamp.
+Lane-ready passed on `67d400d5f48a`, merged with master `3d90c1b8ec`:
+50 tests passed, zero failures, production compile zero errors, DreamChecker
+zero diagnostics, and all analyzer/ratchet checks passed. The runtime evidence is
+`data/test-runs/20261012T065624_67d400d5f4.json`; the normal lane-ready note is
+on that exact tested commit. The batch includes eight engine memo regressions,
+twelve asset regressions, the existing asset-cache hygiene test, both mandatory
+requirement/conversion pins, smoke tests and incremental appearance checks.
+No snapshot rows were blessed. No full suite ran.
+
+Two legacy `CHANGE_EXPLICIT` cache readers and their two manual publications
+were replaced. Repeated and nested child mappings retain the original BYOND
+associative-list merge order and duplicate-key encoding. Native `on_change`
+can observe a declared memo key; batched input writes invalidate immediately
+and deliver the output change after the batch completes.
 
 ### Strict input and deletion contract
 
