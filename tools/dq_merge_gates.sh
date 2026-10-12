@@ -61,6 +61,35 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 # look_keys.txt must match the merged tree before the HEAD is stamped: regenerate it and commit it as part of the merge.
 tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
+# What this batch is meant to land, recorded for tools/dq_push_master.sh: origin/master as the gates start (a push after it moved
+# is refused on the merge worktree) and the tip of every lane in --lanes (the push fails unless each is in HEAD and then in origin/master).
+git fetch -q origin 2>/dev/null || echo "dq_merge_gates: warning: git fetch failed; base_master is the last fetched origin/master" >&2
+base_master="$(git rev-parse -q --verify origin/master 2>/dev/null || true)"
+lane_tips=""
+for ref in $lanes; do
+	tip="$(git rev-parse -q --verify "$ref^{commit}" 2>/dev/null || git rev-parse -q --verify "origin/$ref^{commit}" 2>/dev/null || true)"
+	if [ -z "$tip" ]; then echo "dq_merge_gates: REFUSED: lane '$ref' does not resolve to a commit" >&2; exit 2; fi
+	if ! git merge-base --is-ancestor "$tip" HEAD; then
+		echo "dq_merge_gates: REFUSED: lane '$ref' (${tip:0:12}) is not in HEAD; merge it into this branch first (git merge --no-ff $ref)" >&2
+		exit 1
+	fi
+	lane_tips="$lane_tips${lane_tips:+,}$tip"
+done
+# A baseline that only needs shrinking after the merge (a fixed site left it) is shrunk here, into the merge commit when HEAD is
+# an unpushed merge, instead of a separate repair commit. `analyze baseline --update` never adds a site or raises a ceiling.
+if bin="$(bash tools/ci/analyze.sh 2>/dev/null)"; then
+	"$bin" baseline --update >/dev/null 2>&1 || echo "dq_merge_gates: warning: analyze baseline --update failed; baselines left as they are" >&2
+	if ! git diff --quiet -- tools/ci; then
+		echo "dq_merge_gates: shrank ratchet baselines after the merge:"
+		git diff --stat -- tools/ci | tail -n 5
+		git add -- tools/ci
+		if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
+			git commit -q --amend --no-edit
+		else
+			git commit -q -m "Shrink ratchet baselines after the merge" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+		fi
+	fi
+fi
 bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys regeneration failed" >&2; exit 1; }
 sha="$(git rev-parse HEAD)"
 short="${sha:0:12}"
@@ -187,6 +216,9 @@ for n in "${names[@]}"; do
 		# Every failure is one tools/ci/known_failures.txt lists (dq_focused_test.sh classified them): they are printed, not a gate failure.
 		echo "tests: only KNOWN failures (tools/ci/known_failures.txt); not failing the gate:"
 		grep -h '^  KNOWN' "$log" | sort -u
+		echo "################################################################################"
+		echo "# KNOWN FAILURE STILL PRESENT - fix required (listed above; nothing is committed for them)"
+		echo "################################################################################"
 		rc=0
 	fi
 	if [ "$rc" -ne 0 ]; then failed+=("$n"); fi
@@ -257,6 +289,8 @@ fi
 	echo "tgui=$tgui"
 	echo "dm=$dm_ok"
 	echo "lanes=$lanes"
+	echo "lane_tips=$lane_tips"
+	echo "base_master=$base_master"
 } >"data/merge-gates/$short.ok"
 # The test stamp the push gate reads (tools/dq_push_stamp.sh): a note on this exact commit, only when a test world ran and nothing failed
 # that tools/ci/known_failures.txt does not list. A lane-ready run gets its own note from dq_lane_ready.sh; a merge batch pushes on this one.
