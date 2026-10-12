@@ -1282,6 +1282,8 @@
 #include "dq_look_state_evidence_tests.dm"
 #include "dq_publish_fault_contract_tests.dm"
 
+#include "dq_numeric_grid_lookup_tests.dm"
+#include "dq_state_batch_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

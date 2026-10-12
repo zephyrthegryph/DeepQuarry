@@ -932,6 +932,8 @@
 #include "code\library\reactions\capability_reactions.dm"
 #include "code\library\reactions\legacy_reactions.dm"
 #include "code\engine\change\state.dm"
+#include "code\engine\change\lookup_reads.dm"
+#include "code\engine\change\batch.dm"
 #include "code\engine\actions\work.dm"
 #include "code\engine\refs\table.dm"
 #include "code\engine\refs\transfer.dm"
@@ -5895,3 +5897,4 @@
 
 #include "code\library\operations\presentation.dm"
 #include "code\library\materialization\host.dm"
+
