@@ -93,7 +93,7 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	data["open"] = !!open
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
-		c += list(list("ref" = "ef[P]", "name" = P.name))
+		c += list(list("ref" = "\ref[P]", "name" = P.name))
 	data["contents"] = c
 	return data
 
@@ -115,11 +115,11 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	if(dial == tumbler_1_pos + 1 || dial == tumbler_1_pos - 71)
 		tumbler_1_pos = decrement(tumbler_1_pos)
 		if(canhear)
-			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from 	he [src]."))
+			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
 		if(tumbler_1_pos == tumbler_2_pos + 37 || tumbler_1_pos == tumbler_2_pos - 35)
 			tumbler_2_pos = decrement(tumbler_2_pos)
 			if(canhear)
-				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from 	he [src]."))
+				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
 				play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		check_unlocked(human_user, canhear)
 	return TRUE
@@ -133,11 +133,11 @@ MSG_DEF_SELF(safe/not_human, "You can't work the dial.")
 	if(dial == tumbler_1_pos - 1 || dial == tumbler_1_pos + 71)
 		tumbler_1_pos = increment(tumbler_1_pos)
 		if(canhear)
-			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from 	he [src]."))
+			to_chat(human_user, span_notice("You hear a [pick("clack", "scrape", "clank")] from \the [src]."))
 		if(tumbler_1_pos == tumbler_2_pos - 37 || tumbler_1_pos == tumbler_2_pos + 35)
 			tumbler_2_pos = increment(tumbler_2_pos)
 			if(canhear)
-				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from 	he [src]."))
+				to_chat(human_user, span_notice("You hear a [pick("click", "chink", "clink")] from \the [src]."))
 				play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		check_unlocked(human_user, canhear)
 	return TRUE

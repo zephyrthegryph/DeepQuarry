@@ -114,7 +114,7 @@
 
 /datum/surgical_step/place_item/confirm_text(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)
-	return placed ? "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?" : null
+	return placed ? "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?" : null
 
 /datum/surgical_step/place_item/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	var/obj/item/placed = placed_item(user, tool)

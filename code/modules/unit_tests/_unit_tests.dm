@@ -1282,6 +1282,7 @@
 #include "dq_acceptance_retirement_old_boundaries.dm"
 #include "dq_numeric_grid_lookup_tests.dm"
 #include "dq_state_batch_tests.dm"
+#include "dq_nikki_rig_chest_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

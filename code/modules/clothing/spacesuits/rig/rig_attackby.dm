@@ -96,9 +96,10 @@
 
 /// A welder on the rig patches its chest piece.
 /obj/item/rig/proc/welder_used(datum/act/op/A)
-	if(!chest)
+	var/obj/item/clothing/suit/space/space_chest = chest
+	if(!istype(space_chest))
 		return OP_OK
-	return chest.welder_used(A)
+	return space_chest.welder_used(A)
 
 /obj/item/rig/proc/crowbar_used(datum/act/op/A)
 	var/mob/user = A.actor

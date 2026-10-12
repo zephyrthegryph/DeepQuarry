@@ -4864,3 +4864,10 @@ Unsupported virtual argument aliases are rejected explicitly. No snapshot rows
 have been blessed for this change; runtime verification is still pending.
 
 acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combination with rf-toolact4's grenade stages (the locked manhack grenade and chem grenade rows come back unfactored, the camera assembly loses its Alternate use row, the sechailer's wirecutter click) and the protoblob holder row without source lines.
+
+### fix-constraints: master's constraint sweeps (October 2026)
+
+* **Nikki's RIG owns its cape.** `/obj/item/rig/nikki` sets `chest_type` to `/obj/item/clothing/suit/fluff/nikki` but inherited `owns_one(chest, /obj/item/clothing/suit/space/rig)`, so it could not be created. It declares its own chest (the cape); the rig's `chest` field is a `/obj/item/clothing/suit`, and the two space-suit-only uses (welder patching, the breach threshold in module damage) check for a space suit. A cape has no breach protection. Its conversion pin now records the constructed rig, not the old OWN refusal.
+* **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
+* **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
+* **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
