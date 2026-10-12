@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { withRuntimeIdentityChecks } from './byond';
+import { withRuntimeIdentityChecks, removePrivateHostedLeaves, archiveHostedDaemonLog } from './byond';
 import { CompilerProvenanceError } from './compiler_provenance';
 import { NativeAcquisitionError } from './native_pair';
 import { observeRuntimeLibrary, stageRuntimeLibrary, verifyObservedRuntimeLibrary } from './runtime_library';
@@ -26,6 +26,44 @@ async function failure(run: () => Promise<unknown>): Promise<any> {
   try { await run(); } catch (error) { return error; }
   throw new Error('Expected runtime identity admission to fail');
 }
+
+test('pre-spawn rejection cleans partial owned pair and preserves typed primary failure', async () => {
+  const files = fixture();
+  const slot = path.join(files.root, 'partial'); fs.mkdirSync(slot);
+  fs.writeFileSync(path.join(slot, 'world.dmb'), 'partial copy');
+  const primary = new CompilerProvenanceError('prepared pair rejected before spawn');
+  try {
+    expect(await failure(() => withRuntimeIdentityChecks(async () => { throw primary; },
+      () => removePrivateHostedLeaves(slot)))).toBe(primary);
+    expect(fs.existsSync(slot)).toBe(false);
+  } finally { files.remove(); }
+});
+
+test('failed archival preserves exact daemon log while releasing private pair leaves', () => {
+  const files = fixture();
+  const slot = path.join(files.root, 'log-slot'); fs.mkdirSync(slot);
+  const log = path.join(slot, 'world.log'); fs.writeFileSync(log, 'actual mock evidence');
+  fs.writeFileSync(path.join(slot, 'world.dmb'), 'private world');
+  try {
+    const preserved = archiveHostedDaemonLog(log, files.root); // Directory cannot be overwritten by a file.
+    expect(preserved).toBe(log);
+    removePrivateHostedLeaves(slot, preserved);
+    expect(fs.readFileSync(log, 'utf8')).toBe('actual mock evidence');
+    expect(fs.existsSync(path.join(slot, 'world.dmb'))).toBe(false);
+  } finally { fs.unlinkSync(log); fs.rmdirSync(slot); files.remove(); }
+});
+
+test('private cleanup failure cannot mask typed pre-spawn provenance failure', async () => {
+  const files = fixture();
+  const missing = path.join(files.root, 'never-created');
+  const primary = new CompilerProvenanceError('current pair proof rejected');
+  try {
+    const caught = await failure(() => withRuntimeIdentityChecks(async () => { throw primary; },
+      () => removePrivateHostedLeaves(missing)));
+    expect(caught).toBe(primary);
+    expect(caught.runtimeIdentityCleanup.runtimeIdentityError).toBeDefined();
+  } finally { files.remove(); }
+});
 
 test('passing world rows cannot admit a changed observed runtime library', async () => {
   const files = fixture();

@@ -579,6 +579,8 @@ export async function DreamDaemon(
   const hostedArgs = acquiredWorldArguments(args, options.dmbFile, output.kind === 'native_pair' || privateConventional);
   return withCompiledOutput(output, Juke.exec, async dmbFile => {
     let privateDirectory: string | undefined;
+    let hosted: DDOptions | undefined;
+    return withRuntimeIdentityChecks(async () => {
     if (privateConventional) {
       const root = path.resolve(process.env.DQ_NATIVE_RUN_ROOT ?? 'E:/dq-cache/dmb-build-integration');
       if (!root.toLowerCase().startsWith('e:\\dq-cache\\')) throw new CompilerProvenanceError('Captured runtime directory must be owned below E:/dq-cache');
@@ -592,23 +594,42 @@ export async function DreamDaemon(
       dmbFile = path.join(privateDirectory, 'world.dmb');
     }
     options.onPreparedOutput?.(dmbFile);
-    const hosted = { ...options, dmbFile, compiledOutput: output };
-    try { return await runHostedWorld(hosted, hostedArgs); }
-    finally {
-      if ((output.kind === 'native_pair' || privateConventional) && hosted.daemonLog && fs.existsSync(hosted.daemonLog)) {
+    hosted = { ...options, dmbFile, compiledOutput: output };
+    return await runHostedWorld(hosted, hostedArgs);
+    }, () => {
+      let preservedLog: string | undefined;
+      if ((output.kind === 'native_pair' || privateConventional) && hosted?.daemonLog && fs.existsSync(hosted.daemonLog)) {
         const destination = options.daemonLog ?? options.dmbFile.replace(/\.dmb$/, '.log');
-        try { fs.copyFileSync(hosted.daemonLog, destination); }
-        catch (error) { Juke.logger.warn(`Native daemon log preserved at ${hosted.daemonLog}: ${error}`); }
+        preservedLog = archiveHostedDaemonLog(hosted.daemonLog, destination);
       }
       if (privateDirectory) {
-        for (const name of ['world.dmb', 'world.rsc', 'world.dyn.rsc', 'world.log']) {
-          fs.rmSync(path.join(privateDirectory, name), { force: true });
-        }
-        // Unknown additional evidence stays owned in this private directory.
-        try { fs.rmdirSync(privateDirectory); } catch { /* Preserve nonempty runtime evidence. */ }
+        removePrivateHostedLeaves(privateDirectory, preservedLog);
       }
-    }
+    });
   });
+}
+
+export function archiveHostedDaemonLog(source: string, destination: string): string | undefined {
+  try { fs.copyFileSync(source, destination); return undefined; }
+  catch (error) {
+    Juke.logger.warn(`Daemon log preserved at ${source}: ${error}`);
+    return source;
+  }
+}
+
+/** Exact leaves of this request's newly created private directory only. */
+export function removePrivateHostedLeaves(directory: string, preservedLog?: string): void {
+  assertDirectoryChain(directory);
+  for (const name of ['world.dmb', 'world.rsc', 'world.dyn.rsc', 'world.log']) {
+    const file = path.join(directory, name);
+    if (preservedLog && path.resolve(file) === path.resolve(preservedLog)) continue;
+    fs.rmSync(file, { force: true });
+  }
+  // Unknown additional evidence stays owned; never recursively delete it.
+  try { fs.rmdirSync(directory); }
+  catch (error) {
+    if (!['ENOTEMPTY', 'EEXIST'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+  }
 }
 
 /** Runtime input failures must escape the runner's ordinary nonzero-exit handling. */
