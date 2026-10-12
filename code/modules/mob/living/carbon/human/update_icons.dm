@@ -962,11 +962,10 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	apply_layer(L_HAND_LAYER)
 
 /mob/living/carbon/human/proc/get_tail_layer()
-	// Layer follows facing direction automatically: the tail sits behind the body
-	// when facing toward or away from the viewer (north/south), and on the middle
-	// layer (over clothing) when facing to the side (east/west). Individual tail
-	// sprites may override which dirs render behind the body via lower_layer_dirs.
-	var/list/lower_layer_dirs = list(NORTH, SOUTH)
+	// Layer follows facing direction (set_dir redraws it): the tail sits under the clothing when
+	// facing south, east or west, and over the uniform (TAIL_UPPER_LAYER) when facing north, where
+	// it hangs over the back of the pants. Individual tail sprites may override the lower dirs.
+	var/list/lower_layer_dirs = list(SOUTH, EAST, WEST)
 	if(tail_style)
 		lower_layer_dirs = tail_style.lower_layer_dirs
 
