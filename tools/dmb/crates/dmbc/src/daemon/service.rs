@@ -197,9 +197,9 @@ impl Shared {
         dm_profile::reclaim_unused_allocator_pages();
         let mut after = transport::private_bytes();
         let mut joined_workers = false;
-        if after.is_some_and(|bytes| self.under_memory_pressure(bytes)) {
-            // Idle pool workers keep their own thread heaps; joining them
-            // abandons those heaps so a second collection can purge them.
+        if after.is_some_and(|bytes| self.over_hard_ceiling(bytes)) {
+            // Only above the hard ceiling: idle pool workers own thread heaps
+            // that later builds reuse, so joining them abandons those pages.
             self.executors.trim(Instant::now(), true);
             dm_profile::reclaim_unused_allocator_pages();
             after = transport::private_bytes();
@@ -339,7 +339,7 @@ impl Shared {
         self.housekeep(Instant::now(), soft, hard);
         // Host releases above have finished; no slot/host lock is held here.
         self.engines.prune_idle();
-        self.executors.trim(Instant::now(), soft);
+        self.executors.trim(Instant::now(), hard);
     }
 }
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);

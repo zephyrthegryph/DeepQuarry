@@ -8,7 +8,9 @@ use std::{
 };
 
 const MAX_WORKERS: usize = 8;
-const IDLE: Duration = Duration::from_secs(30);
+// Idle workers keep owning their allocator heaps (and the retained results
+// allocated on them) across edits; joining them abandons those pages.
+const IDLE: Duration = Duration::from_secs(600);
 struct Idle {
     executor: BuildExecutor,
     since: Instant,
