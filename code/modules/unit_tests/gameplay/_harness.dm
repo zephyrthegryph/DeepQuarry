@@ -102,7 +102,7 @@
 	if(access)
 		var/obj/item/card/id/card = new(H)
 		card.access = access
-		card.registered_name = "Gameplay Tester"
+		card.set_registered_name("Gameplay Tester")
 		H.equip_to_slot_or_del(card, SLOT_ID_ID)
 	refresh_flush()
 	player = H

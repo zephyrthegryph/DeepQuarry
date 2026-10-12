@@ -429,15 +429,6 @@ CAPABILITIES(/turf)
 /turf/proc/can_engrave()
 	return FALSE
 
-/// The Graffiti op's condition: the actor holds something sharp to engrave with and the surface takes engraving. Without it the op is no
-/// choice at all (no menu line; an alt-click goes on to the default), as try_graffiti() would decline it.
-/turf/proc/graffiti_tool_ready(datum/act/op/A)
-	var/mob/living/user = A.actor
-	if(!isliving(user))
-		return FALSE
-	var/obj/item/tool = user.get_active_hand()
-	return !!(tool && combat_of(tool).sharp && can_engrave())
-
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
 	if(!tool || !combat_of(tool).sharp || !can_engrave())
