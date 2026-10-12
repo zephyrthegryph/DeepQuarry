@@ -15,7 +15,7 @@ blessed and no full suite ran.
 
 This is the policy prerequisite, not completion of tracked access lists. Global
 object registration still overlaps twelve reserved writes: ten RCD writes in
-`code/game/objects/items/weapons/rcd/walls.dm` (the five direct paths and five
+`code/game/turfs/simulated/walls.dm` (the five direct paths and five
 deferred windoor-choice writes), plus the two private `/obj` access-check helper
 assignments in `code/modules/tgui/modules/atmos_control.dm:22`. Those constructor
 and tool-action paths remain for their owning lanes. Registering tracking first
