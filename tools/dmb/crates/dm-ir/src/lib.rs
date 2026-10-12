@@ -36,9 +36,11 @@ pub use procedure_static::{
     ProcedureIdentity, ProcedureStaticDeclaration, ProcedureStaticIdentity,
 };
 
+mod canonical_answer;
 pub mod predefined_resolution;
 pub mod receiver_resolution;
 pub mod reference_resolution;
+pub use canonical_answer::CanonicalResolvedAnswer;
 mod resolver;
 mod selected_references;
 pub use resolver::{

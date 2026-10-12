@@ -109,6 +109,16 @@ impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
     fn domain_version(&self, domain: ReadDomain) -> Option<u128> {
         self.resolver.domain_version(domain)
     }
+    fn resolve_with_canonical(&self, query: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
+        let version = self
+            .ledger
+            .domain_receipt(&query.domain())
+            .unwrap_or_else(|| self.resolver.domain_version(query.domain()));
+        let answer = self.resolver.resolve_with_canonical(query);
+        self.ledger
+            .record(query, answer.answer.clone(), query.domain(), version);
+        answer
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         let version = self
             .ledger

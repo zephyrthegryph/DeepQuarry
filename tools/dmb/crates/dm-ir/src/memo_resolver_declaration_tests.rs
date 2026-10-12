@@ -4,7 +4,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
-fn declaration() -> ResolvedMeaning {
+pub(super) fn declaration() -> ResolvedMeaning {
     ResolvedMeaning::Declaration {
         identity: ProcedureIdentity {
             owner: SymbolId::of("/datum/probe"),

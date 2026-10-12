@@ -381,19 +381,19 @@ impl Payload<'_> {
             provider.domain_version(*d)
         });
         for (read, typed) in self.reads.0.iter().zip(&self.typed_answers.0) {
-            let answer = typed::hydrate(
+            let answer = typed::hydrate_canonical(
                 read.query,
                 typed.as_ref(),
                 matching.contains(&read.query.domain()),
                 provider,
             );
-            if answer.canonical_bytes() != read.answer.as_ref() {
+            if answer.canonical() != read.answer.as_ref() {
                 return Err(read.query);
             }
             pending.push(ResolverRead {
                 query: read.query,
                 domain: read.query.domain(),
-                answer,
+                answer: answer.answer,
             });
         }
         Ok(Some(pending))

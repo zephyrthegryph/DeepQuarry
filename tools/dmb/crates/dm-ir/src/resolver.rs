@@ -429,6 +429,11 @@ pub trait Resolver: Sync {
         None
     }
 
+    /// The canonical bytes belong to this exact resolved answer. Defaults keep
+    /// ordinary callbacks; pure delegates may forward this capability unchanged.
+    fn resolve_with_canonical(&self, query: ResolveQuery) -> crate::CanonicalResolvedAnswer {
+        crate::CanonicalResolvedAnswer::new(self.resolve(query))
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning;
 }
 

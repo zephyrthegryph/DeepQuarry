@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::sync::{
     atomic::{AtomicU64, AtomicUsize, Ordering},
-    RwLock,
+    Arc, OnceLock, RwLock,
 };
 
 /// Aggregate request-local observations; concurrent snapshots are approximate.
@@ -21,13 +21,18 @@ pub struct MemoStats {
 /// Place caller read/diagnostic recording outside this wrapper: a hit still
 /// answers the caller's exact query and must still be recorded by that caller.
 /// Admission failure and poisoned optimization state fall back to the host.
+struct Entry {
+    answer: ResolvedMeaning,
+    // Allocated only when a consumer requests canonical evidence.
+    canonical: Option<Arc<OnceLock<Option<Arc<[u8]>>>>>,
+}
 pub struct MemoResolver<'a, R: Resolver + ?Sized> {
     host: &'a R,
     entry_budget: usize,
     hits: AtomicU64,
     misses: AtomicU64,
     retained_entries: AtomicUsize,
-    entries: RwLock<HashMap<ResolveQuery, ResolvedMeaning>>,
+    entries: RwLock<HashMap<ResolveQuery, Entry>>,
 }
 impl<'a, R: Resolver + ?Sized> MemoResolver<'a, R> {
     /// The budget is fixed for this request. At capacity, existing hits remain
@@ -133,6 +138,39 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
     fn domain_version(&self, domain: crate::ReadDomain) -> Option<u128> {
         self.host.domain_version(domain)
     }
+    fn resolve_with_canonical(&self, query: ResolveQuery) -> crate::CanonicalResolvedAnswer {
+        let answer = self.resolve(query);
+        let cell = self.entries.write().ok().and_then(|mut entries| {
+            let entry = entries.get_mut(&query)?;
+            if entry.answer != answer {
+                return None;
+            }
+            Some(Arc::clone(
+                entry
+                    .canonical
+                    .get_or_insert_with(|| Arc::new(OnceLock::new())),
+            ))
+        });
+        let Some(cell) = cell else {
+            return crate::CanonicalResolvedAnswer::new(answer);
+        };
+        let mut oversized = None;
+        let retained = cell.get_or_init(|| {
+            let bytes: Arc<[u8]> = answer.canonical_bytes().into();
+            if bytes.len() <= 4096 {
+                Some(bytes)
+            } else {
+                oversized = Some(bytes);
+                None
+            }
+        });
+        let bytes = retained
+            .as_ref()
+            .map(Arc::clone)
+            .or(oversized)
+            .unwrap_or_else(|| answer.canonical_bytes().into());
+        crate::CanonicalResolvedAnswer::with_bytes(answer, bytes)
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         if self.entry_budget == 0 {
             self.misses.fetch_add(1, Ordering::Relaxed);
@@ -141,7 +179,7 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
         if let Ok(entries) = self.entries.read() {
             if let Some(meaning) = entries.get(&query) {
                 self.hits.fetch_add(1, Ordering::Relaxed);
-                return meaning.clone();
+                return meaning.answer.clone();
             }
         }
         // Never resolve while holding a cache lock, and never wait on in-flight
@@ -157,7 +195,13 @@ impl<R: Resolver + ?Sized> Resolver for MemoResolver<'_, R> {
                     && !entries.contains_key(&query)
                     && entries.try_reserve(1).is_ok()
                 {
-                    entries.insert(query, meaning.clone());
+                    entries.insert(
+                        query,
+                        Entry {
+                            answer: meaning.clone(),
+                            canonical: None,
+                        },
+                    );
                     self.retained_entries.fetch_add(1, Ordering::Relaxed);
                 }
             }
@@ -452,3 +496,7 @@ mod tests {
 #[cfg(test)]
 #[path = "memo_resolver_declaration_tests.rs"]
 mod declaration_tests;
+
+#[cfg(test)]
+#[path = "memo_resolver_canonical_tests.rs"]
+mod canonical_tests;

@@ -1,5 +1,6 @@
 //! Typed transport is payload evidence, never a substitute for current issuance.
 use dm_ir::{PortableResolvedAnswer, ResolveQuery, ResolvedMeaning, Resolver};
+#[cfg(test)]
 pub(super) fn hydrate(
     query: ResolveQuery,
     typed: Option<&PortableResolvedAnswer>,
@@ -9,6 +10,17 @@ pub(super) fn hydrate(
     match typed {
         Some(answer) if certified => answer.restore(),
         _ => provider.resolve(query),
+    }
+}
+pub(super) fn hydrate_canonical(
+    query: ResolveQuery,
+    typed: Option<&PortableResolvedAnswer>,
+    certified: bool,
+    provider: &dyn Resolver,
+) -> dm_ir::CanonicalResolvedAnswer {
+    match typed {
+        Some(answer) if certified => dm_ir::CanonicalResolvedAnswer::new(answer.restore()),
+        _ => provider.resolve_with_canonical(query),
     }
 }
 #[cfg(test)]

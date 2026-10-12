@@ -204,3 +204,29 @@ fn nontransparent_custom_observer_keeps_ordinary_resolve_callbacks() {
     assert_eq!(custom.observed.load(Ordering::Relaxed), 2);
     assert!(dm_ir::TransparentReceiptObserver::new(&custom, &recorder).is_none());
 }
+
+#[test]
+fn canonical_forwarding_records_every_nested_observation_around_same_memo() {
+    struct Current(std::sync::atomic::AtomicUsize);
+    impl dm_ir::Resolver for Current {
+        fn observes_reads(&self) -> bool {
+            false
+        }
+        fn resolve(&self, _: dm_ir::ResolveQuery) -> dm_ir::ResolvedMeaning {
+            self.0.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            dm_ir::ResolvedMeaning::Missing
+        }
+    }
+    let host = Current(std::sync::atomic::AtomicUsize::new(0));
+    let memo = dm_ir::MemoResolver::new(&host, 4);
+    let inner = super::RecordingResolver::new(&memo);
+    let outer = super::RecordingResolver::new(&inner);
+    let query = dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of("canonical_missing"));
+    let a = dm_ir::Resolver::resolve_with_canonical(&outer, query);
+    let b = dm_ir::Resolver::resolve_with_canonical(&outer, query);
+    assert_eq!(a.canonical().as_ptr(), b.canonical().as_ptr());
+    assert_eq!(host.0.load(std::sync::atomic::Ordering::Relaxed), 1);
+    assert_eq!(inner.reads().len(), 1);
+    assert_eq!(outer.reads().len(), 1);
+    assert_eq!(outer.reads()[0].answer, dm_ir::ResolvedMeaning::Missing);
+}
