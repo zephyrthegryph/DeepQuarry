@@ -327,6 +327,14 @@ impl<R: Resolver> NativeResourceResolver<R> {
     }
 }
 impl<R: Resolver> Resolver for NativeResourceResolver<R> {
+    /// The captured resource lookup tables are immutable and have no read
+    /// observer, exactly like the tree they wrap, so observation is the inner
+    /// host's. The default (`true`) disabled every exact-replay bypass that
+    /// requires an unobserved host, including the unchanged-local lowering path.
+    fn observes_reads(&self) -> bool {
+        self.tree.observes_reads()
+    }
+
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         if domain != dm_ir::ReadDomain::ResourceSearch {
             return self.tree.domain_version(domain);
@@ -406,6 +414,36 @@ mod tests {
                 _ => ResolvedMeaning::Unsupported(query),
             }
         }
+    }
+    #[test]
+    fn observation_is_the_wrapped_trees_not_the_conservative_default() {
+        struct Observed;
+        impl Resolver for Observed {
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                ResolvedMeaning::Unsupported(query)
+            }
+        }
+        struct Silent;
+        impl Resolver for Silent {
+            fn observes_reads(&self) -> bool {
+                false
+            }
+            fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
+                ResolvedMeaning::Unsupported(query)
+            }
+        }
+        fn wrap<R: Resolver>(tree: R) -> NativeResourceResolver<R> {
+            NativeResourceResolver::from_captured(
+                tree,
+                &SymbolTable::default(),
+                resources(),
+                [],
+                [],
+            )
+            .unwrap()
+        }
+        assert!(!wrap(Silent).observes_reads());
+        assert!(wrap(Observed).observes_reads());
     }
     fn resources() -> ResourceSet {
         ResourceSet {
