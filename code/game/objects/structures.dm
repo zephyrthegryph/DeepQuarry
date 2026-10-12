@@ -89,7 +89,6 @@ TRACKED(/obj/structure, other_connections)
 /obj/structure/proc/smooth_changed(mask)
 	smooth_mask = mask
 	update_connections()
-	update_icon()
 
 /obj/structure/proc/update_connections(propagate = 0)
 	if(propagate)

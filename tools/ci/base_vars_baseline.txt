@@ -63,8 +63,6 @@ base_var	code/datums/soul_link.dm	var/list/datum/soul_link/owned_soul_links // S
 base_var	code/datums/soul_link.dm	var/list/datum/soul_link/shared_soul_links // Soul links we are a/the sharer of (a relation list view).
 base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/alt_appearances_owned
 base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/datum/alternate_appearance/alt_appearances_viewing
-base_var	code/datums/sys/appearance.dm	var/tmp/decl_appearance_key
-base_var	code/datums/sys/appearance.dm	var/tmp/appearance_queued = FALSE
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_touched_at)
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_refused_until)

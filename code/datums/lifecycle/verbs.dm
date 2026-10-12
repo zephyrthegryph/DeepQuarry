@@ -226,11 +226,9 @@
 	var/sound_volume = 50
 	/// Debris type spawned at the same turf, or null.
 	var/debris_type
-	/// Whether atoms on the same turf get update_icon() afterwards.
-	var/update_neighbors = FALSE
 	/// After the atom has left its turf (apply_after()): atoms of this type
-	/// within neighbor_range re-smooth -- structures update_connections() --
-	/// and update_icon(). Walls, grilles, railings, lattices.
+	/// within neighbor_range re-smooth -- structures update_connections().
+	/// Walls, grilles, railings, lattices.
 	var/neighbor_type
 	var/neighbor_range = 1
 	/// Whether neighbour structures also re-run update_connections().
@@ -295,9 +293,6 @@
 	for(var/path in debris)
 		for(var/i in 1 to max(1, debris[path]))
 			new path(T)
-	if(update_neighbors)
-		for(var/atom/movable/AM in contents_of(T))
-			AM.update_icon()
 	return T
 
 /// After Destroy(): neighbours that smooth against the atom see it gone.
@@ -310,4 +305,3 @@
 		if(neighbor_reconnect && isstructure(N))
 			var/obj/structure/S = N
 			S.update_connections()
-		N.update_icon()

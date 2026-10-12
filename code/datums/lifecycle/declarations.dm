@@ -1,13 +1,4 @@
 // Content lifecycle adapters: the generic declaration table lives in engine/declare/lifecycle.dm.
-/datum/lifecycle_decls/clear_presentation()
-	drop_appearance()
-
-/datum/lifecycle_decls/validate_presentation(datum/D)
-	finish_appearance(D)
-
-/datum/lifecycle_decls/has_presentation()
-	return appearance_draws || appearance_mask
-
 /datum/lifecycle_decls/validate_registries()
 	for(var/id in registries?.Copy())
 		var/datum/registry/registry = get_registry(id)
@@ -37,8 +28,6 @@
 		return
 	if(decls.gas)
 		decls.create_gas(D)
-	if(decls.work & DECL_WORK_APPEARANCE)
-		decls.init_appearance(D)
 	if(decls.verbs_always || decls.verbs_if || decls.verbs_hidden)
 		verb_store_apply_declared(D, decls)
 
@@ -56,7 +45,7 @@
 	rel_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
 
 
-// ---- appearance: code/datums/sys/appearance.dm ----
+// ---- verbs ----
 
 // ---- materialize / dematerialize ----
 
