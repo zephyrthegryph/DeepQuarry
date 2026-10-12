@@ -41,8 +41,9 @@ even if current writes occur only in constructors. Reflection makes a
 constructor-only inference insufficient; no file-path exemption establishes
 immutability. Intermediate collection and relation reads obey the same rule.
 
-`QDELETED()` reads have explicit native `lifetime:deleted` metadata. Actual
-source identity is bound weakly, and marking `GC_BATCH_DOOMED` invalidates memo
+`QDELETED()` reads have explicit native `lifetime:deleted` metadata. The signature preserves the actual native flag scalar, including a marked
+producer before teardown; it does not collapse phase values to boolean or null.
+Actual source identity is bound weakly, and marking `GC_BATCH_DOOMED` invalidates memo
 subscribers before any destruction phase runs. Nested input signatures are
 validated synchronously without invoking child callbacks. An untaken dependency
 cycle produces a stable signature marker; an actual recursive memo computation
@@ -51,3 +52,10 @@ still raises a cycle fault.
 Warm reads currently revalidate their actual input graph. They do not skip this
 check merely because observer delivery has not run. Invalidation during
 `state_batch()` remains synchronous while observer publication stays deferred.
+
+Lifetime bindings allocate the actual reaction record and weak identity while a
+producer is live. A flagged producer retains those bindings until the real
+`rx_teardown` boundary, allowing native phase marks to invalidate a warmed
+numeric flag output. The private reaction-record teardown marker prevents
+subscriptions from being recreated during teardown; once its record is gone,
+no fresh binding is made. Direct tombstone reads still validate their signatures.

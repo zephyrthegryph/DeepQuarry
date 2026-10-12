@@ -5,6 +5,8 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 
 /datum/rx_state
 	var/list/memo_cells
+	/// Real memo lifetime teardown boundary; flagged producers still exist before it.
+	var/memo_lifetime_torn_down = FALSE
 
 /datum/memo_cell
 	var/holder_ref
@@ -104,7 +106,18 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 	LAZYADD(watching, list(list(entity_handle(producer), field, index_key)))
 
 /datum/memo_cell/proc/watch_identity(datum/producer)
-	if(QDELETED(producer))
+	if(!producer)
+		return
+	var/datum/rx_state/state = producer.rx
+	if(QDELING(producer))
+		// A warm binding can follow native phase changes while the real
+		// reaction record and weak handle still exist. Never resurrect them.
+		if(!state || state.memo_lifetime_torn_down || !entity_handle_of(producer))
+			return
+	else
+		state = rx_of(producer)
+		entity_handle(producer)
+	if(state.memo_lifetime_torn_down)
 		return
 	var/index_key = REF(producer)
 	var/list/cells = GLOB.memo_lifetime_index[index_key]
@@ -178,7 +191,18 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 	return list(TRUE, argument)
 
 /datum/memo_cell/proc/follow(datum/producer, list/path, position, field, expected_type = null, conservative = FALSE)
-	if(!producer || QDELING(producer))
+	if(!producer)
+		return null
+	// A native lifetime descriptor remains readable at the marking boundary:
+	// the exact flag is meaningful before the producer's teardown begins.
+	if(position > length(path) && field == "lifetime:deleted")
+		if(expected_type && !istype(producer, expected_type))
+			if(conservative)
+				return "different possible lifetime receiver"
+			CRASH("memo [key] expected [expected_type], got [producer.type]")
+		watch_identity(producer)
+		return producer.gc_destroyed
+	if(QDELING(producer))
 		return null
 	if(position > length(path))
 		if(expected_type && !istype(producer, expected_type))
@@ -196,9 +220,6 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 				return "self memo dependency"
 			var/datum/child_holder = resolve_handle(child.holder_ref)
 			return list(child.valid, child.dirty, child.value, child_holder && !QDELING(child_holder) ? child.inputs(child_holder) : null)
-		if(field == "lifetime:deleted")
-			watch_identity(producer)
-			return QDELING(producer)
 		if(!(field in producer.vars))
 			CRASH("memo [key] needs an actual tracked field [producer.type].[field]")
 		watch(producer, field)
@@ -383,6 +404,21 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 				LAZYOR(cells, cell)
 	for(var/datum/memo_cell/cell as anything in cells)
 		cell.invalidate()
+	if(producer.rx?.memo_lifetime_torn_down)
+		// A dirty cell need not resample during invalidation. Detach its
+		// retired-source edges anyway; no weak identity index may outlive
+		// the real producer record merely because a result was already dirty.
+		GLOB.memo_lifetime_index -= REF(producer)
+		for(var/datum/memo_cell/cell as anything in cells)
+			if(cell.identity_inputs)
+				cell.identity_inputs -= REF(producer)
+			for(var/list/read as anything in cell.watching?.Copy())
+				if(findtext(read[3], prefix) == 1)
+					rx_watch_adjust(producer, read[2], -1)
+					cell.watching -= list(read)
+		for(var/index_key in GLOB.memo_read_index.Copy())
+			if(findtext(index_key, prefix) == 1)
+				GLOB.memo_read_index -= index_key
 
 /datum/memo_cell/lifecycle_unbind()
 	unbind()

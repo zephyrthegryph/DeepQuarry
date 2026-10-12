@@ -135,6 +135,25 @@ CAPABILITIES(/datum/dq_lazy_memo_parent)
 
 /datum/dq_lazy_memo_fixture/lifetime
 
+CAPABILITIES(/datum/dq_lazy_memo_fixture/lifetime)
+	memo("source_flag", PROC_REF(compute_source_flag))
+
+/datum/dq_lazy_memo_fixture/lifetime/proc/compute_source_flag(datum/act/eval/A)
+	return source ? source.gc_destroyed : null
+
+/datum/dq_lazy_memo_source/lifetime
+	var/datum/dq_lazy_memo_fixture/lifetime/observer
+	var/flag_at_unbind
+	var/flag_dirty_before_unbind = FALSE
+
+CAPABILITIES(/datum/dq_lazy_memo_source/lifetime)
+	ref_one(nameof(observer), /datum/dq_lazy_memo_fixture/lifetime)
+
+/datum/dq_lazy_memo_source/lifetime/lifecycle_unbind()
+	flag_dirty_before_unbind = memo_cell_of(observer, "source_flag").dirty
+	flag_at_unbind = memo_value(observer, "source_flag")
+	. = ..()
+
 /datum/dq_lazy_memo_fixture/lifetime/compute_value(datum/act/eval/A)
 	return QDELETED(source) ? local_value : local_value + source.amount
 
@@ -142,6 +161,7 @@ CAPABILITIES(/datum/dq_lazy_memo_parent)
 	var/datum/dq_lazy_memo_parent/parent
 	var/observed
 	var/source_was_doomed = FALSE
+	var/native_flag_observed
 
 CAPABILITIES(/datum/dq_lazy_memo_batch_probe)
 	ref_one(nameof(parent), /datum/dq_lazy_memo_parent)
@@ -151,22 +171,29 @@ CAPABILITIES(/datum/dq_lazy_memo_batch_probe)
 	// is marked doomed but its reactive record has not been torn down.
 	source_was_doomed = parent.child.source.gc_destroyed == GC_BATCH_DOOMED
 	observed = memo_value(parent, "envelope")
+	native_flag_observed = memo_value(parent.child, "source_flag")
 	. = ..()
 
 /datum/unit_test/dq_lazy_memo/pre_teardown_batch_lifetime/Run()
 	var/datum/dq_lazy_memo_parent/P = allocate(/datum/dq_lazy_memo_parent)
 	var/datum/dq_lazy_memo_fixture/lifetime/F = allocate(/datum/dq_lazy_memo_fixture/lifetime)
-	var/datum/dq_lazy_memo_source/S = allocate(/datum/dq_lazy_memo_source)
+	var/datum/dq_lazy_memo_source/lifetime/S = allocate(/datum/dq_lazy_memo_source/lifetime)
 	var/datum/dq_lazy_memo_batch_probe/probe = allocate(/datum/dq_lazy_memo_batch_probe)
 	rel_set(P, nameof(P.child), F)
 	rel_set(F, nameof(F.source), S)
+	rel_set(S, nameof(S.observer), F)
 	rel_set(probe, nameof(probe.parent), P)
 	S.set_amount(7)
 	TEST_ASSERT_EQUAL(memo_value(P, "envelope"), 9, "parent and child were not warmed against the live source")
+	TEST_ASSERT_NULL(memo_value(F, "source_flag"), "live source flag was not warmed as the actual null value")
 	qdel_batch(list(S, probe))
 	TEST_ASSERT(probe.source_was_doomed, "probe did not run before source teardown at the batch marking boundary")
+	TEST_ASSERT_EQUAL(probe.native_flag_observed, GC_BATCH_DOOMED, "native signature collapsed a marked producer to null")
+	TEST_ASSERT(S.flag_dirty_before_unbind, "the real transaction flag mark did not invalidate the warmed doomed-phase cache before its callback read")
+	TEST_ASSERT_EQUAL(S.flag_at_unbind, GC_CURRENTLY_BEING_QDELETED, "native signature collapsed a later destruction phase to its boolean value")
 	TEST_ASSERT_EQUAL(probe.observed, 2, "parent returned its cached live-source result after the source was marked doomed")
 	TEST_ASSERT_EQUAL(memo_value(P, "envelope"), 2, "completed teardown changed the already-current scalar result")
+	TEST_ASSERT_NULL(GLOB.memo_lifetime_index[REF(S)], "teardown allowed a fresh lifetime subscription to the retired source")
 
 /datum/unit_test/dq_lazy_memo/scalar_cache/Run()
 	var/datum/dq_lazy_memo_fixture/F = allocate(/datum/dq_lazy_memo_fixture)
