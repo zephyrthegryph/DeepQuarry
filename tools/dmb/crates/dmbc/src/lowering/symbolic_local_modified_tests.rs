@@ -199,6 +199,46 @@ fn modified_local_candidate_reissues_current_nested_recipes_and_matches_fresh() 
         let admission = RequestAdmission::new(&host);
         let candidates = request.candidate_roster(&admission).unwrap();
         let arena = dm_tree::frontend::BodyArena::new(&current);
+        owner.visit_records(|record| {
+            let debug =
+                crate::lowering_memo::rebase_debug(&current, row.body(), &record.relative_debug)
+                    .expect("current modified candidate debug origins must rebase");
+            arena
+                .with_parsed(row.body(), |parsed| {
+                    for (index, recipe) in record.modified_recipes.iter().enumerate() {
+                        assert!(
+                            recipe
+                                .reissue(
+                                    parsed,
+                                    &current,
+                                    &host,
+                                    current.snapshot.tree.symbols(),
+                                    &debug
+                                )
+                                .is_some(),
+                            "current modified recipe {index} must reissue"
+                        );
+                    }
+                })
+                .unwrap();
+            assert!(
+                request
+                    .rebind_record(
+                        record,
+                        &host,
+                        &current,
+                        row.body(),
+                        &licensed.prepared(row).unwrap(),
+                        &arena,
+                        false,
+                        false,
+                        row
+                    )
+                    .is_some(),
+                "current contribution must rebind: {:?}",
+                request.decline_stats()
+            );
+        });
         let hit = request
             .lookup_unchanged_local(&licensed, &candidates, 7, &host, &current, row, &arena)
             .expect("modified local candidate must use ordinary current recipe reissue");
