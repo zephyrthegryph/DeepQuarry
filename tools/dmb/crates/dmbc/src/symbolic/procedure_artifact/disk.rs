@@ -246,8 +246,12 @@ impl<'a> Encoded<'a> {
 }
 impl Encoded<'_> {
     #[cfg(test)]
-    pub(crate) fn corrupt_string(&mut self) {
-        self.strings.0[0].id = SymbolId::of("forged string payload");
+    pub(crate) fn corrupt_string(&mut self) -> bool {
+        let Some(string) = self.strings.0.first_mut() else {
+            return false;
+        };
+        string.id = SymbolId::of("forged string payload");
+        true
     }
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn restore(

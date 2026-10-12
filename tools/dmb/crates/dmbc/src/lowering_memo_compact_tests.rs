@@ -11,7 +11,7 @@ impl dm_preprocess::SourceProvider for Source {
 }
 #[test]
 fn compact_typed_sidecars_check_duplicate_answers_current_tokens_and_rebind_before_observing() {
-    check_replay("/proc/compact_probe()\n    return 1\n", false, false);
+    check_replay("/proc/compact_probe()\n    return \"hello\"\n", false, false);
 }
 
 #[test]
@@ -953,7 +953,7 @@ fn check_replay_features(
     } else if plain {
         bad.required_types.0.clear();
     } else {
-        bad.executable.corrupt_string();
+        assert!(bad.executable.corrupt_string(), "fixture requires a string row");
     }
     assert!(bad.rebind(context(), ready).is_err());
     let mut tampered = bytes;
