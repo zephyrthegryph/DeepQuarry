@@ -23,9 +23,17 @@ impl Deadline {
     }
 }
 
+// Named lifecycle stages; pressure is resampled by the ordinary next pass.
+const OPTIONAL_IMAGES: usize = 4;
+const REMAINING_OPTIONAL: usize = 5;
+const SESSION_RELEASE: usize = 6;
 fn target(age: Duration, pressured: bool, previous: usize) -> usize {
-    if age >= SESSION_IDLE || pressured && previous >= 3 {
-        4
+    if age >= SESSION_IDLE || pressured && previous >= REMAINING_OPTIONAL {
+        SESSION_RELEASE
+    } else if pressured && previous >= OPTIONAL_IMAGES {
+        REMAINING_OPTIONAL
+    } else if pressured && previous >= 3 {
+        OPTIONAL_IMAGES
     } else if pressured && previous >= 2 {
         3
     } else if pressured {
@@ -80,7 +88,7 @@ impl Shared {
                 Err(std::sync::TryLockError::Poisoned(error)) => error.into_inner(),
                 Err(std::sync::TryLockError::WouldBlock) => continue,
             };
-            if next == 4 && Arc::strong_count(&slot) == 2 {
+            if next == SESSION_RELEASE && Arc::strong_count(&slot) == 2 {
                 let removed = slots.remove(&key);
                 drop(slots);
                 let before = transport::private_bytes();
@@ -101,7 +109,7 @@ impl Shared {
             }
             slot.idle_tier.store(next, Ordering::Release);
             drop(slots);
-            if next == 4 {
+            if next == SESSION_RELEASE {
                 // Preserve the queued Slot and its cancellation/serialization
                 // state; replace only idle compiler ownership outside roster lock.
                 let before = transport::private_bytes();
@@ -120,7 +128,11 @@ impl Shared {
                 let before = transport::private_bytes();
                 let requested_before = allocations::requested_live();
                 let started = Instant::now();
-                if next == 3 {
+                if next == OPTIONAL_IMAGES {
+                    host.release_idle_optional_images();
+                } else if next == REMAINING_OPTIONAL {
+                    host.release_idle_remaining_optional();
+                } else if next == 3 {
                     host.release_idle_compiler_artifacts();
                 } else {
                     host.release_idle_artifacts();
@@ -135,7 +147,11 @@ impl Shared {
             }
             super::super::emit_stderr(format_args!(
                 "dmbd idle release tier={} project={} pressure={pressured}",
-                if next == 3 {
+                if next == OPTIONAL_IMAGES {
+                    "optional-images"
+                } else if next == REMAINING_OPTIONAL {
+                    "remaining-optional"
+                } else if next == 3 {
                     "compiler-artifacts"
                 } else if next >= 2 {
                     "rich-buffers"
@@ -167,11 +183,11 @@ mod tests {
         assert_eq!(target(Duration::from_secs(30), false, 0), 1);
         assert_eq!(target(Duration::from_secs(120), false, 1), 1);
         assert_eq!(target(Duration::from_secs(599), false, 1), 1);
-        assert_eq!(target(Duration::from_secs(600), false, 2), 4);
+        assert_eq!(target(Duration::from_secs(600), false, 2), SESSION_RELEASE);
         assert_eq!(target(Duration::ZERO, true, 0), 2);
         assert_eq!(target(Duration::ZERO, true, 2), 3);
         assert_eq!(target(Duration::ZERO, false, 3), 0);
-        assert_eq!(target(Duration::ZERO, true, 3), 4);
+        assert_eq!(target(Duration::ZERO, true, 3), OPTIONAL_IMAGES);
     }
     #[test]
     fn bounded_eviction_is_deterministic_and_preserves_request_owned_slots() {
@@ -211,3 +227,7 @@ mod tests {
         assert!(shared.slots.lock().unwrap().is_empty());
     }
 }
+
+#[cfg(test)]
+#[path = "service_housekeeping_optional_tests.rs"]
+mod optional_tests;

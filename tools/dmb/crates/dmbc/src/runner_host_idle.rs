@@ -91,6 +91,28 @@ impl BuildHost {
         self.emit_idle_census("after-compiler-release");
     }
 
+    /// Drop remaining output/ABI payloads before sacrificing central source and
+    /// semantic ownership. Classification/preparation survives this first step.
+    pub(crate) fn release_idle_optional_images(&mut self) {
+        self.emit_idle_census("before-optional-images-release");
+        self.release_idle_executor();
+        self.rich_generation = self.rich_generation.saturating_add(1);
+        self.symbolic = None;
+        self.startup = None;
+        self.abi = None;
+        self.initializer_assemblies = None;
+        dm_profile::reclaim_unused_allocator_pages();
+        self.emit_idle_census("after-optional-images-release");
+    }
+    /// Last optional tier: only actual private-memory resampling can decide
+    /// whether detachment suffices. Never replace source/tree/query issuers here.
+    pub(crate) fn release_idle_remaining_optional(&mut self) {
+        self.emit_idle_census("before-remaining-optional-release");
+        self.initializers = None;
+        dm_profile::reclaim_unused_allocator_pages();
+        self.emit_idle_census("after-remaining-optional-release");
+    }
+
     pub(crate) fn release_idle_artifacts(&mut self) {
         self.emit_idle_census("before-rich-release");
         // First pressure tier releases rich and physical buffers, retaining the
@@ -220,3 +242,7 @@ mod tests {
 #[cfg(test)]
 #[path = "runner_host_idle_compiler_tests.rs"]
 mod compiler_tests;
+
+#[cfg(test)]
+#[path = "runner_host_idle_optional_tests.rs"]
+mod optional_tests;
