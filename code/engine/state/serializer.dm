@@ -39,6 +39,16 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	"pixel_w", "pixel_z", "density", "opacity", "invisibility", "gender", "maptext",
 ))
 
+/// The names of the vars a datum's per_type() entries bind (engine/lifeforms/per_type.dm): derived from the type, not instance state.
+/proc/state_derived_vars(datum/D)
+	var/datum/lifeform_plan/P = lifeform_plan_of(D)
+	if(!P?.per_types)
+		return null
+	. = list()
+	for(var/datum/centry/C as anything in P.per_types)
+		var/datum/entry/E = C.item
+		. += E.args["var"]
+
 /proc/state_schema_for(datum/D)
 	var/datum/state_schema/schema = GLOB.state_schemas[D.type]
 	if(schema)
@@ -48,8 +58,13 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	schema.saved_vars = list()
 	var/static/list/builtin_saved = STATE_BUILTIN_SAVED
 	var/list/builtins = isatom(D) ? GLOB.state_builtin_vars : GLOB.state_datum_builtin_vars
+	// A per_type() var is derived: preinit binds the type's one shared table into every instance, so it is never saved (its values, like the
+	// radial images of a mask, have no codec and would be overwritten on materialize anyway).
+	var/list/derived = state_derived_vars(D)
 	for(var/name in D.vars)
 		if((name in builtins) && !(name in builtin_saved))
+		if(name in derived)
+			continue
 			continue
 		if(!issaved(D.vars[name]))
 			continue
