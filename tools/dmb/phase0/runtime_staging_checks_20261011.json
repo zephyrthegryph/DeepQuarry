@@ -1,0 +1,22 @@
+{
+  "scope": "Focused runtime integration checks; no full-suite admission",
+  "source_commits": ["097272a157", "56ba495b4f", "921e1eaf13", "92987e8baf", "157690f6c2"],
+  "changes": [
+    "Authenticated independent copies of hard-linked Cargo producer inputs",
+    "Pinned console dd.exe selection and explicit runner propagation",
+    "Exact ordered test prefix preserved without passing duplicate standard defines",
+    "Private captured BYOND pair and DLL staging without overwriting checkout libraries",
+    "Preparation failure cleanup, failed-log archival preservation and typed primary error retention"
+  ],
+  "focused_checks": {
+    "byond_runtime_and_captured_library_bun": {"passed": 6, "failed": 0},
+    "runtime_suite_python": {"passed": 12, "failed": 0},
+    "runtime_identity_and_independent_pair_bun": {"passed": 12, "failed": 0}
+  },
+  "actual_runtime_comparison_receipt": "E:/dq-cache/dmb-native-v2/captured-power-pair-f5-resume-20261011-1925/resume-receipt.json",
+  "actual_runtime_comparison": "BYOND and older f5 native each passed three focused power tests",
+  "actual_runtime_source_commit": "92987e8baf",
+  "cleanup_patch_full_runtime_rerun": false,
+  "latest_rust_compiler_runtime_validated": false,
+  "full_runtime_baseline": "open"
+}
