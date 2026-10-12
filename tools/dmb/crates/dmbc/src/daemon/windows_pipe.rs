@@ -345,10 +345,26 @@ impl Listener {
             Some(535) => {}               // Client connected before this poll.
             Some(536) => return Ok(None), // PIPE_NOWAIT listener is pending.
             Some(232) => {
-                // Client left before request admission.
-                let next = pipe_instance(&self.endpoint, false)?;
-                drop(std::mem::replace(&mut *pending, next));
-                return Ok(None);
+                // A closed client can still have a complete request buffered.
+                // Transfer that stream so framing can consume it (or report a
+                // truncated request); only an empty disconnected instance is
+                // safe to discard before admission.
+                let mut available = 0;
+                let buffered = unsafe {
+                    PeekNamedPipe(
+                        pending.as_raw_handle(),
+                        ptr::null_mut(),
+                        0,
+                        ptr::null_mut(),
+                        &mut available,
+                        ptr::null_mut(),
+                    )
+                } != 0 && available != 0;
+                if !buffered {
+                    let next = pipe_instance(&self.endpoint, false)?;
+                    drop(std::mem::replace(&mut *pending, next));
+                    return Ok(None);
+                }
             }
             _ => return Err(io::Error::last_os_error()),
         }
@@ -512,6 +528,33 @@ mod acl_tests {
         assert_eq!(&bytes, b"bytes");
         ack_send.send(()).unwrap();
         worker.join().unwrap();
+        assert!(stream.read(&mut [0]).is_err());
+    }
+    #[test]
+    fn closed_client_buffer_is_preserved_before_acceptance() {
+        use std::io::{Read, Write};
+        let mut endpoint = Endpoint::current().unwrap();
+        endpoint.name = wide(&format!(
+            r"\\.\pipe\dmbd-closed-buffer-{}-{}",
+            endpoint.sid,
+            std::process::id()
+        ));
+        let listener = listener(&endpoint).unwrap();
+        let mut client = connect(&endpoint).unwrap();
+        client.write_all(b"request").unwrap();
+        drop(client);
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+        let mut stream = loop {
+            if let Some(stream) = listener.try_accept().unwrap() {
+                break stream;
+            }
+            assert!(std::time::Instant::now() < deadline, "buffered request lost");
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        };
+        set_timeout(&mut stream, std::time::Duration::from_secs(2)).unwrap();
+        let mut bytes = [0; 7];
+        stream.read_exact(&mut bytes).unwrap();
+        assert_eq!(&bytes, b"request");
         assert!(stream.read(&mut [0]).is_err());
     }
 }
