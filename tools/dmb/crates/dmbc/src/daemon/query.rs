@@ -87,9 +87,15 @@ pub struct QueryReply {
     pub coverage: String,
     pub query_count: usize,
     pub source_query_count: usize,
+    /// Last admitted captured source, not an assertion about live filesystem
+    /// bytes. A failed newer frontend may leave this predecessor queryable.
     pub source_revision: Option<String>,
+    /// Outcome of the source/semantic capture answering this query.
     pub snapshot_outcome: String,
+    /// Outcome of the latest attempted request, independently of its snapshot.
     pub last_request_outcome: String,
+    /// Pair published by the latest request only. None after failure/analysis
+    /// does not mean a previously published conventional pair was removed.
     pub publication_pair: Option<String>,
     pub jsonl: String,
 }

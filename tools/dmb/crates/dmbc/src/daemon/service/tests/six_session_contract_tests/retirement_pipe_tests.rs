@@ -16,7 +16,7 @@ fn accept_until(listener: &transport::Listener) -> io::Result<transport::Stream>
         std::thread::sleep(Duration::from_millis(2));
     }
 }
-fn serve_once(listener: &transport::Listener, shared: &Arc<Shared>) -> io::Result<()> {
+pub(super) fn serve_once(listener: &transport::Listener, shared: &Arc<Shared>) -> io::Result<()> {
     let stream = accept_until(listener)?;
     shared.connections.fetch_add(1, Ordering::AcqRel);
     let _connection = Connection(Arc::clone(shared));
@@ -24,7 +24,7 @@ fn serve_once(listener: &transport::Listener, shared: &Arc<Shared>) -> io::Resul
     // admission, the retained host/executor core and terminal reply are shared.
     handle(stream, shared, false)
 }
-fn hello(endpoint: &transport::Endpoint, compiler: u128, retiring: bool) -> transport::Stream {
+pub(super) fn hello(endpoint: &transport::Endpoint, compiler: u128, retiring: bool) -> transport::Stream {
     let mut stream = transport::connect(endpoint).unwrap();
     transport::set_timeout(&mut stream, Duration::from_secs(5)).unwrap();
     protocol::send(

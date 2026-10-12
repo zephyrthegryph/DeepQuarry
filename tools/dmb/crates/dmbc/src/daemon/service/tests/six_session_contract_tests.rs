@@ -9,6 +9,8 @@ mod implied_type_recovery;
 mod declaration_error_recovery;
 #[path = "six_session_contract_tests/retirement_pipe_tests.rs"]
 mod retirement_pipe;
+#[path = "six_session_contract_tests/query_failure_state_tests.rs"]
+mod query_failure_state;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 
