@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "scope": "Pinned BYOND compile-only direct literal versus folded string value, both forward/reverse captures; no runtime or full parity admission.",
+  "controls": {
+    "folded": {
+      "receipt": "E:\\dq-cache\\dmb-folded-string-reference\\8f888eac18c347ab9db1b5ced7e865b9\\receipt.json",
+      "receipt_sha256": "56bb379eadcdffbd02fb153fe878ddd74c1317065518533bfdd2ebef48127d5b",
+      "forward_field_ids": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "field_footer": 2,
+      "string_ids": {
+        "z_first": 439,
+        "a_second": 443,
+        "type_value": 444
+      },
+      "proc_pushval_string_id": 439,
+      "runtime": "not run",
+      "native_after_fix": "pending"
+    },
+    "direct": {
+      "receipt": "E:\\dq-cache\\dmb-direct-string-reference\\37d4164e01ae431ebe28b6e8958ec551\\receipt.json",
+      "receipt_sha256": "8e392eeeed9993ea91d72143354d9721c387811d1f4ec26bcde325c9e517f0e6",
+      "forward_field_ids": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "field_footer": 2,
+      "string_ids": {
+        "z_first": 437,
+        "a_second": 441,
+        "type_value": 442
+      },
+      "proc_pushval_string_id": 437,
+      "runtime": "not run",
+      "native_after_fix": "pending"
+    }
+  },
+  "finding": "Both direct authored z_first and generated z_ + first register z_first before declaration names. Blanket omission of frozenStringrelocations would regress folded constants. Preserve only typed packed String value relocations as supplements; direct field operands do not license early registration.",
+  "remaining": "nameof/named-argument/dynamic names and generated values interleaved with lexical registrations remain unobserved."
+}

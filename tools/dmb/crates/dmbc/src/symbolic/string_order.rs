@@ -1,6 +1,6 @@
 //! Expand current source registration events before ordinary StringID assignment.
 use super::{unit_key, FrozenUnit};
-use dm_ir::SymbolId;
+use dm_ir::{RelocationEncoding, SymRef, SymbolId};
 use dm_link::{
     Key, LinkInventory, StringRegistrationEvent as Event, StringRegistrationSource, Table,
 };
@@ -37,7 +37,21 @@ pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> R
         // not registered as an early lexical string. In the pinned member
         // control, holder.z_first leaves a_second/type_value/z_first in their
         // declaration order. Literal leaves already occur in the source roster.
+        // Packed string values also cover generated constants: BYOND registers
+        // "z_" + "first" as z_first before subsequent field declarations.
+        // Direct string operands (fields, dynamic names, debug paths) are not
+        // evidence of lexical value registration.
+        strings.extend(value_string_registrations(unit.frozen.code()));
         Ok(strings)
+    })
+}
+
+fn value_string_registrations(code: &dm_ir::SymbolicCode) -> impl Iterator<Item = SymbolId> + '_ {
+    code.relocations().into_iter().filter_map(|relocation| {
+        match (relocation.reference, relocation.encoding) {
+            (SymRef::String(id), RelocationEncoding::PackedValue24 { tag: 6 }) => Some(id),
+            _ => None,
+        }
     })
 }
 

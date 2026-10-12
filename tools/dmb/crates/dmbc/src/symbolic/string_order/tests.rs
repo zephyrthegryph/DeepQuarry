@@ -132,6 +132,39 @@ fn string_allocation_rejects_unbound_first_occurrence_and_supplied_order_conflic
 }
 
 #[test]
+fn string_allocation_generated_values_supplement_without_direct_member_operands() {
+    let code = dm_ir::SymbolicCode::new(
+        vec![0; 3],
+        vec![
+            dm_ir::Relocation {
+                offset: 0,
+                reference: SymRef::String(SymbolId::of("type_value")),
+                encoding: RelocationEncoding::Direct,
+            },
+            dm_ir::Relocation {
+                offset: 1,
+                reference: SymRef::String(SymbolId::of("z_first")),
+                encoding: RelocationEncoding::PackedValue24 { tag: 6 },
+            },
+        ],
+    )
+    .unwrap();
+    let mut current = inventory(vec![
+        first(&[]),
+        field("a_second", 2),
+        field("type_value", 3),
+        field("z_first", 4),
+    ]);
+    complete_with(&mut current, |_, _, _| {
+        Ok(value_string_registrations(&code).collect())
+    })
+    .unwrap();
+    let tables = LinkTables::build(current).unwrap();
+    let at = |name| tables.index(Key::String(SymbolId::of(name))).unwrap();
+    assert!(at("z_first") < at("a_second"));
+    assert!(at("a_second") < at("type_value"));
+}
+#[test]
 fn string_allocation_member_reference_keeps_declaration_name_order() {
     // BYOND 516.1687 compile-only initializer_member_order control:
     // the first root body returns holder.z_first, but the holder names have
