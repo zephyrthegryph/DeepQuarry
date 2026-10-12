@@ -2,6 +2,3 @@
 # A spec is a /datum/unit_test/ name without the prefix, or parent/* for every child. Edit with --adopt/--refresh, not by hand.
 
 
-dq_hc_computers/operating_toggles	fails on master e7838a09 too: a life sequence step outruns its state table (seq_snapshot_note list index out of bounds) while the test passes time	e7838a09e2
-dq_hc_computers/operating_thresholds	fails on master e7838a09 too: a life sequence step outruns its state table (seq_snapshot_note list index out of bounds) while the test passes time	e7838a09e2
-dq_gameplay/wall_menu	the wall menu offers Graffiti (floor and wall) to an empty hand and picking it does nothing; its op needs a when() on the held tool, which needs flooring/material reads declared (reads lint) first	b874a78920

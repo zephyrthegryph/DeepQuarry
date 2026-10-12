@@ -1166,6 +1166,10 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 /// Tests: the values of the reads of `S` that are vars of `E`, when it falls asleep.
 /proc/seq_snapshot_note(datum/E, datum/seq_state/state, datum/seq_step/S)
+	// A step earlier in this frame can replan E onto another table; the rest of the frame still walks the old one, and
+	// its positions index a table that no longer exists. Those sleeps are void (the new table starts all awake).
+	if(S.pos > state.table.n || state.table.steps[S.pos] != S)
+		return
 	var/list/snap
 	for(var/key in S.keys)
 		if(!(key in E.vars))
