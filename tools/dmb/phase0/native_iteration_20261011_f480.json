@@ -1,0 +1,155 @@
+{
+  "scope": "Real captured DeepQuarry diagnostic opt0 cohort; not release or full BYOND semantic acceptance",
+  "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-232026-7de52a5a\\receipt.json",
+  "receipt_sha256": "7b5ebe19971cb858eee1812d4b69aa48c7c4a0cb11e80ffb3b1a4f6a2f2a9e96",
+  "build_provenance": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-f480cf02d9-counted-opt0.pin.json",
+    "sha256": "bac54a0ac25f04cbfa2d38858aabf48d10dc5fdb7566addc4b891ad263b69351",
+    "compiler_sha256": "49e641992a587480b6451f4311ef600e256092ed0185e28ca7750195be176101",
+    "commit": "f480cf02d95f870a0e387284a58d9c5e4c3734dd",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 2,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "rows": [
+    {
+      "kind": "initial",
+      "retained_launch_through_reap_seconds": 107.09400000000096,
+      "retained_burst_seconds": 107.18700000000172,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 16.4092268,
+        "compilation_seconds": 77.4832406,
+        "input_preparation_seconds": 1.4846804,
+        "publication_seconds": 1.5362911000000001
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 0,
+        "recomputed": 48681,
+        "lookup_seconds": 0.4694846,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 1,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 1,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "unchanged",
+      "retained_launch_through_reap_seconds": 1.6719999999986612,
+      "retained_burst_seconds": 1.75,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 16.4092268,
+        "compilation_seconds": 77.4832406,
+        "input_preparation_seconds": 1.4846804,
+        "publication_seconds": 1.5362911000000001
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 0,
+        "recomputed": 48681,
+        "lookup_seconds": 0.4694846,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 1,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 1,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "body",
+      "retained_launch_through_reap_seconds": 62.64099999999962,
+      "retained_burst_seconds": 62.71900000000096,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 5.6340699,
+        "compilation_seconds": 46.3737805,
+        "input_preparation_seconds": 1.8002756,
+        "publication_seconds": 3.4937669
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 48680,
+        "recomputed": 1,
+        "lookup_seconds": 22.881763,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 2,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 4,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    },
+    {
+      "kind": "structural",
+      "retained_launch_through_reap_seconds": 98.15599999999904,
+      "retained_burst_seconds": 98.26599999999962,
+      "fresh_native_byte_oracle": true,
+      "stats": {
+        "frontend_seconds": 15.0575774,
+        "compilation_seconds": 72.7554513,
+        "input_preparation_seconds": 1.9996161,
+        "publication_seconds": 2.0349244
+      },
+      "memo": {
+        "resident_hits": 0,
+        "disk_hits": 48677,
+        "recomputed": 4,
+        "lookup_seconds": 27.1244819,
+        "host": {
+          "enabled": true,
+          "engine_generation": 1,
+          "procedure_generation": 3,
+          "procedure_policy_replacements": 0,
+          "rich_generation": 7,
+          "scope": "process_local_diagnostic_only",
+          "session": 1
+        }
+      }
+    }
+  ],
+  "unchanged_stats_limitation": "Unchanged repeats prior diagnostic counters; only request wall is new",
+  "owned_job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 6442450944,
+      "peak_job_commit_bytes": 6151790592,
+      "peak_process_commit_bytes": 6144692224,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "daemon_cleanup": {
+    "pid": 30280,
+    "tree_error": "taskkill exited 255",
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "BYOND_baseline_gate": "open",
+  "total_harness_seconds": 947.9689999999973,
+  "limitations": [
+    "Single cohort without continuous host isolation",
+    "Symbolic owner still evicted at tier5 under actual private pressure",
+    "Structural timing regressed; no general throughput improvement claimed",
+    "Full runtime baseline deferred"
+  ]
+}
