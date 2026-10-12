@@ -6,12 +6,12 @@
 // The distributor (channels, cell charging, load shedding) runs in Rust
 // (verdigris/domains/power/src/apc.rs) every power step. The APC never polls:
 // push_to_rust() sends its settings (generated: it runs once per frame after any state it
-// reads changed), and power_poll() applies what Rust reports (channels, charging, status,
+// reads changed), and on_apc_report() applies what Rust reports when it changes (channels, charging, status,
 // alarm, the cell charge).
 //
 // The APC is declared (doc/rewrite/final_api.html section 16.1, doc/rewrite/conversion_guide.md): ONE CAPABILITIES list says what it is: a wall machine
 // with a build ladder, a maintenance hatch (cover, panel, wires, ID lock, emag), a cell bay, its membership of the power system, its terminal and
-// its hacker links, its window and the buttons in it. The imperative parts below are its own: the Rust push, the power poll, the channel and
+// its hacker links, its window and the buttons in it. The imperative parts below are its own: the Rust push, the power report, the channel and
 // area bookkeeping, and the conditions and effects the declarations name.
 
 /obj/machinery/power/apc/critical
@@ -91,6 +91,9 @@
 	var/alarms_hidden = FALSE       // if TRUE, power alarms from this APC are hidden on consoles
 	/// NIGHTSHIFT_AUTO / _NEVER / _ALWAYS (the UI setting).
 	var/nightshift_setting = NIGHTSHIFT_AUTO
+	/// The station's night reaches this APC (on a station level, outside a shuttle): set where it is placed and when its area changes
+	/// (init(), update_area()), so the night lighting stat reads a tracked var and caches.
+	var/station_night = FALSE
 
 	/// The power alarm is raised (as Rust last reported).
 	var/power_alarm_raised = FALSE
@@ -121,6 +124,7 @@ TRACKED(/obj/machinery/power/apc, charging)
 TRACKED(/obj/machinery/power/apc, main_status)
 TRACKED(/obj/machinery/power/apc, coverlocked)
 TRACKED(/obj/machinery/power/apc, nightshift_setting)
+TRACKED(/obj/machinery/power/apc, station_night)
 TRACKED(/obj/machinery/power/apc, emergency_lights)
 TRACKED(/obj/machinery/power/apc, equipment)
 TRACKED(/obj/machinery/power/apc, lighting)
@@ -183,7 +187,7 @@ CAPABILITIES(/obj/machinery/power/apc)
 	subversion_reset(list(tool(TOOL_MULTITOOL), at(SPACE_HATCH)), done = MSG(apc/reset_done))
 	membership(joins = REGISTRY_APCS)
 	emp_disable(PROC_REF(emp_outage), extends = TRUE)
-	contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished), reads = list("graph:[CAP_CONSTRUCTION]"))
+	contributes(STAT_OPERABLE, PROC_REF(electronics_fastened), reason = MSG(apc/unfinished))
 	contributes(STAT_SUPPLYING, STAT_OPERABLE)
 	links(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master)
 	links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)
@@ -312,7 +316,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		spent(terminal)
 	return OP_OK
 
-/// STAT_OPERABLE: the build is finished (its last stage, the electronics fastened). An unfinished frame does not run.
+/// STAT_OPERABLE: the build is finished (its last stage, the electronics fastened). An unfinished frame does not run. built() stands for the
+/// construction graph's key, which every stage change publishes, so the stat caches.
 /obj/machinery/power/apc/proc/electronics_fastened(datum/act/A)
 	return built(src, STAGE_APC_SECURED)
 
@@ -352,10 +357,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(!aidisabled)
 		return TRUE
 	var/mob/user = A.actor
-	if(hacker && user == hacker)
-		return TRUE
-	var/mob/living/silicon/robot/robot = user
-	return hacker && istype(robot) && robot.connected_ai == hacker // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
+	return hacker && user && user.silicon_master() == hacker
 
 // ---- the emag and the subversion reset ----
 
@@ -442,6 +444,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
 	seat_cell_charge(TRUE)
 	pushed_demand = null // the new node takes the area's standing load at the next power step
+	area?.power_loads_changed()
 	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
@@ -491,6 +494,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// Sets its area's power from what it supplies, once the area's machines exist.
 /obj/machinery/power/apc/proc/apply_power_after_init(datum/act/timer/A)
+	if(building)
+		update_station_night() // a hand-built APC skips init(): it reads the station's night where it was placed
 	apply_area_power()
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
@@ -527,7 +532,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /// verdigris/domains/power/src/components.rs). The framework runs it once per frame after any state it
 /// reads changed (the generated rust_push reads), so no caller pushes by hand. The cell is authoritative
 /// for capacity; Rust's `charge` field is authoritative for charge (a law drains/fills it), and
-/// power_poll() reads it back. It writes nothing: a newly seated cell is cell_changed()'s, the area's static loads
+/// on_apc_report() brings it back. It writes nothing: a newly seated cell is cell_changed()'s, the area's static loads
 /// are the area's (its apc relation) and connect_to_network()'s.
 /obj/machinery/power/apc/push_to_rust()
 	if(QDELETED(src) || !vg_entity)
@@ -565,37 +570,30 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/proc/set_cell_charge(amount)
 	if(!cell)
 		return
+	sync_cell_charge() // the delta is against what Rust holds, not the last reported percent
 	var/before = cell.charge
 	cell.set_charge(clamp(amount, 0, cell.maxcharge))
 	if(vg_entity && pushed_cell_ref == REF(cell))
 		adjust_charge(cell.charge - before)
 
-/// Reads back what Rust's `ApcTick` did this step (verdigris/domains/power/src/laws.rs):
-/// channels, charging, the cell charge, and the load it served.
-/obj/machinery/power/apc/proc/power_poll()
-	if(!vg_entity)
+/// Rust's `ApcTick` reports what this APC shows (verdigris/domains/power/src/laws.rs, ApcEvent::Report): it is sent only when a channel, the
+/// charging lamp, the alarm or the external status changed, or the cell charge crossed a whole percent, and the frame's outbox delivers it.
+/// Nothing polls the APC: a settled one hears nothing. A channel change repowers the area (apply_area_power()), which its machines' has_power
+/// stats read.
+/obj/machinery/power/apc/on_apc_report(new_equipment, new_lighting, new_environ, new_charging, alarm, new_status, charge)
+	if(QDELETED(src))
 		return
-	var/charge_changed = FALSE
-	if(cell)
-		var/new_charge = get_charge()
-		charge_changed = new_charge != cell.charge
-		cell.set_charge(new_charge)
-	var/new_equipment = get_channels(0)
-	var/new_lighting = get_channels(1)
-	var/new_environ = get_channels(2)
-	var/new_charging = get_charging()
-	power_refresh_network()
-	var/new_status = !power_region ? APC_EXTERNAL_POWER_NOTCONNECTED : (power_avail(power_region) > 0 && power_netexcess(power_region) < 0 ? APC_EXTERNAL_POWER_NOENERGY : (power_avail(power_region) > 0 ? APC_EXTERNAL_POWER_GOOD : APC_EXTERNAL_POWER_NOTCONNECTED))
-	var/shown_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ || new_charging != charging || new_status != main_status
+	if(cell && pushed_cell_ref == REF(cell))
+		cell.set_charge(clamp(charge, 0, cell.maxcharge))
+	var/channels_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ
+	var/shown_changed = channels_changed || new_charging != charging || new_status != main_status || !!alarm != power_alarm_raised
 	set_equipment(new_equipment)
 	set_lighting(new_lighting)
 	set_environ(new_environ)
 	set_charging(new_charging)
 	set_main_status(new_status)
-	var/alarm = !!get_alarm()
-	// Counts polls that saw Rust change something (tests: a settled APC hears nothing).
-	if(shown_changed || charge_changed || alarm != power_alarm_raised)
-		power_event_count++
+	power_event_count++ // reports heard (tests: a settled APC hears nothing)
+	alarm = !!alarm
 	if(alarm != power_alarm_raised)
 		power_alarm_raised = alarm
 		if(alarm)
@@ -603,7 +601,15 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 		else
 			GLOB.power_alarm.clearAlarm(loc, src)
 	if(shown_changed)
+		log_world("APC_REPORT: [src] ([area]) channels [equipment]/[lighting]/[environ] charging [charging] status [main_status] alarm [alarm] charge [charge]")
+	if(channels_changed)
 		apply_area_power()
+
+/// The exact charge Rust holds now, into the seated cell (the report carries it only at whole-percent crossings): for a reader that needs it
+/// exact, such as a cell about to leave the APC.
+/obj/machinery/power/apc/proc/sync_cell_charge()
+	if(cell && vg_entity && pushed_cell_ref == REF(cell))
+		cell.set_charge(get_charge())
 
 // APCs are pixel-shifted so they need a full refresh when dir changes.
 /obj/machinery/power/apc/set_dir(new_dir)
@@ -634,7 +640,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	return max(emp_disabled_left(src), hold_left(src, STAT_OPERABLE, SRC_POWER_FAILURE) || 0)
 
 /// The output is down for a failure (a pulse or an event), as opposed to broken or unfinished: what the bluescreen shows. Its holds settle
-/// STAT_OPERABLE and so `supplying` in the same step, which is what marks the look.
+/// STAT_OPERABLE and so `supplying` in the same step, which is what marks the look: the proc stands for that stat's key.
+READS_AS(/obj/machinery/power/apc/proc/power_failing, "supplying")
 /obj/machinery/power/apc/proc/power_failing()
 	return failure_left() > 0
 
@@ -662,6 +669,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 	if(istype(area, /area/submap))
 		alarms_hidden = TRUE
+	update_station_night()
 
 	make_terminal()
 
@@ -690,6 +698,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 /obj/machinery/power/apc/screen_override()
 	return !supplying || is_subverted() || cover_open(src) || panel_open(src)
 
+/// is_lit() for the APC, whose own supply keeps its screen up (cap_powered()): whole and showing its normal display (screen_override(), read
+/// through the APC's own keys so its draw caches).
+/obj/machinery/power/apc/proc/screen_lit()
+	return !broken_now() && supplying && !emag_emagged(src) && !cover_open(src) && !panel_open(src)
+
 /// The screen shows the fault bluescreen (subverted or failed, with the cover and panel shut).
 /obj/machinery/power/apc/proc/apc_bluescreen()
 	return !cover_open(src) && !panel_open(src) && (emag_emagged(src) || hacker || power_failing())
@@ -703,14 +716,14 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	look.variant("cover-removed", when = cover_removed(src))
 	look.variant("cell", when = cover_removed(src) && cell)
 	look.part("maintenance", cover_open(src) && !cover_removed(src) && out_of_order())
-	if(is_lit(src) && operating)
+	if(screen_lit() && operating)
 		for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
 			var/mode = channel_mode(channel)
 			look.part("channel-[channel]", "[mode]") // a text value: mode 0 is a state too
 			look.glow("channel-[channel]", "[mode]")
 	if(apc_bluescreen())
 		look.glow(2, 0.25, "#0000FF")
-	else if(is_lit(src))
+	else if(screen_lit())
 		look.glow("charge", "[charging]")
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
 		look.glow(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
@@ -953,19 +966,19 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	after(src, 15 MINUTES, PROC_REF(set_grid_check), key = "grid_check", with = list(FALSE))
 
 /// STAT_LIGHTS_NIGHTSHIFT of its area (section 16.11): the UI setting, and on "automatic" the station's night (the night-shift system's flag,
-/// read through its accessor) for an APC on a station level outside a shuttle.
+/// read through its accessor) for an APC the station's night reaches (station_night).
 /obj/machinery/power/apc/proc/wants_night_lights(datum/act/A)
 	switch(nightshift_setting)
 		if(NIGHTSHIFT_ALWAYS)
 			return TRUE
 		if(NIGHTSHIFT_AUTO)
-			return night_shift_active() && on_station_outside_shuttles()
+			return station_night && night_shift_active()
 	return FALSE
 
-/// The APC stands on a station level, outside a shuttle: the station's night reaches it. Neither can change: an APC never moves and the map's
-/// station levels are fixed for the round.
-/obj/machinery/power/apc/proc/on_station_outside_shuttles()
-	return (z in using_map.station_levels) && !istype(area, /area/shuttle) // ALLOW(reads): an APC is fixed to its wall, so its z level never changes while it exists
+/// Whether the station's night reaches the APC where it stands: a station level, outside a shuttle. Run where it is placed and when the
+/// blueprints change its area (an APC never moves between levels).
+/obj/machinery/power/apc/proc/update_station_night()
+	set_station_night((z in using_map.station_levels) && !istype(area, /area/shuttle))
 
 /// The blueprints redrew the areas: the APC serves the area it now stands in.
 /obj/machinery/power/apc/proc/update_area()
@@ -973,6 +986,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(NA != area)
 		rel_set(src, nameof(area), NA) // paired: the old area lets go, the new one names this APC
 		name = "[area.name] APC"
+		update_station_night()
 	apply_area_power()
 
 /obj/machinery/power/apc/get_cell()
