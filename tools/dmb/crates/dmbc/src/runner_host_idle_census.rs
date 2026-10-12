@@ -17,6 +17,28 @@ impl BuildHost {
         }
         census.finish()
     }
+    fn optional_artifact_retention_census(&self) -> crate::heap_census::HeapCensusReport {
+        let mut census = crate::heap_census::HeapCensus::new("retained.optional_artifacts");
+        // One graph visitor deduplicates shared recipe/answer allocations. Engine
+        // backing may also belong to the semantic host; this report is not an
+        // estimate of reclaimable private bytes or an additive category total.
+        if let Some((_, owner)) = &self.initializers {
+            if census.arc_object("optional.classification_owner", owner) {
+                census.initializer_artifacts(owner);
+            }
+        }
+        if let Some((_, owner)) = &self.startup {
+            if census.arc_object("optional.startup_owner", owner) {
+                crate::heap_census::startup_artifacts::inspect(&mut census, owner);
+            }
+        }
+        if let Some((_, owner)) = &self.abi {
+            if census.arc_object("optional.abi_owner", owner) {
+                census.abi_artifacts(owner);
+            }
+        }
+        census.finish()
+    }
     pub(super) fn emit_idle_census(&self, boundary: &str) {
         let Some(path) = std::env::var_os("DMB_IDLE_CENSUS_PATH").filter(|path| !path.is_empty())
         else {
@@ -61,6 +83,11 @@ impl BuildHost {
             emit(
                 "projections",
                 serde_json::to_value(self.owner_projection_retention_census())
+                    .map_err(io::Error::other)?,
+            )?;
+            emit(
+                "optional_classification_startup_abi",
+                serde_json::to_value(self.optional_artifact_retention_census())
                     .map_err(io::Error::other)?,
             )?;
             emit(
