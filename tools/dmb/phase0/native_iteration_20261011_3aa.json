@@ -1,0 +1,505 @@
+{
+  "scope": "Real captured DeepQuarry diagnostic opt0 cohort; not release-profile, continuous host isolation, full runtime or semantic parity acceptance",
+  "receipt": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\receipt.json",
+  "receipt_sha256": "79eaa733e95fc61d1c9bbb8e0527242564af7deab1d8b130c6d65aa2360d2943",
+  "compiler_commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "compiler_sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8",
+  "build_provenance": {
+    "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-3aa85b31ed-counted-opt0.pin.json",
+    "sha256": "01396d1994cacfa694f105780534bc94d0d8d68b1f355f6d55bf572a4d42f87d",
+    "compiler_sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8",
+    "commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+    "dmbc_opt_level": 0,
+    "dm_tree_opt_level": 2,
+    "dmbc_codegen_units": 256,
+    "lto": false,
+    "declared_acceptance_profile": false,
+    "benchmark_acceptance_admitted": false,
+    "scope": "successful-build receipt matched to exact executable bytes"
+  },
+  "workers": 2,
+  "total_workers": 2,
+  "rows": [
+    {
+      "kind": "initial",
+      "retained_launch_through_reap_seconds": 130.31200000000172,
+      "fresh_launch_through_reap_seconds": 78.95300000000134,
+      "fresh_native_byte_oracle": true,
+      "host": {
+        "enabled": true,
+        "engine_generation": 1,
+        "procedure_generation": 1,
+        "procedure_policy_replacements": 0,
+        "rich_generation": 1,
+        "scope": "process_local_diagnostic_only",
+        "session": 1
+      },
+      "frontend_wall_seconds": 21.5163461,
+      "disk_hits": 0,
+      "resident_hits": 0,
+      "procedures_recomputed": 48681,
+      "lookup_summed_worker_wall_seconds": 0.5643471,
+      "output_hashes": {
+        "dmb": {
+          "retained": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de",
+          "fresh": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      },
+      "BYOND_structural": {
+        "schema_version": 1,
+        "snapshot_id": "166554e9a6d898421b458f21fca1c02dcca2c9138b03bdee5949e80fdd75946c",
+        "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+        "signature_algorithm": "md5-length-framed-v1",
+        "tool_complete": true,
+        "traversal_complete": true,
+        "complete": true,
+        "semantic_coverage": "complete",
+        "total_discrepancies": 653628,
+        "unexplained_discrepancies": 653628,
+        "report": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\0\\session-0\\structural\\structural-diff.json",
+        "report_sha256": "6c90a525397e455c68fbd2b5d28848c2a0dd0082b841e99c24c9df9541a659b5",
+        "evidence_format": "structural-report-reference-v1",
+        "categories": {
+          "bytecode": {
+            "discrepancy_count": 479722,
+            "unique_case_count": 462234
+          },
+          "globals": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "other": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_flags": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_table": {
+            "discrepancy_count": 3909,
+            "unique_case_count": 3909
+          },
+          "strings_by_use": {
+            "discrepancy_count": 169997,
+            "unique_case_count": 169997
+          },
+          "type_headers": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "type_set": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "variable_defaults": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          }
+        },
+        "uncovered": {},
+        "comparison_scope": "same_captured_source_and_configuration",
+        "baseline_snapshot_id": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+        "configuration_matches_baseline": true,
+        "source_identical_to_baseline": true,
+        "structural_check": {
+          "mode": "executed",
+          "identity": {
+            "schema_version": 1,
+            "command": "structural-diff-four-positional-v1",
+            "signature_algorithm": "md5-length-framed-v1",
+            "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+            "expected_dmb_sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb",
+            "actual_dmb_sha256": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de",
+            "actual_rsc_sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "snapshot_id": "166554e9a6d898421b458f21fca1c02dcca2c9138b03bdee5949e80fdd75946c",
+            "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6"
+          }
+        },
+        "inspector_execution": {
+          "exit": 0,
+          "wall_s": 91.07800000000134,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "baseline_admission": "open",
+        "BYOND_byte_parity": "not_asserted",
+        "runtime_parity": "not_run",
+        "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\0\\session-0\\structural\\structural-summary.json"
+      }
+    },
+    {
+      "kind": "unchanged",
+      "retained_launch_through_reap_seconds": 1.7810000000026776,
+      "fresh_launch_through_reap_seconds": 77.4529999999977,
+      "fresh_native_byte_oracle": true,
+      "host": {
+        "enabled": true,
+        "engine_generation": 1,
+        "procedure_generation": 1,
+        "procedure_policy_replacements": 0,
+        "rich_generation": 1,
+        "scope": "process_local_diagnostic_only",
+        "session": 1
+      },
+      "frontend_wall_seconds": 21.5163461,
+      "disk_hits": 0,
+      "resident_hits": 0,
+      "procedures_recomputed": 48681,
+      "lookup_summed_worker_wall_seconds": 0.5643471,
+      "output_hashes": {
+        "dmb": {
+          "retained": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de",
+          "fresh": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      },
+      "BYOND_structural": {
+        "schema_version": 1,
+        "snapshot_id": "166554e9a6d898421b458f21fca1c02dcca2c9138b03bdee5949e80fdd75946c",
+        "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+        "signature_algorithm": "md5-length-framed-v1",
+        "tool_complete": true,
+        "traversal_complete": true,
+        "complete": true,
+        "semantic_coverage": "complete",
+        "total_discrepancies": 653628,
+        "unexplained_discrepancies": 653628,
+        "report": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\0\\session-0\\structural\\structural-diff.json",
+        "report_sha256": "6c90a525397e455c68fbd2b5d28848c2a0dd0082b841e99c24c9df9541a659b5",
+        "evidence_format": "structural-report-reference-v1",
+        "categories": {
+          "bytecode": {
+            "discrepancy_count": 479722,
+            "unique_case_count": 462234
+          },
+          "globals": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "other": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_flags": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_table": {
+            "discrepancy_count": 3909,
+            "unique_case_count": 3909
+          },
+          "strings_by_use": {
+            "discrepancy_count": 169997,
+            "unique_case_count": 169997
+          },
+          "type_headers": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "type_set": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "variable_defaults": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          }
+        },
+        "uncovered": {},
+        "comparison_scope": "same_captured_source_and_configuration",
+        "baseline_snapshot_id": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+        "configuration_matches_baseline": true,
+        "source_identical_to_baseline": true,
+        "structural_check": {
+          "mode": "authenticated_raw_report_reuse",
+          "identity": {
+            "schema_version": 1,
+            "command": "structural-diff-four-positional-v1",
+            "signature_algorithm": "md5-length-framed-v1",
+            "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+            "expected_dmb_sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb",
+            "actual_dmb_sha256": "0e1e49c1962fdeca04442736866792f4c76796c648a311e5ff9268053a59e3de",
+            "actual_rsc_sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "snapshot_id": "166554e9a6d898421b458f21fca1c02dcca2c9138b03bdee5949e80fdd75946c",
+            "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6"
+          }
+        },
+        "inspector_execution": null,
+        "baseline_admission": "open",
+        "BYOND_byte_parity": "not_asserted",
+        "runtime_parity": "not_run",
+        "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\1\\session-0\\structural\\structural-summary.json"
+      }
+    },
+    {
+      "kind": "body",
+      "retained_launch_through_reap_seconds": 72.64099999999962,
+      "fresh_launch_through_reap_seconds": 78.67199999999866,
+      "fresh_native_byte_oracle": true,
+      "host": {
+        "enabled": true,
+        "engine_generation": 1,
+        "procedure_generation": 2,
+        "procedure_policy_replacements": 0,
+        "rich_generation": 4,
+        "scope": "process_local_diagnostic_only",
+        "session": 1
+      },
+      "frontend_wall_seconds": 7.2162991,
+      "disk_hits": 48680,
+      "resident_hits": 0,
+      "procedures_recomputed": 1,
+      "lookup_summed_worker_wall_seconds": 25.6432264,
+      "output_hashes": {
+        "dmb": {
+          "retained": "b5507032400704beb6d41e2a4a786cca6cde8f5566e626123014a1da2d2ffdbb",
+          "fresh": "b5507032400704beb6d41e2a4a786cca6cde8f5566e626123014a1da2d2ffdbb"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      },
+      "BYOND_structural": {
+        "schema_version": 1,
+        "snapshot_id": "ee00522685b4cd981d4296191ad83f78e9e938a9b96224f5078b0b5b135b6ba4",
+        "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+        "signature_algorithm": "md5-length-framed-v1",
+        "tool_complete": true,
+        "traversal_complete": true,
+        "complete": true,
+        "semantic_coverage": "complete",
+        "total_discrepancies": 653631,
+        "unexplained_discrepancies": 653631,
+        "report": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\2\\session-0\\structural\\structural-diff.json",
+        "report_sha256": "775ede1088c51b11f8969719563d7a2ba1388897c64b005f8f52fadc2f82cc31",
+        "evidence_format": "structural-report-reference-v1",
+        "categories": {
+          "bytecode": {
+            "discrepancy_count": 479725,
+            "unique_case_count": 462237
+          },
+          "globals": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "other": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_flags": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_table": {
+            "discrepancy_count": 3909,
+            "unique_case_count": 3909
+          },
+          "strings_by_use": {
+            "discrepancy_count": 169997,
+            "unique_case_count": 169997
+          },
+          "type_headers": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "type_set": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "variable_defaults": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          }
+        },
+        "uncovered": {},
+        "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+        "baseline_snapshot_id": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+        "configuration_matches_baseline": true,
+        "source_identical_to_baseline": false,
+        "structural_check": {
+          "mode": "executed",
+          "identity": {
+            "schema_version": 1,
+            "command": "structural-diff-four-positional-v1",
+            "signature_algorithm": "md5-length-framed-v1",
+            "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+            "expected_dmb_sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb",
+            "actual_dmb_sha256": "b5507032400704beb6d41e2a4a786cca6cde8f5566e626123014a1da2d2ffdbb",
+            "actual_rsc_sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "snapshot_id": "ee00522685b4cd981d4296191ad83f78e9e938a9b96224f5078b0b5b135b6ba4",
+            "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6"
+          }
+        },
+        "inspector_execution": {
+          "exit": 0,
+          "wall_s": 82.14099999999962,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "baseline_admission": "not_evaluable_cross_revision",
+        "BYOND_byte_parity": "not_asserted",
+        "runtime_parity": "not_run",
+        "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\2\\session-0\\structural\\structural-summary.json"
+      }
+    },
+    {
+      "kind": "structural",
+      "retained_launch_through_reap_seconds": 85.34400000000096,
+      "fresh_launch_through_reap_seconds": 84.31199999999808,
+      "fresh_native_byte_oracle": true,
+      "host": {
+        "enabled": true,
+        "engine_generation": 1,
+        "procedure_generation": 3,
+        "procedure_policy_replacements": 0,
+        "rich_generation": 7,
+        "scope": "process_local_diagnostic_only",
+        "session": 1
+      },
+      "frontend_wall_seconds": 13.632352000000001,
+      "disk_hits": 48677,
+      "resident_hits": 0,
+      "procedures_recomputed": 4,
+      "lookup_summed_worker_wall_seconds": 24.0096229,
+      "output_hashes": {
+        "dmb": {
+          "retained": "c931e59c9641c509cf7aed2653f29d3e95f1f2b186bc6cf2346b3f4449253b03",
+          "fresh": "c931e59c9641c509cf7aed2653f29d3e95f1f2b186bc6cf2346b3f4449253b03"
+        },
+        "rsc": {
+          "retained": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+          "fresh": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437"
+        }
+      },
+      "BYOND_structural": {
+        "schema_version": 1,
+        "snapshot_id": "0d256a3bc502b60cf073cb08932c384a899f52313c767ab403f48b04b8fd0dae",
+        "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6",
+        "signature_algorithm": "md5-length-framed-v1",
+        "tool_complete": true,
+        "traversal_complete": true,
+        "complete": true,
+        "semantic_coverage": "complete",
+        "total_discrepancies": 653640,
+        "unexplained_discrepancies": 653640,
+        "report": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\3\\session-0\\structural\\structural-diff.json",
+        "report_sha256": "0894d9480cbb6305b6c4118b9c1d3fc6e8e634a68a3688aae908c19dc9c68daf",
+        "evidence_format": "structural-report-reference-v1",
+        "categories": {
+          "bytecode": {
+            "discrepancy_count": 479733,
+            "unique_case_count": 462245
+          },
+          "globals": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "other": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_flags": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "procedure_table": {
+            "discrepancy_count": 3909,
+            "unique_case_count": 3909
+          },
+          "strings_by_use": {
+            "discrepancy_count": 169997,
+            "unique_case_count": 169997
+          },
+          "type_headers": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "type_set": {
+            "discrepancy_count": 0,
+            "unique_case_count": 0
+          },
+          "variable_defaults": {
+            "discrepancy_count": 1,
+            "unique_case_count": 1
+          }
+        },
+        "uncovered": {},
+        "comparison_scope": "cross_revision_original_BYOND_diagnostic_only",
+        "baseline_snapshot_id": "68deedaf353c95364407b374d2a1eb42607875d14a8597d90461239e2696e5c7",
+        "configuration_matches_baseline": true,
+        "source_identical_to_baseline": false,
+        "structural_check": {
+          "mode": "executed",
+          "identity": {
+            "schema_version": 1,
+            "command": "structural-diff-four-positional-v1",
+            "signature_algorithm": "md5-length-framed-v1",
+            "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+            "expected_dmb_sha256": "a3d3eadadc61d8222698f3fcf071ade48223ab5e9b873ebb3603445dbcf610eb",
+            "actual_dmb_sha256": "c931e59c9641c509cf7aed2653f29d3e95f1f2b186bc6cf2346b3f4449253b03",
+            "actual_rsc_sha256": "6a77e931ddc3e8e909e527d839814d18bbfb95651273e8cefdf3bd27b192f437",
+            "snapshot_id": "0d256a3bc502b60cf073cb08932c384a899f52313c767ab403f48b04b8fd0dae",
+            "semantic_configuration_sha256": "6fb25d402464088e7d7d019c05a00a825b7554e81202e6e40471ed4315bdfbd6"
+          }
+        },
+        "inspector_execution": {
+          "exit": 0,
+          "wall_s": 82.39099999999962,
+          "wall_scope": "client launch through reap; daemon work included for retained requests"
+        },
+        "baseline_admission": "not_evaluable_cross_revision",
+        "BYOND_byte_parity": "not_asserted",
+        "runtime_parity": "not_run",
+        "diagnostic_summary": "E:\\dq-cache\\dmb-native-iterations\\20261011-212428-eee3bf30\\3\\session-0\\structural\\structural-summary.json"
+      }
+    }
+  ],
+  "daemon_cleanup": {
+    "pid": 5032,
+    "tree_error": "taskkill exited 255",
+    "direct_error": null,
+    "wait_error": null,
+    "returncode": 1,
+    "reaped": true
+  },
+  "job_cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 6442450944,
+      "peak_job_commit_bytes": 6164336640,
+      "peak_process_commit_bytes": 6151229440,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "harness_end_to_end_seconds": 944.6409999999996,
+  "harness_scope": "Includes serial fresh-oracle prepass, source proofs and structural comparisons; not compiler time",
+  "BYOND_baseline_gate": "open",
+  "comparison_to_929_same_profile": {
+    "initial_delta_seconds": 10.546000000000006,
+    "unchanged_delta_seconds": 0.10899999999999999,
+    "body_delta_seconds": -7.358999999999995,
+    "structural_delta_seconds": 1.6099999999999994,
+    "causal_claim": false
+  },
+  "pressure_observation": {
+    "tier3_private_after_bytes": 4490162176,
+    "tier4_private_after_bytes": 3050532864,
+    "tier4_wall_seconds": 1.539271,
+    "semantic_host_session_stayed": 1,
+    "symbolic_procedure_owner_released": true
+  },
+  "limitations": [
+    "Foreign compiler processes observed at boundary samples; continuous isolation not established",
+    "653628 unexplained initial BYOND structural discrepancies remain; 6 fewer procedure-table discrepancies than929",
+    "Body and structural edits replay most procedures from disk despite semantic session survival",
+    "Runtime baseline and real DeepQuarry six-worktree geometry acceptance remain open"
+  ]
+}
