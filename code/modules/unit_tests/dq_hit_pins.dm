@@ -39,7 +39,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
-		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx",
+		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx", "type_trait_overrides",
 	)
 	return skip
 
@@ -79,6 +79,12 @@
 	// Native subversion lives in capability keys, outside target.vars. Observe
 	// the public state so a missing emag effect cannot become a passing "nothing".
 	.["is_emagged"] = dq_hit_value(is_emagged(target), "is_emagged")
+	// Master fa9f430b95 moved these semantic values into the light-glow trait.
+	// Observe its public values; the opaque trait backing list is not behavior.
+	var/datum/type_trait/light_glow/G = glow_of(target)
+	.["light_range"] = dq_hit_value(G.range, "light_range")
+	.["light_power"] = dq_hit_value(G.power, "light_power")
+	.["light_color"] = dq_hit_value(G.color, "light_color")
 
 /// The things standing on a tile besides `target`: type -> count.
 /proc/dq_hit_turf_rows(turf/T, atom/target)
@@ -193,6 +199,24 @@
 	// a blast that vents smoke leaves its smoke system alive: the ownership audit flags it at the end of the run
 	for(var/datum/effect/effect/system/smoke_spread/leftover)
 		qdel(leftover)
+
+/datum/unit_test/dq_hit_public_glow/Run()
+	var/obj/item/I = allocate(/obj/item, test_floor())
+	I.set_light_range(4)
+	I.set_light_power(2)
+	I.set_light_color(COLOR_BLUE)
+	var/list/blue = dq_hit_state(I)
+	TEST_ASSERT_EQUAL(blue["light_range"], "4", "Producer observes the actual public glow range")
+	TEST_ASSERT_EQUAL(blue["light_power"], "2", "Producer observes actual public glow power")
+	TEST_ASSERT_EQUAL(blue["light_color"], "'[COLOR_BLUE]'", "Producer preserves the semantic color observation")
+	TEST_ASSERT(!("type_trait_overrides" in blue), "Opaque trait allocation is not substituted for physical behavior")
+	I.set_light_range(1)
+	I.set_light_power(0.5)
+	I.set_light_color(COLOR_RED)
+	var/list/red = dq_hit_state(I)
+	TEST_ASSERT_EQUAL(red["light_range"], "1", "A real range change remains falsifiable")
+	TEST_ASSERT_EQUAL(red["light_power"], "0.5", "A real power change remains falsifiable")
+	TEST_ASSERT_EQUAL(red["light_color"], "'[COLOR_RED]'", "A real color change remains falsifiable")
 
 /datum/unit_test/dq_hit_pin/Run()
 	var/list/bad = list()
