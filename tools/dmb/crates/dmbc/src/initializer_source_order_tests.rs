@@ -40,8 +40,8 @@ fn initializer_ledger_preserves_current_include_order_for_dependent_instance_wri
         let names: Vec<_> = plan
             .writes
             .iter()
-            .filter_map(|write| match write.target {
-                InitializerTarget::Instance { name, .. } => Some(name),
+            .filter_map(|write| match &write.target {
+                InitializerTarget::Instance { name, .. } => Some(*name),
                 _ => None,
             })
             .collect();
