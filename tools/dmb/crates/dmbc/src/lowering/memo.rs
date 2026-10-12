@@ -125,20 +125,29 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
             symbols: startup.map_or(tree.symbols(), |startup| startup.plan().symbols.as_ref()),
         };
         let metadata = current_key.metadata;
-        let issued_prepared =
+        let (issued_prepared, borrowed_abi) =
             if let Some(unit) = local_inputs.and_then(|inputs| inputs.prepared(current_body)) {
-                Some(unit)
+                (Some(unit), true)
             } else {
-                policy
-                    .prepare_issued(metadata, issued, &context)
-                    .ok()?
-                    .map(|replay| replay.into_view())
+                (
+                    policy
+                        .prepare_issued(metadata, issued, &context)
+                        .ok()?
+                        .map(|replay| replay.into_view()),
+                    false,
+                )
             };
         let (needs_parsed, prepared, prepared_tail) = match issued_prepared {
             Some(prepared) => {
                 memo.counts
                     .issued_preparations
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                let source_count = if borrowed_abi {
+                    &memo.counts.borrowed_abi_views
+                } else {
+                    &memo.counts.policy_issued_preparations
+                };
+                source_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                 let tail = crate::lowering_memo::key_recipe::PreparedKey::issued(&prepared)?;
                 (false, prepared, tail)
             }
@@ -297,12 +306,7 @@ pub(super) fn admit_one_input<'a, 'frontend: 'a, R: Resolver, P: AbiPolicy>(
         // Reissued current sidecars may observe dependencies absent from the
         // stored executable ledger. Publish their complete current receipt.
         let admission = if symbolic {
-            symbolic_input::accepted_admission(
-                memo,
-                current_bytes().clone(),
-                &accepted,
-                &recording,
-            )
+            symbolic_input::accepted_admission(memo, current_bytes().clone(), &accepted, &recording)
         } else {
             None
         };

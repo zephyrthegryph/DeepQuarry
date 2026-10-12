@@ -607,6 +607,18 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
     assert_eq!(cold.units[0].debug_origins, warm.units[0].debug_origins);
     assert_eq!(
         memo.counts
+            .borrowed_abi_views
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        memo.counts
+            .policy_issued_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        2
+    );
+    assert_eq!(
+        memo.counts
             .issued_preparations
             .load(std::sync::atomic::Ordering::Relaxed),
         2
@@ -622,6 +634,43 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
             .resident_hits
             .load(std::sync::atomic::Ordering::Relaxed),
         1
+    );
+    // The production roster borrows the admitted ABI owner instead of invoking
+    // prepare_issued. Both paths must retain the same code and compatibility total.
+    let roster = crate::lowering::PreparedBodyRoster::issue(&frontend)
+        .ok()
+        .unwrap();
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let arena = dm_tree::frontend::BodyArena::new(&frontend);
+    let borrowed_memo = crate::lowering_memo::ProcedureMemo::new(abi.policy_identity);
+    let borrowed = crate::lowering::lower_frontend_completed_input_on_execution(
+        &frontend,
+        &host,
+        &policy,
+        LoweringConfig::default(),
+        Some(&startup),
+        Some(&borrowed_memo),
+        crate::lowering::LoweringExecution::new(&executor, &arena).with_prepared_roster(&roster),
+        false,
+        &|input| -> Result<_, String> { Ok(input.into_lowered().code.procedure) },
+    );
+    assert!(
+        borrowed.diagnostics.is_empty(),
+        "{:?}",
+        borrowed.diagnostics
+    );
+    assert!(borrowed.completion_errors.is_empty());
+    assert_eq!(borrowed.units.len(), 1);
+    assert_eq!(borrowed.units[0].value, cold.units[0].code.procedure);
+    let statistics =
+        crate::runner_report::memo_statistics(&borrowed_memo, &serde_json::Value::Null);
+    assert_eq!(statistics["issued_preparations"], 1);
+    assert_eq!(statistics["borrowed_abi_views"], 1);
+    assert_eq!(statistics["policy_issued_preparations"], 0);
+    assert_eq!(statistics["parsed_preparations"], 0);
+    assert_eq!(
+        statistics["preparation_counts_scope"]["policy_issued_preparations"],
+        "successful_prepare_issued_results_not_semantic_recomputations"
     );
     cache.publish(&memo.take_pending()).unwrap();
     let disk = crate::lowering_memo::ProcedureMemo::with_disk(
@@ -657,6 +706,18 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
             .load(std::sync::atomic::Ordering::Relaxed),
         0
     );
+    assert_eq!(
+        disk.counts
+            .borrowed_abi_views
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        disk.counts
+            .policy_issued_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        1
+    );
     drop(disk);
     drop(memo);
     drop(cache);
@@ -676,6 +737,20 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
         &custom,
     );
     assert!(custom_cold.diagnostics.is_empty());
+    assert_eq!(
+        custom
+            .counts
+            .borrowed_abi_views
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
+    assert_eq!(
+        custom
+            .counts
+            .policy_issued_preparations
+            .load(std::sync::atomic::Ordering::Relaxed),
+        0
+    );
     assert_eq!(
         custom
             .counts

@@ -27,7 +27,14 @@ pub struct MemoCounts {
     pub staging_failed: AtomicU64,
     /// Key preparation includes current parse and ABI input preparation.
     pub key_preparation_ns: AtomicU64,
+    /// Compatibility total: borrowed ABI views plus policy-issued views. This
+    /// counts memo admission paths, never fresh semantic ABI computations.
     pub issued_preparations: AtomicU64,
+    /// Views borrowed from the already admitted current ABI batch owner.
+    pub borrowed_abi_views: AtomicU64,
+    /// Successful policy prepare_issued results; the policy may itself reuse
+    /// admitted inputs, so this is not a semantic recomputation counter.
+    pub policy_issued_preparations: AtomicU64,
     pub parsed_preparations: AtomicU64,
     /// Resident/disk lookup, typed decoding, and current meaning verification.
     pub lookup_ns: AtomicU64,

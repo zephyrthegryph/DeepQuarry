@@ -65,7 +65,18 @@ pub(super) fn memo_statistics(
             "recomputed":store.recomputed.load(Relaxed)
         })),
         "issued_preparations":memo.counts.issued_preparations.load(Relaxed),
+        "borrowed_abi_views":memo.counts.borrowed_abi_views.load(Relaxed),
+        "policy_issued_preparations":memo.counts.policy_issued_preparations.load(Relaxed),
         "parsed_preparations":memo.counts.parsed_preparations.load(Relaxed),
+        "preparation_counts_scope": {
+            "scope":"memo_admission_calls",
+            "issued_preparations":"borrowed_abi_views_plus_policy_issued_preparations",
+            "borrowed_abi_views":"views_from_already_admitted_current_abi_batch",
+            "policy_issued_preparations":"successful_prepare_issued_results_not_semantic_recomputations",
+            "parsed_preparations":"policy_prepare_captured_attempts",
+            "excludes":"unchanged_local_admissions_without_key_preparation",
+            "key_preparation_seconds":"summed_worker_elapsed_not_request_wall"
+        },
         "recomputed":memo.counts.recomputed.load(Relaxed),
         "pending_dropped":memo.counts.pending_dropped.load(Relaxed),
         "staged_records":memo.counts.staged_records.load(Relaxed),
@@ -168,7 +179,10 @@ pub(super) fn explanations(
 /// This is reporting only and does not alter resolver keys or persisted receipts.
 fn explained_query(query: dm_ir::ResolveQuery) -> serde_json::Value {
     match query {
-        dm_ir::ResolveQuery::ResourceIn { path, search_context } => serde_json::json!({
+        dm_ir::ResolveQuery::ResourceIn {
+            path,
+            search_context,
+        } => serde_json::json!({
             "ResourceIn": { "path": path, "search_context": format!("{search_context:032x}") }
         }),
         query => serde_json::json!(query),
@@ -184,11 +198,20 @@ mod resource_explanation_tests {
             path,
             search_context: u128::MAX,
         });
-        assert_eq!(value["ResourceIn"]["search_context"], "ffffffffffffffffffffffffffffffff");
+        assert_eq!(
+            value["ResourceIn"]["search_context"],
+            "ffffffffffffffffffffffffffffffff"
+        );
         assert_eq!(value["ResourceIn"]["path"], serde_json::json!(path));
         let encoded = serde_json::to_string(&value).unwrap();
-        assert_eq!(serde_json::from_str::<serde_json::Value>(&encoded).unwrap(), value);
-        assert_eq!(super::explained_query(dm_ir::ResolveQuery::GlobalProc(path)), serde_json::json!(dm_ir::ResolveQuery::GlobalProc(path)));
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&encoded).unwrap(),
+            value
+        );
+        assert_eq!(
+            super::explained_query(dm_ir::ResolveQuery::GlobalProc(path)),
+            serde_json::json!(dm_ir::ResolveQuery::GlobalProc(path))
+        );
     }
 }
 
