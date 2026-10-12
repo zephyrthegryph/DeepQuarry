@@ -1,3 +1,4 @@
+// Unhooked: unconditional category hypothesis disproved by pinned earlier-proc control.
 use super::*;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 struct Source;
