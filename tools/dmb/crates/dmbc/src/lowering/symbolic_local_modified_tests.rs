@@ -7,7 +7,10 @@ impl dm_preprocess::SourceProvider for Source {
         Ok(self.0.clone())
     }
 }
-const SOURCE: &str = "/obj/outer\n    var/child\n/obj/inner\n    var/amount\n/datum/a/proc/p()\n    return /obj/outer{child=/obj/inner{amount=7}}\n";
+// Parenthesize the returned modified type: an unparenthesized brace after
+// `return` is a declaration-parser block, deliberately rejected by the existing
+// unsupported-model gate. This fixture exercises nested descriptor reissue.
+const SOURCE: &str = "/obj/outer\n    var/child\n/obj/inner\n    var/amount\n/datum/a/proc/p()\n    return (/obj/outer{child=/obj/inner{amount=7}})\n";
 fn build(
     state: &mut dm_tree::frontend::RetainedSemanticTree,
     text: &str,
