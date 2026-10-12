@@ -1,2 +1,2 @@
 /datum/ordered
-    var/second = record_initializer("second", first + 1)
+    var/datum/ordered_value/second = new /datum/ordered_value("second", null)

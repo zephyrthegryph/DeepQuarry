@@ -18,6 +18,17 @@ Reverse include order is a compile-only control; its runtime behavior is not
 predicted or certified. A successful compile is not an order-equivalence claim.
 
 The fixture uses an absolute first declaration and an indented reopened type for
-its second declaration, with a real read of the first field and observable calls.
+its second declaration. Both use legal constant-argument `new` initializers. The
+first constructor publishes its instance; the second constructor reads that
+instance's value and increments it, making constructor ordering observable.
 This contrasts the independent constant-list client initialization observation.
 No production ordering change is proposed until the actual paired result exists.
+
+## Pinned compile-only observation
+
+BYOND 516.1687 accepted both final include orders, with DMB/RSC output, in receipt
+`E:/dq-cache/dmb-initializer-order-reference/0f3ca0b07e174683b36708a6f7f1f99b/receipt.json`.
+Machine DM slots and the owned 4 GB Job were used; no DD ran. Earlier attempts
+with ordinary declaration calls and declaration-time `src.first.value` reads
+were rejected and preserved. The legal form moves the dependent read into
+`New()`. Forward values/trace are still assertions awaiting actual runtime.

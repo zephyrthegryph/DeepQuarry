@@ -22,6 +22,7 @@ def observations(file):
 def reference_only(arguments):
     parser=argparse.ArgumentParser();parser.add_argument('--dm',type=Path,required=True);parser.add_argument('--dm-sha256',required=True);parser.add_argument('--output-root',type=Path,required=True);args=parser.parse_args(arguments)
     sys.path.insert(0,str(BENCH));from upgrade_owned_job import OwnedJob
+    from machine_slot_command import slot_command
     h=load('order_iteration',BENCH/'native-iteration.py');common=load('order_common',HERE.parent/'power_retirement_runtime/run.py')
     h.safe_e(args.output_root);args.output_root.mkdir(parents=True,exist_ok=True);root=args.output_root/uuid.uuid4().hex;root.mkdir()
     job=OwnedJob(4_000_000_000);h._owned_job=job;deadline=time.monotonic()+120
@@ -35,8 +36,14 @@ def reference_only(arguments):
             source=root/variant;source.mkdir();common.copy_fixture_files(HERE,source,names,hashes,h.sha)
             if variant=='reverse':
                 reverse=(HERE/'reverse.dme').read_bytes();(source/'probe.dme').write_bytes(reverse);receipt['reverseManifestSha256']=h.sha(HERE/'reverse.dme')
-            result=h.run_child(dm,[str(source/'probe.dme')],root/(variant+'-compile'),min(deadline,time.monotonic()+30))
-            receipt['cases'][variant]={'execution':result,'manifestSha256':h.sha(source/'probe.dme'),'outputs':{}}
+            plan=slot_command('dm_compile',[str(dm),str(source/'probe.dme')],HERE.parents[4],os.environ,label='dependent initializer '+variant+' reference')
+            previous_environment=dict(os.environ)
+            try:
+                os.environ.clear();os.environ.update(plan['environment'])
+                result=h.run_child(Path(plan['command'][0]),plan['command'][1:],root/(variant+'-compile'),min(deadline,time.monotonic()+30))
+            finally:
+                os.environ.clear();os.environ.update(previous_environment)
+            receipt['cases'][variant]={'execution':result,'machineSlot':plan['evidence'],'manifestSha256':h.sha(source/'probe.dme'),'outputs':{}}
             if result['exit']==0:
                 for suffix in ('.dmb','.rsc'):
                     file=source/('probe'+suffix);h.regular(file);receipt['cases'][variant]['outputs'][suffix]={'path':str(file),'sha256':h.sha(file),'bytes':file.stat().st_size}
