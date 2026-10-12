@@ -28,6 +28,23 @@
     "python_selected_passes": 12,
     "runtime_execution": "Saved power pair retry in progress; no acceptance claim"
   },
+  "latest_focused_validation": {
+    "frozen_commit": "92987e8baf3a6b0296241b65ee67ae25b8baabed",
+    "archive_sha256": "b5eff1a6ee562e50075ca7c0a6ca2deecd66157957592a7d8a56ebffd322c0ef",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261011-193618-aa222e0f-job-cargo.json",
+    "build_seconds": 240.922,
+    "children_reaped": true,
+    "selected_passes": 27,
+    "selected_failures": 0,
+    "compact_selected_passes": 11,
+    "immutable_answer_pair_selected_passes": 1,
+    "receipts": [
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194118-ad269588-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194117-2a9ab33b-focused.json",
+      "E:/dq-cache/dmb-native-v2/integration-gates/20261011-194116-c5d85e59-focused.json"
+    ],
+    "request_runner_binary_hook": "Not compiled by library-only test harness; new binary build pending"
+  },
   "new_end_to_end_benchmark": false,
   "full_suite_parity": "open"
 }
