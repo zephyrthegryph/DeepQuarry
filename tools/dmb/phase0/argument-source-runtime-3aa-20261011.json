@@ -1,0 +1,327 @@
+{
+  "scope": "Paired owning-frame observations plus authentic argument-source helper tables.\n\nDirect calls may not execute allowed-values helpers; helper call count is observed,\nnot presumed. This fixture does not simulate a client or assert prompt behavior.\n",
+  "result": "PASS",
+  "receipt": "E:\\dq-cache\\dmb-argument-source-contract\\2a52fdc543cc4488810d33aa2cd58837\\receipt.json",
+  "receipt_sha256": "bb81c49b0f34260aa43601fbcb12a33ff7ae815681a45b86780289834fa02645",
+  "compiler_commit": "3aa85b31edab1ac3356511bb79748fe0ab1a2f99",
+  "pins": {
+    "native": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build-current\\20261011-3aa85b31ed-counted-opt0.exe",
+      "sha256": "884d3d5a21c1b2ad3dd9bc1931bb0d20f2ff98231854ec2ca1731811afda7dc8"
+    },
+    "template": {
+      "path": "E:\\projects\\dq-wt\\dmb-review\\tools\\dmb\\fixtures\\native_template.bin",
+      "sha256": "9221528efb715be5b8df23020989e0c2a53ea32bff9894747166dbe04d785540"
+    },
+    "dm": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dm.exe",
+      "sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0"
+    },
+    "dd": {
+      "path": "D:\\Program Files (x86)\\BYOND516\\bin\\dd.exe",
+      "sha256": "2e3815875c4dcf3c50de70c1c6e017849efe8697c428f02ab9ee77c306c8abf0"
+    },
+    "inspector": {
+      "path": "E:\\dq-cache\\dmb-native-v2\\frozen-build\\20261011-e682617358-inspector-opt0.exe",
+      "sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb"
+    }
+  },
+  "fixture_sources": {
+    "probe.dm": "b12a021b47ed9df91281217cda3acbc6f05c1509f38ff043b891f691b1541988",
+    "probe.dme": "89ab190f2f59c54f6efb197a7da4cadf5e4bfd02f7db19d1c8d7996df267a876"
+  },
+  "executions": {
+    "byond-compile": {
+      "exit": 0,
+      "wall_s": 0.39099999999962165,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "byond-runtime": {
+      "exit": 0,
+      "wall_s": 1.2340000000003783,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-compile": {
+      "exit": 0,
+      "wall_s": 0.21900000000096043,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "acquire": {
+      "exit": 0,
+      "wall_s": 0.125,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    },
+    "native-runtime": {
+      "exit": 0,
+      "wall_s": 1.1559999999990396,
+      "wall_scope": "client launch through reap; daemon work included for retained requests"
+    }
+  },
+  "matches": true,
+  "helper_metadata_equal": true,
+  "helper_formals": {
+    "byond": [
+      {
+        "owners": [
+          [
+            "earlier",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "argument_count",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "argument_first",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "first_source",
+            0
+          ]
+        ],
+        "formals": []
+      },
+      {
+        "owners": [
+          [
+            "third_source",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "third_source",
+            2
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          },
+          {
+            "name": "second",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "dynamic_source",
+            0
+          ]
+        ],
+        "formals": []
+      },
+      {
+        "owners": [
+          [
+            "current_source",
+            0
+          ]
+        ],
+        "formals": [
+          {
+            "name": "value",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      }
+    ],
+    "native": [
+      {
+        "owners": [
+          [
+            "earlier",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "argument_count",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "argument_first",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "first_source",
+            0
+          ]
+        ],
+        "formals": []
+      },
+      {
+        "owners": [
+          [
+            "third_source",
+            1
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "third_source",
+            2
+          ]
+        ],
+        "formals": [
+          {
+            "name": "first",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          },
+          {
+            "name": "second",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "current_source",
+            0
+          ]
+        ],
+        "formals": [
+          {
+            "name": "value",
+            "type_flags": 0,
+            "value_source": 0,
+            "reserved": 0
+          }
+        ]
+      },
+      {
+        "owners": [
+          [
+            "dynamic_source",
+            0
+          ]
+        ],
+        "formals": []
+      }
+    ]
+  },
+  "memory": {
+    "schema": "dm-owned-memory-samples-v1",
+    "budget_bytes": 4000000000,
+    "sampled_peak_private_bytes": 58740736,
+    "samples": 69,
+    "processes_at_sampled_peak": [
+      {
+        "pid": 36292,
+        "private_bytes": 58740736
+      }
+    ],
+    "sample_interval_s": 0.2,
+    "status": "sampled",
+    "reason": null,
+    "errors": [],
+    "strict_peak_proved": false,
+    "scope": "registered owned compile/acquisition/runtime children, 200ms samples; not strict peak or unregistered-descendant proof"
+  },
+  "limitation": "Direct calls may not execute allowed-values helpers; no client/prompt behavior or full runtime baseline claim."
+}
