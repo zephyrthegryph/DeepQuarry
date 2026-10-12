@@ -628,9 +628,6 @@ init_lines	code/game/mecha/components/_component.dm	if(start_damaged)
 init_lines	code/game/mecha/components/_component.dm	update_integrity(round(max_integrity * integrity_danger_mod))
 init_lines	code/game/mecha/equipment/tools/cable_layer.dm	sync_cable_length()
 init_lines	code/game/mecha/equipment/tools/inflatables.dm	rel_set(src, nameof(my_deployer), my_tool)
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.name = name
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.set_anchored(TRUE)
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.canremove = FALSE
 init_lines	code/game/mecha/equipment/tools/shield.dm	my_shield.shield_regen_delay = equip_cooldown
 init_lines	code/game/mecha/equipment/tools/shield.dm	rel_set(my_shield, nameof(my_shield.my_tool), src)
 init_lines	code/game/mecha/equipment/tools/shield_omni.dm	rel_set(src, nameof(my_mech), loc)
@@ -1500,50 +1497,12 @@ init_lines	code/modules/body/body.dm	if(!body)
 init_lines	code/modules/body/body.dm	rel_set(src, nameof(body), new body_type(src))
 init_lines	code/modules/body/organs/internal/_organ_internal.dm	if(supply_conversion_value)
 init_lines	code/modules/body/organs/internal/_organ_internal.dm	make_sellable(/datum/sellable/organ)
-init_lines	code/modules/body/organs/internal/augment.dm	setup_radial_icon()
-init_lines	code/modules/body/organs/internal/augment.dm	if(integrated_object) // declared child
-init_lines	code/modules/body/organs/internal/augment.dm	integrated_object.canremove = FALSE
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	var/list/tools = all_integrated_tools()
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	if(!length(tools))
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	integrated_tool_images = list()
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/I as anything in tools)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.canremove = FALSE
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.set_toolspeed(tooling_of(src).speed)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	rel_set(I, nameof(I.my_augment), src)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.name = "integrated [I.name]"
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/Tool as anything in tools)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	if(istype(Tool, /obj/item/stack))
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	var/obj/item/stack/S = Tool
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/datum/matter_synth/MS as anything in synths)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(S, nameof(S.synths), MS)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	S.uses_charge = length(synths)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
 init_lines	code/modules/body/organs/internal/brain.dm	sync_defib_window()
 init_lines	code/modules/body/organs/internal/brain.dm	make_mind_host(src)
 init_lines	code/modules/body/organs/internal/horror.dm	redspace = GLOB.all_languages[LANGUAGE_REDSPACE]
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(forcetag)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	organ_tag = forcetag
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(!istype(src,/obj/item/organ/internal/malignant/engineered))
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/i = 0
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(!force_location)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	while(++i < 10)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(isliving(loc))
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = pick(validBPspawns)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/mob/living/L = loc
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/obj/item/organ/checklimb = L.organs_by_name[parent_organ]
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(checklimb)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(checklimb.status == 0 && !checklimb.is_robotic())
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	else
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = force_location
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	set_status(ORGAN_DEAD)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	else
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(force_location)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = force_location
 init_lines	code/modules/body/organs/internal/voicebox.dm	amend_assist_langs()
 init_lines	code/modules/body/organs/organ.dm	if(isliving(loc))
 init_lines	code/modules/body/organs/organ.dm	var/mob/living/born_in = loc
-init_lines	code/modules/body/organs/organ.dm	src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
 init_lines	code/modules/body/organs/organ.dm	place_in_body(born_in)
 init_lines	code/modules/body/organs/organ.dm	if(!max_damage)
 init_lines	code/modules/body/organs/organ.dm	set_max_damage(min_broken_damage * 2)
@@ -1572,11 +1531,9 @@ init_lines	code/modules/body/organs/organ_external.dm	if(istype(owner))
 init_lines	code/modules/body/organs/organ_external.dm	sync_colour_to_human(owner)
 init_lines	code/modules/body/organs/organ_stump.dm	var/obj/item/organ/external/limb = stump_of
 init_lines	code/modules/body/organs/organ_stump.dm	if(istype(limb))
-init_lines	code/modules/body/organs/organ_stump.dm	organ_tag = limb.organ_tag
 init_lines	code/modules/body/organs/organ_stump.dm	body_part = limb.body_part
 init_lines	code/modules/body/organs/organ_stump.dm	amputation_point = limb.amputation_point
 init_lines	code/modules/body/organs/organ_stump.dm	joint = limb.joint
-init_lines	code/modules/body/organs/organ_stump.dm	parent_organ = limb.parent_organ
 init_lines	code/modules/body/organs/organ_stump.dm	if(istype(limb))
 init_lines	code/modules/body/organs/organ_stump.dm	set_max_damage(limb.max_damage)
 init_lines	code/modules/body/organs/organ_stump.dm	if((limb.is_robotic()) && (!parent || (parent.is_robotic())))
@@ -2446,25 +2403,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	resolve_sprite_datum()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	recompute_power_demand()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	update_senses()
 init_lines	code/modules/mob/living/silicon/robot/robot_items.dm	access |= ACCESS_ROBOTICS
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(!isrobot(loc))
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/mob/living/silicon/robot/R = loc
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	rel_set(R, nameof(R.module), src)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_camera_networks(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_languages(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_subsystems(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	apply_status_flags(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	handle_shell(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(R.radio)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(R.shell)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	channels = R.mainframe.aiRadio.channels
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.radio.recalculateChannels()
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.set_default_module_icon()
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(!R.client)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.icon_selected = FALSE // It wasnt a player selecting icon? Let them do it later!
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	create_equipment(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	for(var/obj/item/I in modules)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	I.canremove = FALSE
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	on_robot_equip(R)
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	if(CONFIG_GET(flag/allow_ai_shells) && CONFIG_GET(flag/give_free_ai_shell))
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	new /mob/living/silicon/robot/ai_shell(get_turf(src))
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	generate_tools()
@@ -2546,7 +2484,6 @@ init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	ove
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	install_default_hardware()
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	if(hard_drive)
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	install_default_programs()
-init_lines	code/modules/modular_computers/hardware/_hardware.dm	w_class = hardware_size
 init_lines	code/modules/modular_computers/hardware/_hardware.dm	if(istype(loc, /obj/item/modular_computer))
 init_lines	code/modules/modular_computers/hardware/_hardware.dm	rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 init_lines	code/modules/modular_computers/hardware/hard_drive.dm	install_default_programs()
@@ -2742,11 +2679,6 @@ init_lines	code/modules/pda/pda.dm	slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 init_lines	code/modules/pda/pda.dm	)
 init_lines	code/modules/pda/pda.dm	desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-init_lines	code/modules/pda/pda.dm	set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
-init_lines	code/modules/pda/pda.dm	sprite_sheets = list(
-init_lines	code/modules/pda/pda.dm	SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-init_lines	code/modules/pda/pda.dm	SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-init_lines	code/modules/pda/pda.dm	)
 init_lines	code/modules/pda/pda.dm	if(7)
 init_lines	code/modules/pda/pda.dm	icon = 'icons/obj/pda_slider.dmi'
 init_lines	code/modules/pda/pda.dm	model_name = "Slider® Personal Data Assistant"
@@ -3444,7 +3376,6 @@ init_lines	code/modules/vore/resizing/holder_micro.dm	slot_r_hand_str = 'icons/m
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_back_str = 'icons/mob/toy_worn.dmi',
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_head_str = 'icons/mob/toy_worn.dmi')
 init_lines	code/modules/vore/resizing/holder_micro.dm	icon_override = null
-init_lines	code/modules/vore/resizing/holder_micro.dm	sprite_sheets = null
 init_lines	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_lines	code/modules/vore/resizing/holder_micro.dm	item_state = "teshariplushie_white"
 init_lines	code/modules/xenoarcheaology/anomaly_container.dm	var/obj/machinery/artifact/A = locate_within(loc, /obj/machinery/artifact)
