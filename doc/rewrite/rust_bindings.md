@@ -366,9 +366,6 @@ After (the whole binding-related part of the file):
 		if("power")
 			set_on(!get_on())
 			return TRUE
-
-/obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
-	update_icon()
 ```
 
 No `process()`, no sync calls, no ids, no port numbers, no per-tick callbacks.

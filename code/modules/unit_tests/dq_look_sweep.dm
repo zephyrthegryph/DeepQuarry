@@ -353,7 +353,6 @@ GLOBAL_LIST_EMPTY(dq_look_results)
 		call(target, setter)(value)
 	else
 		target.vars[name] = value
-	target.update_icon()
 	changed(target)
 	dq_look_settle()
 

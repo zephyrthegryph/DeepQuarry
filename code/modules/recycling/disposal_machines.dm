@@ -796,7 +796,6 @@ TRACKED(/obj/machinery/disposal, occupied)
 			src.transfer_fingerprints_to(stored)
 			stored.anchored = FALSE
 			stored.density = TRUE
-			stored.update_icon()
 	*/
 	//This is temporary until the above gets used. Or it's permanant if you're reading this 5 years from now.
 	var/obj/structure/disposalconstruct/C = new (src.loc/*null, SOUTH, FALSE, src*/)

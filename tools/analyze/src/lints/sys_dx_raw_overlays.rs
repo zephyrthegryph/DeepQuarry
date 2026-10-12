@@ -15,8 +15,6 @@ const RULES: &[RuleMeta] = &[RuleMeta {
 const EXEMPT: &[&str] = &[
     "code/engine/present/appearance_builder.dm",
     "code/controllers/subsystems/overlays.dm",
-    "code/datums/sys/appearance.dm",
-    "code/__defines/sys_appearance.dm",
 ];
 
 /// `scan_file` of the Python: one site per sanitized line with a raw overlay write.

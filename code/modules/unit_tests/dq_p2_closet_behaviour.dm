@@ -41,12 +41,10 @@
 /// Seals or unseals the closet the way a construct's spell or a test fixture would (no tool).
 /proc/p2cl_set_sealed(obj/structure/closet/C, on)
 	set_welded(C, !!on)
-	C.update_icon()
 
 /// Locks or unlocks the closet with no card (a fixture, or a mapper's starting state).
 /proc/p2cl_set_locked(obj/structure/closet/C, on)
 	C.force_lock(!!on)
-	C.update_icon()
 
 /// What the closet holds, declared contents made real first.
 /proc/p2cl_contents(obj/structure/closet/C)
