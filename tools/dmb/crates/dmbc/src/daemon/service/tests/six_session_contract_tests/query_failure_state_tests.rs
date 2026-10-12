@@ -63,6 +63,48 @@ fn pin(request: &QueryRequest, reply: &QueryReply) -> QueryRequest {
     }];
     pinned
 }
+fn procedure_key(shared: &Arc<Shared>, pinned: &QueryRequest, name: &str) -> Option<String> {
+    let mut start = 0;
+    loop {
+        let mut request = pinned.clone();
+        request.source_queries = vec![SourceQuery::SemanticMembersPage { start, limit: 128 }];
+        let reply = query(shared, request).unwrap();
+        let page: serde_json::Value = serde_json::from_str(reply.jsonl.trim()).unwrap();
+        if let Some(item) = page["items"].as_array().unwrap().iter().find(|item| {
+            item["kind"] == "proc" && item["name"] == name
+        }) {
+            return Some(item["id"].as_str().unwrap().to_owned());
+        }
+        let Some(next) = page["next_cursor"].as_u64() else {
+            return None;
+        };
+        let next = u32::try_from(next).unwrap();
+        assert!(next > start, "semantic cursor must advance");
+        start = next;
+    }
+}
+fn has_procedure_occurrence(shared: &Arc<Shared>, pinned: &QueryRequest, key: &str) -> bool {
+    // Resolve spelling through the current pinned semantic roster, then join
+    // its structural member key to bounded current-source occurrence pages.
+    let mut start = 0;
+    loop {
+        let mut request = pinned.clone();
+        request.source_queries = vec![SourceQuery::OccurrencesPage { start, limit: 128 }];
+        let reply = query(shared, request).unwrap();
+        let page: serde_json::Value = serde_json::from_str(reply.jsonl.trim()).unwrap();
+        if page["items"].as_array().unwrap().iter().any(|item| {
+            item["target_key"] == key
+        }) {
+            return true;
+        }
+        let Some(next) = page["next_cursor"].as_u64() else {
+            return false;
+        };
+        let next = u32::try_from(next).unwrap();
+        assert!(next > start, "occurrence cursor must advance");
+        start = next;
+    }
+}
 fn assert_prior_pair(destination: &Path, pair: &(crate::publish::OutputPair, Vec<u8>, Vec<u8>)) {
     assert_eq!(
         std::fs::read(destination.join("probe.dmb")).unwrap(),
@@ -157,10 +199,9 @@ fn actual_service_queries_preserve_exact_failed_build_snapshots_and_recover_curr
         crate::request_failure::FailureKind::InvalidRequest
     );
     let current_pin = pin(&discover, &current);
-    assert!(query(&shared, current_pin.clone())
-        .unwrap()
-        .jsonl
-        .contains("rejected_query_body"));
+    let rejected_key = procedure_key(&shared, &current_pin, "rejected_query_body")
+        .expect("current failed frontend must expose its rejected procedure");
+    assert!(has_procedure_occurrence(&shared, &current_pin, &rejected_key));
     let mut body_request = current_pin.clone();
     body_request.source_queries = vec![SourceQuery::BodyContextsPage {
         start: 0,
@@ -168,7 +209,16 @@ fn actual_service_queries_preserve_exact_failed_build_snapshots_and_recover_curr
     }];
     let body_page: serde_json::Value =
         serde_json::from_str(query(&shared, body_request.clone()).unwrap().jsonl.trim()).unwrap();
-    let ordinal = body_page["total"].as_u64().unwrap() as u32 - 1;
+    let ordinal = body_page["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["member"] == rejected_key)
+        .expect("tiny fixture's first body page must contain the current rejected procedure")
+        ["ordinal"]
+        .as_u64()
+        .unwrap();
+    let ordinal = u32::try_from(ordinal).unwrap();
     body_request.source_queries = vec![SourceQuery::BodyModel { ordinal }];
     let body = query(&shared, body_request).unwrap();
     assert!(body.jsonl.contains("missing_query_proc"));
@@ -195,13 +245,9 @@ fn actual_service_queries_preserve_exact_failed_build_snapshots_and_recover_curr
         query(&shared, current_pin).unwrap_err().kind,
         crate::request_failure::FailureKind::InvalidRequest
     );
-    assert!(!query(
-        &shared,
-        pin(&query_request(&initial_request), &recovered_query)
-    )
-    .unwrap()
-    .jsonl
-    .contains("rejected_query_body"));
+    let recovered_pin = pin(&query_request(&initial_request), &recovered_query);
+    assert!(procedure_key(&shared, &recovered_pin, "rejected_query_body").is_none());
+    assert!(!has_procedure_occurrence(&shared, &recovered_pin, &rejected_key));
     assert_eq!(*shared.running.lock().unwrap(), 0);
     assert_eq!(*shared.workers.lock().unwrap(), 0);
     assert_eq!(shared.connections.load(Ordering::Acquire), 0);
