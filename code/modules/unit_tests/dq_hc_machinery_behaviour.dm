@@ -10,7 +10,7 @@
 /datum/unit_test/dq_hc_struct/navbeacon_codes_are_edited_through_the_window/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/navbeacon/N = mach(/obj/machinery/navbeacon, tile(3, 2))
-	N.open = TRUE
+	N.set_open(TRUE)
 	N.set_locked(FALSE)
 	press(H, N, "loc_edit", list("new_loc" = "Cargo Bay"))
 	TEST_ASSERT_EQUAL(N.location, "Cargo Bay", "the location is set")
@@ -31,12 +31,12 @@
 /datum/unit_test/dq_hc_struct/locked_navbeacon_refuses_edits/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/machinery/navbeacon/N = mach(/obj/machinery/navbeacon, tile(3, 2))
-	N.open = TRUE
+	N.set_open(TRUE)
 	N.location = "Home"
 	press(H, N, "loc_edit", list("new_loc" = "Away"))
 	TEST_ASSERT_EQUAL(N.location, "Home", "a locked beacon keeps its location")
 	N.set_locked(FALSE)
-	N.open = FALSE
+	N.set_open(FALSE)
 	press(H, N, "loc_edit", list("new_loc" = "Away"))
 	TEST_ASSERT_EQUAL(N.location, "Home", "so does one whose cover is shut")
 
@@ -248,14 +248,14 @@
 	var/mob/living/carbon/human/H = person()
 	var/turf/T = tile(3, 2)
 	var/obj/machinery/biogenerator/B = mach(/obj/machinery/biogenerator, T)
-	B.points = 1000
+	B.set_points(1000)
 	press(H, B, "purchase", list("amount" = 1, "cat" = "Leather Products", "name" = "Wallet"))
 	TEST_ASSERT_NOTNULL(locate(/obj/item/storage/wallet) in T, "a wallet is made")
 	TEST_ASSERT(B.points < 1000, "and costs biomass")
 	var/points = B.points
 	press(H, B, "purchase", list("amount" = 1, "cat" = "Leather Products", "name" = "No Such Thing"))
 	TEST_ASSERT_EQUAL(B.points, points, "something that is not for sale costs nothing")
-	B.points = 0
+	B.set_points(0)
 	var/count = 0
 	for(var/obj/item/storage/wallet/W in T)
 		count++

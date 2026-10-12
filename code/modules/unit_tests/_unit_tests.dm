@@ -399,6 +399,7 @@
 #include "dq_conversion_pins.dm"
 #include "dq_legacy_owns_conditional_starts.dm"
 #include "dq_draw_framework.dm"
+#include "dq_change_sweep_redraw.dm"
 #include "dq_draw_structures.dm"
 #include "dq_draw_sweep_3c.dm"
 #include "dq_draw_reagents.dm"
@@ -1287,6 +1288,13 @@
 #include "dq_nikki_rig_chest_tests.dm"
 #include "dq_relation_edge_native_tests.dm"
 #include "dq_mob_visuals_tests.dm"
+#include "gameplay\_harness.dm"
+#include "gameplay\arrival.dm"
+#include "gameplay\lungs.dm"
+#include "gameplay\clothing.dm"
+#include "gameplay\doors_power.dm"
+#include "gameplay\hands_and_menus.dm"
+#include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

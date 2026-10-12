@@ -156,7 +156,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		affected_by_emp_until = 0
 		release(src, STAT_OPERABLE, SRC_EMP)
 		cancelCameraAlarm()
-		changed(src)
 		update_coverage()
 	check_motion_alarm()
 	schedule_camera_timer()
@@ -188,7 +187,6 @@ TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
 		hold(src, STAT_OPERABLE, FALSE, SRC_EMP, max(affected_by_emp_until - world.time, 1))
 		set_glow(src, GLOW(0, null, null))
 		triggerCameraAlarm()
-		changed(src)
 		update_coverage()
 		schedule_camera_timer()
 
@@ -602,7 +600,6 @@ SETTER(/obj/machinery/camera, status)
 		return
 	atom_fix() // Fix the camera
 	wires_repair(src)
-	changed(src)
 	update_coverage()
 
 // ---- the wires ----

@@ -52,8 +52,6 @@
 			statue_shape = "corgi"
 			desc = "If it takes forever, I will wait for you..."
 
-	if(statue_shape)
-		changed(src)
 
 /// A statue is made around a human, a monkey or a corgi (keeps_if()); without one it is discarded.
 /obj/structure/closet/statue/proc/has_subject()

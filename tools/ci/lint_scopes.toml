@@ -298,6 +298,27 @@ ui_push_converted = [
   "code/modules/admin/magnetic_console_panel.dm",
   "code/modules/admin/edit_memory_panel.dm",
   "code/modules/admin/traffic_control_panel.dm",
+  "code/game/machinery/CableLayer.dm",
+  "code/game/machinery/atm_ret_field.dm",
+  "code/game/machinery/biogenerator.dm",
+  "code/game/machinery/bioprinter.dm",
+  "code/game/machinery/camera/camera.dm",
+  "code/game/machinery/computer/atmos_alert.dm",
+  "code/game/machinery/doors/airlock_angled_bay.dm",
+  "code/game/machinery/doors/airlock_electronics.dm",
+  "code/game/machinery/doors/firedoor.dm",
+  "code/game/machinery/floodlight.dm",
+  "code/game/machinery/food_replicator.dm",
+  "code/game/machinery/suit_storage/suit_storage.dm",
+  "code/game/mecha/equipment/tools/cable_layer.dm",
+  "code/game/objects/structures/crates_lockers/closets/statue.dm",
+  "code/modules/mining/mineral_effect.dm",
+  "code/modules/power/fusion/fuel_assembly/fuel_assembly.dm",
+  "code/modules/power/fusion_coil.dm",
+  "code/modules/power/port_gen.dm",
+  "code/modules/power/solar.dm",
+  "code/modules/power/supermatter/setup_supermatter.dm",
+  "code/modules/telesci/quantum_pad.dm",
 ]
 legacy_forms_converted = [
   "code/game/machinery/",
@@ -647,7 +668,7 @@ heat_ratchet_on_fire_act_overrides_h3 = 6
 damage_ratchet_on_non_turf_ex_act_overrides_d5 = 10
 damage_ratchet_on_atom_break_set_broken_overrides_d4 = 18
 improper_atom_new_usage = 2
-legacy_equip_restriction_vars__slot_flags = 2
+legacy_equip_restriction_vars__slot_flags = 0
 bump_ratchet_on_bumped_overrides = 17
 generic_hit_ratchet_on_attack_generic_overrides = 38
 
