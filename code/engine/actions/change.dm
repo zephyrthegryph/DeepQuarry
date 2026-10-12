@@ -31,12 +31,12 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
 
 /// The keys whose publication means `cond` may have changed, for holder E.
-/proc/change_read_keys(datum/E, cond)
+/proc/change_read_keys(datum/E, cond, datum/act/A = null, datum/lookup_read_scope/scope = null)
 	. = list()
 	if(islist(cond))
 		var/list/tree = cond
 		for(var/i in 2 to length(tree))
-			. |= change_read_keys(E, tree[i])
+			. |= change_read_keys(E, tree[i], A, scope)
 		return
 	if(isnum(cond))
 		var/datum/stat_def/def = stat_def_of(cond)
@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 		return list(cond)
 	if(hascall(E, "__setter_[cond]"))
 		. |= list(cond)
-	for(var/read in stat_generated_reads(E, cond))
+	for(var/read in stat_generated_reads(E, cond, A, scope))
 		if(!findtext(read, ".") && (!findtext(read, ":") || findtext(read, "capkey:") == 1 || findtext(read, "stat:") == 1))
 			. |= read
 

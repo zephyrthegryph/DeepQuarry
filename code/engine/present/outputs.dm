@@ -186,22 +186,20 @@
 /// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing. A window that forwards
 /// (interface(forwards = nameof(v))) is its unit's panel: the first unit's data comes first and the holder's own goes over it, so the sleeper
 /// console shows its sleeper's data with no ui_data() of its own. `observer` is A.observer: the viewer is a ghost with the window read-only.
-/proc/present_tgui_data(datum/holder, mob/user, list/data, observer = FALSE)
+/proc/present_tgui_data(datum/holder, mob/user, list/data, observer = FALSE, datum/lookup_read_scope/lookup_scope = null)
 	var/datum/type_table/T = table_of(holder)
 	if(!length(T.items))
 		return
-	var/datum/act/eval/A = take(/datum/act/eval)
-	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-	A.observer = observer
-	A.authority = user?.click_authority() // what the viewer's inputs carry: a window shows a silicon what its link may change
+	var/datum/act/eval/A = present_eval_context(holder, user, observer)
 	var/datum/unit = present_forwarded_unit(holder)
 	if(unit)
 		A.holder = unit // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		lookup_reads_prepare(unit, A, lookup_scope)
 		var/list/shown = unit.ui_data(A)
 		for(var/key in shown)
 			data[key] = shown[key]
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	lookup_reads_prepare(holder, A, lookup_scope)
 	var/list/own = holder.ui_data(A)
 	A.release()
 	if(islist(own))
@@ -285,3 +283,12 @@
 
 /datum/proc/presentation_modal_data()
 	return null
+
+/// A synchronous pooled output context. The caller releases it; scopes retain only weak roots.
+/proc/present_eval_context(datum/holder, mob/user, observer = FALSE)
+	var/datum/act/eval/A = take(/datum/act/eval)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.observer = observer
+	A.authority = user?.click_authority() // what the viewer's inputs carry: a window shows a silicon what its link may change
+	return A

@@ -27,11 +27,16 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
 /proc/stat_call(datum/holder, proc_name)
+	lookup_reads_prepare(holder)
 	// One context for every contribution handler: a handler may not keep it, and a recompute inside a handler puts the outer holder back.
 	var/static/datum/act/eval/ctx = new
 	var/datum/outer = ctx.holder
 	ctx.holder = holder
-	. = call(holder, proc_name)(ctx)
+	try
+		. = call(holder, proc_name)(ctx)
+	catch(var/exception/fault)
+		ctx.holder = outer
+		throw fault
 	ctx.holder = outer
 
 /// The value of stat `stat_id` on E: its var, or (a virtual stat) what the record holds, or what it composes to now.
@@ -217,9 +222,14 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		TEST_REC_DELTA(E, def.name, old, new_value)
 #endif
 	if(has_var)
+		var/outer_writing = GLOB.stat_writing
 		GLOB.stat_writing = def.name
-		state_changed(E, 0, def.name)
-		GLOB.stat_writing = null
+		try
+			state_changed(E, 0, def.name)
+		catch(var/exception/fault)
+			GLOB.stat_writing = outer_writing
+			throw fault
+		GLOB.stat_writing = outer_writing
 	else
 		op_changed(E)
 		if(READERS(E, def.stat_key))
@@ -329,16 +339,20 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		declare_report("[RULE_STAT_CYCLE] settle of [E.type] is [GLOB.stat_settle_depth] writes deep: a runtime cycle through relations or contributes_to")
 		return
 	GLOB.stat_settle_depth++
-	if(stat_recompute(E, def, FALSE, I))
-		if(I && (I.stat_readers[def.skey] || I.inputs[def.stat_key] || I.inputs[def.name]))
-			var/list/queue = list(def)
-			stat_changed_dependents(E, def, I, queue)
-			stat_settle_queue_run(E, I, queue, 2)
-		else
-			if(GLOB.stat_hop_index[def.name])
-				stat_notify_hops(E, def.name)
-			if(length(GLOB.stat_sys_index))
-				stat_notify_system(E, def.name)
+	try
+		if(stat_recompute(E, def, FALSE, I))
+			if(I && (I.stat_readers[def.skey] || I.inputs[def.stat_key] || I.inputs[def.name]))
+				var/list/queue = list(def)
+				stat_changed_dependents(E, def, I, queue)
+				stat_settle_queue_run(E, I, queue, 2)
+			else
+				if(GLOB.stat_hop_index[def.name])
+					stat_notify_hops(E, def.name)
+				if(length(GLOB.stat_sys_index))
+					stat_notify_system(E, def.name)
+	catch(var/exception/fault)
+		GLOB.stat_settle_depth--
+		throw fault
 	GLOB.stat_settle_depth--
 
 /// Runs a settle queue from entry `start` (entries before it are done).
@@ -347,7 +361,11 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 		declare_report("[RULE_STAT_CYCLE] settle of [E.type] is [GLOB.stat_settle_depth] writes deep: a runtime cycle through relations or contributes_to")
 		return
 	GLOB.stat_settle_depth++
-	stat_settle_queue_run(E, I, queue, start)
+	try
+		stat_settle_queue_run(E, I, queue, start)
+	catch(var/exception/fault)
+		GLOB.stat_settle_depth--
+		throw fault
 	GLOB.stat_settle_depth--
 
 /proc/stat_settle_queue_run(datum/E, datum/stat_type_info/I, list/queue, start)

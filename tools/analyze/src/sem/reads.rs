@@ -36,6 +36,40 @@ pub const IMPURE_CALLS: &[&str] = &[
 /// Calls that talk to a player: forbidden in a pure body (the no-message guard).
 pub const MESSAGE_CALLS: &[&str] = &["to_chat", "visible_message", "audible_message", "say", "emote", "show_message", "playsound", "play_sfx"];
 
+/// A supported numeric lookup argument, kept in the actual caller's coordinate system.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub enum LookupArgument {
+    Literal(String),
+    Path { root: String, path: Vec<String> },
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct LookupBound {
+    pub registry: String,
+    pub identity_key: String,
+    pub lookup: String,
+    pub argument: LookupArgument,
+}
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct LookupRead {
+    pub binding: LookupBound,
+    pub field: String,
+}
+impl LookupRead {
+    pub fn key(&self) -> String {
+        // Stable across runs; do not use a process-randomized hash or a collection position.
+        let text = format!("{:?}", self);
+        let hash = text.bytes().fold(14695981039346656037u64, |h, b| (h ^ u64::from(b)).wrapping_mul(1099511628211));
+        format!("lookup_read_{hash:016x}")
+    }
+}
+#[derive(Clone, Debug)]
+pub struct LookupDeclaration {
+    pub registry: String,
+    pub identity_key: String,
+    pub argument: usize,
+    pub result: String,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ReadKind {
     /// A var on an entity.
@@ -46,6 +80,8 @@ pub enum ReadKind {
     Native,
     /// A system's tracked var read through its `SYSTEM_ACCESSOR` proc.
     System,
+    /// A declared numeric lookup, bound to actual producers by the engine.
+    Lookup(Box<LookupRead>),
 }
 
 /// One read: a var (or key) on the entity reached from `root` through `hops`.
@@ -114,6 +150,8 @@ pub struct ReadSet {
     /// Where each read was first seen: (file, line).
     pub sites: BTreeMap<Read, (String, u32)>,
     pub diags: Vec<Diag>,
+    /// Failures of declared numeric lookup contracts, also present in diags.
+    pub lookup_diags: Vec<Diag>,
     pub effects: Vec<Effect>,
     /// `type::proc` bodies the walk followed (for the graph and for incremental invalidation).
     pub followed: BTreeSet<String>,
@@ -132,6 +170,7 @@ pub struct Annotations {
     pub reads_as: HashMap<(String, String), (String, Option<String>)>,
     /// global proc name -> the param names it reads from (empty = reads nothing).
     pub reads_from: HashMap<String, Vec<String>>,
+    pub lookups: HashMap<String, LookupDeclaration>,
     /// Relations declared in `relations()` bodies (`rel_one(nameof(x), ...)` / `rel_many(...)`): type -> vars.
     pub relations: HashMap<String, HashSet<String>>,
     /// `SYSTEM_ACCESSOR(system, proc, nameof(var))`: proc -> (system, var).
@@ -168,6 +207,16 @@ impl Annotations {
                     break;
                 }
             }
+        }
+        for m in decls.markers_named("READ_LOOKUP") {
+            let Some(path) = m.args.first() else { continue };
+            let Some(name) = path.strip_prefix("/proc/") else { continue };
+            let named = |name: &str| m.args.iter().skip(1).find_map(|a| a.split_once('=').filter(|(k, _)| k.trim() == name).map(|(_, v)| v.trim().to_string()));
+            let proc_name = |value: Option<String>| value.and_then(|v| v.strip_prefix("GLOBAL_PROC_REF(").and_then(|x| x.strip_suffix(')')).map(|x| x.trim().to_string()));
+            let (Some(registry), Some(identity_key), Some(result)) = (proc_name(named("registry")), proc_name(named("key")), named("result")) else { continue };
+            let argument = named("argument").and_then(|s| s.parse::<usize>().ok()).unwrap_or(1);
+            if argument == 0 || !result.starts_with('/') { continue; }
+            a.lookups.insert(name.to_string(), LookupDeclaration { registry, identity_key, argument: argument - 1, result });
         }
         let mut cap_names: HashMap<String, String> = HashMap::new();
         for m in decls.markers_named("CAPABILITY_TYPE").chain(decls.markers_named("CAPABILITY_DEF")) {
@@ -262,6 +311,8 @@ enum Root {
     Act,
     /// Anything untracked (a local, a new object, a global).
     Local,
+    Scalar(LookupArgument),
+    Lookup(Box<LookupBound>),
 }
 
 impl Val {
@@ -269,12 +320,13 @@ impl Val {
         Val { ty, root: Root::Local, hops: Vec::new(), hop_ok: true, list: false }
     }
     fn tracked(&self) -> bool {
-        matches!(self.root, Root::Holder | Root::Ctx(_))
+        matches!(self.root, Root::Holder | Root::Ctx(_) | Root::Lookup(_))
     }
     fn root_name(&self) -> String {
         match &self.root {
             Root::Holder => "holder".to_string(),
             Root::Ctx(c) => c.clone(),
+            Root::Lookup(b) => format!("lookup:{}", serde_json::to_string(b).expect("lookup descriptor serializes")),
             _ => String::new(),
         }
     }
@@ -303,7 +355,7 @@ struct Walk<'a, 'e> {
     /// The context type the hook form gives the handler's first param (overrides the declared one).
     ctx_override: Option<String>,
     out: &'e mut ReadSet,
-    visited: HashSet<(String, String, Root, Vec<String>)>,
+    visited: HashSet<(String, String, Root, Vec<String>, Vec<(Root, Vec<String>)>)>,
     depth: usize,
     line: u32,
     /// Inside `read_once(...)`: reads are evaluated but neither recorded nor subscribed.
@@ -512,7 +564,23 @@ impl<'a, 'e> Walk<'a, 'e> {
         self.eng.sem.rel(p.get().location).to_string()
     }
 
-    fn add_read(&mut self, r: Read, rel: &str, line: u32) {
+    fn add_read(&mut self, mut r: Read, rel: &str, line: u32) {
+        if let Some(text) = r.root.strip_prefix("lookup:") {
+            let binding: LookupBound = serde_json::from_str(text).expect("internal lookup descriptor");
+            if !r.hops.is_empty() {
+                self.lookup_diag("dynamic_read", rel, line, "nested relations after a lookup need their own declared provider".to_string());
+                return;
+            }
+            if r.kind == ReadKind::Var && !(self.eng.is_tracked(&r.owner, &r.var) || self.eng.is_stat(&r.owner, &r.var) || self.eng.is_relation(&r.owner, &r.var) || self.eng.is_derived(&r.owner, &r.var) || self.eng.sem.var_decl(&r.owner, &r.var).map(|v| v.is_const).unwrap_or(false)) {
+                self.lookup_diag("dynamic_read", rel, line, format!("lookup result {}.{} is not tracked or a declared read producer", r.owner, r.var));
+                return;
+            }
+            let lookup = LookupRead { binding, field: r.var };
+            r.var = lookup.key();
+            r.root = "holder".to_string();
+            r.owner.clear();
+            r.kind = ReadKind::Lookup(Box::new(lookup));
+        }
         if self.mute > 0 {
             return;
         }
@@ -526,6 +594,14 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !self.out.diags.iter().any(|d| d.rule == rule && d.rel == rel && d.line == line && d.msg == msg) {
             self.out.diags.push(Diag { rule, rel: rel.to_string(), line, msg });
         }
+    }
+
+    fn lookup_diag(&mut self, rule: &'static str, rel: &str, line: u32, msg: String) {
+        let diagnostic = Diag { rule, rel: rel.to_string(), line, msg: msg.clone() };
+        if !self.out.lookup_diags.contains(&diagnostic) {
+            self.out.lookup_diags.push(diagnostic);
+        }
+        self.diag(rule, rel, line, msg);
     }
 
     /// Walks one proc body with `this` as src. `bind` are the evaluated args for its params.
@@ -546,7 +622,7 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.add_read(Read { root: this.root_name(), hops, var: key, owner: String::new(), kind: ReadKind::Accessor, hop_ok: this.hop_ok }, &rel, p.get().location.line);
             return;
         }
-        let vkey = (owner.clone(), p.name().to_string(), this.root.clone(), this.hops.clone());
+        let vkey = (owner.clone(), p.name().to_string(), this.root.clone(), this.hops.clone(), bind.iter().map(|v| (v.root.clone(), v.hops.clone())).collect());
         if !self.visited.insert(vkey) {
             return;
         }
@@ -697,6 +773,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                             self.eval(fr, ix);
                             self.index(v)
                         }
+                        Follow::Unary(dreammaker::ast::UnaryOp::Neg) => match &v.root {
+                            Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false },
+                            _ => Val::local(None),
+                        },
                         Follow::Unary(_) => Val::local(None),
                         Follow::StaticField(_) | Follow::ProcReference(_) => Val::local(None),
                     };
@@ -782,6 +862,9 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     fn term(&mut self, fr: &mut Frame<'a>, t: &Term, line: u32) -> Val {
         match t {
+            Term::Int(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
+            Term::Float(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
+            Term::Null => Val { ty: None, root: Root::Scalar(LookupArgument::Literal("null".to_string())), hops: Vec::new(), hop_ok: true, list: false },
             Term::Ident(name) => self.ident(fr, name, line),
             Term::Expr(e) => self.eval(fr, e),
             Term::Call(name, args) => self.call(fr, name.as_str(), args, line),
@@ -901,7 +984,7 @@ impl<'a, 'e> Walk<'a, 'e> {
                     Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false }
                 }
                 Some(s) if s.is_object() => Val { ty: Some(s.declared), root: Root::Ctx(name.to_string()), hops: Vec::new(), hop_ok: true, list: false },
-                Some(s) => Val::local((!s.declared.is_empty()).then(|| s.declared)),
+                Some(s) => Val { ty: (!s.declared.is_empty()).then(|| s.declared), root: Root::Scalar(LookupArgument::Path { root: "context".to_string(), path: vec![name.to_string()] }), hops: Vec::new(), hop_ok: true, list: false },
                 None => Val::local(None),
             };
         }
@@ -921,7 +1004,11 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         let Some(sig) = sig else {
             if v.tracked() && sem.ty(&ty).is_some() && sem.proc_ref(&ty, name).is_none() && !is_builtin_name(name) {
-                self.diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                if matches!(v.root, Root::Lookup(_)) {
+                    self.lookup_diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                } else {
+                    self.diag("unknown_field", &rel, line, format!("{} has no var `{}`", ty, name));
+                }
             }
             return Val::local(None);
         };
@@ -953,6 +1040,13 @@ impl<'a, 'e> Walk<'a, 'e> {
                 self.diag("hop_not_relation", &rel, line, msg);
             }
             return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared.clone()), root: v.root.clone(), hops, hop_ok: v.hop_ok && is_rel, list: sig.is_list() };
+        }
+        let mut path = v.hops.clone();
+        path.push(name.to_string());
+        // Runtime lookup paths dereference real datum vars. Virtual stats, computed
+        // aliases and accessor-only fields need a typed hop form, not raw name lookup.
+        if matches!(v.root, Root::Holder | Root::Ctx(_)) && v.hop_ok && self.eng.sem.var_decl(&owner, name).is_some() && (self.eng.is_tracked(&owner, name) || sig.is_const) {
+            return Val { ty: (!sig.declared.is_empty()).then(|| sig.declared), root: Root::Scalar(LookupArgument::Path { root: v.root_name(), path }), hops: Vec::new(), hop_ok: true, list: false };
         }
         Val::local((!sig.declared.is_empty()).then(|| sig.declared))
     }
@@ -1065,6 +1159,28 @@ impl<'a, 'e> Walk<'a, 'e> {
         let rel = fr.rel.clone();
         let this = fr.this.clone();
         self.note_call(fr, name, &this, line);
+        if let Some(decl) = self.eng.ann.lookups.get(name) {
+            let argument = argv.get(decl.argument).and_then(|v| match &v.root {
+                Root::Scalar(a) => Some(a.clone()),
+                _ => None,
+            });
+            let Some(argument) = argument else {
+                self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} argument is not a literal or a tracked root/relation field; declare a provider for getter/index expressions"));
+                return Val::local(None);
+            };
+            if matches!(&argument, LookupArgument::Path { root, .. } if root == "context") {
+                self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} uses a scalar act-context argument with no entity binding lifetime"));
+                return Val::local(None);
+            }
+            for provider in [decl.registry.as_str(), decl.identity_key.as_str(), name] {
+                if self.eng.sem.global_proc(provider).is_none() {
+                    self.lookup_diag("dynamic_read", &rel, line, format!("lookup {name} declares missing global provider {provider}"));
+                    return Val::local(None);
+                }
+            }
+            let bound = LookupBound { registry: decl.registry.clone(), identity_key: decl.identity_key.clone(), lookup: name.to_string(), argument };
+            return Val { ty: Some(decl.result.clone()), root: Root::Lookup(Box::new(bound)), hops: Vec::new(), hop_ok: true, list: false };
+        }
         if name == "native" {
             if let Some(Expression::Base { term, .. }) = args.first() {
                 if let Term::String(s) = &term.elem {
@@ -1260,4 +1376,47 @@ mod global_accessor_tests {
         assert!(blocked.diags.iter().any(|diag| diag.rule == "unannotated_global"));
         std::fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn lookup_arguments_preserve_constants_roots_wrappers_and_reject_opaque_getters() {
+        let root = std::env::temp_dir().join(format!("dq-lookup-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/engine")).unwrap();
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        std::fs::create_dir_all(root.join("code/library")).unwrap();
+        let engine = "#define READ_LOOKUP(P, A...)\n#define READS_FROM(A)\n#define TRACKED(T,V)\n#define TRACKED_DATA(T,V)\n#define CAPABILITIES(T) T/proc/__entries()\n#define ref_one(A...) return\n#define STAT(T,K,A...)\n#define READS_AS(P,K,A...)\n/datum/lookup_grid\n\tvar/load = 0\n\tvar/raw = 0\nTRACKED(/datum/lookup_grid, load)\nREAD_LOOKUP(/proc/lookup_grid, registry = GLOBAL_PROC_REF(lookup_registry), key = GLOBAL_PROC_REF(lookup_identity), argument = 1, result = /datum/lookup_grid)\n/proc/lookup_registry()\n\treturn null\n/proc/lookup_identity(id)\n\treturn id\n/proc/lookup_grid(id)\n\treturn null\n/datum/act/eval\n\tvar/datum/lookup_probe/actor\n";
+        let library = "/proc/lookup_load(id)\n\tREADS_FROM(id)\n\tvar/datum/lookup_grid/G = lookup_grid(id)\n\treturn G.load\n/proc/opaque_region()\n\tREADS_FROM()\n\treturn 1\n";
+        let content = "/datum/lookup_probe\n\tvar/region = 1\n\tvar/other_region = 2\nTRACKED(/datum/lookup_probe, region)\nTRACKED(/datum/lookup_probe, other_region)\n/datum/lookup_profile\n\tvar/region = 3\nTRACKED_DATA(/datum/lookup_profile, region)\n/datum/lookup_probe\n\tvar/datum/lookup_profile/profile\nTRACKED(/datum/lookup_probe, profile)\nCAPABILITIES(/datum/lookup_probe)\n\tref_one(nameof(profile))\nSTAT(/datum/lookup_probe, virtual_region, SUM)\n/datum/lookup_probe/proc/derive_alias_region()\n\treturn region\n/datum/lookup_probe/proc/profile_alias()\n\treturn profile.region\nREADS_AS(/datum/lookup_probe/proc/profile_alias, region, via = nameof(profile))\n/datum/lookup_probe/proc/direct()\n\tvar/datum/lookup_grid/G = lookup_grid(region)\n\treturn G.load\n/datum/lookup_probe/proc/wrapped()\n\treturn lookup_load(region)\n/datum/lookup_probe/proc/two()\n\treturn lookup_load(region) + lookup_load(other_region)\n/datum/lookup_probe/proc/literal()\n\treturn lookup_load(-5)\n/datum/lookup_probe/proc/contextual(datum/act/eval/A)\n\treturn lookup_load(A.actor.region)\n/datum/lookup_probe/proc/profile_leaf()\n\treturn lookup_load(profile.region)\n/datum/lookup_probe/proc/virtual_arg()\n\treturn lookup_load(virtual_region)\n/datum/lookup_probe/proc/derived_arg()\n\treturn lookup_load(alias_region)\n/datum/lookup_probe/proc/profile_alias_arg()\n\treturn lookup_load(profile_alias())\n/datum/lookup_probe/proc/opaque()\n\treturn lookup_load(opaque_region())\n/datum/lookup_probe/proc/untracked()\n\tvar/datum/lookup_grid/G = lookup_grid(region)\n\treturn G.raw\n";
+        std::fs::write(root.join("code/engine/probe.dm"), engine).unwrap();
+        std::fs::write(root.join("code/library/probe.dm"), library).unwrap();
+        std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/engine/probe.dm", engine), SourceFile::from_text("code/library/probe.dm", library), SourceFile::from_text("code/content/probe.dm", content)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        assert!(ann.lookups.contains_key("lookup_grid"));
+        let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(&["code/engine/"]);
+        for name in ["direct", "wrapped"] {
+            let reads = eng.analyze("/datum/lookup_probe", name);
+            assert!(reads.diags.is_empty(), "{name}: {:?}", reads.diags);
+            let bound: Vec<_> = reads.reads.iter().filter_map(|r| match &r.kind { ReadKind::Lookup(b) => Some(b), _ => None }).collect();
+            assert_eq!(bound.len(), 1);
+            assert_eq!(bound[0].field, "load");
+            assert_eq!(bound[0].binding.argument, LookupArgument::Path { root: "holder".into(), path: vec!["region".into()] });
+        }
+        let two = eng.analyze("/datum/lookup_probe", "two");
+        assert_eq!(two.reads.iter().filter(|r| matches!(r.kind, ReadKind::Lookup(_))).count(), 2, "distinct wrapper arguments must not be collapsed by the visit cache");
+        let literal = eng.analyze("/datum/lookup_probe", "literal");
+        assert!(literal.reads.iter().any(|r| matches!(&r.kind, ReadKind::Lookup(b) if b.binding.argument == LookupArgument::Literal("-5".into()))));
+        let contextual = eng.analyze_handler("/datum/lookup_probe", "contextual", "/datum/act/eval");
+        assert!(contextual.reads.iter().any(|r| matches!(&r.kind, ReadKind::Lookup(b) if b.binding.argument == (LookupArgument::Path { root: "actor".into(), path: vec!["region".into()] }))), "actor is never substituted by holder");
+        let profile = eng.analyze("/datum/lookup_probe", "profile_leaf");
+        assert!(profile.diags.is_empty(), "actual tracked profile leaf: {:?}", profile.diags);
+        assert!(profile.reads.iter().any(|r| matches!(&r.kind, ReadKind::Lookup(b) if b.binding.argument == (LookupArgument::Path { root: "holder".into(), path: vec!["profile".into(), "region".into()] }))));
+        for name in ["opaque", "untracked", "virtual_arg", "derived_arg", "profile_alias_arg"] {
+            let reads = eng.analyze("/datum/lookup_probe", name);
+            assert!(reads.diags.iter().any(|d| d.rule == "dynamic_read"), "{name} must diagnose instead of promising an invalid subscription");
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
 }

@@ -58,7 +58,7 @@ SYSTEM_DEF(machines)
 	while(!wake_dirty_gas_subscribers(FALSE))
 		continue
 	flush_pump_transfers()
-	log_world("Machine service initialized: [length(power_grids)] power regions, [gas_dirty_last] gas observations.")
+	log_world("Machine service initialized: [length(power_grids.ids())] power regions, [gas_dirty_last] gas observations.")
 
 /// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
 /// the power step. The gas wake may yield; the power step only starts once it has completed, and its
@@ -115,11 +115,24 @@ SYSTEM_DEF(machines)
 /datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
 	vg_power_commit()
-	for(var/id in power_grids)
-		if(!power_grid_refresh(id))
-			power_grids -= id
-			continue
-		power_grid_sync_problem(id)
+	var/list/sync_ids = list()
+	for(var/id in power_grids.ids())
+		sync_ids |= list(id)
+	for(var/id in power_grids.watched_native_ids())
+		sync_ids |= list(id)
+	for(var/id in sync_ids)
+		if(id <= 0)
+			continue // detached test grids have no native ledger and keep their real tracked fields
+		if(!power_grids.lookup(id))
+			var/list/info = vg_power_region_read(id)
+			if(!islist(info) || length(info) < 3)
+				continue // a watched stale native identity remains absent until a real region exists
+			var/datum/power_grid/adopted = power_grid(id) // system write boundary publishes this numeric identity
+			for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
+				if(!QDELETED(machine) && machine.power_region == id)
+					rel_add(adopted, nameof(adopted.nodes), machine) // actual currently bound DM members, never a sentinel
+		else if(!power_grid_refresh(id))
+			power_grids.drop(id)
 	// Every power machine's `power_region` is polled here, not pushed --
 	// a deferred `connect_to_network(FALSE)` (map load, and every
 	// `power_autoconnect()`) relies on this to eventually resolve. Region ids
@@ -160,7 +173,7 @@ SYSTEM_DEF(machines)
 /datum/system/machines/stat_entry(msg)
 	. = "[..()]C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
-	. += "PN:[length(power_grids)]|"
+	. += "PN:[length(power_grids.ids())]|"
 	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 
 /datum/system/machines/proc/flush_pump_transfers()

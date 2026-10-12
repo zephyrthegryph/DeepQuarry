@@ -1242,6 +1242,7 @@
 #include "dq_draw_pockets.dm"
 #include "dq_draw_final.dm"
 #include "dq_small_forms.dm"
+#include "dq_client_render_regressions.dm"
 #include "dq_draw_rest.dm"
 
 #include "dq_machine_click_intent_tests.dm"
@@ -1279,6 +1280,8 @@
 #include "j_closet_resident_cost_tests.dm"
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
+#include "dq_numeric_grid_lookup_tests.dm"
+#include "dq_state_batch_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
