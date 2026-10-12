@@ -5,7 +5,7 @@ use crate::{
     lowering::UnitIdentity,
 };
 use dm_codegen_byond::{
-    lower_resolver::ResolverProc, procedure_abi::ArgumentSourceHelper, ProcedureInputs,
+    ProcedureInputs, lower_resolver::ResolverProc, procedure_abi::ArgumentSourceHelper,
 };
 use dm_ir::{ProcedureMetadata, Resolver, SymbolTable};
 use dm_syntax::{Item, TokenKind};
@@ -13,6 +13,7 @@ use dm_tree::frontend::ColdFrontend;
 mod header_recipe;
 pub(crate) use header_recipe::current_header_modifier;
 mod failure;
+mod visible_formals;
 pub use failure::HelperFailure;
 
 #[derive(Clone)]
@@ -301,12 +302,14 @@ pub fn lower_helpers<R: Resolver>(
         let mut frame = inputs.clone();
         frame.parameter_defaults.clear();
         frame.parameter_value_sources.clear();
-        let mut code = dm_codegen_byond::compile_simple_proc_with_resolver_and_debug(
-            &container.children,
+        let mut code = visible_formals::compile(
+            &container,
+            &expression,
+            helper.argument,
+            metadata,
             &frame,
             symbols,
             host,
-            Some(&FixedOrigin),
         )
         .map_err(|errors| {
             failure::lowered(
