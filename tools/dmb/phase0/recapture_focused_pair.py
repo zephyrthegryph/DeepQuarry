@@ -17,6 +17,13 @@ from iteration_structural import authenticate_source_snapshot
 from focused_pair_results import memory_bytes, observed_record, compare, passing_acceptance
 
 
+def runtime_extra_defines(ordered_defines):
+    standard = ['CBT', 'CIBUILDING', 'CITESTING', 'DEBUG']
+    if list(ordered_defines[:len(standard)]) != standard:
+        raise ValueError('captured defines must begin with the exact ordinary test-build prefix')
+    return list(ordered_defines[len(standard):])
+
+
 def capture(root, output, byond, native, template, pins, defines, launch, deadline):
     """launch(command,cwd,log,deadline) must bound/reap its owned child tree.
 
@@ -239,7 +246,7 @@ def main():
                 if backend == 'native':
                     command += ['--native-exe', str(args.native), '--native-sha256', args.native_sha256,
                                 '--template', str(args.template), '--template-sha256', args.template_sha256]
-                for value in args.define:
+                for value in runtime_extra_defines(args.define):
                     command += ['--define', value]
                 for value in args.focus:
                     command += ['--focus', value]
