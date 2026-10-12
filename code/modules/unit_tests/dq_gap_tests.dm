@@ -211,7 +211,7 @@
 /datum/unit_test/dq_gap/converted_draw_follows_its_tracked_var/run_gap()
 	var/obj/item/multitool/ai_detector/D = allocate(/obj/item/multitool/ai_detector, run_loc_floor_bottom_left)
 	var/base = initial(D.icon_state)
-	D.update_icon()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "[base]", "no detection: the base state")
 	D.set_detect_state("_red")
 	test_time(2)

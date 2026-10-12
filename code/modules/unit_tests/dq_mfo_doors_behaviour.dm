@@ -17,7 +17,6 @@
 
 /// The icon state `A` shows once every pending redraw has run.
 /proc/mfo_look(atom/A)
-	A.update_icon()
 	refresh_flush()
 	return A.icon_state
 

@@ -51,7 +51,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 
 	/// list(var, volume, temperature, list(gas = kPa)), or null.
 	var/list/gas
-	// Appearance declarations: code/datums/sys/appearance.dm.
 	/// Registry ids declared with DECLARE_REGISTRY that are conditional (joined at materialize).
 	var/list/registries
 	/// list of list(service GLOB name, join proc, leave proc).
@@ -75,7 +74,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// A table with no work: every declaration list dropped (finish() found nothing to run).
 /datum/lifecycle_decls/proc/emptied()
 	gas = null
-	clear_presentation()
 	registries = null
 	services = null
 	binders = null
@@ -126,7 +124,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(gas && !(gas[1] in D.vars))
 		stack_trace("DECLARE_GAS([owner_type], \"[gas[1]]\"): no such var; dropped")
 		gas = null
-	validate_presentation(D)
 	validate_registries()
 	var/list/declared_verbs = list()
 	for(var/verb_path in verbs_always)
@@ -153,8 +150,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		verbs_login = null
 	if(verbs_always || verbs_login || verbs_if || verbs_hidden)
 		work |= DECL_WORK_VERBS
-	if(has_presentation())
-		work |= DECL_WORK_INIT | DECL_WORK_APPEARANCE
 	if(gas || verbs_always || verbs_if || verbs_hidden)
 		work |= DECL_WORK_INIT
 	for(var/hook_var in expiry_hooks?.Copy())
@@ -174,16 +169,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		return D.vars[value]
 	return value
 
-
-/// Downstream presentation declarations validate and discard their own metadata.
-/datum/lifecycle_decls/proc/clear_presentation()
-	return
-
-/datum/lifecycle_decls/proc/validate_presentation(datum/D)
-	return
-
-/datum/lifecycle_decls/proc/has_presentation()
-	return FALSE
 
 /datum/lifecycle_decls/proc/validate_registries()
 	return

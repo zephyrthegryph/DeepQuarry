@@ -94,8 +94,6 @@
 	var/obj/machinery/computer/mfc_probe/B = probe(get_step(left, EAST))
 	A.set_dir(SOUTH)
 	B.set_dir(SOUTH)
-	A.update_icon()
-	B.update_icon()
 	test_time(1 SECOND)
 	TEST_ASSERT(findtext(A.icon_state, "computer_") && findtext(B.icon_state, "computer_"), "both draw the joined desk ([A.icon_state], [B.icon_state])")
 

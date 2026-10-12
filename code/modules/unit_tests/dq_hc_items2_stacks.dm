@@ -5,7 +5,6 @@
 /// Sets a stack's amount the way the game does and lets the redraw run.
 /proc/hci2_set_amount(obj/item/stack/S, n)
 	S.set_amount(n, TRUE)
-	S.update_icon()
 	test_time(2 SECONDS)
 
 /datum/unit_test/dq_hc_items/stack_icon_follows_amount
@@ -32,7 +31,6 @@
 	TEST_ASSERT(!S.add(5), "adding past the maximum is refused")
 	TEST_ASSERT(S.add(4), "adding within the maximum works")
 	TEST_ASSERT_EQUAL(S.amount, 10, "back to ten")
-	S.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(S.icon_state, "nanopaste_3", "the look follows the use and the add")
 	var/obj/item/stack/split_off = S.split(3)
@@ -186,7 +184,6 @@
 	var/turf/T = get_turf(H)
 	var/obj/item/stack/marker_beacon/ten/S = allocate(/obj/item/stack/marker_beacon/ten, T)
 	S.picked_color = "Jade"
-	S.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(S.icon_state, "markerjade", "the stack shows its colour")
 	hci_click(H, S, S)
@@ -212,7 +209,6 @@
 	hci_answer(H, "Indigo")
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(S.picked_color, "Indigo", "the colour is the one chosen")
-	S.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(S.icon_state, "markerindigo", "and shows")
 	var/obj/structure/marker_beacon/B = allocate(/obj/structure/marker_beacon, T, "Jade")
