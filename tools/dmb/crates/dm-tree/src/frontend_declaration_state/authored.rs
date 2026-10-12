@@ -251,7 +251,7 @@ impl DeclarationClaims {
             let replacement = start.take(current.value.skeletons.len()).cloned().collect();
             let old = &current.value;
             let replacement = Contribution {
-                source: Arc::clone(&old.source),
+                source: old.source.clone(),
                 facts: Arc::clone(&old.facts),
                 syntax: Arc::clone(&old.syntax),
                 skeletons: Arc::new(replacement),

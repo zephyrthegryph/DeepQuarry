@@ -131,6 +131,24 @@ impl SourceText {
     pub fn same_view(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing) && self.range == other.range
     }
+    /// Share an exact byte view only when both endpoints are valid UTF-8 bounds.
+    /// Content storage alone grants no parser, revision or occurrence authority.
+    pub fn checked_view(&self, range: Range<usize>) -> Option<Self> {
+        self.as_str().get(range.clone())?;
+        Some(Self {
+            backing: Arc::clone(&self.backing),
+            range: self.range.start.checked_add(range.start)?
+                ..self.range.start.checked_add(range.end)?,
+        })
+    }
+    /// Borrow an existing full string owner for compatibility consumers. A
+    /// subrange or transformed buffer must retain its view or explicitly copy.
+    pub fn full_original_owner(&self) -> Option<&Arc<str>> {
+        match &self.backing.text {
+            TextBacking::Original(text) if self.range == (0..text.len()) => Some(text),
+            _ => None,
+        }
+    }
     #[cfg(test)]
     pub(crate) fn shares_backing(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.backing, &other.backing)
@@ -204,6 +222,30 @@ impl Eq for SourceText {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn checked_source_views_share_bounds_and_full_owner_without_copying() {
+        let bytes: Arc<str> = Arc::from("prefix\ncafé\nend\n");
+        let source = SourceText::from(Arc::clone(&bytes));
+        assert!(Arc::ptr_eq(source.full_original_owner().unwrap(), &bytes));
+        let selected = source.checked_view(7..13).unwrap();
+        assert_eq!(selected.as_ref(), "café\n");
+        assert_eq!(selected.as_str().as_ptr(), source[7..].as_ptr());
+        assert!(selected.same_view(&source.checked_view(7..13).unwrap()));
+        assert!(selected.full_original_owner().is_none());
+        assert!(source.checked_view(7..11).is_none(), "inside é");
+        assert!(source.checked_view(13..7).is_none());
+        assert!(source.checked_view(0..usize::MAX).is_none());
+        assert!(SourceText::from(String::from("owned"))
+            .full_original_owner()
+            .is_none());
+        let weak = Arc::downgrade(&bytes);
+        drop(bytes);
+        drop(source);
+        assert!(weak.upgrade().is_some(), "view retains its immutable owner");
+        drop(selected);
+        assert!(weak.upgrade().is_none());
+    }
 
     #[test]
     fn exact_view_identity_and_weak_lifetime_preserve_backing_and_range() {

@@ -142,6 +142,13 @@ pub(super) fn parse_declarations_with_state(
                                     offset + len - receipt.output_span().start,
                                 )
                             });
+                            // Retain only the contained region's immutable bytes.
+                            // A view into the joined project would pin unrelated
+                            // historical regions after a one-chunk source edit.
+                            let mut source_owner = receipt.zip(relative).and_then(|(receipt, span)| {
+                                receipt.record().shared_output_text().checked_view(span.range())
+                                    .filter(|owner| owner.as_ref() == text)
+                            });
                             let cached = receipt
                                 .zip(relative)
                                 .and_then(|(receipt, span)| {
@@ -161,6 +168,11 @@ pub(super) fn parse_declarations_with_state(
                                     memo.visit_fragment_candidates(key, &mut |record| {
                                         if !record.matches(parserwire::VERSION, text) { return false; }
                                         accepted = parserwire::decode_with_facts(record.payload(), text);
+                                        if accepted.is_some() {
+                                            // This already validated exact sidecar owns just
+                                            // this chunk, rather than a larger region arena.
+                                            source_owner = Some(Arc::clone(record.shared_source()).into());
+                                        }
                                         accepted.is_some()
                                     });
                                     accepted
@@ -294,9 +306,17 @@ pub(super) fn parse_declarations_with_state(
                             };
                             let current = facts.and_then(|(facts,ledger)| {
                                 let current = if let (Some(state),Some(keys))=(retained,retained_keys.as_ref()) {
-                                    state.capture(&keys[index],text,offset,parsed,facts,ledger)
+                                    if let Some(owner) = source_owner {
+                                        state.capture_source(&keys[index],owner,offset,parsed,facts,ledger)
+                                    } else {
+                                        state.capture(&keys[index],text,offset,parsed,facts,ledger)
+                                    }
                                 } else {
-                                    super::declaration_state::CurrentContribution::fresh(text,offset,parsed,facts,ledger)
+                                    if let Some(owner) = source_owner {
+                                        super::declaration_state::CurrentContribution::fresh_source(owner,offset,parsed,facts,ledger)
+                                    } else {
+                                        super::declaration_state::CurrentContribution::fresh(text,offset,parsed,facts,ledger)
+                                    }
                                 };
                                 current.ok_or_else(||vec![crate::AdapterError{kind:dm_syntax::DiagnosticKind::Unsupported,span:dm_ir::Span{file:FileId(0),start:offset as u32,end:offset as u32},message:"relative declaration binding failed".into()}])
                             });

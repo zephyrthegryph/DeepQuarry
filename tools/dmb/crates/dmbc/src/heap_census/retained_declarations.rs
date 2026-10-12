@@ -67,7 +67,7 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemantic
             census.slice(owner, versions, true);
             for read in reads.iter() {
                 match &read.answer {
-                    dm_tree::frontend::ChunkSourceAnswer::Owned(source) => census.arc_text(owner, source),
+                    dm_tree::frontend::ChunkSourceAnswer::Owned(source) => census.source_text(owner, source),
                     dm_tree::frontend::ChunkSourceAnswer::Live(_) => census.unknown(owner, "live source marker is not a retained owned-source receipt"),
                 }
             }
@@ -75,7 +75,7 @@ pub(super) fn inspect_into(mut census: &mut HeapCensus, state: &RetainedSemantic
         }
         DeclarationStorageView::Entry { key, reads, versions, contribution } => {
             let owner = "retained_declarations.payload";
-            census.arc_text(owner, contribution.source);
+            census.source_text(owner, contribution.source);
             census.slice(owner, key, true);
             census.receipt(owner, reads);
             census.slice(owner, versions, true);
@@ -92,7 +92,7 @@ fn contribution_payload(
     contribution: dm_tree::frontend::DeclarationContributionView<'_>,
 ) {
     let owner = "retained_declarations.payload";
-    census.arc_text(owner, contribution.source);
+    census.source_text(owner, contribution.source);
     if !census.buffer(
         owner,
         contribution.allocation_address,

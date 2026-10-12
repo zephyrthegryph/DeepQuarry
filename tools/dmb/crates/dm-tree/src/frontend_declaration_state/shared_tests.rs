@@ -59,6 +59,88 @@ impl dm_preprocess::SourceProvider for Source {
     }
 }
 #[test]
+fn real_frontend_declaration_chunks_share_only_containing_region_sources() {
+    struct CapturedSource(String);
+    impl dm_preprocess::SourceProvider for CapturedSource {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok(self.0.clone())
+        }
+    }
+    struct Memo;
+    impl dm_preprocess::regions::ExpansionMemo for Memo {
+        fn candidates(&self, _: u128) -> Vec<Arc<dm_preprocess::regions::ExpansionRecord>> {
+            Vec::new()
+        }
+        fn insert(&self, _: Arc<dm_preprocess::regions::ExpansionRecord>) {}
+    }
+    let source = CapturedSource(
+        (0..70)
+            .map(|index| format!("/proc/probe_{index}()\n    return \"café {index}\"\n"))
+            .collect(),
+    );
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let mut state = RetainedSemanticTree::new();
+    let build = |state: &mut RetainedSemanticTree| {
+        build_with_executor_and_semantic_state(
+            Path::new("views.dme"),
+            &source,
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            Some(&Memo),
+            &executor,
+            Some(state),
+        )
+        .unwrap()
+    };
+    let current = build(&mut state);
+    let regions: Vec<_> = current
+        .expanded
+        .receipts
+        .iter()
+        .map(|receipt| receipt.record().shared_output_text())
+        .collect();
+    assert!(!regions.is_empty());
+    let mut shared = std::collections::HashSet::new();
+    state.visit_declaration_storage(|view| {
+        if let DeclarationStorageView::SharedEntry { contribution, .. } = view {
+            if !shared.insert(contribution.allocation_address) {
+                return;
+            }
+            assert!(
+                regions.iter().any(|region| {
+                    region
+                        .find(contribution.source.as_ref())
+                        .and_then(|start| {
+                            region.checked_view(start..start + contribution.source.len())
+                        })
+                        .is_some_and(|view| view.same_view(contribution.source))
+                }),
+                "declaration bytes must share the containing region, not joined output"
+            );
+            assert!(!current.expanded.text.same_view(contribution.source));
+        }
+    });
+    assert!(shared.len() > 1, "fixture must exercise region subranges");
+    let fresh = build(&mut RetainedSemanticTree::new());
+    assert_eq!(
+        current.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        current.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    assert_eq!(current.bodies.len(), fresh.bodies.len());
+    for (a, b) in current.bodies.iter().zip(fresh.bodies.iter()) {
+        assert_eq!(a.expanded_span, b.expanded_span);
+        assert_eq!(a.source, b.source);
+    }
+}
+#[test]
 fn two_real_frontends_share_relative_payloads_and_issue_fresh_bodies() {
     let engine = Arc::new(crate::SharedNormalizedDeclarations::default());
     let mut a = RetainedSemanticTree::with_shared_normalized(Arc::clone(&engine));

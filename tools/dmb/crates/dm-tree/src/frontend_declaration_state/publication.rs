@@ -175,6 +175,19 @@ impl RetainedDeclarations {
             .with_pending(|claims| claims.capture(key, text, offset, items, facts, ledger))
             .flatten()
     }
+    pub(in crate::frontend) fn capture_source(
+        &self,
+        key: &[u8],
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<CurrentContribution> {
+        self.access
+            .with_pending(|claims| claims.capture_source(key, source, offset, items, facts, ledger))
+            .flatten()
+    }
     pub(in crate::frontend) fn current_catalog(
         &self,
         current: &[Arc<Contribution>],

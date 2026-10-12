@@ -109,7 +109,7 @@ fn inconsistent_producer_settings_decline_issuance_without_replacing_validation(
     let parsed = dm_syntax::parse_declaration_skeleton(source);
     let owners = [(parsed.items[0].span.start, Arc::new(changed))].into();
     let relative = Arc::new(
-        RelativeSyntax::capture_with_settings(parsed.items, Arc::from(source), &owners).unwrap(),
+        RelativeSyntax::capture_with_settings(parsed.items, source.into(), &owners).unwrap(),
     );
     let syntax = DeclarationSyntax::new(vec![relative.bind(source.len(), 0).unwrap()]).unwrap();
     assert!(syntax

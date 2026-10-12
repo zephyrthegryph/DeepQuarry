@@ -29,7 +29,7 @@ impl HeapCensus {
             self.buffer(owner, address, logical, capacity);
         });
         if let Some(source) = relative.shared_source() {
-            self.arc_text(owner, source);
+            self.source_text(owner, source);
         }
         if let Some(items) = relative.wide_relative_items() {
             self.slice(owner, items, true);

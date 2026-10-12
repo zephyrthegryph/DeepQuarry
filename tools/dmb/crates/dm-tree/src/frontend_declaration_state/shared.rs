@@ -8,7 +8,7 @@ use dm_session::{
 /// length is descriptive only: equivalent always compares every current byte.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ChunkSourceAnswer {
-    Owned(Arc<str>),
+    Owned(dm_preprocess::SourceText),
     Live(usize),
 }
 pub(crate) type SharedContributionStore =
@@ -79,7 +79,7 @@ impl DeclarationValues {
                 vec![Observation {
                     query: (),
                     domain: (),
-                    answer: ChunkSourceAnswer::Owned(Arc::clone(&current.value.source)),
+                    answer: ChunkSourceAnswer::Owned(current.value.source.clone()),
                 }],
                 vec![],
                 0,

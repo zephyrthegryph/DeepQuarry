@@ -49,7 +49,7 @@ impl Default for DeclarationClaims {
 #[derive(Clone)]
 pub(crate) struct Contribution {
     // A locator is not source authority. Every current binding checks these bytes.
-    source: Arc<str>,
+    source: dm_preprocess::SourceText,
     facts: Arc<crate::AdaptedDeclarations>,
     syntax: Arc<RelativeSyntax>,
     skeletons: Arc<Vec<crate::Skeleton>>,
@@ -62,7 +62,7 @@ pub struct DeclarationContributionView<'a> {
     pub allocation_address: usize,
     pub allocation_size: usize,
     pub syntax: &'a Arc<RelativeSyntax>,
-    pub source: &'a Arc<str>,
+    pub source: &'a dm_preprocess::SourceText,
     pub skeletons: &'a Arc<Vec<crate::Skeleton>>,
     pub facts: &'a crate::AdaptedDeclarations,
     pub facts_owner: &'a Arc<crate::AdaptedDeclarations>,
@@ -176,8 +176,20 @@ impl DeclarationClaims {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<CurrentContribution> {
-        let value = Contribution::capture_owned(text, offset, items, facts, ledger)?;
-        let mut current = CurrentContribution::bind(Arc::new(value), text, offset)?;
+        self.capture_source(key, text.into(), offset, items, facts, ledger)
+    }
+    pub(super) fn capture_source(
+        &self,
+        key: &[u8],
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<CurrentContribution> {
+        let value = Contribution::capture_source(source, offset, items, facts, ledger)?;
+        let text = value.source.clone();
+        let mut current = CurrentContribution::bind(Arc::new(value), &text, offset)?;
         if !self.values.is_shared() {
             self.values.publish(key, &mut current)?;
         }
@@ -327,6 +339,56 @@ fn rebase(
 mod tests {
     use super::*;
     #[test]
+    fn declaration_capture_shares_checked_region_view_and_rebinds_current_origins() {
+        let text = "/obj/probe\n    var/display = \"café\"\n";
+        let arena = dm_preprocess::SourceText::from(format!("prefix\n{text}suffix\n"));
+        let view = arena.checked_view(7..7 + text.len()).unwrap();
+        let parsed = dm_syntax::parse_declaration_skeleton(text);
+        let ast = AstFile {
+            items: parsed.items,
+            diagnostics: parsed.diagnostics,
+            tokens: Vec::new(),
+        };
+        let mut facts = crate::from_ast(&ast, SymbolTable::default(), FileId(0), 0, 0).unwrap();
+        let ledger =
+            crate::allocation_ledger::capture(&ast.items, "/", &mut facts.symbols).unwrap();
+        let fallback =
+            CurrentContribution::fresh(text, 0, ast.items.clone(), facts.clone(), ledger.clone())
+                .unwrap();
+        let store = RetainedDeclarations::default();
+        let key = RetainedDeclarations::key(text);
+        store.retain(&[key.clone()]);
+        let current = store
+            .capture_source(&key, view.clone(), 0, ast.items, facts, ledger)
+            .unwrap();
+        assert!(current.value.source.same_view(&view));
+        assert!(current
+            .syntax
+            .shared_relative()
+            .shared_source()
+            .unwrap()
+            .same_view(&view));
+        assert_eq!(current.value.source.as_str().as_ptr(), arena[7..].as_ptr());
+        assert!(!fallback.value.source.same_view(&view));
+        assert_eq!(current.value.skeletons, fallback.value.skeletons);
+        let shifted = store.get_shared(&key, text, 81).unwrap();
+        assert!(shifted.value.source.same_view(&view));
+        let (_, shifted_facts, _) = shifted.value.rebind(text, 81).unwrap();
+        for (old, new) in current
+            .value
+            .relative_origins()
+            .iter()
+            .zip(shifted_facts.origins)
+        {
+            assert_eq!(new.span.start, old.span.start + 81);
+            assert_eq!(new.span.end, old.span.end + 81);
+        }
+        let changed = text.replace("café", "cafe");
+        assert_eq!(changed.len() + 1, text.len());
+        assert!(store.get_shared(&key, &changed, 81).is_none());
+        assert!(store.get_shared(&key, text, usize::MAX).is_none());
+    }
+    #[test]
     fn current_bindings_share_relative_payload_and_catalog_removes_old_names() {
         let text = "/obj/probe\n    var/unique_name=1\n";
         let parsed = dm_syntax::parse_declaration_skeleton(text);
@@ -352,14 +414,23 @@ mod tests {
             Arc::from([1u8, 2]),
         )
         .unwrap();
-        assert!(Arc::ptr_eq(fragment.shared_source(), &first.value.source));
+        assert!(Arc::ptr_eq(
+            fragment.shared_source(),
+            first.value.source.full_original_owner().unwrap()
+        ));
         assert!(Arc::ptr_eq(
             fragment.shared_source(),
             &shifted.shared_source()
         ));
         assert!(Arc::ptr_eq(
             fragment.shared_source(),
-            first.syntax.shared_relative().shared_source().unwrap()
+            first
+                .syntax
+                .shared_relative()
+                .shared_source()
+                .unwrap()
+                .full_original_owner()
+                .unwrap()
         ));
         assert!(fragment.matches(super::super::parserwire::VERSION, text));
 
@@ -489,7 +560,10 @@ pub(super) struct CurrentContribution {
 }
 impl CurrentContribution {
     pub(super) fn shared_source(&self) -> Arc<str> {
-        Arc::clone(&self.value.source)
+        self.value
+            .source
+            .full_original_owner()
+            .map_or_else(|| Arc::from(self.value.source.as_ref()), Arc::clone)
     }
     fn bind(value: Arc<Contribution>, text: &str, offset: usize) -> Option<Self> {
         if value.source.as_ref() != text {
@@ -513,11 +587,21 @@ impl CurrentContribution {
         facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<Self> {
+        Self::fresh_source(text.into(), offset, items, facts, ledger)
+    }
+    pub(super) fn fresh_source(
+        source: dm_preprocess::SourceText,
+        offset: usize,
+        items: Vec<Item>,
+        facts: crate::AdaptedDeclarations,
+        ledger: AllocationLedger,
+    ) -> Option<Self> {
+        let text = source.clone();
         Self::bind(
-            Arc::new(Contribution::capture_owned(
-                text, offset, items, facts, ledger,
+            Arc::new(Contribution::capture_source(
+                source, offset, items, facts, ledger,
             )?),
-            text,
+            &text,
             offset,
         )
     }
@@ -542,16 +626,16 @@ impl Contribution {
         self.origin_max
     }
 
-    fn capture_owned(
-        text: &str,
+    fn capture_source(
+        source: dm_preprocess::SourceText,
         offset: usize,
         mut items: Vec<Item>,
         mut facts: crate::AdaptedDeclarations,
         ledger: AllocationLedger,
     ) -> Option<Self> {
+        let text = source.as_ref();
         items_spans(&mut items, text, offset, 0)?;
         let ledger = rebase(&mut facts, &ledger, text, offset, 0)?;
-        let source: Arc<str> = Arc::from(text);
         let settings = facts
             .skeletons
             .iter()
@@ -566,9 +650,8 @@ impl Contribution {
                     .map(|owner| (origin.span.start as usize, Arc::clone(owner)))
             })
             .collect();
-        let syntax = Arc::new(
-            RelativeSyntax::capture_with_settings(items, Arc::clone(&source), &settings).ok()?,
-        );
+        let syntax =
+            Arc::new(RelativeSyntax::capture_with_settings(items, source.clone(), &settings).ok()?);
         let skeletons = Arc::new(std::mem::take(&mut facts.skeletons));
         let event_leaf = crate::allocation_ledger::ValidatedEventLeaf::new(ledger.events.clone());
         let origin_max = facts
@@ -595,7 +678,13 @@ impl Contribution {
         facts: &crate::AdaptedDeclarations,
         ledger: &AllocationLedger,
     ) -> Option<Self> {
-        Self::capture_owned(text, offset, items.to_vec(), facts.clone(), ledger.clone())
+        Self::capture_source(
+            text.into(),
+            offset,
+            items.to_vec(),
+            facts.clone(),
+            ledger.clone(),
+        )
     }
     #[cfg(test)]
     fn rebind(

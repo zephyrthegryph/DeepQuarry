@@ -106,11 +106,11 @@ impl RelativeSyntax {
     }
     #[cfg(test)]
     pub(crate) fn capture_shared(items: Vec<Item>, source: Arc<str>) -> Result<Self, BindingError> {
-        Self::capture_with_settings(items, source, &Default::default())
+        Self::capture_with_settings(items, source.into(), &Default::default())
     }
     pub(crate) fn capture_with_settings(
         items: Vec<Item>,
-        source: Arc<str>,
+        source: dm_preprocess::SourceText,
         owners: &std::collections::BTreeMap<usize, Arc<dm_ir::ProcedureMetadata>>,
     ) -> Result<Self, BindingError> {
         let mut max_end = 0;
@@ -145,7 +145,7 @@ impl RelativeSyntax {
     pub fn wide_relative_items(&self) -> Option<&Arc<[Item]>> {
         self.items.wide_items()
     }
-    pub fn shared_source(&self) -> Option<&Arc<str>> {
+    pub fn shared_source(&self) -> Option<&dm_preprocess::SourceText> {
         self.items.source()
     }
     pub fn visit_settings_owners(&self, mut visit: impl FnMut(&Arc<dm_ir::ProcedureMetadata>)) {

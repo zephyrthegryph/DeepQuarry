@@ -13,7 +13,7 @@ pub(super) struct Node {
 #[derive(Debug)]
 pub(super) enum Arena {
     Compact {
-        source: Arc<str>,
+        source: dm_preprocess::SourceText,
         nodes: Vec<Node>,
         roots: usize,
         owned: Vec<Box<str>>,
@@ -21,7 +21,8 @@ pub(super) enum Arena {
     Wide(Arc<[Item]>),
 }
 impl Arena {
-    pub(super) fn capture(items: Vec<Item>, source: Arc<str>) -> Self {
+    pub(super) fn capture(items: Vec<Item>, source: impl Into<dm_preprocess::SourceText>) -> Self {
+        let source = source.into();
         fn fits(items: &[Item]) -> bool {
             items.iter().all(|item| {
                 item.indent <= u32::MAX as usize
@@ -107,7 +108,7 @@ impl Arena {
             Self::Compact { .. } => None,
         }
     }
-    pub(super) fn source(&self) -> Option<&Arc<str>> {
+    pub(super) fn source(&self) -> Option<&dm_preprocess::SourceText> {
         match self {
             Self::Compact { source, .. } => Some(source),
             Self::Wide(_) => None,
@@ -366,7 +367,10 @@ mod tests {
             root.children().next_back().unwrap().header(),
             parsed[0].children.last().unwrap().header
         );
-        assert!(Arc::ptr_eq(arena.source().unwrap(), &source));
+        assert!(Arc::ptr_eq(
+            arena.source().unwrap().full_original_owner().unwrap(),
+            &source
+        ));
     }
     #[test]
     fn transformed_headers_and_wide_coordinates_preserve_owned_spelling() {
