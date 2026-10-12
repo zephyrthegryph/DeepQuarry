@@ -19,6 +19,6 @@ pub mod components;
 pub mod kind;
 pub mod laws;
 
-pub use components::{Apc, Cable, Producer, Smes, SmesInputTerminal};
+pub use components::{Apc, ApcEvent, Cable, Producer, Smes, SmesInputTerminal};
 pub use kind::{Cables, PowerLedger, PowerNode};
 pub use laws::PowerEvent;
