@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - code_imp: "Relation requirements now derive native endpoint dependencies and clean up failed linking."
