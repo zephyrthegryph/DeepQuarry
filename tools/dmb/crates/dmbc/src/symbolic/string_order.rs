@@ -1,6 +1,6 @@
 //! Expand current source registration events before ordinary StringID assignment.
 use super::{unit_key, FrozenUnit};
-use dm_ir::{SymRef, SymbolId};
+use dm_ir::SymbolId;
 use dm_link::{
     Key, LinkInventory, StringRegistrationEvent as Event, StringRegistrationSource, Table,
 };
@@ -22,7 +22,7 @@ pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> R
         let mut strings = Vec::new();
         // The chronological source roster is authoritative for formal/local
         // names and literal leaves, including folded/unreachable ones. Frozen
-        // frame/operand names only supplement names absent from that roster;
+        // frame names only supplement names absent from that roster;
         // code reachability can never remove a captured registration.
         for name in unit
             .lowered
@@ -33,11 +33,10 @@ pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> R
         {
             strings.push(SymbolId::of(name));
         }
-        for relocation in unit.frozen.code().relocations() {
-            if let SymRef::String(id) = relocation.reference {
-                strings.push(id);
-            }
-        }
+        // A field reference is resolved against declaration-allocated strings,
+        // not registered as an early lexical string. In the pinned member
+        // control, holder.z_first leaves a_second/type_value/z_first in their
+        // declaration order. Literal leaves already occur in the source roster.
         Ok(strings)
     })
 }

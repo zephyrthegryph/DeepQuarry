@@ -132,6 +132,23 @@ fn string_allocation_rejects_unbound_first_occurrence_and_supplied_order_conflic
 }
 
 #[test]
+fn string_allocation_member_reference_keeps_declaration_name_order() {
+    // BYOND 516.1687 compile-only initializer_member_order control:
+    // the first root body returns holder.z_first, but the holder names have
+    // StringIDs a_second=439, type_value=440, z_first=441. A member operand
+    // contributes no lexical registration; its eventual relocation uses the
+    // declaration-allocated StringID.
+    let order = assigned_order(inventory(vec![
+        first(&[]),
+        field("a_second", 2),
+        field("type_value", 3),
+        field("z_first", 4),
+    ]));
+    let at = |name| order.iter().position(|item| *item == name).unwrap();
+    assert!(at("a_second") < at("type_value"));
+    assert!(at("type_value") < at("z_first"));
+}
+#[test]
 fn string_allocation_supplements_only_current_field_spellings_and_keeps_literals_first() {
     let mut current = inventory(vec![
         first(&["a_second"]),
