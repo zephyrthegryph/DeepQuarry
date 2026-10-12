@@ -255,7 +255,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 //Calling this proc without an oldname will only update the mob and skip updating the pda, id and records ~Carn
 /mob/proc/fully_replace_character_name(oldname,newname)
 	if(!newname)	return 0
-	real_name = newname
+	set_real_name(newname)
 	name = newname
 	if(mind)
 		mind.name = newname
@@ -281,7 +281,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			if( search_id && istype(A,/obj/item/card/id) )
 				var/obj/item/card/id/ID = A
 				if(ID.registered_name == oldname)
-					ID.registered_name = newname
+					ID.set_registered_name(newname)
 					ID.name = "[newname]'s ID Card ([ID.assignment])"
 					if(!search_pda)	break
 					search_id = 0
@@ -289,7 +289,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			else if( search_pda && istype(A,/obj/item/pda) )
 				var/obj/item/pda/PDA = A
 				if(PDA.owner == oldname)
-					PDA.owner = newname
+					PDA.set_owner(newname)
 					PDA.name = "PDA-[newname] ([PDA.ownjob])"
 					if(!search_id)	break
 					search_pda = 0

@@ -17,7 +17,8 @@ robot|none click: Click: Use
 human|/obj/item/survey_scanner menu: Hit
 human|/obj/item/survey_scanner menu: Use
 human|/obj/item/survey_scanner click: Click: Use
-human|/obj/item/analyzer menu: Hit
-human|/obj/item/analyzer menu: Use
-human|/obj/item/analyzer click: Click: Use
+@obj human|/obj/item/analyzer
+-menu: Eject Particle Focus Contents
+-menu: Store
++0 menu: Hit
 keys: analyzer, drag_buckle, hand, melee_hit, survey_scanner

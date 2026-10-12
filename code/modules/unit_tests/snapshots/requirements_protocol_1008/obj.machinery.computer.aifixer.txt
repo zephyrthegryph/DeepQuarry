@@ -1,76 +1,36 @@
 @obj.machinery.computer human|none
 -click: Click: Use
-+1 menu: Ui open
-+3 click: Click: Ui open
++1 menu: Open controls
++3 click: Click: Open controls
 @obj.machinery.computer robot|none
 -click: Click: Use
-+2 menu: Ui open
-+4 click: Click: Ui open
++2 menu: Open controls
++4 click: Click: Open controls
 @obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 @obj.machinery.computer ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
--menu: Use screwdriver
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+6 menu: Use item
++2 menu: Open controls
 @obj.machinery.computer human|/obj/item/tool/crowbar
--menu: Use crowbar
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/tool/wrench
--menu: Use wrench
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/tool/wirecutters
--menu: Use wirecutters
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/multitool
--menu: Use multitool
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/weldingtool
--menu: Use welding tool
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/stack/cable_coil
--menu: Use cable coil
-+1 menu: Make Cable Restraints (refused: You can't do that.)
-+2 menu: Move To Top
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+6 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/stack/material/steel
--menu: Use steel sheet
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
-+5 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item/card/id
--menu: Use identification card
-+1 menu: Move To Top
-+2 menu: Read ID Card (refused: You can't do that.)
-+3 menu: Toggle Digestable (refused: You can't do that.)
-+4 menu: Ui open
-+6 menu: Use item
++1 menu: Open controls
 @obj.machinery.computer human|/obj/item
-+1 menu: Move To Top
-+2 menu: Toggle Digestable (refused: You can't do that.)
-+3 menu: Ui open
++1 menu: Open controls
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aicard
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, PRG_beginReconstruction, robot_remote_blocked, silicon_hand, ui_open, use, use_card, use_gripper, use_item

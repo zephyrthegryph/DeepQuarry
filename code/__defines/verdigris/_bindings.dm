@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "6dd3f2785f0a46a7"
+#define VERDIGRIS_ABI "eea806c364f75ad6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -2449,6 +2449,8 @@
 /// registration. `hysteresis`
 /// < 0 takes each channel's. A breather's air watch (one per breather, on its
 /// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+/// `cell` is one cell for every channel, or a list with one cell per channel
+/// (the air watch also follows the temperature of the turfs around the mob).
 // /proc/world_watch_bands (verdigris/ffi/src/sched.rs)
 /proc/vg_world_watch_bands(code, sub, lane, cell, chs, levels, starts, hysteresis)
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_watch_bands_ffi")

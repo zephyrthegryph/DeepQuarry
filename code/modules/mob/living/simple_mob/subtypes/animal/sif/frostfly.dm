@@ -82,9 +82,6 @@
 	threaten_sound = 'sound/effects/refill.ogg'
 	stand_down_sound = 'sound/effects/sparks5.ogg'
 
-/mob/living/simple_mob/animal/sif/frostfly/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/sif/frostfly/life_special(datum/seq_frame/life/F)
 	..()
 

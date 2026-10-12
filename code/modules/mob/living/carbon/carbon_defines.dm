@@ -36,3 +36,6 @@
 /mob/living/carbon/ownership()
 	. = ..()
 	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+
+/// The pulse level: the heartbeat step reads it.
+TRACKED(/mob/living/carbon, pulse)

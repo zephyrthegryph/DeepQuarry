@@ -152,7 +152,7 @@ CAPABILITIES(/obj/structure/constructshell)
 	S.enable_godmode()
 	S.canmove = 0//Can't move out of the soul stone
 	S.name = "Shade of [T.real_name]"
-	S.real_name = "Shade of [T.real_name]"
+	S.set_real_name("Shade of [T.real_name]")
 	S.icon = T.icon
 	S.icon_state = T.icon_state
 	S.overlays = T.overlays

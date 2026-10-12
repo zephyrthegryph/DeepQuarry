@@ -144,7 +144,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 /mob/living/silicon/pai/proc/start_pda(current, mapload)
 	var/obj/item/pda/ai/pai/P = new /obj/item/pda/ai/pai(src)
 	P.ownjob = "Personal Assistant"
-	P.owner = "[src]"
+	P.set_owner("[src]")
 	P.name = P.owner + " (" + P.ownjob + ")"
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 	if(M)

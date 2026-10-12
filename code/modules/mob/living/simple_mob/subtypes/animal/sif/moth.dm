@@ -113,9 +113,6 @@
 			return FALSE
 
 
-/mob/living/simple_mob/animal/sif/tymisian/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/sif/tymisian/life_special(datum/seq_frame/life/F)
 	..()
 

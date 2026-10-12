@@ -9,7 +9,7 @@ ADMIN_VERB(dq_spawn_medical_dummy, R_DEBUG, "DQ Spawn Medical Dummy", "Spawn a d
 	if(!T)
 		return
 	var/mob/living/carbon/human/dummy = new /mob/living/carbon/human(T)
-	dummy.real_name = "Test Patient #[rand(1000, 9999)]"
+	dummy.set_real_name("Test Patient #[rand(1000, 9999)]")
 	dummy.name = dummy.real_name
 	to_chat(user.mob, span_notice("Spawned conscious medical patient [dummy] at [T]."))
 	log_admin("[key_name(user)] spawned a medical dummy at [T].")

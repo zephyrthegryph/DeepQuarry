@@ -380,6 +380,7 @@
 #include "dq_system_ports_b_tests.dm"
 #include "dq_grid_behaviour.dm"
 #include "dq_power_door_regression.dm"
+#include "dq_power_wakes_tests.dm"
 #include "dq_power_tests.dm"
 #include "dq_power_plants_behaviour.dm"
 #include "dq_om_wake_tests.dm"
@@ -1286,6 +1287,7 @@
 #include "dq_state_batch_tests.dm"
 #include "dq_nikki_rig_chest_tests.dm"
 #include "dq_mob_visuals_tests.dm"
+#include "dq_tanning_rack_wetness_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

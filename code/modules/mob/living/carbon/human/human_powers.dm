@@ -348,7 +348,7 @@ MSG_DEF(human/regen_begins, null, span_filter_notice(span_bold("%U%") + "'s fles
 		var/obj/item/organ/external/E = src.organs_by_name[limb_type]
 
 		if(E && E.disfigured)
-			E.disfigured = 0
+			E.set_disfigured(FALSE)
 		if(E && (E.is_stump() || (E.status & (ORGAN_DESTROYED|ORGAN_DEAD|ORGAN_MUTATED))))
 			E.removed()
 			spent(E)

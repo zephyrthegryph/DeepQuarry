@@ -55,6 +55,13 @@
 #define MOB_KEY_BODY_HEAT "mob_body_heat"
 /// The mob's radiation dose changed (add_radiation(), purge_radiation(), clear_radiation()). The radiation step reads it.
 #define MOB_KEY_RADIATION "mob_radiation"
+/// What others see of who the mob is changed outside its own vars: a face disfigured or mended, the name on a worn ID or
+/// PDA, a disguise (shadekin phase) toggled. Published by those setters (identity_changed_on_holder()); the real name
+/// is its own tracked key (nameof(real_name)).
+#define MOB_KEY_IDENTITY "mob_identity"
+/// The ground under the mob changed: its turf (or the one below it) was replaced, or its area's gravity switched
+/// (ChangeTurf(), /area/gravitychange()). Falling and the gravity read in movement follow it.
+#define MOB_KEY_GROUND "mob_ground"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
 #define ATOM_KEY_LOC "atom_loc"
 
@@ -88,14 +95,13 @@
 // --- Wakes first, resampling only as a fallback (doc/rewrite/life_on_om.md §5) ------------------
 // A sleeping step is woken by the change of what it reads (its `reads`, listed with their producers in `woken_by`).
 // A rewake no shorter than LIFE_SAFETY_RESAMPLE is only a safety net behind those wakes; a shorter one is allowed only
-// for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by
+// for work that drifts with time itself (hunger, germs, a timer), declared with LIFE_WOKEN_BY_TIME in woken_by. There
+// is no polling: every input is tracked state, a published key or a declared relation
 // (life_om/steps_declare_their_wakes checks it).
 /// The safety re-check behind a step's wakes: a missed wake costs at most this long.
 #define LIFE_SAFETY_RESAMPLE (2 MINUTES)
 /// The woken_by entry of a step whose rewake is its work (it drifts with time), not a stand-in for a missing wake.
 #define LIFE_WOKEN_BY_TIME "time"
-/// The woken_by entry of a step whose short rewake stands in for an input no producer publishes yet (a known gap, named).
-#define LIFE_WOKEN_BY_POLL "poll"
 /// A carbon breathing stage idle in steady air: woken by its air watch, moving, equipment; this is the fallback.
 #define BREATH_STEADY_RESAMPLE LIFE_SAFETY_RESAMPLE
 /// A human environment stage idle in comfortable air: woken by its air watch and body heat watch; this is the fallback.
@@ -127,6 +133,13 @@
 #define BREATH_TOXINS_MIN 0.05
 /// A poison gas past this poisons (toxin in the blood) or displaces the breath (methane).
 #define BREATH_TOXINS_MAX 0.2
+/// Toxin injury per kPa of poison gas in a breath past BREATH_TOXINS_MAX, for each breath (one a Life frame while the breath
+/// is hazardous): 2 kPa of phoron burns about 6 a breath, from the first one.
+#define BREATH_POISON_INJURY_PER_KPA 3
+/// The least toxin injury a poisonous breath does.
+#define BREATH_POISON_INJURY_MIN 1
+/// The most toxin injury one poisonous breath does (about 20 kPa of phoron and up).
+#define BREATH_POISON_INJURY_MAX 20
 /// Nitrous oxide past this makes the breather giggle.
 #define BREATH_N2O_GIGGLE 0.15
 /// Nitrous oxide past this paralyses.

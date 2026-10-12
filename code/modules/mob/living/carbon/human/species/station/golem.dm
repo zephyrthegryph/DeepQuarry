@@ -34,6 +34,6 @@
 	if(H.mind)
 		H.mind.assigned_role = JOB_GOLEM
 		H.mind.special_role = JOB_GOLEM
-	H.real_name = "adamantine golem ([rand(1, 1000)])"
+	H.set_real_name("adamantine golem ([rand(1, 1000)])")
 	H.name = H.real_name
 	..()

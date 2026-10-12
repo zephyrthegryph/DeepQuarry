@@ -501,11 +501,11 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	act_message(user, null, MSG_SELF(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
 		MSG_OTHERS(span_warning("A shape forms in the center of the rune. A shape of... a man.")), \
 		MSG_BLIND(span_warning("You hear liquid flowing.")))
-	D.real_name = "Unknown"
+	D.set_real_name("Unknown")
 	var/chose_name = 0
 	for(var/obj/item/paper/P in this_rune.loc)
 		if(P.info)
-			D.real_name = copytext(P.info, findtext(P.info,">")+1, findtext(P.info,"<",2) )
+			D.set_real_name(copytext(P.info, findtext(P.info,">")+1, findtext(P.info,"<",2) ))
 			chose_name = 1
 			break
 	D.universal_speak = 1
@@ -518,9 +518,8 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	GLOB.cult.add_antagonist(D.mind)
 
 	if(!chose_name)
-		D.real_name = pick("Anguished", "Blasphemous", "Corrupt", "Cruel", "Depraved", "Despicable", "Disturbed", "Exacerbated", "Foul", "Hateful", "Inexorable", "Implacable", "Impure", "Malevolent", "Malignant", "Malicious", "Pained", "Profane", "Profligate", "Relentless", "Resentful", "Restless", "Spiteful", "Tormented", "Unclean", "Unforgiving", "Vengeful", "Vindictive", "Wicked", "Wronged")
-		D.real_name += " "
-		D.real_name += pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith")
+		D.set_real_name(pick("Anguished", "Blasphemous", "Corrupt", "Cruel", "Depraved", "Despicable", "Disturbed", "Exacerbated", "Foul", "Hateful", "Inexorable", "Implacable", "Impure", "Malevolent", "Malignant", "Malicious", "Pained", "Profane", "Profligate", "Relentless", "Resentful", "Restless", "Spiteful", "Tormented", "Unclean", "Unforgiving", "Vengeful", "Vindictive", "Wicked", "Wronged"))
+		D.set_real_name(D.real_name + " " + pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith"))
 
 	log_and_message_admins("used a manifest rune.")
 	rel_set(this_rune, nameof(this_rune.manifest_dummy), D)

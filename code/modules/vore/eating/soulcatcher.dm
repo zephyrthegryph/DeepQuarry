@@ -154,7 +154,7 @@ CAPABILITIES(/obj/soulgem)
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
 	brainmob.name = custom_name ? custom_name : brainmob.mind.name
-	brainmob.real_name = custom_name ? custom_name : brainmob.mind.name
+	brainmob.set_real_name(custom_name ? custom_name : brainmob.mind.name)
 
 	//If we caught our owner, special settings.
 	if(M == owner() && !own_mind()) // Need some more sanity if we allow takeover
