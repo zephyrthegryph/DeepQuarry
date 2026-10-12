@@ -1293,6 +1293,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/welding/tiemgogs, equip_spec, dq_spec_join
 TYPE_TABLE(/obj/item/rig/nikki, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SUIT_REGULATORS, POCKET_STORAGE))))
 
 CAPABILITIES(/obj/item/rig/nikki)
+	owns_one(nameof(chest), /obj/item/clothing/suit/fluff/nikki)
 	configure(item_worn(worn_icon = 'icons/vore/custom_clothes_mob.dmi'))
 	configure(item_protection(siemens = 0.9))
 	op("nikki_rig_module_item", item(/obj/item/rig_module), label("Install module"), then(PROC_REF(nikki_rig_module_item)))

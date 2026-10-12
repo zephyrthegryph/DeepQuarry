@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Power-dependent menus refresh when their selected grid changes or disappears."

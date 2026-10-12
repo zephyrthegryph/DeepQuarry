@@ -729,17 +729,25 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 /// The menu of `target` for `actor`: every op a pick (origin ORIGIN_MENU) could reach, with whether Require would pass now and why not.
 /proc/op_menu(mob/actor, atom/target, obj/held)
 	var/list/previous = GLOB.op_menu_read_frame
-	var/list/frame = list(previous, FALSE, null)
+	var/datum/lookup_read_scope/previous_scope = GLOB.lookup_read_scope_frame
+	var/datum/lookup_read_scope/scope = new
+	var/list/frame = list(previous, FALSE, null, scope, FALSE)
+	GLOB.lookup_read_scope_frame = scope
 	var/previous_pure_depth = GLOB.op_pure_depth
 	GLOB.op_menu_read_frame = frame
 	try
 		. = op_menu_read(actor, target, held, frame)
 	catch(var/exception/fault)
 		GLOB.op_menu_read_frame = previous
+		GLOB.lookup_read_scope_frame = previous_scope
 		// An aborted condition may not have reached its matching op_pure_end().
 		GLOB.op_pure_depth = previous_pure_depth
+		lifeform_end(scope, END_SCOPE)
 		throw fault
 	GLOB.op_menu_read_frame = previous
+	GLOB.lookup_read_scope_frame = previous_scope
+	if(!frame[5])
+		lifeform_end(scope, END_SCOPE)
 
 /// Builds or reuses rows within the caller's synchronous admission read.
 /proc/op_menu_read(mob/actor, atom/target, obj/held, list/frame)
@@ -787,9 +795,14 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 			reason = reason_text(why)
 		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
-		GLOB.op_menu_cache.Cut()
+		op_menu_cache_clear()
 	if(!frame[2])
-		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3])
+		var/list/replaced = GLOB.op_menu_cache[cache_key]
+		var/datum/lookup_read_scope/old_scope = length(replaced) >= 4 ? replaced[4] : null
+		if(old_scope && !QDELETED(old_scope))
+			lifeform_end(old_scope, END_SCOPE)
+		GLOB.op_menu_cache[cache_key] = list(rows, timed ? stamp : null, frame[3], frame[4])
+		frame[5] = TRUE
 	return rows.Copy()
 
 /// The reason Require would refuse candidate C now (the requirements only, nothing reserved), or null.

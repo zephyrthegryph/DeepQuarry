@@ -39,7 +39,7 @@
 	if(isatom(src))
 		var/atom/A = src
 		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
-	present_tgui_data(src, user, ., tgui_is_observer_view(user, ui)) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
+	present_tgui_data(src, user, ., tgui_is_observer_view(user, ui), ui?.lookup_scope) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
 
 /**
  * public

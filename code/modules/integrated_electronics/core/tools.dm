@@ -361,6 +361,9 @@ CAPABILITIES(/obj/item/storage/bag/circuits/mini)
 	after_init(0, then(PROC_REF(fill_circuits)))
 
 /obj/item/storage/bag/circuits/mini/proc/fill_circuits(datum/act/timer/A)
+	// The plain box stocks nothing and keeps its ordinary capacity (fitting it to no contents would refuse every circuit).
+	if(!length(circuit_kinds))
+		return
 	for(var/kind in circuit_kinds)
 		for(var/obj/item/integrated_circuit/IC in GLOB.all_integrated_circuits)
 			if(!istype(IC, kind))

@@ -333,7 +333,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 		var/label = derived_entry_label(E)
 		for(var/read in E.reads)
 			if(istext(read))
-				if(!(read in D.vars))
+				if(!(read in D.vars) && !lookup_read_declared(D, read))
 					derived_error(D, "[label] reads [read], which is not a var of the type")
 					continue
 				T.by_var[read] = (T.by_var[read] || 0) | bit
@@ -407,6 +407,7 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
  * New() (and state_changed(src) for its first refresh).
  */
 /proc/derived_attach(datum/D)
+	lookup_reads_prepare(D)
 	var/datum/derived_table/T = derived_table_of(D)
 	if(!T)
 		return

@@ -219,7 +219,7 @@ CAPABILITIES(/datum/ic_export_view)
 	var/obj/item/cell/device/removed = rel_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
-	to_chat(user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
+	to_chat(user, span_notice("You pull \the [removed] out of \the [src]'s power supplier."))
 	return TRUE
 
 	// Circuit actions

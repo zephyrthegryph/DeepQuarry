@@ -191,7 +191,7 @@
 		go_over_slot = HAS_TAG(I, TAG_WEAR_OVER)
 	var/obj/item/present = M.get_equipped_item(slot)
 	if(present && present != I && !go_over_slot)
-		return "you're already wearing 	he [present] there"
+		return "you're already wearing \the [present] there"
 	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, disable_warning ? null : M))
 		return "something is in the way"
 	return dq_equip_item_refusal(I, M, slot)
