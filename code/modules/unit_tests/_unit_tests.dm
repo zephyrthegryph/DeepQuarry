@@ -1288,7 +1288,7 @@
 #include "dq_mob_visuals_tests.dm"
 #include "gameplay\_harness.dm"
 #include "gameplay\arrival.dm"
-#include "gameplay\breathing.dm"
+#include "gameplayungs.dm"
 #include "gameplay\clothing.dm"
 #include "gameplay\doors_power.dm"
 #include "gameplay\hands_and_menus.dm"
