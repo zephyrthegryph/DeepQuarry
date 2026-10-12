@@ -1241,6 +1241,7 @@
 #include "dq_draw_pockets.dm"
 #include "dq_draw_final.dm"
 #include "dq_small_forms.dm"
+#include "dq_client_render_regressions.dm"
 #include "dq_draw_rest.dm"
 
 #include "dq_machine_click_intent_tests.dm"
