@@ -20528,7 +20528,7 @@
 /obj/structure/table/wooden_reinforced	55e89baf94a2f92a	blend_objects,carpeted,connections,flipped,noblend_objects,other_connections,smooth_mask
 /obj/structure/table/woodentable	e60fc24ded450dc1	blend_objects,carpeted,connections,flipped,noblend_objects,other_connections,smooth_mask
 /obj/structure/table/woodentable/holotable	4f48e8344b029488	blend_objects,carpeted,connections,flipped,noblend_objects,other_connections,smooth_mask
-/obj/structure/tanning_rack	ab9bd93bc7cb3a8c	drying
+/obj/structure/tanning_rack	1cb8671ba4be2dec	drying
 /obj/structure/target_stake	7be4f9a6ea1e8b90	
 /obj/structure/thecake	aa4496f39809c619	
 /obj/structure/theonepizza	fa131f4c80fecc9b	
