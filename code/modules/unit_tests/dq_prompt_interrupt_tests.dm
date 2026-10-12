@@ -93,7 +93,7 @@
 	var/obj/e0_fixture/prompt_base/B = make_box()
 	open(H, B)
 	// the world changed without publishing a read the op watches: the answer still meets the requirement
-	B.powered = FALSE
+	B.set_powered(FALSE)
 	var/datum/op_result/result = test_answer(H, 7)
 	TEST_ASSERT_EQUAL(B.runs, 0, "the op did not run")
 	TEST_ASSERT_EQUAL(result?.reason, MSG(prompt/unpowered), "it refused with the requirement's reason")

@@ -505,6 +505,7 @@ const SELFTEST_EXPECT: &[(&str, usize, &str)] = &[
 pub fn register(reg: &mut Registry) {
     reg.add(Tracker { tests: false });
     reg.add(Tracker { tests: true });
+    reg.add(TestFaults);
 }
 
 #[cfg(test)]
@@ -556,4 +557,204 @@ mod named_argument_tests {
     fn named_argument_does_not_hide_real_assignment_on_same_line() {
         assert_eq!(hits("\tstate = 2; interface(\"SpaceHeater\", state = 1)"), vec![5]);
     }
+}
+
+
+// Explicit missed-publication fixtures use the tracked/type/proc indexes.
+// This hard lint has no annotation escape hatch or baseline.
+static META_FAULTS: Meta = Meta {
+    name: "test_faults", group: "", label: "test_faults", legacy: "",
+    select: CODE_MAPS_DM, scan: ScanKind::Tree, policy: Policy::Hard,
+    rules: &[RuleMeta { name: "invalid_fault", hint: "an unpublished fault must target a declared allocate-owned tracked fixture field and assert actual missed-wake evidence" }],
+    allow: &[], lists: &[],
+};
+const FAULT_DRIVER: &str = "code/tests/driver/publish_fault.dm";
+fn test_path(rel: &str) -> bool {
+    rel.starts_with("code/modules/unit_tests/") || rel.starts_with("code/tests/")
+}
+
+// All direct declarations of a fixture type must be in the test tree. A test
+// subtype of a production type is fine; declaring a production type as a test
+// fixture is not. Track only setters, not derived-only or STAT-composed fields.
+fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String, String)>, Vec<(String, usize, String)>) {
+    let mut declared: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for f in files {
+        for (_, line) in f.code().numbered() {
+            if let Some(m) = pat_match!(r"^(/[\w/]+)\s*$").captures(line) {
+                declared.entry(m.s(1).to_owned()).or_default().insert(f.rel.clone());
+            }
+        }
+    }
+    // A production proc/var override also establishes production ownership,
+    // even when its file has no bare type declaration.
+    for f in files {
+        if test_path(&f.rel) { continue; }
+        for proc in parse_procs(f.code()) {
+            declared.entry(proc.owner.to_owned()).or_default().insert(f.rel.clone());
+        }
+        for (_, line) in f.code().numbered() {
+            if let Some(m) = pat_match!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,").captures(line) {
+                declared.entry(m.s(1).to_owned()).or_default().insert(f.rel.clone());
+            }
+            if let Some(m) = pat_match!(r"^(/[\w/]+)/var/").captures(line) {
+                declared.entry(m.s(1).to_owned()).or_default().insert(f.rel.clone());
+            }
+        }
+    }
+    let mut markers = BTreeSet::new();
+    let mut invalid = Vec::new();
+    for f in files {
+        for (n, line) in f.code().numbered() {
+            if line.trim_start().starts_with("#define") { continue; }
+            if let Some(m) = pat_match!(r"\bTEST_FAULT_FIXTURE\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(line) {
+                let ty = m.s(1); let field = m.s(2);
+                let safe_type = declared.get(ty).is_some_and(|ds| !ds.is_empty() && ds.iter().all(|rel| test_path(rel)));
+                if !test_path(&f.rel) || !safe_type || tracked_type_of(tracked, field, ty).is_none() {
+                    invalid.push((f.rel.clone(), n, "fault fixture must be a test-defined type with a real tracked setter".to_owned()));
+                } else { markers.insert((ty.to_owned(), field.to_owned())); }
+            }
+        }
+    }
+    (markers, invalid)
+}
+
+fn invalid_faults(f: &SourceFile, markers: &BTreeSet<(String, String)>) -> Vec<(usize, String)> {
+    let mut invalid = Vec::new();
+    // The low-level injector is implementation-only. Every call site must use
+    // the typed declaration form below, including in tests.
+    if f.rel != FAULT_DRIVER {
+        for (n, line) in f.code().numbered() {
+            if pat_match!(r"\btest_fault_missing_publish\s*\(").is_match(line) {
+                invalid.push((n, "call the fault declaration form; the injector is implementation-only".to_owned()));
+            }
+        }
+    }
+    let mut checked_lines = HashSet::new();
+    for proc in parse_procs(f.code()) {
+        let mut typed: HashMap<String, String> = HashMap::new();
+        let mut allocated: HashSet<String> = HashSet::new();
+        for (idx, (n, line)) in proc.body.iter().enumerate() {
+            if let Some(m) = pat_match!(r"\bvar(/[^\s=]+)/([\w]+)\s*=\s*allocate\(").captures(line) {
+                typed.insert(m.s(2).to_owned(), m.s(1).to_owned());
+                allocated.insert(m.s(2).to_owned());
+            }
+            if !line.contains("TEST_FAULT_MISSING_PUBLISH") { continue; }
+            checked_lines.insert(*n);
+            let Some(m) = pat_match!(r"^\s*var/datum/test_publish_fault/(\w+)\s*=\s*TEST_FAULT_MISSING_PUBLISH\(\s*(\w+)\s*,\s*(\w+)\s*,").captures(line) else {
+                invalid.push((*n, "bind a fault token with a typed allocate-owned local target and a literal field".to_owned())); continue;
+            };
+            let token = m.s(1); let target = m.s(2); let field = m.s(3);
+            let valid_target = typed.get(target).is_some_and(|ty| allocated.contains(target) && markers.contains(&(ty.clone(), field.to_owned())));
+            if !test_path(&f.rel) || !is_subtype(proc.owner, "/datum/unit_test") || !valid_target {
+                invalid.push((*n, "faults are restricted to unit-test procs and declared allocate-owned fixture fields".to_owned())); continue;
+            }
+            // Evidence must come from the real audit of the injected target,
+            // not an arbitrary datum with a matching .key field.
+            let audit = Pat::cached(&format!(r"^\s*var/datum/seq_step/(\w+)\s*=\s*\w+\.missed_wake\(\s*{}\s*\)\s*$", regex::escape(target)));
+            let mut actual = false;
+            for (proof_idx, (_, later)) in proc.body.iter().enumerate().skip(idx + 1) {
+                let Some(found) = audit.captures(later) else { continue };
+                let evidence = found.s(1);
+                let proof = Pat::cached(&format!(r"^\s*TEST_ASSERT\(\s*{}\.confirm_missed_publish\(\s*{}\??\.key\s*\)", regex::escape(token), regex::escape(evidence)));
+                let overwrite = Pat::cached(&format!(r"^\s*(?:{}|{})\s*=(?!=)", regex::escape(token), regex::escape(evidence)));
+                for (_, following) in proc.body.iter().skip(proof_idx + 1) {
+                    if overwrite.is_match(following) { break; }
+                    if proof.is_match(following) { actual = true; break; }
+                }
+                if actual { break; }
+            }
+            if !actual {
+                invalid.push((*n, "assert the token against an actual missed_wake(target) result after injection".to_owned()));
+            }
+        }
+    }
+    for (n, line) in f.code().numbered() {
+        if f.rel == FAULT_DRIVER && line.trim_start().starts_with("#define") { continue; }
+        if line.contains("TEST_FAULT_MISSING_PUBLISH") && !checked_lines.contains(&n) {
+            invalid.push((n, "fault declaration must be a statement in a unit-test proc".to_owned()));
+        }
+        if line.trim_start().starts_with("#define") && line.contains("TEST_FAULT_FIXTURE") {
+            invalid.push((n, "the fixture-marker declaration form cannot be redefined".to_owned()));
+        }
+    }
+    invalid
+}
+
+fn fault_setter_fields(f: &SourceFile, tracked: &mut Tracked) {
+    // Unlike the ordinary tracked index, this deliberately excludes derive()
+    // and STAT-composed values: faults need a real restoration setter.
+    for line in f.code().lines() {
+        if line.trim_start().starts_with("#define") { continue; }
+        if let Some(m) = pat_match!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
+            tracked.entry(m.s(2).to_owned()).or_default().insert(m.s(1).to_owned());
+        }
+    }
+}
+
+struct TestFaults;
+impl Lint for TestFaults {
+    fn meta(&self) -> &Meta { &META_FAULTS }
+    fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        let files = cx.all_files();
+        let mut tracked = Tracked::new();
+        for f in &files { fault_setter_fields(f, &mut tracked); }
+        let (markers, invalid) = fault_markers(&files, &tracked);
+        for (file, line, message) in invalid { out.site_in_msg("invalid_fault", &file, line, message); }
+        for f in files {
+            for (line, message) in invalid_faults(f, &markers) {
+                out.site_in_msg("invalid_fault", &f.rel, line, message);
+            }
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod fault_contract_tests {
+    use super::*;
+    fn source(rel: &str, code: &str) -> SourceFile { SourceFile::from_text(rel, code) }
+    fn judge(rel: &str, body: &str) -> Vec<(usize, String)> {
+        let markers = BTreeSet::from([("/datum/fixture".to_owned(), "heat".to_owned())]);
+        invalid_faults(&source(rel, body), &markers)
+    }
+    const GOOD: &str = "/datum/unit_test/probe/Run()\n\tvar/datum/fixture/E = allocate(/datum/fixture)\n\tvar/datum/test_publish_fault/F = TEST_FAULT_MISSING_PUBLISH(E, heat, 7)\n\tvar/datum/seq_step/missed = def.missed_wake(E)\n\tTEST_ASSERT(F.confirm_missed_publish(missed?.key), \"observed actual fault\")\n";
+    #[test] fn valid_tracked_fixture_and_actual_proof() { assert!(judge("code/modules/unit_tests/probe.dm", GOOD).is_empty()); }
+    #[test] fn production_call_rejected() { assert!(!judge("code/game/machinery/probe.dm", GOOD).is_empty()); }
+    #[test] fn production_owner_in_test_file_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("/datum/unit_test/probe/Run", "/obj/machine/proc/work")).is_empty()); }
+    #[test] fn unknown_field_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("E, heat,", "E, unknown,")).is_empty()); }
+    #[test] fn borrowed_target_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("allocate(/datum/fixture)", "get_map_object()")).is_empty()); }
+    #[test] fn no_confirmation_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("TEST_ASSERT(F.confirm_missed_publish(missed?.key),", "TEST_ASSERT(TRUE,")).is_empty()); }
+    #[test] fn constant_confirmation_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("missed?.key", "\"heat\"")).is_empty()); }
+    #[test] fn nonproc_macro_call_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", "#define BAD TEST_FAULT_MISSING_PUBLISH(E, heat, 7)\n").is_empty()); }
+    #[test] fn redefined_fixture_marker_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", "#define TEST_FAULT_FIXTURE(T,V) 1\n").is_empty()); }
+    #[test] fn injector_backdoor_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", "/datum/unit_test/probe/Run()\n\ttest_fault_missing_publish(E, \"heat\", 7)\n").is_empty()); }
+    #[test] fn production_fixture_registration_rejected() {
+        let production = source("code/game/object.dm", "/datum/fixture\n\tvar/heat\nTRACKED(/datum/fixture, heat)\n");
+        let test = source("code/modules/unit_tests/probe.dm", "TEST_FAULT_FIXTURE(/datum/fixture, heat)\n");
+        let mut tracked = Tracked::new(); tracked_from_text(&production, &mut tracked);
+        let (markers, invalid) = fault_markers(&[&production, &test], &tracked);
+        assert!(markers.is_empty()); assert_eq!(invalid.len(), 1);
+    }
+    #[test] fn test_fixture_registration_requires_setter() {
+        let test = source("code/modules/unit_tests/probe.dm", "/datum/fixture\n\tvar/heat\nTEST_FAULT_FIXTURE(/datum/fixture, heat)\n");
+        let (markers, invalid) = fault_markers(&[&test], &Tracked::new());
+        assert!(markers.is_empty()); assert_eq!(invalid.len(), 1);
+    }
+    #[test] fn forged_key_object_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("def.missed_wake(E)", "fake_result()")).is_empty());
+    }
+    #[test] fn wrong_audited_target_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("def.missed_wake(E)", "def.missed_wake(other)")).is_empty());
+    }
+    #[test] fn overwritten_evidence_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("\tTEST_ASSERT(F", "\tmissed = fake_result()\n\tTEST_ASSERT(F")).is_empty());
+    }
+    #[test] fn production_proc_override_registration_rejected() {
+        let production = source("code/game/object.dm", "/datum/fixture/proc/work()\n\treturn\n");
+        let test = source("code/modules/unit_tests/probe.dm", "/datum/fixture\n\tvar/heat\nTRACKED(/datum/fixture, heat)\nTEST_FAULT_FIXTURE(/datum/fixture, heat)\n");
+        let mut tracked = Tracked::new(); fault_setter_fields(&test, &mut tracked);
+        let (markers, invalid) = fault_markers(&[&production, &test], &tracked);
+        assert!(markers.is_empty()); assert_eq!(invalid.len(), 1);
+    }
+
 }

@@ -119,7 +119,7 @@
 	user = person()
 	target = allocate(/obj/item/paper/carbon/cursedform, get_step(user, NORTH))
 	var/obj/item/flame/lighter/L = hold(/obj/item/flame/lighter)
-	L.lit = TRUE
+	L.set_lit(TRUE)
 	held = L
 
 /datum/unit_test/dq_timed_pin_w11D/cursed_form_burn/is_done()

@@ -262,7 +262,7 @@
 	var/mob/living/silicon/robot/R = make_borg(list(ACCESS_ENGINE), tile(2, 2))
 	var/obj/item/gripper/G = give_module(R, /obj/item/gripper/engineering)
 	var/mob/living/carbon/human/H = make_person(null, tile(3, 3))
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	click(H, A, give_tool(H, /obj/item/tool/crowbar)) // a person pries the cover open
 	H.drop_item()
 	TEST_ASSERT(p2_apc_cover_open(A), "the APC's cover is open")

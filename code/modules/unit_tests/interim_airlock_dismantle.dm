@@ -19,7 +19,7 @@
 	if(has_installed_board)
 		board = allocate(/obj/item/airlock_electronics, door)
 		board.conf_access = list(ACCESS_SECURITY)
-		board.one_access = TRUE
+		board.set_one_access(TRUE)
 		rel_set(door, nameof(door.electronics), board)
 	else
 		TEST_ASSERT_NULL(door.electronics, "The generated-board case must start without installed electronics")

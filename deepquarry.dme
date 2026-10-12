@@ -4742,6 +4742,7 @@
 #include "code\modules\turbolift\turbolift_map.dm"
 #include "code\modules\turbolift\turbolift_turfs.dm"
 #include "code\tests\_tests.dm"
+#include "code\tests\driver\publish_fault.dm"
 #include "code\modules\unit_tests\_unit_tests.dm"
 #include "code\modules\vehicles\bike.dm"
 #include "code\modules\vehicles\boat.dm"
