@@ -4963,3 +4963,14 @@ Additional HOLD: all eight /mob/living/simple_mob/animal/sif/glitterfly/tidy row
 
 - Gelatinous cube deterministic color sampling (2 changed rows): master `85f8779132` declares color via real roll_color calling R.saturated_colour(). The scoped native stream samples #163717 instead of prior #cd87eb. Only that exact color replacement is justified; allowable colors and cube production code are unchanged.
 
+
+### Additional scoped hygiene look causes (f100871d99 audit)
+
+- New notice-paper trees and anomaly board count: `48f4de47962b8da347268e28de036e11e8ab9214` replaces anonymous initialized memos with declared `/obj/item/paper/notice/*` starting contents. Existing memo text and RD/CMO/CentComm/captain stamps are preserved; library notices remain unstamped. References: `code/modules/persistence/noticeboard.dm:211` declares the five anomaly notices; subtype definitions are at270–360. The board's draw at69 uses the actual notices count, so the declared five-paper board shows nboard05. Earlier `68e9f5ae83f58bfdd17f9ab9d748caff4a7bd7ae` made stamps explicit marks; these rows retain those marks.
+- Sif tree native sampling: `68e9f5ae83f58bfdd17f9ab9d748caff4a7bd7ae` changes `choose_icon_state()` from rand to the native roller. `code/game/objects/structures/flora/trees.dm:351` chooses shift0–5; draw at355 computes bulbs5-shift. The scoped fixture sample moves2→3, so tree_sif2/glow3 becomes tree_sif3/glow2; the appearance relationship is unchanged.
+- Fancy suit dispenser: `a78576a440112415dd65fe60cb4a763103a5d2a4` removes Initialize's raw icon_state=suit_storage and adds native draw state suit_storage at`code/game/machinery/gear_dispenser.dm:318`. The mapped sprite remains suit_storage_map while the playable native output uses suit_storage; corresponding parent overlay rows now use that playable state.
+
+Frostbelle correction under further review: current appearance_variant at flora.dm652 returns no suffix when harvest capacity is0. `0c7a99c29bdce88ca74eaa35e1aafa4862bf7c6c` moved harvest-capacity rand(min=-1,max=2) to native rolls; a native zero harvest legitimately gives unnumbered frostbelle. Source alone makes this plausible, but actual captured harvest capacity was not recorded, so those four rows remain held pending falsifiable state evidence rather than treating unnumbered look as proven bug.
+
+Teppi: `babfc5a10ab5979bddd5b6e3912328a704c563ed` moves setup to declared setup(teppi_setup) atteppi.dm443; actual colors still use BYOND pickweight in teppi_setup at334–390, not native appearance rolls. Fresh uncolored eye_base and changed markings cannot be excused as native-roller migration. Keep16 rows held until setup/field/output parity is demonstrated.
+
