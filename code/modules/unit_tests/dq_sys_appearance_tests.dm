@@ -12,8 +12,8 @@
 	var/active = FALSE
 	var/locked = FALSE
 
-TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, on, CHANGE_MACHINE_SETTINGS)
-TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, active, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/dq_appearance_probe, on)
+TRACKED(/obj/machinery/dq_appearance_probe, active)
 TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, locked, CHANGE_MACHINE_MODE)
 
 APPEARANCE_TEMPLATE(/obj/machinery/dq_appearance_probe, "probe{on}{operable}{label?@label:}{initial(icon_state)}")
