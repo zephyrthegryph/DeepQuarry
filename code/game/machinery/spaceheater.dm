@@ -183,7 +183,6 @@ CAPABILITIES(/obj/machinery/space_heater)
 	var/mob/user = A.actor
 	if(cell && !user.get_active_hand())
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
-		cell.update_icon()
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
 		rel_take(src, nameof(cell))

@@ -22,7 +22,7 @@ human|/obj/item/card/id menu: Hit
 human|/obj/item/card/id click: nothing
 human|/obj/item menu: Hit
 human|/obj/item click: nothing
-@obj.structure human|/obj/item/aicard
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/aicard menu: Hit
+human|/obj/item/aicard menu: Use
+human|/obj/item/aicard click: Click: Use
 keys: drag_buckle, item, melee_hit, message

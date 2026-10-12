@@ -48,7 +48,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
 
 /obj/machinery/portable_atmospherics/powered/pump/draw(datum/look/look)
 	..()
-	look.state((on && cell && cell.charge) ? "psiphon:1" : "psiphon:0") // ALLOW(derived_reads): a cell that runs dry calls power_change() and update_icon()
+	look.watch(cell)
+	look.state((on && cell && cell.charge) ? "psiphon:1" : "psiphon:0")
 	look.overlay("siphon-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
 	look.overlay("siphon-connector", when = !!connected_port())
 

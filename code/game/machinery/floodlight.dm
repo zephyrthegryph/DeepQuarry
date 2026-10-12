@@ -98,7 +98,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 			cell.forceMove(src.loc)
 
 		cell.add_fingerprint(user)
-		cell.update_icon()
 
 		rel_take(src, nameof(cell))
 		set_on(0)

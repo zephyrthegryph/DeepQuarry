@@ -47,7 +47,8 @@ CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
 
 /obj/machinery/portable_atmospherics/powered/scrubber/draw(datum/look/look)
 	..()
-	look.state((on && cell && cell.charge) ? "pscrubber:1" : "pscrubber:0") // ALLOW(derived_reads): a cell that runs dry calls power_change() and update_icon()
+	look.watch(cell)
+	look.state((on && cell && cell.charge) ? "pscrubber:1" : "pscrubber:0")
 	look.overlay("scrubber-open", when = !!holding) // ALLOW(derived_reads): the tank bay's insert and the eject button redraw it
 	look.overlay("scrubber-connector", when = !!connected_port())
 
