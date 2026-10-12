@@ -162,8 +162,8 @@ READS_AS(/mob/proc/get_equipped_item, SLOT_OCCUPANCY_KEY)
 /// move anything. Behaviour that moves other things is in slot_vacated().
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	var/datum/relation_definition/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
-	if(istype(def) && def.redraw)
-		call(src, def.redraw)()
+	if(istype(def))
+		def.redraw_on(src) // by name: call(src, def.redraw) would bind the empty /mob proc, never the human's override
 
 /// An item left equip slot `slot_id` through the inventory procs. What that
 /// does to the rest of the inventory (pockets fall out with the jumpsuit, and

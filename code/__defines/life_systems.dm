@@ -46,6 +46,9 @@
 #define MOB_KEY_NUTRITION "mob_nutrition"
 /// A mob picked up, dropped or swapped what it holds in its hands (a window that needs a held tool re-checks its status).
 #define MOB_KEY_HANDS "mob_hands"
+/// The air on the mob's turf changed in place (gas arrived or left: the turf's gas overlays changed, turf_air_changed()).
+/// The breathing step reads it, so a gas filling a room wakes the breathers standing in it.
+#define MOB_KEY_AIR "mob_air"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
 #define ATOM_KEY_LOC "atom_loc"
 

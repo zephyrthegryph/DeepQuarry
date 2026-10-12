@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Clothing redraws on the mob again when it is put on or taken off."
+  - bugfix: "Tails hang over the pants again when facing north."
+  - bugfix: "The technomancer instability meter no longer shows on everyone's HUD."
