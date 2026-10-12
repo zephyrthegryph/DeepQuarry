@@ -41,7 +41,7 @@ initial | scale_appearance: "Sharp"
 initial | secondary_ears_alpha: 255
 initial | selected_a_record: 0
 initial | size_scale: "Normal"
-initial | skin_color: "#eeceb3"
+initial | skin_color: "#EECEB3"
 initial | species_name: null
 initial | species_sound: "Human Male"
 initial | species_sounds_female: "Human Female"
@@ -105,7 +105,7 @@ custom species name | scale_appearance: "Sharp"
 custom species name | secondary_ears_alpha: 255
 custom species name | selected_a_record: 0
 custom species name | size_scale: "Normal"
-custom species name | skin_color: "#eeceb3"
+custom species name | skin_color: "#EECEB3"
 custom species name | species_name: "Pinfolk"
 custom species name | species_sound: "Human Male"
 custom species name | species_sounds_female: "Human Female"
@@ -169,7 +169,7 @@ size set | scale_appearance: "Sharp"
 size set | secondary_ears_alpha: 255
 size set | selected_a_record: 0
 size set | size_scale: "Small"
-size set | skin_color: "#eeceb3"
+size set | skin_color: "#EECEB3"
 size set | species_name: "Pinfolk"
 size set | species_sound: "Human Male"
 size set | species_sounds_female: "Human Female"
@@ -233,7 +233,7 @@ species sound | scale_appearance: "Sharp"
 species sound | secondary_ears_alpha: 255
 species sound | selected_a_record: 0
 species sound | size_scale: "Small"
-species sound | skin_color: "#eeceb3"
+species sound | skin_color: "#EECEB3"
 species sound | species_name: "Pinfolk"
 species sound | species_sound: "Canine"
 species sound | species_sounds_female: "Human Female"
@@ -297,7 +297,7 @@ general flavor text | scale_appearance: "Sharp"
 general flavor text | secondary_ears_alpha: 255
 general flavor text | selected_a_record: 0
 general flavor text | size_scale: "Small"
-general flavor text | skin_color: "#eeceb3"
+general flavor text | skin_color: "#EECEB3"
 general flavor text | species_name: "Pinfolk"
 general flavor text | species_sound: "Canine"
 general flavor text | species_sounds_female: "Human Female"
@@ -361,7 +361,7 @@ head flavor text | scale_appearance: "Sharp"
 head flavor text | secondary_ears_alpha: 255
 head flavor text | selected_a_record: 0
 head flavor text | size_scale: "Small"
-head flavor text | skin_color: "#eeceb3"
+head flavor text | skin_color: "#EECEB3"
 head flavor text | species_name: "Pinfolk"
 head flavor text | species_sound: "Canine"
 head flavor text | species_sounds_female: "Human Female"
@@ -425,7 +425,7 @@ hair colour | scale_appearance: "Sharp"
 hair colour | secondary_ears_alpha: 255
 hair colour | selected_a_record: 0
 hair colour | size_scale: "Small"
-hair colour | skin_color: "#eeceb3"
+hair colour | skin_color: "#EECEB3"
 hair colour | species_name: "Pinfolk"
 hair colour | species_sound: "Canine"
 hair colour | species_sounds_female: "Human Female"
@@ -489,7 +489,7 @@ eye colour | scale_appearance: "Sharp"
 eye colour | secondary_ears_alpha: 255
 eye colour | selected_a_record: 0
 eye colour | size_scale: "Small"
-eye colour | skin_color: "#eeceb3"
+eye colour | skin_color: "#EECEB3"
 eye colour | species_name: "Pinfolk"
 eye colour | species_sound: "Canine"
 eye colour | species_sounds_female: "Human Female"

@@ -300,7 +300,9 @@ impl Lint for Api {
         }
         if !rel.starts_with("code/engine/state/field_tables.dm") {
             for l in pattern_sites(f, &self.vars_write) {
-                emit(out, f, "vars_write", l);
+                if !crate::lints::tracked::validated_fault_driver_write(f, l) {
+                    emit(out, f, "vars_write", l);
+                }
             }
         }
         for l in pattern_sites(f, &self.timer_cooldown) {

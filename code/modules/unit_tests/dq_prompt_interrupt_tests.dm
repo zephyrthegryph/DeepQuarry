@@ -92,11 +92,16 @@
 	var/mob/living/carbon/human/H = make_person()
 	var/obj/e0_fixture/prompt_base/B = make_box()
 	open(H, B)
-	// the world changed without publishing a read the op watches: the answer still meets the requirement
-	B.set_powered(FALSE)
-	var/datum/op_result/result = test_answer(H, 7)
+	// A real setter cohort has changed the value but has not published yet.
+	// The answer must recheck the current value before the cohort flushes.
+	var/datum/op_result/result = state_batch(src, PROC_REF(answer_before_power_publication), list(H, B))
 	TEST_ASSERT_EQUAL(B.runs, 0, "the op did not run")
 	TEST_ASSERT_EQUAL(result?.reason, MSG(prompt/unpowered), "it refused with the requirement's reason")
+
+/datum/unit_test/dq_prompt_interrupt/an_answer_re_runs_the_requirements/proc/answer_before_power_publication(mob/living/carbon/human/H, obj/e0_fixture/prompt_base/B)
+	B.set_powered(FALSE)
+	TEST_ASSERT_NOTNULL(op_pending_of(H), "The prompt remains open until the setter cohort publishes")
+	return test_answer(H, 7)
 
 /datum/unit_test/dq_prompt_interrupt/keeps_zero_survives_walking_away
 /datum/unit_test/dq_prompt_interrupt/keeps_zero_survives_walking_away/run_gate()

@@ -569,6 +569,53 @@ static META_FAULTS: Meta = Meta {
     allow: &[], lists: &[],
 };
 const FAULT_DRIVER: &str = "code/tests/driver/publish_fault.dm";
+// This is an executable contract, not a path exemption. The only raw write
+// accepted by api belongs to this complete guarded, ownership-checked injector.
+// Any operational change must update/review this contract and its rejection tests.
+const FAULT_DRIVER_CONTRACT: &str = r###"#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+#define TEST_FAULT_FIXTURE(T, FIELD) ##T/proc/__test_fault_unpublished_##FIELD() { return TYPE_PROC_REF(T, set_##FIELD) }
+#define TEST_FAULT_MISSING_PUBLISH(TARGET, FIELD, VALUE) test_fault_missing_publish(TARGET, #FIELD, VALUE)
+/datum/test_publish_fault
+	var/field
+	var/confirmed = FALSE
+/datum/test_publish_fault/proc/confirm_missed_publish(actual_key)
+	confirmed = istext(actual_key) && actual_key == field
+	return confirmed
+/proc/test_fault_missing_publish(datum/target, field, value)
+	var/datum/unit_test/fixture = GLOB.current_test
+	var/refusal = test_publish_fault_refusal(fixture, target, field)
+	if(refusal)
+		CRASH(refusal)
+	var/datum/test_publish_fault/fault = fixture.allocate(/datum/test_publish_fault)
+	fault.field = field
+	var/restore_proc = call(target, "__test_fault_unpublished_[field]")()
+	fixture.defer_cleanup(target, restore_proc, target.vars[field])
+	fixture.defer_cleanup(fixture, TYPE_PROC_REF(/datum/unit_test, verify_publish_fault), fault)
+	target.vars[field] = value
+	return fault
+/datum/unit_test/proc/verify_publish_fault(datum/test_publish_fault/fault)
+	if(!fault?.confirmed)
+		CRASH("unpublished test fault was not confirmed against actual missed-wake evidence")
+/proc/test_publish_fault_refusal(datum/unit_test/fixture, datum/target, field)
+	if(!fixture || QDELETED(fixture) || fixture != GLOB.current_test || !target || QDELETED(target) || !(target in fixture.allocated))
+		return "unpublished test fault needs the current fixture's allocate-tracked target"
+	if(!istext(field) || !(field in target.vars) || !hascall(target, "__setter_[field]") || !hascall(target, "__test_fault_unpublished_[field]"))
+		return "unpublished test fault needs a declared tracked fixture field"
+	return null
+#endif
+"###;
+
+fn valid_fault_driver(f: &SourceFile) -> bool {
+    if f.rel != FAULT_DRIVER { return false; }
+    let expected = SourceFile::from_text(FAULT_DRIVER, FAULT_DRIVER_CONTRACT);
+    let operational = |s: &SourceFile| s.code().lines().map(str::trim).filter(|line| !line.is_empty()).map(str::to_owned).collect::<Vec<_>>();
+    operational(f) == operational(&expected)
+}
+
+pub(crate) fn validated_fault_driver_write(f: &SourceFile, line: usize) -> bool {
+    valid_fault_driver(f) && f.code().line(line).trim() == "target.vars[field] = value"
+}
+
 fn test_path(rel: &str) -> bool {
     rel.starts_with("code/modules/unit_tests/") || rel.starts_with("code/tests/")
 }
@@ -625,6 +672,9 @@ fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String,
 
 fn invalid_faults(f: &SourceFile, markers: &BTreeSet<(String, String)>) -> Vec<(usize, String)> {
     let mut invalid = Vec::new();
+    if f.rel == FAULT_DRIVER && !valid_fault_driver(f) {
+        invalid.push((1, "test fault driver must retain the guarded, ownership-checked injection and real setter restoration contract".to_owned()));
+    }
     // The low-level injector is implementation-only. Every call site must use
     // the typed declaration form below, including in tests.
     if f.rel != FAULT_DRIVER {
@@ -793,4 +843,47 @@ mod fault_contract_tests {
         assert!(markers.is_empty()); assert_eq!(invalid.len(), 1);
     }
 
+}
+
+#[cfg(test)]
+mod fault_driver_api_tests {
+    use super::*;
+    fn raw_writes(f: &SourceFile) -> Vec<usize> {
+        let pat = Pat::new(r"\bvars\[[^\]]*\]\s*=(?!=)");
+        f.code().numbered().filter(|(line, code)| pat.is_match(code) && !validated_fault_driver_write(f, *line)).map(|(line, _)| line).collect()
+    }
+    #[test] fn exact_validated_driver_write_is_accepted() {
+        let f = SourceFile::from_text(FAULT_DRIVER, FAULT_DRIVER_CONTRACT);
+        assert!(raw_writes(&f).is_empty());
+        assert!(invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
+    #[test] fn copied_driver_in_arbitrary_test_file_is_rejected() {
+        let f = SourceFile::from_text("code/tests/driver/other.dm", FAULT_DRIVER_CONTRACT);
+        assert_eq!(raw_writes(&f).len(), 1);
+        assert!(!invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
+    #[test] fn extra_raw_write_in_driver_is_rejected() {
+        let code = FAULT_DRIVER_CONTRACT.replace("target.vars[field] = value", "target.vars[field] = value\n\ttarget.vars[other] = value");
+        let f = SourceFile::from_text(FAULT_DRIVER, &code);
+        assert_eq!(raw_writes(&f).len(), 2);
+        assert!(!invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
+    #[test] fn missing_guard_is_rejected() {
+        let code = FAULT_DRIVER_CONTRACT.replace("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)", "");
+        let f = SourceFile::from_text(FAULT_DRIVER, &code);
+        assert_eq!(raw_writes(&f).len(), 1);
+        assert!(!invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
+    #[test] fn bypassed_ownership_preflight_is_rejected() {
+        let code = FAULT_DRIVER_CONTRACT.replace("test_publish_fault_refusal(fixture, target, field)", "null");
+        let f = SourceFile::from_text(FAULT_DRIVER, &code);
+        assert_eq!(raw_writes(&f).len(), 1);
+        assert!(!invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
+    #[test] fn missing_real_setter_restoration_is_rejected() {
+        let code = FAULT_DRIVER_CONTRACT.replace("fixture.defer_cleanup(target, restore_proc, target.vars[field])", "return");
+        let f = SourceFile::from_text(FAULT_DRIVER, &code);
+        assert_eq!(raw_writes(&f).len(), 1);
+        assert!(!invalid_faults(&f, &BTreeSet::new()).is_empty());
+    }
 }

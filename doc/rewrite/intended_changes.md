@@ -5032,3 +5032,16 @@ The rifle parity test demonstrated legacy duplicate associative list keys consum
 * **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
 * **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
 * **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
+
+
+### UI pin fixture identity, nutrition and skin representation (2026-10-12)
+
+Master babfc5a10ab5979bddd5b6e3912328a704c563ed (2026-10-11 01:16 -0500) moves human names to native species rolls; the UI harness only reseeds the world RNG. The tag-menu and syndicate-beacon scripts now explicitly name their real actor Jay Zeta, preserving their existing displayed-name goldens instead of recording a new incidental random identity. Other UI scripts are unchanged. Human name/real_name are untracked fields on this source; no tracked writer is bypassed.
+
+Master b9c640db5868f9ddd477c669092a82c37212f45b (2026-10-11 04:50 -0500) moves starting human nutrition from native rolls to starting_nutrition()/world rand. The vore UI script now sets its actual nutrition through set_nutrition(344) before snapshots, retaining the existing abilities fixture input rather than pinning a new random initial value. This changes no production nutrition policy.
+
+Master 882a289c38 (2026-10-11 00:12 -0500) moves human appearance to its profile record. Species setup stores the declared base_color #EECEB3 directly in looks.skin_color; previous RGB-channel serialization emitted #eeceb3. The eight pre-skin-prompt appearance-changer skin_color rows have an intended hex-case representation change with identical RGB. Only these eight semantic lines are proposed for refresh; actor names and nutrition are repaired in the fixtures, not blessed.
+
+### Prompt requirement recheck fixture (2026-10-11)
+
+The tracked-test migration uses the real setter in an atomic state-publication cohort for dq_prompt_interrupt/an_answer_re_runs_the_requirements. The prompt must remain open before publication, and its answer must refuse the already changed value. This preserves the refusal assertion and tests the real ordering contract without an unpublished raw write. The unrelated lost-power interruption test still checks cancellation after normal publication.

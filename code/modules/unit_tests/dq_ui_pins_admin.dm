@@ -138,6 +138,9 @@
 
 /datum/ui_pin/admin_host/tag_menu_panel/script(turf/T)
 	make_user(T)
+	// Pin the displayed fixture identity independently of native name rolls.
+	user.real_name = "Jay Zeta"
+	user.name = "Jay Zeta"
 	make_holder()
 	host = test.allocate(/datum/tag_menu_panel, holder)
 	watch_host()
@@ -254,6 +257,9 @@
 
 /datum/ui_pin/admin_host/syndicate_beacon_virgo/script(turf/T)
 	make_user(T)
+	// Pin the displayed fixture identity independently of native name rolls.
+	user.real_name = "Jay Zeta"
+	user.name = "Jay Zeta"
 	var/obj/machinery/syndicate_beacon/virgo/beacon = test.allocate(/obj/machinery/syndicate_beacon/virgo, T)
 	host = beacon
 	watch_host()

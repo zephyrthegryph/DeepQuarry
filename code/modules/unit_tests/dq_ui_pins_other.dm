@@ -126,6 +126,8 @@
 
 /datum/ui_pin/vore_look/script(turf/T)
 	make_user(T)
+	// Nutrition is a scripted abilities input, not a random initial-condition pin.
+	user.set_nutrition(344)
 	user.real_name = "Pin Tester"
 	user.name = "Pin Tester"
 	var/obj/belly/B = test.allocate(/obj/belly, user)
