@@ -63,14 +63,13 @@
 +1 menu: Threaten to push the button! (refused: You can't do that.)
 +3 menu: Transfer
 +5 click: Click: Transfer
-@obj human|/obj/item/analyzer
--menu: Eject Particle Focus Contents
--menu: Store
--click: Click: Use
-+0 menu: Analyze
-+2 menu: Threaten to push the button! (refused: You can't do that.)
-+4 menu: Transfer
-+6 click: Click: Transfer
+human|/obj/item/analyzer menu: Analyze
+human|/obj/item/analyzer menu: Move To Top
+human|/obj/item/analyzer menu: Threaten to push the button! (refused: You can't do that.)
+human|/obj/item/analyzer menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/analyzer menu: Transfer
+human|/obj/item/analyzer menu: Use
+human|/obj/item/analyzer click: Click: Transfer
 human|/obj/item/anomaly_scanner menu: Move To Top
 human|/obj/item/anomaly_scanner menu: Scan
 human|/obj/item/anomaly_scanner menu: Threaten to push the button! (refused: You can't do that.)
