@@ -15,9 +15,17 @@
 @obj.machinery.pipedispenser human|/obj/item/stack/material/steel
 @obj.machinery.pipedispenser human|/obj/item/card/id
 @obj.machinery.pipedispenser human|/obj/item
-@obj human|/obj/item/pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
+human|/obj/item/pipe menu: Flip Pipe
+human|/obj/item/pipe menu: Move To Top
+human|/obj/item/pipe menu: Put back
+human|/obj/item/pipe menu: Rotate Clockwise
+human|/obj/item/pipe menu: Rotate Counter Clockwise
+human|/obj/item/pipe menu: Rotate Clockwise
+human|/obj/item/pipe menu: Turn Around
+human|/obj/item/pipe menu: Rotate Counter Clockwise
+human|/obj/item/pipe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe menu: Turn Around
+human|/obj/item/pipe menu: Ui open
+human|/obj/item/pipe click: Click: Put back
 @obj human|/obj/item/pipe_meter
 keys: anchor, dispense_pipe, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, put_back, put_back_meter, p_layer, robot_remote_blocked, shove_back, silicon_hand, ui_open
