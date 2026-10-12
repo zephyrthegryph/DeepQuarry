@@ -484,7 +484,6 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 	if(building)
 		set_dir(build_dir)
 		rel_set(src, nameof(area), get_area(src)) // paired: the area's apc is this APC
-		update_station_night()
 		key_set(src, COVER_OPEN, TRUE)
 		graph_place(src, STAGE_APC_FRAME)
 		set_operating(0)
@@ -495,6 +494,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled)
 
 /// Sets its area's power from what it supplies, once the area's machines exist.
 /obj/machinery/power/apc/proc/apply_power_after_init(datum/act/timer/A)
+	if(building)
+		update_station_night() // a hand-built APC skips init(): it reads the station's night where it was placed
 	apply_area_power()
 
 /// Phase 1 (unbind): the APC's Rust power node goes.

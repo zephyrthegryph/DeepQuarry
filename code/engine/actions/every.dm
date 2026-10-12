@@ -49,7 +49,7 @@
 		cancel_after(holder, activation_every_key(A, E))
 	if(activation_every_parkable(A, E))
 		entry_engine_for(ENTRY_ON_CHANGE).remove(A, activation_every_wake_entry(E))
-	LAZYREMOVE(A.every_parked, E)
+	LAZYREMOVE(A.every_parked, E.sig)
 
 /// The timer key of one every() of one activation.
 /proc/activation_every_key(datum/activation/A, datum/entry/E)
@@ -123,7 +123,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	if(!gated)
 		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
 	if(!gated && A.runs && !GLOB.every_gate_faulted && activation_every_parkable(A, E))
-		LAZYOR(A.every_parked, E) // parked: no timer until its gate publishes true (activation_every_wake())
+		LAZYOR(A.every_parked, E.sig) // parked: no timer until its gate publishes true (activation_every_wake())
 		GLOB.every_activation_parks++
 		return
 	if(gated)
@@ -148,7 +148,7 @@ GLOBAL_VAR_INIT(every_activation_runs, 0)
 GLOBAL_VAR_INIT(every_activation_parks, 0)
 
 /datum/activation
-	/// The every() entries of this activation parked behind their false `when =` (no timer is pending for them).
+	/// The signatures of the every() entries of this activation parked behind their false `when =` (no timer is pending for them).
 	var/list/every_parked
 
 /// TRUE when the every() `E` of activation `A` can park: its `when =` is built only of state whose every write publishes (a stat, a capability
@@ -194,10 +194,13 @@ GLOBAL_VAR_INIT(every_activation_parks, 0)
 	var/datum/holder = act.holder
 	if(!holder || QDELETED(holder))
 		return
-	for(var/datum/entry/E as anything in act.every_parked.Copy())
+	for(var/list/pair as anything in act.applied)
+		var/datum/entry/E = pair[1]
+		if(E.kind != ENTRY_EVERY || !(E.sig in act.every_parked))
+			continue
 		if(!every_gate_holds(holder, E.args["when"], act.def.key))
 			continue
-		act.every_parked -= E
+		act.every_parked -= E.sig
 		activation_every_arm(act, E)
 	if(!length(act.every_parked))
 		act.every_parked = null
