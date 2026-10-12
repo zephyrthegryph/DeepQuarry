@@ -351,10 +351,6 @@
 	if(until_asleep("life_heartbeat"))
 		H.set_pulse(H.pulse == PULSE_FAST ? PULSE_NORM : PULSE_FAST)
 		woke("life_heartbeat", "set_pulse()")
-	if(until_asleep("life_status"))
-		H.set_embedded_flag(1)
-		woke("life_status", "set_embedded_flag()")
-		H.set_embedded_flag(0)
 
 /// Phoron balance: a breath of it burns from the first one, scaled with its partial pressure (breathe_poison()). Before:
 /// one unit of toxin reagent a breath, a breath every 4th frame, ~0.2 injury in the first 12 s at 2 kPa. Now ~6 a breath.

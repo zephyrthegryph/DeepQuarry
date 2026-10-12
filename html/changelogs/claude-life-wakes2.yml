@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - balance: "Phoron burns from the first breath without internals: about 3 toxin damage per kPa per breath (1-20), a breath every Life frame while the air is poisonous. Internals and masks still protect."
+  - bugfix: "Mobs react at once to a floor removed under them, gravity switching, NIFs, phobias, pulse, disguises and name changes, instead of on slow re-checks."
+  - bugfix: "Alraunes notice their CO2 draining away; people in closets still notice the room's air; heat next to you wakes the body heat exchange."
