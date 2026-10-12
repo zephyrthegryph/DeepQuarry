@@ -78,7 +78,13 @@ pub(super) fn grouped(pool: &ProcedureGroups, reads: Vec<ResolverRead>) -> Proce
         return reads.into();
     }
     pool.intern_receipt(reads, |a, b| {
-        family(a.query) == family(b.query) && domain_family(a.domain) == domain_family(b.domain)
+        family(a.query) == family(b.query)
+            && domain_family(a.domain) == domain_family(b.domain)
+            // Global declaration answers are independently issued by name. Do
+            // not duplicate a common global edge merely because another proc
+            // reads a different adjacent global. Equal-query conflicting answers
+            // remain together as independent exact admission obligations.
+            && (!matches!(a.query, ResolveQuery::GlobalVar(_)) || a.query == b.query)
     })
     .expect("canonical recorder receipt")
 }
@@ -86,3 +92,7 @@ pub(super) fn grouped(pool: &ProcedureGroups, reads: Vec<ResolverRead>) -> Proce
 #[cfg(test)]
 #[path = "receipt_groups_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "receipt_global_owner_tests.rs"]
+mod global_owner_tests;
