@@ -68,11 +68,11 @@ def main():
             registered.append(path);receipt["roots"].append(str(path))
         roster=git("-C",str(repo),"worktree","list","--porcelain")
         if any("worktree "+str(path).replace("\\","/") not in roster.replace("\\","/") for path in registered): raise ValueError("registration missing")
-        cache=root/"cache";namespace,endpoint,environment=core.owned_daemon_route(h,cache)
+        job=OwnedJob(receipt["job_memory_bytes"]);h._owned_job=job
+        cache=root/"cache";namespace,endpoint,environment=core.owned_daemon_route(h,cache,args.native,args.native_sha256,owned_job=job)
         environment["DMB_DAEMON_MAX_WORKERS"]="2"
         environment["DMB_DAEMON_SOFT_PRIVATE_BYTES"]=str(2*1024**3)
-        receipt["namespace"]=namespace;endpoint.probe()
-        job=OwnedJob(receipt["job_memory_bytes"]);h._owned_job=job
+        receipt["namespace"]=namespace;receipt["daemon_endpoint_descriptor"]=endpoint.descriptor;endpoint.probe()
         def compile_one(i,changed,retained,phase=None):
             path=registered[i];source=revision(i,changed)
             if (path/"probe.dm").read_text()!=source: raise ValueError("source admission mismatch")

@@ -160,13 +160,15 @@ class RuntimeContractHelperTests(unittest.TestCase):
             helper.expected_markers([0] * 7)
 
     def test_owned_namespace_matches_probe_daemon_and_client_despite_ambient_namespace(self):
-        launch = SimpleNamespace(_daemon_namespace="previous", Endpoint=lambda name: ("endpoint", name))
+        launch = SimpleNamespace(_daemon_namespace="previous", Endpoint=lambda compiler, digest, name, **options: ("endpoint", compiler, digest, name, options))
+        compiler, digest = Path("E:/owned/compiler.exe"), "a" * 64
+        job = object()
         with patch.dict(helper.os.environ, {"DMB_DAEMON_NAMESPACE": "foreign"}):
-            namespace, endpoint, environment = helper.owned_daemon_route(launch, Path("E:/owned/cache"))
-            other, _, _ = helper.owned_daemon_route(launch, Path("E:/owned/cache"))
+            namespace, endpoint, environment = helper.owned_daemon_route(launch, Path("E:/owned/cache"), compiler, digest, owned_job=job)
+            other, _, _ = helper.owned_daemon_route(launch, Path("E:/owned/cache"), compiler, digest, owned_job=job)
         self.assertRegex(namespace, r"^runtime-contract-[0-9a-f]{32}$")
         self.assertNotEqual(namespace, other)
-        self.assertEqual(endpoint, ("endpoint", namespace))
+        self.assertEqual(endpoint, ("endpoint", compiler, digest, namespace, {"owned_job": job}))
         self.assertEqual(environment["DMB_DAEMON_NAMESPACE"], namespace)
         self.assertEqual(environment["DMB_CACHE_DIR"], "E:\\owned\\cache")
         self.assertEqual(launch._daemon_namespace, other)

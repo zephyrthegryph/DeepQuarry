@@ -84,11 +84,12 @@ def main():
         for name in ("probe.dm", "probe.dme"):
             (source / name).write_bytes((HERE / name).read_bytes())
         project, cache = source / "probe.dme", root / "cache"
-        namespace, endpoint, environment = core.owned_daemon_route(h, cache)
-        receipt["daemon_namespace"] = namespace
-        endpoint.probe()  # refuses an existing foreign endpoint
         job = OwnedJob(receipt["job_memory_bytes"])
         h._owned_job = job
+        namespace, endpoint, environment = core.owned_daemon_route(h, cache, args.native, args.native_sha256, owned_job=job)
+        receipt["daemon_namespace"] = namespace
+        receipt["daemon_endpoint_descriptor"] = endpoint.descriptor
+        endpoint.probe()  # refuses an existing foreign endpoint
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(args.native), "--serve-daemon"], stdout=out, stderr=err,
                 env=environment, creationflags=subprocess.CREATE_NO_WINDOW | 0x4)

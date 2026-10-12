@@ -143,14 +143,14 @@ def compile_arguments(project, output, template, retained):
     return arguments
 
 
-def owned_daemon_route(h, cache):
+def owned_daemon_route(h, cache, compiler, compiler_sha256, *, owned_job=None):
     """Configure the probe and client launcher for one private daemon endpoint."""
     namespace = "runtime-contract-" + uuid.uuid4().hex
     h._daemon_namespace = namespace
     environment = os.environ.copy()
     environment["DMB_CACHE_DIR"] = str(cache)
     environment["DMB_DAEMON_NAMESPACE"] = namespace
-    return namespace, h.Endpoint(namespace), environment
+    return namespace, h.Endpoint(compiler, compiler_sha256, namespace, owned_job=owned_job), environment
 
 
 def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_files=("contract-resource.txt",), scope="eleven standalone observations including resource replacement and type addition/deletion"):
@@ -212,8 +212,9 @@ def main(*, fixture_directory=HERE, labels=LABELS, prefix="DQ_CONTRACT", asset_f
             directory.mkdir()
             retirement.copy_fixture_files(fixture_directory, directory, fixture_names, receipt["fixture_sources"], h.sha)
         cache = root / "cache"
-        namespace, endpoint, environment = owned_daemon_route(h, cache)
+        namespace, endpoint, environment = owned_daemon_route(h, cache, args.native, args.native_sha256)
         receipt["daemon_namespace"] = namespace
+        receipt["daemon_endpoint_descriptor"] = endpoint.descriptor
         endpoint.probe()  # Refuse an occupied endpoint; never replace another process.
         memory = OwnedMemory(4_000_000_000)
         h._owned_memory = memory
