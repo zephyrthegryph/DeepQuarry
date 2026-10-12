@@ -1,6 +1,6 @@
 # Six registered Git worktree transport contract
 
-Source-only fixture; not yet executed. This is a tiny protocol/output isolation gate, not real DeepQuarry six-worktree acceptance or a performance measurement.
+Passed on 2026-10-11 with compiler commit `3aa85b31ed` (counted diagnostic opt0 profile). Evidence is recorded in `tools/dmb/phase0/six-git-worktree-contract-20261011.json`, including the exact executable hash, authenticated receipt and process/worktree cleanup. This is a tiny protocol/output isolation gate, not real DeepQuarry six-worktree acceptance or a performance measurement.
 
 Run `python run.py --native EXE --native-sha256 SHA --template TEMPLATE --template-sha256 SHA` after coordinating execution. Evidence and the mini repository live in a new owned E:/dq-cache directory; six registered worktrees live only under E:/projects/dq-wt. The fixture initializes its own mini repository, registers six detached worktrees without changing main history, and removes only its own registrations after reaping children. Receipts/logs/output evidence remain.
 
