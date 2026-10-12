@@ -83,6 +83,10 @@
 	abstract_type = /datum/unit_test/dq_state_leak_guard/counter_probe
 
 /datum/unit_test/dq_state_leak_guard/counter_probe/Run()
+	// Only this intentional clock simulation owns scoped clock mutations.
+	set_global(nameof(GLOB.midnight_rollovers), GLOB.midnight_rollovers)
+	set_global(nameof(GLOB.rollovercheck_last_timeofday), GLOB.rollovercheck_last_timeofday)
+	set_global(nameof(GLOB.rollover_safety_date), GLOB.rollover_safety_date)
 	GLOB.coalesce_runs++
 	// Simulate the last observation being before a real wall-clock rollover.
 	GLOB.rollovercheck_last_timeofday = world.timeofday + 1 SECOND
