@@ -731,8 +731,16 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	if(materialization_host().map_loading())
 		return
 	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
-	if(length(GLOB.stat_marked))
+	// The stats a pass settles publish their changes, which mark on_change hooks (a machine's has_power flip, its power_change()): those run in
+	// the same drain, and what they mark is settled after them, so a tracked write reaches its readers' reactions in one drain, not the next.
+	var/passes = 0
+	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
+		passes++
+		var/spills = GLOB.stat_spills
 		stat_drain_marked(LANE_SIMULATION, FALSE)
+		act_drain_point()
+		if(GLOB.stat_spills != spills)
+			break // the lane's budget is spent: the rest resumes at the next drain
 
 /// A kernel pass begins: the lane's budget is whole again, shared by the drains of this tick's D, P and R.
 /proc/stat_tick_begin()

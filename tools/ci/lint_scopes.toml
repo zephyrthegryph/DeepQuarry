@@ -115,8 +115,9 @@ ui_hosts = [
 
 [lint.tracked]
 # tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
-# are not counted.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+# are not counted. code/engine/_generated/ is build output: its source lines are judged where they are declared (a
+# ui_shape(registered_name = ...) row is a named argument there, not a write).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/engine/_generated/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
 [lint.untracked_inputs]

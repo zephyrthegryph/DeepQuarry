@@ -397,6 +397,8 @@ fn world_watch_band(
 /// registration. `hysteresis`
 /// < 0 takes each channel's. A breather's air watch (one per breather, on its
 /// turf: oxygen, toxins, temperature and pressure levels its species reacts to).
+/// `cell` is one cell for every channel, or a list with one cell per channel
+/// (the air watch also follows the temperature of the turfs around the mob).
 #[auxmacros::bind("/proc/world_watch_bands")]
 fn world_watch_bands(
     code: ByondValue,
@@ -409,16 +411,21 @@ fn world_watch_bands(
     hysteresis: ByondValue,
 ) -> Result<ByondValue> {
     let chans = channels(whole(&code, "code")?)?;
-    let cell = cell_arg(&cell)?;
+    let cells = match cell.get_list_values() {
+        Ok(list) => list.iter().map(cell_arg).collect::<Result<Vec<u32>>>()?,
+        Err(_) => Vec::new(),
+    };
+    let single = if cells.is_empty() { Some(cell_arg(&cell)?) } else { None };
     let starts = starts.get_list_values()?;
     let hyst = self::hysteresis(&hysteresis)?;
     let chs = chs.get_list_values()?;
     let lists = levels.get_list_values()?;
-    if chs.len() != lists.len() || chs.len() != starts.len() || chs.is_empty() {
-        bail!("world_watch_bands: {} channels, {} level lists", chs.len(), lists.len());
+    if chs.len() != lists.len() || chs.len() != starts.len() || chs.is_empty() || (single.is_none() && cells.len() != chs.len()) {
+        bail!("world_watch_bands: {} channels, {} level lists, {} cells", chs.len(), lists.len(), cells.len());
     }
     let mut bands = Vec::with_capacity(chs.len());
-    for ((ch, list), start) in chs.iter().zip(&lists).zip(&starts) {
+    for (i, ((ch, list), start)) in chs.iter().zip(&lists).zip(&starts).enumerate() {
+        let cell = single.unwrap_or(cells[i]);
         let ch_id = channel(&chans, ch)?;
         let levels = list
             .get_list_values()?

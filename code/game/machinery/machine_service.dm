@@ -110,8 +110,8 @@ SYSTEM_DEF(machines)
 	poll_power_storage(FALSE)
 	process_power_finish()
 
-/// The power step up to the APC/SMES poll: area loads, the Rust commit, grid state and every power
-/// machine's region. Queues the APCs and SMES for poll_power_storage().
+/// The power step up to the SMES poll: area loads, the Rust commit, grid state and every power
+/// machine's region. Queues the SMES for poll_power_storage().
 /datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
 	vg_power_commit()
@@ -145,25 +145,19 @@ SYSTEM_DEF(machines)
 		for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
 			if(!QDELETED(machine))
 				machine.power_refresh_network()
-	power_poll_queue = REGISTRY_MEMBERS(REGISTRY_APCS) + REGISTRY_MEMBERS(REGISTRY_SMES)
+	// The APCs are not polled: Rust reports one when what it shows changes (on_apc_report(), delivered by the native frame).
+	power_poll_queue = list() + REGISTRY_MEMBERS(REGISTRY_SMES)
 	power_poll_index = 1
 
-/// Polls the queued APCs and SMES. A poll that finds an APC's channels changed repowers its area
-/// (apply_area_power(): every machine and light in it), so when every APC changes at once -- the first
-/// step of a round, or a grid coming back -- the poll is seconds of work. `budgeted` stops at the tick
-/// limit and returns FALSE (the next call carries on); otherwise it polls them all.
+/// Polls the queued SMES (their flow readings for the display). `budgeted` stops at the tick limit and returns FALSE (the next call carries on);
+/// otherwise it polls them all. The APCs are not here: Rust reports an APC when its shown state crosses a band (on_apc_report()).
 /datum/system/machines/proc/poll_power_storage(budgeted)
 	var/list/queue = power_poll_queue
 	while(power_poll_index <= length(queue))
-		var/obj/machinery/power/machine = queue[power_poll_index++]
-		if(QDELETED(machine))
+		var/obj/machinery/power/smes/storage = queue[power_poll_index++]
+		if(QDELETED(storage))
 			continue
-		if(istype(machine, /obj/machinery/power/apc))
-			var/obj/machinery/power/apc/apc = machine
-			apc.power_poll()
-		else
-			var/obj/machinery/power/smes/storage = machine
-			storage.power_poll()
+		storage.power_poll()
 		if(budgeted && TICK_CHECK)
 			return FALSE
 	power_poll_queue = null

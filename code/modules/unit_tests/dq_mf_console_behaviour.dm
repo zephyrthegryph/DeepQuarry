@@ -77,13 +77,13 @@
 	var/equip = A.power_equip
 	A.set_requires_power(TRUE)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = FALSE
+	A.set_power_equip(FALSE)
 	C.power_change()
 	test_time(1 SECOND)
 	TEST_ASSERT(!glow_of(C).range, "an unpowered one is dark")
 	A.set_requires_power(requires)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = equip
+	A.set_power_equip(equip)
 	C.power_change()
 
 /// Two consoles side by side, facing the same way, join up into one desk.

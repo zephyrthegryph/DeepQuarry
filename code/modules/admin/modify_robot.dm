@@ -233,7 +233,7 @@ CAPABILITIES(/datum/eventkit/modify_robot)
 /datum/eventkit/modify_robot/proc/ui_act_rename(datum/act/op/A, new_name)
 	target().name = new_name
 	target().custom_name = new_name
-	target().real_name = new_name
+	target().set_real_name(new_name)
 	return TRUE
 
 /datum/eventkit/modify_robot/proc/ui_act_select_target(datum/act/op/A, new_target_arg)

@@ -29,7 +29,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 /datum/antagonist/technomancer/update_antag_mob(datum/mind/technomancer)
 	..()
 	technomancer.store_memory(span_bold("Remember:") + " Do not forget to purchase the functions and equipment you need.")
-	technomancer.current.real_name = "[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]"
+	technomancer.current.set_real_name("[pick(GLOB.wizard_first)] [pick(GLOB.wizard_second)]")
 	technomancer.current.name = technomancer.current.real_name
 
 /datum/antagonist/technomancer/equip(mob/living/carbon/human/technomancer_mob)

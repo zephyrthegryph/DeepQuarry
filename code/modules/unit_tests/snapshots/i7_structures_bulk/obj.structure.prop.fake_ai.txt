@@ -42,5 +42,9 @@ robot|none click: nothing
 -menu: Toggle
 -click: Click: Toggle
 +3 click: nothing
-@obj.structure human|/obj/item/aicard
+human|/obj/item/aicard menu: Hit
+human|/obj/item/aicard menu: Move To Top
+human|/obj/item/aicard menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/aicard menu: Use
+human|/obj/item/aicard click: Click: Use
 keys: drag_buckle, item, melee_hit, message

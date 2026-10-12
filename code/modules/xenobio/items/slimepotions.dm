@@ -149,7 +149,7 @@
 	var/newname = copytext(A.answer.value,1,MAX_NAME_LEN)
 	if(newname && !QDELETED(M))
 		M.name = newname
-		M.real_name = newname
+		M.set_real_name(newname)
 	consume(src, user)
 
 /datum/prompt/text/slime_docility_name

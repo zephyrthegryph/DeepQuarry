@@ -129,7 +129,7 @@
 			created_atom.name = atom_name
 			if(ismob(created_atom))
 				var/mob/created_mob = created_atom
-				created_mob.real_name = atom_name
+				created_mob.set_real_name(atom_name)
 
 		if((where_target_type == WHERE_MOB_HAND || where_target_type == WHERE_TARGETED_MOB_HAND) && isliving(target) && isitem(created_atom))
 			var/mob/living/living_target = target

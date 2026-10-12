@@ -60,7 +60,7 @@
 		shifted_out = TRUE
 		shift_state = AB_SHIFT_PASSIVE
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
-		real_name = name
+		set_real_name(name)
 		name = "Something"
 		fully_heal()
 
@@ -108,7 +108,7 @@
 
 	shifted_out = TRUE
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
-	real_name = name
+	set_real_name(name)
 	name = "Something"
 
 	for(var/obj/belly/B as anything in vore_organs)

@@ -224,7 +224,7 @@ MSG_DEF_SELF(taperecorder/has_tape, "There's already a tape inside.")
 	if (M.type == /mob/living/carbon/human)
 	{
 		var/mob/living/carbon/human/H = M
-		voice = H.voice
+		voice = H.GetVoice()
 	}
 	else
 		voice = M.name

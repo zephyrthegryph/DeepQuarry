@@ -1,69 +1,16 @@
 @obj.machinery.computer.pod human|none
--menu: Ui open (refused: access denied)
--click: Click: Ui open
-+1 menu: Open controls (refused: access denied)
-+3 click: Click: Open controls
 @obj.machinery.computer.pod robot|none
--menu: Ui open (refused: access denied)
--menu: Use (refused: access denied)
--click: Click: Ui open
-+2 menu: Open controls (refused: access denied)
-+4 click: Click: Open controls
-ai|none menu: Open controls (refused: access denied)
-ai|none menu: Use
-ai|none click: Click: Open controls
+@obj.machinery.computer.pod ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.pod human|/obj/item/tool/screwdriver
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open (refused: access denied)
--menu: Use item
-+2 menu: Open controls (refused: access denied)
-+4 menu: Use screwdriver
-human|/obj/item/tool/crowbar menu: Climb
-human|/obj/item/tool/crowbar menu: Open controls (refused: access denied)
-human|/obj/item/tool/crowbar menu: Use (refused: access denied)
-human|/obj/item/tool/crowbar menu: Use crowbar
-human|/obj/item/tool/crowbar click: Click: Use item
-human|/obj/item/tool/wrench menu: Climb
-human|/obj/item/tool/wrench menu: Open controls (refused: access denied)
-human|/obj/item/tool/wrench menu: Use (refused: access denied)
-human|/obj/item/tool/wrench menu: Use wrench
-human|/obj/item/tool/wrench click: Click: Use item
-human|/obj/item/tool/wirecutters menu: Climb
-human|/obj/item/tool/wirecutters menu: Open controls (refused: access denied)
-human|/obj/item/tool/wirecutters menu: Use (refused: access denied)
-human|/obj/item/tool/wirecutters menu: Use wirecutters
-human|/obj/item/tool/wirecutters click: Click: Use item
-human|/obj/item/multitool menu: Climb
-human|/obj/item/multitool menu: Open controls (refused: access denied)
-human|/obj/item/multitool menu: Use (refused: access denied)
-human|/obj/item/multitool menu: Use multitool
-human|/obj/item/multitool click: Click: Use item
-human|/obj/item/weldingtool menu: Climb
-human|/obj/item/weldingtool menu: Open controls (refused: access denied)
-human|/obj/item/weldingtool menu: Use (refused: access denied)
-human|/obj/item/weldingtool menu: Use welding tool
-human|/obj/item/weldingtool click: Click: Use item
-human|/obj/item/stack/cable_coil menu: Climb
-human|/obj/item/stack/cable_coil menu: Open controls (refused: access denied)
-human|/obj/item/stack/cable_coil menu: Use (refused: access denied)
-human|/obj/item/stack/cable_coil menu: Use cable coil
-human|/obj/item/stack/cable_coil click: Click: Use item
-human|/obj/item/stack/material/steel menu: Climb
-human|/obj/item/stack/material/steel menu: Open controls (refused: access denied)
-human|/obj/item/stack/material/steel menu: Use (refused: access denied)
-human|/obj/item/stack/material/steel menu: Use steel sheet
-human|/obj/item/stack/material/steel click: Click: Use item
-human|/obj/item/card/id menu: Climb
-human|/obj/item/card/id menu: Open controls (refused: access denied)
-human|/obj/item/card/id menu: Use (refused: access denied)
-human|/obj/item/card/id menu: Use identification card
-human|/obj/item/card/id click: Click: Use item
+@obj.machinery.computer.pod human|/obj/item/tool/crowbar
+@obj.machinery.computer.pod human|/obj/item/tool/wrench
+@obj.machinery.computer.pod human|/obj/item/tool/wirecutters
+@obj.machinery.computer.pod human|/obj/item/multitool
+@obj.machinery.computer.pod human|/obj/item/weldingtool
+@obj.machinery.computer.pod human|/obj/item/stack/cable_coil
+@obj.machinery.computer.pod human|/obj/item/stack/material/steel
+@obj.machinery.computer.pod human|/obj/item/card/id
 @obj.machinery.computer.pod human|/obj/item
--menu: Move To Top
--menu: Toggle Digestable (refused: You can't do that.)
--menu: Ui open (refused: access denied)
-+1 menu: Open controls (refused: access denied)
 @obj human|/obj/item/gripper
 keys: adjust_power, adjust_time, climb.climb, climb.climb_menu, disconnect, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, robot_remote_blocked, silicon_hand, start_stop, test_alarm, test_drive, toggle_door, ui_open, use_gripper, use_item

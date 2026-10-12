@@ -120,7 +120,7 @@
 						M.g_wing3 = color_rgb_list[2]
 						M.b_wing3 = color_rgb_list[3]
 			M.update_wing_showing()
-	M.real_name = generateCorpseName()
+	M.set_real_name(generateCorpseName())
 	M.set_stat(DEAD) //Kills the new mob
 	M.vore_prefs.digest_leave_remains = TRUE
 	M.vore_prefs.can_be_drop_prey = TRUE
@@ -176,7 +176,7 @@
 				W.access = list()
 		if(corpseidjob)
 			W.assignment = corpseidjob
-		W.registered_name = M.real_name
+		W.set_registered_name(M.real_name)
 		M.equip_to_slot_or_del(W, SLOT_ID_ID)
 	if(src.corpsehelmet)
 		M.equip_voidhelm_to_slot_or_del_with_refit(new src.corpsehelmet(M), SLOT_ID_HEAD, src.species)

@@ -56,7 +56,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 			if(!borer.host_brain)
 				rel_set(borer, nameof(borer.host_brain), new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
 			borer.host_brain.name = host.name
-			borer.host_brain.real_name = host.real_name
+			borer.host_brain.set_real_name(host.real_name)
 			return
 		// Place them at a vent if they can't get a host.
 		borer.forceMove(get_turf(pick(get_vents())))

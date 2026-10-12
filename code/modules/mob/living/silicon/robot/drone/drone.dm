@@ -137,14 +137,14 @@ CAPABILITIES(/mob/living/silicon/robot/drone/mining)
 //Redefining some robot procs...
 /mob/living/silicon/robot/drone/SetName(pickedName as text)
 	// Would prefer to call the grandparent proc but this isn't possible, so..
-	real_name = pickedName
+	set_real_name(pickedName)
 	name = real_name
 
 /mob/living/silicon/robot/drone/updatename()
 	if(name_override)
 		return
 
-	real_name = "[initial(name)] ([serial_number])"
+	set_real_name("[initial(name)] ([serial_number])")
 	name = real_name
 
 TRACKED(/mob/living/silicon/robot/drone, shell_accessories)

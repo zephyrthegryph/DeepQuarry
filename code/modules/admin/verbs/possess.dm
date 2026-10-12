@@ -17,7 +17,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 		user.mob.name_archive = user.mob.real_name
 
 	user.mob.forceMove(O)
-	user.mob.real_name = O.name
+	user.mob.set_real_name(O.name)
 	user.mob.name = O.name
 	user.eye = O
 	user.mob.control_object = O
@@ -25,7 +25,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(possess, R_POSSESS, "Possess Obj", "Possess an objec
 
 ADMIN_VERB_AND_CONTEXT_MENU(release, R_POSSESS, "Release Object", "Stop possessing an object.", ADMIN_CATEGORY_OBJECT, obj/O as obj in world)
 	if(user.mob.control_object && user.mob.name_archive) //if you have a name archived and if you are actually relassing an object
-		user.mob.real_name = user.mob.name_archive
+		user.mob.set_real_name(user.mob.name_archive)
 		user.mob.name = user.mob.real_name
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user

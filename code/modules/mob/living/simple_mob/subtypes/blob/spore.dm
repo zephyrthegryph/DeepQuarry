@@ -94,9 +94,6 @@ CAPABILITIES(/mob/living/simple_mob/blob/spore)
 		color = initial(color)//looks better.
 		add_overlay(blob_head_overlay)
 
-/mob/living/simple_mob/blob/spore/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/blob/spore/life_special(datum/seq_frame/life/F)
 	..()
 	if(src.can_infest && !src.is_infesting && isturf(src.loc))

@@ -75,9 +75,6 @@
 			return life_chemicals(F)
 		if("life_random_events")
 			return life_random_events(F)
-		if("life_voice")
-			var/mob/living/carbon/human/M = src
-			return M.life_voice(F)
 		if("life_stasis_sleep")
 			var/mob/living/carbon/human/M = src
 			return M.life_stasis_sleep(F)
@@ -187,8 +184,6 @@
 			return life_ambience_rewake()
 		if("life_movement_due")
 			return life_movement_due()
-		if("life_movement_rewake")
-			return life_movement_rewake()
 		if("life_physiology_due")
 			return life_physiology_due()
 		if("life_physiology_rewake")
@@ -229,17 +224,12 @@
 		if("life_simple_healing_due")
 			var/mob/living/simple_mob/M = src
 			return M.life_simple_healing_due()
-		if("life_type_pre_due")
-			return life_type_pre_due()
 		if("life_chemicals_due")
 			return life_chemicals_due()
 		if("life_chemicals_rewake")
 			return life_chemicals_rewake()
 		if("life_random_events_due")
 			return life_random_events_due()
-		if("life_voice_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_voice_rewake()
 		if("life_stasis_sleep_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_stasis_sleep_due()
@@ -249,9 +239,6 @@
 		if("life_changeling_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_changeling_due()
-		if("life_changeling_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_changeling_rewake()
 		if("life_thermoregulation_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_thermoregulation_due()
@@ -279,34 +266,19 @@
 		if("life_heartbeat_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_heartbeat_due()
-		if("life_heartbeat_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_heartbeat_rewake()
 		if("life_nif_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_nif_due()
-		if("life_nif_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_nif_rewake()
 		if("life_phobias_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_phobias_due()
-		if("life_phobias_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_phobias_rewake()
 		if("life_npc_due")
 			var/mob/living/carbon/human/M = src
 			return M.life_npc_due()
 		if("life_npc_rewake")
 			var/mob/living/carbon/human/M = src
 			return M.life_npc_rewake()
-		if("life_visible_name_rewake")
-			var/mob/living/carbon/human/M = src
-			return M.life_visible_name_rewake()
 		if("life_robot_senses_due")
 			var/mob/living/silicon/robot/M = src
 			return M.life_robot_senses_due()
-		if("life_special_due")
-			var/mob/living/simple_mob/M = src
-			return M.life_special_due()
 	return call(src, name)()

@@ -535,7 +535,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		var/new_name = sanitize_name(raw_name, owner().species, FALSE) // can't edit synths
 		if(new_name)
 			owner().dna.real_name = new_name
-			owner().real_name = new_name
+			owner().set_real_name(new_name)
 			owner().name = new_name
 			return TRUE
 		else
@@ -551,7 +551,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/new_name = P?.value
 	if(designer_console() && !isnull(new_name) && can_change(owner(), APPEARANCE_RACE)) // new name can be empty, it uses base species if so
 		owner().name = new_name
-		owner().real_name = owner().name
+		owner().set_real_name(owner().name)
 		owner().dna.real_name = owner().name
 		return TRUE
 	return FALSE
@@ -761,7 +761,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		rel_clear(src, nameof(/datum/tgui_module/appearance_changer::mannequin))
 		rel_set(src, nameof(/datum/tgui_module/appearance_changer::mannequin), new /mob/living/carbon/human(null, S.name))
 		rel_set(src, nameof(src.owner), mannequin)
-		owner().real_name = "Stock [S.name] Body"
+		owner().set_real_name("Stock [S.name] Body")
 		owner().name = owner().real_name
 		owner().dna.real_name = owner().real_name
 		owner().dna.base_species = S.base_species

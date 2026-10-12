@@ -80,7 +80,7 @@
 
 /datum/ui_pin/appearance_changer/script(turf/T)
 	make_user(T)
-	user.real_name = "Pin Tester"
+	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	var/datum/tgui_module/appearance_changer/module = new(user, user)
 	module.flags = APPEARANCE_ALL
@@ -126,7 +126,7 @@
 
 /datum/ui_pin/vore_look/script(turf/T)
 	make_user(T)
-	user.real_name = "Pin Tester"
+	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	var/obj/belly/B = test.allocate(/obj/belly, user)
 	B.name = "Stomach"
@@ -161,7 +161,7 @@
 
 /datum/ui_pin/private_notes_panel/script(turf/T)
 	make_user(T)
-	user.real_name = "Pin Tester"
+	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	user.private_notes = " "
 	var/datum/private_notes_panel/panel = new(user)
@@ -191,7 +191,7 @@
 
 /datum/ui_pin/ooc_notes_panel/script(turf/T)
 	make_user(T)
-	user.real_name = "Pin Tester"
+	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	var/datum/ooc_notes_panel/panel = new(user)
 	host = panel

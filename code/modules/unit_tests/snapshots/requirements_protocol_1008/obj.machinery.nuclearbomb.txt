@@ -1,82 +1,60 @@
 human|none menu: Make Deployable
-human|none menu: Ui open
+human|none menu: Open controls
 human|none menu: Use
-human|none click: Click: Ui open
+human|none click: Click: Open controls
 @obj.machinery robot|none
 -click: Click: Use
 +1 menu: Make Deployable (refused: you don't have the dexterity to do this)
-+2 menu: Ui open
-+4 click: Click: Ui open
++2 menu: Open controls
++4 click: Click: Open controls
 @obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 @obj ghost|none
 +0 menu: Make Deployable (refused: You can't reach that.)
 human|/obj/item/tool/screwdriver menu: Make Deployable
-human|/obj/item/tool/screwdriver menu: Move To Top
-human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Open controls
 human|/obj/item/tool/screwdriver menu: Unscrew the control panel (refused: the Nuclear Fission Explosive emits a buzzing noise, the panel staying locked in)
 human|/obj/item/tool/screwdriver menu: Use
 human|/obj/item/tool/screwdriver click: Click: Unscrew the control panel
 human|/obj/item/tool/crowbar menu: Make Deployable
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Open controls
 human|/obj/item/tool/crowbar menu: Use
-human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/crowbar click: Click: Open controls
 human|/obj/item/tool/wrench menu: Make Deployable
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Open controls
 human|/obj/item/tool/wrench menu: Use
-human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wrench click: Click: Open controls
 human|/obj/item/tool/wirecutters menu: Make Deployable
-human|/obj/item/tool/wirecutters menu: Move To Top
-human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Open controls
 human|/obj/item/tool/wirecutters menu: Use
 human|/obj/item/tool/wirecutters menu: Wires
-human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/tool/wirecutters click: Click: Open controls
 human|/obj/item/multitool menu: Make Deployable
-human|/obj/item/multitool menu: Move To Top
-human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Open controls
 human|/obj/item/multitool menu: Use
 human|/obj/item/multitool menu: Wires
-human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/multitool click: Click: Open controls
 human|/obj/item/weldingtool menu: Make Deployable
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Open controls
 human|/obj/item/weldingtool menu: Use
-human|/obj/item/weldingtool click: Click: Ui open
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/weldingtool click: Click: Open controls
 human|/obj/item/stack/cable_coil menu: Make Deployable
-human|/obj/item/stack/cable_coil menu: Move To Top
-human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Open controls
 human|/obj/item/stack/cable_coil menu: Use
-human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/cable_coil click: Click: Open controls
 human|/obj/item/stack/material/steel menu: Make Deployable
-human|/obj/item/stack/material/steel menu: Move To Top
-human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Open controls
 human|/obj/item/stack/material/steel menu: Use
-human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/stack/material/steel click: Click: Open controls
 human|/obj/item/card/id menu: Make Deployable
-human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Open controls
 human|/obj/item/card/id menu: Use
-human|/obj/item/card/id click: Click: Ui open
+human|/obj/item/card/id click: Click: Open controls
 human|/obj/item menu: Make Deployable
-human|/obj/item menu: Move To Top
-human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item menu: Ui open
+human|/obj/item menu: Open controls
 human|/obj/item menu: Use
-human|/obj/item click: Click: Ui open
+human|/obj/item click: Click: Open controls
 @obj human|/obj/item/disk/nuclear
 keys: anchor, auth, close_panel, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, open_panel, pulse, removal_stage_0_1, removal_stage_1_2, removal_stage_2_3, removal_stage_3_4, removal_stage_4_5, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_wire_tools, wire

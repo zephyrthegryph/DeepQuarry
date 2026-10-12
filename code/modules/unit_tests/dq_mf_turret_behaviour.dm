@@ -47,7 +47,7 @@
 /proc/mft_area_power(area/A, on)
 	A.set_requires_power(TRUE)
 	A.power_change() // the machines of the area learn of it, as a holodeck switch does
-	A.power_equip = on
+	A.set_power_equip(on)
 	for(var/obj/machinery/M in A)
 		M.power_change()
 
@@ -65,11 +65,11 @@
 	mft_equip = mft_area.power_equip
 	mft_area.set_requires_power(FALSE)
 	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	mft_area.power_equip = TRUE
+	mft_area.set_power_equip(TRUE)
 	..()
 	mft_area.set_requires_power(mft_requires)
 	mft_area.power_change() // the machines of the area learn of it, as a holodeck switch does
-	mft_area.power_equip = mft_equip
+	mft_area.set_power_equip(mft_equip)
 
 /// A turret placed and working.
 /datum/unit_test/dq_hc_struct/mft/proc/turret(type = /obj/machinery/porta_turret, turf/T)
