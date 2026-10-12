@@ -40,17 +40,31 @@ impl dm_session::ObservationHost<(), CodeOwner, ()> for Current {
         self.0.clone()
     }
 }
-pub(crate) fn key(identity: UnitIdentity, helper: Option<u32>) -> Vec<u8> {
-    let mut bytes = b"frozen-procedure-owner-v1".to_vec();
-    bytes.extend_from_slice(&identity.owner.bits().to_le_bytes());
-    bytes.extend_from_slice(&identity.name.bits().to_le_bytes());
-    bytes.push(match identity.namespace {
+const KEY_TAG: &[u8] = b"frozen-procedure-owner-v1";
+pub(crate) const MAIN_KEY_BYTES: usize = KEY_TAG.len() + 16 + 16 + 1 + 4 + 1;
+/// Exact ordinary locator prefix, without an allocation on candidate dispatch.
+pub(crate) fn main_key(identity: UnitIdentity) -> [u8; MAIN_KEY_BYTES] {
+    let mut bytes = [0; MAIN_KEY_BYTES];
+    let mut at = KEY_TAG.len();
+    bytes[..at].copy_from_slice(KEY_TAG);
+    bytes[at..at + 16].copy_from_slice(&identity.owner.bits().to_le_bytes());
+    at += 16;
+    bytes[at..at + 16].copy_from_slice(&identity.name.bits().to_le_bytes());
+    at += 16;
+    bytes[at] = match identity.namespace {
         crate::lowering::Namespace::Proc => 0,
         crate::lowering::Namespace::Verb => 1,
-    });
-    bytes.extend_from_slice(&identity.occurrence.to_le_bytes());
-    bytes.push(u8::from(helper.is_some()));
+    };
+    at += 1;
+    bytes[at..at + 4].copy_from_slice(&identity.occurrence.to_le_bytes());
+    // Final helper-present byte is zero for the main procedure.
+    bytes
+}
+pub(crate) fn key(identity: UnitIdentity, helper: Option<u32>) -> Vec<u8> {
+    let mut bytes = Vec::with_capacity(MAIN_KEY_BYTES + usize::from(helper.is_some()) * 4);
+    bytes.extend_from_slice(&main_key(identity));
     if let Some(argument) = helper {
+        bytes[MAIN_KEY_BYTES - 1] = 1;
         bytes.extend_from_slice(&argument.to_le_bytes());
     }
     bytes
@@ -139,6 +153,35 @@ pub(crate) fn census(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn stack_prefix_and_helper_key_preserve_existing_exact_locator_bytes() {
+        for namespace in [
+            crate::lowering::Namespace::Proc,
+            crate::lowering::Namespace::Verb,
+        ] {
+            let identity = UnitIdentity {
+                owner: dm_ir::SymbolId::of("/datum/prefix_probe"),
+                name: dm_ir::SymbolId::of("check"),
+                namespace,
+                occurrence: 0x12345678,
+            };
+            for helper in [None, Some(0), Some(u32::MAX)] {
+                let mut expected = b"frozen-procedure-owner-v1".to_vec();
+                expected.extend_from_slice(&identity.owner.bits().to_le_bytes());
+                expected.extend_from_slice(&identity.name.bits().to_le_bytes());
+                expected.push(u8::from(namespace == crate::lowering::Namespace::Verb));
+                expected.extend_from_slice(&identity.occurrence.to_le_bytes());
+                expected.push(u8::from(helper.is_some()));
+                if let Some(argument) = helper {
+                    expected.extend_from_slice(&argument.to_le_bytes());
+                }
+                assert_eq!(key(identity, helper), expected);
+                if helper.is_none() {
+                    assert_eq!(main_key(identity).as_slice(), expected);
+                }
+            }
+        }
+    }
     fn code(word: u32) -> Arc<FrozenProc> {
         Arc::new(
             FrozenProc::restore(

@@ -27,12 +27,14 @@ impl Default for Owner {
 }
 pub(super) fn locator(identity: UnitIdentity, exact_key: &[u8]) -> Vec<u8> {
     // Exact identity is a locator only; current key, ledger, ABI and origins still admit.
-    let mut key = crate::symbolic::shared_procedure_code::key(identity, None);
+    let prefix = crate::symbolic::shared_procedure_code::main_key(identity);
+    let mut key = Vec::with_capacity(prefix.len() + exact_key.len());
+    key.extend_from_slice(&prefix);
     key.extend_from_slice(exact_key);
     key
 }
 pub(super) struct BorrowedLocator<'a, 'source> {
-    prefix: Vec<u8>,
+    prefix: [u8; crate::symbolic::shared_procedure_code::MAIN_KEY_BYTES],
     key: &'a crate::lowering_memo::key_recipe::CurrentKey<'source>,
     tail: &'a crate::lowering_memo::key_recipe::PreparedKey,
 }
@@ -43,7 +45,7 @@ impl<'a, 'source> BorrowedLocator<'a, 'source> {
         tail: &'a crate::lowering_memo::key_recipe::PreparedKey,
     ) -> Self {
         Self {
-            prefix: crate::symbolic::shared_procedure_code::key(identity, None),
+            prefix: crate::symbolic::shared_procedure_code::main_key(identity),
             key,
             tail,
         }

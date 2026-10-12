@@ -60,7 +60,7 @@ impl<'request, 'host, R> RequestCandidates<'request, 'host, R> {
             R,
         >,
     > {
-        let prefix = symbolic_publication::locator(identity, &[]);
+        let prefix = crate::symbolic::shared_procedure_code::main_key(identity);
         self.values
             .lock()
             .unwrap_or_else(|error| error.into_inner())
