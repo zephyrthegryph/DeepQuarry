@@ -89,7 +89,37 @@ fn compiler_pressure_tier_preserves_semantic_owner_and_regenerates_fresh_equal_o
         "compact startup facade remains bounded"
     );
     assert!(host.generation.is_none());
-    assert!(host.host_facts.is_none());
+    let pressure_facts = host
+        .host_facts
+        .as_ref()
+        .expect("catalog issuer authority survives with symbolic receipts");
+    assert!(Arc::ptr_eq(&old_facts, pressure_facts));
+    let retained = pressure_facts.census();
+    assert_eq!(
+        retained
+            .owners
+            .iter()
+            .find(|row| row.owner == "host.facts.index")
+            .unwrap()
+            .observed_items,
+        2,
+        "only the existing constants and runtime catalogs remain"
+    );
+    assert!(retained
+        .owners
+        .iter()
+        .any(|row| row.owner == "host.constants"));
+    assert!(retained
+        .owners
+        .iter()
+        .any(|row| row.owner == "host.runtime"));
+    assert!(
+        !retained
+            .owners
+            .iter()
+            .any(|row| row.owner.starts_with("host.scalar.")),
+        "pressure must drop full prepared scalar graphs"
+    );
     let regenerated = host.procedure_memo(17, None, true).unwrap();
     assert!(!Arc::ptr_eq(&old.values, &regenerated.values));
     assert!(!Arc::ptr_eq(
