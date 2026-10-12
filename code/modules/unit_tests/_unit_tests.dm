@@ -1278,6 +1278,7 @@
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
 #include "dq_rifle_starting_list_parity.dm"
+#include "dq_look_state_evidence_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
