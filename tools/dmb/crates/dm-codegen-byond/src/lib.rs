@@ -33,10 +33,10 @@ pub use simple::{
     compile_typed_statements_with_resolver, decode_constant_string_literal,
     nameof_diagnostic_recovery, nameof_reference, observe_reference_source_features,
     observe_reference_source_features_with_lexical_locals, typed_statement_view_supported,
-    typed_statements_supported, typed_statements_supported_for_capture, ArgumentMetadata,
-    DebugSourceProvider, DiagnosticAnchor, LowerBindings, LowerError, LowerErrorKind, LowerRelated,
-    LowerSpan, NameofDiagnosticRecovery, ProcedureWarning, SharedLowerBindings, SimpleProc,
-    SourceFeatures,
+    typed_statements_supported, typed_statements_supported_for_capture,
+    visit_constant_string_literals, ArgumentMetadata, DebugSourceProvider, DiagnosticAnchor,
+    LowerBindings, LowerError, LowerErrorKind, LowerRelated, LowerSpan, NameofDiagnosticRecovery,
+    ProcedureWarning, SharedLowerBindings, SimpleProc, SourceFeatures,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]

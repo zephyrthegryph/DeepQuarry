@@ -961,7 +961,7 @@ use helpers::{
     class_tag, error, fold_number, is_output_target, member_proc_selector, parenthesized,
     parse_interpolated_string, parse_text_template,
 };
-pub use helpers::{decode_constant_string_literal, nameof_reference};
+pub use helpers::{decode_constant_string_literal, nameof_reference, visit_constant_string_literals};
 
 #[cfg(test)]
 #[path = "dynamic_selector_tests.rs"]

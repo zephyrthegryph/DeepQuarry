@@ -60,6 +60,17 @@ pub(super) fn parenthesized(text: &str) -> Option<&str> {
 /// Decode a quoted DM literal using the same escapes as procedure lowering.
 /// Interpolated literals require runtime evaluation and return `None`.
 pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, String> {
+    Ok(string_literal_parts(raw)?
+        .and_then(|(bytes, expressions)| expressions.is_empty().then_some(bytes)))
+}
+
+#[path = "helpers/literal_registration.rs"]
+mod literal_registration;
+pub use literal_registration::visit_constant_string_literals;
+
+/// One shared literal parser for emission and source registration. Expression
+/// nodes exist only for this literal's interpolation leaves, never a whole body.
+fn string_literal_parts(raw: &str) -> Result<Option<(Vec<u8>, Vec<Expr>)>, String> {
     // Raw literals preserve escapes and brackets exactly, including multiline text.
     let raw_value = if raw.starts_with("@{\"") && raw.ends_with("\"}") && raw.len() >= 5 {
         Some(&raw[3..raw.len() - 2])
@@ -72,7 +83,7 @@ pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, Stri
         None
     };
     if let Some(value) = raw_value {
-        return Ok(Some(value.as_bytes().to_vec()));
+        return Ok(Some((value.as_bytes().to_vec(), Vec::new())));
     }
     let value = if raw.starts_with("{\"") && raw.ends_with("\"}") && raw.len() >= 4 {
         &raw[2..raw.len() - 2]
@@ -82,7 +93,7 @@ pub fn decode_constant_string_literal(raw: &str) -> Result<Option<Vec<u8>>, Stri
         return Ok(None);
     };
     let (bytes, expressions) = parse_interpolated_string(value)?;
-    Ok(expressions.is_empty().then_some(bytes))
+    Ok(Some((bytes, expressions)))
 }
 
 pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Expr>), String> {

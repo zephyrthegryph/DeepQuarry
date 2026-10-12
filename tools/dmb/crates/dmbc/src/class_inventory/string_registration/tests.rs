@@ -114,3 +114,21 @@ fn string_allocation_raw_literals_and_comments_keep_exact_candidate_content() {
         .unwrap()
         .is_empty());
 }
+
+#[test]
+fn string_allocation_captures_nested_literals_in_current_first_root_even_unselected() {
+    let inventory = capture(
+        r#"/proc/first()
+    return "[1 ? "a_second" : "type_value"]"
+/datum/orderholder
+    var/z_first = 1
+    var/type_value = 2
+    var/a_second = 3
+"#,
+    );
+    assert!(
+        matches!(&inventory.string_registration.as_ref().unwrap().events[0],
+        Event::FirstRootCallable { strings, .. }
+            if strings.as_ref() == [SymbolId::of("a_second"), SymbolId::of("type_value")])
+    );
+}

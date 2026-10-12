@@ -123,8 +123,8 @@ pub(crate) fn contribute_source_strings(
 
 /// Stream existing lexical spans, retaining only candidate field spellings.
 /// Unreachable/folded constant literals still register; other callable bodies
-/// are never read. Interpolated templates are not constant field-name strings;
-/// nested interpolation literal registration is not inferred from raw text.
+/// are never read. Nested interpolation literals use the same parsed expression
+/// visitor and cooked decoder as emission, without evaluating any branches.
 fn candidate_literals(text: &str, names: &HashSet<SymbolId>) -> Result<Vec<SymbolId>, String> {
     let mut strings = Vec::new();
     let mut seen = HashSet::new();
@@ -133,15 +133,15 @@ fn candidate_literals(text: &str, names: &HashSet<SymbolId>) -> Result<Vec<Symbo
         if token.kind != dm_syntax::TokenKind::String || error.is_some() {
             return;
         }
-        match dm_codegen_byond::decode_constant_string_literal(token.text(text)) {
-            Ok(Some(bytes)) => {
-                let id = SymbolId::of_bytes(&bytes);
+        if let Err(reason) =
+            dm_codegen_byond::visit_constant_string_literals(token.text(text), |bytes| {
+                let id = SymbolId::of_bytes(bytes);
                 if names.contains(&id) && seen.insert(id) {
                     strings.push(id);
                 }
-            }
-            Ok(None) => {}
-            Err(reason) => error = Some(reason),
+            })
+        {
+            error = Some(reason);
         }
     });
     if let Some(error) = error {
