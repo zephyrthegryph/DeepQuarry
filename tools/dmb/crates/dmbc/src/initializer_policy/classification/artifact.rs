@@ -197,12 +197,14 @@ impl InitializerArtifacts {
             Arc::as_ptr(&self.roster) as usize,
             std::mem::size_of_val(self.roster.as_ref()),
         );
+        self.roster.visit_layout_owner(&mut visit);
         self.roster_publication.with_published(|roster| {
             if !Arc::ptr_eq(roster, &self.roster) {
                 visit(
                     Arc::as_ptr(roster) as usize,
                     std::mem::size_of_val(roster.as_ref()),
                 );
+                roster.visit_layout_owner(&mut visit);
             }
         });
     }

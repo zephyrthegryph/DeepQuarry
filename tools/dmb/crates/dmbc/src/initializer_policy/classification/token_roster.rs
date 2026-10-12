@@ -9,12 +9,41 @@ use std::sync::{
 };
 #[derive(Default)]
 pub(super) struct CurrentRoster {
-    value: Mutex<Option<Roster>>,
+    // Published layouts are immutable. Request forks share their owner instead
+    // of cloning every accepted identity, token row and runtime group.
+    value: Mutex<Option<Arc<Roster>>>,
     preparation: Mutex<Option<Arc<preparation::Preparation>>>,
     pub(super) hits: AtomicU64,
     pub(super) recomputed: AtomicU64,
 }
-#[derive(Clone)]
+
+#[cfg(test)]
+mod ownership_tests {
+    use super::*;
+
+    #[test]
+    fn fork_shares_immutable_layout_and_clear_is_request_local() {
+        let roster = CurrentRoster::default();
+        let layout = Arc::new(Roster {
+            debug_defined: false,
+            canonical: crate::initializer_tokens::Tokens::new(false).canonical_owner(),
+            accepted: vec![Arc::new(0)],
+            tokens: vec![None],
+            groups: Vec::new(),
+        });
+        *roster.value.lock().unwrap() = Some(Arc::clone(&layout));
+        let fork = roster.fork();
+        assert!(Arc::ptr_eq(fork.value.lock().unwrap().as_ref().unwrap(), &layout));
+        let mut original_owner = None;
+        let mut fork_owner = None;
+        roster.visit_layout_owner(|address, bytes| original_owner = Some((address, bytes)));
+        fork.visit_layout_owner(|address, bytes| fork_owner = Some((address, bytes)));
+        assert_eq!(original_owner, fork_owner);
+        roster.clear();
+        assert!(roster.value.lock().unwrap().is_none());
+        assert!(Arc::ptr_eq(fork.value.lock().unwrap().as_ref().unwrap(), &layout));
+    }
+}
 struct Roster {
     debug_defined: bool,
     canonical: crate::initializer_tokens::CanonicalTokens,
@@ -56,6 +85,12 @@ impl CurrentRoster {
         let guard = self.value.lock().unwrap_or_else(|error| error.into_inner());
         if let Some(value) = guard.as_ref() {
             visitor(&value.canonical);
+        }
+    }
+    pub(super) fn visit_layout_owner(&self, visit: impl FnOnce(usize, usize)) {
+        let guard = self.value.lock().unwrap_or_else(|error| error.into_inner());
+        if let Some(value) = guard.as_ref() {
+            visit(Arc::as_ptr(value) as usize, std::mem::size_of::<Roster>());
         }
     }
     pub(super) fn clear(&self) {
@@ -159,7 +194,7 @@ impl CurrentRoster {
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let classified = finish_pending_shared(pending.into_iter(), ordinal, tokens)?;
-        let value = accepted.map(|accepted| Roster {
+        let value = accepted.map(|accepted| Arc::new(Roster {
             debug_defined,
             canonical: tokens.canonical_owner(),
             accepted,
@@ -174,7 +209,7 @@ impl CurrentRoster {
                 })
                 .collect(),
             groups: classified.groups.clone(),
-        });
+        }));
         *self.value.lock().unwrap_or_else(|error| error.into_inner()) = value;
         Ok(classified)
     }
