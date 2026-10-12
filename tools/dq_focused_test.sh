@@ -539,6 +539,10 @@ run_once() {
 	# Git Bash can use the same worktree-pinned entry point and system Bun as
 	# the POSIX runner; avoid the batch bootstrap's separate tool download.
 	(
+		# Serialized look sweeps need the same timeout as the split look world.
+		if [ "${look_single:-0}" -eq 1 ] && [ -z "${DQ_FOCUS_TIMEOUT_MINUTES:-}" ]; then
+			export DQ_FOCUS_TIMEOUT_MINUTES=45
+		fi
 		# Concrete plans apply to combined normal, bless and repeat worlds alike.
 		if [ -n "$LOOK_PARAMS" ]; then
 			export DQ_WORLD_PARAMS="${DQ_WORLD_PARAMS:+$DQ_WORLD_PARAMS&}$LOOK_PARAMS"

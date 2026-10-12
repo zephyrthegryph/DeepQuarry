@@ -19,7 +19,7 @@ trap 'rm -rf "$work"' EXIT
 mkdir -p "$work/tools/build"
 cat > "$work/tools/build/build.sh" <<'STUB'
 #!/usr/bin/env bash
-printf '%s\n' "params=$DQ_WORLD_PARAMS" "args=$*"
+printf '%s\n' "params=$DQ_WORLD_PARAMS" "timeout=${DQ_FOCUS_TIMEOUT_MINUTES:-unset}" "args=$*"
 STUB
 chmod +x "$work/tools/build/build.sh"
 run_fn="$(awk '/^run_once\(\) \{/ { copying=1 } copying { print } copying && /^}$/ { exit }' "$runner")"
@@ -33,5 +33,13 @@ args=()
 result="$(run_once)"
 [[ "$result" == *'params=user-param=kept&look-plan=data/look-plan.tsv&look-types=data/look-types.txt'* ]]
 [[ "$result" == *'--focus=dq_real_test,dq_look_state_pin,dq_look_tree_pin'* ]]
+[[ "$result" == *'timeout=45'* ]]
+DQ_FOCUS_TIMEOUT_MINUTES=52
+result="$(run_once)"
+[[ "$result" == *'timeout=52'* ]]
+unset DQ_FOCUS_TIMEOUT_MINUTES
+look_single=0
+result="$(run_once)"
+[[ "$result" == *'timeout=unset'* ]]
 test "$DQ_WORLD_PARAMS" = 'user-param=kept'
 printf '%s\n' 'focused serialized incremental look shell regression: PASS'
