@@ -33,7 +33,10 @@ mod ownership_tests {
         });
         *roster.value.lock().unwrap() = Some(Arc::clone(&layout));
         let fork = roster.fork();
-        assert!(Arc::ptr_eq(fork.value.lock().unwrap().as_ref().unwrap(), &layout));
+        assert!(Arc::ptr_eq(
+            fork.value.lock().unwrap().as_ref().unwrap(),
+            &layout
+        ));
         let mut original_owner = None;
         let mut fork_owner = None;
         roster.visit_layout_owner(|address, bytes| original_owner = Some((address, bytes)));
@@ -41,7 +44,10 @@ mod ownership_tests {
         assert_eq!(original_owner, fork_owner);
         roster.clear();
         assert!(roster.value.lock().unwrap().is_none());
-        assert!(Arc::ptr_eq(fork.value.lock().unwrap().as_ref().unwrap(), &layout));
+        assert!(Arc::ptr_eq(
+            fork.value.lock().unwrap().as_ref().unwrap(),
+            &layout
+        ));
     }
 }
 struct Roster {
@@ -194,22 +200,24 @@ impl CurrentRoster {
         }
         self.recomputed.fetch_add(1, Ordering::Relaxed);
         let classified = finish_pending_shared(pending.into_iter(), ordinal, tokens)?;
-        let value = accepted.map(|accepted| Arc::new(Roster {
-            debug_defined,
-            canonical: tokens.canonical_owner(),
-            accepted,
-            tokens: classified
-                .writes
-                .iter()
-                .map(|write| match &write.default {
-                    DefaultValue::InitializerExpression { token, canonical } => {
-                        Some((*token, Arc::clone(canonical)))
-                    }
-                    _ => None,
-                })
-                .collect(),
-            groups: classified.groups.clone(),
-        }));
+        let value = accepted.map(|accepted| {
+            Arc::new(Roster {
+                debug_defined,
+                canonical: tokens.canonical_owner(),
+                accepted,
+                tokens: classified
+                    .writes
+                    .iter()
+                    .map(|write| match &write.default {
+                        DefaultValue::InitializerExpression { token, canonical } => {
+                            Some((*token, Arc::clone(canonical)))
+                        }
+                        _ => None,
+                    })
+                    .collect(),
+                groups: classified.groups.clone(),
+            })
+        });
         *self.value.lock().unwrap_or_else(|error| error.into_inner()) = value;
         Ok(classified)
     }
