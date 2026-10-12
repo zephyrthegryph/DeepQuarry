@@ -257,7 +257,10 @@ impl StartupAllocationRoster {
                 continue;
             }
             let owner = self.registration_owner(&row.write)?;
-            if !self.allocation.source_owners.contains_key(&owner) {
+            if !self.allocation.source_owners.contains_key(&owner)
+                && !(owner == SymbolId::of("/")
+                    && matches!(row.write.target, InitializerTarget::Shared { .. }))
+            {
                 continue;
             }
             let origin = plan
@@ -301,15 +304,25 @@ impl StartupAllocationRoster {
             }
             let owner = self.registration_owner(write)?;
             let group = match self.allocation.source_owners.get(&owner) {
-                Some(rank)
+                Some(_)
                     if registration_is_deferred(
                         eager.contains(&owner),
                         forward.contains(&owner),
                     ) =>
                 {
-                    count + 3 + *rank
+                    // Deferred declarations share the current source encounter sequence.
+                    count + 3
                 }
                 Some(rank) => *rank,
+                None if owner == SymbolId::of("/")
+                    && matches!(write.target, InitializerTarget::Shared { .. })
+                    && registration_is_deferred(
+                        eager.contains(&owner),
+                        forward.contains(&owner),
+                    ) =>
+                {
+                    count + 3
+                }
                 None if first_root_static(&write.target, self.allocation.first_root_callable) => {
                     count
                 }

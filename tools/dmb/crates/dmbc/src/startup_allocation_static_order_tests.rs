@@ -87,3 +87,75 @@ fn first_callable_registration_preserves_exact_overload_occurrence() {
     assert!(!first_root_static(&target(later), Some(first)));
     assert!(!first_root_static(&target(first), None));
 }
+
+struct ForwardSource;
+impl dm_preprocess::SourceProvider for ForwardSource {
+    fn read(&self, _: &std::path::Path) -> Result<String, String> {
+        Ok("var/global_first = make_value()\n/datum/probe\n    var/static/class_middle = make_value()\nvar/global_last = make_value()\n/proc/make_value()\n    return 7\n".into())
+    }
+}
+#[test]
+fn forward_root_and_source_owner_writes_share_current_encounter_order() {
+    use crate::initializer_policy::{
+        ClassifiedInitializers, ClassifiedWrite, DefaultValue, Phase, RuntimeGroup, RuntimeValue,
+    };
+    let frontend = dm_tree::frontend::build(
+        std::path::Path::new("forward.dme"),
+        &ForwardSource,
+        &Default::default(),
+        1,
+    )
+    .unwrap();
+    let declaration = dm_tree::initializers::capture_declaration_plan(
+        &frontend.snapshot,
+        &frontend.emission_order,
+    )
+    .unwrap();
+    let plan = declaration.plan();
+    let roster =
+        StartupAllocationRoster::issue_current(plan, &[SymbolId::of("/datum/probe")], &frontend)
+            .unwrap();
+    let expression = Arc::new(dm_syntax::parse_expression("make_value()").expr.unwrap());
+    let mut classified = ClassifiedInitializers {
+        accepted: Vec::new(),
+        writes: plan
+            .writes
+            .iter()
+            .enumerate()
+            .map(|(ordinal, write)| ClassifiedWrite {
+                source_features: Default::default(),
+                source_ordinal: ordinal,
+                write: write.clone(),
+                default: DefaultValue::Scalar(dm_ir::SemanticValue::Null),
+                phase: Some(Phase::Runtime),
+                runtime_value: Some(RuntimeValue::Expression(Arc::clone(&expression))),
+            })
+            .collect(),
+        groups: vec![RuntimeGroup {
+            declaration_presence: None,
+            receiver: None,
+            writes: (0..plan.writes.len()).collect(),
+        }],
+    };
+    roster
+        .order_runtime(plan, &mut classified, frontend.snapshot.tree.as_ref())
+        .unwrap();
+    let names: Vec<_> = classified.groups[0]
+        .writes
+        .iter()
+        .map(|index| match classified.writes[*index].write.target {
+            InitializerTarget::Shared { name, .. } => plan.symbols.text(name).unwrap(),
+            _ => panic!("unexpected storage"),
+        })
+        .collect();
+    assert_eq!(names, ["global_first", "class_middle", "global_last"]);
+    let finalized = roster.finalized.get().unwrap();
+    assert_eq!(
+        finalized.keys,
+        classified.groups[0]
+            .writes
+            .iter()
+            .map(|index| key(&classified.writes[*index].write).unwrap())
+            .collect::<Vec<_>>()
+    );
+}
