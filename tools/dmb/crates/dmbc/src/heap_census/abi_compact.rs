@@ -132,8 +132,8 @@ impl crate::driver_facts::AbiArtifacts {
                             .checked_add(receipt(&mut c, &row.reads)?)?;
                         c.slice("compact.abi_row_versions", &row.versions, true);
                     }
-                    c.vec_payload("compact.abi_keys", &recipe.keys);
-                    for key in &recipe.keys {
+                    c.slice("compact.abi_keys", &recipe.keys, true);
+                    for key in recipe.keys.iter() {
                         c.slice("compact.abi_key", key, true);
                     }
                 }
