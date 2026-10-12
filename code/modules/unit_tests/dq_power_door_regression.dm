@@ -60,7 +60,11 @@
 
 CAPABILITIES(/obj/machinery/dq_idle_redraw_probe)
 	configure(uses_power(idle = 5, channel = EQUIP))
-	every(1 SECOND, then(PROC_REF(probe_step)), when = PROC_REF(operable))
+	every(1 SECOND, then(PROC_REF(probe_step)), when = PROC_REF(probe_gate))
+
+/// The polling gate: a proc, so the every() keeps firing while it is false.
+/obj/machinery/dq_idle_redraw_probe/proc/probe_gate(datum/act/A)
+	return operable()
 
 /obj/machinery/dq_idle_redraw_probe/proc/probe_step(datum/act/timer/A)
 	steps++
