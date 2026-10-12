@@ -97,6 +97,18 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 		ending_causes = list()
 	ending_causes[thing] = list(cause, by)
 
+/// ending_cause() and qdel() as one step: the entry lives only for this delete. ending_begin() reads and drops it inside qdel(); a
+/// delete that never reaches ending_begin() (refused, already under way, a runtime before the transaction) would leave the entry in
+/// the global list holding the thing and its `by` (a HUD screen object, a mob) until both hard-delete, so it is dropped here. A thing
+/// a collecting scope deferred (GC_BATCH_DOOMED) keeps its entry for the batch, which runs ending_begin().
+/proc/ending_qdel(datum/thing, cause, datum/by = null, force = FALSE, detail = null)
+	ending_cause(thing, cause, by)
+	if(!isnull(detail) && ending_causes?[thing])
+		ending_causes[thing] += detail
+	qdel(thing, force)
+	if(ending_causes && thing.gc_destroyed != GC_BATCH_DOOMED)
+		ending_causes -= thing
+
 /// Ends `thing` with `cause`. The one place a caused ending deletes: returns TRUE when it ended it.
 /proc/lifeform_end(datum/thing, cause, datum/by = null, force = FALSE)
 	if(isnull(thing))
@@ -106,8 +118,7 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 		return TRUE
 	if(QDELETED(thing))
 		return FALSE
-	ending_cause(thing, cause, by)
-	qdel(thing, force)
+	ending_qdel(thing, cause, by, force)
 	return TRUE
 
 /// Used up: a charge, a single-use tool, a spent cartridge. `force` is qdel()'s: a thing that refuses deletion (a lighting object) ends anyway.
@@ -127,10 +138,7 @@ GLOBAL_LIST_EMPTY(lives_scope_of)
 		return TRUE
 	if(QDELETED(thing))
 		return FALSE
-	ending_cause(thing, END_DESTROYED, by)
-	if(cause)
-		ending_causes[thing] += cause
-	qdel(thing)
+	ending_qdel(thing, END_DESTROYED, by, detail = cause)
 	return TRUE
 
 /// Melted, dissolved or decayed into nothing.
