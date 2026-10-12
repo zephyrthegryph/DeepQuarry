@@ -44,7 +44,7 @@ pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
             }
             for read in reads.iter() {
                 if let Some(answer) = &read.answer {
-                    census.string("retained_type_paths.answers", answer);
+                    census.arc_text("retained_type_paths.answers", answer);
                 }
             }
         }

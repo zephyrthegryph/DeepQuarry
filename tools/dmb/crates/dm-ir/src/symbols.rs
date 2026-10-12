@@ -186,10 +186,17 @@ impl SymbolTable {
     }
 
     pub fn text(&self, id: SymbolId) -> Option<&str> {
-        self.texts
-            .get(&id)
-            .map(AsRef::as_ref)
-            .or_else(|| self.parent.as_ref().and_then(|parent| parent.text(id)))
+        self.shared_text(id).map(AsRef::as_ref)
+    }
+
+    /// Borrow the existing immutable spelling owner through the same overlay
+    /// precedence as `text`. Shared storage is not symbol or revision authority.
+    pub fn shared_text(&self, id: SymbolId) -> Option<&Arc<str>> {
+        self.texts.get(&id).or_else(|| {
+            self.parent
+                .as_ref()
+                .and_then(|parent| parent.shared_text(id))
+        })
     }
 
     pub fn len(&self) -> usize {
@@ -218,6 +225,42 @@ impl SymbolTable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shared_text_lookup_preserves_multilevel_overlay_owners_and_absence() {
+        let mut base = SymbolTable::default();
+        let original = base.intern("/datum/base").unwrap();
+        let base = Arc::new(base);
+        let mut middle = SymbolTable::overlay(Arc::clone(&base));
+        let inherited = middle.intern("/datum/base/child").unwrap();
+        let middle = Arc::new(middle);
+        let mut local = SymbolTable::overlay(Arc::clone(&middle));
+        let added = local.intern("/datum/base/child/grandchild").unwrap();
+        assert!(Arc::ptr_eq(
+            local.shared_text(original).unwrap(),
+            base.shared_text(original).unwrap()
+        ));
+        assert!(Arc::ptr_eq(
+            local.shared_text(inherited).unwrap(),
+            middle.shared_text(inherited).unwrap()
+        ));
+        assert!(Arc::ptr_eq(
+            local.shared_text(added).unwrap(),
+            &local.texts[&added]
+        ));
+        assert_eq!(
+            local.text(inherited),
+            local.shared_text(inherited).map(AsRef::as_ref)
+        );
+        assert!(local.shared_text(SymbolId::of("missing")).is_none());
+        assert!(local.insert(original, "changed").is_err());
+        local.retain_local(|_| false);
+        assert!(local.shared_text(added).is_none());
+        assert!(Arc::ptr_eq(
+            local.shared_text(original).unwrap(),
+            base.shared_text(original).unwrap()
+        ));
+    }
 
     #[test]
     fn certified_merge_shares_spellings_and_preserves_parent() {

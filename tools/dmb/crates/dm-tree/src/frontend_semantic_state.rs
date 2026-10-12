@@ -141,7 +141,7 @@ impl RetainedSemanticTree {
                 '_,
                 crate::type_paths::LexicalPath,
                 dm_ir::SymbolId,
-                Option<String>,
+                Option<Arc<str>>,
                 (),
             >,
         ),

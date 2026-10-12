@@ -12,12 +12,12 @@ pub struct LexicalPath {
     pub parent: Option<Arc<str>>,
 }
 struct Host<'a>(&'a SymbolTable);
-impl ObservationHost<SymbolId, Option<String>, ()> for Host<'_> {
-    fn answer(&self, query: &SymbolId) -> Option<String> {
-        self.0.text(*query).map(str::to_owned)
+impl ObservationHost<SymbolId, Option<Arc<str>>, ()> for Host<'_> {
+    fn answer(&self, query: &SymbolId) -> Option<Arc<str>> {
+        self.0.shared_text(*query).cloned()
     }
 }
-type Store = ObservedArtifactStore<LexicalPath, SymbolId, Option<String>, ()>;
+type Store = ObservedArtifactStore<LexicalPath, SymbolId, Option<Arc<str>>, ()>;
 pub(crate) struct RetainedTypePaths {
     store: Store,
     hits: AtomicUsize,
@@ -75,7 +75,7 @@ impl RetainedTypePaths {
     }
     pub(crate) fn visit_storage(
         &self,
-        visit: impl FnMut(ObservedArtifactStorageView<'_, LexicalPath, SymbolId, Option<String>, ()>),
+        visit: impl FnMut(ObservedArtifactStorageView<'_, LexicalPath, SymbolId, Option<Arc<str>>, ()>),
     ) {
         self.store.visit_storage(visit);
     }
@@ -83,6 +83,53 @@ impl RetainedTypePaths {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn lexical_observations_share_dictionary_owner_and_compare_exact_content() {
+        struct Current(Option<Arc<str>>);
+        impl ObservationHost<SymbolId, Option<Arc<str>>, ()> for Current {
+            fn answer(&self, _: &SymbolId) -> Option<Arc<str>> {
+                self.0.clone()
+            }
+        }
+        let mut base = SymbolTable::default();
+        let path = base.intern("/datum/example/child").unwrap();
+        let base = Arc::new(base);
+        let symbols = SymbolTable::overlay(Arc::new(SymbolTable::overlay(Arc::clone(&base))));
+        let retained = RetainedTypePaths::default();
+        let value = retained.resolve(path, &symbols).unwrap();
+        assert_eq!(value.parent.as_deref(), Some("/datum/example"));
+        let spelling = base.shared_text(path).unwrap();
+        let mut entries = 0;
+        retained.visit_storage(|view| {
+            if let ObservedArtifactStorageView::Entry { reads, .. } = view {
+                assert_eq!(reads.len(), 1);
+                assert_eq!(reads[0].query, path);
+                assert!(Arc::ptr_eq(reads[0].answer.as_ref().unwrap(), spelling));
+                entries += 1;
+            }
+        });
+        assert_eq!(entries, 1);
+        let equal: Arc<str> = Arc::from(spelling.as_ref());
+        assert!(!Arc::ptr_eq(&equal, spelling));
+        assert!(retained
+            .store
+            .lookup(&key(path), &Current(Some(equal)))
+            .is_some());
+        assert!(
+            retained
+                .store
+                .lookup(
+                    &key(path),
+                    &Current(Some(Arc::from("/datum/example/renamed")))
+                )
+                .is_none(),
+            "same key with changed bytes must not admit old lexical meaning"
+        );
+        assert!(retained.store.lookup(&key(path), &Current(None)).is_none());
+        assert!(
+            matches!(retained.resolve(path, &SymbolTable::default()), Err(TreeError::UnknownSymbol(actual)) if actual == path)
+        );
+    }
     #[test]
     fn paths_reuse_across_dense_projection_changes_and_reject_missing_spelling() {
         let retained = RetainedTypePaths::default();
