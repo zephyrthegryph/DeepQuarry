@@ -136,7 +136,7 @@ mod tests {
         assert!(prefix(&batch, &slots, identity, 3, 0).is_err());
         assert_eq!(prefix(&batch, &slots, identity, 0, 1).unwrap(), &["first"]);
         assert_eq!(
-            prefix(&batch, &slots, identity, 0, 3).unwrap(),
+            prefix(&batch, &slots, identity, 2, 3).unwrap(),
             &["first", "second", "third"]
         );
         assert!(prefix(&batch, &slots, identity, 0, 4).is_err());
