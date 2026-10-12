@@ -38,5 +38,7 @@ lexical rather than declared-parent traversal. Their retry passed lookup lifetim
 output invalidation and reentrant delivery. The remaining periodic fixture needs
 an explicit real drain before measuring its one-second interval: parked work
 starts that interval when its queued wake hook drains. The fixture now checks
-arming, the actual edge, parking and resumption separately; its retry is pending.
+arming, the actual edge, parking and resumption separately; its retry passed on
+`b62b84e3b6` (one test, zero failures, clean boot). All five original failures
+have now passed targeted repair runs. A fresh lane-ready gate remains required.
 None of these result sets substitutes for a lane-ready stamp.
