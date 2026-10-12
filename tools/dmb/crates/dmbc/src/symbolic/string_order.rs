@@ -4,7 +4,7 @@ use dm_ir::{SymRef, SymbolId};
 use dm_link::{
     Key, LinkInventory, StringRegistrationEvent as Event, StringRegistrationSource, Table,
 };
-use std::collections::HashSet;
+use std::collections::{BTreeSet, HashSet};
 
 pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> Result<(), String> {
     complete_with(inventory, |key, declaration, source| {
@@ -67,15 +67,15 @@ fn complete_with(
             _ => None,
         })
         .collect();
-    let fixed: HashSet<_> = inventory.fixed.iter().map(|(key, _)| *key).collect();
-    let present: HashSet<_> = inventory
+    let fixed: BTreeSet<_> = inventory.fixed.iter().map(|(key, _)| *key).collect();
+    let present: BTreeSet<_> = inventory
         .entry_iter()
         .filter_map(|entry| match entry.key {
             Key::String(_) => Some(entry.key),
             _ => None,
         })
         .collect();
-    let mut seen = HashSet::new();
+    let mut seen = BTreeSet::new();
     let mut order = Vec::new();
     let mut add = |id: SymbolId| -> Result<(), String> {
         let key = Key::String(id);
