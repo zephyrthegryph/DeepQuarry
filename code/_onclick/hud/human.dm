@@ -265,10 +265,8 @@
 	hud_used?.ling_chem_display?.icon_state = "ling_chems"
 	hud_elements |= hud_used?.ling_chem_display
 
-	rel_set(hud_used, nameof(/datum/hud::wiz_instability_display), new /atom/movable/screen/wizard/instability())
-	hud_used?.wiz_instability_display?.screen_loc = ui_wiz_instability_display
-	hud_used?.wiz_instability_display?.icon_state = "wiz_instability_none"
-	hud_elements |= hud_used?.wiz_instability_display
+	// The instability meter is made by instability_update_hud() the first time the mob has instability:
+	// a mob without any (everyone but a technomancer) has no meter.
 
 	rel_set(hud_used, nameof(/datum/hud::wiz_energy_display), new/atom/movable/screen/wizard/energy())
 	hud_used?.wiz_energy_display?.screen_loc = ui_wiz_energy_display

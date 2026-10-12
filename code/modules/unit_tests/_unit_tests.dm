@@ -331,6 +331,7 @@
 #include "dq_robot_machine_tests.dm"
 #include "dq_b4_tracking_tests.dm"
 #include "dq_phase0_tests.dm"
+#include "dq_breath_hazard_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_mob_every_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
@@ -1283,6 +1284,7 @@
 #include "dq_numeric_grid_lookup_tests.dm"
 #include "dq_state_batch_tests.dm"
 #include "dq_nikki_rig_chest_tests.dm"
+#include "dq_mob_visuals_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
