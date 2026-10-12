@@ -7,7 +7,10 @@ export type CompilerInvocation = Readonly<{
 }>;
 export function compilerInvocation(root: string, relativeManifest: string, orderedDefines: readonly string[]): CompilerInvocation {
   if (!path.isAbsolute(root) || !relativeManifest || path.isAbsolute(relativeManifest)
-    || /^[A-Za-z]:/.test(relativeManifest)
+    // A colon anywhere in a Windows relative name can select an alternate data
+    // stream. NUL is rejected by filesystem APIs, but must fail before a child
+    // is launched so all backends receive the same invocation contract.
+    || /[:\0]/.test(relativeManifest) || root.includes('\0')
     || relativeManifest.split(/[\\/]/).some(part => !part || part === '.' || part === '..')) {
     throw new Error('Captured invocation requires an absolute root and normal contained relative manifest.');
   }

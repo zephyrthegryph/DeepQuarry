@@ -45,7 +45,10 @@ test('captured backend invocation preserves cwd, relative spelling and ordered d
     }, undefined, invocation)).rejects.toBeDefined();
     expect(cancelled).toBe(true);
     expect(() => bindCompilerInvocation(invocation, ['A=2', 'A=1'])).toThrow('ordered defines');
-    for (const invalid of ['../probe.dme', '/probe.dme', 'C:probe.dme']) expect(() => compilerInvocation(invocation.root, invalid, [])).toThrow();
+    for (const invalid of ['../probe.dme', '/probe.dme', 'C:probe.dme', 'nested/probe.dme:stream', 'nested/probe\0.dme']) {
+      expect(() => compilerInvocation(invocation.root, invalid, [])).toThrow();
+    }
+    expect(() => compilerInvocation(`${invocation.root}\0`, 'probe.dme', [])).toThrow();
   } finally {
     for (const key of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_SHADOW_ROOT']) {
       if (previous[key] === undefined) delete process.env[key]; else process.env[key] = previous[key];
