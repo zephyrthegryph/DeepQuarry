@@ -958,7 +958,8 @@ mod typed_statements;
 #[path = "simple/typed_switch.rs"]
 mod typed_switch;
 use helpers::{
-    class_tag, error, fold_number, is_output_target, member_proc_selector, parenthesized,
+    class_tag, error, fold_literal_string_expression, fold_number, is_output_target,
+    member_proc_selector, parenthesized,
     parse_interpolated_string, parse_text_template,
 };
 pub use helpers::{decode_constant_string_literal, nameof_reference, visit_constant_string_literals};
