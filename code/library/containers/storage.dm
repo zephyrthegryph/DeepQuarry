@@ -95,7 +95,7 @@ MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
 	if(!bag.insert_item(H, null, TRUE))
 		A.reason = /datum/msg/storage/too_big_to_climb
 		return OP_REFUSED
-	to_chat(user, span_notice("You climb into 	he [bag]."))
+	to_chat(user, span_notice("You climb into \the [bag]."))
 	return OP_OK
 
 // ---- conditions about the contents ----

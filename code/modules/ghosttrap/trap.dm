@@ -30,11 +30,11 @@ TYPE_TABLE_DECLARE(/datum/ghosttrap, ghosttrap_ban_checks, list(JOB_AI,JOB_CYBOR
 	if(!istype(candidate) || !candidate.client || !candidate.ckey)
 		return /datum/msg/req_silent
 	if(!candidate.MayRespawn())
-		return span_infoplain("You have made use of the AntagHUD and hence cannot enter play as  [object].")
+		return span_infoplain("You have made use of the AntagHUD and hence cannot enter play as \a [object].")
 	if(islist(TYPE_TABLE_GET(src, ghosttrap_ban_checks)))
 		for(var/bantype in TYPE_TABLE_GET(src, ghosttrap_ban_checks))
 			if(jobban_isbanned(candidate, "[bantype]"))
-				return span_infoplain("You are banned from one or more required roles and hence cannot enter play as  [object].")
+				return span_infoplain("You are banned from one or more required roles and hence cannot enter play as \a [object].")
 	return null
 
 // Check for bans, proper atom types, etc.

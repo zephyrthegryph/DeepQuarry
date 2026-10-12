@@ -5026,3 +5026,9 @@ Historical-priority code introduced `if(name in base_vars || name in found)` ine
 
 The rifle parity test demonstrated legacy duplicate associative list keys consume the associated count twice: standard branch4 rifles, native additive branch3. `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d` changed the list roll into an additiveinitial_contents roll. The repair adds the old selected-key count, retaining the actual latent consumer semantics; the regression now observes actual constructor/ledger contents for both branches and destroys all children before assertions. Cabinet pins remain unapproved until this real regression passes and any remaining snapshot discrepancy is reviewed separately.
 
+### fix-constraints: master's constraint sweeps (October 2026)
+
+* **Nikki's RIG owns its cape.** `/obj/item/rig/nikki` sets `chest_type` to `/obj/item/clothing/suit/fluff/nikki` but inherited `owns_one(chest, /obj/item/clothing/suit/space/rig)`, so it could not be created. It declares its own chest (the cape); the rig's `chest` field is a `/obj/item/clothing/suit`, and the two space-suit-only uses (welder patching, the breach threshold in module damage) check for a space suit. A cape has no breach protection. Its conversion pin now records the constructed rig, not the old OWN refusal.
+* **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
+* **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
+* **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
