@@ -30,12 +30,6 @@
 #define CHANGE_RELATED (1<<7)
 
 
-// Machine family.
-#define CHANGE_MACHINE_POWER (1<<8)
-#define CHANGE_MACHINE_PANEL (1<<9)
-#define CHANGE_MACHINE_BROKEN (1<<10)
-#define CHANGE_MACHINE_ANCHORED (1<<11)
-#define CHANGE_MACHINE_OCCUPANT (1<<12)
 /// Settings a player or program changed (input/output levels, breakers, modes).
 #define CHANGE_MACHINE_SETTINGS (1<<16)
 
@@ -231,18 +225,9 @@
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
 // whatever waits on it om_watch()es those channels with its own behaviour.
 
-/// Machine family: a mode another machine or program may wait on changed (door bolts, power,
-/// electrification, open state; an APC's operating state).
-#define CHANGE_MACHINE_MODE (1<<18)
 // Bits 22 and 23 are the last two a DM bitfield holds (24-bit bitwise operators).
 /// Any atom: its integrity changed (update_integrity()); the get_integrity derived field.
 #define CHANGE_INTEGRITY (1<<23)
-/// Power machine family, raised on every machine bound to a power region
-/// (code/modules/power/power_grid.dm): the region's supply or load moved; its
-/// brownout or monitor warning changed; a machine joined or left it.
-#define CHANGE_POWER_GRID_RATE (1<<19)
-#define CHANGE_POWER_GRID_STATE (1<<20)
-#define CHANGE_POWER_GRID_TOPOLOGY (1<<21)
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2

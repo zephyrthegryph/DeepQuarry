@@ -667,6 +667,15 @@ banned_outside = [
 ]
 # Names of forms that no longer exist (a hard ban, no baseline): `name = hint`.
 banned = [
+  "CHANGE_MACHINE_POWER = tracked state or a composed stat, read with on_change()",
+  "CHANGE_MACHINE_PANEL = tracked state or a composed stat, read with on_change()",
+  "CHANGE_MACHINE_BROKEN = tracked state or a composed stat, read with on_change()",
+  "CHANGE_MACHINE_ANCHORED = tracked state or a composed stat, read with on_change()",
+  "CHANGE_MACHINE_OCCUPANT = tracked state or a composed stat, read with on_change()",
+  "CHANGE_MACHINE_MODE = tracked state or a composed stat, read with on_change()",
+  "CHANGE_POWER_GRID_RATE = tracked state or a composed stat, read with on_change()",
+  "CHANGE_POWER_GRID_STATE = tracked state or a composed stat, read with on_change()",
+  "CHANGE_POWER_GRID_TOPOLOGY = tracked state or a composed stat, read with on_change()",
   "DECLARE_APPEARANCE_PROC = a draw(datum/look/look) override: look.state(), look.variant(), look.overlay(), look.glow() (a light is look.glow(range, power, color)); a draw writes no state (doc/rewrite/final_api.html section 13)",
   "appearance_overlays = a draw(datum/look/look) override; the provider form is gone",
   "datum/om = /datum/om/* is gone, use the engine type it aliased (/datum/time_scheduler, /datum/scheduled_behaviour, /datum/definition_event, /datum/relation_definition/slot, /datum/work_pipeline, ...); code/datums/om/ is gone (doc/rewrite/proposals/om_carriers.md)",

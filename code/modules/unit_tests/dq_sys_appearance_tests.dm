@@ -14,7 +14,7 @@
 
 TRACKED(/obj/machinery/dq_appearance_probe, on)
 TRACKED(/obj/machinery/dq_appearance_probe, active)
-TRACKED_BRIDGED(/obj/machinery/dq_appearance_probe, locked, CHANGE_MACHINE_MODE)
+TRACKED(/obj/machinery/dq_appearance_probe, locked)
 
 APPEARANCE_TEMPLATE(/obj/machinery/dq_appearance_probe, "probe{on}{operable}{label?@label:}{initial(icon_state)}")
 APPEARANCE_LEVEL(/obj/machinery/dq_appearance_probe, "charge", 4, "lvl%p")

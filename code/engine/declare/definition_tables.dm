@@ -7,7 +7,7 @@
 //		of = /obj/machinery/recharger
 //		include = list(/datum/definition_bundle/powered_machine)
 //		ticks = list(/obj/machinery/recharger/proc/charge = list(every = 2 SECONDS))
-//		reacts = list(/obj/machinery/recharger/proc/power_changed = CHANGE_MACHINE_POWER)
+//		inputs = list("charge")
 //
 // A decl applies to `of` and every subtype, so base-type families supply
 // defaults; a more specific decl adds to them. Bundles are the same rows with

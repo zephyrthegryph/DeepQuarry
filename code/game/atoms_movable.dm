@@ -551,7 +551,7 @@
 
 /// Anchors or frees it. Anchored is a tracked base var (G8): this is its only writer. A change publishes
 /// nameof(anchored) and, as a bridge, raises the channel of the type's declared field (a machine
-/// CHANGE_MACHINE_ANCHORED; machinery_fields.dm).
+/// the tracked anchored key; machinery_fields.dm).
 /atom/movable/proc/set_anchored(state)
 	if(anchored == state)
 		return FALSE

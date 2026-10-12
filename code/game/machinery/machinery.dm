@@ -663,7 +663,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
  * flags is forbidden (tools/ci/check_breakpoints.sh).
  */
 /obj/machinery/atom_break(damage_flag)
-	var/flipped = set_broken_condition(TRUE) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = set_broken_condition(TRUE) // publishes the actual broken condition
 	..()
 	if(!flipped)
 		return FALSE
@@ -673,7 +673,7 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
-	var/flipped = set_broken_condition(FALSE) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = set_broken_condition(FALSE) // publishes the actual broken condition
 	..()
 	return flipped ? TRUE : FALSE
 
