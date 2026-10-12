@@ -28,7 +28,7 @@ impl StartupAllocationRoster {
         plan: &InitializerPlan,
         source_owners: &[SymbolId],
     ) -> Result<Self, String> {
-        Self::issue_with_registrations(plan, source_owners, BTreeMap::new(), BTreeMap::new())
+        Self::issue_with_registrations(plan, source_owners, BTreeMap::new(), BTreeMap::new(), None)
     }
     #[cfg(test)]
     pub(crate) fn issue_current(
@@ -125,8 +125,19 @@ impl StartupAllocationRoster {
                 .entry((owner, member.name))
                 .or_insert(body.declaration.0 as usize);
         }
-        let mut current =
-            Self::issue_with_registrations(plan, source_owners, registrations, callable_positions)?;
+        let first_root_callable = input
+            .callables
+            .iter()
+            .filter(|(identity, _)| identity.owner == SymbolId::of("/") && !identity.verb)
+            .min_by_key(|(_, position)| *position)
+            .map(|(identity, _)| *identity);
+        let mut current = Self::issue_with_registrations(
+            plan,
+            source_owners,
+            registrations,
+            callable_positions,
+            first_root_callable,
+        )?;
         let receipt = Arc::get_mut(&mut current.allocation).expect("new allocation owner");
         receipt.input = Some(input);
         receipt.bindings = bindings;
@@ -141,6 +152,7 @@ impl StartupAllocationRoster {
         source_owners: &[SymbolId],
         registrations: BTreeMap<Key, SymbolId>,
         callable_positions: BTreeMap<(SymbolId, SymbolId), usize>,
+        first_root_callable: Option<dm_ir::ProcedureIdentity>,
     ) -> Result<Self, String> {
         let root = SymbolId::of("/");
         let mut owners = BTreeMap::new();
@@ -169,10 +181,12 @@ impl StartupAllocationRoster {
             let registration_owner = registrations.get(&key).copied().unwrap_or(owner);
             let group = if let Some(rank) = owners.get(&registration_owner) {
                 *rank
-            } else if shared && registration_owner == root {
+            } else if first_root_static(&write.target, first_root_callable) {
                 owners.len()
-            } else {
+            } else if shared && registration_owner == root {
                 owners.len() + 1
+            } else {
+                owners.len() + 2
             };
             entries.push((group, ordinal, key));
         }
@@ -194,6 +208,7 @@ impl StartupAllocationRoster {
                 registration_owners: registrations,
                 source_owners: owners,
                 callable_positions,
+                first_root_callable,
             }),
             finalized: OnceLock::new(),
             artifacts: None,
@@ -292,15 +307,18 @@ impl StartupAllocationRoster {
                         forward.contains(&owner),
                     ) =>
                 {
-                    count + 2 + *rank
+                    count + 3 + *rank
                 }
                 Some(rank) => *rank,
+                None if first_root_static(&write.target, self.allocation.first_root_callable) => {
+                    count
+                }
                 None if owner == SymbolId::of("/")
                     && matches!(write.target, InitializerTarget::Shared { .. }) =>
                 {
-                    count
+                    count + 1
                 }
-                None => count + 1,
+                None => count + 2,
             };
             entries.push((group, ordinal, entry));
         }
@@ -433,6 +451,11 @@ fn authored_call_availability(
         answer.forward |= child.forward;
     });
     answer
+}
+
+// Exact current callable occurrence, not a name or storage-category shortcut.
+fn first_root_static(target: &InitializerTarget, first: Option<dm_ir::ProcedureIdentity>) -> bool {
+    matches!(target, InitializerTarget::ProcedureStatic(identity) if Some(identity.procedure) == first)
 }
 fn key(write: &InitializerWrite) -> Result<Key, String> {
     match write.target {
@@ -622,3 +645,7 @@ mod tests {
         assert!(roster.order_membership(&mut omitted.into()).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "startup_allocation_static_order_tests.rs"]
+mod static_order_tests;

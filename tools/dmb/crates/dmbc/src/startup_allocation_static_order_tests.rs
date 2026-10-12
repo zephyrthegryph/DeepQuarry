@@ -1,4 +1,3 @@
-// Unhooked: unconditional category hypothesis disproved by pinned earlier-proc control.
 use super::*;
 use dm_ir::{ResolveQuery, ResolvedMeaning, Resolver};
 struct Source;
@@ -64,4 +63,27 @@ fn root_procedure_static_precedes_global_storage_in_both_rank_producers() {
         })
         .collect();
     assert_eq!(globals, ["global_first", "global_second"]);
+}
+
+#[test]
+fn first_callable_registration_preserves_exact_overload_occurrence() {
+    let first = dm_ir::ProcedureIdentity {
+        owner: SymbolId::of("/"),
+        name: SymbolId::of("work"),
+        verb: false,
+        occurrence: 0,
+    };
+    let later = dm_ir::ProcedureIdentity {
+        occurrence: 1,
+        ..first
+    };
+    let target = |procedure| {
+        InitializerTarget::ProcedureStatic(dm_ir::ProcedureStaticIdentity {
+            procedure,
+            name: SymbolId::of("local"),
+        })
+    };
+    assert!(first_root_static(&target(first), Some(first)));
+    assert!(!first_root_static(&target(later), Some(first)));
+    assert!(!first_root_static(&target(first), None));
 }
