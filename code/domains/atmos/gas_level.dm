@@ -48,7 +48,7 @@ CAPABILITIES(/datum/cap_data/gas_level)
 	gas_level_arm(A.holder, src)
 
 /datum/capability/lib/gas_level/on_holder_destroy(datum/act/eval/A)
-	var/datum/cap_data/gas_level/data = gas_level_data(A.holder, src)
+	var/datum/cap_data/gas_level/data = gas_level_data(A.holder, src, FALSE) // a holder destroyed before it armed (a map load's annihilate) has no record to clear
 	if(!data)
 		return
 	own_clear(data, nameof(data.watch), OWN_DELETE)
@@ -56,9 +56,9 @@ CAPABILITIES(/datum/cap_data/gas_level)
 	rel_clear(data, nameof(data.holder))
 
 /// The level record of `holder`'s level `def`, or null.
-/proc/gas_level_data(datum/holder, datum/capability/lib/gas_level/def)
+/proc/gas_level_data(datum/holder, datum/capability/lib/gas_level/def, create = TRUE)
 	RETURN_TYPE(/datum/cap_data/gas_level)
-	var/datum/activation/act = cap_activation(holder, CAP_GAS_LEVEL, def.into, TRUE)
+	var/datum/activation/act = cap_activation(holder, CAP_GAS_LEVEL, def.into, create)
 	return act ? activation_data(act) : null
 
 /// The hysteresis the Rust channel `channel` declares (verdigris/domains/gas/src/cell.rs), in the channel's unit.

@@ -32,8 +32,21 @@
 	#define MAP_OVERRIDE 1
 #endif
 
-///Used to find the sources of harddels, quite laggy, don't be surpised if it freezes your client for a good while
+// Reference finder (harddel hunting). OFF in production and local server
+// builds: with GC_FAILURE_HARD_LOOKUP every object that survives its first GC
+// retry triggers a full datum-graph walk with no tick checks, freezing the
+// world for minutes (and Windows then kills the BYOND client).
+// Opt in explicitly:
+//   tools/build/build.sh -DREFERENCE_TRACKING        tracking + admin "Find References", per-object hints
+//   tools/build/build.sh -DGC_FAILURE_HARD_LOOKUP    also auto-search every GC failure (freezes the world)
+// Unit-test builds (UNIT_TESTS) keep both on: find_reference_sanity and the
+// GC tests rely on them. See doc/testing.md "Reference tracking".
+#if defined(UNIT_TESTS) && !defined(GC_FAILURE_HARD_LOOKUP)
+#define GC_FAILURE_HARD_LOOKUP
+#endif
+#if defined(GC_FAILURE_HARD_LOOKUP) && !defined(REFERENCE_TRACKING)
 #define REFERENCE_TRACKING
+#endif
 #ifdef REFERENCE_TRACKING
 
 // #define FIND_REF_NO_CHECK_TICK // new ref tracking
@@ -43,6 +56,11 @@
 ///Used for doing dry runs of the reference finder, to test for feature completeness
 #define REFERENCE_TRACKING_DEBUG
 
+/// Hard lookup searches without tick checks (the old dev-server policy).
+#if defined(GC_FAILURE_HARD_LOOKUP) && !defined(FIND_REF_NO_CHECK_TICK)
+#define FIND_REF_NO_CHECK_TICK
+#endif
+
 // Test builds keep BYOND's infinite-loop detection: with it off, a runaway
 // loop anywhere (not just in the reference finder) hangs the suite silently
 // until the watchdog kills it, with no stack to say where.
@@ -50,14 +68,6 @@
 /world
 	loop_checks = FALSE
 #endif
-
-/// Dev-server policy: automatically search the complete datum graph for every
-/// object that survives its first GC retry. This is intentionally intrusive and
-/// can freeze the world while an explosion-created deletion backlog is traced.
-#define GC_FAILURE_HARD_LOOKUP
-#ifdef GC_FAILURE_HARD_LOOKUP
-#define FIND_REF_NO_CHECK_TICK
-#endif //ifdef GC_FAILURE_HARD_LOOKUP
 
 #endif //ifdef REFERENCE_TRACKING
 
