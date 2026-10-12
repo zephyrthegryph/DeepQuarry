@@ -93,7 +93,7 @@ pub struct Read {
     pub hops: Vec<String>,
     /// The var read, or the key for an accessor.
     pub var: String,
-    /// The type that declares `var` (empty for keys).
+    /// The declaring type, or a concrete receiver registering an inherited tracked var (empty for keys).
     pub owner: String,
     pub kind: ReadKind,
     /// FALSE when a hop crossed a var that is not a declared relation.
@@ -1018,7 +1018,16 @@ impl<'a, 'e> Walk<'a, 'e> {
         if !v.tracked() {
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
-        let owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        let declaring_owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
+        // A subtype can register a setter for a field declared on an untracked base.
+        // Keep that registration's receiver type: classifying against the declaration
+        // alone loses its publisher, while promoting the base would track unrelated types.
+        // Ordinary inherited reads retain their existing declaration owner.
+        let owner = if self.eng.is_tracked(&ty_used, name) && !self.eng.is_tracked(&declaring_owner, name) {
+            ty_used.clone()
+        } else {
+            declaring_owner
+        };
         if owner == "/" {
             // A global var (`SSair`, `world`): never a read of the holder; not reactive by contract.
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
@@ -1379,6 +1388,89 @@ mod global_accessor_tests {
         assert!(blocked.diags.iter().any(|diag| diag.rule == "unannotated_global"));
         std::fs::remove_dir_all(root).unwrap();
     }
+    #[test]
+    fn subtype_setters_track_inherited_fields_through_requirement_helpers_without_promoting_the_base() {
+        let root = std::env::temp_dir().join(format!("dq-inherited-setter-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let source = r#"
+#define SETTER(T,V) T/proc/__setter_##V() { return TRUE }
+/obj
+    var/list/req_access
+    var/list/req_one_access
+    var/base_tracked = 0
+SETTER(/obj, base_tracked)
+/obj/proc/base_value()
+    return base_tracked
+/obj/proc/check_access_list(list/given)
+    if(!length(req_access) && !length(req_one_access))
+        return TRUE
+    for(var/required in req_access)
+        if(!(required in given))
+            return FALSE
+    if(length(req_one_access))
+        for(var/optional in req_one_access)
+            if(optional in given)
+                return TRUE
+        return FALSE
+    return TRUE
+/obj/proc/allowed(list/given)
+    return check_access_list(given)
+/datum/act/op
+/obj/proc/access_requirement(datum/act/op/A)
+    return allowed(null) ? null : "Access denied"
+/obj/computer
+SETTER(/obj/computer, req_access)
+SETTER(/obj/computer, req_one_access)
+/obj/computer/card
+/obj/closet
+SETTER(/obj/closet, req_access)
+SETTER(/obj/closet, req_one_access)
+/obj/closet/secure
+/obj/door
+"#;
+        std::fs::write(root.join("code/content/access.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/access.dm", source)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let ann = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &ann);
+        for receiver in ["/obj/computer", "/obj/computer/card", "/obj/closet", "/obj/closet/secure"] {
+            for handler in ["check_access_list", "allowed", "access_requirement"] {
+                let reads = if handler == "access_requirement" {
+                    eng.analyze_handler(receiver, handler, "/datum/act/op")
+                } else {
+                    eng.analyze(receiver, handler)
+                };
+                assert!(reads.diags.is_empty(), "{receiver}.{handler}: {:?}", reads.diags);
+                assert_eq!(reads.keys(), ["req_access".to_string(), "req_one_access".to_string()].into_iter().collect());
+                for read in &reads.reads {
+                    assert!(eng.is_tracked(&read.owner, &read.var), "{receiver}.{handler}: {read:?}");
+                    assert_eq!(read.owner, receiver, "the actual receiver carries the inherited setter registration");
+                    assert_eq!(sem.var_owner(receiver, &read.var).as_deref(), Some("/obj"), "declaration ownership is unchanged");
+                }
+            }
+        }
+        for receiver in ["/obj", "/obj/computer/card", "/obj/closet/secure", "/obj/door"] {
+            let reads = eng.analyze(receiver, "base_value");
+            assert!(reads.diags.is_empty(), "{receiver}: {:?}", reads.diags);
+            assert_eq!(reads.reads.len(), 1);
+            let read = reads.reads.iter().next().unwrap();
+            assert_eq!(read.var, "base_tracked");
+            assert_eq!(read.owner, "/obj", "an existing tracked base retains its declaration owner");
+            assert!(eng.is_tracked(&read.owner, &read.var));
+        }
+        for receiver in ["/obj", "/obj/door"] {
+            let reads = eng.analyze_handler(receiver, "access_requirement", "/datum/act/op");
+            assert_eq!(reads.reads.len(), 2, "untracked reads must remain visible for diagnostics");
+            for read in &reads.reads {
+                assert_eq!(read.owner, "/obj");
+                assert!(!eng.is_tracked(&read.owner, &read.var), "a sibling's setter must not promote {receiver}");
+            }
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn lookup_arguments_preserve_constants_roots_wrappers_and_reject_opaque_getters() {
         let root = std::env::temp_dir().join(format!("dq-lookup-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));

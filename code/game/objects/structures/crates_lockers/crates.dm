@@ -202,8 +202,7 @@ CAPABILITIES(/obj/structure/closet/crate/secure)
 		if(!lock_locked(src))
 			open()
 		else
-			req_access = list()
-			req_access += pick(SSaccess.get_all_station_access())
+			set_req_access(list(pick(SSaccess.get_all_station_access())))
 
 /obj/structure/closet/crate/plastic
 	name = "plastic crate"
