@@ -116,7 +116,7 @@ impl<R: Resolver> Resolver for RecordingResolver<'_, R> {
             .unwrap_or_else(|| self.resolver.domain_version(query.domain()));
         let answer = self.resolver.resolve_with_canonical(query);
         self.ledger
-            .record(query, answer.answer.clone(), query.domain(), version);
+            .record(query, answer.answer().clone(), query.domain(), version);
         answer
     }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {

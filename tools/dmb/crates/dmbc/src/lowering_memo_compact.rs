@@ -393,7 +393,7 @@ impl Payload<'_> {
             pending.push(ResolverRead {
                 query: read.query,
                 domain: read.query.domain(),
-                answer: answer.answer,
+                answer: answer.into_parts().0,
             });
         }
         Ok(Some(pending))

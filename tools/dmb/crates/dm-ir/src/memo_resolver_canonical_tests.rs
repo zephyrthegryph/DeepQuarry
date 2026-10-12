@@ -24,7 +24,7 @@ fn canonical_request_memo_lazily_shares_bounded_bytes() {
     assert!(memo.entries.read().unwrap()[&query()].canonical.is_none());
     let a = memo.resolve_with_canonical(query());
     let b = memo.resolve_with_canonical(query());
-    assert_eq!(a.answer, b.answer);
+    assert_eq!(a.answer(), b.answer());
     assert_eq!(a.canonical().as_ptr(), b.canonical().as_ptr());
     assert_eq!(host.calls.load(Ordering::Relaxed), 1);
 }
