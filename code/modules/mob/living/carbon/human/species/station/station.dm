@@ -1876,9 +1876,9 @@
 	spawn_flags = SPECIES_CAN_JOIN
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
 
-	flesh_color = "##242424"
+	flesh_color = "#242424"
 	blood_color = "##00C202"
-	base_color = "##242424"
+	base_color = "#242424"
 
 	blurb = "Xenomorph Hybrids are a strange amalgamation of xenomorph and alternative-species DNA of \
 	disputed origin. While hybrids share many traits with their species's namesake, the vast majority \
