@@ -1,4 +1,4 @@
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 // Two real gas producers whose combined pressure must remain admissible during a transfer.
 /obj/gas_numeric_fixture
