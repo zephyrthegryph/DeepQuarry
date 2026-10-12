@@ -79,4 +79,10 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
 @obj human|/obj/item/disk/nuclear
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
++3 menu: Ui open
++5 click: Click: Ui open
 keys: anchor, auth, close_panel, drag_buckle, insert_disk, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, make_deployable, melee_hit, open_panel, pulse, removal_stage_0_1, removal_stage_1_2, removal_stage_2_3, removal_stage_3_4, removal_stage_4_5, robot_remote_blocked, safety, silicon_hand, time, timer, type, ui_open, use, use_wire_tools, wire

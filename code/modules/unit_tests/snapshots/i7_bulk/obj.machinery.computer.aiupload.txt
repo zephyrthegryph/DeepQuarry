@@ -108,4 +108,8 @@ human|none click: Click: Select AI
 +5 menu: Toggle Digestable (refused: You can't do that.)
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aiModule
+-menu: Use AI module
++3 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Use item
 keys: access_internals, climb.climb, climb.climb_menu, disconnect, drag_buckle, install_module, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, observer_view, robot_remote_blocked, select_ai, silicon_hand, use_gripper, use_item
