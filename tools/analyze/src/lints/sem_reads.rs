@@ -94,6 +94,9 @@ impl Lint for SemReads {
             }
             for d in &set.diags {
                 match d.rule {
+                    "memo_untracked_input" => {
+                        put(out, "unknown_read", &d.rel, d.line, format!("{}: {}", who, d.msg));
+                    }
                     "unannotated_global" | "dynamic_read" | "hop_not_relation" | "unknown_field" => {
                         let rule: &'static str = match d.rule {
                             "unannotated_global" => "unannotated_global",
@@ -127,4 +130,29 @@ impl Lint for SemReads {
 
 pub fn register(reg: &mut Registry) {
     reg.add(SemReads);
+}
+
+#[cfg(test)]
+mod memo_tests {
+    use super::*;
+    use crate::tree::{SourceFile, Tree};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    #[test]
+    fn real_reads_lint_uses_memo_lifetime_and_strict_input_contract() {
+        let root = std::env::temp_dir().join(format!("dq-lint-memo-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let text = "#define CAPABILITIES(T) T/proc/__entries()\n#define memo(K,P) return\n#define ref_one(K,T) return\n#define PROC_REF(P) #P\n/datum\n\tvar/gc_destroyed\n/datum/act/eval\n\tvar/datum/holder\n/datum/source\n\tvar/value = 1\n/datum/source/proc/mutate()\n\tvalue = 2\n/datum/source/proc/flag_mutation()\n\tgc_destroyed = -3\n/datum/probe\n\tvar/datum/source/source\nCAPABILITIES(/datum/probe)\n\tref_one(nameof(source), /datum/source)\n\tmemo(\"lifetime\", PROC_REF(lifetime))\n\tmemo(\"bad\", PROC_REF(bad))\n/datum/probe/proc/lifetime(datum/act/eval/A)\n\treturn source.gc_destroyed\n/datum/probe/proc/bad(datum/act/eval/A)\n\treturn source.value\n";
+        std::fs::write(root.join("code/content/probe.dm"), text).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", text)]);
+        tree.root = root.clone();
+        let scope = crate::scopes::LintScope::default();
+        let cx = Cx { tree: &tree, meta: &META, scope: &scope };
+        let mut sink = Sink::new();
+        SemReads.scan_tree(&cx, &mut sink);
+        assert!(!sink.sites.iter().any(|s| s.msg.contains("gc_destroyed")), "native memo lifetime still went through ordinary mutable-field classification: {:?}", sink.sites);
+        assert!(sink.sites.iter().any(|s| s.rule == "unknown_read" && s.msg.contains("/datum/source.value")), "real lint entrypoint lost strict non-const untracked-input rejection: {:?}", sink.sites);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

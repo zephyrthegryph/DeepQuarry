@@ -112,7 +112,10 @@ fn compute(tree: &Tree) -> Analysis {
             }
             _ => (false, None, Vec::new(), Vec::new()),
         };
-        let set = if proc_found && !h.cap_proc { Some(eng.analyze_handler(&on, &h.proc, h.ctx.type_path())) } else { None };
+        let set = if proc_found && !h.cap_proc {
+            Some(if h.form == "memo" { eng.analyze_memo(&on, &h.proc) }
+                else { eng.analyze_handler(&on, &h.proc, h.ctx.type_path()) })
+        } else { None };
         let mut unknown = Vec::new();
         if let (Some(set), true) = (&set, h.role.reads_covered()) {
             for r in &set.reads {

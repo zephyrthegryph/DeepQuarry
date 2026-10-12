@@ -237,7 +237,7 @@ CAPABILITIES(/datum/dq_lazy_memo_batch_probe)
 	var/list_fault = FALSE
 	try
 		memo_value(F, "result")
-	catch(var/exception/fault)
+	catch(var/exception/list_exception)
 		list_fault = TRUE
 	TEST_ASSERT(list_fault, "memo exposed a mutable cached list to its caller")
 	TEST_ASSERT(!memo_cell_of(F, "result").valid, "rejected list became a valid cached result")
@@ -247,7 +247,7 @@ CAPABILITIES(/datum/dq_lazy_memo_batch_probe)
 	var/datum_fault = FALSE
 	try
 		memo_value(F, "result")
-	catch(var/exception/fault)
+	catch(var/exception/datum_exception)
 		datum_fault = TRUE
 	TEST_ASSERT(datum_fault, "memo retained and returned a borrowed world object")
 	qdel(S)
@@ -261,14 +261,14 @@ CAPABILITIES(/datum/dq_lazy_memo_batch_probe)
 	var/faulted = FALSE
 	try
 		memo_value(F, "result")
-	catch(var/exception/fault)
+	catch(var/exception/computation_exception)
 		faulted = TRUE
 	TEST_ASSERT(faulted, "computation fault did not propagate")
 	TEST_ASSERT(!memo_cell_of(F, "result").evaluating && !memo_cell_of(F, "result").valid, "computation fault retained a partial cache or evaluating guard")
 	var/cycled = FALSE
 	try
 		memo_value(F, "cycle")
-	catch(var/exception/fault)
+	catch(var/exception/cycle_exception)
 		cycled = TRUE
 	TEST_ASSERT(cycled, "recursive memo did not reject its cycle")
 	TEST_ASSERT_EQUAL(GLOB.op_pure_depth, prior_pure, "fault/cycle leaked purity depth")

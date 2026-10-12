@@ -75,7 +75,7 @@ GLOBAL_LIST_EMPTY(memo_lifetime_index)
 		// The entry can have linked before its publication faulted. Teardown
 		// releases any partial custody/indexes, preserving the original fault.
 		try
-			qdel(cell)
+			destroyed(cell, holder, cause = "memo cell setup failed")
 		catch(var/exception/cleanup_fault)
 			dq_report_caught(cleanup_fault, "Memo cell cleanup failed while preserving its allocation fault")
 		GLOB.op_pure_depth = prior_pure
