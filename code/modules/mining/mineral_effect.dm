@@ -23,7 +23,6 @@
 	if(M.reagent)
 		ore_reagent = M.reagent
 	layer = min_turf.layer+0.1
-	changed(src)
 
 /obj/effect/mineral/proc/get_scan_overlay()
 	if(!scanner_image)

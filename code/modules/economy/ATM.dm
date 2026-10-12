@@ -8,7 +8,6 @@ log transactions
 */
 
 #define NO_SCREEN 0
-#define CHANGE_SECURITY_LEVEL 1
 #define TRANSFER_FUNDS 2
 #define VIEW_TRANSACTION_LOGS 3
 
@@ -539,7 +538,6 @@ CAPABILITIES(/obj/machinery/atm)
 	E.owner_name = authenticated_account().owner_name
 
 #undef NO_SCREEN
-#undef CHANGE_SECURITY_LEVEL
 #undef TRANSFER_FUNDS
 #undef VIEW_TRANSACTION_LOGS
 

@@ -134,7 +134,6 @@ base_var	code/game/jobs/access.dm	/obj/var/list/req_access
 base_var	code/game/jobs/access.dm	/obj/var/list/req_one_access
 base_var	code/game/machinery/machinery.dm	var/use_power = USE_POWER_IDLE
 base_var	code/game/machinery/machinery.dm	var/tmp/power_init_complete = FALSE
-base_var	code/game/machinery/machinery.dm	var/power_subscriber = TRUE
 base_var	code/game/machinery/machinery.dm	var/list/component_parts = null
 base_var	code/game/machinery/machinery.dm	var/tmp/uid
 base_var	code/game/machinery/machinery.dm	var/clicksound // sound played on succesful interface. Just put it in the list of vars at the start.
@@ -163,7 +162,6 @@ base_var	code/game/objects/items.dm	var/no_attack_log = 0 //If it's an item we d
 base_var	code/game/objects/items.dm	var/tmp/list/actions //list of /datum/action's that this item has.
 base_var	code/game/objects/items.dm	var/list/actions_types //list of paths of action datums to give to the item on New().
 base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
-base_var	code/game/objects/items.dm	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
 base_var	code/game/objects/items.dm	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 base_var	code/game/objects/items.dm	var/embed_chance = -1 //0 won't embed, and 100 will always embed
@@ -206,7 +204,6 @@ base_var	code/game/objects/items/weapons/capture_crystal.dm	var/capture_caught =
 base_var	code/game/objects/obj_defense.dm	var/debris_type
 base_var	code/game/objects/obj_defense.dm	var/debris_amount = 1
 base_var	code/game/objects/obj_defense.dm	var/broken_icon_state
-base_var	code/game/objects/objs.dm	var/w_class // Size of the object.
 base_var	code/game/objects/objs.dm	var/tmp/in_use = 0 // If we have a user using us, this will be set on. We will check if the user has stopped using us, and thus stop updating and LAGGING EVERYTHING!
 base_var	code/game/objects/objs.dm	var/show_messages
 base_var	code/game/objects/objs.dm	var/can_speak = 0 //For MMIs and admin trickery. If an object has a brainmob in its contents, set this to 1 to allow it to speak.
@@ -328,7 +325,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/image/pose_indicat
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/bloodstream/bloodstr = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/ingested/ingested = null
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/datum/reagents/metabolism/touch/touching = null
-base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/pulse = PULSE_NORM //current pulse level
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/does_not_breathe = 0 //Used for specific mobs that can't take advantage of the species flags (changelings)
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/addictions = null // contains currently addicted chem reagent IDs
 base_var	code/modules/mob/living/carbon/carbon_defines.dm	VAR_PROTECTED/list/addiction_counters = null // contains counters by reagent ID
@@ -336,7 +332,6 @@ base_var	code/modules/mob/living/carbon/carbon_defines.dm	var/last_taste_text = 
 base_var	code/modules/mob/living/carbon/human/MedicalSideEffects.dm	/mob/living/carbon/human/var/list/datum/medical_effect/side_effects
 base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_stomach = FALSE
 base_var	code/modules/mob/living/carbon/human/human.dm	var/struggle_anim_taur = FALSE
-base_var	code/modules/mob/living/carbon/human/human.dm	var/embedded_flag //To check if we've need to roll for damage on movement while an item is imbedded in us.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/obj/item/rig/wearing_rig // This is very not good, but it's much much better than calling get_rig() every update_canmove() call.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spitting = 0 //Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 base_var	code/modules/mob/living/carbon/human/human.dm	var/spit_projectile = null //Projectile type.
@@ -353,7 +348,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/datum/robolim
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear // Lazy.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/all_underwear_metadata = list() // ALLOW(instance_list): d: per-mob all_underwear_metadata, filled at runtime; mobs are few
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/list/hide_underwear = list() // ALLOW(instance_list): d: per-mob hide_underwear, filled at runtime; mobs are few
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/voice = "" //Instead of new say code calling GetVoice() over and over and over, we're just going to ask this variable, which gets updated in Life()
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hand_blood_color
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/robobody_count = 0 // Counts torso, groin, and head, if they're robotic
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/identifying_gender // In case the human identifies as another gender than it's biological
@@ -399,7 +393,6 @@ base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/b_wing3 = 30
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/a_wing = 255 //applied to both portions.
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/flapping = 0
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/custom_species
-base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/phobias //For holding a list of phobias
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/redgate_restricted = FALSE
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_headset = FALSE
 base_var	code/modules/mob/living/carbon/human/human_defines.dm	var/hide_glasses = FALSE
@@ -489,7 +482,6 @@ base_var	code/modules/mob/mob_defines.dm	var/other_mobs = null
 base_var	code/modules/mob/mob_defines.dm	var/memory = ""
 base_var	code/modules/mob/mob_defines.dm	var/disabilities = 0 //Carbon
 base_var	code/modules/mob/mob_defines.dm	var/other = 0.0
-base_var	code/modules/mob/mob_defines.dm	var/real_name = null
 base_var	code/modules/mob/mob_defines.dm	var/nickname = null
 base_var	code/modules/mob/mob_defines.dm	var/flavor_text = ""
 base_var	code/modules/mob/mob_defines.dm	var/med_record = ""
