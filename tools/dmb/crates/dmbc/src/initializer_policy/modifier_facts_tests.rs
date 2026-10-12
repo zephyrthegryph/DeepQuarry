@@ -21,6 +21,55 @@ struct Worker<'a> {
 }
 
 #[test]
+fn initializer_delegates_preserve_current_canonical_answer_ownership() {
+    struct Current {
+        answer: std::sync::Mutex<dm_ir::CanonicalResolvedAnswer>,
+        ordinary: AtomicU64,
+        paired: AtomicU64,
+    }
+    impl Resolver for Current {
+        fn resolve(&self, _: ResolveQuery) -> ResolvedMeaning {
+            self.ordinary.fetch_add(1, Ordering::Relaxed);
+            self.answer.lock().unwrap().answer().clone()
+        }
+        fn resolve_with_canonical(&self, _: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
+            self.paired.fetch_add(1, Ordering::Relaxed);
+            self.answer.lock().unwrap().clone()
+        }
+    }
+    let current = Current {
+        answer: std::sync::Mutex::new(dm_ir::CanonicalResolvedAnswer::new(
+            ResolvedMeaning::Presence(false),
+        )),
+        ordinary: AtomicU64::new(0),
+        paired: AtomicU64::new(0),
+    };
+    let modifier = Host(&current);
+    let admission = super::super::current_admission::Host(&current);
+    let delegates: [&dyn Resolver; 2] = [&modifier, &admission];
+    let query = ResolveQuery::Type(SymbolId::of("/datum/probe"));
+    for expected in [false, true] {
+        *current.answer.lock().unwrap() =
+            dm_ir::CanonicalResolvedAnswer::new(ResolvedMeaning::Presence(expected));
+        let source = current.answer.lock().unwrap().clone();
+        for delegate in delegates {
+            let answer = delegate.resolve_with_canonical(query);
+            assert_eq!(answer.answer(), &ResolvedMeaning::Presence(expected));
+            assert_eq!(answer.canonical().as_ptr(), source.canonical().as_ptr());
+            assert_eq!(answer.canonical(), answer.answer().canonical_bytes());
+            assert!(
+                delegate.observes_reads(),
+                "opaque hosts still require replay"
+            );
+            assert!(delegate.transparent_receipt_observer().is_none());
+            assert_eq!(delegate.resolve(query), ResolvedMeaning::Presence(expected));
+        }
+    }
+    assert_eq!(current.paired.load(Ordering::Relaxed), 4);
+    assert_eq!(current.ordinary.load(Ordering::Relaxed), 4);
+}
+
+#[test]
 fn prepared_modifier_locators_share_exact_inputs_but_replay_changed_semantics() {
     let mut symbols = SymbolTable::default();
     let original = write(&mut symbols);

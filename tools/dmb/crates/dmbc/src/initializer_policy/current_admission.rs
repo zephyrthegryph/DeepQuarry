@@ -4,6 +4,9 @@ use dm_session::observations::ReceiptAdmission;
 use std::sync::Arc;
 pub(super) struct Host<'host>(pub(super) &'host dyn Resolver);
 impl Resolver for Host<'_> {
+    fn resolve_with_canonical(&self, query: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
+        self.0.resolve_with_canonical(query)
+    }
     fn resolve(&self, query: ResolveQuery) -> ResolvedMeaning {
         self.0.resolve(query)
     }

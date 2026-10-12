@@ -206,6 +206,9 @@ impl ModifierArtifacts {
 }
 struct Host<'a>(&'a dyn Resolver);
 impl Resolver for Host<'_> {
+    fn resolve_with_canonical(&self, query: ResolveQuery) -> dm_ir::CanonicalResolvedAnswer {
+        self.0.resolve_with_canonical(query)
+    }
     fn transparent_receipt_observer(&self) -> Option<dm_ir::TransparentReceiptObserver<'_>> {
         self.0.transparent_receipt_observer()
     }
