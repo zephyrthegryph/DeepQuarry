@@ -17,8 +17,8 @@ def required_edit_coverage(edits):
 
 def bounded_policy(total_workers, request_workers, job_memory_mib, sampled_bytes=None):
     if (type(total_workers) is not int or type(request_workers) is not int
-            or not 1 <= total_workers <= 2 or not 1 <= request_workers <= total_workers):
-        raise ValueError("request workers must fit explicit total worker budget 1..2")
+            or not 1 <= total_workers <= 8 or not 1 <= request_workers <= total_workers):
+        raise ValueError("request workers must fit explicit total worker budget 1..8")
     if not 1 <= job_memory_mib <= 32768:
         raise ValueError("job memory must be 1..32768 MiB")
     job_bytes = job_memory_mib * 1024 * 1024

@@ -172,7 +172,7 @@ class Endpoint:
                                                            ctypes.POINTER(wintypes.ULONG)]
 
     def probe(self, owner=None):
-        deadline = time.monotonic() + 2
+        deadline = time.monotonic() + float(os.environ.get("DMB_PROBE_BUSY_SECONDS", "2"))
         while True:
             handle = self.kernel.CreateFileW(self.name, 0xc0000000, 0, None, 3, 0, None)
             if handle != ctypes.c_void_p(-1).value:
@@ -597,9 +597,25 @@ def main():
         receipt["preparation"]["status"] = "complete"
         write_receipt(root, receipt)
         for ordinal, (kind, edit) in enumerate(steps):
+            settle_quiet = float(os.environ.get("DMB_SETTLE_QUIET_SECONDS", "0"))
+            settled_s = 0.0
+            if settle_quiet > 0 and ordinal > 0:
+                # Wait (outside the timed request) until the daemon log is quiet, so pressure
+                # release maintenance is not racing the next client; the wait is recorded.
+                log = root / "daemon.stderr"
+                settle_started = time.monotonic()
+                last_size, quiet_since = -1, time.monotonic()
+                while time.monotonic() - settle_started < 600:
+                    size = log.stat().st_size
+                    if size != last_size:
+                        last_size, quiet_since = size, time.monotonic()
+                    elif time.monotonic() - quiet_since >= settle_quiet:
+                        break
+                    time.sleep(1)
+                settled_s = time.monotonic() - settle_started
             if daemon.poll() is not None or not endpoint.probe(daemon):
                 raise RuntimeError("owned daemon missing before request")
-            row = {"ordinal": ordinal, "kind": kind, "sessions": [], "phase": "retained"}
+            row = {"ordinal": ordinal, "kind": kind, "sessions": [], "phase": "retained", "pre_request_settle_s": settled_s}
             receipt["active_request"] = row
             for index, project in enumerate(projects):
                 session = {"index": index, "project": str(project / manifest)}
