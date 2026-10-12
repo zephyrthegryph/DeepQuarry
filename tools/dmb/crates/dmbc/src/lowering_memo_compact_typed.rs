@@ -1,5 +1,7 @@
 //! Typed transport is payload evidence, never a substitute for current issuance.
-use dm_ir::{PortableResolvedAnswer, ResolveQuery, ResolvedMeaning, Resolver};
+use dm_ir::{PortableResolvedAnswer, ResolveQuery, Resolver};
+#[cfg(test)]
+use dm_ir::ResolvedMeaning;
 #[cfg(test)]
 pub(super) fn hydrate(
     query: ResolveQuery,
