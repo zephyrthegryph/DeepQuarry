@@ -26,6 +26,12 @@ impl LocalShapeValues {
             Self::Shared { lease, .. } => lease.retain_current_keys(keys),
         }
     }
+    pub(super) fn storage_accounting(&self) -> dm_session::ArtifactStorageAccounting {
+        match self {
+            Self::Local(store) => store.storage_accounting(),
+            Self::Shared { lease, .. } => lease.storage_accounting(),
+        }
+    }
     /// Shared visitors expose the entire engine-scoped core, including sibling
     /// leases. Pointer-deduplicated census must not call this per-host bytes.
     pub(super) fn visit_storage(

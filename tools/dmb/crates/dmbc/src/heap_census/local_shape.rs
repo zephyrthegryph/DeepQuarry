@@ -3,6 +3,10 @@ use super::*;
 use dm_tree::{frontend::RetainedSemanticTree, owner_local_shape::LocalShapeStorageView};
 
 pub(super) fn inspect(census: &mut HeapCensus, state: &RetainedSemanticTree) {
+    census.artifact_storage_accounting(
+        "retained_local_shape",
+        state.local_shape_storage_accounting(),
+    );
     state.visit_local_shape_storage(|view| match view {
         LocalShapeStorageView::Store { buckets, entries } => {
             census.owner("retained_local_shape.index").observed_items += entries as u64;

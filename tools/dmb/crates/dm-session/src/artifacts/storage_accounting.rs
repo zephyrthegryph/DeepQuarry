@@ -51,6 +51,9 @@ pub struct ArtifactIncidenceCounts {
 /// are outside this core's traversal. All byte coverage remains explicitly partial.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ArtifactStorageAccounting {
+    /// Diagnostic allocation identity only. Valid for one quiescent traversal;
+    /// never stable across lifetimes, an output ID or artifact admission proof.
+    pub core_address: usize,
     pub coverage: ArtifactStorageCoverage,
     pub exclusions: &'static [ArtifactStorageExclusion],
     pub buckets: usize,
@@ -74,6 +77,7 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
         let state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         ArtifactStorageAccounting {
+            core_address: self as *const Self as usize,
             coverage: ArtifactStorageCoverage::Partial,
             exclusions: EXCLUSIONS,
             buckets: state.buckets.len(),

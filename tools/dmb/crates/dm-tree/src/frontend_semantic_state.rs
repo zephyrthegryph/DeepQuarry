@@ -151,6 +151,11 @@ impl RetainedSemanticTree {
     pub fn local_shape_hits(&self) -> usize {
         self.normalization.local.hits()
     }
+    /// Diagnostic counts of the whole local-shape core, including sibling host
+    /// leases when shared. Private allocation bytes remain explicitly excluded.
+    pub fn local_shape_storage_accounting(&self) -> dm_session::ArtifactStorageAccounting {
+        self.normalization.local.storage_accounting()
+    }
     pub fn visit_local_shape_storage(
         &self,
         visit: impl FnMut(crate::owner_local_shape::LocalShapeStorageView<'_>),

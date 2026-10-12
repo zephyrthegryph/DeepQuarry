@@ -102,6 +102,9 @@ impl RetainedOwnerShapes {
     pub(crate) fn hits(&self) -> usize {
         self.hits.load(Ordering::Relaxed)
     }
+    pub(crate) fn storage_accounting(&self) -> dm_session::ArtifactStorageAccounting {
+        self.store.storage_accounting()
+    }
     pub(crate) fn visit_storage(&self, mut visit: impl FnMut(LocalShapeStorageView<'_>)) {
         use dm_session::ObservedArtifactStorageView as V;
         self.store.visit_storage(|view| match view {

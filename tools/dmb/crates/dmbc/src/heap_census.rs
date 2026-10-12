@@ -2,6 +2,7 @@
 //! not allocator metadata, private memory, or a fabricated total heap size.
 //! A boundary shares one census, so Arc aliases and nested buffers count once.
 mod abi_certificates;
+mod artifact_accounting;
 #[path = "heap_census/body_contexts.rs"]
 mod body_contexts;
 mod cache_batch;
@@ -15,9 +16,9 @@ mod initializer_ledger;
 mod lexical_callable;
 mod local_shape;
 mod macro_environments;
-mod resolver_memo;
 mod metadata_dependencies;
 mod resident_map_outputs;
+mod resolver_memo;
 mod source_text;
 mod storage_inventory;
 pub(crate) use resident_map_outputs::unit_weight as resident_map_unit_weight;
@@ -76,6 +77,8 @@ pub struct HeapCensus {
     file_mappings: HashSet<usize>,
     buffer_encounters: usize,
     collections: HashSet<usize>,
+    // Generic core aliases share logical counts, separately from buffer bytes.
+    accounted_artifact_cores: HashSet<usize>,
     frozen_code_metrics: relocation_metrics::RelocationMetrics,
     compact_charge: Option<compact_symbolic_charge::Budget>,
 }
@@ -112,6 +115,7 @@ impl HeapCensus {
             file_mappings: HashSet::new(),
             buffer_encounters: 0,
             collections: HashSet::new(),
+            accounted_artifact_cores: HashSet::new(),
             frozen_code_metrics: Default::default(),
             compact_charge: None,
         }
@@ -954,6 +958,7 @@ impl HeapCensus {
                 "Shared allocations are deduplicated by live pointer and attributed to the first named owner in this boundary.",
                 "Vec capacities include inline element descriptors; nested heap buffers are counted separately, never those descriptors twice.",
                 "Arc control blocks, allocator size-class rounding/metadata, stack storage, private indexes, and explicitly unknown backing are excluded.",
+                "Generic artifact control counts are logical cardinalities, never node bytes; shared-core counts include sibling leases and are not per-host charges. Lease/claim/incidence index capacities remain excluded even when payload buckets are empty.",
                 "Slices without exposed capacity contribute logical-length lower bounds, marked in their owner; this is not a complete heap or RSS total.",
                 "File-backed mapping extents are deduplicated separately and excluded from heap capacity/compact retention charge; they are not measured private pages.",
                 "The census is diagnostic-only, opt-in, and O(accessible retained nodes); its temporary pointer ledger is excluded.",
