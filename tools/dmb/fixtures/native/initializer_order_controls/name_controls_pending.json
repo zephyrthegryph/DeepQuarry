@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "scope": "Pending name/literal registration controls, no runtime outcomes guessed",
+  "controls": [
+    "initializer_names_formal_order",
+    "initializer_names_local_order",
+    "initializer_names_unreachable_order",
+    "initializer_names_folded_order"
+  ],
+  "referenceStatus": "Paused after machine DM slot contention, no source legality result",
+  "preservedQueueTimeouts": [
+    "E:/dq-cache/dmb-names-formal-reference/ab6242a12b734b4b9c9c78481f14cb1b/receipt.json",
+    "E:/dq-cache/dmb-names-local-reference/3aa0eb57783f4f32a48ba37c3198891c/receipt.json"
+  ],
+  "interruptedPreparationSession": 60864,
+  "recapture": "Use each existing run.py --reference-only with pinned DM; runtime must wait valid receipt and new native CLI pin"
+}
