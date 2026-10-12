@@ -76,7 +76,7 @@ CAPABILITIES(/datum/lookup_read_scope)
 		return
 	var/list/definitions = holder.generated_lookup_reads(proc_name)
 	for(var/list/spec as anything in definitions)
-		var/contextual = spec["root"] in list("actor", "target", "held", "authority")
+		var/contextual = (spec["root"] in list("actor", "target", "held", "authority"))
 		if(contextual && !A)
 			continue
 		var/datum/root = lookup_read_root(holder, A, spec["root"])

@@ -229,7 +229,8 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 		row = table["[path]::[proc_name]"]
 		if(row)
 			break
-		path = type2parent(path)
+		var/datum/typed = path
+		path = initial(typed.parent_type)
 	if(!row)
 		return keys
 	var/list/names = GLOB.generated_read_names
