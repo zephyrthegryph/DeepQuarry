@@ -500,3 +500,7 @@ mod declaration_tests;
 #[cfg(test)]
 #[path = "memo_resolver_canonical_tests.rs"]
 mod canonical_tests;
+
+#[path = "memo_resolver_storage.rs"]
+mod storage;
+pub use storage::MemoStorageView;

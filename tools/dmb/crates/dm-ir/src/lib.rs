@@ -53,7 +53,7 @@ pub use selected_references::{
 mod receipt_observer;
 pub use receipt_observer::{ResolvedReadObserver, TransparentReceiptObserver};
 mod memo_resolver;
-pub use memo_resolver::{MemoResolver, MemoStats};
+pub use memo_resolver::{MemoResolver, MemoStats, MemoStorageView};
 
 mod word_storage;
 pub use word_storage::{

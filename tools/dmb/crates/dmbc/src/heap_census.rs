@@ -15,6 +15,7 @@ mod initializer_ledger;
 mod lexical_callable;
 mod local_shape;
 mod macro_environments;
+mod resolver_memo;
 mod metadata_dependencies;
 mod resident_map_outputs;
 mod source_text;
