@@ -1221,7 +1221,6 @@
 
 /// The picture of a light shows its state.
 /proc/p2l_item_icon(obj/item/light/B)
-	B.update_icon()
 	refresh_flush()
 	return B.icon_state
 

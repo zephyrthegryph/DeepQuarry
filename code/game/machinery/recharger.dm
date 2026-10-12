@@ -218,7 +218,6 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 		return OP_REFUSED
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [device] from %T%."), MSG_OTHERS("%U% removes [device] from %T%."))
-	device.update_icon()
 	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
 	return OP_OK
 

@@ -683,7 +683,6 @@ the megaphone, the medical records console and the desk bell, is [operations_and
 		to_chat(user, span_warning("The cover is locked and cannot be opened."))
 		return ITEM_INTERACT_BLOCKING
 	opened = 1
-	update_icon()
 // AFTER
 CAPABILITIES(/obj/machinery/power/apc)
 	cover(open = tool(TOOL_CROWBAR))
@@ -787,8 +786,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/canister, TYPE_PROC
 ```
 
 ```dm
-// BEFORE: door_control.dm:98 (a string template language)
-APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0:-p}")
+// BEFORE: door_control.dm:98 (a string template language: "doorctrl{appearance_powered?0:-p}")
 // AFTER
 /obj/machinery/button/remote/draw(datum/look/look)
 	..()

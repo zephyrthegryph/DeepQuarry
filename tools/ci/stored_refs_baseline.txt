@@ -1505,7 +1505,6 @@ list	code/datums/properties/constraints.dm	var/list/constraint_overrides
 list	code/datums/registries.dm	var/list/members
 list	code/datums/registries.dm	var/list/member_keys
 list	code/datums/registries.dm	var/list/present
-list	code/datums/sys/appearance.dm	GLOBAL_LIST_EMPTY(appearance_queue)
 list	code/datums/underwear/underwear.dm	var/list/tweaks // Underwear customizations.
 list	code/domains/atmos/pipe_network.dm	var/list/external_air_volumes
 list	code/domains/heat/heat_entries.dm	GLOBAL_LIST_EMPTY(heat_entry_edges)

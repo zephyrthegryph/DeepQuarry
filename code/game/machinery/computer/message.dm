@@ -45,7 +45,6 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 			MK.set_info(MK.info + ("<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")))
 			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
-			changed(src)
 			return OP_OK
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
@@ -63,6 +62,7 @@ MSG_DEF_SELF(message_monitor/too_hot, "It is too hot to mess with!")
 			rel_set(src, nameof(linkedServer), REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 TRACKED(/obj/machinery/computer/message_monitor, emag)
+TRACKED(/obj/machinery/computer/message_monitor, hacking)
 
 CAPABILITIES(/obj/machinery/computer/message_monitor)
 	configure(light_glow(color = "#00b000"))
@@ -171,12 +171,10 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 	else
 		var/currentKey = linkedServer().decryptkey
 		to_chat(user, span_warning("Brute-force completed! The key is '[currentKey]'."))
-	hacking = 0
-	changed(src)
+	set_hacking(0)
 
 /obj/machinery/computer/message_monitor/proc/UnmagConsole()
 	set_emag(FALSE)
-	changed(src)
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
@@ -219,7 +217,7 @@ CAPABILITIES(/obj/machinery/computer/message_monitor)
 /obj/machinery/computer/message_monitor/proc/ui_act_hack(datum/act/op/A)
 	var/mob/living/original = A.actor.mind.original_character
 	if((A.actor.mind.special_role && (original && original == A.actor)))
-		hacking = 1
+		set_hacking(1)
 		//Time it takes to bruteforce is dependant on the password length.
 		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(A.actor))
 

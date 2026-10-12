@@ -242,6 +242,6 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 /// budgeted marked drain; this is the drain point the kernel's phases call).
 /proc/kernel_drain_now()
 	stat_drain_point()
-	appearance_flush()
+	refresh_flush()
 
 #endif

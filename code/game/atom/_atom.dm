@@ -366,12 +366,6 @@ SETTER(/atom, density)
 /atom/proc/melt()
 	return
 
-// Previously this was defined both on /obj/ and /turf/ seperately.  And that's bad.
-/atom/proc/update_icon()
-	// A DECLARE_APPEARANCE type needs no override (code/datums/lifecycle/declarations.dm).
-	decl_appearance_apply()
-
-
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	PUBLISH_LEGACY(src, /datum/notice/hitby, source, throwingdatum)
 	thrown_damage(source, throwingdatum)
