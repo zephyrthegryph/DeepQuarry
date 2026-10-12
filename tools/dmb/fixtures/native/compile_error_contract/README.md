@@ -1,6 +1,6 @@
 # Compiler error contract
 
-Fourteen tiny, independent compiler-only controls use the existing
+Eighteen tiny, independent compiler-only controls use the existing
 `loop_local_diagnostics` paired driver. No DreamDaemon, alternative executor,
 cache, or compiler implementation is added.
 
@@ -45,9 +45,13 @@ The shared runner currently requires acceptance, rejection class, and exact
 diagnostics to agree. No wording normalization, source-error whitelist, or
 assumed error-location golden is applied. A demonstrated and documented wording
 difference can be considered separately; source acceptance and rejection class
-must still agree. No reference compile or paired run has been executed for
-this new corpus yet. This is diagnostic coverage, not runtime or full-suite
-acceptance.
+must still agree. Actual paired evidence exists in
+`E:/dq-cache/dmb-compile-error-contract/20261011-4bf/df5ca5ee29e34857a489e631f4b16cc8/receipt.json`:
+all 18 acceptance/rejection classes agree, while the missing modified type case
+had an additional BYOND recovery diagnostic. Exact diagnostics therefore did
+not all agree. Fresh reference investigation of identical source bytes did not
+reproduce that secondary; see `../modified_initializer_recovery_diagnostics/capture.json`.
+This is diagnostic coverage, not runtime or full-suite acceptance.
 
 Pure fixture checks:
 

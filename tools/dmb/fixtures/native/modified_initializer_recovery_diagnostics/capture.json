@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "scope": "BYOND-only compiler recovery observations; not native paired acceptance or diagnostic completeness",
+  "dm_version": "516.1687",
+  "dm_sha256": "8cac7e8bd48219f8a7fb622535a1ce1a914d0a9a3e909bc9ceb84b3074709dc0",
+  "receipts": [
+    {
+      "path": "E:\\dq-cache\\dmb-modified-initializer-recovery-diagnostics\\f71b816adbab43d891fe9855c41783d4\\receipt.json",
+      "sha256": "ff641f65c9c889a7230d32c5628106e4397307ff44c4dfc5d77bf0fe44dbc515",
+      "complete": true,
+      "reaped": true,
+      "backend": "byond-only",
+      "observations": {
+        "missing_one": [
+          {
+            "file": "missing_one.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/missing: undefined type"
+          }
+        ],
+        "missing_empty": [
+          {
+            "file": "missing_empty.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/missing: undefined type path"
+          }
+        ],
+        "missing_two": [
+          {
+            "file": "missing_two.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/missing: undefined type"
+          }
+        ],
+        "missing_known_proc": [
+          {
+            "file": "missing_known_proc.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/missing: undefined type"
+          }
+        ],
+        "known_missing_field": [
+          {
+            "file": "known_missing_field.dm",
+            "line": 3,
+            "severity": "error",
+            "message": "amount: undefined var"
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-modified-initializer-recovery-diagnostics\\905e09e4a777433f8b0d9b5ef39641bb\\receipt.json",
+      "sha256": "17de453054f4fd2511d5910233d964f838263288b8d417b62d4080cd5b72f7c3",
+      "complete": true,
+      "reaped": true,
+      "backend": "byond-only",
+      "observations": {
+        "missing_one_used": [
+          {
+            "file": "missing_one_used.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type"
+          }
+        ],
+        "missing_known_proc_used": [
+          {
+            "file": "missing_known_proc_used.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type"
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-modified-initializer-recovery-diagnostics\\1af402b723944fe9a1de08d1be0cbb2e\\receipt.json",
+      "sha256": "03a60623a678dcde54011bcf7c1e254e31be7f018fc22343509e25b487c8a684",
+      "complete": true,
+      "reaped": true,
+      "backend": "byond-only",
+      "observations": {
+        "missing_one_used_lf": [
+          {
+            "file": "missing_one_used_lf.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type"
+          }
+        ],
+        "missing_known_proc_used_lf": [
+          {
+            "file": "missing_known_proc_used_lf.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type"
+          }
+        ],
+        "missing_one_lf": [
+          {
+            "file": "missing_one_lf.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/missing: undefined type"
+          }
+        ]
+      }
+    },
+    {
+      "path": "E:\\dq-cache\\dmb-modified-initializer-recovery-diagnostics\\41f42220188d40bb85907e4a0ccf37ca\\receipt.json",
+      "sha256": "0fa68d1a78a7dd29f2290cbd71d48e4bc180ec77e75958188ac9782f1d052e6f",
+      "complete": true,
+      "reaped": true,
+      "backend": "byond-only",
+      "observations": {
+        "undefined_modified_initializer_type": [
+          {
+            "file": "undefined_modified_initializer_type.dm",
+            "line": 1,
+            "severity": "error",
+            "message": "/datum/formerly_missing_type: undefined type"
+          }
+        ]
+      }
+    }
+  ],
+  "historical_secondary_reproduction": "Exact historical DM/DME bytes and same executable SHA freshly reject with only primary type diagnostic; historical extra amount undefined proc not reproduced. DLL/environment/other implicit inputs were not exhaustively captured. No production secondary diagnostic synthesized."
+}
