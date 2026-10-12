@@ -17,6 +17,7 @@ pub struct OperandSite {
 pub struct RestoredInstructionFacts {
     external: bool,
     debug: bool,
+    referenced_argument_prefix: u32,
 }
 impl RestoredInstructionFacts {
     pub fn external(&self) -> bool {
@@ -29,6 +30,7 @@ impl RestoredInstructionFacts {
 pub struct FrozenProc {
     code: std::sync::Arc<SymbolicCode>,
     labels: Vec<Option<u32>>,
+    referenced_argument_prefix: u32,
 }
 impl FrozenProc {
     /// Restore persisted encoded code through the independent decoder grammar.
@@ -47,6 +49,7 @@ impl FrozenProc {
             Self {
                 code: std::sync::Arc::new(code),
                 labels,
+                referenced_argument_prefix: facts.referenced_argument_prefix,
             },
             facts,
         ))
@@ -72,6 +75,9 @@ impl FrozenProc {
     }
     pub fn labels(&self) -> &[Option<u32>] {
         &self.labels
+    }
+    pub fn referenced_argument_prefix(&self) -> u32 {
+        self.referenced_argument_prefix
     }
     /// Actual owned backing, for logical retention accounting only.
     pub fn label_storage_capacity(&self) -> usize {
@@ -184,6 +190,7 @@ pub fn freeze_proc_observed<G>(
     Ok(FrozenProc {
         code: std::sync::Arc::new(code),
         labels,
+        referenced_argument_prefix: emission.referenced_argument_prefix,
     })
 }
 
@@ -234,6 +241,7 @@ struct Emission {
     words: Vec<u32>,
     relocations: Vec<Relocation>,
     sites: Vec<OperandSite>,
+    referenced_argument_prefix: u32,
 }
 impl Emission {
     fn reference(
@@ -297,7 +305,12 @@ impl Emission {
     }
     fn variable(&mut self, variable: &VariableWord) -> Result<(), LinkError> {
         match variable {
-            VariableWord::Arg(id) => self.words.extend([0xffd9, *id]),
+            VariableWord::Arg(id) => {
+                self.referenced_argument_prefix = self
+                    .referenced_argument_prefix
+                    .max(id.checked_add(1).ok_or(LinkError::OffsetOverflow)?);
+                self.words.extend([0xffd9, *id]);
+            }
             VariableWord::Local(id) => self.words.extend([0xffda, *id]),
             VariableWord::Src => self.words.push(0xffce),
             VariableWord::Usr => self.words.push(0xffcd),
@@ -447,6 +460,35 @@ mod tests {
     use crate::{Instruction, LabelId, Ledger, SymbolId};
     fn instruction(opcode: u32, operands: Vec<Word>) -> Item {
         Item::Instruction(Instruction { opcode, operands })
+    }
+    #[test]
+    fn referenced_formal_prefix_is_issued_by_typed_fresh_and_restored_operands() {
+        for (variable, expected) in [
+            (VariableWord::Arg(0), 1),
+            (VariableWord::Arg(2), 3),
+            (VariableWord::Args, 0),
+        ] {
+            let frozen = freeze_proc(&SymbolicProc {
+                items: vec![instruction(
+                    byond_dmb::bytecode::opcode::GET_VAR,
+                    vec![Word::Variable(variable)],
+                )],
+            })
+            .unwrap();
+            assert_eq!(frozen.referenced_argument_prefix(), expected);
+            let restored =
+                FrozenProc::restore(frozen.code().clone(), frozen.labels().to_vec()).unwrap();
+            assert_eq!(restored.referenced_argument_prefix(), expected);
+        }
+        assert!(
+            freeze_proc(&SymbolicProc {
+                items: vec![instruction(
+                    byond_dmb::bytecode::opcode::GET_VAR,
+                    vec![Word::Variable(VariableWord::Arg(u32::MAX))]
+                )]
+            })
+            .is_err()
+        );
     }
     #[test]
     fn frozen_shared_code_clones_share_immutable_word_and_relocation_owners() {

@@ -199,7 +199,7 @@ pub fn validate_global_program(
                     return Err(unsupported(format!(
                         "source declaration not admitted: {}",
                         item.header()
-                    )))
+                    )));
                 }
             }
         }
@@ -666,7 +666,13 @@ fn compose_records_access(
             ),
         );
         let helper = &batch.helpers[helper_index];
-        let prefix = helper_metadata::prefix(&batch, &procedures, helper.owner, helper.argument)?;
+        let prefix = helper_metadata::prefix(
+            &batch,
+            &procedures,
+            helper.owner,
+            helper.argument,
+            helper.frozen.referenced_argument_prefix(),
+        )?;
         helper_metadata::emit(
             &mut dmb,
             &mut string_index,

@@ -11,6 +11,16 @@ enum Site {
     Typed(RelocationKind, OperandEncoding),
     Primitive(RelocationKind, OperandEncoding),
 }
+fn argument_prefix(variable: &Variable) -> Result<u32, String> {
+    match variable {
+        Variable::Arg(index) => index
+            .checked_add(1)
+            .ok_or_else(|| "restored argument index overflow".into()),
+        Variable::SetCache(a, b) => Ok(argument_prefix(a)?.max(argument_prefix(b)?)),
+        Variable::Initial(inner) | Variable::IsSaved(inner) => argument_prefix(inner),
+        _ => Ok(0),
+    }
+}
 pub(super) fn validate(
     code: &SymbolicCode,
     labels: &[Option<u32>],
@@ -29,6 +39,7 @@ pub(super) fn validate(
     let mut facts = RestoredInstructionFacts {
         external: false,
         debug: false,
+        referenced_argument_prefix: 0,
     };
     for instruction in &decoded {
         use byond_dmb::bytecode::opcode;
@@ -64,7 +75,12 @@ pub(super) fn validate(
                     at += 1;
                 }
                 Operand::Value(value) => at += value_site(&value, at, &mut sites),
-                Operand::Variable(value) => at += variable_sites(&value, at, &mut sites),
+                Operand::Variable(value) => {
+                    facts.referenced_argument_prefix = facts
+                        .referenced_argument_prefix
+                        .max(argument_prefix(&value)?);
+                    at += variable_sites(&value, at, &mut sites);
+                }
                 Operand::Switch { cases, .. } => {
                     at += 1;
                     for (value, _) in cases {

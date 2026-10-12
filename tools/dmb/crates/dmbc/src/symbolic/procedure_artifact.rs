@@ -81,8 +81,10 @@ impl Contribution {
                 .len()
                 .checked_add(frame.argument_names.len())?,
             |count, helper| {
-                let prefix = usize::try_from(helper.argument).ok()?;
-                if prefix >= frame.argument_names.len() {
+                let argument = usize::try_from(helper.argument).ok()?;
+                let prefix =
+                    argument.max(usize::try_from(helper.frozen.referenced_argument_prefix()).ok()?);
+                if argument >= frame.argument_names.len() || prefix > frame.argument_names.len() {
                     return None;
                 }
                 count

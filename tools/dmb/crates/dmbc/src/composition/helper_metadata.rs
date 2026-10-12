@@ -1,6 +1,7 @@
 //! Argument-source metadata bound from the SAME current owning frame.
 //! Pinned paired capture f59634645b3046708722d69420335a30 establishes:
-//! helper at argument N has preceding names [0..N], all flags/selectors zero.
+//! helper at argument N has preceding names [0..N], extended through any
+//! directly referenced formal; all flags/selectors are zero.
 //! Executable Arg operands still use the full owning lexical frame.
 use super::*;
 
@@ -9,6 +10,7 @@ pub(super) fn prefix<'a>(
     procedures: &[procedure_plan::Slot<crate::lowering::UnitIdentity>],
     owner: crate::lowering::UnitIdentity,
     argument: u32,
+    referenced_prefix: u32,
 ) -> Result<&'a [String], CompositionError> {
     let table_index = batch
         .tables
@@ -28,9 +30,15 @@ pub(super) fn prefix<'a>(
     if unit.lowered.identity != owner {
         return Err(unsupported("helper owning artifact identity differs"));
     }
-    let count = usize::try_from(argument)
+    let argument = usize::try_from(argument)
         .map_err(|_| unsupported("helper parameter index exceeds usize"))?;
-    if count >= unit.lowered.frame.argument_names.len() {
+    let count = argument.max(
+        usize::try_from(referenced_prefix)
+            .map_err(|_| unsupported("helper referenced parameter extent exceeds usize"))?,
+    );
+    if argument >= unit.lowered.frame.argument_names.len()
+        || count > unit.lowered.frame.argument_names.len()
+    {
         return Err(unsupported("helper parameter is outside current frame"));
     }
     Ok(&unit.lowered.frame.argument_names[..count])
@@ -67,7 +75,7 @@ pub(super) fn emit(
             value: 0,
             name,
         });
-        // Actual 516.1687 helper formals contain only preceding names. The
+        // Actual 516.1687 helper formals include preceding and referenced names. The
         // owner's declared types/defaults/value sources are intentionally absent.
         arguments.extend_from_slice(&[0, 0, id, 0]);
     }
@@ -104,7 +112,7 @@ mod tests {
             artifact: Some(0),
         }];
         for argument in 0..3 {
-            let names = prefix(&batch, &slots, identity, argument).unwrap();
+            let names = prefix(&batch, &slots, identity, argument, 0).unwrap();
             assert_eq!(names.len(), argument as usize);
             let mut dmb =
                 Dmb::from_bytes(include_bytes!("../../../../fixtures/native_template.bin"))
@@ -125,14 +133,20 @@ mod tests {
             }
             dmb.validate_references().unwrap();
         }
-        assert!(prefix(&batch, &slots, identity, 3).is_err());
+        assert!(prefix(&batch, &slots, identity, 3, 0).is_err());
+        assert_eq!(prefix(&batch, &slots, identity, 0, 1).unwrap(), &["first"]);
+        assert_eq!(
+            prefix(&batch, &slots, identity, 0, 3).unwrap(),
+            &["first", "second", "third"]
+        );
+        assert!(prefix(&batch, &slots, identity, 0, 4).is_err());
         let mut foreign = identity;
         foreign.name = SymbolId::of("foreign_helper_owner");
-        assert!(prefix(&batch, &slots, foreign, 1).is_err());
+        assert!(prefix(&batch, &slots, foreign, 1, 0).is_err());
         let bad_slots = [procedure_plan::Slot {
             identity: foreign,
             ..slots[0]
         }];
-        assert!(prefix(&batch, &bad_slots, identity, 1).is_err());
+        assert!(prefix(&batch, &bad_slots, identity, 1, 0).is_err());
     }
 }
