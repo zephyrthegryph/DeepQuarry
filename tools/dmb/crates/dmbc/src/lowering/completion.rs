@@ -146,6 +146,22 @@ pub fn lower_frontend_completed_input_on_execution<
             }),
         )
     });
+    if execution.progress_enabled {
+        // One line per stage: which precondition of the unchanged-local fast path
+        // holds, so a miss is attributable without a profiler.
+        crate::daemon_eprintln!(
+            "native lowering local fast path: symbolic={} capture_references={} selections_only={} store={} prepared_roster={} local_inputs={} candidate_roster={} observes_reads={} verification={}",
+            symbolic,
+            execution.capture_references,
+            execution.selections_only,
+            memo.is_some_and(|memo| memo.symbolic.is_some()),
+            prepared.is_some(),
+            local_inputs.is_some(),
+            candidate_roster.is_some(),
+            host.observes_reads(),
+            memo.is_some_and(|memo| memo.verification.enabled()),
+        );
+    }
     let chunk = config.max_chunk.clamp(1, 256);
     let bodies = if execution.selected_bodies.is_none() && prepared.is_some() {
         CurrentBodies::Prepared(prepared.expect("checked current roster"))
@@ -274,7 +290,11 @@ pub fn lower_frontend_completed_input_on_execution<
                     memo,
                 ) {
                     if !memo.verification.enabled() {
-                        if let Some(input) = store.lookup_unchanged_local(
+                        memo.counts
+                            .local_attempts
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        let local_started = std::time::Instant::now();
+                        let local = store.lookup_unchanged_local(
                             roster,
                             candidates,
                             memo.policy,
@@ -282,16 +302,25 @@ pub fn lower_frontend_completed_input_on_execution<
                             frontend,
                             row,
                             execution.bodies,
-                        ) {
+                        );
+                        memo.counts.local_ns.fetch_add(
+                            local_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                            std::sync::atomic::Ordering::Relaxed,
+                        );
+                        if let Some(input) = local {
                             memo.counts
                                 .resident_hits
+                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            memo.counts
+                                .local_hits
                                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                             return Ok((Some(consume(start + *local_position, Ok(input))), None));
                         }
                     }
                 }
             }
-            memo::admit_one_input(
+            let keyed_started = std::time::Instant::now();
+            let keyed = memo::admit_one_input(
                 frontend,
                 body,
                 host,
@@ -307,8 +336,14 @@ pub fn lower_frontend_completed_input_on_execution<
                 execution.selections_only,
                 execution.disk_replay_bindings,
                 *prepared_body,
-            )
-            .map(|attempt| match attempt {
+            );
+            if let Some(memo) = memo {
+                memo.counts.keyed_ns.fetch_add(
+                    keyed_started.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+                    std::sync::atomic::Ordering::Relaxed,
+                );
+            }
+            keyed.map(|attempt| match attempt {
                 memo::Admission::Admitted(input) => {
                     (Some(consume(start + *local_position, Ok(input))), None)
                 }

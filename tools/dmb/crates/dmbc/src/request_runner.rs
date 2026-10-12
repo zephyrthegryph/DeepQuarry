@@ -835,10 +835,13 @@ fn run_build_attempt(
             publish_cache_records(cache, records);
             use std::sync::atomic::Ordering::Relaxed;
             dmbc::daemon_eprintln!("native retention: policy={:032x} host={}", memo.policy, retention_status);
-            dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} resident_dropped={} retention={:?} recomputed={} unsupported_disk={}",
+            dmbc::daemon_eprintln!("native lowering memo: disk_hits={} resident_hits={} resident_dropped={} retention={:?} recomputed={} unsupported_disk={} local_attempts={} local_hits={} local_worker_s={:.3} keyed_worker_s={:.3} local_declines=[{}]",
                 memo.counts.disk_hits.load(Relaxed), memo.counts.resident_hits.load(Relaxed),
                 memo.counts.resident_dropped.load(Relaxed), memo.resident_retention(),
-                memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed));
+                memo.counts.recomputed.load(Relaxed), memo.counts.unsupported_disk.load(Relaxed),
+                memo.counts.local_attempts.load(Relaxed), memo.counts.local_hits.load(Relaxed),
+                memo.counts.local_ns.load(Relaxed) as f64 / 1e9, memo.counts.keyed_ns.load(Relaxed) as f64 / 1e9,
+                dmbc::lowering::local_decline_stats());
             let errors = memo.staging_errors();
             if !errors.is_empty() {
                 dmbc::daemon_eprintln!("cache population skipped: {}", errors.join("; "));
