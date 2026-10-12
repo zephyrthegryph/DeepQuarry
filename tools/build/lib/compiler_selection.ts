@@ -66,11 +66,18 @@ function nativeNoDaemon(): boolean {
   if (value !== '0' && value !== '1') throw new Error('DQ_NATIVE_NO_DAEMON must be 0 or 1.');
   return value === '1';
 }
+/** Native-only gates preserve internal failures instead of running DreamMaker. */
+function nativeStrict(): boolean {
+  const value = process.env.DQ_COMPILER_STRICT ?? '0';
+  if (value !== '0' && value !== '1') throw new Error('DQ_COMPILER_STRICT must be 0 or 1.');
+  return value === '1';
+}
 /** Include backend configuration and actual binaries in derived-build admission. */
 export function compilerCacheIdentity(): string {
   const mode = compilerMode();
   if (mode === 'byond') return mode;
   const noDaemon = nativeNoDaemon();
+  const strict = mode === 'native' && nativeStrict();
   const hash = createHash('sha256');
   hash.update(mode);
   for (const variable of ['DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_DMB_INSPECT']) {
@@ -85,6 +92,8 @@ export function compilerCacheIdentity(): string {
   hash.update(process.env.DQ_NATIVE_WORKERS ?? '8');
   // Unset and explicit zero preserve the existing default configuration identity.
   if (noDaemon) hash.update('DQ_NATIVE_NO_DAEMON=1');
+  // A prior automatic BYOND fallback cannot satisfy a native-only request.
+  if (strict) hash.update('DQ_COMPILER_STRICT=1');
   return hash.digest('hex');
 }
 function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: string, invocation?: CompilerInvocation): [string, string[]] {
@@ -187,12 +196,17 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
     return { ...conventionalOutput(outputProject), provenance: byondProvenance(mode, options.defines ?? [], result) };
   }
   if (mode === 'native') {
+    const strict = nativeStrict();
     const result = await nativeCompile(dme, options, execute, undefined, invocation);
     if (result.code === 0 && !result.signal) return result.output!;
     // Only the typed compiler internal failure status admits fallback.
     // Setup, transport, source, cancellation and infrastructure failures retain
     // their original error/status and never invoke another compiler.
     if (result.code !== 70 || result.signal) throw new Juke.ExitCode(result.code || 1, result.signal ?? null);
+    if (strict) {
+      Juke.logger.warn('Native compiler exited 70; DreamMaker fallback disabled by DQ_COMPILER_STRICT=1. Diagnostics are above.');
+      throw new Juke.ExitCode(70, result.signal ?? null);
+    }
     Juke.logger.warn('Native fallback to DreamMaker: native compiler exited 70; diagnostics are above.');
     const fallback = await byond(invocation?.relativeManifest, undefined, invocation);
     return { ...conventionalOutput(outputProject), provenance: byondProvenance(mode, options.defines ?? [], fallback, 'internal_error_70') };

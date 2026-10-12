@@ -11,7 +11,7 @@ import { withCompiledOutput } from './native_pair';
 import { createHash } from 'node:crypto';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -242,6 +242,7 @@ test('invalid native one-shot option rejects before launching either compiler', 
 
 test('successful internal fallback records BYOND as the actual test compiler', async () => {
   process.env.DQ_COMPILER = 'native';
+  process.env.DQ_COMPILER_STRICT = '0';
   process.env.DQ_NATIVE_COMPILER = 'native-compiler';
   process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
   const output = await selectedCompiler('project.dme', { defines: ['DEBUG', 'X=1', 'X=2'] }, async () => ({ invocation: {
@@ -252,6 +253,55 @@ test('successful internal fallback records BYOND as the actual test compiler', a
   expect(output.provenance?.actualBackend).toBe('byond');
   expect(output.provenance?.fallback).toBe('internal_error_70');
   expect(output.provenance?.orderedDefines).toEqual(['DEBUG', 'X=1', 'X=2']);
+});
+
+test('strict native gate preserves internal status and never invokes BYOND', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_COMPILER_STRICT = '1';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  for (const code of [70, 2, 64, 75]) {
+    let nativeCalls = 0;
+    let byondCalls = 0;
+    const failure = await selectedCompiler('project.dme', {}, async () => { byondCalls++; },
+      async () => { nativeCalls++; return { code, combined: 'native diagnostic', signal: null }; })
+      .then(() => null, error => error);
+    expect(failure).toBeInstanceOf(Juke.ExitCode);
+    expect(failure.code).toBe(code);
+    expect(nativeCalls).toBe(1);
+    expect(byondCalls).toBe(0);
+  }
+});
+
+test('strict policy changes native cache admission while unset and zero agree', () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  delete process.env.DQ_COMPILER_STRICT;
+  const defaultIdentity = compilerCacheIdentity();
+  process.env.DQ_COMPILER_STRICT = '0';
+  expect(compilerCacheIdentity()).toBe(defaultIdentity);
+  process.env.DQ_COMPILER_STRICT = '1';
+  expect(compilerCacheIdentity()).not.toBe(defaultIdentity);
+});
+
+test('invalid strict native policy rejects before either compiler and leaves BYOND mode alone', async () => {
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  let calls = 0;
+  for (const value of ['', 'true', '2', '-1', ' 1']) {
+    process.env.DQ_COMPILER_STRICT = value;
+    expect(() => compilerCacheIdentity()).toThrow('DQ_COMPILER_STRICT must be 0 or 1');
+    await expect(selectedCompiler('project.dme', {}, async () => { calls++; },
+      async () => { calls++; return { code: 70, combined: '' }; }))
+      .rejects.toThrow('DQ_COMPILER_STRICT must be 0 or 1');
+  }
+  expect(calls).toBe(0);
+  process.env.DQ_COMPILER = 'byond';
+  expect(compilerCacheIdentity()).toBe('byond');
+  await selectedCompiler('project.dme', {}, async () => { calls++; });
+  expect(calls).toBe(1);
 });
 
 test('native setup and transport failures preserve errors without fallback', async () => {
