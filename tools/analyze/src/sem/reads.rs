@@ -1412,7 +1412,7 @@ mod global_accessor_tests {
     fn memo_index_keeps_actual_datum_key_selector_distinct_from_its_value() {
         let root = std::env::temp_dir().join(format!("dq-memo-index-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(root.join("code/content")).unwrap();
-        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n#define owns_many(V,T)\n/datum/key\n\tvar/marker = 2\nTRACKED(/datum/key,marker)\n/datum/value\n\tvar/amount = 1\nTRACKED(/datum/value,amount)\n/datum/probe\n\tvar/datum/key/index_key\n\tvar/list/values\nCAPABILITIES(/datum/probe)\n\tref_one(index_key, /datum/key)\n\towns_many(values, /datum/value)\n/datum/probe/proc/indexed()\n\tvar/datum/value/V = values[index_key]\n\treturn V.amount\n/datum/probe/proc/positional()\n\tvar/datum/key/K = values[1]\n\treturn K.marker\n";
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n#define owns_many(V,T)\n/datum/key\n\tvar/marker = 2\nTRACKED(/datum/key,marker)\n/datum/value\n\tvar/amount = 1\nTRACKED(/datum/value,amount)\n/datum/probe\n\tvar/datum/key/index_key\n\tvar/list/values\nCAPABILITIES(/datum/probe)\n\tref_one(nameof(index_key), /datum/key)\n\towns_many(nameof(values), /datum/value)\n/datum/probe/proc/indexed()\n\tvar/datum/value/V = values[index_key]\n\treturn V.amount\n/datum/probe/proc/positional()\n\tvar/datum/key/K = values[1]\n\treturn K.marker\n";
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
         let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
         tree.root = root.clone();
@@ -1437,7 +1437,7 @@ mod global_accessor_tests {
     fn memo_inputs_require_reactive_or_const_state_not_constructor_inference() {
         let root = std::env::temp_dir().join(format!("dq-memo-inputs-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(root.join("code/content")).unwrap();
-        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n/datum\n\tvar/gc_destroyed\n/datum/untracked\n\tvar/amount = 1\n/datum/untracked/New()\n\tamount = 2\n/datum/tracked\n\tvar/amount = 3\nTRACKED(/datum/tracked,amount)\n/datum/probe\n\tvar/datum/untracked/raw\n\tvar/datum/tracked/reactive\n\tvar/const/fixed = 7\n\tvar/list/untracked_members\nCAPABILITIES(/datum/probe)\n\tref_one(raw,/datum/untracked)\n\tref_one(reactive,/datum/tracked)\n/datum/probe/proc/bad()\n\treturn raw.amount\n/datum/probe/proc/good()\n\treturn reactive.amount + fixed\n/datum/probe/proc/bad_list()\n\treturn length(untracked_members)\n/datum/probe/proc/lifetime()\n\treturn raw.gc_destroyed\n";
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n/datum\n\tvar/gc_destroyed\n/datum/untracked\n\tvar/amount = 1\n/datum/untracked/New()\n\tamount = 2\n/datum/tracked\n\tvar/amount = 3\nTRACKED(/datum/tracked,amount)\n/datum/probe\n\tvar/datum/untracked/raw\n\tvar/datum/tracked/reactive\n\tvar/const/fixed = 7\n\tvar/list/untracked_members\nCAPABILITIES(/datum/probe)\n\tref_one(nameof(raw),/datum/untracked)\n\tref_one(nameof(reactive),/datum/tracked)\n/datum/probe/proc/bad()\n\treturn raw.amount\n/datum/probe/proc/good()\n\treturn reactive.amount + fixed\n/datum/probe/proc/bad_list()\n\treturn length(untracked_members)\n/datum/probe/proc/lifetime()\n\treturn raw.gc_destroyed\n";
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
         let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
         tree.root = root.clone();
@@ -1461,7 +1461,7 @@ mod global_accessor_tests {
     fn native_memo_calls_preserve_member_receivers_and_reject_dynamic_keys() {
         let root = std::env::temp_dir().join(format!("dq-memo-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
         std::fs::create_dir_all(root.join("code/content")).unwrap();
-        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_many(V,T)\n/datum/source\n\tvar/amount = 1\n/datum/probe\n\tvar/list/members\n\tvar/key = \"dynamic\"\nCAPABILITIES(/datum/probe)\n\tref_many(members, /datum/source)\n/proc/memo_value(datum/E, key)\n\treturn null\n/datum/probe/proc/read_member()\n\tfor(var/datum/source/member in members)\n\t\treturn memo_value(member, \"value\")\n/datum/probe/proc/bad_key()\n\treturn memo_value(src, key)\n";
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_many(V,T)\n/datum/source\n\tvar/amount = 1\n/datum/probe\n\tvar/list/members\n\tvar/key = \"dynamic\"\nCAPABILITIES(/datum/probe)\n\tref_many(nameof(members), /datum/source)\n/proc/memo_value(datum/E, key)\n\treturn null\n/datum/probe/proc/read_member()\n\tfor(var/datum/source/member in members)\n\t\treturn memo_value(member, \"value\")\n/datum/probe/proc/bad_key()\n\treturn memo_value(src, key)\n";
         std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
         let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
         tree.root = root.clone();
