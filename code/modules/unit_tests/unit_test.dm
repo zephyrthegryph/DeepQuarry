@@ -940,6 +940,7 @@ GLOBAL_VAR(dq_test_select_names)
 		if(!test.run_finished)
 			log_world("UNIT TEST TIMEOUT: [test_path] did not return from Run() within [test.timeout]s; failing it and moving on. Its fiber may still be running in the background.")
 			test.Fail("timed out after [test.timeout]s -- Run() never returned (stuck sleep, unmet wait_for_condition, or a hung external call)", "TIMEOUT", 0)
+		staleness_test_end(test)
 		test.restore_atmos()
 
 		duration = REALTIMEOFDAY - duration

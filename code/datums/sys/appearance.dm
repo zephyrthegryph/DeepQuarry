@@ -382,6 +382,7 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 	if(!refresh_drain(sched))
 		return FALSE
 	refresh_sweep_step()
+	staleness_drain_step()
 	var/list/Q = GLOB.appearance_queue
 	if(!length(Q))
 		return TRUE

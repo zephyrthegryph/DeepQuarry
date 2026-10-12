@@ -104,6 +104,9 @@
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
+	// The staleness checker: the graph says no draw reads this var, so the applied look is served as it is (checked at the next presentation drain).
+	if(var_name && GLOB.staleness_on && !(mask & DEP_DRAW))
+		staleness_note_served(E, var_name)
 	if(mask)
 		if(!refresh_wanted(E))
 			refresh_mark_owner(E, mask, channel)
@@ -595,6 +598,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 		return
 	rx_of(A).refresh_swept = TRUE
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
+	staleness_track(A)
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
 /// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
