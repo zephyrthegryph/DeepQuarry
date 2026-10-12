@@ -1,0 +1,126 @@
+{
+  "scope": "Nine bounded focused Rust fixtures; not full suite, runtime or benchmark acceptance",
+  "source_commit": "7022e6ed7e7b0b4d2c18254fe34d0de2ba101ac0",
+  "archive_sha256": "01fe17e0ff346a2d5a9c5eda5854ccd91f7b51508bfdc6eb172b8b6bce88eae2",
+  "build": {
+    "command": [
+      "E:/cargo/bin/cargo.exe",
+      "test",
+      "--lib",
+      "--no-run",
+      "--locked",
+      "--offline",
+      "-j1",
+      "-p",
+      "dm-tree",
+      "-p",
+      "dmbc",
+      "--no-default-features",
+      "--config",
+      "profile.test.package.dm-ir.debug=0",
+      "--config",
+      "profile.test.package.dmbc.debug=0",
+      "--config",
+      "profile.test.package.dmbc.codegen-units=256"
+    ],
+    "exit_code": 0,
+    "seconds": 74.67199999999866,
+    "memory_cap": 4000000000,
+    "log": "E:\\dq-cache\\dmb-native-v2\\integration-gates\\20261011-215317-835d3305-job-cargo.log",
+    "error": null,
+    "cleanup": {
+      "reaped": true,
+      "error": null,
+      "memory": {
+        "configured_job_memory_bytes": 3999997952,
+        "peak_job_commit_bytes": 1807765504,
+        "peak_process_commit_bytes": 1776451584,
+        "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+      }
+    },
+    "scope": "bounded correctness build; not a compiler performance benchmark"
+  },
+  "checks": [
+    {
+      "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dm_tree-d24004216c90a625.exe",
+      "binary_sha256": "d28dc1f6ed4446209dcece8c6edf1b590c5df62f36d4826e38c0344771b33e40",
+      "scope": "focused fixture execution, not full suite or runtime parity",
+      "rows": [
+        {
+          "filter": "owner_local_shape::shared_tests",
+          "selected": [
+            "owner_local_shape::shared_tests::asymmetric_shape_edits_keep_sibling_variant_and_release_last_lease",
+            "owner_local_shape::shared_tests::rejected_frontend_keeps_sibling_shape_and_recovery_binds_current_source",
+            "owner_local_shape::shared_tests::shared_shape_negative_name_reads_replay_each_current_catalog",
+            "owner_local_shape::shared_tests::two_frontends_share_exact_local_shapes_and_bind_fresh_dense_members"
+          ],
+          "exit": 0,
+          "seconds": 0.0459999999984575,
+          "stdout": "\nrunning 4 tests\ntest owner_local_shape::shared_tests::asymmetric_shape_edits_keep_sibling_variant_and_release_last_lease ... ok\ntest owner_local_shape::shared_tests::rejected_frontend_keeps_sibling_shape_and_recovery_binds_current_source ... ok\ntest owner_local_shape::shared_tests::shared_shape_negative_name_reads_replay_each_current_catalog ... ok\ntest owner_local_shape::shared_tests::two_frontends_share_exact_local_shapes_and_bind_fresh_dense_members ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 314 filtered out; finished in 0.03s\n\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "binary": "E:\\dq-cache\\dmb-native-v2\\cargo-target\\debug\\deps\\dmbc-fa1f0987474bcdc2.exe",
+      "binary_sha256": "d864a3864b053a7f2a060a29ce24a558d43522d0cae6f305dd2a5e4d28daacee",
+      "scope": "focused fixture execution, not full suite or runtime parity",
+      "rows": [
+        {
+          "filter": "initializer_source_order_tests",
+          "selected": [
+            "initializer_source_order_tests::initializer_ledger_preserves_current_include_order_for_dependent_instance_writes"
+          ],
+          "exit": 0,
+          "seconds": 0.014999999999417923,
+          "stdout": "\nrunning 1 test\ntest initializer_source_order_tests::initializer_ledger_preserves_current_include_order_for_dependent_instance_writes ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 935 filtered out; finished in 0.01s\n\n",
+          "stderr": ""
+        },
+        {
+          "filter": "runner_host::idle::optional_tests",
+          "selected": [
+            "runner_host::idle::optional_tests::optional_detachment_preserves_current_source_query_and_classification_until_last_tier"
+          ],
+          "exit": 0,
+          "seconds": 0.125,
+          "stdout": "\nrunning 1 test\ntest runner_host::idle::optional_tests::optional_detachment_preserves_current_source_query_and_classification_until_last_tier ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 935 filtered out; finished in 0.10s\n\n",
+          "stderr": ""
+        },
+        {
+          "filter": "daemon::service::housekeeping::optional_tests",
+          "selected": [
+            "daemon::service::housekeeping::optional_tests::optional_release_resamples_pressure_before_remaining_artifacts_and_session"
+          ],
+          "exit": 0,
+          "seconds": 0.01599999999962165,
+          "stdout": "\nrunning 1 test\ntest daemon::service::housekeeping::optional_tests::optional_release_resamples_pressure_before_remaining_artifacts_and_session ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 935 filtered out; finished in 0.00s\n\n",
+          "stderr": ""
+        },
+        {
+          "filter": "argument_sources::visible_formals::tests",
+          "selected": [
+            "argument_sources::visible_formals::tests::actual_helper_lexical_selection_rejects_later_formal_at_current_signature",
+            "argument_sources::visible_formals::tests::cached_typed_and_restored_argument_receipts_preserve_visibility_bounds"
+          ],
+          "exit": 0,
+          "seconds": 0.375,
+          "stdout": "\nrunning 2 tests\ntest argument_sources::visible_formals::tests::actual_helper_lexical_selection_rejects_later_formal_at_current_signature ... ok\ntest argument_sources::visible_formals::tests::cached_typed_and_restored_argument_receipts_preserve_visibility_bounds ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 934 filtered out; finished in 0.36s\n\n",
+          "stderr": ""
+        }
+      ]
+    }
+  ],
+  "result": "PASS",
+  "new_verified_behavior": [
+    "A real compiled symbolic record survives auxiliary-image detachment; subsequent stage releases its owner without dropping semantic/query ownership",
+    "Each pressure stage resamples before the next ownership loss",
+    "Failed frontend preserves sibling source-neutral shape and recovery binds current bodies",
+    "Current dependent initializer writes follow include order",
+    "Live and restored helper facts retain current formal and reject later formals"
+  ],
+  "unverified": [
+    "Real DeepQuarry timings with the new auxiliary/symbolic split",
+    "Full BYOND runtime parity",
+    "Disk-backed physical image certificates"
+  ]
+}
