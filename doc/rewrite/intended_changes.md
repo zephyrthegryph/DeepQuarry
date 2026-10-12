@@ -4974,3 +4974,17 @@ Frostbelle correction under further review: current appearance_variant at flora.
 
 Teppi: `babfc5a10ab5979bddd5b6e3912328a704c563ed` moves setup to declared setup(teppi_setup) atteppi.dm443; actual colors still use BYOND pickweight in teppi_setup at334–390, not native appearance rolls. Fresh uncolored eye_base and changed markings cannot be excused as native-roller migration. Keep16 rows held until setup/field/output parity is demonstrated.
 
+
+### Miscellaneous native sampling look rows
+
+The fixture now seeds native rolls by exact type before creation. These scoped rows replace former BYOND/world-stream samples with actual deterministic choices from the same production choices:
+
+- Paper crowns and random Hawaiian/tropical shirts: `68e9f5ae83f58bfdd17f9ab9d748caff4a7bd7ae`, actual style providers at crackers179 and clothing101/155.
+- Flower-shirt hue: `85f8779132a14a00c8852fe6af7985e8379cafaa`, clothing114/117 chooses red or existing state and rotates by R.number(-11,12)*15.
+- Mail stamps: `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d`, mail71 chooses stamps2–8; native sample may differ in count because envelope stamp_max differs. No recipe or stamp-choice expansion.
+- Bottles: `655ec48b288e17bd1fb76140e13f1e5548648dcb`, bottle22 chooses bottle1–4 only when no sprite is specified. Fresh2 replaces prior1 with matching lid.
+- Random rectapes and utilitarian e-cigarette color: `a4992b57c456de986375497270ed4504f368b71f`, taperecorder525/ecigs88 retains declared choice sets. The e-cigarette choice list contains null, so the old no-color row is a valid former sample, not evidence of missing state.
+- Wrapped gum/lollipops: `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d`, chewables237/315 chooses the same seven fruit reagents; draw tint follows actual contents. Only sampled flavor/tint differs.
+
+Only34 listed diagnostic rows are refreshed. Shared clothing/reagent files retain unrelated held classes.
+

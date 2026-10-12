@@ -313,10 +313,10 @@
 /obj/item/reagent_containers/glass/paint/white dir: 2
 /obj/item/reagent_containers/glass/paint/white overlay: icons/obj/items.dmi:paint_white:8:#000000
 /obj/item/reagent_containers/glass/bottle icon: icons/obj/chemical.dmi
-/obj/item/reagent_containers/glass/bottle state: bottle-1
 /obj/item/reagent_containers/glass/bottle dir: 2
-/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:bottle-1:8:#000000
-/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:lid_bottle-1:-32767
+/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:bottle-2:8:#000000
+/obj/item/reagent_containers/glass/bottle overlay: icons/obj/chemical.dmi:lid_bottle-2:-32767
+/obj/item/reagent_containers/glass/bottle state: bottle-2
 /obj/item/reagent_containers/glass/bottle/adminordrazine icon: icons/obj/drinks.dmi
 /obj/item/reagent_containers/glass/bottle/adminordrazine state: holyflask
 /obj/item/reagent_containers/glass/bottle/adminordrazine dir: 2
