@@ -746,6 +746,14 @@ fn run_build_attempt(
                 &values,
                 &prepared.domains(),
             ));
+            // Opt-in live request boundary: the memo is not a retained host
+            // owner. Shared declaration payloads deduplicate against frontend;
+            // private memo table backing remains explicitly unknown.
+            dmbc::heap_census::emit_if_enabled("request_resolver_memo.before_drop", |census| {
+                census.frontend(&frontend);
+                census.resolver_memo(&compilation_resolver);
+            }).map_err(|error| dmbc::cold::ColdError::InitializerInvariant(
+                format!("request resolver memo census: {error}")))?;
             drop(compilation_resolver);
             let (resolver, output_stage, publication) = nontext.into_composition_parts();
             let query_owners = prepared.query_owners();
