@@ -37,6 +37,7 @@
 /// A real Rust region can exist before (or without) a DM cache entry. Read-only
 /// queries must preserve its ledger values without creating persistent state.
 /datum/unit_test/dq_power_grid_uncached_native_read/Run()
+	set_global(nameof(GLOB.stat_spills), GLOB.stat_spills)
 	var/list/run = dq_power_test_run(3)
 	TEST_ASSERT_NOTNULL(run, "a real cable run is required for native first-read coverage")
 	if(!run)
