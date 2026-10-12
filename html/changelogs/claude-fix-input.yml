@@ -1,0 +1,6 @@
+author: "Claude"
+delete-after: true
+changes:
+  - bugfix: "Keyboard keys work again: the per-player key macros are created properly instead of every key beeping."
+  - bugfix: "The right-click menu opens as a compact popup at the cursor instead of a separate window."
+  - bugfix: "Hovering no longer prints a bare object name at the top of the screen; the screentip only shows what a click would do."

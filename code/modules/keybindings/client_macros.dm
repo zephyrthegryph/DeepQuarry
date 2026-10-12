@@ -19,6 +19,30 @@
 	return (binding in RIGHT_CLICK_BINDINGS) ? binding : INPUT_ACTION_MENU
 
 /**
+ * The winset() calls that put `macros` into the skin's macro set, replacing the
+ * `old_count` elements made last time: a list of list(control id, params).
+ *
+ * A macro element is created by naming it as winset()'s control argument with a
+ * `parent` param. The single null-control form ("dqkb1.parent=default") only sets
+ * params of controls that already exist, so it never created the macros and every
+ * key fell through to the client (keys did nothing and the client beeped).
+ */
+/proc/keybinding_winset_calls(list/macros, old_count)
+	. = list()
+	// Elements past the new count are detached; the rest are overwritten in place.
+	for(var/i in length(macros) + 1 to old_count)
+		. += list(list("[KEYBIND_MACRO_PREFIX][i]", "parent=none"))
+	for(var/i in 1 to length(macros))
+		var/list/macro = macros[i]
+		. += list(list("[KEYBIND_MACRO_PREFIX][i]", list2params(list("parent" = KEYBIND_MACRO_SET, "name" = macro[1], "command" = macro[2]))))
+	var/list/window = list(
+		"mainwindow.macro" = KEYBIND_MACRO_SET,
+		"mapwindow.map.right-click" = "true",
+		"mapwindow.map.focus" = "true",
+	)
+	. += list(list(null, list2params(window)))
+
+/**
  * Writes this client's bindings for its mob's profile into the skin.
  * Skips the work when the profile is already applied, unless forced (after a rebind).
  */
@@ -29,23 +53,10 @@
 	var/list/overrides = keybinding_overrides()
 	var/list/macros = keybinding_macros(profile, overrides)
 
-	var/list/params = list()
-	// Remove the macros we made last time. Elements past the new count are
-	// detached; the rest are overwritten in place below.
-	for(var/i in length(macros) + 1 to keybind_macro_count)
-		params["[KEYBIND_MACRO_PREFIX][i].parent"] = "none"
-	for(var/i in 1 to length(macros))
-		var/list/macro = macros[i]
-		var/element = "[KEYBIND_MACRO_PREFIX][i]"
-		params["[element].parent"] = KEYBIND_MACRO_SET
-		params["[element].name"] = macro[1]
-		params["[element].command"] = macro[2]
-	params["mainwindow.macro"] = KEYBIND_MACRO_SET
 	// Right-click always reaches the router: Menu opens the interaction menu,
 	// which replaces BYOND's native verb popup.
-	params["mapwindow.map.right-click"] = "true"
-	params["mapwindow.map.focus"] = "true"
-	winset(src, null, list2params(params))
+	for(var/list/call_args as anything in keybinding_winset_calls(macros, keybind_macro_count))
+		winset(src, call_args[1], call_args[2])
 
 	keybind_macro_count = length(macros)
 	keybind_profile_applied = profile
