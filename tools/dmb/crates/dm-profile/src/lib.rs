@@ -947,4 +947,4 @@ impl Drop for ProfileGuard {
 #[path = "tests.rs"]
 mod interval_tests;
 mod allocator_maintenance;
-pub use allocator_maintenance::{allocator_commit_bytes, reclaim_unused_allocator_pages};
+pub use allocator_maintenance::{allocator_commit_bytes, print_allocator_stats, reclaim_unused_allocator_pages};

@@ -19,6 +19,8 @@ mod admission_deadline;
 mod admission_limits;
 #[path = "service_generation_admission.rs"]
 mod generation_admission;
+#[path = "service_request_threads.rs"]
+mod request_threads;
 #[path = "service_housekeeping.rs"]
 mod housekeeping;
 #[cfg(test)]
@@ -208,6 +210,9 @@ impl Shared {
             dm_profile::allocator_commit_bytes(),
             started.elapsed().as_secs_f64()
         ));
+        if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
+            dm_profile::print_allocator_stats();
+        }
         after
     }
     fn reset_host(&self, host: &mut crate::runner_host::BuildHost) {
@@ -382,11 +387,24 @@ pub(super) fn serve() -> io::Result<()> {
         connections: AtomicUsize::new(0),
     });
     let mut activity = Instant::now();
-    let mut housekeeping = housekeeping::Deadline::new(activity);
+    // Housekeeping (allocator reclaim, tier releases that can take tens of
+    // seconds) runs on its own thread so it can never stall request acceptance.
+    {
+        let owner = Arc::clone(&shared);
+        std::thread::Builder::new()
+            .name("dmbd-housekeeping".into())
+            .stack_size(dm_exec::COMPILER_STACK_BYTES)
+            .spawn(move || {
+                let mut housekeeping = housekeeping::Deadline::new(Instant::now());
+                loop {
+                    if housekeeping.due(Instant::now()) {
+                        owner.trim();
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+            })?;
+    }
     loop {
-        if housekeeping.due(Instant::now()) {
-            shared.trim();
-        }
         let retiring = shared.retiring.load(Ordering::Acquire);
         let incoming = listeners.poll(retiring, Instant::now())?;
         if shared.exit_ready(incoming.is_some(), activity.elapsed()) {
@@ -409,15 +427,12 @@ pub(super) fn serve() -> io::Result<()> {
                     continue;
                 }
                 let shared = Arc::clone(&shared);
-                std::thread::Builder::new()
-                    .name("dmbd-request".into())
-                    .stack_size(dm_exec::COMPILER_STACK_BYTES)
-                    .spawn(move || {
-                        let _connection = Connection(Arc::clone(&shared));
-                        if let Err(error) = handle(stream, &shared, discovery) {
-                            super::emit_stderr(format_args!("daemon request: {error}"));
-                        }
-                    })?;
+                request_threads::run(move || {
+                    let _connection = Connection(Arc::clone(&shared));
+                    if let Err(error) = handle(stream, &shared, discovery) {
+                        super::emit_stderr(format_args!("daemon request: {error}"));
+                    }
+                })?;
             }
             None => std::thread::sleep(Duration::from_millis(5)),
         }

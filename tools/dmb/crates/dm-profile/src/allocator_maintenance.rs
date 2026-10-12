@@ -38,3 +38,20 @@ pub fn allocator_commit_bytes() -> Option<u64> {
     }
     Some(commit as u64)
 }
+
+extern "C" fn stats_line(message: *const std::os::raw::c_char, _argument: *mut std::os::raw::c_void) {
+    if message.is_null() {
+        return;
+    }
+    // SAFETY: mimalloc passes a NUL-terminated string valid for this call.
+    let text = unsafe { std::ffi::CStr::from_ptr(message) }.to_string_lossy();
+    eprint!("mimalloc-stats {text}");
+}
+
+/// Print mimalloc's process statistics (per size class, pages, segments/arenas)
+/// to stderr. Diagnostic; the daemon calls it only when
+/// DMB_DAEMON_ALLOCATOR_STATS is set.
+pub fn print_allocator_stats() {
+    // SAFETY: the callback only reads its message argument; no user pointer.
+    unsafe { libmimalloc_sys::mi_stats_print_out(Some(stats_line), std::ptr::null_mut()) };
+}
