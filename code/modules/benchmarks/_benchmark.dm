@@ -108,6 +108,7 @@
 	window_machines_ms = kernel().work_cost_of(SSmachines.type)["total_ms"]
 	window_stat_evals = GLOB.stat_evals
 	window_stat_read_computes = GLOB.stat_read_computes
+	GLOB.stat_read_compute_by = list()
 
 	window_om_deadlines = benchmark_om_deadline_count()
 	window_system_fires = kernel_system_fire_counts()
@@ -135,6 +136,10 @@
 	// Stat work: recomputes after an input changed, and reads that composed a value nothing had cached (code/engine/stats/recompute.dm).
 	count_metric("[prefix]_stat_evals", GLOB.stat_evals - window_stat_evals, "evals")
 	count_metric("[prefix]_stat_read_computes", GLOB.stat_read_computes - window_stat_read_computes, "computes")
+	var/list/by_stat = sortTim(GLOB.stat_read_compute_by.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	if(length(by_stat) > 30)
+		by_stat.Cut(31)
+	detail("[prefix]_stat_read_computes_by", by_stat)
 	var/list/subsystems = list()
 	var/total_work_items = 0
 	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...), by name.
