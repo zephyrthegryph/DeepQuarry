@@ -7,6 +7,8 @@ use std::{
     collections::{BTreeSet, HashSet},
     sync::Arc,
 };
+mod string_registration;
+pub(crate) use string_registration::contribute_source_strings;
 
 pub fn contribute(
     plan: &ClassProjection,

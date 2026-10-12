@@ -136,10 +136,15 @@ pub struct LinkInventory {
     pub reserved_prefixes: BTreeMap<Table, u32>,
     /// Complete order of fresh keys only, following the retained physical prefix.
     pub append_orders: BTreeMap<Table, Vec<Key>>,
+    /// Current authored string side effects awaiting symbolic finalization.
+    /// The producer must consume these into a complete String append order;
+    /// the numeric linker rejects unexpanded events rather than ignoring them.
+    pub string_registration: Option<StringRegistration>,
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LinkError {
     InvalidContributionOrder,
+    IncompleteStringRegistration,
     SymbolCollision(SymbolId),
     InvalidSymbol(SymbolId),
     MissingSpelling(SymbolId),
@@ -166,6 +171,10 @@ pub use relocation_binding::{BindingAnswers, BoundRelocations, SourceBindingAcce
 mod inventory_contribution;
 pub use inventory_contribution::{InventoryContribution, SharedContribution};
 mod assignment_recipe;
+mod string_registration;
+pub use string_registration::{
+    StringRegistration, StringRegistrationEvent, StringRegistrationSource,
+};
 mod bindings;
 pub use bindings::{BindingTables, RetainedBindings};
 #[derive(Clone, Debug)]
@@ -206,6 +215,9 @@ impl LinkTables {
         recipe: Option<&assignment_recipe::AssignmentRecipe>,
         retain_recipe: bool,
     ) -> Result<(Self, Option<assignment_recipe::AssignmentRecipe>), LinkError> {
+        if inventory.string_registration.is_some() {
+            return Err(LinkError::IncompleteStringRegistration);
+        }
         inventory.validate_shared()?;
         let mut spellings = BTreeMap::new();
         for (id, bytes) in inventory.spelling_iter() {

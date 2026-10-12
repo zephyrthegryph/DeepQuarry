@@ -759,6 +759,8 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         &mut inventory,
     )
     .map_err(ColdError::Initializer)?;
+    crate::class_inventory::contribute_source_strings(frontend, &mut inventory)
+        .map_err(ColdError::Initializer)?;
     measurement.complete();
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
