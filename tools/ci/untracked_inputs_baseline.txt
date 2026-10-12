@@ -70,24 +70,6 @@ stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLE
 stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
 stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
 stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
-stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
 stat_input_untracked	code/game/machinery/air_alarm.dm	return (islist(TLV[A.args?["env"]])) ? null : MSG(alarm/no_such_threshold) // ALLOW(reads): asked when the threshold button is pressed, never from a cached menu
 stat_input_untracked	code/game/machinery/atmoalter/canister.dm	return (!pressure_liner_material_id) ? null : MSG(canister/has_liner) // ALLOW(reads): asked when the sheets are used, never from a cached menu
 stat_input_untracked	code/game/machinery/atmoalter/clamp.dm	return (!locate_within(get_turf(A.target), /obj/machinery/clamp)) ? null : MSG(clamp/occupied)
@@ -632,7 +614,6 @@ draw_untracked	code/game/objects/items/devices/multitool.dm	return connecting
 draw_untracked	code/game/objects/items/devices/multitool.dm	return connectable
 draw_untracked	code/game/objects/items/devices/multitool.dm	return connectable
 draw_untracked	code/game/objects/items/devices/multitool.dm	return connectable
-draw_untracked	code/game/objects/items/devices/radio/intercom.dm	if(!on)
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mutable_appearance(icon, "[stem]_ov"))
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(mutable_appearance(icon, "[stem]_ov"))
 draw_untracked	code/game/objects/items/devices/radio/intercom.dm	look.overlay(emissive_appearance(icon, "[stem]_ov"))
