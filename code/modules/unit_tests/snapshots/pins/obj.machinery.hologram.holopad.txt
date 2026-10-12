@@ -2,14 +2,25 @@
 @obj.machinery.hologram robot|none
 @obj.machinery.hologram ai|none
 @obj ghost|none
-@obj.machinery.hologram human|/obj/item/tool/screwdriver
-@obj.machinery.hologram human|/obj/item/tool/crowbar
-@obj.machinery.hologram human|/obj/item/tool/wrench
-@obj.machinery.hologram human|/obj/item/tool/wirecutters
-@obj.machinery.hologram human|/obj/item/multitool
-@obj.machinery.hologram human|/obj/item/weldingtool
-@obj.machinery.hologram human|/obj/item/stack/cable_coil
-@obj.machinery.hologram human|/obj/item/stack/material/steel
-@obj.machinery.hologram human|/obj/item/card/id
-@obj.machinery.hologram human|/obj/item
+human|/obj/item/tool/screwdriver menu: Disconnect monitor
+human|/obj/item/tool/screwdriver menu: Request AI presence
+human|/obj/item/tool/screwdriver click: Click: Disconnect monitor
+human|/obj/item/tool/crowbar menu: Request AI presence
+human|/obj/item/tool/crowbar click: Click: Request AI presence
+human|/obj/item/tool/wrench menu: Request AI presence
+human|/obj/item/tool/wrench click: Click: Request AI presence
+human|/obj/item/tool/wirecutters menu: Request AI presence
+human|/obj/item/tool/wirecutters click: Click: Request AI presence
+human|/obj/item/multitool menu: Request AI presence
+human|/obj/item/multitool click: Click: Request AI presence
+human|/obj/item/weldingtool menu: Request AI presence
+human|/obj/item/weldingtool click: Click: Request AI presence
+human|/obj/item/stack/cable_coil menu: Request AI presence
+human|/obj/item/stack/cable_coil click: Click: Request AI presence
+human|/obj/item/stack/material/steel menu: Request AI presence
+human|/obj/item/stack/material/steel click: Click: Request AI presence
+human|/obj/item/card/id menu: Request AI presence
+human|/obj/item/card/id click: Click: Request AI presence
+human|/obj/item menu: Request AI presence
+human|/obj/item click: Click: Request AI presence
 keys: disconnect_display, drag_buckle, holopad_project, holopad_request_hand, holopad_request_item, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

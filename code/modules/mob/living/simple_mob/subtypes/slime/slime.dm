@@ -170,9 +170,6 @@ TRACKED(/mob/living/simple_mob/slime, mood)
 	// The other stuff was already checked in parent proc, and the . variable will implicitly return the correct value.
 
 // Slimes regenerate passively.
-/mob/living/simple_mob/slime/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/life_special(datum/seq_frame/life/F)
 	src.mend(TREAT_OXYGENATION, 1)
 	src.mend(TREAT_ANTITOXIN, 1)

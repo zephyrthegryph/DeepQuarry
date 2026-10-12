@@ -2,35 +2,33 @@
 +0 menu: Climb
 @obj.machinery robot|none
 +1 menu: Climb
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/screwdriver
 +0 menu: Climb
-@obj human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/crowbar
 +0 menu: Climb
-@obj human|/obj/item/tool/wrench
+@obj.machinery human|/obj/item/tool/wrench
 +0 menu: Climb
-@obj human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Climb
-@obj human|/obj/item/multitool
+@obj.machinery human|/obj/item/multitool
 +0 menu: Climb
-@obj human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/weldingtool
 +0 menu: Climb
-@obj human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/cable_coil
 +0 menu: Climb
-@obj human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/stack/material/steel
 +0 menu: Climb
-@obj human|/obj/item/card/id
+@obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-@obj human|/obj/item
+@obj.machinery human|/obj/item
 +0 menu: Climb
 human|/obj/item/paper menu: Bind
 human|/obj/item/paper menu: Climb
-human|/obj/item/paper menu: Create Area (refused: You can't do that.)
-human|/obj/item/paper menu: Move To Top
-human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
-human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/paper click: Click: Bind
-@obj human|/obj/item/paper_bundle
+human|/obj/item/paper_bundle menu: Bind
+human|/obj/item/paper_bundle menu: Climb
+human|/obj/item/paper_bundle click: Click: Bind
 keys: bind, climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

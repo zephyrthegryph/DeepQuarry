@@ -74,7 +74,7 @@
 					H.name = pick(GLOB.first_names_female|GLOB.first_names_male)
 
 				H.name += " [pick(GLOB.last_names)]"
-				H.real_name = H.name
+				H.set_real_name(H.name)
 
 				H.set_species(randomize)
 				H.universal_speak = 1

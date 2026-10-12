@@ -1,82 +1,62 @@
-human|none menu: Ui open
+human|none menu: Open controls
 human|none menu: Use
-human|none click: Click: Ui open
+human|none click: Click: Open controls
 @obj.machinery robot|none
 -click: Click: Use
-+1 menu: Ui open
-+3 click: Click: Ui open
-@obj ai|none
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Insert
-+2 menu: Open maintenance panel
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Deconstruct (refused: the maintenance panel is closed)
-+1 menu: Insert
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Unsecure
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Insert
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Insert
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item
--click: nothing
-+0 menu: Insert
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
+human|/obj/item/tool/screwdriver menu: Insert
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Insert
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Insert
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Insert
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Insert
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Insert
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Insert
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Insert
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Insert
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Insert
+human|/obj/item menu: Open controls
+human|/obj/item menu: Use
+human|/obj/item click: Click: Open controls
 @obj human|/obj/item/storage/part_replacer
 -click: Click: Replace parts
-+1 menu: Insert
-+6 menu: Ui open
-+7 menu: Use
-+8 click: Click: Ui open
++0 menu: Insert
++1 menu: Open controls
++3 menu: Use
++4 click: Click: Open controls
 keys: activate, detach, drag_buckle, insert, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement, purchase, robot_remote_blocked, silicon_hand, ui_open, use

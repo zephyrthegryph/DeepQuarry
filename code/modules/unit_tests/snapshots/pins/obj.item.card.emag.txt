@@ -2,7 +2,7 @@
 -menu: Read ID Card (refused: You can't do that.)
 @obj.item.card robot|none
 -menu: Read ID Card (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.card ghost|none
 -menu: Read ID Card (refused: You can't do that.)
 @obj.item.card human|/obj/item/tool/screwdriver
@@ -38,17 +38,18 @@
 @obj.item.card human|/obj/item/stack/cable_coil
 -menu: Read ID Card (refused: You can't do that.)
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj.item.card human|/obj/item/stack/material/steel
 -menu: Read ID Card (refused: You can't do that.)
 -click: nothing
 +2 menu: Use
 +3 click: Click: Use
-@obj human|/obj/item/card/id
+@obj.item.card human|/obj/item/card/id
+-menu: Read ID Card (refused: You can't do that.)
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj.item.card human|/obj/item/kit
 -menu: Read ID Card (refused: You can't do that.)
 +3 menu: Use

@@ -13,5 +13,5 @@
 @obj.effect.alien human|/obj/item/card/id
 @obj.effect.alien human|/obj/item/mop_deploy
 @obj.effect.alien human|/obj/item/soap
-@obj.effect.alien human|/obj/item
+@obj.effect human|/obj/item
 keys: drag_buckle, melee_hit, pass_insert, pass_insert_2, tear_up, touch_weeds, use_welder

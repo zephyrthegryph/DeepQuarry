@@ -9,97 +9,77 @@ human|none click: Click: Use
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 menu: Use wrench
-+8 click: Click: Use wrench
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 menu: Use
-+8 click: Click: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+5 menu: Swipe ID
-+7 menu: Turn Around
-+8 menu: Use
-+9 click: Click: Swipe ID
-@obj human|/obj/item
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Use
-+7 click: Click: Use
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Use
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use wrench
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
+human|/obj/item/tool/wirecutters menu: Turn Around
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
+human|/obj/item/multitool menu: Turn Around
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
+human|/obj/item/stack/cable_coil menu: Turn Around
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Swipe ID
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Swipe ID
+human|/obj/item menu: Climb
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
+human|/obj/item menu: Turn Around
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 @obj.machinery human|/obj/item/card/emag
--menu: Use item
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
+-menu: Use cryptographic sequencer
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
 keys: charge_rate, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, id_swipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, toggle, use, use_wrench

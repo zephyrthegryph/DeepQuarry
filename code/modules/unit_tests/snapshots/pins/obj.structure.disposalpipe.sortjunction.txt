@@ -4,18 +4,18 @@
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
++2 menu: Use screwdriver
++3 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
-+4 menu: Use wirecutter
-+5 click: Click: Use wirecutter
++2 menu: Use wirecutter
++3 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
 -click: Click: Use
-+4 menu: Use multitool
-+5 click: Click: Use multitool
++2 menu: Use multitool
++3 click: Click: Use multitool
 @obj.structure.disposalpipe human|/obj/item/weldingtool
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel

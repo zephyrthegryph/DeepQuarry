@@ -1,34 +1,42 @@
-@obj.machinery.portable_atmospherics human|none
-@obj.machinery.portable_atmospherics robot|none
-@obj ai|none
+human|none menu: Climb
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery robot|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++1 menu: Climb
++2 menu: Open controls
++4 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
 @obj.machinery.portable_atmospherics ghost|none
 @obj.machinery.portable_atmospherics human|/obj/item/tool/screwdriver
 -click: nothing
-+3 menu: Ui open
-+4 click: Click: Ui open
++1 menu: Open controls
++2 click: Click: Open controls
 @obj.machinery.portable_atmospherics human|/obj/item/tool/crowbar
 @obj.machinery.portable_atmospherics human|/obj/item/tool/wrench
 @obj.machinery.portable_atmospherics human|/obj/item/tool/wirecutters
 @obj.machinery.portable_atmospherics human|/obj/item/multitool
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+1 menu: Deconstruct
-+4 menu: Ui open
-+5 click: Click: Deconstruct
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Deconstruct
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Deconstruct
 @obj.machinery.portable_atmospherics human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+1 menu: Install pressure liner (refused: You don't have enough for that.)
-+4 menu: Ui open
-+5 click: Click: Install pressure liner
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Install pressure liner (refused: You don't have enough for that.)
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Install pressure liner
 @obj.machinery.portable_atmospherics human|/obj/item/card/id
 @obj.machinery.portable_atmospherics human|/obj/item
 @obj human|/obj/item/tank
-@obj.machinery.portable_atmospherics human|/obj/item/stack/material
-@obj human|/obj/item/tank/jetpack
+human|/obj/item/stack/material menu: Climb
+human|/obj/item/stack/material menu: Install pressure liner (refused: You don't have enough for that.)
+human|/obj/item/stack/material menu: Open controls
+human|/obj/item/stack/material click: Click: Install pressure liner
+human|/obj/item/tank/jetpack menu: Climb
+human|/obj/item/tank/jetpack menu: Insert tank
+human|/obj/item/tank/jetpack menu: Open controls
+human|/obj/item/tank/jetpack click: Click: Insert tank
 keys: climb.climb, climb.climb_menu, drag_buckle, eject, liner, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, port, pressure, refill_jetpack, relabel, robot_remote_blocked, silicon_hand, tank_bay.holding.insert, ui_open, valve, weld_apart

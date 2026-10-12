@@ -1,7 +1,4 @@
 // Alien larva are quite simple.
-/mob/living/carbon/alien/life_type_pre_due()
-	return TRUE
-
 /mob/living/carbon/alien/life_type_pre(datum/seq_frame/life/F)
 	if (src.transforming)	return F.abort()
 	if(!src.loc)			return F.abort()

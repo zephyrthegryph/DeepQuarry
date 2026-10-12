@@ -6,7 +6,7 @@
 +1 menu: Give DNA (refused: You can't do that.)
 +4 menu: Remove DNA (refused: You can't do that.)
 +6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Give DNA (refused: You can't do that.)
 +2 menu: Remove DNA (refused: You can't do that.)
@@ -58,9 +58,9 @@
 -click: nothing
 +0 menu: Fit
 +1 menu: Give DNA (refused: You can't do that.)
-+4 menu: Remove DNA (refused: You can't do that.)
-+6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-+7 click: Click: Fit
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Fit
@@ -72,9 +72,9 @@
 -click: nothing
 +0 menu: Fit
 +1 menu: Give DNA (refused: You can't do that.)
-+4 menu: Remove DNA (refused: You can't do that.)
-+6 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-+7 click: Click: Fit
++3 menu: Remove DNA (refused: You can't do that.)
++5 menu: Toggle DNA Samples Allowance (refused: You can't do that.)
++6 click: Click: Fit
 @obj human|/obj/item/kit
 +1 menu: Fit
 +2 menu: Give DNA (refused: You can't do that.)

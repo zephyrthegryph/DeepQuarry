@@ -6,20 +6,18 @@ human|none click: Click: Remove bulb
 +4 click: Click: Remove bulb
 @obj.machinery.light ai|none
 @obj ghost|none
-@obj.machinery.light human|/obj/item/tool/screwdriver
--menu: Remove shade
--click: Click: Remove shade
-+2 click: nothing
-@obj human|/obj/item/tool/crowbar
-@obj.machinery.light human|/obj/item/tool/wrench
--menu: Toggle
--click: Click: Toggle
-+2 click: nothing
-@obj human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.light human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/wrench
++0 menu: Move To Top
++1 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.light human|/obj/item/tool/wirecutters
 @obj.machinery.light human|/obj/item/multitool
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+@obj.machinery.light human|/obj/item/weldingtool
+@obj.machinery.light human|/obj/item/stack/cable_coil
+@obj.machinery.light human|/obj/item/stack/material/steel
+@obj.machinery.light human|/obj/item/card/id
+@obj.machinery.light human|/obj/item
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, open_casing, remote_flicker, remove, robot_remote_blocked, silicon_hand, toggle_emergency, tune

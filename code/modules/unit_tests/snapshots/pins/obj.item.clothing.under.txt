@@ -14,7 +14,7 @@
 +8 menu: Toggle Suit Sensors (refused: You can't do that.)
 +9 menu: Under worn hand
 +11 click: Click: Under worn hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Holster (refused: You can't do that.)
 +2 menu: Roll Down Jumpsuit (refused: You can't do that.)
@@ -71,11 +71,11 @@
 @obj.item.clothing human|/obj/item/stack/cable_coil
 -click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-+10 click: Click: Under worn hand
++3 menu: Roll Down Jumpsuit (refused: You can't do that.)
++4 menu: Roll Up Sleeves (refused: You can't do that.)
++6 menu: Toggle Suit Sensors (refused: You can't do that.)
++7 menu: Under worn hand
++9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
@@ -87,11 +87,11 @@
 @obj.item.clothing human|/obj/item/card/id
 -click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
-+4 menu: Roll Down Jumpsuit (refused: You can't do that.)
-+5 menu: Roll Up Sleeves (refused: You can't do that.)
-+7 menu: Toggle Suit Sensors (refused: You can't do that.)
-+8 menu: Under worn hand
-+10 click: Click: Under worn hand
++3 menu: Roll Down Jumpsuit (refused: You can't do that.)
++4 menu: Roll Up Sleeves (refused: You can't do that.)
++6 menu: Toggle Suit Sensors (refused: You can't do that.)
++7 menu: Under worn hand
++9 click: Click: Under worn hand
 @obj.item.clothing human|/obj/item/kit
 +2 menu: Holster (refused: You can't do that.)
 +4 menu: Roll Down Jumpsuit (refused: You can't do that.)
@@ -104,7 +104,7 @@
 +5 menu: Roll Up Sleeves (refused: You can't do that.)
 +7 menu: Toggle Suit Sensors (refused: You can't do that.)
 +8 menu: Under worn hand
-@obj.item human|/obj/item
+@obj human|/obj/item
 -click: Click: Use
 +1 menu: Holster (refused: You can't do that.)
 +3 menu: Roll Down Jumpsuit (refused: You can't do that.)

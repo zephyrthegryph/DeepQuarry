@@ -9,82 +9,79 @@ human|none click: Click: Use
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
-+6 menu: Use (refused: It needs to be firmly secured to the floor first.)
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
-@obj.machinery.power human|/obj/item/tool/screwdriver
--menu: Open maintenance panel
--click: Click: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Bolt to the floor
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench click: Click: Bolt to the floor
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 click: nothing
-@obj.machinery.power human|/obj/item/tool/crowbar
--menu: Deconstruct (refused: the maintenance panel is closed)
--click: Click: Deconstruct
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/multitool
 +0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 click: nothing
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Bolt to the floor
-+1 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: Click: Bolt to the floor
-@obj human|/obj/item/tool/wirecutters
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-@obj human|/obj/item/multitool
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
-+6 menu: Weld to the floor (refused: It needs to be wrenched to the floor.)
-+7 click: Click: Weld to the floor
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool menu: Weld to the floor (refused: It needs to be wrenched to the floor.)
+human|/obj/item/weldingtool click: Click: Weld to the floor
 @obj.machinery.power human|/obj/item/stack/cable_coil
 +0 menu: Climb
-+4 menu: Rotate Clockwise
-+5 menu: Rotate Counter Clockwise
-+7 menu: Turn Around
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+2 menu: Repair with steel (refused: It's already fully repaired.)
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: Click: Repair with steel
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+5 menu: Toggle (refused: Access denied.)
-+7 menu: Turn Around
-+8 click: Click: Toggle
-@obj human|/obj/item
-+0 menu: Climb
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
++4 menu: Turn Around
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Repair with steel (refused: It's already fully repaired.)
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel click: Click: Repair with steel
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Toggle (refused: Access denied.)
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id click: Click: Toggle
+@obj.machinery human|/obj/item
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
 @obj.machinery.power human|/obj/item/pda
+-menu: Move To Top
+-menu: Remove cartridge (refused: You can't do that.)
+-menu: Remove id (refused: You can't do that.)
+-menu: Remove pen (refused: You can't do that.)
+-menu: Reset PDA (refused: You can't do that.)
+-menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.power human|/obj/item/card/emag
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
 @obj human|/obj/item/anomaly_scanner
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 keys: anomalous, cable_place, climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, floor_weld.bolt, floor_weld.weld, lock.toggle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, particle, repair, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, silicon_hand, toggle

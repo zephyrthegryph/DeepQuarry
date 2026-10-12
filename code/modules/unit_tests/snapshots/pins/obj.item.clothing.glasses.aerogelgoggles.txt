@@ -4,7 +4,7 @@
 @obj.item.clothing.glasses robot|none
 -menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.clothing.glasses ghost|none
 -menu: Switch Eyepatch (refused: You can't do that.)
 +0 menu: Adjust Orange Goggles (refused: You can't do that.)

@@ -32,7 +32,7 @@
 +16 menu: Toggle Module (refused: You can't do that.)
 +17 menu: Toggle Visor (refused: You can't do that.)
 +18 click: Click: Rig shock hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
 +1 menu: Deploy Hardsuit (refused: You can't do that.)
@@ -166,19 +166,19 @@
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
 +1 menu: Deploy Hardsuit (refused: You can't do that.)
 +2 menu: Engage Module (refused: You can't do that.)
-+5 menu: Open Hardsuit Interface (refused: You can't do that.)
-+6 menu: Rig item
-+7 menu: Rig shock hand
-+8 menu: Select Module (refused: You can't do that.)
-+9 menu: Switch Vision Mode (refused: You can't do that.)
-+10 menu: Toggle Boots (refused: You can't do that.)
-+11 menu: Toggle Chestpiece (refused: You can't do that.)
-+13 menu: Toggle Gauntlets (refused: You can't do that.)
-+14 menu: Toggle Hardsuit (refused: You can't do that.)
-+15 menu: Toggle Helmet (refused: You can't do that.)
-+16 menu: Toggle Module (refused: You can't do that.)
-+17 menu: Toggle Visor (refused: You can't do that.)
-+18 click: Click: Rig item
++4 menu: Open Hardsuit Interface (refused: You can't do that.)
++5 menu: Rig item
++6 menu: Rig shock hand
++7 menu: Select Module (refused: You can't do that.)
++8 menu: Switch Vision Mode (refused: You can't do that.)
++9 menu: Toggle Boots (refused: You can't do that.)
++10 menu: Toggle Chestpiece (refused: You can't do that.)
++12 menu: Toggle Gauntlets (refused: You can't do that.)
++13 menu: Toggle Hardsuit (refused: You can't do that.)
++14 menu: Toggle Helmet (refused: You can't do that.)
++15 menu: Toggle Module (refused: You can't do that.)
++16 menu: Toggle Visor (refused: You can't do that.)
++17 click: Click: Rig item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
@@ -203,18 +203,18 @@
 +1 menu: Deploy Hardsuit (refused: You can't do that.)
 +2 menu: Engage Module (refused: You can't do that.)
 +4 menu: Open Hardsuit Interface (refused: You can't do that.)
-+6 menu: Rig item
-+7 menu: Rig shock hand
-+8 menu: Select Module (refused: You can't do that.)
-+9 menu: Switch Vision Mode (refused: You can't do that.)
-+10 menu: Toggle Boots (refused: You can't do that.)
-+11 menu: Toggle Chestpiece (refused: You can't do that.)
-+13 menu: Toggle Gauntlets (refused: You can't do that.)
-+14 menu: Toggle Hardsuit (refused: You can't do that.)
-+15 menu: Toggle Helmet (refused: You can't do that.)
-+16 menu: Toggle Module (refused: You can't do that.)
-+17 menu: Toggle Visor (refused: You can't do that.)
-+18 click: Click: Rig item
++5 menu: Rig item
++6 menu: Rig shock hand
++7 menu: Select Module (refused: You can't do that.)
++8 menu: Switch Vision Mode (refused: You can't do that.)
++9 menu: Toggle Boots (refused: You can't do that.)
++10 menu: Toggle Chestpiece (refused: You can't do that.)
++12 menu: Toggle Gauntlets (refused: You can't do that.)
++13 menu: Toggle Hardsuit (refused: You can't do that.)
++14 menu: Toggle Helmet (refused: You can't do that.)
++15 menu: Toggle Module (refused: You can't do that.)
++16 menu: Toggle Visor (refused: You can't do that.)
++17 click: Click: Rig item
 @obj human|/obj/item/kit
 +0 menu: Configure Voice Synthesiser (refused: You can't do that.)
 +2 menu: Deploy Hardsuit (refused: You can't do that.)

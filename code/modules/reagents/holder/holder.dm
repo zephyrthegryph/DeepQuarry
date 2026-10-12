@@ -23,7 +23,7 @@
 	var/tmp/batch_changed = FALSE
 
 CAPABILITIES(/datum/reagents)
-	owns_many(nameof(reagent_list))
+	owns_many(nameof(reagent_list), on_lost = PROC_REF(reagent_lost))
 
 TRACKED(/datum/reagents, total_volume)
 TRACKED(/datum/reagents, tint)
@@ -38,6 +38,25 @@ TRACKED(/datum/reagents, master_id)
 
 // The id index is a plain lookup over the reagents reagent_list owns (never owned itself:
 // a reagent has one owner). Its members die through reagent_list; del_reagent() keeps it in sync.
+
+// The id index points at every reagent reagent_list owns, and each reagent's `holder` points
+// back here: left set after owns_many deletes the members, the deleted holder and its deleted
+// reagents keep each other alive (every reagent of a spent holder hard-deleted; REF SEARCH found
+// them only in reagent_by_id). Point it at the shared empty sentinel so late lookups still work.
+/datum/reagents/on_destroy(force)
+	reagent_by_id = GLOB.reagents_empty_list
+	..()
+
+/// owns_many(on_lost =): a reagent left reagent_list by a route other than del_reagent() (deleted
+/// on its own): the id index lets go of it too, or the live holder keeps the deleted reagent forever.
+/datum/reagents/proc/reagent_lost(datum/reagent/R)
+	if(!R || reagent_by_id?[R.id] != R)
+		return
+	for(var/datum/reagent/other as anything in reagent_list)
+		if(other != R && other.id == R.id)
+			reagent_by_id[R.id] = other
+			return
+	reagent_by_id -= R.id
 
 /* Internal procs */
 

@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -18,8 +18,6 @@
 @obj human|/obj/item/robot_parts/r_leg
 @obj human|/obj/item/organ/external/leg
 human|/obj/item/reagent_containers/glass/bucket menu: Move To Top
-human|/obj/item/reagent_containers/glass/bucket menu: Open or close the lid
-human|/obj/item/reagent_containers/glass/bucket menu: Set transfer amount
 human|/obj/item/reagent_containers/glass/bucket menu: Splash (refused: There is nothing in it to pour.)
 human|/obj/item/reagent_containers/glass/bucket menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass/bucket click: nothing

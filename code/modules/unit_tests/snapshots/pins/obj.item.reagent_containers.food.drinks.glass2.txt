@@ -8,7 +8,7 @@
 +4 menu: Set transfer amount
 +6 menu: Use
 +7 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers.food.drinks ghost|none
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
 -click: nothing
@@ -49,9 +49,9 @@
 @obj.item.reagent_containers human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Glass2 item
-+4 menu: Set transfer amount
-+6 menu: Use
-+7 click: Click: Use
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
 @obj.item.reagent_containers human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Glass2 item
@@ -61,9 +61,9 @@
 @obj.item.reagent_containers human|/obj/item/card/id
 -click: nothing
 +0 menu: Glass2 item
-+4 menu: Set transfer amount
-+6 menu: Use
-+7 click: Click: Use
++3 menu: Set transfer amount
++5 menu: Use
++6 click: Click: Use
 @obj.item.reagent_containers human|/obj/item/kit
 +1 menu: Glass2 item
 +4 menu: Set transfer amount

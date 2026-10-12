@@ -7,69 +7,55 @@ robot|none click: nothing
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item/tool/screwdriver
--menu: Melt
-+2 menu: Tear down
-+4 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item/tool/crowbar
--menu: Melt
-+2 menu: Tear down
-+4 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item/tool/wrench
--menu: Melt
+@obj.structure human|/obj/item/tool/screwdriver
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/crowbar
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Dismantle
-+3 menu: Tear down
-+5 menu: Turn Around (refused: It is fastened to the floor!)
-+7 click: Click: Dismantle
-@obj.structure.bed human|/obj/item/tool/wirecutters
--menu: Melt
--click: Click: Use
-+2 menu: Remove padding (refused: It has no padding to remove.)
-+3 menu: Tear down
-+5 menu: Turn Around (refused: It is fastened to the floor!)
-+7 click: Click: Remove padding
-@obj.structure.bed human|/obj/item/multitool
--menu: Melt
 +2 menu: Tear down
-+4 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item/weldingtool
--menu: Melt
-+2 menu: Tear down
-+4 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item/stack/cable_coil
--menu: Melt
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Dismantle
+@obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
-+3 menu: Pad (refused: You cannot pad that with that.)
-+4 menu: Tear down
-+6 menu: Turn Around (refused: It is fastened to the floor!)
-+8 click: Click: Pad
-@obj.structure.bed human|/obj/item/stack/material/steel
--menu: Melt
--click: Click: Use
-+2 menu: Pad (refused: You cannot pad that with that.)
-+3 menu: Tear down
-+5 menu: Turn Around (refused: It is fastened to the floor!)
-+7 click: Click: Pad
-@obj.structure.bed human|/obj/item/card/id
--menu: Melt
-+3 menu: Tear down
-+5 menu: Turn Around (refused: It is fastened to the floor!)
-@obj.structure.bed human|/obj/item
--menu: Melt
++1 menu: Remove padding (refused: It has no padding to remove.)
 +2 menu: Tear down
-+4 menu: Turn Around (refused: It is fastened to the floor!)
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Remove padding
+@obj.structure human|/obj/item/multitool
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/weldingtool
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item/stack/cable_coil
+-click: Click: Use
++1 menu: Pad (refused: You cannot pad that with that.)
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/stack/material/steel
+-click: Click: Use
++1 menu: Pad (refused: You cannot pad that with that.)
++2 menu: Tear down
++3 menu: Turn Around (refused: It is fastened to the floor!)
++5 click: Click: Pad
+@obj.structure human|/obj/item/card/id
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
+@obj.structure human|/obj/item
++1 menu: Tear down
++2 menu: Turn Around (refused: It is fastened to the floor!)
 @obj.structure human|/obj/item/stack
--menu: Repair (refused: )
--click: Click: Repair
-+2 menu: Pad (refused: You cannot pad that with that.)
-+3 menu: Tear down
-+5 menu: Turn Around (refused: It is fastened to the floor!)
-+7 click: Click: Pad
-@obj.structure human|/obj/item/disk
 +2 menu: Tear down
-+6 menu: Use
++4 menu: Use
+@obj human|/obj/item/disk
++1 menu: Tear down
++4 menu: Use
 @obj human|/obj/item/toy/plushie
-+3 menu: Tear down
-+7 menu: Use
++1 menu: Tear down
++4 menu: Use
 keys: buckle.buckle_drag, buckle.buckle_grab, buckle.buckle_self, buckle.unbuckle, dismantle, drag_buckle, melee_hit, pad, rotatable.turn_around, tear_down, tuck_disk, tuck_plushie, unpad, weaversilk_nest_interaction_item

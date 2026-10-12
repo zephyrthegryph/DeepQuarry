@@ -2,7 +2,7 @@
 +0 menu: Adjust Badge (refused: You can't do that.)
 @obj.item.clothing.suit.storage robot|none
 +0 menu: Adjust Badge (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Adjust Badge (refused: You can't do that.)
 @obj.item.clothing.suit.storage human|/obj/item/tool/screwdriver

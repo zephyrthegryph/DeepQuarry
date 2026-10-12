@@ -6,7 +6,7 @@
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
 +5 menu: Remove card
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Discard (refused: You can't do that.)
 +2 menu: Remove card
@@ -14,80 +14,80 @@
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use screwdriver
 +6 click: Click: Item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use crowbar
 +6 click: Click: Item
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use wrench
 +6 click: Click: Item
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use wirecutters
 +6 click: Click: Item
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use multitool
 +6 click: Click: Item
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use welding tool
 +6 click: Click: Item
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+5 menu: Remove card
-+7 click: Click: Item
++3 menu: Remove card
++5 menu: Use cable coil
++6 click: Click: Item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+4 menu: Remove card
++3 menu: Remove card
++5 menu: Use steel sheet
 +6 click: Click: Item
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alt
 +1 menu: Discard (refused: You can't do that.)
-+2 menu: Item
-+5 menu: Remove card
-+7 click: Click: Item
++3 menu: Remove card
++5 menu: Use identification card
++6 click: Click: Item
 @obj human|/obj/item/kit
 +0 menu: Alt
 +2 menu: Discard (refused: You can't do that.)
-+3 menu: Item
-+5 menu: Remove card
++4 menu: Remove card
++6 menu: Use item
 @obj human|/obj/item/storage
 +0 menu: Alt
 +2 menu: Discard (refused: You can't do that.)
-+3 menu: Item
-+5 menu: Remove card
++4 menu: Remove card
++6 menu: Use storage
 human|/obj/item menu: Alt
 human|/obj/item menu: Discard (refused: You can't do that.)
-human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Remove card
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
 human|/obj/item click: Click: Item
 keys: alt, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, hand_verb_discard, hand_verb_remove_card, item, kit_customize, kit_customize_last, move_to_top, pick_up_item, self, toggle_digestable

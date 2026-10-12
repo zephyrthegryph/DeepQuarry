@@ -2,7 +2,7 @@
 +4 menu: Storage accessory hand
 @obj.item.clothing.accessory robot|none
 +5 menu: Storage accessory hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.clothing.accessory human|/obj/item/tool/screwdriver
 -menu: Collar tag item
@@ -32,16 +32,16 @@
 +4 menu: Storage accessory item
 @obj.item.clothing.accessory human|/obj/item/stack/cable_coil
 -menu: Collar tag item
-+4 menu: Storage accessory hand
-+5 menu: Storage accessory item
++3 menu: Storage accessory hand
++4 menu: Storage accessory item
 @obj.item.clothing.accessory human|/obj/item/stack/material/steel
 -menu: Collar tag item
 +3 menu: Storage accessory hand
 +4 menu: Storage accessory item
 @obj.item.clothing.accessory human|/obj/item/card/id
 -menu: Collar tag item
-+4 menu: Storage accessory hand
-+5 menu: Storage accessory item
++3 menu: Storage accessory hand
++4 menu: Storage accessory item
 @obj.item.clothing.accessory human|/obj/item/kit
 -menu: Collar tag item
 +4 menu: Storage accessory hand

@@ -111,7 +111,7 @@
 	for(var/i in 1 to 6)
 		seq_run_frame_now(H, /datum/sequence/life)
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle, "total stasis takes no breath")
-	TEST_ASSERT_EQUAL(nutrition_of(H), nutrition_of(src), "total stasis metabolises nothing")
+	TEST_ASSERT_EQUAL(nutrition_of(H), nutrition, "total stasis metabolises nothing")
 	H.set_stasis(null, src)
 
 /// P2-S5: species facts replace species-name checks.

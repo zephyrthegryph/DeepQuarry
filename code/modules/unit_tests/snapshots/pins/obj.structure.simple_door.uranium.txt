@@ -6,26 +6,18 @@
 +2 click: Click: Use
 @obj.structure ai|none
 @obj ghost|none
-@obj.structure.simple_door human|/obj/item/tool/screwdriver
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/tool/crowbar
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/tool/wrench
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/tool/wirecutters
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/multitool
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/weldingtool
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/stack/cable_coil
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/stack/material/steel
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/card/id
--menu: Tear at
-@obj.structure.simple_door human|/obj/item
--menu: Tear at
-@obj.structure.simple_door human|/obj/item/pickaxe
--menu: Tear at
+@obj.structure human|/obj/item/tool/screwdriver
+@obj.structure human|/obj/item/tool/crowbar
+@obj.structure human|/obj/item/tool/wrench
+@obj.structure human|/obj/item/tool/wirecutters
+@obj.structure human|/obj/item/multitool
+@obj.structure human|/obj/item/weldingtool
+-click: Click: Use
++2 menu: Use welder
++3 click: Click: Use welder
+@obj.structure human|/obj/item/stack/cable_coil
+@obj.structure human|/obj/item/stack/material/steel
+@obj.structure human|/obj/item/card/id
+@obj.structure human|/obj/item
+@obj human|/obj/item/pickaxe
 keys: dig, drag_buckle, item, melee_hit, silicon_open, use, use_welder

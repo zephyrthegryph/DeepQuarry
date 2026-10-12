@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -35,8 +35,8 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Interaction pass
-+4 menu: Use
-+5 click: Click: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Interaction pass
@@ -45,8 +45,8 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Interaction pass
-+4 menu: Use
-+5 click: Click: Interaction pass
++3 menu: Use
++4 click: Click: Interaction pass
 @obj human|/obj/item/kit
 +1 menu: Interaction pass
 +4 menu: Use
@@ -55,7 +55,7 @@
 +1 menu: Interaction pass
 +4 menu: Use
 +5 click: Click: Interaction pass
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +0 menu: Interaction pass

@@ -147,7 +147,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		rel_set(ndb, nameof(ndb.pred_mind), pred_mind)
 
 		prey_goes_here = ndb
-		prey_goes_here.real_name = src.prey_name
+		prey_goes_here.set_real_name(src.prey_name)
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
 
@@ -160,7 +160,7 @@ CAPABILITIES(/mob/living/dominated_brain)
 		prey_goes_here = ndb
 		src.languages -= src.temp_languages
 		prey_goes_here.languages |= src.prey_langs
-		prey_goes_here.real_name = src.prey_name
+		prey_goes_here.set_real_name(src.prey_name)
 
 	///////////////////
 
@@ -695,7 +695,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 	rel_set(pred_brain, nameof(pred_brain.pred_mind), pred.mind)
 	pred_brain.was_mob = isnull(pred_brain.pred_mind)
 	pred_brain.name = pred.name
-	pred_brain.real_name = pred.real_name
+	pred_brain.set_real_name(pred.real_name)
 	var/list/preylangs = list()
 	preylangs |= prey.languages
 	preylangs -= prey.temp_languages
@@ -717,7 +717,7 @@ CAPABILITIES(/datum/control_transfer_review/lend_prey_control)
 /mob/living/proc/gather_prey_mind(mob/living/M)
 	var/mob/living/dominated_brain/db = new /mob/living/dominated_brain(src, src, M.name, M)
 	db.name = M.name
-	db.real_name = M.real_name
+	db.set_real_name(M.real_name)
 	rel_set(db, nameof(db.prey_mind), M.ensure_mind())
 	rel_set(db, nameof(db.pred_mind), mind)
 

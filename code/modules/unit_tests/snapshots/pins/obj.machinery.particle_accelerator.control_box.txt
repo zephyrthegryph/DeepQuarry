@@ -1,16 +1,57 @@
 @obj.machinery.particle_accelerator human|none
 @obj.machinery.particle_accelerator robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.particle_accelerator ghost|none
-@obj.machinery.particle_accelerator human|/obj/item/tool/screwdriver
-@obj.machinery.particle_accelerator human|/obj/item/tool/crowbar
-@obj.machinery.particle_accelerator human|/obj/item/tool/wrench
-@obj.machinery.particle_accelerator human|/obj/item/tool/wirecutters
-@obj.machinery.particle_accelerator human|/obj/item/multitool
-@obj.machinery.particle_accelerator human|/obj/item/weldingtool
-@obj.machinery.particle_accelerator human|/obj/item/stack/cable_coil
-@obj.machinery.particle_accelerator human|/obj/item/stack/material/steel
-@obj.machinery.particle_accelerator human|/obj/item/card/id
-@obj.machinery.particle_accelerator human|/obj/item
+@obj.machinery human|/obj/item/tool/screwdriver
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/tool/crowbar
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+human|/obj/item/tool/wrench menu: Build bolted
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench click: Click: Build bolted
+@obj.machinery human|/obj/item/tool/wirecutters
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/multitool
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/weldingtool
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/stack/material/steel
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item/card/id
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
+@obj.machinery human|/obj/item
++0 menu: Climb
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++3 menu: Turn Around
 wires: Interface, Maximum Power, Power Toggle, Strength
 keys: add_strength, climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, remove_strength, robot_remote_blocked, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, scan, silicon_hand, ui_open, wires.open

@@ -443,6 +443,10 @@ SYSTEM_DEF(garbage)
 	// whole instead of half torn down (and a forced one is refused too, not queued).
 	if(to_delete.lifecycle_keep(force))
 		to_delete.gc_destroyed = null
+		// The caused ending a verb recorded for it (ending_cause()) is never read now: drop it, or the
+		// global ending_causes list holds the kept thing forever and it hard-deletes when it does end.
+		if(ending_causes)
+			ending_causes -= to_delete
 		if(force)
 			trash.no_respect_force++
 		return

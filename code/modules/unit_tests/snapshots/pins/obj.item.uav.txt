@@ -6,14 +6,13 @@
 -click: Click: Pick up
 +1 menu: Handle
 +5 click: Click: Handle
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Handle
 +3 menu: Use
-+4 menu: Use screwdriver (refused: )
-+5 click: Click: Use screwdriver
++4 click: Click: Use screwdriver
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Handle
@@ -42,8 +41,8 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Handle
-+4 menu: Use
-+5 click: Click: Use
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Handle
@@ -52,8 +51,8 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Handle
-+4 menu: Use
-+5 click: Click: Use
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/kit
 +1 menu: Handle
 +4 menu: Use
@@ -62,14 +61,15 @@
 +1 menu: Handle
 +4 menu: Use
 +5 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 +0 menu: Handle
 @obj human|/obj/item/cell
 -click: nothing
-+2 menu: Handle
-+3 menu: Insert the cell
-+7 click: Click: Insert the cell
++0 menu: Handle
++1 menu: Insert the cell
++4 menu: Use
++5 click: Click: Insert the cell
 @obj human|/obj/item/pen
 -menu: Rename
 -click: Click: Rename

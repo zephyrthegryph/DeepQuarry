@@ -1,37 +1,25 @@
-human|none menu: Use (refused: )
 human|none click: Click: Use
-robot|none menu: Use (refused: )
 robot|none click: Click: Use
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/tool/crowbar
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/tool/wrench
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/tool/wirecutters
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/multitool
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/weldingtool
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/stack/cable_coil
 -menu: Use
-+4 menu: Use (refused: )
 @obj.structure human|/obj/item/stack/material/steel
 -menu: Use
-+3 menu: Use (refused: )
 @obj.structure human|/obj/item/card/id
 -menu: Use
-+4 menu: Use (refused: )
 @obj.structure human|/obj/item
 -menu: Use
-+3 menu: Use (refused: )
 keys: drag_buckle, melee_hit, ring_hand

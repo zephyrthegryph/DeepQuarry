@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Tanning racks refresh their leather overlay when the leather's wetness changes."

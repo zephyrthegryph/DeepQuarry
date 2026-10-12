@@ -4,80 +4,50 @@
 @obj.machinery robot|none
 +1 menu: Eject DNA Scanner
 +2 menu: Enter DNA Scanner
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Eject DNA Scanner (refused: You can't reach that.)
 +1 menu: Enter DNA Scanner (refused: You can't reach that.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Open maintenance panel
-+4 menu: Put inside
-+6 menu: Use
-+7 click: Click: Open maintenance panel
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Deconstruct (refused: the maintenance panel is closed)
-+1 menu: Eject DNA Scanner
-+2 menu: Enter DNA Scanner
-+4 menu: Put inside
-+6 menu: Use
-+7 click: Click: Deconstruct
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+4 menu: Put inside
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item
--click: nothing
-+0 menu: Eject DNA Scanner
-+1 menu: Enter DNA Scanner
-+3 menu: Put inside
-+5 menu: Use
-+6 click: Click: Use
+human|/obj/item/tool/screwdriver menu: Eject DNA Scanner
+human|/obj/item/tool/screwdriver menu: Enter DNA Scanner
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Eject DNA Scanner
+human|/obj/item/tool/crowbar menu: Enter DNA Scanner
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+human|/obj/item/tool/wrench menu: Eject DNA Scanner
+human|/obj/item/tool/wrench menu: Enter DNA Scanner
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Eject DNA Scanner
+human|/obj/item/tool/wirecutters menu: Enter DNA Scanner
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Eject DNA Scanner
+human|/obj/item/multitool menu: Enter DNA Scanner
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Eject DNA Scanner
+human|/obj/item/weldingtool menu: Enter DNA Scanner
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Eject DNA Scanner
+human|/obj/item/stack/cable_coil menu: Enter DNA Scanner
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Eject DNA Scanner
+human|/obj/item/stack/material/steel menu: Enter DNA Scanner
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Eject DNA Scanner
+human|/obj/item/card/id menu: Enter DNA Scanner
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Eject DNA Scanner
+human|/obj/item menu: Enter DNA Scanner
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: dna_scannernew_eject_effect, dna_scannernew_move_inside_effect, dna_scanner_interaction_drag, dna_scanner_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

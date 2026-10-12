@@ -9,92 +9,70 @@ human|none click: Click: Use
 +2 menu: Climb out (refused: you aren't inside it)
 +3 menu: Start
 +4 menu: Start Washing
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
 +1 menu: Climb out (refused: you aren't inside it)
 +2 menu: Start Washing (refused: You can't reach that.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Open maintenance panel (refused: )
-+4 menu: Start
-+5 menu: Start Washing
-+7 menu: Use
-+8 click: Click: Open maintenance panel
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+2 menu: Deconstruct (refused: the maintenance panel is closed)
-+4 menu: Start
-+5 menu: Start Washing
-+7 menu: Use
-+8 click: Click: Deconstruct
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Unsecure (refused: )
-+7 menu: Use
-+8 click: Click: Unsecure
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+4 menu: Start
-+5 menu: Start Washing
-+7 menu: Use
-+8 click: Click: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Use
-+7 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+4 menu: Start
-+5 menu: Start Washing
-+7 menu: Use
-+8 click: Click: Use
-@obj human|/obj/item
--click: nothing
-+0 menu: Climb
-+1 menu: Climb out (refused: you aren't inside it)
-+3 menu: Start
-+4 menu: Start Washing
-+6 menu: Use
-+7 click: Click: Use
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Climb out (refused: you aren't inside it)
+human|/obj/item/tool/screwdriver menu: Start
+human|/obj/item/tool/screwdriver menu: Start Washing
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open maintenance panel
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Climb out (refused: you aren't inside it)
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Start
+human|/obj/item/tool/crowbar menu: Start Washing
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Deconstruct
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Climb out (refused: you aren't inside it)
+human|/obj/item/tool/wrench menu: Start
+human|/obj/item/tool/wrench menu: Start Washing
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Unsecure
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Climb out (refused: you aren't inside it)
+human|/obj/item/tool/wirecutters menu: Start
+human|/obj/item/tool/wirecutters menu: Start Washing
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Climb out (refused: you aren't inside it)
+human|/obj/item/multitool menu: Start
+human|/obj/item/multitool menu: Start Washing
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Climb out (refused: you aren't inside it)
+human|/obj/item/weldingtool menu: Start
+human|/obj/item/weldingtool menu: Start Washing
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Climb out (refused: you aren't inside it)
+human|/obj/item/stack/cable_coil menu: Start
+human|/obj/item/stack/cable_coil menu: Start Washing
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Climb out (refused: you aren't inside it)
+human|/obj/item/stack/material/steel menu: Start
+human|/obj/item/stack/material/steel menu: Start Washing
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Climb out (refused: you aren't inside it)
+human|/obj/item/card/id menu: Start
+human|/obj/item/card/id menu: Start Washing
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Climb
+human|/obj/item menu: Climb out (refused: you aren't inside it)
+human|/obj/item menu: Start
+human|/obj/item menu: Start Washing
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 keys: climb.climb, climb.climb_menu, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, washing_machine_climb_out, washing_machine_load_grab, washing_machine_start, washing_machine_start_washing, washing_machine_use, washing_machine_use_item

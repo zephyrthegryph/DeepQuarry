@@ -24,6 +24,8 @@ GLOBAL_VAR(stat_force_settle) // SETTLE_INLINE / SETTLE_MARKED: the apc_flip_50 
 GLOBAL_VAR_INIT(stat_spills, 0)
 GLOBAL_VAR_INIT(stat_tick_spent, 0) // what this kernel pass's marked drains have charged to the lane so far
 GLOBAL_VAR_INIT(stat_evals, 0)
+GLOBAL_LIST_EMPTY(stat_read_compute_by) // BENCHMARK builds: "type:stat" -> uncached read computes
+GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the value because nothing was cached (the bench's idle stat metric)
 
 /// Calls holder proc `proc_name` (a contribution's or a formula's handler) with the shared evaluation context.
 /proc/stat_call(datum/holder, proc_name)
@@ -49,9 +51,28 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
 		return E.vars[def.name]
 	var/datum/stat_record/rec = E.rx?.stats
-	if(rec?.virtual && (def.skey in rec.virtual))
+	// A stat whose inputs all publish keeps its value until one does (stat_recompute() rewrites it then); one that reads something nobody publishes
+	// (code/engine/_generated/deps.dm, the untracked_inputs lint) is composed on every read, so it is never stale.
+	var/tracked = stat_inputs_tracked(I || null, def)
+	if(tracked && rec?.virtual && (def.skey in rec.virtual))
 		return rec.virtual[def.skey]
-	return stat_compute(E, def, I || null, rec)
+	GLOB.stat_read_computes++
+#if defined(BENCHMARK)
+	GLOB.stat_read_compute_by["[E.type]:[def.name]"]++
+#endif
+	. = stat_compute(E, def, I || null, rec)
+	// Cached on first read once the stat layer has set the entity up (its init computation, or its first hold): before that a map edit or an
+	// Initialize() write may still be on its way. A keyed stat's list is handed out, so it is cached only by a recompute, as before.
+	if(tracked && rec?.inited && !def.keyed)
+		stat_store(E, def, ., I || null)
+
+/// PUBLISH_CHANGE(E, KEY): a producer key that is not one var changed. The stats that read it (through a READS_AS accessor) recompute before the
+/// writer's next line, as for a tracked var, then the key's readers hear it.
+/proc/publish_key_changed(datum/E, key)
+	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
+		stat_inputs_changed(E, key)
+	if(READERS(E, key))
+		publish_change(E, key)
 
 /// Writes a stat's settled value where it lives.
 /proc/stat_store(datum/E, datum/stat_def/def, value, datum/stat_type_info/I)
@@ -207,9 +228,10 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 	var/old = has_var ? E.vars[def.name] : stat_value_now(E, def, FALSE)
 	var/new_value = stat_compute(E, def, I || null, rec)
 	GLOB.stat_evals++
-	if(old == new_value && !islist(new_value))
-		return FALSE
-	if(islist(new_value) && stat_values_equal(old, new_value))
+	if((old == new_value && !islist(new_value)) || (islist(new_value) && stat_values_equal(old, new_value)))
+		// Unchanged, but a virtual stat that equals its base was never stored: keep it now, so its reads stop composing it (stat_value()).
+		if(!has_var && !def.keyed && !(rec.virtual && (def.skey in rec.virtual)) && stat_inputs_tracked(I || null, def))
+			stat_store(E, def, new_value, I || null)
 		return FALSE
 	if(has_var)
 		E.vars[def.name] = new_value // ALLOW(api): the stat layer is the one writer of a stat's var

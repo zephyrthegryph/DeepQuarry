@@ -459,7 +459,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			to_chat(user, span_notice("\The [src] rejects the ID."))
 			return OP_PASS
 		if(!owner)
-			owner = idcard.registered_name
+			set_owner(idcard.registered_name)
 			ownjob = idcard.assignment
 			ownrank = idcard.rank
 			name = "PDA-[owner] ([ownjob])"
@@ -578,3 +578,13 @@ CAPABILITIES(/obj/item/storage/box/PDAs)
 		SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 		SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
 	))
+
+/// The PDA's owner name: a wearer's visible name reads it (MOB_KEY_IDENTITY on whoever carries the PDA).
+/obj/item/pda/proc/set_owner(value)
+	if(TRACKED_UNCHANGED(owner, value))
+		return FALSE
+	owner = value
+	tracked_changed(src, nameof(owner))
+	identity_changed_on_holder()
+	return TRUE
+SETTER(/obj/item/pda, owner)

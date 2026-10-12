@@ -8,7 +8,7 @@
 +1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
 +5 menu: Release Ownership (refused: You can't do that.)
 +7 menu: Toggle Follow (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Destroy Crystal (refused: You can't do that.)
 +1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
@@ -47,8 +47,8 @@
 @obj human|/obj/item/stack/cable_coil
 +0 menu: Destroy Crystal (refused: You can't do that.)
 +1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-+4 menu: Release Ownership (refused: You can't do that.)
-+6 menu: Toggle Follow (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
 @obj human|/obj/item/stack/material/steel
 +0 menu: Destroy Crystal (refused: You can't do that.)
 +1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
@@ -57,8 +57,8 @@
 @obj human|/obj/item/card/id
 +0 menu: Destroy Crystal (refused: You can't do that.)
 +1 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)
-+4 menu: Release Ownership (refused: You can't do that.)
-+6 menu: Toggle Follow (refused: You can't do that.)
++3 menu: Release Ownership (refused: You can't do that.)
++5 menu: Toggle Follow (refused: You can't do that.)
 @obj human|/obj/item/kit
 +1 menu: Destroy Crystal (refused: You can't do that.)
 +2 menu: Enhance (Toggle Ghost Join) (refused: You can't do that.)

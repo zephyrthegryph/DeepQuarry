@@ -24,7 +24,7 @@
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
 	own_clear(new_mob, nameof(new_mob.vore_organs), OWN_DELETE)
 	new_mob.name = src.name
-	new_mob.real_name = src.real_name
+	new_mob.set_real_name(src.real_name)
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)

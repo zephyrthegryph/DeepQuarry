@@ -4,7 +4,7 @@
 @obj.item.clothing.accessory robot|none
 +2 menu: Draw
 +4 menu: Holster (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Holster (refused: You can't do that.)
 @obj.item.clothing.accessory human|/obj/item/tool/screwdriver

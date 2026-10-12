@@ -17,4 +17,6 @@ robot|none click: Click: Dismantle
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 @obj human|/obj/item/stack/rods
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 keys: build, dismantle, drag_buckle, hand, item, melee_hit

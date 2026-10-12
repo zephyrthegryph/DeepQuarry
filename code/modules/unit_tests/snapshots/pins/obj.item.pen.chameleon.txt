@@ -4,7 +4,7 @@
 @obj robot|none
 +0 menu: Change Pen Colour (refused: You can't do that.)
 +1 menu: Click
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Change Pen Colour (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver

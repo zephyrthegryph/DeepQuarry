@@ -106,11 +106,14 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		return
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(activation_every_fire), list(A, E, TRUE))
+		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
 		return
 	var/gated = A.runs
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, A.def.key)
+	if(!gated)
+		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
 	if(gated && E.args["members"])
 		every_members_start(holder, A, E)
 		return
@@ -266,6 +269,7 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	var/datum/entry/E = C.item
 	if(!dispatched && every_dispatch_needed(E))
 		every_dispatch_queue(E, GLOBAL_PROC_REF(type_every_fire), list(holder, C, index, TRUE))
+		GLOB.timer_fire_quiet = TRUE // only queued: the run redraws through what it writes
 		return
 	var/gated = FALSE
 	try
@@ -276,6 +280,8 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 	var/cond = E.args["when"]
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, "type every()")
+	if(!gated)
+		GLOB.timer_fire_quiet = TRUE // a skipped (or parked) run changed nothing of the holder's
 	if(!gated && !GLOB.every_gate_faulted && type_every_parkable(holder, C))
 		type_every_park(holder, index)
 		return

@@ -19,104 +19,84 @@
 +2 menu: Take Road Apart (refused: You can't reach that.)
 +3 menu: Turn Around
 +4 menu: Use Color Pieces (refused: You can't reach that.)
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+5 menu: Take apart
-+6 menu: Take Road Apart
-+8 menu: Turn Around
-+9 menu: Use Color Pieces
-+10 click: nothing
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+5 menu: Take apart
-+6 menu: Take Road Apart
-+8 menu: Turn Around
-+9 menu: Use Color Pieces
-+10 click: nothing
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+4 menu: Take apart
-+5 menu: Take Road Apart
-+7 menu: Turn Around
-+8 menu: Use Color Pieces
-+9 click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Take apart
+human|/obj/item/tool/screwdriver menu: Take Road Apart
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver menu: Use Color Pieces
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Take apart
+human|/obj/item/tool/crowbar menu: Take Road Apart
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar menu: Use Color Pieces
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Take apart
+human|/obj/item/tool/wrench menu: Take Road Apart
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench menu: Use Color Pieces
+human|/obj/item/tool/wrench click: nothing
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
+human|/obj/item/tool/wirecutters menu: Take apart
+human|/obj/item/tool/wirecutters menu: Take Road Apart
+human|/obj/item/tool/wirecutters menu: Turn Around
+human|/obj/item/tool/wirecutters menu: Use Color Pieces
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
+human|/obj/item/multitool menu: Take apart
+human|/obj/item/multitool menu: Take Road Apart
+human|/obj/item/multitool menu: Turn Around
+human|/obj/item/multitool menu: Use Color Pieces
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Take apart
+human|/obj/item/weldingtool menu: Take Road Apart
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool menu: Use Color Pieces
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
+human|/obj/item/stack/cable_coil menu: Take apart
+human|/obj/item/stack/cable_coil menu: Take Road Apart
+human|/obj/item/stack/cable_coil menu: Turn Around
+human|/obj/item/stack/cable_coil menu: Use Color Pieces
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Take apart
+human|/obj/item/stack/material/steel menu: Take Road Apart
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel menu: Use Color Pieces
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Take apart
+human|/obj/item/card/id menu: Take Road Apart
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id menu: Use Color Pieces
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Hit
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
+human|/obj/item menu: Take apart
+human|/obj/item menu: Take Road Apart
+human|/obj/item menu: Turn Around
+human|/obj/item menu: Use Color Pieces
+human|/obj/item click: nothing
 keys: drag_buckle, melee_hit, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around, smoletrack_dismantle_hand, smoletrack_verb_color, smoletrack_verb_dismantle

@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/melee/cursedblade)
 	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
-	new_voice.real_name = "cursed sword"
+	new_voice.set_real_name("cursed sword")
 	rel_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 

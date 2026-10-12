@@ -1,6 +1,6 @@
 @obj.machinery.computer human|none
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 @obj.machinery.computer human|/obj/item/tool/crowbar
@@ -13,5 +13,9 @@
 @obj.machinery.computer human|/obj/item/card/id
 @obj.machinery.computer human|/obj/item
 @obj human|/obj/item/gripper
-@obj human|/obj/item/disk
+human|/obj/item/disk menu: Climb
+human|/obj/item/disk menu: Insert disk
+human|/obj/item/disk menu: Use
+human|/obj/item/disk menu: Use disk
+human|/obj/item/disk click: Click: Use item
 keys: climb.climb, climb.climb_menu, dequeueNode, disconnect, drag_buckle, ejectDisk, enqueueNode, insert_disk, loadTech, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, open_ui_impl, researchNode, robot_remote_blocked, silicon_hand, toggleLock, uploadDisk, use_gripper, use_item

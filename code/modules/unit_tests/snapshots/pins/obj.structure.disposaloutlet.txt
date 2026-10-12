@@ -4,19 +4,18 @@
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
-+4 menu: Use screwdriver
-+5 click: Click: Use screwdriver
++2 menu: Use screwdriver
++3 click: Click: Use screwdriver
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 -click: Click: Use
-+2 menu: Set ejection strength (refused: its panel is closed)
-+5 click: Click: Set ejection strength
++1 menu: Set ejection strength (refused: its panel is closed)
++3 click: Click: Set ejection strength
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Use welder (refused: )
-+5 click: Click: Use welder
++2 click: Click: Use welder
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id

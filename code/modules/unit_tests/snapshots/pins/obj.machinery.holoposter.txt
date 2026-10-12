@@ -1,18 +1,16 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
-@obj human|/obj/item/tool/crowbar
-@obj human|/obj/item/tool/wrench
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Choose poster
-+3 click: Click: Choose poster
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+@obj.machinery human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/wrench
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Choose poster
+human|/obj/item/multitool click: Click: Choose poster
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_multitool

@@ -8,7 +8,7 @@
 +4 menu: Toggle tracking
 +5 menu: Use
 +6 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -43,9 +43,9 @@
 +4 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+3 menu: Toggle tracking
-+4 menu: Use
-+5 click: Click: Use
++2 menu: Toggle tracking
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +2 menu: Toggle tracking
@@ -53,9 +53,9 @@
 +4 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
-+3 menu: Toggle tracking
-+4 menu: Use
-+5 click: Click: Use
++2 menu: Toggle tracking
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/kit
 +3 menu: Toggle tracking
 +4 menu: Use

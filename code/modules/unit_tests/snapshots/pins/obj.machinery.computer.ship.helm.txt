@@ -1,9 +1,6 @@
 @obj.machinery.computer human|none
 @obj.machinery.computer robot|none
-+3 menu: Use (refused: access denied)
-+4 menu: Use (refused: Access Denied.)
-@obj ai|none
-+1 menu: Use (refused: Access Denied.)
+@obj.machinery ai|none
 @obj.machinery.computer.ship ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 @obj.machinery.computer human|/obj/item/tool/crowbar

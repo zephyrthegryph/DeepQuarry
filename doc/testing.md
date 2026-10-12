@@ -402,6 +402,23 @@ roughly `1/N` of the suite's work: from a 120-minute base for a whole-tier run
 minutes per shard on 2026-10-04) and a 45-minute base when `--select` or
 `--affected` narrows it.
 
+### Reference tracking (harddel hunting)
+
+The reference finder is off in production and local server builds. Unit-test
+builds (`UNIT_TESTS`) turn on `REFERENCE_TRACKING` and `GC_FAILURE_HARD_LOOKUP`
+automatically, so `find_reference_sanity` and the GC tests keep working. For a
+local server that hunts harddels, opt in at build time:
+
+- `tools/build/build.sh -DREFERENCE_TRACKING` -- tracking, the admin
+  "Find References" verb and `QDEL_HINT_FINDREFERENCE` hints; no automatic
+  searches.
+- `tools/build/build.sh -DGC_FAILURE_HARD_LOOKUP` -- also searches the whole
+  datum graph, without tick checks, for every object that fails its first GC
+  check. This freezes the world for minutes per object; never use it on a
+  server people play on.
+
+Results land in the round's `runtime.log` as `## REF SEARCH` lines.
+
 ### Test records, flakes and baselines
 
 Every `dm-test` run is saved to `data/test-runs/<timestamp>_<commit>.json`: pass,

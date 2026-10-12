@@ -4,7 +4,7 @@
 @obj.item.reagent_containers robot|none
 -menu: Rename food
 +0 menu: Empty container (refused: There's nothing in it you can remove!)
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers ghost|none
 -menu: Rename food (refused: You can't cook!)
 +0 menu: Empty container (refused: There's nothing in it you can remove!)

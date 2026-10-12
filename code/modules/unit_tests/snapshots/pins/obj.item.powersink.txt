@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +1 menu: Interaction hand
 +5 click: Click: Interaction hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -36,7 +36,7 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Interaction hand
-+4 click: Click: Interaction hand
++3 click: Click: Interaction hand
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Interaction hand
@@ -44,7 +44,7 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Interaction hand
-+4 click: Click: Interaction hand
++3 click: Click: Interaction hand
 @obj human|/obj/item/kit
 +1 menu: Interaction hand
 @obj human|/obj/item/storage

@@ -3,89 +3,52 @@ human|none menu: Use
 human|none click: Click: Use
 @obj.machinery robot|none
 +1 menu: Remote use
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Remote use
 +2 click: Click: Remote use
 @obj ghost|none
-@obj.machinery.door human|/obj/item/tool/screwdriver
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
+human|/obj/item/tool/screwdriver menu: Close (refused: Access denied.)
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Use
 human|/obj/item/tool/crowbar menu: Close (refused: Access denied.)
 human|/obj/item/tool/crowbar menu: Force
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar click: Click: Force
-@obj.machinery.door human|/obj/item/tool/wrench
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
-@obj.machinery.door human|/obj/item/tool/wirecutters
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
-@obj.machinery.door human|/obj/item/multitool
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
+human|/obj/item/tool/wrench menu: Close (refused: Access denied.)
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Close (refused: Access denied.)
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Use
+human|/obj/item/multitool menu: Close (refused: Access denied.)
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
 human|/obj/item/weldingtool menu: Close (refused: Access denied.)
-human|/obj/item/weldingtool menu: Move To Top
-human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/weldingtool menu: Use
 human|/obj/item/weldingtool menu: Weld
 human|/obj/item/weldingtool click: Click: Weld
-@obj.machinery.door human|/obj/item/stack/cable_coil
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+4 menu: Use
-+5 click: Click: Use
-@obj.machinery.door human|/obj/item/stack/material/steel
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
-@obj.machinery.door human|/obj/item/card/id
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+4 menu: Use
-+5 click: Click: Use
-@obj.machinery.door human|/obj/item
--menu: Open
--click: Click: Open
-+0 menu: Close (refused: Access denied.)
-+3 menu: Use
-+4 click: Click: Use
-@obj.machinery.door human|/obj/item/card/emag
--menu: Hammer on the door
--menu: Hold the door open
--menu: Open
--menu: Ring the bell
-+0 menu: Close (refused: Access denied.)
-+4 menu: Use (refused: It must be closed first.)
+human|/obj/item/stack/cable_coil menu: Close (refused: Access denied.)
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Use
+human|/obj/item/stack/material/steel menu: Close (refused: Access denied.)
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Close (refused: Access denied.)
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Close (refused: Access denied.)
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
+human|/obj/item/card/emag menu: Close (refused: Access denied.)
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag click: Click: Use
 human|/obj/item/stack/material/plasteel menu: Close (refused: Access denied.)
-human|/obj/item/stack/material/plasteel menu: Move To Top
 human|/obj/item/stack/material/plasteel menu: Reinforce (refused: It is already reinforced.)
-human|/obj/item/stack/material/plasteel menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/material/plasteel menu: Use
 human|/obj/item/stack/material/plasteel click: Click: Reinforce
-@obj human|/obj/item/taperoll
--menu: Hammer on the door
--menu: Hold the door open
--menu: Open
--menu: Ring the bell
-+0 menu: Close (refused: Access denied.)
-+4 menu: Use
+human|/obj/item/taperoll menu: Close (refused: Access denied.)
+human|/obj/item/taperoll menu: Tape
+human|/obj/item/taperoll menu: Use
+human|/obj/item/taperoll click: Click: Tape
 keys: busy, doors.close, doors.open, drag_buckle, emag.subvert, emag.use, force_claws, force_generic, hatch, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, pry, pry_tool, reinforce, remote_use, remove_electronics, repair, robot_remote_blocked, silicon_hand, strike, tape, unreinforce, use, weld, welded, weld_plasteel

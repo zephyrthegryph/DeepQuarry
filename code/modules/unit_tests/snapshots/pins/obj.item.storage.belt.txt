@@ -2,7 +2,7 @@
 +3 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage robot|none
 +4 menu: Switch Belt Layer (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/tool/screwdriver
@@ -18,11 +18,11 @@
 @obj.item.storage human|/obj/item/weldingtool
 +3 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/stack/cable_coil
-+4 menu: Switch Belt Layer (refused: You can't do that.)
++3 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/stack/material/steel
 +3 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/card/id
-+4 menu: Switch Belt Layer (refused: You can't do that.)
++3 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/kit
 +4 menu: Switch Belt Layer (refused: You can't do that.)
 @obj.item.storage human|/obj/item/storage

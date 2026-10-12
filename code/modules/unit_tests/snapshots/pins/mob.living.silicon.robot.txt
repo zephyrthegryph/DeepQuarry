@@ -15,33 +15,31 @@
 @mob.living human|/obj/item/tool/screwdriver
 -menu: Nutrition heal
 -click: Click: Use on
-+8 menu: Work the panel (refused: )
-+9 click: Click: Work the panel
++6 click: Click: Work the panel
 @mob.living human|/obj/item/tool/crowbar
 -menu: Nutrition heal
 -click: Click: Use on
-+5 menu: Pry the cover or a part
-+9 click: Click: Pry the cover or a part
++4 menu: Pry the cover or a part
++7 click: Click: Pry the cover or a part
 @mob.living human|/obj/item/tool/wrench
 -menu: Nutrition heal
 -click: Click: Use on
-+5 menu: Remove the restraining bolt (refused: )
-+9 click: Click: Remove the restraining bolt
++6 click: Click: Remove the restraining bolt
 @mob.living human|/obj/item/tool/wirecutters
 -menu: Nutrition heal
 -click: Click: Use on
-+8 menu: Work the wiring (refused: You can't reach the wiring.)
-+9 click: Click: Work the wiring
++6 menu: Work the wiring (refused: You can't reach the wiring.)
++7 click: Click: Work the wiring
 @mob.living human|/obj/item/multitool
 -menu: Nutrition heal
 -click: Click: Use on
-+8 menu: Work the wiring (refused: You can't reach the wiring.)
-+9 click: Click: Work the wiring
++6 menu: Work the wiring (refused: You can't reach the wiring.)
++7 click: Click: Work the wiring
 @mob.living human|/obj/item/weldingtool
 -menu: Nutrition heal
 -click: Click: Use on
-+8 menu: Weld the dents (refused: Nothing to fix here.)
-+9 click: Click: Weld the dents
++6 menu: Weld the dents (refused: Nothing to fix here.)
++7 click: Click: Weld the dents
 @mob human|/obj/item/stack/cable_coil
 @mob human|/obj/item/stack/material/steel
 @mob human|/obj/item/card/id
@@ -50,9 +48,7 @@ human|/obj/item/card/emag menu: Disarm
 human|/obj/item/card/emag menu: Grab
 human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Hold with
-human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Shove with
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use

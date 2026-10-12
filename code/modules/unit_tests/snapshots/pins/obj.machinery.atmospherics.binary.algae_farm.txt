@@ -1,37 +1,43 @@
-@obj.machinery.atmospherics.binary human|none
+human|none menu: Open controls
+human|none click: Click: Open controls
 @obj.machinery.atmospherics.binary robot|none
-@obj.machinery.atmospherics.binary ai|none
+-menu: Ui open
+-click: Click: Ui open
++1 menu: Open controls
++3 click: Click: Open controls
+ai|none menu: Open controls
+ai|none menu: Use
+ai|none click: Click: Open controls
 @obj ghost|none
-@obj.machinery.atmospherics.binary human|/obj/item/tool/screwdriver
--menu: Set to max output
--menu: Toggle power
-+1 menu: Open maintenance panel
-@obj.machinery.atmospherics.binary human|/obj/item/tool/crowbar
--menu: Set to max output
--menu: Toggle power
-+0 menu: Deconstruct (refused: the maintenance panel is closed)
-human|/obj/item/tool/wrench menu: Move To Top
-human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/tool/wrench menu: Ui open
-human|/obj/item/tool/wrench click: Click: Ui open
-@obj.machinery.atmospherics.binary human|/obj/item/tool/wirecutters
-@obj.machinery.atmospherics.binary human|/obj/item/multitool
-@obj.machinery.atmospherics.binary human|/obj/item/weldingtool
-@obj.machinery.atmospherics.binary human|/obj/item/stack/cable_coil
-@obj.machinery.atmospherics.binary human|/obj/item/stack/material/steel
--menu: Set to max output
--menu: Toggle power
--click: Click: Ui open
-+0 menu: Insert materials
-+4 click: Click: Insert materials
-@obj.machinery.atmospherics.binary human|/obj/item/card/id
-@obj.machinery.atmospherics.binary human|/obj/item
-@obj.machinery.atmospherics.binary human|/obj/item/stack/material
--menu: Set to max output
--menu: Toggle power
--click: Click: Ui open
-+0 menu: Insert materials
-+4 click: Click: Insert materials
-@obj.machinery.atmospherics.binary human|/obj/item/pipe_painter
-@obj.machinery.atmospherics human|/obj/item/storage/part_replacer
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Open maintenance panel
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Deconstruct (refused: the maintenance panel is closed)
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Insert materials
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Insert materials
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/stack/material menu: Insert materials
+human|/obj/item/stack/material menu: Open controls
+human|/obj/item/stack/material click: Click: Insert materials
+human|/obj/item/pipe_painter menu: Open controls
+human|/obj/item/pipe_painter menu: Painter
+human|/obj/item/pipe_painter click: Click: Painter
+@obj human|/obj/item/storage/part_replacer
++0 menu: Open controls
 keys: drag_buckle, ejectMaterial, fit_material, load, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, painter, part_replacement.replace, robot_remote_blocked, silicon_hand, toggle, ui_open

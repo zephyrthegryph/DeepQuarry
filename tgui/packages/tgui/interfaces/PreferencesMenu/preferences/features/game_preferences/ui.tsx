@@ -19,7 +19,7 @@ export const VCHAT_ENABLE: FeatureToggle = {
   component: CheckboxInput,
 };
 
-export const screentips: FeatureToggle = {
+export const screentips_optin: FeatureToggle = {
   name: 'Screentips',
   category: 'UI',
   description:

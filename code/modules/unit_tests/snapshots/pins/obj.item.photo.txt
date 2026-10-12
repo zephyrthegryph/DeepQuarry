@@ -2,7 +2,7 @@
 +2 menu: Rename photo (refused: You can't do that.)
 @obj robot|none
 +3 menu: Rename photo (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Rename photo (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver
@@ -37,9 +37,9 @@
 +4 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Rename photo (refused: You can't do that.)
-+4 menu: Use
-+5 click: Click: Use
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Rename photo (refused: You can't do that.)
@@ -47,9 +47,9 @@
 +4 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
-+2 menu: Rename photo (refused: You can't do that.)
-+4 menu: Use
-+5 click: Click: Use
++1 menu: Rename photo (refused: You can't do that.)
++3 menu: Use
++4 click: Click: Use
 @obj human|/obj/item/kit
 +2 menu: Rename photo (refused: You can't do that.)
 +4 menu: Use
@@ -58,7 +58,7 @@
 +2 menu: Rename photo (refused: You can't do that.)
 +4 menu: Use
 +5 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 +1 menu: Rename photo (refused: You can't do that.)
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, photo_item, photo_rename, photo_self, pick_up_item, toggle_digestable

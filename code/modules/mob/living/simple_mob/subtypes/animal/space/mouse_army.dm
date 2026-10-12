@@ -220,9 +220,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army/pyro)
 /mob/living/simple_mob/animal/space/mouse_army/stealth/is_cloaked()
 	return dq_get_cloaked(src)
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/space/mouse_army/stealth/life_special(datum/seq_frame/life/F)
 	if(!dq_get_cloaked(src) && src.can_cloak())
 		src.start_cloaking()

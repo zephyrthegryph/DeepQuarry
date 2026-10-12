@@ -4,60 +4,66 @@ human|none click: Click: Ui open
 -click: Click: Use
 +1 menu: Ui open
 +3 click: Click: Ui open
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Ui open
 +2 click: Click: Ui open
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+1 menu: Open
-+3 menu: Ui open
-+4 click: Click: Open
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Dismantle
-@obj human|/obj/item/tool/wrench
--click: nothing
-+1 menu: Put it in
-+3 menu: Ui open
-+4 click: Click: Put it in
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Put it in
-+3 menu: Ui open
-+4 click: Click: Put it in
-@obj human|/obj/item/weldingtool
--click: nothing
-+1 menu: Put it in
-+3 menu: Ui open
-+4 click: Click: Put it in
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+2 menu: Put it in
-+4 menu: Ui open
-+5 click: Click: Put it in
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+1 menu: Put it in
-+3 menu: Ui open
-+4 click: Click: Put it in
-@obj human|/obj/item/card/id
--click: nothing
-+1 menu: Put it in
-+4 menu: Ui open
-+5 click: Click: Put it in
-@obj human|/obj/item
--click: nothing
-+1 menu: Put it in
-+3 menu: Ui open
-+4 click: Click: Put it in
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver click: Click: Open
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar click: Click: Dismantle
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Put it in
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench click: Click: Put it in
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Put it in
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool click: Click: Put it in
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Put it in
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool click: Click: Put it in
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Put it in
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil click: Click: Put it in
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Put it in
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel click: Click: Put it in
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Put it in
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id click: Click: Put it in
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Put it in
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item click: Click: Put it in
 @obj human|/obj/item/storage/part_replacer
++0 menu: Empty contents
++1 menu: Move To Top
 +2 menu: Put it in
++4 menu: Switch gathering method (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Ui open
 keys: build, build_queue, clear_queue, construction.dismantle, del_queue_part, drag_buckle, fabricator.drop_here, fabricator.remove_mat, fabricator.store, machine_anchor, machine_basics.slash, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel.open, part_replacement.replace, robot_remote_blocked, silicon_hand, stop_queue, ui_open

@@ -1,19 +1,19 @@
 @obj.machinery.button human|none
 @obj.machinery.button robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.button ghost|none
 @obj.machinery.button human|/obj/item/tool/screwdriver
-+1 menu: Open maintenance panel
++0 menu: Open maintenance panel
 @obj.machinery.button human|/obj/item/tool/crowbar
 @obj.machinery.button human|/obj/item/tool/wrench
 @obj.machinery.button human|/obj/item/tool/wirecutters
 -click: Click: Toggle
 +0 menu: Cut the wires
-+5 click: Click: Cut the wires
++3 click: Click: Cut the wires
 @obj.machinery.button human|/obj/item/multitool
 -click: Click: Toggle
-+2 menu: Set ID
-+5 click: Click: Set ID
++1 menu: Set ID
++3 click: Click: Set ID
 @obj.machinery.button human|/obj/item/weldingtool
 @obj.machinery.button human|/obj/item/stack/cable_coil
 @obj.machinery.button human|/obj/item/stack/material/steel

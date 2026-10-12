@@ -19,7 +19,7 @@ robot|none click: Click: Use
 @obj.structure human|/obj/item/weldingtool
 +1 menu: Melt
 @obj.structure human|/obj/item/stack/cable_coil
-+2 menu: Melt
++1 menu: Melt
 @obj.structure human|/obj/item/stack/material/steel
 +1 menu: Melt
 @obj.structure human|/obj/item/card/id
