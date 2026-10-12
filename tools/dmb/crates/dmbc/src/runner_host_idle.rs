@@ -28,30 +28,35 @@ impl BuildHost {
         self.maps = None;
         if let Some((_, owner)) = &self.symbolic {
             eprintln!("dmbd compact symbolic procedures begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(192 * 1024 * 1024);
-            eprintln!("dmbd compact symbolic procedures {report:?}");
+            eprintln!("dmbd compact symbolic procedures {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         // Preserve only fully charged source-neutral initializer nodes. This is
         // a logical retention cap, not a claim about process private memory.
         if let Some((_, owner)) = &self.initializers {
             eprintln!("dmbd compact initializer classification begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(96 * 1024 * 1024);
-            eprintln!("dmbd compact initializer classification {report:?}");
+            eprintln!("dmbd compact initializer classification {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         if let Some((_, owner)) = &self.startup {
             eprintln!("dmbd compact startup begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
-            eprintln!("dmbd compact startup {report:?}");
+            eprintln!("dmbd compact startup {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         if let Some((_, owner)) = &self.abi {
             eprintln!("dmbd compact ABI payloads begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(32 * 1024 * 1024);
-            eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?}");
+            eprintln!("dmbd compact ABI payloads (shared engine excluded) {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         if let Some((_, owner)) = &self.initializer_assemblies {
             eprintln!("dmbd compact initializer assembly begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
-            eprintln!("dmbd compact initializer assembly {report:?}");
+            eprintln!("dmbd compact initializer assembly {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         // Payload-free resource/demand proofs remain with the semantic owner.
         if self.memo.is_some() {
@@ -135,8 +140,9 @@ impl BuildHost {
         self.initializer_fragments = None;
         if let Some((_, owner)) = &self.initializer_assemblies {
             eprintln!("dmbd compact initializer assembly begin");
+            let compact_started = std::time::Instant::now();
             let report = owner.compact_for_pressure(64 * 1024 * 1024);
-            eprintln!("dmbd compact initializer assembly {report:?}");
+            eprintln!("dmbd compact initializer assembly {report:?} wall_seconds={:.6}", compact_started.elapsed().as_secs_f64());
         }
         self.link_bindings = None;
         self.maps = None;
