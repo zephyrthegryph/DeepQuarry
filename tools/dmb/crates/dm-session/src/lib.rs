@@ -4,9 +4,10 @@ mod artifacts;
 mod publication;
 mod reads;
 pub use artifacts::{
-    AcceptedArtifact, ArtifactStorageView, ArtifactStore, ObservedArtifact, ObservedArtifactLease,
-    ObservedArtifactStorageView, ObservedArtifactStore, PressureAllocation, PressurePrune, UnchangedCandidate,
-    UnchangedCandidates, DEFAULT_RESIDENT_BYTES,
+    AcceptedArtifact, ArtifactIncidenceCounts, ArtifactStorageAccounting, ArtifactStorageCoverage,
+    ArtifactStorageExclusion, ArtifactStorageView, ArtifactStore, ObservedArtifact,
+    ObservedArtifactLease, ObservedArtifactStorageView, ObservedArtifactStore, PressureAllocation,
+    PressurePrune, UnchangedCandidate, UnchangedCandidates, DEFAULT_RESIDENT_BYTES,
 };
 pub use publication::{ArtifactAttempt, ArtifactGeneration, ArtifactPublication};
 pub use reads::{matching_domains, RecordingResolver, ResolverRead};

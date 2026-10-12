@@ -16,6 +16,11 @@ mod certified_tests;
 mod incidence;
 pub use certified::{UnchangedCandidate, UnchangedCandidates};
 mod borrowed_lookup;
+mod storage_accounting;
+pub use storage_accounting::{
+    ArtifactIncidenceCounts, ArtifactStorageAccounting, ArtifactStorageCoverage,
+    ArtifactStorageExclusion,
+};
 #[cfg(test)]
 mod incidence_tests;
 mod leased;
@@ -93,6 +98,8 @@ impl<T, Q, A, D> Default for ObservedArtifactStore<T, Q, A, D> {
 impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
     /// Explicit census only. The callback runs under the store lock and must not
     /// call back into this store. No value/key cloning or serialization occurs.
+    /// `storage_accounting` describes the excluded private control owners; this
+    /// visitor alone cannot establish complete retained heap-byte coverage.
     pub fn visit_storage(
         &self,
         mut visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>),

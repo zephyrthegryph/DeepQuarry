@@ -142,6 +142,11 @@ impl<T, Q, A, D> ObservedArtifactLease<T, Q, A, D> {
     pub fn visit_storage(&self, visit: impl FnMut(ObservedArtifactStorageView<'_, T, Q, A, D>)) {
         self.store.visit_storage(visit);
     }
+    /// Whole shared-core accounting, including sibling leases. This is neither
+    /// this lease's private byte charge nor complete heap coverage.
+    pub fn storage_accounting(&self) -> ArtifactStorageAccounting {
+        self.store.storage_accounting()
+    }
 }
 impl<T, Q, A, D: Ord + Clone> ObservedArtifactLease<T, Q, A, D> {
     fn claim(&self, key: &[u8], receipt: ObservedArtifact<T, Q, A, D>) -> Option<Arc<T>> {
