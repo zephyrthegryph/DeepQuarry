@@ -14,16 +14,22 @@ impl SessionSymbolicMemo {
             let detached = std::mem::take(&mut *records);
             drop(records);
             drop(detached);
+            self.receipt_groups.prune();
             return dm_session::PressurePrune {
                 evicted_entries,
                 ..Default::default()
             };
         };
-        owner
+        let report = owner
             .values
             .prune_for_pressure_shared(limit, |key, _, _, record, allowance| {
                 shared_charge(key, record, allowance)
-            })
+            });
+        // Core eviction has detached/dropped rejected strong receipt owners.
+        // Weak slice locators still pin their inline Arc allocation until their
+        // weak references are dropped; remove only dead entries after that wave.
+        self.receipt_groups.prune();
+        report
     }
 }
 

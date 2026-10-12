@@ -201,3 +201,63 @@ fn shared_pressure_footprint_preserves_exact_unique_and_shared_backing() {
     );
     assert!(shared_charge(&first.key, &first, 0).is_none());
 }
+
+#[test]
+fn pressure_prunes_dead_weak_receipt_locators_and_preserves_escaped_live_leaf() {
+    let memo = SessionSymbolicMemo::current_revision();
+    let request = memo.for_request(true);
+    let query = dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of("weak_receipt_probe"));
+    let reads = vec![dm_session::ResolverRead {
+        query,
+        domain: query.domain(),
+        answer: dm_ir::ResolvedMeaning::Unsupported(query),
+    }];
+    let live = memo.receipt_groups.intern(reads.clone());
+    let dead_query =
+        dm_ir::ResolveQuery::GlobalProc(dm_ir::SymbolId::of("dead_weak_receipt_probe"));
+    let dead = memo.receipt_groups.intern(vec![dm_session::ResolverRead {
+        query: dead_query,
+        domain: dead_query.domain(),
+        answer: dm_ir::ResolvedMeaning::Unsupported(dead_query),
+    }]);
+    let dead_witness = Arc::downgrade(&dead);
+    for (index, leaf) in [live.clone(), dead].into_iter().enumerate() {
+        let mut current = Arc::try_unwrap(record()).ok().unwrap();
+        current.key = Arc::from(vec![index as u8]);
+        current.reads = dm_session::Receipt::from(leaf);
+        assert!(request.insert_record(
+            crate::lowering::UnitIdentity {
+                owner: dm_ir::SymbolId::of("/"),
+                name: dm_ir::SymbolId::of(if index == 0 { "live" } else { "dead" }),
+                namespace: crate::lowering::Namespace::Proc,
+                occurrence: 0,
+            },
+            current
+        ));
+    }
+    assert!(request.publish_successful());
+    drop(request);
+    let mut buckets = 0;
+    memo.receipt_groups.visit_storage(|_, _, _| buckets += 1);
+    assert_eq!(buckets, 2);
+    let report = memo.compact_for_pressure(0);
+    assert_eq!(report.retained_entries, 0);
+    assert!(dead_witness.upgrade().is_none());
+    buckets = 0;
+    memo.receipt_groups.visit_storage(|_, _, _| buckets += 1);
+    assert_eq!(
+        buckets, 1,
+        "dead weak slice/index allocation detached after core eviction"
+    );
+    assert!(Arc::ptr_eq(
+        &live,
+        &memo.receipt_groups.intern(reads.clone())
+    ));
+    assert_eq!(live.as_ref(), reads.as_slice());
+    drop(dead_witness);
+    drop(live);
+    memo.receipt_groups.prune();
+    buckets = 0;
+    memo.receipt_groups.visit_storage(|_, _, _| buckets += 1);
+    assert_eq!(buckets, 0);
+}
