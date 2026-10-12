@@ -59,6 +59,11 @@ def main():
         for file, digest in ((args.reference_receipt, args.reference_sha256), (args.native, args.native_sha256), (args.template, args.template_sha256)):
             if h.sha(file) != digest:
                 raise ValueError("input pin changed during compile")
+        for name, digest in reference["sourceHashes"].items():
+            if name == "probe.dme" and args.variant == "reverse":
+                digest = reference["reverseManifestSha256"]
+            if h.sha(source / name) != digest:
+                raise ValueError("reference source changed during compile: " + name)
         for suffix in (".dmb", ".rsc"):
             file = root / "artifacts" / ("probe" + suffix)
             if file.exists():
