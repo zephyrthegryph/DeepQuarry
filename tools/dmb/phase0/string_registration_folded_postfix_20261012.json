@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "scope": "Tiny pinned compile-only member and folded-string registration comparison; relative order and typed value observation only, no runtime or full parity acceptance.",
+  "native_commit": "3ede",
+  "native_sha256": "2ac708dac16636a05f32d0d3d2ed0c3212cbfee88229439ffd121aacd66b067e",
+  "inspector_sha256": "4eee5287f76f1401ec161f7c8058781bd5a75fc46faf7979d60f49b01de0f0cb",
+  "observations": {
+    "member": {
+      "receipt": "E:\\dq-cache\\dmb-string-controls-3ede\\ae877582e5d1448daea442b95dae5128\\receipt.json",
+      "receipt_sha256": "cdff4b5bd5c683f4fc9842d66647de515e704816c201d7a651909129fbe69a6b",
+      "dmb_sha256": "2b5fdd966d88f9b27f2f920acc1845e2313943cb8820608bb9a25ec3ec6c8d3d",
+      "field_footer": 119,
+      "field_ids": [
+        180,
+        181,
+        182,
+        183
+      ],
+      "variables": [
+        "Variable { kind: 42, value: 1065353216, name: 593 } name=a_second",
+        "Variable { kind: 42, value: 1073741824, name: 594 } name=type_value",
+        "Variable { kind: 42, value: 1077936128, name: 595 } name=z_first",
+        "Variable { kind: 42, value: 1082130432, name: 596 } name=control_value"
+      ],
+      "string_ids": {
+        "a_second": 593,
+        "type_value": 594,
+        "z_first": 595,
+        "control_value": 596
+      },
+      "procedure": "proc#67 /proc/unused_registration\n0000 0084 DbgFile [597]\n0002 0085 DbgLine [2]\n0004 0033 GetVar [65500, 65497, 0, 595]\n0009 0012 Ret []\n000a 0084 DbgFile [597]\n000c 0085 DbgLine [1]\n000e 0000 End []",
+      "relative_order": [
+        "a_second",
+        "type_value",
+        "z_first"
+      ],
+      "byond_relative_order": [
+        "a_second",
+        "type_value",
+        "z_first"
+      ],
+      "relative_order_matches_byond": true
+    },
+    "folded": {
+      "receipt": "E:\\dq-cache\\dmb-string-controls-3ede\\66e45eb17b3645b8badfe2e45552d502\\receipt.json",
+      "receipt_sha256": "90224b95d44cc317aa1341bbba44f60c308e68d6ecc51fa170d656502982a1bf",
+      "dmb_sha256": "8d3650cffbc7a92a773da5495080d829c66abe9b69627cbdd5e41b47d86a27eb",
+      "field_footer": 119,
+      "field_ids": [
+        179,
+        180,
+        181,
+        182
+      ],
+      "variables": [
+        "Variable { kind: 42, value: 1065353216, name: 594 } name=a_second",
+        "Variable { kind: 42, value: 1073741824, name: 595 } name=type_value",
+        "Variable { kind: 42, value: 1077936128, name: 592 } name=z_first",
+        "Variable { kind: 42, value: 1082130432, name: 596 } name=control_value"
+      ],
+      "string_ids": {
+        "a_second": 594,
+        "type_value": 595,
+        "z_first": 592,
+        "control_value": 596
+      },
+      "procedure": "proc#67 /proc/unused_registration\n0000 0084 DbgFile [597]\n0002 0085 DbgLine [2]\n0004 0060 PushVal [6, 592]\n0007 0012 Ret []\n0008 0084 DbgFile [597]\n000a 0085 DbgLine [1]\n000c 0000 End []",
+      "relative_order": [
+        "z_first",
+        "a_second",
+        "type_value"
+      ],
+      "byond_relative_order": [
+        "z_first",
+        "a_second",
+        "type_value"
+      ],
+      "relative_order_matches_byond": true
+    }
+  },
+  "remaining": [
+    "direct companion receipt pending",
+    "generated and authored string interleaving unobserved",
+    "nameof/namedargument/dynamic name chronology unobserved",
+    "fullruntime parity deferred"
+  ]
+}
