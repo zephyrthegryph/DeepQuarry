@@ -262,7 +262,7 @@ CAPABILITIES(/turf/open)
 /// A visible gas arrived on or left this turf: the mobs standing here hear it (MOB_KEY_AIR), so their
 /// sleeping breathing and environment steps take the new air now instead of on their resample timer.
 /turf/open/proc/turf_air_changed()
-	for(var/mob/living/L in src)
+	for(var/mob/living/L as anything in contents_of(src, /mob/living))
 		L.air_changed_here()
 
 /proc/typecache_of_gases_with_no_overlays()
