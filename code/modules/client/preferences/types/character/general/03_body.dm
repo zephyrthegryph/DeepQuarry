@@ -174,7 +174,7 @@
 	savefile_key = "secondary_ears_alpha"
 
 /datum/preference/numeric/human/ears_alpha/secondary/apply_to_human(mob/living/carbon/human/target, value)
-	target.looks.set_ears_alpha2(value;)
+	target.looks.set_ears_alpha2(value)
 
 /datum/preference/numeric/human/ears_alpha/apply_to_human(mob/living/carbon/human/target, value)
 	target.looks.set_ears_alpha(value)
