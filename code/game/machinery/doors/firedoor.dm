@@ -570,7 +570,7 @@ CAPABILITIES(/obj/machinery/door/firedoor)
 			redraw = TRUE
 			if(!dir_alerts)
 				set_dir_alerts(new /list(4))
-			dir_alerts[index] = alerts
+			set_dir_alerts_at(index, alerts)
 		any_alerts ||= alerts
 		lockdown ||= alerts
 	if(!any_alerts)
