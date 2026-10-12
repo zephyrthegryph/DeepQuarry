@@ -5,8 +5,8 @@
  * verbs and the basic mob actions the popup used to offer (examine, pull, point).
  *
  * Like the native popup it opens at the cursor: it renders in the map's own
- * hidden BROWSER element (INTERACTION_MENU_CONTROL, a mapwindow child like the
- * hover tooltip), which InteractionMenu.tsx sizes to its rows and places at the
+ * BROWSER element (INTERACTION_MENU_CONTROL, a mapwindow child like the hover
+ * tooltip, created by winset on first use), which InteractionMenu.tsx sizes to its rows and places at the
  * clicked pixel. It is never a separate window. The ui stays open on that element
  * and is hidden rather than closed (a dedicated element's tgui window is reused,
  * as the tooltip's is); picking a row, Escape, the close button or the next click
@@ -30,6 +30,9 @@
 
 /datum/interaction_menu/New(client/owner)
 	rel_set(src, nameof(owner), owner)
+	// The element is made here, the first time this player opens the menu, not shipped in the skin: a skin element
+	// in the map pane is laid out with the lobby's title screen too.
+	winset(owner, "interaction_menu", list2params(list("parent" = "mapwindow", "type" = "browser", "pos" = "0,0", "size" = "8x8", "anchor1" = "none", "anchor2" = "none", "is-visible" = "false", "inner-background-color" = "#00000000")))
 	rel_set(src, nameof(menu_window), new /datum/tgui_window(owner, INTERACTION_MENU_CONTROL))
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
