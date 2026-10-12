@@ -4826,3 +4826,7 @@ acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combinat
 * **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
 * **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
 * **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
+
+## Generated-station incremental work state (2026-10-12)
+
+The generated-station plan's hull_coordinates, hull_corners and seal_open are live incremental work state, not derived caches. Removing their CHANGE_EXPLICIT cache registrations prevents an unrelated publication from clearing a partially completed hull map or pressure-seal queue while leaving its cursor intact. Existing mutable map/list identity and traversal order remain unchanged. The borrowed hull-corner list now declares ref_many over actual tile intents owned by the plan; clearing that view preserves tile custody. Focused source tests use the actual step methods with a yielding checkpoint and assert preserved state plus successful continuation. Verification is pending; no snapshot refresh is proposed.
