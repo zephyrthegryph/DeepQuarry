@@ -358,6 +358,11 @@ pub(crate) fn rebase_cached_helper(
     {
         return Err("cached helper frame differs from current preparation".into());
     }
+    visible_formals::validate_cached_prefix(
+        argument,
+        visible_formals::typed_prefix(&code.procedure.code)?,
+        context.inputs.parameters.len(),
+    )?;
     let debug_origins = current_helper_origin(&context, helper)?;
     Ok(LoweredHelper {
         owner: context.owner,
@@ -369,6 +374,22 @@ pub(crate) fn rebase_cached_helper(
 
 /// Validate today's issued header/frame before binding shared frozen helper code.
 pub(crate) fn current_helper_origins(
+    context: &HelperInputs<'_>,
+    argument: u32,
+    referenced_prefix: u32,
+) -> Result<DebugOrigins, String> {
+    validate_cached_helper_prefix(argument, referenced_prefix, context.inputs.parameters.len())?;
+    current_helper_source_origins(context, argument)
+}
+pub(crate) fn validate_cached_helper_prefix(
+    argument: u32,
+    prefix: u32,
+    frame_len: usize,
+) -> Result<(), String> {
+    visible_formals::validate_cached_prefix(argument, prefix, frame_len)
+}
+/// Current source mapping needed before encoded restore; not cache admission.
+pub(crate) fn current_helper_source_origins(
     context: &HelperInputs<'_>,
     argument: u32,
 ) -> Result<DebugOrigins, String> {

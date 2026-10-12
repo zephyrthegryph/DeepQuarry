@@ -2,6 +2,67 @@
 use super::*;
 use dm_codegen_byond::{LowerError, LowerErrorKind, LowerSpan};
 
+pub(super) fn typed_prefix(code: &dm_codegen_byond::SymbolicProc) -> Result<u32, String> {
+    use dm_codegen_byond::{Item, VariableWord as V, Word};
+    fn variable(value: &V) -> Result<u32, String> {
+        match value {
+            V::Arg(index) => index
+                .checked_add(1)
+                .ok_or_else(|| "cached helper argument index overflow".into()),
+            V::Initial(inner) | V::IsSaved(inner) => variable(inner),
+            V::SetCache(a, b) => Ok(variable(a)?.max(variable(b)?)),
+            V::Local(_)
+            | V::Src
+            | V::Usr
+            | V::World
+            | V::Args
+            | V::Caller
+            | V::Callee
+            | V::Null
+            | V::Dot
+            | V::Cache
+            | V::CacheKey
+            | V::CacheIndex
+            | V::Field(_)
+            | V::StaticField(_)
+            | V::Global(_)
+            | V::DynamicProc(_)
+            | V::StaticProc(_)
+            | V::StaticVerb(_)
+            | V::DynamicVerb(_) => Ok(0),
+        }
+    }
+    let mut prefix = 0;
+    for item in &code.items {
+        if let Item::Instruction(instruction) = item {
+            for word in &instruction.operands {
+                if let Word::Variable(value) = word {
+                    prefix = prefix.max(variable(value)?);
+                }
+            }
+        }
+    }
+    Ok(prefix)
+}
+
+pub(super) fn validate_cached_prefix(
+    argument: u32,
+    prefix: u32,
+    frame_len: usize,
+) -> Result<(), String> {
+    let ordinal = usize::try_from(argument).map_err(|_| "cached helper ordinal exceeds usize")?;
+    let visible = argument
+        .checked_add(1)
+        .ok_or("cached helper ordinal overflow")?;
+    if ordinal >= frame_len
+        || prefix > visible
+        || usize::try_from(prefix).map_err(|_| "cached helper prefix exceeds usize")? > frame_len
+    {
+        return Err("cached helper reads a later formal or differs from current frame".into());
+    }
+    Ok(())
+}
+
 pub(super) fn compile<R: Resolver>(
     container: &Item,
     expression: &str,
@@ -74,6 +135,41 @@ pub(super) fn compile<R: Resolver>(
 mod tests {
     use super::*;
     use dm_ir::SymbolId;
+    #[test]
+    fn cached_typed_and_restored_argument_receipts_preserve_visibility_bounds() {
+        use dm_codegen_byond::{Instruction, Item, SymbolicProc, VariableWord as V, Word};
+        for (variable, prefix, accepted) in [
+            (V::Arg(0), 1, true),
+            (V::Arg(1), 2, true),
+            (V::Arg(2), 3, false),
+            (V::Args, 0, true),
+            (V::Initial(Box::new(V::Arg(2))), 3, false),
+        ] {
+            let code = SymbolicProc {
+                items: vec![Item::Instruction(Instruction {
+                    opcode: byond_dmb::bytecode::opcode::GET_VAR,
+                    operands: vec![Word::Variable(variable)],
+                })],
+            };
+            assert_eq!(typed_prefix(&code).unwrap(), prefix);
+            assert_eq!(validate_cached_prefix(1, prefix, 3).is_ok(), accepted);
+            let frozen = dm_codegen_byond::freeze_proc(&code).unwrap();
+            let restored = dm_codegen_byond::FrozenProc::restore(
+                frozen.code().clone(),
+                frozen.labels().to_vec(),
+            )
+            .unwrap();
+            for fact in [
+                frozen.referenced_argument_prefix(),
+                restored.referenced_argument_prefix(),
+            ] {
+                assert_eq!(fact, prefix);
+                assert_eq!(validate_cached_prefix(1, fact, 3).is_ok(), accepted);
+            }
+        }
+        assert!(validate_cached_prefix(u32::MAX, 0, usize::MAX).is_err());
+        assert!(validate_cached_prefix(3, 0, 3).is_err());
+    }
     struct Source<'a>(&'a str);
     impl dm_preprocess::SourceProvider for Source<'_> {
         fn read(&self, _: &std::path::Path) -> Result<String, String> {

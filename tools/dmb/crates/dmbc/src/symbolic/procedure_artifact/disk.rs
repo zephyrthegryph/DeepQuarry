@@ -539,7 +539,8 @@ impl ReusableProcedureArtifact {
                 return None;
             }
             let debug =
-                crate::argument_sources::current_helper_origins(&context, helper.argument).ok()?;
+                crate::argument_sources::current_helper_source_origins(&context, helper.argument)
+                    .ok()?;
             let code = helper.code.restore_mode(
                 frontend,
                 body,
@@ -552,6 +553,12 @@ impl ReusableProcedureArtifact {
                 backing,
             )?;
             let code = Arc::try_unwrap(code).ok()?;
+            crate::argument_sources::validate_cached_helper_prefix(
+                helper.argument,
+                code.frozen.referenced_argument_prefix(),
+                prepared.inputs.parameters.len(),
+            )
+            .ok()?;
             restored.push(HelperArtifact {
                 warnings: Arc::clone(&code.warnings),
                 argument: helper.argument,

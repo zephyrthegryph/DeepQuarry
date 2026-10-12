@@ -166,9 +166,13 @@ impl ReusableProcedureArtifact {
         self.helpers
             .iter()
             .map(|helper| {
-                crate::argument_sources::current_helper_origins(&context, helper.argument)
-                    .ok()
-                    .map(Into::into)
+                crate::argument_sources::current_helper_origins(
+                    &context,
+                    helper.argument,
+                    helper.frozen.referenced_argument_prefix(),
+                )
+                .ok()
+                .map(Into::into)
             })
             .collect()
     }
