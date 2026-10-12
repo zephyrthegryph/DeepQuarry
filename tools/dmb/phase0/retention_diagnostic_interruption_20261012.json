@@ -1,0 +1,11 @@
+{
+  "receipt": "E:/dq-cache/dmb-native-retention-diagnostics/20261012-030101-1bf3c32e/receipt.json",
+  "observed_status": "Incomplete: receipt remains running at fourth fresh oracle prepass",
+  "observation": "The execution session is no longer available; a bounded process inventory found no corresponding compiler or native-iteration supervisor",
+  "owner_census_created": false,
+  "measured_retained_rows": 0,
+  "cleanup_receipt_available": false,
+  "conclusion": "No retention diagnosis or performance result can be admitted from this attempt",
+  "preservation": "Original evidence preserved; its running status does not prove a live process",
+  "followup": "Complete shared exact-key backing migration and focused checks before deciding whether another census is necessary"
+}
