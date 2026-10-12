@@ -42,9 +42,6 @@
 CAPABILITIES(/mob/living/simple_mob/clockwork)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("can_be_drop_prey" = FALSE))
 
-/mob/living/simple_mob/clockwork/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/clockwork/life_special(datum/seq_frame/life/F)
 	if(!src.stat && prob(2)) // spooky
 		var/mob/observer/dead/spook = locate_in_list(range(src, 5), /mob/observer/dead)

@@ -9,27 +9,21 @@ human|/obj/item click: Click: Use
 human|/obj/item/aiModule menu: Access Computer's Internals
 human|/obj/item/aiModule menu: Climb
 human|/obj/item/aiModule menu: Install module
-human|/obj/item/aiModule menu: Move To Top
 human|/obj/item/aiModule menu: Select AI
-human|/obj/item/aiModule menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/aiModule menu: Use item
+human|/obj/item/aiModule menu: Use AI module
 human|/obj/item/aiModule click: Click: Install module
 human|/obj/item/aicard menu: Climb
-human|/obj/item/aicard menu: Move To Top
-human|/obj/item/aicard menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/aicard menu: Ui open
+human|/obj/item/aicard menu: Open controls
 human|/obj/item/aicard menu: Use
 human|/obj/item/aicard menu: Use AI card
-human|/obj/item/aicard menu: Use item
+human|/obj/item/aicard menu: Use intelliCore
 human|/obj/item/aicard click: Click: Use item
 human|/obj/item/airlock_electronics menu: Hit
 human|/obj/item/airlock_electronics menu: Move To Top
 human|/obj/item/airlock_electronics menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/airlock_electronics click: nothing
 human|/obj/item/analyzer menu: Eject Particle Focus Contents
-human|/obj/item/analyzer menu: Move To Top
 human|/obj/item/analyzer menu: Store
-human|/obj/item/analyzer menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/analyzer menu: Use
 human|/obj/item/analyzer click: Click: Use
 human|/obj/item/analyzer/plant_analyzer menu: Climb
@@ -149,21 +143,16 @@ human|/obj/item/card/id click: nothing
 human|/obj/item/card/id/guest menu: Climb
 human|/obj/item/card/id/guest menu: Eject ID Card
 human|/obj/item/card/id/guest menu: Insert ID
-human|/obj/item/card/id/guest menu: Move To Top
-human|/obj/item/card/id/guest menu: Read ID Card (refused: You can't do that.)
-human|/obj/item/card/id/guest menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/card/id/guest menu: Ui open
-human|/obj/item/card/id/guest menu: Use item
+human|/obj/item/card/id/guest menu: Open controls
+human|/obj/item/card/id/guest menu: Use guest pass
 human|/obj/item/card/id/guest click: Click: Use item
 human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell click: nothing
 human|/obj/item/circuitboard menu: Climb
 human|/obj/item/circuitboard menu: Hit
-human|/obj/item/circuitboard menu: Move To Top
 human|/obj/item/circuitboard menu: Rotate Clockwise
 human|/obj/item/circuitboard menu: Rotate Counter Clockwise
-human|/obj/item/circuitboard menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/circuitboard menu: Turn Around
 human|/obj/item/circuitboard menu: Use
 human|/obj/item/circuitboard click: Click: Use
@@ -173,11 +162,9 @@ human|/obj/item/circuitboard/message_monitor menu: Toggle Digestable (refused: Y
 human|/obj/item/circuitboard/message_monitor menu: Toggle PDA relay
 human|/obj/item/circuitboard/message_monitor click: Click: Install memory upgrade
 human|/obj/item/clothing menu: Insert
-human|/obj/item/clothing menu: Move To Top
+human|/obj/item/clothing menu: Open controls
 human|/obj/item/clothing menu: Remove item
-human|/obj/item/clothing menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/clothing menu: Ui open
-human|/obj/item/clothing click: Click: Ui open
+human|/obj/item/clothing click: Click: Open controls
 human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Move To Top
 human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Release prize
 human|/obj/item/clothing/accessory/collar/casinosentientprize menu: Toggle Digestable (refused: You can't do that.)
@@ -231,11 +218,9 @@ human|/obj/item/disk/botany menu: Load disk
 human|/obj/item/disk/botany menu: Use
 human|/obj/item/disk/botany click: Click: Use
 human|/obj/item/disk/nuclear menu: Make Deployable
-human|/obj/item/disk/nuclear menu: Move To Top
-human|/obj/item/disk/nuclear menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/disk/nuclear menu: Ui open
+human|/obj/item/disk/nuclear menu: Open controls
 human|/obj/item/disk/nuclear menu: Use
-human|/obj/item/disk/nuclear click: Click: Ui open
+human|/obj/item/disk/nuclear click: Click: Open controls
 human|/obj/item/encryptionkey menu: Insert key
 human|/obj/item/encryptionkey menu: Move To Top
 human|/obj/item/encryptionkey menu: Toggle Digestable (refused: You can't do that.)
@@ -532,12 +517,8 @@ human|/obj/item/reagent_containers/glass menu: Use
 human|/obj/item/reagent_containers/glass click: Click: Insert container
 human|/obj/item/reagent_containers/glass/beaker menu: Attach container
 human|/obj/item/reagent_containers/glass/beaker menu: Eject Particle Focus Contents
-human|/obj/item/reagent_containers/glass/beaker menu: Move To Top
-human|/obj/item/reagent_containers/glass/beaker menu: Open or close the lid
-human|/obj/item/reagent_containers/glass/beaker menu: Set transfer amount
 human|/obj/item/reagent_containers/glass/beaker menu: Splash (refused: There is nothing in it to pour.)
 human|/obj/item/reagent_containers/glass/beaker menu: Store
-human|/obj/item/reagent_containers/glass/beaker menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/reagent_containers/glass/beaker click: Click: Attach container
 human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Add injector
 human|/obj/item/reagent_containers/hypospray/autoinjector/biginjector/empty menu: Move To Top
@@ -605,12 +586,10 @@ human|/obj/item/stack menu: Split
 human|/obj/item/stack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack click: Click: Combine
 human|/obj/item/stack/arcadeticket menu: Climb
-human|/obj/item/stack/arcadeticket menu: Move To Top
+human|/obj/item/stack/arcadeticket menu: Open controls
 human|/obj/item/stack/arcadeticket menu: Pay
 human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have enough for that.)
-human|/obj/item/stack/arcadeticket menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/arcadeticket menu: Ui open
-human|/obj/item/stack/arcadeticket menu: Use item
+human|/obj/item/stack/arcadeticket menu: Use arcade tickets
 human|/obj/item/stack/arcadeticket click: Click: Use item
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
@@ -740,11 +719,9 @@ human|/obj/item/storage menu: Move To Top
 human|/obj/item/storage menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/storage click: Click: Collect
 human|/obj/item/storage/backpack menu: Insert
-human|/obj/item/storage/backpack menu: Move To Top
+human|/obj/item/storage/backpack menu: Open controls
 human|/obj/item/storage/backpack menu: Remove item
-human|/obj/item/storage/backpack menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage/backpack menu: Ui open
-human|/obj/item/storage/backpack click: Click: Ui open
+human|/obj/item/storage/backpack click: Click: Open controls
 human|/obj/item/storage/bag/plants menu: Empty contents
 human|/obj/item/storage/bag/plants menu: Empty seed bag
 human|/obj/item/storage/bag/plants menu: Move To Top
@@ -754,12 +731,9 @@ human|/obj/item/storage/bag/plants menu: Ui open
 human|/obj/item/storage/bag/plants menu: Use
 human|/obj/item/storage/bag/plants click: Click: Empty seed bag
 human|/obj/item/storage/belt menu: Insert
-human|/obj/item/storage/belt menu: Move To Top
+human|/obj/item/storage/belt menu: Open controls
 human|/obj/item/storage/belt menu: Remove item
-human|/obj/item/storage/belt menu: Switch Belt Layer (refused: You can't do that.)
-human|/obj/item/storage/belt menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/storage/belt menu: Ui open
-human|/obj/item/storage/belt click: Click: Ui open
+human|/obj/item/storage/belt click: Click: Open controls
 human|/obj/item/storage/laundry_basket menu: Hit
 human|/obj/item/storage/laundry_basket menu: Toggle Open
 human|/obj/item/storage/laundry_basket click: Click: Empty into
@@ -817,11 +791,9 @@ human|/obj/item/tool/wrench menu: Move To Top
 human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/wrench click: nothing
 human|/obj/item/toy menu: Insert
-human|/obj/item/toy menu: Move To Top
+human|/obj/item/toy menu: Open controls
 human|/obj/item/toy menu: Remove item
-human|/obj/item/toy menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/toy menu: Ui open
-human|/obj/item/toy click: Click: Ui open
+human|/obj/item/toy click: Click: Open controls
 human|/obj/item/toy/plushie menu: Hit
 human|/obj/item/toy/plushie menu: Tuck plushie
 human|/obj/item/toy/plushie menu: Turn Around (refused: It is fastened to the floor!)

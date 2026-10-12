@@ -45,9 +45,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/fossiltank)
 /mob/living/simple_mob/vore/fossiltank/emp_act
 	regenration_rate = 0
 
-/mob/living/simple_mob/vore/fossiltank/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/fossiltank/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.regenration()

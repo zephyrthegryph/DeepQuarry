@@ -343,7 +343,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	// Set ai pda name
 	if(aiPDA)
 		aiPDA.ownjob = JOB_AI
-		aiPDA.owner = pickedName
+		aiPDA.set_owner(pickedName)
 		aiPDA.name = pickedName + " (" + aiPDA.ownjob + ")"
 
 	if(aiCommunicator)

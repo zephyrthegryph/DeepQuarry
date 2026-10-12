@@ -170,43 +170,43 @@ CAPABILITIES(/obj/item/pda/librarian)
 	var/list/cartridges_to_send_to
 
 /obj/item/pda/multicaster/command/on_materialize()
-	owner = "Command Department"
+	set_owner("Command Department")
 	name = "Command Department (Relay)"
 	cartridges_to_send_to = GLOB.command_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/security/on_materialize()
-	owner = "Security Department"
+	set_owner("Security Department")
 	name = "Security Department (Relay)"
 	cartridges_to_send_to = GLOB.security_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/engineering/on_materialize()
-	owner = "Engineering Department"
+	set_owner("Engineering Department")
 	name = "Engineering Department (Relay)"
 	cartridges_to_send_to = GLOB.engineering_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/medical/on_materialize()
-	owner = "Medical Department"
+	set_owner("Medical Department")
 	name = "Medical Department (Relay)"
 	cartridges_to_send_to = GLOB.medical_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/research/on_materialize()
-	owner = "Research Department"
+	set_owner("Research Department")
 	name = "Research Department (Relay)"
 	cartridges_to_send_to = GLOB.research_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/cargo/on_materialize()
-	owner = "Cargo Department"
+	set_owner("Cargo Department")
 	name = "Cargo Department (Relay)"
 	cartridges_to_send_to = GLOB.cargo_cartridges
 	return ..()
 
 /obj/item/pda/multicaster/civilian/on_materialize()
-	owner = "Civilian Services Department"
+	set_owner("Civilian Services Department")
 	name = "Civilian Services Department (Relay)"
 	cartridges_to_send_to = GLOB.civilian_cartridges
 	return ..()

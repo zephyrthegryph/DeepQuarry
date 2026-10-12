@@ -144,9 +144,6 @@
 		to_chat(src, span_danger("You shock \the [L]."))
 		to_chat(L, span_danger("You've been shocked by \the [src]!"))
 
-/mob/living/simple_mob/slime/xenobio/yellow/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/yellow/life_special(datum/seq_frame/life/F)
 	if(src.stat == CONSCIOUS)
 		if(prob(25))
@@ -242,9 +239,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/dark_purple)
 
 	minbodytemp = 0
 	cold_damage_per_tick = 0
-
-/mob/living/simple_mob/slime/xenobio/dark_blue/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/dark_blue/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -429,9 +423,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 		/mob/living/simple_mob/slime/xenobio/amber
 	)
 
-/mob/living/simple_mob/slime/xenobio/amber/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/amber/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.feed_aura()
@@ -518,9 +509,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 			/mob/living/simple_mob/slime/xenobio/emerald
 		)
 
-/mob/living/simple_mob/slime/xenobio/green/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/xenobio/green/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.irradiate()
@@ -554,9 +542,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/ruby)
 			/mob/living/simple_mob/slime/xenobio/light_pink,
 			/mob/living/simple_mob/slime/xenobio/pink
 		)
-
-/mob/living/simple_mob/slime/xenobio/pink/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/pink/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
@@ -747,9 +732,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/xenobio/oil)
 		/mob/living/simple_mob/slime/xenobio/emerald,
 		/mob/living/simple_mob/slime/xenobio/emerald
 	)
-
-/mob/living/simple_mob/slime/xenobio/emerald/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/xenobio/emerald/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

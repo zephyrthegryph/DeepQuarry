@@ -167,7 +167,7 @@ CAPABILITIES(/obj/machinery/vr_sleeper/alien)
 
 /obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(datum/act/request/A)
 	if(A.answer && A.answer.value)
-		avatar().real_name = A.answer.value
+		avatar().set_real_name(A.answer.value)
 		avatar().name = A.answer.value
 
 

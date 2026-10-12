@@ -54,9 +54,8 @@ human|none click: Click: Select cyborg
 +1 menu: Install module (refused: needs a AI module)
 +2 menu: Select cyborg
 @obj human|/obj/item/gripper
-human|/obj/item/aiModule menu: Climb
-human|/obj/item/aiModule menu: Install module
-human|/obj/item/aiModule menu: Select cyborg
-human|/obj/item/aiModule menu: Use AI module
-human|/obj/item/aiModule click: Click: Install module
+@obj human|/obj/item/aiModule
+-menu: Access Computer's Internals
+-menu: Select AI
++2 menu: Select cyborg
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, install_module, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, observer_view, robot_remote_blocked, select_borg, silicon_hand, use_gripper, use_item

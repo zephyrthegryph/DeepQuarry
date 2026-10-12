@@ -94,9 +94,6 @@
 		leave_host()
 	..()
 
-/mob/living/simple_mob/animal/borer/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/borer/life_special(datum/seq_frame/life/F)
 	src.handle_chemicals()
 	src.handle_docile()

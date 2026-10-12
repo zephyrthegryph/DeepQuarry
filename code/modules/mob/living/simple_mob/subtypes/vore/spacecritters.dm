@@ -155,9 +155,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 
 	var/chilltemp = -20
 
-/mob/living/simple_mob/vore/spacecritter/livingice/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/vore/spacecritter/livingice/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.cold_aura()
@@ -196,9 +193,6 @@ CAPABILITIES(/mob/living/simple_mob/vore/spacecritter/solarray/galaxyray)
 	feed = "/obj/item/ore/uranium"
 	evolvekey = "/obj/item/stack/material/uranium"
 	copy = "/mob/living/simple_mob/vore/spacecritter/radcrab"
-
-/mob/living/simple_mob/vore/spacecritter/radcrab/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/vore/spacecritter/radcrab/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

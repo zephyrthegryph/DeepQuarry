@@ -20,7 +20,6 @@ stat_input_untracked	code/_helpers/mobs.dm	var/mob/living/silicon/robot/R = thin
 stat_input_untracked	code/_helpers/mobs.dm	for(var/obj/item/holder/H in contents_of(L))
 stat_input_untracked	code/datums/managed_browsers/feedback_form.dm	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/datums/properties/constraints.dm	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(I, CONSTRAINT_FIT) ? null : acceptance_plan_for(I, CONSTRAINT_FIT)
-stat_input_untracked	code/domains/power/powered.dm	return !cap_powered()
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
@@ -357,14 +356,8 @@ stat_input_untracked	code/modules/paperwork/filingcabinet.dm	return (length(cont
 stat_input_untracked	code/modules/paperwork/paperbin.dm	return !length(papers) // ALLOW(reads): the bin's papers are read when it is reached into, never cached
 stat_input_untracked	code/modules/paperwork/photocopier.dm	return istype(tempAI) && toner >= 5 && length(tempAI.aiCamera?.aipictures) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/modules/pda/pda.dm	return (tgui_status(user, GLOB.tgui_inventory_state) == STATUS_INTERACTIVE)
-stat_input_untracked	code/modules/power/apc.dm	return built(src, STAGE_APC_SECURED)
-stat_input_untracked	code/modules/power/apc.dm	return hacker && istype(robot) && robot.connected_ai == hacker // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
-stat_input_untracked	code/modules/power/apc.dm	return (z in using_map.station_levels) && !istype(area, /area/shuttle) // ALLOW(reads): an APC is fixed to its wall, so its z level never changes while it exists
 stat_input_untracked	code/modules/power/singularity/emitter.dm	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
 stat_input_untracked	code/modules/power/singularity/emitter.dm	return CEILING((E.max_integrity - E.get_integrity()) / 10, 1) // ALLOW(reads): an emitter's max_integrity is its type's constant
-stat_input_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	if(built(part, STAGE_PA_CLOSED))
-stat_input_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	if(built(part, STAGE_PA_CLOSED))
-stat_input_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	if(built(part, STAGE_PA_CLOSED))
 stat_input_untracked	code/modules/power/singularity/particle_accelerator/particle_smasher.dm	return (istype(held.loc, /obj/item/gripper) || held.canremove) && length(storage) < max_storage // ALLOW(reads): the hand and the storage are read when the item is used, never from a cached menu
 stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
 stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
@@ -415,7 +408,6 @@ stat_input_untracked	code/modules/telesci/bscyrstal.dm	return A.actor ? A.actor.
 stat_input_untracked	code/modules/telesci/telesci_computer.dm	return req_refusal_value(answer, /datum/msg/req_failed)
 stat_input_untracked	code/modules/vehicles/Securitrain.dm	return req_refusal_value(answer, /datum/msg/req_failed)
 stat_input_untracked	code/modules/vehicles/cargo_train.dm	return req_refusal_value(answer, /datum/msg/req_failed)
-stat_input_untracked	code/modules/vehicles/construction.dm	return !built(A.held, STAGE_QUADBIKE_CONTROLLED) ? null : MSG(quadtrailer/too_advanced)
 stat_input_untracked	code/modules/vehicles/rover.dm	return req_refusal_value(answer, /datum/msg/req_failed)
 stat_input_untracked	code/modules/vehicles/train.dm	return req_refusal_value(answer, /datum/msg/req_failed)
 stat_input_untracked	code/modules/xenoarcheaology/tools/artifact_harvester.dm	var/obj/item/anobattery/B = QDELETED(inserted_battery) ? null : inserted_battery // ALLOW(reads): the battery is read when the button is pressed, never cached
@@ -569,7 +561,6 @@ draw_untracked	code/game/machinery/pointdefense.dm	return (active && id_tag && o
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
 draw_untracked	code/game/machinery/portable_turret.dm	look.overlay(turret_opening_image(icon, turret_type, layer))
-draw_untracked	code/game/machinery/portable_turret.dm	look.state(built(src, STAGE_TURRET_FRAME_PLATED) ? "turret_frame2" : "turret_frame")
 draw_untracked	code/game/machinery/protean_reconstitutor.dm	return (appearance_live() && nanomass_reserve >= nanomass_required) ? 1 : 0
 draw_untracked	code/game/machinery/suit_storage/suit_storage.dm	return src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE) ? 1 : 0
 draw_untracked	code/game/machinery/virtual_reality/vr_console.dm	look.state("[base_state][appearance_occupied()]")
@@ -812,7 +803,6 @@ draw_untracked	code/game/objects/structures/tank_dispenser.dm	return oxygentanks
 draw_untracked	code/game/objects/structures/tank_dispenser.dm	return phorontanks >= 1 ? min(phorontanks, 5) : 0
 draw_untracked	code/game/objects/structures/watercloset.dm	var/spray_color = reagent_id == REAGENT_ID_WATER ? null : reagents.get_color()
 draw_untracked	code/game/objects/structures/watercloset.dm	look.overlay(look_overlay_image('icons/obj/watercloset.dmi', "water", layer = MOB_LAYER + 1, dir = dir, color = spray_color))
-draw_untracked	code/game/objects/structures/windoor_assembly.dm	return (built(src, STAGE_WINDOOR_ASSEMBLY_WIRED) || built(src, STAGE_WINDOOR_ASSEMBLY_BOARDED)) ? "02" : "01"
 draw_untracked	code/game/objects/structures/window.dm	return fulltile
 draw_untracked	code/game/objects/structures/window.dm	look.effect(PROC_REF(window_tilt), LERP(0, 15, max_integrity ? get_integrity_damage() / max_integrity : 0) * tilt_sign)
 draw_untracked	code/game/objects/structures/window.dm	look.overlay(look_overlay_image(icon, "[basestate]", color = "#ffffff", alpha = silicate * 255 / 100), silicate > 0)
@@ -1101,7 +1091,6 @@ draw_untracked	code/game/turfs/unsimulated/beach.dm	look.overlay(look_overlay_im
 draw_untracked	code/library/machine/door_parts.dm	if(!cap_of(A, CAP_WELD_SHUT))
 draw_untracked	code/library/machine/door_parts.dm	if(!cap_of(A, CAP_WELD_SHUT))
 draw_untracked	code/library/machine/emp_disable.dm	return held_by_source(E, STAT_OPERABLE, SRC_EMP)
-draw_untracked	code/library/machine/emp_disable.dm	return hold_left(E, STAT_OPERABLE, SRC_EMP) || 0
 draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
 draw_untracked	code/modules/anomalies/anomaly_harvester.dm	var/obj/effect/anomaly/anom = harvested
 draw_untracked	code/modules/artifice/telecube.dm	look.overlay(look_overlay_image(icon, "[icon_state]-[ready ? "ready" : "charging"]", plane = on_floor ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = glow_color, appearance_flags = KEEP_APART))
@@ -1390,7 +1379,6 @@ draw_untracked	code/modules/mining/mine_items.dm	return material_static
 draw_untracked	code/modules/mining/mine_items.dm	return material_static
 draw_untracked	code/modules/mining/mine_turfs.dm	return mineral_static
 draw_untracked	code/modules/mob/living/bot/medbot.dm	switch("[skin]")
-draw_untracked	code/modules/mob/living/bot/secbot.dm	if(built(src, STAGE_SECBOT_HOLED))
 draw_untracked	code/modules/mob/living/carbon/human/human_helpers.dm	return synthetic
 draw_untracked	code/modules/mob/living/carbon/human/human_helpers.dm	return synthetic
 draw_untracked	code/modules/mob/living/carbon/human/human_helpers.dm	return synthetic
@@ -2014,8 +2002,6 @@ draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(Ph.tiny)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(look_overlay_image('icons/obj/bureaucracy.dmi', "clip"))
 draw_untracked	code/modules/paperwork/paperbin.dm	look.state("paper_bin[amount ? "1" : "0"]")
 draw_untracked	code/modules/persistence/noticeboard.dm	look.state("[base_icon_state][appearance_count()]")
-draw_untracked	code/modules/power/apc.dm	if(is_lit(src) && operating)
-draw_untracked	code/modules/power/apc.dm	else if(is_lit(src))
 draw_untracked	code/modules/power/cable.dm	if(!(flags & ATOM_INITIALIZED))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
@@ -2056,8 +2042,6 @@ draw_untracked	code/modules/power/power.dm	return power_avail(power_region)
 draw_untracked	code/modules/power/singularity/emitter.dm	return powered && power_region && avail(power_of(src).active) && active
 draw_untracked	code/modules/power/singularity/emitter.dm	var/image/emitterbeam = image(icon, "emitter-beam")
 draw_untracked	code/modules/power/singularity/field_generator.dm	var/level = between(0, round(num_power_levels * power / FIELD_GEN_MAX_POWER), num_power_levels)
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	if(built(part, STAGE_PA_CLOSED))
-draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	if(built(part, STAGE_PA_CLOSED))
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	suffix = powered ? "p[strength]" : "c"
 draw_untracked	code/modules/power/singularity/particle_accelerator/particle_accelerator.dm	look.state("[reference][suffix]")

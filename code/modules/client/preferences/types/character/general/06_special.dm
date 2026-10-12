@@ -91,4 +91,4 @@
 /datum/preference/toggle/living/shadekin_hide_voice_in_phase/apply_to_living(mob/living/target, value)
 	var/datum/shadekin/our_SK = target.get_shadekin_state()
 	if(our_SK)
-		our_SK.hide_voice_in_phase = value
+		our_SK.set_hide_voice_in_phase(value)

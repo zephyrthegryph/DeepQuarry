@@ -1,0 +1,4 @@
+author: "Claude"
+delete-after: true
+changes:
+  - code_imp: "Machines react to power changes through their has_power stat; APCs report to the grid only when what they show changes, and powered work sleeps while unpowered."

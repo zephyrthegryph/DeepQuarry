@@ -182,7 +182,7 @@
 
 		if(client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random))
 			client.prefs.update_preference_by_type(/datum/preference/name/real_name, random_name(client.prefs.read_preference(/datum/preference/choiced/gender/identifying)))
-		observer.real_name = client.prefs.read_preference(/datum/preference/name/real_name)
+		observer.set_real_name(client.prefs.read_preference(/datum/preference/name/real_name))
 		observer.name = observer.real_name
 		if(!check_rights_for(client, R_HOLDER) && !CONFIG_GET(flag/antag_hud_allowed))           // For new ghosts we remove the verb from even showing up if it's not allowed.
 			grant(observer, granted_verb(/mob/observer/dead/verb/toggle_antagHUD, hidden = TRUE), verb_source(VERB_SOURCE_CONFIG)) // Poor guys, don't know what they are missing!

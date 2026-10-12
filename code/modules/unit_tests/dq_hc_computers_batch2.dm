@@ -9,7 +9,7 @@
 /// A plain card with a name and one access.
 /datum/unit_test/dq_hc_computers/proc/hc_subject_card()
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, hc_side())
-	I.registered_name = "Test Subject"
+	I.set_registered_name("Test Subject")
 	I.access = list(ACCESS_ENGINE)
 	return I
 
@@ -149,7 +149,7 @@
 	var/obj/machinery/computer/guestpass/C = hc_console(/obj/machinery/computer/guestpass)
 	var/mob/living/carbon/human/H = hc_actor()
 	var/obj/item/card/id/giver = hc_subject_card()
-	giver.registered_name = "Giver"
+	giver.set_registered_name("Giver")
 	giver.access = list(ACCESS_ENGINE, ACCESS_CHANGE_IDS)
 	var/passes = 0
 	for(var/obj/item/card/id/guest/G in C.loc)

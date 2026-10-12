@@ -155,9 +155,6 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
 	return FALSE
 
-/mob/living/simple_mob/animal/giant_spider/nurse/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/giant_spider/nurse/life_special(datum/seq_frame/life/F)
 	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
 		if(src.fed && src.can_lay_eggs)

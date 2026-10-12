@@ -7,7 +7,7 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 
 /datum/unit_test/dq_sys_messages_tokens/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	H.real_name = "Alice Test"
+	H.set_real_name("Alice Test")
 	H.name = "Alice Test"
 	H.gender = FEMALE
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, test_floor())
@@ -42,7 +42,7 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 
 /datum/unit_test/dq_sys_messages_literal/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	H.real_name = "Alice Test"
+	H.set_real_name("Alice Test")
 	H.name = "Alice Test"
 	var/obj/structure/closet/box = allocate(/obj/structure/closet, test_floor())
 
@@ -70,7 +70,7 @@ MSG_DEF(unit_test/pry, "You pry %T% open with %I%.", "%U% pries %T% open.")
 
 /datum/unit_test/dq_sys_messages_renamed_item/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
-	H.real_name = "Alice Test"
+	H.set_real_name("Alice Test")
 	H.name = "Alice Test"
 	var/obj/structure/closet/box = allocate(/obj/structure/closet, test_floor())
 	var/obj/item/tool/crowbar/bar = allocate(/obj/item/tool/crowbar, test_floor())

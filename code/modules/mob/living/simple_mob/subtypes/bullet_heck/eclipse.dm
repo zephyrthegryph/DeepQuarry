@@ -53,9 +53,6 @@
 					attackcycle = 0
 
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.frozen_aura()

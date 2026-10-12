@@ -293,9 +293,6 @@
 		)
 	var/build_type = /obj/random/ant_building
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/tyr/mineral_ants/builder/life_special(datum/seq_frame/life/F)
 	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))
 		src.build_tile(src.loc)
@@ -356,9 +353,6 @@
 		)
 	var/build_type = /obj/effect/spider/spiderling/antling
 
-
-/mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/queen/life_special(datum/seq_frame/life/F)
 	if((src.ai_brain ? (src.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) == STANCE_IDLE && !is_working() && isturf(src.loc))

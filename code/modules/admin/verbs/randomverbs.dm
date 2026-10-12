@@ -1491,7 +1491,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 
 	if(name)
 		var/spawner_name = picked_client.prefs.read_preference(/datum/preference/name/real_name)
-		new_mob.real_name = spawner_name
+		new_mob.set_real_name(spawner_name)
 		new_mob.name = spawner_name
 
 
