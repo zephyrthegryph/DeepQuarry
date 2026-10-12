@@ -83,14 +83,14 @@ CAPABILITIES(/obj/structure/gravemarker)
 	return OP_OK
 
 /obj/structure/gravemarker/proc/wrench_begins(datum/act/op/A)
-	return msg_text("You start taking down 	he [src.name].", "[A.actor] starts taking down 	he [src.name].")
+	return msg_text("You start taking down \the [src.name].", "[A.actor] starts taking down \the [src.name].")
 
 /obj/structure/gravemarker/proc/wrench_duration(datum/act/op/A)
 	return material.hardness
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(datum/act/op/A)
 	var/mob/user = A.actor
-	act_message(user, null, MSG_SELF("You take down 	he [src.name]."), MSG_OTHERS("%U% takes down 	he [src.name]."))
+	act_message(user, null, MSG_SELF("You take down \the [src.name]."), MSG_OTHERS("%U% takes down \the [src.name]."))
 	dismantle(user)
 
 /obj/structure/gravemarker/atom_destruction(damage_flag)

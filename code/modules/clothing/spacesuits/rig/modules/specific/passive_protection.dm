@@ -30,7 +30,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
@@ -63,7 +63,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
@@ -131,7 +131,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
@@ -163,7 +163,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
@@ -226,7 +226,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 
@@ -252,7 +252,7 @@
 
 	var/mob/living/carbon/human/H = holder.wearer()
 	var/obj/item/clothing/shoes/boots = holder.boots
-	var/obj/item/clothing/suit/space/rig/chest = holder.chest
+	var/obj/item/clothing/suit/chest = holder.chest
 	var/obj/item/clothing/head/helmet/space/rig/helmet = holder.helmet
 	var/obj/item/clothing/gloves/gauntlets/rig/gloves = holder.gloves
 

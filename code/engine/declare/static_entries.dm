@@ -47,6 +47,14 @@ SYSTEM_DEF(static_entries)
 	stack_trace("[asked] before the static entries were set up")
 	static_entries_build()
 
+/// Sets the static entries up ahead of the system, without a report: for an atom that initializes in New() (INITIALIZE_IMMEDIATE), which the
+/// compiled-in map can create before the kernel booted any system. Building early is not a boot-order mistake there: the tables depend
+/// on nothing but the declarations.
+/proc/static_entries_setup_early()
+	if(!SSstatic_entries || SSstatic_entries.ready) // no system yet: the lookup reports itself (static_entries_ensure())
+		return
+	static_entries_build()
+
 /// Compiles the static blocks and tells the engines of the static kinds. Once; the system runs it at setup.
 /proc/static_entries_build()
 	if(SSstatic_entries.ready)

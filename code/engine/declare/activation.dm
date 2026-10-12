@@ -150,6 +150,9 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
  */
 /proc/grant(datum/holder, what, source, lasts, bound = FALSE, datum/activation/parent = null)
 	RETURN_TYPE(/datum/activation)
+	// A client is not a datum: its grants (verbs, admin verbs) live on its /datum/client_verbs holder.
+	if(istype(holder, /client))
+		holder = verb_grant_target(holder)
 	var/datum/capability/def = grant_definition(what)
 	if(!def)
 		return legacy_grant(holder, what, isnull(source) ? "grant" : source, lasts)
@@ -281,6 +284,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 
 /// Ends `source`'s activation of `what` on holder at once: it is dead when this returns. TRUE when there was one.
 /proc/revoke(datum/holder, what, source)
+	if(istype(holder, /client))
+		holder = verb_grant_target(holder, FALSE)
 	var/cap_id = grant_cap_id(what)
 	if(isnull(cap_id))
 		return legacy_revoke(holder, what, isnull(source) ? "grant" : source)

@@ -40,6 +40,10 @@
 	var/has_cond_scoped = FALSE
 	/// ENGINE_HOOK_*: the lifecycle work an instance of the type needs.
 	var/hook_flags = 0
+	/// compiled_entries()' cache: kind -> its centries, valid for `entries_items` (the items list it was built from) at `entries_items_len`.
+	var/list/entries_by_kind
+	var/list/entries_items
+	var/entries_items_len = 0
 
 /// block type -> /datum/type_table. A static, not a GLOB list: global datums are made while the globals are still being built, and their
 /// declarations (a rel_add(..., key) in a global's New()) must already be readable. The table builds lazily on the first lookup.
@@ -492,15 +496,27 @@ GLOBAL_VAR(declare_report_capture)
 
 /// The items of one kind (a /datum/entry kind, or ENTRY_CAPABILITY for definitions) in effective order. A fresh list.
 /proc/compiled_entries(datum/type_table/T, kind)
-	. = list()
-	for(var/datum/centry/C as anything in T.items)
+	// Read on every timer fire, wake and refresh of a holder (every(), modes, slots): the filtered list is kept on the table per kind. A table's items
+	// only change while it is built (a new list, or appended to), so the cache is valid while `items` is the same list with the same length.
+	var/list/items = T.items
+	if(T.entries_items != items || T.entries_items_len != length(items))
+		T.entries_items = items
+		T.entries_items_len = length(items)
+		T.entries_by_kind = list()
+	var/list/cached = T.entries_by_kind[kind]
+	if(cached)
+		return cached.Copy()
+	cached = list()
+	for(var/datum/centry/C as anything in items)
 		if(kind == ENTRY_CAPABILITY)
 			if(istype(C.item, /datum/capability))
-				. += C
+				cached += C
 		else
 			var/datum/entry/E = C.item
 			if(istype(E) && E.kind == kind)
-				. += C
+				cached += C
+	T.entries_by_kind[kind] = cached
+	return cached.Copy()
 
 /// The table's dump: one line per item, "kind key (args) @ origin", children indented by their when() depth. explain_type() returns it.
 /proc/table_dump(datum/type_table/T)

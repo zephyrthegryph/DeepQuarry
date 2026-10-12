@@ -61,6 +61,9 @@
 	if(!E || QDELING(E))
 		return
 	OP_PURE_GUARD("[E.type][var_name ? ".[var_name]" : ""] was written")
+	if(GLOB.state_batch_depth)
+		state_batch_queue(E, channel, var_name)
+		return
 	op_changed(E) // a cached menu or reach read of the op engine is stale now
 	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
 	if(var_name && GLOB.stat_input_keys?[var_name] && var_name != GLOB.stat_writing)

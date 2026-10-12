@@ -1,115 +1,169 @@
-// The DM view of the Rust power domain's cable regions (M3b). There is no
-// per-network datum: a machine holds the number of the region its node is on
-// (`/obj/machinery/power/var/power_region`, 0 = none) and everything else asks
-// the procs below with that number. Rust (verdigris/domains/power) owns the
-// topology and the ledger; DM keeps only what Rust deliberately does not:
-// the monitor warning, and which machines sit on a region
-// (so readers can walk them), in one flat list per region in
-// `SSmachines.power_grids`.
-//
-// Region ids are stable across edits that keep the region (a merge keeps the
-// larger region's id; a split keeps the parent id for one side). A region
-// Rust no longer knows is dropped at the next power step.
-//
-// Change channels are raised on each machine bound to the region
-// (CHANGE_POWER_GRID_* in om.dm), so something that waits on a grid watches a
-// machine that is on it.
-//
-// Negative ids are detached test grids (`power_test_grid()`): their numbers
-// are their own ledger and Rust never sees them.
+READ_LOOKUP(/proc/power_grid_lookup, registry = GLOBAL_PROC_REF(power_grid_registry), key = GLOBAL_PROC_REF(power_grid_identity_key), argument = 1, result = /datum/power_grid)
 
-#define PGRID_AVAIL 1
-#define PGRID_LOAD 2
-#define PGRID_BROWNOUT 3
-/// TRUE while a timed power_warn() is showing (cleared by power_warn_expire()).
-#define PGRID_PROBLEM_TIMED 4
-/// The material overlay's own standing warning.
-#define PGRID_MATERIAL_PROBLEM 5
-/// The warning state last announced on CHANGE_POWER_GRID_STATE.
-#define PGRID_PROBLEM_SHOWN 6
-/// Machines bound to the region.
-#define PGRID_NODES 7
-#define PGRID_FIELDS 7
+// DM state for the Rust domain's numeric cable-region identities. Real field
+// setters publish once on the region datum; numeric lookup dependencies bind
+// the registry identity key and the selected datum, including empty regions.
+// Negative identities remain detached test ledgers and are never sent to Rust.
 
-/// The state list of region `id`, made on first use (null for 0).
-/proc/power_grid(id)
-	if(!id)
-		return null
-	var/list/grid = SSmachines.power_grids[id]
-	if(grid)
-		return grid
-	grid = new /list(PGRID_FIELDS)
-	grid[PGRID_AVAIL] = 0
-	grid[PGRID_LOAD] = 0
-	grid[PGRID_BROWNOUT] = FALSE
-	grid[PGRID_PROBLEM_TIMED] = FALSE
-	grid[PGRID_MATERIAL_PROBLEM] = FALSE
-	grid[PGRID_PROBLEM_SHOWN] = FALSE
-	grid[PGRID_NODES] = list() // one per live region; created because a machine joined
-	SSmachines.power_grids[id] = grid
-	power_grid_refresh(id)
-	return grid
+/datum/power_grid
+	var/avail = 0
+	var/load = 0
+	var/brownout = FALSE
+	var/problem_timed = FALSE
+	var/material_problem = FALSE
+	var/list/nodes
 
-/// Raises `bits` on every machine bound to region `id`.
-/proc/power_grid_changed(id, bits)
-	var/list/grid = id ? SSmachines.power_grids[id] : null
+TRACKED(/datum/power_grid, avail)
+TRACKED(/datum/power_grid, load)
+TRACKED(/datum/power_grid, brownout)
+TRACKED(/datum/power_grid, problem_timed)
+TRACKED(/datum/power_grid, material_problem)
+
+CAPABILITIES(/datum/power_grid)
+	ref_many(nameof(nodes), /obj/machinery/power)
+
+/datum/power_grid/lifecycle_unbind()
+	var/datum/power_grid_registry/registry = owner_of(src)
+	if(istype(registry))
+		registry.forget(src)
+	. = ..()
+
+/datum/power_grid_registry
+	/// Numeric identities are alist keys, never ordinary list indices.
+	var/alist/by_id
+	var/list/owned_grids
+
+CAPABILITIES(/datum/power_grid_registry)
+	owns_many(nameof(owned_grids), /datum/power_grid)
+
+/proc/power_grid_registry()
+	RETURN_TYPE(/datum/power_grid_registry)
+	return SSmachines.power_grid_registry()
+
+/// A pure lookup: a requirement or draw does not create simulation state.
+/proc/power_grid_lookup(id)
+	RETURN_TYPE(/datum/power_grid)
+	return id ? power_grid_registry()?.lookup(id) : null
+
+/proc/power_grid_identity_key(id)
+	return "power_grid:[num2text(id, 20)]"
+
+/datum/power_grid_registry/proc/lookup(id)
+	RETURN_TYPE(/datum/power_grid)
+	return by_id?[id]
+
+/datum/power_grid_registry/proc/ids()
+	return by_id ? by_id.Copy() : alist()
+
+/// Actual lookup consumers may warm a Rust-only numeric ID before DM custody exists.
+/// The system's write step synchronizes those real watched identities; pure reads never do.
+/datum/power_grid_registry/proc/watched_native_ids()
+	. = list()
+	for(var/key in lookup_registry_watched_keys(src))
+		if(findtext(key, "power_grid:") != 1)
+			continue
+		var/id = text2num(copytext(key, 12))
+		if(id > 0)
+			. |= list(id)
+
+/datum/power_grid_registry/proc/put(id, datum/power_grid/grid)
+	if(!id || !grid || lookup(id) == grid)
+		return
+	if(lookup(id))
+		drop(id)
+	if(!by_id)
+		by_id = alist()
+	rel_add(src, nameof(owned_grids), grid)
+	by_id[id] = grid
+	tracked_changed(src, power_grid_identity_key(id))
+
+/datum/power_grid_registry/proc/drop(id)
+	var/datum/power_grid/grid = lookup(id)
 	if(!grid)
 		return
-	for(var/obj/machinery/power/M as anything in grid[PGRID_NODES])
-		native_changed(M, bits, NATIVE_SRC_POWER)
+	by_id -= id
+	tracked_changed(src, power_grid_identity_key(id))
+	rel_take(src, nameof(owned_grids), grid)
+	lifeform_end(grid, END_SCOPE)
 
-/// Polls region `id`'s numbers from Rust (once a power step). FALSE when Rust
-/// no longer has the region.
+/// A grid ended externally: remove its actual identity while it still has an owner.
+/datum/power_grid_registry/proc/forget(datum/power_grid/grid)
+	for(var/id in ids())
+		if(lookup(id) != grid)
+			continue
+		by_id -= id
+		tracked_changed(src, power_grid_identity_key(id))
+		rel_take(src, nameof(owned_grids), grid)
+
+/datum/power_grid_registry/proc/clear()
+	for(var/id in ids())
+		drop(id)
+
+/// Explicit ensure for writers and network binding, not a requirement read.
+/proc/power_grid(id)
+	RETURN_TYPE(/datum/power_grid)
+	if(!id)
+		return null
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	if(grid)
+		return grid
+	grid = new
+	// Readers warmed against Rust already see the real native values. Hydrate
+	// before identity publication so adopting the record cannot expose zero defaults.
+	grid.poll_native(id)
+	power_grid_registry().put(id, grid)
+	return grid
+
+/// Poll the real region fields once per power step. No per-machine relay.
 /proc/power_grid_refresh(id)
 	if(id <= 0)
 		return TRUE
-	var/list/grid = SSmachines.power_grids[id]
-	if(!grid)
-		return FALSE
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	return grid ? grid.poll_native(id) : FALSE
+
+/// The same real native poll fills an unpublished new record and updates a live one.
+/datum/power_grid/proc/poll_native(id)
+	if(id <= 0)
+		return TRUE // detached ledgers retain their real tracked values
 	var/list/info = vg_power_region_read(id)
 	if(!info)
 		return FALSE
-	var/old_avail = grid[PGRID_AVAIL]
-	var/old_load = grid[PGRID_LOAD]
-	grid[PGRID_AVAIL] = info[1]
-	grid[PGRID_LOAD] = info[2]
-	// Rust reports raw numbers only (rust_core.md §15). Smoothing is the reader's: a monitor's UI eases
-	// what it shows on the client, DM keeps no eased copy.
-	var/bits = 0
-	var/brown = !!info[3]
-	if(brown != grid[PGRID_BROWNOUT])
-		grid[PGRID_BROWNOUT] = brown
-		bits |= CHANGE_POWER_GRID_STATE
-	if(old_avail != info[1] || old_load != info[2])
-		bits |= CHANGE_POWER_GRID_RATE
-	if(bits)
-		power_grid_changed(id, bits)
-	return TRUE
+	return apply_native_sample(info)
 
-/// Announces a warning that started or ended since the last announcement.
-/proc/power_grid_sync_problem(id)
-	var/list/grid = SSmachines.power_grids[id]
-	if(!grid)
-		return
-	var/now = power_problem(id)
-	if(now != grid[PGRID_PROBLEM_SHOWN])
-		grid[PGRID_PROBLEM_SHOWN] = now
-		power_grid_changed(id, CHANGE_POWER_GRID_STATE)
+/// A Rust ledger sample is one coherent state: every field is set before any
+/// observer rechecks, with each actual changed key published once afterward.
+/datum/power_grid/proc/apply_native_sample(list/info)
+	return state_batch(src, PROC_REF(write_native_sample), list(info))
+
+/datum/power_grid/proc/write_native_sample(list/info)
+	set_avail(info[1])
+	set_load(info[2])
+	set_brownout(!!info[3])
+	return TRUE
 
 // ---- reads ------------------------------------------------------------------
 
 /proc/power_avail(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_AVAIL] : 0
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	if(grid)
+		return grid.avail
+	var/list/info = id > 0 ? vg_power_region_read(id) : null
+	return info ? info[1] : 0
 
 /proc/power_load(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_LOAD] : 0
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	if(grid)
+		return grid.load
+	var/list/info = id > 0 ? vg_power_region_read(id) : null
+	return info ? info[2] : 0
 
 /// Supply minus load at the last step (may be negative when overdrawn).
 /proc/power_netexcess(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_AVAIL] - grid[PGRID_LOAD] : 0
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	if(grid)
+		return grid.avail - grid.load
+	var/list/info = id > 0 ? vg_power_region_read(id) : null
+	return info ? info[1] - info[2] : 0
 
 /// Spare power right now, never negative.
 /proc/power_surplus(id)
@@ -124,26 +178,24 @@
 	return power_load(id)
 
 /proc/power_brownout(id)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_BROWNOUT] : FALSE
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	if(grid)
+		return grid.brownout
+	var/list/info = id > 0 ? vg_power_region_read(id) : null
+	return info ? !!info[3] : FALSE
 
 /// TRUE while power monitors should show a warning for region `id`.
 /proc/power_problem(id)
-	var/list/grid = power_grid(id)
+	var/datum/power_grid/grid = power_grid_lookup(id)
 	if(!grid)
 		return FALSE
-	return grid[PGRID_MATERIAL_PROBLEM] || grid[PGRID_PROBLEM_TIMED]
+	return grid.material_problem || grid.problem_timed
 
 /// The machines bound to region `id` (do not modify).
 /proc/power_grid_nodes(id)
 	RETURN_TYPE(/list)
-	var/list/grid = power_grid(id)
-	return grid ? grid[PGRID_NODES] : list()
-
-/// Any one machine on region `id` (a key to watch it by), or null.
-/proc/power_grid_any_node(id)
-	var/list/nodes = power_grid_nodes(id)
-	return length(nodes) ? nodes[1] : null
+	var/datum/power_grid/grid = power_grid_lookup(id)
+	return grid?.nodes || list()
 
 /proc/power_percent_load(id, smes_only = FALSE)
 	var/load = power_load(id)
@@ -170,7 +222,7 @@
 /// Draws from region `id` for `consumer` (or anonymously). Returns what was
 /// delivered; never more than the spare supply this step.
 /proc/power_draw(id, amount, atom/consumer)
-	var/list/grid = power_grid(id)
+	var/datum/power_grid/grid = power_grid(id)
 	if(!grid || amount <= 0)
 		return 0
 	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[id]
@@ -179,10 +231,10 @@
 		efficiency = overlay.material_graph.efficiency_for(consumer)
 	var/drawn
 	if(id < 0)
-		drawn = between(0, amount / efficiency, grid[PGRID_AVAIL] - grid[PGRID_LOAD])
+		drawn = between(0, amount / efficiency, grid.avail - grid.load)
 	else
 		drawn = vg_power_region_draw(id, amount / efficiency)
-	grid[PGRID_LOAD] += drawn
+	grid.set_load(grid.load + drawn)
 	var/delivered = drawn * efficiency
 	if(consumer && overlay?.material_graph)
 		overlay.add_material_consumption(consumer, delivered)
@@ -190,38 +242,33 @@
 
 /// Flags a problem visible on power monitors for `duration` deciseconds.
 /proc/power_warn(id, duration = 2 SECONDS)
-	var/list/grid = power_grid(id)
+	var/datum/power_grid/grid = power_grid(id)
 	if(!grid)
 		return
-	grid[PGRID_PROBLEM_TIMED] = TRUE
+	grid.set_problem_timed(TRUE)
 	after(null, max(duration, 0.1 SECONDS), GLOBAL_PROC_REF(power_warn_expire), key = "power_warn:[id]", with = list(id))
-	power_grid_sync_problem(id)
 
 /// Ends a timed power_warn() on region `id` once its duration has run out.
 /proc/power_warn_expire(id)
-	var/list/grid = SSmachines.power_grids[id]
+	var/datum/power_grid/grid = power_grid_lookup(id)
 	if(!grid)
 		return
-	grid[PGRID_PROBLEM_TIMED] = FALSE
-	power_grid_sync_problem(id)
+	grid.set_problem_timed(FALSE)
 
 /proc/power_set_material_warning(id, active)
-	var/list/grid = power_grid(id)
-	if(!grid || grid[PGRID_MATERIAL_PROBLEM] == !!active)
+	var/datum/power_grid/grid = power_grid(id)
+	if(!grid || grid.material_problem == !!active)
 		return
-	grid[PGRID_MATERIAL_PROBLEM] = !!active
-	power_grid_sync_problem(id)
+	grid.set_material_problem(!!active)
 
 /// Binds `M` onto region `new_id` (0 = none), leaving its old one.
 /proc/power_grid_move_node(obj/machinery/power/M, old_id, new_id)
-	var/list/old_grid = old_id ? SSmachines.power_grids[old_id] : null
+	var/datum/power_grid/old_grid = power_grid_lookup(old_id)
 	if(old_grid)
-		old_grid[PGRID_NODES] -= M
-		power_grid_changed(old_id, CHANGE_POWER_GRID_TOPOLOGY)
-	var/list/new_grid = power_grid(new_id)
+		rel_remove(old_grid, nameof(old_grid.nodes), M)
+	var/datum/power_grid/new_grid = power_grid(new_id)
 	if(new_grid)
-		new_grid[PGRID_NODES] |= M
-		power_grid_changed(new_id, CHANGE_POWER_GRID_TOPOLOGY)
+		rel_add(new_grid, nameof(new_grid.nodes), M)
 	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[old_id]
 	overlay?.material_cache_dirty = TRUE
 	overlay = SSmachines.power_material_overlays[new_id]
@@ -232,19 +279,17 @@
 /// A detached grid holding `avail` W that Rust never sees (tests). Returns its id.
 /proc/power_test_grid(avail = 0)
 	var/id = --SSmachines.power_test_grid_serial
-	var/list/grid = power_grid(id)
-	grid[PGRID_AVAIL] = avail
+	var/datum/power_grid/grid = power_grid(id)
+	grid.set_avail(avail)
 	return id
 
 /proc/power_test_set_avail(id, avail)
-	var/list/grid = power_grid(id)
-	grid[PGRID_AVAIL] = avail
-	power_grid_changed(id, CHANGE_POWER_GRID_RATE)
+	var/datum/power_grid/grid = power_grid(id)
+	grid.set_avail(avail)
 
 /proc/power_test_set_brownout(id, value)
-	var/list/grid = power_grid(id)
-	grid[PGRID_BROWNOUT] = !!value
-	power_grid_changed(id, CHANGE_POWER_GRID_STATE)
+	var/datum/power_grid/grid = power_grid(id)
+	grid.set_brownout(!!value)
 
 /// Puts `M` on detached grid `id` without a Rust node.
 /proc/power_test_join(id, obj/machinery/power/M)
@@ -257,7 +302,7 @@
 	for(var/obj/machinery/power/M as anything in nodes.Copy())
 		if(M.power_region == id)
 			M.set_power_region(0)
-	SSmachines.power_grids -= id
+	power_grid_registry().drop(id)
 
 // ---- material overlay -------------------------------------------------------
 // The CG voltage solver (material_power.rs) runs only for regions holding an
@@ -361,20 +406,12 @@ CAPABILITIES(/datum/material_power_overlay)
 	material_graph.resolve_loads(material_sources(), material_consumers)
 	material_loss_watts = material_graph.loss_watts
 	material_consumers = null
-	var/list/grid = region_id ? power_grid(region_id) : null
+	var/datum/power_grid/grid = region_id ? power_grid(region_id) : null
 	if(material_loss_watts > 0 && grid)
-		grid[PGRID_LOAD] += vg_power_region_draw(region_id, material_loss_watts)
-	power_set_material_warning(region_id, material_loss_watts > max((grid ? grid[PGRID_LOAD] : 0) * 0.1, 1000))
+		grid.set_load(grid.load + vg_power_region_draw(region_id, material_loss_watts))
+	power_set_material_warning(region_id, material_loss_watts > max((grid ? grid.load : 0) * 0.1, 1000))
 	return TRUE
 
-#undef PGRID_AVAIL
-#undef PGRID_LOAD
-#undef PGRID_BROWNOUT
-#undef PGRID_PROBLEM_TIMED
-#undef PGRID_MATERIAL_PROBLEM
-#undef PGRID_PROBLEM_SHOWN
-#undef PGRID_NODES
-#undef PGRID_FIELDS
 
 ////////////////////////////////////////////////
 // Misc.

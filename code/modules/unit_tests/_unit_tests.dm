@@ -376,6 +376,7 @@
 #include "dq_system_ports_a_tests.dm"
 #include "dq_system_ports_b_tests.dm"
 #include "dq_grid_behaviour.dm"
+#include "dq_power_door_regression.dm"
 #include "dq_power_tests.dm"
 #include "dq_power_plants_behaviour.dm"
 #include "dq_om_wake_tests.dm"
@@ -441,6 +442,7 @@
 #include "dq_topic_items_tests.dm"
 #include "dq_topic_mobs_tests.dm"
 #include "dq_topic_datums_tests.dm"
+#include "dq_admin_txt_load_tests.dm"
 #include "dq_topic_admin_tests.dm"
 #include "dq_sys_messages_tests.dm"
 #include "dq_om_core_fix_tests.dm"
@@ -1277,6 +1279,9 @@
 #include "j_closet_resident_cost_tests.dm"
 #include "dq_acceptance_final24_old_boundaries.dm"
 #include "dq_acceptance_retirement_old_boundaries.dm"
+#include "dq_numeric_grid_lookup_tests.dm"
+#include "dq_state_batch_tests.dm"
+#include "dq_nikki_rig_chest_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

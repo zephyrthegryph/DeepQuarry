@@ -70,7 +70,7 @@ MSG_DEF_SELF(window/dismantle_refused, "You're not sure how to dismantle it prop
 
 /// Take a loose window apart into its glass: one sheet, four for a full tile.
 /obj/structure/window/proc/taken_apart(datum/act/op/A)
-	visible_message(span_notice("[A.actor] dismantles 	he [src]."))
+	visible_message(span_notice("[A.actor] dismantles \the [src]."))
 	var/obj/item/stack/material/mats = new glasstype(loc)
 	if(is_fulltile())
 		mats.set_amount(4)

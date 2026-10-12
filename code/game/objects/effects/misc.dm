@@ -161,10 +161,12 @@ CAPABILITIES(/obj/effect/abstract/directional_lighting)
 				light_spot.icon_state = "far"
 
 
-// Only its light component may delete it (a forced qdel()).
+// Only its light component may delete it (a forced qdel()). Anything else that
+// deletes what lies on a turf (a cleared tile, a swept block) reaches it too: it
+// stays its component's, stepping out of the world until the light casts again.
 /obj/effect/abstract/directional_lighting/lifecycle_keep(force)
 	if(force)
 		return FALSE
-	stack_trace("Directional light atom deleted, but not by our component")
+	moveToNullspace()
 	return TRUE
 

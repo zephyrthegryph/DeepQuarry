@@ -54,6 +54,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 /// A condition evaluated in an op's context. The forms are section 9's: nameof(v) (a truthy var of the holder), a stat or capability key id,
 /// cond_not/cond_all/cond_any, a PROC_REF(x) (x(datum/act/A) returns TRUE or FALSE; "cap:x" runs on the capability), a library requirement.
 /proc/op_cond(datum/act/op/A, cond)
+	lookup_reads_prepare(A.holder, A)
 	var/previous_pure_depth = GLOB.op_pure_depth
 	op_pure_begin()
 	try
@@ -230,7 +231,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	if(istext(what) && copytext(what, 1, 5) != "cap:")
 		if(istype(A, /datum/act/admission_query))
 			return op_query_read_pairs(A, what)
-		for(var/key in change_read_keys(A.holder, what))
+		for(var/key in change_read_keys(A.holder, what, A))
 			. += list(list(A.holder, key))
 
 /datum/entry/part/req/generic/refusal(datum/act/op/A)
@@ -656,6 +657,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// A requirement (new, or a legacy /datum/requirement that has a new-engine form) as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)
+	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
 	. = op_req_holds_eval(A, requirement)
 	op_pure_end()
@@ -671,6 +673,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 
 /// The /datum/msg type (or text) a failed requirement reports.
 /proc/op_req_refusal(datum/act/op/A, requirement)
+	lookup_reads_prepare(A.holder, A)
 	op_pure_begin()
 	. = op_req_refusal_eval(A, requirement)
 	op_pure_end()

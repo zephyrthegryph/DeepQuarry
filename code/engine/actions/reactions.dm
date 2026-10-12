@@ -208,7 +208,7 @@
 /datum/proc/generated_reads()
 	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
-	return list()
+	return generated_lookup_output_reads()
 
 // ---------------------------------------------------------------- the composed table
 
