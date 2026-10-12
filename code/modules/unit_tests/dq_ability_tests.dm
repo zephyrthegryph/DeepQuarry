@@ -73,7 +73,7 @@
 /datum/unit_test/dq_ability_phase_shift_returning_is_free/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
 	var/datum/shadekin/SK = H.get_shadekin_state()
-	SK.in_phase = TRUE
+	SK.set_in_phase(TRUE)
 	var/before = SK.shadekin_get_energy()
 	var/datum/op_result/result = dq_use_ability_op(H, ABILITY_ID_SHADEKIN_PHASE_SHIFT)
 	TEST_ASSERT_EQUAL(result?.outcome, ACT_COMMITTED, "phasing back in runs")
