@@ -269,6 +269,9 @@ export async function selectedCompiler(dme: string, options: DreamMakerOptions, 
       // returns no authenticated read roster or effective-version receipt.
       const comparisonContext = {
         schema: 'unverified-shadow-comparison-context-v1',
+        // Core-issued native observed-demand evidence stays explicitly narrower
+        // than shared source/resource closure and cannot admit shadow parity.
+        nativeResourceJournalAdmission: native.output!.publicationProof?.resource_journal_admission ?? null,
         project: path.resolve(outputProject), manifestSha256: createHash('sha256').update(fs.readFileSync(outputProject)).digest('hex'),
         capturedInvocation: invocation ?? null,
         requestedDefines: options.defines ?? [], requestedNamedDmVersion: options.namedDmVersion ?? null,

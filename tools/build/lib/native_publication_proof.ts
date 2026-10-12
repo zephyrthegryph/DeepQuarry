@@ -1,11 +1,13 @@
 /** Native admission metadata only; this does not establish BYOND input access. */
 import path from 'node:path';
+import { parseResourceJournalAdmission, type ResourceJournalAdmission } from './resource_journal_admission';
 export type NativeTargetConfiguration = {
   schema_version: 1; version: 516; build: 1687; engine_template_sha256: string;
   effective_defines: Readonly<Record<string, string>>; implicit_predefines_complete: false;
 };
 
 export type NativePublicationProof = {
+  resource_journal_admission?: ResourceJournalAdmission;
   target_configuration?: NativeTargetConfiguration;
   schema_version: 1;
   kind: 'native_publication_inputs';
@@ -24,6 +26,7 @@ export function parseNativePublicationProof(value: unknown, pairId: string, stor
   if (value === undefined) return undefined;
   if (value === null || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid native publication proof.');
   const proof = value as Record<string, unknown>;
+  const resources = parseResourceJournalAdmission(proof.resource_journal_admission);
   if (proof.schema_version !== 1 || proof.kind !== 'native_publication_inputs'
       || proof.native_inputs_admitted !== true || proof.shared_input_closure_complete !== false
       || proof.pair_id !== pairId) throw new Error('Native publication proof scope or generation differs.');
@@ -55,6 +58,7 @@ export function parseNativePublicationProof(value: unknown, pairId: string, stor
       engine_template_sha256: config.engine_template_sha256, effective_defines: Object.freeze({ ...defines }), implicit_predefines_complete: false });
   }
   return { schema_version: 1, kind: 'native_publication_inputs', native_inputs_admitted: true,
+    ...(resources ? { resource_journal_admission: resources } : {}),
     ...(target ? { target_configuration: target } : {}),
     shared_input_closure_complete: false, pair_id: pairId, document,
     document_bytes: proof.document_bytes as number, document_xxh3_128: proof.document_xxh3_128 as string,
