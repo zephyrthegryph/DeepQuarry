@@ -176,3 +176,117 @@ fn shared_shape_negative_name_reads_replay_each_current_catalog() {
     assert!(matches!(untouched[&owner].first_failure,
         Some((_, LocalValidationFailure::UnknownSymbol(name))) if name == absent));
 }
+
+#[test]
+fn rejected_frontend_keeps_sibling_shape_and_recovery_binds_current_source() {
+    struct Source(&'static str);
+    impl dm_preprocess::SourceProvider for Source {
+        fn read(&self, _: &Path) -> Result<String, String> {
+            Ok(self.0.into())
+        }
+    }
+    let shared = Arc::new(crate::SharedNormalizedDeclarations::default());
+    let mut a = RetainedSemanticTree::with_shared_normalized(Arc::clone(&shared));
+    let mut b = RetainedSemanticTree::with_shared_normalized(shared);
+    let executor = dm_exec::BuildExecutor::new(1).unwrap();
+    let build = |state: &mut RetainedSemanticTree, path: &str, text| {
+        build_with_executor_and_semantic_state(
+            Path::new(path),
+            &Source(text),
+            &BTreeMap::new(),
+            FrontendConfig {
+                workers: 1,
+                engine: None,
+                observer: None,
+            },
+            None,
+            &executor,
+            Some(state),
+        )
+    };
+    let original = "/obj/base\n    var/count = 1\n/proc/probe()\n    return 7\n";
+    let first = build(&mut a, "first.dme", original).unwrap();
+    build(&mut b, "sibling.dme", original).unwrap();
+    let owner = SymbolId::of("/obj/base");
+    let mut initial_rows = None;
+    a.visit_local_shape_storage(|view| {
+        if let LocalShapeStorageView::Payload { rows, .. } = view {
+            if rows.iter().flatten().any(|row| row.key.owner == owner) {
+                assert!(initial_rows.is_none());
+                initial_rows = Some(Arc::clone(rows));
+            }
+        }
+    });
+    let initial_rows = initial_rows.unwrap();
+    let failure = build(&mut a, "failed.dme",
+        "// newer rejected source\n/obj/base\n    var/count = 1\n    var/count = 2\n/proc/probe()\n    return 7\n",
+    ).err().expect("duplicate declarations must fail after preparing local shapes");
+    assert!(failure
+        .iter()
+        .any(|diagnostic| diagnostic.message.contains("duplicate")));
+    assert!(
+        failure.iter().all(
+            |diagnostic| diagnostic.location.as_ref().is_some_and(|location| {
+                location.path.file_name() == Some(std::ffi::OsStr::new("failed.dme"))
+            })
+        ),
+        "rejected-source diagnostics cannot reuse previous host locations"
+    );
+
+    // Force semantic construction in the sibling, rather than its whole-tree
+    // unchanged fast path. Its unchanged owner must still admit the old variant.
+    let sibling_source = "/obj/unrelated\n    var/extra = 0\n/obj/base\n    var/count = 1\n/proc/probe()\n    return 7\n";
+    let before_hits = b.local_shape_hits();
+    let sibling = build(&mut b, "sibling-new.dme", sibling_source).unwrap();
+    assert!(b.local_shape_hits() > before_hits);
+    let mut retained_original = false;
+    b.visit_local_shape_storage(|view| {
+        if let LocalShapeStorageView::Payload { rows, .. } = view {
+            retained_original |= Arc::ptr_eq(rows, &initial_rows);
+        }
+    });
+    assert!(
+        retained_original,
+        "rejection cannot discard a sibling's exact shape claim"
+    );
+    let sibling_fresh = build(
+        &mut RetainedSemanticTree::new(),
+        "sibling-new.dme",
+        sibling_source,
+    )
+    .unwrap();
+    assert_eq!(
+        sibling.snapshot.tree.identity(),
+        sibling_fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        sibling.snapshot.tree.declarations(),
+        sibling_fresh.snapshot.tree.declarations()
+    );
+
+    let recovered = build(&mut a, "recovered.dme", original).unwrap();
+    let fresh = build(&mut RetainedSemanticTree::new(), "recovered.dme", original).unwrap();
+    assert_eq!(
+        recovered.snapshot.tree.identity(),
+        fresh.snapshot.tree.identity()
+    );
+    assert_eq!(
+        recovered.snapshot.tree.declarations(),
+        fresh.snapshot.tree.declarations()
+    );
+    assert_eq!(recovered.bodies.len(), fresh.bodies.len());
+    for (actual, expected) in recovered.bodies.iter().zip(fresh.bodies.iter()) {
+        assert_eq!(actual.expanded_span, expected.expanded_span);
+        assert_eq!(actual.source, expected.source);
+        assert_eq!(
+            actual.source.path.file_name(),
+            Some(std::ffi::OsStr::new("recovered.dme"))
+        );
+    }
+    assert!(BodyArena::new(&recovered)
+        .with_parsed(&first.bodies[0], |_| ())
+        .is_err());
+    assert!(BodyArena::new(&recovered)
+        .with_parsed(&recovered.bodies[0], |_| ())
+        .is_ok());
+}
