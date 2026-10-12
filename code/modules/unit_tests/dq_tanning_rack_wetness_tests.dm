@@ -1,6 +1,7 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /datum/unit_test/dq_tanning_rack_tracks_leather_wetness/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	test_driver_begin()
 	var/obj/structure/tanning_rack/rack = allocate(/obj/structure/tanning_rack, test_floor())
 	var/obj/item/stack/wetleather/leather = allocate(/obj/item/stack/wetleather, rack)
