@@ -452,7 +452,22 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// This is the one path a relation write marks what reads it: a list view written in place (a member added or removed) and a single ref come here alike, so a reader
 /// is marked once per write and a var nothing reads marks nothing (a bookkeeping list stays free to be written from anywhere).
 /proc/own_field_changed(datum/holder, var_name)
-	engine_holder_relation_changed(holder, var_name)
+	var/exception/preparation_fault
+	try
+		engine_holder_relation_changed(holder, var_name)
+	catch(var/exception/fault)
+		preparation_fault = fault
+	// The relation is already committed. Its readers must hear the write even when preparation failed.
+	try
+		own_field_publish(holder, var_name)
+	catch(var/exception/publication_fault)
+		if(!preparation_fault)
+			throw publication_fault
+		log_world("RELATION PUBLICATION FAILED after preparation failed: [holder?.type].[var_name]: [publication_fault.name] ([publication_fault.file]:[publication_fault.line])")
+	if(preparation_fault)
+		throw preparation_fault
+
+/proc/own_field_publish(datum/holder, var_name)
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
 		derived_var_touched(holder, var_name)

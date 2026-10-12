@@ -107,10 +107,19 @@
 	var/datum/type_table/T = type_table_cache()[holder.type]
 	if(!(T?.hook_flags & ENGINE_HOOK_RELATION))
 		return
+	var/exception/first_fault
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
 		var/datum/capability/def = C.item
 		if(def.holder_hooks & HOLDER_HOOK_RELATION)
-			def.run_holder_hook(holder, FALSE, HOLDER_HOOK_RELATION, relation_var)
+			try
+				def.run_holder_hook(holder, FALSE, HOLDER_HOOK_RELATION, relation_var)
+			catch(var/exception/fault)
+				if(!first_fault)
+					first_fault = fault
+				else
+					log_world("RELATION PREPARATION FAILED after an earlier preparer failed: [holder.type].[relation_var] ([def.type]): [fault.name] ([fault.file]:[fault.line])")
+	if(first_fault)
+		throw first_fault
 
 // ---- relation scope: species_capabilities() ----
 

@@ -214,25 +214,48 @@ CAPABILITIES(/obj/dq_numeric_provider_fixture)
 			return entry
 	return null
 CAPABILITY_TYPE(gas_numeric_throwing_preparer, CAP_GAS_NUMERIC_THROWING_PREPARER, /datum/capability/gas_numeric_throwing_preparer, key = NONE)
+CAPABILITY_TYPE(gas_numeric_following_preparer, CAP_GAS_NUMERIC_FOLLOWING_PREPARER, /datum/capability/gas_numeric_following_preparer, key = NONE)
 
 /datum/gas_numeric_throwing_holder
 	var/context_ref
 	var/seen_relation
+	var/datum/target
+	var/following_runs = 0
+	var/notifications = 0
 
 CAPABILITIES(/datum/gas_numeric_throwing_holder)
 	gas_numeric_throwing_preparer()
+	gas_numeric_following_preparer()
+	ref_one(nameof(target), /datum)
+	on_change(nameof(target), ANY, then(PROC_REF(notified)))
+
+/datum/gas_numeric_throwing_holder/proc/notified(datum/act/A)
+	notifications++
+
+/datum/capability/gas_numeric_following_preparer
+	holder_hooks = HOLDER_HOOK_RELATION
+
+/datum/capability/gas_numeric_following_preparer/on_holder_relation_changed(datum/act/eval/A, relation_var)
+	var/datum/gas_numeric_throwing_holder/holder = A.holder
+	if(relation_var == nameof(holder.target) && holder.target)
+		holder.following_runs++
 
 /datum/capability/gas_numeric_throwing_preparer
 	holder_hooks = HOLDER_HOOK_RELATION
 
 /datum/capability/gas_numeric_throwing_preparer/on_holder_relation_changed(datum/act/eval/A, relation_var)
 	var/datum/gas_numeric_throwing_holder/holder = A.holder
+	if(relation_var != nameof(holder.target) || !holder.target)
+		return
 	holder.context_ref = REF(A)
 	holder.seen_relation = relation_var
 	throw EXCEPTION("numeric relation preparer test failure")
 
 /datum/unit_test/dq_gas_numeric_relation_hook_exception/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	test_driver_begin()
 	var/datum/gas_numeric_throwing_holder/holder = allocate(/datum/gas_numeric_throwing_holder)
+	var/datum/target = allocate(/datum)
 	// Seed the actual eval pool so its outstanding lease count can be compared.
 	var/datum/act/eval/seed = take(/datum/act/eval)
 	seed.release()
@@ -241,17 +264,25 @@ CAPABILITIES(/datum/gas_numeric_throwing_holder)
 	var/before_released = pool.released
 	var/exception/caught
 	try
-		engine_holder_relation_changed(holder, "air")
+		rel_set(holder, nameof(holder.target), target)
 	catch(var/exception/fault)
 		caught = fault
 	TEST_ASSERT_NOTNULL(caught, "The actual declared relation preparer must throw through its caller")
 	TEST_ASSERT_EQUAL(caught?.name, "numeric relation preparer test failure", "Cleanup must preserve the original exception")
-	TEST_ASSERT_EQUAL(holder.seen_relation, "air", "The engine must dispatch the actual relation key")
+	TEST_ASSERT_EQUAL(holder.target, target, "The actual relation write committed before its preparer failed")
+	TEST_ASSERT_EQUAL(holder.seen_relation, nameof(holder.target), "The engine must dispatch the actual relation key")
+	TEST_ASSERT_EQUAL(holder.following_runs, 1, "A failing preparer must not prevent the following preparer from preparing the committed relation")
 	var/datum/act/eval/released_context = locate(holder.context_ref)
 	TEST_ASSERT_NOTNULL(released_context, "The hook must have received a real pooled evaluation context")
 	TEST_ASSERT_EQUAL(pool.out, before_out, "A throwing relation hook must return its eval lease to the actual pool")
-	TEST_ASSERT_EQUAL(pool.released, before_released + 1, "The throwing hook must release exactly once")
+	TEST_ASSERT_EQUAL(pool.released, before_released + 2, "Both relation preparers must release exactly once before reaction delivery")
 	TEST_ASSERT(released_context?.pool_state != POOL_STATE_TAKEN, "The failing hook's actual context must no longer be checked out")
 	TEST_ASSERT_NULL(released_context?.holder, "Release must reset the borrowed holder reference")
 	TEST_ASSERT_NULL(released_context?.cap, "Release must reset the borrowed capability reference")
+	TEST_ASSERT_EQUAL(holder.notifications, 0, "The on_change consequence has not run before the driver drains")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(holder.notifications, 1, "The committed relation must publish exactly once despite the preparer exception")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(holder.notifications, 1, "Preparation failure must not duplicate relation publication")
+	test_driver_end()
 #endif
