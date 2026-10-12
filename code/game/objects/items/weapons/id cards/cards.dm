@@ -291,7 +291,7 @@ CAPABILITIES(/obj/item/card_fluff)
 	. = ..()
 	if(isrobot(loc))
 		rel_set(src, nameof(robot_owner), loc)
-		registered_name = robot_owner().braintype
+		set_registered_name(robot_owner().braintype)
 		observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
 /obj/item/card/id/synthetic/borg/proc/check_loc(datum/act/notice/A)

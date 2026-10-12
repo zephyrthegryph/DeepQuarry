@@ -21,9 +21,6 @@ TRACKED(/mob/living/simple_mob/metroid/juvenile, consuming)
 		stop_consumption() // Unbuckle us from our victim.
 	..()
 
-/mob/living/simple_mob/metroid/juvenile/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/metroid/juvenile/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		if(src.victim)

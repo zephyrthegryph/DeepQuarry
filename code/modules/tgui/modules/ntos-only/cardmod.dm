@@ -224,7 +224,7 @@ CAPABILITIES(/datum/tgui_module/cardmod)
 	if(computer && program.can_run(user, 1) && id_card)
 		var/temp_name = sanitizeName(reg, allow_numbers = TRUE)
 		if(temp_name)
-			id_card.registered_name = temp_name
+			id_card.set_registered_name(temp_name)
 		else
 			computer.visible_message(span_notice("[computer] buzzes rudely."))
 	. = TRUE

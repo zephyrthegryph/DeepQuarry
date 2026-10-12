@@ -214,7 +214,7 @@
 	set_global("station_account", test_station)
 	var/obj/machinery/account_database/terminal = new(test_turf)
 	var/obj/item/card/id/authorizer = new(terminal)
-	authorizer.registered_name = "Account Test Captain"
+	authorizer.set_registered_name("Account Test Captain")
 	rel_set(terminal, nameof(terminal.held_card), authorizer)
 	var/list/preexisting_packages = list()
 	for(var/obj/item/smallDelivery/existing_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
@@ -561,7 +561,7 @@
 	rel_set(customer_mind, nameof(customer_mind.initial_account), customer_account)
 	customer_mind.transfer_to(customer)
 	var/obj/item/card/id/customer_id = own(new /obj/item/card/id(customer)) // the PDA spills its ID when deleted
-	customer_id.registered_name = customer_account.owner_name
+	customer_id.set_registered_name(customer_account.owner_name)
 	customer_id.associated_account_number = customer_account.account_number
 	var/obj/item/pda/customer_pda = new(customer)
 	rel_set(customer_pda, nameof(customer_pda.id), customer_id)

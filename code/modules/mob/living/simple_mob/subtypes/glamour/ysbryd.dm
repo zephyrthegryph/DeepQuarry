@@ -135,9 +135,6 @@
 	dissolved(src)
 	return TRUE
 
-/mob/living/simple_mob/ysbryd/life_type_pre_due()
-	return TRUE
-
 /mob/living/simple_mob/ysbryd/life_type_pre(datum/seq_frame/life/F)
 	if(src.chosen_target)
 		src.handle_target()
