@@ -151,5 +151,11 @@
     "Symbolic owner still evicted at tier5 under actual private pressure",
     "Structural timing regressed; no general throughput improvement claimed",
     "Full runtime baseline deferred"
-  ]
+  ],
+  "structural_edit_scope": {
+    "path": "code/datums/datum.dm",
+    "owner": "/datum",
+    "effect": "Adds inherited field to base datum; broad hierarchy edit, not minimal leaf edit",
+    "receipt_preserved": true
+  }
 }
