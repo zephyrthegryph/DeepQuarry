@@ -69,3 +69,10 @@ producer is live. A flagged producer retains those bindings until the real
 numeric flag output. The private reaction-record teardown marker prevents
 subscriptions from being recreated during teardown; once its record is gone,
 no fresh binding is made. Direct tombstone reads still validate their signatures.
+
+## Master merge verification (2026-10-12)
+
+Merged master 17f0997c4d, then current master 80f838d71b during lane-ready. The reads.rs conflict retains both memo validation and the opaque-read path context; all walker constructors initialize both fields.
+
+Fresh lane-ready stamp: 60c945dbf6. 50 tests passed, zero failed, including both mandatory pins and the complete lazy-memo and asset-memo focused groups. Production compile, DreamChecker (zero diagnostics), analyzer and ratchets passed. No full suite or baseline increase.
+
