@@ -955,7 +955,7 @@ TRACKED(/turf/simulated/wall, thermite)
 					A.electronics.req_one_access = the_rcd.conf_access.Copy()
 					A.req_one_access = the_rcd.conf_access.Copy()
 				else
-					A.electronics.conf_access = the_rcd.conf_access.Copy()
+					A.electronics.set_conf_access(the_rcd.conf_access.Copy())
 					A.req_access = the_rcd.conf_access.Copy()
 			A.set_autoclose(TRUE)
 			return TRUE
@@ -1136,7 +1136,7 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 			A.electronics.req_one_access = rcd.conf_access.Copy()
 			A.req_one_access = rcd.conf_access.Copy()
 		else
-			A.electronics.conf_access = rcd.conf_access.Copy()
+			A.electronics.set_conf_access(rcd.conf_access.Copy())
 			A.req_access = rcd.conf_access.Copy()
 	A.set_autoclose(TRUE)
 	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)

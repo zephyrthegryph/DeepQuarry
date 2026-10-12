@@ -15,7 +15,7 @@ TRACKED(/obj/item/card/id/guest, expired)
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
 
-/// Draws none of what the providers above draw (was APPEARANCE_NONE).
+/// Draws none of what the providers above draw.
 /obj/item/card/id/guest/look_parts(datum/look/look)
 	return
 

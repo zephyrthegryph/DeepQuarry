@@ -3318,7 +3318,6 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Open the valve and rebuild — they should merge.
 	VL.open = TRUE
-	VL.update_icon()
 	// Publish the valve's newly enabled internal edge.
 	VL.rust_register_pipe_topology()
 
@@ -4637,28 +4636,18 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "a recharger holding a full cell settles to idle draw")
 	qdel(R)
 
-/// A recharger's OWN_SPILL "charging" drops the item on destroy and the spill
-/// hook refreshes its icon, as the recharger's old Destroy() did.
-/obj/item/cell/dq_spill_probe
-	var/refreshed = FALSE
+/// A recharger's OWN_SPILL "charging" drops the item on destroy, as the recharger's old Destroy() did.
+/datum/unit_test/dq_recharger_spill_drops_item
 
-/obj/item/cell/dq_spill_probe/update_icon()
-	refreshed = TRUE
-	return ..()
-
-/datum/unit_test/dq_recharger_spill_refreshes_icon
-
-/datum/unit_test/dq_recharger_spill_refreshes_icon/Run()
+/datum/unit_test/dq_recharger_spill_drops_item/Run()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
-	var/obj/item/cell/dq_spill_probe/C = new(R)
+	var/obj/item/cell/C = new(R)
 	varslot_set(R, "charging", C)
-	C.refreshed = FALSE
 	qdel(R)
 	TEST_ASSERT(!QDELETED(C), "the charging item was deleted with the recharger")
 	TEST_ASSERT_EQUAL(C.loc, T, "the charging item did not spill to the recharger's turf")
-	TEST_ASSERT(C.refreshed, "the spilled item did not refresh its icon")
 	qdel(C)
 
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate

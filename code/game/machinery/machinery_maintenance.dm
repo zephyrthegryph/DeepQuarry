@@ -37,7 +37,6 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 /// Opens or closes the maintenance panel (the panel's two ops, one per state).
 /obj/machinery/proc/toggle_maintenance_panel(datum/act/op/A)
 	set_panel_open(!panel_open)
-	update_icon()
 	return OP_OK
 
 // ---- deconstruct ----
@@ -55,7 +54,6 @@ MSG_DEF_SELF(interaction/machine_repair/intact, "it isn't damaged")
 /obj/machinery/proc/toggle_maintenance_anchor(datum/act/op/A)
 	set_anchored(!anchored)
 	power_change()
-	update_icon()
 	return OP_OK
 
 // ---- weld repair ----

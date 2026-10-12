@@ -1131,9 +1131,9 @@ GLOBAL_LIST_EMPTY(airlock_close_groups) // closeOtherId -> the airlocks sharing 
 		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))
-		electronics.conf_access = req_access
+		electronics.set_conf_access(req_access)
 	else if (LAZYLEN(req_one_access))
-		electronics.conf_access = req_one_access
+		electronics.set_conf_access(req_one_access)
 		electronics.set_one_access(1)
 
 /// hold open (a relation view: it reads null once the target is deleted).

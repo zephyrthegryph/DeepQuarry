@@ -49,3 +49,7 @@
 ## and a duplicate #include is harmless). doc/rewrite/agent_workflow.md.
 deepquarry.dme merge=union
 code/modules/unit_tests/_unit_tests.dm merge=union
+
+## look_keys.txt is regenerated from the tree by every merge script (tools/ci/check_look_keys_format.sh --regen); the union
+## driver keeps a plain `git merge` from ever conflicting on it, and the regeneration replaces whatever the union produced.
+code/modules/unit_tests/snapshots/look_keys.txt merge=union

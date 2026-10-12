@@ -271,9 +271,6 @@ CAPABILITIES(/obj/item/quantum_pad_booster)
 
 /// After the base screwdriver: the pad re-joins the power region under it.
 /obj/machinery/power/quantumpad/proc/panel_worked(datum/act/op/A)
-	var/original_powernet = power_region
 	if(power_region)
 		disconnect_from_network()
 	connect_to_network()
-	if(power_region != original_powernet)
-		changed(src)

@@ -339,8 +339,6 @@ STAGE_DEF(machine_frame, finished)
 	circuit.construct(B, user)
 	circuit.moveToNullspace()
 	rel_move(src, nameof(circuit), B, nameof(B.circuit))
-	if(!alarm)
-		B.update_icon()
 	replace_with(src, B)
 
 /// Builds a computer.

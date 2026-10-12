@@ -57,7 +57,7 @@ pub const ROOT_PROCS: &[&str] = &["update_icon", "update_icon_state", "update_ov
 /// Files whose contents are part of every key: only the code that draws (the appearance builder that applies a look and the
 /// refresh path). Other engine files, the pin tests and the sweep harness do not change a drawn look, so editing them leaves
 /// every key alone.
-const SALT_FILES: &[&str] = &["code/datums/sys/appearance.dm", "code/engine/present/appearance_builder.dm"];
+const SALT_FILES: &[&str] = &["code/engine/present/appearance_builder.dm"];
 const SALT_DIRS: &[&str] = &[];
 const SALT_PREFIXES: &[&str] = &[];
 /// Procs whose defining files are part of the salt. None: a draw proc is in every closure that reaches it, so its text is

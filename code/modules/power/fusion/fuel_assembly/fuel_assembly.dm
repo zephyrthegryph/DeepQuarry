@@ -62,7 +62,6 @@ CAPABILITIES(/obj/item/fuel_assembly)
 		name = "[fuel_type] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
 
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 
 // Mapper shorthand.
@@ -95,7 +94,6 @@ CAPABILITIES(/obj/item/fuel_assembly)
 	fuel_colour = "#FCE300"
 	fuel_type = "blitzu"
 	rod_glows = TRUE
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 	radiation_pulse(
 		source = src,
@@ -181,7 +179,6 @@ CAPABILITIES(/obj/item/fuel_assembly/blitz/unshielded)
 	fuel_colour = "#76888F"
 	fuel_type = "blitz"
 	rod_glows = TRUE
-	changed(src)
 	rod_quantities[fuel_type] = initial_amount
 	set_glow(src, GLOW(2, 2, "#FCE300"))
 
