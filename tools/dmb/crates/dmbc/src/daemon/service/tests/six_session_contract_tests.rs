@@ -7,6 +7,8 @@ use std::path::Path;
 mod implied_type_recovery;
 #[path = "declaration_error_recovery_tests.rs"]
 mod declaration_error_recovery;
+#[path = "six_session_contract_tests/retirement_pipe_tests.rs"]
+mod retirement_pipe;
 
 const SOURCE: &str = "/datum/base\n    var/value = 7\n    proc/result()\n        return value\n/proc/probe()\n    var/datum/base/item = new\n    return item.result()\n";
 
