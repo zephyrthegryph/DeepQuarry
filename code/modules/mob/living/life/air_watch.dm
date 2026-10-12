@@ -56,6 +56,7 @@
 		return
 	var/list/chs = list()
 	var/list/cuts = list()
+	var/list/starts = list()
 	for(var/ch_text in levels)
 		var/ch = text2num(ch_text)
 		var/list/normal = air_watch_normalise(levels[ch_text], air_watch_spacing(ch))
@@ -63,9 +64,10 @@
 			continue
 		chs += ch
 		cuts += list(normal)
+		starts += air_watch_band_of(air_watch_reading(air, ch), normal)
 	if(!length(chs))
 		return
-	rel_set(src, nameof(air_watch), world_watch_when(src, COND_BANDS(WORLD_GAS_HANDLE(air), chs, cuts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
+	rel_set(src, nameof(air_watch), world_watch_when(src, COND_BANDS(WORLD_GAS_HANDLE(air), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
 
 /mob/living/proc/air_watch_clear()
 	src.air_watch_key = null
@@ -77,6 +79,28 @@
 	if(QDELETED(src) || W != src.air_watch)
 		return
 	air_changed_here()
+
+/// The band of `value` among ascending `levels`: how many are at or under it (Rust's band index).
+/proc/air_watch_band_of(value, list/levels)
+	. = 0
+	for(var/level in levels)
+		if(level > value)
+			return
+		.++
+
+/// The reading of `air` on gas channel `ch`, as Rust computes it (cell.rs gas_ch).
+/proc/air_watch_reading(datum/gas_mixture/air, ch)
+	var/static/list/kpa_gases = list("[CH_GAS_O2_KPA]" = /datum/gas/oxygen, "[CH_GAS_N2_KPA]" = /datum/gas/nitrogen, "[CH_GAS_CO2_KPA]" = /datum/gas/carbon_dioxide, 		"[CH_GAS_PLASMA_KPA]" = /datum/gas/plasma, "[CH_GAS_N2O_KPA]" = /datum/gas/nitrous_oxide, "[CH_GAS_CH4_KPA]" = /datum/gas/methane, "[CH_GAS_FUEL_KPA]" = /datum/gas/volatile_fuel)
+	var/gas = kpa_gases["[ch]"]
+	if(gas)
+		var/total = air.total_moles()
+		return total > 0 ? air.get_moles(gas) / total * air.return_pressure() : 0
+	switch(ch)
+		if(CH_GAS_NITROGEN)
+			return air.get_moles(/datum/gas/nitrogen)
+		if(CH_GAS_METHANE)
+			return air.get_moles(/datum/gas/methane)
+	return gas_level_read(air, ch)
 
 /// The least distance between two levels of channel `ch`: a band is wider than the channel's hysteresis (Rust checks it).
 /proc/air_watch_spacing(ch)

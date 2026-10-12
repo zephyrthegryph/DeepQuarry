@@ -238,7 +238,7 @@ fn a_crossing_undone_within_one_frame_is_invisible() {
             unit: Unit::Kpa,
             levels: vec![75.0],
             hysteresis: None,
-            quiet: false,
+            start: None,
         },
     );
     assert_eq!(h.frame().len(), 1, "the band reports its start");
@@ -266,7 +266,7 @@ fn bands_move_up_at_the_level_and_down_past_the_hysteresis() {
         unit: Unit::Kpa,
         levels,
         hysteresis: Some(2.0),
-        quiet: false,
+        start: None,
     };
     h.watch(1, band(vec![10.0, 20.0, 30.0]));
     assert_eq!(h.frame().len(), 1, "initial band 0");
@@ -615,7 +615,7 @@ fn registration_rejects_bad_conditions() {
                 unit: Unit::Kpa,
                 levels: vec![3.0, 2.0],
                 hysteresis: None,
-                quiet: false,
+                start: None,
             },
             WatchError::BandLevels {
                 reason: "must be strictly increasing",
@@ -628,7 +628,7 @@ fn registration_rejects_bad_conditions() {
                 unit: Unit::Kpa,
                 levels: vec![1.0, 1.4],
                 hysteresis: None,
-                quiet: false,
+                start: None,
             },
             WatchError::BandLevels {
                 reason: "must be further apart than the hysteresis",
@@ -641,7 +641,7 @@ fn registration_rejects_bad_conditions() {
                 unit: Unit::Kpa,
                 levels: vec![],
                 hysteresis: None,
-                quiet: false,
+                start: None,
             },
             WatchError::BandLevels {
                 reason: "are empty",
@@ -834,26 +834,26 @@ fn evaluate_fresh_primes_only_new_watches() {
 }
 
 #[test]
-fn quiet_bands_in_any_take_the_start_silently_then_fire_on_a_crossing() {
+fn bands_given_their_start_stay_silent_at_registration_then_fire_on_a_crossing() {
     let mut h = Harness::new();
     h.kpa(0, 21.0);
     h.set(0, |c| c.temp = 293.0);
-    let band = |ch, unit, levels: Vec<f32>| Cond::Band {
+    let band = |ch, unit, levels: Vec<f32>, start: usize| Cond::Band {
         cell: 0,
         ch,
         unit,
         levels,
         hysteresis: None,
-        quiet: true,
+        start: Some(start),
     };
     h.watch(
         1,
         Cond::Any(vec![
-            band(ch::PRESSURE, Unit::Kpa, vec![16.0]),
-            band(ch::TEMPERATURE, Unit::Kelvin, vec![290.0, 330.0]),
+            band(ch::PRESSURE, Unit::Kpa, vec![16.0], 1),
+            band(ch::TEMPERATURE, Unit::Kelvin, vec![290.0, 330.0], 1),
         ]),
     );
-    assert!(h.frame().is_empty(), "quiet: no wake at registration");
+    assert!(h.frame().is_empty(), "started: no wake at registration");
     h.kpa(0, 0.0);
     assert_eq!(h.frame().len(), 1, "the first channel crossing down wakes");
     h.set(0, |c| c.temp = 400.0);
