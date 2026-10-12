@@ -48,7 +48,7 @@
 
 /**
  * BRIDGE (removed with S4): TRACKED() that also raises the OM channel CHANNEL, for a var an OM stage `wake_on` or an
- * om_watch() still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else
+ * a work pipeline still listens to by channel (the machine pipeline wakes on CHANGE_MACHINE_SETTINGS). Everything else
  * uses TRACKED(T, V). When the last channel consumer of V is gone, drop the third argument.
  */
 #define TRACKED_BRIDGED(T, V, CHANNEL) ##T/proc/set_##V(value) { if(TRACKED_UNCHANGED(V, value)) { return FALSE }; V = value; changed(src, CHANNEL, #V); return TRUE };SETTER(T, V)

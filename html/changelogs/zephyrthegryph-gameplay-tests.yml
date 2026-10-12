@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added a gameplay scenario suite (walking, doors, clothing, breathing, wall menus, power) that runs on every landing"

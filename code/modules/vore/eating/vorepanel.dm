@@ -1159,7 +1159,7 @@ CAPABILITIES(/datum/vore_look)
 				to_chat(user, span_warning("You can't do that in your state!"))
 				return TRUE
 
-			host().ClickOn(target)
+			input_submit(new /datum/input_event/click(host(), target))
 			return TRUE
 
 	if(!isliving(target))

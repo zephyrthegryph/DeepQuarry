@@ -47,14 +47,14 @@
 		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)
 			return result
-	// The ops had their say: the mob's click handling below must not resolve them a second time (route_click()).
+	// The ops had their say: the mob's click handling below must not resolve them a second time (the router's route_click() only classifies and performs).
 	GLOB.op_click_resolved[actor] = TRUE
 	E.actor.op_compatibility_click(E.target, E.params)
 	GLOB.op_click_resolved -= actor
 	return null
 
 /// Actors whose click the inbox already resolved among the ops (it is in the mob's own click handling now). A click that reaches the router any other
-/// way (the router entry of an AI hotkey, a pAI card, a test) resolves the ops first itself (route_click()).
+/// way (the router entry of an AI hotkey, a pAI card, a test) is not resolved among the ops by the router (route_click() only classifies and performs): submit it through input_submit().
 GLOBAL_LIST_EMPTY(op_click_resolved)
 
 /// op_resolve_click() with the click's parameters readable by the effects it runs, through dq_interaction_click_params(actor): an item put on a table
