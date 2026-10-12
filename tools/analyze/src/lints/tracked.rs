@@ -598,7 +598,7 @@ fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String,
             declared.entry(proc.owner.to_owned()).or_default().insert(f.rel.clone());
         }
         for (_, line) in f.code().numbered() {
-            if let Some(m) = pat_match!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,").captures(line) {
+            if let Some(m) = pat!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,").captures(line) {
                 declared.entry(m.s(1).to_owned()).or_default().insert(f.rel.clone());
             }
             if let Some(m) = pat_match!(r"^(/[\w/]+)/var/").captures(line) {
@@ -611,7 +611,7 @@ fn fault_markers(files: &[&SourceFile], tracked: &Tracked) -> (BTreeSet<(String,
     for f in files {
         for (n, line) in f.code().numbered() {
             if line.trim_start().starts_with("#define") { continue; }
-            if let Some(m) = pat_match!(r"\bTEST_FAULT_FIXTURE\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(line) {
+            if let Some(m) = pat!(r"\bTEST_FAULT_FIXTURE\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)").captures(line) {
                 let ty = m.s(1); let field = m.s(2);
                 let safe_type = declared.get(ty).is_some_and(|ds| !ds.is_empty() && ds.iter().all(|rel| test_path(rel)));
                 if !test_path(&f.rel) || !safe_type || tracked_type_of(tracked, field, ty).is_none() {
@@ -629,7 +629,7 @@ fn invalid_faults(f: &SourceFile, markers: &BTreeSet<(String, String)>) -> Vec<(
     // the typed declaration form below, including in tests.
     if f.rel != FAULT_DRIVER {
         for (n, line) in f.code().numbered() {
-            if pat_match!(r"\btest_fault_missing_publish\s*\(").is_match(line) {
+            if pat!(r"\btest_fault_missing_publish\s*\(").is_match(line) {
                 invalid.push((n, "call the fault declaration form; the injector is implementation-only".to_owned()));
             }
         }
@@ -639,7 +639,7 @@ fn invalid_faults(f: &SourceFile, markers: &BTreeSet<(String, String)>) -> Vec<(
         let mut typed: HashMap<String, String> = HashMap::new();
         let mut allocated: HashSet<String> = HashSet::new();
         for (idx, (n, line)) in proc.body.iter().enumerate() {
-            if let Some(m) = pat_match!(r"\bvar(/[^\s=]+)/([\w]+)\s*=\s*allocate\(").captures(line) {
+            if let Some(m) = pat!(r"\bvar(/[^\s=]+)/([\w]+)\s*=\s*allocate\(").captures(line) {
                 typed.insert(m.s(2).to_owned(), m.s(1).to_owned());
                 allocated.insert(m.s(2).to_owned());
             }
@@ -690,7 +690,7 @@ fn fault_setter_fields(f: &SourceFile, tracked: &mut Tracked) {
     // and STAT-composed values: faults need a real restoration setter.
     for line in f.code().lines() {
         if line.trim_start().starts_with("#define") { continue; }
-        if let Some(m) = pat_match!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
+        if let Some(m) = pat!(r"\b(?:TRACKED(?:_BRIDGED)?|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(line) {
             tracked.entry(m.s(2).to_owned()).or_default().insert(m.s(1).to_owned());
         }
     }
