@@ -4826,7 +4826,8 @@ acceptance-consumers-1011 merge: `dq_conversion_pin` re-blessed for the combinat
 * **The plain circuit box takes circuits again.** `/obj/item/storage/bag/circuits/mini` (no stocked kinds) fitted itself to its empty contents at init; only a stocked box fits itself.
 * **The phoron bore's cell removal is the magnetic gun's hand op.** Its own copy clashed with the inherited one (a declaration error at creation); the inherited op removes the cell the same way.
 * **A directional light atom deleted by anything but its light** (a cleared tile, a swept test block) steps into nullspace and stays its light's, instead of stack-tracing.
-`n## Requirement pins after master menu fixes (2026-10-12)
+
+## Requirement pins after master menu fixes (2026-10-12)
 
 Master `f5007aa10f` (2026-10-12 01:18 CDT, integrated by `f208564b45`)
 changed the menu producer. Its specialized requirement goldens were only
@@ -4879,4 +4880,3 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
-
