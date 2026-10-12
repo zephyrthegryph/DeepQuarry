@@ -15,8 +15,6 @@ robot|none click: Click: Use
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 human|/obj/item/survey_scanner menu: Hit
-human|/obj/item/survey_scanner menu: Move To Top
-human|/obj/item/survey_scanner menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/survey_scanner menu: Use
 human|/obj/item/survey_scanner click: Click: Use
 @obj human|/obj/item/analyzer

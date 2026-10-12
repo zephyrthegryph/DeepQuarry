@@ -3,28 +3,22 @@
 -click: Click: Use
 +1 menu: Read the gauge
 +3 click: Click: Read the gauge
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Read the gauge
 +2 click: Click: Read the gauge
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+1 menu: Panel
-+3 click: Click: Panel
-@obj human|/obj/item/tool/crowbar
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Unwrench
-+3 click: Click: Unwrench
-@obj human|/obj/item/tool/wirecutters
-@obj human|/obj/item/multitool
--click: nothing
-+1 menu: Retarget (refused: There is no pipe here to watch.)
-+3 click: Click: Retarget
-@obj human|/obj/item/weldingtool
-@obj human|/obj/item/stack/cable_coil
-@obj human|/obj/item/stack/material/steel
-@obj human|/obj/item/card/id
-@obj human|/obj/item
+human|/obj/item/tool/screwdriver menu: Panel
+human|/obj/item/tool/screwdriver click: Click: Panel
+@obj.machinery human|/obj/item/tool/crowbar
+human|/obj/item/tool/wrench menu: Unwrench
+human|/obj/item/tool/wrench click: Click: Unwrench
+@obj.machinery human|/obj/item/tool/wirecutters
+human|/obj/item/multitool menu: Retarget (refused: There is no pipe here to watch.)
+human|/obj/item/multitool click: Click: Retarget
+@obj.machinery human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
+@obj.machinery human|/obj/item
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, panel, read, retarget, robot_remote_blocked, set_id, silicon_hand, unwrench

@@ -3,9 +3,6 @@
 /mob/living/carbon/human/proc/life_phobias_due()
 	return src.phobias
 
-/mob/living/carbon/human/proc/life_phobias_rewake()
-	return 30 SECONDS
-
 /mob/living/carbon/human/proc/life_phobias(datum/seq_frame/life/F)
 	if(!src.phobias)
 		return

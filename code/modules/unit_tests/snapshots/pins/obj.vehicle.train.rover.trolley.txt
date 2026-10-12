@@ -14,65 +14,65 @@ ghost|none click: nothing
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/tool/crowbar
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/tool/wrench
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/tool/wirecutters
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/multitool
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/weldingtool
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/stack/cable_coil
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+6 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/stack/material/steel
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/card/id
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+6 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 @obj.vehicle human|/obj/item/card/emag
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-+5 menu: Toggle load limiter
++2 menu: Toggle load limiter
 keys: drag_buckle, emag.subvert, emag.use, melee_hit, train_drag, train_hand, train_limiter_cable, train_unlatch, use_crowbar, use_screwdriver, use_welder, vehicle_item

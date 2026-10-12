@@ -15,75 +15,73 @@
 @mob.living.simple_mob.vore human|/obj/item/tool/screwdriver
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/tool/crowbar
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/tool/wrench
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/tool/wirecutters
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/multitool
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/weldingtool
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/stack/cable_coil
 -click: Click: Pet
 +2 menu: Handle roughly
-+9 menu: Remove accessory
-+11 menu: Tend
-+14 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/stack/material/steel
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item/card/id
 -click: Click: Pet
 +2 menu: Handle roughly
-+9 menu: Remove accessory
-+11 menu: Tend
-+14 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 @mob.living.simple_mob.vore human|/obj/item
 -click: Click: Pet
 +2 menu: Handle roughly
-+8 menu: Remove accessory
-+10 menu: Tend
-+13 click: Click: Tend
++7 menu: Remove accessory
++9 menu: Tend
++11 click: Click: Tend
 human|/obj/item/material/knife menu: Disarm
 human|/obj/item/material/knife menu: Grab
 human|/obj/item/material/knife menu: Handle roughly
 human|/obj/item/material/knife menu: Hit
 human|/obj/item/material/knife menu: Hold with
-human|/obj/item/material/knife menu: Move To Top
 human|/obj/item/material/knife menu: Nutrition heal
 human|/obj/item/material/knife menu: Pet
 human|/obj/item/material/knife menu: Remove accessory
 human|/obj/item/material/knife menu: Shove with
 human|/obj/item/material/knife menu: Tend
-human|/obj/item/material/knife menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/material/knife menu: Use on
 human|/obj/item/material/knife click: Click: Tend
 keys: absorb_devour, attack_variants.disarm, attack_variants.grab, beacon_insert, body_writing, butcher, climb_down, climb_wall, dominate_predator, dominate_prey, drag_buckle, eat_minerals, egg_laying, ghost_join, harvest, healing_rainbows, hit_disarm, hit_grab, hit_help, hit_hurt, injection, lend_prey_control, melee_swing, mob_attacks.alarm, mob_attacks.charge, mob_attacks.fire, mob_attacks.melee, mob_attacks.pickup, mob_attacks.shoot, mob_attacks.slam, mob_attacks.special, mob_attacks.step, mob_attacks.throw, nutrition_heal, polymorph, reload, revert_beast_form, shred_limb, spin, succubus_bite, teppi_hand_disarm, teppi_hand_grab, teppi_hand_help, teppi_hand_hurt, teppi_item_disarm, teppi_item_grab, teppi_item_help, teppi_item_hurt, teppi_shear_cutter, teppi_shear_knife, teppi_slaughter, touch_disarm, touch_grab, touch_help, touch_hurt, ventcrawl_in, vertical_nom, yank_out, zmove

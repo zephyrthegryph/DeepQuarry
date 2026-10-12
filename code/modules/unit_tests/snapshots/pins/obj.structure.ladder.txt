@@ -13,7 +13,7 @@ ghost|none click: Click: Climb
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
 +0 menu: Deconstruct
-+5 click: Click: Deconstruct
++3 click: Click: Deconstruct
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id

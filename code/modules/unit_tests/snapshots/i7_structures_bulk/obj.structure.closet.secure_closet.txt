@@ -7,51 +7,77 @@ robot|none click: Click: Toggle Lock
 @obj.structure.closet ghost|none
 -menu: Toggle Open
 +0 menu: Toggle Lock
-@obj.structure.closet human|/obj/item/tool/screwdriver
-@obj.structure.closet human|/obj/item/tool/crowbar
--menu: Toggle Open
--click: nothing
-+3 menu: Toggle Lock
-+4 click: Click: Toggle Lock
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Lock
+human|/obj/item/tool/screwdriver click: Click: Toggle Lock
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Lock
+human|/obj/item/tool/crowbar click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/tool/wrench
 -menu: Toggle Open
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 +4 menu: Toggle Lock
-@obj.structure.closet human|/obj/item/tool/wirecutters
-@obj.structure.closet human|/obj/item/multitool
--menu: Toggle Open
--click: nothing
-+3 menu: Toggle Lock
-+4 click: Click: Toggle Lock
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Lock
+human|/obj/item/tool/wirecutters click: Click: Toggle Lock
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Lock
+human|/obj/item/multitool click: Click: Toggle Lock
 @obj.structure.closet human|/obj/item/weldingtool
 -menu: Toggle Open
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 +3 menu: Toggle Lock
-@obj.structure.closet human|/obj/item/stack/cable_coil
--menu: Toggle Open
--click: nothing
-+4 menu: Toggle Lock
-+5 click: Click: Toggle Lock
-@obj.structure.closet human|/obj/item/stack/material/steel
--menu: Toggle Open
--click: nothing
-+3 menu: Toggle Lock
-+4 click: Click: Toggle Lock
-@obj.structure.closet human|/obj/item/card/id
--menu: Toggle Open
--click: nothing
-+3 menu: Toggle
-+5 menu: Toggle Lock
-+6 click: Click: Toggle
-@obj.structure.closet human|/obj/item
--menu: Toggle Open
--click: nothing
-+3 menu: Toggle Lock
-+4 click: Click: Toggle Lock
-@obj human|/obj/item/storage/laundry_basket
--menu: Toggle Open
--click: Click: Empty into
-+5 menu: Toggle Lock
-+6 click: Click: Toggle Lock
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Lock
+human|/obj/item/stack/cable_coil click: Click: Toggle Lock
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Lock
+human|/obj/item/stack/material/steel click: Click: Toggle Lock
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Lock
+human|/obj/item/card/id click: Click: Toggle
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Lock
+human|/obj/item click: Click: Toggle Lock
+human|/obj/item/storage/laundry_basket menu: Empty contents
+human|/obj/item/storage/laundry_basket menu: Hit
+human|/obj/item/storage/laundry_basket menu: Move To Top
+human|/obj/item/storage/laundry_basket menu: Switch gathering method (refused: You can't do that.)
+human|/obj/item/storage/laundry_basket menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/storage/laundry_basket menu: Toggle Lock
+human|/obj/item/storage/laundry_basket click: Click: Toggle Lock
 @obj.structure human|/obj/item/pda
++1 menu: Move To Top
++2 menu: Remove cartridge (refused: You can't do that.)
++3 menu: Remove id (refused: You can't do that.)
++4 menu: Remove pen (refused: You can't do that.)
++5 menu: Reset PDA (refused: You can't do that.)
++7 menu: Toggle Digestable (refused: You can't do that.)
 @obj.structure human|/obj/item/card/emag
-@obj human|/obj/item/melee/energy/blade
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.structure human|/obj/item/melee/energy/blade
++1 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 keys: anchor.toggle, break_out, cut_apart, devour, door, drag_buckle, emag.subvert, emag.use, empty_basket, lock.toggle, lock.toggle_worn, lock_with_item, melee_hit, set_down, silicon_hand, slice, stuff, stuff_grab, weld_shut.toggle

@@ -5036,7 +5036,7 @@ The rifle parity test demonstrated legacy duplicate associative list keys consum
 
 ### UI pin fixture identity, nutrition and skin representation (2026-10-12)
 
-Master babfc5a10ab5979bddd5b6e3912328a704c563ed (2026-10-11 01:16 -0500) moves human names to native species rolls; the UI harness only reseeds the world RNG. The tag-menu and syndicate-beacon scripts now explicitly name their real actor Jay Zeta, preserving their existing displayed-name goldens instead of recording a new incidental random identity. Other UI scripts are unchanged. Human name/real_name are untracked fields on this source; no tracked writer is bypassed.
+Master babfc5a10ab5979bddd5b6e3912328a704c563ed (2026-10-11 01:16 -0500) moves human names to native species rolls; the UI harness only reseeds the world RNG. The tag-menu and syndicate-beacon scripts now explicitly name their real actor Jay Zeta, preserving their existing displayed-name goldens instead of recording a new incidental random identity. Other UI scripts are unchanged. The original source had untracked human name/real_name fields; after merging the tracked-field lane, real_name assignments use its registered setter.
 
 Master b9c640db5868f9ddd477c669092a82c37212f45b (2026-10-11 04:50 -0500) moves starting human nutrition from native rolls to starting_nutrition()/world rand. The vore UI script now sets its actual nutrition through set_nutrition(344) before snapshots, retaining the existing abilities fixture input rather than pinning a new random initial value. This changes no production nutrition policy.
 
@@ -5096,3 +5096,56 @@ Prison toilet existing native rolls(open,range_of(0,1)) now samples lid-up under
 Exact rows: 4
 
 Excluded: all seven /guncabinet/rifle/dq_parity/lever rows. Exact test-only subtype abstract declaration is fixed separately; these rows are never golden candidates.
+## Requirement pins after master menu fixes (2026-10-12)
+
+Master `f5007aa10f` (2026-10-12 01:18 CDT, integrated by `f208564b45`)
+changed the menu producer. Its specialized requirement goldens were only
+re-factored, leaving the old behavior rows. The generated-plan lane refreshes
+29 fresh requirement captures from run `20261012T072134_264b48922c` only:
+
+| Cause class | Source on master | Result |
+|---|---|---|
+| Generated window label | `code/engine/parts/part.dm`, `f5007aa10f` | `Ui open` becomes `Open controls`, including click labels. |
+| Held item's self-menu filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Held-item own-menu rows no longer appear in the target menu. |
+| Drag-only input filtering | `code/engine/parts/resolve.dm`, `f5007aa10f` | Drag actions such as recharger insertion no longer appear as plain-menu actions. |
+| Silent refusals and duplicate labels | `code/engine/parts/resolve.dm`, `f5007aa10f` | Suppressed or duplicate rows disappear, preserving the current producer's ordered result. |
+| Unlabelled catch-all presentation | `code/engine/parts/resolve.dm`, `f5007aa10f` | Internal item operation names use the current `Use held item` label. |
+| Existing VR-sleeper serial stabilization | `dq_pin_stable_rows`, `9b8f69f7e7` (2026-10-11) | Four literal serial rows use the already-existing canonical placeholder; gameplay refusal text is unchanged. |
+
+The audit expands inherited rows before comparing them: 285 diagnostic groups,
+1,154 removed and 418 added expanded semantic rows, zero unproved differences.
+Capture timestamps and both file hashes were checked before promotion. Every
+non-target file rewritten by factoring preserves its exact expanded rows.
+`dq_conversion_pin` passed and its captures were excluded. No resolver or
+interface production code was changed by this lane.
+
+Affected requirement-pin classes:
+- `/obj/item/floor_light`
+- `/obj/machinery/bomb_tester`
+- `/obj/machinery/cablelayer`
+- `/obj/machinery/camera`
+- `/obj/machinery/computer/aifixer`
+- `/obj/machinery/computer/aiupload`
+- `/obj/machinery/computer/arcade/clawmachine`
+- `/obj/machinery/computer/borgupload`
+- `/obj/machinery/computer/guestpass`
+- `/obj/machinery/computer/pandemic`
+- `/obj/machinery/computer/pod/old/syndicate`
+- `/obj/machinery/computer/prison_shuttle`
+- `/obj/machinery/computer/skills`
+- `/obj/machinery/computer/supplycomp`
+- `/obj/machinery/cryopod`
+- `/obj/machinery/floor_light`
+- `/obj/machinery/food_replicator`
+- `/obj/machinery/gear_painter`
+- `/obj/machinery/nuclearbomb`
+- `/obj/machinery/organ_printer`
+- `/obj/machinery/particle_smasher`
+- `/obj/machinery/partslathe`
+- `/obj/machinery/recharge_station`
+- `/obj/machinery/robotic_fabricator`
+- `/obj/machinery/suit_cycler`
+- `/obj/machinery/suit_storage_unit`
+- `/obj/machinery/vr_sleeper/alien`
+- `/obj/machinery/vr_sleeper`
+- `/obj/structure/frame`

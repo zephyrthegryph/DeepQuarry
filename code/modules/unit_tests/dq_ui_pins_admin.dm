@@ -105,7 +105,7 @@
 	make_user(T)
 	make_holder()
 	var/mob/living/carbon/human/subject = test.allocate(/mob/living/carbon/human, T)
-	subject.real_name = "Pin Subject"
+	subject.set_real_name("Pin Subject")
 	subject.name = "Pin Subject"
 	host = test.allocate(/datum/edit_player_panel, holder, subject)
 	watch_host()
@@ -202,7 +202,7 @@
 	make_user(T)
 	make_holder()
 	var/mob/living/carbon/human/subject = test.allocate(/mob/living/carbon/human, T)
-	subject.real_name = "Pin Banned"
+	subject.set_real_name("Pin Banned")
 	subject.name = "Pin Banned"
 	host = test.allocate(/datum/jobban_panel, holder, subject)
 	watch_host()

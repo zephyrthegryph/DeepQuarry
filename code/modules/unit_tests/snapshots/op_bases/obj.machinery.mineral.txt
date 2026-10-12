@@ -1,4 +1,0 @@
-human|/obj/item/stack/material menu: Move To Top
-human|/obj/item/stack/material menu: Press coins (refused: You can't make coins out of that.)
-human|/obj/item/stack/material menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material click: Click: Press coins

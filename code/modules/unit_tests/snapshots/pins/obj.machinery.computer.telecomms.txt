@@ -1,13 +1,11 @@
 human|none menu: Climb
 human|none click: nothing
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
-@obj.machinery.computer human|/obj/item/tool/screwdriver
--menu: Disconnect
--menu: Use
--click: Click: Disconnect
-+4 click: Click: Use item
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Use item
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
 @obj.machinery.computer human|/obj/item/tool/wrench

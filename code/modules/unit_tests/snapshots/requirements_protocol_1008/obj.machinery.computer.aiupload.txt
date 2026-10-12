@@ -9,7 +9,7 @@ human|none click: Click: Select AI
 +3 menu: Install module (refused: needs an item)
 +4 menu: Select AI
 +6 click: Click: Select AI
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 -click: nothing
 +0 menu: Access Computer's Internals (refused: You can't reach that.)
@@ -20,52 +20,52 @@ human|none click: Click: Select AI
 -menu: Use
 +0 menu: Access Computer's Internals
 +3 menu: Install module
-+5 menu: Select AI
++4 menu: Select AI
 @obj.machinery.computer human|/obj/item/tool/crowbar
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/tool/wrench
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/tool/wirecutters
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/stack/cable_coil
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+5 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/stack/material/steel
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item/card/id
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+5 menu: Select AI
++3 menu: Select AI
 @obj.machinery.computer human|/obj/item
 -menu: Use
 +0 menu: Access Computer's Internals
 +2 menu: Install module
-+4 menu: Select AI
++3 menu: Select AI
 @obj human|/obj/item/gripper
 @obj human|/obj/item/aiModule
 keys: access_internals, climb.climb, climb.climb_menu, disconnect, drag_buckle, install_module, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, observer_view, robot_remote_blocked, select_ai, silicon_hand, use_gripper, use_item

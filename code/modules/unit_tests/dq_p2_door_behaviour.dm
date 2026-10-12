@@ -231,7 +231,7 @@
 	if(access)
 		var/obj/item/card/id/card = allocate(/obj/item/card/id, H.loc)
 		card.access = access
-		card.registered_name = "P2 Tester"
+		card.set_registered_name("P2 Tester")
 		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
 		H.equip_to_slot(card, SLOT_ID_ID)
 	return H

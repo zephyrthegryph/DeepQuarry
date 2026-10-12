@@ -10,13 +10,13 @@
 @obj.structure human|/obj/item/weldingtool
 @obj.structure human|/obj/item/stack/cable_coil
 -click: Click: Use
-+3 menu: Repair (refused: )
-+6 click: Click: Repair
++2 click: Click: Repair
 @obj.structure human|/obj/item/stack/material/steel
 -click: Click: Use
-+2 menu: Repair (refused: )
-+5 click: Click: Repair
++2 click: Click: Repair
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-@obj.structure human|/obj/item/stack
+human|/obj/item/stack menu: Hit
+human|/obj/item/stack menu: Use
+human|/obj/item/stack click: Click: Repair
 keys: drag_buckle, melee_hit, repair, repair_or_hit

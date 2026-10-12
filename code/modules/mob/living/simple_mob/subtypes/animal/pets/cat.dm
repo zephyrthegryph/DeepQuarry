@@ -55,9 +55,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 /mob/living/simple_mob/animal/passive/cat/get_available_emotes()
 	return GLOB.cat_default_emotes.Copy()
 
-/mob/living/simple_mob/animal/passive/cat/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/animal/passive/cat/life_special(datum/seq_frame/life/F)
 	if(!src.stat && prob(2)) // spooky
 		var/mob/observer/dead/spook = locate_in_list(range(src, 5), /mob/observer/dead)
@@ -358,9 +355,6 @@ CAPABILITIES(/obj/item/cat_box)
 CAPABILITIES(/mob/living/simple_mob/animal/passive/cat/tabiranth)
 	profile(nameof(vore_prefs), /datum/record/vore_prefs, fields = list("digestable" = 0))
 	configure(mob_kind(death_message = "teleports away!"))
-
-/mob/living/simple_mob/animal/passive/cat/tabiranth/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/animal/passive/cat/tabiranth/life_special(datum/seq_frame/life/F)
 	. = ..()

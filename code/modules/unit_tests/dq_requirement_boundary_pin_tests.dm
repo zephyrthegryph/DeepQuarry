@@ -29,12 +29,12 @@
 	var/obj/item/card/id/I = allocate(/obj/item/card/id, H.loc)
 	var/datum/computer_file/program/digitalwarrant/W = allocate(/datum/computer_file/program/digitalwarrant)
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
-	I.registered_name = ""
+	I.set_registered_name("")
 	I.access = list(ACCESS_SECURITY)
 	H.equip_to_slot(I, SLOT_ID_ID)
 	TEST_ASSERT_EQUAL(H.GetIdCard(), I, "actual actor ID lookup sees the equipped card")
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
-	I.registered_name = "Boundary Tester"
+	I.set_registered_name("Boundary Tester")
 	I.access = list()
 	check(W, H, "addwarrant", "warrant_id_ok", MSG(digitalwarrant/no_id))
 	I.access = list(ACCESS_SECURITY)

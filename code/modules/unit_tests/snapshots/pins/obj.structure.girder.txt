@@ -4,16 +4,16 @@
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
 -click: Click: Use
-+2 menu: Switch between reinforcing and plating
-+5 click: Click: Switch between reinforcing and plating
++1 menu: Switch between reinforcing and plating
++3 click: Click: Switch between reinforcing and plating
 @obj.structure human|/obj/item/tool/crowbar
 -click: Click: Use
 +0 menu: Dislodge the girder
-+5 click: Click: Dislodge the girder
++3 click: Click: Dislodge the girder
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Disassemble the girder
-+5 click: Click: Disassemble the girder
++3 click: Click: Disassemble the girder
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool
@@ -22,4 +22,6 @@
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
 @obj human|/obj/item/pickaxe/plasmacutter
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 keys: construct_wall_wait, disassemble, dislodge, drag_buckle, hulk_smash, item, melee_hit, reinforce_wait, remove_struts, secure, slice, toggle_reinforcing, unsecure_struts

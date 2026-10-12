@@ -8,7 +8,7 @@
 +1 menu: Hammer rudely
 +4 menu: Ring
 +6 click: Click: Ring
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -44,8 +44,8 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Hammer rudely
-+3 menu: Ring
-+5 click: Click: Ring
++2 menu: Ring
++4 click: Click: Ring
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Hammer rudely
@@ -54,8 +54,8 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Hammer rudely
-+3 menu: Ring
-+5 click: Click: Ring
++2 menu: Ring
++4 click: Click: Ring
 @obj human|/obj/item/kit
 +1 menu: Hammer rudely
 +3 menu: Ring

@@ -1837,5 +1837,5 @@ CAPABILITIES(/datum/prompt/choice/victim/absorbed)
 	log_and_message_admins("[key_name(src)] set their name to [chosen_name]", src)
 	if(dna)
 		dna.real_name = chosen_name
-	real_name = chosen_name
+	set_real_name(chosen_name)
 	name = chosen_name

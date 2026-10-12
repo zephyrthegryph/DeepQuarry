@@ -1,71 +1,51 @@
 human|none menu: Climb
-human|none menu: Ui open
-human|none click: Click: Ui open
+human|none menu: Open controls
+human|none click: Click: Open controls
 robot|none menu: Climb
-robot|none menu: Ui open (refused: Sadly there's nothing in here for you to wear.)
-robot|none click: Click: Ui open
-ai|none menu: Ui open (refused: Sadly there's nothing in here for you to wear.)
-ai|none click: Click: Ui open
+robot|none menu: Open controls (refused: Sadly there's nothing in here for you to wear.)
+robot|none click: Click: Open controls
+ai|none menu: Open controls (refused: Sadly there's nothing in here for you to wear.)
+ai|none click: Click: Open controls
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+5 menu: Ui open
-+6 click: Click: Ui open
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+5 menu: Ui open
-+6 click: Click: Ui open
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Ui open
-+5 click: Click: Ui open
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
 keys: change_underwear, climb.climb, climb.climb_menu, drag_buckle, melee_hit, remove_underwear, tweak, ui_open

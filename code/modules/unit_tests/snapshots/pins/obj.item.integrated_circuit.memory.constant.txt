@@ -1,6 +1,6 @@
 @obj.item.integrated_circuit human|none
 @obj.item.integrated_circuit robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.integrated_circuit ghost|none
 @obj.item.integrated_circuit human|/obj/item/tool/screwdriver
 -menu: Use
@@ -29,7 +29,7 @@
 @obj.item.integrated_circuit human|/obj/item/stack/cable_coil
 -menu: Use
 -click: Click: Use
-+4 click: nothing
++3 click: nothing
 @obj.item.integrated_circuit human|/obj/item/stack/material/steel
 -menu: Use
 -click: Click: Use
@@ -37,7 +37,7 @@
 @obj.item.integrated_circuit human|/obj/item/card/id
 -menu: Use
 -click: Click: Use
-+4 click: nothing
++3 click: nothing
 @obj.item.integrated_circuit human|/obj/item/kit
 -menu: Use
 @obj.item.integrated_circuit human|/obj/item/storage

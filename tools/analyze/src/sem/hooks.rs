@@ -198,6 +198,17 @@ pub fn discover(decls: &Decls) -> Vec<HandlerRef> {
     out
 }
 
+/// The handlers the markers named `names` name (a family [`discover`] leaves out, such as `CAP_ENTRIES` for `gen deps`).
+pub fn discover_in(decls: &Decls, names: &[&str]) -> Vec<HandlerRef> {
+    let mut out = Vec::new();
+    for m in &decls.markers {
+        if names.contains(&m.name.as_str()) {
+            marker_handlers(m, &mut out);
+        }
+    }
+    out
+}
+
 fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
     // The non-path observe overload is a legacy key subscription, not an act handler.
     // Its callback receives a key list; only path triggers use native action parts.

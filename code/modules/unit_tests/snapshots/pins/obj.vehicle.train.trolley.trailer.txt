@@ -24,14 +24,12 @@ ghost|none click: nothing
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
-@obj.vehicle human|/obj/item/tool/wirecutters
--menu: Insert key
--menu: Remove key
--menu: Start engine
--menu: Stop engine (refused: The engine is already stopped.)
--click: Click: Vehicle item
-+6 menu: Use wirecutter
-+8 click: Click: Use wirecutter
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Interaction train hand
+human|/obj/item/tool/wirecutters menu: Unlatch
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
 @obj.vehicle human|/obj/item/multitool
 -menu: Insert key
 -menu: Remove key

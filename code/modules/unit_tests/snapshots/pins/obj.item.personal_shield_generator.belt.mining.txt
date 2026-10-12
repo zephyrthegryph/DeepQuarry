@@ -1,6 +1,6 @@
 @obj.item.personal_shield_generator human|none
 @obj.item.personal_shield_generator robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.personal_shield_generator ghost|none
 @obj.item.personal_shield_generator human|/obj/item/tool/screwdriver
 @obj.item.personal_shield_generator human|/obj/item/tool/crowbar

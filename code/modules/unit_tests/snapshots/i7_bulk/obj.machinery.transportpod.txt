@@ -2,27 +2,49 @@
 +0 menu: Move Inside
 @obj.machinery robot|none
 +1 menu: Move Inside (refused: It is not designed for that organism.)
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Move Inside (refused: You can't do that right now.)
-@obj human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/screwdriver
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/crowbar
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/tool/wrench
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/wrench
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/tool/wirecutters
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/multitool
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/weldingtool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/weldingtool
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/stack/cable_coil
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
 +1 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/stack/material/steel
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/stack/material/steel
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item/card/id
 +0 menu: Move Inside (refused: There is nobody to put in.)
-@obj human|/obj/item
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery human|/obj/item
 +0 menu: Move Inside (refused: There is nobody to put in.)
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, occupant_pod.busy_tools, occupant_pod.climb_in, occupant_pod.eject, occupant_pod.put_in, occupant_pod.put_in_grabbed, robot_remote_blocked, silicon_hand

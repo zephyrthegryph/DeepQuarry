@@ -6,7 +6,7 @@
 -click: Click: Use
 +4 menu: Suit pockets hand
 +7 click: Click: Suit pockets hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.clothing human|/obj/item/tool/screwdriver
 -click: Click: Use
@@ -36,22 +36,22 @@
 @obj.item.clothing.suit human|/obj/item/weldingtool
 @obj.item.clothing human|/obj/item/stack/cable_coil
 -click: Click: Use
-+3 menu: Suit pockets hand
-+4 menu: Suit pockets item
-+7 click: Click: Suit pockets hand
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
 @obj.item.clothing.suit human|/obj/item/stack/material/steel
 @obj.item.clothing human|/obj/item/card/id
 -click: Click: Use
-+3 menu: Suit pockets hand
-+4 menu: Suit pockets item
-+7 click: Click: Suit pockets hand
++2 menu: Suit pockets hand
++3 menu: Suit pockets item
++6 click: Click: Suit pockets hand
 @obj.item.clothing human|/obj/item/kit
 +3 menu: Suit pockets hand
 +4 menu: Suit pockets item
 @obj.item.clothing human|/obj/item/storage
 +3 menu: Suit pockets hand
 +4 menu: Suit pockets item
-@obj.item human|/obj/item
+@obj human|/obj/item
 -click: Click: Use
 +2 menu: Suit pockets hand
 +3 menu: Suit pockets item

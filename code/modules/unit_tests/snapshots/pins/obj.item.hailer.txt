@@ -2,7 +2,7 @@
 +2 menu: Set Hailer Message (refused: You can't do that.)
 @obj robot|none
 +3 menu: Set Hailer Message (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver
@@ -18,11 +18,11 @@
 @obj human|/obj/item/weldingtool
 +1 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/stack/cable_coil
-+2 menu: Set Hailer Message (refused: You can't do that.)
++1 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/stack/material/steel
 +1 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/card/id
-+2 menu: Set Hailer Message (refused: You can't do that.)
++1 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/kit
 +2 menu: Set Hailer Message (refused: You can't do that.)
 @obj human|/obj/item/storage

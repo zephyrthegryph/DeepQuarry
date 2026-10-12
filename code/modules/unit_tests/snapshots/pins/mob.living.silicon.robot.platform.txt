@@ -20,86 +20,71 @@
 @mob.living human|/obj/item/tool/screwdriver
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 menu: Work the panel (refused: )
-+12 click: Click: Platform item
++4 menu: Platform hand
++7 menu: Use screwdriver
++8 click: Click: Platform item
 @mob.living human|/obj/item/tool/crowbar
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+8 menu: Pry the cover or a part
-+12 click: Click: Platform item
++4 menu: Platform hand
++5 menu: Pry the cover or a part
++7 menu: Use crowbar
++9 click: Click: Platform item
 @mob.living human|/obj/item/tool/wrench
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+8 menu: Remove the restraining bolt (refused: )
-+12 click: Click: Platform item
++4 menu: Platform hand
++7 menu: Use wrench
++8 click: Click: Platform item
 @mob.living human|/obj/item/tool/wirecutters
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 menu: Work the wiring (refused: You can't reach the wiring.)
-+12 click: Click: Platform item
++4 menu: Platform hand
++7 menu: Use wirecutters
++8 menu: Work the wiring (refused: You can't reach the wiring.)
++9 click: Click: Platform item
 @mob.living human|/obj/item/multitool
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 menu: Work the wiring (refused: You can't reach the wiring.)
-+12 click: Click: Platform item
++4 menu: Platform hand
++6 menu: Use multitool
++8 menu: Work the wiring (refused: You can't reach the wiring.)
++9 click: Click: Platform item
 @mob.living human|/obj/item/weldingtool
 -menu: Nutrition heal
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 menu: Weld the dents (refused: Nothing to fix here.)
-+12 click: Click: Platform item
++4 menu: Platform hand
++7 menu: Use welding tool
++8 menu: Weld the dents (refused: Nothing to fix here.)
++9 click: Click: Platform item
 @mob human|/obj/item/stack/cable_coil
 -click: Click: Use on
-+4 menu: Load into cargo
-+7 menu: Platform hand
-+8 menu: Platform item
-+12 click: Click: Platform item
++4 menu: Platform hand
++6 menu: Use cable coil
++8 click: Click: Platform item
 @mob human|/obj/item/stack/material/steel
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 click: Click: Platform item
++4 menu: Platform hand
++7 menu: Use steel sheet
++8 click: Click: Platform item
 @mob human|/obj/item/card/id
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+12 click: Click: Platform item
++4 menu: Platform hand
++6 menu: Use identification card
++8 click: Click: Platform item
 @mob human|/obj/item
 -click: Click: Use on
-+4 menu: Load into cargo
-+6 menu: Platform hand
-+7 menu: Platform item
-+11 click: Click: Platform item
++4 menu: Platform hand
++6 menu: Use item
++8 click: Click: Platform item
 human|/obj/item/card/emag menu: Disarm
 human|/obj/item/card/emag menu: Grab
 human|/obj/item/card/emag menu: Hit
 human|/obj/item/card/emag menu: Hold with
-human|/obj/item/card/emag menu: Load into cargo
-human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Platform hand
-human|/obj/item/card/emag menu: Platform item
 human|/obj/item/card/emag menu: Shove with
-human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
 human|/obj/item/card/emag menu: Use on
 human|/obj/item/card/emag click: Click: Use
 wires: AI Control, Camera, Law Check, Lockdown

@@ -1051,7 +1051,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 		new_voice.name = "[candidate_name]"
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
-	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
+	new_voice.set_real_name("[new_voice.real_name]") //We still know their real name though!
 	rel_add(src, nameof(possessed_voice), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	grant(new_voice, granted_verb(/mob/living/voice/verb/change_name, hidden = TRUE), src) // No changing your name! Bad!

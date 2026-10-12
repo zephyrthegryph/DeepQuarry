@@ -2,7 +2,7 @@
 +2 menu: Dedicate Bracelet (refused: You can't do that.)
 @obj.item.clothing.accessory robot|none
 +2 menu: Dedicate Bracelet (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Dedicate Bracelet (refused: You can't do that.)
 @obj.item.clothing.accessory human|/obj/item/tool/screwdriver

@@ -7,13 +7,13 @@
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Dismantle
-+5 click: Click: Dismantle
++3 click: Click: Dismantle
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+4 menu: Weld to the floor
-+5 click: Click: Weld to the floor
++2 menu: Weld to the floor
++3 click: Click: Weld to the floor
 @obj.structure human|/obj/item/stack/cable_coil
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id

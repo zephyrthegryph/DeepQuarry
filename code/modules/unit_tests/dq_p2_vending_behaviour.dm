@@ -278,7 +278,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 /datum/unit_test/dq_p2_vending/proc/p2v_id(mob/living/carbon/human/H, list/access, money)
 	var/obj/item/card/id/C = allocate(/obj/item/card/id, p2v_side_spot())
 	C.access = access ? access.Copy() : list()
-	C.registered_name = H.real_name
+	C.set_registered_name(H.real_name)
 	if(!isnull(money))
 		var/datum/money_account/A = create_account(H.real_name, money)
 		A.security_level = 0

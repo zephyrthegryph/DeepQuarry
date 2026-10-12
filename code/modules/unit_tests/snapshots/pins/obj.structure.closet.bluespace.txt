@@ -3,17 +3,12 @@
 @obj.structure ai|none
 @obj.structure.closet ghost|none
 @obj.structure.closet human|/obj/item/tool/screwdriver
--menu: Toggle Lock
--click: Click: Toggle Lock
-+3 menu: Toggle Open
-+4 click: nothing
 @obj.structure.closet human|/obj/item/tool/crowbar
 @obj.structure.closet human|/obj/item/tool/wrench
 @obj.structure.closet human|/obj/item/tool/wirecutters
--menu: Toggle Lock
--click: Click: Toggle Lock
-+3 menu: Toggle Open
-+4 click: nothing
+-menu: Cut the tag off
+-click: Click: Cut the tag off
++2 click: nothing
 @obj.structure.closet human|/obj/item/multitool
 @obj.structure.closet human|/obj/item/weldingtool
 @obj.structure.closet human|/obj/item/stack/cable_coil

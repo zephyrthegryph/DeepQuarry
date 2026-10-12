@@ -2,31 +2,29 @@
 +0 menu: Climb
 @obj.machinery robot|none
 +1 menu: Climb
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
 @obj.machinery.power human|/obj/item/tool/screwdriver
 +0 menu: Climb
 @obj.machinery.power human|/obj/item/tool/crowbar
 +0 menu: Climb
-@obj human|/obj/item/tool/wrench
--click: nothing
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Secure
+human|/obj/item/tool/wrench click: Click: Secure
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Climb
-+2 menu: Secure
-+4 click: Click: Secure
-@obj human|/obj/item/tool/wirecutters
+@obj.machinery human|/obj/item/multitool
 +0 menu: Climb
-@obj human|/obj/item/multitool
-+0 menu: Climb
-@obj human|/obj/item/weldingtool
+@obj.machinery human|/obj/item/weldingtool
 +0 menu: Climb
 @obj.machinery.power human|/obj/item/stack/cable_coil
 +0 menu: Climb
-@obj human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/stack/material/steel
 +0 menu: Climb
-@obj human|/obj/item/card/id
+@obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-@obj human|/obj/item
+@obj.machinery human|/obj/item
 +0 menu: Climb
 @obj human|/obj/item/storage/part_replacer
 +0 menu: Climb

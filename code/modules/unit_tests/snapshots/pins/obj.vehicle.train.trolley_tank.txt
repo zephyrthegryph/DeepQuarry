@@ -18,104 +18,79 @@ ghost|none click: nothing
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/tool/crowbar
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/tool/wrench
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/tool/wirecutters
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
-@obj.vehicle human|/obj/item/multitool
--menu: Insert key
--menu: Remove key
--menu: Start engine
--menu: Stop engine (refused: The engine is already stopped.)
--click: Click: Vehicle item
-+0 menu: Climb
-+3 menu: Interaction trolley tank drag
-+6 menu: Repaint
-+10 click: Click: Repaint
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Interaction train hand
+human|/obj/item/multitool menu: Repaint
+human|/obj/item/multitool menu: Unlatch
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Repaint
 @obj.vehicle human|/obj/item/weldingtool
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/stack/cable_coil
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/stack/material/steel
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/card/id
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
 @obj.vehicle human|/obj/item/card/emag
 -menu: Insert key
 -menu: Remove key
 -menu: Start engine
 -menu: Stop engine (refused: The engine is already stopped.)
 +0 menu: Climb
-+3 menu: Interaction trolley tank drag
-@obj human|/obj/item/reagent_containers/glass
--menu: Eject Beaker
--menu: Insert container
--menu: Use
--click: Click: Insert container
-+0 menu: Climb
-+1 menu: Fill container
-+2 menu: Hit
-+3 menu: Interaction train hand
-+4 menu: Interaction trolley tank drag
-+5 menu: Load
-+10 menu: Unlatch
-+11 menu: Vehicle item
-+12 click: Click: Fill container
-@obj human|/obj/item/pen
--menu: Rename
--click: Click: Rename
-+0 menu: Climb
-+1 menu: Hit
-+2 menu: Interaction train hand
-+3 menu: Interaction trolley tank drag
-+4 menu: Load
-+6 menu: Relabel
-+8 menu: Unlatch
-+9 menu: Vehicle item
-+10 click: Click: Relabel
+human|/obj/item/reagent_containers/glass menu: Climb
+human|/obj/item/reagent_containers/glass menu: Fill container
+human|/obj/item/reagent_containers/glass menu: Hit
+human|/obj/item/reagent_containers/glass menu: Interaction train hand
+human|/obj/item/reagent_containers/glass menu: Unlatch
+human|/obj/item/reagent_containers/glass menu: Use  
+human|/obj/item/reagent_containers/glass click: Click: Fill container
+human|/obj/item/pen menu: Climb
+human|/obj/item/pen menu: Hit
+human|/obj/item/pen menu: Interaction train hand
+human|/obj/item/pen menu: Relabel
+human|/obj/item/pen menu: Unlatch
+human|/obj/item/pen menu: Use pen
+human|/obj/item/pen click: Click: Relabel
 keys: climb.climb, climb.climb_menu, drag_buckle, emag.subvert, emag.use, fill_container, melee_hit, relabel, repaint, train_drag, train_hand, train_unlatch, trolley_tank_drag, use_crowbar, use_screwdriver, use_welder, vehicle_item

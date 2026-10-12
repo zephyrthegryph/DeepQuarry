@@ -7,20 +7,19 @@
 @obj.structure human|/obj/item/tool/wrench
 @obj.structure human|/obj/item/tool/wirecutters
 -click: Click: Use
-+4 menu: Use wirecutter
-+5 click: Click: Use wirecutter
++2 menu: Use wirecutter
++3 click: Click: Use wirecutter
 @obj.structure human|/obj/item/multitool
 -click: Click: Use
-+4 menu: Use multitool
-+5 click: Click: Use multitool
++2 menu: Use multitool
++3 click: Click: Use multitool
 @obj.structure human|/obj/item/weldingtool
 -click: Click: Use
-+0 menu: Cut the cable (refused: )
-+5 click: Click: Cut the cable
++2 click: Click: Cut the cable
 @obj.structure human|/obj/item/stack/cable_coil
 -click: Click: Use
 +0 menu: Connect cable (refused: you will need heavier cables to connect to these)
-+6 click: Click: Connect cable
++3 click: Click: Connect cable
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item

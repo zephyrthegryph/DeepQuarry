@@ -1,67 +1,41 @@
-human|none menu: Ui open
-human|none click: Click: Ui open
+human|none menu: Open controls
+human|none click: Click: Open controls
 @obj.machinery robot|none
 -click: Click: Use
-+1 menu: Ui open
-+3 click: Click: Ui open
-@obj ai|none
++1 menu: Open controls
++3 click: Click: Open controls
+@obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 ghost|none menu: View
 ghost|none click: Click: View
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Ui open
-+3 menu: Unsecure
-+4 menu: Use wrench
-+5 click: Click: Ui open
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/multitool
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/weldingtool
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+3 menu: Ui open
-+4 click: Click: Ui open
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/card/id
--click: nothing
-+3 menu: Ui open
-+4 click: Click: Ui open
-@obj human|/obj/item
--click: nothing
-+2 menu: Ui open
-+3 click: Click: Ui open
-@obj human|/obj/item/reagent_containers/chem_disp_cartridge
--menu: Rotate Clockwise (refused: It is fastened to the floor!)
--menu: Rotate Counter Clockwise (refused: It is fastened to the floor!)
--menu: Turn Around (refused: It is fastened to the floor!)
-@obj human|/obj/item/reagent_containers/glass
--menu: Eject Beaker
--menu: Insert container
--menu: Use
--click: Click: Insert container
-+2 menu: Set catalyst (refused: )
-+5 menu: Ui open
-+6 click: Click: Set catalyst
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Open controls
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Open controls
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Unsecure
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Open controls
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Open controls
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Open controls
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Open controls
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Open controls
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Open controls
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Open controls
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Open controls
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Insert cartridge
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Open controls
+human|/obj/item/reagent_containers/chem_disp_cartridge menu: Splash (refused: The lid is closed.)
+human|/obj/item/reagent_containers/chem_disp_cartridge click: Click: Insert cartridge
+human|/obj/item/reagent_containers/glass menu: Open controls
+human|/obj/item/reagent_containers/glass click: Click: Set catalyst
 keys: add_cartridge, add_queue, add_recipe, bottle_product, change_bottle_style, change_patch_style, change_pill_style, clear_queue, drag_buckle, drug_form, eject_catalyst, emergency_stop, exp_recipe, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, mode_toggle, panel_toggle, remove_cartridge, rem_queue, rem_recipe, robot_remote_blocked, set_catalyst, silicon_hand, start_queue, toggle_catalyst, ui_observe, ui_open, use_wrench

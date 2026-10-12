@@ -57,8 +57,9 @@
 			return TRUE
 	return FALSE
 
+/// Reagents reach it through on_reagent_change() (MOB_KEY_HEALTH). This is the fallback.
 /mob/living/carbon/life_addictions_rewake()
-	return 30 SECONDS
+	return LIFE_SAFETY_RESAMPLE
 
 /mob/living/carbon/life_addictions(datum/seq_frame/life/F)
 	src.process_addictions()

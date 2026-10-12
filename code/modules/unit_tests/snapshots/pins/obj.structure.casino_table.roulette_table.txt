@@ -10,93 +10,71 @@ robot|none click: Click: Spin
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
 +1 menu: Remove Roulette Ball (refused: You can't reach that.)
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Place
-+5 menu: Remove Roulette Ball
-+6 menu: Spin
-+8 click: Click: Place
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+5 menu: Remove Roulette Ball
-+6 menu: Spin
-+8 click: Click: Place
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Place
-+4 menu: Remove Roulette Ball
-+5 menu: Spin
-+7 click: Click: Place
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Place
+human|/obj/item/tool/screwdriver menu: Remove Roulette Ball
+human|/obj/item/tool/screwdriver menu: Spin
+human|/obj/item/tool/screwdriver click: Click: Place
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Place
+human|/obj/item/tool/crowbar menu: Remove Roulette Ball
+human|/obj/item/tool/crowbar menu: Spin
+human|/obj/item/tool/crowbar click: Click: Place
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Place
+human|/obj/item/tool/wrench menu: Remove Roulette Ball
+human|/obj/item/tool/wrench menu: Spin
+human|/obj/item/tool/wrench click: Click: Place
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Place
+human|/obj/item/tool/wirecutters menu: Remove Roulette Ball
+human|/obj/item/tool/wirecutters menu: Spin
+human|/obj/item/tool/wirecutters click: Click: Place
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Place
+human|/obj/item/multitool menu: Remove Roulette Ball
+human|/obj/item/multitool menu: Spin
+human|/obj/item/multitool click: Click: Place
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Place
+human|/obj/item/weldingtool menu: Remove Roulette Ball
+human|/obj/item/weldingtool menu: Spin
+human|/obj/item/weldingtool click: Click: Place
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Place
+human|/obj/item/stack/cable_coil menu: Remove Roulette Ball
+human|/obj/item/stack/cable_coil menu: Spin
+human|/obj/item/stack/cable_coil click: Click: Place
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Place
+human|/obj/item/stack/material/steel menu: Remove Roulette Ball
+human|/obj/item/stack/material/steel menu: Spin
+human|/obj/item/stack/material/steel click: Click: Place
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Place
+human|/obj/item/card/id menu: Remove Roulette Ball
+human|/obj/item/card/id menu: Spin
+human|/obj/item/card/id click: Click: Place
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Place
+human|/obj/item menu: Remove Roulette Ball
+human|/obj/item menu: Spin
+human|/obj/item click: Click: Place
 human|/obj/item/roulette_ball menu: Climb
 human|/obj/item/roulette_ball menu: Hit
 human|/obj/item/roulette_ball menu: Insert a roulette ball
-human|/obj/item/roulette_ball menu: Move To Top
 human|/obj/item/roulette_ball menu: Place
 human|/obj/item/roulette_ball menu: Remove Roulette Ball
 human|/obj/item/roulette_ball menu: Spin
-human|/obj/item/roulette_ball menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/roulette_ball click: Click: Insert a roulette ball
 keys: climb.climb, climb.climb_menu, drag_buckle, hand, insert_ball, interaction_place, melee_hit, roulette_table_remove_ball_effect

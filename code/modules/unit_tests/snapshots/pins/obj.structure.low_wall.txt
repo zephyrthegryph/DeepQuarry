@@ -7,41 +7,39 @@
 +0 menu: Climb (refused: You can't climb right now.)
 @obj.structure human|/obj/item/tool/screwdriver
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/tool/crowbar
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
 +0 menu: Climb
-+3 menu: Place on wall
-+6 menu: Use wrench
-+7 click: Click: Use wrench
++3 menu: Use wrench
++4 click: Click: Use wrench
 @obj.structure human|/obj/item/tool/wirecutters
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/weldingtool
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/stack/cable_coil
 +0 menu: Climb
-+4 menu: Place on wall
 @obj.structure human|/obj/item/stack/material/steel
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item/card/id
 +0 menu: Climb
-+3 menu: Place on wall
 @obj.structure human|/obj/item
 +0 menu: Climb
-+3 menu: Place on wall
 @obj human|/obj/item/stack/rods
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 +0 menu: Climb
-+3 menu: Place on wall
-+6 menu: Use (refused: <span class='notice'>This type of wall frame doesn't support grilles.</span>)
 @obj human|/obj/item/stack/material/glass
+-menu: Move To Top
+-menu: Place on wall
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 @obj human|/obj/item/stack/material/cyborg/glass
+-menu: Move To Top
+-menu: Place on wall
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
 keys: build_grille, build_window, build_window_cyborg, climb.climb, climb.climb_menu, drag_buckle, melee_hit, place, place_drag, use_wrench

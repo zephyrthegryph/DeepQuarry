@@ -1,17 +1,47 @@
-@obj.machinery.portable_atmospherics.powered human|none
+@obj.machinery.portable_atmospherics human|none
 @obj.machinery.portable_atmospherics.powered robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.portable_atmospherics ghost|none
 @obj.machinery.portable_atmospherics human|/obj/item/tool/screwdriver
-@obj.machinery.portable_atmospherics.powered human|/obj/item/tool/crowbar
-@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/tool/wrench
-@obj.machinery.portable_atmospherics.powered human|/obj/item/tool/wirecutters
-@obj.machinery.portable_atmospherics.powered human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/tool/crowbar
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Wrench
+human|/obj/item/tool/wrench click: Click: Wrench
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/tool/wirecutters
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/multitool
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.portable_atmospherics.powered human|/obj/item/weldingtool
-@obj.machinery.portable_atmospherics.powered human|/obj/item/stack/cable_coil
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/stack/cable_coil
++1 menu: Make Cable Restraints (refused: You can't do that.)
++2 menu: Move To Top
++3 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery.portable_atmospherics.powered human|/obj/item/stack/material/steel
-@obj.machinery.portable_atmospherics.powered human|/obj/item/card/id
-@obj.machinery.portable_atmospherics.powered human|/obj/item
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/card/id
++1 menu: Move To Top
++2 menu: Read ID Card (refused: You can't do that.)
++3 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 @obj.machinery human|/obj/item/cell
-@obj.machinery.portable_atmospherics.powered human|/obj/item/tank
++0 menu: Charge with your body (refused: not in your hand)
++2 menu: Drain its charge (refused: not in your hand)
++3 menu: Move To Top
++4 menu: Toggle Digestable (refused: You can't do that.)
+@obj.machinery.portable_atmospherics.powered.pump human|/obj/item/tank
++1 menu: Move To Top
++2 menu: Toggle Digestable (refused: You can't do that.)
 keys: anchor, climb.climb, climb.climb_menu, console_only, direction, drag_buckle, eject, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, power, pressure, robot_remote_blocked, silicon_hand, swallow_cell, swallow_tank

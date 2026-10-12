@@ -244,6 +244,7 @@
 #include "dq_expedition_tests.dm"
 #include "dq_faction_reputation_tests.dm"
 #include "dq_flight_operations_tests.dm"
+#include "dq_generated_deps_tests.dm"
 #include "dq_generated_station_tests.dm"
 #include "dq_generated_station_planner_tests.dm"
 #include "dq_generated_station_room_definition_tests.dm"
@@ -329,6 +330,7 @@
 #include "dq_robot_machine_tests.dm"
 #include "dq_b4_tracking_tests.dm"
 #include "dq_phase0_tests.dm"
+#include "dq_breath_hazard_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_mob_every_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
@@ -388,6 +390,7 @@
 #include "dq_i7_structures_bulk_capture.dm"
 #include "dq_i7_items_bulk_capture.dm"
 #include "dq_interaction_tests.dm"
+#include "dq_ops_menu_sanity_tests.dm"
 #include "dq_domain_snapshot.dm"
 #include "dq_snapshot_files.dm"
 #include "dq_chem_math_pins.dm"
@@ -1287,6 +1290,8 @@
 #include "dq_numeric_grid_lookup_tests.dm"
 #include "dq_state_batch_tests.dm"
 #include "dq_nikki_rig_chest_tests.dm"
+#include "dq_mob_visuals_tests.dm"
+#include "dq_tanning_rack_wetness_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

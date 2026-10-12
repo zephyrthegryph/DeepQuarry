@@ -18,7 +18,6 @@ human|/obj/item click: Click: Under worn hand
 human|/obj/item/card/id menu: Alternate use
 human|/obj/item/card/id menu: Holster (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/card/id menu: Roll Up Sleeves (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
@@ -49,7 +48,6 @@ human|/obj/item/multitool menu: Use
 human|/obj/item/multitool click: Click: Under worn hand
 human|/obj/item/stack/cable_coil menu: Alternate use
 human|/obj/item/stack/cable_coil menu: Holster (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Roll Down Jumpsuit (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Roll Up Sleeves (refused: You can't do that.)

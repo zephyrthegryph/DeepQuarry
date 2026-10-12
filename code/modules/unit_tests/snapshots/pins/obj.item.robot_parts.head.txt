@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.robot_parts human|/obj/item/tool/screwdriver
 -menu: Use
@@ -29,7 +29,7 @@
 @obj.item.robot_parts human|/obj/item/stack/cable_coil
 -menu: Use
 -click: Click: Use
-+3 click: nothing
++2 click: nothing
 @obj.item.robot_parts human|/obj/item/stack/material/steel
 -menu: Use
 -click: Click: Use
@@ -37,7 +37,7 @@
 @obj.item.robot_parts human|/obj/item/card/id
 -menu: Use
 -click: Click: Use
-+3 click: nothing
++2 click: nothing
 @obj.item.robot_parts human|/obj/item/kit
 -menu: Use
 @obj.item.robot_parts human|/obj/item/storage
@@ -47,10 +47,7 @@
 @obj.item.robot_parts human|/obj/item/card/emag
 human|/obj/item/assembly/infra menu: Add sensor
 human|/obj/item/assembly/infra menu: Move To Top
-human|/obj/item/assembly/infra menu: Rotate Clockwise
-human|/obj/item/assembly/infra menu: Rotate Counter Clockwise
 human|/obj/item/assembly/infra menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/assembly/infra menu: Turn Around
 human|/obj/item/assembly/infra click: Click: Add sensor
 human|/obj/item/flash menu: Insert flash
 human|/obj/item/flash menu: Move To Top

@@ -1800,7 +1800,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " expands!"))
 	var/mob/living/carbon/human/H = new(get_turf(src))
 	H.set_species(monkey_type)
-	H.real_name = H.species.get_random_name()
+	H.set_real_name(H.species.get_random_name())
 	H.name = H.real_name
 	H.low_sorting_priority = TRUE
 	H.species.produceCopy(H.species.traits.Copy(),H,null,FALSE)

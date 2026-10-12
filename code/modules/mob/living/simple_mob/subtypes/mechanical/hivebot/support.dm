@@ -19,9 +19,6 @@
 	player_msg = "You <b>increase the performance of other hivebots near you</b> passively.<br>\
 	You are otherwise very weak offensively."
 
-/mob/living/simple_mob/mechanical/hivebot/support/commander/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/mechanical/hivebot/support/commander/life_special(datum/seq_frame/life/F)
 	for(var/mob/living/L in range(4, src))
 		if(L == src)
@@ -69,9 +66,6 @@ CAPABILITIES(/mob/living/simple_mob/mechanical/hivebot/support/commander/autofol
 	var/resupply_range = 5
 	var/resupply_cooldown = 4 SECONDS
 	COOLDOWN_DECLARE(resupply_cooldown_until)
-
-/mob/living/simple_mob/mechanical/hivebot/support/logistics/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/mechanical/hivebot/support/logistics/life_special(datum/seq_frame/life/F)
 	if(!COOLDOWN_FINISHED(src, resupply_cooldown_until))

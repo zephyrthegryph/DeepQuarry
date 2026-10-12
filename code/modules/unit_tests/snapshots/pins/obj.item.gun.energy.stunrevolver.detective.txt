@@ -6,7 +6,7 @@
 -menu: Use Scope (refused: You can't do that.)
 +4 menu: Name Gun (refused: You can't do that.)
 +7 menu: Resprite gun (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +2 menu: Name Gun (refused: You can't do that.)
@@ -44,8 +44,8 @@
 +6 menu: Resprite gun (refused: You can't do that.)
 @obj.item.gun.energy human|/obj/item/stack/cable_coil
 -menu: Use Scope (refused: You can't do that.)
-+5 menu: Name Gun (refused: You can't do that.)
-+7 menu: Resprite gun (refused: You can't do that.)
++4 menu: Name Gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
 @obj.item.gun.energy human|/obj/item/stack/material/steel
 -menu: Use Scope (refused: You can't do that.)
 +4 menu: Name Gun (refused: You can't do that.)
@@ -53,7 +53,7 @@
 @obj.item.gun.energy human|/obj/item/card/id
 -menu: Use Scope (refused: You can't do that.)
 +4 menu: Name Gun (refused: You can't do that.)
-+7 menu: Resprite gun (refused: You can't do that.)
++6 menu: Resprite gun (refused: You can't do that.)
 @obj.item.gun.energy human|/obj/item/kit
 -menu: Use Scope (refused: You can't do that.)
 +5 menu: Name Gun (refused: You can't do that.)
@@ -72,6 +72,6 @@
 +6 menu: Resprite gun (refused: You can't do that.)
 @obj.item.gun human|/obj/item/cell
 -menu: Use Scope (refused: You can't do that.)
-+7 menu: Name Gun (refused: You can't do that.)
-+9 menu: Resprite gun (refused: You can't do that.)
++5 menu: Name Gun (refused: You can't do that.)
++7 menu: Resprite gun (refused: You can't do that.)
 keys: collect_item, drag_buckle, emag.subvert, emag.use, gen_silicon_item_silicon_equip_module, gun_item, gun_self, gun_self_hurt, gun_verb_allow_dna, gun_verb_give_dna, gun_verb_remove_dna, interaction_hand, kit_customize, kit_customize_last, load_cell, move_to_top, pick_up_item, rename, reskin, suicide, toggle_digestable, use_screwdriver

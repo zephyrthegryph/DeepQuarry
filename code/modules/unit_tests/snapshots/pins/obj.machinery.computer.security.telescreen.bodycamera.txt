@@ -2,7 +2,7 @@
 +0 menu: .map
 @obj.machinery.computer robot|none
 +0 menu: .map
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 +0 menu: .map (refused: You can't reach that.)
 @obj.machinery.computer human|/obj/item/tool/screwdriver

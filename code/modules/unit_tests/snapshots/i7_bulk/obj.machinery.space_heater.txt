@@ -7,80 +7,90 @@ human|none click: Click: Ui open
 +1 menu: Climb
 +2 menu: Ui open
 +4 click: Click: Ui open
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
 +0 menu: Ui open
 +2 click: Click: Ui open
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Climb
-+2 menu: Open hatch
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Open hatch
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Climb
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Climb
-+4 menu: Ui open
-+5 menu: Use
-+6 click: Click: Ui open
-@obj human|/obj/item
--click: nothing
-+0 menu: Climb
-+3 menu: Ui open
-+4 menu: Use
-+5 click: Click: Ui open
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Open hatch
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Ui open
+human|/obj/item/tool/screwdriver menu: Use
+human|/obj/item/tool/screwdriver click: Click: Open hatch
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Ui open
+human|/obj/item/tool/crowbar menu: Use
+human|/obj/item/tool/crowbar click: Click: Ui open
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Ui open
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Ui open
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Ui open
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters click: Click: Ui open
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Ui open
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Ui open
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Ui open
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Ui open
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Ui open
+human|/obj/item/stack/cable_coil menu: Use
+human|/obj/item/stack/cable_coil click: Click: Ui open
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Ui open
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Ui open
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Ui open
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Ui open
+human|/obj/item menu: Climb
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Ui open
+human|/obj/item menu: Use
+human|/obj/item click: Click: Ui open
 @obj.machinery human|/obj/item/cell
 -click: Click: Use
++0 menu: Charge with your body (refused: not in your hand)
++2 menu: Drain its charge (refused: not in your hand)
 +3 menu: Insert power cell (refused: the hatch must be open to insert a power cell)
++4 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Ui open
 +8 click: Click: Insert power cell
 @obj human|/obj/item/storage/part_replacer
 +0 menu: Climb
++1 menu: Empty contents
++2 menu: Move To Top
++4 menu: Switch gathering method (refused: You can't do that.)
++5 menu: Toggle Digestable (refused: You can't do that.)
 +6 menu: Ui open
 +7 menu: Use
 keys: cellinstall, cellremove, climb.climb, climb.climb_menu, drag_buckle, hatch, insert_cell, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, part_replacement.replace, robot_remote_blocked, silicon_hand, temp, ui_open, use

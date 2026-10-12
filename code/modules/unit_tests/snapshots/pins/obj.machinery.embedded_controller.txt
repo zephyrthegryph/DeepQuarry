@@ -1,64 +1,44 @@
 human|none menu: Embedded controller open ui
-human|none menu: Ui open
+human|none menu: Open controls
 human|none click: Click: Embedded controller open ui
 @obj.machinery robot|none
 -click: Click: Use
 +1 menu: Embedded controller open ui
-+2 menu: Ui open
++2 menu: Open controls
 +4 click: Click: Embedded controller open ui
-@obj ai|none
+@obj.machinery ai|none
 -click: Click: Use
-+0 menu: Ui open
-+2 click: Click: Ui open
++0 menu: Open controls
++2 click: Click: Open controls
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Embedded controller open ui
-+4 menu: Ui open
-+5 click: Click: Embedded controller open ui
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Embedded controller open ui
-+4 menu: Ui open
-+5 click: Click: Embedded controller open ui
-@obj human|/obj/item
--click: nothing
-+0 menu: Embedded controller open ui
-+3 menu: Ui open
-+4 click: Click: Embedded controller open ui
+human|/obj/item/tool/screwdriver menu: Embedded controller open ui
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver click: Click: Embedded controller open ui
+human|/obj/item/tool/crowbar menu: Embedded controller open ui
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar click: Click: Embedded controller open ui
+human|/obj/item/tool/wrench menu: Embedded controller open ui
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench click: Click: Embedded controller open ui
+human|/obj/item/tool/wirecutters menu: Embedded controller open ui
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters click: Click: Embedded controller open ui
+human|/obj/item/multitool menu: Embedded controller open ui
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool click: Click: Embedded controller open ui
+human|/obj/item/weldingtool menu: Embedded controller open ui
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool click: Click: Embedded controller open ui
+human|/obj/item/stack/cable_coil menu: Embedded controller open ui
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil click: Click: Embedded controller open ui
+human|/obj/item/stack/material/steel menu: Embedded controller open ui
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel click: Click: Embedded controller open ui
+human|/obj/item/card/id menu: Embedded controller open ui
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id click: Click: Embedded controller open ui
+human|/obj/item menu: Embedded controller open ui
+human|/obj/item menu: Open controls
+human|/obj/item click: Click: Embedded controller open ui
 keys: drag_buckle, embedded_controller_open_ui, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, program_command, robot_remote_blocked, silicon_hand, silicon_ui, ui_open

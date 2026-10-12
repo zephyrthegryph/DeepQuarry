@@ -6,33 +6,29 @@ human|none click: Click: Activate
 +0 menu: Activate (refused: It needs to be firmly secured to the floor first.)
 +2 menu: Climb
 +4 click: Click: Activate
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 +0 menu: Climb (refused: You can't climb right now.)
-@obj human|/obj/item/tool/screwdriver
+@obj.machinery human|/obj/item/tool/screwdriver
 +0 menu: Climb
-@obj human|/obj/item/tool/crowbar
+@obj.machinery human|/obj/item/tool/crowbar
 +0 menu: Climb
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Bolt to the floor
-+1 menu: Climb
-+4 click: Click: Bolt to the floor
-@obj human|/obj/item/tool/wirecutters
+human|/obj/item/tool/wrench menu: Bolt to the floor
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench click: Click: Bolt to the floor
+@obj.machinery human|/obj/item/tool/wirecutters
 +0 menu: Climb
-@obj human|/obj/item/multitool
+@obj.machinery human|/obj/item/multitool
 +0 menu: Climb
-@obj human|/obj/item/weldingtool
--click: nothing
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Weld to the floor (refused: It needs to be wrenched to the floor.)
+human|/obj/item/weldingtool click: Click: Weld to the floor
+@obj.machinery human|/obj/item/stack/cable_coil
 +0 menu: Climb
-+3 menu: Weld to the floor (refused: It needs to be wrenched to the floor.)
-+4 click: Click: Weld to the floor
-@obj human|/obj/item/stack/cable_coil
+@obj.machinery human|/obj/item/stack/material/steel
 +0 menu: Climb
-@obj human|/obj/item/stack/material/steel
+@obj.machinery human|/obj/item/card/id
 +0 menu: Climb
-@obj human|/obj/item/card/id
-+0 menu: Climb
-@obj human|/obj/item
+@obj.machinery human|/obj/item
 +0 menu: Climb
 keys: activate, climb.climb, climb.climb_menu, drag_buckle, floor_weld.bolt, floor_weld.weld, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

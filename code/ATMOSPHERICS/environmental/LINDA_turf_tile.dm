@@ -255,6 +255,8 @@ CAPABILITIES(/turf/open)
 
 	UNSETEMPTY(new_overlay_types)
 	src.atmos_overlay_types = new_overlay_types
+	// The mobs standing here are not told: each breather's air watch (air_watch.dm) hears the crossings of the levels it
+	// acts on, visible gas or not.
 
 /proc/typecache_of_gases_with_no_overlays()
 	. = list()

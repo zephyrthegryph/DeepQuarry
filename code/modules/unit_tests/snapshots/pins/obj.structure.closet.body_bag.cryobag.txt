@@ -5,7 +5,7 @@
 @obj.structure.closet.body_bag human|/obj/item/tool/screwdriver
 @obj.structure.closet human|/obj/item/tool/crowbar
 @obj.structure.closet human|/obj/item/tool/wrench
-@obj.structure.closet.body_bag human|/obj/item/tool/wirecutters
+@obj.structure.closet human|/obj/item/tool/wirecutters
 @obj.structure.closet human|/obj/item/multitool
 @obj.structure.closet human|/obj/item/weldingtool
 @obj.structure.closet human|/obj/item/stack/cable_coil
@@ -13,7 +13,7 @@
 @obj.structure.closet human|/obj/item/card/id
 @obj.structure.closet human|/obj/item
 @obj human|/obj/item/storage/laundry_basket
-@obj.structure.closet human|/obj/item/pen
+@obj.structure human|/obj/item/pen
 @obj human|/obj/item/healthanalyzer
 @obj human|/obj/item/reagent_containers/syringe
 keys: anchor.toggle, break_out, cut_apart, cut_label, devour, door, door_used, drag_buckle, empty_basket, fold, insert_injector, label, melee_hit, remove_injector, scan, set_down, silicon_hand, stuff, stuff_grab, weld_shut.toggle

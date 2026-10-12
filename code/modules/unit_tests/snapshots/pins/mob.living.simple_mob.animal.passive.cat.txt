@@ -16,10 +16,8 @@ human|/obj/item/pen menu: Disarm
 human|/obj/item/pen menu: Grab
 human|/obj/item/pen menu: Hit
 human|/obj/item/pen menu: Hold with
-human|/obj/item/pen menu: Move To Top
 human|/obj/item/pen menu: Nutrition heal
 human|/obj/item/pen menu: Shove with
-human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/pen menu: Use
 human|/obj/item/pen menu: Use on
 human|/obj/item/pen click: Click: Use
@@ -27,10 +25,8 @@ human|/obj/item/flashlight/pen menu: Disarm
 human|/obj/item/flashlight/pen menu: Grab
 human|/obj/item/flashlight/pen menu: Hit
 human|/obj/item/flashlight/pen menu: Hold with
-human|/obj/item/flashlight/pen menu: Move To Top
 human|/obj/item/flashlight/pen menu: Nutrition heal
 human|/obj/item/flashlight/pen menu: Shove with
-human|/obj/item/flashlight/pen menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/flashlight/pen menu: Use
 human|/obj/item/flashlight/pen menu: Use on
 human|/obj/item/flashlight/pen click: Click: Use

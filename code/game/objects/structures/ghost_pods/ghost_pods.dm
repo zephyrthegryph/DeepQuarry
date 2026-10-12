@@ -232,7 +232,7 @@ CAPABILITIES(/obj/structure/ghost_pod/automatic)
 		return
 	var/newname = A.answer.value
 	if(newname)
-		real_name = newname
+		set_real_name(newname)
 
 
 REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)

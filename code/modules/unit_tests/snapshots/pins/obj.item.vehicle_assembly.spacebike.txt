@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -13,20 +13,15 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj human|/obj/item/tank/jetpack
--menu: Climb
--menu: Insert tank
--menu: Ui open
--click: Click: Insert tank
-+0 menu: Build jetpacked
-+5 click: Click: Build jetpacked
+human|/obj/item/tank/jetpack menu: Build jetpacked
+human|/obj/item/tank/jetpack menu: Move To Top
+human|/obj/item/tank/jetpack menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tank/jetpack click: Click: Build jetpacked
 human|/obj/item/borg/upgrade/advanced/jetpack menu: Build jetpacked
 human|/obj/item/borg/upgrade/advanced/jetpack menu: Move To Top
 human|/obj/item/borg/upgrade/advanced/jetpack menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/borg/upgrade/advanced/jetpack click: Click: Build jetpacked
-human|/obj/item/stack/material/plastic menu: Move To Top
-human|/obj/item/stack/material/plastic menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/plastic click: nothing
+@obj human|/obj/item/stack/material/plastic
 @obj human|/obj/item/stock_parts/console_screen
 @obj human|/obj/item/stock_parts/spring
 @obj human|/obj/item/cell

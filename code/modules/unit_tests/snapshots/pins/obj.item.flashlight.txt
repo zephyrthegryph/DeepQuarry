@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +3 menu: Remove cell
 +5 click: Click: Remove cell
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -34,16 +34,16 @@
 +3 click: Click: Remove cell
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+2 menu: Remove cell
-+4 click: Click: Remove cell
++1 menu: Remove cell
++3 click: Click: Remove cell
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +1 menu: Remove cell
 +3 click: Click: Remove cell
 @obj human|/obj/item/card/id
 -click: nothing
-+2 menu: Remove cell
-+4 click: Click: Remove cell
++1 menu: Remove cell
++3 click: Click: Remove cell
 @obj human|/obj/item/kit
 +2 menu: Remove cell
 @obj human|/obj/item/storage
@@ -52,7 +52,7 @@
 +4 click: Click: Remove cell
 @obj human|/obj/item/cell
 -click: nothing
-+2 menu: Install cell
-+4 menu: Remove cell
-+7 click: Click: Install cell
++0 menu: Install cell
++2 menu: Remove cell
++4 click: Click: Install cell
 keys: collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, insert_cell, kit_customize, kit_customize_last, move_to_top, pick_up_item, switch, take_cell, toggle_digestable

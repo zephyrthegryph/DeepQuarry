@@ -399,7 +399,7 @@ TYPE_TABLE(/datum/affliction/cardiac_arrhythmia, affliction_stages, list( \
 	recompute_stage_from_severity()
 	var/mob/living/carbon/human/H = owner
 	if(istype(H) && !is_perfusing())
-		H.pulse = PULSE_NONE
+		H.set_pulse(PULSE_NONE)
 	if(body)
 		body.invalidate(BODY_DIRTY_VITALS)
 

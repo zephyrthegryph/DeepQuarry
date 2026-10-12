@@ -14,85 +14,65 @@
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +3 menu: Turn Around
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+0 menu: Build bolted
-+1 menu: Climb
-+4 menu: Rotate Clockwise
-+5 menu: Rotate Counter Clockwise
-+7 menu: Turn Around
-+8 click: Click: Build bolted
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Rotate Clockwise
-+5 menu: Rotate Counter Clockwise
-+7 menu: Turn Around
-+8 click: nothing
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+4 menu: Rotate Clockwise
-+5 menu: Rotate Counter Clockwise
-+7 menu: Turn Around
-+8 click: nothing
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+0 menu: Climb
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
-+7 click: nothing
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Rotate Clockwise
+human|/obj/item/tool/screwdriver menu: Rotate Counter Clockwise
+human|/obj/item/tool/screwdriver menu: Turn Around
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Rotate Clockwise
+human|/obj/item/tool/crowbar menu: Rotate Counter Clockwise
+human|/obj/item/tool/crowbar menu: Turn Around
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Build bolted
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Rotate Clockwise
+human|/obj/item/tool/wrench menu: Rotate Counter Clockwise
+human|/obj/item/tool/wrench menu: Turn Around
+human|/obj/item/tool/wrench click: Click: Build bolted
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Rotate Clockwise
+human|/obj/item/tool/wirecutters menu: Rotate Counter Clockwise
+human|/obj/item/tool/wirecutters menu: Turn Around
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Rotate Clockwise
+human|/obj/item/multitool menu: Rotate Counter Clockwise
+human|/obj/item/multitool menu: Turn Around
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Rotate Clockwise
+human|/obj/item/weldingtool menu: Rotate Counter Clockwise
+human|/obj/item/weldingtool menu: Turn Around
+human|/obj/item/weldingtool click: nothing
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Rotate Clockwise
+human|/obj/item/stack/cable_coil menu: Rotate Counter Clockwise
+human|/obj/item/stack/cable_coil menu: Turn Around
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Rotate Clockwise
+human|/obj/item/stack/material/steel menu: Rotate Counter Clockwise
+human|/obj/item/stack/material/steel menu: Turn Around
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Rotate Clockwise
+human|/obj/item/card/id menu: Rotate Counter Clockwise
+human|/obj/item/card/id menu: Turn Around
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Climb
+human|/obj/item menu: Hit
+human|/obj/item menu: Rotate Clockwise
+human|/obj/item menu: Rotate Counter Clockwise
+human|/obj/item menu: Turn Around
+human|/obj/item click: nothing
 keys: climb.climb, climb.climb_menu, construction.build:pa_bolted, construction.build:pa_closed, construction.build:pa_wired, construction.undo:pa_bolted, construction.undo:pa_closed, construction.undo:pa_wired, drag_buckle, melee_hit, rotatable.clockwise, rotatable.counterclockwise, rotatable.turn_around

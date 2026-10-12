@@ -8,7 +8,7 @@
 +4 menu: Rotate Clockwise
 +5 menu: Rotate Counter Clockwise
 +7 menu: Turn Around
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Flip Pipe (refused: You can't do that now.)
 +2 menu: Rotate Clockwise
@@ -49,9 +49,9 @@
 +5 menu: Turn Around
 @obj human|/obj/item/stack/cable_coil
 +0 menu: Flip Pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Flip Pipe
@@ -62,9 +62,9 @@
 +7 click: Click: Form material
 @obj human|/obj/item/card/id
 +0 menu: Flip Pipe
-+3 menu: Rotate Clockwise
-+4 menu: Rotate Counter Clockwise
-+6 menu: Turn Around
++2 menu: Rotate Clockwise
++3 menu: Rotate Counter Clockwise
++5 menu: Turn Around
 @obj human|/obj/item/kit
 +1 menu: Flip Pipe
 +3 menu: Rotate Clockwise

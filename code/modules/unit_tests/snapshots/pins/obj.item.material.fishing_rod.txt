@@ -1,9 +1,9 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.material human|/obj/item/tool/screwdriver
--menu: Plate item
+-menu: Use screwdriver
 -click: Click: Plate item
 +3 menu: Use
 +4 click: Click: Repair
@@ -21,11 +21,11 @@
 @obj.item.material human|/obj/item/weldingtool
 +3 menu: Use
 @obj.item.material human|/obj/item/stack/cable_coil
-+4 menu: Use
++3 menu: Use
 @obj.item.material human|/obj/item/stack/material/steel
 +3 menu: Use
 @obj.item.material human|/obj/item/card/id
-+4 menu: Use
++3 menu: Use
 @obj.item.material human|/obj/item/kit
 +4 menu: Use
 @obj.item.material human|/obj/item/storage

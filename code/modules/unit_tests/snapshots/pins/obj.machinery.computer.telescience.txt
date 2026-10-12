@@ -1,7 +1,7 @@
 human|none menu: Climb
 human|none click: nothing
 @obj.machinery.computer robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer human|/obj/item/tool/screwdriver
 -menu: Use
@@ -14,8 +14,7 @@ human|none click: nothing
 @obj.machinery.computer human|/obj/item/multitool
 -menu: Use
 -click: Click: Use item
-+4 menu: Use multitool
-+5 click: Click: Use multitool
++2 click: Click: Use multitool
 @obj.machinery.computer human|/obj/item/weldingtool
 -menu: Use
 @obj.machinery.computer human|/obj/item/stack/cable_coil
@@ -28,5 +27,13 @@ human|none click: nothing
 -menu: Use
 @obj human|/obj/item/gripper
 @obj human|/obj/item/bluespace_crystal
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use item
++2 menu: Use bluespace crystal
 @obj human|/obj/item/gps
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
+-menu: Use item
++2 menu: Use global positioning system (GEN0)
 keys: climb.climb, climb.climb_menu, disconnect, drag_buckle, eject, ejectGPS, insert_crystal, insert_gps, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, recal, receive, robot_remote_blocked, send, setdistance, setMemory, setrotation, setz, silicon_hand, use_gripper, use_item, use_multitool
