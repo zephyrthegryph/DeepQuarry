@@ -59,9 +59,9 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 	area_air_leave(A.holder)
 
 /// The device record of `holder`, or null.
-/proc/area_air_data(datum/holder)
+/proc/area_air_data(datum/holder, create = TRUE)
 	RETURN_TYPE(/datum/cap_data/area_air_device)
-	var/datum/activation/act = cap_activation(holder, CAP_AREA_AIR_DEVICE, null, TRUE)
+	var/datum/activation/act = cap_activation(holder, CAP_AREA_AIR_DEVICE, null, create)
 	return act ? activation_data(act) : null
 
 /// Registers `holder` in area `A` under its tag; the area names it.
@@ -80,7 +80,7 @@ CAPABILITY_TYPE(area_air_device, CAP_AREA_AIR_DEVICE, /datum/capability/lib/area
 /// Takes `holder` out of its area's lists.
 /proc/area_air_leave(obj/holder)
 	var/datum/capability/lib/area_air_device/def = cap_of(holder, CAP_AREA_AIR_DEVICE)
-	var/datum/cap_data/area_air_device/data = area_air_data(holder)
+	var/datum/cap_data/area_air_device/data = area_air_data(holder, FALSE) // leaving never makes the record: a holder destroyed before it joined has none
 	if(!def || !data?.area)
 		return
 	data.area.air_device_unregister(def.kind, data.device_tag)

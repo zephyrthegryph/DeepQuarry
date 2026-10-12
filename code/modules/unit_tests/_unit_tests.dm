@@ -378,6 +378,7 @@
 #include "dq_system_ports_a_tests.dm"
 #include "dq_system_ports_b_tests.dm"
 #include "dq_grid_behaviour.dm"
+#include "dq_power_door_regression.dm"
 #include "dq_power_tests.dm"
 #include "dq_power_plants_behaviour.dm"
 #include "dq_om_wake_tests.dm"
