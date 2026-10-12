@@ -4,7 +4,7 @@
 
 A cached reader must observe the same pressure as `return_pressure()` immediately after a synchronous gas operation. The turf getter includes accepted local commands before the worker frame; numeric readers sample that actual host-visible value immediately, then sample again when the worker view commits. They never publish the mutation's tentative calculation instead of the getter's real view.
 
-The branch implements `gas_numeric_read(air = nameof(air_contents))` and the pure accessor `gas_numeric_pressure(air_contents)`. This first form supports pressure only. It prepares a shared numeric producer outside pure evaluation. The producer's `pressure_kpa` field contains actual kPa; its native subscription and identity are framework state. It does not use a synthetic revision as the reader's value or invent a holder state key. Verification is pending.
+The branch implements `gas_numeric_read(air = nameof(air_contents))` and the pure accessor `gas_numeric_pressure(air_contents)`. This first form supports pressure only. It prepares a shared numeric producer outside pure evaluation. The producer's `pressure_kpa` field contains actual kPa; its native subscription and identity are framework state. It does not use a synthetic revision as the reader's value or invent a holder state key. The final lane-ready gate passed on `37fea69058`; the handoff records the focused and native test evidence.
 
 The holder's declared mixture relation and the mixture's actual native identity are dependencies. Replacing `air_contents`, rebinding a mixture datum to a pipe region, deleting a mixture, or retiring its native slot rebinds the producer before evaluation resumes. The old subscription cannot overwrite the new producer. An absent mixture reads zero. A destroyed holder releases its subscription and producer scope.
 
@@ -22,7 +22,7 @@ An explicit generated mutation-binding post-hook is necessary. Attaching the hoo
 
 ## Actual commit paths
 
-- `verdigris/ffi/src/gas/mix.rs:store`: Main replaces the live slab value; Pipe applies the conserved delta to the actual region. Publish after storage succeeds, sampling `load(r)`, not the caller's tentative `after` value. Turf only submits `GasCmd::Delta` and must not publish a numeric commit there.
+- `verdigris/ffi/src/gas/mix.rs:store`: Main replaces the live slab value; Pipe applies the conserved delta to the actual region. Publish after storage succeeds, sampling `load(r)`, not the caller's tentative `after` value. Turf submits `GasCmd::Delta` and samples the actual host getter, which already includes accepted local commands; the worker boundary samples its committed view again.
 - `with_mix_mut` commits one mixture. `with_mixes_mut` commits both participants; delivery happens after both stores. Gas temperature, volume and mole setters reach these helpers.
 - `verdigris/ffi/src/gas/binds.rs` also calls `store` directly for transfers, pump operations and bulk updates. Those bindings need the same outer completion boundary.
 - `copy_from_ratio` in `code/ATMOSPHERICS/gasmixtures/gas_mixture.dm` calls copy and multiply separately. Its publication scope must enclose both.
@@ -37,12 +37,12 @@ An explicit generated mutation-binding post-hook is necessary. Attaching the hoo
 2. Transfer, merge and copy-ratio operations update both participating producers atomically. A pending operation whose final requirement remains satisfied must not be cancelled by an intermediate publication.
 3. Replace the disposal reservoir and deliver an old reservoir event afterwards. The new UI follows the new live mixture and ignores the old identity.
 4. Delete a holder, mixture or native identity and reuse a slot. No callback updates the deleted holder or a producer belonging to a prior subscription.
-5. Submit a turf command: the dependency and native getter remain on the old committed value. Commit the worker view: both change together, including native pipe/device changes outside host mixture setters.
+5. Submit a turf command: the dependency matches the native getter's host-visible value, including accepted local commands. Commit the worker view: both reflect that view, including native pipe/device changes outside host mixture setters.
 6. Rejected, immutable, zero-effect and invalid mutations publish no fictitious pressure change. Preserve the getter's existing zero-volume behavior exactly.
 
 ## Migration gate
 
-The disposal pressure read now uses the committed producer and its former broad settings publication is removed. Source regressions are present, but generation, compilation and focused verification have not run on this draft. No claim of a completed channel landing is made until that gate passes.
+The disposal pressure read uses the committed producer and its former broad settings publication is removed (one production publication to zero). Generation, compilation, DreamChecker, ratchets and the final lane-ready gate passed. This branch alone does not remove the other machinery settings bridges; combining the separate machine-channel cohort enables the channel's final ban.
 
 ## Validated lookup argument providers
 
