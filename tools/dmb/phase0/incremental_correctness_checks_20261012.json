@@ -1,0 +1,50 @@
+{
+  "scope": "Focused compiler and tiny trusted runtime checks; not full DM suite or release acceptance",
+  "source_commit": "fac7a51a47a68dde0af23907ce4d348152990f25",
+  "source_archive_sha256": "39427850428b1edc13d388efaa7d6a04757a40a1b1ae54a4f58da8a51f79dc85",
+  "test_build": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-004114-23f96420-job-cargo.json",
+  "test_build_seconds": 203.766,
+  "test_binary_sha256": "5fa382efdb039c13e886ccb26bfb10d29032276f2878a80703b9ac8ffb2b36a2",
+  "focused_receipts": [
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-004532-c602e32a-focused.json",
+    "E:/dq-cache/dmb-native-v2/integration-gates/20261012-004557-a135d433-focused.json"
+  ],
+  "passed_tests": 36,
+  "coverage": [
+    "10 source string capture and linker order tests",
+    "3 accepted-generation scheduling tests",
+    "5 six-worktree contract tests including actual accepted/retire/new-generation pipe publication",
+    "2 current-read promotion observer/provider/version tests",
+    "3 borrowed exact-key fragment tests",
+    "2 compact typed receipt tests",
+    "11 compact production replay and output fixtures"
+  ],
+  "selection_error": "The first focused receipt also records an unmatched key_fragments_tests filter; the subsequent receipt uses the actual key_recipe::fragments module and passes its three tests.",
+  "startup_regression": {
+    "receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-004547-96acdfe1-focused.json",
+    "result": "cold startup footer order differs from expected",
+    "byond_reference": "E:/dq-cache/dmb-cold-order-reference/d37248c149ec44f38dc88e403eabe066/receipt.json",
+    "conclusion": "BYOND authenticates the existing expectation; native forward-call registration is a production bug",
+    "followup": "fd854f9968 fixes source-order interleaving; validation pending, absent from this binary"
+  },
+  "cli_build": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-004714-f940238b-job-cargo.json",
+  "cli_build_seconds": 115.672,
+  "native_binary_sha256": "22271fd75bf4299c7bced624f2b39fda3800becb2c1e6b189110a7d43f654bc5",
+  "profile": "Counted diagnostic with dmbc opt0 and tree/codegen opt2; not release acceptance",
+  "runtime_control_receipt": "E:/dq-cache/dmb-order-controls-fac7/4a4fd24542e640d280e527adcfc73178/receipt.json",
+  "runtime_controls": {
+    "base": "exact match, zero runtimes",
+    "early_literal": "exact match, zero runtimes",
+    "early_numeric": "exact match, zero runtimes",
+    "after": "exact match, zero runtimes",
+    "between": "incomplete: 30 second compiler-child watchdog while waiting for a machine slot"
+  },
+  "all_five_runtime_controls_complete": false,
+  "runtime_receipt_caveat": "Original schema1 aggregate complete=true means collection reached its end; the between child explicitly has complete=false and aggregate exit was1. New launcher schema2 distinguishes collection completion from all requested controls completing.",
+  "children_reaped": true,
+  "limitations": [
+    "formal/local first-root name chronology still needs a production fix and paired validation",
+    "full runtime baseline remains deferred to Phase5",
+    "whole-program BYOND semantic parity and performance/memory acceptance remain open"
+  ]
+}
