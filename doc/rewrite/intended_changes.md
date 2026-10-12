@@ -5165,3 +5165,13 @@ master changes are recorded here; the precise contribution of candidate order
 versus native invalidation is not isolated by this run. Only these six fresh
 rows from that exact commit's completed run are refreshed. All pre-existing
 rows, including soil rows, are preserved.
+
+The same completed, unsharded state sweep initialized the previously empty
+`/obj/item/gun/energy/laser` pin with 32 charge_meter=0 rows across nine laser
+classes. The producer's existing empty-pin recording rule writes this file
+without a mismatch. Cause: expanded fallback probe coverage after master's
+base-field migrations, over the existing charge-meter draw from 2d24ebe232
+(2026-10-08); no energy-gun source is changed by hygiene. Each row disables the
+meter's charge suffix (100 -> no suffix), and, for mirrored guns, its matching
+in-hand overlay. No pre-existing row was removed; the golden was empty. The
+trailing blank line is the producer's output.
