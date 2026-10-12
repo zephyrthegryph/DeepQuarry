@@ -37,12 +37,19 @@
 
 /datum/entry_engine/every/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	activation_every_arm(A, E)
+	// A gate built only of published state (stats, capability keys, tracked vars) parks the every() while it is false, as a type-level one does:
+	// its wake is an ENTER hook of the gate on the same activation.
+	if(activation_every_parkable(A, E))
+		entry_engine_for(ENTRY_ON_CHANGE).apply(A, activation_every_wake_entry(E), C)
 	return TRUE
 
 /datum/entry_engine/every/remove(datum/activation/A, datum/entry/E)
 	var/datum/holder = A.holder
 	if(holder && !QDELETED(holder))
 		cancel_after(holder, activation_every_key(A, E))
+	if(activation_every_parkable(A, E))
+		entry_engine_for(ENTRY_ON_CHANGE).remove(A, activation_every_wake_entry(E))
+	LAZYREMOVE(A.every_parked, E)
 
 /// The timer key of one every() of one activation.
 /proc/activation_every_key(datum/activation/A, datum/entry/E)
@@ -110,10 +117,17 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		return
 	var/gated = A.runs
 	var/cond = E.args["when"]
+	GLOB.every_gate_faulted = FALSE
 	if(gated && !isnull(cond))
 		gated = every_gate_holds(holder, cond, A.def.key)
 	if(!gated)
 		GLOB.timer_fire_quiet = TRUE // a skipped run changed nothing of the holder's
+	if(!gated && A.runs && !GLOB.every_gate_faulted && activation_every_parkable(A, E))
+		LAZYOR(A.every_parked, E) // parked: no timer until its gate publishes true (activation_every_wake())
+		GLOB.every_activation_parks++
+		return
+	if(gated)
+		GLOB.every_activation_runs++
 	if(gated && E.args["members"])
 		every_members_start(holder, A, E)
 		return
@@ -128,6 +142,65 @@ GLOBAL_VAR_INIT(every_gate_faulted, FALSE)
 		T.release()
 	if(!A.dead)
 		activation_every_arm(A, E)
+
+/// Activation every() runs (its handler ran) and parks since boot: what a test reads to see work stop while its gate is false.
+GLOBAL_VAR_INIT(every_activation_runs, 0)
+GLOBAL_VAR_INIT(every_activation_parks, 0)
+
+/datum/activation
+	/// The every() entries of this activation parked behind their false `when =` (no timer is pending for them).
+	var/list/every_parked
+
+/// TRUE when the every() `E` of activation `A` can park: its `when =` is built only of state whose every write publishes (a stat, a capability
+/// key, a tracked var of the holder, or a tree of those). The answer is per holder type and entry.
+/proc/activation_every_parkable(datum/activation/A, datum/entry/E)
+	var/cond = E.args["when"]
+	if(isnull(cond) || !A.holder)
+		return FALSE
+	var/static/list/known = list()
+	var/id = "[A.holder.type]|[E.sig]"
+	if(isnull(known[id]))
+		known[id] = activation_every_cond_published(A.holder, cond) ? TRUE : FALSE
+	return known[id]
+
+/// type_every_cond_tracked(), plus capability keys: key_set() publishes every change of one (capability_key_changed()).
+/proc/activation_every_cond_published(datum/holder, cond)
+	if(islist(cond))
+		var/list/tree = cond
+		if(length(tree) < 2)
+			return FALSE
+		for(var/i in 2 to length(tree))
+			if(!activation_every_cond_published(holder, tree[i]))
+				return FALSE
+		return TRUE
+	if(isnum(cond) && cond >= CAPKEY_ID_BASE)
+		return TRUE
+	return type_every_cond_tracked(holder, cond)
+
+/// The ENTER hook of a parkable activation every()'s gate, which wakes it. One flyweight per every() entry.
+/proc/activation_every_wake_entry(datum/entry/E)
+	var/static/list/made = list()
+	var/datum/entry/known = made[E.sig]
+	if(!known)
+		known = entry_make(ENTRY_ON_CHANGE, null, list("cond" = E.args["when"], "edge" = ENTER), list(then(GLOBAL_PROC_REF(activation_every_wake))))
+		made[E.sig] = known
+	return known
+
+/// The gate of a parked activation every() became true: each of the activation's parked entries whose gate holds is armed an interval from now.
+/proc/activation_every_wake(datum/act/A)
+	var/datum/activation/act = A.activation
+	if(!act || act.dead || !length(act.every_parked))
+		return
+	var/datum/holder = act.holder
+	if(!holder || QDELETED(holder))
+		return
+	for(var/datum/entry/E as anything in act.every_parked.Copy())
+		if(!every_gate_holds(holder, E.args["when"], act.def.key))
+			continue
+		act.every_parked -= E
+		activation_every_arm(act, E)
+	if(!length(act.every_parked))
+		act.every_parked = null
 
 // ---- type-level every() ----
 //

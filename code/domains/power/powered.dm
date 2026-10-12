@@ -9,8 +9,9 @@
 
 MSG_DEF_SELF(power/unpowered, "It is unpowered.")
 
+/// The machine has no power: its has_power stat, read directly so the look and the examine line depend on the stat itself.
 /obj/machinery/proc/power_unavailable(datum/act/A)
-	return !cap_powered()
+	return !stat_value(src, STAT_HAS_POWER)
 
 CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/lib/powered, key = NONE, channel = POWER_CHANNEL_EQUIPMENT)
 

@@ -44,6 +44,16 @@
 /mob/living/silicon/robot/remote_link_allows(obj/machine)
 	return machine.check_access(idcard)
 
+/// The AI a silicon answers to: an AI is its own, a cyborg its connected AI; null for anyone else.
+/mob/proc/silicon_master()
+	return null
+
+/mob/living/silicon/ai/silicon_master()
+	return src
+
+/mob/living/silicon/robot/silicon_master()
+	return connected_ai
+
 /// The requirement a machine names for its remote controls: the input came over a link (AUTH_REMOTE_ACCESS) and the actor's link is let in.
 /// req(PROC_REF(remote_link_allowed)). A condition: it reads and writes nothing.
 /obj/proc/remote_link_allowed(datum/act/op/A)
