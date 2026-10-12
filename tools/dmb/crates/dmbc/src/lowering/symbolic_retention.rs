@@ -105,7 +105,7 @@ impl SessionSymbolicMemo {
             });
         census.unknown(
             "session_symbolic.receipt_pool",
-            "weak leaf locators retain no read payload; private BTree node layout is not exposed",
+            "weak slice locators may retain inline Arc allocation backing until dead locators are pruned; live receipt payloads are visited through records; private BTree node layout is not exposed",
         );
         census.unknown("session_symbolic.records", "BTreeMap index node capacity, Arc control blocks, allocator overhead and freed pages are not exposed; this is not private-memory measurement");
         count
