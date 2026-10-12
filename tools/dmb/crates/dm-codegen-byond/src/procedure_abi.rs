@@ -401,7 +401,16 @@ pub fn prepare_verified_procedure(
     let mut argument_sources = Vec::new();
     for (index, param) in metadata.signature.parameters.iter().enumerate() {
         let restriction_type = match crate::parameter_abi::formal_shape(param)? {
-            crate::parameter_abi::FormalShape::Scalar { declared_type } => declared_type,
+            crate::parameter_abi::FormalShape::Scalar { declared_type } => {
+                // A list/atom formal is lexically a list, while BYOND's
+                // argument table restricts its input to the authored element
+                // family. Keep that metadata separate from lexical lookup.
+                if declared_type == Some(dm_ir::SymbolId::of("/list")) {
+                    param.list_element_type.or(declared_type)
+                } else {
+                    declared_type
+                }
+            }
             // Native unsized formals are lexical lists, but their argument
             // restriction bits retain the authored element family.
             crate::parameter_abi::FormalShape::UnsizedList { element_type } => element_type,

@@ -152,6 +152,58 @@ fn typed_parameter_and_symbolic_source_helper_keep_argument_frame() {
     assert_eq!(result.source_helpers[0].frame_parameters, ["count"]);
 }
 #[test]
+fn typed_list_formals_keep_lexical_list_and_authored_element_input_flags() {
+    let mut symbols = SymbolTable::default();
+    let mut metadata = metadata(&[], &mut symbols);
+    let list = symbols.intern("/list").unwrap();
+    metadata.signature.parameters = ["/atom", "/atom/movable", "/obj", "/mob", "/datum/item"]
+        .into_iter()
+        .enumerate()
+        .map(|(index, element)| Parameter {
+            name: symbols.intern(&format!("values{index}")).unwrap(),
+            declared_type: Some(list),
+            list_element_type: Some(symbols.intern(element).unwrap()),
+            flags: 0,
+            array: None,
+            default: None,
+            input_annotation: None,
+            source_expression: None,
+            relative_span: Span::new(0, 1),
+        })
+        .collect::<Vec<_>>()
+        .into();
+    let prepared = prepare_procedure(
+        &metadata,
+        &symbols,
+        &[],
+        ProcedureInputs::default(),
+        InheritedAbi::Fresh,
+        |_| Err(fail("unused")),
+    )
+    .unwrap();
+    // Authenticated DeepQuarry structural comparison observes 0x123 for
+    // try_infect_crossed(list/atom/old_locs), while the lexical type is /list.
+    assert_eq!(prepared.inputs.parameter_type_flags, [0x123, 3, 2, 1, 0]);
+    for name in &prepared.inputs.parameters {
+        assert_eq!(prepared.inputs.parameter_types[name], "/list");
+    }
+
+    let mut parameters = metadata.signature.parameters.to_vec();
+    parameters[0].input_annotation = Some(expression("num|null", &mut symbols));
+    metadata.signature.parameters = parameters.into();
+    let annotated = prepare_procedure(
+        &metadata,
+        &symbols,
+        &[],
+        ProcedureInputs::default(),
+        InheritedAbi::Fresh,
+        |_| Err(fail("unused")),
+    )
+    .unwrap();
+    assert_eq!(annotated.inputs.parameter_type_flags[0], 0x88);
+    assert_eq!(annotated.inputs.parameter_types["values0"], "/list");
+}
+#[test]
 fn typed_unsized_formals_keep_list_lexical_type_and_element_restrictions() {
     let mut symbols = SymbolTable::default();
     let mut metadata = metadata(&[], &mut symbols);
