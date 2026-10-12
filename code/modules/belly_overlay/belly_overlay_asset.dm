@@ -46,7 +46,7 @@ GLOBAL_LIST_EMPTY(dq_belly_overlay_aci_by_name)
 	if(!istype(ACI))
 		log_asset("dq_register_belly_asset: failed to register [asset_name]")
 		return null
-	ACI.keep_local_name = TRUE
+	ACI.set_keep_local_name(TRUE)
 	GLOB.dq_belly_overlay_aci_by_name[asset_name] = ACI
 	return asset_name
 

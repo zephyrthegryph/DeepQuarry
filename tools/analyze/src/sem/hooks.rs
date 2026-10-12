@@ -81,6 +81,7 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "contributes", ctx: Ctx::Eval, role: Role::Contribution },
     HookForm { kw: "contributes_to", ctx: Ctx::Eval, role: Role::Contribution },
     HookForm { kw: "outputs", ctx: Ctx::Eval, role: Role::Output },
+    HookForm { kw: "memo", ctx: Ctx::Eval, role: Role::Output },
     HookForm { kw: "look_layer", ctx: Ctx::Eval, role: Role::Condition },
     // `look_glow(PROC_REF(x), when = ...)`: the light's value (a GLOW()), read when the look is drawn; pure, and it reads declared state only
     HookForm { kw: "look_glow", ctx: Ctx::Eval, role: Role::Contribution },

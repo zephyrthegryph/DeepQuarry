@@ -273,6 +273,14 @@
 		all += "[name]_[size_id].png"
 	. = SSassets.transport.send_assets(client, all)
 
+/datum/asset/spritesheet_batched/url_input_names()
+	if(!name)
+		return list()
+	var/list/names = list("spritesheet_[name].css")
+	for(var/size_id in sizes)
+		names += "[name]_[size_id].png"
+	return names
+
 /datum/asset/spritesheet_batched/get_url_mappings()
 	if (!name)
 		return

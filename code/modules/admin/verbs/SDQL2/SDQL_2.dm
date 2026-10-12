@@ -749,7 +749,11 @@ CAPABILITIES(/datum/SDQL2_query)
 			if(++i == sets.len)
 				if(superuser)
 					if(temp.vars.Find(v))
-						temp.vars[v] = SDQL_expression(d, set_list[sets]) // ALLOW(api): SDQL UPDATE: admin query sets vars by name
+						var/new_value = SDQL_expression(d, set_list[sets])
+						if(hascall(temp, "__setter_[v]"))
+							call(temp, "set_[v]")(new_value)
+						else
+							temp.vars[v] = new_value // ALLOW(api): SDQL UPDATE: admin query sets vars by name
 				else
 					temp.vv_edit_var(v, SDQL_expression(d, set_list[sets]))
 				break

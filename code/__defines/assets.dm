@@ -19,3 +19,6 @@
 /// Parameters (in order):
 /// icon_file, icon_state, dir, frame, transform, color
 #define uni_icon(I, icon_state, rest...) new /datum/universal_icon(I, icon_state, ##rest)
+
+#define ASSET_URL_MESSAGE "asset_url_message"
+#define ASSET_URL_MAPPING_JSON "asset_url_mapping_json"

@@ -6,6 +6,16 @@
 
 /datum/config_entry/string/asset_cdn_url
 
+/datum/config_entry/string/asset_cdn_url/ValidateAndSet(str_val)
+	. = ..()
+	if(. && SSassets)
+		SSassets.apply_cdn_url(config_entry_value)
+
+/datum/config_entry/string/asset_cdn_url/set_default()
+	..()
+	if(SSassets)
+		SSassets.apply_cdn_url(config_entry_value)
+
 /// Cache generated spritesheets across rounds. The cache is stamped with the
 /// build (asset_cache_build_key()) and wiped when the build changes, so it is
 /// safe on development servers too.

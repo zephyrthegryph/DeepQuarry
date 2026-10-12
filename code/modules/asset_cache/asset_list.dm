@@ -89,8 +89,10 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset
 	var/_abstract = /datum/asset
-	var/cached_serialized_url_mappings
-	var/cached_serialized_url_mappings_transport_type
+	/// Real registered items and children used by the prepared URL mapping view.
+	var/list/datum/asset_url_entry/url_items
+	var/list/datum/asset_child_entry/url_children
+	var/datum/asset_transport/url_transport
 
 	/// Whether or not this asset should be loaded in the "early assets" SS
 	var/early = FALSE
@@ -117,23 +119,89 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/get_url_mappings()
 	return list()
 
-/// Returns a cached tgui message of URL mappings
+CAPABILITIES(/datum/asset)
+	owns_many(nameof(url_items), /datum/asset_url_entry)
+	owns_many(nameof(url_children), /datum/asset_child_entry)
+	ref_one(nameof(url_transport), /datum/asset_transport)
+	memo(ASSET_URL_MAPPING_JSON, PROC_REF(compute_url_mapping_json))
+	memo(ASSET_URL_MESSAGE, PROC_REF(compute_url_message))
+
+/// Prepare effectful generation and actual references before entering the memo query.
 /datum/asset/proc/get_serialized_url_mappings()
-	if (isnull(cached_serialized_url_mappings) || cached_serialized_url_mappings_transport_type != SSassets.transport.type)
-		cached_serialized_url_mappings = TGUI_CREATE_MESSAGE("asset/mappings", get_url_mappings())
-		cached_serialized_url_mappings_transport_type = SSassets.transport.type
-		scheduler_record_of(src) // join the object model so the declared caches are cleared on CHANGE_EXPLICIT
+	ensure_ready()
+	SSassets.sync_transport_config()
+	prepare_url_inputs()
+	return memo_value(src, ASSET_URL_MESSAGE)
 
-	return cached_serialized_url_mappings
+/datum/asset/proc/prepare_url_inputs(list/visiting = null)
+	rel_set(src, nameof(url_transport), SSassets.current_transport())
+	var/list/names = url_input_names()
+	var/list/next = list()
+	for(var/asset_name in names)
+		var/datum/asset_cache_item/I = assets_cache()[asset_name]
+		if(!QDELETED(I))
+			next[asset_name] = I
+	reconcile_url_items(next)
 
-/// The serialized URL mappings (and the transport they were built for) are declared
-/// caches: regenerating the asset raises CHANGE_EXPLICIT and the object-model core nulls them.
-/datum/asset/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["cached_serialized_url_mappings"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["cached_serialized_url_mappings_transport_type"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
+/// Only actual registry input names, never generated URL strings.
+/datum/asset/proc/url_input_names()
+	return list()
+
+/// Each entry is the real mapping-name/item pair. Separate aliases may point
+/// at the same item; the item reference does not take custody from the cache.
+/datum/asset_url_entry
+	var/mapping_name
+	var/datum/asset_cache_item/item
+
+TRACKED(/datum/asset_url_entry, mapping_name)
+CAPABILITIES(/datum/asset_url_entry)
+	ref_one(nameof(item), /datum/asset_cache_item)
+
+/// An actual position in the group's ordered input list, including repeats.
+/datum/asset_child_entry
+	var/datum/asset/child
+
+CAPABILITIES(/datum/asset_child_entry)
+	ref_one(nameof(child), /datum/asset)
+
+/// Reconcile keyed owned entries without republishing unchanged membership.
+/datum/asset/proc/reconcile_url_items(list/next)
+	for(var/asset_name in url_items?.Copy())
+		var/datum/asset_url_entry/entry = url_items[asset_name]
+		if(QDELETED(entry) || entry.item != next[asset_name] || QDELETED(entry.item))
+			rel_add(src, nameof(url_items), null, asset_name)
+	for(var/asset_name in next)
+		var/datum/asset_cache_item/I = next[asset_name]
+		if(QDELETED(I) || url_items?[asset_name])
+			continue
+		var/datum/asset_url_entry/entry = new()
+		entry.set_mapping_name(asset_name)
+		rel_set(entry, nameof(entry.item), I)
+		rel_add(src, nameof(url_items), entry, asset_name)
+
+/datum/asset/proc/compute_url_message(datum/act/eval/A)
+	return TGUI_CREATE_MESSAGE("asset/mappings", json_decode(memo_value(src, ASSET_URL_MAPPING_JSON)))
+
+/// Each child is a real scalar memo dependency, so nested groups do not rely
+/// on a finite expansion of recursive helper reads.
+/datum/asset/proc/compute_url_mapping_json(datum/act/eval/A)
+	var/list/mappings = list()
+	for(var/asset_name in url_items)
+		var/datum/asset_url_entry/entry = url_items[asset_name]
+		if(QDELETED(entry))
+			continue
+		var/datum/asset_cache_item/I = entry.item
+		if(QDELETED(I) || QDELETED(url_transport))
+			continue
+		mappings[entry.mapping_name] = url_transport.url_for_item(entry.mapping_name, I)
+	for(var/datum/asset_child_entry/entry in url_children)
+		if(QDELETED(entry))
+			continue
+		var/datum/asset/child = entry.child
+		if(QDELETED(child))
+			continue
+		mappings += json_decode(memo_value(child, ASSET_URL_MAPPING_JSON))
+	return json_encode(mappings)
 
 /datum/asset/proc/register()
 	return
@@ -149,7 +217,6 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/regenerate()
 	SHOULD_CALL_PARENT(FALSE)
 	unregister()
-	changed(src, CHANGE_EXPLICIT)
 	register()
 
 /// Unregisters any assets from the transport.
@@ -184,10 +251,21 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue
 		if(legacy)
-			ACI.legacy = legacy
+			ACI.set_legacy(legacy)
 		if(keep_local_name)
-			ACI.keep_local_name = keep_local_name
+			ACI.set_keep_local_name(keep_local_name)
 		assets[asset_name] = ACI
+
+	prepare_url_inputs()
+
+/datum/asset/simple/prepare_url_inputs(list/visiting = null)
+	rel_set(src, nameof(url_transport), SSassets.current_transport())
+	var/list/next = list()
+	for(var/asset_name in assets)
+		var/datum/asset_cache_item/I = assets[asset_name]
+		if(istype(I) && !QDELETED(I))
+			next[asset_name] = I
+	reconcile_url_items(next)
 
 /datum/asset/simple/send(client)
 	. = SSassets.transport.send_assets(client, assets || list())
@@ -198,6 +276,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		.[asset_name] = SSassets.transport.get_asset_url(asset_name, assets[asset_name])
 
 /datum/asset/simple/unregister()
+	rel_clear(src, nameof(url_items))
 	for (var/asset_name in assets)
 		SSassets.transport.unregister_asset(asset_name)
 
@@ -209,6 +288,40 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/group/register()
 	for(var/type in children)
 		load_asset_datum(type)
+
+/datum/asset/group/prepare_url_inputs(list/visiting = null)
+	if(!visiting)
+		visiting = list()
+	if(visiting[src])
+		CRASH("Cyclic asset group preparation at [type]")
+	visiting[src] = TRUE
+	var/list/next = list()
+	try
+		for(var/child_type in children)
+			var/datum/asset/child = get_asset_datum(child_type)
+			if(QDELETED(child))
+				continue
+			child.prepare_url_inputs(visiting)
+			next += child
+	catch(var/exception/fault)
+		visiting -= src
+		throw fault
+	visiting -= src
+	var/same_order = length(next) == length(url_children)
+	if(same_order)
+		for(var/i in 1 to length(next))
+			var/datum/asset_child_entry/entry = url_children[i]
+			if(QDELETED(entry) || next[i] != entry.child)
+				same_order = FALSE
+				break
+	if(!same_order)
+		rel_clear(src, nameof(url_children))
+		for(var/datum/asset/child in next)
+			if(QDELETED(child))
+				continue
+			var/datum/asset_child_entry/entry = new()
+			rel_set(entry, nameof(entry.child), child)
+			rel_add(src, nameof(url_children), entry)
 
 /datum/asset/group/send(client/C)
 	for(var/type in children)
@@ -279,6 +392,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	return cache_refresh_needed
 
 /datum/asset/spritesheet/unregister()
+	rel_clear(src, nameof(url_items))
 	SSassets.transport.unregister_asset("spritesheet_[name].css")
 	if(length(sizes))
 		for(var/size_id in sizes)
@@ -298,7 +412,6 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		fdel("[SPRITESHEET_DIR][name]_[size_id].png")
 	sizes = list()
 	to_generate = list()
-	changed(src, CHANGE_EXPLICIT)
 	fully_generated = FALSE
 	var/old_load = load_immediately
 	load_immediately = TRUE
@@ -377,6 +490,18 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	for(var/size_id in sizes)
 		all += "[name]_[size_id].png"
 	. = SSassets.transport.send_assets(client, all)
+
+/datum/asset/spritesheet/url_input_names()
+	if(!name)
+		return list()
+	var/list/names = list("spritesheet_[name].css")
+	if(!should_refresh())
+		for(var/asset_name in spritesheets_needed)
+			names += asset_name
+	else
+		for(var/size_id in sizes)
+			names += "[name]_[size_id].png"
+	return names
 
 /datum/asset/spritesheet/get_url_mappings()
 	if (!name)
@@ -629,12 +754,16 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		return
 	. = SSassets.transport.send_assets(client, item_filename)
 
+/datum/asset/changelog_item/url_input_names()
+	return item_filename ? list(item_filename) : list()
+
 /datum/asset/changelog_item/get_url_mappings()
 	if (!item_filename)
 		return
 	. = list("[item_filename]" = SSassets.transport.get_asset_url(item_filename))
 
 /datum/asset/changelog_item/unregister()
+	rel_clear(src, nameof(url_items))
 	if (!item_filename)
 		return
 	SSassets.transport.unregister_asset(item_filename)
@@ -704,7 +833,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		if (!istype(ACI) || !ACI.hash)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue
-		ACI.namespace_parent = TRUE
+		ACI.set_namespace_parent(TRUE)
 		created_items[asset_name] = ACI
 
 	for(var/asset_name in created_items)
@@ -712,7 +841,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		if (!istype(ACI) || !ACI.hash)
 			log_asset("ERROR: Invalid asset: [type]:[asset_name]:[ACI]")
 			continue
-		ACI.namespace = namespace
+		ACI.set_namespace(namespace)
 
 	assets = created_items
 	..()
@@ -734,6 +863,9 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 
 /datum/asset/json/send(client)
 	return SSassets.transport.send_assets(client, "[name].json")
+
+/datum/asset/json/url_input_names()
+	return list("[name].json")
 
 /datum/asset/json/get_url_mappings()
 	return list(

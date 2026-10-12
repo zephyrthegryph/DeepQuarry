@@ -39,7 +39,7 @@
 /datum/asset_transport/webroot/get_asset_url(asset_name, datum/asset_cache_item/asset_cache_item)
 	if (!istype(asset_cache_item))
 		asset_cache_item = assets_cache()[asset_name]
-	var/url = CONFIG_GET(string/asset_cdn_url) //config loading will handle making sure this ends in a /
+	var/url = url_root // the actual configured prefix, updated on every accepted load/reset
 	return "[url][get_asset_suffex(asset_cache_item)]"
 
 /datum/asset_transport/webroot/proc/get_asset_suffex(datum/asset_cache_item/asset_cache_item)

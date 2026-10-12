@@ -134,6 +134,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		if(M.client)
 			return FALSE
 	D.gc_destroyed = GC_BATCH_DOOMED
+	memo_lifetime_changed(D)
 	batch.doomed[D] = TRUE
 	if(force)
 		batch.forced[D] = TRUE

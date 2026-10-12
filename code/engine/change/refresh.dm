@@ -61,6 +61,8 @@
 	if(!E || QDELING(E))
 		return
 	OP_PURE_GUARD("[E.type][var_name ? ".[var_name]" : ""] was written")
+	if(var_name)
+		memo_inputs_changed(E, var_name)
 	if(GLOB.state_batch_depth)
 		state_batch_queue(E, channel, var_name)
 		return

@@ -7,6 +7,12 @@
 	/// If turning this on fixes asset issues, something isn't using get_asset_url and the asset isn't marked legacy, fix one of those.
 	var/dont_mutate_filenames = FALSE
 
+	/// Actual configured URL prefix; populated on configuration load/reset.
+	var/url_root = ""
+
+TRACKED(/datum/asset_transport, dont_mutate_filenames)
+TRACKED(/datum/asset_transport, url_root)
+
 /// Called when the transport is loaded by the config controller, not called on the default transport unless it gets loaded by a config change.
 /datum/asset_transport/proc/Load()
 	if (CONFIG_GET(flag/asset_simple_preload))
@@ -41,9 +47,13 @@
 			CRASH("ERROR: Invalid asset: [asset_name]:[asset]:[ACI]")
 	if (assets_cache()[asset_name])
 		var/datum/asset_cache_item/OACI = assets_cache()[asset_name]
-		OACI.legacy = ACI.legacy = (ACI.legacy|OACI.legacy)
-		OACI.namespace_parent = ACI.namespace_parent = (ACI.namespace_parent | OACI.namespace_parent)
-		OACI.namespace = OACI.namespace || ACI.namespace
+		var/merged_legacy = ACI.legacy | OACI.legacy
+		OACI.set_legacy(merged_legacy)
+		ACI.set_legacy(merged_legacy)
+		var/merged_parent = ACI.namespace_parent | OACI.namespace_parent
+		OACI.set_namespace_parent(merged_parent)
+		ACI.set_namespace_parent(merged_parent)
+		OACI.set_namespace(OACI.namespace || ACI.namespace)
 		if (OACI.hash != ACI.hash)
 			var/error_msg = "ERROR: new asset added to the asset cache with the same name as another asset: [asset_name] existing asset hash: [OACI.hash] new asset hash:[ACI.hash]"
 			stack_trace(error_msg)
@@ -79,6 +89,24 @@
 		return url_encode(asset_cache_item.name)
 	return url_encode("asset.[asset_cache_item.hash][asset_cache_item.ext]")
 
+
+/// Pure URL projection over this transport and the actual registered item.
+/// Unlike get_asset_url(), this never performs a registry fallback.
+/datum/asset_transport/proc/url_for_item(asset_name, datum/asset_cache_item/I)
+	if(!I)
+		return null
+	if(istype(src, /datum/asset_transport/webroot))
+		var/base = "[copytext(I.hash, 1, 3)]/"
+		var/filename = "asset.[I.hash][I.ext]"
+		if(length(I.namespace))
+			base = "namespaces/[copytext(I.namespace, 1, 3)]/[I.namespace]/"
+			if(!I.namespace_parent)
+				filename = "[I.name]"
+		return "[url_root][base][filename]"
+	var/keep_local = dont_mutate_filenames || I.legacy || I.keep_local_name || (I.namespace && !I.namespace_parent)
+	if(keep_local)
+		return url_encode(I.name)
+	return url_encode("asset.[I.hash][I.ext]")
 
 /// Sends a list of browser assets to a client
 /// client - a client or mob

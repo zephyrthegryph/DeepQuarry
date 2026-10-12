@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Asset URL messages refresh when the CDN prefix or registered URL inputs change."
+  - bugfix: "Privileged SDQL asset identity edits invalidate URL messages through registered setters."

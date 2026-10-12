@@ -11,6 +11,8 @@ SYSTEM_DEF(assets)
 	var/list/preload = list()
 	var/datum/asset_transport/transport = new()
 
+TRACKED(/datum/system/assets, transport)
+
 /datum/system/assets/OnConfigLoad()
 	var/newtransporttype = /datum/asset_transport
 	switch (CONFIG_GET(string/asset_transport))
@@ -18,11 +20,13 @@ SYSTEM_DEF(assets)
 			newtransporttype = /datum/asset_transport/webroot
 
 	if (newtransporttype == transport.type)
+		sync_transport_config()
 		return
 
 	var/datum/asset_transport/newtransport = new newtransporttype ()
 	if (newtransport.validate_config())
-		transport = newtransport
+		set_transport(newtransport)
+	sync_transport_config()
 	transport.Load()
 
 /datum/system/assets/initialize()

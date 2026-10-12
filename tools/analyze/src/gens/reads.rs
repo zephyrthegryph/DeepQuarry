@@ -23,7 +23,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::sem::decls::Decls;
 use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
-use crate::sem::reads::{Annotations, LookupArgument, LookupRead, ReadKind, ReadsEngine};
+use crate::sem::reads::{Annotations, LookupArgument, LookupRead, MemoIndex, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the walk does not enter. The Verdigris bindings (code/__defines/verdigris/) read Rust-owned values: a condition that
 /// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
@@ -64,7 +64,7 @@ impl Generator for Reads {
     }
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
-        let handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
+        let mut handlers: Vec<_> = cx.handlers().into_iter().filter(|h| h.role.reads_covered() && !h.owner.is_empty()).collect();
         let mut rows: BTreeMap<String, Vec<Row>> = BTreeMap::new();
         let mut ranks: BTreeMap<String, u32> = BTreeMap::new();
         let mut capability_keys = BTreeSet::new();
@@ -75,6 +75,21 @@ impl Generator for Reads {
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
+                // An inherited memo can call overridden pure helpers. Analyze
+                // each actual subtype, rather than reusing its parent's graph.
+                let inherited_memos: Vec<_> = handlers.iter().filter(|h| h.form == "memo").cloned().collect();
+                for ty in sem.objtree.iter_types() {
+                    let owner = ty.get().path.clone();
+                    for inherited in &inherited_memos {
+                        if owner != inherited.owner && sem.is_subtype(&owner, &inherited.owner)
+                            && !handlers.iter().any(|h| h.owner == owner && h.proc == inherited.proc) {
+                            let mut h = inherited.clone();
+                            h.owner = owner.clone();
+                            handlers.push(h);
+                        }
+                    }
+                }
+
                 for marker in decls.markers_named("READ_LOOKUP") {
                     let name = marker.args.first().and_then(|p| p.strip_prefix("/proc/"));
                     let Some(decl) = name.and_then(|n| ann.lookups.get(n)) else {
@@ -101,9 +116,15 @@ impl Generator for Reads {
                         out.diag(&h.rel, h.line, format!("handler `{}` is not a proc of {}", h.proc, h.owner));
                         continue;
                     }
-                    let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+                    let set = if h.form == "memo" { eng.analyze_memo(&h.owner, &h.proc) } else { eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path()) };
+                    if h.form == "memo" {
+                        for effect in &set.effects {
+                            out.diag(&effect.rel, effect.line, format!("memo compute is not pure: {} {}", effect.kind, effect.name));
+                        }
+                    }
+
                     for d in &set.diags {
-                        if matches!(d.rule, "unannotated_global" | "dynamic_read") {
+                        if h.form == "memo" || matches!(d.rule, "unannotated_global" | "dynamic_read") {
                             out.diag(&d.rel, d.line, format!("{}: {}", d.rule, d.msg));
                         }
                     }
@@ -112,6 +133,7 @@ impl Generator for Reads {
                     rows.insert(id, v);
                 }
                 extend_lookup_outputs(&mut rows, &sem, &eng, out);
+                extend_memo_outputs(&mut rows, &sem, &eng);
                 let graph = DepGraph::from_derives(&sem, &eng);
                 match graph.ranks() {
                     Ok(r) => ranks = r,
@@ -182,6 +204,8 @@ impl Generator for Reads {
         out.doc("Chunked read rows; one global initializer assembles the complete table.");
         out.line(read_table_initializer(&entries));
         emit_lookup_methods(out, &rows, &crate::sem::gen::test_only_types(cx.tree));
+        emit_memo_methods(out, &rows, &handlers, &crate::sem::gen::test_only_types(cx.tree));
+        emit_memo_outputs(out, &rows, &crate::sem::gen::test_only_types(cx.tree));
     }
 }
 
@@ -206,6 +230,97 @@ fn extend_lookup_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem
         if lookups.is_empty() { continue; }
         lookups.sort();
         rows.insert(id, lookups);
+    }
+}
+
+fn extend_memo_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem::Sem, eng: &ReadsEngine<'_>) {
+    for output in crate::sem::procs::proc_defs(sem, &["draw", "ui_data", "tgui_data", "hidden_verbs", "push_to_rust", "should_run"]) {
+        if output.owner == "/" || OPAQUE.iter().any(|prefix| output.rel.starts_with(prefix)) { continue; }
+        let id = format!("{}::{}", output.owner, output.name);
+        let set = eng.analyze_handler(&output.owner, &output.name, "/datum/act/eval");
+        let memo_reads: Vec<_> = set.reads.iter().filter(|r| r.kind == ReadKind::Accessor && r.var.starts_with("memo:")).map(|r| (r.root.clone(), r.kind.clone(), r.var.clone(), r.hops.clone(), r.owner.clone())).collect();
+        if !memo_reads.is_empty() { rows.entry(id).or_default().extend(memo_reads); }
+    }
+}
+fn emit_memo_outputs(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, test_types: &BTreeSet<String>) {
+    let mut owners: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (id, reads) in rows {
+        let Some((owner, handler)) = id.rsplit_once("::") else { continue; };
+        let call = match handler { "draw" | "hidden_verbs" => "drawn_from", "ui_data" | "tgui_data" => "ui_from", "push_to_rust" => "rust_push", "should_run" => "runs_while", _ => continue };
+        for (root, kind, field, path, _) in reads.iter().filter(|r| r.1 == ReadKind::Accessor && r.2.starts_with("memo:")) {
+            if root != "holder" { continue; }
+            let read = match path.as_slice() {
+                [] => dm_text(field),
+                [hop] if hop.ends_with("[]") => format!("rel_each({}, {})", dm_text(hop.trim_end_matches("[]")), dm_text(field)),
+                [hop] => format!("rel({}, {})", dm_text(hop), dm_text(field)),
+                _ => {
+                    out.diag("deepquarry.dme", 1, format!("memo output {id} crosses multiple relations; it needs a bound output-read descriptor"));
+                    continue;
+                }
+            };
+            owners.entry(owner.to_string()).or_default().push(format!("\t. += {call}({read})"));
+            let _ = kind;
+        }
+    }
+    for (owner, entries) in owners {
+        let test_only = test_types.contains(&owner);
+        if test_only { out.line(crate::sem::gen::TEST_GUARD); }
+        out.line(format!("{owner}/generated_memo_output_reads()"));
+        out.line("\t. = ..()");
+        for entry in entries { out.line(entry); }
+        if test_only { out.line("#endif"); }
+    }
+}
+
+fn memo_path_node(hop: &str) -> String {
+    if let Some(encoded) = hop.strip_prefix("@memo_index:") {
+        let index: MemoIndex = serde_json::from_str(encoded).expect("semantic memo index");
+        let selector = match index.argument {
+            Some(LookupArgument::Literal(value)) => format!("list(\"literal\" = {value}, \"is_literal\" = TRUE)"),
+            Some(LookupArgument::Path { root, path }) => format!("list(\"root\" = {}, \"path\" = list({}), \"is_literal\" = FALSE)", dm_text(&root), path.iter().map(|p| dm_text(p)).collect::<Vec<_>>().join(", ")),
+            None => "null".to_string(),
+        };
+        return format!("list(\"name\" = {}, \"indexed\" = TRUE, \"selector\" = {selector})", dm_text(&index.name));
+    }
+    dm_text(hop).replace('[', "\\[").replace(']', "\\]")
+}
+
+/// Memo cells bind real field/membership producers, never fake revision keys.
+fn emit_memo_methods(out: &mut GenOut, rows: &BTreeMap<String, Vec<Row>>, handlers: &[crate::sem::hooks::HandlerRef], test_types: &BTreeSet<String>) {
+    let mut owners: BTreeMap<String, BTreeMap<String, Vec<String>>> = BTreeMap::new();
+    for h in handlers.iter().filter(|h| h.form == "memo") {
+        let id = format!("{}::{}", h.owner, h.proc);
+        let Some(reads) = rows.get(&id) else { continue; };
+        let mut descriptors = Vec::new();
+        for (root, kind, field, hops, owner) in reads {
+            if !matches!(root.as_str(), "holder") && !root.starts_with("system:") {
+                out.diag(&h.rel, h.line, "memo outputs cannot retain contextual actor/target/held dependencies");
+                continue;
+            }
+            let descriptor = match kind {
+                ReadKind::Lookup(read) => format!("list(\"lookup\" = {})", lookup_descriptor(read)),
+                ReadKind::Var | ReadKind::System => format!("list(\"root\" = {}, \"path\" = list({}), \"field\" = {}, \"owner\" = {})", dm_text(root), hops.iter().map(|p| memo_path_node(p)).collect::<Vec<_>>().join(", "), dm_text(field), if owner.starts_with('/') { owner.clone() } else { "null".to_string() }),
+                ReadKind::Accessor if field.starts_with("memo:") || field == "lifetime:deleted" => format!("list(\"root\" = {}, \"path\" = list({}), \"field\" = {}, \"owner\" = {})", dm_text(root), hops.iter().map(|p| memo_path_node(p)).collect::<Vec<_>>().join(", "), dm_text(field), if owner.starts_with('/') { owner.clone() } else { "null".to_string() }),
+                _ => {
+                    out.diag(&h.rel, h.line, format!("memo read {field} needs an actual tracked-field, collection or lookup descriptor"));
+                    continue;
+                }
+            };
+            descriptors.push(descriptor);
+        }
+        owners.entry(h.owner.clone()).or_default().insert(h.proc.clone(), descriptors);
+    }
+    for (owner, methods) in owners {
+        let test_only = test_types.contains(&owner);
+        if test_only { out.line(crate::sem::gen::TEST_GUARD); }
+        out.line(format!("{owner}/generated_memo_reads(proc_name)"));
+        out.line("\tswitch(proc_name)");
+        for (name, descriptors) in methods {
+            out.line(format!("\t\tif({})", dm_text(&name)));
+            out.line(format!("\t\t\treturn list({})", descriptors.join(", ")));
+        }
+        out.line("\treturn ..()");
+        if test_only { out.line("#endif"); }
     }
 }
 
@@ -319,6 +434,9 @@ fn read_table_initializer(entries: &[String]) -> String {
 
 // A list-hop suffix is literal metadata, unlike intentionally interpolated capability keys.
 fn literal_read_name(name: &str) -> String {
+    if name.starts_with("@memo_index:") {
+        return name.replace('\\', "\\\\").replace('"', "\\\"").replace('[', "\\[").replace(']', "\\]");
+    }
     match name.strip_suffix("[]") {
         Some(base) => format!("{}\\[\\]", base),
         None => name.to_owned(),
@@ -330,6 +448,50 @@ mod tests {
     use super::{canonical_read_key, read_table_initializer, literal_read_name};
     use crate::sem::reads::ReadKind;
     use std::collections::BTreeSet;
+
+    #[test]
+    fn memo_index_metadata_emits_real_selector_binding_not_dictionary_key_receiver() {
+        let index = crate::sem::reads::MemoIndex { name: "values".to_string(), argument: Some(crate::sem::reads::LookupArgument::Path { root: "holder".to_string(), path: vec!["index_key".to_string()] }) };
+        let hop = format!("@memo_index:{}", serde_json::to_string(&index).unwrap());
+        let node = super::memo_path_node(&hop);
+        assert!(node.contains("\"name\" = \"values\""));
+        assert!(node.contains("\"indexed\" = TRUE"));
+        assert!(node.contains("\"selector\" = list(\"root\" = \"holder\", \"path\" = list(\"index_key\"), \"is_literal\" = FALSE)"));
+        assert!(!node.contains("\"values[]\""), "indexed value was collapsed into a ForList key/member receiver");
+        let positional = crate::sem::reads::MemoIndex { name: "values".to_string(), argument: Some(crate::sem::reads::LookupArgument::Literal("1".to_string())) };
+        let positional_hop = format!("@memo_index:{}", serde_json::to_string(&positional).unwrap());
+        assert!(super::memo_path_node(&positional_hop).contains("\"literal\" = 1, \"is_literal\" = TRUE"));
+        assert!(literal_read_name(&hop).contains("\\\"name\\\""), "interned index metadata produced invalid DM quoted names");
+    }
+
+    #[test]
+    fn memo_metadata_binds_real_members_and_guards_test_only_types() {
+        let owner = "/datum/test_memo".to_string();
+        let handler = crate::sem::hooks::HandlerRef {
+            owner: owner.clone(), cap_proc: false, cap_type: String::new(), proc: "compute".to_string(), form: "memo",
+            ctx: crate::sem::hooks::Ctx::Eval, role: crate::sem::hooks::Role::Output,
+            rel: "code/modules/unit_tests/probe.dm".to_string(), line: 1, notice: String::new(), ui_args: None,
+        };
+        let mut rows = std::collections::BTreeMap::new();
+        rows.insert(format!("{owner}::compute"), vec![
+            ("holder".to_string(), ReadKind::Var, "amount".to_string(), vec!["members[]".to_string()], "/datum/source".to_string()),
+            ("holder".to_string(), ReadKind::Accessor, "memo:child".to_string(), vec!["members[]".to_string()], "/datum/source".to_string()),
+            ("holder".to_string(), ReadKind::Accessor, "lifetime:deleted".to_string(), vec!["members[]".to_string()], "/datum".to_string()),
+        ]);
+        let test_types = BTreeSet::from([owner.clone()]);
+        let mut out = crate::sem::gen::GenOut::default();
+        super::emit_memo_methods(&mut out, &rows, &[handler.clone()], &test_types);
+        assert!(out.diags.is_empty());
+        assert!(out.text().contains("\"members\\[\\]\""), "member metadata interpolated away its [] hop");
+        assert!(out.text().contains("\"field\" = \"amount\""));
+        assert!(out.text().contains("\"field\" = \"memo:child\""));
+        assert!(out.text().contains("\"field\" = \"lifetime:deleted\""));
+        assert!(crate::sem::gen::test_type_leaks(out.text(), &test_types).is_empty(), "memo method leaked a unit-test type into production generation");
+        rows.get_mut(&format!("{owner}::compute")).unwrap().push(("actor".to_string(), ReadKind::Var, "amount".to_string(), Vec::new(), "/datum/source".to_string()));
+        let mut refused = crate::sem::gen::GenOut::default();
+        super::emit_memo_methods(&mut refused, &rows, &[handler], &test_types);
+        assert!(refused.diags.iter().any(|d| d.msg.contains("contextual")), "unbound per-call actor was substituted with holder");
+    }
 
     #[test]
     fn list_hop_metadata_is_literal_without_breaking_interpolated_accessors() {

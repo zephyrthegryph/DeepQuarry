@@ -149,6 +149,7 @@ GLOBAL_VAR_INIT(destroy_transaction_depth, 0)
 				// re-entrant qdel(D) (qdel()'s own check, above this call), and the teardown
 				// guard refuses new ownership, relations, timers, hooks and tasks on D.
 				D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
+				memo_lifetime_changed(D)
 				D.datum_flags |= DF_DESTROYING
 				PUBLISH_LEGACY(D, /datum/notice/qdeleting, force)
 				if(length(GLOB.notice_late_queue))

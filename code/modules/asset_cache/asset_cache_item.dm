@@ -25,6 +25,14 @@
 	/// TRUE for keeping local asset names when browse_rsc backend is used
 	var/keep_local_name = FALSE
 
+TRACKED(/datum/asset_cache_item, name)
+TRACKED(/datum/asset_cache_item, hash)
+TRACKED(/datum/asset_cache_item, ext)
+TRACKED(/datum/asset_cache_item, legacy)
+TRACKED(/datum/asset_cache_item, namespace)
+TRACKED(/datum/asset_cache_item, namespace_parent)
+TRACKED(/datum/asset_cache_item, keep_local_name)
+
 ///pass in a valid file_hash if you have one to save it from needing to do it again.
 ///pass in a valid dmi file path string e.g. "icons/path/to/dmi_file.dmi" to make generating the hash less expensive
 /datum/asset_cache_item/New(name, file, file_hash, dmi_file_path)
@@ -40,24 +48,24 @@
 		log_asset("WARNING: [name] is an empty file, this is almost certainly not intended and could indicate a bad boot!")
 		message_admins("ASSET WARNING: [name] is an empty file, this is almost certainly not intended and could indicate a bad boot!")
 
-	hash = file_hash
+	set_hash(file_hash)
 	//the given file is directly from a dmi file and is thus in the rsc already, we know that its file_hash will be correct
 	if(!hash)
 		if(dmi_file_path)
-			hash = md5(file)
+			set_hash(md5(file))
 		else
-			hash = md5asfile(file) //icons sent to the rsc md5 incorrectly when theyre given incorrect data
+			set_hash(md5asfile(file)) //icons sent to the rsc md5 incorrectly when theyre given incorrect data
 	if(!hash)
-		hash = md5(fcopy_rsc(file))
+		set_hash(md5(fcopy_rsc(file)))
 		if (!hash)
 			CRASH("invalid asset sent to asset cache")
 		log_runtime("asset cache unexpected success of second fcopy_rsc")
 	if(compiled)
 		asset_cache_remember_hash(name, hash)
-	src.name = name
+	set_name(name)
 	var/extstart = findlasttext(name, ".")
 	if(extstart)
-		ext = ".[copytext(name, extstart+1)]"
+		set_ext(".[copytext(name, extstart+1)]")
 	resource = file
 
 /datum/asset_cache_item/vv_edit_var(var_name, var_value)

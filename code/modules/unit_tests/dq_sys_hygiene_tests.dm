@@ -11,19 +11,25 @@
 	TEST_ASSERT(length(first), "species preference has no choices")
 	TEST_ASSERT(first == pref.get_choices(), "get_choices() rebuilt its list instead of reading the shared cache")
 
-/// An asset's serialized URL mappings are a declared cache: CHANGE_EXPLICIT clears them.
+/// Native URL messages reuse a scalar memo until a real item input changes.
 /datum/unit_test/dq_sys_hygiene_asset_declared_cache
+	parent_type = /datum/unit_test/dq_asset_memo
 
 /datum/unit_test/dq_sys_hygiene_asset_declared_cache/Run()
-	var/datum/asset/A = get_asset_datum(/datum/asset/simple/generic)
-	TEST_ASSERT(istype(A), "no generic asset datum")
+	var/datum/asset/simple/dq_native_memo/A = prepare_fixture()
+	var/datum/asset_transport/T = allocate(/datum/asset_transport)
+	SSassets.set_transport(T)
+	var/datum/asset_cache_item/I = allocate(/datum/asset_cache_item, "dq-hygiene-memo.css", icon('icons/effects/effects.dmi'), "hygiene-memo-hash")
+	A.assets = list("dq-hygiene-memo.css" = I)
 	var/message = A.get_serialized_url_mappings()
-	TEST_ASSERT(!isnull(message), "serialized mappings were not built")
-	TEST_ASSERT(!isnull(A.cached_serialized_url_mappings), "serialized mappings were not kept")
-	changed(A, CHANGE_EXPLICIT)
-	TEST_ASSERT(isnull(A.cached_serialized_url_mappings), "CHANGE_EXPLICIT did not clear the declared cache")
-	TEST_ASSERT(isnull(A.cached_serialized_url_mappings_transport_type), "CHANGE_EXPLICIT did not clear the transport key")
-	TEST_ASSERT(!isnull(A.get_serialized_url_mappings()), "serialized mappings were not rebuilt after clearing")
+	TEST_ASSERT_NOTNULL(message, "Native serialized mappings were built")
+	var/datum/memo_cell/cell = memo_cell_of(A, ASSET_URL_MESSAGE)
+	var/computations = cell.computations
+	TEST_ASSERT_EQUAL(A.get_serialized_url_mappings(), message, "Unchanged real inputs preserve the scalar output")
+	TEST_ASSERT_EQUAL(cell.computations, computations, "An unchanged message is reused without recomputation")
+	I.set_keep_local_name(TRUE)
+	TEST_ASSERT_NOTEQUAL(A.get_serialized_url_mappings(), message, "Changing a real URL flag refreshes the message")
+	TEST_ASSERT_EQUAL(cell.computations, computations + 1, "The changed projection is recomputed once, lazily")
 
 /// The anomaly device's run ends on its after() timer, not a world.time check in its step.
 /datum/unit_test/dq_sys_hygiene_anodevice_timer

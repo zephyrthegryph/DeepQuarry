@@ -17,6 +17,7 @@
 #define ENTRY_KNOWS "knows"
 #define ENTRY_STARTS_AS "starts_as"
 #define ENTRY_DERIVES "derives"
+#define ENTRY_MEMO "memo"
 #define ENTRY_LIVES_WHILE "lives_while"
 #define ENTRY_ON_ENDING "on_ending"
 #define ENTRY_INPUT "input_action"

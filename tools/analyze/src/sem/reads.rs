@@ -42,6 +42,13 @@ pub enum LookupArgument {
     Literal(String),
     Path { root: String, path: Vec<String> },
 }
+/// A memo index preserves its selector instead of confusing datum keys with values.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct MemoIndex {
+    pub name: String,
+    pub argument: Option<LookupArgument>,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
 pub struct LookupBound {
     pub registry: String,
@@ -360,6 +367,7 @@ struct Walk<'a, 'e> {
     line: u32,
     /// Inside `read_once(...)`: reads are evaluated but neither recorded nor subscribed.
     mute: u32,
+    memo: bool,
 }
 
 impl<'a> ReadsEngine<'a> {
@@ -376,7 +384,7 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze(&self, ty: &str, name: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0 };
+        let mut w = Walk { eng: self, ctx_override: None, out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
@@ -388,10 +396,29 @@ impl<'a> ReadsEngine<'a> {
     pub fn analyze_handler(&self, ty: &str, name: &str, ctx_ty: &str) -> ReadSet {
         let mut out = ReadSet::default();
         let Some(p) = self.sem.proc_ref(ty, name) else { return out };
-        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0 };
+        let mut w = Walk { eng: self, ctx_override: Some(ctx_ty.to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: false };
         let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
         w.run_proc(p, this, &[], true);
         out
+    }
+
+    /// Lazy outputs may not depend on unbound globals, time or a per-call context.
+    pub fn analyze_memo(&self, ty: &str, name: &str) -> ReadSet {
+        let mut out = ReadSet::default();
+        let Some(p) = self.sem.proc_ref(ty, name) else { return out };
+        let mut w = Walk { eng: self, ctx_override: Some("/datum/act/eval".to_string()), out: &mut out, visited: HashSet::new(), depth: 0, line: 0, mute: 0, memo: true };
+        let this = Val { ty: Some(ty.to_string()), root: Root::Holder, hops: Vec::new(), hop_ok: true, list: false };
+        w.run_proc(p, this, &[], true);
+        out
+    }
+
+    /// The initial memo contract deliberately does not infer immutability from
+    /// constructor-only writes: reflection can still mutate ordinary fields.
+    pub fn memo_field_supported(&self, owner: &str, field: &str) -> bool {
+        self.is_tracked(owner, field) || self.is_relation(owner, field)
+            || self.sem.var_decl(owner, field).map(|v| v.is_const).unwrap_or(false)
+            // DM's intrinsic type identity is read-only, not a gameplay var.
+            || field == "type" && self.sem.is_subtype(owner, "/datum")
     }
 
     /// Whether a var read through `owner` is reactive, constant, or unknown.
@@ -581,6 +608,17 @@ impl<'a, 'e> Walk<'a, 'e> {
             r.owner.clear();
             r.kind = ReadKind::Lookup(Box::new(lookup));
         }
+        // QDELETED expands to the engine-owned destruction flag. A memo
+        // subscribes to its native lifetime contract, not an untracked var.
+        if self.memo && r.kind == ReadKind::Var && r.owner == "/datum" && r.var == "gc_destroyed" {
+            r.kind = ReadKind::Accessor;
+            r.var = "lifetime:deleted".to_string();
+        }
+        if self.memo && matches!(r.kind, ReadKind::Var | ReadKind::System)
+            && !self.eng.memo_field_supported(&r.owner, &r.var) {
+            self.diag("memo_untracked_input", rel, line,
+                format!("memo input {}.{} is mutable or unproven: declare TRACKED/SETTER, a relation, or a genuine const input", r.owner, r.var));
+        }
         if self.mute > 0 {
             return;
         }
@@ -761,8 +799,8 @@ impl<'a, 'e> Walk<'a, 'e> {
                         Follow::Field(_, name) => self.field(fr, v, name.as_str()),
                         Follow::Call(_, name, args) => self.method(fr, v, name.as_str(), args),
                         Follow::Index(_, ix) => {
-                            self.eval(fr, ix);
-                            self.index(v)
+                            let selector = self.eval(fr, ix);
+                            self.index(v, selector)
                         }
                         Follow::Unary(dreammaker::ast::UnaryOp::Neg) => match &v.root {
                             Root::Scalar(LookupArgument::Literal(n)) if n != "null" => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("-{n}"))), hops: Vec::new(), hop_ok: true, list: false },
@@ -843,8 +881,8 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Follow::Field(_, name) => self.field(fr, v, name.as_str()),
                 Follow::Call(_, name, args) => self.method(fr, v, name.as_str(), args),
                 Follow::Index(_, ix) => {
-                    self.eval(fr, ix);
-                    self.index(v)
+                    let selector = self.eval(fr, ix);
+                    self.index(v, selector)
                 }
                 _ => Val::local(None),
             };
@@ -853,6 +891,7 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     fn term(&mut self, fr: &mut Frame<'a>, t: &Term, line: u32) -> Val {
         match t {
+            Term::String(s) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"")))), hops: Vec::new(), hop_ok: true, list: false },
             Term::Int(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
             Term::Float(n) => Val { ty: None, root: Root::Scalar(LookupArgument::Literal(n.to_string())), hops: Vec::new(), hop_ok: true, list: false },
             Term::Null => Val { ty: None, root: Root::Scalar(LookupArgument::Literal("null".to_string())), hops: Vec::new(), hop_ok: true, list: false },
@@ -906,6 +945,10 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Val::local(None)
             }
             Term::Pick(p) => {
+                if self.memo {
+                    let rel = fr.rel.clone();
+                    self.diag("dynamic_read", &rel, line, "memo compute cannot consume random state through pick".to_string());
+                }
                 for (w, e) in p.iter() {
                     if let Some(w) = w {
                         self.eval(fr, w);
@@ -937,6 +980,10 @@ impl<'a, 'e> Walk<'a, 'e> {
     }
 
     fn ident(&mut self, fr: &mut Frame<'a>, name: &str, line: u32) -> Val {
+        if self.memo && matches!(name, "world" | "GLOB") {
+            let rel = fr.rel.clone();
+            self.diag("dynamic_read", &rel, line, format!("memo cannot cache unbound {name} state; use a declared tracked producer"));
+        }
         if name == "src" {
             return fr.this.clone();
         }
@@ -967,6 +1014,10 @@ impl<'a, 'e> Walk<'a, 'e> {
         }
         let Some(ty) = v.ty.clone() else { return Val::local(None) };
         if v.root == Root::Act {
+            if self.memo && name != "holder" {
+                let rel = fr.rel.clone();
+                self.diag("dynamic_read", &rel, self.line, format!("memo cannot retain per-call context field {name}"));
+            }
             // Context field.
             self.out.ctx_fields.entry(name.to_string()).or_insert((rel.clone(), line));
             let sig = sem.var_decl(&ty, name);
@@ -1042,11 +1093,20 @@ impl<'a, 'e> Walk<'a, 'e> {
         Val::local((!sig.declared.is_empty()).then(|| sig.declared))
     }
 
-    fn index(&mut self, v: Val) -> Val {
+    fn index(&mut self, v: Val, selector: Val) -> Val {
         if v.tracked() && v.list {
             let mut hops = v.hops.clone();
             if let Some(l) = hops.last_mut() {
-                if !l.ends_with("[]") {
+                if self.memo {
+                    let argument = match &selector.root {
+                        Root::Scalar(LookupArgument::Path { path, .. }) if path.iter().any(|h| h.ends_with("[]") || h.starts_with("@memo_index:")) => None,
+                        Root::Scalar(argument) => Some(argument.clone()),
+                        Root::Holder | Root::Ctx(_) if selector.hop_ok && !selector.hops.iter().any(|h| h.ends_with("[]") || h.starts_with("@memo_index:")) => Some(LookupArgument::Path { root: selector.root_name(), path: selector.hops.clone() }),
+                        _ => None,
+                    };
+                    let index = MemoIndex { name: l.clone(), argument };
+                    *l = format!("@memo_index:{}", serde_json::to_string(&index).expect("memo index metadata"));
+                } else if !l.ends_with("[]") {
                     l.push_str("[]");
                 }
             }
@@ -1137,6 +1197,10 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         }
         if name == "read_once" {
+            if self.memo {
+                let rel = fr.rel.clone();
+                self.diag("dynamic_read", &rel, line, "memo dependencies cannot be hidden with read_once".to_string());
+            }
             // A value read once when the question opens (code/engine/parts/cond.dm read_once()): never subscribed.
             self.mute += 1;
             for a in args {
@@ -1145,11 +1209,29 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.mute -= 1;
             return Val::local(None);
         }
+        if self.memo && matches!(name, "rand" | "randtext" | "prob" | "pick") {
+            let rel = fr.rel.clone();
+            self.diag("dynamic_read", &rel, line, format!("memo compute cannot consume random state through {name}"));
+        }
         let argv: Vec<Val> = args.iter().map(|a| self.eval(fr, a)).collect();
         let sem = self.eng.sem;
         let rel = fr.rel.clone();
         let this = fr.this.clone();
         self.note_call(fr, name, &this, line);
+        if name == "memo_value" {
+            let holder = argv.first().filter(|v| v.tracked());
+            let key = argv.get(1).and_then(|v| match &v.root {
+                Root::Scalar(LookupArgument::Literal(value)) if value.starts_with('"') && value.ends_with('"') => Some(value[1..value.len() - 1].to_string()),
+                _ => None,
+            });
+            if let (Some(holder), Some(key)) = (holder, key) {
+                let r = Read { root: holder.root_name(), hops: holder.hops.clone(), var: format!("memo:{key}"), owner: holder.ty.clone().unwrap_or_default(), kind: ReadKind::Accessor, hop_ok: holder.hop_ok };
+                self.add_read(r, &rel, line);
+            } else {
+                self.diag("dynamic_read", &rel, line, "memo_value needs a tracked entity and a constant text key".to_string());
+            }
+            return Val::local(None);
+        }
         if let Some(decl) = self.eng.ann.lookups.get(name) {
             let argument = argv.get(decl.argument).and_then(|v| match &v.root {
                 Root::Scalar(a) => Some(a.clone()),
@@ -1325,6 +1407,75 @@ mod global_accessor_tests {
     use crate::tree::{SourceFile, Tree};
     use std::sync::atomic::{AtomicUsize, Ordering};
     static NEXT: AtomicUsize = AtomicUsize::new(0);
+
+    #[test]
+    fn memo_index_keeps_actual_datum_key_selector_distinct_from_its_value() {
+        let root = std::env::temp_dir().join(format!("dq-memo-index-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n#define owns_many(V,T)\n/datum/key\n\tvar/marker = 2\nTRACKED(/datum/key,marker)\n/datum/value\n\tvar/amount = 1\nTRACKED(/datum/value,amount)\n/datum/probe\n\tvar/datum/key/index_key\n\tvar/list/values\nCAPABILITIES(/datum/probe)\n\tref_one(index_key, /datum/key)\n\towns_many(values, /datum/value)\n/datum/probe/proc/indexed()\n\tvar/datum/value/V = values[index_key]\n\treturn V.amount\n/datum/probe/proc/positional()\n\tvar/datum/key/K = values[1]\n\treturn K.marker\n";
+        std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations);
+        let indexed = eng.analyze_memo("/datum/probe", "indexed");
+        assert!(indexed.diags.is_empty(), "datum-keyed source inference: {:?}", indexed.diags);
+        let value = indexed.reads.iter().find(|r| r.var == "amount" && r.owner == "/datum/value").expect("actual value field dependency");
+        let index: MemoIndex = serde_json::from_str(value.hops[0].strip_prefix("@memo_index:").expect("explicit value selector metadata")).unwrap();
+        assert_eq!(index.name, "values");
+        assert_eq!(index.argument, Some(LookupArgument::Path { root: "holder".to_string(), path: vec!["index_key".to_string()] }));
+        let positional = eng.analyze_memo("/datum/probe", "positional");
+        let key = positional.reads.iter().find(|r| r.var == "marker" && r.owner == "/datum/key").expect("actual positional key field dependency");
+        let position: MemoIndex = serde_json::from_str(key.hops[0].strip_prefix("@memo_index:").unwrap()).unwrap();
+        assert_eq!(position.argument, Some(LookupArgument::Literal("1".to_string())));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn memo_inputs_require_reactive_or_const_state_not_constructor_inference() {
+        let root = std::env::temp_dir().join(format!("dq-memo-inputs-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_one(V,T)\n/datum\n\tvar/gc_destroyed\n/datum/untracked\n\tvar/amount = 1\n/datum/untracked/New()\n\tamount = 2\n/datum/tracked\n\tvar/amount = 3\nTRACKED(/datum/tracked,amount)\n/datum/probe\n\tvar/datum/untracked/raw\n\tvar/datum/tracked/reactive\n\tvar/const/fixed = 7\n\tvar/list/untracked_members\nCAPABILITIES(/datum/probe)\n\tref_one(raw,/datum/untracked)\n\tref_one(reactive,/datum/tracked)\n/datum/probe/proc/bad()\n\treturn raw.amount\n/datum/probe/proc/good()\n\treturn reactive.amount + fixed\n/datum/probe/proc/bad_list()\n\treturn length(untracked_members)\n/datum/probe/proc/lifetime()\n\treturn raw.gc_destroyed\n";
+        std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations);
+        let bad = eng.analyze_memo("/datum/probe", "bad");
+        assert!(bad.diags.iter().any(|d| d.rule == "memo_untracked_input" && d.msg.contains("/datum/untracked.amount")), "constructor-only raw field was falsely treated immutable");
+        let bad_list = eng.analyze_memo("/datum/probe", "bad_list");
+        assert!(bad_list.diags.iter().any(|d| d.rule == "memo_untracked_input" && d.msg.contains("untracked_members")), "mutable untracked collection input was accepted");
+        let lifetime = eng.analyze_memo("/datum/probe", "lifetime");
+        assert!(lifetime.diags.is_empty(), "native lifetime dependency was rejected: {:?}", lifetime.diags);
+        assert!(lifetime.reads.iter().any(|r| r.kind == ReadKind::Accessor && r.var == "lifetime:deleted" && r.hops == vec!["raw".to_string()]), "destruction flag was not classified as actual receiver lifetime metadata");
+        let good = eng.analyze_memo("/datum/probe", "good");
+        assert!(good.diags.is_empty(), "real relation, tracked field and const were rejected: {:?}", good.diags);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn native_memo_calls_preserve_member_receivers_and_reject_dynamic_keys() {
+        let root = std::env::temp_dir().join(format!("dq-memo-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let content = "#define TRACKED(T,V)\n#define CAPABILITIES(T)\n#define ref_many(V,T)\n/datum/source\n\tvar/amount = 1\n/datum/probe\n\tvar/list/members\n\tvar/key = \"dynamic\"\nCAPABILITIES(/datum/probe)\n\tref_many(members, /datum/source)\n/proc/memo_value(datum/E, key)\n\treturn null\n/datum/probe/proc/read_member()\n\tfor(var/datum/source/member in members)\n\t\treturn memo_value(member, \"value\")\n/datum/probe/proc/bad_key()\n\treturn memo_value(src, key)\n";
+        std::fs::write(root.join("code/content/probe.dm"), content).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", content)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations);
+        let good = eng.analyze("/datum/probe", "read_member");
+        assert!(good.diags.is_empty(), "member memo inference: {:?}", good.diags);
+        assert!(good.reads.iter().any(|r| r.root == "holder" && r.hops == vec!["members[]".to_string()] && r.var == "memo:value" && r.kind == ReadKind::Accessor), "the child memo receiver was replaced by its parent or lost its member edge: {:?}", good.reads);
+        let bad = eng.analyze("/datum/probe", "bad_key");
+        assert!(bad.diags.iter().any(|d| d.rule == "dynamic_read" && d.msg.contains("constant text key")), "dynamic memo identity silently subscribed an invented key");
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn annotated_global_accessors_preserve_argument_roots_through_library_wrappers() {
