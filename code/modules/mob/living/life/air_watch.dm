@@ -12,12 +12,12 @@
 // couplings. A band watch on the body (heat_watch_band()) at the levels the body's steps act on (the comfort band around
 // the set point, discomfort, harm, the medical metric thresholds) publishes MOB_KEY_BODY_HEAT on a crossing.
 
-/mob/living
-	/// The Rust band watch on the air of the turf this mob stands on (air_watch_arm()).
+/datum/body
+	/// The Rust band watch on the air of the turf its mob stands on (/mob/living/proc/air_watch_arm()).
 	var/tmp/datum/native_watch/world/air_watch
 	/// What `air_watch` was armed for (the mixture and the levels), so an unchanged watch is not re-armed.
 	var/tmp/air_watch_key
-	/// The Rust band watch on this mob's body temperature (body_heat_watch_arm()).
+	/// The Rust band watch on its mob's body temperature (/mob/living/proc/body_heat_watch_arm()).
 	var/tmp/datum/native_watch/heat/body_heat_watch
 	/// The levels `body_heat_watch` was armed with.
 	var/tmp/body_heat_watch_key
@@ -46,11 +46,14 @@
 	if(isnull(id))
 		air_watch_clear() // off a turf (a container wakes the steps that read its air itself: they stay awake there) or in still air
 		return
+	var/datum/body/B = src.body
+	if(!B)
+		return
 	var/key = "[id]|[air_watch_levels_key()]"
-	if(key == src.air_watch_key && src.air_watch)
+	if(key == B.air_watch_key && B.air_watch)
 		return
 	air_watch_clear()
-	src.air_watch_key = key
+	B.air_watch_key = key
 	var/list/levels = air_watch_levels()
 	if(!length(levels))
 		return
@@ -67,16 +70,19 @@
 		starts += air_watch_band_of(air_watch_reading(air, ch), normal)
 	if(!length(chs))
 		return
-	rel_set(src, nameof(air_watch), world_watch_when(src, COND_BANDS(WORLD_GAS_HANDLE(air), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
+	rel_set(B, nameof(B.air_watch), world_watch_when(src, COND_BANDS(WORLD_GAS_HANDLE(air), chs, cuts, starts, -1), PROC_REF(air_watch_heard), LANE_URGENT))
 
 /mob/living/proc/air_watch_clear()
-	src.air_watch_key = null
-	if(src.air_watch)
-		own_clear(src, nameof(air_watch), OWN_DELETE)
+	var/datum/body/B = src.body
+	if(!B)
+		return
+	B.air_watch_key = null
+	if(B.air_watch)
+		own_clear(B, nameof(B.air_watch), OWN_DELETE)
 
 /// Rust: the air this mob stands in crossed one of its levels.
 /mob/living/proc/air_watch_heard(datum/native_watch/world/W, reason, source, source_kind)
-	if(QDELETED(src) || W != src.air_watch)
+	if(QDELETED(src) || W != src.body?.air_watch)
 		return
 	air_changed_here()
 
@@ -218,19 +224,22 @@
 	var/list/levels = body_heat_levels()
 	if(length(levels))
 		levels = air_watch_normalise(levels, 0.2)
-	var/key = jointext(levels || list(), ",")
-	if(key == src.body_heat_watch_key && (src.body_heat_watch || !length(levels)))
+	var/datum/body/B = src.body
+	if(!B)
 		return
-	if(src.body_heat_watch)
-		own_clear(src, nameof(body_heat_watch), OWN_DELETE)
-	src.body_heat_watch_key = key
+	var/key = jointext(levels || list(), ",")
+	if(key == B.body_heat_watch_key && (B.body_heat_watch || !length(levels)))
+		return
+	if(B.body_heat_watch)
+		own_clear(B, nameof(B.body_heat_watch), OWN_DELETE)
+	B.body_heat_watch_key = key
 	if(!length(levels))
 		return
-	rel_set(src, nameof(body_heat_watch), heat_watch_band(src, src, levels, PROC_REF(body_heat_heard), keep_body = FALSE))
+	rel_set(B, nameof(B.body_heat_watch), heat_watch_band(src, src, levels, PROC_REF(body_heat_heard), keep_body = FALSE))
 
 /// Rust: the body temperature crossed one of this mob's levels.
 /mob/living/proc/body_heat_heard(datum/native_watch/heat/W, reason, source)
-	if(QDELETED(src) || W != src.body_heat_watch)
+	if(QDELETED(src) || W != src.body?.body_heat_watch)
 		return
 	body_heat_changed()
 

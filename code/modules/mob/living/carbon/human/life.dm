@@ -610,7 +610,7 @@
 		src.body?.set_breath_quality(1)
 		return
 
-	src.breath_hazard = FALSE
+	src.set_breath_hazard(FALSE)
 	// XGM .total_moles var → LINDA proc. Cache to avoid 12 proc calls.
 	var/breath_moles = breath ? breath.total_moles() : 0
 	if(!breath_moles)
@@ -689,14 +689,14 @@
 	// To be clear, this isn't how much they're exhaling -- it's the amount of the species exhale gas in the breath.
 	var/exhaled_pp = (LINDA_GAS_AMT(breath, exhale_type)/breath_moles)*breath_pressure
 	if(exhaled_pp > safe_exhaled_max)
-		src.breath_hazard = TRUE
+		src.set_breath_hazard(TRUE)
 		if (prob(15))
 			var/word = pick("extremely dizzy","short of breath","faint","confused")
 			to_chat(src, span_danger("You feel [word]."))
 		// Hypercapnia: the exhaled gas crowds out the breath.
 		return 0.4
 	if(exhaled_pp > safe_exhaled_max * 0.7)
-		src.breath_hazard = TRUE
+		src.set_breath_hazard(TRUE)
 		if (!prob(1))
 			var/word = pick("dizzy","short of breath","faint","momentarily confused")
 			to_chat(src, span_warning("You feel [word]."))
@@ -705,7 +705,7 @@
 		// Mild hypercapnia: the breath worsens as the exhaled gas nears its limit.
 		return 1 - 0.5 * ratio
 	if(exhaled_pp > safe_exhaled_max * 0.6)
-		src.breath_hazard = TRUE
+		src.set_breath_hazard(TRUE)
 		if(prob(0.3))
 			var/word = pick("a little dizzy","short of breath")
 			to_chat(src, span_warning("You feel [word]."))
@@ -721,7 +721,7 @@
 	var/poison_methane = LINDA_GAS_AMT(breath, GAS_CH4)
 	var/methane_pp = (poison_methane/breath_moles)*breath_pressure
 	if(methane_pp > safe_toxins_min)
-		src.breath_hazard = TRUE
+		src.set_breath_hazard(TRUE)
 		if(prob(5))
 			to_chat(src,span_warning("You smell rotten eggs."))
 	if(methane_pp > safe_toxins_max)

@@ -94,7 +94,7 @@
 
 /// The hazard acted, and the human was never moved (moving would wake its steps on its own).
 /datum/unit_test/life_om/breath_hazard/proc/assert_acts(check_proc, what)
-	TEST_ASSERT(wait_for(check_proc), "[what] within [LIFE_HAZARD_LIMIT] s (awake: [jointext(life_test_awake(H), ", ")]; air watch [H.air_watch ? (H.air_watch.is_live() ? "live" : "dead") : "none"] key [H.air_watch_key], levels [json_encode(H.air_watch_levels())])")
+	TEST_ASSERT(wait_for(check_proc), "[what] within [LIFE_HAZARD_LIMIT] s (awake: [jointext(life_test_awake(H), ", ")]; air watch [H.body?.air_watch ? (H.body.air_watch.is_live() ? "live" : "dead") : "none"] key [H.body?.air_watch_key], levels [json_encode(H.air_watch_levels())])")
 	TEST_ASSERT_EQUAL(H.loc, T, "the human stayed on its tile (no move woke it)")
 
 /datum/unit_test/life_om/breath_hazard/proc/poisoned()

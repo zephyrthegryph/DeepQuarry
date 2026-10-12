@@ -75,7 +75,7 @@
 	var/poison = LINDA_GAS_AMT(breath, poison_type)
 	var/toxins_pp = (poison / breath_moles) * breath_pressure
 	if(toxins_pp > safe_toxins_min)
-		breath_hazard = TRUE
+		set_breath_hazard(TRUE)
 		var/phoron_pp = (LINDA_GAS_AMT(breath, GAS_PHORON) / breath_moles) * breath_pressure
 		if(phoron_pp > BREATH_TOXINS_MIN && prob(3))
 			to_chat(src, span_warning("Something burns as you breathe."))
@@ -97,7 +97,7 @@
 	var/SA_sleep_min = BREATH_N2O_SLEEP
 	var/SA_pp = (n2o / breath_moles) * breath_pressure
 	if(SA_pp > BREATH_N2O_GIGGLE)
-		breath_hazard = TRUE
+		set_breath_hazard(TRUE)
 	// Enough to make us paralysed for a bit
 	if(SA_pp > SA_para_min)
 		// 3 gives them one second to wake up and run away a bit!
@@ -173,7 +173,7 @@
 		H.throw_alert("pressure", /atom/movable/screen/alert/lowpressure)
 		return
 	H.clear_alert("pressure")
-	H.breath_hazard = FALSE
+	H.set_breath_hazard(FALSE)
 
 	var/datum/species/S = H.species
 	var/safe_exhaled_max = BREATH_EXHALED_MAX

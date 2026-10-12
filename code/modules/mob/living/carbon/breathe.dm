@@ -4,10 +4,6 @@
 /// mob's own cadence, independent of how often the atmos subsystem fires.
 /mob/living/carbon/var/breath_cycle = 0
 
-/// The last breath carried a gas that acts on every breath (a poison, N2O, methane, the exhaled gas building up): breathing
-/// stays awake and keeps breathing on its cadence while it does. Set by the breath exchange.
-/mob/living/carbon/var/tmp/breath_hazard = FALSE
-
 /// A scheduled breath is taken every this many Life cycles.
 #define BREATH_CYCLE_PERIOD 4
 
@@ -38,7 +34,7 @@
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.breath_hazard || src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE
@@ -144,3 +140,9 @@
 /mob/living/carbon/proc/life_breathing_exhale(datum/gas_mixture/breath)
 	if(breath)
 		src.loc.assume_air(breath) //by default, exhale
+
+/// Records whether the last breath carried a gas that acts on every breath (physiology breath_hazard).
+/mob/living/carbon/proc/set_breath_hazard(value)
+	var/datum/physiology/P = src.body?.physiology
+	if(P)
+		P.breath_hazard = value
