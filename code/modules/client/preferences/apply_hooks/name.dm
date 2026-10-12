@@ -32,7 +32,7 @@
 		else if(firstspace == name_length)
 			char_real_name += "[pick(GLOB.last_names)]"
 
-	target.real_name = char_real_name
+	target.set_real_name(char_real_name)
 	target.name = target.real_name
 	if(target.dna)
 		target.dna.real_name = target.real_name

@@ -53,9 +53,6 @@
 		new wreckage(loc) // Leave some wreckage.
 
 
-/mob/living/simple_mob/mechanical/mecha/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/mechanical/mecha/life_special(datum/seq_frame/life/F)
 	if(src.has_repair_droid)
 		src.mend(TREAT_PLATING_REPAIR, 2)

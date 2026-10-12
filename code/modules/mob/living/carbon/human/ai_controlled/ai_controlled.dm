@@ -76,7 +76,7 @@ TYPE_TABLE(/mob/living/carbon/human/ai_controlled, initial_species_copy, TRUE)
 		W.access = list()
 	if(to_wear_id_job)
 		W.assignment = to_wear_id_job
-	W.registered_name = real_name
+	W.set_registered_name(real_name)
 
 /*
  * Subtypes.

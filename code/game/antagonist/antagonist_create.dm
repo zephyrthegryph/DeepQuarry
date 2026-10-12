@@ -23,7 +23,7 @@
 		M = new mob_path(get_turf(source))
 	else
 		M = new /mob/living/carbon/human(get_turf(source))
-	M.real_name = source.real_name
+	M.set_real_name(source.real_name)
 	M.name = M.real_name
 	if(!isnull(source.mind))
 		source.mind.transfer_to(M)
@@ -132,7 +132,7 @@
 	// Closing the original name prompt supplied a blank answer and still refreshed access.
 	var/newname = A.answer ? A.answer.value : ""
 	if (newname)
-		player.real_name = newname
+		player.set_real_name(newname)
 		player.name = player.real_name
 		player.dna.real_name = newname
 	if(player.mind) player.mind.name = player.name

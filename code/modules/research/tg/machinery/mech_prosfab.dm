@@ -160,7 +160,7 @@ CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg/prosthetics)
 		H.dna.ResetUIFrom(H)
 
 		H.vore_prefs.allow_spontaneous_tf = TRUE// Allows vore customization of synthmorphs
-		H.real_name = "Synthmorph #[rand(100,999)]"
+		H.set_real_name("Synthmorph #[rand(100,999)]")
 		H.name = H.real_name
 		H.set_dir(2)
 		H.add_language(LANGUAGE_EAL)

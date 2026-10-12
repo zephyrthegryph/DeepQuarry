@@ -47,7 +47,7 @@
 	add_attack_logs(src,T,"Transformation sting (changeling)")
 	act_message(T, null, others = span_warning("%U% transforms!"))
 	rel_set(T, nameof(T.dna), chosen_dna.dna.Clone())
-	T.real_name = chosen_dna.dna.real_name
+	T.set_real_name(chosen_dna.dna.real_name)
 	T.UpdateAppearance()
 	domutcheck(T, null)
 	feedback_add_details("changeling_powers","TS")

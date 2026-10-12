@@ -16,7 +16,8 @@
 	src.breath_cycle = (src.breath_cycle + 1) % BREATH_CYCLE_PERIOD
 	var/datum/physiology/P = src.body?.physiology
 	var/breath_due = !src.breath_cycle || (P && ELAPSED_SINCE(src, P.last_breath_at, CLOCK_OWN) >= (BREATH_CYCLE_PERIOD - 0.5) * LIFE_CYCLE)
-	if(breath_due || P?.air_stale || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
+	// A hazardous breath (poison, N2O) is taken every frame: what it carries acts at once, not one breath in four.
+	if(breath_due || P?.air_stale || P?.breath_hazard || src.failed_last_breath || src.is_critical()) // First, resolve location and get a breath
 		if(P)
 			P.last_breath_at = EXPIRY_NOW(src, CLOCK_OWN)
 			P.air_stale = FALSE
@@ -34,7 +35,7 @@
 /mob/living/carbon/life_breathing_due()
 	if(!src.breathes())
 		return FALSE
-	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || src.failed_last_breath || src.internal || !isturf(src.loc))
+	if(src.body?.physiology?.air_stale || src.body?.physiology?.breath_hazard || src.losebreath || src.failed_last_breath || src.internal || !src.air_watched())
 		return TRUE
 	if(src.alerts?["oxy"] || src.alerts?["tox_in_air"] || src.alerts?["methane_in_air"])
 		return TRUE

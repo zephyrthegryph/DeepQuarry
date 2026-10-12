@@ -559,7 +559,7 @@
 	TEST_ASSERT(trial.accept(), "medical study could not be accepted")
 	for(var/index in 1 to 3)
 		var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-		subject.real_name = "Trial Subject [index]"
+		subject.set_real_name("Trial Subject [index]")
 		var/obj/item/organ/host = subject.organ_in(O_LUNGS)
 		var/datum/affliction/pulmonary_contusion/condition = subject.body.afflict(/datum/affliction/pulmonary_contusion, host, 30)
 		TEST_ASSERT_NOTNULL(condition, "pulmonary contusion could not be afflicted")
@@ -821,7 +821,7 @@
 	trial.profile.cohort = "healthy-volunteer safety"
 	TEST_ASSERT(trial.accept(), "fax-path test study could not be accepted")
 	var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-	subject.real_name = "Test Subject"
+	subject.set_real_name("Test Subject")
 	var/obj/item/paper/consent = create_contract_document(run_loc_floor_bottom_left, "test consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	var/datum/contract_document/consent_component = consent.contract_document
 	consent.on_field_written(subject, 1, null)
@@ -886,7 +886,7 @@
 	TEST_ASSERT(participant.consent_withdrawn && trial.participants[identity.id] == participant, "post-submission withdrawal incorrectly erased already-received evidence")
 
 	var/mob/living/carbon/human/withdrawing_subject = new(test_turf)
-	withdrawing_subject.real_name = "Withdrawing Subject"
+	withdrawing_subject.set_real_name("Withdrawing Subject")
 	var/obj/item/paper/withdrawing_consent = create_contract_document(test_turf, "withdrawal test consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	withdrawing_consent.on_field_written(withdrawing_subject, 1, null)
 	var/datum/contract_subject_identity/withdrawing_identity = SScontracts.subject_identity(withdrawing_subject)
@@ -923,7 +923,7 @@
 	fallback_account.owner_name = "Fallback Clinician"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, fallback_account)
 	var/mob/living/carbon/human/fallback_clinician = new(test_turf)
-	fallback_clinician.real_name = fallback_account.owner_name
+	fallback_clinician.set_real_name(fallback_account.owner_name)
 	fallback_clinician.job = JOB_MEDICAL_DOCTOR
 	var/datum/mind/fallback_mind = new("fallback_clinician")
 	rel_set(fallback_mind, nameof(fallback_mind.initial_account), fallback_account)
@@ -976,7 +976,7 @@
 	// Evidence is accepted during grace, so unsubmitted consent must remain
 	// revocable for that same interval.
 	var/mob/living/carbon/human/grace_subject = new(test_turf)
-	grace_subject.real_name = "Grace Subject"
+	grace_subject.set_real_name("Grace Subject")
 	var/obj/item/paper/grace_consent = create_contract_document(test_turf, "grace consent", "<b>Subject signature:</b> <span class=\"paper_field\"></span>", trial.id, CONTRACT_DOCUMENT_CLINICAL_CASE, CONTRACT_FAX_VEYMED, list("issuer_account" = owner.account_number))
 	grace_consent.on_field_written(grace_subject, 1, null)
 	var/datum/contract_subject_identity/grace_identity = SScontracts.subject_identity(grace_subject)
@@ -1014,7 +1014,7 @@
 /datum/unit_test/dq_medical_contract_machine_integration/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/doctor = new(test_turf)
-	doctor.real_name = "Integration Doctor"
+	doctor.set_real_name("Integration Doctor")
 	var/obj/item/card/id/medical/head/head_id = new(doctor)
 	var/obj/machinery/computer/skills/management = new(test_turf)
 	head_id.forceMove(management) // CONTAINED: in its contents before rel_set
@@ -1047,7 +1047,7 @@
 /datum/unit_test/dq_rare_case_report_workflow/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/subject = new(test_turf)
-	subject.real_name = "Rare Case Patient"
+	subject.set_real_name("Rare Case Patient")
 	var/datum/mind/test_mind = own(new /datum/mind) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	test_mind.transfer_to(subject)
@@ -1119,7 +1119,7 @@
 /datum/unit_test/dq_rare_case_consent_revocation/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/subject = new(test_turf)
-	subject.real_name = "Registry Withdrawal Patient"
+	subject.set_real_name("Registry Withdrawal Patient")
 	var/datum/mind/subject_mind = new("rare_case_withdrawal_patient")
 	subject_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	subject_mind.transfer_to(subject)
@@ -1641,7 +1641,7 @@
 		registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 		accounts += account
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
-		player.real_name = account.owner_name
+		player.set_real_name(account.owner_name)
 		player.job = "Scientist"
 		var/datum/mind/player_mind = own(new /datum/mind("reassignment_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		rel_set(player_mind, nameof(player_mind.initial_account), account)
@@ -1692,7 +1692,7 @@
 	TEST_ASSERT_EQUAL(trial.negotiated_effect("identity"), "anonymous", "identity negotiation did not produce a gameplay effect")
 	TEST_ASSERT(trial.accept(), "negotiated-effect trial could not be accepted")
 	var/mob/living/carbon/human/subject = new(run_loc_floor_bottom_left)
-	subject.real_name = "Negotiated Privacy Subject"
+	subject.set_real_name("Negotiated Privacy Subject")
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
 	var/datum/medical_trial_participant/participant = new(identity.id, list(), TRUE, 0)
 	participant.dose = MEDICAL_TRIAL_MINIMUM_DOSE

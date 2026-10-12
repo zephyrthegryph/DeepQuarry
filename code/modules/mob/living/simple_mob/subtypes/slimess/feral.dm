@@ -224,9 +224,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
 	reagent_injected = REAGENT_ID_RADIUM
 	var/rads = 25
 
-/mob/living/simple_mob/slime/feral/green/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/feral/green/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.irradiate()
@@ -248,9 +245,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
 	coretype = /obj/item/slime_extract/pink
 	glow_toggle = TRUE
 
-/mob/living/simple_mob/slime/feral/pink/life_special_due()
-	return TRUE
-
 /mob/living/simple_mob/slime/feral/pink/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)
 		src.heal_aura()
@@ -269,9 +263,6 @@ CAPABILITIES(/mob/living/simple_mob/slime/feral/ruby)
 	glow_toggle = TRUE
 	slime_color = "emerald"
 	coretype = /obj/item/slime_extract/emerald
-
-/mob/living/simple_mob/slime/feral/emerald/life_special_due()
-	return TRUE
 
 /mob/living/simple_mob/slime/feral/emerald/life_special(datum/seq_frame/life/F)
 	if(src.stat != DEAD)

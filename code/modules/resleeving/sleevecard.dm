@@ -111,7 +111,7 @@ CAPABILITIES(/mob/living/silicon/pai/infomorph)
 
 	//PDA
 	pda.ownjob = "Sleevecard"
-	pda.owner = text("[]", src)
+	pda.set_owner(text("[]", src))
 	pda.name = pda.owner + " (" + pda.ownjob + ")"
 
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM] // Same issue as bots

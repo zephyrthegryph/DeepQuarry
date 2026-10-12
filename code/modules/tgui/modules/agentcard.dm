@@ -177,7 +177,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 	var/_answer_a7 = A.answer.value
 	var/new_name = sanitizeName(_answer_a7)
 	if(!isnull(new_name))
-		S.registered_name = new_name
+		S.set_registered_name(new_name)
 		S.update_name()
 		to_chat(user, span_notice("Name changed to '[new_name]'."))
 		. = TRUE
@@ -240,7 +240,7 @@ CAPABILITIES(/datum/tgui_module/agentcard)
 		S.set_sprite_stack(S.initial_sprite_stack)
 		S.front = null
 		S.name = initial(S.name)
-		S.registered_name = initial(S.registered_name)
+		S.set_registered_name(initial(S.registered_name))
 		S.unset_registered_user()
 		S.sex = initial(S.sex)
 		S.species = initial(S.species)

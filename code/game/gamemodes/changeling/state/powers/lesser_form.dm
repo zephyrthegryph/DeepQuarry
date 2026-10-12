@@ -109,7 +109,7 @@
 		O.gender = MALE
 	rel_set(O, nameof(O.dna), C.dna.Clone())
 	own_clear(C, nameof(C.dna), OWN_DELETE)
-	O.real_name = chosen_dna.real_name
+	O.set_real_name(chosen_dna.real_name)
 
 	for(var/obj/T in C)
 		spent(T)

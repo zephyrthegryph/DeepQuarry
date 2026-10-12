@@ -242,7 +242,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	var/mob/living/carbon/human/protean/P = new /mob/living/carbon/human/protean
 	P.forceMove(src)
 	P.name = "Unfinished Protean"
-	P.real_name = "Unfinished Protean"
+	P.set_real_name("Unfinished Protean")
 	var/list/organs = list()
 	for(var/obj/item/organ/present as anything in INTERNAL_ORGANS(P))
 		organs += present.organ_tag

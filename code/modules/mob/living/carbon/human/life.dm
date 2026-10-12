@@ -27,10 +27,6 @@
 //	                       heartbeat, NIF, phobias, NPC       (when = list("!in_stasis", "alive"))
 //	species components, visible name, pulse
 
-/// The code before ..() in the old human Life().
-/mob/living/carbon/human/life_type_pre_due()
-	return TRUE
-
 /mob/living/carbon/human/life_type_pre(datum/seq_frame/life/F)
 	if (src.transforming)
 		return F.abort()
@@ -74,17 +70,6 @@
 		hud_updateflag = (1 << TOTAL_HUDS) - 1
 		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
-/// The voice others hear.
-/mob/living/carbon/human/proc/life_voice(datum/seq_frame/life/F)
-	src.voice = src.GetVoice()
-
-/// Event-driven: equipment (masks, voice changers, rigs), the body, stat and moving (belly
-/// absorb) wake it. Voice changers, changeling mimicry and disguises toggle from scattered
-/// sites, so a slow timer backs the events up.
-
-/mob/living/carbon/human/proc/life_voice_rewake()
-	return 10 SECONDS
-
 /// Deep stasis (BF_STASIS above STASIS_SLEEP_THRESHOLD) puts the body to sleep.
 /mob/living/carbon/human/proc/life_stasis_sleep(datum/seq_frame/life/F)
 	if(src.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
@@ -98,11 +83,13 @@
 /mob/living/carbon/human/proc/life_fall(datum/seq_frame/life/F)
 	src.fall()
 
-/// Event-driven: moving wakes it. A floor removed from under a standing player is caught by
-/// the rewake.
-
+/// Event-driven: moving, equipment, status and the ground changing (MOB_KEY_GROUND) wake it. Only a flier hovering over
+/// open space has per-frame work (flight tires it), so only it comes back on the next frame.
 /mob/living/carbon/human/proc/life_fall_rewake()
-	return src.client ? 10 SECONDS : 0
+	if(!stat_value(src, STAT_FLYING) || !isturf(src.loc))
+		return 0
+	var/turf/T = src.loc
+	return T.CanZPass(src, DOWN) ? LIFE_CYCLE : 0
 
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /// MED-6: nothing to do while no trigger domain is dirty, no side effect runs, no allergen
@@ -156,10 +143,7 @@
 	//Update our name based on whether our face is obscured/disfigured
 	src.name = src.get_visible_name()
 
-/// Event-driven like the voice system, with the same slow timer behind it.
-
-/mob/living/carbon/human/proc/life_visible_name_rewake()
-	return 10 SECONDS
+/// Event-driven: everything get_visible_name() reads publishes (life_steps.dm woken_by).
 
 // Calculate how vulnerable the human is to the current pressure.
 // Returns 0 (equals 0 %) if sealed in an undamaged suit that's rated for the pressure, 1 if unprotected (equals 100%).
@@ -857,7 +841,7 @@
 		/datum/species/xenomorph_hybrid,
 		/datum/species/xenos,
 	))
-	if(!src.environment_steady || !isturf(src.loc) || src.alerts?["pressure"])
+	if(!src.environment_steady || !src.air_watched() || src.alerts?["pressure"])
 		return TRUE
 	if(LAZYLEN(src.species.env_traits) || is_type_in_typecache(src.species, active_environment_species))
 		return TRUE
@@ -1266,9 +1250,10 @@
 			return TRUE
 	return FALSE
 
-/// Raw fear / tiredness writes and slow drift are caught by the rewake.
+/// Fear and tiredness keep it awake while they last (life_status_due()); their writers are status setters, login and
+/// logout wake every step. This is only the safety resample.
 /mob/living/carbon/human/life_status_rewake()
-	return src.stat == DEAD ? 0 : 5 SECONDS
+	return src.stat == DEAD ? 0 : LIFE_SAFETY_RESAMPLE
 
 /// P2-F1: the status update, split into one proc per concern below.
 /mob/living/carbon/human/life_status_update_status()
@@ -1394,7 +1379,7 @@
 		return
 	var/list/visible = src.get_visible_implants(0)
 	if(!length(visible) || !src.embedded_needs_process())
-		src.embedded_flag = 0
+		src.set_embedded_flag(0)
 
 /// Eyes: a rig visor, the vision organ, disabilities and blindfolds.
 /mob/living/carbon/human/proc/life_status_update_sight()
@@ -1842,9 +1827,6 @@
 		return TRUE
 	return src.mind && src.hud_used && hud_used?.ling_chem_display?.invisibility != INVISIBILITY_ABSTRACT
 
-/mob/living/carbon/human/proc/life_changeling_rewake()
-	return 30 SECONDS
-
 /// Updates the number of stored chemicals for powers.
 /mob/living/carbon/human/proc/life_changeling(datum/seq_frame/life/F)
 	var/datum/changeling/comp = is_changeling(src)
@@ -1966,7 +1948,7 @@
 		src.status_at_least(STAT_WEAKENED, 20)
 
 /mob/living/carbon/human/proc/life_pulse(datum/seq_frame/life/F)
-	src.pulse = life_pulse_compute()
+	src.set_pulse(life_pulse_compute())
 
 /// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body
 /// (MOB_KEY_HEALTH) or set_stat().
@@ -2053,9 +2035,6 @@
 	if(!src.client || src.pulse == PULSE_NONE)
 		return FALSE
 	return src.pulse >= PULSE_2FAST || src.shock_stage >= 10 || istype(get_turf(src), /turf/space)
-
-/mob/living/carbon/human/proc/life_heartbeat_rewake()
-	return 4 SECONDS
 
 /// Heartbeat sound for fast pulses, shock or space.
 /mob/living/carbon/human/proc/life_heartbeat(datum/seq_frame/life/F)
@@ -2325,9 +2304,6 @@
 /// MED-6: no NIF, nothing to run.
 /mob/living/carbon/human/proc/life_nif_due()
 	return src.nif
-
-/mob/living/carbon/human/proc/life_nif_rewake()
-	return 30 SECONDS
 
 /// Our call for the NIF to do whatever.
 /mob/living/carbon/human/proc/life_nif(datum/seq_frame/life/F)

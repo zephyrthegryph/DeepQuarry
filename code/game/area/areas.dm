@@ -420,6 +420,7 @@ TRACKED(/area, always_unpowered)
 			thunk(M)
 		M.update_floating( M.Check_Dense_Object() )
 		M.update_gravity(get_gravity())
+		PUBLISH_CHANGE(M, MOB_KEY_GROUND)
 
 /area/proc/thunk(mob)
 	if(istype(get_turf(mob), /turf/space)) // Can't fall onto nothing.

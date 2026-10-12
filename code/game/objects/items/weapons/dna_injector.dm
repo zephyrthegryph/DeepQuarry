@@ -116,7 +116,7 @@ CAPABILITIES(/obj/item/dnainjector)
 				if (!block) //isolated block?
 					M.UpdateAppearance(buf.dna.UI.Copy())
 					if (buf.types & DNA2_BUF_UE) //unique enzymes? yes
-						M.real_name = buf.dna.real_name
+						M.set_real_name(buf.dna.real_name)
 						M.name = buf.dna.real_name
 					uses--
 				else

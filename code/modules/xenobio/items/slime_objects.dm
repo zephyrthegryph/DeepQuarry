@@ -142,7 +142,7 @@ CAPABILITIES(/datum/slime_cube_invitation_review)
 	if(isnull(newname))
 		return
 	if(newname)
-		S.real_name = newname
+		S.set_real_name(newname)
 		S.name = S.real_name
 		S.dna.real_name = newname
 	if(S.mind)

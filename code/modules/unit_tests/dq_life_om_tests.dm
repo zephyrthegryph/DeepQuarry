@@ -273,7 +273,6 @@
 		"life_tf_holder",
 		"life_vr_derez",
 		"life_germs",
-		"life_voice",
 		"life_stasis_sleep",
 		"life_fall",
 		"life_changeling",

@@ -80,10 +80,13 @@
 		if(phoron_pp > BREATH_TOXINS_MIN && prob(3))
 			to_chat(src, span_warning("Something burns as you breathe."))
 	if(toxins_pp > safe_toxins_max)
+		// The gas burns the airway and blood at once, scaled with its partial pressure; a little lingers as toxin.
+		var/burn = clamp(toxins_pp * BREATH_POISON_INJURY_PER_KPA, BREATH_POISON_INJURY_MIN, BREATH_POISON_INJURY_MAX)
+		injure(INJURY_TOXIN, burn, source = src, flags = INJURE_CONTINUOUS)
 		var/ratio = (poison / safe_toxins_max) * 10
 		if(reagents)
 			reagents.add_reagent(REAGENT_ID_TOXIN, CLAMP(ratio, MIN_TOXIN_DAMAGE, MAX_TOXIN_DAMAGE))
-			breath.adjust_gas(poison_type, -poison / 6, update = 0) //update after
+		breath.adjust_gas(poison_type, -poison / 6, update = 0) //update after
 		throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 	else
 		clear_alert("tox_in_air")

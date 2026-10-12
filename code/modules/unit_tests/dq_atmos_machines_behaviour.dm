@@ -236,7 +236,7 @@
 /datum/unit_test/dq_atmos_m/proc/id_card(list/access, turf/where)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, where || tile(2, 1))
 	card.access = access || list()
-	card.registered_name = "Atmos Tester"
+	card.set_registered_name("Atmos Tester")
 	return card
 
 /// A fast tool of `type`.
