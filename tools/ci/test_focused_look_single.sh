@@ -34,7 +34,7 @@ result="$(run_once)"
 [[ "$result" == *'params=user-param=kept&look-plan=data/look-plan.tsv&look-types=data/look-types.txt'* ]]
 [[ "$result" == *'--focus=dq_real_test,dq_look_state_pin,dq_look_tree_pin'* ]]
 [[ "$result" == *'timeout=45'* ]]
-DQ_FOCUS_TIMEOUT_MINUTES=52
+export DQ_FOCUS_TIMEOUT_MINUTES=52
 result="$(run_once)"
 [[ "$result" == *'timeout=52'* ]]
 unset DQ_FOCUS_TIMEOUT_MINUTES
