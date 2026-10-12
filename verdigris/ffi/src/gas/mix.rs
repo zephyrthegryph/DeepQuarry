@@ -531,6 +531,9 @@ pub fn store(r: MixRef, before: &Mixture, after: &Mixture) {
             if d.iter().any(|v| *v != 0.0) {
                 turf_submit(c, GasCmd::Delta(d));
             }
+            // The host getter includes its accepted local commands before the worker frame.
+            // Sample that actual view now; the later frame refresh samples it again.
+            pressure_committed(r);
             return;
         }
     }
@@ -1451,7 +1454,7 @@ mod tests {
     }
 
     #[test]
-    fn numeric_turf_pressure_waits_for_the_actual_committed_worker_view() {
+    fn numeric_turf_pressure_matches_the_host_getter_and_then_the_worker_view() {
         let corners = watched_room();
         let r = MixRef::Turf(corners[0]);
         let id = r.id();
@@ -1460,16 +1463,17 @@ mod tests {
         let mut after = before.clone();
         after.set_temperature(before.get_temperature() * 2.0);
         store(r, &before, &after);
-        assert_eq!(load(r).unwrap().return_pressure(), initial, "a command submission is not a committed native getter value");
-        assert!(take_pressure_commits().is_empty(), "uncommitted turf commands publish no pressure");
+        let immediate = load(r).unwrap().return_pressure();
+        assert_ne!(immediate, initial, "the real host getter includes its accepted local command");
+        assert_eq!(take_pressure_commits(), vec![(910_041, id, Some(immediate))], "numeric readers agree immediately with that getter");
         with_world(|w| {
             w.step_blocking();
             Ok(())
         }).unwrap();
         split_wakes();
         let committed = load(r).unwrap().return_pressure();
-        assert_ne!(initial, committed, "the real worker committed a pressure change");
-        assert_eq!(take_pressure_commits(), vec![(910_041, id, Some(committed))], "the numeric source agrees with the getter's committed view");
+        let expected = if committed.to_bits() == immediate.to_bits() { Vec::new() } else { vec![(910_041, id, Some(committed))] };
+        assert_eq!(take_pressure_commits(), expected, "the worker view is published exactly when its getter value differs");
         pressure_unsubscribe(910_041);
         for (index, _) in corners.iter().enumerate() {
             unwatch_dirty(100 + u32::try_from(index).unwrap());

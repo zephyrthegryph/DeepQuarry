@@ -2,7 +2,7 @@
 
 ## Contract
 
-A cached reader must observe the same committed pressure as `return_pressure()` immediately after a synchronous gas operation. A submitted turf command is not a committed gas operation: before the worker's committed view is published, both the native getter and the dependency retain the prior value.
+A cached reader must observe the same pressure as `return_pressure()` immediately after a synchronous gas operation. The turf getter includes accepted local commands before the worker frame; numeric readers sample that actual host-visible value immediately, then sample again when the worker view commits. They never publish the mutation's tentative calculation instead of the getter's real view.
 
 The branch implements `gas_numeric_read(air = nameof(air_contents))` and the pure accessor `gas_numeric_pressure(air_contents)`. This first form supports pressure only. It prepares a shared numeric producer outside pure evaluation. The producer's `pressure_kpa` field contains actual kPa; its native subscription and identity are framework state. It does not use a synthetic revision as the reader's value or invent a holder state key. Verification is pending.
 

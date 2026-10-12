@@ -1058,8 +1058,11 @@ export function render(root: string): {
   for (const b of binds) {
     const gasCommit = b.docs.includes('@dm-gas-commit');
     const identityDocs = b.docs.filter((doc) => doc.startsWith('@dm-gas-identity '));
-    const identityArgument = identityDocs[0]?.slice('@dm-gas-identity '.length).trim();
-    if (identityDocs.length > 1 || (identityArgument && (!gasCommit || !b.args?.includes(identityArgument)))) {
+    const identityRustArgument = identityDocs[0]?.slice('@dm-gas-identity '.length).trim();
+    const identityArgument = identityRustArgument ? argName(identityRustArgument, 0) : undefined;
+    if (identityDocs.length > 1 || (identityDocs.length &&
+      (!identityRustArgument || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(identityRustArgument) ||
+        !gasCommit || !identityArgument || !b.args?.includes(identityArgument)))) {
       throw new Error(`${b.file}: invalid committed gas identity metadata for ${b.name}`);
     }
     const returnDocs = b.docs.filter((doc) => doc.startsWith('@dm-health returns '));

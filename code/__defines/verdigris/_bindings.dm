@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "eea806c364f75ad6"
+#define VERDIGRIS_ABI "edd7357b6f1918a7"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -631,9 +631,13 @@
 /// Args: (amount). Adds the given amount to each gas.
 // /datum/gas_mixture/proc/add (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_add_hook(src_ref, num_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_add_hook), list(src_ref, num_val))
+
+/proc/__vg_committed_add_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:add_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, num_val)
+	. = call_ext(__f)(src_ref, num_val)
+	return .
 
 /// Members placed, over every kind (diagnostics, tests).
 // /proc/vg_adjacency_count (verdigris/ffi/src/adjacency.rs)
@@ -674,27 +678,42 @@
 /// Args: (heat). Adds a given amount of heat to the mixture, i.e. in joules taking into account capacity.
 // /datum/gas_mixture/proc/adjust_heat (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_heat_hook(src_ref, temp)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_adjust_heat_hook), list(src_ref, temp))
+
+/proc/__vg_committed_adjust_heat_hook(src_ref, temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_heat_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, temp)
+	. = call_ext(__f)(src_ref, temp)
+	return .
 
 /// Args: (gas_id, moles). Adjusts the given gas's amount by the given amount, e.g. (GAS_O2, -0.1) will remove 0.1 moles of oxygen from the mixture.
 // /datum/gas_mixture/proc/adjust_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_moles_hook(src_ref, id_val, num_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_adjust_moles_hook), list(src_ref, id_val, num_val))
+
+/proc/__vg_committed_adjust_moles_hook(src_ref, id_val, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, id_val, num_val)
+	. = call_ext(__f)(src_ref, id_val, num_val)
+	return .
 
 /// Args: (gas_id, moles, temp). Adjusts the given gas's amount by the given amount, with that gas being treated as if it is at the given temperature.
 // /datum/gas_mixture/proc/adjust_moles_temp (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_moles_temp_hook(src_ref, id_val, num_val, temp_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_adjust_moles_temp_hook), list(src_ref, id_val, num_val, temp_val))
+
+/proc/__vg_committed_adjust_moles_temp_hook(src_ref, id_val, num_val, temp_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_moles_temp_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, id_val, num_val, temp_val)
+	. = call_ext(__f)(src_ref, id_val, num_val, temp_val)
+	return .
 
 /// Args: (gas_id_1, amount_1, gas_id_2, amount_2, ...). As adjust_moles, but with variadic arguments.
 // /datum/gas_mixture/proc/adjust_multi (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_adjust_multi_hook(...)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_adjust_multi_hook), args)
+
+/proc/__vg_committed_adjust_multi_hook(...)
 	var/static/__f = load_ext(VERDIGRIS, "byond:adjust_multi_hook_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(arglist(args))
@@ -753,26 +772,43 @@
 /// volume. Returns one boolean residual per exposed face.
 // /proc/auxmos_batch_mingle (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_mingle_hook(operations)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_batch_mingle_hook), list(operations))
+
+/proc/__vg_committed_batch_mingle_hook(operations)
 	var/static/__f = load_ext(VERDIGRIS, "byond:batch_mingle_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(operations)
+	. = call_ext(__f)(operations)
+	return .
 
 /// Flat operation list: source handle, sink handle, requested moles. Returns
 /// one actual mole count per operation after shared-source clamping.
 // /proc/auxmos_batch_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_batch_transfer_hook(operations)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_batch_transfer_hook), list(operations))
+
+/proc/__vg_committed_batch_transfer_hook(operations)
 	var/static/__f = load_ext(VERDIGRIS, "byond:batch_transfer_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(operations)
+	. = call_ext(__f)(operations)
+	return .
 
 /// Binds a gas mixture datum to a pipe region's gas (the handle from
 /// `vg_pipe_upsert`/`vg_pipe_commit`, `verdigris/ffi/src/pipes.rs`). The
 /// datum's own slot is freed.
 // /datum/gas_mixture/proc/__bind_handle (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_bind_handle(src_ref, handle)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_bind_handle), list(src_ref, handle))
+
+/proc/__vg_committed_bind_handle(src_ref, handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:bind_handle_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, handle)
+	var/datum/gas_mixture/native_identity_mixture = src_ref
+	var/prior_native_identity = native_identity_mixture?._extools_pointer_gasmixture
+	. = call_ext(__f)(src_ref, handle)
+	gas_numeric_flush_binding_commits()
+	if(native_identity_mixture && !QDELETED(native_identity_mixture))
+		native_identity_mixture.set__extools_pointer_gasmixture(native_identity_mixture._extools_pointer_gasmixture, prior_native_identity, TRUE)
+	return .
 
 /// One Life cycle of a metabolism holder (`vg_chem::metabolism::cycle`). `args` is flat, 7 values per reagent:
 /// `volume, rate, dose, max_dose, overdose_at, overdose, overdose_mod`. Returns a flat list, 5 per reagent in the same order:
@@ -801,9 +837,13 @@
 /// Clears the gas mixture my removing all of its gases.
 // /datum/gas_mixture/proc/clear (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_clear_hook(src_ref)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_clear_hook), list(src_ref))
+
+/proc/__vg_committed_clear_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:clear_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
+	. = call_ext(__f)(src_ref)
+	return .
 
 /// Returns: true if the two mixtures are different enough for processing, false otherwise.
 // /datum/gas_mixture/proc/compare (verdigris/ffi/src/gas/binds.rs)
@@ -890,16 +930,24 @@
 /// Arg: (mixture). Makes src into a copy of the argument mixture.
 // /datum/gas_mixture/proc/copy_from (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_copy_from_hook(src_ref, giver)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_copy_from_hook), list(src_ref, giver))
+
+/proc/__vg_committed_copy_from_hook(src_ref, giver)
 	var/static/__f = load_ext(VERDIGRIS, "byond:copy_from_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, giver)
+	. = call_ext(__f)(src_ref, giver)
+	return .
 
 /// Args: (coefficient). Divides all gases by this amount.
 // /datum/gas_mixture/proc/divide (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_divide_hook(src_ref, num_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_divide_hook), list(src_ref, num_val))
+
+/proc/__vg_committed_divide_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:divide_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, num_val)
+	. = call_ext(__f)(src_ref, num_val)
+	return .
 
 // /proc/drop_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_drop_material_power_graph(handle)
@@ -986,16 +1034,24 @@
 /// Args: (list). Takes every gas in the list and makes them all identical, scaled to their respective volumes. The total heat and amount of substance in all of the combined gases is conserved.
 // /proc/equalize_all_gases_in_list (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_equalize_all_hook(gas_list)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_equalize_all_hook), list(gas_list))
+
+/proc/__vg_committed_equalize_all_hook(gas_list)
 	var/static/__f = load_ext(VERDIGRIS, "byond:equalize_all_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(gas_list)
+	. = call_ext(__f)(gas_list)
+	return .
 
 /// Args: (mixture). Makes `src` a copy of `mixture`, with volumes taken into account.
 // /datum/gas_mixture/proc/equalize_with (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_equalize_with_hook(src_ref, total)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_equalize_with_hook), list(src_ref, total))
+
+/proc/__vg_committed_equalize_with_hook(src_ref, total)
 	var/static/__f = load_ext(VERDIGRIS, "byond:equalize_with_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, total)
+	. = call_ext(__f)(src_ref, total)
+	return .
 
 /// A filter device's entropy-limited power budget
 /// (`_atmospherics_helpers.dm`'s `filter_gas()`, `power_budget.rs`'s
@@ -1010,9 +1066,13 @@
 /// unfilterable_moles, power_draw)`, or `null` when nothing should move.
 // /proc/vg_filter_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_filter_transfer(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_filter_transfer), list(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency))
+
+/proc/__vg_committed_filter_transfer(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
+	. = call_ext(__f)(source, sink_filtered, sink_clean, filtering, requested, available_power, efficiency)
+	return .
 
 /// The omni filter's N-way generalization of [`filter_transfer`]
 /// (`_atmospherics_helpers.dm`'s `filter_gas_multi()`, `power_budget.rs`'s
@@ -1025,9 +1085,13 @@
 /// iteration order, or `null` when nothing should move.
 // /proc/vg_filter_transfer_multi (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_filter_transfer_multi(source, outputs, sink_clean, requested, available_power, efficiency)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_filter_transfer_multi), list(source, outputs, sink_clean, requested, available_power, efficiency))
+
+/proc/__vg_committed_filter_transfer_multi(source, outputs, sink_clean, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:filter_transfer_multi_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(source, outputs, sink_clean, requested, available_power, efficiency)
+	. = call_ext(__f)(source, outputs, sink_clean, requested, available_power, efficiency)
+	return .
 
 /// One frame: see the module docs. `elapsed` is the wheel ticks since the
 /// last frame (`0`: no pacing, just drain: a test that ran steps by hand),
@@ -1035,9 +1099,13 @@
 /// limited). Returns the outbox page.
 // /proc/frame (verdigris/ffi/src/frame.rs)
 /proc/vg_frame(elapsed, budget)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_frame), list(elapsed, budget))
+
+/proc/__vg_committed_frame(elapsed, budget)
 	var/static/__f = load_ext(VERDIGRIS, "byond:frame_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(elapsed, budget)
+	. = call_ext(__f)(elapsed, budget)
+	return .
 
 /// The frames run since boot (tests, the profiler).
 // /proc/frame_count (verdigris/ffi/src/frame.rs)
@@ -1070,6 +1138,20 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(src_ref, temp)
 
+/// Effectful preparation: subscribe a live native-watch handle to actual committed pressure. Returns initial kPa, or null for an absent mixture.
+// /proc/gas_numeric_pressure_subscribe (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_gas_numeric_pressure_subscribe(id, handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_numeric_pressure_subscribe_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(id, handle)
+
+/// Effectful teardown: detach only this numeric subscriber; other gas watches are untouched.
+// /proc/gas_numeric_pressure_unsubscribe (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_gas_numeric_pressure_unsubscribe(handle)
+	var/static/__f = load_ext(VERDIGRIS, "byond:gas_numeric_pressure_unsubscribe_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(handle)
+
 /// Applies a gas reaction to a mixture in one step
 /// (`vg_gas::reaction_energy::react`): `deltas` is a flat list of
 /// `GAS_ID_*, moles, ...`; the energy the reaction of `kind`
@@ -1079,18 +1161,26 @@
 /// or null for an unknown kind (nothing applied).
 // /proc/gas_reaction_apply (verdigris/ffi/src/heat_net.rs)
 /proc/vg_gas_reaction_apply(mixture, kind, extent, aux, deltas)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_gas_reaction_apply), list(mixture, kind, extent, aux, deltas))
+
+/proc/__vg_committed_gas_reaction_apply(mixture, kind, extent, aux, deltas)
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_reaction_apply_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(mixture, kind, extent, aux, deltas)
+	. = call_ext(__f)(mixture, kind, extent, aux, deltas)
+	return .
 
 /// Frees every main-owned slot whose datum is not in `mixtures` (a list of
 /// every live `/datum/gas_mixture`); `/world/New()` calls it once. Returns
 /// the number of slots freed. See [`mix::retain`].
 // /proc/gas_retain_mixtures (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_gas_retain_mixtures(mixtures)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_gas_retain_mixtures), list(mixtures))
+
+/proc/__vg_committed_gas_retain_mixtures(mixtures)
 	var/static/__f = load_ext(VERDIGRIS, "byond:gas_retain_mixtures_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(mixtures)
+	. = call_ext(__f)(mixtures)
+	return .
 
 /// `list(frames, 0, 0, 0, 0, 0, 0, 0, last frame µs, command backlog,
 /// overlay entries, view age, frames skipped, removal shortfall (mol), 0, 0,
@@ -1283,9 +1373,13 @@
 /// joules moved from the first to the second.
 // /proc/heat_conduct (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_conduct(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_conduct), list(a_kind, a_ref, b_kind, b_ref, conductance, seconds))
+
+/proc/__vg_committed_heat_conduct(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_conduct_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+	. = call_ext(__f)(a_kind, a_ref, b_kind, b_ref, conductance, seconds)
+	return .
 
 /// `list(TCMB, T0C, T20C, space sky temperature, Stefan-Boltzmann constant,
 /// default emissivity, seconds per heat frame, normal body temperature,
@@ -1355,9 +1449,13 @@
 /// electrical work, booked out. Returns the work, J.
 // /proc/heat_engine_once (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_engine_once(a_kind, a_ref, b_kind, b_ref, efficiency)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_engine_once), list(a_kind, a_ref, b_kind, b_ref, efficiency))
+
+/proc/__vg_committed_heat_engine_once(a_kind, a_ref, b_kind, b_ref, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_engine_once_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, efficiency)
+	. = call_ext(__f)(a_kind, a_ref, b_kind, b_ref, efficiency)
+	return .
 
 /// Moves `fraction` (0..1) of the way to the common temperature of two
 /// reservoirs in one conserved operation (1: both end at the mixed
@@ -1365,9 +1463,13 @@
 /// the first to the second.
 // /proc/heat_equalize (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_equalize(a_kind, a_ref, b_kind, b_ref, fraction)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_equalize), list(a_kind, a_ref, b_kind, b_ref, fraction))
+
+/proc/__vg_committed_heat_equalize(a_kind, a_ref, b_kind, b_ref, fraction)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_equalize_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(a_kind, a_ref, b_kind, b_ref, fraction)
+	. = call_ext(__f)(a_kind, a_ref, b_kind, b_ref, fraction)
+	return .
 
 /// A conduction (and radiation) link between two reservoirs: `conductance`
 /// W/K, plus `εσA(T_a⁴ − T_b⁴)` when `emissivity` and `area` (m²) are
@@ -1386,25 +1488,37 @@
 /// it is booked. Returns the joules actually moved.
 // /proc/heat_move (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_move(from_kind, from_ref, to_kind, to_ref, joules, source)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_move), list(from_kind, from_ref, to_kind, to_ref, joules, source))
+
+/proc/__vg_committed_heat_move(from_kind, from_ref, to_kind, to_ref, joules, source)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(from_kind, from_ref, to_kind, to_ref, joules, source)
+	. = call_ext(__f)(from_kind, from_ref, to_kind, to_ref, joules, source)
+	return .
 
 /// Brings a reservoir to `temperature` K by an external, booked source
 /// (`HEAT_SOURCE_*`): an authority write (map load, admin, a spawn-time
 /// temperature) expressed as the joules it takes. Returns the joules added.
 // /proc/heat_move_to_temperature (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_move_to_temperature(kind, r, temperature, source)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_move_to_temperature), list(kind, r, temperature, source))
+
+/proc/__vg_committed_heat_move_to_temperature(kind, r, temperature, source)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_move_to_temperature_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(kind, r, temperature, source)
+	. = call_ext(__f)(kind, r, temperature, source)
+	return .
 
 /// Advances the heat network alone by `seconds` (the unit-test kernel clock, which does not pace the native world). Returns nothing.
 // /proc/heat_net_advance (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_net_advance(seconds)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_net_advance), list(seconds))
+
+/proc/__vg_committed_heat_net_advance(seconds)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_net_advance_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(seconds)
+	. = call_ext(__f)(seconds)
+	return .
 
 /// A heat pump driving `controlled` toward `target` K with at most `watts`
 /// of electrical work, rejecting heat to (or drawing it from) `other`
@@ -1473,9 +1587,13 @@
 /// the joules added.
 // /proc/heat_set_energy (verdigris/ffi/src/heat_net.rs)
 /proc/vg_heat_set_energy(kind, r, joules, source)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_heat_set_energy), list(kind, r, joules, source))
+
+/proc/__vg_committed_heat_set_energy(kind, r, joules, source)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_set_energy_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(kind, r, joules, source)
+	. = call_ext(__f)(kind, r, joules, source)
+	return .
 
 // /turf/proc/heat_set_turf (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_set_turf(turf, kind, capacity, conductivity, emissivity, temperature, air)
@@ -1566,23 +1684,35 @@
 /// Marks the mix as immutable, meaning it will never change. This cannot be undone.
 // /datum/gas_mixture/proc/mark_immutable (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_mark_immutable_hook(src_ref)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_mark_immutable_hook), list(src_ref))
+
+/proc/__vg_committed_mark_immutable_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:mark_immutable_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
+	. = call_ext(__f)(src_ref)
+	return .
 
 /// Args: (mixture). Merges the gas from the giver into src, without modifying the giver mix.
 // /datum/gas_mixture/proc/merge (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_merge_hook(src_ref, giver)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_merge_hook), list(src_ref, giver))
+
+/proc/__vg_committed_merge_hook(src_ref, giver)
 	var/static/__f = load_ext(VERDIGRIS, "byond:merge_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, giver)
+	. = call_ext(__f)(src_ref, giver)
+	return .
 
 /// Args: (min_heat_cap). Sets the mix's minimum heat capacity.
 // /datum/gas_mixture/proc/set_min_heat_capacity (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_min_heat_cap_hook(src_ref, arg_min)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_min_heat_cap_hook), list(src_ref, arg_min))
+
+/proc/__vg_committed_min_heat_cap_hook(src_ref, arg_min)
 	var/static/__f = load_ext(VERDIGRIS, "byond:min_heat_cap_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, arg_min)
+	. = call_ext(__f)(src_ref, arg_min)
+	return .
 
 /// A mixer device's entropy-limited power budget
 /// (`_atmospherics_helpers.dm`'s `mix_gas()`, `power_budget.rs`'s
@@ -1594,9 +1724,13 @@
 /// iteration order, or `null` when nothing should move.
 // /proc/vg_mix_transfer (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_mix_transfer(sources, sink, requested, available_power, efficiency)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_mix_transfer), list(sources, sink, requested, available_power, efficiency))
+
+/proc/__vg_committed_mix_transfer(sources, sink, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:mix_transfer_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(sources, sink, requested, available_power, efficiency)
+	. = call_ext(__f)(sources, sink, requested, available_power, efficiency)
+	return .
 
 /// Args: (src, sink, target_kpa, gases_mask, sink_volume_mod). Read-only: the moles
 /// of `gases_mask` that would bring `sink` (its volume enlarged by
@@ -1610,9 +1744,13 @@
 /// Args: (coefficient). Multiplies all gases by this amount.
 // /datum/gas_mixture/proc/multiply (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_multiply_hook(src_ref, num_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_multiply_hook), list(src_ref, num_val))
+
+/proc/__vg_committed_multiply_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:multiply_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, num_val)
+	. = call_ext(__f)(src_ref, num_val)
+	return .
 
 /// Args: (temperature). Returns: how much oxidizer for fire is in the mixture at the given temperature. If temperature is omitted, just uses current temperature instead.
 // /datum/gas_mixture/proc/get_oxidation_power (verdigris/ffi/src/gas/binds.rs)
@@ -1624,9 +1762,13 @@
 /// Returns: true. Parses gas strings like "o2=2500;plasma=5000;TEMP=370" and turns src mixes into the parsed gas mixture, invalid patterns will be ignored
 // /datum/gas_mixture/proc/__auxtools_parse_gas_string (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_parse_gas_string(src_ref, string)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_parse_gas_string), list(src_ref, string))
+
+/proc/__vg_committed_parse_gas_string(src_ref, string)
 	var/static/__f = load_ext(VERDIGRIS, "byond:parse_gas_string_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, string)
+	. = call_ext(__f)(src_ref, string)
+	return .
 
 /// Args: (gas_id). Returns the heat capacity from the given gas, in J/K (probably).
 // /datum/gas_mixture/proc/partial_heat_capacity (verdigris/ffi/src/gas/binds.rs)
@@ -1649,9 +1791,13 @@
 /// already parses.
 // /proc/vg_pipe_commit (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_commit()
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_pipe_commit), list())
+
+/proc/__vg_committed_pipe_commit()
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_commit_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)()
+	. = call_ext(__f)()
+	return .
 
 /// Connects two ports' nodes directly (`NetworkHost::connect_entities`,
 /// bypassing any geometric connection rule -- pipes manage topology
@@ -1905,9 +2051,13 @@
 /// should move (`pump_gas()`'s `-1`).
 // /proc/vg_pump (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_pump(source, sink, requested, available_power, efficiency, mode)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_pump), list(source, sink, requested, available_power, efficiency, mode))
+
+/proc/__vg_committed_pump(source, sink, requested, available_power, efficiency, mode)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pump_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(source, sink, requested, available_power, efficiency, mode)
+	. = call_ext(__f)(source, sink, requested, available_power, efficiency, mode)
+	return .
 
 /// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
 /// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets
@@ -1931,9 +2081,13 @@
 /// Args: (holder). Runs all reactions on this gas mixture. Holder is used by the reactions, and can be any arbitrary datum or null.
 // /datum/gas_mixture/proc/react (verdigris/ffi/src/gas/mod.rs)
 /proc/vg_react_hook(src_ref, holder)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_react_hook), list(src_ref, holder))
+
+/proc/__vg_committed_react_hook(src_ref, holder)
 	var/static/__f = load_ext(VERDIGRIS, "byond:react_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, holder)
+	. = call_ext(__f)(src_ref, holder)
+	return .
 
 /// Batched read. Args: (list of gas mixtures). Returns one flat list with, for
 /// each mixture in order, `GAS_READ_HEADER` floats (pressure, temperature,
@@ -1950,30 +2104,51 @@
 /// `initial_volume`, and writes the handle into it.
 // /datum/gas_mixture/proc/__gasmixture_register (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_register_gasmixture_hook(src_ref)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_register_gasmixture_hook), list(src_ref))
+
+/proc/__vg_committed_register_gasmixture_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:register_gasmixture_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
+	var/datum/gas_mixture/native_identity_mixture = src_ref
+	var/prior_native_identity = native_identity_mixture?._extools_pointer_gasmixture
+	. = call_ext(__f)(src_ref)
+	gas_numeric_flush_binding_commits()
+	if(native_identity_mixture && !QDELETED(native_identity_mixture))
+		native_identity_mixture.set__extools_pointer_gasmixture(native_identity_mixture._extools_pointer_gasmixture, prior_native_identity, TRUE)
+	return .
 
 /// Args: (mixture, flag, amount). Takes `amount` from src that have the given `flag` and puts them into the given `mixture`. Returns: 0 if gas didn't have any with that flag, 1 if it did.
 // /datum/gas_mixture/proc/__remove_by_flag (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_by_flag_hook(src_ref, into, flag_val, amount_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_remove_by_flag_hook), list(src_ref, into, flag_val, amount_val))
+
+/proc/__vg_committed_remove_by_flag_hook(src_ref, into, flag_val, amount_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_by_flag_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, into, flag_val, amount_val)
+	. = call_ext(__f)(src_ref, into, flag_val, amount_val)
+	return .
 
 /// Args: (mixture, amount). Takes the given amount of gas from src and puts it into the argument mixture. Amount is amount of substance in moles.
 // /datum/gas_mixture/proc/__remove (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_hook(src_ref, into, amount_arg)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_remove_hook), list(src_ref, into, amount_arg))
+
+/proc/__vg_committed_remove_hook(src_ref, into, amount_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, into, amount_arg)
+	. = call_ext(__f)(src_ref, into, amount_arg)
+	return .
 
 /// Args: (mixture, ratio). Takes the given ratio of gas from src and puts it into the argument mixture. Ratio is a number between 0 and 1.
 // /datum/gas_mixture/proc/__remove_ratio (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_remove_ratio_hook(src_ref, into, ratio_arg)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_remove_ratio_hook), list(src_ref, into, ratio_arg))
+
+/proc/__vg_committed_remove_ratio_hook(src_ref, into, ratio_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:remove_ratio_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, into, ratio_arg)
+	. = call_ext(__f)(src_ref, into, ratio_arg)
+	return .
 
 /// Returns: the mix's pressure, in kilopascals.
 // /datum/gas_mixture/proc/return_pressure (verdigris/ffi/src/gas/binds.rs)
@@ -2004,37 +2179,57 @@
 /// allows nothing (the trace of a nearly-clean mix still moves).
 // /proc/vg_scrub (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_scrub(source, sink, mask, requested, available_power, efficiency)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_scrub), list(source, sink, mask, requested, available_power, efficiency))
+
+/proc/__vg_committed_scrub(source, sink, mask, requested, available_power, efficiency)
 	var/static/__f = load_ext(VERDIGRIS, "byond:scrub_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(source, sink, mask, requested, available_power, efficiency)
+	. = call_ext(__f)(source, sink, mask, requested, available_power, efficiency)
+	return .
 
 /// Args: (mixture, ratio, gas_list). Takes gases given by `gas_list` and moves `ratio` amount of those gases from `src` into `mixture`.
 // /datum/gas_mixture/proc/scrub_into (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_scrub_into_hook(src_ref, into, ratio_v, gas_list)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_scrub_into_hook), list(src_ref, into, ratio_v, gas_list))
+
+/proc/__vg_committed_scrub_into_hook(src_ref, into, ratio_v, gas_list)
 	var/static/__f = load_ext(VERDIGRIS, "byond:scrub_into_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, into, ratio_v, gas_list)
+	. = call_ext(__f)(src_ref, into, ratio_v, gas_list)
+	return .
 
 /// Args: (gas_id, moles). Sets the amount of substance of the given gas, in moles.
 // /datum/gas_mixture/proc/set_moles (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_moles_hook(src_ref, gas_id, amt_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_set_moles_hook), list(src_ref, gas_id, amt_val))
+
+/proc/__vg_committed_set_moles_hook(src_ref, gas_id, amt_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_moles_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, gas_id, amt_val)
+	. = call_ext(__f)(src_ref, gas_id, amt_val)
+	return .
 
 /// Args: (temperature). Sets the temperature of the mixture. Will be set to 2.7 if it's too low.
 // /datum/gas_mixture/proc/set_temperature (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_temperature_hook(src_ref, arg_temp)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_set_temperature_hook), list(src_ref, arg_temp))
+
+/proc/__vg_committed_set_temperature_hook(src_ref, arg_temp)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_temperature_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, arg_temp)
+	. = call_ext(__f)(src_ref, arg_temp)
+	return .
 
 /// Args: (volume). Sets the volume of the gas.
 // /datum/gas_mixture/proc/set_volume (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_set_volume_hook(src_ref, vol_arg)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_set_volume_hook), list(src_ref, vol_arg))
+
+/proc/__vg_committed_set_volume_hook(src_ref, vol_arg)
 	var/static/__f = load_ext(VERDIGRIS, "byond:set_volume_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, vol_arg)
+	. = call_ext(__f)(src_ref, vol_arg)
+	return .
 
 /// Args: (links). One entry per z-level: the `UP`/`DOWN` bits of the levels
 /// air may cross into. Vertical faces open only between linked levels.
@@ -2067,9 +2262,20 @@
 /// Args: (amount). Subtracts the given amount from each gas.
 // /datum/gas_mixture/proc/subtract (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_subtract_hook(src_ref, num_val)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_subtract_hook), list(src_ref, num_val))
+
+/proc/__vg_committed_subtract_hook(src_ref, num_val)
 	var/static/__f = load_ext(VERDIGRIS, "byond:subtract_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, num_val)
+	. = call_ext(__f)(src_ref, num_val)
+	return .
+
+/// Dedicated committed numeric transport: subscriber, mixture identity, present, actual kPa. No ordinary frame/gas wakes are consumed.
+// /proc/take_gas_numeric_pressure_commits (verdigris/ffi/src/gas/binds.rs)
+/proc/vg_take_gas_numeric_pressure_commits()
+	var/static/__f = load_ext(VERDIGRIS, "byond:take_gas_numeric_pressure_commits_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)()
 
 /// Returns: the mix's thermal energy, the product of the mixture's heat capacity and its temperature.
 // /datum/gas_mixture/proc/thermal_energy (verdigris/ffi/src/gas/binds.rs)
@@ -2088,9 +2294,13 @@
 /// left `air` (the caller credits a wall's heat cell).
 // /proc/vg_thermal_exchange (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_thermal_exchange(air, other_air, share_volume, conductivity, other_temperature, other_capacity)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_thermal_exchange), list(air, other_air, share_volume, conductivity, other_temperature, other_capacity))
+
+/proc/__vg_committed_thermal_exchange(air, other_air, share_volume, conductivity, other_temperature, other_capacity)
 	var/static/__f = load_ext(VERDIGRIS, "byond:thermal_exchange_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(air, other_air, share_volume, conductivity, other_temperature, other_capacity)
+	. = call_ext(__f)(air, other_air, share_volume, conductivity, other_temperature, other_capacity)
+	return .
 
 /// Diagnostic invariant for shuttle and atmos tests: the turf's air datum
 /// names its field cell (or the shared vacuum), and the cell is in the field.
@@ -2110,16 +2320,24 @@
 /// Args: (mixture, amount). Takes the `amount` given and transfers it from `src` to `mixture`.
 // /datum/gas_mixture/proc/transfer_to (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_transfer_hook(src_ref, other, moles)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_transfer_hook), list(src_ref, other, moles))
+
+/proc/__vg_committed_transfer_hook(src_ref, other, moles)
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, other, moles)
+	. = call_ext(__f)(src_ref, other, moles)
+	return .
 
 /// Args: (mixture, ratio). Transfers `ratio` of `src` to `mixture`.
 // /datum/gas_mixture/proc/transfer_ratio_to (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_transfer_ratio_hook(src_ref, other, ratio)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_transfer_ratio_hook), list(src_ref, other, ratio))
+
+/proc/__vg_committed_transfer_ratio_hook(src_ref, other, ratio)
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_ratio_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, other, ratio)
+	. = call_ext(__f)(src_ref, other, ratio)
+	return .
 
 /// Args: (src, sink, target_kpa, max_moles, gases_mask). Moves gas from `src` into
 /// `sink` until the sink reaches `target_kpa` (an exact ideal-gas solve, with
@@ -2128,9 +2346,13 @@
 /// Returns the moles moved. Replaces the DM `gas_pressure_calculate` solvers.
 // /proc/vg_transfer_to_pressure (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_transfer_to_pressure(src_ref, sink, target_kpa, max_moles, gases_mask)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_transfer_to_pressure), list(src_ref, sink, target_kpa, max_moles, gases_mask))
+
+/proc/__vg_committed_transfer_to_pressure(src_ref, sink, target_kpa, max_moles, gases_mask)
 	var/static/__f = load_ext(VERDIGRIS, "byond:transfer_to_pressure_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref, sink, target_kpa, max_moles, gases_mask)
+	. = call_ext(__f)(src_ref, sink, target_kpa, max_moles, gases_mask)
+	return .
 
 /// Diagnostic: whether the turf's gas is still moving (some open edge is
 /// not settled).
@@ -2153,9 +2375,13 @@
 /// (the cell and the region own it).
 // /datum/gas_mixture/proc/__gasmixture_unregister (verdigris/ffi/src/gas/binds.rs)
 /proc/vg_unregister_gasmixture_hook(src_ref)
+	return gas_numeric_run_binding(GLOBAL_PROC_REF(__vg_committed_unregister_gasmixture_hook), list(src_ref))
+
+/proc/__vg_committed_unregister_gasmixture_hook(src_ref)
 	var/static/__f = load_ext(VERDIGRIS, "byond:unregister_gasmixture_hook_ffi")
 	VG_COUNT_FFI_CALL
-	return call_ext(__f)(src_ref)
+	. = call_ext(__f)(src_ref)
+	return .
 
 /// Drops DM watch `handle`'s dependency watch.
 // /proc/unwatch_dirty_gas_mixture (verdigris/ffi/src/gas/binds.rs)
