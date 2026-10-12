@@ -245,6 +245,29 @@ fn compute(tree: &crate::tree::Tree) -> Option<DepsAnalysis> {
 
 struct Deps;
 
+/// Writes `GLOB.<name>` from `rows` (each tab-indented `"key" = value`) through builder procs of at most 300 rows: one GLOBAL_LIST_INIT over thousands
+/// of entries is a macro argument DreamMaker cannot parse (the reads table is chunked for the same reason).
+fn emit_table(out: &mut GenOut, name: &str, rows: &[String]) {
+    let chunks: Vec<&[String]> = rows.chunks(300).collect();
+    for (n, chunk) in chunks.iter().enumerate() {
+        out.line(format!("/proc/{}_chunk_{}()", name, n));
+        out.line("	. = list()");
+        for r in chunk.iter() {
+            let r = r.trim_start_matches('\t');
+            let (key, value) = r.split_once(" = ").unwrap_or((r, "TRUE"));
+            out.line(format!("	.[{}] = {}", key, value));
+        }
+    }
+    out.line(format!("/proc/{}_build()", name));
+    out.line("	. = list()");
+    for n in 0..chunks.len() {
+        out.line(format!("	var/list/c{} = {}_chunk_{}()", n, name, n));
+        out.line(format!("	for(var/k in c{})", n));
+        out.line(format!("		.[k] = c{}[k]", n));
+    }
+    out.line(format!("GLOBAL_LIST_INIT({}, {}_build())", name, name));
+}
+
 fn quote(s: &str) -> String {
     // `[` opens an embedded expression in a DM string: a list hop ("parts[].x") is written `\[`.
     format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"").replace('[', "\\["))
@@ -273,7 +296,6 @@ impl Generator for Deps {
         out.doc("\"<type>::<proc>\" -> what a stat input, condition, requirement, output or draw reads that nothing publishes: an untracked var");
         out.doc("(\"power_area.x\"), ?<rule> for a read the analysis could not resolve, ?opaque:<type>::<proc> for an engine body it does not enter.");
         out.doc("A stat with such an input recomputes on every read instead of caching (stat_value(), code/engine/stats/recompute.dm).");
-        out.line("GLOBAL_LIST_INIT(generated_untracked_reads, list(");
         let rows: Vec<String> = an
             .consumers
             .iter()
@@ -283,37 +305,26 @@ impl Generator for Deps {
                 format!("\t{} = list({})", quote(id), whats.iter().map(|w| quote(w)).collect::<Vec<_>>().join(", "))
             })
             .collect();
-        for (i, r) in rows.iter().enumerate() {
-            out.line(format!("{}{}", r, if i + 1 < rows.len() { "," } else { "" }));
-        }
-        out.line("))");
+        emit_table(out, "generated_untracked_reads", &rows);
         out.blank();
         out.doc("\"<type>\" -> vars its declarations name as a stat input (nameof(v) in contributes(), contributes_to() or a when() around one) that");
         out.doc("nothing publishes: a stat that reads one recomputes on every read.");
-        out.line("GLOBAL_LIST_INIT(generated_untracked_leaves, list(");
         let mut by_type: BTreeMap<&str, BTreeSet<&str>> = BTreeMap::new();
         for l in &an.leaves {
             by_type.entry(l.owner.as_str()).or_default().insert(l.var.as_str());
         }
         let rows: Vec<String> = by_type.iter().map(|(t, vs)| format!("\t{} = list({})", quote(t), vs.iter().map(|v| quote(v)).collect::<Vec<_>>().join(", "))).collect();
-        for (i, r) in rows.iter().enumerate() {
-            out.line(format!("{}{}", r, if i + 1 < rows.len() { "," } else { "" }));
-        }
-        out.line("))");
+        emit_table(out, "generated_untracked_leaves", &rows);
         out.blank();
         out.doc("\"<type>\" -> the holder vars its own draw() (and the parent draws it calls) reads: a change of any of them redraws an exact type too");
         out.doc("(derived_compile(), code/engine/change/derived.dm), so a draw needs no hand-written drawn_from().");
-        out.line("GLOBAL_LIST_INIT(generated_draw_reads, list(");
         let rows: Vec<String> = an
             .draw_reads
             .iter()
             .filter(|(_, ks)| !ks.is_empty())
             .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
             .collect();
-        for (i, r) in rows.iter().enumerate() {
-            out.line(format!("{}{}", r, if i + 1 < rows.len() { "," } else { "" }));
-        }
-        out.line("))");
+        emit_table(out, "generated_draw_reads", &rows);
     }
 }
 

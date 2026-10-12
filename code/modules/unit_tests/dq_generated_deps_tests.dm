@@ -6,11 +6,11 @@
 /// A stat fixture: gdeps_low reads a tracked var through a holder proc, gdeps_raw names an untracked var as its value.
 /obj/gdeps_probe
 	name = "generated deps probe"
-	var/level = 0
+	var/gauge = 0
 	/// Untracked on purpose: break_raw() writes it with no setter, so nothing publishes it.
 	var/raw_ok = TRUE
 
-TRACKED(/obj/gdeps_probe, level)
+TRACKED(/obj/gdeps_probe, gauge)
 
 STAT(/obj/gdeps_probe, gdeps_low, ALL, virtual = TRUE)
 STAT(/obj/gdeps_probe, gdeps_raw, ALL, virtual = TRUE)
@@ -20,7 +20,7 @@ CAPABILITIES(/obj/gdeps_probe)
 	contributes(STAT_GDEPS_RAW, nameof(raw_ok))
 
 /obj/gdeps_probe/proc/level_low(datum/act/A)
-	return level < 5
+	return gauge < 5
 
 /obj/gdeps_probe/proc/break_raw()
 	raw_ok = FALSE
@@ -50,10 +50,10 @@ TRACKED(/obj/gdeps_lamp, glow_level)
 	for(var/i in 2 to length(reads))
 		var/list/read = reads[i]
 		keys += GLOB.generated_read_names[read[3]]
-	TEST_ASSERT_EQUAL(jointext(keys, ","), "level", "level_low reads exactly level")
+	TEST_ASSERT_EQUAL(jointext(keys, ","), "gauge", "level_low reads exactly gauge")
 	TEST_ASSERT(!GLOB.generated_untracked_reads["/obj/gdeps_probe::level_low"], "level_low reads only tracked state")
 	var/list/leaves = GLOB.generated_untracked_leaves["/obj/gdeps_probe"]
-	TEST_ASSERT(islist(leaves) && ("raw_ok" in leaves) && !("level" in leaves), "the untracked leaf is raw_ok alone: [json_encode(leaves)]")
+	TEST_ASSERT(islist(leaves) && ("raw_ok" in leaves) && !("gauge" in leaves), "the untracked leaf is raw_ok alone: [json_encode(leaves)]")
 	var/list/drawn = GLOB.generated_draw_reads["/obj/gdeps_lamp"]
 	TEST_ASSERT(islist(drawn) && ("glow_level" in drawn), "the lamp's draw reads glow_level: [json_encode(drawn)]")
 	// A real stat input: the machine's area power read follows its area's channel vars through power_area, all of them published.
@@ -74,14 +74,14 @@ TRACKED(/obj/gdeps_lamp, glow_level)
 	var/datum/stat_type_info/I = stat_type_of(P)
 	TEST_ASSERT(istype(I), "the probe has stat info")
 	TEST_ASSERT(stat_inputs_tracked(I, stat_def_of(STAT_GDEPS_LOW)), "gdeps_low's inputs are tracked: [json_encode(I.untracked)]")
-	TEST_ASSERT_EQUAL(stat_value(P, STAT_GDEPS_LOW), TRUE, "level 0 is low")
+	TEST_ASSERT_EQUAL(stat_value(P, STAT_GDEPS_LOW), TRUE, "gauge 0 is low")
 	var/computes = GLOB.stat_read_computes
 	for(var/i in 1 to 5)
 		TEST_ASSERT_EQUAL(stat_value(P, STAT_GDEPS_LOW), TRUE, "a cached read is right")
 	TEST_ASSERT_EQUAL(GLOB.stat_read_computes, computes, "five reads of a cached stat compose nothing")
-	P.set_level(9)
+	P.set_gauge(9)
 	TEST_ASSERT_EQUAL(stat_value(P, STAT_GDEPS_LOW), FALSE, "changing the tracked input invalidates the cached value before the next line")
-	P.set_level(1)
+	P.set_gauge(1)
 	TEST_ASSERT_EQUAL(stat_value(P, STAT_GDEPS_LOW), TRUE, "and back")
 	TEST_ASSERT_EQUAL(GLOB.stat_read_computes, computes, "the input change recomputed it; the reads still compose nothing")
 

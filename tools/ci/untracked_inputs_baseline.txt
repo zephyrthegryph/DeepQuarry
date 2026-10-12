@@ -20,7 +20,6 @@ stat_input_untracked	code/_helpers/mobs.dm	var/mob/living/silicon/robot/R = thin
 stat_input_untracked	code/_helpers/mobs.dm	for(var/obj/item/holder/H in contents_of(L))
 stat_input_untracked	code/datums/managed_browsers/feedback_form.dm	return length(feedback_body) && length(feedback_body) <= MAX_FEEDBACK_LENGTH // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
 stat_input_untracked	code/datums/properties/constraints.dm	var/datum/entry/part/acceptance_plan/native_plan = dq_constraint_has_legacy_override(I, CONSTRAINT_FIT) ? null : acceptance_plan_for(I, CONSTRAINT_FIT)
-stat_input_untracked	code/domains/power/powered.dm	return cap_powered()
 stat_input_untracked	code/domains/power/powered.dm	return !cap_powered()
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
