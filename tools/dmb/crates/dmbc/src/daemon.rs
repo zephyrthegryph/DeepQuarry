@@ -6,6 +6,7 @@ use std::{
 };
 mod build_admission;
 pub mod control;
+pub mod endpoint_descriptor;
 mod generation_listeners;
 mod lifecycle_deadline;
 mod protocol;

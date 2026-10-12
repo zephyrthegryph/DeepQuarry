@@ -1,7 +1,8 @@
 # Owned dual-generation upgrade prototype
 
-Requires two distinct immutable compiler images implementing the optional
-`DMB_DAEMON_NAMESPACE` endpoint suffix. No run is admitted for older binaries.
+Requires two distinct immutable compiler images implementing the read-only
+[`--daemon-endpoint-json` contract](daemon-endpoint.md) and optional
+`DMB_DAEMON_NAMESPACE` isolation. No run is admitted for older binaries.
 The default user endpoint is never probed, replaced or retired.
 
 Example (root owns execution):
@@ -12,7 +13,8 @@ python tools/dmb/bench/daemon-upgrade.py --old E:/dq-cache/old.exe --old-sha256 
 
 The new generation's normal CLI client must initiate the upgrade. The helper
 never sends `Retire`. Success requires an observed retiring Hello before the old
-build completes, successful old output, authenticated replacement process/image,
+build completes on the old generation endpoint, successful old output,
+authenticated replacement process/image on its distinct generation endpoint,
 and exact DMB/RSC equality against each generation's independent fresh compile.
 A missed tiny-build overlap fails explicitly instead of claiming drain coverage.
 

@@ -26,6 +26,19 @@ fn main_inner() {
             std::process::exit(2);
         }
     };
+    if arguments.first().map(String::as_str) == Some("--daemon-endpoint-json") {
+        if arguments.len() != 1 || compile_result.is_some() {
+            eprintln!("--daemon-endpoint-json accepts no other arguments");
+            std::process::exit(2);
+        }
+        if let Err(error) =
+            dmbc::daemon::endpoint_descriptor::write_current(&mut std::io::stdout().lock())
+        {
+            eprintln!("native daemon endpoint: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
     if arguments.first().map(String::as_str) == Some("acquire") {
         if let Err(error) = dmbc::output_cli::acquire(&arguments) {
             eprintln!("{error}");

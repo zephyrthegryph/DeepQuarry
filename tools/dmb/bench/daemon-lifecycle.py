@@ -41,10 +41,8 @@ class Pipe:
         self._adopt_handle(handle)
         endpoint.kernel.PeekNamedPipe.argtypes = [ctypes.wintypes.HANDLE, ctypes.c_void_p,
             ctypes.wintypes.DWORD, ctypes.c_void_p, ctypes.POINTER(ctypes.wintypes.DWORD), ctypes.c_void_p]
-        self.compiler = self._hello(0, discovery=True)
-        # The first mismatched Hello cannot Build. Reconnect with exact identity.
-        self.close()
-        self.reconnect(endpoint, owner)
+        self.compiler = endpoint.compiler_identity
+        self._hello(self.compiler)
 
     def reconnect(self, endpoint, owner):
         deadline = self.deadline
@@ -76,14 +74,12 @@ class Pipe:
             os.close(descriptor)
             raise
 
-    def _hello(self, compiler, discovery=False):
+    def _hello(self, compiler):
         try:
-            self.send({"Hello": {"version": 4, "compiler": compiler}})
+            version = self.endpoint.protocol_version
+            self.send({"Hello": {"version": version, "compiler": compiler}})
             hello = self.receive()["Hello"]
-            if discovery:
-                if hello["version"] != 4 or hello["retiring"]:
-                    raise RuntimeError("unexpected daemon generation state")
-            elif hello != {"version": 4, "compiler": compiler, "retiring": False}:
+            if hello != {"version": version, "compiler": compiler, "retiring": False}:
                 raise RuntimeError("generation changed during handshake")
             return hello["compiler"]
         except BaseException:
@@ -144,15 +140,17 @@ def main():
         raise ValueError("owned outputs must be beneath E:/dq-cache")
     compiler, template = iteration.safe_e(args.compiler), iteration.safe_e(args.template)
     iteration.regular(compiler); iteration.regular(template)
-    endpoint = iteration.Endpoint()
+    compiler_sha256 = iteration.sha(compiler)
+    endpoint = iteration.Endpoint(compiler, compiler_sha256)
     endpoint.probe()  # Refuse any pre-existing daemon without retiring it.
     root.mkdir(parents=True)
     source = root / "source"; source.mkdir()
     project = source / "world.dme"
     project.write_text('/world\n    name = "lifecycle"\n/proc/lifecycle_value()\n    return 42\n', encoding="utf-8")
     environment = os.environ.copy(); environment["DMB_CACHE_DIR"] = str(root / "cache")
+    environment.pop("DMB_DAEMON_NAMESPACE", None)
     owned = []
-    report = {"schema_version": 1, "status": "running", "scope": "direct protocol retirement, owned crash restart and fresh byte oracle; not version-upgrade autostart, runtime or performance acceptance", "compiler_sha256": iteration.sha(compiler), "template_sha256": iteration.sha(template)}
+    report = {"schema_version": 1, "status": "running", "scope": "direct protocol retirement, owned crash restart and fresh byte oracle; not version-upgrade autostart, runtime or performance acceptance", "compiler_sha256": compiler_sha256, "template_sha256": iteration.sha(template), "daemon_endpoint_descriptor": endpoint.descriptor}
     def start(name):
         with (root / (name + ".stdout")).open("xb") as out, (root / (name + ".stderr")).open("xb") as err:
             child = subprocess.Popen([str(compiler), "--serve-daemon"], stdout=out, stderr=err, env=environment, creationflags=subprocess.CREATE_NO_WINDOW)

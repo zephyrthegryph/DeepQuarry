@@ -15,7 +15,7 @@ pub(super) fn current_generation_name(base: &str, compiler: u128) -> io::Result<
 pub(super) fn current_discovery_name(base: &str) -> io::Result<String> {
     discovery_name(base, std::env::var_os("DMB_DAEMON_NAMESPACE").as_deref())
 }
-fn discovery_name(base: &str, namespace: Option<&OsStr>) -> io::Result<String> {
+pub(super) fn discovery_name(base: &str, namespace: Option<&OsStr>) -> io::Result<String> {
     let scoped = name(base, namespace)?;
     if namespace.is_some() {
         Ok(format!(
@@ -26,7 +26,11 @@ fn discovery_name(base: &str, namespace: Option<&OsStr>) -> io::Result<String> {
         Ok(format!("{base}-discovery-v1"))
     }
 }
-fn generation_name(base: &str, compiler: u128, namespace: Option<&OsStr>) -> io::Result<String> {
+pub(super) fn generation_name(
+    base: &str,
+    compiler: u128,
+    namespace: Option<&OsStr>,
+) -> io::Result<String> {
     let scoped = name(base, namespace)?;
     // Keep the full compiler identity. Hash the validated namespace so its
     // supported 64-byte spelling does not overflow Unix socket path limits.

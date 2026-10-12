@@ -30,12 +30,13 @@ class PipeTests(unittest.TestCase):
     def pipe(self, stream):
         pipe = lifecycle.Pipe.__new__(lifecycle.Pipe)
         pipe.file = stream
+        pipe.endpoint = type("Endpoint", (), {"protocol_version": 5})()
         pipe.deadline = time.monotonic() + 10
         return pipe
 
     def test_partial_writes_produce_one_complete_frame(self):
         stream = Stream(2)
-        expected = {"Hello": {"version": 4, "compiler": 123}}
+        expected = {"Hello": {"version": 5, "compiler": 123}}
         self.pipe(stream).send(expected)
         size = struct.unpack("<I", stream.data[:4])[0]
         self.assertEqual(size, len(stream.data) - 4)
@@ -51,7 +52,7 @@ class PipeTests(unittest.TestCase):
         self.assertEqual(pipe.file.data, b"")
 
     def test_handshake_errors_close_once(self):
-        for reply in ({"Hello": {"version": 4, "compiler": 999, "retiring": False}}, {"Rejected": "bad"}, None):
+        for reply in ({"Hello": {"version": 5, "compiler": 999, "retiring": False}}, {"Hello": {"version": 4, "compiler": 123, "retiring": False}}, {"Rejected": "bad"}, None):
             stream = Stream()
             pipe = self.pipe(stream)
 
@@ -65,6 +66,14 @@ class PipeTests(unittest.TestCase):
                 pipe._hello(123)
             pipe.close()
             self.assertEqual(stream.closed, 1)
+
+    def test_handshake_uses_exact_descriptor_protocol_and_compiler(self):
+        stream = Stream()
+        pipe = self.pipe(stream)
+        pipe.receive = lambda: {"Hello": {"version": 5, "compiler": 123, "retiring": False}}
+        self.assertEqual(pipe._hello(123), 123)
+        request = json.loads(stream.data[4:])
+        self.assertEqual(request, {"Hello": {"version": 5, "compiler": 123}})
 
     def test_adoption_failure_closes_exact_current_owner(self):
         class Kernel:

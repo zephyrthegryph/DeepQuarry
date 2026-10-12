@@ -53,7 +53,7 @@ def main():
     initial = ''.join(f"/proc/query_{n}(x=1)\n    return x + 1\n" for n in range(270))
     project.write_text(initial, encoding="utf-8")
     namespace = "query-" + uuid.uuid4().hex
-    endpoint = I.Endpoint(namespace); endpoint.probe()
+    endpoint = None
     env = os.environ.copy(); env["DMB_DAEMON_NAMESPACE"] = namespace; env["DMB_CACHE_DIR"] = str(root / "cache")
     env["DMB_DAEMON_AUTOSTART"] = "0"
     report = {"schema_version": 1, "status": "running", "scope": "actual compile/query clients, fresh output and selected-reference equality; not shared input closure/runtime/performance acceptance",
@@ -106,6 +106,9 @@ def main():
         if not rows or not any(row["row"] == "selected_reference" for row in rows): raise ValueError("demand returned no actual references")
         return reply, target["occurrence"], rows
     try:
+        endpoint = I.Endpoint(pins["compiler"], args.compiler_sha256, namespace, owned_job=job)
+        endpoint.probe()
+        report["daemon_endpoint_descriptor"] = endpoint.descriptor
         with (root / "daemon.stdout").open("xb") as out, (root / "daemon.stderr").open("xb") as err:
             daemon = subprocess.Popen([str(pins["compiler"]), "--serve-daemon"], env=env, stdout=out, stderr=err,
                                       creationflags=subprocess.CREATE_NO_WINDOW | 0x4)

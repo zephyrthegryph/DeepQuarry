@@ -28,6 +28,7 @@ import build_receipt
 from iteration_memory import OwnedMemory, iteration_concurrency
 from upgrade_owned_job import OwnedJob
 from session_acceptance import session_edit_coverage, edit_sessions, bounded_policy, daemon_reserve
+from daemon_endpoint import load_descriptor
 
 _owned_memory = None
 _owned_job = None
@@ -155,14 +156,11 @@ def replace_edit(project, edit):
 
 
 class Endpoint:
-    def __init__(self, namespace=None):
-        sid = subprocess.check_output(
-            ["powershell", "-NoProfile", "-Command",
-             "[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value"],
-            text=True, timeout=10, creationflags=subprocess.CREATE_NO_WINDOW).strip()
-        self.name = "\\\\.\\pipe\\dmbd-" + sid
-        if namespace:
-            self.name += "-" + namespace
+    def __init__(self, compiler, compiler_sha256, namespace=None, *, owned_job=None):
+        self.descriptor = load_descriptor(compiler, compiler_sha256, namespace, owned_job=owned_job)
+        self.name = self.descriptor["generation_endpoint"]
+        self.protocol_version = self.descriptor["protocol_version"]
+        self.compiler_identity = int(self.descriptor["compiler_identity"], 16)
         self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
         self.kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD,
             wintypes.DWORD, ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD, ctypes.c_void_p]
@@ -489,7 +487,7 @@ def main():
     write_receipt(root, receipt)
     global _owned_memory, _owned_job, _daemon_namespace
     _daemon_namespace = "iteration-" + uuid.uuid4().hex
-    endpoint = Endpoint(_daemon_namespace)
+    endpoint = None
     receipt["daemon_namespace"] = _daemon_namespace
     daemon = None
     _owned_memory = OwnedMemory(args.owned_memory_budget_bytes) if args.worktree_sources or args.sample_owned_memory else None
@@ -497,6 +495,8 @@ def main():
     deadline = started + args.overall_seconds
     try:
         _owned_job = OwnedJob(job_bytes)
+        endpoint = Endpoint(executable, receipt["compiler_sha256"], _daemon_namespace, owned_job=_owned_job)
+        receipt["daemon_endpoint_descriptor"] = endpoint.descriptor
         receipt["owned_job_memory_limit_bytes"] = job_bytes
         receipt["daemon_soft_private_limit_bytes"] = soft_bytes
         receipt["memory_reserve_scope"] = "six-root soft pressure reserve; active builds can exceed it; six resident graphs are not guaranteed" if soft_bytes else "ordinary daemon startup policy"

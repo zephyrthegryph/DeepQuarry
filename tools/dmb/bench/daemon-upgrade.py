@@ -32,9 +32,12 @@ def hello(endpoint, job, deadline):
             raise ctypes.WinError(ctypes.get_last_error())
         image = job.image(pid.value)
         pipe._adopt_handle(handle); handle = None
-        pipe.send({"Hello": {"version": 4, "compiler": 0}})
+        pipe.send({"Hello": {"version": endpoint.protocol_version, "compiler": endpoint.compiler_identity}})
         reply = pipe.receive()
         if not isinstance(reply, dict) or "Hello" not in reply: raise RuntimeError("invalid isolated Hello")
+        greeting = reply["Hello"]
+        if greeting.get("version") != endpoint.protocol_version or greeting.get("compiler") != endpoint.compiler_identity:
+            raise RuntimeError("isolated Hello differs from pinned compiler endpoint descriptor")
         return pid.value, image, reply["Hello"]
     finally:
         if handle is not None: endpoint.kernel.CloseHandle(handle)
@@ -77,8 +80,7 @@ def main():
     project = source / manifest
     if not args.source: project.write_text('/world/name = "upgrade"\n' + ''.join('/proc/probe_%d()\n    return %d\n' % (n,n) for n in range(512)), encoding="utf-8")
     namespace = "upgrade-" + uuid.uuid4().hex
-    endpoint = I.Endpoint(); endpoint.name += "-" + namespace
-    endpoint.probe()  # Never probes or retires the default user endpoint.
+    old_endpoint = new_endpoint = None
     env = os.environ.copy(); env["DMB_DAEMON_NAMESPACE"] = namespace; env["DMB_CACHE_DIR"] = str(root / "cache")
     env.pop("DMB_DAEMON_AUTOSTART", None)
     deadline = time.monotonic() + args.overall_seconds; job = OwnedJob(job_bytes); owned = []
@@ -101,11 +103,19 @@ def main():
         values = ["compile", str(project), "--engine-template", str(pins["template"]), "--bootstrap-catalog", "--workers", str(generation_workers), "--exact-inputs", "--artifact-directory", str(root/name/"artifacts"), "--output-store", str(root/name/"store")]
         return values + (["--no-daemon", "--no-cache"] if fresh else [])
     try:
+        old_endpoint = I.Endpoint(pins["old"], args.old_sha256, namespace, owned_job=job)
+        new_endpoint = I.Endpoint(pins["new"], args.new_sha256, namespace, owned_job=job)
+        if old_endpoint.name == new_endpoint.name:
+            raise RuntimeError("distinct compiler generations must provide distinct build endpoints")
+        if old_endpoint.descriptor["discovery_endpoint"] != new_endpoint.descriptor["discovery_endpoint"]:
+            raise RuntimeError("compiler generations disagree on stable namespace discovery")
+        report["endpoint_descriptors"] = {"old": old_endpoint.descriptor, "new": new_endpoint.descriptor}
+        old_endpoint.probe(); new_endpoint.probe()  # No default or legacy endpoint is probed.
         # Prove the new binary honors the isolated endpoint before giving its
         # normal client permission to retire/autostart any server.
         preflight = start(pins["new"], ["--serve-daemon"], "namespace-preflight")
         startup_deadline = min(deadline, time.monotonic() + 20)
-        while not endpoint.probe(preflight):
+        while not new_endpoint.probe(preflight):
             if preflight.poll() is not None or time.monotonic() >= startup_deadline:
                 raise RuntimeError("new compiler lacks required isolated namespace")
             time.sleep(.02)
@@ -113,13 +123,13 @@ def main():
         if not report["namespace_preflight_cleanup"]["reaped"]: raise RuntimeError("preflight not reaped")
         old = start(pins["old"], ["--serve-daemon"], "old-daemon")
         startup_deadline = min(deadline, time.monotonic() + 20)
-        while not endpoint.probe(old):
+        while not old_endpoint.probe(old):
             if old.poll() is not None or time.monotonic() >= startup_deadline: raise RuntimeError("namespace unsupported or old daemon startup failed")
             time.sleep(.02)
         def build_old():
             pipe = None
             try:
-                pipe = L.Pipe(endpoint, old); pipe.deadline = min(deadline, time.monotonic() + 300)
+                pipe = L.Pipe(old_endpoint, old); pipe.deadline = min(deadline, time.monotonic() + 300)
                 request = dict(command="Compile", project=str(project), defines={}, workers=generation_workers, engine_template=str(pins["template"]), bootstrap_catalog=True, progress_enabled=True, output_store=str(root/"old"/"store"), exact_inputs=True, no_cache=False, cache_root=str(root/"cache"), record_inputs=None, replay_inputs=None, artifact_directory=str(root/"old"/"artifacts"), no_daemon=False, trace_path=None)
                 pipe.send({"Build":request})
                 while True:
@@ -142,17 +152,22 @@ def main():
         observed_drain = False; replacement = None
         while new.poll() is None:
             if time.monotonic() >= new_deadline: raise TimeoutError("new client exceeded bounded deadline")
-            try: answer = hello(endpoint, job, min(deadline, time.monotonic()+2))
+            try: answer = hello(old_endpoint, job, min(deadline, time.monotonic()+2))
             except OSError: answer = None  # Old generation can exit between connect and Hello.
             if answer:
                 pid, image, greeting = answer
-                if pid == old.pid and greeting.get("retiring") and not completed.is_set(): observed_drain = True
-                elif pid != old.pid:
-                    if Path(image).resolve() != pins["new"].resolve() or I.sha(Path(image)) != args.new_sha256: raise RuntimeError("replacement image differs")
-                    replacement = {"pid":pid, "image":image, "hello":greeting}
+                if pid != old.pid: raise RuntimeError("old-generation endpoint belongs to another process")
+                if greeting.get("retiring") and not completed.is_set(): observed_drain = True
+            try: answer = hello(new_endpoint, job, min(deadline, time.monotonic()+2))
+            except OSError: answer = None
+            if answer:
+                pid, image, greeting = answer
+                if pid == old.pid or greeting.get("retiring") or Path(image).resolve() != pins["new"].resolve() or I.sha(Path(image)) != args.new_sha256:
+                    raise RuntimeError("replacement image/generation differs")
+                replacement = {"pid":pid, "image":image, "hello":greeting}
             time.sleep(.01)
         if replacement is None and new.returncode == 0:
-            answer = hello(endpoint, job, min(deadline, time.monotonic() + 2))
+            answer = hello(new_endpoint, job, min(deadline, time.monotonic() + 2))
             if answer:
                 pid, image, greeting = answer
                 if pid == old.pid or Path(image).resolve() != pins["new"].resolve() or I.sha(Path(image)) != args.new_sha256:

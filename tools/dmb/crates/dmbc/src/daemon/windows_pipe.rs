@@ -258,6 +258,18 @@ impl Endpoint {
         })
     }
 }
+/// Uses the same current-user and namespace authority as the live endpoints,
+/// without opening a pipe, starting a daemon or changing its lifecycle.
+pub(in crate::daemon) fn endpoint_addresses(
+    compiler: u128,
+    namespace: Option<&std::ffi::OsStr>,
+) -> io::Result<(String, String)> {
+    let base = format!(r"\\.\pipe\dmbd-{}", user_sid()?);
+    Ok((
+        super::namespace::generation_name(&base, compiler, namespace)?,
+        super::namespace::discovery_name(&base, namespace)?,
+    ))
+}
 pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
     let pending = pipe_instance(endpoint, true).map_err(|error| {
         if error.raw_os_error() == Some(5) {

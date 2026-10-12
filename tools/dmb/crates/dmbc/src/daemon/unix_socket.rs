@@ -73,7 +73,10 @@ impl Endpoint {
         )
     }
     fn named(name: String, uid: u32) -> io::Result<Self> {
-        let directory = std::env::temp_dir().join(name);
+        let path = address_path(&name);
+        let directory = path
+            .parent()
+            .expect("socket address has a private directory");
         match fs::symlink_metadata(&directory) {
             Ok(_) => {}
             Err(e) if e.kind() == io::ErrorKind::NotFound => {
@@ -96,8 +99,35 @@ impl Endpoint {
                 "daemon runtime directory is not private",
             ));
         }
-        Ok(Self(directory.join("compiler.sock")))
+        Ok(Self(path))
     }
+}
+fn address_path(name: &str) -> PathBuf {
+    std::env::temp_dir().join(name).join("compiler.sock")
+}
+/// Unlike Endpoint::named, description does not create runtime directories.
+pub(in crate::daemon) fn endpoint_addresses(
+    compiler: u128,
+    namespace: Option<&std::ffi::OsStr>,
+) -> io::Result<(String, String)> {
+    let base = format!("dmbd-{}", unsafe { getuid() });
+    let address = |name: String| {
+        address_path(&name)
+            .into_os_string()
+            .into_string()
+            .map_err(|_| {
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "daemon socket address is not UTF-8",
+                )
+            })
+    };
+    Ok((
+        address(super::namespace::generation_name(
+            &base, compiler, namespace,
+        )?)?,
+        address(super::namespace::discovery_name(&base, namespace)?)?,
+    ))
 }
 pub(in crate::daemon) fn listener(endpoint: &Endpoint) -> io::Result<Listener> {
     use fs2::FileExt;
