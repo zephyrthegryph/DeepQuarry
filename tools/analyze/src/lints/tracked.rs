@@ -655,15 +655,26 @@ fn invalid_faults(f: &SourceFile, markers: &BTreeSet<(String, String)>) -> Vec<(
             }
             // Evidence must come from the real audit of the injected target,
             // not an arbitrary datum with a matching .key field.
-            let audit = Pat::cached(&format!(r"^\s*var/datum/seq_step/(\w+)\s*=\s*\w+\.missed_wake\(\s*{}\s*\)\s*$", regex::escape(target)));
+            let audit = Pat::cached(&format!(r"^\s*var/datum/seq_step/(\w+)\s*=\s*(\w+)\.missed_wake\(\s*{}\s*\)\s*$", regex::escape(target)));
             let mut actual = false;
             for (proof_idx, (_, later)) in proc.body.iter().enumerate().skip(idx + 1) {
                 let Some(found) = audit.captures(later) else { continue };
                 let evidence = found.s(1);
+                let receiver = found.s(2);
+                // A matching method name is not proof: require the engine's
+                // typed definition getter before injection, with no rebinding.
+                let binding = Pat::cached(&format!(r"^\s*var/datum/sequence/{}\s*=\s*sequence_def\(\s*\w+\s*\)\s*$", regex::escape(receiver)));
+                let rebind = Pat::cached(&format!(r"^\s*(?:var(?:/[\w]+)*/)?{}\s*(?:=(?!=)|\+=|-=|\*=|/=|\+\+|--)", regex::escape(receiver)));
+                let mut definition_bound = false;
+                for (_, preceding) in proc.body.iter().take(idx) {
+                    if binding.is_match(preceding) { definition_bound = true; }
+                    else if rebind.is_match(preceding) { definition_bound = false; }
+                }
+                if !definition_bound || proc.body.iter().take(proof_idx).skip(idx + 1).any(|(_, between)| rebind.is_match(between)) { continue; }
                 let proof = Pat::cached(&format!(r"^\s*TEST_ASSERT\(\s*{}\.confirm_missed_publish\(\s*{}\??\.key\s*\)", regex::escape(token), regex::escape(evidence)));
                 let overwrite = Pat::cached(&format!(r"^\s*(?:{}|{})\s*=(?!=)", regex::escape(token), regex::escape(evidence)));
                 for (_, following) in proc.body.iter().skip(proof_idx + 1) {
-                    if overwrite.is_match(following) { break; }
+                    if overwrite.is_match(following) || rebind.is_match(following) { break; }
                     if proof.is_match(following) { actual = true; break; }
                 }
                 if actual { break; }
@@ -722,8 +733,20 @@ mod fault_contract_tests {
         let markers = BTreeSet::from([("/datum/fixture".to_owned(), "heat".to_owned())]);
         invalid_faults(&source(rel, body), &markers)
     }
-    const GOOD: &str = "/datum/unit_test/probe/Run()\n\tvar/datum/fixture/E = allocate(/datum/fixture)\n\tvar/datum/test_publish_fault/F = TEST_FAULT_MISSING_PUBLISH(E, heat, 7)\n\tvar/datum/seq_step/missed = def.missed_wake(E)\n\tTEST_ASSERT(F.confirm_missed_publish(missed?.key), \"observed actual fault\")\n";
+    const GOOD: &str = "/datum/unit_test/probe/Run()\n\tvar/datum/fixture/E = allocate(/datum/fixture)\n\tvar/datum/sequence/def = sequence_def(SEQ_TEST)\n\tvar/datum/test_publish_fault/F = TEST_FAULT_MISSING_PUBLISH(E, heat, 7)\n\tvar/datum/seq_step/missed = def.missed_wake(E)\n\tTEST_ASSERT(F.confirm_missed_publish(missed?.key), \"observed actual fault\")\n";
     #[test] fn valid_tracked_fixture_and_actual_proof() { assert!(judge("code/modules/unit_tests/probe.dm", GOOD).is_empty()); }
+    #[test] fn forged_audit_receiver_type_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("var/datum/sequence/def = sequence_def(SEQ_TEST)", "var/datum/fake_same_named/def = allocate(/datum/fake_same_named)")).is_empty());
+    }
+    #[test] fn reassigned_definition_before_injection_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("\tvar/datum/test_publish_fault/F", "\tdef = fake_same_named()\n\tvar/datum/test_publish_fault/F")).is_empty());
+    }
+    #[test] fn reassigned_definition_before_audit_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("\tvar/datum/seq_step/missed", "\tdef = fake_same_named()\n\tvar/datum/seq_step/missed")).is_empty());
+    }
+    #[test] fn reassigned_definition_before_confirmation_rejected() {
+        assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("\tTEST_ASSERT(F", "\tdef = fake_same_named()\n\tTEST_ASSERT(F")).is_empty());
+    }
     #[test] fn production_call_rejected() { assert!(!judge("code/game/machinery/probe.dm", GOOD).is_empty()); }
     #[test] fn production_owner_in_test_file_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("/datum/unit_test/probe/Run", "/obj/machine/proc/work")).is_empty()); }
     #[test] fn unknown_field_rejected() { assert!(!judge("code/modules/unit_tests/probe.dm", &GOOD.replace("E, heat,", "E, unknown,")).is_empty()); }
