@@ -124,8 +124,8 @@ impl HeapCensus {
                                 if let Some(binding) = recipe.binding.lock().unwrap_or_else(|e| e.into_inner()).as_ref() {
                                     self.prepared_abi_units(binding);
                                 }
-                                if self.vec_payload("prepared_abi.batch_keys", &recipe.keys) {
-                                    for key in &recipe.keys {self.slice("prepared_abi.artifact_keys",key,true);}
+                                if self.slice("prepared_abi.batch_keys", &recipe.keys, true) {
+                                    for key in recipe.keys.iter() {self.slice("prepared_abi.artifact_keys",key,true);}
                                 }
                             }
                         }

@@ -56,7 +56,15 @@ pub(crate) struct Recipe {
     // identifiers only: PreparedAbiUnits retains no tree, source, or origins.
     // Exact receipt and current roster/map admission precede every reuse.
     pub(crate) binding: Mutex<Option<Arc<crate::driver_facts::PreparedAbiUnits>>>,
-    pub(crate) keys: Vec<Arc<[u8]>>,
+    pub(crate) keys: Arc<[Arc<[u8]>]>,
+}
+impl Recipe {
+    fn retained_keys(&self) -> impl Iterator<Item = &[u8]> {
+        self.keys
+            .iter()
+            .map(|key| key.as_ref())
+            .chain(std::iter::once(KEY))
+    }
 }
 struct Current<'a> {
     inputs: Arc<Inputs>,
@@ -167,15 +175,7 @@ pub(in crate::driver_facts) fn replay(
     };
     *binding = Some(units.clone());
     drop(binding);
-    let keys = Mutex::new(
-        recipe
-            .keys
-            .iter()
-            .cloned()
-            .chain(std::iter::once(Arc::from(KEY)))
-            .collect(),
-    );
-    store.prune(&keys);
+    store.prune_keys(recipe.retained_keys());
     store
         .reused
         .fetch_add(units.entries().len(), Ordering::Relaxed);
@@ -292,8 +292,12 @@ pub(in crate::driver_facts) fn remember(
                 units: units.into(),
                 rows: rows.into(),
                 binding: Mutex::new(Some(prepared.clone())),
-                keys,
+                keys: keys.into(),
             }))
         },
     );
 }
+
+#[cfg(test)]
+#[path = "abi_batch_keys_tests.rs"]
+mod key_tests;

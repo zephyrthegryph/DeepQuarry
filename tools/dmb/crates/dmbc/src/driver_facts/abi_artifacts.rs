@@ -127,8 +127,10 @@ impl AbiArtifacts {
     }
     pub(super) fn prune(&self, keys: &Mutex<Vec<Arc<[u8]>>>) {
         let keys = keys.lock().unwrap_or_else(|error| error.into_inner());
-        self.store
-            .retain_current_keys(keys.iter().map(|key| key.as_ref()));
+        self.prune_keys(keys.iter().map(|key| key.as_ref()));
+    }
+    pub(super) fn prune_keys<'a>(&self, keys: impl IntoIterator<Item = &'a [u8]>) {
+        self.store.retain_current_keys(keys);
         self.groups.prune();
     }
 }
