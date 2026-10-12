@@ -42,3 +42,18 @@ arming, the actual edge, parking and resumption separately; its retry passed on
 `b62b84e3b6` (one test, zero failures, clean boot). All five original failures
 have now passed targeted repair runs. A fresh lane-ready gate remains required.
 None of these result sets substitutes for a lane-ready stamp.
+
+The final normal lane-ready run stamped `9d526bc949` against master
+`eb6096546b`: 51 passed, zero failed, production compilation had zero errors,
+DreamChecker had zero diagnostics, and analyzer/ratchets passed. Both mandatory
+pins passed; neither op nor appearance goldens were blessed. The outer wrapper
+initially loaded the pre-merge abbreviated-SHA bug; restarting the normal updated
+entry point used its duplicate-test guard, without forcing another test world.
+The targeted analyzer output-lookup regression also passed.
+
+The seven legacy grid-channel publications are replaced by exact registry
+identity and tracked-field publications; their unused channel defines remain
+for the following channel-removal landing. Known fixture warnings remain for
+coalesce_runs, test_prompts and NIFsoft caches. This run additionally exposed
+stat_spills in the native first-read fixture; the hygiene landing must restore
+its exact entry value after teardown. These warnings are recorded, not suppressed.
