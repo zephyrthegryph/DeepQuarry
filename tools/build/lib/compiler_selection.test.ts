@@ -683,3 +683,52 @@ test('shadow legacy successful callback does not fabricate reference diagnostics
     expect(report.diagnosticsAgree).toBe(null);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
+test('failed native publication ignores leftover pair receipts and preserves old output files', async () => {
+  const root = fs.mkdtempSync('E:/dq-cache/native-failed-publication-fixture-');
+  process.env.DQ_COMPILER = 'native';
+  process.env.DQ_NATIVE_COMPILER = 'native-compiler';
+  process.env.DQ_NATIVE_ENGINE_TEMPLATE = 'engine-template';
+  process.env.DQ_NATIVE_RUN_ROOT = path.join(root, 'requests');
+  const project = path.join(root, 'probe.dme');
+  const dmb = path.join(root, 'probe.dmb');
+  const rsc = path.join(root, 'probe.rsc');
+  fs.writeFileSync(project, '#include "probe.dm"\n');
+  fs.writeFileSync(dmb, 'old published DMB');
+  fs.writeFileSync(rsc, 'old published RSC');
+  const originalDmb = fs.readFileSync(dmb);
+  const originalRsc = fs.readFileSync(rsc);
+  try {
+    for (const [code, diagnostic] of [
+      [2, 'probe.dm:3:error: value: undefined var'],
+      [75, 'request cancelled by newer request'],
+      [75, 'inputs changed before publication'],
+      [1, 'output publication unavailable'],
+    ] as const) {
+      for (const malformed of [false, true]) {
+        let fallbackCalls = 0;
+        let resultPath = '';
+        const failure = await selectedCompiler(project, {}, async () => { fallbackCalls++; },
+          async (_executable, args) => {
+            resultPath = args[args.indexOf('--compile-result-file') + 1];
+            // A failed attempt cannot turn any machine-result bytes into a
+            // current generation. Include both an old valid-shaped result and
+            // malformed bytes which would throw if the failure path read them.
+            fs.writeFileSync(resultPath, malformed ? 'not JSON' : JSON.stringify({
+              schema_version: 1, kind: 'native_pair', store: path.join(root, 'old-store'),
+              pair_id: '1'.repeat(32), dmb_hash: '2'.repeat(32), rsc_hash: '3'.repeat(32),
+              dmb_bytes: originalDmb.length, rsc_bytes: originalRsc.length, output_project: project,
+            }));
+            return { code, combined: diagnostic, signal: null };
+          }).then(() => null, error => error);
+        expect(failure).toBeInstanceOf(Juke.ExitCode);
+        expect(failure.code).toBe(code);
+        expect(fallbackCalls).toBe(0);
+        expect(fs.readFileSync(dmb)).toEqual(originalDmb);
+        expect(fs.readFileSync(rsc)).toEqual(originalRsc);
+        expect(fs.existsSync(resultPath)).toBe(false);
+      }
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
