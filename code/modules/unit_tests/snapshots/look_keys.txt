@@ -2212,7 +2212,7 @@
 /obj/effect/gibspawner/robot	a9296a7e7cde72d6	bloodcolor,fleshcolor
 /obj/effect/graffitispawner	5b6c416ac14bda5f	color_secondary,graffiti_type
 /obj/effect/hoist_hook	206e0997e8b6dad1	source_hoist
-/obj/effect/hotspot	a1da4adcfe6f02ad	*
+/obj/effect/hotspot	6e219ccac819facc	our_hot_group,starting_temperature,starting_volume
 /obj/effect/illusionary_fall	c0cd43bc6116d78f	
 /obj/effect/immovablerod	125692f35b5aa562	
 /obj/effect/instantboom	c21db7c9be79cd24	devastation,flash,heavyboom,lightboom
