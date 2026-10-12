@@ -30,9 +30,9 @@ def tool_pin(path,expected):
     if digest!=expected:raise ValueError('machine-slot tool pin changed')
     return {'path':str(path),'sha256':digest,'bytes':info.st_size}
 
-def slot_command(kind,command,worktree,inherited,*,label,hosted_unit_test=False):
+def slot_command(kind,command,worktree,inherited,*,label,hosted_unit_test=False,fixture_test_world=False):
     if kind not in ('dm_compile','test_world','cargo'):raise ValueError('unsupported direct heavy-child slot class')
-    if kind=='test_world' and not hosted_unit_test:raise ValueError('raw fixture is not an issued hosted unit-test run')
+    if kind=='test_world' and not (hosted_unit_test or fixture_test_world):raise ValueError('explicit hosted or fixture test-world mode required')
     if not command or any(not isinstance(value,str) or '\0' in value for value in command):raise ValueError('invalid direct argv')
     if any(Path(value.replace('\\','/')).name in ('build.sh','build.bat','build.ts','runtime-suite.py','dq_focused_test.sh') for value in command):
         raise ValueError('do not hold an outer slot around slot-aware orchestration')
@@ -45,7 +45,7 @@ def slot_command(kind,command,worktree,inherited,*,label,hosted_unit_test=False)
     environment.update(CAPS,DQ_SLOTS='1',DQ_SLOTS_DIR=str(directory),DQ_SLOT_WORKTREE=str(owner))
     return {'command':[tools['bash']['path'],tools['script']['path'],'run',kind,'--label',label,'--',*command],
             'environment':environment,'evidence':{'kind':kind,'tools':tools,'worktree':str(owner),'slotDirectory':str(directory),
-            'capacities':dict(CAPS),'waitIncludedInOwnedChildDeadline':True,'jobContainment':'caller must add suspended bash to existing Job before resume'}}
+            'worldMode':('fixture' if fixture_test_world else 'hosted' if hosted_unit_test else None),'capacities':dict(CAPS),'waitIncludedInOwnedChildDeadline':True,'jobContainment':'caller must add suspended bash to existing Job before resume'}}
 
 def claim_workspace_target(target,worktree):
     """Exclusive operational owner marker only; never licenses compiler outputs.

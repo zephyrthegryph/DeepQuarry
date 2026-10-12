@@ -65,6 +65,7 @@ def main():
     admission_parser.add_argument('--reference-receipt',type=Path,required=True)
     admission_parser.add_argument('--reference-receipt-sha256',required=True)
     admitted,remaining=admission_parser.parse_known_args(args)
+    sys.path.insert(0,str(HERE.parents[2]/'phase0'))
     from recover_iteration_source import absolute_nonreparse,regular,sha
     reference_file=absolute_nonreparse(admitted.reference_receipt);regular(reference_file)
     if not reference_file.is_relative_to(Path('E:/dq-cache')) or reference_file.stat().st_size>1024*1024:
@@ -89,6 +90,18 @@ def main():
             def child(executable,arguments,directory,child_deadline,**kwargs):
                 nonlocal evidence
                 evidence=directory.parent
+                if directory.name.endswith(('-compile','-runtime')):
+                    from machine_slot_command import slot_command
+                    runtime=directory.name.endswith('-runtime')
+                    plan=slot_command('test_world' if runtime else 'dm_compile',[str(executable),*arguments],HERE.parents[4],os.environ,label='dependent initializer '+directory.name,fixture_test_world=runtime)
+                    previous=dict(os.environ)
+                    try:
+                        os.environ.clear();os.environ.update(plan['environment'])
+                        result=original(Path(plan['command'][0]),plan['command'][1:],directory,min(deadline,child_deadline),**kwargs)
+                        result['machineSlot']=plan['evidence'];return result
+                    finally:
+                        os.environ.clear();os.environ.update(previous)
+                # This standalone world is not a hosted unit-test world slot.
                 return original(executable,arguments,directory,min(deadline,child_deadline),**kwargs)
             h.run_child=child
         return module

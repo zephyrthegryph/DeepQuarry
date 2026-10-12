@@ -16,6 +16,11 @@ class Slots(unittest.TestCase):
         for command in (['bash','tools/build/build.sh','dm-test'],['python','runtime-suite.py']):
             with self.assertRaises(ValueError):slots.slot_command('cargo',command,'E:/projects/dq-wt/dmb-review',{},label='nested')
         with self.assertRaises(ValueError):slots.slot_command('test_world',['dd.exe'],'E:/projects/dq-wt/dmb-review',{},label='raw tiny fixture')
+    def test_fixture_world_is_explicitly_distinct_from_hosted(self):
+        with patch.object(slots,'tool_pin',side_effect=lambda p,s:{'path':str(p),'sha256':s,'bytes':1}):
+            plan=slots.slot_command('test_world',['dd.exe'],'E:/projects/dq-wt/dmb-review',{},label='tiny fixture',fixture_test_world=True)
+        self.assertEqual(plan['evidence']['worldMode'],'fixture')
+        self.assertEqual(plan['evidence']['kind'],'test_world')
     def test_existing_targets_require_same_explicit_workspace_owner(self):
         with tempfile.TemporaryDirectory(dir='E:/dq-cache',prefix='slot-policy-') as root:
             target=Path(root)/'target'

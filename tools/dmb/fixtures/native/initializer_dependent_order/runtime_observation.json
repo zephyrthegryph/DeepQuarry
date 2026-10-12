@@ -1,0 +1,145 @@
+{
+  "schema": 1,
+  "scope": "Tiny forward constructor initialization order only; reverse compile-only, no full-suite or source-closure claim",
+  "receipt": {
+    "path": "E:\\dq-cache\\dmb-initializer-order-runtime\\0ec3454d37be48d3920f93d9e0e7b7af\\receipt.json",
+    "sha256": "9496f960d9992ec09b54a2531384c936d95264226764cf5f1137ab2250778e32"
+  },
+  "cleanup": {
+    "reaped": true,
+    "error": null,
+    "memory": {
+      "configured_job_memory_bytes": 3999997952,
+      "peak_job_commit_bytes": 86401024,
+      "peak_process_commit_bytes": 58748928,
+      "scope": "Windows owned-job commit accounting; not private-byte or working-set peak"
+    }
+  },
+  "complete": true,
+  "matches": true,
+  "byond": {
+    "markers": [
+      "DQ_INIT_ORDER values first=11 second=12 trace=first=11;second=12; resource=contract-resource.txt",
+      "DQ_INIT_ORDER PASS",
+      "DQ_INIT_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "native": {
+    "markers": [
+      "DQ_INIT_ORDER values first=11 second=12 trace=first=11;second=12; resource=contract-resource.txt",
+      "DQ_INIT_ORDER PASS",
+      "DQ_INIT_ORDER finished"
+    ],
+    "runtimes": {}
+  },
+  "slots": {
+    "byond-compile": {
+      "kind": "dm_compile",
+      "tools": {
+        "script": {
+          "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+          "bytes": 22161
+        },
+        "bash": {
+          "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+          "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+          "bytes": 45560
+        }
+      },
+      "worktree": "E:\\projects\\dq-wt\\dmb-review",
+      "slotDirectory": "E:\\dq-cache\\slots",
+      "worldMode": null,
+      "capacities": {
+        "DQ_SLOTS_DM_COMPILE": "2",
+        "DQ_SLOTS_TEST_WORLD": "3",
+        "DQ_SLOTS_CARGO": "1",
+        "DQ_SLOTS_LOOK_STATE_PIN": "2"
+      },
+      "waitIncludedInOwnedChildDeadline": true,
+      "jobContainment": "caller must add suspended bash to existing Job before resume"
+    },
+    "byond-runtime": {
+      "kind": "test_world",
+      "tools": {
+        "script": {
+          "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+          "bytes": 22161
+        },
+        "bash": {
+          "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+          "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+          "bytes": 45560
+        }
+      },
+      "worktree": "E:\\projects\\dq-wt\\dmb-review",
+      "slotDirectory": "E:\\dq-cache\\slots",
+      "worldMode": "fixture",
+      "capacities": {
+        "DQ_SLOTS_DM_COMPILE": "2",
+        "DQ_SLOTS_TEST_WORLD": "3",
+        "DQ_SLOTS_CARGO": "1",
+        "DQ_SLOTS_LOOK_STATE_PIN": "2"
+      },
+      "waitIncludedInOwnedChildDeadline": true,
+      "jobContainment": "caller must add suspended bash to existing Job before resume"
+    },
+    "native-compile": {
+      "kind": "dm_compile",
+      "tools": {
+        "script": {
+          "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+          "bytes": 22161
+        },
+        "bash": {
+          "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+          "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+          "bytes": 45560
+        }
+      },
+      "worktree": "E:\\projects\\dq-wt\\dmb-review",
+      "slotDirectory": "E:\\dq-cache\\slots",
+      "worldMode": null,
+      "capacities": {
+        "DQ_SLOTS_DM_COMPILE": "2",
+        "DQ_SLOTS_TEST_WORLD": "3",
+        "DQ_SLOTS_CARGO": "1",
+        "DQ_SLOTS_LOOK_STATE_PIN": "2"
+      },
+      "waitIncludedInOwnedChildDeadline": true,
+      "jobContainment": "caller must add suspended bash to existing Job before resume"
+    },
+    "native-runtime": {
+      "kind": "test_world",
+      "tools": {
+        "script": {
+          "path": "E:\\projects\\CHOMPStation2\\tools\\dq_machine_slots.sh",
+          "sha256": "d711a1c716c528347d4ec328b5bfe6ae527eacc14a6a7d7acaece06646db9be4",
+          "bytes": 22161
+        },
+        "bash": {
+          "path": "D:\\Program Files\\Git\\bin\\bash.exe",
+          "sha256": "f70ff98512a90090ac394429cc051e54412fb27fbf86a04ed5c1bb1de7365fde",
+          "bytes": 45560
+        }
+      },
+      "worktree": "E:\\projects\\dq-wt\\dmb-review",
+      "slotDirectory": "E:\\dq-cache\\slots",
+      "worldMode": "fixture",
+      "capacities": {
+        "DQ_SLOTS_DM_COMPILE": "2",
+        "DQ_SLOTS_TEST_WORLD": "3",
+        "DQ_SLOTS_CARGO": "1",
+        "DQ_SLOTS_LOOK_STATE_PIN": "2"
+      },
+      "waitIncludedInOwnedChildDeadline": true,
+      "jobContainment": "caller must add suspended bash to existing Job before resume"
+    }
+  },
+  "inputClosureAuthenticated": false,
+  "acceptedRuntimeBaseline": false,
+  "earlierCompileOnlyCoordinatedAttempt": "E:\\dq-cache\\dmb-initializer-order-runtime\\a2447ca8fb6148cda0e3c68776bdb077\\receipt.json"
+}
