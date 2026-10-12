@@ -16,6 +16,16 @@
     "End-to-end pressure fixture still asserts host_facts is absent at tier 3 despite the new retained-catalog contract; fixture update pending",
     "Two mistaken short test selectors selected no fixtures; subsequent full module selectors verified nonempty execution"
   ],
+  "pressure_compile_closeout": {
+    "fixture_source_commit": "0c97e9d8810ba120451f7d772737d2ce995e9c8b",
+    "archive_sha256": "ec051e8cee4bb8a73dc8c8ce2d7c2b7bbe62bc38713d7fa718c7a68ff16c0017",
+    "build_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-124222-e49f45f1-job-cargo.json",
+    "focused_receipt": "E:/dq-cache/dmb-native-v2/integration-gates/20261012-124611-c8b8c510-focused.json",
+    "passed": 2,
+    "verified": "Pressure preserves catalog-only authority and current semantic owner; rebuilt output equals initial and fresh output; changed catalog dependencies invalidate",
+    "production_admission_weakened": false,
+    "build_reaped": true
+  },
   "scope": "Focused Rust checks, not full runtime or release performance acceptance",
   "performance": "No measured performance claim for these later changes"
 }
