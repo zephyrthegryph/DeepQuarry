@@ -662,16 +662,14 @@ fn procedure_memo_frozen_preparation_hits_without_prelookup_body_parse() {
     assert!(borrowed.completion_errors.is_empty());
     assert_eq!(borrowed.units.len(), 1);
     assert_eq!(borrowed.units[0].value, cold.units[0].code.procedure);
-    let statistics =
-        crate::runner_report::memo_statistics(&borrowed_memo, &serde_json::Value::Null);
-    assert_eq!(statistics["issued_preparations"], 1);
-    assert_eq!(statistics["borrowed_abi_views"], 1);
-    assert_eq!(statistics["policy_issued_preparations"], 0);
-    assert_eq!(statistics["parsed_preparations"], 0);
-    assert_eq!(
-        statistics["preparation_counts_scope"]["policy_issued_preparations"],
-        "successful_prepare_issued_results_not_semantic_recomputations"
-    );
+    for (count, expected) in [
+        (&borrowed_memo.counts.issued_preparations, 1),
+        (&borrowed_memo.counts.borrowed_abi_views, 1),
+        (&borrowed_memo.counts.policy_issued_preparations, 0),
+        (&borrowed_memo.counts.parsed_preparations, 0),
+    ] {
+        assert_eq!(count.load(std::sync::atomic::Ordering::Relaxed), expected);
+    }
     cache.publish(&memo.take_pending()).unwrap();
     let disk = crate::lowering_memo::ProcedureMemo::with_disk(
         abi.policy_identity,

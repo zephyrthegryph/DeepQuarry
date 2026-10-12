@@ -136,6 +136,28 @@ fn frontend_stage_wall_seconds(t: &dm_tree::frontend::FrontendTimings) -> serde_
 #[cfg(test)]
 mod frontend_timing_tests {
     #[test]
+    fn preparation_report_distinguishes_shared_abi_views_without_semantic_recompute_claims() {
+        use std::sync::atomic::Ordering::Relaxed;
+        let memo = crate::lowering_memo::ProcedureMemo::new(1);
+        memo.counts.issued_preparations.store(3, Relaxed);
+        memo.counts.borrowed_abi_views.store(2, Relaxed);
+        memo.counts.policy_issued_preparations.store(1, Relaxed);
+        memo.counts.parsed_preparations.store(4, Relaxed);
+        let statistics = super::memo_statistics(&memo, &serde_json::Value::Null);
+        assert_eq!(statistics["issued_preparations"], 3);
+        assert_eq!(statistics["borrowed_abi_views"], 2);
+        assert_eq!(statistics["policy_issued_preparations"], 1);
+        assert_eq!(statistics["parsed_preparations"], 4);
+        assert_eq!(
+            statistics["preparation_counts_scope"]["policy_issued_preparations"],
+            "successful_prepare_issued_results_not_semantic_recomputations"
+        );
+        assert_eq!(
+            statistics["preparation_counts_scope"]["key_preparation_seconds"],
+            "summed_worker_elapsed_not_request_wall"
+        );
+    }
+    #[test]
     fn existing_stage_durations_are_exported_as_wall_without_worker_sum() {
         use std::time::Duration;
         let timings = dm_tree::frontend::FrontendTimings {
