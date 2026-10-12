@@ -284,6 +284,61 @@
 			if(delay > 0 && delay < LIFE_SAFETY_RESAMPLE && !woken_by[LIFE_WOKEN_BY_TIME])
 				TEST_FAIL("[where] re-checks every [delay / 10] s, under the [LIFE_SAFETY_RESAMPLE / 10] s safety resample, without declaring work that drifts with time")
 
+/// The former poll gaps: each input now wakes its sleeping step the moment it changes (a tracked setter, a published key
+/// or a relation), and the step acts on its next run.
+/datum/unit_test/life_om/former_polls_wake
+	var/mob/living/carbon/human/H
+
+/// Lets the human's steps run in steady air until `key` sleeps. FALSE (and a failure) if it never does.
+/datum/unit_test/life_om/former_polls_wake/proc/until_asleep(key)
+	for(var/i in 1 to 12)
+		if(life_test_asleep(H, key))
+			return TRUE
+		life_test_advance(LIFE_CYCLE_SECONDS)
+	TEST_FAIL("[key] never slept (awake: [jointext(life_test_awake(H), ", ")])")
+	return FALSE
+
+/datum/unit_test/life_om/former_polls_wake/proc/woke(key, what)
+	TEST_ASSERT(!life_test_asleep(H, key), "[what] didn't wake [key]")
+
+/datum/unit_test/life_om/former_polls_wake/run_life()
+	H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT(life_test_place(H), "no floor for the test human")
+	// Identity: the real name, then a disfigured face.
+	if(until_asleep("life_visible_name"))
+		H.set_real_name("Wake Test Name")
+		woke("life_visible_name", "set_real_name()")
+		life_test_advance(LIFE_CYCLE_SECONDS)
+		TEST_ASSERT_EQUAL(H.name, "Wake Test Name", "the visible name followed the real name on the woken run")
+	if(until_asleep("life_visible_name"))
+		var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
+		head?.set_disfigured(TRUE)
+		woke("life_visible_name", "a disfigured face")
+		life_test_advance(LIFE_CYCLE_SECONDS)
+		TEST_ASSERT_EQUAL(H.name, "Unknown", "a disfigured face hides the name on the woken run")
+		head?.set_disfigured(FALSE)
+	// The ground: the floor under it replaced, its area's gravity switched.
+	if(until_asleep("life_fall"))
+		var/turf/T = H.loc
+		T.ChangeTurf(T.type)
+		woke("life_fall", "the turf under it replaced")
+	if(until_asleep("life_movement"))
+		var/area/A = get_area(H)
+		A.gravitychange(A.has_gravity)
+		woke("life_movement", "gravitychange()")
+	// Tracked vars.
+	if(until_asleep("life_phobias"))
+		H.set_phobias(H.phobias | NYCTOPHOBIA)
+		woke("life_phobias", "set_phobias()")
+		H.set_phobias(0)
+	if(until_asleep("life_heartbeat"))
+		H.set_pulse(H.pulse == PULSE_FAST ? PULSE_NORM : PULSE_FAST)
+		woke("life_heartbeat", "set_pulse()")
+	if(until_asleep("life_status"))
+		H.set_embedded_flag(1)
+		woke("life_status", "set_embedded_flag()")
+		H.set_embedded_flag(0)
+
 #undef LIFE_HAZARD_LIMIT
 
 #endif
