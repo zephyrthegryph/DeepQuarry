@@ -1,6 +1,25 @@
 //! Request-borrowed observations, issued only after complete disk admission.
+use super::{Arc, LoweredUnit};
 use crate::lowering_memo::ResolverRead;
 use dm_ir::{ReadDomain, ResolveQuery, Resolver};
+#[derive(Default)]
+pub(crate) struct ResidentPromotion<'host> {
+    pub current: Option<CurrentReads<'host>>,
+    pub queries: Vec<ResolveQuery>,
+    pub versions: Vec<(dm_ir::ReadDomain, u128)>,
+    pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
+}
+#[derive(Default)]
+pub(crate) struct ProcedureLookup<'host> {
+    pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
+    pub unit: Option<LoweredUnit>,
+    pub selections: Option<Arc<dm_ir::SelectedReferences>>,
+    pub prepared: Option<crate::symbolic::PreparedContribution>,
+    pub resident: Option<ResidentPromotion<'host>>,
+    pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
+    pub changed_query: Option<ResolveQuery>,
+    pub miss: Option<crate::lowering_memo::MemoMissReason>,
+}
 
 pub(crate) struct CurrentReads<'host> {
     host: &'host dyn Resolver,

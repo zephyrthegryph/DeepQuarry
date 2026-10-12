@@ -682,24 +682,6 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub verify: bool,
     pub modified: Option<&'a dyn crate::lowering_memo_compact::ModifiedIssuer>,
 }
-#[derive(Default)]
-pub(crate) struct ResidentPromotion<'host> {
-    pub current: Option<CurrentReads<'host>>,
-    pub queries: Vec<ResolveQuery>,
-    pub versions: Vec<(dm_ir::ReadDomain, u128)>,
-    pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
-}
-#[derive(Default)]
-pub(crate) struct ProcedureLookup<'host> {
-    pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
-    pub unit: Option<LoweredUnit>,
-    pub selections: Option<Arc<dm_ir::SelectedReferences>>,
-    pub prepared: Option<crate::symbolic::PreparedContribution>,
-    pub resident: Option<ResidentPromotion<'host>>,
-    pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
-    pub changed_query: Option<ResolveQuery>,
-    pub miss: Option<crate::lowering_memo::MemoMissReason>,
-}
 pub(crate) fn candidates(bytes: &[u8]) -> Result<Candidates<'_>, String> {
     let mut values = Vec::new();
     for bytes in dm_cache::decode_variants(bytes)? {
@@ -1009,3 +991,4 @@ pub(crate) mod initializer;
 #[path = "lowering_memo_current_reads.rs"]
 mod current_reads;
 use current_reads::CurrentReads;
+pub(crate) use current_reads::{ProcedureLookup, ResidentPromotion};
