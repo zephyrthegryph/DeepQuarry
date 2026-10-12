@@ -215,7 +215,7 @@ fn validate_body_requests(reply: &QueryReply, questions: &[SourceQuery]) -> io::
     }
     Ok(())
 }
-fn validate_reply(
+pub(super) fn validate_reply(
     reply: &QueryReply,
     count: usize,
     source_count: usize,
