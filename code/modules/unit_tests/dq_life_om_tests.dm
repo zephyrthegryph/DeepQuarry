@@ -118,9 +118,17 @@
 /proc/life_test_clock_end()
 	test_driver_end()
 
-/// Lets `seconds` of test time pass: every kernel phase, drain and sweep that falls due.
+/// Lets `seconds` of test time pass: every kernel phase, drain and sweep that falls due. A second at a time, each followed
+/// by the change-reaction drain: the live scheduler runs it every tick on its presentation lane, but the test scheduler
+/// (manual time) leaves the world's presentation queues alone, so an on_change() reaction (vision, HUD) published with no
+/// refresh queued beside it waited for some unrelated refresh to drain it.
 /proc/life_test_advance(seconds)
-	test_time(seconds * 10)
+	var/left = seconds
+	while(left > 0)
+		var/step = min(left, 1)
+		test_time(step * 10)
+		rx_drain()
+		left -= step
 
 // --- Test-only contributed steps (added per mob with seq_extra_add(); never in a table otherwise) ---------------------
 
@@ -1086,11 +1094,8 @@
 	TEST_ASSERT_EQUAL(H.see_in_dark, 77, "walking around doesn't recompute sight")
 	H.see_in_dark = 8
 	H.remove_mutation(XRAY)
-	var/queued_after_remove = life_test_rx_queued(H, "life_vision_changed")
-	var/readers = READERS(H, MOB_KEY_CONDITIONS)
 	life_test_advance(1)
-	log_world("npc_vision: queued [queued_after_remove] readers [readers] sight [H.sight]")
-	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away (still has it: [H.has_mutation(XRAY)], mutations [json_encode(H.mutations)], see_in_dark [H.see_in_dark], wanted [H.life_vision_wanted()])")
+	TEST_ASSERT(!(H.sight & SEE_MOBS), "losing the mutation takes it away")
 	H.death()
 	life_test_advance(1)
 	TEST_ASSERT(H.sight & SEE_TURFS, "the dead see everything (stat raises the vision channel)")

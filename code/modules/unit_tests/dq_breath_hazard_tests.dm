@@ -285,24 +285,3 @@
 #undef LIFE_HAZARD_LIMIT
 
 #endif
-
-#if defined(UNIT_TESTS)
-/datum/unit_test/life_om/breath_hazard/zz_debug_watch
-
-/datum/unit_test/life_om/breath_hazard/zz_debug_watch/run_life()
-	if(!setup_breather())
-		return
-	world_wake_trace(H)
-	var/id = T.air.arena_id()
-	log_world("ZZDBG id [id] turfbase? o2 before [T.air.get_moles(/datum/gas/oxygen)] chans o2kpa=[vg_world_channel(VG_GAS_HANDLES, "o2_kpa")] temp=[vg_world_channel(VG_GAS_HANDLES, "temperature")]")
-	T.air.set_moles(/datum/gas/oxygen, 0)
-	dq_gas_level_test_deliver()
-	log_world("ZZDBG after o2: traced [world_wake_traced(H)] stale [H.body.physiology.air_stale]")
-	T.air_update_turf(TRUE, FALSE)
-	dq_gas_level_test_deliver()
-	log_world("ZZDBG after update: traced [world_wake_traced(H)]")
-	heat_set(T.air, 450, HEAT_SOURCE_OTHER)
-	dq_gas_level_test_deliver()
-	log_world("ZZDBG after heat: traced [world_wake_traced(H)]")
-	world_wake_untrace(H)
-#endif
