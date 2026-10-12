@@ -1,6 +1,7 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /obj/machinery/maint_vendor/dq_access_probe
+	abstract_type = /obj/machinery/maint_vendor/dq_access_probe
 	req_access = list(ACCESS_MAINT_TUNNELS)
 	req_one_access = list(ACCESS_SECURITY)
 
@@ -8,10 +9,13 @@
 	required_access = list(ACCESS_ENGINE, ACCESS_MEDICAL)
 
 /obj/item/card/id/dq_vendor_denied
+	abstract_type = /obj/item/card/id/dq_vendor_denied
 	access = list(ACCESS_MAINT_TUNNELS)
 /obj/item/card/id/dq_vendor_allowed
+	abstract_type = /obj/item/card/id/dq_vendor_allowed
 	access = list(ACCESS_MAINT_TUNNELS, ACCESS_ENGINE)
 /obj/item/card/id/dq_vendor_missing_all
+	abstract_type = /obj/item/card/id/dq_vendor_missing_all
 	access = list(ACCESS_ENGINE)
 
 /datum/unit_test/dq_maint_vendor_access_policy/proc/credential_user(card_type, turf/T)
