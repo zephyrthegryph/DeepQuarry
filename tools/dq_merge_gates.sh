@@ -90,6 +90,14 @@ if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f "$smoke_file" ]; then
 		[ -n "$line" ] && add_test "$line"
 	done <"$smoke_file"
 fi
+# The gameplay scenarios (tools/ci/gameplay_tests.txt) run on every landing, with the smoke set.
+if [ "$run_tests" -eq 1 ] && [ "$smoke" -eq 1 ] && [ -f tools/ci/gameplay_tests.txt ]; then
+	while IFS= read -r line; do
+		line="${line%%#*}"
+		line="$(echo "$line" | tr -d '' | xargs)"
+		[ -n "$line" ] && add_test "$line"
+	done <tools/ci/gameplay_tests.txt
+fi
 add_test ${tests_arg[@]+"${tests_arg[@]}"}
 lane_rows=()
 unstamped=()

@@ -257,6 +257,25 @@ The input inbox (code/engine/kernel/inbox.dm) is tested with `/datum/input_event
 decides whether an input resolves in place or queues, and `test_phase(KERNEL_PHASE_K)` drains. In a test build the tick always has
 room unless the override says otherwise (a test world boots through ticks far past 100%).
 
+### Gameplay scenarios
+
+`code/modules/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
+arrivals, walking through a door, putting a coat on and off, the tail's layer against the uniform, breathing phoron with and without
+internals, losing the room's oxygen, an airlock controller's window, picking up and dropping, a wall's right-click menu, and cutting and
+restoring an area's power. They drive the game as a player does and assert what the player would see, never a snapshot:
+
+- input goes in the way a client sends it, through the helpers in `gameplay/_harness.dm`: `click()` (a map click is the
+  `/datum/input_event/click` that `/atom/Click()` submits; a HUD click is the screen object's own `Click()` with the player as usr),
+  `press()` (a window button, `test_ui()`), `menu_pick()` (`test_menu()`), `stride()` (the mob move a client's `Move()` makes; walking
+  into a door bumps it), `key_equip()` / `key_drop()` (the verbs the E and Q macros run);
+- time is the kernel's (`test_driver_begin()`, then `pass_time()`, which steps `test_time()` a second at a time and, when asked, the
+  native gas frame and a power step, which the injected clock does not step);
+- the player is `spawn_player()` (or `spawn_arrival()`, the late-join path): a body someone controls, with a HUD.
+
+`tools/dq_lane_ready.sh` adds every line of `tools/ci/gameplay_tests.txt` to each lane's tests, so they run on every landing; the whole
+set takes about 20 s of world time. A scenario failing because of a bug in another lane's scope sets `expected_failure = "<why>"`: it
+still runs, its failure is logged as an `EXPECTED FAILURE` notice, and a pass fails it so the marker comes off with the fix.
+
 ### Sharded runs
 
 `dm-test` runs sharded by default. It compiles once, then boots N DreamDaemon

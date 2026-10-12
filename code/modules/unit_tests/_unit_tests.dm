@@ -1286,6 +1286,13 @@
 #include "dq_state_batch_tests.dm"
 #include "dq_nikki_rig_chest_tests.dm"
 #include "dq_mob_visuals_tests.dm"
+#include "gameplay\_harness.dm"
+#include "gameplay\arrival.dm"
+#include "gameplay\lungs.dm"
+#include "gameplay\clothing.dm"
+#include "gameplay\doors_power.dm"
+#include "gameplay\hands_and_menus.dm"
+#include "gameplay\machines.dm"
 #include "dq_tanning_rack_wetness_tests.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
