@@ -63,7 +63,6 @@
 /datum/unit_test/dq_p2_storage_engine/first_look_adopting_contents_is_not_a_self_mark/run_gate()
 	GLOB.refresh_self_marks.Cut()
 	var/obj/item/storage/fancy/crayons/box = allocate(/obj/item/storage/fancy/crayons, run_loc_floor_bottom_left)
-	box.update_icon()
 	test_time(10 SECONDS)
 	TEST_ASSERT_EQUAL(length(GLOB.refresh_self_marks), 0, "no refresh marked its own holder changed")
 	TEST_ASSERT(length(box.held_things()) > 0, "the box holds its crayons")

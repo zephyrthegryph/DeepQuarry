@@ -93,11 +93,8 @@
 	rec.table = definition_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		entity_cache_scan(rec.table, E)
-	if(!rec.table.appearance_scanned)
-		rec.table.appearance_scanned = TRUE
-		rec.table.appearance_mask = E.scheduler_presentation_mask()
-	if(rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.relay_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.appearance_mask | rec.table.relay_mask
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.relay_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.relay_mask
 	if(rec.table.derived_relays)
 		scheduler_field_derived_relink(E, rec)
 	return rec
@@ -322,7 +319,7 @@
 			var/datum/derived_definition/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | rec.table?.appearance_mask | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
+	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/entity_observed_mask(datum/scheduler_record/rec)
@@ -352,9 +349,6 @@
 	if(E.seq_states)
 		seq_channels(E, bits)
 	var/datum/scheduler_record/rec = E.om_rec
-	// A declared appearance reading these channels refreshes once this frame (code/datums/sys/appearance.dm).
-	if(bits & (rec ? rec.table.appearance_mask : E.scheduler_presentation_mask()))
-		E.scheduler_queue_presentation()
 	if(!rec || rec.torn_down)
 		return
 	var/datum/time_scheduler/sched = rec.sched

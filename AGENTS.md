@@ -230,7 +230,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
-  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union. `doc/rewrite/agent_workflow.md`.
+  that still tracks them. `deepquarry.dme`, `_unit_tests.dm` and `code/modules/unit_tests/snapshots/look_keys.txt` merge by union
+  (`.gitattributes`); `look_keys.txt` stays committed (it is the record look probes narrow against) but every merge script regenerates it, so
+  never hand-merge it. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash

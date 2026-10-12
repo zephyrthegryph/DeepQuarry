@@ -65,7 +65,6 @@ CAPABILITIES(/obj/machinery/light_switch)
 	set_on(!on)
 
 	area().lightswitch = on
-	area().update_icon()
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 
 	for(var/obj/machinery/light_switch/L as anything in area_contents_of_type(area(), /obj/machinery/light_switch))

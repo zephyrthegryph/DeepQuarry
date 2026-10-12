@@ -87,10 +87,12 @@ CAPABILITIES(/obj/dq_actor_probe)
 /datum/unit_test/proc/dq_actor_click(mob/user, atom/target, params = "left=1", ops_first = TRUE)
 	GLOB.dq_actor_calls.Cut()
 	cooldown_set_end(user, next_click, 0)
-	if(!ops_first)
+	if(ops_first)
+		input_submit(new /datum/input_event/click(user, target, null, null, params))
+	else
 		GLOB.op_click_resolved[user] = TRUE
-	GLOB.input_router.route_click(user, target, params)
-	GLOB.op_click_resolved -= user
+		GLOB.input_router.route_click(user, target, params)
+		GLOB.op_click_resolved -= user
 	if(ops_first)
 		test_time(1 SECONDS) // an op's effect (a silicon_hand() forward) runs in the op pipeline, not inside the click
 	return jointext(GLOB.dq_actor_calls, ",")

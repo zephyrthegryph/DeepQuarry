@@ -18,7 +18,7 @@
 	var/obj/item/airlock_electronics/board
 	if(has_installed_board)
 		board = allocate(/obj/item/airlock_electronics, door)
-		board.conf_access = list(ACCESS_SECURITY)
+		board.set_conf_access(list(ACCESS_SECURITY))
 		board.one_access = TRUE
 		rel_set(door, nameof(door.electronics), board)
 	else

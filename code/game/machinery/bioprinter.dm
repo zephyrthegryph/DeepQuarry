@@ -201,7 +201,6 @@ CAPABILITIES(/obj/machinery/organ_printer)
 /obj/machinery/organ_printer/proc/printing_done(organ_path)
 	set_use_power(USE_POWER_IDLE)
 	set_printing(0)
-	changed(src)
 
 	if(!operable())
 		return

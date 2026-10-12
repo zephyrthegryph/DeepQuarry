@@ -1,12 +1,10 @@
 // Actual downstream implementations of engine transport interfaces.
-/datum/scheduler_presentation_mask()
-	return appearance_mask_of(src)
-
-/datum/scheduler_queue_presentation()
-	appearance_queue(src)
-
+/// The presentation lane's draw pass: the refresh engine's queue, then its sweep (code/engine/change/refresh.dm).
 /datum/time_scheduler/drain_presentation()
-	return appearance_drain(src)
+	if(!refresh_drain(src))
+		return FALSE
+	refresh_sweep_step()
+	return TRUE
 
 /datum/native_watch/bind_native()
 	return SSvg.bind_datum(src)
