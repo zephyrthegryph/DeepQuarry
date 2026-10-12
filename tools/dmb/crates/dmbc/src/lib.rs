@@ -53,6 +53,8 @@ pub mod initializer_diagnostics;
 pub mod initializer_lowering;
 pub mod initializer_policy;
 mod initializer_tokens;
+#[cfg(test)]
+mod initializer_source_order_tests;
 pub mod intrinsic_initializer_facts;
 pub mod lowering;
 pub mod lowering_memo;
