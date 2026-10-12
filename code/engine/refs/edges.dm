@@ -40,7 +40,18 @@
 		R.on_link(source, target, edge)
 	catch(var/exception/e)
 		srec.sched.report_caught(e, "[R.type] on_link: [e]")
-	relation_edge_setup(edge)
+	try
+		relation_edge_setup(edge)
+	catch(var/exception/setup_fault)
+		edge.unlink_reason = RELATION_BROKEN
+		try
+			// No aggregate contribution was installed before setup succeeded.
+			relation_unlink_edge(edge, aggregate_added = FALSE)
+		catch(var/exception/cleanup_fault)
+			dq_report_caught(cleanup_fault, "Relation setup cleanup failed while preserving its setup fault")
+		throw setup_fault
+	if(!edge.source || !edge.target)
+		return edge
 	derived_agg_edge_added(edge)
 	relation_edge_structure_changed(srec, R.id, CHANGE_RELATION_ADDED)
 	relation_edge_structure_changed(trec, R.id, CHANGE_RELATION_ADDED)
@@ -59,7 +70,7 @@
 
 /// Removes `edge` from both ends. `deleting` is the end being destroyed, if
 /// any: end policies apply to the other end. Hooks get both ends non-null.
-/proc/relation_unlink_edge(datum/relation_edge/edge, datum/deleting)
+/proc/relation_unlink_edge(datum/relation_edge/edge, datum/deleting, aggregate_added = TRUE)
 	var/datum/relation_definition/R = edge.rel
 	var/datum/source = edge.source
 	var/datum/target = edge.target
@@ -72,7 +83,7 @@
 	if(trec)
 		LAZYREMOVE(trec.edges, edge)
 	relation_edge_teardown(edge)
-	if(trec)
+	if(trec && aggregate_added)
 		derived_agg_edge_removed(edge, trec)
 	if(!edge.unlink_reason)
 		edge.unlink_reason = deleting ? RELATION_DESTROYING : RELATION_UNLINKED
@@ -221,45 +232,140 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 
 // ---------------------------------------------------------------- edge contributions
 
-/datum/scheduled_behaviour/internal/edge_refresh
-	name = "om: relation active_if"
-	lane = LANE_URGENT
+/datum/relation_edge/var/datum/relation_edge_read_scope/read_scope
+TRACKED(/datum/relation_edge, active)
 
-/datum/scheduled_behaviour/internal/edge_refresh/on_wake(datum/relation_edge/edge, changes)
-	relation_edge_refresh(edge)
+CAPABILITIES(/datum/relation_edge)
+	owns_one(nameof(read_scope), /datum/relation_edge_read_scope)
+
+/// Observes actual predicate inputs. Weak producer handles are bookkeeping;
+/// dependency_sources is a borrowed membership view, cleared on producer death.
+/datum/relation_edge_read_scope
+	var/datum/relation_edge/edge
+	var/list/watching
+	var/list/dependency_sources
+	var/rebinding = FALSE
+
+CAPABILITIES(/datum/relation_edge_read_scope)
+	ref_one(nameof(edge), /datum/relation_edge)
+	ref_many(nameof(dependency_sources))
+	on_change(nameof(dependency_sources), ANY, then(PROC_REF(sources_changed)))
+	on_ending(PROC_REF(ending))
+
+/datum/relation_edge_read_scope/proc/clear_reads()
+	for(var/list/row as anything in watching)
+		var/datum/producer = resolve_handle(row[1])
+		if(producer)
+			unobserve(producer, on_change(row[2], PROC_REF(inputs_changed)), src)
+	watching = null
+	rel_clear(src, nameof(dependency_sources))
+
+/datum/relation_edge_read_scope/proc/ending(cause, by)
+	rebinding = TRUE
+	clear_reads()
+
+/datum/relation_edge_read_scope/proc/sources_changed(datum/act/A)
+	// Bind's own view edits publish too. Only a vanished borrowed producer
+	// changes the completed membership independently of our binding rows.
+	if(!rebinding && length(dependency_sources) != length(watching) && edge && !QDELETED(edge))
+		relation_edge_refresh(edge)
+
+/datum/relation_edge_read_scope/proc/inputs_changed(datum/producer, list/keys)
+	if(!rebinding && edge && !QDELETED(edge))
+		relation_edge_refresh(edge)
+
+/datum/relation_edge_read_scope/proc/bind(list/pairs)
+	var/list/by_producer = list()
+	for(var/list/pair as anything in pairs)
+		if(length(pair) != 2 || !isdatum(pair[1]))
+			CRASH("generated endpoint descriptor yielded an invalid producer/key pair")
+		var/datum/producer = pair[1]
+		var/key = pair[2]
+		if(QDELETED(producer))
+			continue
+		var/datum/stat_def/stat = stat_def_of(key)
+		var/native_field = istext(key) && (hascall(producer, "__setter_[key]") || rel_kind(producer, key) || list_state_of(producer, key))
+		if(!native_field && !(stat && stat_declared_on(producer.type, stat)))
+			CRASH("relation predicate [edge.rel.type] reads undeclared native key [producer.type].[key]")
+		var/handle = entity_handle(producer)
+		var/list/keys = by_producer[handle]
+		if(!keys)
+			keys = list()
+			by_producer[handle] = keys
+		keys |= key
+	var/same = length(watching) == length(by_producer)
+	for(var/list/row as anything in watching)
+		var/list/keys = by_producer[row[1]]
+		if(length(keys) != length(row[2]))
+			same = FALSE
+			break
+		for(var/key in row[2])
+			if(!(key in keys))
+				same = FALSE
+	if(same)
+		return
+	rebinding = TRUE
+	try
+		clear_reads()
+		for(var/handle in by_producer)
+			var/datum/producer = resolve_handle(handle)
+			var/list/keys = by_producer[handle]
+			rel_add(src, nameof(dependency_sources), producer)
+			// Record before observer registration, so a partial registration fault
+			// is removed by the same real teardown path as a completed binding.
+			LAZYADD(watching, list(list(handle, keys)))
+			observe(producer, on_change(keys, PROC_REF(inputs_changed)), src, PROC_REF(inputs_changed))
+	catch(var/exception/fault)
+		try
+			clear_reads()
+		catch(var/exception/cleanup_fault)
+			dq_report_caught(cleanup_fault, "Relation dependency cleanup failed while preserving its binding fault")
+		rebinding = FALSE
+		throw fault
+	rebinding = FALSE
+	forms_trace("relation", "[edge.rel.type] bound [length(watching)] native dependency producer(s)")
 
 /proc/relation_edge_setup(datum/relation_edge/edge)
 	var/datum/relation_definition/R = edge.rel
 	if(R.compiled_active_if || R.compiled_holds_while)
-		var/datum/scheduled_behaviour/B = definition_registry().edge_behaviour
-		entity_attach(edge, B)
-		var/mask = (R.compiled_active_if?.depends_on || 0) | (R.compiled_holds_while?.depends_on || 0)
-		if(mask)
-			entity_watch(edge, edge.source, mask, B)
-			entity_watch(edge, edge.target, mask, B)
-	relation_edge_refresh(edge)
+		var/datum/relation_edge_read_scope/scope = new
+		rel_set(edge, nameof(edge.read_scope), scope)
+		rel_set(scope, nameof(scope.edge), edge)
+	relation_edge_refresh(edge, aggregate_added = FALSE)
 
 /proc/relation_edge_teardown(datum/relation_edge/edge)
+	rel_clear(edge, nameof(edge.read_scope))
 	if(edge.om_rec)
 		entity_teardown_rest(edge)
-	edge.active = FALSE
+	edge.set_active(FALSE)
 
 /// Marks the edge active or not as active_if says (a relation contributes through the stat layer: contributes_to).
-/proc/relation_edge_refresh(datum/relation_edge/edge)
+/proc/relation_edge_refresh(datum/relation_edge/edge, aggregate_added = TRUE)
 	var/datum/relation_definition/R = edge.rel
 	var/datum/source = edge.source
 	var/datum/target = edge.target
 	if(!source || !target)
 		return
-	if(R.compiled_holds_while && !isnull(R.compiled_holds_while.why_not(source, target)))
+	var/previous_pure_depth = GLOB.op_pure_depth
+	var/list/pairs = list()
+	var/refusal
+	var/want
+	op_pure_begin()
+	try
+		refusal = R.compiled_holds_while?.endpoint_query(source, target, pairs)
+		want = !R.compiled_active_if || isnull(R.compiled_active_if.endpoint_query(source, target, pairs))
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		throw fault
+	op_pure_end()
+	if(!isnull(refusal))
+		forms_trace("relation", "[R.type] unlinked by its native requirement: [reason_text(refusal)]")
 		edge.unlink_reason = RELATION_BROKEN
-		relation_unlink_edge(edge)
+		relation_unlink_edge(edge, aggregate_added = aggregate_added)
 		return
-	var/want = !R.compiled_active_if || isnull(R.compiled_active_if.why_not(source, target))
-	if(!want)
-		edge.active = FALSE
-		return
-	edge.active = TRUE
+	edge.read_scope?.bind(pairs)
+	if(edge.set_active(want))
+		forms_trace("relation", "[R.type] native predicate active=[want]")
 
 // ---------------------------------------------------------------- forwarding
 

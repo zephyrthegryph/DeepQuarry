@@ -20,6 +20,7 @@ pub enum Ctx {
     Timer,
     Notice,
     Request,
+    Endpoint,
 }
 
 impl Ctx {
@@ -31,6 +32,7 @@ impl Ctx {
             Ctx::Notice => "/datum/act/notice",
             Ctx::Action => "/datum/act/action",
             Ctx::Request => "/datum/act/request",
+            Ctx::Endpoint => "/datum/act/eval/endpoint_query",
         }
     }
 }
@@ -196,6 +198,19 @@ pub fn discover(decls: &Decls) -> Vec<HandlerRef> {
         marker_handlers(m, &mut out);
     }
     out
+}
+
+/// Endpoint predicates are virtual engine callbacks, not optional declaration metadata.
+/// Analyze inherited implementations on every concrete type, including local overrides.
+pub fn endpoint_handlers(sem: &super::Sem) -> Vec<HandlerRef> {
+    sem.type_paths().into_iter().filter_map(|owner| {
+        if !sem.is_subtype(&owner, "/datum/requirement_definition") { return None; }
+        let p = sem.proc_ref(&owner, "endpoint_reason")?;
+        let body = sem.proc_body(p);
+        if body.owner == "/datum/requirement_definition" || body.owner == "/datum/requirement_definition/combinator" { return None; }
+        Some(HandlerRef { owner, cap_proc: false, cap_type: String::new(), proc: "endpoint_reason".into(), form: "endpoint_reason", ctx: Ctx::Endpoint,
+            role: Role::Requirement, rel: body.file, line: body.line, notice: String::new(), ui_args: None })
+    }).collect()
 }
 
 /// The handlers the markers named `names` name (a family [`discover`] leaves out, such as `CAP_ENTRIES` for `gen deps`).
@@ -453,6 +468,117 @@ fn holder_arg(m: &Marker) -> String {
 mod context_tests {
     use super::*;
     use crate::tree::{SourceFile, Tree};
+
+    #[test]
+    fn endpoint_overrides_have_automatic_actual_dependency_contracts() {
+        use crate::sem::{Sem, reads::{Annotations, ReadsEngine, VarClass, WriteIndex}};
+        let root = std::env::temp_dir().join(format!("dq-endpoint-context-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("code/content")).unwrap();
+        let source = r#"#define TRACKED(T,V)
+#define QDELETED(X) (isnull(X) || X.gc_destroyed)
+/datum
+    var/gc_destroyed = 0
+/datum/global_state
+    var/mutable_flag = 1
+var/global/datum/global_state/GLOB
+/datum/act
+    var/datum/source
+/datum/act/eval/endpoint_query
+    var/datum/target
+/datum/endpoint
+    var/ready = 1
+    var/untracked = 1
+TRACKED(/datum/endpoint, ready)
+/datum/endpoint/proc/change_untracked()
+    untracked = 0
+/datum/requirement_definition/proc/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return null
+/datum/requirement_definition/good/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = A.source
+    var/datum/endpoint/T = A.target
+    return S.ready && T.ready ? null : "not ready"
+/datum/requirement_definition/good/inherited
+/datum/requirement_definition/good/override/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/T = A.target
+    return T.untracked ? null : "no"
+/datum/requirement_definition/hidden/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return helper(A)
+/datum/requirement_definition/hidden/proc/helper(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = A.source
+    return read_once(S.ready) ? null : "no"
+/datum/requirement_definition/volatile/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return random_helper()
+/datum/requirement_definition/volatile/proc/random_helper()
+    return randtext("yes", "no")
+/datum/requirement_definition/deletion_mark/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = A.source
+    return QDELETED(S) ? "deleted" : null
+/datum/requirement_definition/global_state/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return global_helper()
+/datum/requirement_definition/global_state/proc/global_helper()
+    return GLOB.mutable_flag ? null : "no"
+/datum/requirement_definition/world_state/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return clock_helper()
+/datum/requirement_definition/world_state/proc/clock_helper()
+    return world.time ? null : "no"
+/datum/requirement_definition/pick_ast/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return pick_helper()
+/datum/requirement_definition/pick_ast/proc/pick_helper()
+    return pick("yes", "no")
+/datum/requirement_definition/external_ast/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return external_helper()
+/datum/requirement_definition/external_ast/proc/external_helper()
+    return call_ext("test.dll", "query")()
+/datum/requirement_definition/custom_config
+    var/custom_flag = 1
+/datum/requirement_definition/custom_config/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return custom_flag ? null : "no"
+/datum/requirement_definition/tracked_config
+    var/custom_flag = 1
+TRACKED(/datum/requirement_definition/tracked_config, custom_flag)
+/datum/requirement_definition/tracked_config/endpoint_reason(datum/act/eval/endpoint_query/A)
+    return custom_flag ? null : "no"
+/datum/requirement_definition/returned_entity/endpoint_reason(datum/act/eval/endpoint_query/A)
+    var/datum/endpoint/S = identity(A)
+    return S.ready ? null : "no"
+/datum/requirement_definition/returned_entity/proc/identity(datum/act/eval/endpoint_query/A)
+    return A.source
+"#;
+        std::fs::write(root.join("code/content/probe.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/content/probe.dm", source)]);
+        tree.root = root.clone();
+        let sem = Sem::build(&root, &tree).unwrap();
+        let found = endpoint_handlers(&sem);
+        assert!(found.iter().any(|h| h.owner == "/datum/requirement_definition/good/inherited"));
+        assert!(found.iter().all(|h| h.ctx == Ctx::Endpoint && h.role == Role::Requirement));
+        let decls = Decls::get(&tree);
+        let annotations = Annotations::get(&sem, &decls);
+        let eng = ReadsEngine::new(&sem, &decls, &annotations);
+        let analyze = |ty| eng.analyze_handler(ty, "endpoint_reason", Ctx::Endpoint.type_path());
+        let good = analyze("/datum/requirement_definition/good");
+        assert!(good.reads.iter().any(|r| r.root == "source" && r.var == "ready"));
+        assert!(good.reads.iter().any(|r| r.root == "target" && r.var == "ready"));
+        let bad = analyze("/datum/requirement_definition/good/override");
+        let writes = WriteIndex::build(&sem);
+        assert!(bad.reads.iter().any(|r| eng.classify(&r.owner, &r.var, &writes) == VarClass::Unknown));
+        for ty in ["/datum/requirement_definition/hidden", "/datum/requirement_definition/volatile", "/datum/requirement_definition/deletion_mark", "/datum/requirement_definition/global_state", "/datum/requirement_definition/world_state", "/datum/requirement_definition/pick_ast", "/datum/requirement_definition/external_ast", "/datum/requirement_definition/returned_entity"] {
+            assert!(analyze(ty).diags.iter().any(|d| d.rule == "dynamic_read"), "reachable hidden and volatile helpers must be rejected");
+        }
+        assert!(analyze("/datum/requirement_definition/deletion_mark").diags.iter().any(|d| d.msg.contains("validated native lifetime dependency")), "an explicit raw deletion mark must never become an omitted constant read");
+        for (ty, diagnostic) in [
+            ("/datum/requirement_definition/global_state", "mutable GLOB"),
+            ("/datum/requirement_definition/world_state", "mutable world"),
+            ("/datum/requirement_definition/pick_ast", "sample pick()"),
+            ("/datum/requirement_definition/external_ast", "external library"),
+        ] {
+            assert!(analyze(ty).diags.iter().any(|d| d.msg.contains(diagnostic)), "the actual AST path must produce its specific fail-closed diagnostic: {ty}");
+        }
+        let custom = analyze("/datum/requirement_definition/custom_config");
+        assert!(custom.reads.iter().any(|r| r.root == "holder" && eng.classify_endpoint(r, &writes) == VarClass::Unknown), "custom definition vars must not become inferred constants just because no writer was discovered");
+        let tracked = analyze("/datum/requirement_definition/tracked_config");
+        assert!(tracked.reads.iter().any(|r| r.root == "holder" && eng.classify_endpoint(r, &writes) == VarClass::Reactive), "tracked definition state must retain real holder dependencies");
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     fn handlers(source: &str) -> Vec<HandlerRef> {
         let file = SourceFile::from_text("code/content/probe.dm", source);

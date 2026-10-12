@@ -69,7 +69,8 @@ pub fn analyzed(tree: &Tree) -> Option<Arc<Analysis>> {
 
 fn compute(tree: &Tree) -> Analysis {
     let decls = Decls::get(tree);
-    let refs: Vec<HandlerRef> = hooks::discover(&decls);
+    let mut refs: Vec<HandlerRef> = hooks::discover(&decls);
+    if let Some(sem) = super::sem_for(tree) { refs.extend(hooks::endpoint_handlers(&sem)); }
     let has_reads_as = decls.markers_named("READS_AS").next().is_some();
     let mut an = Analysis { handlers: Vec::new(), graph: None, cycles: Vec::new(), accessor_gaps: Vec::new() };
     if refs.is_empty() && !has_reads_as {
@@ -112,11 +113,16 @@ fn compute(tree: &Tree) -> Analysis {
             }
             _ => (false, None, Vec::new(), Vec::new()),
         };
-        let set = if proc_found && !h.cap_proc { Some(eng.analyze_handler(&on, &h.proc, h.ctx.type_path())) } else { None };
+        let set = if proc_found && !h.cap_proc {
+            Some(if h.ctx == hooks::Ctx::Endpoint {
+                ReadsEngine::new(&sem, &decls, &ann).analyze_handler(&on, &h.proc, h.ctx.type_path())
+            } else { eng.analyze_handler(&on, &h.proc, h.ctx.type_path()) })
+        } else { None };
         let mut unknown = Vec::new();
         if let (Some(set), true) = (&set, h.role.reads_covered()) {
             for r in &set.reads {
-                if r.kind == super::reads::ReadKind::Var && eng.classify(&r.owner, &r.var, &written) == super::reads::VarClass::Unknown {
+                let class = if h.ctx == hooks::Ctx::Endpoint { eng.classify_endpoint(r, &written) } else { eng.classify(&r.owner, &r.var, &written) };
+                if r.kind == super::reads::ReadKind::Var && class == super::reads::VarClass::Unknown {
                     let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
                     unknown.push((r.key(), r.var.clone(), r.owner.clone(), rel, line));
                 }

@@ -285,6 +285,12 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return null
 
+/// Pure null-or-reason endpoint predicate. The analyzer generates its actual
+/// source/target read paths; an unimplemented callback cannot be silently static.
+/datum/requirement_definition/proc/endpoint_reason(datum/act/eval/endpoint_query/A)
+	SHOULD_NOT_SLEEP(TRUE)
+	CRASH("[type] has no native endpoint requirement callback")
+
 // ===================================================================== derived
 
 /datum/derived_definition

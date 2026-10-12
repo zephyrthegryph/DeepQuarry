@@ -63,7 +63,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 	var/list/type_tables
 	/// Internal behaviours (timers, edge refresh).
 	var/datum/scheduled_behaviour/timer_behaviour
-	var/datum/scheduled_behaviour/edge_behaviour
 
 /datum/definition_registry/proc/error(msg)
 	errors += msg
@@ -334,7 +333,6 @@ GLOBAL_DATUM(om_reg, /datum/definition_registry)
 		pending += B
 		behaviour_by_type[path] = B
 	timer_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/timers]
-	edge_behaviour = behaviour_by_type[/datum/scheduled_behaviour/internal/edge_refresh]
 	// Inline behaviours from table rows.
 	for(var/datum/definition_bundle/bundle as anything in bundles)
 		bundle.compiled_behaviours = list()

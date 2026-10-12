@@ -100,6 +100,57 @@
 	var/op
 	var/list/parts
 
+/// A narrow synchronous pooled context; endpoints are datums, never acting mobs.
+/datum/act/eval/endpoint_query
+	var/datum/target
+
+/// Generated rows are mandatory: a proven constant callback has a rank-only row.
+/datum/requirement_definition/proc/endpoint_query(datum/source, datum/target, list/pairs)
+	var/list/row = GLOB.generated_reads_table["[type]::endpoint_reason"]
+	if(!row)
+		CRASH("[type] has no validated endpoint requirement descriptor")
+	var/datum/act/eval/endpoint_query/A = take(/datum/act/eval/endpoint_query)
+	A.holder = src
+	A.source = source
+	A.target = target
+	var/previous_pure_depth = GLOB.op_pure_depth
+	op_pure_begin()
+	try
+		pairs += native_query_read_pairs(row, list("holder" = src, "source" = source, "target" = target))
+		. = endpoint_reason(A)
+		if(!isnull(.))
+			. = req_refusal_value(.)
+	catch(var/exception/fault)
+		GLOB.op_pure_depth = previous_pure_depth
+		try
+			A.release()
+		catch(var/exception/cleanup_fault)
+			dq_report_caught(cleanup_fault, "Endpoint context release failed while preserving its query fault")
+		throw fault
+	op_pure_end()
+	A.release()
+
+/datum/requirement_definition/combinator/endpoint_query(datum/source, datum/target, list/pairs)
+	// Evaluate every part so a short-circuit cannot omit later dependency sources.
+	var/list/reasons = list()
+	for(var/datum/requirement_definition/part as anything in parts)
+		reasons += list(part.endpoint_query(source, target, pairs))
+	switch(op)
+		if("all")
+			for(var/reason in reasons)
+				if(!isnull(reason))
+					return reason
+			return null
+		if("any")
+			for(var/reason in reasons)
+				if(isnull(reason))
+					return null
+			return length(reasons) ? reasons[1] : null
+		if("not")
+			if(length(reasons) != 1)
+				return "malformed check"
+			return isnull(reasons[1]) ? "not allowed" : null
+	return "malformed check"
 /datum/requirement_definition/combinator/why_not(datum/actor, datum/target)
 	switch(op)
 		if("all")

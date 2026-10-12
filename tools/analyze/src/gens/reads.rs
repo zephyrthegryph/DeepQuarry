@@ -75,6 +75,7 @@ impl Generator for Reads {
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
                 let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
+                let written = crate::sem::reads::WriteIndex::build(&sem);
                 for marker in decls.markers_named("READ_LOOKUP") {
                     let name = marker.args.first().and_then(|p| p.strip_prefix("/proc/"));
                     let Some(decl) = name.and_then(|n| ann.lookups.get(n)) else {
@@ -101,13 +102,47 @@ impl Generator for Reads {
                         out.diag(&h.rel, h.line, format!("handler `{}` is not a proc of {}", h.proc, h.owner));
                         continue;
                     }
-                    let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
+                    let set = if h.ctx == crate::sem::hooks::Ctx::Endpoint {
+                        ReadsEngine::new(&sem, &decls, &ann).analyze_handler(&h.owner, &h.proc, h.ctx.type_path())
+                    } else { eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path()) };
+                    if h.ctx == crate::sem::hooks::Ctx::Endpoint {
+                        for (field, (rel, line)) in &set.ctx_fields {
+                            if !matches!(field.as_str(), "holder" | "source" | "target") {
+                                out.diag(rel, *line, format!("endpoint requirements do not carry contextual {field}"));
+                            }
+                        }
+                        for r in &set.reads {
+                            if !matches!(r.kind, ReadKind::Var | ReadKind::Accessor | ReadKind::Native | ReadKind::System) {
+                                out.diag(&h.rel, h.line, format!("endpoint requirements need a native producer for dependency kind {:?}", r.kind));
+                            }
+                            if !matches!(r.root.as_str(), "holder" | "source" | "target") && r.kind != ReadKind::System {
+                                out.diag(&h.rel, h.line, format!("endpoint requirement has unsupported root {}", r.root));
+                            }
+                            if r.kind == ReadKind::Var && eng.classify_endpoint(r, &written) == crate::sem::reads::VarClass::Unknown {
+                                out.diag(&h.rel, h.line, format!("endpoint requirement reads untracked {}.{}", r.owner, r.var));
+                            }
+                        }
+                        for e in &set.effects {
+                            out.diag(&e.rel, e.line, format!("endpoint requirement is not pure: {} {}", e.kind, e.name));
+                        }
+                        if let Some(p) = sem.proc_ref(&h.owner, &h.proc) {
+                            let body = sem.proc_body(p);
+                            if body.params.len() != 1 || body.params[0].var_type.type_path.join("/") != "datum/act/eval/endpoint_query" {
+                                out.diag(&h.rel, h.line, "endpoint_reason must take exactly one datum/act/eval/endpoint_query context");
+                            }
+                            if let Some(code) = body.code {
+                                let mut violations = Vec::new();
+                                crate::sem::checks::requirement_returns(code, &mut violations);
+                                for violation in violations { out.diag(&h.rel, h.line, format!("endpoint requirement return protocol: {:?}", violation)); }
+                            }
+                        }
+                    }
                     for d in &set.diags {
-                        if matches!(d.rule, "unannotated_global" | "dynamic_read") {
+                        if h.ctx == crate::sem::hooks::Ctx::Endpoint || matches!(d.rule, "unannotated_global" | "dynamic_read") {
                             out.diag(&d.rel, d.line, format!("{}: {}", d.rule, d.msg));
                         }
                     }
-                    let mut v: Vec<Row> = set.reads.iter().map(|r| (r.root.clone(), r.kind.clone(), r.var.clone(), r.hops.clone(), r.owner.clone())).collect();
+                    let mut v: Vec<Row> = set.reads.iter().filter(|r| h.ctx != crate::sem::hooks::Ctx::Endpoint || r.kind != ReadKind::Var || eng.classify_endpoint(r, &written) != crate::sem::reads::VarClass::Constant).map(|r| (r.root.clone(), r.kind.clone(), r.var.clone(), r.hops.clone(), r.owner.clone())).collect();
                     v.sort();
                     rows.insert(id, v);
                 }

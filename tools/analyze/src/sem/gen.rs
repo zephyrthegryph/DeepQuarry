@@ -289,7 +289,9 @@ impl<'a> GenCx<'a> {
     }
 
     pub fn handlers(&self) -> Vec<HandlerRef> {
-        super::hooks::discover(&self.decls)
+        let mut handlers = super::hooks::discover(&self.decls);
+        if let Some(sem) = self.sem() { handlers.extend(super::hooks::endpoint_handlers(&sem)); }
+        handlers
     }
 }
 

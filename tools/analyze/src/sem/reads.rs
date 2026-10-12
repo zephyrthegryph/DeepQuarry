@@ -414,6 +414,20 @@ impl<'a> ReadsEngine<'a> {
         VarClass::Unknown
     }
 
+    /// Endpoint predicates cannot infer immutability merely from missing writes in
+    /// this tree. Only compiler constants and the engine's compiled spec identity/
+    /// argument are configuration; custom definition state must be tracked too.
+    pub fn classify_endpoint(&self, read: &Read, written: &WriteIndex) -> VarClass {
+        if self.classify(&read.owner, &read.var, written) == VarClass::Reactive {
+            return VarClass::Reactive;
+        }
+        if self.sem.var_decl(&read.owner, &read.var).is_some_and(|v| v.is_const)
+            || (read.root == "holder" && read.hops.is_empty() && read.owner == "/datum/requirement_definition" && matches!(read.var.as_str(), "arg" | "key")) {
+            return VarClass::Constant;
+        }
+        VarClass::Unknown
+    }
+
     /// A relation declared with a macro or in a `relations()` body, on the type or an ancestor.
     pub fn is_relation(&self, ty: &str, var: &str) -> bool {
         if self.decls.is_relation_chain(self.sem, ty, var) {
@@ -872,12 +886,18 @@ impl<'a, 'e> Walk<'a, 'e> {
             Term::Expr(e) => self.eval(fr, e),
             Term::Call(name, args) => self.call(fr, name.as_str(), args, line),
             Term::GlobalCall(_, args) | Term::List(args) => {
+                if matches!(t, Term::GlobalCall(..)) && self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements cannot use an unresolved global-call expression".into());
+                }
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
                 Val::local(None)
             }
             Term::SelfCall(args) => {
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements cannot use an unresolved self-call expression".into());
+                }
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
@@ -901,6 +921,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Val::local(None)
             }
             Term::NewImplicit { args } | Term::NewPrefab { args, .. } | Term::NewMiniExpr { args, .. } => {
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements cannot allocate an unanalysed mutable object".into());
+                }
                 if let Some(a) = args {
                     for x in a.iter() {
                         self.eval(fr, x);
@@ -909,6 +932,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Val::local(None)
             }
             Term::Input { args, in_list, .. } | Term::Locate { args, in_list } => {
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements need a native dependency contract for input/locate expressions".into());
+                }
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
@@ -918,6 +944,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Val::local(None)
             }
             Term::Pick(p) => {
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements cannot sample pick()".into());
+                }
                 for (w, e) in p.iter() {
                     if let Some(w) = w {
                         self.eval(fr, w);
@@ -935,6 +964,9 @@ impl<'a, 'e> Walk<'a, 'e> {
                 Val::local(None)
             }
             Term::ExternalCall { args, .. } => {
+                if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                    self.lookup_diag("dynamic_read", &fr.rel, line, "endpoint requirements cannot call an external library".into());
+                }
                 for a in args.iter() {
                     self.eval(fr, a);
                 }
@@ -958,6 +990,9 @@ impl<'a, 'e> Walk<'a, 'e> {
         if let Some(v) = fr.locals.get(name) {
             return v.clone();
         }
+        if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") && matches!(name, "GLOB" | "world") {
+            self.lookup_diag("dynamic_read", &fr.rel, line, format!("endpoint requirements cannot read mutable {name} state without a native producer"));
+        }
         if name == "vars" {
             let rel = fr.rel.clone();
             self.diag("dynamic_read", &rel, line, "vars[] reads are not allowed in a handler".to_string());
@@ -970,6 +1005,9 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     /// `v.name`: a var read on the entity `v` is (when it is tracked), else nothing.
     fn field(&mut self, fr: &mut Frame<'a>, v: Val, name: &str) -> Val {
+        if name == "gc_destroyed" && self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+            self.lookup_diag("dynamic_read", &fr.rel, self.line, "endpoint deletion-mark queries need a validated native lifetime dependency; gc_destroyed is not a published state key".into());
+        }
         let sem = self.eng.sem;
         let rel = fr.rel.clone();
         let line = self.line;
@@ -977,7 +1015,12 @@ impl<'a, 'e> Walk<'a, 'e> {
             self.diag("dynamic_read", &rel, line, "vars[] reads are not allowed in a handler".to_string());
             return Val::local(None);
         }
-        let Some(ty) = v.ty.clone() else { return Val::local(None) };
+        let Some(ty) = v.ty.clone() else {
+            if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                self.lookup_diag("dynamic_read", &rel, line, format!("endpoint field {name} has an unresolved receiver"));
+            }
+            return Val::local(None);
+        };
         if v.root == Root::Act {
             // Context field.
             self.out.ctx_fields.entry(name.to_string()).or_insert((rel.clone(), line));
@@ -1016,10 +1059,16 @@ impl<'a, 'e> Walk<'a, 'e> {
             return Val::local(None);
         };
         if !v.tracked() {
+            if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") && !sig.is_const {
+                self.lookup_diag("dynamic_read", &rel, line, format!("endpoint field {ty_used}.{name} has no proven native receiver path"));
+            }
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
         let owner = sem.var_owner(&ty_used, name).unwrap_or_else(|| ty_used.clone());
         if owner == "/" {
+            if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") {
+                self.lookup_diag("dynamic_read", &rel, line, format!("endpoint requirement global {name} has no native dependency producer"));
+            }
             // A global var (`SSair`, `world`): never a read of the holder; not reactive by contract.
             return Val::local((!sig.declared.is_empty()).then(|| sig.declared));
         }
@@ -1073,6 +1122,9 @@ impl<'a, 'e> Walk<'a, 'e> {
         let sem = self.eng.sem;
         let line = self.line;
         let rel = fr.rel.clone();
+        if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query") && !v.tracked() && v.root != Root::Act {
+            self.lookup_diag("dynamic_read", &rel, line, format!("endpoint method {name} has no proven native receiver path"));
+        }
         self.note_call(fr, name, &v, line);
         if v.root == Root::Act {
             // A.snapshot(), A.captured(...): context API, not a read.
@@ -1145,6 +1197,10 @@ impl<'a, 'e> Walk<'a, 'e> {
 
     /// An unscoped call: a proc of src's type, a global with READS_FROM, or an unannotated global.
     fn call(&mut self, fr: &mut Frame<'a>, name: &str, args: &[Expression], line: u32) -> Val {
+        if self.ctx_override.as_deref() == Some("/datum/act/eval/endpoint_query")
+            && matches!(name, "read_once" | "rand" | "randtext" | "prob" | "pick") {
+            self.lookup_diag("dynamic_read", &fr.rel, line, format!("endpoint requirements cannot hide or sample volatile inputs with {name}()"));
+        }
         if name == "nameof" || name == "PROC_REF" || name == "TYPE_PROC_REF" || name == "GLOBAL_PROC_REF" || name == "initial" {
             return Val::local(None);
         }

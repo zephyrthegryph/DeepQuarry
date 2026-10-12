@@ -31,6 +31,11 @@ ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requi
 		if(proc_name in A.holder.vars)
 			. += list(list(A.holder, proc_name))
 		return
+	return native_query_read_pairs(row, list("holder" = A.holder, "actor" = A.actor, "held" = A.held_provider(), "target" = A.target, "wearer" = A.wearer, "mover" = A.mover, "destination" = A.destination))
+
+/// Resolves generated native paths; membership hops remain reads even with no live member.
+/proc/native_query_read_pairs(list/row, list/roots)
+	. = list()
 	for(var/i in 2 to length(row))
 		var/list/read = row[i]
 		var/root = GLOB.generated_read_roots[read[1]]
@@ -43,23 +48,9 @@ ACTION(admission_query, mob/wearer, mob/mover, datum/destination, slot_id, requi
 				CRASH("query system root [root] is not initialized")
 			. += list(list(D, GLOB.generated_read_names[read[3]]))
 			continue
-		switch(root)
-			if("holder")
-				D = A.holder
-			if("actor")
-				D = A.actor
-			if("held")
-				D = A.held_provider()
-			if("target")
-				D = A.target
-			if("wearer")
-				D = A.wearer
-			if("mover")
-				D = A.mover
-			if("destination")
-				D = A.destination
-			else
-				CRASH("unsupported query dependency root [root]")
+		D = roots[root]
+		if(!(root in roots))
+			CRASH("unsupported query dependency root [root]")
 		if(!(read[2] in list(SREAD_KIND_VAR, SREAD_KIND_ACCESSOR, READ_KIND_NATIVE)))
 			CRASH("query dependency needs a native read provider for kind [read[2]]")
 		var/list/owners = D && !QDELETED(D) ? list(D) : list()
