@@ -925,6 +925,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if (clicklimiter[SECOND_COUNT] > scl)
 			to_chat(src, span_danger("Your previous click was ignored because you've done too many in a second"))
 			return
+	// Any click on the map dismisses an open interaction menu, as one dismisses BYOND's native popup
+	// (a right-click then opens the new one).
+	if(interaction_menu?.visible)
+		interaction_menu.hide()
 	// Clients cannot be hooked: the click event is emitted on the client's mob.
 	if(mob)
 		PUBLISH_LEGACY(mob, /datum/notice/client_click, object, location, control, params, usr)

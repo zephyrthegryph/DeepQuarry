@@ -155,3 +155,29 @@
 	TEST_ASSERT_EQUAL(length(listed), length(rows), "every op row is listed once: [json_encode(listed)]")
 	for(var/list/row as anything in rows)
 		TEST_ASSERT_EQUAL(listed[row["key"]], row["enabled"] ? "ok" : row["reason"], "[row["key"]] is listed as the op menu says")
+
+/// The screentip is what Click and Alt-click would do, under the target's name; a target no op answers shows nothing
+/// (a bare name at the top of the screen is not a screentip).
+/datum/unit_test/dq_screentip_needs_an_op
+
+/datum/unit_test/dq_screentip_needs_an_op/Run()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/C = allocate(/obj/structure/closet, T)
+	var/click = screentip_for(H, C, null, GESTURE_CLICK)
+	TEST_ASSERT_NOTNULL(click, "a click opens a closet")
+	var/text = interaction_screentip_text(H, C, null)
+	TEST_ASSERT(findtext(text, capitalize(C.name)) == 1, "the screentip starts with the name: [text]")
+	TEST_ASSERT(findtext(text, click), "the screentip names the click's op: [text]")
+	var/obj/dq_screentip_blank/blank = allocate(/obj/dq_screentip_blank, T)
+	var/checked = 0
+	for(var/atom/A as anything in list(blank, T, H))
+		if(screentip_for(H, A, null, GESTURE_CLICK) || screentip_for(H, A, null, GESTURE_ALT))
+			continue
+		checked++
+		TEST_ASSERT_NULL(interaction_screentip_text(H, A, null), "no op answers [A] ([A.type]), so no screentip")
+	TEST_ASSERT(checked, "at least one target has no op to show")
+
+/// A plain object no op answers.
+/obj/dq_screentip_blank
+	name = "screentip blank"
