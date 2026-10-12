@@ -24,8 +24,8 @@
 /// Screentips: what Click and Alt-click would do to the hovered thing (code/datums/interactions/presentation.dm).
 /datum/preference/toggle/screentips
 	category = PREFERENCE_CATEGORY_GAME_PREFERENCES
-	savefile_key = "screentips"
-	default_value = TRUE
+	savefile_key = "screentips_optin" // renamed when the default went off, so a value saved under the old default does not keep it on
+	default_value = FALSE // opt-in: the hover line at the top of the map is off unless the player turns it on
 	savefile_identifier = PREFERENCE_PLAYER
 
 /datum/preference/toggle/screentips/apply_to_client(client/client, value)
