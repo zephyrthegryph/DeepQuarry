@@ -32,3 +32,6 @@ Initial holds refusal preserves the public edge-shaped return while detaching it
 
 
 The active publication counter is an effect handler on the actual edge producer, not a computed cross-object observer on the source. General computed on-change getters do not currently follow dotted cross-object read dependencies reliably; that framework gap is not repaired or disguised by this cohort. Endpoint query dependency generation remains separate from that computed-getter contract.
+
+
+The compatibility delivery order runs native effect hooks before legacy RX inputs. A scope input callback can therefore change the real edge active setter during RX delivery, queuing its direct native observer hook for the next native phase. The two publication-counter tests settle this boundary with exactly two drains before reading counters; they do not loop, publish manually or alter engine phases. The forced drain inside a partial atomic snapshot and the other fixture cases remain unchanged. This ordering distinguishes a queued real publication from a missing publication.
