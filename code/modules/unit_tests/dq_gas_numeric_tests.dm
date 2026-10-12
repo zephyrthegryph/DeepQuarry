@@ -217,8 +217,7 @@ CAPABILITY_TYPE(gas_numeric_throwing_preparer, CAP_GAS_NUMERIC_THROWING_PREPARER
 CAPABILITY_TYPE(gas_numeric_following_preparer, CAP_GAS_NUMERIC_FOLLOWING_PREPARER, /datum/capability/gas_numeric_following_preparer, key = NONE)
 
 /datum/gas_numeric_throwing_holder
-	// Retain the poisoned eval object itself: a released object's text ref can be reused after collection.
-	var/datum/act/eval/observed_context
+	var/context_ref
 	var/seen_relation
 	var/datum/target
 	var/following_runs = 0
@@ -248,12 +247,15 @@ CAPABILITIES(/datum/gas_numeric_throwing_holder)
 	var/datum/gas_numeric_throwing_holder/holder = A.holder
 	if(relation_var != nameof(holder.target) || !holder.target)
 		return
-	holder.observed_context = A
+	holder.context_ref = REF(A)
 	holder.seen_relation = relation_var
 	throw EXCEPTION("numeric relation preparer test failure")
 
 /datum/unit_test/dq_gas_numeric_relation_hook_exception/Run()
 	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	// Normal recycling keeps the released object alive in its actual pool.
+	// Poisoned objects are intentionally unretained; their text refs cannot be inspected after collection.
+	set_global(nameof(GLOB.pool_poison), FALSE)
 	test_driver_begin()
 	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/datum/gas_numeric_throwing_holder/holder = allocate(/datum/gas_numeric_throwing_holder)
@@ -274,8 +276,9 @@ CAPABILITIES(/datum/gas_numeric_throwing_holder)
 	TEST_ASSERT_EQUAL(holder.target, target, "The actual relation write committed before its preparer failed")
 	TEST_ASSERT_EQUAL(holder.seen_relation, nameof(holder.target), "The engine must dispatch the actual relation key")
 	TEST_ASSERT_EQUAL(holder.following_runs, 1, "A failing preparer must not prevent the following preparer from preparing the committed relation")
-	var/datum/act/eval/released_context = holder.observed_context
+	var/datum/act/eval/released_context = locate(holder.context_ref)
 	TEST_ASSERT_NOTNULL(released_context, "The hook must have received a real pooled evaluation context")
+	TEST_ASSERT(released_context in pool.free, "The actual normal pool must retain the released eval, not an escaped context")
 	TEST_ASSERT_EQUAL(pool.out, before_out, "A throwing relation hook must return its eval lease to the actual pool")
 	TEST_ASSERT_EQUAL(pool.released, before_released + 2, "Both relation preparers must release exactly once before reaction delivery")
 	TEST_ASSERT(released_context?.pool_state != POOL_STATE_TAKEN, "The failing hook's actual context must no longer be checked out")
