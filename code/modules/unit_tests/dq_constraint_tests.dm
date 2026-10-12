@@ -58,6 +58,16 @@
 		return FALSE
 	return dq_constraint_present(W, CONSTRAINT_SUIT_STORAGE) ? TRUE : FALSE
 
+/// Holder/item cells the legacy fixture recorded as taken whose refusal is a documented intended change
+/// (doc/rewrite/intended_changes.md): the legacy check lived in the click handler, outside can_be_inserted().
+/proc/dq_parity_intended_refusal(holder_name, item_type)
+	var/static/list/intended = list(
+		// "A crayon the box will not take says the general refusal": the mime and rainbow crayons are refuses of the crayon box.
+		"/obj/item/storage/fancy/crayons" = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow),
+	)
+	var/list/types = intended[holder_name]
+	return types && (item_type in types)
+
 /datum/unit_test/dq_constraint_parity
 	abstract_type = /datum/unit_test/dq_constraint_parity
 	priority = TEST_LONGER
@@ -103,6 +113,8 @@
 				continue
 			cells++
 			var/expected = dq_parity_hex_bit(hex, i)
+			if(dq_parity_intended_refusal(holder_name, I.type))
+				expected = 0
 			var/actual = call(src, check)(holder, I) ? 1 : 0
 			if(actual != expected)
 				mismatch("[holder_name] [expected ? "took" : "refused"] [I.type] before, now [actual ? "takes" : "refuses"] it")

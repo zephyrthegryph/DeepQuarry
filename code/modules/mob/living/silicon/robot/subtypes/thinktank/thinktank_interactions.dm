@@ -19,7 +19,7 @@ CAPABILITIES(/mob/living/silicon/robot/platform)
 	return read_once(!(client || key || stat == DEAD || !SSticker || !ticker_mode())) ? null : /datum/msg/req_failed // whether anyone is in it is asked when the click is made
 
 /mob/living/silicon/robot/platform/proc/ghost_control_question(datum/act/A)
-	return "Do you wish to take control of 	he [src]?"
+	return "Do you wish to take control of \the [src]?"
 
 /// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
 /mob/living/silicon/robot/platform/proc/platform_interaction_hand(datum/act/op/A)

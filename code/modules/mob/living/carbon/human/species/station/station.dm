@@ -1877,7 +1877,7 @@
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
 
 	flesh_color = "#242424"
-	blood_color = "##00C202"
+	blood_color = "#00C202"
 	base_color = "#242424"
 
 	blurb = "Xenomorph Hybrids are a strange amalgamation of xenomorph and alternative-species DNA of \

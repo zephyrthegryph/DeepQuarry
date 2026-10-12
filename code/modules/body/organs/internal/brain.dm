@@ -173,7 +173,7 @@ CAPABILITIES(/obj/item/organ/internal/brain)
 	if(owner?.mind)
 		var/datum/mind_host/host = get_mind_host(src)
 		var/mob/living/carbon/brain/view = host.receive_mind(owner.mind, "brain removed from [owner]")
-		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just  [initial(name)]."))
+		to_chat(view, span_notice("You feel slightly disoriented. That's normal when you're just \a [initial(name)]."))
 
 	..()
 	sync_defib_window() // re-anchor on the loose brain's clock
