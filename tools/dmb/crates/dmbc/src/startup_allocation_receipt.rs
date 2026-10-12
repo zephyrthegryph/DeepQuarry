@@ -1,7 +1,7 @@
 //! Exact symbolic inputs and shared ordering payloads; no current spans/tree IDs.
 use super::*;
-pub(crate) const ALLOCATION_KEY: &[u8] = b"dmbc-startup-allocation-v1\0";
-pub(crate) const FINAL_KEY: &[u8] = b"dmbc-startup-allocation-final-v1\0";
+pub(crate) const ALLOCATION_KEY: &[u8] = b"dmbc-startup-allocation-v2-procedure-storage\0";
+pub(crate) const FINAL_KEY: &[u8] = b"dmbc-startup-allocation-final-v2-procedure-storage\0";
 pub(crate) fn retained_keys() -> impl Iterator<Item = &'static [u8]> {
     [ALLOCATION_KEY, FINAL_KEY].into_iter()
 }

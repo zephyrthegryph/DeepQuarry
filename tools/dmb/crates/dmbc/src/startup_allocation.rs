@@ -169,10 +169,14 @@ impl StartupAllocationRoster {
             let registration_owner = registrations.get(&key).copied().unwrap_or(owner);
             let group = if let Some(rank) = owners.get(&registration_owner) {
                 *rank
-            } else if shared && registration_owner == root {
+            // Pinned observable-order fixture establishes root procedure-static
+            // storage before root shared storage, after source-owner storage.
+            } else if !shared && registration_owner == root {
                 owners.len()
-            } else {
+            } else if shared && registration_owner == root {
                 owners.len() + 1
+            } else {
+                owners.len() + 2
             };
             entries.push((group, ordinal, key));
         }
@@ -292,15 +296,20 @@ impl StartupAllocationRoster {
                         forward.contains(&owner),
                     ) =>
                 {
-                    count + 2 + *rank
+                    count + 3 + *rank
                 }
                 Some(rank) => *rank,
                 None if owner == SymbolId::of("/")
-                    && matches!(write.target, InitializerTarget::Shared { .. }) =>
+                    && matches!(write.target, InitializerTarget::ProcedureStatic(_)) =>
                 {
                     count
                 }
-                None => count + 1,
+                None if owner == SymbolId::of("/")
+                    && matches!(write.target, InitializerTarget::Shared { .. }) =>
+                {
+                    count + 1
+                }
+                None => count + 2,
             };
             entries.push((group, ordinal, entry));
         }
@@ -622,3 +631,7 @@ mod tests {
         assert!(roster.order_membership(&mut omitted.into()).is_err());
     }
 }
+
+#[cfg(test)]
+#[path = "startup_allocation_static_order_tests.rs"]
+mod static_order_tests;
