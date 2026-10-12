@@ -6,7 +6,7 @@
 -menu: Use
 -click: Click: Use
 +4 click: Click: Pick up
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.mecha_parts human|/obj/item/tool/screwdriver
 @obj.item.mecha_parts human|/obj/item/tool/crowbar

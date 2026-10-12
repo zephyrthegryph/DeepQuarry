@@ -1,6 +1,6 @@
 @datum human|none
 @datum robot|none
-ai|none click: nothing
+@datum ai|none
 @datum ghost|none
 @datum human|/obj/item/tool/screwdriver
 @datum human|/obj/item/tool/crowbar

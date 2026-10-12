@@ -2,7 +2,7 @@
 +0 menu: Empty Ore compartment
 @obj.item.mecha_parts.mecha_equipment robot|none
 +0 menu: Empty Ore compartment
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Empty Ore compartment (refused: You can't reach that.)
 @obj.item.mecha_parts human|/obj/item/tool/screwdriver
@@ -39,7 +39,7 @@
 -menu: Use
 -click: Click: Use
 +0 menu: Empty Ore compartment
-+4 click: nothing
++3 click: nothing
 @obj.item.mecha_parts human|/obj/item/stack/material/steel
 -menu: Use
 -click: Click: Use
@@ -49,7 +49,7 @@
 -menu: Use
 -click: Click: Use
 +0 menu: Empty Ore compartment
-+4 click: nothing
++3 click: nothing
 @obj.item.mecha_parts human|/obj/item/kit
 -menu: Use
 +1 menu: Empty Ore compartment

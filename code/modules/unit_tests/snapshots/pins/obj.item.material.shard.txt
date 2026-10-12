@@ -1,9 +1,9 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.material human|/obj/item/tool/screwdriver
--menu: Plate item
+-menu: Use screwdriver
 -click: Click: Plate item
 +3 click: Click: Repair
 @obj.item.material human|/obj/item/tool/crowbar

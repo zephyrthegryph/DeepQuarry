@@ -1,6 +1,6 @@
 @obj.item.reagent_containers human|none
 @obj.item.reagent_containers robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers ghost|none
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
 -click: nothing
@@ -29,7 +29,7 @@
 @obj.item.reagent_containers human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Grown item
-+5 click: Click: Grown item
++4 click: Click: Grown item
 @obj.item.reagent_containers human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Grown item
@@ -37,7 +37,7 @@
 @obj.item.reagent_containers human|/obj/item/card/id
 -click: nothing
 +0 menu: Grown item
-+5 click: Click: Grown item
++4 click: Click: Grown item
 @obj.item.reagent_containers human|/obj/item/kit
 +1 menu: Grown item
 @obj.item.reagent_containers human|/obj/item/storage

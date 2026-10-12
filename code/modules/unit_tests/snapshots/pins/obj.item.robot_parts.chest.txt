@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.robot_parts human|/obj/item/tool/screwdriver
 @obj.item.robot_parts human|/obj/item/tool/crowbar

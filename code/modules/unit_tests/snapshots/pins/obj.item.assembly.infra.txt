@@ -12,7 +12,7 @@
 +6 menu: Turn Around
 +7 menu: Use
 +8 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
@@ -46,17 +46,19 @@
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
 @obj.item.assembly human|/obj/item/stack/cable_coil
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
+-menu: Make Cable Restraints (refused: You can't do that.)
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
 @obj.item.assembly human|/obj/item/stack/material/steel
 +1 menu: Rotate Clockwise
 +2 menu: Rotate Counter Clockwise
 +4 menu: Turn Around
 @obj.item.assembly human|/obj/item/card/id
-+2 menu: Rotate Clockwise
-+3 menu: Rotate Counter Clockwise
-+5 menu: Turn Around
+-menu: Read ID Card (refused: You can't do that.)
++1 menu: Rotate Clockwise
++2 menu: Rotate Counter Clockwise
++4 menu: Turn Around
 @obj.item.assembly human|/obj/item/kit
 +2 menu: Rotate Clockwise
 +3 menu: Rotate Counter Clockwise

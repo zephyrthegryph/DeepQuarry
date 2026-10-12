@@ -1,6 +1,6 @@
 @obj.item.toy.plushie human|none
 @obj.item.toy.plushie robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.toy.plushie ghost|none
 @obj.item.toy human|/obj/item/tool/screwdriver
 @obj.item.toy human|/obj/item/tool/crowbar

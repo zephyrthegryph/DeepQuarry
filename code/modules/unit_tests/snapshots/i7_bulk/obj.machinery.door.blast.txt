@@ -2,7 +2,7 @@
 -menu: Open
 +0 menu: Open (refused: Access denied.)
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.door human|/obj/item/tool/screwdriver
 -menu: Open

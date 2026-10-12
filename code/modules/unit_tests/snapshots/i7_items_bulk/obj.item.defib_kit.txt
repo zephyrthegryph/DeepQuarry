@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +4 menu: Use
 +5 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -42,6 +42,7 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Load
++1 menu: Make Cable Restraints (refused: You can't do that.)
 +4 menu: Use
 +5 click: Click: Load
 @obj human|/obj/item/stack/material/steel
@@ -52,6 +53,7 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Load
++2 menu: Read ID Card (refused: You can't do that.)
 +4 menu: Use
 +5 click: Click: Load
 @obj human|/obj/item/kit
@@ -67,7 +69,7 @@ human|/obj/item/card/emag menu: Move To Top
 human|/obj/item/card/emag menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/emag menu: Use
 human|/obj/item/card/emag click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 -click: Click: Use
 +0 menu: Load

@@ -1,7 +1,7 @@
 @obj human|none
 +2 menu: Remove ID
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 -click: nothing
 +2 menu: View
@@ -19,11 +19,13 @@
 @obj human|/obj/item/weldingtool
 +1 menu: Remove ID
 @obj human|/obj/item/stack/cable_coil
++0 menu: Make Cable Restraints (refused: You can't do that.)
 +2 menu: Remove ID
 @obj human|/obj/item/stack/material/steel
 +1 menu: Remove ID
 @obj human|/obj/item/card/id
 -click: nothing
++1 menu: Read ID Card (refused: You can't do that.)
 +2 menu: Remove ID
 +3 menu: Scan ID
 +5 click: Click: Scan ID

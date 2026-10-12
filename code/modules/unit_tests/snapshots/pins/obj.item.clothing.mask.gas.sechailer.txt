@@ -6,7 +6,7 @@
 +2 menu: HALT! (refused: You can't do that.)
 +5 menu: Select gas mask phrase (refused: You can't do that.)
 +6 menu: Select phrase
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: HALT! (refused: You can't do that.)
 +2 menu: Select gas mask phrase (refused: You can't do that.)
@@ -45,16 +45,16 @@
 +4 menu: Select phrase
 @obj.item.clothing human|/obj/item/stack/cable_coil
 +1 menu: HALT! (refused: You can't do that.)
-+4 menu: Select gas mask phrase (refused: You can't do that.)
-+5 menu: Select phrase
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
 @obj.item.clothing human|/obj/item/stack/material/steel
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase
 @obj.item.clothing human|/obj/item/card/id
 +1 menu: HALT! (refused: You can't do that.)
-+4 menu: Select gas mask phrase (refused: You can't do that.)
-+5 menu: Select phrase
++3 menu: Select gas mask phrase (refused: You can't do that.)
++4 menu: Select phrase
 @obj.item.clothing human|/obj/item/kit
 +2 menu: HALT! (refused: You can't do that.)
 +4 menu: Select gas mask phrase (refused: You can't do that.)
@@ -63,7 +63,7 @@
 +2 menu: HALT! (refused: You can't do that.)
 +4 menu: Select gas mask phrase (refused: You can't do that.)
 +5 menu: Select phrase
-@obj.item human|/obj/item
+@obj human|/obj/item
 +1 menu: HALT! (refused: You can't do that.)
 +3 menu: Select gas mask phrase (refused: You can't do that.)
 +4 menu: Select phrase

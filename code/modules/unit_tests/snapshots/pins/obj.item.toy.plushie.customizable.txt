@@ -4,7 +4,7 @@
 @obj.item.toy.plushie robot|none
 -menu: Name Plushie (refused: You can't do that.)
 +0 menu: Alternate use
-@obj.item ai|none
+@obj ai|none
 @obj.item.toy.plushie ghost|none
 -menu: Name Plushie (refused: You can't do that.)
 @obj.item.toy human|/obj/item/tool/screwdriver

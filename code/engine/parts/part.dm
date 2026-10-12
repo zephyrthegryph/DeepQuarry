@@ -830,7 +830,7 @@
 /// window for the observer. The observer's tgui state is update-only, so the ghost sees the data and no button of it reaches an op. Requirements the window's ops share
 /// (a broken machine shows nothing) are given to it with extend("ui_observe", needs(...)).
 /proc/interface(window, title = null, rights = null, host = null, input = null, state = null, forwards = null, window_var = null, autoupdate = FALSE, pinned = FALSE, preinitialized = FALSE, pressed = null, observe = FALSE)
-	var/list/declared = list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized, "pressed" = pressed)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), opens_ui()))
+	var/list/declared = list(entry_make("interface", null, list("window" = window, "title" = title, "rights" = rights, "host" = host, "state" = state, "forwards" = forwards, "window_var" = window_var, "autoupdate" = autoupdate, "pinned" = pinned, "preinitialized" = preinitialized, "pressed" = pressed)), 		op("ui_open", inputs(input || hand(), remote()), priority(OP_PRIORITY_DEFAULT), label("Open controls"), opens_ui()))
 	if(observe)
 		declared += op("ui_observe", observer(), priority(OP_PRIORITY_DEFAULT), label("View"), opens_ui())
 	return declared

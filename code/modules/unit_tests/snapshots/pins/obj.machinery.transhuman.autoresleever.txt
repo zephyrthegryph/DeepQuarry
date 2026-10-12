@@ -1,46 +1,26 @@
 @obj.machinery human|none
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 ghost|none menu: Respawn
 ghost|none click: Click: Respawn
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Autoresleever interaction item
-+4 click: Click: Autoresleever interaction item
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Autoresleever interaction item
-+4 click: Click: Autoresleever interaction item
-@obj human|/obj/item
--click: nothing
-+0 menu: Autoresleever interaction item
-+3 click: Click: Autoresleever interaction item
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Autoresleever interaction item
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Autoresleever interaction item
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Autoresleever interaction item
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Autoresleever interaction item
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Autoresleever interaction item
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Autoresleever interaction item
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Autoresleever interaction item
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Autoresleever interaction item
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Autoresleever interaction item
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Autoresleever interaction item
 keys: autoresleever_interaction_ghost, autoresleever_interaction_item, drag_buckle, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand

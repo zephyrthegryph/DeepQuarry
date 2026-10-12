@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -13,12 +13,10 @@
 @obj human|/obj/item/card/id
 @obj human|/obj/item/kit
 @obj human|/obj/item/storage
-@obj human|/obj/item/pipe
--menu: Put back
--menu: Ui open
--click: Click: Put back
-+4 menu: Secure the piping
-+7 click: Click: Secure the piping
+human|/obj/item/pipe menu: Move To Top
+human|/obj/item/pipe menu: Secure the piping
+human|/obj/item/pipe menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pipe click: Click: Secure the piping
 human|/obj/item/transfer_valve menu: Move To Top
 human|/obj/item/transfer_valve menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/transfer_valve click: nothing

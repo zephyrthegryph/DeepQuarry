@@ -1,6 +1,6 @@
 @obj human|none
 @obj robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 @obj human|/obj/item/tool/crowbar
@@ -17,7 +17,5 @@ human|/obj/item/stack/rods menu: Assemble the rod backbone (refused: You don't h
 human|/obj/item/stack/rods menu: Move To Top
 human|/obj/item/stack/rods menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/stack/rods click: Click: Assemble the rod backbone
-human|/obj/item/stack/material/plastic menu: Move To Top
-human|/obj/item/stack/material/plastic menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/stack/material/plastic click: nothing
+@obj human|/obj/item/stack/material/plastic
 keys: buildstate_0_1, buildstate_1_2, buildstate_2_3, buildstate_3_4, buildstate_4_5, collect_item, drag_buckle, finish, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, move_to_top, pick_up_item, toggle_digestable

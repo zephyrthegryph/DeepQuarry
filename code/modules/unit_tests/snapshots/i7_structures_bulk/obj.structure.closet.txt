@@ -6,57 +6,63 @@ robot|none click: Click: Toggle Open
 @obj.structure ai|none
 @obj ghost|none
 +0 menu: Toggle Open
-@obj.structure human|/obj/item/tool/screwdriver
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
-@obj.structure human|/obj/item/tool/crowbar
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
-@obj.structure human|/obj/item/tool/wrench
--menu: Use
--click: Click: Use
-+2 menu: Toggle (refused: You can't reach the anchoring bolts when the door is closed!)
-+4 menu: Toggle Open
-+5 click: Click: Toggle
-@obj.structure human|/obj/item/tool/wirecutters
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
-@obj.structure human|/obj/item/multitool
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
-@obj.structure human|/obj/item/weldingtool
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 menu: Weld shut
-+5 click: Click: Weld shut
-@obj.structure human|/obj/item/stack/cable_coil
--menu: Use
--click: Click: Use
-+4 menu: Toggle Open
-+5 click: nothing
-@obj.structure human|/obj/item/stack/material/steel
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
-@obj.structure human|/obj/item/card/id
--menu: Use
--click: Click: Use
-+4 menu: Toggle Open
-+5 click: nothing
-@obj.structure human|/obj/item
--menu: Use
--click: Click: Use
-+3 menu: Toggle Open
-+4 click: nothing
+human|/obj/item/tool/screwdriver menu: Hit
+human|/obj/item/tool/screwdriver menu: Move To Top
+human|/obj/item/tool/screwdriver menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/screwdriver menu: Toggle Open
+human|/obj/item/tool/screwdriver click: nothing
+human|/obj/item/tool/crowbar menu: Hit
+human|/obj/item/tool/crowbar menu: Move To Top
+human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/crowbar menu: Toggle Open
+human|/obj/item/tool/crowbar click: nothing
+human|/obj/item/tool/wrench menu: Hit
+human|/obj/item/tool/wrench menu: Move To Top
+human|/obj/item/tool/wrench menu: Toggle (refused: You can't reach the anchoring bolts when the door is closed!)
+human|/obj/item/tool/wrench menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wrench menu: Toggle Open
+human|/obj/item/tool/wrench click: Click: Toggle
+human|/obj/item/tool/wirecutters menu: Hit
+human|/obj/item/tool/wirecutters menu: Move To Top
+human|/obj/item/tool/wirecutters menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/tool/wirecutters menu: Toggle Open
+human|/obj/item/tool/wirecutters click: nothing
+human|/obj/item/multitool menu: Hit
+human|/obj/item/multitool menu: Move To Top
+human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/multitool menu: Toggle Open
+human|/obj/item/multitool click: nothing
+human|/obj/item/weldingtool menu: Hit
+human|/obj/item/weldingtool menu: Move To Top
+human|/obj/item/weldingtool menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/weldingtool menu: Toggle Open
+human|/obj/item/weldingtool menu: Weld shut
+human|/obj/item/weldingtool click: Click: Weld shut
+human|/obj/item/stack/cable_coil menu: Hit
+human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Move To Top
+human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/cable_coil menu: Toggle Open
+human|/obj/item/stack/cable_coil click: nothing
+human|/obj/item/stack/material/steel menu: Hit
+human|/obj/item/stack/material/steel menu: Move To Top
+human|/obj/item/stack/material/steel menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/stack/material/steel menu: Toggle Open
+human|/obj/item/stack/material/steel click: nothing
+human|/obj/item/card/id menu: Hit
+human|/obj/item/card/id menu: Move To Top
+human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/card/id menu: Toggle Open
+human|/obj/item/card/id click: nothing
+human|/obj/item menu: Hit
+human|/obj/item menu: Move To Top
+human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Toggle Open
+human|/obj/item click: nothing
 @obj human|/obj/item/storage/laundry_basket
++0 menu: Empty contents
++2 menu: Move To Top
++3 menu: Switch gathering method (refused: You can't do that.)
++4 menu: Toggle Digestable (refused: You can't do that.)
 keys: anchor.toggle, break_out, cut_apart, devour, door, drag_buckle, empty_basket, melee_hit, set_down, silicon_hand, stuff, stuff_grab, weld_shut.toggle

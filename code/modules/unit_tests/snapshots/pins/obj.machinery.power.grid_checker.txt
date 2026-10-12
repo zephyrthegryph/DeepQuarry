@@ -1,46 +1,32 @@
 human|none menu: Use
 human|none click: Click: Use
 @obj.machinery robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.power human|/obj/item/tool/screwdriver
-+3 menu: Use
++1 menu: Use
 @obj.machinery.power human|/obj/item/tool/crowbar
 -click: Click: Deconstruct
-+3 menu: Use
-+4 menu: Use crowbar
-+5 click: Click: Use crowbar
-@obj human|/obj/item/tool/wrench
--click: nothing
-+2 menu: Use
-+3 click: Click: Use
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+2 menu: Use
-+3 menu: Use wirecutter
-+4 click: Click: Use wirecutter
-@obj human|/obj/item/multitool
--click: nothing
-+2 menu: Use
-+3 menu: Use multitool
-+4 click: Click: Use multitool
-@obj human|/obj/item/weldingtool
--click: nothing
-+2 menu: Use
-+3 click: Click: Use
++1 menu: Use
++2 menu: Use crowbar
++3 click: Click: Use crowbar
+human|/obj/item/tool/wrench menu: Use
+human|/obj/item/tool/wrench click: Click: Use
+human|/obj/item/tool/wirecutters menu: Use
+human|/obj/item/tool/wirecutters menu: Use wirecutter
+human|/obj/item/tool/wirecutters click: Click: Use wirecutter
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use multitool
+human|/obj/item/weldingtool menu: Use
+human|/obj/item/weldingtool click: Click: Use
 @obj.machinery.power human|/obj/item/stack/cable_coil
-+4 menu: Use
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+2 menu: Use
-+3 click: Click: Use
-@obj human|/obj/item/card/id
--click: nothing
-+3 menu: Use
-+4 click: Click: Use
-@obj human|/obj/item
--click: nothing
-+2 menu: Use
-+3 click: Click: Use
++1 menu: Use
+human|/obj/item/stack/material/steel menu: Use
+human|/obj/item/stack/material/steel click: Click: Use
+human|/obj/item/card/id menu: Use
+human|/obj/item/card/id click: Click: Use
+human|/obj/item menu: Use
+human|/obj/item click: Click: Use
 wires: Electrification, Lockout, Manual Override 1, Manual Override 2, Manual Override 3, Reboot
 keys: cable_place, drag_buckle, grid_checker_use, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, robot_remote_blocked, silicon_hand, use_crowbar, use_multitool, use_wirecutter

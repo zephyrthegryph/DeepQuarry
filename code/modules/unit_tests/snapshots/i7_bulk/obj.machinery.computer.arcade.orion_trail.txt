@@ -1,12 +1,6 @@
-human|none menu: Climb
-human|none menu: Use
-human|none click: Click: Use
-@obj.machinery.computer.arcade robot|none
--menu: Ui open
--click: Click: Ui open
-+3 click: Click: Use
-ai|none menu: Use
-ai|none click: Click: Use
+@obj.machinery.computer human|none
+@obj.machinery.computer robot|none
+@obj.machinery ai|none
 @obj.machinery.computer ghost|none
 @obj.machinery.computer.arcade human|/obj/item/tool/screwdriver
 -menu: Pay

@@ -2,7 +2,7 @@
 +3 menu: Set transfer amount
 @obj.item.reagent_containers robot|none
 +4 menu: Set transfer amount
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers.food.drinks ghost|none
 @obj.item.reagent_containers human|/obj/item/tool/screwdriver
 +2 menu: Set transfer amount
@@ -17,11 +17,11 @@
 @obj.item.reagent_containers human|/obj/item/weldingtool
 +2 menu: Set transfer amount
 @obj.item.reagent_containers human|/obj/item/stack/cable_coil
-+3 menu: Set transfer amount
++2 menu: Set transfer amount
 @obj.item.reagent_containers human|/obj/item/stack/material/steel
 +2 menu: Set transfer amount
 @obj.item.reagent_containers human|/obj/item/card/id
-+3 menu: Set transfer amount
++2 menu: Set transfer amount
 @obj.item.reagent_containers human|/obj/item/kit
 +3 menu: Set transfer amount
 @obj.item.reagent_containers human|/obj/item/storage

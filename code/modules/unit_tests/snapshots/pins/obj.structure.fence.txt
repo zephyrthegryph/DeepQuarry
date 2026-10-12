@@ -17,7 +17,7 @@ robot|none click: Click: Use
 -click: Click: Use
 +0 menu: Climb (refused: There is no hole in the fence to climb through.)
 +1 menu: Cut through
-+6 click: Click: Cut through
++4 click: Click: Cut through
 @obj.structure human|/obj/item/multitool
 +0 menu: Climb (refused: There is no hole in the fence to climb through.)
 @obj.structure human|/obj/item/weldingtool

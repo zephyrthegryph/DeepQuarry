@@ -2,7 +2,7 @@
 +0 menu: Alternate use
 @obj robot|none
 +0 menu: Alternate use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 +0 menu: Alternate use

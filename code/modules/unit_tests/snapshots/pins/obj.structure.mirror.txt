@@ -9,8 +9,8 @@ ai|none click: Click: Use
 @obj.structure human|/obj/item/tool/crowbar
 @obj.structure human|/obj/item/tool/wrench
 -click: Click: Use
-+4 menu: Use wrench
-+5 click: Click: Use wrench
++2 menu: Use wrench
++3 click: Click: Use wrench
 @obj.structure human|/obj/item/tool/wirecutters
 @obj.structure human|/obj/item/multitool
 @obj.structure human|/obj/item/weldingtool
@@ -18,8 +18,7 @@ ai|none click: Click: Use
 @obj.structure human|/obj/item/stack/material/steel
 @obj.structure human|/obj/item/card/id
 @obj.structure human|/obj/item
-@obj human|/obj/item/stack/material/glass
--menu: Climb
--menu: Place on wall
--menu: Use (refused: <span class='notice'>You can't build that type of window on this type of low wall.</span>)
+human|/obj/item/stack/material/glass menu: Hit
+human|/obj/item/stack/material/glass menu: Use
+human|/obj/item/stack/material/glass click: Click: Use
 keys: add_glass, drag_buckle, item, melee_hit, remove_frame, silicon_use, use, use_wrench

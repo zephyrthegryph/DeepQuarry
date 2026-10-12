@@ -1,6 +1,6 @@
 @obj.item.grenade human|none
 @obj.item.grenade robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -31,7 +31,7 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Grenade interaction hand
-+4 click: Click: Grenade interaction hand
++3 click: Click: Grenade interaction hand
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Grenade interaction hand
@@ -39,7 +39,7 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Grenade interaction hand
-+4 click: Click: Grenade interaction hand
++3 click: Click: Grenade interaction hand
 @obj human|/obj/item/kit
 +1 menu: Grenade interaction hand
 @obj human|/obj/item/storage

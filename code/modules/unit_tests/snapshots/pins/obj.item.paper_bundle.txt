@@ -4,7 +4,7 @@
 @obj robot|none
 +1 menu: Loose bundle (refused: You can't do that.)
 +4 menu: Rename bundle (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Loose bundle (refused: You can't do that.)
 +2 menu: Rename bundle (refused: You can't do that.)
@@ -47,9 +47,9 @@
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Loose bundle (refused: You can't do that.)
-+3 menu: Rename bundle (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
++2 menu: Rename bundle (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Loose bundle (refused: You can't do that.)
@@ -59,9 +59,9 @@
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Loose bundle (refused: You can't do that.)
-+3 menu: Rename bundle (refused: You can't do that.)
-+5 menu: Use
-+6 click: Click: Use
++2 menu: Rename bundle (refused: You can't do that.)
++4 menu: Use
++5 click: Click: Use
 @obj human|/obj/item/kit
 +1 menu: Loose bundle (refused: You can't do that.)
 +3 menu: Rename bundle (refused: You can't do that.)
@@ -72,7 +72,7 @@
 +3 menu: Rename bundle (refused: You can't do that.)
 +5 menu: Use
 +6 click: Click: Use
-@obj.item human|/obj/item
+@obj human|/obj/item
 -menu: Alternate use
 +0 menu: Loose bundle (refused: You can't do that.)
 +2 menu: Rename bundle (refused: You can't do that.)

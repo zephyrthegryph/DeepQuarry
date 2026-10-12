@@ -1,12 +1,15 @@
 @obj.machinery.door human|none
 @obj.machinery.door.blast robot|none
-@obj ai|none
+@obj.machinery ai|none
 @obj ghost|none
 @obj.machinery.door.blast human|/obj/item/tool/screwdriver
 @obj.machinery.door.blast human|/obj/item/tool/crowbar
 @obj.machinery.door.blast human|/obj/item/tool/wrench
 @obj.machinery.door.blast human|/obj/item/tool/wirecutters
-@obj.machinery.door.blast human|/obj/item/multitool
+human|/obj/item/multitool menu: Open
+human|/obj/item/multitool menu: Strike
+human|/obj/item/multitool menu: Use
+human|/obj/item/multitool click: Click: Use
 @obj.machinery.door.blast human|/obj/item/weldingtool
 @obj.machinery.door.blast human|/obj/item/stack/cable_coil
 @obj.machinery.door.blast human|/obj/item/stack/material/steel

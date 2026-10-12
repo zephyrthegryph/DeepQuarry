@@ -1,6 +1,4 @@
 human|/obj/item/tool/crowbar menu: Hit
-human|/obj/item/tool/crowbar menu: Move To Top
-human|/obj/item/tool/crowbar menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/tool/crowbar menu: Use
 human|/obj/item/tool/crowbar menu: Use crowbar
 human|/obj/item/tool/crowbar click: Click: Use crowbar

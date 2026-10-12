@@ -18,7 +18,7 @@
 +8 menu: Stop (refused: You can't do that.)
 +10 menu: Wipe Tape (refused: You can't do that.)
 +11 click: Click: Eject tape
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Eject Tape (refused: You can't do that.)
 +2 menu: Playback Tape (refused: You can't do that.)
@@ -90,12 +90,12 @@
 -click: nothing
 +0 menu: Eject tape
 +1 menu: Eject Tape (refused: You can't do that.)
-+4 menu: Playback Tape (refused: You can't do that.)
-+5 menu: Print Transcript (refused: You can't do that.)
-+6 menu: Start Recording (refused: You can't do that.)
-+7 menu: Stop (refused: You can't do that.)
-+9 menu: Wipe Tape (refused: You can't do that.)
-+10 click: Click: Eject tape
++3 menu: Playback Tape (refused: You can't do that.)
++4 menu: Print Transcript (refused: You can't do that.)
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Eject tape
@@ -112,10 +112,10 @@
 +1 menu: Eject Tape (refused: You can't do that.)
 +3 menu: Playback Tape (refused: You can't do that.)
 +4 menu: Print Transcript (refused: You can't do that.)
-+6 menu: Start Recording (refused: You can't do that.)
-+7 menu: Stop (refused: You can't do that.)
-+9 menu: Wipe Tape (refused: You can't do that.)
-+10 click: Click: Eject tape
++5 menu: Start Recording (refused: You can't do that.)
++6 menu: Stop (refused: You can't do that.)
++8 menu: Wipe Tape (refused: You can't do that.)
++9 click: Click: Eject tape
 @obj human|/obj/item/kit
 +1 menu: Eject tape
 +2 menu: Eject Tape (refused: You can't do that.)

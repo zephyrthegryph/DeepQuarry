@@ -8,7 +8,7 @@
 +1 menu: Hide
 +5 menu: Use
 +6 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Hide (refused: You can't reach that.)
 @obj.item.assembly human|/obj/item/tool/screwdriver
@@ -28,10 +28,12 @@
 @obj.item.assembly human|/obj/item/weldingtool
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/stack/cable_coil
+-menu: Make Cable Restraints (refused: You can't do that.)
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/stack/material/steel
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/card/id
+-menu: Read ID Card (refused: You can't do that.)
 +0 menu: Hide
 @obj.item.assembly human|/obj/item/kit
 +1 menu: Hide

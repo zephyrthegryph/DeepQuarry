@@ -2,7 +2,7 @@
 +2 menu: Recolor
 @obj robot|none
 +3 menu: Recolor
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 +1 menu: Recolor
@@ -17,11 +17,11 @@
 @obj human|/obj/item/weldingtool
 +1 menu: Recolor
 @obj human|/obj/item/stack/cable_coil
-+2 menu: Recolor
++1 menu: Recolor
 @obj human|/obj/item/stack/material/steel
 +1 menu: Recolor
 @obj human|/obj/item/card/id
-+2 menu: Recolor
++1 menu: Recolor
 @obj human|/obj/item/kit
 +2 menu: Recolor
 @obj human|/obj/item/storage

@@ -4,75 +4,75 @@
 @obj robot|none
 +0 menu: Alt
 +4 menu: Take HeadPods (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +1 menu: Take HeadPods (refused: You can't do that.)
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use screwdriver
 +5 click: Click: Item
 @obj human|/obj/item/tool/crowbar
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use crowbar
 +5 click: Click: Item
 @obj human|/obj/item/tool/wrench
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use wrench
 +5 click: Click: Item
 @obj human|/obj/item/tool/wirecutters
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use wirecutters
 +5 click: Click: Item
 @obj human|/obj/item/multitool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use multitool
 +5 click: Click: Item
 @obj human|/obj/item/weldingtool
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use welding tool
 +5 click: Click: Item
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+4 menu: Take HeadPods (refused: You can't do that.)
-+6 click: Click: Item
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use cable coil
++5 click: Click: Item
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+3 menu: Take HeadPods (refused: You can't do that.)
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use steel sheet
 +5 click: Click: Item
 @obj human|/obj/item/card/id
 -click: nothing
 +0 menu: Alt
-+1 menu: Item
-+4 menu: Take HeadPods (refused: You can't do that.)
-+6 click: Click: Item
++2 menu: Take HeadPods (refused: You can't do that.)
++4 menu: Use identification card
++5 click: Click: Item
 @obj human|/obj/item/kit
 +0 menu: Alt
-+2 menu: Item
-+4 menu: Take HeadPods (refused: You can't do that.)
++3 menu: Take HeadPods (refused: You can't do that.)
++5 menu: Use item
 @obj human|/obj/item/storage
 +0 menu: Alt
-+2 menu: Item
-+4 menu: Take HeadPods (refused: You can't do that.)
++3 menu: Take HeadPods (refused: You can't do that.)
++5 menu: Use storage
 human|/obj/item menu: Alt
-human|/obj/item menu: Item
 human|/obj/item menu: Move To Top
 human|/obj/item menu: Take HeadPods (refused: You can't do that.)
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item menu: Use item
 human|/obj/item click: Click: Item
 keys: alt, change_track, collect_item, drag_buckle, gen_silicon_item_silicon_equip_module, item, kit_customize, kit_customize_last, loopmode, move_to_top, pick_up_item, play, self, stop, toggle_digestable, volume, walkpod_verb_take_headpods

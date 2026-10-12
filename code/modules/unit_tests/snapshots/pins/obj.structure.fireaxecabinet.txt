@@ -11,46 +11,36 @@ ai|none click: Click: Toggle lock
 +0 menu: Open/Close (refused: You can't reach that.)
 +1 menu: Remove Fire Axe (refused: You can't reach that.)
 @obj.structure human|/obj/item/tool/screwdriver
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/tool/crowbar
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/tool/wrench
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/tool/wirecutters
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/multitool
 -click: Click: Use
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+4 menu: Reset the lock
-+7 menu: Use (refused: The cabinet won't budge.)
-+8 click: Click: Reset the lock
++1 menu: Open/Close
++2 menu: Remove Fire Axe
++3 menu: Reset the lock
++5 click: Click: Reset the lock
 @obj.structure human|/obj/item/weldingtool
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/stack/cable_coil
-+3 menu: Open/Close
-+4 menu: Remove Fire Axe
-+7 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/stack/material/steel
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item/card/id
-+2 menu: Open/Close
-+4 menu: Remove Fire Axe
-+7 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 @obj.structure human|/obj/item
-+2 menu: Open/Close
-+3 menu: Remove Fire Axe
-+6 menu: Use (refused: The cabinet won't budge.)
++1 menu: Open/Close
++2 menu: Remove Fire Axe
 keys: drag_buckle, fireaxecabinet_silicon_lock, hand, item, lock_reset, melee_hit, remove_fire_axe_effect, robot_item, tk, toggle_openness_effect, unlock_reset

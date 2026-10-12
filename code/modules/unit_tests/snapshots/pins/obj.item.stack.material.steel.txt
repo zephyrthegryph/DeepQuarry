@@ -1,6 +1,6 @@
 @obj.item.stack human|none
 @obj.item.stack robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack.material human|/obj/item/tool/screwdriver
 @obj.item.stack.material human|/obj/item/tool/crowbar

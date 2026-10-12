@@ -27,15 +27,12 @@ human|/obj/item/card/emag click: Click: Use
 human|/obj/item/card/id menu: Fit
 human|/obj/item/card/id menu: Give DNA (refused: You can't do that.)
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id menu: Toggle DNA Samples Allowance (refused: You can't do that.)
 human|/obj/item/card/id menu: Unload
 human|/obj/item/card/id menu: Use Scope (refused: You can't do that.)
 human|/obj/item/card/id click: Click: Fit
-human|/obj/item/cell menu: Charge with your body (refused: not in your hand)
-human|/obj/item/cell menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell menu: Fit
 human|/obj/item/cell menu: Give DNA (refused: You can't do that.)
 human|/obj/item/cell menu: Insert cell
@@ -44,7 +41,6 @@ human|/obj/item/cell menu: Move To Top
 human|/obj/item/cell menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/cell menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/cell menu: Toggle DNA Samples Allowance (refused: You can't do that.)
-human|/obj/item/cell menu: Use
 human|/obj/item/cell menu: Use Scope (refused: You can't do that.)
 human|/obj/item/cell click: Click: Insert cell
 human|/obj/item/kit menu: Customise
@@ -68,7 +64,6 @@ human|/obj/item/multitool menu: Use Scope (refused: You can't do that.)
 human|/obj/item/multitool click: Click: Fit
 human|/obj/item/stack/cable_coil menu: Fit
 human|/obj/item/stack/cable_coil menu: Give DNA (refused: You can't do that.)
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Remove DNA (refused: You can't do that.)
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)

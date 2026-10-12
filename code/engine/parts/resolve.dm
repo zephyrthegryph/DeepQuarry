@@ -416,6 +416,10 @@
 		// an actor's own menu() op is the Abilities entry, not a target's menu line
 		C.dropped_by = GATE_MATCH
 		return
+	if(R.origin == ORIGIN_MENU && B.bind_kind == BIND_MENU && C.side == CAND_HELD && R.target != R.held)
+		// likewise the held item's own menu() op (Move To Top, Toggle Digestable) is a line of the item's own Menu, not of every target's
+		C.dropped_by = GATE_MATCH
+		return
 	var/datum/target = (C.side == CAND_ACTOR) ? R.actor : R.target
 	if(C.side == CAND_ACTOR && !op_actor_side_binding(B))
 		C.dropped_by = GATE_MATCH
@@ -691,6 +695,18 @@
 
 // ---- the menu and the screentip ----
 
+/// Is candidate C a line a player can choose in the Menu? Not an op only a drag reaches: it needs the dragged thing, which a pick has not got.
+/proc/op_menu_lists(datum/op_cand/C)
+	return LAZYACCESS(C.oplan.selects, "gesture") != GESTURE_DRAG
+
+/// The Menu line of candidate C: its label, except that an unlabelled catch-all (item(/obj/item) with no label(): the "use what you hold on it"
+/// fallback a click falls through to) reads as using the held thing, not as its key ("Turf item", "Wall item"), so the fallbacks a type
+/// stacks up merge into one line (op_menu_read()).
+/proc/op_menu_label(datum/op_resolution/R, datum/op_cand/C)
+	if(!C.oplan.label && R.held && C.binding && (C.binding.bind_kind in list(BIND_ITEM, BIND_STACK)) && op_cand_catch_all(C))
+		return "Use [R.held.name]"
+	return op_label(C.oplan)
+
 /// The menus read so far: key -> list(rows, time stamp or null). The key is (actor, target, held, the act generation of each of the three, the actor's
 /// provider set generation), the ids never reused (a ref would be). An entity's act generation bumps when a published key, a relation, a stat, its place or
 /// its contents change (op_changed()), and the provider set generation when an activation with provides attaches or detaches, so a stale read never
@@ -776,15 +792,20 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_MENU, actor_authority(actor), null, null)
 	var/list/rows = list()
 	var/list/seen = list()
+	var/list/label_rows = list() // label -> the row listed under it: one line per label (op_menu_lists())
 	var/timed = FALSE
 	for(var/datum/op_cand/C as anything in R.ordered)
 		if(seen[C.oplan.key])
+			continue
+		if(!op_menu_lists(C))
 			continue
 		if(!op_cand_when(R, C))
 			continue
 		if(op_cand_path_reason(R, C))
 			continue // behind a closed door: not a menu line, as a click sets it aside (spaces.dm)
 		seen[C.oplan.key] = TRUE
+		var/label = op_menu_label(R, C)
+		var/list/same = label_rows[label]
 		if(!isnull(C.oplan.cooldown_t))
 			timed = TRUE
 		var/enabled = TRUE
@@ -793,7 +814,18 @@ GLOBAL_VAR_INIT(op_menu_builds, 0)
 		if(why)
 			enabled = FALSE
 			reason = reason_text(why)
-		rows += list(list("key" = C.oplan.key, "label" = op_label(C.oplan), "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = op_label(C.oplan)))
+			if(!length(reason))
+				continue // refused silently (req(..., silent = TRUE): a guard op that swallows a click): nothing a player could choose
+		var/list/row = list("key" = C.oplan.key, "label" = label, "enabled" = enabled, "reason" = reason, "id" = C.oplan.key, "name" = label)
+		if(same)
+			// Two ops under one label (a wall's Touch over the turf's inherited Touch): the player sees one line, the first that would
+			// run (the higher placed), unless only a later one is open now.
+			if(!same["enabled"] && enabled)
+				rows[rows.Find(same)] = row
+				label_rows[label] = row
+			continue
+		label_rows[label] = row
+		rows += list(row)
 	if(length(GLOB.op_menu_cache) >= OP_MENU_CACHE_MAX)
 		op_menu_cache_clear()
 	if(!frame[2])

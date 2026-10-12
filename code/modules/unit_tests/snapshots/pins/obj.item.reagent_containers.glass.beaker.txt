@@ -1,6 +1,6 @@
 @obj.item.reagent_containers.glass human|none
 @obj.item.reagent_containers.glass robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers.glass ghost|none
 @obj.item.reagent_containers.glass human|/obj/item/tool/screwdriver
 @obj.item.reagent_containers.glass human|/obj/item/tool/crowbar
@@ -23,14 +23,7 @@
 -menu: Rename food
 +2 menu: Open or close the lid
 +3 menu: Set transfer amount
-@obj human|/obj/item/pen
--menu: Rename
--click: Click: Rename
-+0 menu: Dip into it
-+1 menu: Label it
-+3 menu: Open or close the lid
-+4 menu: Set transfer amount
-+6 click: Click: Label it
+@obj.item.reagent_containers human|/obj/item/pen
 @obj human|/obj/item/flashlight/pen
 @obj.item.reagent_containers human|/obj/item
 -menu: Rename food

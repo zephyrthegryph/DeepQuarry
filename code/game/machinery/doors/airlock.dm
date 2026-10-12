@@ -223,13 +223,13 @@ CAPABILITIES(/obj/machinery/door/airlock)
 	op("idscan_toggle", ui_act("idscan-toggle"), needs(req_wire(WIRE_IDSCAN, because = MSG(airlock/idscan_wire_cut))),
 		toggles_hold(STAT_AIDISABLEDIDSCANNER, source = SRC_AI_CONTROL))
 	op("emergency_toggle", ui_act("emergency-toggle"), toggles(DOOR_EMERGENCY_ENGAGED), says(PROC_REF(emergency_message)), logs(LOG_GAME))
-	op("bolt_toggle", ui_act("bolt-toggle"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
+	op("bolt_toggle", ui_act("bolt-toggle"), label("Toggle bolts"), needs(req_wire(WIRE_DOOR_BOLTS, because = MSG(airlock/bolt_wire_cut)),
 		req_is(nameof(operating), FALSE, because = MSG(airlock/swinging)), req(PROC_REF(actor_may_move_bolts))),
 		toggles_hold(STAT_BOLTED, source = ON_ACTOR), says(PROC_REF(bolts_message)), logs(LOG_GAME))
 	op("light_toggle", ui_act("light-toggle"), needs(req_wire(WIRE_BOLT_LIGHT, because = MSG(airlock/light_wire_cut))), toggles(nameof(lights)))
 	op("safe_toggle", ui_act("safe-toggle"), needs(req_wire(WIRE_SAFETY, because = MSG(airlock/safety_wire_cut))), then(PROC_REF(safeties_toggled)))
 	op("speed_toggle", ui_act("speed-toggle"), needs(req_wire(WIRE_SPEED, because = MSG(airlock/timing_wire_cut))), toggles(nameof(normalspeed)))
-	op("open_close", ui_act("open-close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
+	op("open_close", ui_act("open-close"), label("Open or close"), needs(req_is(nameof(frozen), FALSE, because = MSG(airlock/frozen)),
 		req_is(WELD_SHUT_WELDED, FALSE, because = MSG(airlock/welded)), req_is(STAT_BOLTED, FALSE, because = MSG(airlock/bolted)),
 		req(PROC_REF(not_held_by_another))), then(PROC_REF(ui_open_close)))
 	// a silicon's gestures over its link: shift opens or closes it, ctrl bolts it, alt electrifies it, middle switches the bolt lights (the AI's: a

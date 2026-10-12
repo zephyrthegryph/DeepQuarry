@@ -1,6 +1,6 @@
 @obj.item.reagent_containers.glass human|none
 @obj.item.reagent_containers.glass robot|none
-@obj.item ai|none
+@obj ai|none
 @obj.item.reagent_containers.glass ghost|none
 @obj.item.reagent_containers.glass human|/obj/item/tool/screwdriver
 @obj.item.reagent_containers.glass human|/obj/item/tool/crowbar
@@ -31,14 +31,7 @@
 +1 menu: Dip into it
 +3 menu: Open or close the lid
 +4 menu: Set transfer amount
-@obj human|/obj/item/pen
--menu: Rename
--click: Click: Rename
-+0 menu: Dip into it
-+1 menu: Label it
-+3 menu: Open or close the lid
-+4 menu: Set transfer amount
-+6 click: Click: Label it
+@obj.item.reagent_containers human|/obj/item/pen
 @obj human|/obj/item/flashlight/pen
 @obj.item.reagent_containers human|/obj/item
 -menu: Rename food
@@ -59,14 +52,14 @@ human|/obj/item/mop menu: Set transfer amount
 human|/obj/item/mop menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/mop menu: Wet it (refused: The bucket is empty!)
 human|/obj/item/mop click: Click: Wet it
-@obj human|/obj/item/soap
--menu: Insert a soap
--click: Click: Insert a soap
-+1 menu: Dip into it
-+3 menu: Open or close the lid
-+4 menu: Set transfer amount
-+6 menu: Wet it (refused: The bucket is empty!)
-+7 click: Click: Wet it
+human|/obj/item/soap menu: Clean
+human|/obj/item/soap menu: Dip into it
+human|/obj/item/soap menu: Move To Top
+human|/obj/item/soap menu: Open or close the lid
+human|/obj/item/soap menu: Set transfer amount
+human|/obj/item/soap menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/soap menu: Wet it (refused: The bucket is empty!)
+human|/obj/item/soap click: Click: Wet it
 human|/obj/item/material/knife/machete/hatchet menu: Cut a hole in it
 human|/obj/item/material/knife/machete/hatchet menu: Dip into it
 human|/obj/item/material/knife/machete/hatchet menu: Move To Top

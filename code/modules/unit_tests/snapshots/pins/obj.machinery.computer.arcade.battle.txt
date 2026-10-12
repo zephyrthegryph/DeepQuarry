@@ -1,30 +1,65 @@
-@obj.machinery.computer.arcade human|none
-@obj.machinery.computer.arcade robot|none
-@obj.machinery.computer.arcade ai|none
+human|none menu: Climb
+human|none menu: Open controls
+human|none click: Click: Open controls
+@obj.machinery.computer robot|none
+-click: Click: Use
++2 menu: Open controls
++4 click: Click: Open controls
+@obj.machinery ai|none
+-click: Click: Use
++0 menu: Open controls
++2 click: Click: Open controls
 @obj.machinery.computer ghost|none
-@obj.machinery.computer.arcade human|/obj/item/tool/screwdriver
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/tool/crowbar
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/tool/wrench
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/tool/wirecutters
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/multitool
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/weldingtool
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/stack/cable_coil
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/stack/material/steel
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/card/id
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item
--menu: Pay
+human|/obj/item/tool/screwdriver menu: Climb
+human|/obj/item/tool/screwdriver menu: Disconnect
+human|/obj/item/tool/screwdriver menu: Open controls
+human|/obj/item/tool/screwdriver menu: Use screwdriver
+human|/obj/item/tool/screwdriver click: Click: Disconnect
+human|/obj/item/tool/crowbar menu: Climb
+human|/obj/item/tool/crowbar menu: Open controls
+human|/obj/item/tool/crowbar menu: Use crowbar
+human|/obj/item/tool/crowbar click: Click: Use item
+human|/obj/item/tool/wrench menu: Climb
+human|/obj/item/tool/wrench menu: Open controls
+human|/obj/item/tool/wrench menu: Use wrench
+human|/obj/item/tool/wrench click: Click: Use item
+human|/obj/item/tool/wirecutters menu: Climb
+human|/obj/item/tool/wirecutters menu: Open controls
+human|/obj/item/tool/wirecutters menu: Use wirecutters
+human|/obj/item/tool/wirecutters click: Click: Use item
+human|/obj/item/multitool menu: Climb
+human|/obj/item/multitool menu: Open controls
+human|/obj/item/multitool menu: Use multitool
+human|/obj/item/multitool click: Click: Use item
+human|/obj/item/weldingtool menu: Climb
+human|/obj/item/weldingtool menu: Open controls
+human|/obj/item/weldingtool menu: Use welding tool
+human|/obj/item/weldingtool click: Click: Use item
+human|/obj/item/stack/cable_coil menu: Climb
+human|/obj/item/stack/cable_coil menu: Open controls
+human|/obj/item/stack/cable_coil menu: Use cable coil
+human|/obj/item/stack/cable_coil click: Click: Use item
+human|/obj/item/stack/material/steel menu: Climb
+human|/obj/item/stack/material/steel menu: Open controls
+human|/obj/item/stack/material/steel menu: Use steel sheet
+human|/obj/item/stack/material/steel click: Click: Use item
+human|/obj/item/card/id menu: Climb
+human|/obj/item/card/id menu: Open controls
+human|/obj/item/card/id menu: Use identification card
+human|/obj/item/card/id click: Click: Use item
+human|/obj/item menu: Climb
+human|/obj/item menu: Open controls
+human|/obj/item menu: Use item
+human|/obj/item click: Click: Use item
 @obj human|/obj/item/gripper
-@obj human|/obj/item/stack/arcadeticket
--menu: Pay
-@obj.machinery.computer.arcade human|/obj/item/card/emag
--menu: Pay
+human|/obj/item/stack/arcadeticket menu: Climb
+human|/obj/item/stack/arcadeticket menu: Open controls
+human|/obj/item/stack/arcadeticket menu: Redeem tickets (refused: You don't have enough for that.)
+human|/obj/item/stack/arcadeticket menu: Use arcade tickets
+human|/obj/item/stack/arcadeticket click: Click: Use item
+human|/obj/item/card/emag menu: Climb
+human|/obj/item/card/emag menu: Open controls
+human|/obj/item/card/emag menu: Use
+human|/obj/item/card/emag menu: Use cryptographic sequencer
+human|/obj/item/card/emag click: Click: Use
 keys: attack, charge, climb.climb, climb.climb_menu, disconnect, drag_buckle, emag.subvert, emag.use, heal, machine_anchor, machine_deconstruct, machine_panel, machine_panel_close, machine_repair, machine_unanchor, melee_hit, newgame, redeem_tickets, robot_remote_blocked, silicon_hand, ui_open, use_gripper, use_item

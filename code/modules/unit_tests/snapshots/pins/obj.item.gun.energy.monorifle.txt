@@ -4,7 +4,7 @@
 @obj.item.gun.energy robot|none
 -menu: Use Scope (refused: You can't do that.)
 +0 menu: Aim Down Sights (refused: You can't do that.)
-@obj.item ai|none
+@obj ai|none
 @obj.item.gun ghost|none
 -menu: Use Scope (refused: You can't do that.)
 +0 menu: Aim Down Sights (refused: You can't do that.)

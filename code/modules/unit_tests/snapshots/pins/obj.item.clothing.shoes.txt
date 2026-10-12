@@ -10,100 +10,88 @@
 +5 menu: Shoes draw knife hand
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
 +9 click: Click: Shoes draw knife hand
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Draw Boot Knife (refused: You can't do that.)
 +2 menu: Switch Shoe Layer (refused: You can't do that.)
 @obj.item.clothing human|/obj/item/tool/screwdriver
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/crowbar
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/wrench
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/tool/wirecutters
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/multitool
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/weldingtool
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/stack/cable_coil
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+5 menu: Shoes draw knife hand
-+6 menu: Shoes stuff item
-+7 menu: Switch Shoe Layer (refused: You can't do that.)
-+10 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/stack/material/steel
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+4 menu: Shoes draw knife hand
-+5 menu: Shoes stuff item
-+6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/card/id
 -click: Click: Use
 +1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
-+5 menu: Shoes draw knife hand
-+6 menu: Shoes stuff item
-+7 menu: Switch Shoe Layer (refused: You can't do that.)
-+10 click: Click: Shoes draw knife hand
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 @obj.item.clothing human|/obj/item/kit
 +2 menu: Draw Boot Knife (refused: You can't do that.)
-+3 menu: Drop onto
-+5 menu: Shoes draw knife hand
-+6 menu: Shoes stuff item
-+7 menu: Switch Shoe Layer (refused: You can't do that.)
-@obj.item.clothing human|/obj/item/storage
-+2 menu: Draw Boot Knife (refused: You can't do that.)
-+3 menu: Drop onto
-+5 menu: Shoes draw knife hand
-+6 menu: Shoes stuff item
-+7 menu: Switch Shoe Layer (refused: You can't do that.)
-@obj.item human|/obj/item
--click: Click: Use
-+1 menu: Draw Boot Knife (refused: You can't do that.)
-+2 menu: Drop onto
 +4 menu: Shoes draw knife hand
 +5 menu: Shoes stuff item
 +6 menu: Switch Shoe Layer (refused: You can't do that.)
-+9 click: Click: Shoes draw knife hand
+@obj.item.clothing human|/obj/item/storage
++2 menu: Draw Boot Knife (refused: You can't do that.)
++4 menu: Shoes draw knife hand
++5 menu: Shoes stuff item
++6 menu: Switch Shoe Layer (refused: You can't do that.)
+@obj human|/obj/item
+-click: Click: Use
++1 menu: Draw Boot Knife (refused: You can't do that.)
++3 menu: Shoes draw knife hand
++4 menu: Shoes stuff item
++5 menu: Switch Shoe Layer (refused: You can't do that.)
++8 click: Click: Shoes draw knife hand
 keys: clothing_accessory_hand, clothing_accessory_item, clothing_circuit_self, clothing_remove_accessory_alt, collect_item, drag, drag_buckle, gen_silicon_item_silicon_equip_module, kit_customize, kit_customize_last, micro_climb_out, micro_escape_macro, move_to_top, pick_up_item, shoes_draw_knife_hand, shoes_draw_knife_verb, shoes_shake_out_self, shoes_stuff_item, shoes_toggle_layer_verb, toggle_digestable

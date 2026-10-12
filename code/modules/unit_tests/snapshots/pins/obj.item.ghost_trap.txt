@@ -4,7 +4,7 @@
 @obj robot|none
 +0 menu: Eat Entity
 +4 menu: Relase Entity
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 +0 menu: Eat Entity (refused: You can't reach that.)
 +2 menu: Relase Entity (refused: You can't reach that.)
@@ -28,13 +28,13 @@
 +2 menu: Relase Entity
 @obj human|/obj/item/stack/cable_coil
 +0 menu: Eat Entity
-+3 menu: Relase Entity
++2 menu: Relase Entity
 @obj human|/obj/item/stack/material/steel
 +0 menu: Eat Entity
 +2 menu: Relase Entity
 @obj human|/obj/item/card/id
 +0 menu: Eat Entity
-+3 menu: Relase Entity
++2 menu: Relase Entity
 @obj human|/obj/item/kit
 +1 menu: Eat Entity
 +3 menu: Relase Entity

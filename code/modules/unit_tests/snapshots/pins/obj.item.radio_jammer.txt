@@ -6,7 +6,7 @@
 -click: Click: Pick up
 +4 menu: Use
 +5 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -34,24 +34,22 @@
 +3 click: Click: Use
 @obj human|/obj/item/stack/cable_coil
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +2 menu: Use
 +3 click: Click: Use
 @obj human|/obj/item/card/id
 -click: nothing
-+3 menu: Use
-+4 click: Click: Use
++2 menu: Use
++3 click: Click: Use
 @obj human|/obj/item/kit
 +3 menu: Use
 @obj human|/obj/item/storage
 -click: Click: Collect
 +3 menu: Use
 +4 click: Click: Use
-human|/obj/item/cell/device/weapon menu: Charge with your body (refused: not in your hand)
-human|/obj/item/cell/device/weapon menu: Drain its charge (refused: not in your hand)
 human|/obj/item/cell/device/weapon menu: Insert cell
 human|/obj/item/cell/device/weapon menu: Move To Top
 human|/obj/item/cell/device/weapon menu: Toggle Digestable (refused: You can't do that.)

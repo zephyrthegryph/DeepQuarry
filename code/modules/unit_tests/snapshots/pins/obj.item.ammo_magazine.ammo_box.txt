@@ -8,7 +8,7 @@
 +0 menu: Alternate use
 +5 menu: Use
 +6 click: Click: Use
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj human|/obj/item/tool/screwdriver
 -click: nothing
@@ -50,8 +50,8 @@
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Load
-+5 menu: Use
-+6 click: Click: Load
++4 menu: Use
++5 click: Click: Load
 @obj human|/obj/item/stack/material/steel
 -click: nothing
 +0 menu: Alternate use
@@ -62,8 +62,8 @@
 -click: nothing
 +0 menu: Alternate use
 +1 menu: Load
-+5 menu: Use
-+6 click: Click: Load
++4 menu: Use
++5 click: Click: Load
 @obj human|/obj/item/kit
 +0 menu: Alternate use
 +2 menu: Load
@@ -74,7 +74,7 @@
 +2 menu: Load
 +5 menu: Use
 +6 click: Click: Load
-@obj.item human|/obj/item
+@obj human|/obj/item
 -click: Click: Use
 +1 menu: Load
 +5 click: Click: Load

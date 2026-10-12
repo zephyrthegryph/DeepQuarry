@@ -2,7 +2,7 @@
 +0 menu: Knock down
 @obj.item.stack robot|none
 +1 menu: Knock down
-@obj.item ai|none
+@obj ai|none
 @obj.item ghost|none
 @obj.item.stack human|/obj/item/tool/screwdriver
 +0 menu: Knock down
@@ -23,13 +23,13 @@
 +0 menu: Knock down
 @obj.item.stack human|/obj/item/stack/cable_coil
 +1 menu: Knock down
-+6 menu: Use
++5 menu: Use
 @obj.item.stack human|/obj/item/stack/material/steel
 +1 menu: Knock down
 +5 menu: Use
 @obj.item.stack human|/obj/item/card/id
 +0 menu: Knock down
-+5 menu: Use
++4 menu: Use
 @obj.item.stack human|/obj/item/kit
 +1 menu: Knock down
 +5 menu: Use

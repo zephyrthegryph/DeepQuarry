@@ -4,42 +4,24 @@ robot|none menu: Invoke
 robot|none click: Click: Invoke
 @obj.effect ai|none
 @obj ghost|none
-@obj human|/obj/item/tool/screwdriver
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/tool/crowbar
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/tool/wrench
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/tool/wirecutters
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/multitool
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/weldingtool
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/stack/cable_coil
--click: nothing
-+0 menu: Invoke
-+4 click: Click: Invoke
-@obj human|/obj/item/stack/material/steel
--click: nothing
-+0 menu: Invoke
-+3 click: Click: Invoke
-@obj human|/obj/item/card/id
--click: nothing
-+0 menu: Invoke
-+4 click: Click: Invoke
+human|/obj/item/tool/screwdriver menu: Invoke
+human|/obj/item/tool/screwdriver click: Click: Invoke
+human|/obj/item/tool/crowbar menu: Invoke
+human|/obj/item/tool/crowbar click: Click: Invoke
+human|/obj/item/tool/wrench menu: Invoke
+human|/obj/item/tool/wrench click: Click: Invoke
+human|/obj/item/tool/wirecutters menu: Invoke
+human|/obj/item/tool/wirecutters click: Click: Invoke
+human|/obj/item/multitool menu: Invoke
+human|/obj/item/multitool click: Click: Invoke
+human|/obj/item/weldingtool menu: Invoke
+human|/obj/item/weldingtool click: Click: Invoke
+human|/obj/item/stack/cable_coil menu: Invoke
+human|/obj/item/stack/cable_coil click: Click: Invoke
+human|/obj/item/stack/material/steel menu: Invoke
+human|/obj/item/stack/material/steel click: Click: Invoke
+human|/obj/item/card/id menu: Invoke
+human|/obj/item/card/id click: Click: Invoke
 @obj human|/obj/item/mop_deploy
 +1 menu: Invoke
 +2 menu: Mop
@@ -47,12 +29,8 @@ robot|none click: Click: Invoke
 +2 menu: Invoke
 human|/obj/item/book/tome menu: Erase rune
 human|/obj/item/book/tome menu: Invoke
-human|/obj/item/book/tome menu: Move To Top
-human|/obj/item/book/tome menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/book/tome click: Click: Erase rune
 human|/obj/item/nullrod menu: Disrupt rune
 human|/obj/item/nullrod menu: Invoke
-human|/obj/item/nullrod menu: Move To Top
-human|/obj/item/nullrod menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/nullrod click: Click: Disrupt rune
 keys: drag_buckle, erase_rune, invoke_rune, nullrod_rune, pass_insert, pass_insert_2

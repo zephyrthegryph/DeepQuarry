@@ -7,7 +7,6 @@ human|/obj/item menu: Rename food
 human|/obj/item menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item click: nothing
 human|/obj/item/card/id menu: Move To Top
-human|/obj/item/card/id menu: Read ID Card (refused: You can't do that.)
 human|/obj/item/card/id menu: Rename food
 human|/obj/item/card/id menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/card/id click: nothing
@@ -20,7 +19,13 @@ human|/obj/item/multitool menu: Move To Top
 human|/obj/item/multitool menu: Rename food
 human|/obj/item/multitool menu: Toggle Digestable (refused: You can't do that.)
 human|/obj/item/multitool click: nothing
-human|/obj/item/stack/cable_coil menu: Make Cable Restraints (refused: You can't do that.)
+human|/obj/item/pen menu: Dip into it
+human|/obj/item/pen menu: Label it
+human|/obj/item/pen menu: Move To Top
+human|/obj/item/pen menu: Open or close the lid
+human|/obj/item/pen menu: Set transfer amount
+human|/obj/item/pen menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/pen click: Click: Label it
 human|/obj/item/stack/cable_coil menu: Move To Top
 human|/obj/item/stack/cable_coil menu: Rename food
 human|/obj/item/stack/cable_coil menu: Toggle Digestable (refused: You can't do that.)

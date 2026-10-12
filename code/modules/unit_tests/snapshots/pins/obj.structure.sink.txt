@@ -4,24 +4,27 @@ human|none click: Click: Wash hands
 @obj.structure ai|none
 @obj ghost|none
 @obj.structure human|/obj/item/tool/screwdriver
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/tool/crowbar
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/tool/wrench
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/tool/wirecutters
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/multitool
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/weldingtool
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/stack/cable_coil
-+5 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/stack/material/steel
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/card/id
-+5 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item
-+4 menu: Wash hands
++2 menu: Wash hands
 @obj.structure human|/obj/item/reagent_containers
+-menu: Empty into sink
+-menu: Move To Top
+-menu: Toggle Digestable (refused: You can't do that.)
 keys: drag_buckle, empty, item, melee_hit, sink_wash_gurgled_item, wash
