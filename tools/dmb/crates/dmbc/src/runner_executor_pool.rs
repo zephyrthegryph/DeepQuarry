@@ -194,6 +194,16 @@ mod tests {
         assert_eq!(owner.state.lock().unwrap().physical, 0);
     }
     #[test]
+    fn idle_workers_survive_ordinary_idle_and_retire_at_the_pool_idle_limit() {
+        let owner = Arc::new(ExecutorPools::default());
+        drop(owner.checkout(2).unwrap());
+        // Ordinary idle shorter than the pool limit keeps worker heaps owned.
+        owner.trim(Instant::now() + Duration::from_secs(60), false);
+        assert_eq!(owner.state.lock().unwrap().physical, 2);
+        owner.trim(Instant::now() + IDLE, false);
+        assert_eq!(owner.state.lock().unwrap().physical, 0);
+    }
+    #[test]
     fn panic_returns_unbound_pool_and_active_pool_is_never_trimmed() {
         let owner = Arc::new(ExecutorPools::default());
         let mut lease = owner.checkout(2).unwrap();

@@ -4,9 +4,9 @@
 //! non-Rust allocations. They are not an attribution to the released session.
 use std::fmt;
 
-pub(super) struct RequestedLive(Option<u64>);
+pub(in crate::daemon) struct RequestedLive(Option<u64>);
 
-pub(super) fn requested_live() -> RequestedLive {
+pub(in crate::daemon) fn requested_live() -> RequestedLive {
     #[cfg(feature = "allocation-counting")]
     let bytes = Some(dm_profile::CountingAllocator::live_requested_bytes());
     #[cfg(not(feature = "allocation-counting"))]

@@ -2,10 +2,12 @@
 use super::*;
 
 #[path = "service_housekeeping_allocations.rs"]
-mod allocations;
+pub(super) mod allocations;
 
 const EXECUTOR_IDLE: Duration = Duration::from_secs(30);
-const SESSION_IDLE: Duration = Duration::from_secs(600);
+// A retained session is the next edit's resident state; developers iterate in
+// minutes but not always within ten, so the whole-session release waits an hour.
+pub(super) const SESSION_IDLE: Duration = Duration::from_secs(3600);
 const RELEASES_PER_PASS: usize = 4;
 
 pub(super) struct Deadline(Instant);
@@ -202,8 +204,8 @@ mod tests {
         assert_eq!(target(Duration::from_secs(29), false, false, 0), 0);
         assert_eq!(target(Duration::from_secs(30), false, false, 0), 1);
         assert_eq!(target(Duration::from_secs(120), false, false, 1), 1);
-        assert_eq!(target(Duration::from_secs(599), false, false, 1), 1);
-        assert_eq!(target(Duration::from_secs(600), false, false, 2), SESSION_RELEASE);
+        assert_eq!(target(SESSION_IDLE - Duration::from_secs(1), false, false, 1), 1);
+        assert_eq!(target(SESSION_IDLE, false, false, 2), SESSION_RELEASE);
         assert_eq!(target(Duration::ZERO, true, true, 0), 2);
         assert_eq!(target(Duration::ZERO, true, true, 2), 3);
         assert_eq!(target(Duration::ZERO, false, false, 3), 0);
@@ -226,7 +228,7 @@ mod tests {
             connections: AtomicUsize::new(0),
         };
         let now = Instant::now();
-        let last = now - Duration::from_secs(601);
+        let last = now - SESSION_IDLE - Duration::from_secs(1);
         for name in ["f", "e", "d", "c", "b", "a"] {
             let slot = shared.slot(PathBuf::from(name), &BTreeMap::new(), None);
             *slot.last.lock().unwrap() = last;

@@ -206,8 +206,9 @@ impl Shared {
             joined_workers = true;
         }
         super::emit_stderr(format_args!(
-            "dmbd allocator reclaim private-before={before:?} private-after={after:?} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} seconds={:.6}",
+            "dmbd allocator reclaim private-before={before:?} private-after={after:?} mimalloc-commit-before={commit_before:?} mimalloc-commit-after={:?} joined-idle-workers={joined_workers} rust-requested-live={} seconds={:.6}",
             dm_profile::allocator_commit_bytes(),
+            housekeeping::allocations::requested_live(),
             started.elapsed().as_secs_f64()
         ));
         if std::env::var_os("DMB_DAEMON_ALLOCATOR_STATS").is_some() {
@@ -325,9 +326,15 @@ impl Shared {
         let finished = BUILDS_FINISHED.load(Ordering::Acquire);
         let stale = finished != BUILDS_RECLAIMED.load(Ordering::Acquire);
         // Reclaim off the request path, only between builds; resample after.
-        if running == 0
-            && (stale || bytes.is_some_and(|bytes| self.under_memory_pressure(bytes)))
-        {
+        // Pressure alone re-collects at most every 30 s: retained memory that a
+        // collect cannot return would otherwise be re-collected every second.
+        let pressured_due = bytes.is_some_and(|bytes| self.under_memory_pressure(bytes))
+            && PRESSURE_RECLAIMED
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .is_none_or(|at| at.elapsed() >= Duration::from_secs(30));
+        if running == 0 && (stale || pressured_due) {
+            *PRESSURE_RECLAIMED.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
             BUILDS_RECLAIMED.store(finished, Ordering::Release);
             bytes = self.reclaim_allocator(bytes);
         }
@@ -342,6 +349,7 @@ impl Shared {
         self.executors.trim(Instant::now(), hard);
     }
 }
+static PRESSURE_RECLAIMED: Mutex<Option<Instant>> = Mutex::new(None);
 static BUILDS_FINISHED: AtomicU64 = AtomicU64::new(0);
 static BUILDS_RECLAIMED: AtomicU64 = AtomicU64::new(0);
 struct Permit(Arc<Shared>, usize);
@@ -771,7 +779,7 @@ mod tests {
         let first = shared.slot(path.clone(), &BTreeMap::new(), None);
         let second = shared.slot(path.clone(), &BTreeMap::new(), None);
         assert!(Arc::ptr_eq(&first, &second));
-        *first.last.lock().unwrap() = Instant::now() - Duration::from_secs(601);
+        *first.last.lock().unwrap() = Instant::now() - housekeeping::SESSION_IDLE - Duration::from_secs(1);
         shared.trim();
         assert_eq!(shared.slots.lock().unwrap().len(), 1);
         drop((first, second));
