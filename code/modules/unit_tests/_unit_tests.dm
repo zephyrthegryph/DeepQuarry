@@ -1285,6 +1285,13 @@
 #include "dq_state_batch_tests.dm"
 #include "dq_nikki_rig_chest_tests.dm"
 #include "dq_mob_visuals_tests.dm"
+#include "gameplay\_harness.dm"
+#include "gameplay\arrival.dm"
+#include "gameplay\breathing.dm"
+#include "gameplay\clothing.dm"
+#include "gameplay\doors_power.dm"
+#include "gameplay\hands_and_menus.dm"
+#include "gameplay\machines.dm"
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL
