@@ -49,31 +49,26 @@ CAPABILITIES(/datum/system/machines)
 
 /datum/system/machines/proc/power_flush_areas()
 	stat_drain_point() // the on_change hooks that mark an area dirty run at a drain: take them before reading the set
-	// The standing load, by level: each APC is sent what its area's machines ask when that differs from what Rust was last sent (the
-	// first step after a bind sends it too). No edge can be missed: the machines' own contributions are the source, read here.
-	for(var/obj/machinery/power/apc/serving as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		var/area/served = serving.area
-		if(!served || !serving.vg_entity)
-			continue
-		var/equip_load = served.demand(EQUIP)
-		var/light_load = served.demand(LIGHT)
-		var/environ_load = served.demand(ENVIRON)
-		var/list/sent = serving.pushed_demand
-		if(sent && sent[1] == equip_load && sent[2] == light_load && sent[3] == environ_load)
-			continue
-		native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)
-		native_write(serving, NATIVE_APC_STATIC_LOAD, light_load, 1)
-		native_write(serving, NATIVE_APC_STATIC_LOAD, environ_load, 2)
-		serving.pushed_demand = list(equip_load, light_load, environ_load)
-		log_world("POWER_DEMAND: [serving] ([served]) now carries [equip_load] W equipment, [light_load] W lighting, [environ_load] W environment")
-	// The one-offs: a pulse, handed over once and cleared.
+	// Only the areas whose loads changed: an area is marked when a demand stat of it changes, when its APC changes, when its APC's node is
+	// bound again (Rust lost its copy) and when a one-off is booked (power_loads_changed()). An idle station sends nothing and walks nothing.
 	for(var/area/A as anything in power_dirty_areas)
-		var/obj/machinery/power/apc/apc = A.apc
-		if(apc?.vg_entity)
+		var/obj/machinery/power/apc/serving = A.apc
+		if(serving?.vg_entity && serving.area == A)
+			var/equip_load = A.demand(EQUIP)
+			var/light_load = A.demand(LIGHT)
+			var/environ_load = A.demand(ENVIRON)
+			var/list/sent = serving.pushed_demand
+			if(!sent || sent[1] != equip_load || sent[2] != light_load || sent[3] != environ_load)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, equip_load, 0)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, light_load, 1)
+				native_write(serving, NATIVE_APC_STATIC_LOAD, environ_load, 2)
+				serving.pushed_demand = list(equip_load, light_load, environ_load)
+				log_world("POWER_DEMAND: [serving] ([A]) now carries [equip_load] W equipment, [light_load] W lighting, [environ_load] W environment")
+			// The one-offs: a pulse, handed over once and cleared.
 			if(A.oneoff_equip || A.oneoff_light || A.oneoff_environ)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_light, 1)
-				native_write(apc, NATIVE_APC_ONEOFF, A.oneoff_environ, 2)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_equip, 0)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_light, 1)
+				native_write(serving, NATIVE_APC_ONEOFF, A.oneoff_environ, 2)
 		A.oneoff_equip = 0
 		A.oneoff_light = 0
 		A.oneoff_environ = 0
@@ -133,6 +128,7 @@ CAPABILITIES(/datum/system/machines)
 		apc.power_send_node(force = TRUE)
 	for(var/obj/machinery/power/apc/apc in world)
 		apc.pushed_demand = null // Rust lost its copy of the standing load with the rebind
+		apc.area?.power_loads_changed()
 	process_power()
 
 /// Registers every cable and power machine again (admin repair, and after

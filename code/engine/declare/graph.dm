@@ -457,6 +457,9 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 		if(length(row[4]))
 			. += list(row[4])
 
+// The graph's key stands for it: a stage change publishes "graph:<cap>" on E, so a stat or draw that asks built() caches and is told. Only the
+// construction graph's key is named: no type declares a deployment() graph today (add its key here when one does).
+READS_AS(/proc/built, CONSTRUCTION_GRAPH_KEY)
 /// TRUE when `stage` is the current stage of E's graph, or appears in its history: "at or past" is reachability through the history, so a
 /// stage never passed (another branch was taken) is not built.
 /proc/built(datum/E, stage)

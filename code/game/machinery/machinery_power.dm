@@ -85,12 +85,10 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 		chan = power_of(src).channel
 	return A.powered(chan)			// return power status of the area
 
-// called whenever the power settings of the containing area change
-// by default, check equipment channel & set/clear NOPOWER flag
-// Returns TRUE if NOPOWER stat flag changed.
-// can override if needed
+// Called when the machine's has_power flips (has_power_changed(), the stat's on_change hook), and by hand where a type re-reads its own power.
+// Returns TRUE when has_power changed since the last call. Can be overridden.
 /obj/machinery/proc/power_change()
-	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), current: the area settled it before telling us
+	var/now = !!stat_value(src, STAT_HAS_POWER) // the grid's reading, a contribution (area_gives_power()), recomputed on read when its inputs moved
 	if(now == power_seen)
 		return FALSE
 	power_seen = now
@@ -102,6 +100,10 @@ READS_AS(/proc/power_of, USES_POWER_KEY)
 		PUBLISH_LEGACY(src, /datum/notice/machinery_power_restored)
 	update_heat_output()
 	return TRUE
+
+/// STAT_HAS_POWER changed (the on_change hook in the machine's CAPABILITIES): the machine acts on the flip.
+/obj/machinery/proc/has_power_changed(datum/act/A)
+	power_change()
 
 /// STAT_HAS_POWER's reading of the grid: the machine's area has its channel energized. A machine with no area has power (nothing darkens it).
 /obj/machinery/proc/area_gives_power(datum/act/A)
