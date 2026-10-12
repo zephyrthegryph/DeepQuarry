@@ -4994,3 +4994,19 @@ Only34 listed diagnostic rows are refreshed. Shared clothing/reagent files retai
 The real old `starts_with += path` repeats an associative standard-rifle key whose count is two. Its latent consumer therefore spawns four standard rifles on that branch. Master `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d` converted the extra entry to a plain one-item roll, producing three instead. The native roll now returns the actual inherited count for the selected path, preserving four standard rifles or two standard rifles plus one lever rifle. The regression observes real constructor/ledger contents and compares both branches with the actual legacy latent count consumer. Cabinet pins remain held until this repaired behavior passes.
 
 The historical-probe coverage change must preserve the existing base-field exclusion. Independently parenthesized membership checks restore that exclusion; a real-drone regression rejects every inherited base field, including the Rust entity identity. Native handles are not numeric appearance inputs and must not be rewritten as 0/1/2.
+
+### Runtime-proven look sample causes
+
+The exact snapshot allocation/seed/settlement fixtures individually passed on 0d67ff35d02eae92ca0a1a347b1ffb0745afabf6. The run was subsequently stopped after invalid native-handle probing; no complete-run success or lane stamp is claimed.
+
+- Frostbelle4 tree rows: `0c7a99c29bdce88ca74eaa35e1aafa4862bf7c6c` moves harvest-capacity sampling to native rolls. Actual fixture values are max_harvests0, harvest_count0, variantnum2; appearance_variant correctly returns no suffix at zero harvest capacity. The captured unnumbered frostbelle is valid, not missing variant setup.
+- Teppi16 tree rows: `babfc5a10ab5979bddd5b6e3912328a704c563ed` moves the formerly BYOND-random numbered name to native rolls before palette setup. Removing that BYOND random draw shifts subsequent pickweight/marking samples. Actual parent/mutant/baby fixture values are eye_color#ffffff (the captured appearance normalizes this to null/default white), horn_color#454238 and marking_type3. Setup fields are nonnull and valid; settled eye overlays match actual normalized fields. No palette choice set changed and no missing eye initialization is excused.
+
+The SHA-guarded evidence20 proposal changes only these exact20 diagnostic rows in two files, preserving other unresolved simple_mob rows.
+
+### Source repair evidence, not pin approval
+
+Historical-priority code introduced `if(name in base_vars || name in found)` ineb2773db779a26274755f4d08dee9c49f0bf3d23. Parenthesize both memberships to preserve the original generic exclusion; native /datum identity handles are base fields and not writable appearance inputs. The new real-drone regression checks every base field exclusion, not just a special-casevg_entity skip.
+
+The rifle parity test demonstrated legacy duplicate associative list keys consume the associated count twice: standard branch4 rifles, native additive branch3. `d8218e91bbbe8fc1a8b070edc46f6fd5785d234d` changed the list roll into an additiveinitial_contents roll. The repair adds the old selected-key count, retaining the actual latent consumer semantics; the regression now observes actual constructor/ledger contents for both branches and destroys all children before assertions. Cabinet pins remain unapproved until this real regression passes and any remaining snapshot discrepancy is reviewed separately.
+
