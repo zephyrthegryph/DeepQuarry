@@ -234,7 +234,7 @@ TRACKED(/area, party)
 	look.state("") // in game an area shows nothing (its map sprite marks it in the editor) but an alarm
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
-			look.state(null) // Let lights take care of it
+			look.state("") // Let lights take care of it
 		/*else if(atmosalm && !fire && !eject && !party)
 			look.state("bluenew")*/
 		else if(!fire && eject && !party)
@@ -245,7 +245,7 @@ TRACKED(/area, party)
 			look.state("blue-red")
 	else
 	//	new lighting behaviour with obj lights
-		look.state(null)
+		look.state("") // a blank state: state(null) would leave the map sprite ("unknown", the editor colours) showing in game
 
 TRACKED(/area, power_equip)
 TRACKED(/area, power_light)

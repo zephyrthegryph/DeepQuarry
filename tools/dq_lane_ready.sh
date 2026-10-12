@@ -129,7 +129,9 @@ MSYS2_ARG_CONV_EXCL='*' node -e '
 	if (![passed, failed, newFailed].every(x => /^[0-9]+$/.test(x)) || Number(passed) < 1 || Number(newFailed) !== 0) process.exit(1);
 	let result;
 	try { result = JSON.parse(fs.readFileSync(file, "utf8")); } catch { process.exit(1); }
-	if (result.commit !== tested || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
+	// A run JSON names its commit abbreviated (10 hex digits, as in its file name): match it as a prefix of the tested sha.
+	const c = String(result.commit || "");
+	if (c.length < 10 || !tested.startsWith(c) || result.counts?.passed !== Number(passed) || result.counts?.failed !== Number(failed)) process.exit(1);
 ' "$tests_json" "$passed" "$failed" "$new_failed" "$tested" || die "missing or inconsistent test evidence; nothing was stamped"
 mkdir -p data/lane-ready
 stamp_json="$(MSYS2_ARG_CONV_EXCL='*' node -e '

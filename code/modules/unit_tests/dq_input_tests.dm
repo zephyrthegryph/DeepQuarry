@@ -418,3 +418,37 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	probe.last_handler = null
 	GLOB.input_router.route_drag(H, item, probe)
 	TEST_ASSERT_EQUAL(probe.last_handler, "MouseDrop_T", "dragging onto an atom reaches MouseDrop_T")
+
+/// apply_keybindings() creates each macro by naming it as winset()'s control with a parent: the null-control
+/// "id.parent=" form only edits controls that exist, so it never made the macros and every key beeped.
+/datum/unit_test/dq_keybinding_winset_creates_macros
+
+/datum/unit_test/dq_keybinding_winset_creates_macros/Run()
+	var/list/macros = keybinding_macros(KEYBIND_PROFILE_DEFAULT, null)
+	TEST_ASSERT(length(macros) > 50, "the default profile has its macros")
+	var/list/calls = keybinding_winset_calls(macros, length(macros) + 2)
+	TEST_ASSERT_EQUAL(length(calls), length(macros) + 3, "two detaches, one call per macro and the window settings")
+	var/list/created = list()
+	var/list/detached = list()
+	var/list/window
+	for(var/list/call_args as anything in calls)
+		var/list/params = params2list(call_args[2])
+		if(isnull(call_args[1]))
+			window = params
+			continue
+		TEST_ASSERT(findtext(call_args[1], KEYBIND_MACRO_PREFIX) == 1, "macro call [call_args[1]] names its own element")
+		TEST_ASSERT(!findtext(call_args[2], "[call_args[1]]."), "macro call [call_args[1]] sets its own params, not dotted ones")
+		if(params["parent"] == "none")
+			detached += call_args[1]
+			continue
+		TEST_ASSERT_EQUAL(params["parent"], KEYBIND_MACRO_SET, "[call_args[1]] goes into the skin's macro set")
+		created["[params["name"]]"] = params["command"]
+	TEST_ASSERT_EQUAL(jointext(detached, ","), "[KEYBIND_MACRO_PREFIX][length(macros) + 1],[KEYBIND_MACRO_PREFIX][length(macros) + 2]", "elements past the new count are detached")
+	TEST_ASSERT_EQUAL(created["W"], "KeyDown W", "W moves")
+	TEST_ASSERT_EQUAL(created["W+UP"], "KeyUp W", "releasing W stops")
+	TEST_ASSERT_EQUAL(created["X"], ".northeast", "X swaps hands")
+	TEST_ASSERT_EQUAL(created["T"], "Say-verb", "T says")
+	TEST_ASSERT_EQUAL(length(created), length(macros), "every macro is created")
+	TEST_ASSERT_NOTNULL(window, "the window settings are written")
+	TEST_ASSERT_EQUAL(window["mainwindow.macro"], KEYBIND_MACRO_SET, "the main window uses the macro set")
+	TEST_ASSERT_EQUAL(window["mapwindow.map.focus"], "true", "the map takes keyboard focus")
