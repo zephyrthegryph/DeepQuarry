@@ -338,15 +338,15 @@ impl ProcedureMemo {
             content: xxhash_rust::xxh3::xxh3_128(key),
         }
     }
-    pub(crate) fn lookup_procedure<R: Resolver>(
+    pub(crate) fn lookup_procedure<'host, R: Resolver>(
         &self,
         key: &key_recipe::CurrentKey<'_>,
         tail: &key_recipe::PreparedKey,
         identity: dm_ir::ProcedureIdentity,
         context: crate::lowering_memo_wire::ProcedureReplayContext<'_>,
-        host: &R,
+        host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
-    ) -> crate::lowering_memo_wire::ProcedureLookup {
+    ) -> crate::lowering_memo_wire::ProcedureLookup<'host> {
         let Some(snapshot) = self.disk.as_ref().and_then(|disk| disk.snapshot()) else {
             return crate::lowering_memo_wire::ProcedureLookup {
                 miss: Some(MemoMissReason::RecordAbsent),

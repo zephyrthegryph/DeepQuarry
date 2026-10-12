@@ -104,8 +104,9 @@ pub(crate) fn decode(bytes: &[u8]) -> Result<Payload<'_>, String> {
     Ok(value)
 }
 impl Payload<'_> {
-    pub(crate) fn promotion(&self) -> crate::lowering_memo_wire::ResidentPromotion {
+    pub(crate) fn promotion<'host>(&self) -> crate::lowering_memo_wire::ResidentPromotion<'host> {
         crate::lowering_memo_wire::ResidentPromotion {
+            current: None,
             queries: self.reads.0.iter().map(|read| read.query).collect(),
             versions: self.versions.0.clone(),
             relative_debug: Vec::new(),

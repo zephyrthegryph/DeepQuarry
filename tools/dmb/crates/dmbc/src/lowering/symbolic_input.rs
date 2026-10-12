@@ -775,18 +775,10 @@ pub(super) fn disk_admission<R: Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Vec<u8>,
     host: &R,
-    promotion: &crate::lowering_memo_wire::ResidentPromotion,
+    promotion: &crate::lowering_memo_wire::ResidentPromotion<'_>,
 ) -> Option<Admission> {
     let store = Arc::clone(memo.symbolic.as_ref()?);
-    let reads = promotion
-        .queries
-        .iter()
-        .map(|query| ResolverRead {
-            query: *query,
-            domain: query.domain(),
-            answer: host.resolve(*query),
-        })
-        .collect();
+    let (reads, versions) = promotion.current_observations(host);
     let reads = receipt_groups::grouped(&store.receipt_groups, reads);
     Some(Admission {
         previous: None,
@@ -796,7 +788,7 @@ pub(super) fn disk_admission<R: Resolver>(
         disk: None,
         key: key.into(),
         reads,
-        versions: promotion.versions.clone().into(),
+        versions: versions.into(),
         relative_debug: promotion.relative_debug.clone(),
     })
 }
@@ -804,7 +796,7 @@ pub(super) fn remember_selections<R: Resolver>(
     memo: &crate::lowering_memo::ProcedureMemo,
     key: Vec<u8>,
     host: &R,
-    promotion: &crate::lowering_memo_wire::ResidentPromotion,
+    promotion: &crate::lowering_memo_wire::ResidentPromotion<'_>,
     identity: UnitIdentity,
     prepared: &PreparedUnit,
     facts: &Arc<dm_ir::SelectedReferences>,

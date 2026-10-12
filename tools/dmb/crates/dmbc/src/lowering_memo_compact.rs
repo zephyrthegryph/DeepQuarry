@@ -363,10 +363,12 @@ impl Payload<'_> {
         &self,
         host: &R,
     ) -> Result<Option<Vec<ResolverRead>>, ResolveQuery> {
-        let Some(observer) = host.transparent_receipt_observer() else {
-            return self.changed_read(host).map_or(Ok(None), Err);
+        let observer = host.transparent_receipt_observer();
+        let provider: &dyn Resolver = match observer.as_ref() {
+            Some(observer) => observer.provider(),
+            None if !host.observes_reads() => host,
+            None => return self.changed_read(host).map_or(Ok(None), Err),
         };
-        let provider = observer.provider();
         let mut pending = Vec::with_capacity(self.reads.0.len());
         let matching = dm_session::observations::certified_domains(&self.versions.0, |d| {
             provider.domain_version(*d)
@@ -390,8 +392,9 @@ impl Payload<'_> {
         }
         Ok(Some(pending))
     }
-    pub(crate) fn promotion(&self) -> crate::lowering_memo_wire::ResidentPromotion {
+    pub(crate) fn promotion<'host>(&self) -> crate::lowering_memo_wire::ResidentPromotion<'host> {
         crate::lowering_memo_wire::ResidentPromotion {
+            current: None,
             queries: self.reads.0.iter().map(|r| r.query).collect(),
             versions: self.versions.0.clone(),
             relative_debug: self.debug.0.clone(),

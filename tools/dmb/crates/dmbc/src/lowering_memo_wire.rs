@@ -683,18 +683,19 @@ pub(crate) struct ProcedureReplayContext<'a> {
     pub modified: Option<&'a dyn crate::lowering_memo_compact::ModifiedIssuer>,
 }
 #[derive(Default)]
-pub(crate) struct ResidentPromotion {
+pub(crate) struct ResidentPromotion<'host> {
+    pub current: Option<CurrentReads<'host>>,
     pub queries: Vec<ResolveQuery>,
     pub versions: Vec<(dm_ir::ReadDomain, u128)>,
     pub relative_debug: Vec<crate::debug_sources::RelativeDebugAnchor>,
 }
 #[derive(Default)]
-pub(crate) struct ProcedureLookup {
+pub(crate) struct ProcedureLookup<'host> {
     pub verification_reads: Option<Vec<(ResolveQuery, Vec<u8>)>>,
     pub unit: Option<LoweredUnit>,
     pub selections: Option<Arc<dm_ir::SelectedReferences>>,
     pub prepared: Option<crate::symbolic::PreparedContribution>,
-    pub resident: Option<ResidentPromotion>,
+    pub resident: Option<ResidentPromotion<'host>>,
     pub errors: Option<Vec<dm_codegen_byond::LowerError>>,
     pub changed_query: Option<ResolveQuery>,
     pub miss: Option<crate::lowering_memo::MemoMissReason>,
@@ -757,14 +758,14 @@ mod anonymous;
 pub(crate) use anonymous::AnonymousLookup;
 impl Candidates<'_> {
     #[cfg(test)]
-    pub(crate) fn procedure<R: Resolver>(
+    pub(crate) fn procedure<'host, R: Resolver>(
         self,
         key: &[u8],
         identity: ProcedureIdentity,
         context: ProcedureReplayContext<'_>,
-        host: &R,
+        host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
-    ) -> ProcedureLookup {
+    ) -> ProcedureLookup<'host> {
         self.procedure_matching(
             &|candidate| candidate == key,
             identity,
@@ -774,25 +775,25 @@ impl Candidates<'_> {
         )
     }
     #[cfg(test)]
-    pub(crate) fn procedure_matching<R: Resolver>(
+    pub(crate) fn procedure_matching<'host, R: Resolver>(
         self,
         matches_key: &dyn Fn(&[u8]) -> bool,
         identity: ProcedureIdentity,
         context: ProcedureReplayContext<'_>,
-        host: &R,
+        host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
-    ) -> ProcedureLookup {
+    ) -> ProcedureLookup<'host> {
         self.procedure_matching_backed(matches_key, identity, context, host, prepared, None)
     }
-    pub(crate) fn procedure_matching_backed<R: Resolver>(
+    pub(crate) fn procedure_matching_backed<'host, R: Resolver>(
         self,
         matches_key: &dyn Fn(&[u8]) -> bool,
         identity: ProcedureIdentity,
         context: ProcedureReplayContext<'_>,
-        host: &R,
+        host: &'host R,
         prepared: &crate::procedure_policy::PreparedUnit,
         backing: Option<&dm_cache::MappedPayload>,
-    ) -> ProcedureLookup {
+    ) -> ProcedureLookup<'host> {
         let mut result = ProcedureLookup {
             miss: Some(crate::lowering_memo::MemoMissReason::FullKeyMismatch),
             ..Default::default()
@@ -832,6 +833,8 @@ impl Candidates<'_> {
                 if !matches_key(v.key.as_ref()) || v.identity != identity {
                     continue;
                 }
+                let mut promotion = v.promotion();
+                let current_versions = CurrentReads::versions(host, &promotion.queries);
                 let pending_reads = match v.transparent_reads(host) {
                     Ok(reads) => reads,
                     Err(query) => {
@@ -839,7 +842,6 @@ impl Candidates<'_> {
                         continue;
                     }
                 };
-                let promotion = v.promotion();
                 let verification_reads = context.verify.then(|| v.verification_reads());
                 match v.rebind_with_backing(
                     ProcedureReplayContext {
@@ -856,7 +858,7 @@ impl Candidates<'_> {
                 ) {
                     Ok(value) => {
                         if let (Some(reads), Some(observer)) =
-                            (pending_reads, host.transparent_receipt_observer())
+                            (pending_reads.as_ref(), host.transparent_receipt_observer())
                         {
                             for read in reads {
                                 let version = observer.provider().domain_version(read.domain);
@@ -868,6 +870,9 @@ impl Candidates<'_> {
                                 );
                             }
                         }
+                        promotion.current = pending_reads.and_then(|reads| {
+                            CurrentReads::accepted(host, reads, current_versions)
+                        });
                         result.verification_reads = verification_reads;
                         result.prepared = Some(value);
                         result.resident = Some(promotion);
@@ -914,6 +919,7 @@ impl Candidates<'_> {
                 Candidate::Executable(v) => {
                     let verification_reads = context.verify.then(|| v.reads.clone());
                     let promotion = ResidentPromotion {
+                        current: None,
                         queries: v.reads.iter().map(|(query, _)| *query).collect(),
                         versions: v.versions.clone(),
                         relative_debug: v.relative_debug.clone(),
@@ -999,3 +1005,7 @@ pub(crate) fn verification_unit_equal(a: &LoweredUnit, b: &LoweredUnit) -> bool 
 
 #[path = "lowering_memo_wire_initializer.rs"]
 pub(crate) mod initializer;
+
+#[path = "lowering_memo_current_reads.rs"]
+mod current_reads;
+use current_reads::CurrentReads;
