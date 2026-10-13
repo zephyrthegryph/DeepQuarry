@@ -29,18 +29,6 @@ stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_co
 stat_input_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 stat_input_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 stat_input_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-stat_input_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
 stat_input_untracked	code/game/dna/dna_modifier.dm	return (isturf(A.actor?.loc) || (A.authority & AUTH_REMOTE_ACCESS)) ? null : MSG(dna_console/not_standing) // ALLOW(reads): where the user stands is read when the button is pressed; a menu shows no buttons of a window
 stat_input_untracked	code/game/gamemodes/technomancer/catalog.dm	return req_refusal_value(answer, /datum/msg/req_failed)
 stat_input_untracked	code/game/jobs/access.dm	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
@@ -484,9 +472,6 @@ draw_untracked	code/game/atom/_atom.dm	var/datum/capability/lib/reagent_containe
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 draw_untracked	code/game/atom/_atom.dm	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
-draw_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-draw_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
-draw_untracked	code/game/atom/atom_defense.dm	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	look.overlay(look_overlay_image(of = copied(), transform = M))
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
 draw_untracked	code/game/gamemodes/technomancer/spells/illusion.dm	return copied
