@@ -1,7 +1,5 @@
 @turf human|none
--menu: Graffiti
 @turf robot|none
--menu: Graffiti
 @turf ai|none
 @turf ghost|none
 @turf human|/obj/item/tool/screwdriver

@@ -1,10 +1,10 @@
-human|none menu: Emote Beyond
-human|none menu: Pet
-human|none menu: Pet Fur
-human|none menu: Touch
-human|none click: Click: Pet
+@turf human|none
+-click: Click: Touch
++0 menu: Emote Beyond
++1 menu: Pet
++2 menu: Pet Fur
++4 click: Click: Pet
 @turf robot|none
--menu: Graffiti
 -click: Click: Touch
 +0 menu: Emote Beyond
 +1 menu: Pet

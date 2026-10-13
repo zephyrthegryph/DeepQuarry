@@ -1,7 +1,5 @@
 @turf human|none
--menu: Graffiti
 @turf robot|none
--menu: Graffiti
 ai|none menu: Interface
 ai|none click: Click: Interface
 @turf ghost|none
