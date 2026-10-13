@@ -449,8 +449,9 @@ CAPABILITIES(/mob/living/carbon/brain/caught_soul)
 
 CAPABILITIES(/mob/observer/eye/ar_soul)
 	param(nameof(parent_human), pos = 1)
+	after_init(0, then(PROC_REF(dress_as_owner)))
 
-// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob, follows its owner's body and dresses as its owner's character
+// ALLOW(init/INSTANCE_STATE): an AR soul looks through its brain mob and follows its owner's body
 /mob/observer/eye/ar_soul/Initialize(mapload)
 	. = ..()
 	var/mob/brainmob = loc
@@ -467,14 +468,16 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 	dq_add_recursive_move(parent_human())
 	global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
 
-	//Time to play dressup
-	if(brainmob.client.prefs)
-		var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
-		mannequin.delete_inventory(TRUE)
-		brainmob.client.prefs.dress_preview_mob(mannequin)
-
-		var/icon/new_icon = getHologramIcon(getCompoundIcon(draw_now(mannequin)))
-		icon = new_icon
+/// Time to play dressup: the soul wears its brain mob's character as a hologram.
+/mob/observer/eye/ar_soul/proc/dress_as_owner(datum/act/A)
+	var/mob/brainmob = eye_looker
+	if(QDELETED(brainmob) || !brainmob.client?.prefs)
+		return
+	var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
+	mannequin.delete_inventory(TRUE)
+	brainmob.client.prefs.dress_preview_mob(mannequin)
+	draw_now(mannequin)
+	icon = getHologramIcon(getCompoundIcon(mannequin))
 
 /mob/observer/eye/ar_soul/EyeMove(n, direct)
 	var/initial = initial(sprint)
