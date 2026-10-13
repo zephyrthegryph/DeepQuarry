@@ -232,6 +232,11 @@ Windows is the supported dev OS. Entry points (`bin/`):
 - `bin/tgui-build.cmd` / `bin/tgui-dev.cmd` / `bin/tgui-fix.cmd`.
 - `bin/clean.cmd`.
 
+**Native compiler (incremental).** `DQ_COMPILER=native` (with `tools/build/build.sh dmbc` once) compiles through the
+warm `tools/dmb` daemon: ~1 s unchanged, ~20 s after a proc edit, instead of a cold DreamMaker run. No other
+variable is needed; paths default to `tools/dmb/target/release/dmbc` and `tools/dmb/fixtures/native_template.bin`.
+See `doc/testing.md` "Native compiler (incremental)". The project default is still `byond`.
+
 `tools/build/build.ts` (Juke) orchestrates the DM build. Two fork-specific steps:
 
 - **Icon repack** (`tools/dq_icons/`): regenerates `.dmi` from `png` + `dmi.toml`

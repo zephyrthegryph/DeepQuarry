@@ -1,3 +1,4 @@
+import os from 'node:os';
 import { ByondCompileFailure, failedCompileOutcome, observedCompileOutcome } from './compile_outcome';
 import { afterEach, expect, test } from 'bun:test';
 import { classifyShadowReport, compilerCacheIdentity, compilerMode, selectedCompiler, shadowSnapshotContract } from './compiler_selection';
@@ -11,7 +12,7 @@ import { withCompiledOutput } from './native_pair';
 import { createHash } from 'node:crypto';
 const originalEnvironment = { ...process.env };
 afterEach(() => {
-  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT']) {
+  for (const name of ['DQ_COMPILER', 'DQ_COMPILER_STRICT', 'DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_NATIVE_WORKERS', 'DQ_NATIVE_NO_DAEMON', 'DQ_SHADOW_ROOT', 'DQ_DMB_INSPECT', 'DQ_NATIVE_RUN_ROOT', 'DQ_BUILD_ROOT']) {
     if (originalEnvironment[name] === undefined) delete process.env[name];
     else process.env[name] = originalEnvironment[name];
   }
@@ -310,6 +311,7 @@ test('native setup and transport failures preserve errors without fallback', asy
   let executions = 0;
   delete process.env.DQ_NATIVE_COMPILER;
   delete process.env.DQ_NATIVE_ENGINE_TEMPLATE;
+  process.env.DQ_BUILD_ROOT = os.tmpdir(); // no default compiler/template under it
   await expect(selectedCompiler('project.dme', {}, async () => { calls++; }, async () => {
     executions++;
     return { code: 70, combined: '' };

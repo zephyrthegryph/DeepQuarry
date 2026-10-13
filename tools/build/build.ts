@@ -64,7 +64,7 @@ import { suiteBatches, exactSuiteUnion, bindSuitePlan, sameSuiteRuntime, suiteRo
 import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
-import { compilerMode } from './lib/compiler_selection';
+import { compilerMode, nativeDefaultCompiler } from './lib/compiler_selection';
 import { currentCompiledOutput, NativeAcquisitionError, type CompiledOutput } from './lib/native_pair';
 import { beginCompilerReceipt, CompilerProvenanceError, type CompilerProvenance } from './lib/compiler_provenance';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
@@ -398,6 +398,31 @@ export const VerdigrisTarget = new Juke.Target({
 });
 // DQAdd End
 
+/** Release build of the native DM compiler (tools/dmb), the default DQ_COMPILER=native executable. */
+const DMBC_EXE = `tools/dmb/target/release/${process.platform === 'win32' ? 'dmbc.exe' : 'dmbc'}`;
+export const DmbcTarget = new Juke.Target({
+  onlyWhen: () => !process.env.DQ_NATIVE_COMPILER, // an explicit compiler is never rebuilt here
+  inputs: [
+    'tools/dmb/Cargo.toml',
+    'tools/dmb/Cargo.lock',
+    'tools/dmb/build.rs',
+    'tools/dmb/src/**/*.rs',
+    'tools/dmb/crates/**/Cargo.toml',
+    'tools/dmb/crates/**/*.rs',
+  ],
+  outputs: [DMBC_EXE],
+  executes: async () => {
+    // One cargo build at a time machine-wide; the slot script queues and reclaims crashed holders.
+    const slots = 'tools/dq_machine_slots.sh';
+    const cargo = ['cargo', 'build', '--release', '-p', 'dmbc', '--manifest-path', 'tools/dmb/Cargo.toml'];
+    if (fs.existsSync(slots)) {
+      await Juke.exec('bash', [slots, 'run', 'cargo', '--label', 'dmbc', '--', ...cargo]);
+    } else {
+      await Juke.exec(cargo[0], cargo.slice(1));
+    }
+  },
+});
+
 // DreamDaemon security for test, bench and run worlds. -trusted makes BYOND show a
 // "Proceed with trusted mode?" dialog for any .dmb path it hasn't been told to
 // trust, which hangs headless runs in new worktrees forever. DQ_DD_SECURITY=safe
@@ -416,6 +441,7 @@ export const DmTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
+    nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // DQAdd — regenerate .dmi from PNG+TOML before DM compile
     ValidateDmeTarget, // DQAdd — fail fast if any code/ .dm is missing from the DME
     VerdigrisBindingsCheckTarget, // DQAdd — _bindings.dm must match the Rust binds
@@ -1752,6 +1778,7 @@ export const DmTestTarget = new Juke.Target({
   ],
   dependsOn: ({ get }) => get(NormalResumeParameter) || get(SuiteResumeParameter) || get(FocusedCompiledOutputParameter) || get(SuiteCompiledOutputParameter) ? [] : [
     get(DefineParameter).includes('ALL_MAPS') && DmMapsIncludeTarget,
+    nativeDefaultCompiler() && DmbcTarget,
     IconRepackTarget, // tests boot the world, which uses the .rsc
     ValidateDmeTarget, // catch missing includes before compiling
     VerdigrisTarget, // tests boot the world, which loads the FFI lib
@@ -1841,7 +1868,7 @@ export const DmTestTarget = new Juke.Target({
  */
 export const TestRepeatTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, RunsParameter],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const runs = Math.max(get(RunsParameter) ?? 3, 1);
     reportFocus();
@@ -1983,7 +2010,7 @@ export const BenchTarget = new Juke.Target({
     ScenarioParameter, RunsParameter, WarmupParameter, ArgParameter, ProfileParameter, LabelParameter,
     ExclusiveParameter,
   ],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const scenarios = get(ScenarioParameter).flatMap((s) => s.split(','));
     const runs = Math.max(get(RunsParameter) ?? 1, 1);
@@ -2171,7 +2198,7 @@ export const BenchReportTarget = new Juke.Target({
  */
 export const BalanceTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter, ArgParameter, LabelParameter, ThresholdParameter],
-  dependsOn: [IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, ValidateDmeTarget, VerdigrisTarget, MapBoundsTarget],
   executes: async ({ get }) => {
     const worldParams: Record<string, string> = { bench: 'balance' };
     for (const arg of get(ArgParameter)) {
@@ -2383,7 +2410,7 @@ export const AutowikiTarget = new Juke.Target({
 // writes data/ui_types.json and exits, then generate the tgui interface types from it.
 export const UiTypesTarget = new Juke.Target({
   parameters: [DefineParameter, DmVersionParameter, WarningParameter, NoWarningParameter],
-  dependsOn: () => [IconRepackTarget, VerdigrisTarget],
+  dependsOn: () => [nativeDefaultCompiler() && DmbcTarget, IconRepackTarget, VerdigrisTarget],
   outputs: [UI_TYPES_JSON],
   executes: async ({ get }) => {
     fs.copyFileSync(`${DME_NAME}.dme`, `${DME_NAME}.test.dme`);

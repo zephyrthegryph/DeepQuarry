@@ -61,6 +61,26 @@ export function compilerMode(): CompilerMode {
   }
   return mode;
 }
+/** Checkout root the default native paths resolve against. */
+function nativeRoot(): string {
+  return path.resolve(process.env.DQ_BUILD_ROOT ?? process.cwd());
+}
+/** DQ_NATIVE_COMPILER, else this checkout's release build (`build.sh dmbc`). */
+export function nativeCompilerPath(): string | undefined {
+  if (process.env.DQ_NATIVE_COMPILER) return process.env.DQ_NATIVE_COMPILER;
+  const built = path.join(nativeRoot(), 'tools/dmb/target/release', process.platform === 'win32' ? 'dmbc.exe' : 'dmbc');
+  return fs.existsSync(built) ? built : undefined;
+}
+/** DQ_NATIVE_ENGINE_TEMPLATE, else the committed template fixture. */
+export function nativeTemplatePath(): string | undefined {
+  if (process.env.DQ_NATIVE_ENGINE_TEMPLATE) return process.env.DQ_NATIVE_ENGINE_TEMPLATE;
+  const fixture = path.join(nativeRoot(), 'tools/dmb/fixtures/native_template.bin');
+  return fs.existsSync(fixture) ? fixture : undefined;
+}
+/** True when native is selected without an explicit executable: `build.sh dmbc` supplies it. */
+export function nativeDefaultCompiler(): boolean {
+  return compilerMode() === 'native' && !process.env.DQ_NATIVE_COMPILER;
+}
 function nativeNoDaemon(): boolean {
   const value = process.env.DQ_NATIVE_NO_DAEMON ?? '0';
   if (value !== '0' && value !== '1') throw new Error('DQ_NATIVE_NO_DAEMON must be 0 or 1.');
@@ -80,8 +100,13 @@ export function compilerCacheIdentity(): string {
   const strict = mode === 'native' && nativeStrict();
   const hash = createHash('sha256');
   hash.update(mode);
-  for (const variable of ['DQ_NATIVE_COMPILER', 'DQ_NATIVE_ENGINE_TEMPLATE', 'DQ_DMB_INSPECT']) {
-    const value = process.env[variable] ?? '';
+  const resolved: Record<string, string | undefined> = {
+    DQ_NATIVE_COMPILER: nativeCompilerPath(),
+    DQ_NATIVE_ENGINE_TEMPLATE: nativeTemplatePath(),
+    DQ_DMB_INSPECT: process.env.DQ_DMB_INSPECT,
+  };
+  for (const variable of Object.keys(resolved)) {
+    const value = resolved[variable] ?? '';
     hash.update(variable);
     hash.update(value);
     if (value) {
@@ -107,10 +132,10 @@ function nativeCommand(dme: string, options: DreamMakerOptions, artifacts?: stri
   if (unsupported.length) {
     throw new Error(`Native compiler does not support requested DreamMaker options: ${unsupported.join(', ')}.`);
   }
-  const configuredExecutable = process.env.DQ_NATIVE_COMPILER;
-  const template = process.env.DQ_NATIVE_ENGINE_TEMPLATE;
+  const configuredExecutable = nativeCompilerPath();
+  const template = nativeTemplatePath();
   if (!configuredExecutable || !template) {
-    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE.');
+    throw new Error('Native compiler requires DQ_NATIVE_COMPILER and DQ_NATIVE_ENGINE_TEMPLATE, or the defaults tools/dmb/target/release/dmbc and tools/dmb/fixtures/native_template.bin (run `tools/build/build.sh dmbc`).');
   }
   // Resolve path-bearing configuration in the caller's cwd, before the child
   // switches to its captured namespace. PATH commands stay explicitly unobserved.
