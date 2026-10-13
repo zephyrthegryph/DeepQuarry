@@ -38,6 +38,8 @@
 /datum/unit_test/dq_gameplay/arrival_spawn
 
 /datum/unit_test/dq_gameplay/arrival_spawn/play()
+	// This is cumulative diagnostic telemetry, not an outstanding context lease.
+	set_global(nameof(GLOB.act_taken), GLOB.act_taken)
 	var/mob/living/carbon/human/H = spawn_arrival()
 	if(!H)
 		return
