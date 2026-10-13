@@ -66,7 +66,6 @@
 			emp_damage = 30//Let's not overdo it
 		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
 			status_set(STAT_BLINDED, 1)
-			set_blinded(1)
 			status_set(STAT_DEAFENED, 1)
 			status_set(STAT_MUTED, 1)
 			if(!alert)//Sounds an alarm, but only once per 'level'
@@ -139,7 +138,7 @@
 	src.client.screen.Remove(GLOB.global_hud.blurry,GLOB.global_hud.druggy,GLOB.global_hud.vimpaired)
 
 	if (src.stat != DEAD)
-		if ((src.blinded))
+		if(src.has_status(STAT_BLINDED))
 			src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		else
 			src.clear_fullscreen("blind")

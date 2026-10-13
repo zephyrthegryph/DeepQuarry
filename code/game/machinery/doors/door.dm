@@ -434,6 +434,24 @@ CAPABILITIES(/obj/machinery/door)
 				play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	return
 
+/// A door's density is a stat: shut or open is a hold on it from the door's state, so the served value is the composed one. TRUE when it changed.
+/obj/machinery/door/set_density(new_density)
+	new_density = !!new_density
+	if(density == new_density)
+		return FALSE
+	hold(src, STAT_DENSITY, new_density, SRC_DOOR_STATE, priority = PRIORITY_FORCE)
+	return density == new_density
+
+/// A door's opacity is a stat: the door's state replaces the composed value (an override from SRC_DOOR_STATE), so an open door reads clear whatever its
+/// type's own opacity says. Returns the old opacity when it changed, null when it did not, as /atom/proc/set_opacity() does.
+/obj/machinery/door/set_opacity(new_opacity)
+	new_opacity = !!new_opacity
+	if(new_opacity == opacity)
+		return null
+	. = opacity
+	hold_override(src, STAT_OPACITY, new_opacity, SRC_DOOR_STATE)
+	opacity_light_update(.)
+
 /obj/machinery/door/proc/open(forced = 0)
 	if(!can_open(forced))
 		return

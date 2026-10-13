@@ -799,8 +799,11 @@ mod block_tests {
     fn no_indented_line_is_no_block() {
         let f = SourceFile::from_text("code/a.dm", "CAPABILITY_DEF(x, CAP_X, key = NONE)\n\n/datum/capability/def/x/entries()\n\treturn list()\n");
         let d = scan_file(&f);
-        assert_eq!(d.markers.len(), 1);
+        // The CAPABILITY_DEF line keeps its own three arguments (no block swallows the lines below it); the second marker is the
+        // CAP_ENTRIES one the capability's `entries()` body (`return list()`) reads as.
+        assert_eq!(d.markers.len(), 2);
         assert_eq!(d.markers[0].args, vec!["x", "CAP_X", "key = NONE"]);
+        assert_eq!(d.markers[1].name, CAP_ENTRIES);
     }
 
     #[test]

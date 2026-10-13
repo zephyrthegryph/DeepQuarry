@@ -24,8 +24,9 @@
 //!   multi-line string still declares a var;
 //! * a global `/proc/foo(` has owner `/proc` (the lazy owner group), and `derived` procs of owner `/`
 //!   are skipped;
-//! * the ALLOW lookup and the proc scan read the line numbers of the `code_only` view, which drift from
-//!   the raw file after an unbalanced quote;
+//! * the ALLOW lookup and the proc scan read the same-length `clean` view (physical line numbers, as the AST's
+//!   argument positions are), so an unbalanced quote moves no line; an `[expr]` embedded in a string is code in DM and
+//!   is scanned like any other;
 //! * `tracked_type_of` returns the first base of the var's type set that the owner is under; the
 //!   Python's set is hash-ordered, so with two matching bases the message may name either (the site
 //!   is the same). Here the set is sorted, so the shortest path wins.
