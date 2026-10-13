@@ -27,6 +27,26 @@
 	/// The levels `body_heat_watch` was armed with.
 	var/tmp/body_heat_watch_key
 
+/// What blocks air on this turf changed (a door opened or closed, a window broke, a wall went up): Rust rebuilt its adjacency, so the air the mobs
+/// on this turf and on the turfs around it breathe, stand in and average (their plume) is another set of mixtures than the one their watch is
+/// armed on. They re-arm now. Their Life steps do not have to run for it to hold: a sleeping human's steps are asleep because nothing they read
+/// moved, and this is a change of what they read that no band crossing reports (code/ATMOSPHERICS/environmental/LINDA_system.dm).
+/turf/proc/air_structure_changed()
+	for(var/turf/T as anything in RANGE_TURFS(1, src))
+		for(var/mob/living/L as anything in contents_of(T, /mob/living))
+			L.air_watch_structure_changed()
+
+/// This mob's air watch is stale if the mixtures it covers are not the ones it would be armed on now: re-arms it, and when it changed wakes the steps
+/// that read the air (their conclusions rest on the old set). A mob with no watch has nothing stale.
+/mob/living/proc/air_watch_structure_changed()
+	var/datum/body/B = src.body
+	if(QDELETED(src) || !B || !(B.air_watch || B.air_watch_key))
+		return
+	var/before = B.air_watch_key
+	air_watch_arm()
+	if(B.air_watch_key != before)
+		air_changed_here()
+
 /// The air on this mob's turf crossed a level that matters to it (its air watch), or this mob was told the air changed.
 /// The steps that read the air (MOB_KEY_AIR) are due again.
 /mob/living/proc/air_changed_here()
