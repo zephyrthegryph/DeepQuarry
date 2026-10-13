@@ -24,6 +24,11 @@ SYSTEM_DEF(profiler)
 	#else
 	var/bench_profile = FALSE
 	#endif
+	#ifdef UNIT_TESTS
+	// `-params boot_profile=1`: profile the rest of boot; the unit-test suite dumps it to <log dir>/boot_profile.json when it starts.
+	if(text2num(world.params?["boot_profile"] || "0"))
+		bench_profile = TRUE
+	#endif
 	if(CONFIG_GET(flag/auto_profile) || bench_profile)
 		StartProfiling()
 	else

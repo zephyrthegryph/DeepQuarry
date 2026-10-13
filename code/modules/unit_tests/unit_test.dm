@@ -1337,6 +1337,11 @@ GLOBAL_VAR(boot_unclean)
 	var/total_tests = length(tests_to_run)
 	var/current_test_index = 0
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
+	if(text2num(world.params?["boot_profile"] || "0"))
+		var/boot_profile_json = world.Profile(PROFILE_REFRESH, format = "json")
+		WRITE_FILE(file("[GLOB.log_directory]/boot_profile.json"), boot_profile_json)
+		world.Profile(PROFILE_STOP)
+		log_test("Boot profile written to [GLOB.log_directory]/boot_profile.json")
 	unit_test_boot_gate()
 
 	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
