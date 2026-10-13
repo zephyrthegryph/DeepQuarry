@@ -402,9 +402,11 @@ impl Sem {
 }
 
 fn tempfile_dir(root: &Path) -> PathBuf {
+    static SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
     let n = std::process::id();
+    let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let t = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    let dir = std::env::temp_dir().join(format!("dq-sem-{}-{}-{}", n, t, root.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().chars().take(12).collect::<String>()));
+    let dir = std::env::temp_dir().join(format!("dq-sem-{}-{}-{}-{}", n, seq, t, root.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default().chars().take(12).collect::<String>()));
     let _ = std::fs::create_dir_all(&dir);
     dir
 }

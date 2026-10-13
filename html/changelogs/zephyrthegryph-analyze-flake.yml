@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Analyzer temp dirs for synthesized .dme files are unique per call"
