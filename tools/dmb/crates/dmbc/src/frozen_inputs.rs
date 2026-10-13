@@ -464,3 +464,51 @@ mod tests {
 #[cfg(test)]
 #[path = "frozen_inputs/access_view_tests.rs"]
 mod access_view_tests;
+
+/// Live inputs whose stamps are answered by the request's directory proofs
+/// once session validation has captured them (one directory sweep instead of
+/// one stat per file). Paths outside the captured directories, reads,
+/// listings and every non-live mode go to the wrapped provider unchanged.
+/// Publication still restats against a fresh capture, so an edit racing the
+/// build is caught exactly as before.
+pub struct ProofStampedInputs<'a> {
+    inner: &'a Inputs,
+    proofs: std::sync::OnceLock<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
+}
+impl<'a> ProofStampedInputs<'a> {
+    pub fn new(inner: &'a Inputs) -> Self {
+        Self {
+            inner,
+            proofs: std::sync::OnceLock::new(),
+        }
+    }
+    /// Adopt the request's validation proofs (live mode only; first wins).
+    pub fn adopt(&self, proofs: Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>) {
+        if let (Inputs::Live, Some(proofs)) = (self.inner, proofs) {
+            let _ = self.proofs.set(proofs);
+        }
+    }
+}
+impl SnapshotProvider for ProofStampedInputs<'_> {
+    fn generated_outputs(&self) -> Option<&std::collections::BTreeSet<PathBuf>> {
+        self.inner.generated_outputs()
+    }
+    fn stamp(&self, path: &Path) -> io::Result<Stamp> {
+        match self.proofs.get() {
+            Some(proofs) => proofs.stamp(path),
+            None => self.inner.stamp(path),
+        }
+    }
+    fn read(&self, path: &Path) -> io::Result<(Stamp, Vec<u8>)> {
+        self.inner.read(path)
+    }
+    fn read_verified(&self, path: &Path) -> io::Result<CapturedInputRead> {
+        self.inner.read_verified(path)
+    }
+    fn list(&self, path: &Path) -> io::Result<FolderListing> {
+        self.inner.list(path)
+    }
+    fn digest(&self, path: &Path) -> io::Result<(Stamp, u128)> {
+        self.inner.digest(path)
+    }
+}

@@ -40,6 +40,7 @@ pub(crate) fn lower_selected<R: Resolver>(
 ) -> Result<PatchLowering, String> {
     let roster = crate::lowering::PreparedBodyRoster::issue(frontend)
         .map_err(|diagnostics| format!("body roster: {} diagnostics", diagnostics.len()))?;
+    dm_profile::request_mark("patch.roster_issued");
     let bodies = dm_tree::frontend::BodyArena::new_typed(
         frontend,
         dm_codegen_byond::typed_statements_supported_for_capture,

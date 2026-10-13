@@ -154,8 +154,10 @@ fn run_build_attempt(
         (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
+    // Stamps come from session validation's directory proofs once captured.
+    let stamped_provider = dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider);
     let generated_provider = dmbc::input_snapshot::GeneratedOutputInputs::new(
-        &input_provider,
+        &stamped_provider,
         runner_generated_paths::paths(
             &project,
             &output_project,
@@ -233,6 +235,7 @@ fn run_build_attempt(
     } else {
         None
     };
+    let mut shared_proofs = None;
     if command == BuildCommand::Compile && !no_cache {
         let compiler = compiler.expect("configured compiler identity");
         let configuration = runner_configuration::session(
@@ -255,7 +258,7 @@ fn run_build_attempt(
         )?;
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
             if let Some(mut validated) = configured
-                .validate_filesystem_observed_with_generated_outputs(
+                .validate_filesystem_shared(
                     id,
                     exact_inputs,
                     now_ns(),
@@ -286,6 +289,7 @@ fn run_build_attempt(
                             }
                         }
                     },
+                    &mut shared_proofs,
                 )?
             {
                 let pair_verification_started = Instant::now();
@@ -362,6 +366,7 @@ fn run_build_attempt(
         session = Some(configured);
         pair_store = Some(store);
     }
+    stamped_provider.adopt(shared_proofs.take());
     drop(session_profile);
     dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
@@ -557,14 +562,16 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
+    dm_profile::request_mark("frontend.revision");
     query_attempt.capture(&frontend);
+    dm_profile::request_mark("frontend.query_capture");
     if command == BuildCommand::Compile {
         // Body-edit patch shape: declaration skeleton and per-body digests of
         // this frontend, compared with the retained base (`dmbc::body_patch`).
         let patch_shape = generation
             .as_ref()
             .filter(|_| !verification_capture)
-            .map(|_| Arc::new(dmbc::body_patch::SourceShape::capture(&frontend)));
+            .map(|_| Arc::new(dmbc::body_patch::SourceShape::capture(&frontend, executor)));
         dm_profile::request_mark("patch.source_shape");
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
         frontend_report.capture_metadata(Some(&*semantic_state));

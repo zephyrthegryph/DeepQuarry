@@ -55,14 +55,16 @@ fn word_at(text: &[u8], at: usize, word: &[u8]) -> bool {
 
 /// Conservative: any `static` word, or a `global` word not used as `global.x`.
 fn declares_static(text: &[u8]) -> bool {
-    for (word, member_access_ok) in [(&b"static"[..], false), (&b"global"[..], true)] {
-        let mut from = 0;
-        while let Some(found) = text[from..]
-            .windows(word.len())
-            .position(|window| window == word)
-        {
-            let at = from + found;
-            if word_at(text, at, word) {
+    let mut at = 0;
+    while at < text.len() {
+        let byte = text[at];
+        if byte == b's' || byte == b'g' {
+            let (word, member_access_ok): (&[u8], bool) = if byte == b's' {
+                (b"static", false)
+            } else {
+                (b"global", true)
+            };
+            if text[at..].starts_with(word) && word_at(text, at, word) {
                 let next = text[at + word.len()..]
                     .iter()
                     .find(|byte| !byte.is_ascii_whitespace());
@@ -70,14 +72,61 @@ fn declares_static(text: &[u8]) -> bool {
                     return true;
                 }
             }
-            from = at + word.len();
         }
+        at += 1;
     }
     false
 }
 
+fn body_shape(body: &dm_tree::frontend::BodyOccurrence, text: &[u8]) -> BodyShape {
+    let span = body.expanded_span.range();
+    let start = span.start.min(text.len());
+    let end = span.end.min(text.len()).max(start);
+    let body_text = &text[start..end];
+    let source = &body.source;
+    let mut hash = Xxh3::new();
+    hash.update(&(body_text.len() as u64).to_le_bytes());
+    hash.update(body_text);
+    hash.update(source.path.as_os_str().as_encoded_bytes());
+    hash.update(b"\0");
+    hash.update(source.semantic_path.as_bytes());
+    hash.update(b"\0");
+    for value in [
+        source.line,
+        source.encounter_ordinal,
+        source.include_occurrence,
+        body.declaration.0 as usize,
+        body.member.0 as usize,
+        source.include_chain.len(),
+    ] {
+        hash.update(&(value as u64).to_le_bytes());
+    }
+    for &include in source.include_chain.iter() {
+        hash.update(&(include as u64).to_le_bytes());
+    }
+    for expansion in source.macro_expansions.iter() {
+        hash.update(expansion.name.as_bytes());
+        for name in expansion.replacement_chain.iter() {
+            hash.update(b"/");
+            hash.update(name.as_bytes());
+        }
+        hash.update(b";");
+    }
+    for origin in body.setting_context_origins.iter() {
+        hash.update(origin.semantic_path.as_bytes());
+        hash.update(&(origin.line as u64).to_le_bytes());
+    }
+    BodyShape {
+        digest: hash.digest128(),
+        guarded: declares_static(body_text),
+    }
+}
+
 impl SourceShape {
-    pub fn capture(frontend: &dm_tree::frontend::ColdFrontend) -> Self {
+    pub fn capture(
+        frontend: &dm_tree::frontend::ColdFrontend,
+        executor: &dm_exec::BuildExecutor,
+    ) -> Self {
         let _profile = dm_profile::stage("body_patch.source_shape");
         let text = frontend.expanded.text.as_str().as_bytes();
         let bodies = &frontend.bodies;
@@ -109,48 +158,15 @@ impl SourceShape {
             through = through.max(end);
         }
         skeleton.update(&text[through.min(text.len())..]);
-        let shapes = bodies
-            .iter()
-            .map(|body| {
-                let span = body.expanded_span.range();
-                let start = span.start.min(text.len());
-                let end = span.end.min(text.len()).max(start);
-                let body_text = &text[start..end];
-                let source = &body.source;
-                let mut hash = Xxh3::new();
-                hash.update(&(body_text.len() as u64).to_le_bytes());
-                hash.update(body_text);
-                hash.update(source.path.to_string_lossy().as_bytes());
-                hash.update(b"\0");
-                hash.update(source.semantic_path.as_bytes());
-                hash.update(b"\0");
-                for value in [
-                    source.line,
-                    source.encounter_ordinal,
-                    source.include_occurrence,
-                    body.declaration.0 as usize,
-                ] {
-                    hash.update(&(value as u64).to_le_bytes());
-                }
-                hash.update(format!("{:?}{:?}", source.include_chain, body.member).as_bytes());
-                for expansion in source.macro_expansions.iter() {
-                    hash.update(expansion.name.as_bytes());
-                    for name in expansion.replacement_chain.iter() {
-                        hash.update(b"/");
-                        hash.update(name.as_bytes());
-                    }
-                    hash.update(b";");
-                }
-                for origin in body.setting_context_origins.iter() {
-                    hash.update(origin.semantic_path.as_bytes());
-                    hash.update(&(origin.line as u64).to_le_bytes());
-                }
-                BodyShape {
-                    digest: hash.digest128(),
-                    guarded: declares_static(body_text),
-                }
-            })
-            .collect();
+        dm_profile::request_mark("patch.skeleton_hashed");
+        let shapes = executor.install(|| {
+            use rayon::prelude::*;
+            bodies
+                .par_iter()
+                .with_min_len(256)
+                .map(|body| body_shape(body, text))
+                .collect()
+        });
         Self {
             skeleton: skeleton.digest128(),
             bodies: shapes,
