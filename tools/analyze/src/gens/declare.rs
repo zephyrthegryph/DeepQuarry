@@ -1067,9 +1067,10 @@ CAPABILITIES(/obj/random/x/y)
         let (_, decl, diags) = gen(vec![("code/a.dm", src)]);
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(decl.contains("/proc/declared_static_blocks()
-	. = list()"), "{}", decl);
-        assert!(decl.contains("	.[/obj/random/x] = list(\"code/a.dm\", 2, list(entry_line(3), global.loot(table = list(/obj/a = 2))))"), "{}", decl);
-        assert!(decl.contains("	.[/obj/random/x/y] = list(\"code/a.dm\", 5, list(entry_line(6), configure(global.loot(chance = 5))))"), "{}", decl);
+	. = list()
+	declared_static_blocks_part1(.)"), "{}", decl);
+        assert!(decl.contains("	into[/obj/random/x] = list(\"code/a.dm\", 2, list(entry_line(3), global.loot(table = list(/obj/a = 2))))"), "{}", decl);
+        assert!(decl.contains("	into[/obj/random/x/y] = list(\"code/a.dm\", 5, list(entry_line(6), configure(global.loot(chance = 5))))"), "{}", decl);
         assert!(!decl.contains("into += list(global.loot"), "a static entry is not in the instance chain: {}", decl);
         assert!(!decl.contains("configure(global.loot(chance = 5))
 	into"), "{}", decl);

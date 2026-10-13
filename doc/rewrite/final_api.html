@@ -1181,6 +1181,19 @@ resolve_token(token)          <span class="c">// the entity, or null if it was d
     </ul>
   </div>
 
+  <h3 id="stored-refs">Storing references</h3>
+  <div class="sig">owns_one · owns_many · ref_one · ref_many · links() · slot()   <span class="c">// strong, declared: cleared when the other end is deleted</span>
+entity_handle(E) → resolve_handle(h)                <span class="c">// weak (ref_token / resolve_token in the final spelling): never keeps E alive</span></div>
+  <div class="prose">
+    <ul>
+      <li><strong>The rule.</strong> Every stored reference to an atom or datum is either a declared relation (<code>owns_one</code>, <code>owns_many</code>, <code>ref_one</code>, <code>ref_many</code>, a <code>links()</code> end or a <code>slot()</code>), which the destroy transaction clears on either end's deletion, or a weak ref (a handle or token), which never keeps its target alive. There is no third kind. A reference nothing clears keeps a deleted object alive until the collector gives up and hard-deletes it, a full-world reference walk on the live server.</li>
+      <li><strong>Everywhere a reference can be stored.</strong> A var; a list's members, assoc keys and assoc values; a sparse slot; a timer's or <code>after()</code>'s arguments (captured as handles by the engine); a cache, a pool, a queue, a global table. A per-type or global cache keys by a handle, an id or a type, never by the object, and holds handles, never objects. A pooled record (a notice, a context) holds its entities for one delivery and is reset on release.</li>
+      <li><strong>Scratch is free.</strong> A local var or a local list lives for one proc call and stores nothing. A <code>var/static</code> list inside a proc is storage, not scratch.</li>
+      <li><strong>Not references.</strong> Turfs and areas are never deleted; registry and flyweight instances, kernel systems and controllers are never <code>qdel()</code>ed; values (<code>/image</code>, <code>/mutable_appearance</code>, <code>/icon</code>, <code>/matrix</code>, <code>/regex</code>) are not datums. None of these needs a declaration.</li>
+      <li><strong>Checked.</strong> The <code>stored_refs</code> lint (<code>tools/analyze/src/lints/stored_refs.rs</code>) reads the typed model: a var whose declared type is an atom or datum and that no relation declares, and a list some proc fills with a value whose static type is an atom or datum, unless a many relation declares it. It is a shrink-only ratchet (<code>tools/ci/stored_refs_baseline.txt</code>). The <code>dq_gc_sweep</code> test creates and deletes a representative set of objects (machines, items, equipped humans, mobs, windows, screens, lights) and fails on any object a reference still holds after its delete. Proposal and migration waves: <code>doc/rewrite/proposals/reference_storage.md</code>.</li>
+    </ul>
+  </div>
+
   <h3>Containment and slots</h3>
   <div class="sig">slot(id, accepts =, fits =, capacity =, exposure = SLOT_EXPOSURE_EXTERNAL, at = SPACE_X, on_destroy = SPILL | DELETE | TRANSFER(resolver) | TO_LATENT | KEEP_WITH(slot))
 move_into(holder, slot_id, item, actor = null)    <span class="c">// puts item into the holder's slot, through /datum/act/insert</span>

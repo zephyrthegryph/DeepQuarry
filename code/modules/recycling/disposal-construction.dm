@@ -130,7 +130,7 @@ MSG_DEF_SELF(disposalconstruct/unfasten_first, "you must unfasten the pipe befor
 // hide called by levelupdate if turf intact status changes
 // change visibility status and force update of icon
 /obj/structure/disposalconstruct/hide(intact)
-	invisibility = (intact && level==1) ? INVISIBILITY_ABSTRACT: INVISIBILITY_NONE	// hide if floor is intact
+	hide_under_floor(src, intact && level == 1)	// hide if floor is intact
 	update()
 
 /// Old Flip Pipe verb.

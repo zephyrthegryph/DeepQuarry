@@ -99,6 +99,8 @@ Rules that hold under both old and new forms:
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/__defines/_lists.dm`).
+  A `TRACKED` list var is mutated through its generated `add_<v>()`, `include_<v>()`, `remove_<v>()`, `set_<v>_at()`, `clear_<v>()`,
+  `insert_<v>()`, `swap_<v>()`, `cut_<v>()` (`tracked_lists.dm`); `analyze fix` rewrites `LAZYADD`, `.Add()`, `v[i] = x` and the rest.
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.

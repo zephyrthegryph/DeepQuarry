@@ -48,7 +48,6 @@ spawn	code/modules/sched/rules.dm	3
 spawn	code/modules/sched/rules.dm	4
 spawn	code/modules/sched/rules.dm	5
 spawn	code/modules/sched/rules.dm	5
-spawn	code/modules/sched/rules.dm	9
 spawn	code/modules/sched/rules.dm	10
 spawn	code/modules/sched/shapes.dm	10
 spawn	code/modules/sched/shapes.dm	16

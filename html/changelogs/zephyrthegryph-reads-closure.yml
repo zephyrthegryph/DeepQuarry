@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "A TRACKED list var gets generated add_/include_/remove_/set_<v>_at/clear_/insert_/swap_/cut_ procs and a <v>_version counter; the tracked lint bans in-place edits of such a list and analyze fix rewrites them"
+  - refactor: "Generated reads walk the engine's own bodies and take the union of a virtual call's overrides; PROC_SUMMARY declares what a proc that cannot be walked reads and writes"
+  - code_imp: "analyze sem closure lists the untracked inputs the closed walk finds that the lints' walk did not (doc/rewrite/reads_closure_newly_visible.md)"
