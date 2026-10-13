@@ -539,7 +539,7 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
 /// Only explicit alists (and subtype overrides of them) get metadata: legacy list maps
 /// retain their existing allocation and ordering rules.
 fn relation_storage(cx: &GenCx, out: &mut GenOut) {
-    let sem = cx.sem();
+    let Some(sem) = cx.sem() else { return };
     let mut rows: BTreeMap<(bool, String), BTreeMap<String, bool>> = BTreeMap::new();
     for ty in sem.objtree.iter_types() {
         let owner = &ty.get().path;
@@ -949,7 +949,15 @@ mod tests {
 
     #[test]
     fn keyed_relation_storage_respects_lazy_inherited_alists_and_legacy_lists() {
-        let (_, decl, diags) = gen(vec![("code/storage.dm", "/datum/map_holder\n\tvar/alist/records\n/datum/map_holder/child\n/datum/map_holder/legacy\n\tvar/list/records\n/datum/legacy_holder\n\tvar/list/records\n")]);
+        let source = "/datum/map_holder\n\tvar/alist/records\n/datum/map_holder/child\n/datum/map_holder/legacy\n\tvar/list/records\n/datum/legacy_holder\n\tvar/list/records\n";
+        let dir = tempfile::tempdir_in(std::env::current_dir().unwrap()).unwrap();
+        std::fs::create_dir_all(dir.path().join("code")).unwrap();
+        std::fs::write(dir.path().join("code/storage.dm"), source).unwrap();
+        let mut tree = Tree::from_files(vec![SourceFile::from_text("code/storage.dm", source)]);
+        tree.root = dir.path().to_path_buf();
+        let cx = GenCx::new(&tree, dir.path());
+        assert!(cx.sem().is_some(), "the storage fixture must have a real semantic model");
+        let (decl, diags) = render(&Declare, &cx);
         assert!(diags.is_empty(), "{:?}", diags);
         assert!(decl.contains("/datum/map_holder/relation_declared_alist(var_name)\n\tswitch(var_name)\n\t\tif(\"records\") return TRUE"), "{}", decl);
         assert!(!decl.contains("/datum/map_holder/child/relation_declared_alist"), "a child inherits its parent's shape");
