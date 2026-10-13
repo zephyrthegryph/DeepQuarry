@@ -786,14 +786,21 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug)
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/pilotslug/proc/take_a_helm(datum/act/timer/A)
 	if(!takes_a_helm)
 		return
-	var/list/possible_targets = list()
+	var/list/possible_targets
 	for(var/obj/machinery/computer/ship/helm/h in world)
-		if(h.z in using_map.player_levels)
-			possible_targets |= h
+		if(QDELETED(h))
+			continue
+		var/turf/helm_turf = get_turf(h)
+		if(helm_turf && !QDELETED(helm_turf) && (helm_turf.z in using_map.player_levels))
+			LAZYOR(possible_targets, h)
 	if(!length(possible_targets))
 		return
-	forceMove(get_turf(pick(possible_targets)))
-	set_ghostjoin(TRUE)
+	var/obj/machinery/computer/ship/helm/target = pick(possible_targets)
+	var/turf/destination = get_turf(target)
+	if(QDELETED(target) || QDELETED(destination) || !(destination.z in using_map.player_levels))
+		return
+	if(forceMove(destination))
+		set_ghostjoin(TRUE)
 
 /datum/category_item/catalogue/fauna/catslug/custom/pilotslug
 	name = "Alien Wildlife - Catslug - Navigator Purrverick"

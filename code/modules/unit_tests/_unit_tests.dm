@@ -325,6 +325,8 @@
 #include "dq_tracked_list_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_integrity_native_key_tests.dm"
+#include "dq_cliff_density_stat_tests.dm"
+#include "dq_pilotslug_helm_placement_tests.dm"
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
 #include "dq_ownership_transfer_tests.dm"

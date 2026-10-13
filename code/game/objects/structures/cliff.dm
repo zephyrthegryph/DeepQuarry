@@ -138,7 +138,7 @@ CAPABILITIES(/obj/structure/cliff/automatic)
 	bottom.set_corner(corner)
 	bottom.set_ramp(ramp)
 	bottom.layer = layer - 0.1
-	bottom.set_density(density)
+	hold(bottom, STAT_DENSITY, !!density, SRC_CLIFF_SHAPE, priority = PRIORITY_FORCE)
 
 /// The ledge's sprite by its facing and kind, with the ground above it cut out of a different turf's picture.
 /obj/structure/cliff/draw(datum/look/look)

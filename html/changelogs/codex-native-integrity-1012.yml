@@ -2,3 +2,5 @@ author: "Codex"
 delete-after: true
 changes:
   - bugfix: "Fixed sprites remaining stale after damage and native capability-state changes."
+  - bugfix: "Kept generated cliff ramps passable through the composed density state."
+  - bugfix: "Prevented navigator catslugs from attempting to move to helms without a valid location."
