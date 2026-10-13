@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"40c95d30fba8259612d0005e34946f3a437b7d4e","ok":true,"passed":38,"failed":0,"new_failed":0,"lanes":"rewrite/lane-ready-fix","tests_json":"data/test-runs/20261013T074420_40c95d30fb.json","created":"2026-10-13T07:44:22Z"}
