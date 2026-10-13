@@ -732,9 +732,9 @@ PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot 
 	part_name = "req_range"
 
 /datum/entry/part/req/range/check(datum/act/op/A)
-	var/turf/from = get_turf(A?.actor)
-	var/turf/to = get_turf(A?.target)
-	var/in_range = from && to && from.z == to.z && get_dist(from, to) <= src.args["tiles"]
+	var/turf/actor_turf = get_turf(A?.actor)
+	var/turf/target_turf = get_turf(A?.target)
+	var/in_range = actor_turf && target_turf && actor_turf.z == target_turf.z && get_dist(actor_turf, target_turf) <= src.args["tiles"]
 	if(in_range != !!src.args["exclude"])
 		return null
 	if(!isnull(src.args["because"]))

@@ -621,12 +621,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
 		if(istype(TT))
 			state = "[icon_base]_[TT.icon_sprite_tag]"
 	look.held_state(state)
-	look.effect(PROC_REF(redraw_worn_back))
-
-/obj/item/storage/backpack/saddlebag_common/proc/redraw_worn_back()
-	var/mob/living/carbon/human/H = draw_wearer
-	if(H && H.get_equipped_item(SLOT_ID_BACK) == src)
-		H.update_inv_back()
+	// Applying held_state publishes this look; the wearer's worn-item look watch follows it.
 
 /obj/item/storage/backpack/saddlebag_common/robust //Shared bag for other taurs with sturdy backs
 	name = "Robust Saddlebags"

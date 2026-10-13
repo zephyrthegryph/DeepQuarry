@@ -18,3 +18,19 @@
 	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))
 
 
+/// Preserve the tool refusal grammar shared with tool_quality_failure().
+/proc/dq_pred_article(noun)
+	return "[(copytext(noun, 1, 2) in list("a", "e", "i", "o", "u")) ? "an" : "a"] [noun]"
+
+/proc/dq_pred_tool_name(quality)
+	switch(quality)
+		if(TOOL_CABLE_COIL)
+			return "cable coil"
+		if(TOOL_BLOODFILTER)
+			return "blood filter"
+		if(TOOL_ROLLINGPIN)
+			return "rolling pin"
+		if(TOOL_MINING)
+			return "mining tool"
+	return quality
+

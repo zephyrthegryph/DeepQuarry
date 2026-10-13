@@ -12,6 +12,7 @@
 	return /datum/msg/req_failed
 
 /proc/req_acceptance_type(types, exclude = FALSE, because = null)
+	RETURN_TYPE(/datum/entry/part/req/acceptance_leaf/type)
 	var/list/paths = ispath(types) ? list(types) : types
 	if(!islist(paths))
 		CRASH("acceptance type must be a path or list of paths")
