@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"1643eb3aa6f4d91209bcc6b5860b9a1684942180","ok":true,"passed":38,"failed":0,"new_failed":0,"lanes":"rewrite/gc-hidden-refs","tests_json":"data/test-runs/20261013T052621_1643eb3aa6.json","created":"2026-10-13T05:26:26Z"}
