@@ -83,6 +83,60 @@ impl ListEncoding {
         }
         self.image.bytes().get(self.ranges.get(index)?.clone())
     }
+    /// Detached row image of this certificate (see `ListRowImage`).
+    pub(in crate::dmb) fn row_image(&self) -> crate::dmb::ListRowImage {
+        crate::dmb::ListRowImage::new(self.image.clone(), self.ranges.clone(), self.width)
+    }
+    /// Splice replacement rows into the certified image (see
+    /// `list_rows::splice_rows`). Returns the new image and shifted certificate.
+    pub(in crate::dmb) fn splice(
+        &self,
+        replacements: &[(usize, Arc<Vec<u32>>)],
+    ) -> io::Result<(EncodedDmb, Self)> {
+        let mut ordered: Vec<&(usize, Arc<Vec<u32>>)> = replacements.iter().collect();
+        ordered.sort_by_key(|(index, _)| *index);
+        let rows: Vec<(usize, &[u32])> = ordered
+            .iter()
+            .map(|(index, words)| (*index, words.as_slice()))
+            .collect();
+        let (bytes, ranges) = crate::dmb::list_rows::splice_rows(
+            self.image.bytes(),
+            &self.ranges,
+            self.width,
+            &rows,
+        )?;
+        let image = EncodedDmb::from_spliced(bytes);
+        let mut words = self.words.clone();
+        for (index, replacement) in &ordered {
+            words[*index] = Arc::clone(replacement);
+        }
+        let mut by_owner = self.by_owner.clone();
+        for (index, replacement) in &ordered {
+            let previous = &self.words[*index];
+            let address = Arc::as_ptr(previous) as usize;
+            if by_owner.get(&address) == Some(index) {
+                by_owner.remove(&address);
+                // Another row may still share the replaced payload.
+                if let Some(other) = words.iter().position(|row| Arc::ptr_eq(row, previous)) {
+                    by_owner.insert(address, other);
+                }
+            }
+            by_owner
+                .entry(Arc::as_ptr(replacement) as usize)
+                .or_insert(*index);
+        }
+        let encoding = Self {
+            words,
+            image: image.clone(),
+            ranges,
+            width: self.width,
+            by_owner,
+        };
+        Ok((image, encoding))
+    }
+    pub(in crate::dmb) fn width(&self) -> usize {
+        self.width
+    }
     pub(in crate::dmb) fn visit_storage(
         &self,
         mut visit: impl FnMut(&Vec<Arc<Vec<u32>>>, &EncodedDmb, &Vec<Range<usize>>, usize, usize),
@@ -173,6 +227,52 @@ mod tests {
             old_bytes.upgrade().is_none(),
             "current certificates cannot retain historical images"
         );
+    }
+    #[test]
+    fn spliced_row_patches_equal_canonical_encoding() {
+        let mut model =
+            crate::dmb::Dmb::from_bytes(include_bytes!("../fixtures/native_template.bin")).unwrap();
+        model.lists.push(vec![1, 2, 3]);
+        model.lists.push(vec![4]);
+        model.lists.push(vec![]);
+        model.lists.push(vec![5, 6]);
+        retain(&model);
+        let last = model.lists.len() - 1;
+        let shared = model.lists.shared(last - 3).unwrap().clone();
+        // Grow, shrink and empty rows in one patch, out of order.
+        let patched = model
+            .patch_list_rows(&[
+                (last, Arc::new(vec![])),
+                (last - 3, Arc::new(vec![9, 8, 7, 6, 5])),
+                (last - 2, Arc::new(vec![1, 1])),
+            ])
+            .unwrap();
+        let fresh = model.encode().unwrap();
+        assert_eq!(patched.bytes(), fresh.bytes());
+        assert_eq!(patched.content_hash(), fresh.content_hash());
+        assert_eq!(model.lists[last - 3], vec![9, 8, 7, 6, 5]);
+        assert_eq!(*shared, vec![1, 2, 3], "replaced payload is not mutated");
+        // A detached row image splices to the same bytes.
+        let rows = model.list_row_image().unwrap();
+        assert!(rows.row_equals(last - 3, &[9, 8, 7, 6, 5]));
+        assert!(!rows.row_equals(last - 3, &[9, 8, 7, 6]));
+        let detached = rows.splice(&[(last - 1, Arc::new(vec![3, 3, 3]))]).unwrap();
+        // A second patch chains on the shifted certificate.
+        let again = model
+            .patch_list_rows(&[(last - 1, Arc::new(vec![3, 3, 3]))])
+            .unwrap();
+        assert_eq!(again.bytes(), model.encode().unwrap().bytes());
+        assert_eq!(detached.image().bytes(), again.bytes());
+        assert_eq!(detached.image().content_hash(), again.content_hash());
+        let chained = detached.splice(&[(last, Arc::new(vec![4, 4]))]).unwrap();
+        model.patch_list_rows(&[(last, Arc::new(vec![4, 4]))]).unwrap();
+        assert_eq!(chained.image().bytes(), model.encode().unwrap().bytes());
+        // Without a certificate the patch declines and leaves the model intact.
+        let mut uncertified = model.clone();
+        uncertified.lists.push(vec![1]);
+        let before = uncertified.lists.len();
+        assert!(uncertified.patch_list_rows(&[(0, Arc::new(vec![]))]).is_err());
+        assert_eq!(uncertified.lists.len(), before);
     }
     #[test]
     fn checked_rows_preserve_exact_words_width_order_and_empty_rows() {

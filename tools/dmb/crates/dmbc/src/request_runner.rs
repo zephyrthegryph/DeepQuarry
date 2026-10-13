@@ -135,6 +135,8 @@ fn run_build_attempt(
         None => project.clone(),
     };
     let total = Instant::now();
+    dm_profile::request_marks_begin_if_idle();
+    dm_profile::request_mark("runner.start");
     let mut build_lock = if command == BuildCommand::Compile {
         Some(dmbc::compile_driver::acquire_build_lock(&project)?)
     } else {
@@ -164,8 +166,10 @@ fn run_build_attempt(
         (_, Some(directory)) => dmbc::frozen_inputs::Inputs::replay(directory)?,
         _ => dmbc::frozen_inputs::Inputs::Live,
     };
+    // Stamps come from session validation's directory proofs once captured.
+    let stamped_provider = dmbc::frozen_inputs::ProofStampedInputs::new(&input_provider);
     let generated_provider = dmbc::input_snapshot::GeneratedOutputInputs::new(
-        &input_provider,
+        &stamped_provider,
         runner_generated_paths::paths(
             &project,
             &output_project,
@@ -243,6 +247,7 @@ fn run_build_attempt(
     } else {
         None
     };
+    let mut shared_proofs = None;
     if command == BuildCommand::Compile && !no_cache {
         let compiler = compiler.expect("configured compiler identity");
         let configuration = runner_configuration::session(
@@ -265,7 +270,7 @@ fn run_build_attempt(
         )?;
         for id in configured.latest(if verification_capture { 0 } else { 4 })? {
             if let Some(mut validated) = configured
-                .validate_filesystem_observed_with_generated_outputs(
+                .validate_filesystem_shared(
                     id,
                     exact_inputs,
                     now_ns(),
@@ -296,6 +301,7 @@ fn run_build_attempt(
                             }
                         }
                     },
+                    &mut shared_proofs,
                 )?
             {
                 let pair_verification_started = Instant::now();
@@ -372,6 +378,7 @@ fn run_build_attempt(
         session = Some(configured);
         pair_store = Some(store);
     }
+    stamped_provider.adopt(shared_proofs.take());
     drop(session_profile);
     dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
@@ -569,8 +576,17 @@ fn run_build_attempt(
             return Err(failure.into());
         }
     });
+    dm_profile::request_mark("frontend.revision");
     query_attempt.capture(&frontend);
+    dm_profile::request_mark("frontend.query_capture");
     if command == BuildCommand::Compile {
+        // Body-edit patch shape: declaration skeleton and per-body digests of
+        // this frontend, compared with the retained base (`dmbc::body_patch`).
+        let patch_shape = generation
+            .as_ref()
+            .filter(|_| !verification_capture)
+            .map(|_| Arc::new(dmbc::body_patch::SourceShape::capture(&frontend, executor)));
+        dm_profile::request_mark("patch.source_shape");
         let mut frontend_report = runner_report::FrontendReport::capture(&frontend);
         frontend_report.capture_metadata(Some(&*semantic_state));
         let retained_engine = engine_capture
@@ -765,7 +781,88 @@ fn run_build_attempt(
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
         dmbc::daemon::control::checkpoint()?;
-        let compile_result = (|| {
+        // Body-edit fast path: relower only changed bodies and splice their code
+        // into the retained output. Any unproven condition declines (logged) and
+        // the full compilation below runs. DMB_BODY_PATCH=0 disables it.
+        let patched = match (&generation, &patch_shape) {
+            (Some(generation), Some(shape))
+                if std::env::var_os("DMB_BODY_PATCH").is_none_or(|value| value != "0") =>
+            {
+                let patch_started = Instant::now();
+                let attempt = (|| {
+                    let inputs = runner_freshness::admit_captured(
+                        &inputs_capture,
+                        nontext.retained_resource_inputs(),
+                        &input_provider,
+                        generated_paths,
+                    )
+                    .map_err(|error| format!("input admission: {error}"))?;
+                    dmbc::body_patch::try_patch(dmbc::body_patch::PatchRequest {
+                        generation,
+                        shape,
+                        frontend: &frontend,
+                        resolver: &nontext.resolver,
+                        engine,
+                        engine_bytes: bytes,
+                        references: &links.references,
+                        spellings: &links.inventory.spellings,
+                        resource_search_context: Some(nontext.resource_search_context),
+                        inputs,
+                        archive: nontext.archive_identity(),
+                        executor,
+                        memo: procedure_memo.as_ref(),
+                        workers,
+                    })
+                })();
+                match attempt {
+                    Ok(patched) => {
+                        dmbc::daemon_eprintln!(
+                            "native body patch: applied changed_bodies={} patched_rows={} {:.3}s",
+                            patched.changed_bodies,
+                            patched.patched_rows,
+                            patch_started.elapsed().as_secs_f64()
+                        );
+                        Some(patched)
+                    }
+                    Err(reason) => {
+                        dmbc::daemon_eprintln!(
+                            "native body patch: declined after {:.3}s, full compilation: {reason}",
+                            patch_started.elapsed().as_secs_f64()
+                        );
+                        None
+                    }
+                }
+            }
+            _ => None,
+        };
+        dm_profile::request_mark("patch.attempted");
+        // A patch claims nothing in the procedure memo; publishing its empty
+        // request lease would replace (evict) every resident record.
+        let body_patched = patched.is_some();
+        let compile_result = if let Some(patched) = patched {
+            let (resolver, _stage, publication) = nontext.into_composition_parts();
+            let (abi, startup) = patched.query;
+            query_attempt
+                .capture_resolved_host(&frontend, resolver, abi, startup)
+                .map_err(|error| {
+                    dmbc::request_failure::RequestFailure::internal(format!(
+                        "native internal: query host capture: {error}"
+                    ))
+                })?;
+            let explanations = runner_report::explanations(&frontend, None);
+            drop(frontend);
+            Ok::<_, dmbc::cold::ColdError>((
+                dmbc::cold::ColdOutput {
+                    dmb: patched.dmb,
+                    timings: Default::default(),
+                    warnings: patched.warnings,
+                    startup: None,
+                },
+                publication,
+                explanations,
+                None,
+            ))
+        } else { (|| {
             let values = dmbc::type_values::CapturedTypeValues::pinned(&frontend, engine)
                 .map_err(dmbc::cold::ColdError::RuntimeTypeValues)?;
             let values = dmbc::resource_values::CapturedResourceValues::new(
@@ -780,7 +877,7 @@ fn run_build_attempt(
                     .and_then(|value| value.parse().ok())
                     .unwrap_or(65_536),
             );
-            let prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
+            let mut prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
                 &frontend,
                 &compilation_resolver,
                 engine,
@@ -794,6 +891,7 @@ fn run_build_attempt(
                 progress_enabled.then_some(&cold_observer),
                 procedure_memo.as_ref(),
             )?;
+            dm_profile::request_mark("compilation.prepared");
             if progress_enabled {
                 dmbc::daemon_eprintln!("native resolver memo: {:?}", compilation_resolver.stats());
             }
@@ -818,25 +916,28 @@ fn run_build_attempt(
                     .map_err(|error|dmbc::cold::ColdError::InitializerInvariant(format!("query host capture: {error}")))?;
             } else { drop(resolver); }
 
+            let patch_records = patch_shape.as_ref().map(|_| prepared.take_patch_records());
             let composition = prepared.seal(
                 &frontend,
                 Arc::clone(bytes),
                 owned_values,
                 Some(Box::new(output_stage)),
             )?;
+            dm_profile::request_mark("compilation.sealed");
             // The sealed composition retains exact output facts and no source owners.
             drop(frontend);
+            dm_profile::request_mark("compilation.frontend_dropped");
             let output =
                 composition.compose_with_generation(executor, progress_enabled.then_some(&cold_observer), generation.as_deref())?;
-            Ok::<_, dmbc::cold::ColdError>((output, publication, explanations))
-        })();
+            Ok::<_, dmbc::cold::ColdError>((output, publication, explanations, patch_records))
+        })() };
         if progress_enabled && compile_result.is_err() {
             dmbc::daemon_eprintln!("native failed stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s total={:.3}s",
                 input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
                 linking_inputs_seconds, compilation_started.elapsed().as_secs_f64(),
                 total.elapsed().as_secs_f64());
         }
-        let (output, publication, explanations) = match compile_result {
+        let (output, publication, explanations, patch_records) = match compile_result {
             Ok(output) => output,
             Err(dmbc::cold::ColdError::Lowering(diagnostics)) => {
                 dmbc::diagnostics::write_lowering_diagnostics(
@@ -950,6 +1051,7 @@ fn run_build_attempt(
         let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?;
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
+        dm_profile::request_mark("publication.inputs_admitted");
         dmbc::daemon::control::begin_publication()?;
         let pair = match &publication.archive {
             dmbc::assets::ResourceArchive::Captured(bytes) => {
@@ -963,6 +1065,26 @@ fn run_build_attempt(
                     exact_inputs,
                 )?,
         };
+        dm_profile::request_mark("publication.pair_stored");
+        // A full build leaves the patch base for the next body edit.
+        if let (Some(generation), Some(shape), Some(records)) = (&generation, &patch_shape, patch_records) {
+            match dmbc::body_patch::BodyPatchBase::of_full_build(
+                Arc::clone(shape),
+                records,
+                publication_inputs.clone(),
+                publication.archive.identity(),
+                output.warnings.clone(),
+                output.dmb.content_hash(),
+            ) {
+                Some(base) => {
+                    if !generation.install_patch_base(base) {
+                        dmbc::daemon_eprintln!("native body patch: base not installed (no link answers)");
+                    }
+                }
+                None => dmbc::daemon_eprintln!("native body patch: base not installed (duplicate units)"),
+            }
+            dm_profile::request_mark("publication.patch_base");
+        }
         let ResourceOutputs { pins: _, prepared } = resource_outputs
             .into_inner()
             .unwrap_or_else(|error| error.into_inner());
@@ -979,6 +1101,7 @@ fn run_build_attempt(
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
         )?;
+        dm_profile::request_mark("publication.installed");
         let resource_journal_admission = resource_journal_admission.into_inner().unwrap_or_else(|error| error.into_inner());
         let publication_proof = verification_capture.then(|| crate::publication_proof::issue_with_resource_admission(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path(), resource_journal_admission)).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
         if !verification_capture && (session.is_some() || resource_owner.is_some()) {
@@ -1025,16 +1148,21 @@ fn run_build_attempt(
         // Required compile, freshness, pair installation and session operations
         // succeeded. The sole cache segment is published only at this boundary.
         dmbc::daemon::control::checkpoint()?;
+        dm_profile::request_mark("finalization.checkpoint");
         declaration_request.publish_successful();
+        dm_profile::request_mark("finalization.declarations_published");
         if let Some(generation) = &generation {
             generation.publish_successful();
         }
-        if let Some(memo) = &procedure_memo {
+        dm_profile::request_mark("finalization.generation_published");
+        if let Some(memo) = procedure_memo.as_ref().filter(|_| !body_patched) {
             memo.publish_successful();
         }
+        dm_profile::request_mark("finalization.procedure_memo_published");
         if let Some(memo) = &map_memo {
             memo.publish_successful();
         }
+        dm_profile::request_mark("finalization.memo_published");
         let cache_batch_stats = memo_cache.as_ref().map(|cache| match cache.finish_batch() {
             Ok(report) => serde_json::json!({
                 "segment": report.segment.map(|id| format!("{id:032x}")),
@@ -1050,6 +1178,7 @@ fn run_build_attempt(
                     "scope":"one_request_completed_batch"})
             }
         });
+        dm_profile::request_mark("finalization.cache_batch");
         let memo_stats = procedure_memo.as_ref()
             .map(|memo| runner_report::memo_statistics(memo, &retention_status));
         let expansion_stats = expansion_memo.as_ref().map(|memo| {
@@ -1065,6 +1194,7 @@ fn run_build_attempt(
         let stats = serde_json::json!({"project":project,"workers":workers,"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"input_preparation_seconds":input_preparation_seconds,"frontend_seconds":frontend_report.frontend_seconds,"frontend_stage_wall_seconds":frontend_report.frontend_stage_wall_seconds,"declaration_reuse":declaration_stats,"nontext_seconds":nontext_seconds,"compilation_seconds":compilation_seconds,"publication_seconds":publication_seconds,"dmb_bytes":pair.dmb_bytes,"rsc_bytes":pair.rsc_bytes,"memo":memo_stats,"cache_batch":cache_batch_stats,"expansion_memo":expansion_stats,"map_memo":map_stats,"explanations":explanations});
         let mut stats = stats;
         stats["metadata_resolution"] = frontend_report.metadata_resolution;
+        dm_profile::request_mark("finalization.stats_built");
         if let Err(error) = dmbc::telemetry::save(&project, "stats", &stats) {
             dmbc::daemon_eprintln!("native telemetry skipped: {error}");
         }
@@ -1073,6 +1203,7 @@ fn run_build_attempt(
             "last-run",
             &serde_json::json!({"session_hit":false,"seconds":total.elapsed().as_secs_f64(),"pair":pair.name()}),
         );
+        dm_profile::request_mark("finalization.telemetry_saved");
         dmbc::daemon_eprintln!("native stages: input_preparation={:.3}s frontend={:.3}s captured_facts={:.3}s resources_maps={:.3}s linking_inputs={:.3}s compilation={:.3}s publication={:.3}s",
             input_preparation_seconds, frontend_report.frontend_seconds, facts_seconds, nontext_seconds,
             linking_inputs_seconds, compilation_seconds, publication_seconds);
@@ -1083,6 +1214,7 @@ fn run_build_attempt(
             pair.dmb_bytes, pair.rsc_bytes, pair.name());
         dmbc::initializer_policy::warnings::write_warnings(&mut dmbc::daemon::stderr_writer(), &output.warnings)?;
         query_attempt.finish_published(&pair);
+        dm_profile::request_mark("finalization.done");
         return Ok(BuildOutcome::Published {
             publication_proof,
             pair,
@@ -1109,7 +1241,9 @@ fn run_build_attempt(
     runner_analysis::finish(&frontend, engine_capture.as_ref(), host_facts.as_deref(), executor,
         procedure_memo.as_ref(), memo_policy, command, &mut query_attempt, total)
     });
+    dm_profile::request_mark("runner.execution_joined");
     drop(frontend_memo);
     host.prune_foreign_callable_index();
+    dm_profile::request_mark("runner.host_pruned");
     execution_result?
 }

@@ -81,6 +81,32 @@ impl WordLists {
             });
         }
     }
+    /// Replace whole rows of a model whose certified encoding is retained and
+    /// splice the certified image (see `ListEncoding::splice`). Errors leave
+    /// `self` unchanged.
+    pub(super) fn patch_rows(
+        &mut self,
+        replacements: &[(usize, Arc<Vec<u32>>)],
+        width: usize,
+    ) -> std::io::Result<crate::dmb::EncodedDmb> {
+        let encoding = self
+            .encoding()
+            .ok_or_else(|| std::io::Error::other("no certified list encoding retained"))?;
+        if encoding.width() != width {
+            return Err(std::io::Error::other("certified list width differs"));
+        }
+        if !encoding.matches(&self.0) {
+            return Err(std::io::Error::other(
+                "certified list encoding differs from words",
+            ));
+        }
+        let (image, next) = encoding.splice(replacements)?;
+        for (index, words) in replacements {
+            self.0[*index] = Arc::clone(words);
+        }
+        *self.1.get_mut().unwrap_or_else(|e| e.into_inner()) = Some(Arc::new(next));
+        Ok(image)
+    }
     pub fn len(&self) -> usize {
         self.0.len()
     }

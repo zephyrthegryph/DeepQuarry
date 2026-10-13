@@ -446,6 +446,21 @@ impl SessionRecords {
         generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
         observer: impl FnOnce(&Record),
     ) -> io::Result<Option<ValidatedRecord>> {
+        self.validate_filesystem_shared(id, exact, now_ns, generated_outputs, observer, &mut None)
+    }
+    /// As above, sharing one directory-proof capture across the records of a
+    /// request: the first record's capture answers later records (paths outside
+    /// it fall back to ordinary per-file handling), so the session's recent
+    /// records cost one directory sweep instead of one each.
+    pub fn validate_filesystem_shared(
+        &self,
+        id: u128,
+        exact: bool,
+        now_ns: u128,
+        generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+        observer: impl FnOnce(&Record),
+        shared: &mut Option<std::sync::Arc<crate::filesystem_proofs::BulkFileSystemProofs>>,
+    ) -> io::Result<Option<ValidatedRecord>> {
         let started = std::time::Instant::now();
         let Some(mut record) = self.prior(id)? else {
             return Ok(None);
@@ -456,12 +471,23 @@ impl SessionRecords {
         };
         observer(&record);
         let started = std::time::Instant::now();
-        let proofs =
-            crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&record.inputs)?;
+        let proofs = match shared {
+            Some(proofs) => std::sync::Arc::clone(proofs),
+            None => {
+                let proofs = std::sync::Arc::new(
+                    crate::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(
+                        &record.inputs,
+                    )?,
+                );
+                *shared = Some(std::sync::Arc::clone(&proofs));
+                proofs
+            }
+        };
+        let proofs = proofs.as_ref();
         timings.bulk_capture = started.elapsed();
         let started = std::time::Instant::now();
         let generated = crate::input_snapshot::GeneratedOutputInputs::new(
-            &proofs,
+            proofs,
             generated_outputs.iter().cloned(),
         );
         let validated = record

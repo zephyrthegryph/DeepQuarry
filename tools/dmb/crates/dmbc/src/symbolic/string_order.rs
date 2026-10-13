@@ -46,7 +46,7 @@ pub(super) fn complete(inventory: &mut LinkInventory, units: &[FrozenUnit]) -> R
     })
 }
 
-fn value_string_registrations(code: &dm_ir::SymbolicCode) -> impl Iterator<Item = SymbolId> + '_ {
+pub(in crate::symbolic) fn value_string_registrations(code: &dm_ir::SymbolicCode) -> impl Iterator<Item = SymbolId> + '_ {
     code.relocations().into_iter().filter_map(|relocation| {
         match (relocation.reference, relocation.encoding) {
             (SymRef::String(id), RelocationEncoding::PackedValue24 { tag: 6 }) => Some(id),

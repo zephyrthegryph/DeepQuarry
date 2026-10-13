@@ -428,6 +428,44 @@ impl InputSnapshot {
         }
     }
 
+    /// First difference between two snapshots outside DM text sources
+    /// (`.dm`, `.dme`), by content: non-text files, folder listings, negative
+    /// lookups and generated outputs. Used to admit body-edit patches.
+    pub(crate) fn non_text_difference(&self, other: &Self) -> Option<String> {
+        let text = |path: &Path| {
+            path.extension().is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("dm") || extension.eq_ignore_ascii_case("dme")
+            })
+        };
+        let left = self.files.iter().filter(|(path, _)| !text(path));
+        let mut right = other.files.iter().filter(|(path, _)| !text(path));
+        for (path, file) in left {
+            match right.next() {
+                Some((other_path, other_file)) if other_path == path => {
+                    if other_file.content != file.content {
+                        return Some(format!("{} content", path.display()));
+                    }
+                }
+                Some((other_path, _)) => {
+                    return Some(format!("{} / {} roster", path.display(), other_path.display()))
+                }
+                None => return Some(format!("{} added", path.display())),
+            }
+        }
+        if let Some((path, _)) = right.next() {
+            return Some(format!("{} removed", path.display()));
+        }
+        if self.folders != other.folders {
+            return Some("resource folder listing".into());
+        }
+        if self.negative_files != other.negative_files {
+            return Some("negative file lookups".into());
+        }
+        if self.generated_outputs != other.generated_outputs {
+            return Some("generated outputs".into());
+        }
+        None
+    }
     pub fn files(&self) -> impl Iterator<Item = &FileInput> {
         self.files.values()
     }

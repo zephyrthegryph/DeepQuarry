@@ -550,6 +550,9 @@ fn compose_records_access(
     } else {
         dm_link::MobBindings::new()
     };
+    if let Some(generation) = generation {
+        generation.capture_patch_link(&batch.tables, &mob_bindings);
+    }
     let linked_records_profile = dm_profile::stage("composition.linked_records");
     if let Some(index) = builtin_global_vars {
         if index as usize != dmb.variables.len() {

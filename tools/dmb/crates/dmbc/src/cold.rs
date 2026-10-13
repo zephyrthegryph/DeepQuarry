@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 mod diagnostic_continuation;
 mod initializer_factory;
 mod prepared;
+pub(crate) mod body_patch;
 pub use prepared::{PreparedCold, PreparedComposition};
 
 #[derive(Clone, Copy, Debug)]
@@ -280,6 +281,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     )
     .map_err(|error| static_diagnostics::capture_error(frontend, &bodies, error))?;
     measurement.complete();
+    dm_profile::request_mark("cold.startup_captured");
     let measurement = StageMeasurement::new(observer, ColdStage::AbiPreparation);
     let prepared =
         crate::driver_facts::prepare_pinned_source_abi_with_startup_on_executor_with_artifacts(
@@ -306,6 +308,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
     .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
     measurement.complete();
     let abi_preparation = total.elapsed();
+    dm_profile::request_mark("cold.abi_prepared");
     let mut output = prepare_with_startup(
         frontend,
         resolver,
@@ -624,9 +627,11 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     drop(detail_phase);
     measurement.complete();
     let initializers = stage.elapsed();
+    dm_profile::request_mark("cold.initializers_done");
     let mut inventory = links.inventory;
     crate::class_inventory::contribute_source_strings(frontend, &bodies, &mut inventory)
         .map_err(ColdError::Initializer)?;
+    dm_profile::request_mark("cold.source_strings");
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::ProcedureLowering);
     let pre_lowering_timer = dm_profile::detail_timer("cold.pre_lowering_setup");
@@ -684,6 +689,11 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         return Err(error);
     }
     let mut contributions: Vec<_> = batch.units.into_iter().map(|unit| unit.value).collect();
+    // Body-edit patch base: Arc-only copies of each unit's link footprint inputs.
+    let patch_records: Vec<_> = contributions
+        .iter()
+        .map(crate::symbolic::PreparedContribution::patch_record)
+        .collect();
     crate::heap_census::emit_if_enabled("lowering.ready", |census| {
         census.frontend(frontend);
         census.startup(startup);
@@ -709,6 +719,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     // Reusable startup facts never retain executable syntax.
     drop(bodies);
     measurement.complete();
+    dm_profile::request_mark("cold.lowered");
     // Discover anonymous descriptors only from actual emitted operand sites.
     // Recursive descriptor initializers append to one request-local graph.
     let seeds = initialization
@@ -737,6 +748,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     drop(modified_defaults);
     crate::modified_output::contribute(&modified.descriptors, &mut inventory)
         .map_err(ColdError::Initializer)?;
+    dm_profile::request_mark("cold.modified_collected");
     let modified_stage = crate::modified_initializers::Stage {
         descriptors: &modified.descriptors,
         types: declarations.type_values,
@@ -777,6 +789,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     )
     .map_err(ColdError::Initializer)?;
     measurement.complete();
+    dm_profile::request_mark("cold.required_types");
     let stage = Instant::now();
     let measurement = StageMeasurement::new(observer, ColdStage::SymbolicLinking);
     let initialization: Vec<crate::initialization_artifact::InitializationArtifact> =
@@ -813,6 +826,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     )
     .map_err(ColdError::Linking)?;
     measurement.complete();
+    dm_profile::request_mark("cold.linked");
     let symbolic_linking = stage.elapsed();
     crate::heap_census::emit_if_enabled("linking.ready", |census| {
         census.frontend(frontend);
@@ -830,6 +844,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         symbols: std::sync::Arc::clone(&plan.symbols),
         startup: Some(startup.facts()),
         query_abi: None,
+        patch_records,
         timings: ColdTimings {
             abi_preparation: Duration::ZERO,
             lowering,

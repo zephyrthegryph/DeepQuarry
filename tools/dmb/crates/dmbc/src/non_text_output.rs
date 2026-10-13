@@ -330,6 +330,10 @@ impl PreparedOutputStage {
     pub(super) fn into_archive(self) -> crate::assets::ResourceArchive {
         self.resources.archive
     }
+    /// Identity of the archive this stage will publish.
+    pub(crate) fn archive_identity(&self) -> crate::publish::ResourceIdentity {
+        self.resources.archive.identity()
+    }
     /// Transfer publication bytes while retaining the same authenticated archive
     /// identity. DMB/skin emission reads resource rows and inventory, not RSC bytes.
     pub(super) fn take_archive(&mut self) -> crate::assets::ResourceArchive {

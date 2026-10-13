@@ -978,5 +978,45 @@ pub fn detail_mark(label: &'static str, start: Instant) {
     static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     if *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|v| v == "1")) {
         eprintln!("detail mark {label}: {:.3}s", start.elapsed().as_secs_f64());
+        request_mark(label);
+    }
+}
+
+static REQUEST_ORIGIN: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
+fn detail_enabled() -> bool {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|v| v == "1"))
+}
+/// Starts the request timeline used by [`request_mark`] (`DMB_TIMINGS_DETAIL=1`).
+/// The daemon calls it when a build request arrives, so the timeline covers
+/// admission, the build and the reply; one-shot builds start it in the runner.
+pub fn request_marks_begin() {
+    if detail_enabled() {
+        *REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner()) = Some(Instant::now());
+    }
+}
+/// Starts the request timeline only when none is running.
+pub fn request_marks_begin_if_idle() {
+    if detail_enabled() {
+        let mut origin = REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner());
+        if origin.is_none() {
+            *origin = Some(Instant::now());
+        }
+    }
+}
+/// Ends the request timeline after printing a final mark.
+pub fn request_marks_end(label: &'static str) {
+    if detail_enabled() {
+        request_mark(label);
+        *REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    }
+}
+/// Prints `detail rmark <label>: <seconds since request arrival>` when
+/// `DMB_TIMINGS_DETAIL=1`. Consecutive marks attribute the whole request wall.
+pub fn request_mark(label: &'static str) {
+    if detail_enabled() {
+        if let Some(origin) = *REQUEST_ORIGIN.lock().unwrap_or_else(|e| e.into_inner()) {
+            eprintln!("detail rmark {label}: {:.3}s", origin.elapsed().as_secs_f64());
+        }
     }
 }

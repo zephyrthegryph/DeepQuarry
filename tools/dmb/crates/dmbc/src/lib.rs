@@ -93,6 +93,7 @@ pub mod non_text_output;
 pub mod resource_order;
 
 pub mod captured_non_text_driver;
+pub mod body_patch;
 pub mod compile_driver;
 mod request_lease;
 pub mod required_types;

@@ -744,6 +744,7 @@ pub use prepared_contribution::{
     link_prepared_artifact_tables_on_executor_with_bindings, prepare_contribution,
     PreparedContribution, PreparedModifiedSeed, ReusableProcedureArtifact,
 };
+pub(crate) use prepared_contribution::PreparedPatchRecord;
 
 #[cfg(test)]
 #[path = "symbolic_tests.rs"]

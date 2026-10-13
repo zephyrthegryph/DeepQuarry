@@ -5,6 +5,25 @@ use dm_codegen_byond::lower_resolver::ResolverProc;
 
 pub use super::procedure_artifact::ReusableProcedureArtifact;
 pub use crate::modified_initializers::PreparedSeed as PreparedModifiedSeed;
+/// Patch-eligibility facts of one contribution (see `crate::body_patch`).
+#[derive(Clone)]
+pub(crate) struct PreparedPatchRecord {
+    pub record: super::procedure_artifact::patch::PatchRecord,
+    pub effective: bool,
+    pub required_types: Arc<[SymbolId]>,
+    /// Anonymous modified-instance seeds feed shared descriptor tables.
+    pub modified: bool,
+}
+impl PreparedPatchRecord {
+    pub(crate) fn footprint(&self) -> super::procedure_artifact::patch::Footprint {
+        let mut parts = self.record.footprint();
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(&[u8::from(self.effective), u8::from(self.modified)]);
+        hash.update(format!("{:?}", self.required_types).as_bytes());
+        parts.push(("sidecars", hash.digest128()));
+        parts
+    }
+}
 pub struct PreparedContribution {
     identity: UnitIdentity,
     effective: bool,
@@ -36,6 +55,18 @@ impl PreparedContribution {
                 _ => false,
             }
             && self.contribution.verification_equal(&other.contribution)
+    }
+    pub(crate) fn patch_record(&self) -> PreparedPatchRecord {
+        PreparedPatchRecord {
+            record: self.contribution.patch_record(),
+            effective: self.effective,
+            required_types: Arc::clone(&self.required_types),
+            modified: !self.modified_seeds.is_empty()
+                || self
+                    .modified_recipes
+                    .as_ref()
+                    .is_some_and(|recipes| !recipes.is_empty()),
+        }
     }
     pub(crate) fn current_warnings(
         &self,
