@@ -282,4 +282,4 @@ CAPABILITIES(/obj/machinery/washing_machine)
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon
 
-TRACKED_BRIDGED(/obj/machinery/washing_machine, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/washing_machine, state)

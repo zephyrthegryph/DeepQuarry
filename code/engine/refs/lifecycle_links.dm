@@ -11,14 +11,6 @@
 /datum/proc/lifecycle_prerelease()
 	return
 
-/// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
-/// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
-/// cache may hold object references; the object-model core nulls it when the
-/// rule fires (om_cache_scan(), entity.dm), and tools/ci/declared_refs_lint.py
-/// rejects an entry with no rule.
-/datum/proc/declared_cache_vars()
-	return null
-
 /// Phase 4 (doc/rewrite/lifecycle.md sec 2): rich relation edges, watches and forwards (the OM
 /// core), the sparse declared links, then owned values by policy, then REF views on both ends.
 /proc/dq_lifecycle_clear_links(datum/D)

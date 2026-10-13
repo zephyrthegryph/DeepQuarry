@@ -27,7 +27,6 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)
 	hide_under_floor(src, intact)
-	changed(src)
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/bluespace_beacon/draw(datum/look/look)

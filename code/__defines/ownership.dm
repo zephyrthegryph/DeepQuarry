@@ -74,7 +74,7 @@
 /// REL: TRUE when the view is a list (1:N side, symmetric membership).
 #define OWNE_LIST 5
 /// REL: the target var names the holder's reactive procs read (watch =), or null. While linked,
-/// a changed() of the target marks the holder changed too.
+/// a state_changed() of the target marks the holder changed too.
 #define OWNE_WATCH 6
 /// REL: CLEAR or DELETE_ME (other_deleted =).
 #define OWNE_OTHER_DELETED 7

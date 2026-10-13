@@ -34,11 +34,7 @@ FIRE ALARM
 
 /// TRUE while the fire alarm's lockdown countdown runs.
 /obj/machinery/firealarm/var/timing = 0
-TRACKED_BRIDGED(/obj/machinery/firealarm, timing, CHANGE_MACHINE_SETTINGS)
-/datum/scheduler_field_definition/obj/machinery/firealarm/timing
-	of = /obj/machinery/firealarm
-	field = "timing"
-	channel = CHANGE_MACHINE_SETTINGS
+TRACKED(/obj/machinery/firealarm, timing)
 
 CAPABILITIES(/obj/machinery/firealarm)
 	rolls(ROLL_PIXEL, PROC_REF(roll_wall_offset))

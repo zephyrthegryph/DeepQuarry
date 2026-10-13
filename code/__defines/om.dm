@@ -30,20 +30,6 @@
 #define CHANGE_RELATED (1<<7)
 
 
-// Machine family.
-#define CHANGE_MACHINE_POWER (1<<8)
-#define CHANGE_MACHINE_PANEL (1<<9)
-#define CHANGE_MACHINE_BROKEN (1<<10)
-#define CHANGE_MACHINE_ANCHORED (1<<11)
-#define CHANGE_MACHINE_OCCUPANT (1<<12)
-/// Settings a player or program changed (input/output levels, breakers, modes).
-#define CHANGE_MACHINE_SETTINGS (1<<16)
-
-// Generic datum family (framework-owned datums: sessions, edges, tasks).
-#define CHANGE_DATUM_A (1<<8)
-#define CHANGE_DATUM_B (1<<9)
-#define CHANGE_DATUM_C (1<<10)
-
 // Rust -> DM change delivery sources (code/datums/om/native_adapter.dm).
 #define NATIVE_SRC_GAS_EVENT 1
 #define NATIVE_SRC_GAS_WATCH 2
@@ -227,22 +213,6 @@
 #define PERIODIC_SECOND /datum/cadence/second
 #define PERIODIC_FAST /datum/cadence/fast
 
-// ---------------------------------------------------------------- published facts as change channels
-// What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
-// whatever waits on it watches those channels with its own behaviour.
-
-/// Machine family: a mode another machine or program may wait on changed (door bolts, power,
-/// electrification, open state; an APC's operating state).
-#define CHANGE_MACHINE_MODE (1<<18)
-// Bits 22 and 23 are the last two a DM bitfield holds (24-bit bitwise operators).
-/// Any atom: its integrity changed (update_integrity()); the get_integrity derived field.
-#define CHANGE_INTEGRITY (1<<23)
-/// Power machine family, raised on every machine bound to a power region
-/// (code/modules/power/power_grid.dm): the region's supply or load moved; its
-/// brownout or monitor warning changed; a machine joined or left it.
-#define CHANGE_POWER_GRID_RATE (1<<19)
-#define CHANGE_POWER_GRID_STATE (1<<20)
-#define CHANGE_POWER_GRID_TOPOLOGY (1<<21)
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1
 	#define SHUTTLE_SCHEDULE_SUPPLY 2
@@ -250,11 +220,6 @@
 /// om_guarded_call(): the callee slept (it finishes on its own; its result is lost).
 #define OM_CALLEE_SLEPT "__om_callee_slept"
 // STEP_NEXT, STEP_DONE, STEP_REPEAT() and STEP_FAIL() are code/__defines/engine/tasks.dm's.
-
-// ---- Declared caches (lifecycle.md §4, LC-refs): the invalidation rule each entry of
-// declared_cache_vars() names. The core nulls the var when the rule fires.
-/// Cleared when any of `bits` is raised on the entity (changed / OM_CHANGED).
-#define CACHE_ON_CHANGE(bits) list("change", bits)
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 
@@ -265,7 +230,7 @@
 /// declared fields it reads (by name) and of raw channels for inputs that are not fields (a datum's
 /// own channel). Its channel is the union of the inputs' channels, resolved once per
 /// type (scheduler_field_field_table()), so every input setter raises it: nothing refreshes a derived field by
-/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_DATUM_A))`
+/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity"))`
 #define OM_DERIVE_FIELD(T, F, INPUTS) /datum/scheduler_field_definition##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
 // ---------------------------------------------------------------- om_prompt requires (prompt.dm)

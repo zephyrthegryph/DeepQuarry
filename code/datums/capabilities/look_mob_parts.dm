@@ -1,7 +1,7 @@
 // Look parts that name content types (an item worn on a mob, a living mob). The look builder itself is code/engine/present/appearance_builder.dm.
 
 /// A hat on a small mob: `hat`'s worn sprite (item_state, else icon_state, from the head icon) raised by `pixel_y`, keeping its own colour. Reads the
-/// hat's own state, so the mob hears a change of it; the mob's hat var is a relation or a changed() request.
+/// hat's own state, so the mob hears a change of it; the mob's hat var is a relation.
 /datum/look/proc/hat(obj/item/hat, pixel_y = 0, icon = 'icons/inventory/head/mob.dmi')
 	touched = TRUE
 	if(!hat)
