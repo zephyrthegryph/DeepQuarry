@@ -525,6 +525,7 @@
 #include "dq_kernel_measure_tests.dm"
 #include "dq_e0_proofs_tests.dm"
 #include "dq_e1_declare_tests.dm"
+#include "dq_table_cache_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_hop_tests.dm"
 #include "dq_life_wake_tests.dm"

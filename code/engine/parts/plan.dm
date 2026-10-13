@@ -633,13 +633,56 @@
 /proc/op_validate_table(datum/type_table/T)
 	var/datum/op_index/index = op_index_of_table(T)
 	var/list/plans = index.ordered
-	for(var/i in 1 to length(plans))
-		for(var/j in i + 1 to length(plans))
-			var/datum/op_plan/A = plans[i]
-			var/datum/op_plan/B = plans[j]
-			var/clash = op_plans_clash(A, B)
-			if(clash)
-				table_error(T, B.origin, declare_rule(RULE_OP_CLASH), "ops \"[A.key]\" ([A.origin]) and \"[B.key]\" take the same input ([clash]) at the same tier ([op_tier_name(A.tier)])", "give one a different input, a different tier, or passes() on the first; order them in the composing bundle's click_order(), or with priority(above(\"[A.key]\")); or make their when() parts mutually exclusive")
+	for(var/pair in op_clash_candidates(plans))
+		var/datum/op_plan/A = plans[pair[1]]
+		var/datum/op_plan/B = plans[pair[2]]
+		var/clash = op_plans_clash(A, B)
+		if(clash)
+			table_error(T, B.origin, declare_rule(RULE_OP_CLASH), "ops \"[A.key]\" ([A.origin]) and \"[B.key]\" take the same input ([clash]) at the same tier ([op_tier_name(A.tier)])", "give one a different input, a different tier, or passes() on the first; order them in the composing bundle's click_order(), or with priority(above(\"[A.key]\")); or make their when() parts mutually exclusive")
+
+/// The text two bindings must share to answer the same input (op_plans_clash() compares exactly this), or null for a binding that never clashes.
+/proc/op_binding_input_key(datum/op_plan/P, datum/entry/part/bind/B)
+	switch(B.bind_kind)
+		if(BIND_UI)
+			return "[B.bind_kind]|ui|[B.args["action"] || P.key]"
+		if(BIND_TOPIC)
+			return "[B.bind_kind]|topic|[B.args["key"]]"
+		if(BIND_MENU, BIND_AI)
+			return null // chosen by key, and keys are unique
+	return "[B.bind_kind]|[B.sig]"
+
+/// The pairs (i, j), i < j, of `plans` that share at least one binding input, in the order the full i-then-j walk would reach them: the only
+/// pairs op_plans_clash() can report, because it returns null unless some binding of one equals some binding of the other.
+/proc/op_clash_candidates(list/plans)
+	var/list/buckets = list()
+	var/list/seen_pairs = list()
+	var/list/pairs = list()
+	var/count = length(plans)
+	for(var/j in 1 to count)
+		var/datum/op_plan/B = plans[j]
+		var/list/mine = list()
+		for(var/datum/entry/part/bind/BB as anything in B.bindings)
+			var/key = op_binding_input_key(B, BB)
+			if(isnull(key) || mine[key])
+				continue
+			mine[key] = TRUE
+			var/list/earlier = buckets[key]
+			if(earlier)
+				for(var/i in earlier)
+					var/id = i * (count + 1) + j
+					if(seen_pairs["[id]"])
+						continue
+					seen_pairs["[id]"] = TRUE
+					pairs += id
+				earlier += j
+			else
+				buckets[key] = list(j)
+	pairs = sortTim(pairs, GLOBAL_PROC_REF(cmp_numeric_asc))
+	var/list/ordered = list()
+	for(var/id in pairs)
+		var/second = id % (count + 1)
+		ordered += list(list((id - second) / (count + 1), second))
+	return ordered
 
 /// The shared input text of two ops that would answer the same input at the same tier and intent, or null.
 /proc/op_plans_clash(datum/op_plan/A, datum/op_plan/B)
