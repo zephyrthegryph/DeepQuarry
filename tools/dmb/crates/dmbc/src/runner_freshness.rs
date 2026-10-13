@@ -95,6 +95,58 @@ pub(super) fn admit_live(
     admit(inputs, &current)
 }
 
+/// Live freshness admission started while compilation runs. Every input is
+/// captured once the frontend, resources and maps are done; the sweep then
+/// proves the captured stamps still hold. Publication uses the result only
+/// when its captured snapshot is identical to the swept one (anything recorded
+/// later forces the ordinary synchronous admission).
+pub(super) struct EarlyAdmission {
+    worker: Option<std::thread::JoinHandle<(InputSnapshot, Result<(), String>)>>,
+}
+
+impl EarlyAdmission {
+    pub(super) fn start(
+        inputs: InputSnapshot,
+        provider: &crate::frozen_inputs::Inputs,
+        generated_outputs: &std::collections::BTreeSet<std::path::PathBuf>,
+    ) -> Self {
+        if !matches!(provider, crate::frozen_inputs::Inputs::Live) {
+            return Self { worker: None };
+        }
+        let generated = generated_outputs.clone();
+        let worker = std::thread::Builder::new()
+            .name("dmbc-early-admission".into())
+            .spawn(move || {
+                let started = std::time::Instant::now();
+                let result = admit_live(&inputs, &generated).map_err(|error| error.to_string());
+                crate::daemon_eprintln!(
+                    "native early admission: {:.3}s files={} result={:?}",
+                    started.elapsed().as_secs_f64(),
+                    inputs.file_paths().count(),
+                    result
+                );
+                (inputs, result)
+            })
+            .ok();
+        Self { worker }
+    }
+
+    /// The admitted snapshot when the early sweep proved exactly `current`.
+    pub(super) fn finish(mut self, current: &InputSnapshot) -> Option<InputSnapshot> {
+        let (swept, result) = self.worker.take()?.join().ok()?;
+        if result.is_err() {
+            return None;
+        }
+        if &swept != current {
+            crate::daemon_eprintln!(
+                "native early admission unused: inputs recorded after the sweep started"
+            );
+            return None;
+        }
+        Some(swept)
+    }
+}
+
 /// The captured inputs without a live freshness sweep: the body-patch gate
 /// only compares them with its base; publication still admits them live.
 pub(super) fn snapshot_captured<P: SnapshotProvider>(

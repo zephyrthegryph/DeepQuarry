@@ -793,6 +793,14 @@ fn run_build_attempt(
         // One immutable captured host for this compile. Consumer read recording
         // remains outside this optimization, including on memo hits.
         dmbc::daemon::control::checkpoint()?;
+        // Every input is captured now; prove freshness while compilation runs.
+        let early_admission = match runner_freshness::snapshot_captured(&inputs_capture, nontext.retained_resource_inputs()) {
+            Ok(inputs) => Some(runner_freshness::EarlyAdmission::start(inputs, &input_provider, generated_paths)),
+            Err(error) => {
+                dmbc::daemon_eprintln!("native early admission skipped: {error}");
+                None
+            }
+        };
         // Body-edit fast path: relower only changed bodies and splice their code
         // into the retained output. Any unproven condition declines (logged) and
         // the full compilation below runs. DMB_BODY_PATCH=0 disables it.
@@ -1060,7 +1068,20 @@ fn run_build_attempt(
             Some(session) => session.identity()?,
             None => xxhash_rust::xxh3::xxh3_128(project.to_string_lossy().as_bytes()),
         };
-        let publication_inputs = runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?;
+        // A live admission (early or here) already proved these exact inputs,
+        // so the session record below needs no second freshness sweep.
+        let early_inputs = early_admission.and_then(|early| {
+            runner_freshness::snapshot_captured(&inputs_capture, publication.retained_resource_inputs.as_ref())
+                .ok()
+                .and_then(|current| early.finish(&current))
+        });
+        let early_admitted = early_inputs.is_some();
+        let publication_inputs = match early_inputs {
+            Some(inputs) => inputs,
+            None => runner_freshness::admit_captured(&inputs_capture, publication.retained_resource_inputs.as_ref(), &input_provider, generated_paths)?,
+        };
+        let live_admitted = early_admitted || !matches!(input_provider, dmbc::frozen_inputs::Inputs::Replay(_));
+        dmbc::daemon_eprintln!("native publication admission: early={early_admitted} live={live_admitted}");
         input_provider.finish()?;
         inputs_capture.finish_prepared()?;
         dm_profile::request_mark("publication.inputs_admitted");
@@ -1118,9 +1139,15 @@ fn run_build_attempt(
         let publication_proof = verification_capture.then(|| crate::publication_proof::issue_with_resource_admission(&publication_inputs, &pair, &project, &defines, engine_identity, bootstrap_catalog, store.root_path(), resource_journal_admission)).transpose().map_err(|error| std::io::Error::other(format!("output pair {} was published, but native input proof issuance failed: {error}", pair.name())))?;
         if !verification_capture && (session.is_some() || resource_owner.is_some()) {
             let inputs = publication_inputs;
-            let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
-            let publication_proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_publication_proofs, generated_paths.iter().cloned());
-            if inputs.restat(&publication_proofs)?.unchanged() {
+            // The record pairs the compiled snapshot with its output; a live
+            // admission already proved it, so only replayed inputs sweep again.
+            let unchanged = live_admitted || {
+                let raw_publication_proofs = dmbc::filesystem_proofs::BulkFileSystemProofs::capture_snapshot(&inputs)?;
+                let publication_proofs = dmbc::input_snapshot::GeneratedOutputInputs::new(&raw_publication_proofs, generated_paths.iter().cloned());
+                inputs.restat(&publication_proofs)?.unchanged()
+            };
+            dm_profile::request_mark("publication.session_admitted");
+            if unchanged {
                 let mut outputs = dmbc::input_snapshot::InputSnapshot::new(now_ns());
                 installation.record_outputs(&mut outputs)?;
                 let asset_paths = publication
@@ -1144,6 +1171,7 @@ fn run_build_attempt(
                     });
                 }
                 if let Some(engine) = &engine_capture { query_attempt.bind_publication_proof(&inputs, &engine.bytes); }
+                dm_profile::request_mark("publication.resource_manifest");
                 if let Some(session) = &session {
                     session.store(dmbc::session::Record { inputs, pair: pair.id,
                         outputs: Some(outputs), warnings: dmbc::initializer_policy::warnings::render(&output.warnings)?, resource_manifest: Some((*resource_manifest).clone()) })?;
