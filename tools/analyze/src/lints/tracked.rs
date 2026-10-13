@@ -1022,7 +1022,7 @@ fn drop_declared(engine: &crate::run::Engine, root: &std::path::Path, apply: boo
     let defs = crate::gens::auto_tracked::setter_defs(&sem);
     let outside = crate::gens::auto_tracked::writes_outside_setters(&sem);
     let scopes = crate::scopes::Scopes::load(&root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
-    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).chain(scopes.for_lint("auto_tracked", "").list("exclude_heat")).cloned().collect();
+    let exclude: Vec<String> = scopes.for_lint("auto_tracked", "").list("exclude").iter().chain(scopes.for_lint("auto_tracked", "").list("exclude_fixtures")).chain(scopes.for_lint("auto_tracked", "").list("exclude_heat")).chain(scopes.for_lint("auto_tracked", "").list("exclude_memo")).cloned().collect();
     let line_pat = pat_match!(r"^(\s*)TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)\s*(?://.*)?$");
     let (mut dropped, mut kept) = (0usize, 0usize);
     for f in tree.select(&CODE_DM) {

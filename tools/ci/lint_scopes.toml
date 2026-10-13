@@ -128,6 +128,9 @@ exempt_files = ["code/__defines/tgs.dm"]
 exclude = ["gc_destroyed", "vg_entity"]
 # The heat domain bans a proc named set_temperature() outside code/domains/ (check_grep heat_raw_temperature_writes), so a generated setter for a var called
 # `temperature` would be a violation by name; a generator's own temperature belongs in the heat domain.
+# A lazily refreshed accumulator: check_charge() (reached from conditions and draws) tops it up from the clock, so the write happens inside an output
+# (PURITY). It is a memo of time, not state anything publishes.
+exclude_memo = ["/obj/item/cell::material_discharge_credit"]
 exclude_heat = ["/obj/machinery/power/port_gen/pacman::temperature"]
 # Test fixtures that count their own draws from inside draw(): an output must not write tracked state (PURITY), and the counter is the test's probe.
 exclude_fixtures = ["/obj/dq_small_look_composer::draws", "/obj/machinery/dq_idle_redraw_probe::draws", "/obj/item/remote_scene_tool/voodoo_doll/dq_small_counting::draws", "/obj/cap_fixture/dx_deps_derive::draw_calls", "/obj/cap_fixture/dx_deps_laser::draw_calls", "/obj/cap_fixture/dx_deps_legacy::draw_calls", "/obj/cap_fixture/dx_deps_watcher::draw_calls"]

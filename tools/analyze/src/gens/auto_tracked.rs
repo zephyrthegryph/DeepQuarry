@@ -237,7 +237,7 @@ pub fn inferred(tree: &Tree) -> Arc<Option<AutoSet>> {
         let sem = crate::sem::sem_for(tree)?;
         let scopes = crate::scopes::Scopes::load(&tree.root.join("tools/ci/lint_scopes.toml")).unwrap_or_default();
         let scope = scopes.for_lint("auto_tracked", "");
-        let exclude: Vec<String> = scope.list("exclude").iter().chain(scope.list("exclude_fixtures")).chain(scope.list("exclude_heat")).cloned().collect();
+        let exclude: Vec<String> = scope.list("exclude").iter().chain(scope.list("exclude_fixtures")).chain(scope.list("exclude_heat")).chain(scope.list("exclude_memo")).cloned().collect();
         Some(decide(&sem, &an.candidates, &exclude))
     })
 }

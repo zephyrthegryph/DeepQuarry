@@ -136,9 +136,9 @@ CAPABILITIES(/obj/item/cell)
 
 /obj/item/cell/proc/refresh_material_discharge()
 	if(isnull(material_discharge_credit))
-		set_material_discharge_credit(material_discharge_limit)
+		material_discharge_credit = material_discharge_limit
 	else
-		set_material_discharge_credit(min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit))
+		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
 	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
@@ -289,7 +289,7 @@ CAPABILITIES(/obj/item/cell)
 		debited = charge_before - charge
 	used = min(used, debited)
 	if(span <= 1)
-		set_material_discharge_credit(material_discharge_credit - used)
+		material_discharge_credit -= used
 	var/datum/material_service/service = material_service_of(src)
 	if(service)
 		service.input_joules += debited / CELLRATE

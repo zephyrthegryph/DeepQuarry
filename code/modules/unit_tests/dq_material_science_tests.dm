@@ -335,7 +335,7 @@
 /datum/unit_test/dq_material_cell_delivery_and_rebuild/Run()
 	var/obj/item/cell/cell = new(run_loc_floor_bottom_left)
 	cell.set_material_discharge_limit(10)
-	cell.set_material_discharge_credit(10)
+	cell.material_discharge_credit = 10
 	cell.set_material_discharge_updated(world.time)
 	var/before = cell.charge
 	TEST_ASSERT(!cell.checked_use(20), "An action requiring more than the conductor can deliver must fail")

@@ -636,6 +636,8 @@ draw_untracked	code/modules/paperwork/clipboard.dm	return toppaper
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.state(top.icon_state)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	for(var/list/mark in top.stamp_marks)
 draw_untracked	code/modules/paperwork/paper_bundle.dm	look.overlay(Ph.tiny)
+draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
+draw_untracked	code/modules/power/cell.dm	if(isnull(material_discharge_credit))
 draw_untracked	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	look.overlay(look_overlay_image(icon, "fuel_assembly", color = fuel_colour))
 draw_untracked	code/modules/power/fusion_coil.dm	look.overlay(mutable_appearance(icon, "fc_unstable"))
 draw_untracked	code/modules/power/lighting.dm	overlay_layer = image(icon, "[provided_state]-overlay")
