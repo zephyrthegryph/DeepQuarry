@@ -27,7 +27,6 @@
 
 	var/datum/gas_mixture/faketank
 	var/faketank_integrity
-TRACKED(/obj/machinery/bomb_tester, simulating)
 
 CAPABILITIES(/obj/machinery/bomb_tester)
 	configure(uses_power(idle = 50, active = 1.5 KILOWATTS))

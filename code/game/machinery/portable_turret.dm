@@ -103,8 +103,6 @@
 	/// How many machine frames the cover stays up after the turret last had a target.
 	var/timeout = 10
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
-TRACKED(/obj/machinery/porta_turret, icon_color)
-TRACKED(/obj/machinery/porta_turret, lethal_icon_color)
 
 TRACKED(/obj/machinery/porta_turret, enabled)
 TRACKED(/obj/machinery/porta_turret, power_held)

@@ -23,8 +23,6 @@
 	/// Dried up (dry()): drawn darker, under its dried name.
 	var/dried = FALSE
 
-TRACKED(/obj/effect/decal/cleanable/blood, synthblood)
-TRACKED(/obj/effect/decal/cleanable/blood, dried)
 
 /// The colour of the blood when wet ("rainbow" is a random one, chosen here). A change is drawn.
 /obj/effect/decal/cleanable/blood/proc/set_basecolor(value)

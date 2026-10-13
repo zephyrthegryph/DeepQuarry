@@ -13,7 +13,6 @@
 	var/festive = FALSE // If true, adds a festive bow overlay to it.
 
 TRACKED(/obj/structure/lightpost, lit)
-TRACKED(/obj/structure/lightpost, festive)
 
 /// The glow and the light while it is lit, the bow when it is festive. The one emissive blocker is the atom's own (doc/rewrite/intended_changes.md).
 /obj/structure/lightpost/draw(datum/look/look)

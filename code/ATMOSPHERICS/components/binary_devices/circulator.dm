@@ -27,8 +27,6 @@
 
 	density = TRUE
 
-TRACKED(/obj/machinery/atmospherics/binary/circulator, temperature_overlay)
-TRACKED(/obj/machinery/atmospherics/binary/circulator, run_state)
 
 MSG_DEF(circulator/secured, "You secure the bolts holding %T% to the floor.", "%U% secures the bolts holding %T% to the floor.")
 MSG_DEF(circulator/unsecured, "You unsecure the bolts holding %T% to the floor.", "%U% unsecures the bolts holding %T% to the floor.")

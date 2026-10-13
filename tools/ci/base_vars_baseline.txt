@@ -66,7 +66,6 @@ base_var	code/datums/sparse_vars/alt_appearance.dm	var/tmp/list/datum/alternate_
 base_var	code/datums/variants/gear_tweak_variant.dm	var/variant
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_touched_at)
 base_var	code/engine/refs/containment/latency_policy.dm	EXPIRY_TMP_DECLARE(latent_refused_until)
-base_var	code/game/atom/_atom.dm	var/level = 2
 base_var	code/game/atom/_atom.dm	var/flags = NONE
 base_var	code/game/atom/_atom.dm	var/pass_flags = 0
 base_var	code/game/atom/_atom.dm	var/throwpass = 0
@@ -88,7 +87,6 @@ base_var	code/game/atom/armor.dm	var/armor_spec
 base_var	code/game/atom/armor.dm	var/tmp/datum/armor_override
 base_var	code/game/atom/atom_defense.dm	var/uses_integrity = FALSE
 base_var	code/game/atom/atom_defense.dm	VAR_PRIVATE/atom_integrity //defaults to max_integrity
-base_var	code/game/atom/atom_defense.dm	var/max_integrity = 500
 base_var	code/game/atom/atom_defense.dm	var/integrity_failure = 0 //0 if we have no special broken behavior, otherwise is a percentage of at what point the atom breaks. 0.5 being 50%
 base_var	code/game/atom/atom_defense.dm	var/damage_deflection = 0
 base_var	code/game/atom/atom_defense.dm	var/resistance_flags = NONE // INDESTRUCTIBLE | LAVA_PROOF | FIRE_PROOF | ON_FIRE | UNACIDABLE | ACID_PROOF
@@ -107,7 +105,6 @@ base_var	code/game/atoms_movable.dm	var/datum/thrownthing/throwing // running: s
 base_var	code/game/atoms_movable.dm	var/tmp/datum/throw_source
 base_var	code/game/atoms_movable.dm	var/throw_speed = 2
 base_var	code/game/atoms_movable.dm	var/throw_range = 7
-base_var	code/game/atoms_movable.dm	var/item_state = null // Used to specify the item state for the on-mob overlays.
 base_var	code/game/atoms_movable.dm	var/icon_scale_x = DEFAULT_ICON_SCALE_X // Used to scale icons up or down horizonally in update_transform().
 base_var	code/game/atoms_movable.dm	var/icon_scale_y = DEFAULT_ICON_SCALE_Y // Used to scale icons up or down vertically in update_transform().
 base_var	code/game/atoms_movable.dm	var/icon_rotation = DEFAULT_ICON_ROTATION // Used to rotate icons in update_transform()
@@ -128,8 +125,6 @@ base_var	code/game/gamemodes/endgame/supermatter_cascade/portal.dm	var/tmp/image
 base_var	code/game/gamemodes/technomancer/instability.dm	var/last_instability = 0 // Used to calculate instability delta.
 base_var	code/game/gamemodes/technomancer/instability.dm	EXPIRY_DECLARE(last_instability_event) // most recent world.time that something bad happened due to instability.
 base_var	code/game/gamemodes/technomancer/spells/summon/summon.dm	var/summoned = 0
-base_var	code/game/jobs/access.dm	/obj/var/list/req_access
-base_var	code/game/jobs/access.dm	/obj/var/list/req_one_access
 base_var	code/game/machinery/machinery.dm	var/use_power = USE_POWER_IDLE
 base_var	code/game/machinery/machinery.dm	var/tmp/power_init_complete = FALSE
 base_var	code/game/machinery/machinery.dm	var/list/component_parts = null
@@ -163,9 +158,6 @@ base_var	code/game/objects/items.dm	var/slowdown = 0 // How much clothing is slo
 base_var	code/game/objects/items.dm	var/zoomdevicename = null //name used for message when binoculars/scope is used
 base_var	code/game/objects/items.dm	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 base_var	code/game/objects/items.dm	var/embed_chance = -1 //0 won't embed, and 100 will always embed
-base_var	code/game/objects/items.dm	var/icon_override = null //Used to override hardcoded clothing dmis in human clothing proc.
-base_var	code/game/objects/items.dm	var/list/item_state_slots //overrides the default item_state for particular slots.
-base_var	code/game/objects/items.dm	var/list/item_icons
 base_var	code/game/objects/items.dm	var/list/sprite_sheets
 base_var	code/game/objects/items.dm	var/list/sprite_sheets_obj
 base_var	code/game/objects/items.dm	var/worn_layer //Default on-mob layer

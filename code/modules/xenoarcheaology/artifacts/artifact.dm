@@ -19,7 +19,6 @@
 	var/artifact_master_type = /datum/artifact_master
 	/// The air of its tile is at or past ARTIFACT_HEAT_BREAK (gas_level()).
 	var/overheated = FALSE
-TRACKED(/obj/machinery/artifact, icon_num)
 TRACKED(/obj/machinery/artifact, overheated)
 
 /// Air too hot: it breaks. Its tile's air crossing ARTIFACT_HEAT_BREAK turns `overheated` (gas_level(), code/domains/atmos/gas_level.dm), and a

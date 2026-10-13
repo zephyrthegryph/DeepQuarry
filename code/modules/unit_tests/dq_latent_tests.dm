@@ -405,7 +405,7 @@
 	for(var/atom/movable/thing as anything in contents_of(L))
 		TEST_ASSERT(!istype(thing, /obj/item/light) && !istype(thing, /obj/item/cell), "no parts in contents: [thing.type]")
 	var/latent_charge = L.latent_cell_charge
-	L.status = LIGHT_BURNED
+	L.set_status(LIGHT_BURNED)
 	L.switchcount = 7
 	var/obj/item/light/B = L.bulb()
 	TEST_ASSERT(istype(B, L.light_type), "bulb() makes the fitted type")
@@ -430,7 +430,7 @@
 	if(!L.has_cell())
 		return
 	L.latent_cell_charge = 100
-	L.status = LIGHT_OK
+	L.set_status(LIGHT_OK)
 	TEST_ASSERT(L.has_emergency_power(0.2), "a charged latent cell gives emergency power")
 	TEST_ASSERT(isnull(L.cell), "checking doesn't materialize")
 	L.set_grid_power(FALSE)

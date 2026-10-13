@@ -1,15 +1,6 @@
 ghost|none menu: Remove ID card (refused: You can't reach that.)
 ghost|none menu: Staff Request Form (refused: You can't do that.)
 ghost|none click: nothing
-human|/obj/item/paper menu: Create Area (refused: You can't do that.)
-human|/obj/item/paper menu: Insert
-human|/obj/item/paper menu: Move To Top
-human|/obj/item/paper menu: Remove ID card (refused: there is no ID card to remove)
-human|/obj/item/paper menu: Rename paper (refused: You can't do that.)
-human|/obj/item/paper menu: Staff Request Form
-human|/obj/item/paper menu: Toggle Digestable (refused: You can't do that.)
-human|/obj/item/paper menu: Use
-human|/obj/item/paper click: Click: Insert
 human|/obj/item/paper_bundle menu: Insert
 human|/obj/item/paper_bundle menu: Loose bundle (refused: You can't do that.)
 human|/obj/item/paper_bundle menu: Move To Top

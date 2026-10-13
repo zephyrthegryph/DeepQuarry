@@ -52,7 +52,7 @@ BLOOD_VOLUME_SURVIVE = 40
 
 			var/changeling_blood = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || has_trait(src, TRAIT_REDSPACE_CORRUPTED)
 			B.data["changeling"] = changeling_blood
-			B.color = B.data["blood_colour"]
+			B.set_color(B.data["blood_colour"])
 			B.name = B.data["blood_name"]
 
 //Makes a blood drop, leaking amt units of blood from the mob
@@ -95,7 +95,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(!B)
 		B = new /datum/reagent/blood
 	rel_set(B, nameof(B.holder), container.reagents)
-	B.volume += amount
+	B.set_volume(B.volume + amount)
 
 	//set reagent data
 	B.data["donor"] = src // ALLOW(ownership): reagent data is a plain payload dict shared with the chemistry code; donor is read back as a nullable mob
@@ -120,7 +120,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/mob/living/carbon/human/H = src
 		var/drawn_colour = H.species.get_blood_colour(H)
 		B.data["blood_colour"] = drawn_colour
-		B.color = B.data["blood_colour"]
+		B.set_color(B.data["blood_colour"])
 		// B17: drawn blood carries its species, as the vessel's does (fixblood()), so
 		// blood_incompatible() can refuse a cross-species transfusion.
 		var/datum/reagent/blood/own = H.vessel ? get_blood(H.vessel) : null

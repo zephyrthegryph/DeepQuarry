@@ -111,7 +111,6 @@ MSG_DEF_SELF(particle_smasher/cannot_act, "You can't do that right now.")
 		MSG_OTHERS("[user.name] [anchored ? "secures" : "unsecures"] [src.name] to the floor."), \
 		MSG_BLIND("You hear a ratchet."))
 
-TRACKED(/obj/machinery/particle_smasher, successful_craft)
 
 /// What the focus shows: open and filled with its target's colour once secured (glowing when a craft is waiting), its beaker, and a light
 /// in the target's colour that grows with the stored energy.

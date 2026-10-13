@@ -207,7 +207,6 @@
 	var/list/stock_suggested_prices
 	var/list/stock_stocker_accounts
 
-TRACKED(/obj/machinery/department_storefront, department_id)
 
 /obj/machinery/department_storefront/proc/set_up_storefront(datum/act/timer/A)
 	machine_id = "[station_name()] STOREFRONT #[GLOB.num_financial_terminals++]"

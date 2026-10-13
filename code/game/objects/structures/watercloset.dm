@@ -39,7 +39,6 @@
 
 TRACKED(/obj/structure/toilet, open)
 
-TRACKED(/obj/structure/toilet, cistern)
 
 TRACKED(/obj/structure/toilet, refilling)
 

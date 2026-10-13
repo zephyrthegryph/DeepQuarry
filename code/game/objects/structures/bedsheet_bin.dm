@@ -264,7 +264,7 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 		if(!own_bring_in(src, nameof(sheets), I, null, user, TRUE, null, FALSE))
 			return TRUE
 		rel_add(src, nameof(sheets), I)
-		amount++
+		set_amount(amount + 1)
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		if(!own_bring_in(src, nameof(hidden), I, null, user, TRUE, null, FALSE))
@@ -277,7 +277,7 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 /obj/structure/bedsheetbin/proc/interaction_hand(datum/act/op/A)
 	var/mob/user = A.actor
 	if(amount >= 1)
-		amount--
+		set_amount(amount - 1)
 
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
@@ -304,7 +304,7 @@ CAPABILITIES(/obj/structure/bedsheetbin)
 /obj/structure/bedsheetbin/proc/interaction_tk(datum/act/op/A)
 	var/mob/user = A.actor
 	if(amount >= 1)
-		amount--
+		set_amount(amount - 1)
 
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)

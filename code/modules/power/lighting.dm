@@ -91,12 +91,8 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/tmp/last_area_power = null
 
 TRACKED(/obj/machinery/light, status)
-TRACKED(/obj/machinery/light, current_alert)
-TRACKED(/obj/machinery/light, overlay_color)
-TRACKED(/obj/machinery/light, emergency_mode)
 TRACKED(/obj/machinery/light, nightshift_allowed)
 TRACKED(/obj/machinery/light, flickering)
-TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light)
 	configure(uses_power(idle = 2, active = 10, channel = LIGHT))
@@ -188,7 +184,6 @@ CAPABILITIES(/obj/machinery/light)
 	var/lamp_shade = 1
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 
-TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 /obj/machinery/light/flamp/flicker
 	auto_flicker = TRUE

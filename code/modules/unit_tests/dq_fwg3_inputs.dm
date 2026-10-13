@@ -118,7 +118,7 @@
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(tank.amount_per_transfer_from_this, 50, "the answered amount is set")
 	var/obj/structure/reagent_dispensers/watertank/fixed = allocate(/obj/structure/reagent_dispensers/watertank, T)
-	fixed.possible_transfer_amounts = null
+	fixed.set_possible_transfer_amounts(null)
 	TEST_ASSERT(!menu_has(H, fixed, "Set transfer amount"), "a tank with no amounts offers no setting")
 	var/obj/structure/reagent_dispensers/water_cooler/cooler = allocate(/obj/structure/reagent_dispensers/water_cooler, T)
 	cooler.cups = 2

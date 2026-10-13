@@ -199,7 +199,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 				return OP_PASS
 			O.post_mmi_setup()
 			O.invisibility = INVISIBILITY_NONE
-			O.custom_name = created_name
+			O.set_custom_name(created_name)
 			O.updatename("Default")
 
 			var/datum/mind_host/host = get_mind_host(M)

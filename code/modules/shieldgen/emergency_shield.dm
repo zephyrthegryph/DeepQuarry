@@ -112,9 +112,7 @@ CAPABILITIES(/obj/machinery/shield)
 	var/power_efficiency = 1 //Inverse. The lower, the more power efficient we are.
 	use_power = USE_POWER_OFF
 
-TRACKED(/obj/machinery/shieldgen, malfunction)
 
-TRACKED(/obj/machinery/shieldgen, is_open)
 
 MSG_DEF_SELF(shieldgen/rewiring, span_notice("You begin to replace the wires."))
 

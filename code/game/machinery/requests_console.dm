@@ -108,7 +108,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
-TRACKED(/obj/machinery/requests_console, newmessagepriority)
 
 /// What the console shows: dark without power, else its screen for the newest message's priority, lit.
 /obj/machinery/requests_console/draw(datum/look/look)

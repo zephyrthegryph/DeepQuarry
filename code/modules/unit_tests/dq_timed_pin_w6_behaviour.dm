@@ -424,7 +424,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/machinery/shieldgen/G = allocate(/obj/machinery/shieldgen, run_loc_floor_bottom_left)
 	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 10)
-	G.malfunction = 1
+	G.set_malfunction(1)
 	G.set_is_open(TRUE)
 	hold(user, C)
 	begin(user, G, C, 3 SECONDS, "You begin to replace the wires")
@@ -441,7 +441,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/machinery/shieldgen/G = allocate(/obj/machinery/shieldgen, run_loc_floor_bottom_left)
 	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 10)
-	G.malfunction = 1
+	G.set_malfunction(1)
 	G.set_is_open(TRUE)
 	hold(user, C)
 	var/datum/T = begin(user, G, C, 3 SECONDS)

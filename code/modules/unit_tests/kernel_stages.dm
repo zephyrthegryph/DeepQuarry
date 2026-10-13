@@ -46,11 +46,16 @@
 	TEST_ASSERT_EQUAL(W.lane, LANE_SIMULATION, "the burn is simulation work")
 	TEST_ASSERT(W.members && member_is(W.members, H), "a hotspot joins the work item's membership when it appears")
 	var/runs_before = W.member_runs
-	sleep(2 SECONDS)
-	if(!QDELETED(H))
-		TEST_ASSERT(W.member_runs > runs_before, "the kernel stepped the hotspot")
-		TEST_ASSERT(!H.just_spawned, "the hotspot's first step ran")
-		qdel(H)
+	// One pass of the item, driven here: a wall-clock sleep waits for the live kernel to get to it, and under load it may not within the wait. The first
+	// step of a new hotspot only clears just_spawned, so the hotspot is certainly still there after it.
+	W.next_run = 0
+	W.cursor = 0
+	W.yielded = FALSE
+	K.run_item(W, TICK_USAGE + 100, world.time + W.interval) // a whole tick of budget from here: the test's tick may already be spent
+	TEST_ASSERT(!QDELETED(H), "the hotspot's first step deleted it")
+	TEST_ASSERT(W.member_runs > runs_before, "the kernel stepped the hotspot")
+	TEST_ASSERT(!H.just_spawned, "the hotspot's first step ran")
+	qdel(H)
 	T.active_hotspot = null
 	TEST_ASSERT(!member_is(W.members, H), "a deleted hotspot left the membership")
 

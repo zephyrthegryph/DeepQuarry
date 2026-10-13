@@ -184,7 +184,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	var/obj/item/tool/screwdriver/S = allocate(/obj/item/tool/screwdriver, run_loc_floor_bottom_left)
-	N.open = 3
+	N.set_open(3)
 	user.put_in_active_hand(S)
 	nif_tool_click(user, N, S)
 	TEST_ASSERT(!isnull(running(user)), "a screwdriver on a repaired NIF starts a timed action")
@@ -200,7 +200,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
-	N.open = 2
+	N.set_open(2)
 	user.put_in_active_hand(M)
 	nif_tool_click(user, N, M)
 	TEST_ASSERT(!isnull(running(user)), "a multitool on a rewired NIF starts a timed action")
@@ -216,7 +216,7 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	var/obj/item/multitool/M = allocate(/obj/item/multitool, run_loc_floor_bottom_left)
-	N.open = 2
+	N.set_open(2)
 	user.put_in_active_hand(M)
 	nif_tool_click(user, N, M)
 	var/datum/T = running(user)
@@ -232,8 +232,8 @@
 	var/mob/living/carbon/human/user = person()
 	var/obj/item/nif/N = allocate(/obj/item/nif, run_loc_floor_bottom_left)
 	var/obj/item/stack/cable_coil/C = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 10)
-	N.open = 1
-	N.durability = 10
+	N.set_open(1)
+	N.set_durability(10)
 	user.put_in_active_hand(C)
 	test_click(user, N, C)
 	TEST_ASSERT(!isnull(running(user)), "cable on a damaged open NIF starts a timed action")
@@ -572,7 +572,7 @@
 /datum/unit_test/dq_timed_pin_w3/cass_revived_by_long_pet/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/simple_mob/vore/woof/cass/C = allocate(/mob/living/simple_mob/vore/woof/cass, get_step(run_loc_floor_bottom_left, EAST))
-	C.stat = DEAD
+	C.set_stat(DEAD)
 	user.set_use_stance(I_HELP)
 	test_click(user, C, null)
 	TEST_ASSERT(!isnull(running(user)), "a help touch on a dead Cass starts a timed action")
@@ -586,7 +586,7 @@
 /datum/unit_test/dq_timed_pin_w3/cass_pet_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
 	var/mob/living/simple_mob/vore/woof/cass/C = allocate(/mob/living/simple_mob/vore/woof/cass, get_step(run_loc_floor_bottom_left, EAST))
-	C.stat = DEAD
+	C.set_stat(DEAD)
 	user.set_use_stance(I_HELP)
 	test_chat_clear()
 	test_click(user, C, null)

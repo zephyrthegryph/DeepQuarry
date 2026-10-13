@@ -45,8 +45,8 @@
 	else //We're a puddle.
 		B.name = "puddle of something"
 	B.desc = "It's thick and gooey. Perhaps it's the chef's cooking?"
-	B.dryname = "dried something"
-	B.drydesc = "It's dry and crusty. The janitor isn't doing their job."
+	B.set_dryname("dried something")
+	B.set_drydesc("It's dry and crusty. The janitor isn't doing their job.")
 	dq_set_fluorescent(B, 0)
 	B.invisibility = INVISIBILITY_NONE
 

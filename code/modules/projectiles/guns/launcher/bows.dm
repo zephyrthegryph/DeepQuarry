@@ -47,7 +47,6 @@ CAPABILITIES(/obj/item/arrow/energy)
 
 	///Var for attack_self chain
 	var/hardlight = FALSE
-TRACKED(/obj/item/gun/launcher/crossbow/bow, drawn)
 
 /obj/item/gun/launcher/crossbow/bow/update_release_force(obj/item/projectile)
 	return 0

@@ -14,7 +14,6 @@
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.
 
-TRACKED(/obj/structure/flora/tree, is_stump)
 
 TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
 
@@ -349,7 +348,7 @@ TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 	var/light_shift = 0
 
 /obj/structure/flora/tree/sif/choose_icon_state(datum/roller/R)
-	light_shift = R.number(0, 5)
+	set_light_shift(R.number(0, 5))
 	return "[base_state][light_shift]"
 
 /obj/structure/flora/tree/sif/draw(datum/look/look)

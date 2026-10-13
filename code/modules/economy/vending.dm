@@ -109,8 +109,6 @@ MSG_DEF(vending/shorted, "You short out %T%'s product lock.", "%U% shorts out %T
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
 
 // What the window shows and what the machine's timed work reads.
-TRACKED(/obj/machinery/vending, vend_ready)
-TRACKED(/obj/machinery/vending, categories)
 TRACKED(/obj/machinery/vending, shut_up)
 /// Shocks its customers like an airlock: the shock wire cut (until mended) or pulsed (30 s), an event; live only while operable (shock_live()).
 STAT(/obj/machinery/vending, electrified, TOP, base = 0)
@@ -218,7 +216,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			product.price = (entry in prices) ? prices[entry] : 0
 			product.set_amount(spec["count"] || 1)
 			product.variant = spec["variant"]
-			product.category = category
+			product.set_category(category)
 
 			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
@@ -467,7 +465,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(isnull(number) || number < 1 || number > length(product_records))
 		return null
 	var/datum/stored_item/vending_product/R = product_records[number]
-	if(!(R.category & categories)) // ALLOW(reads): a product record's category is fixed when the vendor is built; asked when a purchase is chosen, never cached
+	if(!(R.category & categories))
 		return null
 	return R
 

@@ -1,4 +1,3 @@
-TRACKED(/obj/structure/privacyswitch, use_cooldown)
 
 /obj/structure/privacyswitch
 	name = "privacy switch"

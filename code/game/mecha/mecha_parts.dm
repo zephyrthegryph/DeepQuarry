@@ -470,4 +470,3 @@ CAPABILITIES(/obj/item/mecha_parts/chassis/hades)
 
 /// A chassis: which of its blueprint's parts are on, one bit per part. Tracked: the chassis draws a "+o" overlay for each.
 /obj/item/mecha_parts/var/parts_mask = 0
-TRACKED(/obj/item/mecha_parts, parts_mask)

@@ -18,7 +18,6 @@
 	var/assembled = 0
 	var/parts = null
 
-TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
@@ -33,11 +32,11 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 /obj/machinery/particle_accelerator/control_box/update_state()
 	if(pa_stage() < 3)
 		set_use_power(USE_POWER_OFF)
-		assembled = 0
+		set_assembled(0)
 		set_active(0)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
-			part.strength = null
-			part.powered = 0
+			part.set_strength(null)
+			part.set_powered(0)
 		rel_clear(src, nameof(connected_parts))
 		return
 	if(!part_scan())
@@ -63,13 +62,13 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/proc/strength_change()
 	for(var/obj/structure/particle_accelerator/part in connected_parts)
-		part.strength = strength
+		part.set_strength(strength)
 
 /obj/machinery/particle_accelerator/control_box/proc/add_strength(mob/user, s)
 	if(assembled)
-		strength++
+		set_strength(strength + 1)
 		if(strength > strength_upper_limit)
-			strength = strength_upper_limit
+			set_strength(strength_upper_limit)
 		else
 			message_admins("PA Control Computer increased to [strength] by [key_name(user, user?.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
 			log_game("PACCEL([x],[y],[z]) [key_name(user)] increased to [strength]")
@@ -78,9 +77,9 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 
 /obj/machinery/particle_accelerator/control_box/proc/remove_strength(mob/user, s)
 	if(assembled)
-		strength--
+		set_strength(strength - 1)
 		if(strength < 0)
-			strength = 0
+			set_strength(0)
 		else
 			message_admins("PA Control Computer decreased to [strength] by [key_name(user, user?.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
 			log_game("PACCEL([x],[y],[z]) [key_name(user)] decreased to [strength]")
@@ -114,7 +113,7 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 		break
 
 	rel_clear(src, nameof(connected_parts))
-	assembled = 0
+	set_assembled(0)
 	var/ldir = turn(dir,90)
 	var/rdir = turn(dir,-90)
 	var/odir = turn(dir,180)
@@ -146,7 +145,7 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 	if(!check_part(T,/obj/structure/particle_accelerator/particle_emitter/right))
 		return 0
 
-	assembled = 1
+	set_assembled(1)
 	return 1
 
 /obj/machinery/particle_accelerator/control_box/proc/check_part(turf/T, type)
@@ -168,13 +167,13 @@ TRACKED(/obj/machinery/particle_accelerator/control_box, interface_control)
 	if(active)
 		set_use_power(USE_POWER_ACTIVE)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
-			part.strength = src.strength
-			part.powered = 1
+			part.set_strength(src.strength)
+			part.set_powered(1)
 	else
 		set_use_power(USE_POWER_IDLE)
 		for(var/obj/structure/particle_accelerator/part in connected_parts)
-			part.strength = null
-			part.powered = 0
+			part.set_strength(null)
+			part.set_powered(0)
 	return 1
 
 /// Its window answers only when it is built and its interface wire is whole.

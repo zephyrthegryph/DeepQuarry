@@ -118,7 +118,21 @@ human|/obj/item menu: Ui open
 human|/obj/item menu: Use
 human|/obj/item click: Click: Ui open
 @obj human|/obj/item/clothing/head/helmet/space/void
+-menu: Open controls
+-click: Click: Open controls
++3 menu: Move To Top
++5 menu: Toggle Digestable (refused: You can't do that.)
++6 menu: Ui open
++8 click: Click: Ui open
 @obj human|/obj/item/clothing/suit/space/void
+-menu: Open controls
+-click: Click: Open controls
++1 menu: Eject Voidsuit Tank/Cooler (refused: You can't do that.)
++4 menu: Move To Top
++6 menu: Toggle Digestable (refused: You can't do that.)
++7 menu: Toggle Helmet (refused: You can't do that.)
++8 menu: Ui open
++10 click: Click: Ui open
 @obj.machinery human|/obj/item/card/emag
 -menu: Climb
 -menu: Use cryptographic sequencer

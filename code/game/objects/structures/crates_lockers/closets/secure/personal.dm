@@ -52,7 +52,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 		//they can open all lockers, or nobody owns this, or they own this locker
 		force_lock(!lock_locked(src))
 		if(!registered_name)
-			registered_name = I.registered_name
+			set_registered_name(I.registered_name)
 			desc = "Owned by [I.registered_name]."
 		return OP_OK
 	A.reason = /datum/msg/lock/denied
@@ -69,7 +69,7 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 
 /// An unlocked, owned locker that is not broken can be reset.
 /obj/structure/closet/secure_closet/personal/proc/can_reset(datum/act/A)
-	if(!lock_locked(src) && registered_name && !broken) // ALLOW(reads): who owns it and whether it is locked is read when the entry is offered and when it is picked
+	if(!lock_locked(src) && registered_name && !broken)
 		return null
 	if(lock_locked(src) || !registered_name)
 		return /datum/msg/personal/unlock_first
@@ -82,6 +82,6 @@ CAPABILITIES(/obj/structure/closet/secure_closet/personal)
 		if(!close())
 			return OP_REFUSED
 	force_lock(TRUE)
-	registered_name = null
+	set_registered_name(null)
 	desc = "It's a secure locker for personnel. The first card swiped gains control."
 	return OP_OK

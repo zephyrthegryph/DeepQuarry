@@ -37,7 +37,6 @@ GLOBAL_VAR(world_time_day)
 	/// The sprite of the season's flowers or leaves lying on this tile (null for none), rolled once when the tile is made.
 	var/season_overlay
 
-TRACKED(/turf/simulated/floor/outdoors/grass/seasonal, season_overlay)
 
 /turf/simulated/floor/outdoors/grass/seasonal/Initialize(mapload)
 	switch(GLOB.world_time_season)

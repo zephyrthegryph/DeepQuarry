@@ -76,7 +76,6 @@
 /obj/item/modular_computer/proc/stored_pen() as /obj/item/pen
 	return stored_pen
 
-TRACKED(/obj/item/modular_computer, bsod)
 
 MSG_DEF_SELF(modular_computer/already_on, "it is already on")
 

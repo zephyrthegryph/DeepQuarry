@@ -57,11 +57,11 @@ Buildable meters
 	set_dir(make_from.dir)
 	pipename = make_from.name
 	if(make_from.req_access)
-		src.req_access = make_from.req_access
+		set_req_access(make_from.req_access)
 	if(make_from.req_one_access)
-		src.req_one_access = make_from.req_one_access
+		set_req_one_access(make_from.req_one_access)
 	color = make_from.pipe_color
-	pipe_type = make_from.type
+	set_pipe_type(make_from.type)
 	material_engineered_id_set(src, make_from.engineered_material_id)
 	material_liner_integrity = make_from.material_liner_integrity
 	copy_material_construction_from(make_from)
@@ -80,7 +80,7 @@ Buildable meters
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	if(initial(fakeA.pipe_flags) & (PIPING_ALL_LAYER|PIPING_DEFAULT_LAYER_ONLY))
 		new_layer = PIPING_LAYER_DEFAULT
-	piping_layer = new_layer
+	set_piping_layer(new_layer)
 	// Do it the Polaris way
 	switch(piping_layer)
 		if(PIPING_LAYER_SCRUBBER)
@@ -194,12 +194,12 @@ CAPABILITIES(/obj/item/pipe)
 
 /// What stands in the way of building it here (null: nothing): a dense device's tile, or a pipe already on its layer and directions.
 /obj/item/pipe/proc/tile_blocker()
-	var/obj/machinery/atmospherics/fakeA = pipe_type // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+	var/obj/machinery/atmospherics/fakeA = pipe_type
 	var/flags = initial(fakeA.pipe_flags)
 	for(var/obj/machinery/atmospherics/M in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
 		if((M.pipe_flags & flags & PIPING_ONE_PER_TURF))	//Only one dense/requires density object per tile, eg connectors/cryo/heater/coolers.
 			return /datum/msg/pipe_item/hogged
-		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER))
 			continue
 		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir))
 			return /datum/msg/pipe_item/occupied
@@ -243,7 +243,7 @@ CAPABILITIES(/obj/item/pipe)
 		return ..()
 
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
-	A.engineered_material_id = material_engineered_id(src)
+	A.set_engineered_material_id(material_engineered_id(src))
 	A.material_liner_integrity = material_liner_integrity
 	A.copy_material_construction_from(src)
 	A.set_dir(dir)
@@ -251,13 +251,13 @@ CAPABILITIES(/obj/item/pipe)
 	if(pipename)
 		A.name = pipename
 	if(req_access)
-		A.req_access = req_access
+		A.set_req_access(req_access)
 	if(req_one_access)
-		A.req_one_access = req_one_access
+		A.set_req_one_access(req_one_access)
 	A.on_construction(color, piping_layer)
 
 /obj/item/pipe/trinary/flippable/build_pipe(obj/machinery/atmospherics/trinary/T)
-	T.mirrored = mirrored
+	T.set_mirrored(mirrored)
 	. = ..()
 
 // Lookup the initialize_directions for a given atmos machinery instance facing dir.
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/pipe_meter)
 
 /obj/item/pipe_meter/proc/pipe_here(datum/act/A)
 	for(var/obj/machinery/atmospherics/pipe/P in contents_of(loc)) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
-		if(P.piping_layer == piping_layer) // ALLOW(reads): read when the tool or item is used on it, never from a cached menu or look
+		if(P.piping_layer == piping_layer)
 			return null
 	return MSG(pipe_meter/no_pipe)
 
@@ -309,7 +309,7 @@ CAPABILITIES(/obj/item/pipe_meter)
 		setAttachLayer(piping_layer)
 
 /obj/item/pipe_meter/proc/setAttachLayer(new_layer = PIPING_LAYER_DEFAULT)
-	piping_layer = new_layer
+	set_piping_layer(new_layer)
 
 /obj/item/pipe_gsensor
 	name = "gas sensor"

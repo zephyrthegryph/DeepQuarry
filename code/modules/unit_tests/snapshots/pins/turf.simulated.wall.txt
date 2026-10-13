@@ -10,13 +10,11 @@
 @turf human|/obj/item/tool/crowbar
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
@@ -25,38 +23,31 @@
 @turf human|/obj/item/multitool
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
 +0 menu: Cut through the outer plating
-+1 menu: Graffiti
-+4 click: Click: Cut through the outer plating
++3 click: Click: Cut through the outer plating
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
-human|/obj/item/shovel menu: Graffiti
++2 click: Click: Wall item
 human|/obj/item/shovel menu: Touch
 human|/obj/item/shovel menu: Use shovel
 human|/obj/item/shovel click: Click: Wall item
 @turf human|/obj/item
 -menu: Dig
 -click: Click: Dig
-+0 menu: Graffiti
-+3 click: Click: Wall item
++2 click: Click: Wall item
 human|/obj/item/melee/energy/blade menu: Cut through the outer plating
 human|/obj/item/melee/energy/blade menu: Graffiti
 human|/obj/item/melee/energy/blade menu: Touch

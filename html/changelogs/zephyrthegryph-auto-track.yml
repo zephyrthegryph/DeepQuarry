@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "A var that reactive code reads (a stat input, a draw, a requirement) is now tracked automatically: its setter is generated from the read set, the tracked lint holds every write to it, and analyze fix rewrites raw writes to set_<var>() calls. About 400 TRACKED declarations became redundant and were removed."

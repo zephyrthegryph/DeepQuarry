@@ -7,7 +7,6 @@
  * capabilities) only has to touch this file.
  */
 
-TRACKED(/mob, mutations)
 
 /// Returns TRUE if this mob currently has the given mutation.
 /mob/proc/has_mutation(mut)

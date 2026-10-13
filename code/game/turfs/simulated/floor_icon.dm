@@ -88,11 +88,8 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 /// open space above shows through: written by the adjacency index when this tile or a neighbour changed (code/game/turfs/turf_edges.dm).
 /turf/simulated/floor/var/edge_mask = 0
 /turf/simulated/floor/var/no_ceiling = FALSE
-TRACKED(/turf/simulated/floor, edge_mask)
 /// The edge overlays the stronger turfs around spill onto this one (null for none): floors and open space draw them.
 /turf/simulated/var/list/edge_spill
-TRACKED(/turf/simulated, edge_spill)
-TRACKED(/turf/simulated/floor, no_ceiling)
 
 /turf/simulated/floor/edges_changed(mask)
 	..()

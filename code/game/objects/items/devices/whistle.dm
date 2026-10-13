@@ -11,7 +11,6 @@
 
 
 TRACKED(/obj/item/hailer, use_message)
-TRACKED(/obj/item/hailer, insults)
 
 CAPABILITIES(/obj/item/hailer)
 	configure(item_worn(slots = SLOT_EARS))

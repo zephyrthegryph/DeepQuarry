@@ -499,7 +499,6 @@ CAPABILITIES(/obj/item/storage/backpack/purse)
 	/// Packed and ready to open (movement reads the same fact through dq_get_parachute()).
 	var/packed = FALSE
 
-TRACKED(/obj/item/storage/backpack/parachute, packed)
 
 /obj/item/storage/backpack/parachute/examine(mob/user)
 	. = ..()

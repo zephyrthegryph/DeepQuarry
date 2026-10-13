@@ -22,7 +22,6 @@
 		/obj/item/card/id = 3,
 		/obj/item/paper_bundle = 3,
 		)
-TRACKED(/obj/machinery/papershredder, paperamount)
 
 
 CAPABILITIES(/obj/machinery/papershredder)

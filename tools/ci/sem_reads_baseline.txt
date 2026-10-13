@@ -42,7 +42,6 @@ unknown_read	code/controllers/subsystems/overlays.dm	build_overlays[index] = ico
 unknown_read	code/controllers/subsystems/overlays.dm	if(!overlays)
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
 unknown_read	code/controllers/subsystems/overlays.dm	if(islist(priority_overlays))
-unknown_read	code/controllers/subsystems/tgui.dm	if(!LAZYLEN(src_object?.open_tguis))
 unknown_read	code/datums/chat_message.dm	return maptext_height
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 unknown_read	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
@@ -58,17 +57,7 @@ unknown_read	code/engine/stats/recompute.dm	var/list/direct = E.rx?.stats?.hop_i
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	if (pixel_x == 0 && pixel_y == 0)
 unknown_read	code/game/atom/_atom.dm	var/list/icon_dimensions = get_icon_dimensions(icon)
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/machinery/computer/guestpass.dm	LAZYINITLIST(temp_access)
-unknown_read	code/game/mecha/mecha.dm	if(access_list==src.operation_req_access)
 unknown_read	code/game/objects/items/devices/radio/radio.dm	if(!on)
-unknown_read	code/game/objects/items/devices/uplink.dm	if(!active)
 unknown_read	code/game/objects/items/weapons/RCD.dm	if(isrobot(loc)) // In a borg.
 unknown_read	code/game/objects/items/weapons/RCD.dm	if(module.holder) // Is it attached to a RIG?
 unknown_read	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
@@ -76,15 +65,7 @@ unknown_read	code/modules/assembly/assembly.dm	if(istype(loc, /obj/item/assembly
 unknown_read	code/modules/body/body.dm	var/gained = domains & ~dirty
 unknown_read	code/modules/body/body.dm	if(gained && owner)
 unknown_read	code/modules/body/plans/humanoid.dm	var/obj/item/organ/torso = H.organs_by_name?[BP_TORSO]
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	if(!security_check_enabled)
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	else if(!ai_override_enabled)
-unknown_read	code/modules/clothing/spacesuits/rig/rig.dm	if(malfunction_delay)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
-unknown_read	code/modules/clothing/under/miscellaneous.dm	if(. && ishuman(M) && original_size && !disable_warning)
 unknown_read	code/modules/clothing/under/miscellaneous.dm	if(!H.vore_prefs.resizable)
-unknown_read	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
 unknown_read	code/modules/integrated_electronics/subtypes/camera.dm	var/obj/item/integrated_circuit/output/video_camera/parent = loc
 unknown_read	code/modules/mob/inventory.dm	if(!I || I.loc != src)
 unknown_read	code/modules/mob/inventory.dm	if(!I || I.loc != src)

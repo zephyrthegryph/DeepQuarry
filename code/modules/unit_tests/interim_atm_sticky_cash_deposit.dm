@@ -12,7 +12,7 @@
 	set_var(SSsupply, nameof(SSsupply.currency_created), currency_before)
 	set_var(SSsupply, nameof(SSsupply.currency_sources), SSsupply.currency_sources.Copy())
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
-	cash.worth = 75
+	cash.set_worth(75)
 	TEST_ASSERT(user.put_in_active_hand(cash), "the actor holds the original physical cash")
 	add_trait(cash, TRAIT_NODROP, "interim_atm_cash_sticky")
 	TEST_ASSERT(user.release_refusal(cash, user), "actual inventory refuses consumption of the sticky cash")

@@ -48,9 +48,6 @@ two tiles on initialization, and which way a cliff is facing may change during m
 	var/is_double_cliff = FALSE // Set to true when making the two-tile cliffs, used for projectile checks.
 	var/uphill_penalty = 30 // Odds of a projectile not making it up the cliff.
 
-TRACKED(/obj/structure/cliff, icon_variant)
-TRACKED(/obj/structure/cliff, corner)
-TRACKED(/obj/structure/cliff, ramp)
 
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()

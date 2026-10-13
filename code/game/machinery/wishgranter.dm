@@ -13,8 +13,6 @@
 
 
 
-TRACKED(/obj/machinery/wish_granter, chargesa)
-TRACKED(/obj/machinery/wish_granter, insistinga)
 
 CAPABILITIES(/obj/machinery/wish_granter)
 	op("wish_touch", hand(), ungated(), priority(OP_PRIORITY_DEFAULT - 1), label("Touch"), asks(/datum/prompt/choice/wish_granter, fields = list("title" = "Wish", "question" = "You want...", "choices" = list("Power", "Wealth", "Immortality", "To Kill", "Peace"), "timeout" = 0), when = PROC_REF(wish_ready)), then(PROC_REF(interaction_touch)))

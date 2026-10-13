@@ -179,7 +179,7 @@ GLOBAL_LIST_EMPTY(grab_drain_test_stages)
 	carcass.name_the_meat = FALSE
 	carcass.gib_on_butchery = FALSE
 	carcass.set_mob_size(MOB_SMALL) // a cut takes half a second per ten of size
-	carcass.stat = DEAD
+	carcass.set_stat(DEAD)
 	carcass.harvest(H, null)
 	TEST_ASSERT_NOTNULL(op_pending_of(H), "the first cut is under way")
 	TEST_ASSERT(op_claimed(carcass), "nobody else may work on the carcass")

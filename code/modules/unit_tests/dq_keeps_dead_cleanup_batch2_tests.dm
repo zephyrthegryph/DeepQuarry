@@ -43,7 +43,7 @@
 	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, T)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
-	S.mode = NEEDLE_INJECT
+	S.set_mode(NEEDLE_INJECT)
 	after(S, 1 SECONDS, GLOBAL_PROC_REF(needle_inject_cycle), with = list(S, user, target, 1 SECONDS, 0, 0, "mode", T, T, null), keeps_dead = TRUE)
 	qdel(user)
 	scheduler_advance(2)

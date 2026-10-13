@@ -48,11 +48,11 @@ human|/obj/item menu: Remove ID card (refused: there is no ID card to remove)
 human|/obj/item menu: Staff Request Form
 human|/obj/item menu: Use
 human|/obj/item click: Click: Use
-@obj.machinery.photocopier human|/obj/item/paper
--menu: Create Area (refused: You can't do that.)
--menu: Move To Top
--menu: Rename paper (refused: You can't do that.)
--menu: Toggle Digestable (refused: You can't do that.)
+human|/obj/item/paper menu: Insert
+human|/obj/item/paper menu: Remove ID card (refused: there is no ID card to remove)
+human|/obj/item/paper menu: Staff Request Form
+human|/obj/item/paper menu: Use
+human|/obj/item/paper click: Click: Insert
 @obj.machinery.photocopier human|/obj/item/photo
 -menu: Move To Top
 -menu: Rename photo (refused: You can't do that.)

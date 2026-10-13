@@ -74,7 +74,6 @@ CAPABILITIES(/obj/item/arrow/quill)
 	///Var for attack_self chain
 	var/is_bow = FALSE
 	special_handling = TRUE
-TRACKED(/obj/item/gun/launcher/crossbow, tension)
 
 // Drawing the string is one op that waits a notch at a time, 2.5 seconds each, until the string is at its maximum tension; leaving, firing or
 // losing the bolt ends it with the notches drawn so far, and the string relaxes.

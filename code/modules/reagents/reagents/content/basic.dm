@@ -24,7 +24,7 @@
 /datum/reagent/blood/initialize_data(newdata)
 	..()
 	if(data && data["blood_colour"])
-		color = data["blood_colour"]
+		set_color(data["blood_colour"])
 
 	return
 

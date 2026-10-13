@@ -78,7 +78,6 @@
 		)
 
 TRACKED(/obj/machinery/chemical_synthesizer, busy)
-TRACKED(/obj/machinery/chemical_synthesizer, finishing)
 
 /obj/machinery/chemical_synthesizer/var/_recharge_reagents = TRUE
 TRACKED(/obj/machinery/chemical_synthesizer, _recharge_reagents)

@@ -164,6 +164,9 @@ pub struct Decls {
     pub relations: HashMap<String, HashSet<String>>,
     /// type path -> tracked vars (TRACKED / SETTER / OM_FIELD ...).
     pub tracked: HashMap<String, HashSet<String>>,
+    /// `tracked` without what `analyze gen auto_tracked` itself declares (`gens::auto_tracked::AUTO_REL`): the declarations a person wrote.
+    /// The inference reads this, so the file it writes is never an input of the next run.
+    pub tracked_explicit: HashMap<String, HashSet<String>>,
     /// Every `#define NAME` in the tree.
     pub defines: HashSet<String>,
     /// KEY text -> producer sites of `PUBLISH_CHANGE(E, KEY)`.
@@ -214,12 +217,15 @@ impl Decls {
             let key = crate::incr::ctx_key(&nonempty);
             let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
             let mut d = Decls { key, ..Decls::default() };
-            for p in parts {
+            for (f, p) in files.iter().zip(parts) {
                 d.markers.extend(p.markers);
                 for (t, v) in p.relations {
                     d.relations.entry(t).or_default().insert(v);
                 }
                 for (t, v) in p.tracked {
+                    if f.rel != crate::gens::auto_tracked::AUTO_REL {
+                        d.tracked_explicit.entry(t.clone()).or_default().insert(v.clone());
+                    }
                     d.tracked.entry(t).or_default().insert(v);
                 }
                 d.defines.extend(p.defines);

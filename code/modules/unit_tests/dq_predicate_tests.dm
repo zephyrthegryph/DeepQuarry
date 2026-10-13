@@ -47,7 +47,7 @@ CAPABILITIES(/obj/item/dq_pred_test/knife)
 			held.moveToNullspace()
 	move_into(src, SLOT_ID_HAND_R, right, src)
 	move_into(src, SLOT_ID_HAND_L, left, src)
-	hand = null
+	set_hand(null)
 
 /datum/predicate/dq_test_weld_light
 	name = "weld a light thing"

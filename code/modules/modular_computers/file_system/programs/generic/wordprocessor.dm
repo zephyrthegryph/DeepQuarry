@@ -73,7 +73,6 @@
 		return F
 
 TRACKED(/datum/computer_file/program/wordprocessor, open_file)
-TRACKED(/datum/computer_file/program/wordprocessor, is_edited)
 
 CAPABILITIES(/datum/computer_file/program/wordprocessor)
 	interface("NtosWordProcessor")

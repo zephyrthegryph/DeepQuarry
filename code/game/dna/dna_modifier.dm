@@ -349,7 +349,6 @@ CAPABILITIES(/obj/machinery/dna_scannernew)
 
 /// Old attackby.
 TRACKED(/obj/machinery/computer/scan_consolenew, irradiating)
-TRACKED(/obj/machinery/computer/scan_consolenew, injector_ready)
 
 MSG_DEF_SELF(dna_console/no_scanner, "The console has no DNA modifier connected.")
 MSG_DEF_SELF(dna_console/busy, "The console is busy irradiating its subject.")

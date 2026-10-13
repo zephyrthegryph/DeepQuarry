@@ -110,7 +110,7 @@
 	var/obj/machinery/power/apc/A = p2_apc()
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
-	A.coverlocked = FALSE
+	A.set_coverlocked(FALSE)
 	A.take_damage(A.max_integrity * 0.75)
 	p2_settle()
 	H.drop_item()

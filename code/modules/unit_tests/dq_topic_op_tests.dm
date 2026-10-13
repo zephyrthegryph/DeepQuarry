@@ -107,12 +107,12 @@ CAPABILITIES(/datum/dq_topic_op_probe)
 /datum/unit_test/dq_e2/topic_refuses_like_a_click/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/datum/dq_topic_op_probe/P = new
-	P.usable = FALSE
+	P.set_usable(FALSE)
 	var/datum/op_result/refused = inbox_topic(M, P, list("action" = "bump"))
 	TEST_ASSERT_EQUAL(refused?.outcome, ACT_REFUSED, "a requirement refuses an href as it refuses a click")
 	TEST_ASSERT_EQUAL(refused?.reason, /datum/msg/dq_topic_probe/closed, "with its reason")
 	TEST_ASSERT_EQUAL(P.bumped, 0, "and the handler never ran")
-	P.usable = TRUE
+	P.set_usable(TRUE)
 	TEST_ASSERT_EQUAL(inbox_topic(M, P, list("action" = "bump"))?.outcome, ACT_COMMITTED, "once the requirement holds the same href runs")
 	// rights: an actor with no admin rights is refused
 	var/datum/op_result/no_rights = inbox_topic(M, P, list("secret" = 1))

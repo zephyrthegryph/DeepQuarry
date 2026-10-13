@@ -162,7 +162,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(blood_volume_raw < species.blood_volume)
 		var/datum/reagent/blood/B = own_blood()
 		if(B)
-			B.volume += (BLOOD_REGEN_PER_CYCLE + factor(BF_BLOOD_REGEN)) * cycles
+			B.set_volume(B.volume + ((BLOOD_REGEN_PER_CYCLE + factor(BF_BLOOD_REGEN)) * cycles))
 
 	// DQ medical owns blood-loss presentation (internal_hemorrhage / hypovolemic_shock symptoms) and the physiology owns
 	// its consequence (low perfusion -> oxygen debt). Here: the pale sprite cue, and the fatal collapse below the

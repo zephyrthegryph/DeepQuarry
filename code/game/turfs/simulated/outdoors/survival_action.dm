@@ -83,7 +83,6 @@ CAPABILITIES(/turf/simulated/floor/outdoors/newdirt)
 /obj/structure/flora/tree
 	var/sticks = TRUE
 
-TRACKED(/obj/structure/flora/tree, sticks)
 
 /obj/structure/flora/tree/proc/sticks_found(datum/act/op/A)
 	var/mob/user = A.actor

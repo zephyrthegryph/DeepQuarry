@@ -88,7 +88,7 @@ CAPABILITIES(/obj/item/borg/upgrade/utility/rename)
 	if(isshell(R)) return FALSE
 	R.notify_ai(ROBOT_NOTIFICATION_NEW_NAME, R.name, heldname)
 	R.name = heldname
-	R.custom_name = heldname
+	R.set_custom_name(heldname)
 	R.set_real_name(heldname)
 
 	return TRUE

@@ -24,12 +24,8 @@
 	var/panelopen = 0
 	var/safetieson = 1
 	var/cycletime_left = 0
-TRACKED(/obj/machinery/suit_storage_unit, isopen)
 TRACKED(/obj/machinery/suit_storage_unit, ispowered)
 TRACKED(/obj/machinery/suit_storage_unit, isbroken)
-TRACKED(/obj/machinery/suit_storage_unit, isUV)
-TRACKED(/obj/machinery/suit_storage_unit, islocked)
-TRACKED(/obj/machinery/suit_storage_unit, issuperUV)
 TRACKED(/obj/machinery/suit_storage_unit, panelopen)
 TRACKED(/obj/machinery/suit_storage_unit, safetieson)
 

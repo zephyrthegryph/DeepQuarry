@@ -48,7 +48,6 @@
 	/// Resting state the current appearance was drawn for.
 	var/drawn_resting = FALSE
 
-TRACKED(/datum/forms, form_overlays)
 
 CAPABILITIES(/datum/forms)
 	owns_many(nameof(forms))

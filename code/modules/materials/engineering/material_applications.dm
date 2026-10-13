@@ -89,7 +89,7 @@
 				cell.set_charge(min(cell.charge, cell.maxcharge))
 				cell.material_emp_resistance = clamp(round((insulation?.dielectric_strength || 0) * 0.5 + conductor.magnetism * 0.2 + casing.heat_resistance * 0.2), 0, 90)
 				cell.robot_durability = clamp(round(casing.integrity / 2), 20, 125)
-				cell.material_discharge_limit = max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.5) / 150, 0.1, 2)))
+				cell.set_material_discharge_limit(max(1, round(initial(cell.maxcharge) * clamp((conductor.conductivity + thermal.heat_resistance * 0.5 + thermal.conductivity * (1 - thermal.thermal_insulation / 125) * 0.5) / 150, 0.1, 2))))
 		if(MATERIAL_APPLICATION_ARMOR)
 			if(istype(src, /obj/item/clothing))
 				var/obj/item/clothing/clothing = src

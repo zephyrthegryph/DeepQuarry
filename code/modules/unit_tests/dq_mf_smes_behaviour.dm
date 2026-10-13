@@ -101,7 +101,7 @@
 	bare_floor(p2_side_spot())
 	open_panel(H, S)
 	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, get_turf(H))
-	coil.amount = 30
+	coil.set_amount(30)
 	touch(H, S, coil)
 	TEST_ASSERT_EQUAL(length(p2_smes_terminals(S)), 2, "(a second terminal was built)")
 	TEST_ASSERT(p2_smes_broken(S), "the terminal does not mend a broken unit")
@@ -118,7 +118,7 @@
 	bare_floor(p2_term_spot())
 	open_panel(H, S)
 	var/obj/item/stack/cable_coil/coil = allocate(/obj/item/stack/cable_coil, p2_term_spot())
-	coil.amount = 30
+	coil.set_amount(30)
 	touch(H, S, coil)
 	TEST_ASSERT_EQUAL(length(p2_smes_terminals(S)), 1, "(the terminal was built)")
 	TEST_ASSERT(!p2_smes_unworking(S), "and the unit works")
@@ -137,7 +137,7 @@
 
 /datum/unit_test/dq_p2_smes/mf_rcon_list_drops_a_deleted_unit/run_gate()
 	var/obj/machinery/power/smes/buildable/S = p2_smes(/obj/machinery/power/smes/buildable/p2_test)
-	S.RCon_tag = "MF_TEST"
+	S.set_RCon_tag("MF_TEST")
 	var/datum/tgui_module/rcon/R = new(S)
 	TEST_ASSERT(S in p2_rcon_units(R), "the console lists the tagged unit")
 	qdel(S)

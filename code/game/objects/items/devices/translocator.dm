@@ -38,7 +38,6 @@
 	/// The beacon a new one is made as.
 	var/beacon_type = /obj/item/perfect_tele_beacon
 
-TRACKED(/obj/item/perfect_tele, beacons_left)
 
 CAPABILITIES(/obj/item/perfect_tele)
 	configure(item_sounds(pickup = SFX_ITEMS_PICKUP_DEVICE, drop = SFX_ITEMS_DROP_DEVICE))

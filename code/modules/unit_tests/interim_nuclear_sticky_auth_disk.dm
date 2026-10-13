@@ -5,7 +5,7 @@
 	for(var/route in list("item", "ui"))
 		var/obj/machinery/nuclearbomb/bomb = allocate(/obj/machinery/nuclearbomb, T)
 		var/obj/item/disk/nuclear/disk = allocate(/obj/item/disk/nuclear, T)
-		bomb.extended = TRUE
+		bomb.set_extended(TRUE)
 		TEST_ASSERT(!bomb.timing && bomb.safety, "the actual test bomb remains safe and unarmed")
 		TEST_ASSERT(user.put_in_active_hand(disk), "the actor holds the real authentication disk")
 		add_trait(disk, TRAIT_NODROP, "interim_nuclear_sticky_disk")

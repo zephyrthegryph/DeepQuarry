@@ -8,7 +8,7 @@
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	p2_door_set_power(door, TRUE)
 	door.set_autoclose(FALSE)
-	door.req_access = list(ACCESS_SECURITY)
+	door.set_req_access(list(ACCESS_SECURITY))
 	var/list/access_before = door.req_access
 	var/datum/wires_test_adapter/wires = wires_test(door)
 	TEST_ASSERT(istype(wires), "the actual airlock creates its real airlock wires datum")

@@ -172,7 +172,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 /obj/item/rig/proc/ui_act_toggle_ai_control(datum/act/op/A)
 	if(!ui_gate(A))
 		return FALSE
-	ai_override_enabled = !ai_override_enabled
+	set_ai_override_enabled(!ai_override_enabled)
 	notify_ai("Synthetic suit control has been [ai_override_enabled ? "enabled" : "disabled"].")
 	. = TRUE
 

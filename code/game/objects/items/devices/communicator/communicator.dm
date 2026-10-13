@@ -389,7 +389,6 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 		return "-called"
 	return ""
 
-TRACKED(/obj/item/communicator, alert_called)
 
 /// The look (the draw sweep: from its template).
 /obj/item/communicator/draw(datum/look/look)

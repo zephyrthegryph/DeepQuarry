@@ -78,7 +78,7 @@
 /// A card with `access` in `H`'s hand (and nothing worn).
 /datum/unit_test/dq_hc_struct/mft/proc/card_in_hand(mob/living/carbon/human/H, list/access)
 	var/obj/item/card/id/C = allocate(/obj/item/card/id, get_turf(H))
-	C.access = access ? access.Copy() : list()
+	C.set_access(access ? access.Copy() : list())
 	H.drop_item()
 	H.put_in_active_hand(C)
 	return C
@@ -86,7 +86,7 @@
 /// A card with `access` worn on `H`.
 /datum/unit_test/dq_hc_struct/mft/proc/card_worn(mob/living/carbon/human/H, list/access)
 	var/obj/item/card/id/C = allocate(/obj/item/card/id, get_turf(H))
-	C.access = access ? access.Copy() : list()
+	C.set_access(access ? access.Copy() : list())
 	if(!H.get_equipped_item(SLOT_ID_UNIFORM))
 		H.equip_to_slot_or_del(allocate(/obj/item/clothing/under/color/grey, get_turf(H)), SLOT_ID_UNIFORM)
 	H.equip_to_slot_or_del(C, SLOT_ID_ID)

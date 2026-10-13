@@ -29,7 +29,6 @@
 
 TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, id_tag)
 TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, frequency)
-TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing)
 TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, panic)
 TRACKED(/obj/machinery/atmospherics/unary/vent_scrubber, scrubbing_gas)
 

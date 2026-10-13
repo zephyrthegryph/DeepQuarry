@@ -18,7 +18,6 @@
 		/obj/item/clothing/mask/gas/clown_hat,
 		/obj/item/clothing/head/beret
 	)
-TRACKED(/obj/item/reagent_containers/cooking_container, food_items)
 
 
 // A cooking container is a dish, basket or rack that holds the solid things on its list (up to the sum of their sizes) and, open to reagents, whatever is
@@ -161,7 +160,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 		total += J.w_class
 
-	if((max_space - total) >= I.w_class) // ALLOW(reads): the room is read when a thing is put in; the click asks again
+	if((max_space - total) >= I.w_class)
 		return 1
 
 

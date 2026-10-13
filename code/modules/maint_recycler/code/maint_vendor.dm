@@ -127,12 +127,12 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 		purchase_failed(user, "Out of Stock")
 		return FALSE
 	if(LAZYLEN(attempted_entry.required_access)) //access check
-		req_one_access = attempted_entry.required_access
+		set_req_one_access(attempted_entry.required_access)
 		if(!allowed(user))
 			purchase_failed(user, "Access Denied")
-			req_one_access = list()
+			set_req_one_access(list())
 			return FALSE
-		req_one_access = list()
+		set_req_one_access(list())
 
 	return TRUE
 

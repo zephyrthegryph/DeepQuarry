@@ -198,8 +198,8 @@
 /obj/item/rig/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor
 	if(!subverted)
-		req_access = null
-		req_one_access = null
+		set_req_access(null)
+		set_req_one_access(null)
 		locked = 0
 		subverted = 1
 		to_chat(user, span_danger("You short out the access protocol for the suit."))
