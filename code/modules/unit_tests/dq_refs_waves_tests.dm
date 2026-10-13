@@ -50,19 +50,44 @@
 	qdel(prefs, TRUE)
 	TEST_ASSERT(QDELETED(prefs), "a forced delete removes them")
 
-/// A pending op keeps the answered steps of a waiting op by relation: a prompt that ended and was deleted leaves it, so the record never
-/// holds a deleted prompt (and, through it, the objects the prompt captured) while the op waits.
-/datum/unit_test/dq_refs_pending_op_drops_deleted_prompts
+/// An op's earlier answers stay readable at its later steps: the op owns the answered prompts (the request layer no longer deletes one an op
+/// adopted), so a handler after a wait reads the first question's fields, not a deleted prompt (and the op deletes them when it ends).
+/obj/refs_two_step
+	name = "two step fixture"
+	anchored = TRUE
+	var/seen_value
+	var/list/seen_choices
+	var/seen_second
 
-/datum/unit_test/dq_refs_pending_op_drops_deleted_prompts/Run()
-	var/datum/pending_op/pending = new
-	var/datum/request/kept = new
-	var/datum/request/ended = new
-	rel_add(pending, nameof(pending.step_answers_saved), kept, "kept")
-	rel_add(pending, nameof(pending.step_answers_saved), ended, "ended")
-	TEST_ASSERT_EQUAL(length(pending.step_answers_saved), 2, "both answered steps are on the waiting op")
-	qdel(ended)
-	TEST_ASSERT(isnull(pending.step_answers_saved?["ended"]), "the deleted prompt left the waiting op")
-	TEST_ASSERT(pending.step_answers_saved?["kept"] == kept, "the live prompt stays")
-	qdel(pending)
-	qdel(kept)
+CAPABILITIES(/obj/refs_two_step)
+	op("two", ui_act("two"), asks(/datum/prompt/choice, fields = list("question" = "Which?", "choices" = list("a", "b"), "timeout" = 0), step = "first"), asks(/datum/prompt/text, fields = list("question" = "Why?", "timeout" = 0), step = "second"), then(PROC_REF(finish)))
+
+/obj/refs_two_step/proc/finish(datum/act/op/A)
+	var/datum/prompt/choice/first = A.step_answers?["first"]
+	seen_value = first?.value
+	seen_choices = first?.choices
+	seen_second = A.step_value("second")
+	return OP_OK
+
+/datum/unit_test/dq_refs_two_step_op_reads_first_prompt_after_wait
+
+/datum/unit_test/dq_refs_two_step_op_reads_first_prompt_after_wait/Run()
+	test_driver_begin()
+	test_prompts_reset()
+	var/mob/living/simple_mob/e0_fixture/M = allocate(/mob/living/simple_mob/e0_fixture)
+	var/obj/refs_two_step/C = allocate(/obj/refs_two_step)
+	var/datum/op_result/waiting = test_ui(M, C, "two", list())
+	TEST_ASSERT_NULL(waiting?.outcome, "the op waits on its first question")
+	var/datum/prompt/choice/first_prompt = GLOB.test_prompts[1]
+	var/datum/op_result/second = test_answer(M, "a")
+	TEST_ASSERT_NULL(second?.outcome, "the op waits on its second question")
+	TEST_ASSERT(!QDELETED(first_prompt), "the answered first prompt is kept for the op's later handlers")
+	var/datum/op_result/done = test_answer(M, "because")
+	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "the op commits after the second answer")
+	TEST_ASSERT_EQUAL(C.seen_value, "a", "the handler read the first answer after a later wait")
+	TEST_ASSERT_EQUAL(length(C.seen_choices), 2, "and a field of the first prompt (its choices)")
+	TEST_ASSERT_EQUAL(C.seen_second, "because", "and the second answer")
+	test_time(1 SECOND)
+	TEST_ASSERT(QDELETED(first_prompt), "the first prompt is deleted with the op, not kept for the round")
+	GLOB.test_prompts = null
+	test_driver_end()
