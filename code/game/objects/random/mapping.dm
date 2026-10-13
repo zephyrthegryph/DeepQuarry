@@ -505,7 +505,7 @@ CAPABILITIES(/obj/random/turf)
 	var/turf/T = spawned
 	var/obj/random/turf/P = path
 	if(isturf(T) && MAP_VAR(P, varedits, override_outdoors))
-		T.outdoors = MAP_VAR(P, varedits, turf_outdoors)
+		T.set_outdoors(MAP_VAR(P, varedits, turf_outdoors))
 
 /obj/random/turf/lava
 	name = "random Lava spawn"

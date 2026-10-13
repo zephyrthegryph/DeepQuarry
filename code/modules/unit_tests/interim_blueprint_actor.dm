@@ -22,10 +22,10 @@
 	own(isolated)
 	TEST_ASSERT_EQUAL(get_area(T), original_room, "creating the private area preserves the test floor's room")
 	TEST_ASSERT_EQUAL(length(get_area_turfs(isolated.type)), 0, "the private area owns no map turfs")
-	isolated.outdoors = TRUE
+	isolated.set_outdoors(TRUE)
 	TEST_ASSERT_EQUAL(blueprint.get_area_type(isolated), AREA_SPACE, "an explicit outdoor area is unclaimed")
 	TEST_ASSERT_EQUAL(get_new_area_type(isolated), 1, "an explicit outdoor area allows creation")
-	isolated.outdoors = FALSE
+	isolated.set_outdoors(FALSE)
 	TEST_ASSERT_EQUAL(blueprint.get_area_type(isolated), AREA_STATION, "an explicit ordinary indoor area is a station area")
 	TEST_ASSERT_EQUAL(get_new_area_type(isolated), 0, "an ordinary indoor area does not allow new-area creation")
 	TEST_ASSERT_EQUAL(blueprint.get_area_type(null), 0, "missing areas have no editing classification")

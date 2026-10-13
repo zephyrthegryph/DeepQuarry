@@ -129,7 +129,7 @@
 		H.drop_r_hand()
 
 		SK.shadekin_set_energy(0)
-		SK.in_dark_respite = TRUE
+		SK.set_in_dark_respite(TRUE)
 		H.set_invisibility(INVISIBILITY_SHADEKIN)
 
 		// Dark respite mends three quarters of every injury.
@@ -195,7 +195,7 @@
 	if(!SK)
 		return
 	SK.respite_activating = FALSE
-	SK.in_dark_respite = TRUE
+	SK.set_in_dark_respite(TRUE)
 
 	forceMove(pick(GLOB.latejoin_thedark))
 	set_invisibility(initial(invisibility))
@@ -205,7 +205,7 @@
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return
-	SK.in_dark_respite = FALSE
+	SK.set_in_dark_respite(FALSE)
 	to_chat(src, span_notice("You feel like you can leave the Dark again"))
 
 /datum/species/shadekin/get_bodytype()

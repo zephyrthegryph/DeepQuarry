@@ -170,7 +170,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 		// change
 		canmove = FALSE
 		SK.set_in_phase(FALSE)
-		SK.doing_phase = TRUE
+		SK.set_doing_phase(TRUE)
 		throwpass = FALSE
 		name = get_visible_name()
 		for(var/obj/belly/B as anything in vore_organs)
@@ -227,7 +227,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 	if(!SK)
 		return
-	SK.doing_phase = FALSE
+	SK.set_doing_phase(FALSE)
 	if(SK.flicker_time < 5 || SK.flicker_distance < 5 || SK.flicker_break_chance < 5)
 		status_at_least(STAT_STUNNED, SK.calculate_stun())
 	if(!SK.flicker_time)
@@ -280,7 +280,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 
 		// change
 		SK.set_in_phase(TRUE)
-		SK.doing_phase = TRUE
+		SK.set_doing_phase(TRUE)
 		throwpass = TRUE
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases out!")
 
@@ -314,7 +314,7 @@ CAPABILITY_DEF(shadekin_phase, CAP_SHADEKIN_PHASE, key = NONE)
 	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	if(SK)
-		SK.doing_phase = FALSE
+		SK.set_doing_phase(FALSE)
 
 /datum/body_effect/shadekin_phase_vision
 	stacks = MODIFIER_STACK_FORBID

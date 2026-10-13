@@ -42,7 +42,7 @@
 	var/turf/process_next = locate(x, y, z)
 	if(process_next)
 		master_SW = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-		process_next.lighting_corner_NE = src
+		process_next.set_lighting_corner_NE(src)
 		// Now, we go north!
 		process_next = get_step(process_next, NORTH)
 	else
@@ -53,7 +53,7 @@
 	// Ok, if we have a north turf, go there. otherwise, onto the next
 	if(process_next)
 		master_NW = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-		process_next.lighting_corner_SE = src
+		process_next.set_lighting_corner_SE(src)
 		// Now, TO THE EAST
 		process_next = get_step(process_next, EAST)
 	else
@@ -62,7 +62,7 @@
 	// Etc etc
 	if(process_next)
 		master_NE = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-		process_next.lighting_corner_SW = src
+		process_next.set_lighting_corner_SW(src)
 		// Now, TO THE SOUTH AGAIN (SE)
 		process_next = get_step(process_next, SOUTH)
 	else
@@ -71,7 +71,7 @@
 	// anddd the last tile
 	if(process_next)
 		master_SE = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
-		process_next.lighting_corner_NW = src
+		process_next.set_lighting_corner_NW(src)
 
 	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 

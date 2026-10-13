@@ -1615,7 +1615,6 @@ list	code/modules/medical/causes/_cause.dm	GLOBAL_LIST_EMPTY(affliction_triggers
 list	code/modules/medical/contagion/engineered/engineered.dm	GLOBAL_LIST_EMPTY(archive_diseases)
 list	code/modules/mob/dead/observer/chunk.dm	var/list/hidden_areas
 list	code/modules/mob/living/life/living_systems.dm	var/static/list/owned
-list	code/modules/mob/living/organs.dm	var/list/organs_by_name // map organ names to organs
 list	code/modules/mob/living/silicon/robot/robot_upgrade_detection.dm	var/static/list/prototypes = list()
 list	code/modules/mob/mob_chunks.dm	GLOBAL_LIST_EMPTY(mob_chunks)
 list	code/modules/overmap/turfs.dm	GLOBAL_LIST_EMPTY(map_sectors)

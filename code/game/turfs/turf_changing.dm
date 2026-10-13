@@ -149,7 +149,7 @@
 	rel_set(src, nameof(lighting_corner_SW), old_lighting_corner_SW)
 	rel_set(src, nameof(lighting_corner_NW), old_lighting_corner_NW)
 
-	dynamic_lumcount = old_dynamic_lumcount
+	set_dynamic_lumcount(old_dynamic_lumcount)
 
 	if(SSlighting.initialized)
 		rel_set(src, nameof(lighting_object), old_lighting_object)
@@ -201,7 +201,7 @@
 
 	if(old_shandler) old_shandler.holder_change()
 	if(preserve_outdoors)
-		outdoors = old_outdoors
+		set_outdoors(old_outdoors)
 
 /turf/proc/finalize_explosion_deferred_change(update_appearance = TRUE)
 	levelupdate()

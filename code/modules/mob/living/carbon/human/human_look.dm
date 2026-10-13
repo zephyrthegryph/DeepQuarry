@@ -327,7 +327,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/obj/item/organ/external/head/headtypepath = headtype?["path"]
 	if(!headtypepath)
 		return
-	head.eye_icon = initial(headtypepath.eye_icon)
+	head.set_eye_icon(initial(headtypepath.eye_icon))
 	head.eye_icon_location = initial(headtypepath.eye_icon_location)
 
 /obj/item/organ/external/head/joined_body(mob/living/M)

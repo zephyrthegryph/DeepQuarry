@@ -183,7 +183,7 @@ CAPABILITIES(/datum/overlay_lighting)
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()
 	for(var/turf/lit_turf as anything in affected_turfs)
-		lit_turf.dynamic_lumcount -= lum_power
+		lit_turf.set_dynamic_lumcount(lit_turf.dynamic_lumcount - lum_power)
 	affected_turfs = null // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
 
 ///Populates the affected_turfs lazylist, adding to its contents the effects of being near the light.
@@ -193,7 +193,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	var/atom/movable/light_source = GET_LIGHT_SOURCE
 	. = list()
 	for(var/turf/lit_turf in view(lumcount_range, get_turf(light_source)))
-		lit_turf.dynamic_lumcount += lum_power
+		lit_turf.set_dynamic_lumcount(lit_turf.dynamic_lumcount + lum_power)
 		. += lit_turf
 	if(length(.))
 		affected_turfs = . // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
@@ -460,7 +460,7 @@ CAPABILITIES(/datum/overlay_lighting)
 	lum_power = new_lum_power
 	var/difference = . - lum_power
 	for(var/turf/lit_turf as anything in affected_turfs)
-		lit_turf.dynamic_lumcount -= difference
+		lit_turf.set_dynamic_lumcount(lit_turf.dynamic_lumcount - difference)
 
 ///Moves the light directional_atom that emits our "light" based on our position and our direction
 /datum/overlay_lighting/proc/cast_directional_light()
