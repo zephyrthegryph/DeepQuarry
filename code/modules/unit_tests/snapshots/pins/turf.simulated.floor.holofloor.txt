@@ -1,5 +1,7 @@
 @turf human|none
+-menu: Graffiti
 @turf robot|none
+-menu: Graffiti
 @turf ai|none
 @turf ghost|none
 @turf human|/obj/item/tool/screwdriver
@@ -14,18 +16,16 @@
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 @turf human|/obj/item/tool/wrench
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 @turf human|/obj/item/tool/wirecutters
 -menu: Dig
 -click: Click: Dig
@@ -38,45 +38,39 @@
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 @turf human|/obj/item/weldingtool
 -menu: Dig
 -click: Click: Dig
 +0 menu: Cut through the plating
 +1 menu: Draw graffiti
-+2 menu: Graffiti
-+3 menu: Hit the floor
-+4 menu: Nothing
-+7 click: Click: Cut through the plating
++2 menu: Hit the floor
++3 menu: Nothing
++6 click: Click: Cut through the plating
 @turf human|/obj/item/stack/cable_coil
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 @turf human|/obj/item/stack/material/steel
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 @turf human|/obj/item/card/id
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 human|/obj/item/shovel menu: Draw graffiti
-human|/obj/item/shovel menu: Graffiti
 human|/obj/item/shovel menu: Hit the floor
 human|/obj/item/shovel menu: Nothing
 human|/obj/item/shovel menu: Touch
@@ -86,8 +80,7 @@ human|/obj/item/shovel click: Click: Nothing
 -menu: Dig
 -click: Click: Dig
 +0 menu: Draw graffiti
-+1 menu: Graffiti
-+2 menu: Hit the floor
-+3 menu: Nothing
-+6 click: Click: Nothing
++1 menu: Hit the floor
++2 menu: Nothing
++5 click: Click: Nothing
 keys: crawl_drag, cut_plating, dig, dig_grave, floor_graffiti, floor_item_disarm, floor_item_grab, floor_item_help, floor_item_hurt, graffiti, lay_flooring, pass_item, pry_covering, silicon_hand, turf_crawl, turf_item, turf_touch, unscrew_covering, unwrench_covering, weld_dents

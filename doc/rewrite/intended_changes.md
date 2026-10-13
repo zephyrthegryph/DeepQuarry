@@ -4893,3 +4893,13 @@ telemetry rows are expected to disappear; actual hit damage, health, custody,
 redraw and reactions remain covered by the unchanged public-state rows. No
 other hit-pin change is authorized by this cause. The new live-key regression
 asserts warmed redraw, one notification per mutation and no unchanged wake.
+
+### Master Graffiti requirement: pin refresh during integrity validation
+
+Master `54ee97e79a` (2026-10-12, 18:11:39 -05:00), merged through `e23dd2b9d7`, adds the held-engraving requirement to floor and wall Graffiti ops. Empty hands and unsuitable items no longer see an inert Graffiti menu row. This master fix is independent of integrity publication.
+
+Fresh captures on `4496a7e06b` differ only by 57 removed expanded `menu: Graffiti` rows: `/turf/simulated/floor` (11), `/turf/simulated/floor/holofloor` (11), `/turf/simulated/floor/outdoors/fur` (13), `/turf/simulated/floor/water/digestive_enzymes/nanites` (11), and `/turf/simulated/wall` (11). Each factored file was expanded, its exact removals and retained ordering verified, and re-encoded against unchanged shared bases. No added row, click, refusal or other menu changed.
+
+### Hit capture follows the native light trait
+
+Master fa9f430b95 (2026-10-11) moved light range, power and color to the native light_glow trait. The hit producer now reads glow_of() under the original light_range/light_power/light_color row names and excludes type_trait_overrides, which is internal storage. This repairs observation of the same public lighting state; it authorizes no gameplay snapshot change. A fixture checks declared glow, real setter mutations and turning the light off.

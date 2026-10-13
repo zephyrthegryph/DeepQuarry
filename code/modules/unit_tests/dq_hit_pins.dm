@@ -39,7 +39,7 @@
 		"tag", "x", "y", "z", "loc", "locs", "bound_x", "bound_y", "bound_width", "bound_height", "step_x", "step_y", "weak_reference",
 		"datum_flags", "gc_destroyed", "comp_lookup", "signal_procs", "status_traits", "_listen_lookup", "active_timers", "cooldowns",
 		"light", "light_sources", "x_pos", "y_pos", "z_pos", "ckey", "key", "mind", "client", "last_move", "last_move_time", "pixloc",
-		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx",
+		"om_hid", "own_key_text", "shared_cache_uid", "last_damage_flag", "rx", "type_trait_overrides",
 	)
 	return skip
 
@@ -79,6 +79,11 @@
 	// Native subversion lives in capability keys, outside target.vars. Observe
 	// the public state so a missing emag effect cannot become a passing "nothing".
 	.["is_emagged"] = dq_hit_value(is_emagged(target), "is_emagged")
+	// Preserve semantic lighting rows after their storage moved to a native trait.
+	var/datum/type_trait/light_glow/glow = glow_of(target)
+	.["light_range"] = dq_hit_value(glow.range, "light_range")
+	.["light_power"] = dq_hit_value(glow.power, "light_power")
+	.["light_color"] = dq_hit_value(glow.color, "light_color")
 
 /// The things standing on a tile besides `target`: type -> count.
 /proc/dq_hit_turf_rows(turf/T, atom/target)
@@ -263,3 +268,29 @@
 	if(rest)
 		out += "[rest]"
 	return jointext(out, "|")
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+/obj/dq_hit_glow_fixture
+	abstract_type = /obj/dq_hit_glow_fixture
+CAPABILITIES(/obj/dq_hit_glow_fixture)
+	configure(light_glow(range = 2, power = 1.5, color = "#FF9900"))
+
+/datum/unit_test/dq_hit_native_glow_capture/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
+	var/obj/dq_hit_glow_fixture/F = allocate(/obj/dq_hit_glow_fixture, test_floor())
+	var/list/before = dq_hit_state(F)
+	TEST_ASSERT_EQUAL(before["light_range"], "2", "Hit pins must read the actual declared glow range")
+	TEST_ASSERT_EQUAL(before["light_power"], "1.5", "Hit pins preserve numeric intensity normalization")
+	TEST_ASSERT_EQUAL(before["light_color"], "'#FF9900'", "Hit pins preserve exact color normalization")
+	TEST_ASSERT(!("type_trait_overrides" in before), "Internal trait storage must never appear as behavior")
+	TEST_ASSERT(set_glow(F, GLOW(4, 3, "#006622")), "The real public light setter must change the fixture")
+	TEST_ASSERT(length(F.type_trait_overrides), "The mutation must actually create native trait override storage")
+	var/list/after = dq_hit_state(F)
+	TEST_ASSERT_EQUAL(after["light_range"], "4", "Hit pins must capture a real changed glow range under its original row name")
+	TEST_ASSERT_EQUAL(after["light_power"], "3", "Hit pins must capture a real changed glow power")
+	TEST_ASSERT_EQUAL(after["light_color"], "'#006622'", "Hit pins must capture the real changed color")
+	TEST_ASSERT(!("type_trait_overrides" in after), "Native override creation must not create a storage-only snapshot row")
+	TEST_ASSERT(set_glow(F, GLOW_OFF), "The actual public setter must turn the fixture dark")
+	var/list/dark = dq_hit_state(F)
+	TEST_ASSERT_EQUAL(dark["light_range"], "0", "Turning a real light off remains visible to the hit pin")
+#endif
