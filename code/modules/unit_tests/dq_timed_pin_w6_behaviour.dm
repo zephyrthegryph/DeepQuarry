@@ -872,7 +872,7 @@
 	using_map.use_overmap = FALSE
 	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
 	using_map.use_overmap = had_overmap
-	dog.invisibility = INVISIBILITY_NONE
+	dog.set_invisibility(INVISIBILITY_NONE)
 	dog.in_fur += victim
 	test_chat_clear()
 	hci_click(H, dog, null)
@@ -905,7 +905,7 @@
 	using_map.use_overmap = FALSE
 	var/mob/living/simple_mob/vore/overmap/stardog/test_fur/dog = allocate(/mob/living/simple_mob/vore/overmap/stardog/test_fur, get_step(T, EAST))
 	using_map.use_overmap = had_overmap
-	dog.invisibility = INVISIBILITY_NONE
+	dog.set_invisibility(INVISIBILITY_NONE)
 	dog.in_fur += victim
 	hci_click(H, dog, null)
 	test_time(1 SECOND)

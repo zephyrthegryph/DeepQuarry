@@ -19,9 +19,9 @@ CAPABILITIES(/obj/structure/prop/lock)
 	enabled = !enabled
 
 	if(enabled)
-		icon_state = "[initial(icon_state)]-active"
+		set_icon_state("[initial(icon_state)]-active")
 	else
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 
 /obj/structure/prop/lock/projectile
 	name = "beam lock"

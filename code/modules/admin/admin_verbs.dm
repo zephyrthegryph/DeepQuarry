@@ -780,7 +780,7 @@ ADMIN_VERB(spawn_reagent, R_DEBUG|R_EVENT, "Spawn Reagent", "Spawn any reagent."
 	var/mob/user_mob = user.mob
 	var/obj/item/reagent_containers/glass/bottle/new_bottle = new(user_mob.loc)
 
-	new_bottle.icon_state = "bottle-1"
+	new_bottle.set_icon_state("bottle-1")
 	new_bottle.reagents.add_reagent(new_reagent.id, 60)
 	new_bottle.name = "[new_bottle.name] of [new_reagent.name]"
 

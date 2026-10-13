@@ -10,11 +10,11 @@
 	canmove = 0
 	status_set(STAT_STUNNED, 1)
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), src)
 	flick("h2monkey", animation)
@@ -26,7 +26,7 @@
 	set_transforming(0)
 	status_set(STAT_STUNNED, 0)
 	update_canmove()
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 
 	if(!species.primitive_form) //If the creature in question has no primitive set, this is going to be messy.
 		gib()
@@ -68,7 +68,7 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	return ..()
 
 /mob/proc/AIize(move = TRUE)
@@ -99,7 +99,7 @@
 		newloc = loc_landmark.loc
 
 	var/mob/living/silicon/ai/O = new (newloc, FALSE, using_map.default_law_type, null, 1)//No MMI but safety is in effect.
-	O.invisibility = INVISIBILITY_NONE
+	O.set_invisibility(INVISIBILITY_NONE)
 	O.set_aiRestorePowerRoutine(0)
 
 	if(isliving(src))
@@ -154,14 +154,14 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
 
 	var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(loc)
 
 	O.gender = gender
-	O.invisibility = INVISIBILITY_NONE
+	O.set_invisibility(INVISIBILITY_NONE)
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
@@ -204,7 +204,7 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)
 		ended_with(t, src)
 
@@ -228,7 +228,7 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 	for(var/t in organs)	//this really should not be necessary
 		ended_with(t, src)
 
@@ -263,7 +263,7 @@
 	set_transforming(1)
 	canmove = 0
 	icon = null
-	invisibility = INVISIBILITY_ABSTRACT
+	set_invisibility(INVISIBILITY_ABSTRACT)
 
 	for(var/t in organs)
 		ended_with(t, src)

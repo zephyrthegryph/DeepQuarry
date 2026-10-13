@@ -153,7 +153,7 @@ CAPABILITIES(/atom/movable/screen/combat_mode)
 	return TRUE
 
 /atom/movable/screen/combat_mode/proc/update_for(mob/owner)
-	icon_state = owner.combat_mode ? on_state : off_state
+	set_icon_state(owner.combat_mode ? on_state : off_state)
 
 /// Builds the combat mode button for a HUD. Callers set icon, colour, alpha and layer.
 /datum/hud/proc/make_combat_mode_button(mob/owner, off_state = "intent_help", on_state = "intent_harm")

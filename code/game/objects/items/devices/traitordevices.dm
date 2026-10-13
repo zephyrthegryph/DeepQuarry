@@ -53,7 +53,7 @@ CAPABILITIES(/obj/item/batterer)
 	to_chat(user, span_notice("You trigger [src]."))
 	set_times_used(times_used + 1)
 	if(times_used >= max_uses)
-		icon_state = "battererburnt"
+		set_icon_state("battererburnt")
 
 /obj/item/batterer/proc/mind_batter_effect(mob/living/carbon/human/M)
 	if(!M)

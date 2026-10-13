@@ -31,11 +31,11 @@ CAPABILITIES(/obj/item/uv_light)
 	set_on(!on)
 	if(on)
 		set_glow(src, GLOW(range, 2, "#007fff"))
-		icon_state = "uv_on"
+		set_icon_state("uv_on")
 	else
 		set_glow(src, GLOW(0, null, null))
 		clear_last_scan()
-		icon_state = "uv_off"
+		set_icon_state("uv_off")
 	return TRUE
 
 /obj/item/uv_light/proc/clear_last_scan()
@@ -44,7 +44,7 @@ CAPABILITIES(/obj/item/uv_light)
 			var/atom/O = resolve_handle(object_handle) // a deleted atom stops resolving
 			if(!O)
 				continue
-			O.invisibility = LAZYACCESS(scanned, object_handle)
+			O.set_invisibility(LAZYACCESS(scanned, object_handle))
 			if(dq_get_fluorescent(O) == 2) dq_set_fluorescent(O, 1)
 		LAZYCLEARLIST(scanned)
 	if(length(stored_alpha))
@@ -75,7 +75,7 @@ CAPABILITIES(/obj/item/uv_light)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)
 						LAZYSET(scanned, entity_handle(A), A.invisibility)
-						A.invisibility = INVISIBILITY_NONE
+						A.set_invisibility(INVISIBILITY_NONE)
 						LAZYSET(stored_alpha, entity_handle(A), A.alpha)
 						A.alpha = use_alpha
 					if(istype(A, /obj/item))

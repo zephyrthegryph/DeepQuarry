@@ -44,14 +44,14 @@ TRACKED(/obj/machinery/v_garbosystem, operating)
 /obj/machinery/v_garbosystem/proc/update()
 	if(!operable())
 		set_operating(FALSE)
-		icon_state = "cronchy_off"
+		set_icon_state("cronchy_off")
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operating)
-		icon_state = "cronchy_off"
+		set_icon_state("cronchy_off")
 		set_use_power(USE_POWER_OFF)
 		return
-	icon_state = "cronchy_active"
+	set_icon_state("cronchy_active")
 	set_use_power(USE_POWER_ACTIVE)
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
@@ -67,9 +67,9 @@ CAPABILITIES(/obj/machinery/v_garbosystem)
 
 /obj/machinery/v_garbosystem/proc/work_step(datum/act/timer/A)
 	if(!crusher() || (crusher().power_lost() || crusher().broken_now()))
-		icon_state = "cronchy_off"
+		set_icon_state("cronchy_off")
 		return PROCESS_KILL
-	icon_state = "cronchy_active"
+	set_icon_state("cronchy_active")
 
 	affecting = loc.contents - src
 	after(src, 0.1 SECONDS, PROC_REF(grind_affecting))

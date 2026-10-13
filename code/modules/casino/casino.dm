@@ -89,7 +89,7 @@ CAPABILITIES(/obj/structure/casino_table/roulette_table)
 	play_sfx(src.loc, SFX_MACHINES_ROULETTE)
 	hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
 	ball.on_spin()
-	icon_state = spin_state
+	set_icon_state(spin_state)
 	var/result = rand(0,36)
 	if(ball.cheatball)
 		result = ball.get_cheated_result()
@@ -559,7 +559,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 
 	if(mode == "not_lottery")
 		hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
-		icon_state = "wheel_of_fortune_spinning"
+		set_icon_state("wheel_of_fortune_spinning")
 		result = rand(1,interval)
 
 		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, the number is [result]!"))
@@ -570,7 +570,7 @@ TRACKED(/obj/machinery/wheel_of_fortune, lottery_sale)
 			return
 
 		hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
-		icon_state = "wheel_of_fortune_spinning"
+		set_icon_state("wheel_of_fortune_spinning")
 		result = pick(lottery_tickets)
 
 		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, and the winner is [result]!"))
@@ -708,7 +708,7 @@ TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 				C.sentientprizeitemtf = allowitemtf
 				C.set_name("Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!")
 				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
-				C.icon_state = "casinoslave_available"
+				C.set_icon_state("casinoslave_available")
 				rel_add(src, nameof(collar_list), C)
 
 				spawn_casinochips(casinosentientprize_price, src.loc)
@@ -759,7 +759,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 			return
 		if(confirm == "Yes")
 			to_chat(user, span_warning("[C.sentientprizename] collar has been deleted from registry!"))
-			C.icon_state = "casinoslave"
+			C.set_icon_state("casinoslave")
 			C.set_name("disabled Sentient Prize Collar: [C.sentientprizename]")
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
 			LAZYREMOVE(sentientprizes_ckeys_list, C.sentientprizeckey)
@@ -789,11 +789,11 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 			if("Toggle Sentient Prize Sales")
 				if(casinosentientprize_sale == "disabled")
 					set_casinosentientprize_sale("enabled")
-					icon_state = "casinoslave_hub_on"
+					set_icon_state("casinoslave_hub_on")
 					to_chat(user,span_notice("Prize sale has been enabled."))
 				else
 					set_casinosentientprize_sale("disabled")
-					icon_state = "casinoslave_hub_off"
+					set_icon_state("casinoslave_hub_off")
 					to_chat(user,span_notice("Prize sale has been disabled."))
 
 			if("Wipe Selected Prize Entry")
@@ -1023,7 +1023,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 
 	if(buystate == "selfbuy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))
-		collar.icon_state = "casinoslave"
+		collar.set_icon_state("casinoslave")
 		collar.set_name("disabled Sentient Prize Collar: [collar.sentientprizename]")
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
 		LAZYREMOVE(sentientprizes_ckeys_list, collar.sentientprizeckey)
@@ -1045,7 +1045,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 				to_chat(user,span_infoplain("Falling back to claiming your prize as normal. An admin can help transform your prize!"))
 		else if(declined_tf)
 			to_chat(user,span_notice("You decided to claim your prize without transformation."))
-		collar.icon_state = "casinoslave_owned"
+		collar.set_icon_state("casinoslave_owned")
 		collar.ownername = user.name
 		collar.set_name("Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!")
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."
@@ -1093,7 +1093,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	SStgui.update_uis(src)
 
 /obj/structure/casino_table/roulette_table/proc/roulette_stops(result, color)
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 	if(color=="gold") // Happy celebrations!
 		visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
@@ -1110,7 +1110,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	confetti_spread.attach(src) //If somehow people start dragging slot machine
 	confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	flick("[icon_state]-winning",src)
-	icon_state = "wheel_of_fortune"
+	set_icon_state("wheel_of_fortune")
 
 /obj/structure/casino_table/roulette_table/ownership()
 	. = ..()

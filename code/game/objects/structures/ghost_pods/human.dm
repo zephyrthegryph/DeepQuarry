@@ -102,7 +102,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/human)
 		E.description_antag = "This is a 'disguised' emag, to make your escape from wherever you happen to be trapped."
 		H.equip_to_appropriate_slot(E)
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 
@@ -222,7 +222,7 @@ CAPABILITIES(/obj/structure/ghost_pod/manual/human)
 
 	H.offer_spawn_rename()
 
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 
 	H.forceMove(T)
 

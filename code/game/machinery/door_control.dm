@@ -213,7 +213,7 @@ CAPABILITIES(/obj/machinery/button/remote/blast_door)
 /// Toggles like any remote button but keeps the bear's sprite.
 /obj/machinery/button/remote/blast_door/bear/pressed(datum/act/op/A)
 	. = ..()
-	icon_state = "stuffedbear"
+	set_icon_state("stuffedbear")
 
 /// The look (the draw sweep: from its template).
 /obj/machinery/button/remote/blast_door/bear/draw(datum/look/look)
@@ -362,7 +362,7 @@ TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
 /obj/machinery/button/remote/blast_door/single_use/slab/pressed(datum/act/op/A)
 	. = ..()
 	to_chat(A.actor, span_notice("You hear a heavy mechanism open somewhere in the distance."))
-	icon_state = pressed_state
+	set_icon_state(pressed_state)
 
 /// The look (the mapped sprite).
 /obj/machinery/button/remote/blast_door/single_use/slab/draw(datum/look/look)

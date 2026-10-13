@@ -59,7 +59,7 @@ CAPABILITIES(/obj/structure/ghost_pod/ghost_activated/unified_hole)
 				return OP_OK
 			create_lurker(user)
 	set_used(TRUE)
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	return OP_OK
 

@@ -133,7 +133,7 @@ CAPABILITIES(/obj/item/clothing/mask/smokable/ecig/util)
 	var/wanted = ecig_state()
 	if(item_state == wanted)
 		return
-	item_state = wanted
+	set_item_state(wanted)
 	if(ismob(loc))
 		var/mob/living/M = loc
 		changed(src)

@@ -29,7 +29,7 @@ CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 /obj/item/instrument/piano_synth/headphones/proc/start_playing(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	icon_state = "[initial(icon_state)]_on"
+	set_icon_state("[initial(icon_state)]_on")
 	changed(src) // the wearer watches its headphones
 
 /**
@@ -38,7 +38,7 @@ CAPABILITIES(/obj/item/instrument/piano_synth/headphones)
 /obj/item/instrument/piano_synth/headphones/proc/stop_playing(datum/act/notice/N)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 	changed(src) // the wearer watches its headphones
 
 

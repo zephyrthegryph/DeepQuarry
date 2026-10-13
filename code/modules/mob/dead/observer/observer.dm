@@ -941,7 +941,7 @@ CAPABILITIES(/datum/ghost_doodle_review)
 		to_chat(src, span_info("You are now visible!"))
 
 	plane = (plane == PLANE_GHOSTS) ? PLANE_WORLD : PLANE_GHOSTS
-	invisibility = (plane == PLANE_WORLD) ? INVISIBILITY_NONE : INVISIBILITY_OBSERVER
+	set_invisibility((plane == PLANE_WORLD) ? INVISIBILITY_NONE : INVISIBILITY_OBSERVER)
 
 	// Give the ghost a cult icon which should be visible only to itself
 	toggle_icon("cult")
@@ -1139,17 +1139,17 @@ CAPABILITIES(/datum/prompt/text/spectral_whisper)
 	var/datum/prompt/choice/ghost_sprite/prompt = A.answer
 	icon = 'icons/mob/ghost.dmi'
 	cut_overlays()
-	icon_state = GLOB.possible_ghost_sprites[A.answer.value]
+	set_icon_state(GLOB.possible_ghost_sprites[A.answer.value])
 	open_request(src, /datum/prompt/choice/ghost_sprite_confirm, PROC_REF(ghost_sprite_confirmed), answerer = src, previous = prompt.previous, picked_sprite = A.answer.value)
 
 /mob/observer/dead/proc/ghost_sprite_confirmed(datum/act/request/A)
 	var/datum/prompt/choice/ghost_sprite_confirm/prompt = A.request
 	if(!A.answer)
 		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.value) && !QDELETED(A.request.answerer))
-			icon_state = prompt.previous
+			set_icon_state(prompt.previous)
 		return
 	if(A.answer.value == "No")
-		icon_state = prompt.previous
+		set_icon_state(prompt.previous)
 		ask_ghost_sprite(prompt.previous)
 		return
 	ghost_sprite = GLOB.possible_ghost_sprites[prompt.picked_sprite]

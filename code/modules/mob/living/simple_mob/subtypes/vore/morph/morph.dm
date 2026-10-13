@@ -118,7 +118,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	name = target.name
 	desc = target.desc
 	icon = target.icon
-	icon_state = target.icon_state
+	set_icon_state(target.icon_state)
 	alpha = max(target.alpha, 150)
 	copy_overlays(target, TRUE)
 	our_size_multiplier = size_multiplier
@@ -161,7 +161,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	desc = initial(desc)
 
 	icon = initial(icon)
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 
 	alpha = initial(alpha)
 	if(chosen_color)
@@ -210,7 +210,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/morph/dominated_prey)
 	if(morphed)
 		var/temp_state = icon_state
 		..()
-		icon_state = temp_state
+		set_icon_state(temp_state)
 		//Stolen from protean blobs, ambush noms from resting! Doesn't hide you any better, but makes noms sneakier.
 		if(resting)
 			plane = ABOVE_OBJ_PLANE

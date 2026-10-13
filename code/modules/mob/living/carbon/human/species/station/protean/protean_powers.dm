@@ -112,7 +112,7 @@ CAPABILITIES(/obj/effect/protean_power_button)
 	name = power.name
 	desc = power.desc
 	icon = power.icon
-	icon_state = power.icon_state
+	set_icon_state(power.icon_state)
 
 /obj/effect/protean_power_button/Click(location, control, params)
 	var/mob/living/carbon/human/H = usr

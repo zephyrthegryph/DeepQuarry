@@ -75,11 +75,11 @@ CAPABILITIES(/obj/item/extrapolator)
 	var/mob/user = A.actor
 	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
-		icon_state = "extrapolator_sample"
+		set_icon_state("extrapolator_sample")
 		scan = FALSE
 		to_chat(user, span_notice("You remove the probe from the device and set it to EXTRACT."))
 	else
-		icon_state = "extrapolator_scan"
+		set_icon_state("extrapolator_scan")
 		scan = TRUE
 		to_chat(user, span_notice("You put the probe back into the device and set it to SCAN."))
 	return OP_OK

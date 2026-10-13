@@ -428,7 +428,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	var/S=0
 	for(var/obj/effect/rune/R in orange(rad,src))
 		if(R!=src)
-			R.invisibility=INVISIBILITY_OBSERVER
+			R.set_invisibility(INVISIBILITY_OBSERVER)
 		S=1
 	if(S)
 		if(istype(src,/obj/effect/rune))

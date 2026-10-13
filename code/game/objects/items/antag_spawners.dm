@@ -58,13 +58,13 @@ CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
 	return OP_OK
 
 /obj/item/antag_spawner/technomancer_apprentice/request_player()
-	icon_state = "oldshieldon"
+	set_icon_state("oldshieldon")
 	..()
 
 /obj/item/antag_spawner/technomancer_apprentice/reset_search()
 	..()
 	if(!used)
-		icon_state = "oldshieldoff"
+		set_icon_state("oldshieldoff")
 		visible_message(span_warning("The teleporter failed to find the apprentice.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/technomancer_apprentice/spawn_antag(client/C, turf/T)
@@ -110,13 +110,13 @@ CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
 	return OP_OK
 
 /obj/item/antag_spawner/syndicate_drone/request_player()
-	icon_state = "oldshieldon"
+	set_icon_state("oldshieldon")
 	..()
 
 /obj/item/antag_spawner/syndicate_drone/reset_search()
 	..()
 	if(!used)
-		icon_state = "oldshieldoff"
+		set_icon_state("oldshieldoff")
 		visible_message(span_warning("The teleporter failed to find any available.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/syndicate_drone/spawn_antag(client/C, turf/T)

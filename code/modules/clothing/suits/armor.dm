@@ -826,14 +826,14 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle/yw/secjacket)
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		open = 0
-		icon_state = "secjacket"
-		item_state = "secjacket_s"
+		set_icon_state("secjacket")
+		set_item_state("secjacket_s")
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		open = 1
-		icon_state = "secjacket_open"
-		item_state = "secjacket_open_s"
+		set_icon_state("secjacket_open")
+		set_item_state("secjacket_open_s")
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed

@@ -379,7 +379,7 @@ CAPABILITIES(/datum/prompt/number/plasma_transfer)
 		return
 
 	G.state = GRAB_PASSIVE
-	G.icon_state = "grabbed1"
+	G.set_icon_state("grabbed1")
 	G.synch()
 
 /mob/living/carbon/human/proc/gut()

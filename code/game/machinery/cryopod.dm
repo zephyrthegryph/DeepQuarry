@@ -342,7 +342,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 
 /obj/machinery/cryopod/robot/door/gateway/despawn_occupant()
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "off"
+		G.set_icon_state("off")
 	..()
 
 // This function can not be undone; do not call this unless you are sure
@@ -488,7 +488,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 				if((G.fields["name"] == to_despawn.real_name))
 					spent(G)
 
-		icon_state = base_icon_state
+		set_icon_state(base_icon_state)
 
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
@@ -546,7 +546,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 /obj/machinery/cryopod/proc/interaction_eject(datum/act/op/A)
 	var/mob/user = A.actor
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	icon_state = base_icon_state
+	set_icon_state(base_icon_state)
 
 	//Eject any items that aren't meant to be in the pod.
 	var/list/items = contents
@@ -595,7 +595,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 		var/atom/movable/_tmp_buck_6 = user?.buckled_to()
 		_tmp_buck_6.forceMove(user.loc)
 
-	icon_state = occupied_icon_state
+	set_icon_state(occupied_icon_state)
 
 	to_chat(user, span_notice("[on_enter_occupant_message]"))
 	to_chat(user, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))
@@ -607,13 +607,13 @@ CAPABILITIES(/obj/machinery/cryopod)
 /obj/machinery/cryopod/robot/door/gateway/self_entry_started(datum/act/op/A)
 	. = ..()
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "on"
+		G.set_icon_state("on")
 	return .
 
 /obj/machinery/cryopod/robot/door/gateway/go_out(skip_move = FALSE)
 	..(skip_move)
 	for(var/obj/machinery/gateway/G in range(1,src))
-		G.icon_state = "off"
+		G.set_icon_state("off")
 
 /obj/machinery/cryopod/proc/go_out(skip_move = FALSE)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
@@ -628,7 +628,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 		L.set_stasis(null, src)
 	set_occupant(null)
 
-	icon_state = base_icon_state
+	set_icon_state(base_icon_state)
 
 	return
 
@@ -663,7 +663,7 @@ CAPABILITIES(/obj/machinery/cryopod)
 		return msg_text(null, "%U% [on_enter_visible_message] %T%.")
 	return msg_text(null, "%U% starts putting [M] into %T%.")
 /obj/machinery/cryopod/proc/go_in_finish(mob/M, mob/user)
-	icon_state = occupied_icon_state
+	set_icon_state(occupied_icon_state)
 
 	to_chat(M, span_notice("[on_enter_occupant_message]"))
 	to_chat(M, span_boldnotice("If you ghost, log out or close your client now, your character will shortly be permanently removed from the round."))

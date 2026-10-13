@@ -47,10 +47,10 @@ CAPABILITIES(/obj/item/implanter)
 
 /obj/item/implanter/proc/update()
 	if (src.imp)
-		src.icon_state = "implanter1"
+		set_icon_state("implanter1")
 	else
-		src.icon_state = "implanter0"
-	src.icon_state += "_[active]"
+		set_icon_state("implanter0")
+	set_icon_state(src.icon_state + ("_[active]"))
 	return
 
 /obj/item/implanter/proc/implant_time(datum/act/op/A)
@@ -156,11 +156,11 @@ CAPABILITIES(/obj/item/implanter)
 	if (imp)
 		var/obj/item/implant/compressed/c = imp
 		if(!c.scanned())
-			icon_state = "cimplanter1"
+			set_icon_state("cimplanter1")
 		else
-			icon_state = "cimplanter2"
+			set_icon_state("cimplanter2")
 	else
-		icon_state = "cimplanter0"
+		set_icon_state("cimplanter0")
 	return
 
 /obj/item/implanter/compressed/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

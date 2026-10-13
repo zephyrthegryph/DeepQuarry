@@ -310,7 +310,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 	O.name = "Thermite"
 	O.desc = "Looks hot."
 	O.icon = 'icons/effects/fire.dmi'
-	O.icon_state = "2"
+	O.set_icon_state("2")
 	O.set_anchored(TRUE)
 	O.set_density(TRUE)
 	O.plane = ABOVE_PLANE
@@ -322,7 +322,7 @@ TRACKED(/turf/simulated/wall, radioactive)
 
 	var/turf/simulated/floor/F = src
 	F.burn_tile()
-	F.icon_state = "dmg[rand(1,4)]"
+	F.set_icon_state("dmg[rand(1,4)]")
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
 	after(null, 10 SECONDS, GLOBAL_PROC_REF(thermite_cleanup), with = list(O)) // not on the wall: the turf is the plating by then
@@ -1111,19 +1111,19 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 	var/obj/machinery/door/window/A = new(src)
 	if(selected_windoor_type == "default")
 		selected_windoor_type = ""
-	A.icon_state = selected_windoor_open_dir+selected_windoor_type
+	A.set_icon_state(selected_windoor_open_dir+selected_windoor_type)
 	A.set_base_state(selected_windoor_open_dir+selected_windoor_type)
 	switch(selected_windoor_dir)
 		if("NORTH")
-			A.dir = NORTH
+			A.set_dir(NORTH)
 		if("SOUTH")
-			A.dir = SOUTH
+			A.set_dir(SOUTH)
 		if("EAST")
-			A.dir = EAST
+			A.set_dir(EAST)
 		if("WEST")
-			A.dir = WEST
+			A.set_dir(WEST)
 	if(selected_windoor_type == "secure")
-		A.max_integrity = 300
+		A.set_max_integrity(300)
 		A.update_integrity(A.max_integrity)
 	rel_set(A, nameof(A.electronics), new/obj/item/airlock_electronics(A))
 	A.electronics.req_access = null
@@ -1243,9 +1243,9 @@ CAPABILITIES(/datum/prompt/choice/rcd_build_review)
 				to_chat(user, span_warning("There is already a wall item there!"))
 				return FALSE
 			var/obj/O = new the_rcd.wall_frame_type(get_step(src,direction))
-			O.dir = direction
+			O.set_dir(direction)
 			if(istype(O,/obj/machinery/light))
-				O.dir = GLOB.reverse_dir[O.dir]
+				O.set_dir(GLOB.reverse_dir[O.dir])
 				return TRUE
 			var/static/list/adjusts = list(
 			/obj/machinery/computer/security/telescreen/entertainment,

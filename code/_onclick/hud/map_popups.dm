@@ -151,7 +151,7 @@
 	background.assigned_map = map_name
 	background.fill_rect(1, 1, width, height)
 	if(bg_icon)
-		background.icon_state = bg_icon
+		background.set_icon_state(bg_icon)
 	register_map_obj(background)
 
 	return map_name

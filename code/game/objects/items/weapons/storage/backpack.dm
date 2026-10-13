@@ -79,11 +79,11 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 	if(!user.canmove || user.stat || user.restrained())
 		return OP_REFUSED
 	if(tilted)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
-		icon_state = "[icon_state]_tilted"
+		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	changed(src)
@@ -199,11 +199,11 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag)
 	if(!user.canmove || user.stat || user.restrained())
 		return OP_REFUSED
 	if(tilted)
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
 		tilted = 0
 	else
-		icon_state = "[icon_state]_tilted"
+		set_icon_state("[icon_state]_tilted")
 		to_chat(user, "You adjust the angle of \the [src] to rest diagonally across your back.")
 		tilted = 1
 	changed(src)

@@ -117,7 +117,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 		if(!choice || choice == "No" || !Adjacent(user) || !operable() || panel_open || busy_bank)
 			return
 		set_busy_bank(TRUE)
-		icon_state = "item_bank_o"
+		set_icon_state("item_bank_o")
 		perform_op(user, src, "retrieve_wait", null, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL, with = list("item_type" = I))
 		return
 	else if(choice == "Info")
@@ -164,7 +164,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 
 /obj/machinery/item_bank/proc/bank_interrupted()
 	set_busy_bank(FALSE)
-	icon_state = "item_bank"
+	set_icon_state("item_bank")
 
 /// The wait ended without its work: the bank is free again.
 /obj/machinery/item_bank/proc/bank_wait_interrupted(datum/act/op/A)
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 	fdel(path)
 	item_takers += user.ckey
 	set_busy_bank(FALSE)
-	icon_state = "item_bank"
+	set_icon_state("item_bank")
 
 /// Requirement: TRUE, or why nothing can be stored right now (a non-human is refused silently by the effect).
 /obj/machinery/item_bank/proc/can_store(mob/living/user, atom/target, obj/item/held)
@@ -216,7 +216,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 	log_admin("[key_name_admin(user)] stored [O] in the item bank.")
 	consume(O, user)
 	set_busy_bank(FALSE)
-	icon_state = "item_bank"
+	set_icon_state("item_bank")
 
 /obj/machinery/item_bank/proc/interaction_store(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -239,7 +239,7 @@ CAPABILITIES(/obj/machinery/item_bank)
 				return OP_OK
 		set_busy_bank(TRUE)
 		act_message(user, src, MSG_SELF(span_notice("You begin storing %I% in %T%.")), MSG_OTHERS(span_notice("%U% begins storing %I% in %T%.")), item = O)
-		icon_state = "item_bank_o"
+		set_icon_state("item_bank_o")
 		perform_op(user, src, "store_wait", O, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 		return OP_OK
 	else

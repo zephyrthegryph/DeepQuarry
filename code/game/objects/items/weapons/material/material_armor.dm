@@ -26,7 +26,7 @@
 		spent(src)
 	else
 		name = "[material.display_name] [initial(name)]"
-		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_color)
 			color = material.icon_colour
@@ -312,7 +312,7 @@ CAPABILITIES(/obj/item/material/armor_plating)
 		if(S.use(20))
 			to_chat(user, span_notice("You attach several wires to \the [src].  Now it needs another plate."))
 			wired = TRUE
-			icon_state = "[initial(icon_state)]_wired"
+			set_icon_state("[initial(icon_state)]_wired")
 			return OP_PASS
 		else
 			to_chat(user, span_notice("You need more wire for that."))

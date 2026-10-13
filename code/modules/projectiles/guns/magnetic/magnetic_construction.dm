@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/coilgun_assembly)
 /obj/item/coilgun_assembly/proc/increment_construction_stage()
 	if(construction_stage < 9)
 		construction_stage++
-	icon_state = "coilgun_construction_[construction_stage]"
+	set_icon_state("coilgun_construction_[construction_stage]")
 
 /obj/item/coilgun_assembly/examine(mob/user)
 	. = ..()

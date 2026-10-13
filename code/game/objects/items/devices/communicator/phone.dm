@@ -87,7 +87,7 @@
 	var/atom/movable/screen/blackness = new() 	//Makes a black screen, so the candidate can't see what's going on before actually 'connecting' to the communicator.
 	blackness.screen_loc = ui_entire_screen
 	blackness.icon = 'icons/effects/effects.dmi'
-	blackness.icon_state = "1"
+	blackness.set_icon_state("1")
 	blackness.mouse_opacity = 2			//Can't see anything!
 	new_voice.client.screen.Add(blackness)
 

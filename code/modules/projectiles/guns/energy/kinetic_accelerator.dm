@@ -672,11 +672,11 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 /obj/item/borg/upgrade/modkit/chassis_mod/install(obj/item/gun/energy/kinetic_accelerator/KA, mob/user)
 	. = ..()
 	if(.)
-		KA.icon_state = chassis_icon
+		KA.set_icon_state(chassis_icon)
 		KA.name = chassis_name
 
 /obj/item/borg/upgrade/modkit/chassis_mod/uninstall(obj/item/gun/energy/kinetic_accelerator/KA)
-	KA.icon_state = initial(KA.icon_state)
+	KA.set_icon_state(initial(KA.icon_state))
 	KA.name = initial(KA.name)
 	..()
 
@@ -694,7 +694,7 @@ CAPABILITIES(/obj/item/borg/upgrade/modkit)
 	var/bolt_color = "#FFFFFF"
 
 /obj/item/borg/upgrade/modkit/tracer/modify_projectile(obj/item/projectile/kinetic/K)
-	K.icon_state = "ka_tracer"
+	K.set_icon_state("ka_tracer")
 	K.color = bolt_color
 
 /obj/item/borg/upgrade/modkit/tracer/adjustable

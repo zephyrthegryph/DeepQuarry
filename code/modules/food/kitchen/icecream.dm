@@ -96,7 +96,7 @@ CAPABILITIES(/obj/machinery/icecream_vat)
 			product_types[index_action] -= 1
 			var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
 			I.cone_type = cone_name
-			I.icon_state = "icecream_cone_[cone_name]"
+			I.set_icon_state("icecream_cone_[cone_name]")
 			I.desc = "Delicious [cone_name] cone, but no ice cream."
 			act_message(user, src, MSG_SELF(span_info("You dispense a crunchy [cone_name] cone from %T%.")), MSG_OTHERS(span_info("%U% dispenses a crunchy [cone_name] cone from %T%.")))
 		else

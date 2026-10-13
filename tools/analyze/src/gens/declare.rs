@@ -708,6 +708,9 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
             out.line(format!("{}/declared_entries(list/into)", ty));
             out.line("\t..(into)");
             out.line(format!("\tinto += entry_block({}, {}, {})", quote(&m.rel), m.line, ty));
+            // table_build() marks the chain it asks for: a block whose table is already compiled is not read, so its constructors are not run again.
+            out.line(format!("\tif(declare_block_skipped(into, {}))", ty));
+            out.line("\t\treturn");
             // section(name, "doc") opens a section: the entries after it, to the next section or the block's end, are the type's own
             // entries like any other, and each carries the section's name with its file:line (Explain Type and Interaction print both).
             let mut current: Option<(String, u32, usize)> = None; // name, line, entries so far

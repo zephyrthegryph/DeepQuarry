@@ -51,7 +51,7 @@
 		I.icon = new_icon_file ? new_icon_file : I.icon
 		I.set_icon_override(new_icon_override_file ? new_icon_override_file : I.icon_override)
 		if(new_icon)
-			I.icon_state = new_icon
+			I.set_icon_state(new_icon)
 		var/obj/item/clothing/under/U = I
 		if(istype(U))
 			U.worn_state = I.icon_state
@@ -109,8 +109,8 @@
 			var/obj/item/clothing/head/helmet/space/void/helmet = I
 			helmet.name = "[new_name] suit helmet"
 			helmet.desc = new_desc
-			helmet.icon_state = "[new_icon]_helmet"
-			helmet.item_state = "[new_icon]_helmet"
+			helmet.set_icon_state("[new_icon]_helmet")
+			helmet.set_item_state("[new_icon]_helmet")
 			if(new_icon_file)
 				helmet.icon = new_icon_file
 			if(new_icon_override_file)
@@ -125,10 +125,10 @@
 			var/obj/item/clothing/suit/storage/hooded/suit = I
 			suit.name = "[new_name] suit"
 			suit.desc = new_desc
-			suit.icon_state = "[new_icon]_suit"
+			suit.set_icon_state("[new_icon]_suit")
 			suit.set_toggleicon("[new_icon]_suit")
 			var/obj/item/clothing/head/hood/S = suit.hood
-			S.icon_state = "[new_icon]_helmet"
+			S.set_icon_state("[new_icon]_helmet")
 			if(new_icon_file)
 				suit.icon = new_icon_file
 				S.icon = new_icon_file
@@ -140,8 +140,8 @@
 			var/obj/item/clothing/suit/space/void/suit = I
 			suit.name = "[new_name] voidsuit"
 			suit.desc = new_desc
-			suit.icon_state = "[new_icon]_suit"
-			suit.item_state = "[new_icon]_suit"
+			suit.set_icon_state("[new_icon]_suit")
+			suit.set_item_state("[new_icon]_suit")
 			if(new_icon_file)
 				suit.icon = new_icon_file
 			if(new_icon_override_file)
@@ -160,12 +160,12 @@
 /obj/item/kit/suit/rig/customize(obj/item/I, mob/user)
 	var/obj/item/rig/RIG = I
 	RIG.suit_state = new_icon
-	RIG.item_state = new_icon
+	RIG.set_item_state(new_icon)
 	RIG.suit_type = "customized [initial(RIG.suit_type)]"
 	RIG.name = "[new_name]"
 	RIG.desc = new_desc
 	RIG.icon = new_icon_file
-	RIG.icon_state = new_icon
+	RIG.set_icon_state(new_icon)
 	RIG.set_icon_override(new_icon_override_file)
 	for(var/obj/item/piece in list(RIG.gloves,RIG.helmet,RIG.boots,RIG.chest))
 		if(!istype(piece))
@@ -182,7 +182,7 @@
 		else
 			piece.name = "[RIG.suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [RIG.name]."
-		piece.icon_state = "[RIG.suit_state]"
+		piece.set_icon_state("[RIG.suit_state]")
 		if(istype(piece, /obj/item/clothing/shoes))
 			piece.icon = 'icons/mob/custom_items_rig_boots.dmi'
 			piece.set_icon_override('icons/mob/custom_items_rig_boots.dmi')

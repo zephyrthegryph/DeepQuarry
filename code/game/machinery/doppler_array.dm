@@ -78,9 +78,9 @@ CAPABILITIES(/obj/machinery/doppler_array)
 /obj/machinery/doppler_array/power_change()
 	. = ..()
 	if(!power_lost())
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	else
-		icon_state = "[initial(icon_state)]_off"
+		set_icon_state("[initial(icon_state)]_off")
 
 /obj/machinery/doppler_array/proc/interaction_part_replacement_impl(datum/act/op/A)
 	var/mob/user = A.actor

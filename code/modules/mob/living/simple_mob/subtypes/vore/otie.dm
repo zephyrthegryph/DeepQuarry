@@ -330,7 +330,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/otie)
 /mob/living/simple_mob/vore/otie/on_death(gibbed)
 	.=..()
 	set_resting(0)
-	icon_state = icon_dead
+	set_icon_state(icon_dead)
 
 /mob/living/simple_mob/vore/otie/Login()
 	. = ..()

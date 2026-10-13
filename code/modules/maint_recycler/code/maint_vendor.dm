@@ -64,7 +64,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	if(GLOB.recycler_vendor_locations.len > 0)
 		var/turf/spot = pick(GLOB.recycler_vendor_locations)
 		forceMove(spot)
-		dir = SOUTH
+		set_dir(SOUTH)
 		log_admin("[src] has been placed at [loc], [x],[y],[z]")
 		testing("[src] has been placed at [loc], [x],[y],[z]")
 	else

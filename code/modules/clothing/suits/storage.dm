@@ -44,12 +44,12 @@ CAPABILITIES(/obj/item/clothing/suit/storage/toggle)
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		open = 0
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 		set_flags_inv(HIDETIE|HIDEHOLSTER)
 		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		open = 1
-		icon_state = "[icon_state]_open"
+		set_icon_state("[icon_state]_open")
 		set_flags_inv(HIDEHOLSTER)
 		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
@@ -112,10 +112,10 @@ CAPABILITIES(/obj/item/clothing/suit/storage/vest)
 		return 0
 
 	if(icon_state == icon_badge)
-		icon_state = icon_nobadge
+		set_icon_state(icon_nobadge)
 		to_chat(user, "You conceal \the [src]'s badge.")
 	else if(icon_state == icon_nobadge)
-		icon_state = icon_badge
+		set_icon_state(icon_badge)
 		to_chat(user, "You reveal \the [src]'s badge.")
 	else
 		to_chat(user, "\The [src] does not have a badge.")

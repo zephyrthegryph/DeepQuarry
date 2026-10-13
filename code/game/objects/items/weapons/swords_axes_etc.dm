@@ -65,8 +65,8 @@ CAPABILITIES(/obj/item/melee/telebaton)
 		act_message(user, null, MSG_SELF(span_warning("You extend the baton.")), \
 			MSG_OTHERS(span_warning("With a flick of their wrist, %U% extends their telescopic baton.")), \
 			MSG_BLIND("You hear an ominous click."))
-		icon_state = "telebaton1"
-		item_state = icon_state
+		set_icon_state("telebaton1")
+		set_item_state(icon_state)
 		set_w_class(ITEMSIZE_NORMAL)
 		set_force(15)//quite robust
 		set_attack_verb(list("smacked", "struck", "slapped"))
@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/melee/telebaton)
 		act_message(user, null, MSG_SELF(span_notice("You collapse the baton.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their telescopic baton.")), \
 			MSG_BLIND("You hear a click."))
-		icon_state = "telebaton0"
-		item_state = icon_state
+		set_icon_state("telebaton0")
+		set_item_state(icon_state)
 		set_w_class(ITEMSIZE_SMALL)
 		set_force(3)//not so robust now
 		set_attack_verb(list("hit", "punched"))

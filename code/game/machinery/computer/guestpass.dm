@@ -76,7 +76,7 @@ CAPABILITIES(/obj/item/card/id/guest)
 	if(!expired)
 		//rip guest pass </3
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + "deactivates %T%."))
-		icon_state = "guest-invalid"
+		set_icon_state("guest-invalid")
 		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		set_expired(TRUE)
 
@@ -87,7 +87,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 	if(expired)
 		return
 	visible_message(span_warning("\The [src] flashes a few times before turning red."))
-	icon_state = "guest-invalid"
+	set_icon_state("guest-invalid")
 	set_expired(TRUE)
 
 /////////////////////////////////////////////

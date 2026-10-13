@@ -178,7 +178,7 @@ CAPABILITIES(/datum/prompt/choice/camera_direction)
 	var/datum/prompt/choice/camera_direction/R = A.request
 	var/obj/machinery/camera/C = R.camera
 	if(A.answer.value != "LEAVE IT")
-		C.dir = text2dir(A.answer.value)
+		C.set_dir(text2dir(A.answer.value))
 	if(R.chances > 0)
 		open_request(src, /datum/prompt/yes_no/camera_direction_ok, PROC_REF(camera_direction_confirmed), answerer = R.answerer, title = "Confirmation", question = "Is this what you want? Chances Remaining: [R.chances]", camera = C, chances = R.chances, ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 

@@ -61,10 +61,10 @@ CAPABILITIES(/obj/item/mmi)
 	var/mob/living/carbon/brain/view = get_occupant()
 	if(!view)
 		name = initial(name)
-		icon_state = "mmi_empty"
+		set_icon_state("mmi_empty")
 		return
 	name = "[initial(name)] ([view.real_name])"
-	icon_state = "mmi_full"
+	set_icon_state("mmi_full")
 	locked = 1
 
 /// Old Toggle Brain Radio verb: Enables or disables the integrated brain radio, which is only usable outside of a body.
@@ -354,7 +354,7 @@ CAPABILITIES(/obj/item/mmi/digital)
 	ghost_query_type = /datum/ghost_query/posi_brain
 
 /obj/item/mmi/digital/posibrain/request_player()
-	icon_state = "posibrain-searching"
+	set_icon_state("posibrain-searching")
 	..()
 
 /obj/item/mmi/digital/posibrain/take_identity(mob/living/L, move_mind = TRUE)
@@ -363,15 +363,15 @@ CAPABILITIES(/obj/item/mmi/digital)
 	if(view.mind)
 		view.mind.assigned_role = JOB_POSITRONIC_BRAIN
 	to_chat(view, span_notify("You feel slightly disoriented. That's normal when you're just a metal cube."))
-	icon_state = "posibrain-occupied"
+	set_icon_state("posibrain-occupied")
 
 /obj/item/mmi/digital/posibrain/transfer_personality(mob/candidate)
 	..()
-	icon_state = "posibrain-occupied"
+	set_icon_state("posibrain-occupied")
 
 /obj/item/mmi/digital/posibrain/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	..()
-	icon_state = "posibrain"
+	set_icon_state("posibrain")
 
 // ALLOW(init/INSTANCE_STATE): rolls the designation of the mind it boots
 /obj/item/mmi/digital/posibrain/Initialize(mapload)

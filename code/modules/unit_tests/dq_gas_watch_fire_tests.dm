@@ -51,7 +51,7 @@
 	var/obj/machinery/atmospherics/pipe/simple/P1 = allocate(/obj/machinery/atmospherics/pipe/simple, A)
 	var/obj/machinery/atmospherics/pipe/simple/P2 = allocate(/obj/machinery/atmospherics/pipe/simple, B)
 	for(var/obj/machinery/atmospherics/pipe/simple/P as anything in list(P1, P2))
-		P.dir = direction | REVERSE_DIR(direction)
+		P.set_dir(direction | REVERSE_DIR(direction))
 		P.initialize_directions = P.dir
 	P1.atmos_init()
 	P2.atmos_init()

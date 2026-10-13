@@ -80,12 +80,12 @@
 	if(!target() || !istype(O))
 		return
 
-	O.dir = get_dir(O, target())
+	O.set_dir(get_dir(O, target()))
 
 	if(!target() || !istype(O))
 		return
 
-	O.dir = get_dir(O, target())
+	O.set_dir(get_dir(O, target()))
 
 	if(isturf(O.loc))
 		if(get_dist(O.loc, target().loc) > 1)

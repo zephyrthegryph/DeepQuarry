@@ -90,7 +90,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	else if(H.tail_style)
 		tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
 
-	max_integrity = H.get_endurance() + 100
+	set_max_integrity(H.get_endurance() + 100)
 	original_int = H.vitality() * H.get_endurance() + 100
 	update_integrity(original_int)
 	name = "[identifier] of [H.name]"
@@ -139,7 +139,7 @@ CAPABILITIES(/obj/structure/gargoyle)
 	layer = H.layer
 	pixel_x = H.pixel_x
 	pixel_y = H.pixel_y
-	dir = H.dir
+	set_dir(H.dir)
 	initial_lying = H.lying
 	initial_lying_prev = H.lying_prev
 	H.set_sdisabilities(H.sdisabilities | MUTE)

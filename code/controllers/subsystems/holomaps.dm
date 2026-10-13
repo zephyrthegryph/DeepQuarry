@@ -14,6 +14,11 @@ SYSTEM_DEF(holomaps)
 
 
 /datum/system/holomaps/initialize()
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_HOLOMAPS))
+		unit_test_boot_skipped(BOOT_NEED_HOLOMAPS, "HoloMiniMaps (no minimap is generated)")
+		return
+	#endif
 	generateHoloMinimaps()
 
 /datum/system/holomaps/stat_entry(msg)

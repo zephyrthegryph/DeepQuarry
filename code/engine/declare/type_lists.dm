@@ -32,6 +32,22 @@
 		result = call(post)(result)
 	return result
 
+/// The names of the vars of D's type that count toward its signature (saved vars, not "vars" or "tag"), built once per type: whether a
+/// var is saved depends on the type alone, so the per-var issaved() test need not run again for every datum signed.
+/proc/signature_vars_of(datum/D)
+	RETURN_TYPE(/list)
+	var/static/list/by_type = list()
+	var/list/names = by_type[D.type]
+	if(names)
+		return names
+	names = list()
+	for(var/name in D.vars)
+		if(name == "vars" || name == "tag" || !issaved(D.vars[name]))
+			continue
+		names += name
+	by_type[D.type] = names
+	return names
+
 /**
  * A stable text signature of a value, for interning shared declaration data: numbers, text, paths,
  * lists (keys and values) and non-atom datums (their type and every saved var that differs from its
@@ -64,9 +80,7 @@
 	if(isdatum(value))
 		var/datum/D = value
 		var/list/parts = list()
-		for(var/name in D.vars)
-			if(name == "vars" || name == "tag" || !issaved(D.vars[name]))
-				continue
+		for(var/name in signature_vars_of(D))
 			var/v = D.vars[name]
 			if(v == initial(D.vars[name]))
 				continue
