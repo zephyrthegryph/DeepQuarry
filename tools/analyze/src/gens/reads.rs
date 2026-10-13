@@ -340,6 +340,7 @@ mod tests {
         // These canonical accessor keys intentionally interpolate a declared key constant.
         assert_eq!(literal_read_name("capkey:[EMAG_EMAGGED]"), "capkey:[EMAG_EMAGGED]");
         assert_eq!(literal_read_name("[OP_KEY_CAP_STATE]"), "[OP_KEY_CAP_STATE]");
+        assert_eq!(literal_read_name("stat:[STAT_SUSPENDED]"), "stat:[STAT_SUSPENDED]");
     }
 
     #[test]
@@ -351,6 +352,7 @@ mod tests {
         assert_eq!(canonical_read_key(&ReadKind::Accessor, "OP_KEY_CAP_STATE", &keys, &defines), "[OP_KEY_CAP_STATE]");
         assert_eq!(canonical_read_key(&ReadKind::Var, "EMAG_EMAGGED", &keys, &defines), "EMAG_EMAGGED");
         assert_eq!(canonical_read_key(&ReadKind::Accessor, "UNKNOWN_STATE", &keys, &defines), "UNKNOWN_STATE");
+        assert_eq!(canonical_read_key(&ReadKind::Accessor, "stat:[STAT_SUSPENDED]", &keys, &defines), "stat:[STAT_SUSPENDED]");
     }
 
 
