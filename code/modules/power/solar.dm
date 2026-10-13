@@ -231,7 +231,7 @@ TRACKED(/obj/item/solar_assembly, tracker)
 	return OP_OK
 
 /obj/item/solar_assembly/proc/on_floor(datum/act/A)
-	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed) // ALLOW(reads): where an assembly lies is engine state, read only when a tool is applied to it
+	return (isturf(loc)) ? null : MSG(solar_assembly/not_placed)
 
 /obj/item/solar_assembly/proc/held_is_glass(datum/act/op/A)
 	var/obj/item/stack/material/S = A.held

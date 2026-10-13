@@ -60,11 +60,21 @@ pub struct Untracked {
     pub line: u32,
 }
 
-/// What a consumer's reads leave the graph unable to see change.
-pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex) -> Vec<Untracked> {
+/// The hops an output's subscriptions do not follow yet: a draw (or another derived output) redraws from its own vars and from the entities it
+/// declares it watches (`look.watch()`, a derived() hop over a relation); the engine does not subscribe it from a generated read through the
+/// container hop, so such a read is an input an output cannot hear change. Stat inputs, conditions and requirements do hear it.
+const DRAW_UNHEARD_HOPS: &[&str] = &["loc"];
+
+/// What a consumer's reads leave the graph unable to see change. `output`: the consumer is a draw() or another derived output.
+pub fn untracked_of(set: &ReadSet, eng: &ReadsEngine, written: &WriteIndex, output: bool) -> Vec<Untracked> {
     let mut out = Vec::new();
     for r in &set.reads {
         if r.kind != ReadKind::Var || r.root != "holder" || set.internal.contains(r) {
+            continue;
+        }
+        if output && r.hops.iter().any(|h| DRAW_UNHEARD_HOPS.contains(&h.as_str())) {
+            let (rel, line) = set.sites.get(r).cloned().unwrap_or_default();
+            out.push(Untracked { what: r.key(), rel, line });
             continue;
         }
         if !r.hop_ok || eng.classify(&r.owner, &r.var, written) == VarClass::Unknown {
@@ -185,6 +195,9 @@ pub struct DepsAnalysis {
     pub leaves: Vec<Leaf>,
     /// "<type>" -> the holder vars its own draw() reads.
     pub draw_reads: BTreeMap<String, BTreeSet<String>>,
+    /// "<type>" -> the published keys its own draw() reads through a READS_AS accessor (`nutrition_of(src)` stands for MOB_KEY_NUTRITION), as the
+    /// DM text of the key (a define is written `[MOB_KEY_NUTRITION]` so the compile resolves it): a PUBLISH_CHANGE of one redraws the thing.
+    pub draw_keys: BTreeMap<String, BTreeSet<String>>,
     /// Every `(declaring type, var)` a consumer reads off the holder (or through a declared relation hop), whatever its class: the read
     /// set `gens::auto_tracked` turns into tracked vars.
     pub reads: BTreeSet<(String, String)>,
@@ -227,11 +240,11 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
                 if closed {
                     // `handlers::analyzed` keeps the closed walk's set beside the targeted one.
                     note_reads(handled, &mut reads);
-                    untracked_of(handled, &eng, &written)
+                    untracked_of(handled, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 } else {
                     let set = eng.analyze_handler(&a.on, &a.h.proc, a.h.ctx.type_path());
                     note_reads(&set, &mut reads);
-                    untracked_of(&set, &eng, &written)
+                    untracked_of(&set, &eng, &written, a.h.role == crate::sem::hooks::Role::Output)
                 }
             });
         }
@@ -248,7 +261,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         }
         let set = eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path());
         note_reads(&set, &mut reads);
-        consumers.insert(id, untracked_of(&set, &eng, &written));
+        consumers.insert(id, untracked_of(&set, &eng, &written, h.role == crate::sem::hooks::Role::Output));
     }
     // STAT(T, v, FORMULA, formula = PROC_REF(f)): the formula is the stat's one input.
     for m in decls.markers_named("STAT") {
@@ -261,11 +274,14 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
             }
             let set = eng.analyze_handler(owner, name, "/datum/act/eval");
             note_reads(&set, &mut reads);
-            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written));
+            consumers.entry(format!("{}::{}", owner, name)).or_insert_with(|| untracked_of(&set, &eng, &written, false));
         }
     }
     let mut draws = BTreeSet::new();
     let mut draw_reads: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let mut draw_keys: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    let capability_keys: BTreeSet<String> = ann.capkey_accessors.values().cloned().collect();
+    let defines: BTreeSet<String> = decls.defines.iter().cloned().collect();
     for d in crate::sem::procs::proc_defs(&sem, &["draw"]) {
         if d.owner == "/" || handlers::OPAQUE_DIRS.iter().any(|p| d.rel.starts_with(p)) {
             continue;
@@ -277,12 +293,18 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         let set = eng.analyze(&d.owner, "draw");
         note_reads(&set, &mut reads);
         let keys = draw_reads.entry(d.owner.clone()).or_default();
+        let published = draw_keys.entry(d.owner.clone()).or_default();
         for r in &set.reads {
             if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Var {
                 keys.insert(r.var.clone());
             }
+            // A capability's state key redraws its holder already (capability_key_changed -> look_key_changed); any other accessor key is a
+            // producer's PUBLISH_CHANGE, which reaches the draw through this table.
+            if r.root == "holder" && r.hops.is_empty() && r.kind == ReadKind::Accessor && !capability_keys.contains(&r.var) {
+                published.insert(crate::gens::reads::canonical_read_key(&r.kind, &r.var, &capability_keys, &defines));
+            }
         }
-        consumers.insert(id.clone(), untracked_of(&set, &eng, &written));
+        consumers.insert(id.clone(), untracked_of(&set, &eng, &written, true));
         draws.insert(id);
     }
     let mut leaves = Vec::new();
@@ -299,7 +321,7 @@ fn compute(tree: &crate::tree::Tree, closed: bool) -> Option<DepsAnalysis> {
         eprintln!("analyze: gen/deps ({}) {} consumers in {:.1?}", if closed { "closed" } else { "legacy" }, consumers.len(), started.elapsed());
     }
     let candidates = reads.iter().filter(|(owner, var)| super::auto_tracked::candidate(&eng, &outside_setters, &set_calls, owner, var)).cloned().collect();
-    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, reads, candidates })
+    Some(DepsAnalysis { consumers, draws, leaves, draw_reads, draw_keys, reads, candidates })
 }
 
 struct Deps;
@@ -325,6 +347,11 @@ fn emit_table(out: &mut GenOut, name: &str, rows: &[String]) {
         out.line(format!("		.[k] = c{}[k]", n));
     }
     out.line(format!("GLOBAL_LIST_INIT({}, {}_build())", name, name));
+}
+
+/// A published key as DM text: quotes and backslashes escaped, `[` left alone (a define is written `[MOB_KEY_X]` and the compile interpolates it).
+fn quote_key(s: &str) -> String {
+    format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\""))
 }
 
 fn quote(s: &str) -> String {
@@ -395,6 +422,16 @@ impl Generator for Deps {
             .map(|(t, ks)| format!("\t{} = list({})", quote(t), ks.iter().map(|k| quote(k)).collect::<Vec<_>>().join(", ")))
             .collect();
         emit_table(out, "generated_draw_reads", &rows);
+        out.blank();
+        out.doc("\"<type>\" -> the published keys its own draw() (and the parent draws it calls) reads through a READS_AS accessor: a PUBLISH_CHANGE of one");
+        out.doc("redraws the thing (publish_key_changed(), code/engine/stats/recompute.dm), so a draw needs no hand-written on_change() for a key it reads.");
+        let rows: Vec<String> = an
+            .draw_keys
+            .iter()
+            .filter(|(_, ks)| !ks.is_empty())
+            .map(|(t, ks)| format!("	{} = list({})", quote(t), ks.iter().map(|k| quote_key(k)).collect::<Vec<_>>().join(", ")))
+            .collect();
+        emit_table(out, "generated_draw_keys", &rows);
     }
 }
 
