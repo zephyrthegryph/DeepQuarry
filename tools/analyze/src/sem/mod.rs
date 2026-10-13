@@ -81,6 +81,9 @@ pub struct ProcBody<'a> {
 }
 
 pub struct Sem {
+    /// Literal preprocessor IDs for declared stats; None is an unsupported or
+    /// ambiguous explicit override, never permission to guess its publication.
+    pub stat_ids: std::collections::BTreeMap<String, Option<u32>>,
     pub objtree: ObjectTree,
     /// `FileId` -> repo-relative path (built from the locations the tree carries).
     files: HashMap<dreammaker::FileId, String>,
@@ -258,7 +261,27 @@ impl Sem {
                 layering_owner_defs.entry(owner.clone()).or_default().push(file.clone());
             }
         }
-        Ok(Sem { objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
+        let declarations = decls::Decls::get(tree);
+        let mut stat_ids: std::collections::BTreeMap<_, _> = decls::generated_stat_ids(&declarations)
+            .into_iter().map(|(name, value)| (name, Some(value))).collect();
+        let directive = regex::Regex::new(r"^\s*#define\s+(STAT_[A-Za-z0-9_]+)(?:\s|$)").unwrap();
+        let mut overrides: std::collections::BTreeMap<String, std::collections::BTreeSet<Option<u32>>> = Default::default();
+        for file in tree.select(&CODE_DM) {
+            if file.rel == "code/engine/_generated/ids.dm" { continue; }
+            for (_, code) in file.code().numbered() {
+                let Some(capture) = directive.captures(code) else { continue };
+                let name = capture[1].to_string();
+                if !stat_ids.contains_key(&name) { continue; }
+                let value = code.trim().strip_prefix("#define")
+                    .and_then(|rest| rest.trim_start().strip_prefix(&name))
+                    .and_then(|rest| rest.trim().parse::<u32>().ok());
+                overrides.entry(name).or_default().insert(value);
+            }
+        }
+        for (name, values) in overrides {
+            stat_ids.insert(name, if values.len() == 1 { *values.iter().next().unwrap() } else { None });
+        }
+        Ok(Sem { stat_ids, objtree, files, layering_type_defs, layering_owner_defs, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {

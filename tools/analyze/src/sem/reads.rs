@@ -546,6 +546,36 @@ impl<'a> ReadsEngine<'a> {
         false
     }
 
+    /// A stat_value read names the actual declared stat publication, not its
+    /// display name. Stored stats publish their var; virtual stats publish the
+    /// declaration compiler's stat:<id> key. No dynamic or guessed IDs enter.
+    pub fn stat_read_key(&self, owner: &str, id: &str) -> Option<(String, ReadKind)> {
+        let id_name = if self.sem.stat_ids.contains_key(id) {
+            id.to_string()
+        } else {
+            let value = id.parse::<u32>().ok()?;
+            let matches: Vec<_> = self.sem.stat_ids.iter().filter(|(_, number)| **number == Some(value)).collect();
+            if matches.len() != 1 { return None; }
+            matches[0].0.clone()
+        };
+        self.sem.stat_ids.get(&id_name).copied().flatten()?;
+        let mut current = Some(owner.to_string());
+        while let Some(ty) = current {
+            for marker in self.decls.markers_named("STAT").filter(|marker| marker.args.first() == Some(&ty)) {
+                let name = marker.args.get(1)?;
+                let declared_id = marker.args.iter().skip(3).find_map(|arg| {
+                    arg.split_once('=').filter(|(key, _)| key.trim() == "id").map(|(_, value)| value.trim().to_string())
+                }).unwrap_or_else(|| format!("STAT_{}", name.to_uppercase()));
+                if declared_id != id_name { continue; }
+                let virtual_stat = marker.args.iter().skip(3).any(|arg| arg.replace(' ', "") == "virtual=TRUE");
+                return Some(if virtual_stat { (format!("stat:[{id_name}]"), ReadKind::Accessor) }
+                    else { (name.clone(), ReadKind::Var) });
+            }
+            current = self.sem.parent_of(&ty).filter(|parent| parent != &ty && parent != "/");
+        }
+        None
+    }
+
     pub fn is_stat(&self, owner: &str, var: &str) -> bool {
         self.decls.markers_named("STAT").any(|m| m.args.get(1).map(|n| n == var).unwrap_or(false) && m.args.first().map(|t| self.sem.is_subtype(owner, t)).unwrap_or(false))
     }
@@ -1309,6 +1339,32 @@ impl<'a, 'e> Walk<'a, 'e> {
         let rel = fr.rel.clone();
         let this = fr.this.clone();
         self.note_call(fr, name, &this, line);
+        if name == "stat_value" && sem.global_proc(name).is_some()
+            && this.ty.as_ref().and_then(|ty| sem.proc_ref(ty, name)).is_none_or(|proc| proc.ty().get().path.is_empty()) {
+            let id = args.get(1).and_then(|expression| match expression {
+                Expression::Base { term, follow } if follow.is_empty() => match &term.elem {
+                    Term::Ident(name) => Some(name.clone()),
+                    Term::Int(value) if *value >= 0 => Some(value.to_string()),
+                    Term::Float(value) if value.is_finite() && value.fract() == 0.0 && *value >= 0.0 => Some(value.to_string()),
+                    _ => None,
+                },
+                _ => None,
+            });
+            let producer = argv.first().filter(|value| value.tracked()).and_then(|value|
+                value.ty.as_ref().zip(id.as_ref()).and_then(|(ty, id)| self.eng.stat_read_key(ty, id))
+                    .map(|key| (value, key)));
+            if let Some((value, (key, kind))) = producer {
+                self.add_read(Read { root: value.root_name(), hops: value.hops.clone(), var: key,
+                    owner: value.ty.clone().unwrap_or_default(), kind, hop_ok: value.hop_ok }, &rel, line);
+                return Val::local(None);
+            } else {
+                // Native draw admission consumes this specific diagnostic. The
+                // existing runtime-bound dynamic framework consumers still walk
+                // their normal stat_value path; this contract does not invent a
+                // dependency for a parameter chosen only at runtime.
+                self.diag("native_stat_read", &rel, line, "stat_value needs a literal declared stat ID on a compatible tracked receiver".to_string());
+            }
+        }
         if let Some(decl) = self.eng.ann.lookups.get(name) {
             let argument = argv.get(decl.argument).and_then(|v| match &v.root {
                 Root::Scalar(a) => Some(a.clone()),

@@ -45,6 +45,16 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 		record[token] = change
 	change[2] |= channel
 
+/// Native producer publications share the atomic boundary but retain their
+/// identity. They do not become stored-var writes or legacy state_changed calls.
+/proc/state_batch_queue_native_key(datum/receiver, key)
+	var/handle = entity_handle(receiver)
+	var/list/record = GLOB.state_batch_pending[handle]
+	if(!record)
+		record = list()
+		GLOB.state_batch_pending[handle] = record
+	record["native:[key]"] = list(key, 0, TRUE)
+
 /// Continue delivering the cohort after a receiver faults, then rethrow the
 /// first fault with all framework flags restored. A nested writer queues the
 /// next cohort; it never replaces the delivery currently being iterated.
@@ -67,7 +77,10 @@ GLOBAL_LIST_EMPTY(state_batch_pending)
 				var/prior_pure_depth = GLOB.op_pure_depth
 				var/prior_output_depth = GLOB.derived_evaluating
 				try
-					state_changed(receiver, change[2], change[1])
+					if(length(change) >= 3 && change[3])
+						publish_key_changed(receiver, change[1])
+					else
+						state_changed(receiver, change[2], change[1])
 				catch(var/exception/fault)
 					GLOB.op_pure_depth = prior_pure_depth
 					GLOB.derived_evaluating = prior_output_depth

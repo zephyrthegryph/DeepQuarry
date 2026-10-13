@@ -24,8 +24,6 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 
 /// Generated capability ids start here, above the ids a hand-written define gives and below the tag ids.
 const CAP_BASE: u32 = 300;
-/// Stat ids start here: far above any number a contribution's constant value will be.
-const STAT_BASE: u32 = 100_000;
 
 fn up(s: &str) -> String {
     s.to_uppercase()
@@ -176,10 +174,11 @@ impl Generator for Ids {
         let graphs: BTreeSet<String> = cx.markers("STATE_GRAPH").filter_map(|m| m.args.first().cloned()).collect();
 
         out.doc("Stat ids: STAT_<NAME> for each STAT(T, name, ...), from 100001. A status (units =) also has STATUS_<NAME> and STAT_<NAME>_IMMUNE.");
-        for (i, (name, status)) in stats.iter().enumerate() {
+        let stat_ids = crate::sem::decls::generated_stat_ids(cx.decls());
+        for (name, status) in &stats {
             let id = format!("STAT_{}", name);
             if !defined.contains(&id) {
-                out.line(format!("#define {} {}", id, STAT_BASE + 1 + i as u32));
+                out.line(format!("#define {} {}", id, stat_ids[&id]));
             }
             if *status {
                 out.line(format!("#define STATUS_{} STAT_{}", name, name));

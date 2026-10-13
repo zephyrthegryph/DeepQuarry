@@ -73,6 +73,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 /// TRUE when a static reaction of E's type, a generated / derived() read, or a dynamic observer reads `key`.
 /proc/rx_readers(datum/E, key)
+	if(draw_reads_native_key(E, key))
+		return TRUE
 	var/datum/rx_table/T = GLOB.rx_tables?[E.type]
 	if(isnull(T))
 		T = rx_table_build(E)

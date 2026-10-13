@@ -104,6 +104,8 @@
 	var/mask = DEP_ALL
 	if(var_name)
 		mask = derived_mask(E, var_name)
+		if(draw_reads_native_key(E, var_name))
+			mask |= DEP_DRAW
 	if(mask)
 		if(!refresh_wanted(E))
 			refresh_mark_owner(E, mask, channel)

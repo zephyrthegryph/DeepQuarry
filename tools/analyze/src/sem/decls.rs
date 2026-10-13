@@ -178,6 +178,16 @@ pub struct Decls {
     pub key: u128,
 }
 
+/// The declaration compiler's authoritative default stat IDs. Explicit source
+/// defines override these at preprocessing time; consumers must validate those
+/// overrides rather than infer a key from the default number.
+pub fn generated_stat_ids(decls: &Decls) -> BTreeMap<String, u32> {
+    let names: std::collections::BTreeSet<_> = decls.markers_named("STAT")
+        .filter_map(|marker| marker.args.get(1).map(|name| name.to_uppercase())).collect();
+    names.into_iter().enumerate().map(|(index, name)|
+        (format!("STAT_{name}"), 100_001 + index as u32)).collect()
+}
+
 /// What a key literal names, by the call it sits in (doc/rewrite/final_api.html section 4,
 /// "Three kinds of key").
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]

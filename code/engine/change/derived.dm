@@ -631,3 +631,26 @@ GLOBAL_VAR_INIT(derived_write_expected, FALSE)
 /proc/output_failed(datum/D, output_name, exception/fault, depth)
 	GLOB.derived_evaluating = depth
 	log_world("OUTPUT RUNTIME: [D?.type].[output_name]: [fault] ([fault.file]:[fault.line])")
+
+/// Exact native accessor keys consumed by this draw. Empty child rows stop
+/// inheritance; key identity is generated from registered READS_AS producers.
+/proc/draw_reads_native_key(datum/holder, key)
+	var/list/table = GLOB.generated_draw_native_keys
+	var/path = holder.type
+	while(path)
+		var/list/keys = table["[path]"]
+		if(islist(keys))
+			return key in keys
+		var/datum/typed = path
+		path = initial(typed.parent_type)
+	return FALSE
+
+/// Presentation consumer of a real producer publication, not an integrity
+/// callsite special case. refresh_mark coalesces the actual draw once per drain.
+/proc/draw_native_key_published(datum/holder, key)
+	// Applying a look may set its native light trait. Reactions and stats
+	// still receive the publication, but presentation must not self-mark.
+	if(holder == GLOB.refresh_applying)
+		return
+	if(draw_reads_native_key(holder, key))
+		refresh_mark(holder, DEP_DRAW)

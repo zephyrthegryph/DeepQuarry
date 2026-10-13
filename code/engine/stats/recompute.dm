@@ -69,10 +69,16 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 /// PUBLISH_CHANGE(E, KEY): a producer key that is not one var changed. The stats that read it (through a READS_AS accessor) recompute before the
 /// writer's next line, as for a tracked var, then the key's readers hear it.
 /proc/publish_key_changed(datum/E, key)
+	if(!E || QDELING(E))
+		return
+	if(GLOB.state_batch_depth)
+		state_batch_queue_native_key(E, key)
+		return
 	if(GLOB.stat_input_keys?[key] && key != GLOB.stat_writing)
 		stat_inputs_changed(E, key)
 	if(READERS(E, key))
 		publish_change(E, key)
+	draw_native_key_published(E, key)
 
 /// Writes a stat's settled value where it lives.
 /proc/stat_store(datum/E, datum/stat_def/def, value, datum/stat_type_info/I)
@@ -256,6 +262,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 		op_changed(E)
 		if(READERS(E, def.stat_key))
 			publish_change(E, def.stat_key)
+		draw_native_key_published(E, def.stat_key)
 	// A status started or ended: its holder's hooks and presentation follow at once (code/library/mob/statuses.dm).
 	if(def.units && ((isnum(old) && old > 0) != (isnum(new_value) && new_value > 0)))
 		E.stat_status_changed(def.id, isnum(new_value) && new_value > 0)
