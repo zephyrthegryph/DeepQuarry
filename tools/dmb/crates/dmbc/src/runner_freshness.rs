@@ -101,7 +101,7 @@ pub(super) fn admit_live(
 /// when its captured snapshot is identical to the swept one (anything recorded
 /// later forces the ordinary synchronous admission).
 pub(super) struct EarlyAdmission {
-    worker: Option<std::thread::JoinHandle<(InputSnapshot, Result<(), String>)>>,
+    worker: Option<std::thread::JoinHandle<(InputSnapshot, Result<(), String>, f64)>>,
 }
 
 impl EarlyAdmission {
@@ -119,13 +119,9 @@ impl EarlyAdmission {
             .spawn(move || {
                 let started = std::time::Instant::now();
                 let result = admit_live(&inputs, &generated).map_err(|error| error.to_string());
-                crate::daemon_eprintln!(
-                    "native early admission: {:.3}s files={} result={:?}",
-                    started.elapsed().as_secs_f64(),
-                    inputs.file_paths().count(),
-                    result
-                );
-                (inputs, result)
+                // Logged by `finish` on the request thread: a worker-thread line
+                // would interleave with diagnostics written concurrently.
+                (inputs, result, started.elapsed().as_secs_f64())
             })
             .ok();
         Self { worker }
@@ -133,7 +129,11 @@ impl EarlyAdmission {
 
     /// The admitted snapshot when the early sweep proved exactly `current`.
     pub(super) fn finish(mut self, current: &InputSnapshot) -> Option<InputSnapshot> {
-        let (swept, result) = self.worker.take()?.join().ok()?;
+        let (swept, result, seconds) = self.worker.take()?.join().ok()?;
+        crate::daemon_eprintln!(
+            "native early admission: {seconds:.3}s files={} result={result:?}",
+            swept.file_paths().count()
+        );
         if result.is_err() {
             return None;
         }
