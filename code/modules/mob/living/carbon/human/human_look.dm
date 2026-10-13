@@ -592,8 +592,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// Which of the ten idle loops (`<tail>_idle0` to `<tail>_idle9`, same frames at shifted delays) this human's animated species tail
 /// plays until an emote picks another: fixed per mob, so a crowd does not wag in step, and the same on every redraw.
 /mob/living/carbon/human/proc/tail_idle_variant()
-	return hex2num(copytext(md5("
-ef[src]"), 1, 3)) % 10
+	return hex2num(copytext(md5("ef[src]"), 1, 3)) % 10
 
 /mob/living/carbon/human/proc/get_tail_icon()
 	return human_look_icon("tail_icon|[species.get_race_key(src)]|[looks.skin_color]|[looks.hair_color]", "build_tail_icon")

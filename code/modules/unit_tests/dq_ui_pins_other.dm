@@ -83,7 +83,7 @@
 	user.set_real_name("Pin Tester")
 	user.name = "Pin Tester"
 	var/datum/tgui_module/appearance_changer/module = new(user, user)
-	module.set_flags(APPEARANCE_ALL)
+	module.flags = APPEARANCE_ALL
 	host = module
 	watch_host()
 	snap("initial")

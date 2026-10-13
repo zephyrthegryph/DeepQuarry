@@ -754,18 +754,18 @@
 /// An appearance changer working on a human, with everything it may change allowed.
 /datum/unit_test/dq_hc_tgui/proc/hct_changer(mob/living/carbon/human/owner)
 	var/datum/tgui_module/appearance_changer/M = hct_track(new /datum/tgui_module/appearance_changer(hct_host(), owner))
-	M.set_flags(APPEARANCE_ALL)
+	M.flags = APPEARANCE_ALL
 	M.generate_data(owner, owner)
 	return M
 
 /// A press on the changer after its half-second cooldown (it reads world.time, which the test clock does not advance).
 /datum/unit_test/dq_hc_tgui/proc/cpress(datum/tgui_module/appearance_changer/M, mob/actor, action, list/args)
-	M.set_cooldown(0)
+	M.cooldown = 0
 	press(actor, M, action, args)
 
 /// Answers the question the person was asked, after the cooldown.
 /datum/unit_test/dq_hc_tgui/proc/canswer(datum/tgui_module/appearance_changer/M, mob/actor, value, cancel = FALSE)
-	M.set_cooldown(0)
+	M.cooldown = 0
 	p2cl_answer(actor, value, cancel)
 	test_time(10 SECONDS)
 
@@ -793,7 +793,7 @@
 	hct_ui(src, H, M, "hair", list("name" = first))
 	hct_ui(src, H, M, "hair", list("name" = second))
 	TEST_ASSERT_EQUAL(H.looks.hair_style, first, "a second button inside half a second is refused")
-	M.set_cooldown(0)
+	M.cooldown = 0
 	hct_ui(src, H, M, "hair", list("name" = second))
 	TEST_ASSERT_EQUAL(H.looks.hair_style, second, "and works once the half second has passed")
 
