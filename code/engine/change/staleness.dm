@@ -271,7 +271,8 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 		fresh = stat_compute(E, def, I, rec)
 	catch(var/exception/fault_stat)
 		failed = fault_stat
-		staleness_unchecked("stat", E, def.name, fault_stat)
+		GLOB.staleness_skipped++
+		log_world("STALENESS|unchecked|stat|[E.type]|[def.name]|[fault_stat.name] at [fault_stat.file]:[fault_stat.line]")
 	GLOB.staleness_depth--
 	if(failed)
 		return
@@ -319,7 +320,7 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 /// A's applied look against a dry draw now. `served` names the vars that were written while the engine said the draw reads none of them.
 /// `forced` skips the sampling roll (the entity was already picked).
 /proc/staleness_check_draw(atom/A, trigger, list/served, forced = FALSE)
-	if(QDELETED(A) || A.refresh_queued || A.appearance_queued)
+	if(QDELETED(A) || A.refresh_queued)
 		return
 	if(GLOB.derived_evaluating || GLOB.refresh_running || GLOB.refresh_applying)
 		return // a draw is running: the shared look builder is in use
@@ -339,7 +340,8 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 		key = refresh_look(A, apply = FALSE)
 	catch(var/exception/fault_draw)
 		failed = fault_draw
-		staleness_unchecked("draw", A, "draw", fault_draw)
+		GLOB.staleness_skipped++
+		log_world("STALENESS|unchecked|draw|[A.type]|draw|[fault_draw.name] at [fault_draw.file]:[fault_draw.line]")
 	GLOB.staleness_depth--
 	if(failed)
 		return
@@ -373,7 +375,8 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 			value = call(A, V.proc_name)()
 		catch(var/exception/fault_derive)
 			failed = fault_derive
-			staleness_unchecked("derive", A, V.name, fault_derive)
+			GLOB.staleness_skipped++
+			log_world("STALENESS|unchecked|derive|[A.type]|[V.name]|[fault_derive.name] at [fault_derive.file]:[fault_derive.line]")
 		DERIVED_EVAL_END
 		GLOB.staleness_depth--
 		if(failed)
@@ -487,14 +490,12 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 	if(length(GLOB.stale_all) && GLOB.staleness_sample > 0 && rand(1, GLOB.staleness_sample) == 1)
 		staleness_check_ref(GLOB.stale_all[rand(1, length(GLOB.stale_all))], "presentation drain (sampled)")
 
-#if defined(UNIT_TESTS)
 /// The end of a test: queued work settles, then everything that appeared during the test and a slice of the rest is checked, against the test's own
 /// result (a report fails it). The expectation flag is the test's own and ends with it.
-/proc/staleness_test_end(datum/unit_test/test)
+/proc/staleness_test_end(test)
 	if(!GLOB.staleness_strict)
 		return
 	var/found = staleness_sweep("end of test", settle = TRUE)
 	if(found)
-		log_world("STALENESS: [found] stale after [test.type]")
+		log_world("STALENESS: [found] stale after [test]")
 	GLOB.staleness_expected = FALSE
-#endif
