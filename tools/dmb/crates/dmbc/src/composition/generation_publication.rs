@@ -3,22 +3,26 @@ use super::*;
 use std::sync::atomic::{AtomicU64, Ordering};
 pub(super) struct Pending {
     pub(super) current: Arc<Mutex<Option<Arc<Generation>>>>,
+    pub(super) patch: Arc<Mutex<PatchSlot>>,
     pub(super) plan: Arc<Mutex<Option<Arc<procedure_plan::CachedPlan>>>>,
     pub(super) headers: Arc<crate::class_projection::HeaderRecipes>,
 }
 impl Default for RetainedGeneration {
     fn default() -> Self {
         let current = Arc::new(Mutex::new(None));
+        let patch = Arc::new(Mutex::new(PatchSlot::default()));
         let plan = Arc::new(Mutex::new(None));
         let header_recipes = Arc::new(Default::default());
         let publication = Arc::new(dm_session::ArtifactPublication::default());
         let attempt = publication.begin(Pending {
             current: Arc::clone(&current),
+            patch: Arc::clone(&patch),
             plan: Arc::clone(&plan),
             headers: Arc::clone(&header_recipes),
         });
         Self {
             current,
+            patch,
             plan,
             header_recipes,
             publication,
@@ -31,22 +35,28 @@ impl RetainedGeneration {
     pub(crate) fn for_request(&self, publishable: bool) -> Arc<Self> {
         let snapshot =
             |current: &Arc<Mutex<Option<Arc<Generation>>>>,
+             patch: &Arc<Mutex<PatchSlot>>,
              plan: &Arc<Mutex<Option<Arc<procedure_plan::CachedPlan>>>>,
              headers: &Arc<crate::class_projection::HeaderRecipes>| {
                 (
                     current.lock().unwrap_or_else(|e| e.into_inner()).clone(),
+                    patch.lock().unwrap_or_else(|e| e.into_inner()).clone(),
                     plan.lock().unwrap_or_else(|e| e.into_inner()).clone(),
                     headers.for_request(publishable),
                 )
             };
-        let (current, plan, header_recipes) = self
+        let (current, patch, plan, header_recipes) = self
             .publication
-            .with_published(|old| snapshot(&old.current, &old.plan, &old.headers))
-            .unwrap_or_else(|| snapshot(&self.current, &self.plan, &self.header_recipes));
+            .with_published(|old| snapshot(&old.current, &old.patch, &old.plan, &old.headers))
+            .unwrap_or_else(|| {
+                snapshot(&self.current, &self.patch, &self.plan, &self.header_recipes)
+            });
         let current = Arc::new(Mutex::new(current));
+        let patch = Arc::new(Mutex::new(patch));
         let plan = Arc::new(Mutex::new(plan));
         let pending = Pending {
             current: Arc::clone(&current),
+            patch: Arc::clone(&patch),
             plan: Arc::clone(&plan),
             headers: Arc::clone(&header_recipes),
         };
@@ -57,6 +67,7 @@ impl RetainedGeneration {
         };
         Arc::new(Self {
             current,
+            patch,
             plan,
             header_recipes,
             publication: Arc::clone(&self.publication),

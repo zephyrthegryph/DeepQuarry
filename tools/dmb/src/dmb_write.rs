@@ -35,6 +35,17 @@ impl EncodedDmb {
         std::sync::Arc::try_unwrap(self.bytes).unwrap_or_else(|bytes| bytes.as_ref().clone())
     }
 }
+impl EncodedDmb {
+    /// Owner for bytes produced by splicing a validated canonical image; the
+    /// digest is the same one-pass xxh3-128 the canonical writer streams.
+    pub(super) fn from_spliced(bytes: Vec<u8>) -> Self {
+        let content_hash = xxhash_rust::xxh3::xxh3_128(&bytes);
+        Self {
+            bytes: std::sync::Arc::new(bytes),
+            content_hash,
+        }
+    }
+}
 impl AsRef<[u8]> for EncodedDmb {
     fn as_ref(&self) -> &[u8] {
         self.bytes()

@@ -23,6 +23,9 @@ pub use records::{
 pub use writing::EncodedDmb;
 #[path = "dmb_lists.rs"]
 mod word_lists;
+#[path = "dmb_list_rows.rs"]
+mod list_rows;
+pub use list_rows::ListRowImage;
 pub use word_lists::{EncodedListRows, WordLists};
 #[path = "dmb_resources.rs"]
 mod resource_attachment;
@@ -834,6 +837,34 @@ impl Dmb {
         };
         let certificate = self.lists.issue_encoding(&image, ranges, width)?;
         Ok((image, certificate))
+    }
+    /// Replace whole list rows (procedure code, for example) of a model whose
+    /// certified list encoding is retained, splicing the certified image instead
+    /// of re-encoding. The result is byte-identical to `encode()` of the patched
+    /// model: the list table follows the offset-ciphered string table and no
+    /// later record depends on byte offsets. Errors leave the model unchanged.
+    pub fn patch_list_rows(
+        &mut self,
+        replacements: &[(usize, std::sync::Arc<Vec<u32>>)],
+    ) -> io::Result<EncodedDmb> {
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
+        };
+        self.lists.patch_rows(replacements, width)
+    }
+    /// The certified list-row image of this model's last canonical encoding,
+    /// when one is retained and its words and width still match.
+    pub fn list_row_image(&self) -> Option<ListRowImage> {
+        let width = if self.header.flags & 0x4000_0000 != 0 {
+            4
+        } else {
+            2
+        };
+        let encoding = self.lists.encoding()?;
+        (encoding.width() == width && encoding.matches(self.lists.storage()))
+            .then(|| encoding.row_image())
     }
     /// Encodes canonical table chunks on the existing build executor. No global
     /// pool or additional OS workers are created.

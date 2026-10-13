@@ -24,9 +24,30 @@ impl CertifiedGenerationInputs {
     }
 }
 
+/// Link answers of the generation's own build, retained for body-edit patches:
+/// a patched procedure is linked against exactly the tables that produced it.
+pub(crate) struct PatchLink {
+    pub tables: dm_link::LinkTables,
+    pub mobs: dm_link::MobBindings,
+}
+/// The published image of a patch base, detached from its model: list-row
+/// ranges for splicing and each procedure's code list.
+pub(crate) struct PatchImage {
+    pub rows: byond_dmb::dmb::ListRowImage,
+    pub proc_code: Arc<Vec<u32>>,
+}
+/// Body-edit patch state of the current generation (see `crate::body_patch`).
+/// It is compact (no model) and survives wire-image pressure release.
+#[derive(Clone, Default)]
+pub(super) struct PatchSlot {
+    link: Option<Arc<PatchLink>>,
+    base: Option<Arc<crate::body_patch::BodyPatchBase>>,
+    image: Option<Arc<PatchImage>>,
+}
 /// A single latest successful generation; no history or source authority retained.
 pub struct RetainedGeneration {
     current: Arc<Mutex<Option<Arc<Generation>>>>,
+    patch: Arc<Mutex<PatchSlot>>,
     plan: Arc<Mutex<Option<Arc<procedure_plan::CachedPlan>>>>,
     publication: Arc<dm_session::ArtifactPublication<Pending>>,
     attempt: dm_session::ArtifactAttempt<Pending>,
@@ -221,6 +242,103 @@ impl RetainedGeneration {
         self.header_recipes.evict_cached_claims();
         self.release_wire_images();
     }
+    /// Composition records the link answers of the model it is about to encode.
+    /// The source half of the patch base is installed by the runner after a
+    /// successful build; until then the slot holds no base.
+    pub(super) fn capture_patch_link(
+        &self,
+        tables: &dm_link::LinkTables,
+        mobs: &dm_link::MobBindings,
+    ) {
+        self.attempt.with_pending(|_| {
+            *self.patch.lock().unwrap_or_else(|e| e.into_inner()) = PatchSlot {
+                link: Some(Arc::new(PatchLink {
+                    tables: tables.clone(),
+                    mobs: mobs.clone(),
+                })),
+                base: None,
+                image: None,
+            };
+        });
+    }
+    /// Attach the source half of the patch base to this request's generation
+    /// and detach the row image of the model it just encoded.
+    pub(crate) fn install_patch_base(&self, base: crate::body_patch::BodyPatchBase) -> bool {
+        self.attempt
+            .with_pending(|_| {
+                let image = {
+                    let current = self.current.lock().unwrap_or_else(|e| e.into_inner());
+                    let Some(generation) = current.as_ref() else {
+                        return false;
+                    };
+                    let model = &generation.inputs.model;
+                    let Some(rows) = model.list_row_image() else {
+                        return false;
+                    };
+                    if rows.image().content_hash() != generation.encoded.content_hash() {
+                        return false;
+                    }
+                    PatchImage {
+                        rows,
+                        proc_code: Arc::new(
+                            model.procs.iter().map(|proc| proc.code_locals_args[0]).collect(),
+                        ),
+                    }
+                };
+                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+                if slot.link.is_none() {
+                    return false;
+                }
+                slot.base = Some(Arc::new(base));
+                slot.image = Some(Arc::new(image));
+                true
+            })
+            .unwrap_or(false)
+    }
+    /// The patch base, its link answers and the image they describe.
+    pub(crate) fn patch_base(
+        &self,
+    ) -> Option<(
+        Arc<crate::body_patch::BodyPatchBase>,
+        Arc<PatchLink>,
+        Arc<PatchImage>,
+    )> {
+        let slot = self.patch.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        Some((slot.base?, slot.link?, slot.image?))
+    }
+    /// Splice whole code-list rows into the retained patch image; the result
+    /// equals a canonical encode of the model with those rows replaced. The
+    /// spliced image and `base` become this request's pending patch state. The
+    /// retained model memo (if any) is left as is: it is keyed by complete
+    /// model equality, so it stays correct for the model it describes.
+    pub(crate) fn patch_rows(
+        &self,
+        image: &PatchImage,
+        rows: &[(usize, Arc<Vec<u32>>)],
+        base: crate::body_patch::BodyPatchBase,
+    ) -> Result<byond_dmb::dmb::EncodedDmb, String> {
+        self.attempt
+            .with_pending(|_| {
+                let spliced = {
+                    let _profile = dm_profile::stage("patch.splice");
+                    image
+                        .rows
+                        .splice(rows)
+                        .map_err(|error| format!("list splice: {error}"))?
+                };
+                dm_profile::request_mark("patch.spliced");
+                let encoded = spliced.image().clone();
+                validate_encoded(&encoded).map_err(|error| format!("{error:?}"))?;
+                let mut slot = self.patch.lock().unwrap_or_else(|e| e.into_inner());
+                slot.base = Some(Arc::new(base.with_output_hash(encoded.content_hash())));
+                slot.image = Some(Arc::new(PatchImage {
+                    rows: spliced,
+                    proc_code: Arc::clone(&image.proc_code),
+                }));
+                Ok(encoded)
+            })
+            .unwrap_or_else(|| Err("generation attempt is not pending".into()))
+    }
     /// Release physical generation buffers without discarding symbolic header recipes.
     pub(crate) fn release_wire_images(&self) {
         self.evict_published_wire_memo();
@@ -232,6 +350,8 @@ impl RetainedGeneration {
             .current
             .lock()
             .unwrap_or_else(|error| error.into_inner()) = None;
+        // The compact patch slot (row image, link answers, source base) stays:
+        // it is what lets the next body edit skip whole-program compilation.
     }
     /// Borrow retained physical owners for opt-in census without cloning buffers.
     pub(crate) fn visit_retained(

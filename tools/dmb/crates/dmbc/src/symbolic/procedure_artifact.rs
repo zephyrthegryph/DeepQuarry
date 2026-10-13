@@ -4,6 +4,7 @@ use super::parallel::BoundContribution;
 use super::*;
 pub(crate) mod disk;
 pub(super) mod retained_abi;
+pub(crate) mod patch;
 use retained_abi::RetainedAbi;
 #[path = "retained_census.rs"]
 mod retained_census;

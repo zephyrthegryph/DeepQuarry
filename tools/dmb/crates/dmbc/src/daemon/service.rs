@@ -564,6 +564,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
             }
         }
         Request::Build(request) => {
+            dm_profile::request_marks_begin();
             if discovery {
                 return protocol::send(
                     &mut stream,
@@ -648,6 +649,7 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                 }
             };
             slot.idle_tier.store(0, Ordering::Release);
+            dm_profile::request_mark("daemon.admitted");
             let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
                 || -> Result<crate::request::BuildOutcome, Box<dyn std::error::Error>> {
                     control::checkpoint()?;
@@ -667,10 +669,12 @@ fn handle(mut stream: transport::Stream, shared: &Arc<Shared>, discovery: bool) 
                     ))
                 }
             };
+            dm_profile::request_mark("daemon.build_returned");
             let result = protocol::send(
                 &mut *stream.lock().unwrap_or_else(|e| e.into_inner()),
                 &reply,
             );
+            dm_profile::request_marks_end("daemon.replied");
             result
         }
         _ => Err(io::Error::other(

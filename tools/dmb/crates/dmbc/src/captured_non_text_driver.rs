@@ -200,6 +200,15 @@ impl<R> PreparedNonTextOutput<R> {
         (resolver, stage, publication)
     }
 
+    /// Identity of the resource archive this output will publish.
+    pub fn archive_identity(&self) -> crate::publish::ResourceIdentity {
+        self.stage.archive_identity()
+    }
+    /// Resource inputs carried over from a retained archive (merged into the
+    /// published input record).
+    pub fn retained_resource_inputs(&self) -> Option<&crate::input_snapshot::InputSnapshot> {
+        self.retained_resource_inputs.as_ref()
+    }
     pub fn stage(&self) -> &crate::non_text_output::PreparedOutputStage {
         &self.stage
     }
