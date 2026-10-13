@@ -577,12 +577,25 @@ CAPABILITIES(/obj/item/storage/backpack/parachute)
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE //Saddlebags can hold more, like dufflebags
 	slowdown = 0.5 //And are slower, too...
 	var/no_message = "You aren't the appropriate taur type to wear this!"
+	/// The actual BACK-slot wearer, updated by the ledger's committed slot hooks.
+	var/mob/living/carbon/human/draw_wearer
 
 TRACKED(/obj/item/storage/backpack/saddlebag_common, icon_base)
 TRACKED(/obj/item/storage/backpack/saddlebag_common, no_message)
 
 CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
+	ref_one(nameof(draw_wearer), /mob/living/carbon/human)
 	acceptance("equip", req_acceptance_common_taur(), mode = ACCEPTANCE_APPEND)
+
+/obj/item/storage/backpack/saddlebag_common/on_slotted(atom/holder, slot_id, flags = 0)
+	..()
+	if(slot_id == SLOT_ID_BACK && istype(holder, /mob/living/carbon/human))
+		rel_set(src, nameof(draw_wearer), holder)
+
+/obj/item/storage/backpack/saddlebag_common/on_unslotted(atom/holder, slot_id, flags = 0)
+	..()
+	if(slot_id == SLOT_ID_BACK && draw_wearer == holder)
+		rel_set(src, nameof(draw_wearer), null)
 
 /proc/req_acceptance_common_taur()
 	return part_make(/datum/entry/part/req/acceptance_leaf/common_taur, list())
@@ -599,7 +612,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
 
 /obj/item/storage/backpack/saddlebag_common/draw(datum/look/look)
 	..()
-	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	var/mob/living/carbon/human/H = draw_wearer
 	look.watch(H)
 	var/state = initial(item_state)
 	if(H && H.get_equipped_item(SLOT_ID_BACK) == src)
@@ -611,7 +624,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag_common)
 	look.effect(PROC_REF(redraw_worn_back))
 
 /obj/item/storage/backpack/saddlebag_common/proc/redraw_worn_back()
-	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	var/mob/living/carbon/human/H = draw_wearer
 	if(H && H.get_equipped_item(SLOT_ID_BACK) == src)
 		H.update_inv_back()
 

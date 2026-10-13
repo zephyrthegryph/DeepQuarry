@@ -772,16 +772,30 @@ CAPABILITIES(/obj/item/clothing/suit/space/void/engineering/hazmat/fluff/screesp
 	desc = "A pointy purple hat with a wide brim, with a red hatband. It appears to have ear-holes in it."
 	icon = 'icons/vore/custom_clothes_item.dmi'
 	icon_state = "avidahat"
+	/// The actual HEAD-slot wearer, updated by the ledger's committed slot hooks.
+	var/mob/living/carbon/human/draw_wearer
 	item_icons = list(
 		slot_l_hand_str = 'icons/vore/custom_clothes_left_hand_vr.dmi',
 		slot_r_hand_str = 'icons/vore/custom_clothes_right_hand_vr.dmi',
 		slot_head_str = 'icons/vore/custom_onmob_32x48_vr.dmi'
 		)
 
+CAPABILITIES(/obj/item/clothing/head/fluff/avida)
+	ref_one(nameof(draw_wearer), /mob/living/carbon/human)
+
+/obj/item/clothing/head/fluff/avida/on_slotted(atom/holder, slot_id, flags = 0)
+	..()
+	if(slot_id == SLOT_ID_HEAD && istype(holder, /mob/living/carbon/human))
+		rel_set(src, nameof(draw_wearer), holder)
+
+/obj/item/clothing/head/fluff/avida/on_unslotted(atom/holder, slot_id, flags = 0)
+	..()
+	if(slot_id == SLOT_ID_HEAD && draw_wearer == holder)
+		rel_set(src, nameof(draw_wearer), null)
 
 /obj/item/clothing/head/fluff/avida/draw(datum/look/look)
 	..()
-	var/mob/living/carbon/human/H = istype(loc, /mob/living/carbon/human) ? loc : null
+	var/mob/living/carbon/human/H = draw_wearer
 	look.watch(H)
 	var/state = initial(item_state)
 	if(H && H.get_equipped_item(SLOT_ID_HEAD) == src)
