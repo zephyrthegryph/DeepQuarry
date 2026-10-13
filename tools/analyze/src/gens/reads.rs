@@ -16,6 +16,7 @@
 //! ```
 //!
 //! A kind is READ_KIND_VAR (0), READ_KIND_ACCESSOR (1), READ_KIND_NATIVE (2) or READ_KIND_SYSTEM (3).
+//! The rows come from the closed walk (`ReadsEngine::closed`): engine bodies are entered and a virtual call is the union of its overrides.
 //! `rank` is the evaluation order of the handler's derived reads (0 = reads only base state).
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -25,9 +26,7 @@ use crate::sem::gen::{GenCx, GenOut, Generator};
 use crate::sem::graph::DepGraph;
 use crate::sem::reads::{Annotations, LookupArgument, LookupRead, ReadKind, ReadsEngine};
 
-/// Engine-internal directories the walk does not enter. The Verdigris bindings (code/__defines/verdigris/) read Rust-owned values: a condition that
-/// asks one (a SMES's charge) is re-asked when a requirement is checked or a gate is polled, never subscribed.
-pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/", "code/__defines/verdigris/"];
+use crate::sem::reads::ENGINE_DIRS;
 
 struct Reads;
 
@@ -74,7 +73,7 @@ impl Generator for Reads {
                 let decls = Decls::get(cx.tree);
                 let ann = Annotations::get(&sem, &decls);
                 capability_keys.extend(ann.capkey_accessors.values().cloned());
-                let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE);
+                let eng = ReadsEngine::new(&sem, &decls, &ann).closed();
                 let written = crate::sem::reads::WriteIndex::build(&sem);
                 for marker in decls.markers_named("READ_LOOKUP") {
                     let name = marker.args.first().and_then(|p| p.strip_prefix("/proc/"));
@@ -103,7 +102,7 @@ impl Generator for Reads {
                         continue;
                     }
                     let set = if h.ctx == crate::sem::hooks::Ctx::Endpoint {
-                        ReadsEngine::new(&sem, &decls, &ann).analyze_handler(&h.owner, &h.proc, h.ctx.type_path())
+                        ReadsEngine::new(&sem, &decls, &ann).closed().analyze_handler(&h.owner, &h.proc, h.ctx.type_path())
                     } else { eng.analyze_handler(&h.owner, &h.proc, h.ctx.type_path()) };
                     if h.ctx == crate::sem::hooks::Ctx::Endpoint {
                         for (field, (rel, line)) in &set.ctx_fields {
@@ -138,7 +137,10 @@ impl Generator for Reads {
                         }
                     }
                     for d in &set.diags {
-                        if h.ctx == crate::sem::hooks::Ctx::Endpoint || matches!(d.rule, "unannotated_global" | "dynamic_read") {
+                        // The closed walk enters the engine's own bodies. What it cannot resolve there (a `vars[]` dispatcher, an unannotated engine
+                        // helper, a Verdigris FFI call) is the engine's to declare with PROC_SUMMARY, and is listed by `analyze sem closure`;
+                        // it fails a build only where it sits in the handler's own code, not in an override only a virtual call reaches.
+                        if h.ctx == crate::sem::hooks::Ctx::Endpoint || (matches!(d.rule, "unannotated_global" | "dynamic_read") && !d.closed_only && !ENGINE_DIRS.iter().any(|prefix| d.rel.starts_with(prefix))) {
                             out.diag(&d.rel, d.line, format!("{}: {}", d.rule, d.msg));
                         }
                     }
@@ -227,7 +229,7 @@ fn extend_lookup_outputs(rows: &mut BTreeMap<String, Vec<Row>>, sem: &crate::sem
     let outputs = crate::sem::procs::proc_defs(sem, &["draw", "ui_data", "tgui_data", "hidden_verbs", "push_to_rust", "should_run"]);
     let mut seen = BTreeSet::new();
     for output in outputs {
-        if output.owner == "/" || OPAQUE.iter().any(|prefix| output.rel.starts_with(prefix)) { continue; }
+        if output.owner == "/" || ENGINE_DIRS.iter().any(|prefix| output.rel.starts_with(prefix)) { continue; }
         let id = format!("{}::{}", output.owner, output.name);
         if !seen.insert(id.clone()) || rows.contains_key(&id) { continue; }
         let set = eng.analyze_handler(&output.owner, &output.name, "/datum/act/eval");

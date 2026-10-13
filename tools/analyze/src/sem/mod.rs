@@ -14,6 +14,7 @@
 pub mod actor_tests;
 pub mod ast;
 pub mod checks;
+pub mod closure;
 pub mod ctor_args;
 pub mod handlers;
 pub mod hooks;
