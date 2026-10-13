@@ -160,6 +160,8 @@
 	relation_z_generation_bump(z)
 	. = rel_drop_z(z)
 	for(var/turf/T as anything in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
+		if(T.own_key_text)
+			GLOB.om_turf_pos -= T.own_key_text // the level's plain turf handles stop resolving (its generation moved on): drop their cached positions
 		for(var/datum/relation_edge/edge as anything in T.om_rec?.edges?.Copy())
 			edge.unlink_reason = RELATION_Z_RELEASED
 			relation_unlink_edge(edge)
@@ -267,8 +269,6 @@ GLOBAL_LIST_EMPTY(om_z_generations)
 /// behaviours that asked for RELATION_ADDED/REMOVED on it, and rebuild every
 /// forwarding path that runs through this entity.
 /proc/relation_edge_structure_changed(datum/scheduler_record/rec, rel_id, bit)
-	if(rec.table.cache_relations)
-		entity_cache_clear(rec.owner, rec.table.cache_relations, rel_id)
 	for(var/i in 1 to length(rec.att))
 		var/datum/scheduled_behaviour/B = rec.att[i]
 		if(!(B.related_added_mask & bit))

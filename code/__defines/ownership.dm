@@ -74,7 +74,7 @@
 /// REL: TRUE when the view is a list (1:N side, symmetric membership).
 #define OWNE_LIST 5
 /// REL: the target var names the holder's reactive procs read (watch =), or null. While linked,
-/// a changed() of the target marks the holder changed too.
+/// a state_changed() of the target marks the holder changed too.
 #define OWNE_WATCH 6
 /// REL: CLEAR or DELETE_ME (other_deleted =).
 #define OWNE_OTHER_DELETED 7
@@ -93,6 +93,15 @@
 /// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
 /// for every link, and nearly every call is a hit.
 #define OWN_KEY(D) (D.own_key_text || own_key(D))
+
+/// TRUE for a plain list and for an alist, the two containers a many relation var can hold. islist() is FALSE for an alist, so every relation
+/// branch that asks "is this a list" asks this instead (code/engine/refs/members.dm).
+#define REL_LISTLIKE(X) (islist(X) || istype(X, /alist))
+/// A plain many relation list this long or shorter is searched with `in` (a few compares); a longer one asks the reverse index instead.
+#define REL_SCAN_MAX 24
+/// A plain list this long or shorter may still hold a keyed member nothing recorded (a map filled outside the accessors): its releases scan for it.
+/// A longer one is trusted to the key index, because a scan per release is quadratic over a mass delete.
+#define REL_LEGACY_SCAN_MAX 64
 
 /// Reports an ownership violation (a runtime, so a test fails; captured in tests of the checks).
 #define OWN_REPORT(msg) dq_lifecycle_report("OWN: [msg]")

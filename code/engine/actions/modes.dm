@@ -118,6 +118,7 @@
 // ---- the transition ----
 
 /// Makes the granted mode follow the var: revokes what was granted, grants what the var names, publishes mode_changed. TRUE when it changed.
+PROC_SUMMARY(/proc/modes_sync) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/modes_sync(datum/holder, var_name)
 	if(!holder || QDELETED(holder))
 		return FALSE
@@ -160,6 +161,7 @@
 	PUBLISH(holder, mode_change, have, want, var_name)
 
 /// Sets the mode of `var_name` on holder to `mode_type` now. TRUE when it changed.
+PROC_SUMMARY(/proc/mode_enter) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/mode_enter(datum/holder, var_name, mode_type)
 	if(!holder || QDELETED(holder))
 		return FALSE

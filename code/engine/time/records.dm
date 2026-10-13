@@ -91,44 +91,11 @@
 	rec = new /datum/scheduler_record(E, time_scheduler())
 	E.om_rec = rec
 	rec.table = definition_registry().type_table(E.type)
-	if(!rec.table.cache_scanned)
-		entity_cache_scan(rec.table, E)
-	if(rec.table.service_mask | rec.table.cache_mask | rec.table.relay_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.relay_mask
+	if(rec.table.service_mask | rec.table.relay_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.relay_mask
 	if(rec.table.derived_relays)
 		scheduler_field_derived_relink(E, rec)
 	return rec
-
-// ---------------------------------------------------------------- declared caches
-
-/// Reads `E`'s declared_cache_vars() into its type table (every instance of a type
-/// declares the same rules). A cache with no rule is an error.
-/proc/entity_cache_scan(datum/scheduler_type_table/T, datum/E)
-	T.cache_scanned = TRUE
-	var/list/decl = E.declared_cache_vars()
-	for(var/name in decl)
-		var/list/rule = decl[name]
-		if(!islist(rule) || length(rule) != 2 || !(name in E.vars))
-			time_scheduler().error("[E.type]: declared cache [name] needs a CACHE_ON_* rule")
-			continue
-		switch(rule[1])
-			if("change")
-				T.cache_mask |= rule[2]
-				LAZYADD(T.cache_change, list(rule[2], name))
-			if("event")
-				LAZYADD(T.cache_events, list(rule[2], name))
-			if("relation")
-				var/datum/relation_definition/R = definition_registry().relation(rule[2])
-				LAZYADD(T.cache_relations, list(R.id, name))
-			else
-				time_scheduler().error("[E.type]: declared cache [name] has an unknown rule [rule[1]]")
-
-/// Nulls every declared cache on `E` whose rule in `rules` (stride 2: key, var) matches.
-/proc/entity_cache_clear(datum/E, list/rules, key, bits)
-	for(var/i in 1 to length(rules) step 2)
-		var/k = rules[i]
-		if(bits ? (k & bits) : (ispath(key) ? ispath(key, k) : k == key))
-			E.vars[rules[i + 1]] = null
 
 // ---------------------------------------------------------------- start / attach
 
@@ -319,7 +286,7 @@
 			var/datum/derived_definition/D = defs[rec.dv[i]]
 			slow |= D.inputs
 	rec.slow_mask = slow
-	rec.owner.om_listen = mask | slow | rec.table?.cache_mask | (rec.owner.seq_states ? seq_listen_mask(rec.owner) : 0)
+	rec.owner.om_listen = mask | slow
 
 /// The mask other entities and behaviours observe (decides eager derived values).
 /proc/entity_observed_mask(datum/scheduler_record/rec)
@@ -344,18 +311,10 @@
 		refresh_mark(E, DEP_ALL, bits)
 
 /proc/entity_dispatch_change(datum/E, bits)
-	// Sequence steps that read these channels wake (code/controllers/kernel/sequence.dm). state_changed(), entity_raise_change() and the
-	// OM_CHANGED() setters reach here: E's listen mask carries its sequences' channels (seq_listen_mask()).
-	if(E.seq_states)
-		seq_channels(E, bits)
 	var/datum/scheduler_record/rec = E.om_rec
 	if(!rec || rec.torn_down)
 		return
 	var/datum/time_scheduler/sched = rec.sched
-	// A declared cache keyed on these channels is stale now (clearing is idempotent,
-	// so it runs before the repeat and bulk short cuts below).
-	if(rec.table.cache_mask & bits)
-		entity_cache_clear(E, rec.table.cache_change, null, bits)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)

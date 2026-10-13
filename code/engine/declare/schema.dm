@@ -229,6 +229,7 @@ GLOBAL_VAR_INIT(schemas_built, FALSE)
  * failure is rejected, unless on_invalid says otherwise. `boundary` is TRUE for input that arrives from a player, a UI arg or a
  * request: an int refuses a fractional number there instead of rounding it.
  */
+PROC_SUMMARY(/proc/schema_check) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/schema_check(datum/schema/S, value, boundary = FALSE, datum/holder = null)
 	switch(S.kind)
 		if(SCHEMA_BOOL)

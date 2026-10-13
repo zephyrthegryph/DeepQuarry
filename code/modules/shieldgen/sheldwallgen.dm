@@ -322,4 +322,4 @@ CAPABILITIES(/obj/machinery/shieldwall)
 /obj/machinery/shieldwall/step_start_condition()
 	return needs_power
 
-TRACKED_BRIDGED(/obj/machinery/shieldwallgen, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/shieldwallgen, state)

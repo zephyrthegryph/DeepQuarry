@@ -355,7 +355,7 @@
 #define LIFE_CANMOVE_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT)
 #define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI)
 // What each reaction reads: the facts its old stages woke on (their wake_on channels plus their pipeline's
-// wake_all), as change keys. The catch-all CHANGE_EXPLICIT is gone: a hand change that should redraw writes its
+// wake_all), as change keys. The catch-all channel is gone: a hand change that should redraw writes its
 // var through a setter or publishes the fact (MOB_KEY_VIEW for what the client looks through).
 /// after() keys of the rewakes.
 #define LIFE_HUD_REWAKE "life_hud"

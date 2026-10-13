@@ -905,6 +905,7 @@
 #include "code\datums\native\entities.dm"
 #include "code\engine\declare\definition_registry.dm"
 #include "code\engine\refs\edges.dm"
+#include "code\engine\refs\members.dm"
 #include "code\datums\ownership\typed_relations.dm"
 #include "code\engine\time\scheduler.dm"
 #include "code\modules\client\dx_exec.dm"

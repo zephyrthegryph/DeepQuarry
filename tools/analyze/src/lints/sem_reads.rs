@@ -5,7 +5,8 @@
 //!
 //! * `unknown_read`: a read of a var that is not tracked, a relation, a stat, a derived value or
 //!   constant (never written after init). The hint lists the four fixes.
-//! * `unannotated_global`: a global proc called without `READS_FROM(arg)`.
+//! * `untracked_global`: global state that changes after boot (`GLOB.x`, `SSx.y`, a real global var) read by reactive code. Constant-after-init
+//!   globals (written only while the world boots, `sem/globals.rs`) read like constants; a tracked var of a system is a system read.
 //! * `dynamic_read`: `vars[]` or `call()` in a handler.
 //! * `hop_not_relation`: a read through a var that is not a declared relation.
 //! * `unknown_field`: a var that the receiver's type does not have.
@@ -20,7 +21,7 @@ use crate::sem::handlers;
 use crate::tree::CODE_DM;
 
 const H_UNKNOWN: &str = "make it tracked, add a relation, add READS_FROM(arg) to the global proc it came through, or add READS_AS(proc, key)";
-const H_GLOBAL: &str = "add READS_FROM(arg) to the global proc (READS_FROM() when it reads nothing): a condition cannot call what the graph cannot follow";
+const H_GLOBAL: &str = "move the state into a system's tracked vars (SYSTEM_DEF) and read it through its accessor, or write it only while the world boots: reactive code cannot read a global that changes and nothing publishes";
 const H_DYNAMIC: &str = "read a declared var; nothing uses vars[] or call() in a handler";
 const H_HOP: &str = "declare the link var a relation (REL/OWN or rel_one in relations()); a hop only follows a declared relation";
 const H_FIELD: &str = "read a var the type declares (the build checks each read against the receiver's type)";
@@ -34,10 +35,17 @@ static META: Meta = Meta {
     legacy: "",
     select: CODE_DM,
     scan: ScanKind::Tree,
-    policy: Policy::Hard,
+    policy: Policy::Sites {
+        baseline: "tools/ci/sem_reads_baseline.txt",
+        header: &[
+            "sem/reads: what the closed read walk cannot cover in a handler, an output, a condition or a contribution. rule<TAB>file<TAB>normalized line.",
+            "Shrink-only: `analyze baseline --update --lint sem/reads` drops fixed sites and never adds one.",
+        ],
+        banned: &[],
+    },
     rules: &[
         RuleMeta { name: "unknown_read", hint: H_UNKNOWN },
-        RuleMeta { name: "unannotated_global", hint: H_GLOBAL },
+        RuleMeta { name: "untracked_global", hint: H_GLOBAL },
         RuleMeta { name: "dynamic_read", hint: H_DYNAMIC },
         RuleMeta { name: "hop_not_relation", hint: H_HOP },
         RuleMeta { name: "unknown_field", hint: H_FIELD },
@@ -73,9 +81,10 @@ impl Lint for SemReads {
                 None => false,
             }
         };
+        // A site is one finding however many handlers reach it: the key leaves the handler out of the message.
         let mut seen: std::collections::HashSet<(String, String, u32, String)> = std::collections::HashSet::new();
-        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, msg: String| {
-            if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, msg.clone())) {
+        let mut put = |out: &mut Sink, rule: &'static str, rel: &str, line: u32, key: String, msg: String| {
+            if rel.is_empty() || !seen.insert((rule.to_string(), rel.to_string(), line, key)) {
                 return;
             }
             if allowed(out, rel, line) {
@@ -87,21 +96,21 @@ impl Lint for SemReads {
             if !a.h.role.reads_covered() {
                 continue;
             }
-            let Some(set) = &a.set else { continue };
+            let Some(set) = &a.closed else { continue };
             let who = format!("{}::{} ({}())", a.on, a.h.proc, a.h.form);
             for (key, var, owner, rel, line) in &a.unknown {
-                put(out, "unknown_read", rel, *line, format!("{} reads `{}`: {} on {} is not tracked, a relation, a stat, derived or constant", who, key, var, owner));
+                put(out, "unknown_read", rel, *line, format!("{key}|{var}|{owner}"), format!("{} reads `{}`: {} on {} is not tracked, a relation, a stat, derived or constant", who, key, var, owner));
             }
             for d in &set.diags {
                 match d.rule {
-                    "unannotated_global" | "dynamic_read" | "hop_not_relation" | "unknown_field" => {
+                    "untracked_global" | "dynamic_read" | "hop_not_relation" | "unknown_field" => {
                         let rule: &'static str = match d.rule {
-                            "unannotated_global" => "unannotated_global",
+                            "untracked_global" => "untracked_global",
                             "dynamic_read" => "dynamic_read",
                             "hop_not_relation" => "hop_not_relation",
                             _ => "unknown_field",
                         };
-                        put(out, rule, &d.rel, d.line, format!("{}: {}", who, d.msg));
+                        put(out, rule, &d.rel, d.line, d.msg.clone(), format!("{}: {}", who, d.msg));
                     }
                     _ => {}
                 }
@@ -110,7 +119,7 @@ impl Lint for SemReads {
         for c in &an.cycles {
             let first = an.graph.as_ref().and_then(|g| g.nodes.get(&c[0]));
             let (rel, line) = first.map(|n| (n.rel.clone(), n.line)).unwrap_or_default();
-            put(out, "condition_cycle", &rel, line, format!("cycle in the condition and stat graph: {} -> {}", c.join(" -> "), c[0]));
+            put(out, "condition_cycle", &rel, line, c.join(">"), format!("cycle in the condition and stat graph: {} -> {}", c.join(" -> "), c[0]));
         }
         for g in &an.accessor_gaps {
             put(
@@ -118,6 +127,7 @@ impl Lint for SemReads {
                 "reads_as_uncovered",
                 &g.rel,
                 g.line,
+                format!("{}|{}", g.proc, g.key),
                 format!("READS_AS({}, {}) on {} reads {} which are not tracked and nothing publishes {}", g.proc, g.key, g.ty, g.vars.join(", "), g.key),
             );
         }

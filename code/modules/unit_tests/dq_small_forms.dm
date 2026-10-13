@@ -108,7 +108,7 @@ TRACKED(/obj/dq_small_look_subject, noise)
 	var/obj/dq_small_look_composer/C = allocate(/obj/dq_small_look_composer, T)
 	refresh_flush()
 	C.subject = S
-	changed(C)
+	state_changed(C)
 	refresh_flush()
 	var/datum/cap_engine_state/theirs = cap_engine_state_of(S)
 	TEST_ASSERT(theirs?.look_watchers?[OWN_KEY(C)], "the subject knows who composes its look")
@@ -124,7 +124,7 @@ TRACKED(/obj/dq_small_look_subject, noise)
 	TEST_ASSERT(C.rx?.look_key != key, "and the composer's key moved with the version of the look it composes")
 	TEST_ASSERT(cap_engine_state_of(S)?.look_serial >= 1, "the subject counted its published look")
 	C.subject = null
-	changed(C)
+	state_changed(C)
 	refresh_flush()
 	TEST_ASSERT(!length(cap_engine_state_of(S)?.look_watchers), "a draw that stops composing it stops hearing it")
 

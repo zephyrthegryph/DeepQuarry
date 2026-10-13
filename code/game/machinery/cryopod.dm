@@ -146,8 +146,7 @@ CAPABILITIES(/obj/machinery/computer/cryopod)
 	density = TRUE
 
 //Cryopods themselves.
-/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
-/// CHANGE_RELATION_ADDED/REMOVED on the pod (the occupant slot link).
+/// The pod holds someone (the occupant slot's link/unlink publishes the slot key on the pod).
 /obj/machinery/cryopod/proc/cryopod_occupied()
 	return slot_item(OCCUPANT_SLOT_CRYOPOD) ? TRUE : FALSE
 
