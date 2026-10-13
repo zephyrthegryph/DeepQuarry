@@ -81,7 +81,7 @@
 	var/static/list/limb_hint = list()
 	var/hint = limb_hint[tag]
 	if(hint)
-		var/obj/item/organ/external/E = organs_by_name?[hint]
+		var/obj/item/organ/external/E = limb_tagged(hint)
 		var/datum/ledger/EL = E?.containment_ledger()
 		var/obj/item/organ/found = EL?.slot_lookup(SLOT_ID_PART_ORGANS, tag)
 		if(found?.owner == src)

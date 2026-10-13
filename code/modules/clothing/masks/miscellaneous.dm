@@ -401,7 +401,7 @@ CAPABILITIES(/obj/item/clothing/mask/paper)
 	if(!istype(user) || !choice || !options[choice] || user.incapacitated() || !in_range(user, src))
 		return
 	icon_state = options[choice]
-	user.update_inv_wear_mask()
+	changed(src)
 	user.update_mob_action_buttons()
 	to_chat(user, span_notice("Your paper mask now is now [choice]."))
 
@@ -445,7 +445,7 @@ CAPABILITIES(/obj/item/clothing/mask/emotions)
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
 	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]
-		user.update_inv_wear_mask()
+		changed(src)
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays a [choice] emotion."))
 

@@ -13,7 +13,7 @@
 	click(H, wrench)
 	TEST_ASSERT_EQUAL(H.get_active_hand(), wrench, "clicking an item next to the player picks it up")
 	TEST_ASSERT_EQUAL(wrench.loc, H, "the item is carried")
-	var/image/in_hand = H.overlays_standing[H.hand ? L_HAND_LAYER : R_HAND_LAYER]
+	var/image/in_hand = H.look_layers()[H.hand ? L_HAND_LAYER : R_HAND_LAYER]
 	TEST_ASSERT(in_hand && draws_icon(H, in_hand.icon), "the held item is drawn in the player's hand")
 	key_drop(H)
 	TEST_ASSERT_NULL(H.get_active_hand(), "the drop key empties the hand")

@@ -429,14 +429,18 @@ TRACKED_BRIDGED(/obj/cap_fixture/dx_deps_cap, spare, CHANGE_DATUM_A)
 	set_global("derived_write_expected", TRUE)
 	set_global("refresh_self_mark_expected", TRUE)
 	GLOB.derived_write_violations.Cut()
-	allocate(/obj/cap_fixture/dx_deps_writer)
-	refresh_flush()
+	var/obj/cap_fixture/dx_deps_writer/F = allocate(/obj/cap_fixture/dx_deps_writer)
+	// One drain, not refresh_flush(): draw() reads and writes lie, so the fixture re-marks itself on every pass, which flush reports as a
+	// runaway after its pass cap. One pass is enough for the write detector, and the re-mark waits for the next drain (as in dx_review_self_mark).
+	refresh_drain(null)
 	set_global("derived_write_expected", FALSE)
 	set_global("refresh_self_mark_expected", FALSE)
 	TEST_ASSERT(length(GLOB.derived_write_violations) > 0, "the write was reported")
 	TEST_ASSERT(findtext(GLOB.derived_write_violations[1], "lie"), "and names the var: [GLOB.derived_write_violations[1]]")
 	GLOB.derived_write_violations.Cut()
 	GLOB.refresh_self_marks.Cut()
+	F.refresh_queued = FALSE
+	GLOB.refresh_queue -= F
 
 /// The drift audit finds a look that no longer matches and names the undeclared read behind it.
 /datum/unit_test/dx_deps_drift_names_read/Run()

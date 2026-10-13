@@ -171,7 +171,7 @@
 				src.throw_alert("temp", /atom/movable/screen/alert/cold/robot, COLD_ALERT_SEVERITY_MODERATE)
 
 	// Blindness is raised by update_senses() when the camera or stat changes.
-	if(src.stat != DEAD && !src.blinded)
+	if(src.stat != DEAD && !src.has_status(STAT_BLINDED))
 		src.set_fullscreen(src.status_units(STAT_BLURRY), "blurry", /atom/movable/screen/fullscreen/blurry)
 		src.set_fullscreen(src.status_units(STAT_DRUGGED), "high", /atom/movable/screen/fullscreen/high)
 

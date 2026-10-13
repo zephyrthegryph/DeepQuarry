@@ -1,12 +1,15 @@
 //! Port of `tools/ci/tracked_lint.py`: the tracked-var write lint (doc/rewrite/dx_conventions.md sec 1,
 //! final_design.md sec 1).
 //!
-//! `TRACKED(T, var, channel)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
-//! subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed().
-//! `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var
-//! tracked the same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the
-//! setter body. Reads are unrestricted. A `derive()` value (`. += derive(nameof(var), ...)` in a
-//! `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//! `TRACKED(T, var)` (code/__defines/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
+//! subtypes) is written only through its generated setter `T/proc/set_<var>(value)`, which compares with `TRACKED_UNCHANGED` (null differs from 0)
+//! and publishes through `tracked_changed()`. `TRACKED_BRIDGED(T, var, channel)` is the same plus a legacy `CHANGE_*` channel, until the pipeline that
+//! consumes the channel is deleted. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
+//! same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the setter body. Reads are unrestricted. A `derive()` value
+//! (`. += derive(nameof(var), ...)` in a `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//!
+//! This lint covers declared tracked vars only. The end state (doc/rewrite/final_api.html section 7, "Reactive closure") makes any var that reactive
+//! code reads tracked, with a generated setter and a `raw_write` lint; list mutations of a read list get their own lint (`tracked_list`).
 //!
 //! Counted, for every tracked var V of type T, outside a setter body of V:
 //! * `V = x`, `src.V = x`, `V += x` (and the other compound ops), `V++`, `V--`, `++V`, `--V` inside a
@@ -24,8 +27,9 @@
 //!   multi-line string still declares a var;
 //! * a global `/proc/foo(` has owner `/proc` (the lazy owner group), and `derived` procs of owner `/`
 //!   are skipped;
-//! * the ALLOW lookup and the proc scan read the line numbers of the `code_only` view, which drift from
-//!   the raw file after an unbalanced quote;
+//! * the ALLOW lookup and the proc scan read the same-length `clean` view (physical line numbers, as the AST's
+//!   argument positions are), so an unbalanced quote moves no line; an `[expr]` embedded in a string is code in DM and
+//!   is scanned like any other;
 //! * `tracked_type_of` returns the first base of the var's type set that the owner is under; the
 //!   Python's set is hash-ordered, so with two matching bases the message may name either (the site
 //!   is the same). Here the set is sorted, so the shortest path wins.

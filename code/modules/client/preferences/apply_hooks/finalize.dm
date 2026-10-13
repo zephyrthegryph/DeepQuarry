@@ -14,4 +14,3 @@
 	if(target.dna)
 		target.dna.ResetUIFrom(target)
 	target.force_update_limbs()
-	target.regenerate_icons()

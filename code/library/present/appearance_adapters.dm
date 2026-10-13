@@ -15,27 +15,14 @@
 		look_replace_priority_overlay(AM, old, blocker)
 		return
 
-/// The mob that holds or wears `I` redraws that slot (its hand, belt, back...) through the slot's own redraw proc: a look that state_changed the
-/// item's sprite or inhand state is shown there too. Nothing when the item is not on a mob.
-/proc/look_redraw_worn(obj/item/I)
-	var/mob/M = I.loc
-	if(!ismob(M))
-		return
-	var/datum/relation_definition/slot/body/def = dq_ledger(M)?.def_by_id(M.inventory_slot_id(I))
-	if(istype(def))
-		def.redraw_on(M)
-
 /atom/movable/look_changed_sprite(old_icon, old_state)
 	look_resync_emissive_blocker(src, old_icon, old_state)
 
-/obj/item/look_changed_sprite(old_icon, old_state)
-	..()
-	look_redraw_worn(src)
-
+/// The hands draw this item with its item_state. Whoever holds or wears it watches its look (look.watch_look()), so the new state is shown
+/// there when this look is applied; nothing to call.
 /obj/item/look_apply_held_state(state)
 	if(item_state != state)
 		item_state = state
-		look_redraw_worn(src)
 
 /atom/look_apply_light(range, power, color)
 	set_glow(src, GLOW(range, power, color))

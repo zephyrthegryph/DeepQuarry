@@ -46,12 +46,11 @@
 		H.restore_blood()
 		H.remove_mutation(HUSK)
 		H.set_status_flags(H.status_flags & ~DISFIGURED)
-		H.update_icons_body()
 		for(var/limb in H.organs_by_name)
 			var/obj/item/organ/external/current_limb = H.organs_by_name[limb]
 			if(current_limb)
 				current_limb.relocate()
-				current_limb.open = 0
+				current_limb.set_open(0)
 
 		H.flag_hud_update(HEALTH_HUD)
 		H.flag_hud_update(STATUS_HUD)

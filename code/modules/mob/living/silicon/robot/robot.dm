@@ -458,7 +458,7 @@
 		camera.set_status(camera_on ? 1 : 0)
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
-	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !has_status(STAT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
+	var/sees = stat != DEAD && !has_status(STAT_PARALYZED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
 	set_blinded(!sees)
 	if(stat == DEAD)
 		return
@@ -1570,8 +1570,6 @@ MSG_DEF_SELF(robot_tool/no_dents, "Nothing to fix here.")
 
 	H.desc = "An all-access ID-card, shaped like a robot!"
 	H.icon_state = "[sprite_name]"
-	grabber.update_inv_l_hand()
-	grabber.update_inv_r_hand()
 	return H
 
 /mob/living/silicon/robot/onTransitZ(old_z, new_z)

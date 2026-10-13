@@ -45,10 +45,12 @@
 	var/struggle_anim = FALSE
 	var/bellies_icon_path = 'icons/mob/vore/Taur_Bellies.dmi'
 
+TRACKED(/datum/sprite_accessory/tail, clip_mask)
+
 /datum/sprite_accessory/tail/New()
 	. = ..()
 	if(clip_mask_state)
-		clip_mask = icon(icon = (clip_mask_icon ? clip_mask_icon : icon), icon_state = clip_mask_state)
+		set_clip_mask(icon(icon = (clip_mask_icon ? clip_mask_icon : icon), icon_state = clip_mask_state))
 
 // Everyone tails
 

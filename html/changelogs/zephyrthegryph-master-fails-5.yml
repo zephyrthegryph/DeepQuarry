@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "The zeta, omega and syndicate wolftaur mobs kept their pixel offsets, projectiles and armor again (their vars had fallen into a CAPABILITIES block); analyze gen now reports a var assignment inside a block"
+  - bugfix: "A turkeygirl redraws as it fills; a per_type() table (emotion mask designs, tactical visor patterns) is no longer saved with the item's state"
+  - code_imp: "Look pins re-recorded for the types whose draw changed since they were pinned"

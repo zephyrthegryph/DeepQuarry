@@ -107,10 +107,10 @@
 	var/before = get_trauma() + get_burn()
 	if(flags & INJURE_CONTINUOUS)
 		var/wound_kind = burn ? BURN : (sharp ? (edge ? CUT : PIERCE) : BRUISE)
-		if(accumulate_wound_damage(wound_kind, amount))
-			owner?.UpdateDamageIcon()
-	else if(apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE)))
-		owner?.UpdateDamageIcon()
+		accumulate_wound_damage(wound_kind, amount)
+	else
+		apply_wound_damage(trauma, burn, sharp, edge, source, projectile = (flags & INJURE_PROJECTILE))
+	update_damage_state() // the wound shows on the body at once, not at the next body clock cycle
 	return max(0, get_trauma() + get_burn() - before)
 
 /// Continuous harm (INJURE_CONTINUOUS): `amount` of `wound_kind` (CUT, PIERCE,

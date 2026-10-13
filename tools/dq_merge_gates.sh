@@ -11,6 +11,7 @@
 #        dm         tools/build/build.sh dm                        (production DreamMaker without UNIT_TESTS + DreamChecker)
 #        ratchets   tools/ci/check_ratchets.sh, then build.sh analyze
 #        tgui       tools/build/build.sh tgui-lint                 (only when the batch touches tgui/, or with --tgui)
+#        analyze_tests  cargo test in tools/analyze, in a cargo slot (only when the batch touches tools/analyze/)
 #
 # The test list is the cross-branch smoke set (tools/ci/smoke_tests.txt, which includes the boot gate), plus --tests, plus the
 # tests of every lane in --lanes whose lane-ready stamp (tools/dq_lane_ready.sh, tools/dq_lane_check.sh) is not valid for this
@@ -59,7 +60,7 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 	echo "dq_merge_gates: REFUSED: uncommitted changes to tracked files; commit the merge first (the stamp names an exact HEAD)" >&2
 	exit 1
 fi
-# look_keys.txt must match the merged tree before the HEAD is stamped: regenerate it and commit it as part of the merge.
+# The generated files must be fresh before the HEAD is stamped.
 tools/build/build.sh gen || { echo "dq_merge_gates: gen failed" >&2; exit 1; }
 # What this batch is meant to land, recorded for tools/dq_push_master.sh: origin/master as the gates start (a push after it moved
 # is refused on the merge worktree) and the tip of every lane in --lanes (the push fails unless each is in HEAD and then in origin/master).
@@ -87,7 +88,27 @@ if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git
 		git commit -q --amend --no-edit
 	fi
 fi
-bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys regeneration failed" >&2; exit 1; }
+# look_keys.txt records VERIFIED keys only. The union merge may have left it non-canonical (normalize drops rows, never writes a key).
+bash tools/ci/check_look_keys_format.sh --commit || { echo "dq_merge_gates: look_keys normalization failed" >&2; exit 1; }
+# Every type whose current look key has no recorded row (its look changed in a lane or in the merge) is probed here, and only here are
+# its keys recorded, into the merge commit. A lane-ready run (--snapshot-output) probes its own and records them itself.
+if [ "$run_tests" -eq 1 ] && [ "$snapshot_output" -eq 0 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then
+	unverified_line="$(bash tools/ci/check_look_keys_format.sh --unverified)" || { echo "dq_merge_gates: could not compute the unverified look types" >&2; exit 1; }
+	unverified_n="${unverified_line%% *}"
+	echo "== look pins: $unverified_line"
+	if [ "${unverified_n:-0}" -gt 0 ]; then
+		bash tools/dq_focused_test.sh dq_look_state_pin dq_look_tree_pin || { echo "dq_merge_gates: FAILED: the look pins over the unverified types; fix them (or bless explicitly), recommit, rerun" >&2; exit 1; }
+		if ! git diff --quiet -- code/modules/unit_tests/snapshots/look_keys.txt; then
+			git add -- code/modules/unit_tests/snapshots/look_keys.txt
+			if [ "$(git rev-list --parents -n 1 HEAD | awk '{print NF-1}')" = "2" ] && ! git merge-base --is-ancestor HEAD origin/master 2>/dev/null; then
+				git commit -q --amend --no-edit
+			else
+				git commit -q -m "Record look keys for the types the merge gates probed" -m "Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+			fi
+			echo "dq_merge_gates: recorded the probed look keys into HEAD"
+		fi
+	fi
+fi
 sha="$(git rev-parse HEAD)"
 short="${sha:0:12}"
 mkdir -p data/merge-gates
@@ -99,6 +120,9 @@ wall_start=$(date +%s)
 if [ "$tgui" -eq 0 ] && git rev-parse -q --verify origin/master >/dev/null; then
 	if ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tgui/ ':!tgui/packages/tgui/interfaces/generated'; then tgui=1; fi
 fi
+
+analyze_tests=0
+if git rev-parse -q --verify origin/master >/dev/null && ! git diff --quiet "$(git merge-base origin/master HEAD)" HEAD -- tools/analyze/; then analyze_tests=1; fi
 
 # ---- the test list ---------------------------------------------------------------------------------------------------------
 tests=()
@@ -181,11 +205,15 @@ job_ratchets() {
 	tools/build/build.sh analyze || return 2
 }
 job_tgui() { tools/build/build.sh tgui-lint; }
+job_analyze_tests() { # the analyzer's own cargo tests: a change under tools/analyze must leave them green (all targets, every failure listed)
+	bash tools/dq_machine_slots.sh run cargo --label analyze-tests -- bash -c 'cd tools/analyze && cargo test --no-fail-fast'
+}
 
 names=()
 [ "$run_tests" -eq 1 ] && names+=(tests)
 names+=(dm ratchets)
 [ "$tgui" -eq 1 ] && names+=(tgui)
+[ "$analyze_tests" -eq 1 ] && names+=(analyze_tests)
 echo "== gates in parallel: ${names[*]}$([ "$run_tests" -eq 1 ] && echo " (${#tests[@]} test(s): ${tests[*]:0:6}$([ ${#tests[@]} -gt 6 ] && echo ' ...'))")"
 declare -A pid start
 for n in "${names[@]}"; do

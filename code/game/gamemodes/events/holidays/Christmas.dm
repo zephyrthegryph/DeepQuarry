@@ -39,7 +39,6 @@
 			"Why is Christmas just like life on ss13?\n\n" + span_italics("You do all the work and the fat guy gets all the credit."),
 			"Why doesn't Santa have any children?\n\n" + span_italics("Because he only comes down the chimney.")))
 		new /obj/item/clothing/head/festive(target.loc)
-		user.update_icons()
 		cracked = 1
 		icon_state = "cracker1"
 		var/obj/item/toy/xmas_cracker/other_half = new /obj/item/toy/xmas_cracker(target)

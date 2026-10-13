@@ -45,7 +45,7 @@
 		alpha = initial(alpha)
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
-		incorporeal_move = initial(incorporeal_move)
+		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
 		force_max_speed = initial(force_max_speed)
 
@@ -130,7 +130,7 @@
 	alpha = initial(alpha)
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
-	incorporeal_move = initial(incorporeal_move)
+	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
@@ -149,7 +149,7 @@
 
 	set_is_shifting(FALSE)
 	canmove = original_canmove
-	incorporeal_move = TRUE
+	set_incorporeal_move(TRUE)
 	set_density(FALSE)
 	force_max_speed = TRUE
 
@@ -317,7 +317,7 @@
 	alpha = initial(alpha)
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
-	incorporeal_move = initial(incorporeal_move)
+	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove

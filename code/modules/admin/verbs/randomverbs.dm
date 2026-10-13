@@ -16,7 +16,6 @@ ADMIN_VERB(drop_everything, R_ADMIN, "Drop Everything", ADMIN_VERB_NO_DESCRIPTIO
 			continue
 		dropee.drop_from_inventory(W)
 
-	dropee.regenerate_icons()
 
 	log_admin("[key_name(user)] made [key_name(dropee)] drop everything!")
 	var/msg = "[key_name_admin(user)] made [ADMIN_LOOKUPFLW(dropee)] drop everything!"
@@ -838,7 +837,6 @@ CAPABILITIES(/datum/respawn_review)
 		GLOB.data_core.manifest_inject(new_character)
 
 	//A redraw for good measure
-	new_character.regenerate_icons()
 
 	new_character.update_transform()
 

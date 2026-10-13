@@ -249,7 +249,6 @@ init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	to_chat(owner_ref(
 init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	expire(5 SECONDS)
 init_lines	code/game/gamemodes/technomancer/spells/spawner/destablize.dm	radiate_loop()
 init_lines	code/game/machinery/Beacon.dm	var/turf/T = src.loc
-init_lines	code/game/machinery/Beacon.dm	Beacon.invisibility = INVISIBILITY_MAXIMUM
 init_lines	code/game/machinery/Beacon.dm	Beacon.forceMove(T)
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
@@ -1123,94 +1122,6 @@ init_lines	code/game/objects/structures/droppod.dm	cargo_at_make.forceMove(src) 
 init_lines	code/game/objects/structures/droppod.dm	podfall(auto_open)
 init_lines	code/game/objects/structures/fence.dm	update_cut_status()
 init_lines	code/game/objects/structures/fence.dm	update_door_status()
-init_lines	code/game/objects/structures/gargoyle.dm	var/mob/living/carbon/human/H = petrified
-init_lines	code/game/objects/structures/gargoyle.dm	if(isspace(loc) || isopenspace(loc))
-init_lines	code/game/objects/structures/gargoyle.dm	set_anchored(FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(!istype(H) || !isturf(H.loc))
-init_lines	code/game/objects/structures/gargoyle.dm	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
-init_lines	code/game/objects/structures/gargoyle.dm	var/tint = "#FFFFFF"
-init_lines	code/game/objects/structures/gargoyle.dm	if(comp)
-init_lines	code/game/objects/structures/gargoyle.dm	EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
-init_lines	code/game/objects/structures/gargoyle.dm	rel_set(comp, nameof(comp.statue), src)
-init_lines	code/game/objects/structures/gargoyle.dm	comp.transformed = TRUE
-init_lines	code/game/objects/structures/gargoyle.dm	comp.paused = FALSE
-init_lines	code/game/objects/structures/gargoyle.dm	identifier = length(comp.identifier) > 0 ? comp.identifier : initial(identifier)
-init_lines	code/game/objects/structures/gargoyle.dm	material = length(comp.material) > 0 ? comp.material : initial(material)
-init_lines	code/game/objects/structures/gargoyle.dm	tint = length(comp.tint) > 0 ? comp.tint : initial(comp.tint)
-init_lines	code/game/objects/structures/gargoyle.dm	adjective = length(comp.adjective) > 0 ? comp.adjective : initial(adjective)
-init_lines	code/game/objects/structures/gargoyle.dm	if(copytext_char(adjective, -1) != "s")
-init_lines	code/game/objects/structures/gargoyle.dm	adjective += "s"
-init_lines	code/game/objects/structures/gargoyle.dm	rel_set(src, nameof(WR_gargoyle), H)
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
-init_lines	code/game/objects/structures/gargoyle.dm	set_density(FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(ident_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	identifier = ident_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(mat_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	material = mat_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(adj_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	adjective = adj_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(tint_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	tint = tint_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.tail_style?.clip_mask_state)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_lower_dirs.Cut()
-init_lines	code/game/objects/structures/gargoyle.dm	else if(H.tail_style)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
-init_lines	code/game/objects/structures/gargoyle.dm	max_integrity = H.get_endurance() + 100
-init_lines	code/game/objects/structures/gargoyle.dm	original_int = H.vitality() * H.get_endurance() + 100
-init_lines	code/game/objects/structures/gargoyle.dm	update_integrity(original_int)
-init_lines	code/game/objects/structures/gargoyle.dm	name = "[identifier] of [H.name]"
-init_lines	code/game/objects/structures/gargoyle.dm	desc = "A very lifelike [identifier] made of [material]."
-init_lines	code/game/objects/structures/gargoyle.dm	stored_examine = H.examine(H)
-init_lines	code/game/objects/structures/gargoyle.dm	description_fluff = H.get_description_fluff()
-init_lines	code/game/objects/structures/gargoyle.dm	if(H?.buckled_to())
-init_lines	code/game/objects/structures/gargoyle.dm	var/atom/movable/_tmp_buck_10 = H?.buckled_to()
-init_lines	code/game/objects/structures/gargoyle.dm	_tmp_buck_10.unbuckle_mob(H, TRUE)
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/RGB = rgb2num(tint)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorr = rgb(RGB[1]*0.299, RGB[2]*0.299, RGB[3]*0.299)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorg = rgb(RGB[1]*0.587, RGB[2]*0.587, RGB[3]*0.587)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorb = rgb(RGB[1]*0.114, RGB[2]*0.114, RGB[3]*0.114)
-init_lines	code/game/objects/structures/gargoyle.dm	var/tint_color = list(colorr, colorg, colorb, "#000000")
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/body_layers = HUMAN_BODY_LAYERS
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/other_layers = HUMAN_OTHER_LAYERS
-init_lines	code/game/objects/structures/gargoyle.dm	for (var/i = 1; i <= length(H.overlays_standing); i++)
-init_lines	code/game/objects/structures/gargoyle.dm	if(i in other_layers)
-init_lines	code/game/objects/structures/gargoyle.dm	continue
-init_lines	code/game/objects/structures/gargoyle.dm	if(discard_clothes && !(i in body_layers))
-init_lines	code/game/objects/structures/gargoyle.dm	continue
-init_lines	code/game/objects/structures/gargoyle.dm	if(istype(H.overlays_standing[i], /image) && (i in body_layers))
-init_lines	code/game/objects/structures/gargoyle.dm	var/image/old_image = H.overlays_standing[i]
-init_lines	code/game/objects/structures/gargoyle.dm	var/image/new_image = image(old_image)
-init_lines	code/game/objects/structures/gargoyle.dm	if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_image = new_image
-init_lines	code/game/objects/structures/gargoyle.dm	new_image.color = tint_color
-init_lines	code/game/objects/structures/gargoyle.dm	new_image.layer = old_image.layer
-init_lines	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
-init_lines	code/game/objects/structures/gargoyle.dm	else
-init_lines	code/game/objects/structures/gargoyle.dm	if(!isnull(H.overlays_standing[i]))
-init_lines	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
-init_lines	code/game/objects/structures/gargoyle.dm	initial_sleep = H.status_units(STAT_SLEEPING)
-init_lines	code/game/objects/structures/gargoyle.dm	initial_blind = H.status_units(STAT_BLINDED)
-init_lines	code/game/objects/structures/gargoyle.dm	initial_is_shifted = H.is_shifted
-init_lines	code/game/objects/structures/gargoyle.dm	transform = H.transform
-init_lines	code/game/objects/structures/gargoyle.dm	layer = H.layer
-init_lines	code/game/objects/structures/gargoyle.dm	pixel_x = H.pixel_x
-init_lines	code/game/objects/structures/gargoyle.dm	pixel_y = H.pixel_y
-init_lines	code/game/objects/structures/gargoyle.dm	dir = H.dir
-init_lines	code/game/objects/structures/gargoyle.dm	initial_lying = H.lying
-init_lines	code/game/objects/structures/gargoyle.dm	initial_lying_prev = H.lying_prev
-init_lines	code/game/objects/structures/gargoyle.dm	H.set_sdisabilities(H.sdisabilities | MUTE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.appearance_flags & PIXEL_SCALE)
-init_lines	code/game/objects/structures/gargoyle.dm	appearance_flags |= PIXEL_SCALE
-init_lines	code/game/objects/structures/gargoyle.dm	wagging = H.wagging
-init_lines	code/game/objects/structures/gargoyle.dm	flapping = H.flapping
-init_lines	code/game/objects/structures/gargoyle.dm	H.toggle_tail(FALSE, FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	H.toggle_wing(FALSE, FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	act_message(H, null, MSG_SELF(span_warning("Your skin abruptly [adjective] as you turn to [material]!")), \
-init_lines	code/game/objects/structures/gargoyle.dm	MSG_OTHERS(span_warning("%U%'s skin rapidly [adjective] as they turn to [material]!")))
-init_lines	code/game/objects/structures/gargoyle.dm	H.forceMove(src)
-init_lines	code/game/objects/structures/gargoyle.dm	H.status_set(STAT_BLINDED, 0)
-init_lines	code/game/objects/structures/gargoyle.dm	H.status_set(STAT_SLEEPING, 0)
-init_lines	code/game/objects/structures/gargoyle.dm	H.canmove = 0
 init_lines	code/game/objects/structures/ghost_pods/silicon.dm	var/turf/T = get_turf(src)
 init_lines	code/game/objects/structures/ghost_pods/silicon.dm	say_dead_object("A " + span_notice("[drone_class] swarm drone") + " shell is now available in \the [T.loc].", src)
 init_lines	code/game/objects/structures/grille.dm	update_integrity(rand(1, 5)) //In the broken-but-not-cleared band (below integrity_failure).
@@ -2228,9 +2139,6 @@ init_lines	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLO
 init_lines	code/modules/mob/dead/observer/observer.dm	else
 init_lines	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 init_lines	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(mind), M.mind) //we don't transfer the mind but we keep a reference to it.
-init_lines	code/modules/mob/dead/observer/observer.dm	if(ishuman(M))
-init_lines	code/modules/mob/dead/observer/observer.dm	var/mob/living/carbon/human/H = M
-init_lines	code/modules/mob/dead/observer/observer.dm	add_overlay(H.overlays_standing) // ALLOW(decl): copies the body's overlays
 init_lines	code/modules/mob/dead/observer/observer.dm	default_pixel_x = M.default_pixel_x
 init_lines	code/modules/mob/dead/observer/observer.dm	default_pixel_y = M.default_pixel_y
 init_lines	code/modules/mob/dead/observer/observer.dm	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))
@@ -2290,7 +2198,6 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	dna.real_name = real_na
 init_lines	code/modules/mob/living/carbon/human/human.dm	sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 init_lines	code/modules/mob/living/carbon/human/human.dm	sync_organ_dna()
 init_lines	code/modules/mob/living/carbon/human/human.dm	initialize_vessel()
-init_lines	code/modules/mob/living/carbon/human/human.dm	regenerate_icons()
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/image/img = image('icons/mob/animal.dmi', src, animal)
 init_lines	code/modules/mob/living/carbon/human/human.dm	img.override = TRUE
@@ -2516,7 +2423,6 @@ init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	if(brainmob.client.pr
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	mannequin.delete_inventory(TRUE)
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	brainmob.client.prefs.dress_preview_mob(mannequin)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	mannequin.regenerate_icons()
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	icon = new_icon
 init_lines	code/modules/overmap/disperser/disperser_console.dm	link_parts()
