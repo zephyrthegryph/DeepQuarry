@@ -100,6 +100,26 @@ pub fn lex(source: &str) -> Lexed {
     }
 }
 
+/// DreamMaker's wording for an unterminated literal or block comment.
+fn unterminated_message(rest: &str) -> &'static str {
+    if rest.starts_with("/*") {
+        "unterminated comment"
+    } else if rest.starts_with("{\"") || rest.starts_with("@{\"") {
+        "unterminated text (expecting \"})"
+    } else if rest.starts_with('"') && unclosed_embedding(rest.lines().next().unwrap_or("")) {
+        "unterminated text expression (expecting ])"
+    } else if rest.starts_with('\'') {
+        "unterminated text (expecting ')"
+    } else {
+        "unterminated text (expecting \")"
+    }
+}
+
+/// The text line opens an embedded expression (`[`) that it never closes.
+fn unclosed_embedding(line: &str) -> bool {
+    line.rfind('[').is_some_and(|open| !line[open..].contains(']'))
+}
+
 /// Lex into source-backed spans. The caller must retain `source` while reading token text.
 pub fn lex_spans(source: &str) -> SpannedLexed {
     let mut out = SpannedLexed::default();
@@ -185,7 +205,7 @@ pub fn visit_tokens_while(
             diagnostics.push(Diagnostic {
                 span: Span::new(pos, end),
                 kind: DiagnosticKind::Lexical,
-                message: "unterminated string or comment".into(),
+                message: unterminated_message(rest).into(),
             });
         }
         if !visitor(SpanToken {

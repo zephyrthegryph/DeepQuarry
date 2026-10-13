@@ -72,6 +72,76 @@ fn reference_context(statement: &str, name: &str) -> String {
     };
     context
 }
+/// DreamMaker's subject for an undefined member variable: the receiver chain
+/// as written (`src.missing`), prefixed by `return` when the statement only
+/// returns that chain. Falls back to the bare name when no chain matches.
+pub fn undefined_member_message(statement: &str, selector: &str) -> String {
+    let lexed = dm_syntax::lex_spans(statement);
+    let tokens: Vec<&str> = lexed
+        .tokens
+        .iter()
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+            )
+        })
+        .map(|token| token.text(statement))
+        .collect();
+    let is_ident = |text: &str| {
+        text.chars().next().is_some_and(|ch| ch.is_alphabetic() || ch == '_')
+            && text.chars().all(|ch| ch.is_alphanumeric() || ch == '_')
+    };
+    let separator = |text: &str| text == "." || text == ":";
+    let Some(selected) = (2..tokens.len())
+        .find(|&index| tokens[index] == selector && separator(tokens[index - 1]) && is_ident(tokens[index - 2]))
+    else {
+        return format!("{selector}: undefined var");
+    };
+    let mut start = selected - 2;
+    while start >= 2 && separator(tokens[start - 1]) && is_ident(tokens[start - 2]) {
+        start -= 2;
+    }
+    let mut end = selected;
+    while end + 2 < tokens.len() && separator(tokens[end + 1]) && is_ident(tokens[end + 2]) {
+        end += 2;
+    }
+    let chain: String = tokens[start..=end].concat();
+    if start == 1 && tokens[0] == "return" && end + 1 == tokens.len() {
+        format!("return{chain}: undefined var")
+    } else {
+        format!("{chain}: undefined var")
+    }
+}
+
+/// Owner and name of a variable fact the resolver could not answer, recovered
+/// from the stable reason text of `LowerResolver::error` (see `query_subject`).
+/// A name with no declared spelling is matched against the statement's
+/// identifiers by symbol hash.
+pub fn unresolved_variable_candidate<'a>(
+    reason: &'a str,
+    statement: &'a str,
+) -> Option<(Option<&'a str>, &'a str)> {
+    let rest = reason.strip_prefix("unsupported semantic query: variable ")?;
+    let names = rest.split_once(" (")?.1.strip_suffix(')')?;
+    let (owner, name) = match names.split_once(", name=") {
+        Some((owner, name)) => (Some(owner.strip_prefix("owner=")?), name),
+        None => (None, names.strip_prefix("name=")?),
+    };
+    let Some(bits) = name.strip_prefix('#') else {
+        return Some((owner, name));
+    };
+    let bits = u64::from_str_radix(bits, 16).ok()?;
+    let lexed = dm_syntax::lex_spans(statement);
+    let name = lexed
+        .tokens
+        .iter()
+        .filter(|token| token.kind == TokenKind::Ident)
+        .map(|token| token.text(statement))
+        .find(|text| dm_ir::SymbolId::of(text).bits() == bits)?;
+    Some((owner, name))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,5 +167,34 @@ mod tests {
                 expected.replace(": undefined var", ": undefined type: /datum/missing")
             );
         }
+    }
+    #[test]
+    fn member_chain_subjects_match_dreammaker() {
+        for (statement, expected) in [
+            ("return src.nope", "returnsrc.nope: undefined var"),
+            ("return src.nope.deeper", "returnsrc.nope.deeper: undefined var"),
+            ("var/x = src.nope + 1", "src.nope: undefined var"),
+            ("src.nope = 1", "src.nope: undefined var"),
+            ("return T:nope", "returnT:nope: undefined var"),
+            ("return global.nope + 1", "global.nope: undefined var"),
+            ("return 1", "nope: undefined var"),
+        ] {
+            assert_eq!(undefined_member_message(statement, "nope"), expected);
+        }
+        assert_eq!(
+            unresolved_variable_candidate(
+                "unsupported semantic query: variable storage (owner=/datum/a, name=b)",
+                ""
+            ),
+            Some((Some("/datum/a"), "b"))
+        );
+        let hashed = format!(
+            "unsupported semantic query: variable global (name=#{:016x})",
+            dm_ir::SymbolId::of("g").bits()
+        );
+        assert_eq!(
+            unresolved_variable_candidate(&hashed, "return global.g + 1"),
+            Some((None, "g"))
+        );
     }
 }

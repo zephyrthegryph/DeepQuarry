@@ -1,0 +1,2 @@
+include_missing.dm:1:error: unable to open "does_not_exist.dm".
+include_missing.dmb - 1 error, 0 warnings

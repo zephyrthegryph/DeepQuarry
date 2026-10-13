@@ -1,0 +1,2 @@
+call_undefined_parent_proc.dm:2:warning (no_parent): ..: ..() has no parent proc to call
+call_undefined_parent_proc.dmb - 0 errors, 1 warning

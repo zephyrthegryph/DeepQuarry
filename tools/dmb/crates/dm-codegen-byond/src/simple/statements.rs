@@ -343,12 +343,12 @@ impl Compiler<'_> {
             let target = *if text == "break" {
                 self.breaks
                     .last()
-                    .ok_or_else(|| error(text, "break outside a loop or switch"))?
+                    .ok_or_else(|| source_error(text, "break: not in a loop"))?
             } else {
                 &self
                     .loops
                     .last()
-                    .ok_or_else(|| error(text, "continue outside a loop"))?
+                    .ok_or_else(|| source_error(text, "continue: not in a loop"))?
                     .0
             };
             self.emit(opcode::JMP, vec![Word::Branch(target)]);
@@ -371,6 +371,17 @@ impl Compiler<'_> {
                 .strip_prefix("var")
                 .is_some_and(|tail| tail.chars().next().is_some_and(char::is_whitespace))
         {
+            if let Some(child) = item.children.first() {
+                // A block indented under `var/name` is never DM; DreamMaker
+                // rejects the first indented line.
+                return Err(LowerError {
+                    span: Some(LowerSpan {
+                        start: child.header_span.start,
+                        end: child.header_span.end,
+                    }),
+                    ..source_error(text, ": missing expression")
+                });
+            }
             let (declaration, initial) = text
                 .split_once('=')
                 .map_or((text.trim(), None), |(n, e)| (n.trim(), Some(e.trim())));
@@ -403,7 +414,7 @@ impl Compiler<'_> {
                         |compiler: &mut Self| {
                             let parsed = parse_expression(initial);
                             if !parsed.diagnostics.is_empty() {
-                                return Err(error(text, "expression syntax is unsupported"));
+                                return Err(syntax_failure(text, &parsed.diagnostics));
                             }
                             let value = parsed
                                 .expr
@@ -430,11 +441,23 @@ impl Compiler<'_> {
             return Ok(());
         }
         if !item.children.is_empty() {
+            if text == "else" || text.starts_with("else ") || text.starts_with("else if") {
+                return Err(source_error(
+                    "else",
+                    "else: 'else' clause without preceding 'if' statement",
+                ));
+            }
+            if text.starts_with("proc/") || text.starts_with("verb/") {
+                return Err(source_error(
+                    text,
+                    "proc definition not allowed inside another proc",
+                ));
+            }
             return Err(error(text, "control-flow statement is not lowered yet"));
         }
         let parsed = parse_expression(text);
         if !parsed.diagnostics.is_empty() {
-            return Err(error(text, "expression syntax is unsupported"));
+            return Err(syntax_failure(text, &parsed.diagnostics));
         }
         let expr = parsed
             .expr

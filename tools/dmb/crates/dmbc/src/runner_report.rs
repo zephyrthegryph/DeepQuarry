@@ -4,6 +4,7 @@ pub(super) fn replay_warnings(warnings: &[String]) -> std::io::Result<()> {
     use std::io::Write;
     let mut output = dmbc::daemon::stderr_writer();
     for warning in warnings {
+        dmbc::diagnostics::count_rendered_warning(warning);
         output.write_all(warning.as_bytes())?;
     }
     Ok(())

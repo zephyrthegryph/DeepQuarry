@@ -1,0 +1,2 @@
+undefined_method.dm:2:error: src.nope: undefined proc
+undefined_method.dmb - 1 error, 0 warnings

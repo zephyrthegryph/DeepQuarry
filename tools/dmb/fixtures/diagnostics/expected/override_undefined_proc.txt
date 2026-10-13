@@ -1,0 +1,2 @@
+override_undefined_proc.dm:1:error: test: undefined proc
+override_undefined_proc.dmb - 1 error, 0 warnings

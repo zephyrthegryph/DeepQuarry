@@ -23,6 +23,7 @@ pub mod procedure_abi;
 mod retained_capacity;
 mod simple;
 pub mod typed_scopes;
+pub use lower_diagnostics::{undefined_member_message, unresolved_variable_candidate};
 pub use lower_resolver::ProcedureInputs;
 pub use simple::{
     compile_preparsed_lossless_with_resolver, compile_simple_proc,

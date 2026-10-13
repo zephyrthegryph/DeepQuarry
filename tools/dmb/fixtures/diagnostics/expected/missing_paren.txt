@@ -1,0 +1,3 @@
+missing_paren.dm:8:error: return: missing comma ',' or right-paren ')'
+missing_paren.dm:8:error: return: expected end of statement
+missing_paren.dmb - 2 errors, 0 warnings

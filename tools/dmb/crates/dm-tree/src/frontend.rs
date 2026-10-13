@@ -808,6 +808,8 @@ fn resolution_error(
     origins: &[crate::Provenance],
     mapping: &Mapping<'_>,
     opaque_engine: bool,
+    symbols: &SymbolTable,
+    intrinsics: &[crate::IntrinsicMember],
 ) -> Diagnostic {
     let index = match &error {
         SnapshotError::Tree(crate::TreeError::Duplicate { owner, name, kind }
@@ -829,7 +831,25 @@ fn resolution_error(
         });
     Diagnostic {
         kind: match &error {
-            SnapshotError::Tree(crate::TreeError::MissingOverride { .. }) if opaque_engine => {
+            // A partial engine inventory cannot prove a built-in absent; a name
+            // that is no BYOND built-in anywhere is still the author's error.
+            SnapshotError::Tree(crate::TreeError::MissingOverride { owner, name, kind })
+                if opaque_engine
+                    && (intrinsics.iter().any(|member| {
+                        member.name == *name
+                            && member.kind == *kind
+                            && authored_ancestry(*owner, skeletons, symbols).contains(&member.owner)
+                    })
+                        || symbols.text(*name).is_none_or(|name| {
+                        let plain = plain_datum_owner(*owner, skeletons, symbols);
+                        match kind {
+                            MemberKind::Var => dm_ir::builtin_names::is_builtin_var_in(plain, name),
+                            MemberKind::Proc | MemberKind::Verb => {
+                                dm_ir::builtin_names::is_builtin_proc_in(plain, name)
+                            }
+                        }
+                    })) =>
+            {
                 DiagnosticKind::UnsupportedModel
             }
             SnapshotError::Inventory(_) => DiagnosticKind::Internal,
@@ -843,10 +863,14 @@ fn resolution_error(
             _ => DiagnosticKind::SourceError,
         },
         stage: DiagnosticStage::Resolution,
-        message: format!("{error:?}"),
+        message: resolution_message(error, symbols),
         location,
     }
 }
+
+#[path = "frontend_resolution_messages.rs"]
+mod resolution_messages;
+use resolution_messages::{authored_ancestry, plain_datum_owner, resolution_message};
 
 fn collect_bodies(
     syntax: &DeclarationSyntax,

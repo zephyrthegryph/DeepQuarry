@@ -448,7 +448,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                 &path,
                                 source_line,
                                 DiagnosticKind::Conditional,
-                                "#elif without #if",
+                                "unexpected #elif",
                             );
                             continue;
                         };
@@ -486,7 +486,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                 &path,
                                 source_line,
                                 DiagnosticKind::Conditional,
-                                "#else without #if",
+                                "unexpected #else",
                             );
                             continue;
                         };
@@ -509,7 +509,7 @@ impl<P: SourceProvider> Context<'_, P> {
                                 &path,
                                 source_line,
                                 DiagnosticKind::Conditional,
-                                "#endif without #if",
+                                "unexpected #endif",
                             );
                         }
                     }

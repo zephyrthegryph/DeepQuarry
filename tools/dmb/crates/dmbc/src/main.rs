@@ -81,8 +81,7 @@ fn main_inner() {
                     )
                 });
                 if let Err(error) = result {
-                    eprintln!("{error}");
-                    std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
+                    report_failure(error.as_ref());
                 }
                 return;
             }
@@ -125,7 +124,15 @@ fn main_inner() {
         }
     }
     if let Err(error) = result {
-        eprintln!("{error}");
-        std::process::exit(dmbc::request_failure::exit_code(error.as_ref()));
+        report_failure(error.as_ref());
     }
+}
+/// A source failure whose diagnostics and summary were already printed carries
+/// an empty message; print only what the user has not seen yet.
+fn report_failure(error: &(dyn std::error::Error + 'static)) -> ! {
+    let message = error.to_string();
+    if !message.is_empty() {
+        eprintln!("{message}");
+    }
+    std::process::exit(dmbc::request_failure::exit_code(error));
 }

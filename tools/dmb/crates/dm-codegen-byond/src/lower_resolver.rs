@@ -447,8 +447,11 @@ impl ProjectResolver<'_> {
             | Q::Constant { owner, name }
             | Q::StaticVar { owner, name }
             | Q::HasMemberProc { owner, name } => {
+                // A name absent from every declaration has no spelling here;
+                // `#bits` lets diagnostics match it against the statement.
                 match (self.symbols.text(owner), self.symbols.text(name)) {
                     (Some(owner), Some(name)) => format!(" (owner={owner}, name={name})"),
+                    (Some(owner), None) => format!(" (owner={owner}, name=#{:016x})", name.bits()),
                     _ => String::new(),
                 }
             }
@@ -461,14 +464,14 @@ impl ProjectResolver<'_> {
                 .symbols
                 .text(name)
                 .map(|name| format!(" (name={name})"))
-                .unwrap_or_default(),
+                .unwrap_or_else(|| format!(" (name=#{:016x})", name.bits())),
             _ => String::new(),
         };
         LowerError {
             primary_anchor: None,
             related: Vec::new(),
             statement: String::new(),
-            reason: format!("{reason}: {query:?}{names}"),
+            reason: format!("{reason}: {}{names}", query_subject(query)),
             ..LowerError::default()
         }
     }
@@ -677,3 +680,29 @@ mod parent_warning_tests;
 #[cfg(test)]
 #[path = "missing_call_tests.rs"]
 mod missing_call_tests;
+
+/// User-facing description of a semantic query. Variable facts start with
+/// "variable" so `unresolved_variable_candidate` can recover the name.
+fn query_subject(query: Q) -> &'static str {
+    match query {
+        Q::Var { .. } => "variable declaration",
+        Q::HasMemberVar { .. } => "variable presence",
+        Q::DeclaredVarType { .. } => "variable declared type",
+        Q::VarStorage { .. } => "variable storage",
+        Q::StaticVar { .. } => "variable static storage",
+        Q::GlobalVar(_) => "variable global",
+        Q::UniqueStaticVar(_) => "unique static storage",
+        Q::Constant { .. } => "constant value",
+        Q::PredefinedConstant(_) => "predefined constant",
+        Q::Proc { .. } | Q::GlobalProc(_) => "procedure",
+        Q::HasMemberProc { .. } => "procedure presence",
+        Q::ProcedureValue { .. } | Q::MethodProcedureValue { .. } => "procedure reference",
+        Q::OverrideChain { .. } | Q::DeclarationChain { .. } => "procedure override chain",
+        Q::MemberCallableName(_) | Q::MemberCallableVerbName(_) => "dynamic member call",
+        Q::Signature(_) => "procedure signature",
+        Q::ProcedureStatic { .. } => "procedure static variable",
+        Q::Type(_) | Q::Parent(_) | Q::Ancestry(_) => "type hierarchy",
+        Q::RuntimeType(_) => "runtime type",
+        Q::Resource(_) | Q::ResourceIn { .. } => "resource",
+    }
+}

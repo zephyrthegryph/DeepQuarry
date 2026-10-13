@@ -46,6 +46,9 @@ pub struct BuildRequest {
     pub no_daemon: bool,
     /// Profiling lifecycle belongs to the host, not reusable build execution.
     pub trace_path: Option<PathBuf>,
+    /// Reporting policy only; never part of build identity or reuse.
+    #[serde(default)]
+    pub warnings: crate::diagnostics::WarningPolicy,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

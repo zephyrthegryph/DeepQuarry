@@ -1,0 +1,3 @@
+undefined_type_var.dm:3:error: returnx: undefined type: /datum/nope
+undefined_type_var.dm:2:warning (unused_var): x: variable defined but not used
+undefined_type_var.dmb - 1 error, 1 warning

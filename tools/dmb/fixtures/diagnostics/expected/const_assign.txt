@@ -1,0 +1,2 @@
+const_assign.dm:5:error: C: cannot change constant value
+const_assign.dmb - 1 error, 0 warnings
