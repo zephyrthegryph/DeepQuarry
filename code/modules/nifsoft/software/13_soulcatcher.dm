@@ -473,8 +473,7 @@ CAPABILITIES(/mob/observer/eye/ar_soul)
 		mannequin.delete_inventory(TRUE)
 		brainmob.client.prefs.dress_preview_mob(mannequin)
 
-		draw_now(mannequin)
-		var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
+		var/icon/new_icon = getHologramIcon(getCompoundIcon(draw_now(mannequin)))
 		icon = new_icon
 
 /mob/observer/eye/ar_soul/EyeMove(n, direct)
