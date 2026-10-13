@@ -303,7 +303,7 @@
 	dir = new_dir
 	// A drawn type that reads dir redraws, and so does a look that watches this atom (dir is a tracked read of every look), and so does a stat, an
 	// on_change() hook or a pending operation that reads it; an atom nothing draws, watches or reads pays one var read and the demand test.
-	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir)))))
+	if(old_dir != new_dir && (rx?.look_key || rel_watchers || GLOB.stat_input_keys?[nameof(dir)] || GLOB.derived_read_vars?[nameof(dir)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(dir))) || draw_hop_reads_var(nameof(dir))))
 		tracked_changed(src, nameof(dir))
 SETTER(/atom, dir)
 
@@ -326,7 +326,7 @@ SETTER(/atom, density)
 	if(invisibility == new_invisibility)
 		return FALSE
 	invisibility = new_invisibility
-	if(GLOB.stat_input_keys?[nameof(invisibility)] || GLOB.derived_read_vars?[nameof(invisibility)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(invisibility))))
+	if(GLOB.stat_input_keys?[nameof(invisibility)] || GLOB.derived_read_vars?[nameof(invisibility)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(invisibility))) || draw_hop_reads_var(nameof(invisibility)))
 		tracked_changed(src, nameof(invisibility))
 	return TRUE
 
@@ -726,7 +726,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 	if(icon_state == new_state)
 		return
 	icon_state = new_state
-	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))))
+	if(GLOB.stat_input_keys?[nameof(icon_state)] || GLOB.derived_read_vars?[nameof(icon_state)] || (length(GLOB.generated_reads_table) && READERS(src, nameof(icon_state))) || draw_hop_reads_var(nameof(icon_state)))
 		tracked_changed(src, nameof(icon_state))
 
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).

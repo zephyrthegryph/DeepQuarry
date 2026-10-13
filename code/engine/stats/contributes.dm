@@ -287,7 +287,7 @@ PROC_SUMMARY(/proc/stat_index_inputs) // vars[] / call() dispatcher: the walk ca
 				stat_note_untracked(I, stat_id, list(key))
 			continue
 		// A hop starts at a var of the holder; one that does not (a generated read through a local the walk typed) cannot be indexed.
-		if(istext(key) && findtext(key, ".") && findtext(key, "sys:") != 1 && !(copytext(key, 1, findtext(key, ".")) in E.vars))
+		if(istext(key) && findtext(key, ".") && findtext(key, "sys:") != 1 && !hop_segment_known(E, copytext(key, 1, findtext(key, "."))))
 			if(stat_id)
 				stat_note_untracked(I, stat_id, list(key))
 			continue

@@ -466,6 +466,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		// that something reads re-derives everything. Its draw()'s reads are generated (generated_reads()), so READERS knows them.
 		if(!QDELING(holder) && !derived_is_exact(holder))
 			state_changed(holder)
+	// A draw one container, turf or area hop away reads it: it redraws (refs/hops.dm).
+	if(holder && draw_hop_reads_var(var_name))
+		draw_hop_published(holder, var_name)
 	var/datum/definition_registry/R = GLOB?.om_reg
 	if(!R || !holder)
 		return
