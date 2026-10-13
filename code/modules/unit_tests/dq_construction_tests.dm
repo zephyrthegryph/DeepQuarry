@@ -107,6 +107,7 @@
 /datum/unit_test/dq_construction_wall_plain
 
 /datum/unit_test/dq_construction_wall_plain/Run()
+	set_global(nameof(GLOB.coalesce_runs), GLOB.coalesce_runs)
 	test_driver_begin()
 	var/turf/T = test_floor()
 	var/turf/wall_turf = get_step(T, NORTH) || get_step(T, SOUTH)

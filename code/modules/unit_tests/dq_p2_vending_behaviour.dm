@@ -1348,6 +1348,9 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 /// The shop's contraband wire does nothing (the hidden stock needs an emag); its emag shows the hidden stock once.
 /datum/unit_test/dq_p2_vending/nifsoft_shop_hides_its_contraband_from_wires
 /datum/unit_test/dq_p2_vending/nifsoft_shop_hides_its_contraband_from_wires/run_gate()
+	// The shared catalogs contain type paths; preserve their exact incoming identities.
+	set_global(nameof(GLOB.starting_legal_nifsoft), GLOB.starting_legal_nifsoft)
+	set_global(nameof(GLOB.starting_illegal_nifsoft), GLOB.starting_illegal_nifsoft)
 	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/nifsoft_shop)
 	var/mob/living/carbon/human/H = p2v_actor()
 	toggle_panel(H, V)
@@ -1364,6 +1367,9 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 /// The shop cannot throw software at anyone, and its malfunction breaks it without throwing stock.
 /datum/unit_test/dq_p2_vending/nifsoft_shop_throws_nothing
 /datum/unit_test/dq_p2_vending/nifsoft_shop_throws_nothing/run_gate()
+	// The shared catalogs contain type paths; preserve their exact incoming identities.
+	set_global(nameof(GLOB.starting_legal_nifsoft), GLOB.starting_legal_nifsoft)
+	set_global(nameof(GLOB.starting_illegal_nifsoft), GLOB.starting_illegal_nifsoft)
 	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/nifsoft_shop)
 	var/mob/living/carbon/human/H = p2v_actor(get_step(p2v_spot(), EAST))
 	TEST_ASSERT(!V.throw_item(H), "nothing is thrown")
