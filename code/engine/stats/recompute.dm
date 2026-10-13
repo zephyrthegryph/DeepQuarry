@@ -51,13 +51,19 @@ PROC_SUMMARY(/proc/stat_value) // vars[] / call() dispatcher: the walk cannot en
 		return null
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
-		return E.vars[def.name]
+		. = E.vars[def.name]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
 	var/datum/stat_record/rec = E.rx?.stats
 	// A stat whose inputs all publish keeps its value until one does (stat_recompute() rewrites it then); one that reads something nobody publishes
 	// (code/engine/_generated/deps.dm, the untracked_inputs lint) is composed on every read, so it is never stale.
 	var/tracked = stat_inputs_tracked(I || null, def)
 	if(tracked && rec?.virtual && (def.skey in rec.virtual))
-		return rec.virtual[def.skey]
+		. = rec.virtual[def.skey]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
 	GLOB.stat_read_computes++
 #if defined(BENCHMARK)
 	GLOB.stat_read_compute_by["[E.type]:[def.name]"]++
@@ -296,6 +302,7 @@ PROC_SUMMARY(/proc/stat_ensure_inited) // vars[] / call() dispatcher: the walk c
 	if(rec.inited)
 		return rec
 	rec.inited = TRUE
+	staleness_track(E)
 	if(!I)
 		return rec
 	for(var/datum/stat_def/def as anything in I.defs)

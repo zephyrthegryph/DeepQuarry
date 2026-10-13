@@ -209,6 +209,8 @@ GLOBAL_VAR(restart_counter)
 
 	config.Load(params[OVERRIDE_CONFIG_DIRECTORY_PARAMETER])
 
+	staleness_configure()
+
 	ConfigLoaded()
 
 	if(NO_INIT_PARAMETER in params)
