@@ -1,0 +1,2 @@
+undefined_global.dm:2:error: returnglobal.nope: undefined var
+undefined_global.dmb - 1 error, 0 warnings

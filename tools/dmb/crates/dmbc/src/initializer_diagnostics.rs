@@ -250,9 +250,9 @@ pub fn map_lower_errors(
                 LowerErrorKind::Internal => DiagnosticKind::Internal,
             },
             identity: None,
-            origin,
             message: if error.kind == LowerErrorKind::SourceError || error.statement.is_empty() { error.reason }
                 else { format!("{}: {}", error.statement, error.reason) },
+            origin,
         })
     }).collect()
 }

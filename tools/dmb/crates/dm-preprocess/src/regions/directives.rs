@@ -591,7 +591,31 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             None => match self.provider.read(&path) {
                 Ok(source) => Arc::new(prepared_source::PreparedSource::from_text(source.into())),
                 Err(error) => {
-                    self.error(occurrence, 1, DiagnosticKind::Io, error);
+                    // DreamMaker reports an unreadable include at its #include
+                    // directive, naming the authored operand.
+                    let current = &self.plan.occurrences[occurrence];
+                    match current.parent {
+                        Some(parent) => {
+                            let line = current.directive_line;
+                            let parent_dir = Path::new(self.plan.occurrences[parent].semantic_path.as_ref())
+                                .parent()
+                                .map(Path::to_path_buf)
+                                .unwrap_or_default();
+                            let semantic = PathBuf::from(current.semantic_path.as_ref());
+                            let spelling = semantic
+                                .strip_prefix(&parent_dir)
+                                .unwrap_or(&semantic)
+                                .to_string_lossy()
+                                .into_owned();
+                            self.error(
+                                parent,
+                                line,
+                                DiagnosticKind::Io,
+                                format!("unable to open \"{spelling}\"."),
+                            );
+                        }
+                        None => self.error(occurrence, 1, DiagnosticKind::Io, error),
+                    }
                     return;
                 }
             },
@@ -927,7 +951,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         occurrence,
                         line,
                         DiagnosticKind::Conditional,
-                        format!("#{word} without #if"),
+                        format!("unexpected #{word}"),
                     );
                     return;
                 };
@@ -961,7 +985,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         occurrence,
                         line,
                         DiagnosticKind::Conditional,
-                        "#endif without #if".into(),
+                        "unexpected #endif".into(),
                     );
                 }
             }

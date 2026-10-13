@@ -1,0 +1,2 @@
+assign_to_proc_call.dm:5:error: : bad assignment
+assign_to_proc_call.dmb - 1 error, 0 warnings

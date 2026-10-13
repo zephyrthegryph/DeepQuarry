@@ -58,6 +58,7 @@ mod tests {
             artifact_directory: None,
             no_daemon: false,
             trace_path: None,
+            warnings: Default::default(),
         }
     }
     #[test]

@@ -1,0 +1,2 @@
+undefined_field.dm:5:error: returnsrc.nonexistent: undefined var
+undefined_field.dmb - 1 error, 0 warnings

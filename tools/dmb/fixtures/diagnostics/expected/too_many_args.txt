@@ -1,0 +1,2 @@
+too_many_args.dm:2:error: abs: extra args
+too_many_args.dmb - 1 error, 0 warnings

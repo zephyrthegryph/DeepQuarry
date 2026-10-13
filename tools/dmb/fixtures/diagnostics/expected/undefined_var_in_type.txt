@@ -1,0 +1,2 @@
+undefined_var_in_type.dm:2:error: x: undefined var
+undefined_var_in_type.dmb - 1 error, 0 warnings

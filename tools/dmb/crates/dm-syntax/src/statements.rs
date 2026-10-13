@@ -658,6 +658,16 @@ fn parse_var_parts(
 }
 
 fn parse_var(item: &Item, diagnostics: &mut Vec<Diagnostic>) -> Option<StatementKind> {
+    if let Some(child) = item.children.first() {
+        // A block indented under an initialized `var/name = value` is never
+        // DM; the statement lowerer reports DreamMaker's error.
+        diagnostics.push(Diagnostic {
+            span: child.header_span,
+            kind: DiagnosticKind::Unsupported,
+            message: "statement block under a variable declaration".into(),
+        });
+        return None;
+    }
     parse_var_header(item, "", diagnostics)
 }
 fn parse_var_header(

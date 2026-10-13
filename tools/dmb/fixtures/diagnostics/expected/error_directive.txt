@@ -1,0 +1,2 @@
+error_directive.dm:1:error: #error custom failure here
+error_directive.dmb - 1 error, 0 warnings

@@ -51,6 +51,80 @@ pub(super) fn error(statement: &str, reason: &str) -> LowerError {
     }
 }
 
+/// A confirmed error in the author's source, worded as DreamMaker words it.
+pub(super) fn source_error(statement: &str, reason: &str) -> LowerError {
+    LowerError {
+        kind: LowerErrorKind::SourceError,
+        ..error(statement, reason)
+    }
+}
+
+/// Classify an expression the native parser rejected. Only failures that are
+/// invalid DM regardless of parser coverage (unbalanced delimiters, an operator
+/// with nothing after it, unterminated text) become source errors; anything
+/// else may be valid DM the native parser does not cover yet.
+pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) -> LowerError {
+    use dm_syntax::TokenKind;
+    let lexed = dm_syntax::lex_spans(text);
+    if let Some(diagnostic) = lexed.diagnostics.first() {
+        return source_error(text, &diagnostic.message);
+    }
+    let tokens: Vec<_> = lexed
+        .tokens
+        .iter()
+        .filter(|token| {
+            !matches!(
+                token.kind,
+                TokenKind::Whitespace | TokenKind::Newline | TokenKind::Comment
+            )
+        })
+        .map(|token| (token.kind, token.text(text)))
+        .collect();
+    let mut open = Vec::new();
+    for (kind, token) in &tokens {
+        if *kind != TokenKind::Punctuation {
+            continue;
+        }
+        match *token {
+            "(" | "[" | "{" => open.push(*token),
+            ")" | "]" | "}" => {
+                if open.pop().is_none() {
+                    return source_error(text, &format!("{token}: expected end of statement"));
+                }
+            }
+            _ => {}
+        }
+    }
+    if !open.is_empty() {
+        return source_error(text, "missing comma ',' or right-paren ')'");
+    }
+    // Two adjacent literal operands (`list(1 2)`) are never DM.
+    if let Some(pair) = tokens.windows(2).find(|pair| {
+        matches!(pair[0].0, TokenKind::Number | TokenKind::String)
+            && matches!(pair[1].0, TokenKind::Number | TokenKind::String)
+    }) {
+        return source_error(
+            text,
+            &format!("{}: missing comma ',' or right-paren ')'", pair[1].1),
+        );
+    }
+    let dangling_operator = tokens.iter().enumerate().any(|(index, (kind, token))| {
+        *kind == TokenKind::Operator
+            && !matches!(*token, "++" | "--")
+            && (index == 0 || tokens[index - 1].1 != *token)
+            && tokens
+                .get(index + 1)
+                .is_none_or(|(_, next)| matches!(*next, ")" | "]" | ","))
+    });
+    if dangling_operator {
+        return source_error(text, "missing expression");
+    }
+    let detail = diagnostics
+        .first()
+        .map_or("unrecognized syntax", |diagnostic| diagnostic.message.as_str());
+    error(text, &format!("expression syntax is unsupported ({detail})"))
+}
+
 pub(super) fn parenthesized(text: &str) -> Option<&str> {
     let open = text.find('(')?;
     text.ends_with(')')

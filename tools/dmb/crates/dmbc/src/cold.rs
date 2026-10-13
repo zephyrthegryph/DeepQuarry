@@ -612,6 +612,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             .map_err(initializer_lowering_error)?;
     warnings
         .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    warnings.extend(crate::local_warnings::capture(frontend).map_err(initializer_lowering_error)?);
     drop(detail_phase);
     let detail_phase = dm_profile::detail_timer("init.release_classified");
     drop(initialization.classified);

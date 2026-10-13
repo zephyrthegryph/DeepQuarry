@@ -1,0 +1,2 @@
+undefined_macro_call.dm:2:error: UNDEFINED_MACRO: undefined proc
+undefined_macro_call.dmb - 1 error, 0 warnings

@@ -1,0 +1,4 @@
+missing_comma_list.dm:2:error: 2: missing comma ',' or right-paren ')'
+missing_comma_list.dm:2:error: 2: expected end of statement
+missing_comma_list.dm:2:error: expected expression
+missing_comma_list.dmb - 3 errors, 0 warnings

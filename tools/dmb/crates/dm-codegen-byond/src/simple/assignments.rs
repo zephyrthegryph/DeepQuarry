@@ -221,7 +221,7 @@ impl Compiler<'_> {
     ) -> Result<(), LowerError> {
         let parsed = parse_expression(expression);
         if !parsed.diagnostics.is_empty() {
-            return Err(error(statement, "expression syntax is unsupported"));
+            return Err(syntax_failure(statement, &parsed.diagnostics));
         }
         let expression = parsed
             .expr
@@ -302,6 +302,14 @@ impl Compiler<'_> {
                 Ok(VariableWord::SetCache(
                     Box::new(owner),
                     Box::new(VariableWord::Field(SymbolId::of(selector))),
+                ))
+            }
+            ExprKind::Call { .. } => Err(source_error(statement, ": bad assignment")),
+            ExprKind::Binary { op, .. } if op == "/" && path_like_target(statement) => {
+                // `vra/a = 1`: a misspelled `var/` reads as division by DM too.
+                Err(source_error(
+                    statement,
+                    &format!("{}: undefined var", assignment_target_text(statement)),
                 ))
             }
             _ => Err(error(statement, "unsupported variable target")),
@@ -742,4 +750,18 @@ impl Compiler<'_> {
         }
         self.expression(expr, statement)
     }
+}
+
+/// Assignment target as authored: the statement text before its first `=`.
+fn assignment_target_text(statement: &str) -> &str {
+    statement.split_once('=').map_or(statement, |(target, _)| target).trim()
+}
+
+/// `name/name...` with no spaces: a misspelled `var/` declaration.
+fn path_like_target(statement: &str) -> bool {
+    let target = assignment_target_text(statement);
+    target.contains('/')
+        && target
+            .split('/')
+            .all(|part| !part.is_empty() && part.chars().all(|ch| ch.is_alphanumeric() || ch == '_'))
 }

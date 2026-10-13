@@ -185,7 +185,12 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 | dm_preprocess::DiagnosticKind::UserError => DiagnosticKind::SourceError,
             },
             stage: DiagnosticStage::Preprocess,
-            message: diagnostic.message.clone(),
+            // DreamMaker echoes the directive with the author's text.
+            message: if diagnostic.kind == dm_preprocess::DiagnosticKind::UserError {
+                format!("#error {}", diagnostic.message.trim())
+            } else {
+                diagnostic.message.clone()
+            },
             location: mapping.line(&diagnostic.path, diagnostic.line),
         })
         .collect();
@@ -353,6 +358,7 @@ pub fn build_with_executor_and_semantic_state<P: SourceProvider>(
                 &mapping,
                 config.engine.is_some(),
                 &resolution_symbols,
+                config.engine.map_or(&[][..], |seed| &seed.intrinsics[..]),
             ));
         };
     let snapshot = match semantic_state.as_deref_mut() {

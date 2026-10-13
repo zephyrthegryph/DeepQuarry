@@ -33,7 +33,7 @@ pub fn run(request: Command) -> Result<CommandOutcome, Box<dyn std::error::Error
                 .map(|()| CommandOutcome::Completed)
         }
         Command::Help => {
-            dmbc::daemon_println!("dmbc analyze|compile|prepare-query [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH]");
+            dmbc::daemon_println!("dmbc analyze|compile|prepare-query [--bodies|--resolved (analyze only)] [--no-daemon] [--no-cache] [--exact-inputs] [--verify] [--trace FILE] PROJECT [-DNAME[=VALUE]] [--workers N] [--engine-template PATH] [--bootstrap-catalog] [--progress] [--output-store PATH] [--warnings-as-errors] [--ignore-warning CODE[,CODE...]]");
             dmbc::daemon_println!(
                 "dmbc stats [PROJECT] | explain PROCEDURE [PROJECT] | gc [PROJECT] | query REQUEST.json [--jsonl|--export-jsonl]"
             );
@@ -74,8 +74,17 @@ pub fn run_build_with_host(
     request: BuildRequest,
     host: &mut crate::runner_host::BuildHost,
 ) -> Result<BuildOutcome, Box<dyn std::error::Error>> {
-    runner_freshness::run(request, |request| run_build_attempt(request, host))
+    let report = (request.command == BuildCommand::Compile).then(|| request.project.clone());
+    dmbc::diagnostics::begin(request.warnings.clone());
+    let result = runner_freshness::run(request, |request| run_build_attempt(request, host));
+    match report {
+        Some(project) => finish_report(&project, result),
+        None => result,
+    }
 }
+#[path = "runner_summary.rs"]
+mod runner_summary;
+use runner_summary::finish_report;
 #[path = "runner_analysis.rs"]
 pub(crate) mod runner_analysis;
 #[path = "runner_output_digest.rs"]
@@ -90,6 +99,8 @@ fn run_build_attempt(
         host.retains_artifacts(),
     );
     let _build_profile = dm_profile::stage("build");
+    // A retried attempt reports its own diagnostics; count only those.
+    dmbc::diagnostics::begin(request.warnings.clone());
     let request_profile = dm_profile::stage("request.prepare");
     let BuildRequest {
         command,
@@ -108,6 +119,7 @@ fn run_build_attempt(
         artifact_directory,
         no_daemon: _,
         trace_path,
+        warnings: _,
     } = request;
     let publishable_artifacts = command == BuildCommand::Compile;
     let project = std::fs::canonicalize(project)?;
@@ -547,9 +559,11 @@ fn run_build_attempt(
         Ok(frontend) => frontend,
         Err(diagnostics) => {
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
-            let message = "source analysis did not produce a complete declaration model";
+            let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
+            // Source errors are fully reported above and by the summary line.
+            let message = if kind == dmbc::request_failure::FailureKind::Source { "" } else { "source analysis did not produce a complete declaration model" };
             let failure = dmbc::request_failure::RequestFailure {
-                kind: dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind)),
+                kind,
                 message: message.into(),
             };
             return Err(failure.into());
@@ -829,9 +843,11 @@ fn run_build_attempt(
                     &mut dmbc::daemon::stderr_writer(),
                     &diagnostics,
                 )?;
-                let message = "native lowering did not produce a complete executable";
+                let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
+                // Source errors are fully reported above and by the summary line.
+                let message = if kind == dmbc::request_failure::FailureKind::Source { "" } else { "native lowering did not produce a complete executable" };
                 let failure = dmbc::request_failure::RequestFailure {
-                    kind: dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind)),
+                    kind,
                     message: message.into(),
                 };
                 return Err(failure.into());
@@ -845,6 +861,11 @@ fn run_build_attempt(
             }
             Err(dmbc::cold::ColdError::RuntimeTypeValues(error)) => {
                 return Err(dmbc::request_failure::RequestFailure::internal(format!("runtime type values: {error:?}")).into())
+            }
+            Err(dmbc::cold::ColdError::AbiPreparation(message))
+                if dmbc::diagnostics::write_carried_source_error(&mut dmbc::daemon::stderr_writer(), &message)? =>
+            {
+                return Err(dmbc::request_failure::RequestFailure::source("").into())
             }
             Err(error) => return Err(dmbc::request_failure::RequestFailure::internal(format!("native compilation: {error:?}")).into()),
         };

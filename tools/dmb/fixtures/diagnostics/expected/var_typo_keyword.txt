@@ -1,0 +1,2 @@
+var_typo_keyword.dm:2:error: vra/a: undefined var
+var_typo_keyword.dmb - 1 error, 0 warnings

@@ -420,6 +420,9 @@ impl Compiler<'_> {
             return Ok(());
         }
         if let Some(spec) = crate::builtin_catalog::lookup_with_arity(name, args.len()) {
+            if args.len() > spec.max_args {
+                return Err(source_error(statement, &format!("{name}: extra args")));
+            }
             if !(spec.min_args..=spec.max_args).contains(&args.len()) {
                 return Err(error(
                     statement,

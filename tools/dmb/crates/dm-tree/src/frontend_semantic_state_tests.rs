@@ -570,7 +570,7 @@ fn retained_resolution_failure_repeat_shift_and_repair_match_fresh_diagnostics()
         assert_eq!(format!("{current:?}"), format!("{fresh:?}"));
         let error = current
             .iter()
-            .find(|error| error.message.contains("ConflictingParent"))
+            .find(|error| error.message.contains("conflicting parent type"))
             .expect("independent conflicting parent source must fail resolution");
         assert_eq!(error.kind, crate::frontend::DiagnosticKind::SourceError);
         let location = error

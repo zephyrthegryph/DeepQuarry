@@ -1,4 +1,4 @@
-//! Current declaration provenance for variable duplicate diagnostics.
+//! Current declaration provenance for duplicate variable and procedure diagnostics.
 use super::*;
 pub(super) fn resolve(
     error: &SnapshotError,
@@ -7,40 +7,44 @@ pub(super) fn resolve(
     mapping: &Mapping<'_>,
     opaque_engine: bool,
     symbols: &SymbolTable,
+    intrinsics: &[crate::IntrinsicMember],
 ) -> Vec<Diagnostic> {
     let duplicate = match error {
-        SnapshotError::Tree(crate::TreeError::Duplicate {
-            owner,
-            name,
-            kind: MemberKind::Var,
-        }) => Some((*owner, *owner, *name, false)),
+        SnapshotError::Tree(crate::TreeError::Duplicate { owner, name, kind }) => {
+            Some((*owner, *owner, *name, false, *kind))
+        }
         SnapshotError::Tree(crate::TreeError::InheritedDuplicate {
             owner,
             previous_owner,
             name,
             kind: MemberKind::Var,
-        }) => Some((*owner, *previous_owner, *name, true)),
+        }) => Some((*owner, *previous_owner, *name, true, MemberKind::Var)),
         _ => None,
     };
-    let Some((owner, previous_owner, name, inherited)) = duplicate else {
+    let Some((owner, previous_owner, name, inherited, member_kind)) = duplicate else {
         return vec![resolution_error(
             error,
             skeletons,
             origins,
             mapping,
             opaque_engine,
+            symbols,
+            intrinsics,
         )];
     };
     let declarations = |wanted| {
         skeletons.iter().enumerate().filter_map(move |(index, skeleton)| {
-        matches!(skeleton, Skeleton::Member { owner: found, name: found_name, kind: MemberKind::Var, mode: crate::DefinitionMode::Declare, .. }
-            if *found == wanted && *found_name == name).then_some(index)
+        matches!(skeleton, Skeleton::Member { owner: found, name: found_name, kind: found_kind, mode: crate::DefinitionMode::Declare, .. }
+            if *found == wanted && *found_name == name && *found_kind == member_kind).then_some(index)
     }).collect::<Vec<_>>()
     };
     let current = declarations(owner);
     let previous = declarations(previous_owner);
     let indices = if inherited {
         current.last().copied().zip(previous.first().copied())
+    } else if member_kind != MemberKind::Var {
+        // DreamMaker reports a repeated procedure at the later definition.
+        current.get(1).copied().zip(current.first().copied())
     } else {
         current.first().copied().zip(current.get(1).copied())
     };
@@ -51,6 +55,8 @@ pub(super) fn resolve(
             origins,
             mapping,
             opaque_engine,
+            symbols,
+            intrinsics,
         )];
     };
     let Some(spelling) = symbols.text(name) else {
@@ -60,6 +66,8 @@ pub(super) fn resolve(
             origins,
             mapping,
             opaque_engine,
+            symbols,
+            intrinsics,
         )];
     };
     [

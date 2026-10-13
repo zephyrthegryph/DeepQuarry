@@ -8,6 +8,7 @@ use std::fmt;
 mod portable_answer;
 pub use portable_answer::PortableResolvedAnswer;
 mod warnings;
+pub mod builtin_names;
 pub use warnings::WarningCode;
 
 mod symbols;

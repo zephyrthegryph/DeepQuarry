@@ -141,7 +141,7 @@ impl Compiler<'_> {
                         .user_labels
                         .get(name)
                         .copied()
-                        .ok_or_else(|| error(&statement.raw_header, "undefined goto label"))?;
+                        .ok_or_else(|| source_error(&statement.raw_header, &format!("{}: bad link", statement.raw_header.trim())))?;
                     let depth = *self.label_try_depths.get(&label).unwrap_or(&0);
                     if depth > self.try_depth {
                         return Err(protected_entry_error(&statement.raw_header, name));
@@ -866,7 +866,7 @@ impl Compiler<'_> {
                         .breaks
                         .last()
                         .copied()
-                        .ok_or_else(|| error(&statement.raw_header, "break outside loop"))?;
+                        .ok_or_else(|| source_error(&statement.raw_header, "break: not in a loop"))?;
                     let leaves_try = self
                         .label_try_depths
                         .get(&target)
@@ -915,7 +915,7 @@ impl Compiler<'_> {
                     let target = self
                         .loops
                         .last()
-                        .ok_or_else(|| error(&statement.raw_header, "continue outside loop"))?
+                        .ok_or_else(|| source_error(&statement.raw_header, "continue: not in a loop"))?
                         .0;
                     let leaves_try = self
                         .label_try_depths

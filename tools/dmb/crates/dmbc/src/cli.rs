@@ -99,8 +99,16 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
     let mut artifact_directory = None;
     let mut no_daemon = false;
     let mut trace_path = None;
+    let mut warnings = crate::diagnostics::WarningPolicy::default();
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--warnings-as-errors" => warnings.as_errors = true,
+            "--ignore-warning" => {
+                let codes = args.next().ok_or("--ignore-warning requires a warning code")?;
+                warnings.ignored.extend(
+                    codes.split(',').map(str::trim).filter(|code| !code.is_empty()).map(str::to_owned),
+                );
+            }
             "--bodies" if command == BuildCommand::Analyze => command = BuildCommand::AnalyzeBodies,
             "--resolved" if command == BuildCommand::Analyze => {
                 command = BuildCommand::AnalyzeResolved
@@ -185,6 +193,7 @@ pub fn parse(arguments: &[String]) -> Result<Command, Box<dyn std::error::Error>
         artifact_directory,
         no_daemon,
         trace_path,
+        warnings,
     })))
 }
 
