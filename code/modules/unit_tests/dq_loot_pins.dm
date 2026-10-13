@@ -291,18 +291,18 @@
 			for(var/i in 1 to total)
 				if(QDELETED(pile))
 					break
-				searcher.ckey = "pinsearcher[i]"
+				searcher.set_ckey("pinsearcher[i]")
 				steps += "search [i]: [pin_search(pile, searcher, T)]"
 			if(!QDELETED(pile))
-				searcher.ckey = "pinsearcher1"
+				searcher.set_ckey("pinsearcher1")
 				steps += "again by 1: [pin_search(pile, searcher, T)]"
-				unlucky.ckey = "pinunlucky"
+				unlucky.set_ckey("pinunlucky")
 				steps += "unlucky: [pin_search(pile, unlucky, T)]"
 				qdel(pile)
 			rows["[pile_text] | seed [seed]"] = jointext(steps, " || ")
 			CHECK_TICK
-	searcher.ckey = null
-	unlucky.ckey = null
+	searcher.set_ckey(null)
+	unlucky.set_ckey(null)
 	GLOB.unique_gamma_loot = saved_pool
 	GLOB.loot_seed = saved_seed
 	GLOB.loot_roll_serial = saved_serial

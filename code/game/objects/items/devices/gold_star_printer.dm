@@ -41,7 +41,7 @@ CAPABILITIES(/obj/item/gold_star_printer)
 	var/turf/our_turf = get_turf(user)
 	var/obj/item/clothing/accessory/gold_sticker/p = new /obj/item/clothing/accessory/gold_sticker(our_turf)
 	p.desc = "A gold star issued by [user] for [star_title], if you look closely, the fine print reads: [star_desc]"
-	p.name = "Gold Star for [star_title]"
+	p.set_name("Gold Star for [star_title]")
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
 	log_admin("[key_name(user)] has printed a Gold Star for [star_title] with the description: \"[star_desc]\"")
 	return OP_OK

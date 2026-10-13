@@ -44,7 +44,7 @@
 		own_turf_contents(T)
 	for(var/mob/M as anything in named)
 		if(!QDELETED(M))
-			M.ckey = null // a mob that still has a ckey leaves a ghost behind when it is deleted
+			M.set_ckey(null) // a mob that still has a ckey leaves a ghost behind when it is deleted
 	named = null
 
 /// Takes the scene down so the next one starts clean.
@@ -123,7 +123,7 @@
 /// A new actor with a name the pins can recognise.
 /datum/unit_test/dq_timed_pin_w2/proc/worker(name = "pinuser")
 	var/mob/living/carbon/human/H = person()
-	H.ckey = name
+	H.set_ckey(name)
 	LAZYADD(named, H)
 	return H
 

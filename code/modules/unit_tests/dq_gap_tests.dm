@@ -155,10 +155,10 @@
 	M.set_flag(FALSE)
 	test_time(2)
 	TEST_ASSERT(!(/mob/gap_verb_mob/proc/gv_when in M.verbs), "and false took it off")
-	M.key = "gap_verb_test_key"
+	M.set_key("gap_verb_test_key")
 	verb_store_login(M)
 	TEST_ASSERT(/mob/gap_verb_mob/proc/gv_login in M.verbs, "a player has the mob: the login verb is on")
-	M.key = null
+	M.set_key(null)
 
 /// grant(M, granted_verb(path), source): the verb is on while the source holds it and ends with revoke() or the source.
 /datum/unit_test/dq_gap/granted_verb_follows_its_source

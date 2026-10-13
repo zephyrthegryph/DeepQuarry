@@ -706,7 +706,7 @@ TRACKED(/obj/machinery/casinosentientprize_handler, casinosentientprize_sale)
 				C.sentientprizeflavor = user.bio.flavor_text
 				C.sentientprizeooc = user.identity().ooc_notes
 				C.sentientprizeitemtf = allowitemtf
-				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
+				C.set_name("Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!")
 				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!"
 				C.icon_state = "casinoslave_available"
 				rel_add(src, nameof(collar_list), C)
@@ -760,7 +760,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 		if(confirm == "Yes")
 			to_chat(user, span_warning("[C.sentientprizename] collar has been deleted from registry!"))
 			C.icon_state = "casinoslave"
-			C.name = "disabled Sentient Prize Collar: [C.sentientprizename]"
+			C.set_name("disabled Sentient Prize Collar: [C.sentientprizename]")
 			C.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [C.sentientprizename], but harsh red text informs you its been disabled."
 			LAZYREMOVE(sentientprizes_ckeys_list, C.sentientprizeckey)
 			C.sentientprizeckey = null
@@ -1024,7 +1024,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 	if(buystate == "selfbuy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and nullify your collar!"))
 		collar.icon_state = "casinoslave"
-		collar.name = "disabled Sentient Prize Collar: [collar.sentientprizename]"
+		collar.set_name("disabled Sentient Prize Collar: [collar.sentientprizename]")
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename], but harsh red text informs you its been disabled."
 		LAZYREMOVE(sentientprizes_ckeys_list, collar.sentientprizeckey)
 		collar.sentientprizeckey = null
@@ -1047,7 +1047,7 @@ MSG_DEF_SELF(casino/incapacitated, "you cannot do that right now")
 			to_chat(user,span_notice("You decided to claim your prize without transformation."))
 		collar.icon_state = "casinoslave_owned"
 		collar.ownername = user.name
-		collar.name =  "Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!"
+		collar.set_name("Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!")
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."
 		if(selected_collar == collar)
 			rel_clear(src, nameof(selected_collar))

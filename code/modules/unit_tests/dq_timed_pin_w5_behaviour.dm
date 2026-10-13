@@ -43,7 +43,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w5/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		H.set_ckey(null)
 
 /// Takes the scene down so the next one starts clean.
 /datum/unit_test/dq_timed_pin_w5/proc/clear_scene()

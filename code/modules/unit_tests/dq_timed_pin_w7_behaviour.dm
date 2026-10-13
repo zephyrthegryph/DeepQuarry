@@ -8,7 +8,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w7/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		H.set_ckey(null)
 
 /// Clicks `target` with `held` and checks that a timed action of `dur` starts (and says `start_text` when given). Returns the running action.
 /datum/unit_test/dq_timed_pin_w7/proc/begin(mob/user, atom/target, obj/item/held, dur, start_text = null)

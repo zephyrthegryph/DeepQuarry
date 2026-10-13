@@ -8,13 +8,13 @@
 /// A searcher with a ckey: the pile marks searchers by it.
 /datum/unit_test/dq_loot_search_op/proc/searcher(key)
 	var/mob/living/carbon/human/H = person()
-	H.ckey = key
+	H.set_ckey(key)
 	return H
 
 /// Takes the ckeys off the test mobs (a mob that still has one leaves a ghost behind when it is deleted).
 /datum/unit_test/dq_loot_search_op/proc/forget_keys()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		H.set_ckey(null)
 
 /// The things on the test floor that are not the pile or a person.
 /datum/unit_test/dq_loot_search_op/proc/found_on_floor()

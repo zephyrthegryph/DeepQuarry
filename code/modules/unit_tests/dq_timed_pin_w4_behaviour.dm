@@ -9,7 +9,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w4/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		H.set_ckey(null)
 
 // ---- Dumbbell: an item in hand, refused while too hungry ----
 
@@ -301,7 +301,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/candybowl_search/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinsearcher"
+	user.set_ckey("pinsearcher")
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	test_click(user, B, null)
 	var/datum/T = running(user)
@@ -318,8 +318,8 @@
 /datum/unit_test/dq_timed_pin_w4/candybowl_one_searcher/run_pin()
 	var/mob/living/carbon/human/one = person()
 	var/mob/living/carbon/human/two = person()
-	one.ckey = "pinsearcher"
-	two.ckey = "pinsearchertwo"
+	one.set_ckey("pinsearcher")
+	two.set_ckey("pinsearchertwo")
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	test_click(one, B, null)
 	TEST_ASSERT(!isnull(running(one)), "the first searcher is running")
@@ -335,7 +335,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/candybowl_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinsearcher"
+	user.set_ckey("pinsearcher")
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	test_click(user, B, null)
 	var/datum/T = running(user)
@@ -350,7 +350,7 @@
 
 /datum/unit_test/dq_timed_pin_w4/candybowl_empty/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinsearcher"
+	user.set_ckey("pinsearcher")
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	B.set_has_candy(FALSE)
 	test_chat_clear()

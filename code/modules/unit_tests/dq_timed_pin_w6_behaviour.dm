@@ -9,7 +9,7 @@
 /// A mob that still has a ckey when it is deleted leaves an observer behind: take the ckeys off.
 /datum/unit_test/dq_timed_pin_w6/proc/forget_ghosts()
 	for(var/mob/living/carbon/human/H in range(3, run_loc_floor_bottom_left))
-		H.ckey = null
+		H.set_ckey(null)
 
 /// Clicks `target` with `held` and checks that a timed action of `dur` starts (and says `start_text` when given). Returns the running action.
 /datum/unit_test/dq_timed_pin_w6/proc/begin(mob/user, atom/target, obj/item/held, dur, start_text = null)
@@ -147,7 +147,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_rummage/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrummager"
+	user.set_ckey("pinrummager")
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	test_chat_clear()
 	begin(user, B, null, 5 SECONDS)
@@ -165,8 +165,8 @@
 /datum/unit_test/dq_timed_pin_w6/boxpile_one_rummager/run_pin()
 	var/mob/living/carbon/human/one = person()
 	var/mob/living/carbon/human/two = person()
-	one.ckey = "pinrummager"
-	two.ckey = "pinrummagertwo"
+	one.set_ckey("pinrummager")
+	two.set_ckey("pinrummagertwo")
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	test_click(one, B, null)
 	TEST_ASSERT(!isnull(running(one)), "the first rummager is running")
@@ -183,7 +183,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/boxpile_cancel_on_move/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrummager"
+	user.set_ckey("pinrummager")
 	var/obj/structure/boxpile/B = allocate(/obj/structure/boxpile, run_loc_floor_bottom_left)
 	var/datum/T = begin(user, B, null, 5 SECONDS)
 	user.forceMove(get_step(user, EAST))
@@ -640,7 +640,7 @@
 
 /datum/unit_test/dq_timed_pin_w6/candybowl_repeat_asks/run_pin()
 	var/mob/living/carbon/human/user = person()
-	user.ckey = "pinrepeater"
+	user.set_ckey("pinrepeater")
 	var/obj/structure/candybowl/B = allocate(/obj/structure/candybowl, run_loc_floor_bottom_left)
 	test_click(user, B, null)
 	test_time(6 SECONDS)
