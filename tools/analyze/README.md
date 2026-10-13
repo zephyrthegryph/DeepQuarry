@@ -320,7 +320,7 @@ baseline decision that file asks for.
 
 ### Tracked lists (`gens/tracked_lists.rs`)
 
-A `TRACKED(T, v)` / `TRACKED_BRIDGED(T, v, CHANNEL)` on a `list` var gets, in `tracked_lists.dm`, the procs `add_v(x)`, `include_v(x)`
+A `TRACKED(T, v)` on a `list` var gets, in `tracked_lists.dm`, the procs `add_v(x)`, `include_v(x)`
 (add when absent), `remove_v(x)`, `set_v_at(i, x)`, `clear_v()`, `insert_v(i, x)`, `swap_v(a, b)`, `cut_v(from, to)` and a `v_version`
 counter. Each publishes through the setter's path, bumps the version, and returns TRUE when the list changed. The `tracked` lint's
 `list_mutation` rule bans `LAZYADD/LAZYREMOVE/LAZYOR/LAZYDISTINCTADD/LAZYSET/LAZYCLEARLIST/LAZYNULL`, `v.Add/Remove/Cut/

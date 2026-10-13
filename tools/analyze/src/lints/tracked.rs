@@ -3,8 +3,7 @@
 //!
 //! `TRACKED(T, var)` (code/__defines/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
 //! subtypes) is written only through its generated setter `T/proc/set_<var>(value)`, which compares with `TRACKED_UNCHANGED` (null differs from 0)
-//! and publishes through `tracked_changed()`. `TRACKED_BRIDGED(T, var, channel)` is the same plus a legacy `CHANGE_*` channel, until the pipeline that
-//! consumes the channel is deleted. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
+//! and publishes through `tracked_changed()`. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
 //! same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the setter body. Reads are unrestricted. A `derive()` value
 //! (`. += derive(nameof(var), ...)` in a `derived()` proc) is tracked with no setter at all: every write in DM is counted.
 //!
@@ -168,7 +167,7 @@ fn tracked_from_text_with(f: &SourceFile, tracked: &mut Tracked, stats: bool) {
                 continue;
             }
             let re = pat_match!(
-                r"\s*(?:TRACKED(?:_BRIDGED)?\(\s*(/[\w/]+)\s*,\s*(\w+)\s*[,)]|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))"
+                r"\s*(?:TRACKED\(\s*(/[\w/]+)\s*,\s*(\w+)\s*[,)]|SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\))"
             );
             if let Some(m) = re.captures(line) {
                 let var = if m.s(2).is_empty() { m.s(4) } else { m.s(2) };
@@ -526,7 +525,7 @@ pub struct StoredHit {
     pub fix: Option<Fix>,
 }
 
-/// The tracked list vars (`TRACKED` / `TRACKED_BRIDGED` on a `list` var): the vars whose generated procs exist, as `{var: {types}}`.
+/// The tracked list vars (`TRACKED` on a `list` var): the vars whose generated procs exist, as `{var: {types}}`.
 pub fn tracked_lists(cx: &Cx) -> Tracked {
     let mut lists: Tracked = BTreeMap::new();
     let Some(sem) = cx.sem() else { return lists };

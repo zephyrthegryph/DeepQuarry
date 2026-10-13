@@ -187,7 +187,7 @@ CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
 	. = FALSE
 	if(state != new_state)
 		state = new_state
-		tracked_bridged_changed(src, "state")
+		tracked_changed(src, "state")
 		. = TRUE
 	if(state)
 		brightness_color = "00FF00"

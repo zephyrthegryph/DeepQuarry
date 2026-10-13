@@ -120,15 +120,6 @@
 /datum/world_model/proc/last_known_threat_turf() as /atom
 	return last_known_threat_turf
 
-/// The perception lists are rebuilt from view() on every update_perception() call:
-/// caches of other mobs, not relationships.
-/datum/world_model/declared_cache_vars()
-	var/list/L = ..()
-	L = L ? L.Copy() : list()
-	L["visible_hostiles"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["visible_friendlies"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	L["visible_neutrals"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
-	return L
 
 CAPABILITIES(/datum/world_model)
 	ref_many(nameof(hazard_atoms))

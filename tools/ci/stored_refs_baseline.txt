@@ -81,7 +81,6 @@ var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud
 var	code/_onclick/hud/action/action_screen_objects.dm	var/datum/action_group/owner
 var	code/_onclick/hud/hud.dm	GLOBAL_DATUM_INIT(global_hud, /datum/global_hud, new)
-var	code/_onclick/hud/hud.dm	var/mob/mymob
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/lingchemdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobpwrdisplay
 var	code/_onclick/hud/hud.dm	var/atom/movable/screen/blobhealthdisplay
@@ -104,7 +103,6 @@ var	code/_onclick/hud/minihud_rigmech.dm	var/atom/movable/screen/mech/airtoggle/
 var	code/_onclick/hud/picture_in_picture.dm	var/atom/center
 var	code/_onclick/hud/radial.dm	var/datum/radial_menu/parent
 var	code/_onclick/hud/radial.dm	var/atom/anchor
-var	code/_onclick/hud/screen_objects.dm	var/datum/master_ref = null
 var	code/_onclick/hud/screen_objects.dm	var/datum/hud/hud // A reference to the owner HUD, if any.
 var	code/_onclick/hud/screen_objects.dm	var/obj/item/owner
 var	code/_onclick/hud/screen_objects.dm	var/atom/movable/screen/parent
@@ -553,7 +551,6 @@ var	code/game/objects/items/weapons/mop_deploy.dm	var/mob/living/creator
 var	code/game/objects/items/weapons/storage/internal.dm	var/obj/item/master_item
 var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/storage/storage
 var	code/game/objects/items/weapons/storage/storage.dm	var/obj/item/held_item
-var	code/game/objects/items/weapons/storage/wallets.dm	var/obj/item/card/id/front_id
 var	code/game/objects/items/weapons/syndie.dm	var/obj/item/syndie/c4explosive/bomb
 var	code/game/objects/items/weapons/tanks/jetpack.dm	var/obj/item/rig/holder
 var	code/game/objects/items/weapons/tanks/tanks.dm	var/obj/item/tank/tank = null
@@ -1011,7 +1008,6 @@ var	code/modules/mob/living/silicon/robot/drone/drone_items.dm	var/datum/matter_
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv1 = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv2 = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/atom/movable/screen/inv3 = null
-var	code/modules/mob/living/silicon/robot/robot.dm	var/mob/living/silicon/ai/connected_ai = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 var	code/modules/mob/living/silicon/robot/robot.dm	var/datum/matter_synth/water_res
 var	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	/obj/item/gripper/var/obj/item/shown_item
@@ -1040,7 +1036,6 @@ var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/liv
 var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/mob/living/simple_mob/animal/space/space_worm/next //head is the nextest segment
 var	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	var/atom/currentlyEating // Worm's current Maw target.
 var	code/modules/mob/living/simple_mob/subtypes/blob/blob.dm	var/datum/blob_type/blob_type = null // Used for the blob core items, as they have no overmind mob.
-var	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	var/mob/living/carbon/human/infested = null // The human this thing is totally not making into a zombie.
 var	code/modules/mob/living/simple_mob/subtypes/bullet_heck/bullet_patterns.dm	/mob/living/simple_mob/mechanical/mecha/eclipse/var/atom/volley_target
 var	code/modules/mob/living/simple_mob/subtypes/glamour/homunculus.dm	var/obj/item/glamour_face/owner // relation: the face that made us (its homunculus view clears when we go)
 var	code/modules/mob/living/simple_mob/subtypes/glamour/ysbryd.dm	var/mob/living/chosen_target
@@ -1170,7 +1165,6 @@ var	code/modules/power/lighting.dm	/obj/item/light/var/tmp/obj/machinery/light/f
 var	code/modules/power/lighting.dm	/obj/machinery/light/var/tmp/obj/machinery/light_construct/construct_at_make
 var	code/modules/power/solar_service.dm	GLOBAL_DATUM_INIT(sun, /datum/sun, new)
 var	code/modules/projectiles/ammunition/smartmag.dm	var/tmp/obj/item/gun/holding_gun // What gun are we in, if any?
-var	code/modules/projectiles/ammunition/smartmag.dm	var/tmp/obj/item/cell/device/attached_cell // What cell are we using, if any?
 var	code/modules/projectiles/autofire.dm	var/tmp/obj/item/gun/autofire_gun
 var	code/modules/projectiles/autofire.dm	var/tmp/atom/autofire_target
 var	code/modules/projectiles/gun.dm	var/tmp/datum/auto_target
@@ -1337,7 +1331,6 @@ var	code/modules/tickets/tickets_player_ui.dm	var/tmp/datum/ticket/T
 var	code/modules/tooltip/tooltip.dm	var/tmp/atom/last_target
 var	code/modules/turbolift/turbolift.dm	var/tmp/datum/turbolift_floor/target_floor // Where are we going?
 var	code/modules/turbolift/turbolift.dm	var/tmp/datum/turbolift_floor/current_floor // Where is the lift currently?
-var	code/modules/turbolift/turbolift_console.dm	var/tmp/datum/turbolift/lift
 var	code/modules/turbolift/turbolift_door.dm	var/tmp/datum/turbolift_floor/floor
 var	code/modules/vehicles/construction.dm	var/tmp/obj/item/cell/cell
 var	code/modules/vehicles/janicart.dm	var/tmp/obj/item/storage/bag/trash/mybag

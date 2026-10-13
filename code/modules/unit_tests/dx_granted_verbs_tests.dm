@@ -66,11 +66,11 @@
 	refresh_flush()
 	TEST_ASSERT(!(/obj/cap_fixture/dx_granted/proc/dx_var_verb in F.verbs), "not granted while the var is clear")
 	F.grant_extra = TRUE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(/obj/cap_fixture/dx_granted/proc/dx_var_verb in F.verbs, "granted while the var is set")
 	F.grant_extra = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(!(/obj/cap_fixture/dx_granted/proc/dx_var_verb in F.verbs), "removed when cleared")
 
@@ -78,10 +78,10 @@
 	var/obj/cap_fixture/dx_granted/F = allocate(/obj/cap_fixture/dx_granted)
 	F.grant_extra = TRUE
 	F.hide_extra = TRUE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(!(/obj/cap_fixture/dx_granted/proc/dx_var_verb in F.verbs), "hidden_verbs() wins over granted_verbs()")
 	F.hide_extra = FALSE
-	changed(F)
+	state_changed(F)
 	refresh_flush()
 	TEST_ASSERT(/obj/cap_fixture/dx_granted/proc/dx_var_verb in F.verbs, "granted once the hide lifts")

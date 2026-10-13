@@ -32,10 +32,6 @@ CAPABILITIES(/obj/machinery/oxygen_pump)
 
 /// Who wears the mask (a relation view), or null.
 /obj/machinery/oxygen_pump/var/mob/living/carbon/breather
-/datum/scheduler_field_definition/obj/machinery/oxygen_pump/breather
-	of = /obj/machinery/oxygen_pump
-	field = "breather"
-	channel = CHANGE_MACHINE_OCCUPANT
 /// Keeps the mask and internals right while a mask is on someone.
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()

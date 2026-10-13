@@ -21,11 +21,6 @@ SYSTEM_DEF(pois)
 CAPABILITIES(/datum/system/pois)
 	ref_many(nameof(allocated_gamma_items))
 
-/// Queued loader landmarks: each qdels itself once placed.
-/datum/system/pois/declared_cache_vars()
-	// ALLOW(sys_static_getter): the object model's per-type declaration hook (read once per type into its type table and parsed by declared_refs_lint.py / ref_kinds.py), owned by the refs lead; not a table getter
-	var/static/list/names = list("poi_queue")
-	return names
 
 /datum/system/pois/initialize()
 	if(initialized)
