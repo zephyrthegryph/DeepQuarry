@@ -42,6 +42,7 @@
 
 CAPABILITIES(/datum/system/machines)
 	owns_one(nameof(power_grids), /datum/power_grid_registry, starts = /datum/power_grid_registry)
+	owns_many(nameof(power_material_overlays), /datum/material_power_overlay)
 	ref_many(nameof(power_material_cables), /obj/structure/cable)
 
 /// Queues an area's loads for its APC.
@@ -89,12 +90,11 @@ CAPABILITIES(/datum/system/machines)
 			continue
 		var/id = cable.get_power_region()
 		if(id && !power_material_overlays[id])
-			power_material_overlays[id] = new /datum/material_power_overlay(id)
+			rel_add(src, nameof(power_material_overlays), new /datum/material_power_overlay(id), id)
 	for(var/id in power_material_overlays)
 		var/datum/material_power_overlay/overlay = power_material_overlays[id]
 		if(!power_grids.lookup(id) || !overlay.process_material_network())
-			power_material_overlays -= id
-			spent(overlay)
+			rel_remove(src, nameof(power_material_overlays), overlay) // owned: removing it disposes of it
 
 /// The cable network's topology was edited (a node bound or unbound): regions may split, merge or gain members at
 /// the next commit, so the next power step re-reads every machine's region. Every vg_power_bind_* and
@@ -112,9 +112,7 @@ CAPABILITIES(/datum/system/machines)
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
 /// cannot survive it.
 /datum/system/machines/proc/power_reregister_all()
-	for(var/id in power_material_overlays)
-		spent(power_material_overlays[id])
-	power_material_overlays = alist()
+	rel_clear(src, nameof(power_material_overlays))
 	power_grids.clear()
 	power_regions_stale = TRUE
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))

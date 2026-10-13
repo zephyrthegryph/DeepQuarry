@@ -47,6 +47,7 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 /// been released and reused: turfs are never deleted and a turf's position survives ChangeTurf() (which resets the turf's vars).
 /// A client's is "@ckey", resolved through GLOB.directory.
 /proc/entity_handle(datum/D)
+	READS_FROM() // a handle is the datum's stable id: the slot table it reads is identity bookkeeping, not state a draw or condition depends on
 	if(isturf(D))
 		var/turf/T = D
 		var/key = T.own_key_text || own_key(T)
@@ -87,6 +88,7 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 /// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
 /// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
 /proc/entity_handle_of(datum/D)
+	READS_FROM() // the same identity bookkeeping as entity_handle()
 	if(isturf(D) || isclient(D))
 		return entity_handle(D)
 	if(!isdatum(D))
@@ -167,6 +169,7 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 
 /// The datum a handle names, or null if it has been deleted (whatever now uses its id).
 /proc/resolve_handle(h)
+	READS_FROM() // turns an id back into the datum: identity bookkeeping, not reactive state
 	if(!istext(h))
 		return null
 	var/id = GLOB.om_handle_ids[h]
@@ -193,6 +196,7 @@ GLOBAL_ALIST_EMPTY(om_handle_ids)
 /// The handles that are not slot texts: a turf's (its key, then "#generation" once its z-level was released), a client's ("@ckey") and the older
 /// "[0x...]" turf ref. Anything else (a stale slot text, junk) names nothing.
 /proc/resolve_handle_keyed(h)
+	READS_FROM() // the keyed form of resolve_handle(): identity bookkeeping, not reactive state
 	switch(text2ascii(h))
 		if(91) // "[": a turf's ref and its z-level's generation
 			var/ref_hash = findtext(h, "#")

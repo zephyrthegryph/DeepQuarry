@@ -6,7 +6,7 @@
 	move_time = move_time + rand(-30, 60)
 	if(name in SSemergency_shuttle.escape_pods)
 		CRASH("An escape pod with the name '[name]' has already been defined.")
-	SSemergency_shuttle.escape_pods[name] = src
+	rel_add(SSemergency_shuttle, nameof(SSemergency_shuttle.escape_pods), src, name)
 
 	..()
 
