@@ -122,7 +122,8 @@ CAPABILITIES(/datum/prompt/text/electronics_rename)
 
 /obj/item/integrated_circuit/tgui_host(mob/user)
 	if(istype(loc, /obj/item/electronic_assembly))
-		return loc.tgui_host()
+		var/obj/item/electronic_assembly/host = loc
+		return host.tgui_host()
 	return ..()
 
 /obj/item/integrated_circuit/ui_data(datum/act/eval/A)

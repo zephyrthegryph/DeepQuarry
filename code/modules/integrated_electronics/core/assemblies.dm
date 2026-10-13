@@ -23,6 +23,7 @@
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 
 CAPABILITIES(/obj/item/electronic_assembly)
+	ref_one(nameof(access_card), /obj/item/card/id)
 	owns_one(nameof(export_view), /datum/ic_export_view)
 	every(2 SECONDS, then(PROC_REF(assembly_power_step)), when = nameof(power_relevant))
 	op("assembly_self", in_hand(), label("Use"),

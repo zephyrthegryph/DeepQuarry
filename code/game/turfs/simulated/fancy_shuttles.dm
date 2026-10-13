@@ -78,7 +78,7 @@ TYPE_TABLE(/turf/simulated/wall/fancy_shuttle, wall_forced_materials, list(MAT_S
 			material.place_dismantled_product(src)
 
 	clear_plants()
-	set_material(get_material_by_name("placeholder"))
+	rel_set(src, nameof(material), get_material_by_name("placeholder"))
 	set_reinf_material(null)
 	girder_material = null
 
