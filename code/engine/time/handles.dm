@@ -4,6 +4,15 @@
 // generation per slot, no per-target datum. A deleted datum's slot is freed and its generation bumped, so a stale handle never resolves to
 // whatever reuses the id. Every deferred record in the engine (timers and their keyed and real-time forms, I/O callbacks, timed actions)
 // holds its datum arguments as handles, never as references: a record can outlive what it names without keeping it alive.
+//
+// A handle is text, so it can key a plain list. What it costs is kept off the hot path: the text is made once, when its slot is taken, and kept
+// per slot (om_handle_texts), so entity_handle() is a list read; resolve_handle() is one alist lookup (om_handle_ids: handle text -> slot id)
+// and a locate() of the target's address, kept per slot as two numbers (om_handle_ta / om_handle_ib), with no parsing of the weak key. A freed
+// slot's text leaves the index, so a stale handle misses it instead of being compared.
+//
+// A turf's handle is its key (own_key(): its position, led by a scramble so the strings hash well; no new string is made) and, once its z-level
+// has been released and reused, that level's generation. Resolving one reads a cached packed position (om_turf_pos), parsing the key only the
+// first time.
 
 // ---------------------------------------------------------------- handles
 //
@@ -18,43 +27,62 @@ GLOBAL_LIST_EMPTY(om_handle_gens)
 /// Per handle slot: the type of the datum it names (for the collected-without-qdel report).
 GLOBAL_LIST_EMPTY(om_handle_types)
 GLOBAL_LIST_EMPTY(om_handle_free)
+/// Per handle slot: the type part of the target's address (the number in "[0x<type><id>]"), or null while the slot is free or parked.
+GLOBAL_LIST_EMPTY(om_handle_ta)
+/// Per handle slot: the id part of the target's address (the last six hex digits of its ref).
+GLOBAL_LIST_EMPTY(om_handle_ib)
+/// A turf's plain handle (its key, the z-level never released) -> its position packed as x + 512 * (y + 512 * z), read by resolve_handle().
+/// A level too big to pack (x or y over 511, z over 63) is parsed each time instead.
+GLOBAL_ALIST_EMPTY(om_turf_pos)
+/// Per handle slot: the handle text ("id:gen") it answers to now, or null while the slot is free.
+GLOBAL_LIST_EMPTY(om_handle_texts)
+/// Handle text -> slot id, for every taken slot (a parked one too). A text leaves it when its slot is freed, so a stale handle misses.
+GLOBAL_ALIST_EMPTY(om_handle_ids)
 
 /// The datum's handle slot, 0 until entity_handle() is first called on it.
 /datum/var/tmp/om_hid = 0
 
 /// A handle to `D`: "id:gen". Null for a deleted datum or a non-datum.
-/// A turf's handle is its ref text ("[0x...]"): turfs are never deleted and a turf's
-/// ref is its position, so it survives ChangeTurf() (which resets the turf's vars).
+/// A turf's handle is its key (own_key(): its position, led by a scramble so the strings hash well), with "#<generation>" once its z-level has
+/// been released and reused: turfs are never deleted and a turf's position survives ChangeTurf() (which resets the turf's vars).
 /// A client's is "@ckey", resolved through GLOB.directory.
 /proc/entity_handle(datum/D)
 	if(isturf(D))
 		var/turf/T = D
-		return "[REF(T)]#[relation_z_generation(T.z)]"
+		var/key = T.own_key_text || own_key(T)
+		var/gen = relation_z_generation(T.z)
+		return gen ? "[key]#[gen]" : key
 	if(isclient(D))
 		var/client/C = D
 		return "@[C.ckey]" // a client is its ckey: it reads null while that player is disconnected
 	if(!isdatum(D) || QDELETED(D))
 		return null
+	var/id = D.om_hid
+	if(id)
+		return GLOB.om_handle_texts[id]
 	var/list/slots = GLOB.om_handle_slots
 	var/list/gens = GLOB.om_handle_gens
-	var/id = D.om_hid
-	if(!id)
-		var/list/free = GLOB.om_handle_free
-		if(length(free))
-			id = free[length(free)]
-			free.len--
-		else
-			slots.len++
-			gens.len++
-			id = length(slots)
-			gens[id] = 0
-		slots[id] = own_key(D)
-		var/list/types = GLOB.om_handle_types
-		if(length(types) < id)
-			types.len = id
-		types[id] = D.type
-		D.om_hid = id
-	return "[id]:[gens[id]]"
+	var/list/texts = GLOB.om_handle_texts
+	var/list/free = GLOB.om_handle_free
+	if(length(free))
+		id = free[length(free)]
+		free.len--
+	else
+		slots.len++
+		gens.len++
+		texts.len++
+		id = length(slots)
+		gens[id] = 0
+	entity_handle_slot_bind(id, D)
+	var/text = "[id]:[gens[id]]"
+	texts[id] = text
+	GLOB.om_handle_ids[text] = id
+	var/list/types = GLOB.om_handle_types
+	if(length(types) < id)
+		types.len = id
+	types[id] = D.type
+	D.om_hid = id
+	return text
 
 /// The handle `D` already has, even while `D` is being deleted (until phase 5 releases it), or null
 /// if it never had one. Never allocates. For taking a dying datum out of a handle-keyed list.
@@ -64,7 +92,26 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	if(!isdatum(D))
 		return null
 	var/id = D.om_hid
-	return id ? "[id]:[GLOB.om_handle_gens[id]]" : null
+	return id ? GLOB.om_handle_texts[id] : null
+
+/// Slot `id` names `D`: its weak key, and the two numbers of its address that resolve_handle() rebuilds the ref from. A key that is not the usual
+/// "<scramble>:<id>:<type>" (a ref kept as it is) leaves the numbers null, and the slot resolves through own_locate().
+/proc/entity_handle_slot_bind(id, datum/D)
+	var/key = D.own_key_text || own_key(D)
+	GLOB.om_handle_slots[id] = key
+	var/list/ta = GLOB.om_handle_ta
+	var/list/ib = GLOB.om_handle_ib
+	if(length(ta) < id)
+		ta.len = id
+		ib.len = id
+	var/first = findtext(key, ":")
+	var/second = first ? findtext(key, ":", first + 1) : 0
+	if(second && text2ascii(key) != 91)
+		ta[id] = text2num(copytext(key, second + 1))
+		ib[id] = text2num(copytext(key, first + 1, second))
+	else
+		ta[id] = null
+		ib[id] = null
 
 /// TRUE if handle `h` names `D`, even while `D` is being deleted (until phase 5
 /// releases its slot). A handle accessor (`owner()` = resolve_handle(owner_handle))
@@ -101,7 +148,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return FALSE
 	if(D.om_hid)
 		entity_handle_release(D)
-	slots[id] = own_key(D)
+	entity_handle_slot_bind(id, D)
 	var/list/types = GLOB.om_handle_types
 	if(length(types) >= id)
 		types[id] = D.type
@@ -115,41 +162,21 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/slots = GLOB.om_handle_slots
 	if(!id || id > length(slots) || slots[id] != OM_HANDLE_PARKED)
 		return
-	slots[id] = null
-	GLOB.om_handle_gens[id]++
-	GLOB.om_handle_free += id
+	entity_handle_slot_free(id)
 	GLOB.rel_dormant -= "[id]"
 
 /// The datum a handle names, or null if it has been deleted (whatever now uses its id).
 /proc/resolve_handle(h)
 	if(!istext(h))
 		return null
-	switch(text2ascii(h))
-		if(91) // "[": a turf's ref and its z-level's generation (entity_handle())
-			var/hash = findtext(h, "#")
-			var/turf/T = locate(hash ? copytext(h, 1, hash) : h)
-			if(!isturf(T))
-				return null
-			// A released and recycled z-level bumps its generation: an old turf handle stops
-			// resolving instead of naming a turf of whatever site reuses the level.
-			if(hash && text2num(copytext(h, hash + 1)) != relation_z_generation(T.z))
-				return null
-			return T
-		if(64) // "@": a client's ckey
-			return GLOB.directory[copytext(h, 2)]
-	var/sep = findtext(h, ":")
-	if(!sep)
-		return null
-	var/id = text2num(copytext(h, 1, sep))
-	var/list/slots = GLOB.om_handle_slots
-	if(!id || id > length(slots))
-		return null
-	if(GLOB.om_handle_gens[id] != text2num(copytext(h, sep + 1)))
-		return null
-	var/ref = slots[id]
+	var/id = GLOB.om_handle_ids[h]
+	if(!id)
+		return resolve_handle_keyed(h) // a turf's or a client's handle, or a stale / foreign text
+	var/ref = GLOB.om_handle_slots[id]
 	if(!ref || ref == OM_HANDLE_PARKED)
 		return null
-	var/datum/D = own_locate(ref)
+	var/ta = GLOB.om_handle_ta[id]
+	var/datum/D = isnull(ta) ? own_locate(ref) : locate("\[0x[num2text(ta, 1, 16)][num2text(GLOB.om_handle_ib[id], 6, 16)]\]")
 	if(!isdatum(D) || D.om_hid != id)
 		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
 		// A handle is not a reference: when it was the only thing naming its
@@ -157,13 +184,60 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		// a handle by the LC-refs sweep). That var owns what it names.
 		var/list/types = GLOB.om_handle_types
 		entity_handle_collected_report(id <= length(types) ? types[id] : null)
-		slots[id] = null
-		GLOB.om_handle_gens[id]++
-		GLOB.om_handle_free += id
+		entity_handle_slot_free(id)
 		return null
 	if(QDELETED(D))
 		return null
 	return D
+
+/// The handles that are not slot texts: a turf's (its key, then "#generation" once its z-level was released), a client's ("@ckey") and the older
+/// "[0x...]" turf ref. Anything else (a stale slot text, junk) names nothing.
+/proc/resolve_handle_keyed(h)
+	switch(text2ascii(h))
+		if(91) // "[": a turf's ref and its z-level's generation
+			var/ref_hash = findtext(h, "#")
+			var/turf/ref_turf = locate(ref_hash ? copytext(h, 1, ref_hash) : h)
+			if(!isturf(ref_turf))
+				return null
+			if(ref_hash && text2num(copytext(h, ref_hash + 1)) != relation_z_generation(ref_turf.z))
+				return null
+			return ref_turf
+		if(64) // "@": a client's ckey
+			return GLOB.directory[copytext(h, 2)]
+	var/packed = GLOB.om_turf_pos[h]
+	if(packed)
+		// A plain turf handle seen before: the position is a number. A released z-level (generation moved on) stops it resolving.
+		var/z = packed >> 18
+		if(relation_z_generation(z))
+			return null
+		return locate(packed & 511, (packed >> 9) & 511, z)
+	var/hash = findtext(h, "#")
+	var/key = hash ? copytext(h, 1, hash) : h
+	if(!findtext(key, "t"))
+		return null
+	var/turf/T = own_locate(key)
+	if(!isturf(T))
+		return null
+	// A released and recycled z-level bumps its generation: an old turf handle stops
+	// resolving instead of naming a turf of whatever site reuses the level.
+	var/gen = hash ? text2num(copytext(h, hash + 1)) : 0
+	if(gen != relation_z_generation(T.z))
+		return null
+	if(!hash && T.x <= 511 && T.y <= 511 && T.z <= 63)
+		GLOB.om_turf_pos[h] = T.x + 512 * (T.y + 512 * T.z)
+	return T
+
+/// Frees handle slot `id`: its text leaves the index (every handle to it stops resolving), its generation moves on, and it is free to reuse.
+/proc/entity_handle_slot_free(id)
+	var/list/texts = GLOB.om_handle_texts
+	if(id <= length(texts))
+		var/text = texts[id]
+		if(text)
+			GLOB.om_handle_ids -= text
+		texts[id] = null
+	GLOB.om_handle_slots[id] = null
+	GLOB.om_handle_gens[id]++
+	GLOB.om_handle_free += id
 
 /// Lifecycle phase 5: frees `D`'s handle slot. Every handle to it stops resolving.
 /// A handle's target was freed by BYOND without going through qdel() (a
@@ -181,14 +255,12 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/slots = GLOB.om_handle_slots
 	if(id > length(slots) || slots[id] != own_key(D))
 		return
-	slots[id] = null
-	GLOB.om_handle_gens[id]++
-	GLOB.om_handle_free += id
+	entity_handle_slot_free(id)
 
 /// TRUE if `h` is text shaped like an OM handle ("id:gen"). Says nothing about
 /// whether it still resolves.
 /proc/is_entity_handle(h)
-	var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+	var/static/regex/shape = regex(@"^(\d+:\d+|\d+t\d+:\d+:\d+(#\d+)?|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
 	return istext(h) && shape.Find(h)
 
 /// qdel()s whatever handle `h` names, if it still exists (QDEL_IN's deferred form).

@@ -34,7 +34,7 @@
 			log_world("entity_clone: [D.type] refused: [jointext(ctx.errors, "; ")]")
 		spent(ctx)
 	if(clone && new_owner && slot)
-		if(islist(new_owner.vars[slot]))
+		if(REL_LISTLIKE(new_owner.vars[slot]))
 			_own_add(new_owner, slot, clone)
 		else
 			_own_set(new_owner, slot, clone)

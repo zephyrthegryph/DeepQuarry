@@ -442,7 +442,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				if(isdatum(held) && is_registered(held))
 					OWN_REPORT("[D.type].[var_name]: OWN of registry type [held.type] (a registered instance is SHARED; a per-holder copy is PROTO)")
 			if(OWNK_REL)
-				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !islist(value) && !isnull(value))
+				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !REL_LISTLIKE(value) && !isnull(value))
 					OWN_REPORT("[D.type].[var_name]: rel(symmetric = TRUE) needs a list var")
 
 /// A framework write changed holder.var_name. When the var is also a declared (tracked)
