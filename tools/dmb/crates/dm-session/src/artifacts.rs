@@ -196,12 +196,21 @@ impl<T, Q, A, D> ObservedArtifactStore<T, Q, A, D> {
         if !matches!(self.retention, Retention::RetainedCurrentRevision) {
             return;
         }
-        let keys: std::collections::BTreeSet<&[u8]> = keys.into_iter().collect();
+        let keys: std::collections::HashSet<&[u8]> = keys.into_iter().collect();
+        self.retain_where(|key| keys.contains(key));
+    }
+    /// [`Self::retain_current_keys`] with the current roster given as a
+    /// predicate over existing keys, for callers whose roster is "everything
+    /// except" a computable set (no key list has to be materialized).
+    pub fn retain_where(&self, mut keep_key: impl FnMut(&[u8]) -> bool) {
+        if !matches!(self.retention, Retention::RetainedCurrentRevision) {
+            return;
+        }
         let mut state = self.state.lock().unwrap_or_else(|error| error.into_inner());
         let mut removed_ids = Vec::new();
         state.buckets.retain(|_, bucket| {
             bucket.retain(|entry| {
-                let keep = keys.contains(entry.key.as_ref());
+                let keep = keep_key(entry.key.as_ref());
                 if !keep {
                     removed_ids.push(Arc::as_ptr(&entry.value) as usize as u64);
                 }

@@ -9,7 +9,6 @@ use dm_preprocess::regions::{
     },
 };
 use dm_preprocess::SourceProvider;
-use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
@@ -70,6 +69,19 @@ impl NativeInputs {
         provider: &P,
         executor: &dm_exec::BuildExecutor,
     ) -> Result<Self, NativeInputError> {
+        Self::prepare_with_hints(project, provider, executor, Vec::new())
+    }
+
+    /// As [`Self::prepare_with_executor`], also offering `hints` (for example
+    /// the previous request's prepared roster) as speculative candidates after
+    /// the manifest's literal includes. Hints only warm captures; the ordered
+    /// directive pass still decides which files are actually included.
+    pub fn prepare_with_hints<P: SourceProvider + Sync>(
+        project: &Path,
+        provider: &P,
+        executor: &dm_exec::BuildExecutor,
+        hints: Vec<PathBuf>,
+    ) -> Result<Self, NativeInputError> {
         let project = canonical_path(project);
         let manifest = prepare_source(provider, &project).map_err(|message| {
             NativeInputError::RequiredSourceRead {
@@ -78,7 +90,9 @@ impl NativeInputs {
             }
         })?;
         let parent = project.parent().unwrap_or(Path::new(""));
-        let mut seen = BTreeSet::from([project.clone()]);
+        // Hash, not ordered, membership: hinted rosters are ~11k Windows paths
+        // and ordered Path comparison parses components on every compare.
+        let mut seen = std::collections::HashSet::from([project.clone()]);
         let mut candidates = manifest
             .lines()
             .iter()
@@ -92,6 +106,11 @@ impl NativeInputs {
                     })
             })
             .map(|path| parent.join(path))
+            .chain(hints.into_iter().filter(|path| {
+                path.extension()
+                    .and_then(|value| value.to_str())
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("dm"))
+            }))
             .collect::<Vec<_>>();
         // Resolve filesystem paths on the existing pool. Retaining in manifest
         // order afterwards preserves which alias supplies the first capture.

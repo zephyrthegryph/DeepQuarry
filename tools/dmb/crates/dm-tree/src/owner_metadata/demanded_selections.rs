@@ -2,7 +2,7 @@
 //! Proc, verb, and variable names share one demand lifecycle and issuer.
 //! Only queried ancestor paths are retained, never owner times inherited-name rosters.
 use super::*;
-use std::sync::{Mutex, Weak};
+use std::sync::{Mutex, RwLock, Weak};
 
 #[derive(Default, Debug)]
 pub struct CallableDemands {
@@ -17,7 +17,20 @@ impl CallableDemands {
         visitor(&*tokens as *const _ as usize, tokens.len());
     }
 }
-pub(super) type CurrentDemands = Mutex<Weak<CallableDemands>>;
+/// The current demand owner. Walks hold `current` shared, so a revision
+/// (exclusive) never interleaves with an admission in progress; workers on the
+/// same tree walk concurrently. `issue` serializes only the short
+/// check-lookup-insert of one missing token so racing workers agree on it.
+#[derive(Default)]
+pub(super) struct CurrentDemands {
+    current: RwLock<Weak<CallableDemands>>,
+    issue: Mutex<()>,
+}
+impl std::fmt::Debug for CurrentDemands {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CurrentDemands").finish_non_exhaustive()
+    }
+}
 const PREFIX: &[u8] = b"member-name-demand-v2";
 fn key((owner, name, namespace): (SymbolId, SymbolId, u8)) -> Arc<[u8]> {
     let mut bytes = PREFIX.to_vec();
@@ -158,13 +171,29 @@ impl RetainedMetadata {
         }
         let current = self
             .current_demands
-            .lock()
+            .current
+            .read()
             .unwrap_or_else(|e| e.into_inner());
         if !current
             .upgrade()
             .is_some_and(|owner| Arc::ptr_eq(&owner, &tree.owner_callable_demands))
         {
             return None;
+        }
+        let _issue = self
+            .current_demands
+            .issue
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(token) = tree
+            .owner_callable_demands
+            .tokens
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(&selection)
+            .copied()
+        {
+            return Some(token);
         }
         let host = Host(answer);
         let token_of = |value: &EffectiveOwner| match value {
@@ -200,7 +229,8 @@ impl RetainedMetadata {
     pub(super) fn demanded_keys(&self, tree: &SemanticTree) -> Vec<Arc<[u8]>> {
         let current = self
             .current_demands
-            .lock()
+            .current
+            .read()
             .unwrap_or_else(|error| error.into_inner());
         current.upgrade().map_or_else(Vec::new, |current| {
             current
@@ -222,7 +252,8 @@ impl RetainedMetadata {
         }
         let mut current = self
             .current_demands
-            .lock()
+            .current
+            .write()
             .unwrap_or_else(|error| error.into_inner());
         if current
             .upgrade()
@@ -239,23 +270,16 @@ impl RetainedMetadata {
                 .copied()
                 .collect::<Vec<_>>()
         });
-        let mut keys = Vec::new();
-        self.store.visit_storage(|view| {
-            if let dm_session::ObservedArtifactStorageView::Entry { key: existing, .. } = view {
-                if !existing.starts_with(PREFIX) {
-                    keys.push(Arc::clone(existing));
-                }
-            }
-        });
-        keys.extend(
-            retained
-                .iter()
-                .filter(|selection| tree.lookup_type(selection.0).is_some())
-                .copied()
-                .map(key),
-        );
+        // Keep every non-demand entry and the demand entries whose owner type
+        // still exists; drop the rest. Same roster as listing every kept key.
+        let demanded: std::collections::HashSet<Arc<[u8]>> = retained
+            .iter()
+            .filter(|selection| tree.lookup_type(selection.0).is_some())
+            .copied()
+            .map(key)
+            .collect();
         self.store
-            .retain_current_keys(keys.iter().map(AsRef::as_ref));
+            .retain_where(|existing| !existing.starts_with(PREFIX) || demanded.contains(existing));
         *current = Arc::downgrade(&tree.owner_callable_demands);
     }
     pub(crate) fn bind_selection_owner(&self, tree: &SemanticTree) {
@@ -317,7 +341,8 @@ impl RetainedMetadata {
         // Old snapshots may read their existing receipts but cannot alter the store.
         let current = self
             .current_demands
-            .lock()
+            .current
+            .read()
             .unwrap_or_else(|error| error.into_inner());
         if !current
             .upgrade()
@@ -392,6 +417,18 @@ impl RetainedMetadata {
                     )
                 };
                 let host = Host(answer);
+                let _issue = self
+                    .current_demands
+                    .issue
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner());
+                let raced = tree
+                    .owner_callable_demands
+                    .tokens
+                    .lock()
+                    .unwrap_or_else(|error| error.into_inner())
+                    .get(&selection)
+                    .copied();
                 let token_of = |entry: &EffectiveOwner| {
                     if selection.2 == 2 {
                         entry.variable_token()
@@ -399,10 +436,11 @@ impl RetainedMetadata {
                         entry.callable_token()
                     }
                 };
-                let existing = self
-                    .store
-                    .lookup(&key(selection), &host)
-                    .and_then(|entry| token_of(&entry));
+                let existing = raced.or_else(|| {
+                    self.store
+                        .lookup(&key(selection), &host)
+                        .and_then(|entry| token_of(&entry))
+                });
                 let token = if let Some(token) = existing {
                     token
                 } else {

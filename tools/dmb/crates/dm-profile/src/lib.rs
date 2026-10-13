@@ -971,3 +971,12 @@ impl Drop for DetailTimer {
         }
     }
 }
+
+/// Prints `detail mark <label>: <seconds since start>` when
+/// `DMB_TIMINGS_DETAIL=1`; consecutive marks attribute a request's wall time.
+pub fn detail_mark(label: &'static str, start: Instant) {
+    static ENABLED: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    if *ENABLED.get_or_init(|| std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|v| v == "1")) {
+        eprintln!("detail mark {label}: {:.3}s", start.elapsed().as_secs_f64());
+    }
+}

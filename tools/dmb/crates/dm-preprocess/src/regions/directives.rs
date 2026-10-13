@@ -30,6 +30,7 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
         environment: MacroEnvironment::default(),
         file_dir_origins: Vec::new(),
         conditionals: Vec::new(),
+        detail: PassDetail::default(),
     };
     for (name, replacement) in [
         ("EXCEPTION", "new /exception(message, __FILE__, __LINE__)"),
@@ -225,8 +226,35 @@ pub(super) fn plan_with_memo<P: SourceProvider>(
         pass.environment.insert(name, definition.clone(), None);
     }
     let occurrence = pass.occurrence(project, None, None, Span::default(), 1);
+    let started = std::time::Instant::now();
     pass.visit(occurrence);
+    if std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "1") {
+        let d = &pass.detail;
+        eprintln!(
+            "detail directives: total={:.3}s source={:.3}s (provider={:.3}s) context={:.3}s match={:.3}s replay={:.3}s intervals={} hits={}",
+            started.elapsed().as_secs_f64(),
+            d.source.as_secs_f64(),
+            d.provider.as_secs_f64(),
+            d.context.as_secs_f64(),
+            d.matching.as_secs_f64(),
+            d.replay.as_secs_f64(),
+            d.intervals,
+            d.hits,
+        );
+    }
     pass.plan
+}
+
+/// Diagnostic wall-time split of the ordered pass (DMB_TIMINGS_DETAIL=1).
+#[derive(Default)]
+struct PassDetail {
+    source: std::time::Duration,
+    provider: std::time::Duration,
+    context: std::time::Duration,
+    matching: std::time::Duration,
+    replay: std::time::Duration,
+    intervals: usize,
+    hits: usize,
 }
 
 struct DirectivePass<'a, P> {
@@ -241,6 +269,7 @@ struct DirectivePass<'a, P> {
     file_dir_origins: Vec<Option<DefinitionOrigin>>,
     // Includes splice their directives into the same encounter stream.
     conditionals: Vec<Conditional>,
+    detail: PassDetail,
 }
 
 impl<P: SourceProvider> DirectivePass<'_, P> {
@@ -556,6 +585,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
             ancestor = self.plan.occurrences[parent].parent;
         }
         self.plan.dependencies.insert(path.as_ref().clone());
+        let source_started = std::time::Instant::now();
         let prepared = match self.provider.prepared_source(&path) {
             Some(prepared) => prepared,
             None => match self.provider.read(&path) {
@@ -566,12 +596,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 }
             },
         };
+        self.detail.provider += source_started.elapsed();
         self.plan
             .source_line_starts
             .insert(path.as_ref().clone(), prepared.line_starts().clone());
         self.plan
             .source_texts
             .insert(path.as_ref().clone(), prepared.original().clone());
+        self.detail.source += source_started.elapsed();
         let mut line_number = 0;
         let mut returns = Vec::new();
         let mut recoveries = BTreeSet::new();
@@ -593,9 +625,13 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     let end = (cursor..lines.len())
                         .find(|&index| prepared.is_include(index))
                         .unwrap_or(lines.len());
-                    if let Some(context) =
-                        directive_memo::context(prepared.original(), lines.slice(cursor..end))
-                    {
+                    let context_started = std::time::Instant::now();
+                    let context =
+                        directive_memo::context(prepared.original(), lines.slice(cursor..end));
+                    self.detail.context += context_started.elapsed();
+                    self.detail.intervals += 1;
+                    if let Some(context) = context {
+                        let matching_started = std::time::Instant::now();
                         let mut hit = None;
                         memo.visit_directive_candidates(context.2, &mut |record| {
                             let accepted = record.matches(
@@ -611,7 +647,10 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                             }
                             accepted
                         });
+                        self.detail.matching += matching_started.elapsed();
                         if let Some(record) = hit {
+                            self.detail.hits += 1;
+                            let replay_started = std::time::Instant::now();
                             self.replay_directives(
                                 occurrence,
                                 region,
@@ -620,6 +659,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 &mut pending,
                                 &mut recoveries,
                             );
+                            self.detail.replay += replay_started.elapsed();
                             line_number += lines
                                 .slice(cursor..end)
                                 .iter()
