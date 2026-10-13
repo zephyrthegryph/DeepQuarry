@@ -51,7 +51,7 @@ BLIND     // can't see anything
 /obj/item/clothing/glasses/update_clothing_icon()
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_glasses()
+		changed(src)
 
 /obj/item/clothing/glasses/proc/can_toggle(mob/living/user)
 	if(!toggleable)
@@ -69,7 +69,7 @@ BLIND     // can't see anything
 	if(active)
 		active = FALSE
 		icon_state = off_state
-		user.update_inv_glasses()
+		changed(src)
 		flash_protection = FLASH_PROTECTION_NONE
 		tint = TINT_NONE
 		away_planes = enables_planes
@@ -78,7 +78,7 @@ BLIND     // can't see anything
 	else
 		active = TRUE
 		icon_state = initial(icon_state)
-		user.update_inv_glasses()
+		changed(src)
 		flash_protection = initial(flash_protection)
 		tint = initial(tint)
 		enables_planes = away_planes
@@ -549,7 +549,7 @@ TRACKED(/obj/item/clothing/glasses/sunglasses/sechud/aviator, on)
 			to_chat(user, "You switch \the [src] to flash protection mode.")
 		user << sound(get_sfx(activation_sound))
 		user.recalculate_vis()
-		user.update_inv_glasses()
+		changed(src)
 		user.update_mob_action_buttons()
 
 /obj/item/clothing/glasses/sunglasses/sechud/aviator/draw(datum/look/look)
@@ -788,7 +788,7 @@ CAPABILITIES(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vis)
 	var/static/list/options = list("Scanning pattern 1" = "tacsecvis1", "Scanning pattern 2" = "tacsecvis2", "Scanning pattern 3" = "tacsecvis3","Scanning pattern 4" ="tacsecvis4")
 	if(choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]
-		user.update_inv_glasses()
+		changed(src)
 		user.update_mob_action_buttons()
 		to_chat(user, span_notice("Your [src] now displays [choice] ."))
 

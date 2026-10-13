@@ -284,20 +284,19 @@
 				S.dirt = 0
 				gained += rand(10, 20)
 	if(H.feet_blood_color || LAZYLEN(H.feet_blood_DNA))
-		LAZYCLEARLIST(H.feet_blood_DNA)
-		H.feet_blood_DNA = null
-		H.feet_blood_color = null
+		H.clear_feet_blood_DNA()
+		H.set_feet_blood_DNA(null)
+		H.set_feet_blood_color(null)
 		gained += rand(3, 10)
 	if(H.bloody_hands)
 		H.forensic_data?.clear_blooddna()
-		H.hand_blood_color = null
+		H.set_hand_blood_color(null)
 		H.bloody_hands = 0
 		gained += rand(3, 10)
 	// Prometheans themselves aren't very safe places for other biota.
 	H.germ_level = 0
 	if(gained)
 		H.adjust_nutrition(gained)
-		H.update_bloodied()
 
 /// Whatever a bare-handed promethean picks up gets cleaned too.
 /datum/trait_state/promethean_biology/proc/on_equipped(datum/act/notice/A)

@@ -195,7 +195,6 @@
 		new organ_type(H, TRUE) // takes its place in its limb
 		regrown++
 	if(regrown)
-		H.regenerate_icons()
 		log_game("NANOFORM: [key_name(H)] regrew [regrown] part(s).")
 	return regrown
 

@@ -541,7 +541,7 @@ CAPABILITIES(/obj/item/clothing/suit/fluff/purp_robes)
 			icon_state = "[initial(icon_state)]"
 			unbuttoned = FALSE
 			to_chat(user, "You button up the coat.")
-	user.update_inv_wear_suit()
+	changed(src)
 
 /obj/item/clothing/head/fluff/pink_tiara
 	name = "pink tourmaline tiara"
@@ -769,7 +769,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		icon_state = "tempestbag-amb"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
+			changed(src)
 		ambulance_state = FALSE
 		set_glow(src, GLOW(2, 1, "#FF0000"))
 		soundloop.start()
@@ -778,7 +778,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 		icon_state = "tempestbag"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
+			changed(src)
 		set_glow(src, GLOW(0, null, null))
 		soundloop.stop()
 
@@ -790,7 +790,7 @@ CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
 			newlight = "#0000FF"
 		if (ismob(loc))
 			var/mob/M = loc
-			M.update_inv_back()
+			changed(src)
 		set_glow(src, GLOW(2, 1, newlight))
 		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
@@ -1141,8 +1141,7 @@ CAPABILITIES(/obj/item/melee/fluffstuff)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	add_fingerprint(user)
 	return

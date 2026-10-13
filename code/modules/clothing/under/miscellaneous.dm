@@ -1883,7 +1883,6 @@ CAPABILITIES(/obj/item/clothing/under/hyperfiber/bluespace)
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H,span_warning("The uniform panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if (!H.size_range_check(new_size))
@@ -2038,7 +2037,6 @@ CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe)
 	if (isnull(H.size_multiplier)) // Why would this ever be the case?
 		to_chat(H, span_warning("The gloves panics and corrects your apparently microscopic size."))
 		H.resize(RESIZE_NORMAL, ignore_prefs = TRUE)
-		H.update_icons() //Just want the matrix transform
 		return
 
 	if(new_size != H.size_multiplier)

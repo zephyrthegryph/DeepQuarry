@@ -73,7 +73,7 @@ CAPABILITIES(/obj/item/lipstick)
 		act_message(A.actor, src, MSG_SELF(span_notice("You apply %T%.")), \
 			MSG_OTHERS(span_notice("%U% does [H]'s lips with %T%.")))
 	H.looks.set_lip_style(colour)
-	H.update_icons_body()
+	changed(src)
 	return OP_OK
 
 //you can wipe off lipstick with paper! see code/modules/paperwork/paper.dm, paper/attack()

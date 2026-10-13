@@ -39,7 +39,7 @@
 	var/list/forms
 	/// The form being worn right now. Never null while attached.
 	var/datum/form/current
-	/// Appearances the current form added to the mob.
+	/// What the current form shows instead of the body (the human's draw shows these while TRAIT_FORM_HIDES_BODY holds).
 	var/list/form_overlays
 	/// holder_type the mob had before a form replaced it.
 	var/prior_holder_type
@@ -47,6 +47,8 @@
 	var/switching = FALSE
 	/// Resting state the current appearance was drawn for.
 	var/drawn_resting = FALSE
+
+TRACKED(/datum/forms, form_overlays)
 
 CAPABILITIES(/datum/forms)
 	owns_many(nameof(forms))
@@ -128,20 +130,15 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	if(current.draws_body)
 		if(has_trait(H, TRAIT_FORM_HIDES_BODY))
 			remove_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
-			H.regenerate_icons()
 		return
 	if(!has_trait(H, TRAIT_FORM_HIDES_BODY))
 		add_trait(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
-		H.cut_overlays()
 	drawn_resting = H.resting
-	form_overlays = current.build_overlays(src, H)
-	if(length(form_overlays))
-		H.add_overlay(form_overlays)
+	set_form_overlays(current.build_overlays(src, H))
 
+/// The form's own appearance goes: the human's draw shows its body again (or the next form's overlays).
 /datum/forms/proc/clear_form_appearance(mob/living/carbon/human/H)
-	if(length(form_overlays))
-		H.cut_overlay(form_overlays)
-	form_overlays = null
+	set_form_overlays(null)
 
 /datum/forms/proc/on_life(mob/living/source)
 	// Shapeless forms draw their own resting states.
@@ -237,13 +234,6 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 	return
 
 // --- Body-drawing hooks ---------------------------------------------------------------
-
-// A form that draws itself keeps the body layer cache up to date but does not
-// apply it; returning to a body-drawing form regenerates the icons.
-/mob/living/carbon/human/apply_layer(cache_index)
-	if(has_trait(src, TRAIT_FORM_HIDES_BODY))
-		return overlays_standing[cache_index]
-	return ..()
 
 // Shapeless forms scale with the mob but never rotate to lie down; they draw
 // their own resting states.

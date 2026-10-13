@@ -162,7 +162,6 @@ GLOBAL_LIST_EMPTY(surgery_op_steps)
 		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
 	log_game("SURGERY: [key_name(user)] interrupted [A.key] on [key_name(src)]; no complication.")
 	surgery_record_end(user)
-	update_surgery()
 
 /// The step's time is up: roll its chance, then perform or complicate.
 /mob/living/carbon/human/proc/surgery_done(datum/act/op/A)

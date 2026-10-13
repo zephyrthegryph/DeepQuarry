@@ -32,7 +32,7 @@
 
 /// Lying down, malfunction, APU and queued alarms.
 /mob/living/silicon/ai/proc/life_ai_upkeep(datum/seq_frame/life/F)
-	src.lying = 0			// Handle lying down
+	set_lying(0)			// Handle lying down
 
 	src.malf_process()
 	src.process_apu()

@@ -10,36 +10,36 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 		add_overlay(organ.mob_icon)
 
 /obj/item/organ/external/proc/sync_colour_to_human(mob/living/carbon/human/human)
-	s_tone = null
-	s_col = null
-	h_col = null
+	set_s_tone(null)
+	set_s_col(null)
+	set_h_col(null)
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
 		if(!(franchise && franchise.skin_tone) && !(franchise && franchise.skin_color))
 			if(human.looks.synth_color)
-				s_col = hex2rgb(human.looks.synth_color_rgb)
+				set_s_col(hex2rgb(human.looks.synth_color_rgb))
 			return
 	if(human.species && data.get_species_name() != human.species.name)
 		return
 	if(!isnull(human.looks.skin_tone) && (human.species.appearance_flags & HAS_SKIN_TONE))
-		s_tone = human.looks.skin_tone
+		set_s_tone(human.looks.skin_tone)
 	if(human.species.appearance_flags & HAS_SKIN_COLOR)
-		s_col = hex2rgb(human.looks.skin_color)
-	h_col = hex2rgb(human.looks.hair_color)
+		set_s_col(hex2rgb(human.looks.skin_color))
+	set_h_col(hex2rgb(human.looks.hair_color))
 
 /obj/item/organ/external/proc/sync_colour_to_dna()
-	s_tone = null
-	s_col = null
-	h_col = null
+	set_s_tone(null)
+	set_s_col(null)
+	set_h_col(null)
 	if(is_robotic())
 		var/datum/robolimb/franchise = GLOB.all_robolimbs[model]
 		if(!(franchise && franchise.skin_tone) && !(franchise && franchise.skin_color))
 			return
 	if(!isnull(data.skin_tone) && (data.get_species_appearance_flags() & HAS_SKIN_TONE))
-		s_tone = data.skin_tone
+		set_s_tone(data.skin_tone)
 	if(data.get_species_appearance_flags() & HAS_SKIN_COLOR)
-		s_col = data.skin_color.Copy()
-	h_col = data.hair_color.Copy()
+		set_s_col(data.skin_color.Copy())
+	set_h_col(data.hair_color.Copy())
 
 /obj/item/organ/external/head/sync_colour_to_human(mob/living/carbon/human/human)
 	..()

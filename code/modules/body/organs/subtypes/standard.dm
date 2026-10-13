@@ -37,7 +37,7 @@
 		var/datum/robolimb/R = GLOB.all_robolimbs[model] // company should be set in parent by now
 		if(!R)
 			log_runtime("A torso was robotize() but has no model that can be found: [model]. May affect FBPs.")
-		shared_set(owner, nameof(owner.synthetic), R)
+		rel_set(owner, nameof(owner.synthetic), R)
 	return FALSE
 
 
@@ -319,7 +319,6 @@ CAPABILITIES(/obj/item/organ/external/hand)
 	var/mob/living/carbon/human/victim = owner
 	if(iscarbon(victim))
 		name = "[victim.real_name]'s head"
-		after(victim, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, update_hair))
 	get_icon()
 	return ..()
 

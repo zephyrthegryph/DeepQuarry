@@ -1,10 +1,3 @@
-/mob/living/carbon/human/proc/update_eyes()
-	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
-	if(eyes)
-		eyes.update_colour()
-		update_icons_body() //Body handles eyes
-		update_eyes() //For floating eyes only
-
 /mob/living/carbon/human/proc/handle_grasp()
 	if(!get_equipped_item(SLOT_ID_HAND_L) && !get_equipped_item(SLOT_ID_HAND_R))
 		return

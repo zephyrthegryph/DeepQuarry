@@ -476,7 +476,7 @@ CAPABILITIES(/obj/item/clothing/accessory/medal)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_mask()
+		changed(src)
 
 /// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(datum/act/op/A)
@@ -1448,7 +1448,7 @@ CAPABILITIES(/obj/item/clothing/accessory/antediluvian/loincloth)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	op("half_cloak_flip_self", in_hand(), label("Flip cloak"), then(PROC_REF(half_cloak_flip_self)))
@@ -1535,7 +1535,7 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/cloak/half)
 	. = ..()
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_wear_suit()
+		changed(src)
 
 CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	op("neo_ranger_adjust_self", in_hand(), label("Adjust"), then(PROC_REF(neo_ranger_adjust_self)))

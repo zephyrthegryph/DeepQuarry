@@ -32,7 +32,7 @@
 		return FALSE
 	if(user.restrained() || user.buckled_to())
 		return FALSE
-	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED)) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
+	if(user.stat || user.has_status(STAT_PARALYZED) || user.has_status(STAT_SLEEPING) || user.lying || user.has_status(STAT_WEAKENED))
 		return FALSE
 	return TRUE
 

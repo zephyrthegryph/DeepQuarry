@@ -440,7 +440,6 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	else
 		clear_alert("handcuffed")
 	update_mob_action_buttons() //some of our action buttons might be unusable when we're handcuffed.
-	update_inv_handcuffed()
 
 // Clears blood overlays
 /mob/living/carbon/wash(clean_types)
@@ -450,8 +449,7 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 	if(get_equipped_item(SLOT_ID_HAND_L))
 		get_equipped_item(SLOT_ID_HAND_L).wash(clean_types)
 	if(get_equipped_item(SLOT_ID_BACK))
-		if(get_equipped_item(SLOT_ID_BACK).wash(clean_types))
-			src.update_inv_back(0)
+		get_equipped_item(SLOT_ID_BACK).wash(clean_types)
 
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
@@ -477,49 +475,38 @@ MSG_DEF(pat_out/begin, span_warning("You try to pat out %T%'s flames! Hot!"), sp
 				washglasses = !(worn_of(H.get_equipped_item(SLOT_ID_MASK)).hides & HIDEEYES)
 
 		if(H.get_equipped_item(SLOT_ID_HEAD))
-			if(H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types))
-				H.update_inv_head()
+			H.get_equipped_item(SLOT_ID_HEAD).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_SUIT))
-			if(H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types))
-				H.update_inv_wear_suit()
+			H.get_equipped_item(SLOT_ID_SUIT).wash(clean_types)
 
 		else if(H.get_equipped_item(SLOT_ID_UNIFORM))
-			if(H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types))
-				H.update_inv_w_uniform()
+			H.get_equipped_item(SLOT_ID_UNIFORM).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_GLOVES) && washgloves)
-			if(H.get_equipped_item(SLOT_ID_GLOVES).wash(clean_types))
-				H.update_inv_gloves(0)
+			H.get_equipped_item(SLOT_ID_GLOVES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_SHOES) && washshoes)
-			if(H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types))
-				H.update_inv_shoes(0)
+			H.get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_MASK) && washmask)
-			if(H.get_equipped_item(SLOT_ID_MASK).wash(clean_types))
-				H.update_inv_wear_mask(0)
+			H.get_equipped_item(SLOT_ID_MASK).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EYES) && washglasses)
-			if(H.get_equipped_item(SLOT_ID_EYES).wash(clean_types))
-				H.update_inv_glasses(0)
+			H.get_equipped_item(SLOT_ID_EYES).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EAR_L) && washears)
-			if(H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types))
-				H.update_inv_ears(0)
+			H.get_equipped_item(SLOT_ID_EAR_L).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_EAR_R) && washears)
-			if(H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types))
-				H.update_inv_ears(0)
+			H.get_equipped_item(SLOT_ID_EAR_R).wash(clean_types)
 
 		if(H.get_equipped_item(SLOT_ID_BELT))
-			if(H.get_equipped_item(SLOT_ID_BELT).wash(clean_types))
-				H.update_inv_belt(0)
+			H.get_equipped_item(SLOT_ID_BELT).wash(clean_types)
 
 	else
 		if(get_equipped_item(SLOT_ID_MASK))						//if the mob is not human, it cleans the mask without asking for bitflags
-			if(get_equipped_item(SLOT_ID_MASK).wash(clean_types))
-				src.update_inv_wear_mask(0)
+			get_equipped_item(SLOT_ID_MASK).wash(clean_types)
 
 /mob/living/carbon/proc/food_preference(allergen_type) //RS edit
 	if(!species) // carbon/brains have no species

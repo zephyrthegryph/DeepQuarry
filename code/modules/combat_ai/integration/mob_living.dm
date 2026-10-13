@@ -37,6 +37,8 @@ CAPABILITIES(/mob/living)
 	ref_one(nameof(cameraFollow))
 	every(PROC_REF(autofire_interval), then(PROC_REF(autofire_tick)), when = nameof(autofire_on))
 	ref_many(nameof(shared_soul_links))
+	// The attached limbs (rel_add() in body/parts/attach.dm): a look follows them attaching and leaving.
+	ref_many(nameof(organs), /obj/item/organ/external)
 	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
 	ref_one(nameof(internal))
 	owns_one(nameof(ai_brain), /datum/ai_brain)
