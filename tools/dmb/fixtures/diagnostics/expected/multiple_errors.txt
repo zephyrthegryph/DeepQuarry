@@ -1,0 +1,4 @@
+multiple_errors.dm:2:error: returnmissing_one: undefined var
+multiple_errors.dm:5:error: returnmissing_two: undefined var
+multiple_errors.dm:8:error: returnmissing_three: undefined var
+multiple_errors.dmb - 3 errors, 0 warnings

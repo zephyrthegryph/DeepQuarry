@@ -54,15 +54,13 @@ fn replay_errors(
                     }
                 }
             };
+            if error.kind == dm_codegen_byond::LowerErrorKind::Internal {
+                return None;
+            }
+            let (kind, message) = wording::present(frontend, &origin, &error);
             Some(LoweringDiagnostic {
                 related: related::bind_related(frontend, body, error.related, true)?,
-                kind: match error.kind {
-                    dm_codegen_byond::LowerErrorKind::SourceError => DiagnosticKind::SourceError,
-                    dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
-                        DiagnosticKind::UnsupportedModel
-                    }
-                    dm_codegen_byond::LowerErrorKind::Internal => return None,
-                },
+                kind,
                 identity: Some(UnitIdentity {
                     owner: identity.owner,
                     name: identity.name,
@@ -74,19 +72,15 @@ fn replay_errors(
                     occurrence: identity.occurrence,
                 }),
                 origin,
-                message: if error.kind == dm_codegen_byond::LowerErrorKind::SourceError
-                    || error.statement.is_empty()
-                {
-                    error.reason
-                } else {
-                    format!("{}: {}", error.statement, error.reason)
-                },
+                message,
             })
         })
         .collect()
 }
 #[path = "lowering/related.rs"]
 mod related;
+#[path = "lowering/wording.rs"]
+pub(crate) mod wording;
 struct MemoDebugProvider<'a> {
     original: FrontendDebugProvider<'a>,
     base: usize,

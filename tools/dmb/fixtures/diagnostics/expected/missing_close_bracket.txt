@@ -1,0 +1,3 @@
+missing_close_bracket.dme:2:error: }: missing comma ',' or right-paren ')'
+missing_close_bracket.dm:3:error: list started here
+missing_close_bracket.dmb - 2 errors, 0 warnings

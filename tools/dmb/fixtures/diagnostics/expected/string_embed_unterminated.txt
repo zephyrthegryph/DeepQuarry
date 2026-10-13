@@ -1,0 +1,4 @@
+string_embed_unterminated.dme:2:error: unterminated text expression (expecting ])
+string_embed_unterminated.dme:2:error: end of file: expected }
+string_embed_unterminated.dm:2:error: location of top-most unmatched {
+string_embed_unterminated.dmb - 3 errors, 0 warnings

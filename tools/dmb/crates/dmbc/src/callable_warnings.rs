@@ -32,7 +32,7 @@ pub(crate) fn capture(
         if member.definition == DefinitionMode::Declare {
             if let Some(earlier) = pending.remove(&key) {
                 let mut earlier: Vec<usize> = earlier;
-                if !earlier.is_empty() {
+                if !earlier.is_empty() && !owner_declared_proc_before(frontend, earlier[0], member.owner) {
                     selected.push((
                         earlier.remove(0),
                         WarningCode::OverrideBeforeDefinition,
@@ -85,6 +85,29 @@ pub(crate) fn capture(
             })
         })
         .collect()
+}
+
+/// DreamMaker does not warn when the owner already declared some procedure
+/// (`/owner/proc/other()`, not a verb or an override) before the first
+/// override. Pinned against DreamMaker 516.1687 on DeepQuarry and probes.
+fn owner_declared_proc_before(
+    frontend: &ColdFrontend,
+    first_override: usize,
+    owner: dm_ir::TypeId,
+) -> bool {
+    let tree = &frontend.snapshot.tree;
+    frontend.snapshot.occurrences.source_order()[..first_override]
+        .iter()
+        .any(|occurrence| {
+            let Target::Member(id) = occurrence.target else {
+                return false;
+            };
+            tree.member(id).is_some_and(|member| {
+                member.owner == owner
+                    && member.kind == MemberKind::Proc
+                    && member.definition == DefinitionMode::Declare
+            })
+        })
 }
 
 #[cfg(test)]

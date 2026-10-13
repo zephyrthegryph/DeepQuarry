@@ -123,23 +123,17 @@ pub(super) fn lowered(
                 Some((origin, related))
             };
             match bind() {
-                Some((origin, related)) => LoweringDiagnostic {
-                    related,
-                    identity: Some(owner),
-                    origin,
-                    kind: match error.kind {
-                        LowerErrorKind::SourceError => DiagnosticKind::SourceError,
-                        LowerErrorKind::UnsupportedModel => DiagnosticKind::UnsupportedModel,
-                        LowerErrorKind::Internal => DiagnosticKind::Internal,
-                    },
-                    message: if error.kind == LowerErrorKind::SourceError
-                        || error.statement.is_empty()
-                    {
-                        error.reason
-                    } else {
-                        format!("{}: {}", error.statement, error.reason)
-                    },
-                },
+                Some((origin, related)) => {
+                    let (kind, message) =
+                        crate::lowering::wording::present(frontend, &origin, &error);
+                    LoweringDiagnostic {
+                        related,
+                        identity: Some(owner),
+                        origin,
+                        kind,
+                        message,
+                    }
+                }
                 None => LoweringDiagnostic {
                     related: Vec::new(),
                     identity: Some(owner),

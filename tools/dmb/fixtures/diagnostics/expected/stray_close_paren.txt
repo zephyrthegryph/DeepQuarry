@@ -1,0 +1,3 @@
+stray_close_paren.dm:2:error: ): expected }
+stray_close_paren.dm:2:error: location of top-most unmatched {
+stray_close_paren.dmb - 2 errors, 0 warnings

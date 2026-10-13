@@ -1,0 +1,2 @@
+static_var_in_proc_typo.dm:2:error: returnusr.nonexistent_field: undefined var
+static_var_in_proc_typo.dmb - 1 error, 0 warnings

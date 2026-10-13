@@ -456,12 +456,12 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
         }
         errors
             .into_iter()
-            .map(|e| {
+            .map(|mut e| {
                 let Some(related) = super::related::bind_current_related(
                     frontend,
                     body,
                     debug.parameters.as_ref(),
-                    e.related,
+                    std::mem::take(&mut e.related),
                 ) else {
                     return LoweringDiagnostic {
                         related: Vec::new(),
@@ -491,26 +491,13 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         .and_then(|span| frontend.location(span.start))
                         .unwrap_or_else(|| body.source.clone()),
                 };
+                let (kind, message) = super::wording::present(frontend, &origin, &e);
                 LoweringDiagnostic {
                     related,
-                    kind: match e.kind {
-                        dm_codegen_byond::LowerErrorKind::SourceError => {
-                            DiagnosticKind::SourceError
-                        }
-                        dm_codegen_byond::LowerErrorKind::UnsupportedModel => {
-                            DiagnosticKind::UnsupportedModel
-                        }
-                        dm_codegen_byond::LowerErrorKind::Internal => DiagnosticKind::Internal,
-                    },
+                    kind,
                     identity: Some(identity),
                     origin,
-                    message: if e.kind == dm_codegen_byond::LowerErrorKind::SourceError
-                        || e.statement.is_empty()
-                    {
-                        e.reason
-                    } else {
-                        format!("{}: {}", e.statement, e.reason)
-                    },
+                    message,
                 }
             })
             .collect::<Vec<_>>()

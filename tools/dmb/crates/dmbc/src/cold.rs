@@ -605,6 +605,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             .map_err(initializer_lowering_error)?;
     warnings
         .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    warnings.extend(crate::local_warnings::capture(frontend).map_err(initializer_lowering_error)?);
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.

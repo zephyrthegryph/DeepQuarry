@@ -1,0 +1,2 @@
+unused_ternary_continuation.dm:4:warning (unused_var): c: variable defined but not used
+unused_ternary_continuation.dmb - 0 errors, 1 warning

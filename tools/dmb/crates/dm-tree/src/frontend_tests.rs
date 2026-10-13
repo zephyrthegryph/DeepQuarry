@@ -70,7 +70,7 @@ fn preprocessing_diagnostic_kind_is_independent_of_user_message_prefix() {
             DiagnosticKind::SourceError
         ]
     );
-    assert_eq!(errors[0].message.trim_end(), "unsupported authored message");
+    assert_eq!(errors[0].message.trim_end(), "#error unsupported authored message");
     assert_eq!(errors[1].message, "unverified include extension");
     assert_eq!(
         errors[2].message,
@@ -103,7 +103,7 @@ fn parent_resolution_errors_point_to_authored_cause_not_later_reopen() {
     .unwrap_err();
     let error = errors
         .iter()
-        .find(|error| error.message.contains("ConflictingParent"))
+        .find(|error| error.message.contains("conflicting parent type"))
         .unwrap();
     assert_eq!(
         error.location.as_ref().unwrap().path.as_path(),
@@ -119,7 +119,7 @@ fn parent_resolution_errors_point_to_authored_cause_not_later_reopen() {
     .unwrap_err();
     let error = errors
         .iter()
-        .find(|error| error.message.contains("MissingParent"))
+        .find(|error| error.message.contains("undefined type path"))
         .unwrap();
     assert_eq!(
         error.location.as_ref().unwrap().path.as_path(),

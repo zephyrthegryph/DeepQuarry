@@ -48,3 +48,4 @@ pub struct LowerRelated {
 mod undefined_variable;
 pub(crate) use undefined_variable::undefined_type_message;
 pub(crate) use undefined_variable::undefined_variable_message;
+pub use undefined_variable::{undefined_member_message, unresolved_variable_candidate};

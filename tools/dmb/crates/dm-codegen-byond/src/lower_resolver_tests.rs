@@ -457,7 +457,7 @@ fn type_presence_cannot_substitute_for_unknown_runtime_alias_coverage() {
     .unwrap();
     assert!(errors
         .iter()
-        .any(|error| error.reason.contains("RuntimeType")));
+        .any(|error| error.reason.contains("runtime type")));
 }
 #[test]
 fn builtin_world_binding_bypasses_constant_preflight_and_keeps_lexical_shadows() {

@@ -1,0 +1,2 @@
+unmatched_brace.dme:2:error: inconsistent indentation or missing '}'
+unmatched_brace.dmb - 1 error, 0 warnings

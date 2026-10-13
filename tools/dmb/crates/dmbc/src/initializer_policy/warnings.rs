@@ -117,6 +117,14 @@ pub fn capture(
 
 /// A warning has no failure status; callers keep their successful outcome.
 pub fn write_warnings(output: &mut impl Write, warnings: &[InitializerWarning]) -> io::Result<()> {
+    write_warning_lines(output, warnings, true)
+}
+
+fn write_warning_lines(
+    output: &mut impl Write,
+    warnings: &[InitializerWarning],
+    reported: bool,
+) -> io::Result<()> {
     for warning in warnings {
         if warning.code.requires_name() != warning.name.is_some() {
             return Err(io::Error::new(
@@ -129,6 +137,9 @@ pub fn write_warnings(output: &mut impl Write, warnings: &[InitializerWarning]) 
             write!(output, "{line}:")?;
         }
         write!(output, "warning ({}): ", warning.code.name())?;
+        if reported {
+            crate::diagnostics::count_warning(Some(warning.code.name()));
+        }
         if let Some(name) = &warning.name {
             write!(output, "{name}: ")?;
         }
@@ -143,7 +154,7 @@ pub fn render(warnings: &[InitializerWarning]) -> io::Result<Vec<String>> {
         .iter()
         .map(|warning| {
             let mut bytes = Vec::new();
-            write_warnings(&mut bytes, std::slice::from_ref(warning))?;
+            write_warning_lines(&mut bytes, std::slice::from_ref(warning), false)?;
             String::from_utf8(bytes)
                 .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))
         })

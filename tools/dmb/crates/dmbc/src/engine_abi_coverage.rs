@@ -103,6 +103,30 @@ impl<'a> NamedEngineCoverage<'a> {
                     let owner = symbols.text(unit.owner).unwrap_or("<unknown owner>");
                     let name = symbols.text(unit.name).unwrap_or("<unknown name>");
                     let member = units.get(&unit).copied();
+                    // An override of a name that neither the source nor any
+                    // built-in of the owner declares is the author's error.
+                    if let BoundarySelection::UncertifiableAbsence { name: missing, kind } = &other {
+                        let tree = &frontend.snapshot.tree;
+                        let plain = tree
+                            .lookup_type(unit.owner)
+                            .is_some_and(|owner| crate::lowering::wording::plain_datum(tree, owner));
+                        let builtin = symbols.text(*missing).is_none_or(|missing| match kind {
+                            MemberKind::Var => dm_ir::builtin_names::is_builtin_var_in(plain, missing),
+                            MemberKind::Proc | MemberKind::Verb => {
+                                dm_ir::builtin_names::is_builtin_proc_in(plain, missing)
+                            }
+                        });
+                        let body = frontend.bodies.iter().find(|body| Some(body.member) == member);
+                        if let (false, Some(body), Some(missing)) = (builtin, body, symbols.text(*missing)) {
+                            let undefined = if *kind == MemberKind::Var { "undefined var" } else { "undefined proc" };
+                            return Err(format!(
+                                "{}{}:{}:error: {missing}: {undefined}",
+                                crate::diagnostics::CARRIED_SOURCE_ERROR,
+                                body.source.semantic_path,
+                                body.source.line
+                            ));
+                        }
+                    }
                     let origin = frontend
                         .bodies
                         .iter()

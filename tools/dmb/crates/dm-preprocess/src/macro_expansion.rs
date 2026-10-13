@@ -93,10 +93,9 @@ fn expand_mode_disabled_traced<'a>(
     }
     let lexed = lex_spans(source);
     if let Some(diagnostic) = lexed.diagnostics.first() {
-        return Err(format!(
-            "{} at byte {}",
-            diagnostic.message, diagnostic.span.start
-        ));
+        // The logical line already locates the failure; a byte offset into
+        // the expanded line is not a user-facing position.
+        return Err(diagnostic.message.clone());
     }
     let tokens = lexed.tokens;
     let mut out = String::new();
