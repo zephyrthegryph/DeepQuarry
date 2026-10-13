@@ -58,6 +58,18 @@ pub(super) fn write_owned(path: &Path, bytes: &[u8]) -> io::Result<crate::input_
     finish_owned(file, path)
 }
 
+/// Replace an existing (staged) file with in-memory bytes whose identity the
+/// caller already authenticated; no source reread or rehash.
+pub(super) fn write_replacing(path: &Path, bytes: &[u8]) -> io::Result<crate::input_snapshot::Stamp> {
+    let mut file = OpenOptions::new().write(true).truncate(true).open(path)?;
+    dm_profile::io_call(|| file.write_all(bytes), |_| (0, bytes.len() as u64))?;
+    file.flush()?;
+    if file.metadata()?.len() != bytes.len() as u64 {
+        return Err(invalid("owned output write has unexpected length"));
+    }
+    finish_owned(file, path)
+}
+
 /// Hash only bytes accepted by the output writer. A short write is retried;
 /// failure never exposes a partial output or authorizes its inode.
 pub(super) fn copy_hashed(

@@ -32,7 +32,7 @@ mod publication_io;
 #[path = "publish_resource_stream.rs"]
 mod resource_stream;
 pub use eviction::EvictionResult;
-use publication_io::{copy_hashed, write_owned, StagedPath};
+use publication_io::{copy_hashed, write_owned, write_replacing, StagedPath};
 pub use resource_stream::ResourcePin;
 #[path = "publish_prepared.rs"]
 mod prepared;
@@ -645,6 +645,7 @@ impl PairStore {
                 prepared,
                 prior: None,
             },
+            None,
         )
     }
     pub(crate) fn install_receipt_with_resource_proof(
@@ -655,6 +656,7 @@ impl PairStore {
         marker: &Path,
         exact: bool,
         resource: ResourceInstall<'_>,
+        image: Option<&byond_dmb::dmb::EncodedDmb>,
     ) -> io::Result<InstallationReceipt> {
         let ResourceInstall { prepared, prior } = resource;
         destinations::distinct([dmb, rsc, marker])?;
@@ -680,11 +682,28 @@ impl PairStore {
         };
         #[cfg(test)]
         publication_fault("install_rsc_replaced")?;
-        let dmb_receipt = install::conventional_receipt(
-            &source.join("deepquarry.dmb"),
-            dmb,
-            (pair.dmb_bytes, pair.dmb_hash),
-        )?;
+        // The just-encoded image is the pair's DMB (same length and memory
+        // hash): write it directly instead of rereading and rehashing the store
+        // copy (an unchanged destination would cost a full authenticated read
+        // to prove, about the same as rewriting it).
+        let image = image.filter(|image| {
+            image.len() as u64 == pair.dmb_bytes && image.content_hash() == pair.dmb_hash
+        });
+        let dmb_receipt = match image {
+            Some(image) => {
+                let _profile = dm_profile::stage("publication.install_image");
+                let staged = temporary_file(dmb)?;
+                let _cleanup = StagedPath::new(staged.clone());
+                let stamp = write_replacing(&staged, image.bytes())?;
+                atomic_replace(&staged, dmb)?;
+                receipt::InstalledFile::after_replace(dmb, stamp, pair.dmb_hash)?
+            }
+            _ => install::conventional_receipt(
+                &source.join("deepquarry.dmb"),
+                dmb,
+                (pair.dmb_bytes, pair.dmb_hash),
+            )?,
+        };
         #[cfg(test)]
         publication_fault("install_dmb_replaced")?;
         let staged = temporary_file(marker)?;

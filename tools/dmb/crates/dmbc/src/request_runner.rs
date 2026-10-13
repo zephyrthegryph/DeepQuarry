@@ -1133,6 +1133,7 @@ fn run_build_attempt(
                     .as_ref()
                     .map(|outputs| dmbc::publish::PriorResourceProof::new(outputs, now_ns())),
             },
+            Some(&output.dmb),
         )?;
         dm_profile::request_mark("publication.installed");
         let resource_journal_admission = resource_journal_admission.into_inner().unwrap_or_else(|error| error.into_inner());
