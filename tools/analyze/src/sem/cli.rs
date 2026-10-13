@@ -172,6 +172,7 @@ fn gen_store_dir() -> Option<std::path::PathBuf> {
 }
 
 const GEN_STORE_KEEP: usize = 40;
+static GEN_STORE_SEQ: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// Restores the stored outputs for `key` into the tree; the paths written, or None (no entry, a damaged one, or nothing to restore).
 fn gen_store_restore(key: u128, root: &Path) -> Option<Vec<std::path::PathBuf>> {
@@ -213,7 +214,7 @@ fn gen_store_put(key: u128, root: &Path, results: &[super::gen::GenResult]) {
     if dir.join("manifest").exists() {
         return;
     }
-    let tmp = base.join(format!(".tmp{}-{:032x}", std::process::id(), key));
+    let tmp = base.join(format!(".tmp{}-{}-{:032x}", std::process::id(), GEN_STORE_SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed), key));
     let _ = std::fs::remove_dir_all(&tmp);
     let mut manifest = String::new();
     for r in results {
