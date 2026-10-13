@@ -83,7 +83,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			return "a SUM_PER_KEY stat has no override: hold or release a key"
 	else if(!isnull(key))
 		return "key = is for a SUM_PER_KEY stat; [def.name] is [def.rule]"
-	if(stat_rule_is_boolean(def.rule) && !isnull(value))
+	if(stat_rule_is_boolean(def.rule) && !isnull(value) && !override)
 		var/forcing = stat_forcing_value(def)
 		if(!!value != !!forcing)
 			return "a hold on the [def.rule] stat [def.name] forces [forcing ? "TRUE" : "FALSE"]; holding the other way can never change anything"
@@ -106,9 +106,9 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 /proc/hold_until(datum/E, stat, value, source, until, priority = PRIORITY_DEFAULT, clock, reason, outlives_source = FALSE)
 	return stat_hold_place(E, stat, value, source, null, until, priority, clock, reason, outlives_source, FALSE, TRUE)
 
-/// Replaces the composed value of a stat until released (not on a SET stat). An admin's VV edit of a stat is one of these, sourced SRC_VV.
+/// Replaces the composed value of a stat until released (not on a SET stat). An admin's VV edit of a stat is one of these, sourced SRC_VV. Placing it again from the same source replaces the value, up or down (exact), whatever the stat's reapply rule.
 /proc/hold_override(datum/E, stat, value, source, priority = PRIORITY_ADMIN)
-	return stat_hold_place(E, stat, value, source, null, null, priority, HOLD_CLOCK_OWN, null, FALSE, TRUE, FALSE)
+	return stat_hold_place(E, stat, value, source, null, null, priority, HOLD_CLOCK_OWN, null, FALSE, TRUE, TRUE)
 
 /// The one place a hold is placed. `exact` is hold_until's replace-and-may-shorten; `override` the replace-the-composed-value flag.
 /proc/stat_hold_place(datum/E, stat, value, source, lasts, until, priority, clock, reason, outlives_source, override, exact, key = null)

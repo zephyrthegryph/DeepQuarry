@@ -556,6 +556,7 @@
 #include "dq_doors_full_behaviour.dm"
 #include "dq_paths_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
+#include "dq_stale_fix_tests.dm"
 #include "dq_p2_table_behaviour.dm"
 #include "dq_p2_seating_behaviour.dm"
 #include "dq_climb_conversion_tests.dm"

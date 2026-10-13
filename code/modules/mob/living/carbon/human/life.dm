@@ -31,12 +31,6 @@
 	if (src.transforming)
 		return F.abort()
 
-	//Apparently, the person who wrote this code designed it so that
-	//blinded get reset each cycle and then get activated later in the
-	//code. Very ugly. I dont care. Moving this stuff here so its easy
-	//to find it.
-	src.set_blinded(0)
-
 	//TODO: seperate this out
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
 	src.life_tick++
@@ -1235,7 +1229,9 @@
 	var/datum/body/B = src.body
 	if(!B || LAZYLEN(B.afflictions) || B.dirty || src.current_pain() || src.oxygen_debt() || src.is_critical())
 		return TRUE
-	// blinded is reset every frame (type_pre) and set again here, so anything that blinds keeps it awake.
+	// A blindfold or rig-visor hold keeps the step awake until the step finds its cause gone and releases it (life_status_update_sight).
+	if(held_by_source(src, STAT_BLINDED, SRC_BLINDFOLD) || held_by_source(src, STAT_BLINDED, SRC_RIG_VISOR))
+		return TRUE
 	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.embedded_flag || src.resting || src.wearing_blindfold() || life_status_rig_visor_blinds())
 		return TRUE
 	if(src.has_status(STAT_SLEEPING) || src.has_status(STAT_DROWSY) || src.has_status(STAT_HALLUCINATING) || src.has_status(STAT_BLINDED) || src.has_status(STAT_DEAFENED))
@@ -1287,7 +1283,6 @@
 	return 1
 
 /mob/living/carbon/human/proc/life_status_dead_senses()
-	src.set_blinded(1)
 	src.status_set(STAT_MUTED, 0)
 	src.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
@@ -1298,7 +1293,6 @@
 	src.status_at_least(STAT_PARALYZED, 3)
 	src.status_at_least(STAT_SLEEPING, 3)
 	src.set_stat(UNCONSCIOUS)
-	src.set_blinded(TRUE)
 	if(!has_trait(src, TRAIT_CRITICAL_CONDITION))
 		add_trait(src, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 	return TRUE
@@ -1355,7 +1349,6 @@
 			if(has_trait(src, TRAIT_CRITICAL_CONDITION))
 				remove_trait(src, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
-	src.set_blinded(TRUE)
 	src.set_stat(UNCONSCIOUS)
 	src.animate_tail_reset()
 	src.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
@@ -1383,29 +1376,26 @@
 
 /// Eyes: a rig visor, the vision organ, disabilities and blindfolds.
 /mob/living/carbon/human/proc/life_status_update_sight()
-	//Check rig first because it's two-check and other checks will override it.
-	if(life_status_rig_visor_blinds())
-		src.set_blinded(1)
-
+	// Blindness is the STAT_BLINDED stat: a dose, a disability (life_disabilities) or unconsciousness hold it already. What this adds are the causes
+	// that are not timed doses, each its own idempotent hold: a rig visor, a blindfold.
 	if(!src.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
+		life_disability_hold(src, STAT_BLINDED, SRC_RIG_VISOR, FALSE)
+		life_disability_hold(src, STAT_BLINDED, SRC_BLINDFOLD, FALSE)
 		src.status_set(STAT_BLINDED, 0)
-		src.set_blinded(0)
 		src.status_set(STAT_BLURRY, 0)
 		src.clear_alert("blind")
 		return
+	//Check rig first because it's two-check and other checks will override it.
+	life_disability_hold(src, STAT_BLINDED, SRC_RIG_VISOR, life_status_rig_visor_blinds())
+	life_disability_hold(src, STAT_BLINDED, SRC_BLINDFOLD, src.wearing_blindfold())
 	var/obj/item/organ/vision = src.organ_in(src.species.vision_organ)
 	if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
 		src.status_set(STAT_BLINDED, 1)
-		src.set_blinded(1)
 		src.status_set(STAT_BLURRY, 1)
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 		return
 	//You have the requisite organs
-	if(src.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
-		src.set_blinded(1)
-		src.throw_alert("blind", /atom/movable/screen/alert/blind)
-	else if(src.has_status(STAT_BLINDED) || src.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
-		src.set_blinded(1)
+	if((src.sdisabilities & BLIND) || src.has_status(STAT_BLINDED))	// Disabled-blind doesn't get better on its own; blindness wears off on its own. A blindfold also heals blur faster (status_rate())
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	if(vision.is_bruised())   // Vision organs impaired? Permablurry.
 		src.status_at_least(STAT_BLURRY, 1)
@@ -1459,7 +1449,7 @@
 		return TRUE
 	if(src.stat != CONSCIOUS || src.is_critical() || src.oxygen_debt() || src.damageoverlaytemp)
 		return FALSE
-	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.blinded)
+	if(src.status_units(STAT_TIREDNESS) || src.status_units(STAT_FEAR) || src.has_status(STAT_BLINDED))
 		return FALSE
 	return !src.has_status(STAT_BLURRY) && !src.has_status(STAT_DRUGGED)
 
@@ -1564,7 +1554,7 @@
 
 /// Blindness, nearsightedness, blur and drug overlays.
 /mob/living/carbon/human/proc/life_hud_sight_overlays()
-	if(src.blinded)
+	if(src.has_status(STAT_BLINDED))
 		src.overlay_fullscreen("blind", /atom/movable/screen/fullscreen/blind)
 		src.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else

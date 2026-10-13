@@ -249,7 +249,6 @@ init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	to_chat(owner_ref(
 init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	expire(5 SECONDS)
 init_lines	code/game/gamemodes/technomancer/spells/spawner/destablize.dm	radiate_loop()
 init_lines	code/game/machinery/Beacon.dm	var/turf/T = src.loc
-init_lines	code/game/machinery/Beacon.dm	Beacon.invisibility = INVISIBILITY_MAXIMUM
 init_lines	code/game/machinery/Beacon.dm	Beacon.forceMove(T)
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
