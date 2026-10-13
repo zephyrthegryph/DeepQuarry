@@ -314,8 +314,9 @@
 	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
 		return null
 	if(!REL_LISTLIKE(L))
-		// A number is an index in a plain list, never a key: a numeric key makes an alist (a sparse table, or a map by id).
-		L = isnum(key) ? alist() : list()
+		// Numeric keys and explicitly declared alists need map storage even when the first key is a path.
+		// An ordinary list declaration keeps its legacy text-key allocation and ordering.
+		L = (isnum(key) || holder.relation_declared_alist(var_name)) ? alist() : list()
 		holder.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		own_field_changed(holder, var_name)
 	var/old = L[key]

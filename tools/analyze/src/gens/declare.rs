@@ -470,6 +470,7 @@ impl Generator for Declare {
             out.blank();
             out.line("#endif");
         }
+        relation_storage(cx, out);
         keyed_targets(cx, out);
         static_blocks(cx, out, &caps, &globals, &statics);
         make_procs(cx, out);
@@ -537,6 +538,55 @@ fn static_blocks(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<
 /// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
 /// sides carry. A type is a keyed target whichever side builds its table first, so the table of a target built before any holder's (a door
 /// placed before its button) must already know its key: the engine reads this list once, ahead of the first table.
+/// Preserve a declared alist's shape when its first keyed write allocates the container.
+/// Only explicit alists (and subtype overrides of them) get metadata: legacy list maps
+/// retain their existing allocation and ordering rules.
+fn relation_storage(cx: &GenCx, out: &mut GenOut) {
+    let sem = cx.sem();
+    let mut rows: BTreeMap<(bool, String), BTreeMap<String, bool>> = BTreeMap::new();
+    for ty in sem.objtree.iter_types() {
+        let owner = &ty.get().path;
+        if !sem.is_subtype(owner, "/datum") { continue; }
+        for (name, var) in &ty.get().vars {
+            let Some(decl) = var.declaration.as_ref() else { continue };
+            if decl.location.is_builtins() { continue; }
+            let Some(sig) = sem.var_decl(owner, name) else { continue };
+            if sig.is_static || sig.is_const { continue; }
+            let alist = sig.declared == "/alist";
+            let inherited_alist = sem.parent_of(owner).and_then(|p| sem.var_decl(&p, name))
+                .is_some_and(|v| v.declared == "/alist");
+            if !alist && !inherited_alist { continue; }
+            rows.entry((crate::sem::gen::test_only(&sig.file), owner.clone()))
+                .or_default().insert(name.to_string(), alist);
+        }
+    }
+    out.doc("Declared keyed-relation storage shape; inherited by subtypes, independent of a null initial value.");
+    out.line("/datum/proc/relation_declared_alist(var_name)");
+    if let Some(base) = rows.remove(&(false, "/datum".to_string())) {
+        out.line("\tswitch(var_name)");
+        for (name, alist) in base {
+            out.line(format!("\t\tif(\"{}\") return {}", name, if alist { "TRUE" } else { "FALSE" }));
+        }
+    }
+    out.line("\treturn FALSE");
+    out.blank();
+    for test in [false, true] {
+        let selected: Vec<_> = rows.iter().filter(|((is_test, _), _)| *is_test == test).collect();
+        if selected.is_empty() { continue; }
+        if test { out.line(crate::sem::gen::TEST_GUARD); }
+        for ((_, owner), vars) in selected {
+            out.line(format!("{}/relation_declared_alist(var_name)", owner));
+            out.line("\tswitch(var_name)");
+            for (name, alist) in vars {
+                out.line(format!("\t\tif(\"{}\") return {}", name, if *alist { "TRUE" } else { "FALSE" }));
+            }
+            out.line("\treturn ..()");
+            out.blank();
+        }
+        if test { out.line("#endif"); out.blank(); }
+    }
+}
+
 fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
     use std::cell::RefCell;
     let rows: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
@@ -895,6 +945,16 @@ mod tests {
         let (decl, d2) = render(&Declare, &cx);
         let diags = d1.into_iter().chain(d2).map(|d| d.msg).collect();
         (ids, decl, diags)
+    }
+
+    #[test]
+    fn keyed_relation_storage_respects_lazy_inherited_alists_and_legacy_lists() {
+        let (_, decl, diags) = gen(vec![("code/storage.dm", "/datum/map_holder\n\tvar/alist/records\n/datum/map_holder/child\n/datum/map_holder/legacy\n\tvar/list/records\n/datum/legacy_holder\n\tvar/list/records\n")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("/datum/map_holder/relation_declared_alist(var_name)\n\tswitch(var_name)\n\t\tif(\"records\") return TRUE"), "{}", decl);
+        assert!(!decl.contains("/datum/map_holder/child/relation_declared_alist"), "a child inherits its parent's shape");
+        assert!(decl.contains("/datum/map_holder/legacy/relation_declared_alist(var_name)\n\tswitch(var_name)\n\t\tif(\"records\") return FALSE"), "{}", decl);
+        assert!(!decl.contains("/datum/legacy_holder/relation_declared_alist"), "ordinary lists retain legacy allocation");
     }
 
     const SRC: &str = r#"

@@ -6,7 +6,7 @@ GLOBAL_LIST(capability_runtime_records)
 
 /datum/capability_runtime
 	var/bits = 0
-	var/alist/data = alist()
+	var/alist/data
 	var/list/extras
 
 CAPABILITIES(/datum/capability_runtime)
