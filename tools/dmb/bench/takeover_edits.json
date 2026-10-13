@@ -1,0 +1,15 @@
+[
+  {
+    "kind": "body",
+    "path": "code/_helpers/unsorted.dm",
+    "before": "return max(low,min(high,num))",
+    "after": "return max(low,min(high,num)) + 1"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "variable",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/reference",
+    "after": "/datum/weakref\n\tvar/tmp/dmb_leaf_iteration_marker = 1\n\tvar/reference"
+  }
+]

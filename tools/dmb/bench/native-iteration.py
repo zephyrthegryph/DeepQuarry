@@ -352,7 +352,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--compiler", required=True)
     parser.add_argument("--build-receipt", help="optional successful-build receipt pinned to exact executable SHA")
-    parser.add_argument("--inspector", required=True, help="frozen dmb-inspect structural comparator")
+    parser.add_argument("--inspector", help="frozen dmb-inspect structural comparator")
     parser.add_argument("--byond-dmb", default=str(DEFAULT / "frozen/pairs/byond/world.dmb"))
     parser.add_argument("--byond-pin", default=str(DEFAULT / "byond-structural-pin.json"))
     parser.add_argument("--source-snapshot", default=str(DEFAULT / "r6-source-snapshot.json"))
@@ -377,6 +377,8 @@ def main():
     parser.add_argument("--require-owned-daemon", action="store_true",
                         help="opt in only for binaries implementing DMB_DAEMON_AUTOSTART=0")
     parser.add_argument("--worktree-sources", help="JSON array of exactly six distinct real E: Git worktree roots")
+    parser.add_argument("--no-pin", action="store_true",
+                        help="with --byte-oracles-only: do not load the BYOND pin, snapshot, closure or inspector")
     parser.add_argument("--byte-oracles-only", action="store_true",
                         help="skip BYOND structural comparison; retain exact fresh DMB/RSC byte oracles")
     parser.add_argument("--one-shot-requests", action="store_true",
@@ -468,10 +470,17 @@ def main():
     if manifest.is_absolute() or manifest.drive or ".." in manifest.parts:
         raise ValueError("manifest must be relative")
     configuration, _ = semantic_configuration.command_configuration(str(manifest), semantic, sha)
-    structural = Comparison(args.inspector, args.byond_dmb, args.byond_pin, configuration, sha, safe_e)
-    source_snapshot_path = safe_e(args.source_snapshot)
-    source_snapshot = json.loads(source_snapshot_path.read_text(encoding="utf-8"))
-    closure_sha = authenticate_source_snapshot(source_snapshot, safe_e(args.input_closure), structural.pin, sha)
+    if args.no_pin:
+        if not args.byte_oracles_only:
+            parser.error("--no-pin requires --byte-oracles-only")
+        import types
+        structural = types.SimpleNamespace(pin_sha=None, expected_sha=None, inspector_sha=None, configuration_sha=None)
+        source_snapshot_path, source_snapshot, closure_sha = None, None, None
+    else:
+        structural = Comparison(args.inspector, args.byond_dmb, args.byond_pin, configuration, sha, safe_e)
+        source_snapshot_path = safe_e(args.source_snapshot)
+        source_snapshot = json.loads(source_snapshot_path.read_text(encoding="utf-8"))
+        closure_sha = authenticate_source_snapshot(source_snapshot, safe_e(args.input_closure), structural.pin, sha)
     root = output_parent / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
     root.mkdir(parents=True)
     receipt = {"schema_version": 1, "status": "running", "root": str(root),
@@ -486,7 +495,7 @@ def main():
                "source_roots": [str(source) for source in sources], "session_count": len(sources),
                "request_mode": "one-shot" if args.one_shot_requests else "daemon",
                "isolated_compiler_cache": str(root / "compiler-cache"),
-               "source_snapshot_sha256": sha(source_snapshot_path),
+               "source_snapshot_sha256": sha(source_snapshot_path) if source_snapshot_path else None,
                "input_closure_sha256": closure_sha,
                "byond_pin_sha256": structural.pin_sha, "byond_dmb_sha256": structural.expected_sha,
                "inspector_sha256": structural.inspector_sha,
@@ -519,7 +528,7 @@ def main():
             regular(project / manifest)
             receipt["preparation"]["completed_roots"] += 1
             write_receipt(root, receipt)
-        baseline_sources = [source_matches(project, source_snapshot, sha) for project in projects]
+        baseline_sources = [None if source_snapshot is None else source_matches(project, source_snapshot, sha) for project in projects]
         receipt["source_identical_to_captured_baseline"] = baseline_sources
         if args.worktree_sources and not all(baseline_sources):
             write_receipt(root, receipt)
