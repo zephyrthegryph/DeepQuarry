@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Deleting a table, window, low wall or catwalk no longer leaves an extra reference on everything on its tile (the wall redraw kept a list of the surrounding atoms alive)"
+  - code_imp: "GC tests pass the collector without the tick budget; the table delete probe test covers the smoothing structures"

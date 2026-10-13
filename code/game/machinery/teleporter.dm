@@ -261,12 +261,12 @@ CAPABILITIES(/obj/machinery/teleport/station)
 /obj/machinery/teleport/station/power_change()
 	. = ..()
 	if(power_lost())
-		icon_state = "controller-p"
+		set_icon_state("controller-p")
 
 		if(com())
 			com().icon_state = "tele0"
 	else
-		icon_state = "controller"
+		set_icon_state("controller")
 
 /obj/effect/laser/Bump()
 	range--

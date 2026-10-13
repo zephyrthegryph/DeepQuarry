@@ -11,10 +11,14 @@ SYSTEM_DEF(holomaps)
 	var/static/holomaps_initialized = FALSE
 	var/static/list/holoMiniMaps = list()
 	var/static/list/extraMiniMaps = list()
-	var/static/list/station_holomaps = list()
 
 
 /datum/system/holomaps/initialize()
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_HOLOMAPS))
+		unit_test_boot_skipped(BOOT_NEED_HOLOMAPS, "HoloMiniMaps (no minimap is generated)")
+		return
+	#endif
 	generateHoloMinimaps()
 
 /datum/system/holomaps/stat_entry(msg)

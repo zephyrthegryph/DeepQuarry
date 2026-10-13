@@ -71,13 +71,13 @@
 	var/datum/map_template/unit_tests/template = new
 	template.load_new_z_async(FALSE, PROC_REF(done), src, list("first"))
 	template.load_new_z_async(FALSE, PROC_REF(done), src, list("second"))
-	TEST_ASSERT_EQUAL(length(GLOB.map_load_queue), 1, "the second load waits behind the first")
+	TEST_ASSERT_EQUAL(map_load_queue_length(), 1, "the second load waits behind the first")
 	await_loads(2)
 	TEST_ASSERT_EQUAL(length(completions), 2, "both loads reported")
 	TEST_ASSERT_EQUAL(completions[1][1], "first", "in the order they were submitted")
 	TEST_ASSERT_EQUAL(completions[2][1], "second", "and the second after the first")
 	TEST_ASSERT(completions[1][2] && completions[2][2], "both loaded")
-	TEST_ASSERT_EQUAL(length(GLOB.map_load_queue), 0, "the queue is empty again")
+	TEST_ASSERT_EQUAL(map_load_queue_length(), 0, "the queue is empty again")
 	test_driver_end()
 
 /// A load that cannot start (off the edge of the world) reports failure instead of hanging.

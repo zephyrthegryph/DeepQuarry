@@ -82,7 +82,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			item_type = "bowl"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "bowl"
+			new_item.set_icon_state("bowl")
 			apply_image_decorations = TRUE
 			new_item.color = rgb(rand(0,255),rand(0,255),rand(0,255))
 			additional_desc = "There appear to be [pick("dark","faintly glowing","pungent","bright")] [pick("red","purple","green","blue")] stains inside."
@@ -90,7 +90,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			item_type = "urn"
 			new_item = new /obj/item/reagent_containers/glass/replenishing(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "urn[rand(1,2)]"
+			new_item.set_icon_state("urn[rand(1,2)]")
 			apply_image_decorations = TRUE
 			additional_desc = "It [pick("whispers faintly","makes a quiet roaring sound","whistles softly","thrums quietly","throbs")] if you put it to your ear."
 		if(ARCHAEO_STATUETTE)
@@ -176,7 +176,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			item_type = "box"
 			new_item = new /obj/item/storage/box(src.loc)
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "box"
+			new_item.set_icon_state("box")
 			var/obj/item/storage/box/new_box = new_item
 			var/max_size = pick(1,2,2,3,3,3,4,4)
 			new_box.restrict_hold(null, max_size)
@@ -263,7 +263,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			if(prob(25))
 				new_item = new /obj/item/soulstone(src.loc)
 				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-				new_item.icon_state = icon_state
+				new_item.set_icon_state(icon_state)
 				new_item.name = "Redspace Gem"
 				new_item.desc = "A glowing stone made of what appears to be a pure chunk of redspace. It seems to have the power to transfer the consciousness of dead or nearly-dead humanoids into it."
 
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			new_item = new /obj/item/radio/beacon(src.loc)
 			talkative = FALSE
 			new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-			new_item.icon_state = "unknown[rand(1,4)]"
+			new_item.set_icon_state("unknown[rand(1,4)]")
 			new_item.desc = ""
 
 		if(ARCHAEO_CLAYMORE)
@@ -296,7 +296,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			item_type = new_item.name
 			if(prob(30))
 				new_item.icon = 'icons/obj/xenoarchaeology.dmi'
-				new_item.icon_state = "blade1"
+				new_item.set_icon_state("blade1")
 
 		if(ARCHAEO_CULTROBES)
 			//arcane clothing
@@ -358,7 +358,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 			var/new_laser = pick(possible_laser_paths)
 			new_gun.projectile_type = new_laser
 			new_item = new_gun
-			new_item.icon_state = "egun[rand(1,18)]"
+			new_item.set_icon_state("egun[rand(1,18)]")
 			new_gun.desc = "This is an antique energy weapon."
 
 			//10% chance to have an unchargeable cell
@@ -375,7 +375,7 @@ CAPABILITIES(/obj/item/archaeological_find)
 		if(ARCHAEO_GUN)
 			var/obj/item/gun/projectile/artifact/new_gun = new /obj/item/gun/projectile/artifact(src.loc)
 			new_item = new_gun
-			new_item.icon_state = "gun[rand(1,7)]"
+			new_item.set_icon_state("gun[rand(1,7)]")
 			item_type = "Relic Gun"
 			//There is no 'global list of all the gun caliber types' so...Whatever. This will have to do. (Side note: After further review, making it a global list would result in the gun requiring unobtainable calibers, so this is ideal.)
 			//When someone does make a global list of all the calibers, replace the below with it.

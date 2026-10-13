@@ -93,7 +93,7 @@ MSG_DEF_SELF(lightswitch/fastened_first, "You have to unscrew the case first.")
 	return FRAME_UNFASTENED
 
 /obj/structure/construction/proc/update_state()
-	icon_state = "[base_icon][frame_stage()]"
+	set_icon_state("[base_icon][frame_stage()]")
 
 /obj/structure/construction/proc/stage_changed(datum/act/op/A)
 	update_state()

@@ -69,7 +69,7 @@ CAPABILITIES(/obj/structure/ghost_pod)
 /// Marks the pod used and opened (and swaps it for a charger if it needs one).
 /obj/structure/ghost_pod/proc/open_pod()
 	set_used(TRUE)
-	icon_state = icon_state_opened
+	set_icon_state(icon_state_opened)
 	registry_leave(REGISTRY_GHOST_PODS, src)
 	if(needscharger)
 		replace_with(src, /obj/machinery/recharge_station/ghost_pod_recharger)

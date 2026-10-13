@@ -54,7 +54,7 @@ CAPABILITIES(/obj/structure/AIcore)
 			if(istype(P, /obj/item/circuitboard/aicore) && !circuit)
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
-				icon_state = "1"
+				set_icon_state("1")
 				move_into(src, nameof(src.circuit), P, user)
 		if(3)
 
@@ -100,20 +100,20 @@ CAPABILITIES(/obj/structure/AIcore)
 				if(!move_into(src, nameof(src.brain), P, user))
 					return OP_PASS
 				to_chat(user, "Added [P].")
-				icon_state = "3b"
+				set_icon_state("3b")
 	return OP_PASS
 
 /obj/structure/AIcore/proc/reinforced_panel(datum/act/op/A)
 	return (read_once(A.held.get_material_name()) == MAT_RGLASS) ? null : MSG(ai_core/reinforced_glass)
 
 /obj/structure/AIcore/proc/attackby_timed_done(datum/act/op/A)
-	icon_state = "3"
+	set_icon_state("3")
 	to_chat(A.actor, span_notice("You add cables to the frame."))
 	return OP_OK
 
 /obj/structure/AIcore/proc/attackby_timed_done2(datum/act/op/A)
 	to_chat(A.actor, span_notice("You put in the glass panel."))
-	icon_state = "4"
+	set_icon_state("4")
 	return OP_OK
 
 /obj/structure/AIcore/proc/frame_wrench_duration(datum/act/op/A)
@@ -160,21 +160,21 @@ CAPABILITIES(/obj/structure/AIcore)
 	var/obj/item/tool = A.held
 	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You screw the circuit board into place."))
-	icon_state = "2"
+	set_icon_state("2")
 	return OP_OK
 
 /obj/structure/AIcore/proc/board_unfastened(datum/act/op/A)
 	var/obj/item/tool = A.held
 	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You unfasten the circuit board."))
-	icon_state = "1"
+	set_icon_state("1")
 	return OP_OK
 
 /obj/structure/AIcore/proc/board_removed(datum/act/op/A)
 	var/obj/item/tool = A.held
 	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the circuit board."))
-	icon_state = "0"
+	set_icon_state("0")
 	circuit.forceMove(loc)
 	rel_take(src, nameof(circuit))
 	return OP_OK
@@ -185,14 +185,14 @@ CAPABILITIES(/obj/structure/AIcore)
 	to_chat(A.actor, span_notice("You remove the brain."))
 	brain.forceMove(loc)
 	rel_take(src, nameof(brain))
-	icon_state = "3"
+	set_icon_state("3")
 	return OP_OK
 
 /obj/structure/AIcore/proc/panel_removed(datum/act/op/A)
 	var/obj/item/tool = A.held
 	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the glass panel."))
-	icon_state = brain ? "3b" : "3"
+	set_icon_state(brain ? "3b" : "3")
 	new /obj/item/stack/material/glass/reinforced(loc, 2)
 	return OP_OK
 
@@ -200,7 +200,7 @@ CAPABILITIES(/obj/structure/AIcore)
 	var/obj/item/tool = A.held
 	playsound(src, sounds_of(tool).use, 50, 1)
 	to_chat(A.actor, span_notice("You remove the cables."))
-	icon_state = "2"
+	set_icon_state("2")
 	new /obj/item/stack/cable_coil(loc, 5)
 	return OP_OK
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)

@@ -13,6 +13,15 @@
 // returns), which once looked like a hidden reference in machines, bags and mobs and was worked around with per-family baselines;
 // two controls at the top of Run() prove the count is exact, so the judgement is plain zero for every subject.
 
+/// One collector pass over queue `level` that ignores the tick budget, the way a test needs it: the kernel's own pass stops once the tick is
+/// over its limit, so a backlog left by an earlier test (the lifecycle sandbox queues tens of thousands of deleted objects) is reached a few
+/// thousand entries per second and a judge that waits seconds never gets to its own subjects.
+/proc/dq_test_gc_pass(level = GC_QUEUE_FILTER)
+	var/saved_limit = Kernel.current_ticklimit
+	Kernel.current_ticklimit = 1000000
+	SSgarbage.HandleQueue(level)
+	Kernel.current_ticklimit = saved_limit
+
 /// A UI host for the window case: any datum can own a /datum/tgui.
 /datum/dq_gc_sweep_ui_host
 
@@ -43,7 +52,7 @@
 	refresh_flush()
 	// Earlier tests' garbage may sit ahead of ours and a pass stops when the tick is over budget: keep passing until ours is through.
 	for(var/i in 1 to 400)
-		SSgarbage.HandleQueue(GC_QUEUE_FILTER)
+		dq_test_gc_pass(GC_QUEUE_FILTER)
 		if(!dq_gc_sweep_pending(deleted, GC_QUEUE_FILTER))
 			break
 		wait_ticks(1)

@@ -23,9 +23,18 @@ SYSTEM_DEF(lighting)
 
 
 /datum/system/lighting/initialize()
+	#ifdef UNIT_TESTS
+	if(unit_test_boot_skips(BOOT_NEED_LIGHTING))
+		// initialized stays FALSE, so no turf or light grows a lighting object later either: the world is consistently unlit.
+		unit_test_boot_skipped(BOOT_NEED_LIGHTING, "create_all_lighting_objects (Lighting stays uninitialized)")
+	else if(!initialized)
+		initialized = TRUE
+		create_all_lighting_objects()
+	#else
 	if(!initialized)
 		initialized = TRUE
 		create_all_lighting_objects()
+	#endif
 
 	for(var/datum/planet/planet in planets_planets())
 		if(!planet_shandlers[planet])

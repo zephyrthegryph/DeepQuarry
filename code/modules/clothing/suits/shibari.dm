@@ -42,9 +42,9 @@ GLOBAL_LIST_INIT(shibari_modes, list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, S
 	if(!rope_mode)
 		rope_mode = SHIBARI_NONE
 	if(rope_mode == SHIBARI_BOTH)
-		icon_state = "shibari_Both"
+		set_icon_state("shibari_Both")
 	else
-		icon_state = "shibari_[rope_mode]"
+		set_icon_state("shibari_[rope_mode]")
 
 /obj/item/clothing/suit/shibari/equipped(mob/living/user,slot)
 	. = ..()

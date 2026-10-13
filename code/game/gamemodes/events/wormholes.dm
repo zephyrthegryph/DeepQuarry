@@ -79,7 +79,7 @@
 	P.creator = null
 	P.icon = 'icons/obj/objects.dmi'
 	P.failchance = 0
-	P.icon_state = "bhole3" // Better icon as well
+	P.set_icon_state("bhole3") // Better icon as well
 	P.name = "wormhole"
 	P.event = TRUE
 	P.expire(rand(min_duration,max_duration))

@@ -38,9 +38,9 @@ CAPABILITIES(/obj/machinery/flasher/portable)
 /obj/machinery/flasher/power_change()
 	. = ..()
 	if(!power_lost())
-		icon_state = "[base_state]1"
+		set_icon_state("[base_state]1")
 	else
-		icon_state = "[base_state]1-p"
+		set_icon_state("[base_state]1-p")
 
 //Don't want to render prison breaks impossible
 /obj/machinery/flasher/proc/wirecutter_used(datum/act/op/A)
@@ -166,7 +166,7 @@ CAPABILITIES(/obj/machinery/button/flasher)
 		return TRUE
 
 	set_active(TRUE)
-	icon_state = "launcheract"
+	set_icon_state("launcheract")
 
 	for(var/obj/machinery/flasher/M as anything in controlled_flashers)
 		M.flash()
@@ -177,5 +177,5 @@ CAPABILITIES(/obj/machinery/button/flasher)
 
 /obj/machinery/button/flasher/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)
-	icon_state = "launcherbtt"
+	set_icon_state("launcherbtt")
 	set_active(FALSE)

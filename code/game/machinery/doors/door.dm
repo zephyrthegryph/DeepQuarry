@@ -459,7 +459,7 @@ CAPABILITIES(/obj/machinery/door)
 	publish_navigation_change()
 
 	do_animate("opening")
-	icon_state = "door0"
+	set_icon_state("door0")
 	set_opacity(0)
 	after(src, anim_length_before_density, PROC_REF(open_internalsetdensity), with = list(forced))
 

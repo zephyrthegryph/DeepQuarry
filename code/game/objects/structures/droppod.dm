@@ -41,7 +41,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 		return
 
 	moveToNullspace()
-	icon_state = "[initial(icon_state)]_falling"
+	set_icon_state("[initial(icon_state)]_falling")
 
 	// Show warning on 3x3 area centred on our drop spot
 	var/list/turfs_nearby = block(get_step(T, SOUTHWEST), get_step(T, NORTHEAST))
@@ -97,7 +97,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 
 	// Landed! Simmer
 	plane = initial(plane)
-	icon_state = "[initial(icon_state)]"
+	set_icon_state("[initial(icon_state)]")
 
 	if(auto_open)
 		after(src, 2 SECONDS, PROC_REF(open_pod), with = list(TRUE))
@@ -110,7 +110,7 @@ CAPABILITIES(/obj/structure/drop_pod)
 		visible_message("\The [src] pops open!")
 	if(finished)
 		return
-	icon_state = "[initial(icon_state)]_open"
+	set_icon_state("[initial(icon_state)]_open")
 	play_sfx(src, SFX_EFFECTS_MAGNETCLAMP)
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)

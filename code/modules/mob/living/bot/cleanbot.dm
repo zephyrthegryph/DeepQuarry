@@ -203,9 +203,9 @@
 
 /mob/living/bot/cleanbot/update_icons()
 	if(bot_busy())
-		icon_state = "cleanbot-c"
+		set_icon_state("cleanbot-c")
 	else
-		icon_state = "cleanbot[on]"
+		set_icon_state("cleanbot[on]")
 
 CAPABILITIES(/mob/living/bot/cleanbot)
 	after_init(0, then(PROC_REF(cleanbot_targets_ready)))

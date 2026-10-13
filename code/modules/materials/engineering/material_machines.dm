@@ -186,7 +186,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 		act_message(user, src, others = span_notice("%U% removes [finished] from %T%'s output tray."))
 		return OP_OK
 	set_firing(TRUE)
-	icon_state = "nt_cruciforge_work"
+	set_icon_state("nt_cruciforge_work")
 	var/ignition_energy = use_power_oneoff(power_of(src).active * 6)
 	heat_add(chamber_air, ignition_energy, HEAT_SOURCE_DEVICE)
 	for(var/step in 1 to 3)
@@ -218,7 +218,7 @@ MSG_DEF_SELF(material_furnace/firing, "the sealed furnace can't be opened while 
 
 /obj/machinery/material_furnace/proc/finish_firing()
 	set_firing(FALSE)
-	icon_state = "nt_cruciforge"
+	set_icon_state("nt_cruciforge")
 	set_glow(src, GLOW(0, null, null))
 	var/datum/material_batch/batch
 	var/heat_treatment = FALSE

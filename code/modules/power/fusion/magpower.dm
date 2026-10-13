@@ -41,7 +41,7 @@ CAPABILITIES(/obj/machinery/power/hydromagnetic_trap)
 	Search()
 	if(!length(active_field))
 		set_active(FALSE)
-		icon_state = "mag_trap0"
+		set_icon_state("mag_trap0")
 		return
 	Active()
 
@@ -76,10 +76,10 @@ CAPABILITIES(/obj/machinery/power/hydromagnetic_trap)
 		return
 	for (var/obj/effect/fusion_em_field/FF in active_field)
 		if (FF.plasma_temperature >= MINIMUM_PLASMA_TEMPERATURE)
-			icon_state = "mag_trap1"
+			set_icon_state("mag_trap1")
 			add_avail(ENERGY_PER_K * FF.plasma_temperature)
 		if (FF.plasma_temperature <= MINIMUM_PLASMA_TEMPERATURE)
-			icon_state = "mag_trap0"
+			set_icon_state("mag_trap0")
 	return
 
 #undef ENERGY_PER_K

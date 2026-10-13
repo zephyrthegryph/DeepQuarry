@@ -88,10 +88,10 @@ CAPABILITIES(/obj/structure/droppod_door)
 	// Create a decorative ramp bottom and flatten out our current ramp.
 	set_density(FALSE)
 	set_opacity(0)
-	icon_state = "ramptop"
+	set_icon_state("ramptop")
 	var/obj/structure/droppod_door/door_bottom = new(T)
 	door_bottom.deployed = TRUE
 	door_bottom.set_density(FALSE)
 	door_bottom.set_opacity(0)
 	door_bottom.set_dir(src.dir)
-	door_bottom.icon_state = "rampbottom"
+	door_bottom.set_icon_state("rampbottom")

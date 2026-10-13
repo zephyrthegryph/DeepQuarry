@@ -281,7 +281,7 @@ MSG_DEF_SELF(tank/attaching, span_notice("You begin attaching the assembly to %T
 	message_admins("[key_name_admin(user)] attempted to weld a [src]. [src.air_contents.return_temperature()-T0C]")
 	if(WT?.welding)
 		to_chat(user, span_danger("You accidentally rake \the [tool] across \the [src]!"))
-		max_integrity -= rand(20,60)
+		set_max_integrity(max_integrity - (rand(20,60)))
 		if(get_integrity() > max_integrity)
 			update_integrity(max_integrity)
 		heat_add(src.air_contents, rand(2000,50000), HEAT_SOURCE_OTHER)

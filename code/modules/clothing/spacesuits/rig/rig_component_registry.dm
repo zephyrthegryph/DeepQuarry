@@ -76,7 +76,7 @@
 		piece.set_canremove(FALSE)
 		piece.name = "[holder().suit_type] [initial(piece.name)]"
 		piece.desc = "It seems to be part of a [holder().name]."
-		piece.icon_state = "[holder().suit_state]"
+		piece.set_icon_state("[holder().suit_state]")
 		piece.set_min_cold_protection_temperature(protection_of(holder()).min_cold)
 		piece.set_max_heat_protection_temperature(protection_of(holder()).max_heat)
 		// Preserve insulated gloves that already have a lower coefficient

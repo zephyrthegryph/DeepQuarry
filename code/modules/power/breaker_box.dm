@@ -115,7 +115,7 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 /obj/machinery/power/breakerbox/proc/set_breaker_on(state)
 	set_on(state)
 	if(on)
-		icon_state = icon_state_on
+		set_icon_state(icon_state_on)
 		var/list/connection_dirs = list()
 		for(var/direction in directions)
 			for(var/obj/structure/cable/C in get_step(src,direction))
@@ -127,12 +127,12 @@ CAPABILITIES(/obj/machinery/power/breakerbox/activated)
 			var/obj/structure/cable/C = new/obj/structure/cable(src.loc)
 			C.set_d1(0)
 			C.set_d2(direction)
-			C.icon_state = "[C.d1]-[C.d2]"
+			C.set_icon_state("[C.d1]-[C.d2]")
 			rel_set(C, nameof(C.breaker_box), src)
 			C.power_register()
 
 	else
-		icon_state = icon_state_off
+		set_icon_state(icon_state_off)
 		for(var/obj/structure/cable/C in src.loc)
 			rel_clear(C, nameof(C.breaker_box))
 			destroyed(C)

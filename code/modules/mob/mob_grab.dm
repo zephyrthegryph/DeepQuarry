@@ -68,7 +68,7 @@
 		assailant.stop_pulling()
 
 	hud.icon_state = "reinforce"
-	icon_state = "grabbed"
+	set_icon_state("grabbed")
 	hud.name = "reinforce grab"
 	rel_set(hud, nameof(hud.master_ref), src)
 
@@ -285,7 +285,7 @@ CAPABILITIES(/obj/item/grab)
 			apply_pinning(affecting, assailant)
 
 		state = GRAB_AGGRESSIVE
-		icon_state = "grabbed1"
+		set_icon_state("grabbed1")
 		hud.icon_state = "reinforce1"
 		add_attack_logs(assailant, affecting, "Aggressively grabbed", FALSE) // Not important enough to notify admins, but still helpful.
 	else if(state < GRAB_NECK)
@@ -295,7 +295,7 @@ CAPABILITIES(/obj/item/grab)
 
 		act_message(assailant, affecting, others = span_warning("%U% has reinforced %THEIR% grip on %T% (now neck)!"))
 		state = GRAB_NECK
-		icon_state = "grabbed+1"
+		set_icon_state("grabbed+1")
 		assailant.set_dir(get_dir(assailant, affecting))
 		add_attack_logs(assailant,affecting,"Neck grabbed")
 		hud.icon_state = "kill"

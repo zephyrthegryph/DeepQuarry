@@ -60,10 +60,10 @@
 	cooldown_start(src, last_special, 1 SECOND)
 
 	if(src.icon_state == "promethean")
-		icon_state = lowertext(src.species.get_bodytype(src))
+		set_icon_state(lowertext(src.species.get_bodytype(src)))
 		shapeshifter_change_species("Virtual Reality [src.species.get_bodytype(src)]")
 	else
-		icon_state = "promethean"
+		set_icon_state("promethean")
 		shapeshifter_change_species(SPECIES_VR)
 
 // enter_vr is called on the original mob, and puts the mind into the supplied vr mob

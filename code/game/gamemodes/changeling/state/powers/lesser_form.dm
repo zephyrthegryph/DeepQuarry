@@ -84,9 +84,9 @@
 	C.canmove = 0
 	C.icon = null
 	C.cut_overlays()
-	C.invisibility = INVISIBILITY_ABSTRACT
+	C.set_invisibility(INVISIBILITY_ABSTRACT)
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( C.loc )
-	animation.icon_state = "blank"
+	animation.set_icon_state("blank")
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), src)
 	flick("monkey2h", animation)

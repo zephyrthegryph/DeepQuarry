@@ -2345,10 +2345,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/atmospherics/unary/vent_pump/V = new(T)
 	TEST_ASSERT_NOTNULL(V, "couldn't construct vent_pump")
 	TEST_ASSERT_NOTNULL(V.air_contents, "vent_pump air_contents null")
-	V.dir = direction
+	V.set_dir(direction)
 	V.initialize_directions = direction
 	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
-	P.dir = axis_directions
+	P.set_dir(axis_directions)
 	P.initialize_directions = axis_directions
 	V.atmos_init()
 	P.atmos_init()
@@ -2441,10 +2441,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	heat_set(neighbour_air, T20C, HEAT_SOURCE_OTHER)
 
 	var/obj/machinery/atmospherics/binary/dp_vent_pump/V = new(T)
-	V.dir = direction
+	V.set_dir(direction)
 	V.initialize_directions = axis_directions
 	var/obj/machinery/atmospherics/pipe/simple/P = new(pipe_turf)
-	P.dir = axis_directions
+	P.set_dir(axis_directions)
 	P.initialize_directions = axis_directions
 	V.atmos_init()
 	P.atmos_init()
@@ -2820,11 +2820,11 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/dir_B_to_A = get_dir(B, A)
 
 	var/obj/machinery/atmospherics/pipe/simple/P1 = new(A)
-	P1.dir = dir_A_to_B | dir_B_to_A // straight pipe along the A-B axis
+	P1.set_dir(dir_A_to_B | dir_B_to_A) // straight pipe along the A-B axis
 	P1.initialize_directions = dir_A_to_B | dir_B_to_A
 
 	var/obj/machinery/atmospherics/pipe/simple/P2 = new(B)
-	P2.dir = dir_A_to_B | dir_B_to_A
+	P2.set_dir(dir_A_to_B | dir_B_to_A)
 	P2.initialize_directions = dir_A_to_B | dir_B_to_A
 
 	TEST_ASSERT_NOTNULL(P1, "P1 pipe construction failed")
@@ -3020,10 +3020,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/dir_B_to_A = get_dir(B, A)
 
 	var/obj/machinery/atmospherics/pipe/simple/P1 = new(A)
-	P1.dir = dir_A_to_B | dir_B_to_A
+	P1.set_dir(dir_A_to_B | dir_B_to_A)
 	P1.initialize_directions = dir_A_to_B | dir_B_to_A
 	var/obj/machinery/atmospherics/pipe/simple/P2 = new(B)
-	P2.dir = dir_A_to_B | dir_B_to_A
+	P2.set_dir(dir_A_to_B | dir_B_to_A)
 	P2.initialize_directions = dir_A_to_B | dir_B_to_A
 
 	P1.atmos_init()
@@ -3124,13 +3124,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Construct three straight pipes along the strip's axis.
 	var/obj/machinery/atmospherics/pipe/simple/PA = new(A)
-	PA.dir = axis
+	PA.set_dir(axis)
 	PA.initialize_directions = axis
 	var/obj/machinery/atmospherics/pipe/simple/PB = new(B)
-	PB.dir = axis
+	PB.set_dir(axis)
 	PB.initialize_directions = axis
 	var/obj/machinery/atmospherics/pipe/simple/PC = new(C)
-	PC.dir = axis
+	PC.set_dir(axis)
 	PC.initialize_directions = axis
 
 	PA.atmos_init()
@@ -3160,7 +3160,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Insert a fresh bridging pipe at B's slot.
 	var/obj/machinery/atmospherics/pipe/simple/PB2 = new(B)
-	PB2.dir = axis
+	PB2.set_dir(axis)
 	PB2.initialize_directions = axis
 	PB2.atmos_init()
 	dq_atmos_test_publish_rust_pipenets(list(PB2))
@@ -3295,14 +3295,14 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/axis = get_dir(A, V) | get_dir(V, A)
 
 	var/obj/machinery/atmospherics/pipe/simple/PA = new(A)
-	PA.dir = axis
+	PA.set_dir(axis)
 	PA.initialize_directions = axis
 	var/obj/machinery/atmospherics/valve/VL = new(V)
-	VL.dir = get_dir(V, B)
+	VL.set_dir(get_dir(V, B))
 	VL.initialize_directions = axis
 	VL.set_open(FALSE)
 	var/obj/machinery/atmospherics/pipe/simple/PB = new(B)
-	PB.dir = axis
+	PB.set_dir(axis)
 	PB.initialize_directions = axis
 
 	PA.atmos_init()
@@ -3558,10 +3558,10 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/turf/simulated/floor/pipe_turf = run[2]
 	var/axis_directions = get_dir(T, pipe_turf) | REVERSE_DIR(get_dir(T, pipe_turf))
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
-	P.dir = axis_directions
+	P.set_dir(axis_directions)
 	P.initialize_directions = axis_directions
 	var/obj/machinery/atmospherics/pipe/simple/Q = new(pipe_turf)
-	Q.dir = axis_directions
+	Q.set_dir(axis_directions)
 	Q.initialize_directions = axis_directions
 	P.atmos_init()
 	Q.atmos_init()
@@ -5256,10 +5256,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Construct and publish a real Rust-authoritative connected network.
 	// return_air() deliberately no longer creates topology as a side effect.
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
-	P.dir = axis_directions
+	P.set_dir(axis_directions)
 	P.initialize_directions = axis_directions
 	var/obj/machinery/atmospherics/pipe/simple/P2 = new(T2)
-	P2.dir = axis_directions
+	P2.set_dir(axis_directions)
 	P2.initialize_directions = axis_directions
 	P.atmos_init()
 	P2.atmos_init()
@@ -5730,10 +5730,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/direction = get_dir(T, T2)
 	var/axis_directions = direction | REVERSE_DIR(direction)
 	var/obj/machinery/atmospherics/pipe/simple/P = new(T)
-	P.dir = axis_directions
+	P.set_dir(axis_directions)
 	P.initialize_directions = axis_directions
 	var/obj/machinery/atmospherics/pipe/simple/P2 = new(T2)
-	P2.dir = axis_directions
+	P2.set_dir(axis_directions)
 	P2.initialize_directions = axis_directions
 	P.atmos_init()
 	P2.atmos_init()

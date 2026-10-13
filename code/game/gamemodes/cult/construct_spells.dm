@@ -44,7 +44,7 @@
 	hud_state = "const_floor"
 
 /datum/spell/aoe_turf/conjure/floor/conjure_animation(atom/movable/overlay/animation, turf/target)
-	animation.icon_state = "cultfloor"
+	animation.set_icon_state("cultfloor")
 	flick("cultfloor",animation)
 	animation.expire(1 SECOND)
 
@@ -62,7 +62,7 @@
 	hud_state = "const_wall"
 
 /datum/spell/aoe_turf/conjure/wall/conjure_animation(atom/movable/overlay/animation, turf/target)
-	animation.icon_state = "cultwall"
+	animation.set_icon_state("cultwall")
 	flick("cultwall",animation)
 	animation.expire(1 SECOND)
 
@@ -221,12 +221,12 @@ CAPABILITIES(/obj/effect/forcefield/cult)
 	hud_state = "const_shift"
 
 /datum/spell/targeted/ethereal_jaunt/shift/jaunt_disappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "phase_shift"
+	animation.set_icon_state("phase_shift")
 	animation.set_dir(target.dir)
 	flick("phase_shift",animation)
 
 /datum/spell/targeted/ethereal_jaunt/shift/jaunt_reappear(atom/movable/overlay/animation, mob/living/target)
-	animation.icon_state = "phase_shift2"
+	animation.set_icon_state("phase_shift2")
 	animation.set_dir(target.dir)
 	flick("phase_shift2",animation)
 

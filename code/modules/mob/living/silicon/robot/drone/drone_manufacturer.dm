@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 /obj/machinery/drone_fabricator/power_change()
 	. = ..()
 	if (power_lost())
-		icon_state = "drone_fab_nopower"
+		set_icon_state("drone_fab_nopower")
 
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
 CAPABILITIES(/obj/machinery/drone_fabricator)
@@ -56,11 +56,11 @@ CAPABILITIES(/obj/machinery/drone_fabricator)
 	if(ticker_current_state() < GAME_STATE_PLAYING || !produce_drones)
 		return drone_progress
 	if(power_lost())
-		icon_state = "drone_fab_nopower"
+		set_icon_state("drone_fab_nopower")
 		return drone_progress
 	var/was_ready = drone_progress >= 100
 	drone_progress = clamp(round(((world.time - time_last_drone) / CONFIG_GET(number/drone_build_time)) * 100), 0, 100)
-	icon_state = drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active"
+	set_icon_state(drone_progress >= 100 ? "drone_fab_idle" : "drone_fab_active")
 	if(!was_ready && drone_progress >= 100)
 		visible_message("\The [src] voices a strident beep, indicating a drone chassis is prepared.")
 	return drone_progress

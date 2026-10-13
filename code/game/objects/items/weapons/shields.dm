@@ -251,7 +251,7 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 /obj/item/shield/riot/tele/proc/shield_toggled(datum/act/op/A)
 	var/mob/user = A.actor
 	set_active(!active)
-	icon_state = "teleriot[active]"
+	set_icon_state("teleriot[active]")
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 
 	if(active)

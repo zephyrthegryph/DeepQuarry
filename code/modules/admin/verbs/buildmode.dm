@@ -313,7 +313,7 @@ CAPABILITIES(/obj/effect/bmode/buildmode)
 			master().cl().buildmode = 1
 		else
 			master().cl().buildmode++
-		src.icon_state = "buildmode[master().cl().buildmode]"
+		set_icon_state("buildmode[master().cl().buildmode]")
 
 	else if(pa.Find("right"))
 		switch(master().cl().buildmode)

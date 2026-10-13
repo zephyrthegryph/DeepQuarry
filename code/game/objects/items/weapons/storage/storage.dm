@@ -634,7 +634,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
 	rel_set(B, nameof(B.master_ref), master)
-	B.icon_state = state
+	B.set_icon_state(state)
 	return B
 
 /// Every screen object to put on a viewer's screen (items are in `shown`).

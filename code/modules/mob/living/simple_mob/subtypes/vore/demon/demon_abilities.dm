@@ -43,7 +43,7 @@
 
 		cut_overlays()
 		alpha = initial(alpha)
-		invisibility = initial(invisibility)
+		set_invisibility(initial(invisibility))
 		see_invisible = initial(see_invisible)
 		set_incorporeal_move(initial(incorporeal_move))
 		set_density(initial(density))
@@ -128,7 +128,7 @@
 
 	cut_overlays()
 	alpha = initial(alpha)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
@@ -143,7 +143,7 @@
 	after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, TRUE)) //The duration of the TP animation
 
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
-	invisibility = INVISIBILITY_LEVEL_TWO
+	set_invisibility(INVISIBILITY_LEVEL_TWO)
 	see_invisible = INVISIBILITY_LEVEL_TWO
 	alpha = 127
 
@@ -315,7 +315,7 @@
 
 	cut_overlays()
 	alpha = initial(alpha)
-	invisibility = initial(invisibility)
+	set_invisibility(initial(invisibility))
 	see_invisible = initial(see_invisible)
 	set_incorporeal_move(initial(incorporeal_move))
 	set_density(initial(density))
