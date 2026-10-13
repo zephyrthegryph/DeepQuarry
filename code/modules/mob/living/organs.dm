@@ -4,6 +4,14 @@
 	var/list/organs
 	var/list/organs_by_name // map organ names to organs
 
+/// The attached limb whose organ_tag is `tag`, or null: read from the `organs` relation so a look follows a limb attaching or leaving.
+/mob/living/proc/limb_tagged(tag)
+	RETURN_TYPE(/obj/item/organ/external)
+	for(var/obj/item/organ/external/E as anything in organs)
+		if(E.organ_tag == tag)
+			return E
+	return null
+
 /mob/living/proc/get_bodypart_name(zone)
 	var/obj/item/organ/external/E = get_organ(zone)
 	if(E) . = E.name

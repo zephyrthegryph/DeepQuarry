@@ -113,8 +113,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 			for(var/datum/affliction/wound/W as anything in E.get_wounds())
 				W.run_bleed(cycles, W.bleeding())
 		E.update_damages()
-		if(E.update_damage_state())
-			UpdateDamageIcon(1)
+		E.update_damage_state()
 
 /// TRUE when wounds on this limb close on their own: not on a prosthesis or an undead limb.
 /obj/item/organ/external/proc/wounds_heal()
@@ -147,8 +146,7 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 		return
 	E.remove_wound(W)
 	E.update_damages()
-	if(E.update_damage_state())
-		UpdateDamageIcon(1)
+	E.update_damage_state()
 
 // --- Blood --------------------------------------------------------------------------------
 
@@ -172,11 +170,9 @@ STAT(/mob/living/carbon/human, body_clock_active, ANY)
 	if(blood_volume_raw >= species.blood_volume * species.blood_level_safe)
 		if(pale)
 			pale = 0
-			update_icons_body()
 	else
 		if(!pale)
 			pale = 1
-			update_icons_body()
 		if(blood_volume_raw < species.blood_volume * species.blood_level_fatal)
 			status_at_least(STAT_PARALYZED, 3)
 			status_at_least(STAT_SLEEPING, 3)

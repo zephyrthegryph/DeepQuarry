@@ -68,14 +68,13 @@ CAPABILITIES(/obj/item/organ/internal/eyes/grey/colormatch)
 		// Now sync the organ's eye_colour list.
 		update_colour()
 		// Finally, update the eye icon on the mob.
-		owner.regenerate_icons()
 
 /obj/item/organ/internal/eyes/replaced(mob/living/carbon/human/target)
 
 	// Apply our eye colour to the target.
 	if(istype(target) && eye_colour)
 		target.looks.set_eyes_color(rgb(eye_colour[1], eye_colour[2], eye_colour[3]))
-		target.update_eyes()
+		changed(src)
 	..()
 
 /// The eye colour as a hex string.

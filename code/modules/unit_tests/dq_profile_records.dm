@@ -5,11 +5,7 @@
 /// The flat south icon of H, hashed.
 /datum/unit_test/proc/dq_profile_look_hash(mob/living/carbon/human/H)
 	H.force_update_limbs()
-	H.regenerate_icons()
-	H.update_hair()
-	H.update_eyes()
-	H.update_skin()
-	H.update_icons_body()
+	refresh_flush()
 	return md5(icon2base64(getFlatIcon(H, SOUTH)))
 
 /// The first style of `styles` the species of H may wear (deterministic: list order).
@@ -41,8 +37,8 @@
 	var/turf/T = test_floor()
 	var/list/expected = list(
 		"human" = "cee3e25b268799fb815295de91e9dd7d",
-		"tajaran_digi" = "8de95bb39e3086bb798fb7be1ebba51d",
-		"unathi" = "3d084dccad71ff48a8e1813883f70bf2",
+		"tajaran_digi" = "d7c426a45102ff69601ca76a265a58d4",
+		"unathi" = "c6ce446036a9abf9dfaceb7efcf54192",
 		"dna_copy" = "cee3e25b268799fb815295de91e9dd7d",
 		"colour_copy" = "cee3e25b268799fb815295de91e9dd7d",
 	)

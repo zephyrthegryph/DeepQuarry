@@ -63,7 +63,6 @@
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.set_base_species(new_species)
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " shifts and contorts, taking the form of \a [new_species]!"))
-	regenerate_icons()
 
 /mob/living/carbon/human/proc/lleill_select_colour()
 
@@ -90,7 +89,6 @@
 	for(var/obj/item/organ/external/E in organs)
 		E.sync_colour_to_human(src)
 
-	regenerate_icons()
 
 /datum/power/lleill/transmute
 	name = "Transmute Object (50)"

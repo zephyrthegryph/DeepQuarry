@@ -196,7 +196,6 @@ CAPABILITIES(/datum/protean_power/blobform)
 		return
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.set_base_species(A.answer.value)
-	regenerate_icons()
 
 /datum/protean_power/hide_self
 	name = "Hide Self"
@@ -339,7 +338,6 @@ CAPABILITIES(/datum/prompt/yes_no/protean_power)
 	if(!eo)
 		return
 	eo.robotize(ask.value)
-	H.update_icons_body()
 
 /datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
 	if(refactory.get_stored_material(MAT_STEEL) < PER_LIMB_STEEL_COST)
@@ -377,7 +375,6 @@ CAPABILITIES(/datum/protean_power/reform_limb)
 	var/obj/item/organ/external/new_eo = new limbpath(H) // joins onto its parent limb
 	new_eo.robotize(H.synthetic ? H.synthetic.company : null)
 	new_eo.sync_colour_to_human(H)
-	H.regenerate_icons()
 
 /// The steel is given back when the regrowth is interrupted.
 /datum/protean_power/reform_limb/proc/regrow_limb_reform_limb_failed(datum/act/op/A)
@@ -757,10 +754,8 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	for(var/obj/item/organ/external/limb as anything in organs)
 		if(!include_head && limb.organ_tag == BP_HEAD)
 			continue
-		limb.transparent = !limb.transparent
+		limb.set_transparent(!limb.transparent)
 	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
-	update_icons_body()
-	update_hair()
 
 /datum/protean_power/absorb_implant
 	name = "Absorb Implant"

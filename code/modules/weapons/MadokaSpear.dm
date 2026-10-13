@@ -91,8 +91,7 @@ CAPABILITIES(/obj/item/oldtwohanded)
 
 	if(istype(user,/mob/living/carbon/human))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	return TRUE
 

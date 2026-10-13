@@ -24,77 +24,25 @@
 		return FALSE
 	return (hand ? put_in_l_hand(W) : put_in_r_hand(W))
 
-/mob/living/simple_mob/update_inv_r_hand()
-	if(QDESTROYING(src))
+/// The held sprite of the item in `slot` (SLOT_ID_HAND_L or SLOT_ID_HAND_R), or null. The draw reads the hand slots and watches what they hold.
+/mob/living/simple_mob/proc/hand_look(datum/look/look, slot)
+	var/obj/item/held = get_equipped_item(slot)
+	if(!held)
+		return null
+	look.watch(held)
+	look.watch_look(held)
+	return held.held_look_image(slot == SLOT_ID_HAND_R)
+
+/// A held item sits in its hand's place on the HUD.
+/mob/living/simple_mob/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
+	..()
+	var/obj/item/held = thing
+	if(!inserted || !istype(held))
 		return
-
-	if(get_equipped_item(SLOT_ID_HAND_R))
-		get_equipped_item(SLOT_ID_HAND_R).screen_loc = ui_rhand	//TODO
-
-		//determine icon state to use
-		var/t_state
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_state_slots, slot_r_hand_str))
-			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state_slots[slot_r_hand_str]
-		else if(get_equipped_item(SLOT_ID_HAND_R).item_state)
-			t_state = get_equipped_item(SLOT_ID_HAND_R).item_state
-		else
-			t_state = get_equipped_item(SLOT_ID_HAND_R).icon_state
-
-		//determine icon to use
-		var/icon/t_icon
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_R).item_icons, slot_r_hand_str))
-			t_icon = get_equipped_item(SLOT_ID_HAND_R).item_icons[slot_r_hand_str]
-		else if(get_equipped_item(SLOT_ID_HAND_R).icon_override)
-			t_state += "_r"
-			t_icon = get_equipped_item(SLOT_ID_HAND_R).icon_override
-		else
-			t_icon = INV_R_HAND_DEF_ICON
-
-		//apply color
-		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = get_equipped_item(SLOT_ID_HAND_R).color
-
-		set_r_hand_sprite(standing)
-
-	else
-		set_r_hand_sprite(null)
-
-
-/mob/living/simple_mob/update_inv_l_hand()
-	if(QDESTROYING(src))
-		return
-
-	if(get_equipped_item(SLOT_ID_HAND_L))
-		get_equipped_item(SLOT_ID_HAND_L).screen_loc = ui_lhand	//TODO
-
-		//determine icon state to use
-		var/t_state
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_state_slots, slot_l_hand_str))
-			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state_slots[slot_l_hand_str]
-		else if(get_equipped_item(SLOT_ID_HAND_L).item_state)
-			t_state = get_equipped_item(SLOT_ID_HAND_L).item_state
-		else
-			t_state = get_equipped_item(SLOT_ID_HAND_L).icon_state
-
-		//determine icon to use
-		var/icon/t_icon
-		if(LAZYACCESS(get_equipped_item(SLOT_ID_HAND_L).item_icons, slot_l_hand_str))
-			t_icon = get_equipped_item(SLOT_ID_HAND_L).item_icons[slot_l_hand_str]
-		else if(get_equipped_item(SLOT_ID_HAND_L).icon_override)
-			t_state += "_l"
-			t_icon = get_equipped_item(SLOT_ID_HAND_L).icon_override
-		else
-			t_icon = INV_L_HAND_DEF_ICON
-
-		//apply color
-		var/image/standing = image(icon = t_icon, icon_state = t_state)
-		standing.color = get_equipped_item(SLOT_ID_HAND_L).color
-
-		set_l_hand_sprite(standing)
-
-	else
-		set_l_hand_sprite(null)
-
+	if(slot_id == SLOT_ID_HAND_R)
+		held.screen_loc = ui_rhand
+	else if(slot_id == SLOT_ID_HAND_L)
+		held.screen_loc = ui_lhand
 
 //Can insert extra huds into the hud holder here.
 /mob/living/simple_mob/proc/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)

@@ -64,6 +64,5 @@
 				if(M)
 					LAZYREMOVE(M.active_genes, gene.name) // Traitgenes Use name instead, cannot use type with dynamically setup traitgenes
 					M.update_icon = 1
-	M.update_mutations()
 	// Inform anything attached of our mutation
 	PUBLISH_LEGACY(M, /datum/notice/mob_dna_mutation)

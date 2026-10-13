@@ -218,7 +218,7 @@ CAPABILITIES(/obj/item/clothing/shoes/chameleon)
 	icon_state = "backpack"
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_back()
+		changed(src)
 
 CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -241,7 +241,7 @@ CAPABILITIES(/obj/item/storage/backpack/chameleon)
 	//so our overlays update.
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_back()
+		changed(src)
 
 /obj/item/storage/backpack/chameleon/full
 	starts_with = list(
@@ -395,7 +395,7 @@ CAPABILITIES(/obj/item/clothing/glasses/chameleon)
 	icon_state = "utilitybelt"
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_belt()
+		changed(src)
 
 CAPABILITIES(/obj/item/storage/belt/chameleon)
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(chameleon_emp_reveal)))
@@ -417,7 +417,7 @@ CAPABILITIES(/obj/item/storage/belt/chameleon)
 
 	if(ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_belt() //so our overlays update.
+		changed(src)
 
 //******************
 //**Chameleon Tie**
@@ -516,8 +516,7 @@ TRACKED(/obj/item/gun/energy/chameleon, disguise_state)
 	set_disguise_state("deagle")
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_r_hand()
-		M.update_inv_l_hand()
+		changed(src)
 
 /obj/item/gun/energy/chameleon/disguise(newtype)
 	var/obj/item/gun/copy = ..()
@@ -558,5 +557,4 @@ CAPABILITIES(/obj/item/gun/energy/chameleon)
 	//so our overlays update.
 	if (ismob(src.loc))
 		var/mob/M = src.loc
-		M.update_inv_r_hand()
-		M.update_inv_l_hand()
+		changed(src)

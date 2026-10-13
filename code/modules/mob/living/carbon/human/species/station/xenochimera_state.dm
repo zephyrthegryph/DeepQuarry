@@ -364,7 +364,7 @@ CAPABILITIES(/datum/xenochimera)
 		set_revival_delay(time)
 		owner.throw_alert("regen", /atom/movable/screen/alert/xenochimera/reconstitution)
 		after(src, time SECONDS, PROC_REF(chimera_regenerate_nutrition))
-	owner.lying = TRUE
+	owner.set_lying(TRUE)
 
 /datum/xenochimera/proc/chimera_regenerate_nutrition()
 	if(!owner)

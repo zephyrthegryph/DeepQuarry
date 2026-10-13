@@ -53,7 +53,7 @@
 			use(1)
 			return ITEM_INTERACT_FAILURE
 
-		H.UpdateDamageIcon()
+		changed(src)
 
 	else
 		if(heal_brute)
