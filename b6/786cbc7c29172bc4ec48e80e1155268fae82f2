@@ -1,0 +1,1 @@
+{"version":1,"kind":"merge-gates","commit":"b6786cbc7c29172bc4ec48e80e1155268fae82f2","ok":true,"passed":133,"failed":0,"new_failed":0,"lanes":"rewrite/reactive-hops","tests_json":"data/test-runs/20261013T192437_b6786cbc7c_focused.json","created":"2026-10-13T19:24:42Z"}
