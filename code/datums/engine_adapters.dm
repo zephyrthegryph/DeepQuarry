@@ -4,6 +4,7 @@
 	if(!refresh_drain(src))
 		return FALSE
 	refresh_sweep_step()
+	staleness_drain_step()
 	return TRUE
 
 /datum/native_watch/bind_native()
