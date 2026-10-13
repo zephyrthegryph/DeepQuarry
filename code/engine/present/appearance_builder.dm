@@ -865,7 +865,11 @@ DECLARE_SHARED_CACHE_EX(look_cached_images, GLOBAL_PROC_REF(build_look_cached_im
 	READS_FROM()
 	if(!isfile(icon))
 		return build_look_cached_image(icon, state, color, plane, layer) // a runtime /icon has no stable identity: built uncached
-	return CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+	. = CACHED_KEY(look_cached_images, key, icon, state, color, plane, layer)
+	if(GLOB.staleness_on && staleness_gate())
+		GLOB.staleness_depth++
+		staleness_check_image(key, ., build_look_cached_image(icon, state, color, plane, layer))
+		GLOB.staleness_depth--
 
 /proc/build_look_cached_image(icon, state, color, plane, layer)
 	var/image/I = image(icon = icon, icon_state = state)
