@@ -1,0 +1,4 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Fixed sprites remaining stale after damage and native capability-state changes."
