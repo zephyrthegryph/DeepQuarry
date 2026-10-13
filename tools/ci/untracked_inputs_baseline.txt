@@ -47,12 +47,6 @@ stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/bed.dm	re
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	return (!padding_material) ? null : MSG(chair/padded) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	return (!padding_material && !isnull(padding_type_of(A.held))) ? null : padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 stat_input_untracked	code/game/objects/structures/stool_bed_chair_nest/stools.dm	return (!!padding_material) ? null : MSG(bed/no_padding) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
-stat_input_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.is_plating)
-stat_input_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.can_engrave)
-stat_input_untracked	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
-stat_input_untracked	code/library/mob/statuses.dm	var/datum/stat_record/rec = rx?.stats
-stat_input_untracked	code/library/mob/statuses.dm	if(!GLOB.status_policies)
-stat_input_untracked	code/library/mob/statuses.dm	return GLOB.status_policies
 stat_input_untracked	code/modules/admin/banjob.dm	for(var/s in GLOB.jobban_keylist)
 stat_input_untracked	code/modules/admin/topic/admin_topic_panels.dm	if(SSemergency_shuttle.shuttle.has_arrive_time())
 stat_input_untracked	code/modules/admin/topic/admin_topic_panels.dm	return (GLOB.master_mode == "secret") ? null : MSG(admin_topic/not_secret)
@@ -77,17 +71,7 @@ stat_input_untracked	code/modules/food/food/z_custom_food.dm	return (length(cont
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	total += J.w_class
-stat_input_untracked	code/modules/integrated_electronics/_defines.dm	return assembly
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies.dm	return access_card
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
-stat_input_untracked	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
-stat_input_untracked	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
 stat_input_untracked	code/modules/library/lib_items.dm	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/mob/holder.dm	return held_mob?.GetIdCard()
-stat_input_untracked	code/modules/ghosttrap/trap.dm	if(!GLOB.ghost_traps)
-stat_input_untracked	code/modules/ghosttrap/trap.dm	return GLOB.ghost_traps[trap_key]
-stat_input_untracked	code/modules/ghosttrap/trap.dm	GLOB.ghost_traps[G.object] = G
-stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
 stat_input_untracked	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 stat_input_untracked	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	if(check_rights_for(client, R_HOLDER))
 stat_input_untracked	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
