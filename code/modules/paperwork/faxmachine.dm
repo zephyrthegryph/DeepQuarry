@@ -8,7 +8,7 @@ GLOBAL_VAR(last_fax_role_request)
 // The links in the admin message point at these copies, so the cache keeps them (bounded by admin_fax_keep()).
 GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 /// The newest faxes the cache keeps: an older copy is deleted, so the cache is not a leak that grows with every fax of the round.
-#define ADMIN_FAX_KEEP 100
+#define ADMIN_FAX_KEEP 500
 
 /// Files a copy of a fax sent to the admins; the oldest copies past ADMIN_FAX_KEEP are deleted.
 /proc/admin_fax_keep(obj/item/rcvdcopy)

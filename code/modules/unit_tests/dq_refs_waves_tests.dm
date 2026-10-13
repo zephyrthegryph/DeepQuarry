@@ -21,10 +21,10 @@
 	test_driver_begin()
 	var/list/saved = GLOB.adminfaxes
 	GLOB.adminfaxes = list()
-	var/obj/item/paper/first = new(null)
+	var/obj/item/pen/first = new(null)
 	admin_fax_keep(first)
 	for(var/i in 1 to ADMIN_FAX_KEEP)
-		admin_fax_keep(new /obj/item/paper(null))
+		admin_fax_keep(new /obj/item/pen(null))
 	TEST_ASSERT_EQUAL(length(GLOB.adminfaxes), ADMIN_FAX_KEEP, "the cache holds no more than its limit")
 	test_time(1 SECOND)
 	TEST_ASSERT(QDELETED(first), "the oldest copy was deleted when it fell out of the cache")

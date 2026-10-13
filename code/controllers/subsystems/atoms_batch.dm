@@ -55,7 +55,7 @@
 	var/tmp/datum/materialize_batch/active_batch
 	/// Test hook: when set to list(owner, PROC_REF), every chunk boundary suspends the frame and calls owner.proc(batch).
 	var/tmp/list/batch_yield_probe
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	/// Every frame that opened, in order, when a test is recording (else null).
 	var/list/batch_trace
 #endif
@@ -65,7 +65,7 @@
 /datum/system/atoms/proc/batch_open(source)
 	var/datum/materialize_batch/batch = new(source, active_batch)
 	active_batch = batch
-#if defined(UNIT_TESTS)
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	batch_trace?.Add(batch)
 #endif
 	return batch
