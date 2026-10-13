@@ -109,7 +109,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(!(name in source.vars))
 			continue
 		var/value = source.vars[name]
-		if(value == target || (islist(value) && (target in value)))
+		if(value == target)
+			return TRUE
+		if(istype(value, /alist))
+			if((target in value) || !isnull(rel_keys_of(source, name, target)))
+				return TRUE
+		else if(islist(value) && (target in value))
 			return TRUE
 	return FALSE
 
@@ -151,6 +156,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return FALSE
 	if(!rel_tracked(target))
 		var/value = source.vars[var_name]
+		if(istype(value, /alist))
+			return (target in value) || !isnull(rel_keys_of(source, var_name, target))
 		return islist(value) ? (target in value) : value == target
 	var/list/index = _rel_index_of(target)
 	if(!index)
@@ -197,9 +204,15 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return target
 
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
-/proc/rel_view_add(datum/source, var_name, datum/target)
+/proc/rel_view_add(datum/source, var_name, datum/target, key = null)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
-	if(!entry || !target)
+	if(!entry)
+		return null
+	if(!target)
+		if(!isnull(key) && entry[OWNE_LIST]) // rel_add(.., null, key): empties that key of a keyed many
+			var/alist/KL = source.vars[var_name]
+			if(istype(KL, /alist))
+				_rel_map_drop_key(source, var_name, KL, key, entry)
 		return null
 	if(!entry[OWNE_LIST])
 		OWN_REPORT("rel_add on single view [source.type].[var_name]: use rel_set")
@@ -209,7 +222,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!own_guard(source, target, "rel_add([var_name])")) // the one teardown guard (guard.dm)
 		return null
 	var/list/L = source.vars[var_name]
-	if(islist(L) && (target in L))
+	// A key on a null or alist var is a keyed many (an alist map). On a plain list the key means nothing here: the member joins the list.
+	if(!isnull(key) && (isnull(L) || istype(L, /alist)))
+		return _rel_map_put(source, var_name, target, key, entry)
+	if(REL_LISTLIKE(L) && rel_list_holds(L, source, var_name, target))
 		return target
 	_rel_attach(source, var_name, target, entry)
 	return target
@@ -219,10 +235,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!target)
 		return FALSE
 	var/value = source.vars[var_name]
-	if(islist(value) ? !(target in value) : value != target)
+	if(istype(value, /alist))
+		if(!(target in value) && isnull(rel_keys_of(source, var_name, target)))
+			return FALSE
+	else if(islist(value) ? !rel_list_holds(value, source, var_name, target) : value != target)
 		return FALSE
 	// Learn the shape from the value (a remove before any add must not fix a list view as single).
-	var/list/entry = _rel_entry(source, var_name, islist(value))
+	var/list/entry = _rel_entry(source, var_name, REL_LISTLIKE(value))
 	if(!entry)
 		return FALSE
 	_rel_detach(source, var_name, target, entry)
@@ -233,7 +252,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Returns the target, or null when refused.
 /proc/rel_link(datum/source, var_name, datum/target)
 	var/list/entry = own_table_of(source).entries[var_name]
-	if(entry ? entry[OWNE_LIST] : islist(source.vars[var_name]))
+	if(entry ? entry[OWNE_LIST] : REL_LISTLIKE(source.vars[var_name]))
 		return rel_add(source, var_name, target)
 	return rel_set(source, var_name, target)
 
@@ -254,16 +273,18 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(isnull(value))
 		return
 	if(!entry)
-		if(islist(value)) // emptied in place, not nulled: `L.len` readers keep working
+		if(REL_LISTLIKE(value)) // emptied in place, not nulled: `L.len` readers keep working
 			var/list/E = value
 			E.Cut()
+			rel_keys_clear(source, var_name)
 		else
 			source.vars[var_name] = null // ALLOW(api): a view var no type declared: the accessor clears it and reports the missing declaration
 		own_field_changed(source, var_name)
 		return
-	if(islist(value))
+	if(REL_LISTLIKE(value))
 		var/list/L = value
-		for(var/datum/target as anything in L.Copy())
+		var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
+		for(var/datum/target as anything in members)
 			_rel_detach(source, var_name, target, entry)
 		// The list stays (emptied), not nulled: `L.len` readers keep working.
 	else
@@ -273,11 +294,14 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
 	if(entry[OWNE_LIST])
 		var/list/L = source.vars[var_name]
-		if(!islist(L))
+		if(!REL_LISTLIKE(L))
 			L = list()
 			source.vars[var_name] = L // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 		// rel_add() (the only list caller) already found `target` absent: append, don't rescan.
-		L += target
+		if(istype(L, /alist))
+			L[target] = TRUE
+		else
+			L += target
 		own_field_changed(source, var_name) // a member added is a write: what draws or reads the list follows
 	else
 		source.vars[var_name] = target // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
@@ -297,13 +321,16 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	var/theirs = target.vars[partner_var]
 	if(pentry[OWNE_LIST])
-		if(islist(theirs) && (source in theirs))
+		if(REL_LISTLIKE(theirs) && rel_list_holds(theirs, target, partner_var, source))
 			return
 		var/list/TL = theirs
-		if(!islist(TL))
+		if(!REL_LISTLIKE(TL))
 			TL = list()
 			target.vars[partner_var] = TL // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
-		TL += source // absent (checked above): a pipeline's thousands of members stay linear
+		if(istype(TL, /alist))
+			TL[source] = TRUE
+		else
+			TL += source // absent (checked above): a pipeline's thousands of members stay linear
 		own_field_changed(target, partner_var)
 		_rel_index(source, target, partner_var)
 		if(pentry[OWNE_WATCH])
@@ -322,7 +349,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Unlinks source.var_name -> target, and the partner side when it names source.
 /proc/_rel_detach(datum/source, var_name, datum/target, list/entry, notify_source = TRUE)
 	var/value = source.vars[var_name]
-	if(islist(value))
+	if(istype(value, /alist))
+		rel_alist_remove(value, source, var_name, target)
+		if(notify_source)
+			own_field_changed(source, var_name)
+	else if(islist(value))
 		var/list/L = value
 		L -= target
 		if(notify_source)
@@ -340,10 +371,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	var/theirs = target.vars[partner_var]
 	var/unlinked = FALSE
-	if(islist(theirs))
+	if(REL_LISTLIKE(theirs))
 		var/list/TL = theirs
-		if(source in TL)
-			TL -= source
+		if(rel_list_holds(TL, target, partner_var, source))
+			if(istype(TL, /alist))
+				rel_alist_remove(TL, target, partner_var, source)
+			else
+				TL -= source
 			own_field_changed(target, partner_var)
 			_rel_unindex(source, target, partner_var)
 			unlinked = TRUE
@@ -409,6 +443,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/rel_targets(datum/source, var_name)
 	var/static/list/empty = list()
 	var/value = source.vars[var_name]
+	if(istype(value, /alist))
+		return rel_list_members(value)
 	if(islist(value))
 		return value
 	return isnull(value) ? empty : list(value)
@@ -474,6 +510,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 					S.vars[name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
 					own_field_changed(S, name)
 					dropped = TRUE
+				else if(istype(value, /alist))
+					if((D in value) || !isnull(rel_keys_of(S, name, D)))
+						rel_alist_remove(value, S, name, D)
+						own_field_changed(S, name)
+						dropped = TRUE
 				else if(islist(value))
 					var/list/L = value
 					if(D in L)
@@ -497,11 +538,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(isnull(value))
 			continue
 		var/list/entry = T.entries[var_name]
-		if(islist(value))
+		if(REL_LISTLIKE(value))
 			var/list/L = value
-			for(var/datum/target as anything in L.Copy())
+			var/list/members = istype(L, /alist) ? rel_list_members(L) : L.Copy()
+			for(var/datum/target as anything in members)
 				_rel_detach(D, var_name, target, entry)
 			D.vars[var_name] = null // ALLOW(api): relation teardown clears the view var; the relation machinery is the accessor
+			rel_keys_clear(D, var_name)
 			own_field_changed(D, var_name)
 		else
 			_rel_detach(D, var_name, value, entry)
@@ -613,7 +656,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(id && !successor.om_hid)
 		var/list/slots = GLOB.om_handle_slots
 		if(id <= length(slots) && slots[id] == own_key(original))
-			slots[id] = own_key(successor)
+			entity_handle_slot_bind(id, successor)
 			var/list/types = GLOB.om_handle_types
 			if(length(types) >= id)
 				types[id] = successor.type
@@ -628,8 +671,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(!entry)
 			continue
 		if(entry[OWNE_LIST])
+			var/list/keys = rel_keys_list(S, name, original) // a keyed many keeps the successor under the original's keys
 			rel_remove(S, name, original)
-			rel_add(S, name, successor)
+			if(length(keys))
+				for(var/key in keys)
+					rel_add(S, name, successor, key)
+			else
+				rel_add(S, name, successor)
 		else if(S.vars[name] == original)
 			rel_set(S, name, successor)
 	rel_forward_state(original, successor)
@@ -649,8 +697,13 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			if(OWNK_REL)
 				var/list/targets = rel_targets(original, name)
 				for(var/datum/target as anything in targets.Copy())
-					if(islist(successor.vars[name]) || entry[OWNE_LIST])
-						rel_add(successor, name, target)
+					if(REL_LISTLIKE(successor.vars[name]) || entry[OWNE_LIST])
+						var/list/keys = rel_keys_list(original, name, target)
+						if(length(keys))
+							for(var/key in keys)
+								rel_add(successor, name, target, key)
+						else
+							rel_add(successor, name, target)
 					else
 						rel_set(successor, name, target)
 			else
