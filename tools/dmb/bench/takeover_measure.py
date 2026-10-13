@@ -14,25 +14,49 @@ What it does, in one command:
      Fresh-vs-retained DMB/RSC byte equality is checked by the harness.
   3. Writes a JSON summary (per-request wall, per-stage seconds, peak commit, eviction signals)
      and prints it.
-Inputs are the pinned ones used by the 20261012 runs under E:/dq-cache/dmb-native-v2.
+Inputs: baseline source E:/dq-cache/dmb-takeover/baseline-src (created if missing), bench/takeover_edits.json, engine template from the worktree fixtures. No BYOND pin/inspector needed (--no-pin).
 Takes ~10-30 min and ~15 GB of E: disk (run root under E:/dq-cache/dmb-native-iterations).
 """
 import argparse, json, os, subprocess, sys, time
 from pathlib import Path
 
-BASE = "E:/dq-cache/dmb-native-v2/recovered-baseline-20261010"
-EDITS = "E:/dq-cache/dmb-native-v2/integration-gates/iteration-edits-body-leaf-var-20261011.json"
-INSPECTOR = "E:/dq-cache/dmb-native-v2/frozen-build/20261011-e423001c58-inspector-opt0.exe"
-TARGET = "E:/dq-cache/dmb-takeover/measure/target"
+ROOT = "E:/dq-cache/dmb-takeover"
+BASELINE = ROOT + "/baseline-src"
+# The captured baseline was a dirty working tree (not a clean commit): when absent it can only be
+# approximated from git revision d58f79336c (same #include roster, ~66 files differ) plus the
+# generated manifest comparison.dme below. The exact tree was rebuilt from a surviving run copy.
+BASELINE_REV = "d58f79336c"
+TARGET = ROOT + "/measure/target"
 SLOTS = "E:/projects/CHOMPStation2/tools/dq_machine_slots.sh"
+BASELINE_DME_DEFINES = ["#define VERB_CAT_OOC_RESOURCES \"OOC.Resources\"", "#define DEBUG"]
 
 
-def build(worktree):
-    env = dict(os.environ, CARGO_HOME="E:/dq-cache/dmb-native-v2/cargo-home", CARGO_TARGET_DIR=TARGET)
+def build(worktree, target):
+    env = dict(os.environ, CARGO_HOME="E:/dq-cache/dmb-native-v2/cargo-home", CARGO_TARGET_DIR=target)
     cmd = ["bash", SLOTS, "run", "cargo", "--label", "dmb-measure", "--", "E:/cargo/bin/cargo.exe",
            "build", "--release", "--locked", "--offline", "-p", "dmbc", "--bin", "dmbc"]
     subprocess.run(cmd, cwd=worktree / "tools/dmb", env=env, check=True)
-    return TARGET + "/release/dmbc.exe"
+    return target + "/release/dmbc.exe"
+
+
+def ensure_baseline(worktree):
+    """Create the baseline source when missing (approximation from git; see BASELINE note)."""
+    if Path(BASELINE, "comparison.dme").exists():
+        return
+    print("baseline missing: approximating from git " + BASELINE_REV, file=sys.stderr)
+    Path(BASELINE).mkdir(parents=True, exist_ok=True)
+    arc = subprocess.Popen(["git", "archive", BASELINE_REV], cwd=worktree, stdout=subprocess.PIPE)
+    subprocess.run(["tar", "-x", "-C", BASELINE], stdin=arc.stdout, check=True)
+    if arc.wait():
+        raise RuntimeError("git archive failed")
+    dme = (Path(BASELINE) / "deepquarry.dme").read_text(encoding="utf-8", errors="replace").splitlines()
+    out = []
+    for line in dme:
+        out.append(line)
+        if line.startswith('#include "code' + chr(92) + 'genesis_call.dme"'):
+            out.append(BASELINE_DME_DEFINES[0])
+    out.insert(31, BASELINE_DME_DEFINES[1])
+    (Path(BASELINE) / "comparison.dme").write_text(chr(10).join(out) + chr(10), encoding="utf-8")
 
 
 def flat(obj, prefix=""):
@@ -88,6 +112,7 @@ def main():
     p.add_argument("--job-memory-mib", type=int, default=12288,
                    help="owned Job commit cap; 6144 killed the 8-worker daemon (allocation failure)")
     p.add_argument("--compiler")
+    p.add_argument("--target-dir", default=TARGET, help="cargo target dir for the release build")
     p.add_argument("--out", default="measure-summary.json")
     a = p.parse_args()
     if a.summarize_receipt:
@@ -95,16 +120,15 @@ def main():
         Path(a.out).write_text(json.dumps(summary, indent=2))
         return 0
     wt = Path(a.worktree)
-    exe = a.compiler or (TARGET + "/release/dmbc.exe" if a.skip_build else build(wt))
-    cmd = [sys.executable, str(wt / "tools/dmb/bench/native-iteration.py"),
-           "--compiler", exe, "--inspector", INSPECTOR, "--byte-oracles-only",
-           "--source", f"{BASE}/source",
-           "--source-snapshot", f"{BASE}/filtered-admission/source-snapshot.json",
-           "--input-closure", f"{BASE}/filtered-admission/input-closure.json",
-           "--scenarios", f"{BASE}/filtered-admission/scenarios.json",
-           "--byond-pin", f"{BASE}/filtered-admission/byond-structural-pin.json",
-           "--byond-dmb", f"{BASE}/recapture/byond/world.dmb",
-           "--edits", EDITS, "--workers", str(a.workers), "--total-workers", str(a.workers),
+    exe = a.compiler or (a.target_dir + "/release/dmbc.exe" if a.skip_build else build(wt, a.target_dir))
+    ensure_baseline(wt)
+    scen = Path(ROOT) / "scenarios.json"
+    template = str(wt / "tools/dmb/fixtures/native_template.bin").replace("\\", "/")
+    scen.write_text(json.dumps([{"name": "cold", "project": "comparison.dme", "arguments": ["--bootstrap-catalog", "--engine-template", template, "-DCIBUILDING", "-DCITESTING", "-DDM_VERSION=516", "-DDM_BUILD=1687"]}]))
+    cmd = [sys.executable, str(Path(__file__).resolve().parent / "native-iteration.py"),
+           "--compiler", exe, "--byte-oracles-only", "--no-pin",
+           "--source", BASELINE, "--scenarios", str(scen),
+           "--edits", str(Path(__file__).resolve().parent / "takeover_edits.json"), "--workers", str(a.workers), "--total-workers", str(a.workers),
            "--job-memory-mib", str(a.job_memory_mib), "--owned-memory-budget-bytes", str(a.job_memory_mib * 1048576),
            "--sample-owned-memory", "--require-owned-daemon",
            "--overall-seconds", "3600", "--minimum-free-gib", "16",
