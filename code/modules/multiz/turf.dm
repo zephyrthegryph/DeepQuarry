@@ -200,7 +200,7 @@ CAPABILITIES(/turf/simulated/open)
 			new_junction |= direction
 
 	if(!(new_junction & (NORTH|SOUTH)) || !(new_junction & (EAST|WEST)))
-		icon_state = "[base_icon_state]-[new_junction]"
+		set_icon_state("[base_icon_state]-[new_junction]")
 		return
 
 	if(new_junction & NORTH)
@@ -225,7 +225,7 @@ CAPABILITIES(/turf/simulated/open)
 			if(istype(T, type))
 				new_junction |= (1<<5)
 
-	icon_state = "[base_icon_state]-[new_junction]"
+	set_icon_state("[base_icon_state]-[new_junction]")
 
 /turf/simulated/floor/glass/reinforced
 	name = "reinforced glass floor"

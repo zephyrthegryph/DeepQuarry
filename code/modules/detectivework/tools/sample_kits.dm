@@ -100,7 +100,7 @@ CAPABILITIES(/obj/item/sample/print)
 	var/fullprint = H.get_full_print()
 	set_evidence_at(fullprint, fullprint)
 	name = "[initial(name)] (\the [H])"
-	icon_state = "fingerprint1"
+	set_icon_state("fingerprint1")
 	return OP_OK
 
 /obj/item/sample/print/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -138,7 +138,7 @@ CAPABILITIES(/obj/item/sample/print)
 		set_evidence_at(fullprint, fullprint)
 		copy_evidence(src)
 		name = "[initial(name)] (\the [H])"
-		icon_state = "fingerprint1"
+		set_icon_state("fingerprint1")
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_FAILURE
 

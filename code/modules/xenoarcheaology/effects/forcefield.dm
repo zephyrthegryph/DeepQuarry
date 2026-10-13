@@ -28,7 +28,7 @@ CAPABILITIES(/datum/artifact_effect/forcefield)
 			E.set_strength(1)
 			E.set_density(TRUE)
 			E.set_anchored(TRUE)
-			E.invisibility = INVISIBILITY_NONE
+			E.set_invisibility(INVISIBILITY_NONE)
 		after(src, 1 SECOND, PROC_REF(UpdateMove))
 	return 1
 
@@ -51,7 +51,7 @@ CAPABILITIES(/datum/artifact_effect/forcefield)
 			rel_add(src, nameof(created_field), E)
 			E.set_anchored(TRUE)
 			E.set_density(TRUE)
-			E.invisibility = INVISIBILITY_NONE
+			E.set_invisibility(INVISIBILITY_NONE)
 
 		var/obj/effect/energy_field/E = LAZYACCESS(created_field, 1)
 		E.forceMove(locate(T.x + 2,T.y + 2,T.z))

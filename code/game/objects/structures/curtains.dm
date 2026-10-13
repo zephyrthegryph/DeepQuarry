@@ -30,11 +30,11 @@
 /obj/structure/curtain/proc/toggle()
 	set_opacity(!opacity)
 	if(opacity)
-		icon_state = "closed"
+		set_icon_state("closed")
 		plane = MOB_PLANE
 		layer = ABOVE_MOB_LAYER
 	else
-		icon_state = "open"
+		set_icon_state("open")
 		plane = OBJ_PLANE
 		layer = OBJ_LAYER
 

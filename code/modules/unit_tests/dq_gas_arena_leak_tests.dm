@@ -34,11 +34,11 @@
 	// pipe - pump - pipe: a binary device between two pipelines (PROTO ports bound to the
 	// region mixtures, private until bound).
 	var/obj/machinery/atmospherics/pipe/simple/P1 = new(A)
-	P1.dir = axis
+	P1.set_dir(axis)
 	P1.initialize_directions = axis
 	var/obj/machinery/atmospherics/binary/pump/pump = new(B, get_dir(A, B))
 	var/obj/machinery/atmospherics/pipe/simple/P2 = new(C)
-	P2.dir = axis
+	P2.set_dir(axis)
 	P2.initialize_directions = axis
 	var/list/machines = list(P1, pump, P2)
 	for(var/obj/machinery/atmospherics/machine as anything in machines)

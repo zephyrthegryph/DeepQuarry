@@ -18,6 +18,7 @@ import { bun, bunRoot } from './lib/bun';
 import { acquireDdSlot, countFreeDdSlots } from './lib/dd_slot';
 import { claimFreePort, shouldRetryBoot } from './lib/free_port';
 import { acquireSlot, acquireSlotGroup, type HeldSlot, slotCapacity, withSlot } from './lib/machine_slots';
+import { dmeValidationKey, isGeneratedDm, seedFromMainCheckout } from './lib/seed';
 import { generateVerdigrisBindings } from './lib/verdigris_bindings';
 import {
   BALANCE_RESULTS_FILE,
@@ -215,6 +216,13 @@ export const MapBoundsTarget = new Juke.Target({
   inputs: ['maps/**/*.dmm'],
   outputs: [MAP_BOUNDS_FILE],
   executes: async () => {
+    // A fresh worktree has no bounds yet: take the main checkout's. DM re-parses any template whose recorded file
+    // size no longer matches, and any map the seed lacks, so a seed from another branch stays correct.
+    const seededFrom = seedFromMainCheckout(process.cwd(), MAP_BOUNDS_FILE);
+    if (seededFrom) {
+      Juke.logger.info(`map-bounds: seeded ${MAP_BOUNDS_FILE} from ${seededFrom} (DM re-parses templates whose size differs)`);
+      return;
+    }
     const count = writeMapBounds(['maps']);
     Juke.logger.info(`Wrote bounds for ${count} maps to ${MAP_BOUNDS_FILE}`);
   },
@@ -223,6 +231,8 @@ export const MapBoundsTarget = new Juke.Target({
 // validate that every .dm file under code/ is included in
 // deepquarry.dme. Runs before the DM compile so missing includes are caught
 // with a helpful error rather than silently-uncompiled code.
+// Key of the last passing validation (deepquarry.dme, the .dm file list and their stats); see lib/seed.ts.
+const VALIDATE_DME_RECORD = 'data/validate-dme.json';
 export const ValidateDmeTarget = new Juke.Target({
   // Generates code/engine/_generated first (GenTarget, defined below: hence the function form).
   dependsOn: () => [GenTarget],
@@ -271,7 +281,29 @@ export const ValidateDmeTarget = new Juke.Target({
       }
     };
 
-    seed(fs.readFileSync(`${DME_NAME}.dme`, 'utf-8'), '.');
+    const dmeText = fs.readFileSync(`${DME_NAME}.dme`, 'utf-8');
+    const dmFiles = Juke.glob('code/**/*.dm');
+    const statOf = (f: string): string => {
+      try {
+        const st = fs.statSync(f);
+        return `${st.size}:${st.mtimeMs}`;
+      } catch {
+        return 'missing';
+      }
+    };
+    const dmeKey = dmeValidationKey(dmeText, dmFiles, statOf);
+    if (!process.env.DQ_FULL_CHECKS && !process.env.CI) {
+      try {
+        if (JSON.parse(fs.readFileSync(VALIDATE_DME_RECORD, 'utf-8')).key === dmeKey) {
+          Juke.logger.info(`validate-dme: up to date (hash ${dmeKey.slice(0, 12)}, ${dmFiles.length} files); skipped`);
+          return;
+        }
+      } catch {
+        // no record yet
+      }
+    }
+
+    seed(dmeText, '.');
     while (queue.length > 0) {
       const file = queue.pop() as string;
       if (reachable.has(file)) continue;
@@ -286,7 +318,6 @@ export const ValidateDmeTarget = new Juke.Target({
       'code/modules/unit_tests/',
     ];
 
-    const dmFiles = Juke.glob('code/**/*.dm');
     const missing: string[] = [];
     for (const file of dmFiles) {
       const normalized = file.replace(/\\/g, '/');
@@ -311,7 +342,9 @@ export const ValidateDmeTarget = new Juke.Target({
       );
       throw new Juke.ExitCode(1);
     }
-    Juke.logger.info(`ValidateDme: all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
+    fs.mkdirSync('data', { recursive: true });
+    fs.writeFileSync(VALIDATE_DME_RECORD, JSON.stringify({ key: dmeKey, checkedAt: new Date().toISOString() }));
+    Juke.logger.info(`ValidateDme: (hash ${dmeKey.slice(0, 12)}) all ${dmFiles.length} code/ .dm files are reachable from the DME.`);
   },
 });
 
@@ -383,7 +416,8 @@ const verdigrisBindingsCheckKey = (): string => {
   }
   const dm: string[] = [];
   walk('code', (n) => n.endsWith('.dm'), dm);
-  hash.update(dm.sort().join('\n'));
+  // `gen` restores its build output into code/ after a fresh tree's first key was computed: leave it out.
+  hash.update(dm.filter((f) => !isGeneratedDm(f)).sort().join('\n'));
   return hash.digest('hex');
 };
 const VERDIGRIS_BINDINGS_CHECK_RECORD = 'data/verdigris-bindings-check.json';
@@ -393,6 +427,9 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
     const full = !!process.env.CI || process.env.DQ_FULL_CHECKS === '1';
     const key = full ? null : verdigrisBindingsCheckKey();
     if (key) {
+      // A fresh worktree takes the main checkout's passing record; it only counts when its key equals ours.
+      const seededFrom = seedFromMainCheckout(process.cwd(), VERDIGRIS_BINDINGS_CHECK_RECORD);
+      if (seededFrom) Juke.logger.info(`verdigris bindings: seeded the check record from ${seededFrom} (used only if its key matches)`);
       try {
         if (JSON.parse(fs.readFileSync(VERDIGRIS_BINDINGS_CHECK_RECORD, 'utf-8')).key === key) {
           Juke.logger.info('verdigris bindings: inputs unchanged since the last passing check; skipped');

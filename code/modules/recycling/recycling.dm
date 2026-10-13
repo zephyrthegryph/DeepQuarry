@@ -113,7 +113,7 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "crusher-process"
+	set_icon_state("crusher-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
 
@@ -133,13 +133,13 @@ MSG_DEF_SELF(recycling/working, "it's busy; wait until it's idle")
 		if(istype(D))
 			D.add_materials(modified_mats)
 			set_use_power(USE_POWER_IDLE)
-			icon_state = "crusher"
+			set_icon_state("crusher")
 			destroyed(O, src, BRUTE)
 			working = FALSE
 			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
 	set_use_power(USE_POWER_IDLE)
-	icon_state = "crusher"
+	set_icon_state("crusher")
 	destroyed(O, src, BRUTE)
 	working = FALSE
 
@@ -170,7 +170,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 /obj/machinery/recycling/sorter/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "sorter-process"
+	set_icon_state("sorter-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 2 SECONDS, PROC_REF(sort_done), with = list(O))
 
@@ -197,7 +197,7 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 			return
 	set_dispensing(FALSE)
 	set_use_power(USE_POWER_IDLE)
-	icon_state = "sorter"
+	set_icon_state("sorter")
 	working = FALSE
 
 /**
@@ -218,13 +218,13 @@ CAPABILITIES(/obj/machinery/recycling/sorter)
 /obj/machinery/recycling/stamper/take_item(obj/item/O)
 	. = ..()
 	working = TRUE
-	icon_state = "stamper-process"
+	set_icon_state("stamper-process")
 	set_use_power(USE_POWER_ACTIVE)
 	after(src, 6.4 SECONDS, PROC_REF(stamp_done), with = list(O))
 
 /obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
 	dust_to_sheet(O)
-	icon_state = "stamper"
+	set_icon_state("stamper")
 	set_use_power(USE_POWER_IDLE)
 	working = FALSE
 

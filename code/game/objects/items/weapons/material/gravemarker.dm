@@ -102,6 +102,6 @@ MSG_DEF_SELF(gravemarker/occupied, "There's already something there.")
 	G.grave_name = grave_name
 	G.epitaph = epitaph
 	G.add_fingerprint(user)
-	G.dir = user.dir
+	G.set_dir(user.dir)
 	QDEL_NULL(src)
 	return

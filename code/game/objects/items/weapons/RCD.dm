@@ -439,22 +439,22 @@ CAPABILITIES(/obj/effect/constructing_effect)
 
 /// Plays the construction animation for `delay` (shorter states for faster work), then the end animation.
 /obj/effect/constructing_effect/proc/start_animation(delay, status)
-	icon_state = "rcd"
+	set_icon_state("rcd")
 	if (delay < 1 SECOND)
-		icon_state += "_shortest"
+		set_icon_state(icon_state + ("_shortest"))
 	else if (delay < 2 SECONDS)
-		icon_state += "_shorter"
+		set_icon_state(icon_state + ("_shorter"))
 	else if (delay < 3.7 SECONDS)
-		icon_state += "_short"
+		set_icon_state(icon_state + ("_short"))
 	if (status == RCD_DECONSTRUCT)
-		icon_state += "_reverse"
+		set_icon_state(icon_state + ("_reverse"))
 	after(src, delay, PROC_REF(end_animation), with = list(status))
 
 /obj/effect/constructing_effect/proc/end_animation(status)
 	if (status == RCD_DECONSTRUCT)
-		icon_state = "rcd_end_reverse"
+		set_icon_state("rcd_end_reverse")
 	else
-		icon_state = "rcd_end"
+		set_icon_state("rcd_end")
 	after(src, 1.5 SECONDS, PROC_REF(end))
 
 /obj/effect/constructing_effect/proc/end()

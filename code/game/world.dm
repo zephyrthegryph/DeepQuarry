@@ -315,7 +315,11 @@ GLOBAL_VAR(restart_counter)
 	// after 2 s; a test that only passes after the longer settle should wait
 	// for what it needs itself (see doc/testing.md).
 	if(unit_test_is_focused_run())
-		start_delay = 2 SECONDS
+		start_delay = 1 SECONDS
+		// --boot (only dq_boot_gate): the gate reads what the boot logged, so there is nothing to settle.
+		if(unit_test_is_boot_only_run())
+			start_delay = 0
+		log_world("Unit tests: round-start settle [start_delay / (1 SECONDS)] s ([unit_test_is_boot_only_run() ? "boot-only" : "focused"] run).")
 #endif
 	SSticker.OnRoundstart(null, after_start, delay = start_delay)
 

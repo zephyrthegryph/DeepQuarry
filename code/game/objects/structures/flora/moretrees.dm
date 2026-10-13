@@ -20,7 +20,7 @@
 
 	set_is_stump(TRUE)
 	set_density(FALSE)
-	icon_state = "[icon_state]_stump"
+	set_icon_state("[icon_state]_stump")
 	cut_overlays()
 	set_glow(src, GLOW(0, null, null))
 

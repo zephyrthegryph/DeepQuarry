@@ -198,7 +198,7 @@ CAPABILITIES(/obj/item/robot_parts/robot_suit)
 			if(!move_into(O, nameof(O.mmi), W, user))
 				return OP_PASS
 			O.post_mmi_setup()
-			O.invisibility = INVISIBILITY_NONE
+			O.set_invisibility(INVISIBILITY_NONE)
 			O.set_custom_name(created_name)
 			O.updatename("Default")
 

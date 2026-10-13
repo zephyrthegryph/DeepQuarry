@@ -241,7 +241,7 @@ CAPABILITIES(/datum/action)
 		return
 
 	current_button.icon = button_icon
-	current_button.icon_state = button_icon_state
+	current_button.set_icon_state(button_icon_state)
 
 /**
  * Applies any overlays to our button

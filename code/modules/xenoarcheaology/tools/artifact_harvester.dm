@@ -131,7 +131,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 		cur_artifact().in_use = 0
 		rel_clear(src, nameof(/obj/machinery/artifact_harvester::cur_artifact))
 		atom_say("Energy harvesting interrupted.")
-		icon_state = "incubator"
+		set_icon_state("incubator")
 	return TRUE
 
 /obj/machinery/artifact_harvester/proc/ui_act_ejectbattery(datum/act/op/A)
@@ -156,7 +156,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 					inserted_battery().battery_effect.ToggleActivate(1)
 				harvesting = -1
 				set_use_power(USE_POWER_ACTIVE)
-				icon_state = "incubator_on"
+				set_icon_state("incubator_on")
 				atom_say("Warning, battery charge dump commencing.")
 		else
 			atom_say("Cannot dump energy. Battery is drained of charge already.")
@@ -256,7 +256,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 			set_use_power(USE_POWER_ACTIVE)
 			cur_artifact().anchored = TRUE
 			cur_artifact().in_use = 1
-			icon_state = "incubator_on"
+			set_icon_state("incubator_on")
 			atom_say("Beginning energy harvesting.")
 
 			//duplicate the artifact's effect datum
@@ -312,7 +312,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 			cur_artifact().in_use = 0
 			rel_clear(src, nameof(cur_artifact))
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
-			icon_state = "incubator"
+			set_icon_state("incubator")
 
 	else if(harvesting < 0)
 		//dump some charge
@@ -337,7 +337,7 @@ CAPABILITIES(/obj/machinery/artifact_harvester)
 			if(inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
 				inserted_battery().battery_effect.ToggleActivate()
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")
-			icon_state = "incubator"
+			set_icon_state("incubator")
 
 /// Accessor for the inserted_battery var.
 /obj/machinery/artifact_harvester/proc/inserted_battery() as /obj/item/anobattery

@@ -102,7 +102,7 @@
 	using = new /atom/movable/screen()
 	using.name = "mov_intent"
 	using.icon = ui_style
-	using.icon_state = (m_intent == I_RUN ? "running" : "walking")
+	using.set_icon_state((m_intent == I_RUN ? "running" : "walking"))
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -113,7 +113,7 @@
 	using = new /atom/movable/screen()
 	using.name = "resist"
 	using.icon = ui_style
-	using.icon_state = "act_resist"
+	using.set_icon_state("act_resist")
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -145,13 +145,13 @@
 
 	rel_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
-	pai_fold_display.icon_state = "folded"
+	pai_fold_display.set_icon_state("folded")
 	rel_add(HUD, nameof(HUD.hud_elements), pai_fold_display)
 
 	//Choose chassis button
 	using = new /atom/movable/screen/pai()
 	using.name = "choose chassis"
-	using.icon_state = "choose_chassis"
+	using.set_icon_state("choose_chassis")
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -161,7 +161,7 @@
 	//Software interface button
 	using = new /atom/movable/screen/pai()
 	using.name = "software interface"
-	using.icon_state = "software_interface"
+	using.set_icon_state("software_interface")
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -171,7 +171,7 @@
 	//Radio configuration button
 	using = new /atom/movable/screen/pai()
 	using.name = "radio configuration"
-	using.icon_state = "radio_configuration"
+	using.set_icon_state("radio_configuration")
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -181,7 +181,7 @@
 	//PDA button
 	using = new /atom/movable/screen/pai()
 	using.name = "pda"
-	using.icon_state = "pda"
+	using.set_icon_state("pda")
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -191,7 +191,7 @@
 	//Communicator button
 	using = new /atom/movable/screen/pai()
 	using.name = "communicator"
-	using.icon_state = "communicator"
+	using.set_icon_state("communicator")
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -201,7 +201,7 @@
 	//Language button
 	using = new /atom/movable/screen/pai()
 	using.name = "known languages"
-	using.icon_state = "language"
+	using.set_icon_state("language")
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -210,7 +210,7 @@
 
 	using = new /atom/movable/screen/pai()
 	using.name = "software toggle"
-	using.icon_state = "software"
+	using.set_icon_state("software")
 	using.screen_loc = ui_inventory
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -219,7 +219,7 @@
 
 	using = new /atom/movable/screen/pai()
 	using.name = "directives"
-	using.icon_state = "directives"
+	using.set_icon_state("directives")
 	using.screen_loc = "WEST:6,SOUTH:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -227,7 +227,7 @@
 
 	using = new /atom/movable/screen/pai()
 	using.name = "crew manifest"
-	using.icon_state = "manifest"
+	using.set_icon_state("manifest")
 	using.screen_loc = "WEST:6,SOUTH+1:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
@@ -306,7 +306,7 @@
 
 	var/atom/movable/screen/aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "aw-select"
+	aw.set_icon_state("aw-select")
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
@@ -314,7 +314,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "lang"
+	aw.set_icon_state("lang")
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
@@ -322,7 +322,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "pose"
+	aw.set_icon_state("pose")
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
@@ -330,7 +330,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "up"
+	aw.set_icon_state("up")
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
 	rel_add(HUD, nameof(HUD.extra_screens), aw)
@@ -338,7 +338,7 @@
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
-	aw.icon_state = "down"
+	aw.set_icon_state("down")
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
 	rel_add(HUD, nameof(HUD.extra_screens), aw)

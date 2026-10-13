@@ -72,7 +72,7 @@ CAPABILITIES(/obj/item/hand_labeler)
 
 /obj/item/hand_labeler/proc/label_configuration_begin(mob/user, obj/item/held)
 	mode = !mode
-	icon_state = "labeler[mode]"
+	set_icon_state("labeler[mode]")
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.

@@ -234,7 +234,7 @@
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
 	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
 	G.set_expired(0)
-	G.icon_state = "guest"
+	G.set_icon_state("guest")
 	H.set_combat_mode(TRUE)
 	hc_hold(H, G)
 	TEST_ASSERT_EQUAL(H.get_active_hand(), G, "the real pass is carried before self input")
@@ -256,7 +256,7 @@
 	var/obj/item/card/id/guest/G = allocate(/obj/item/card/id/guest, hc_side())
 	EXPIRY_SET(G, expiration_time, 1 HOURS, CLOCK_WORLD)
 	G.set_expired(TRUE)
-	G.icon_state = "guest" // a stale rendering must not reactivate the real expired pass
+	G.set_icon_state("guest") // a stale rendering must not reactivate the real expired pass
 	H.set_combat_mode(TRUE)
 	hc_hold(H, G)
 	test_click(H, G, G, GESTURE_SELF)

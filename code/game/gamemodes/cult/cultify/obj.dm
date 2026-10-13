@@ -47,7 +47,7 @@
 
 /obj/machinery/atmospherics/cultify()
 	if(src.invisibility != INVISIBILITY_MAXIMUM)
-		src.invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_density(FALSE)
 
 /obj/machinery/appliance/cooker/cultify()
@@ -62,7 +62,7 @@
 
 /obj/machinery/door/cultify()
 	if(invisibility != INVISIBILITY_MAXIMUM)
-		invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		set_density(FALSE)
 		anim(target = src, a_icon = 'icons/effects/effects.dmi', a_icon_state = "breakdoor", sleeptime = 10)
 		destroyed(src)
@@ -78,14 +78,14 @@
 
 /obj/machinery/power/apc/cultify()
 	if(src.invisibility != INVISIBILITY_MAXIMUM)
-		src.invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 
 /obj/machinery/vending/cultify()
 	replace_with(src, /obj/structure/cult/forge)
 
 /obj/structure/bed/chair/cultify()
 	var/obj/structure/bed/chair/wood/wings/I = new(loc)
-	I.dir = dir
+	I.set_dir(dir)
 	..()
 
 /obj/structure/bed/chair/wood/cultify()

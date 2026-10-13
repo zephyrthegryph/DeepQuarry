@@ -138,7 +138,7 @@
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/bed/chair/chair = allocate(/obj/structure/bed/chair, T)
 	var/obj/item/extinguisher/ext = allocate(/obj/item/extinguisher, T)
-	chair.anchored = FALSE
+	chair.set_anchored(FALSE)
 	chair.propelled = 5
 	ext.propel_object(chair, user, NORTH)
 	qdel(user)

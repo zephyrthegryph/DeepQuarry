@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/chameleon)
 	name = O.name
 	desc = O.desc
 	icon = new_icon
-	icon_state = new_iconstate
+	set_icon_state(new_iconstate)
 	overlays = new_overlays
 	set_dir(O.dir)
 	M.forceMove(src)

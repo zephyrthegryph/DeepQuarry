@@ -39,9 +39,9 @@
 	. = ..()
 	switch(state)
 		if("off")
-			icon_state = "nt_reader_off"
+			set_icon_state("nt_reader_off")
 		if("on")
-			icon_state = "nt_reader_on"
+			set_icon_state("nt_reader_on")
 		if("no_cruciform")
 			cut_overlay("nt_reader_c_green")
 			cut_overlay("nt_reader_c_red")

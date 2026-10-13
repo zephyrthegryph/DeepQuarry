@@ -23,9 +23,9 @@
 /obj/machinery/bluespace_denier/power_change()
 	. = ..()
 	if(!power_lost())
-		icon_state = "[base_state]1"
+		set_icon_state("[base_state]1")
 	else
-		icon_state = "[base_state]1-p"
+		set_icon_state("[base_state]1-p")
 
 //Let the AI trigger them directly.
 

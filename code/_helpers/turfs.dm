@@ -148,7 +148,7 @@
 
 		X = B.ChangeTurf(T.type)
 		X.set_dir(old_dir1)
-		X.icon_state = old_icon_state1
+		X.set_icon_state(old_icon_state1)
 		X.icon = old_icon1
 		X.copy_overlays(T, TRUE)
 		X.set_decals(old_decals)

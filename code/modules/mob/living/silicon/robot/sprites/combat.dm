@@ -105,7 +105,7 @@
 	if(BCS)
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"
-		BCS.icon_state = "ertjaws"
+		BCS.set_icon_state("ertjaws")
 		BCS.set_hitsound('sound/weapons/bite.ogg')
 		BCS.set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 		BCS.dogborg = TRUE
@@ -224,7 +224,7 @@
 	if(BCS)
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"
-		BCS.icon_state = "ertjaws"
+		BCS.set_icon_state("ertjaws")
 		BCS.set_hitsound('sound/weapons/bite.ogg')
 		BCS.set_attack_verb(list("chomped", "bit", "ripped", "mauled", "enforced"))
 		BCS.dogborg = TRUE

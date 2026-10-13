@@ -562,7 +562,7 @@ TRACKED(/obj/item/organ, max_damage)
 	var/obj/item/reagent_containers/food/snacks/organ/O = new(get_turf(src))
 	O.name = name
 	O.icon = icon
-	O.icon_state = icon_state
+	O.set_icon_state(icon_state)
 
 	// Pass over the blood.
 	reagents.trans_to(O, reagents.total_volume)

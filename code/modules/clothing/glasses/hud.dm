@@ -121,7 +121,7 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd
 	if(icon_state == "glasses" || icon_state == "sun")
 		if(prob(10))
-			icon_state = "3d"
+			set_icon_state("3d")
 			if(ishuman(loc))
 				to_chat(loc, span_warning("The lenses of your [src.name] malfunction!"))
 
@@ -135,11 +135,11 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 	if(prescription)
 		act_message(user, null, others = "%U% uploads new prescription data to the [src.name] and resets the lenses.")
 		name = "[initial(name)] (pr)" //change the name *after* the text so the message above is accurate
-		icon_state = "[initial(icon_state)]" //reset the icon state just to be safe
+		set_icon_state("[initial(icon_state)]") //reset the icon state just to be safe
 	else
 		act_message(user, null, others = "%U% deletes the prescription data on the [src.name] and resets the lenses.")
 		name = "[initial(name)]"
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 
 /// Old attack_self: show the AR display. FALSE where the old body fell through or returned nothing.
 /obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(datum/act/op/A)
@@ -169,18 +169,18 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 			name = "[initial(name)] (pr)"
 		else
 			name = "[initial(name)]"
-		icon_state = "[initial(icon_state)]"
+		set_icon_state("[initial(icon_state)]")
 	else if(prescription)
 		if(icon_state == "glasses")
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded, pr)"
 			set_flags_inv(worn_of(src).hides | (HIDEEYES))
-			icon_state = "sun"
+			set_icon_state("sun")
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)] (pr)"
 			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
-			icon_state = "glasses"
+			set_icon_state("glasses")
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!prescription)
@@ -188,12 +188,12 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud)
 			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded)"
 			set_flags_inv(worn_of(src).hides | (HIDEEYES))
-			icon_state = "sun"
+			set_icon_state("sun")
 		else if(icon_state == "sun")
 			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)]"
 			set_flags_inv(worn_of(src).hides & (~HIDEEYES))
-			icon_state = "glasses"
+			set_icon_state("glasses")
 		else
 			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!can_shade)
@@ -313,14 +313,14 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 	if(toggleable)
 		if(active)
 			active = 0
-			icon_state = off_state
-			item_state = "[initial(item_state)]-off"
+			set_icon_state(off_state)
+			set_item_state("[initial(item_state)]-off")
 			changed(src)
 			to_chat(user, "You deactivate the retinal projector on the [src].")
 		else
 			active = 1
-			icon_state = initial(icon_state)
-			item_state = initial(item_state)
+			set_icon_state(initial(icon_state))
+			set_item_state(initial(item_state))
 			changed(src)
 			to_chat(user, "You activate the retinal projector on the [src].")
 		user.update_mob_action_buttons()
@@ -369,9 +369,9 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch)
 /obj/item/clothing/glasses/hud/security/eyepatch/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 	return OP_OK
 
@@ -403,9 +403,9 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/security/eyepatch2)
 /obj/item/clothing/glasses/hud/security/eyepatch2/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 	return OP_OK
 
@@ -437,9 +437,9 @@ CAPABILITIES(/obj/item/clothing/glasses/hud/health/eyepatch)
 /obj/item/clothing/glasses/hud/health/eyepatch/proc/eye_switched(datum/act/op/A)
 	set_eye(!eye)
 	if(eye)
-		icon_state = "[icon_state]_1"
+		set_icon_state("[icon_state]_1")
 	else
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 	update_clothing_icon()
 	return OP_OK
 

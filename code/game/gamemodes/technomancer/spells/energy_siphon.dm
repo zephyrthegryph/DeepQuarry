@@ -171,7 +171,7 @@
 		on_impact(A)
 
 		set_density(FALSE)
-		invisibility = INVISIBILITY_ABSTRACT
+		set_invisibility(INVISIBILITY_ABSTRACT)
 
 		spent(src)
 		return 1

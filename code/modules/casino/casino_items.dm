@@ -50,13 +50,13 @@ CAPABILITIES(/obj/item/storage/wallet/casino)
 /obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(datum/act/op/A)
 
 	if (icon_state == "casinowallet_black")
-		icon_state = "casinowallet_brown"
+		set_icon_state("casinowallet_brown")
 		return
 	if (icon_state == "casinowallet_brown")
-		icon_state = "casinowallet_white"
+		set_icon_state("casinowallet_white")
 		return
 	else
-		icon_state = "casinowallet_black"
+		set_icon_state("casinowallet_black")
 
 /obj/structure/stripper_pole
 	name = "stripper pole"

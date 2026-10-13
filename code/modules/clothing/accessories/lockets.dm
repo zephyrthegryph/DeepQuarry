@@ -30,13 +30,13 @@ MSG_DEF_SELF(locket/no_open, "you have to open it first")
 	open = !open
 	to_chat(user, "You flip \the [src] [open?"open":"closed"].")
 	if(open)
-		icon_state = "[base_icon]_open"
+		set_icon_state("[base_icon]_open")
 		if(held())
 			to_chat(user, "\The [held()] falls out!")
 			held().forceMove(get_turf(user))
 			rel_clear(src, nameof(held))
 	else
-		icon_state = "[base_icon]"
+		set_icon_state("[base_icon]")
 
 /// A paper or photo must be releasable from its current holder before insertion.
 /obj/item/clothing/accessory/locket/proc/can_insert_keepsake(mob/user, atom/target, obj/item/held_item)

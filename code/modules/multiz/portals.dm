@@ -99,7 +99,7 @@ CAPABILITIES(/obj/structure/portal_event)
 			return OP_OK
 		if(letsportal == "Yes")
 			var/portal_icon_selection = chosen_portal_icon(A, "a")
-			icon_state = portal_icon_selection
+			set_icon_state(portal_icon_selection)
 			target.icon_state = portal_icon_selection
 	if(response == "Target Here")
 		var/obj/structure/portal_target/newtarg = new(get_turf(user))
@@ -110,9 +110,9 @@ CAPABILITIES(/obj/structure/portal_event)
 			return OP_OK
 		if(letsportal == "Yes")
 			user.forceMove(src)
-			icon_state = chosen_portal_icon(A, "b")
+			set_icon_state(chosen_portal_icon(A, "b"))
 	if(response == "Select Type")
-		icon_state = chosen_portal_icon(A, "c")
+		set_icon_state(chosen_portal_icon(A, "c"))
 		return OP_OK
 	if(target)
 		message_admins("The [src]([x],[y],[z]) was given [target]([target.x],[target.y],[target.z]) as a target, and should be ready to use.")

@@ -144,7 +144,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/giant_spider/nurse)
 
 	// Todo: Put this code on the cocoon object itself?
 	if(large_cocoon)
-		C.icon_state = pick("cocoon_large1","cocoon_large2","cocoon_large3")
+		C.set_icon_state(pick("cocoon_large1","cocoon_large2","cocoon_large3"))
 
 	ai_brain?.lose_target()
 
