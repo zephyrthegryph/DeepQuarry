@@ -5,7 +5,7 @@
 
 /// Takes a test mind back off the round's roster (mind_initialize() adds it there).
 /proc/dq_gameplay_forget_mind(datum/mind/M)
-	SSticker.minds -= M
+	rel_remove(SSticker, nameof(SSticker.minds), M)
 
 /// The late-join spawn: the arrivals turf the job system hands a joiner, the body equipped for the job there, a client's controls.
 /datum/unit_test/dq_gameplay/proc/spawn_arrival(rank = JOB_INTERN)

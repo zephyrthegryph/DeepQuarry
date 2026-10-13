@@ -5,14 +5,15 @@ SYSTEM_DEF(contracts)
 	var/next_subject_id = 1
 	var/next_evidence_id = 1
 	var/next_event_id = 1
-	var/list/contracts_by_id
-	var/list/offered_contracts
-	var/list/active_contracts
-	var/list/grace_contracts
-	var/list/closed_contracts
-	var/list/offer_candidates
+	/// Contract id -> the contract; the system owns every registered contract (a deleted one leaves it).
+	var/list/datum/contract/contracts_by_id
+	var/list/datum/contract/offered_contracts
+	var/list/datum/contract/active_contracts
+	var/list/datum/contract/grace_contracts
+	var/list/datum/contract/closed_contracts
+	var/list/datum/contract_offer_candidate/offer_candidates
 	var/list/offer_cooldowns
-	var/list/lifecycle_history
+	var/list/datum/contract_lifecycle_entry/lifecycle_history
 	var/next_candidate_id = 1
 	var/suppress_offer_reconcile = FALSE
 	var/offers_materialized = 0
@@ -22,10 +23,11 @@ SYSTEM_DEF(contracts)
 	var/list/event_subscriptions
 	var/list/definitions
 	var/list/subject_identities
-	var/list/evidence_by_id
+	/// Evidence id -> the evidence; the system owns it until unregister_evidence() spends it.
+	var/list/datum/contract_evidence/evidence_by_id
 	var/list/pending_subject_reconciliations
 	/// Bounded diagnostic history of published immutable event snapshots.
-	var/list/recent_events
+	var/list/datum/contract_event/recent_events
 	/// Round-local idempotency ledger, keyed by event type and producer occurrence ID.
 	var/list/seen_event_occurrences
 	var/list/event_occurrence_order
@@ -50,7 +52,7 @@ SYSTEM_DEF(contracts)
 	var/list/opportunity_rules_by_event
 	var/list/opportunity_windows
 	var/list/opportunity_cooldowns
-	var/list/opportunity_history
+	var/list/datum/contract_opportunity_history_entry/opportunity_history
 	var/opportunity_events_observed = 0
 	var/opportunities_triggered = 0
 	var/opportunities_suppressed = 0
@@ -407,18 +409,19 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(!contract || contract.id)
 		return FALSE
 	contract.id = "DQ-[next_contract_id++]"
-	contracts_by_id[contract.id] = contract
-	offered_contracts += contract
+	rel_add(src, nameof(contracts_by_id), contract, contract.id)
+	rel_add(src, nameof(offered_contracts), contract)
 	return TRUE
 
 /datum/system/contracts/proc/unregister_contract(datum/contract/contract)
 	if(!contract)
 		return
-	contracts_by_id -= contract.id
-	offered_contracts -= contract
-	active_contracts -= contract
-	grace_contracts -= contract
-	closed_contracts -= contract
+	if(contract.id)
+		rel_take(src, nameof(contracts_by_id), key = contract.id)
+	rel_remove(src, nameof(offered_contracts), contract)
+	rel_remove(src, nameof(active_contracts), contract)
+	rel_remove(src, nameof(grace_contracts), contract)
+	rel_remove(src, nameof(closed_contracts), contract)
 	for(var/event_type in event_subscriptions)
 		event_subscriptions[event_type] -= contract
 
@@ -426,19 +429,19 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	if(!contract)
 		return
 	if(old_state == CONTRACT_OFFERED)
-		offered_contracts -= contract
+		rel_remove(src, nameof(offered_contracts), contract)
 	else if(old_state == CONTRACT_ACTIVE)
-		active_contracts -= contract
+		rel_remove(src, nameof(active_contracts), contract)
 	else if(old_state == CONTRACT_GRACE)
-		grace_contracts -= contract
+		rel_remove(src, nameof(grace_contracts), contract)
 	if(new_state == CONTRACT_OFFERED)
-		offered_contracts |= contract
+		rel_add(src, nameof(offered_contracts), contract)
 	else if(new_state == CONTRACT_ACTIVE)
-		active_contracts |= contract
+		rel_add(src, nameof(active_contracts), contract)
 	else if(new_state == CONTRACT_GRACE)
-		grace_contracts |= contract
+		rel_add(src, nameof(grace_contracts), contract)
 	else
-		closed_contracts |= contract
+		rel_add(src, nameof(closed_contracts), contract)
 
 /datum/system/contracts/proc/subscribe(datum/contract/contract, event_type)
 	if(!contract || !istext(event_type) || !length(event_type))
@@ -482,10 +485,10 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	event.id = "DQ-CE-[next_event_id++]"
 	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
-	recent_events += event
+	rel_add(src, nameof(recent_events), event)
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
 		var/datum/contract_event/expired_event = recent_events[1]
-		recent_events.Cut(1, 2)
+		rel_remove(src, nameof(recent_events), expired_event)
 		lapsed(expired_event)
 	observe_opportunity_event(event)
 	var/list/subscribers = event_subscriptions[event.event_type]

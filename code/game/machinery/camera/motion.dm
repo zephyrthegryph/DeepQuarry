@@ -18,7 +18,7 @@
 	if (detectTime == 0)
 		EXPIRY_STAMP(src, detectTime, CLOCK_WORLD) // start the clock
 	if (!(target in motionTargets))
-		LAZYADD(motionTargets, target)
+		rel_add(src, nameof(motionTargets), target)
 		// Losing a target is event driven: it moves, dies or is deleted.
 		observe(target, /datum/notice/moved, src, then(PROC_REF(on_motion_target_changed)))
 		observe(target, /datum/notice/mob_statchange, src, then(PROC_REF(on_motion_target_changed)))
@@ -41,7 +41,7 @@
 
 /obj/machinery/camera/proc/lostTarget(mob/target)
 	if (target in motionTargets)
-		LAZYREMOVE(motionTargets, target)
+		rel_remove(src, nameof(motionTargets), target)
 		unobserve(target, /datum/notice/moved, src)
 		unobserve(target, /datum/notice/mob_statchange, src)
 		unobserve(target, /datum/notice/qdeleting, src)

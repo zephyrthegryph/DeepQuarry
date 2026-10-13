@@ -184,7 +184,7 @@
 /proc/op_pending_all_text()
 	var/list/blocks = list()
 	for(var/ref in GLOB.op_pending_all)
-		var/datum/pending_op/P = GLOB.op_pending_all[ref]
+		var/datum/pending_op/P = resolve_handle(GLOB.op_pending_all[ref])
 		if(P?.active && !QDELETED(P))
 			blocks += op_pending_line(P)
 	return length(blocks) ? jointext(blocks, "\n") : "no pending ops"

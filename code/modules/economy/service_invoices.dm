@@ -88,6 +88,7 @@
 	var/verified_amount = 0
 	var/verified_item_count = 0
 	var/list/verified_item_types
+	/// Handles (entity_handle) of the scanned items; a deleted item stops resolving.
 	var/list/verified_items
 	/// Closed accounting periods are final evidence and cannot be refunded.
 	var/settled = FALSE
@@ -152,19 +153,20 @@
 	// ordinary retail/stock-handling role, so any real scanned item is eligible.
 	var/list/remaining_by_name = items?.Copy() || list()
 	var/remaining_personal_payment = max(0, invoice.personal)
-	for(var/obj/sale_item as anything in verified_sale_items)
-		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
+	for(var/sale_handle in verified_sale_items)
+		var/obj/sale_item = resolve_handle(sale_handle)
+		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id || !remaining_by_name[sale_item.name] || remaining_personal_payment <= 0)
 			continue
 		if(!(provider.department_id in list(DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN)) && sale_item.economic_department != provider.department_id)
 			continue
-		var/scanned_value = verified_sale_items[sale_item]
+		var/scanned_value = verified_sale_items[sale_handle]
 		if(!isnum(scanned_value) || scanned_value <= 0)
 			continue
 		var/credited_value = min(round(scanned_value), remaining_personal_payment)
 		if(credited_value <= 0)
 			continue
 		sale_item.economic_sale_invoice_id = invoice.id
-		invoice.verified_items += sale_item
+		invoice.verified_items += entity_handle(sale_item)
 		invoice.verified_item_types["[sale_item.type]"] = TRUE
 		invoice.verified_amount += credited_value
 		invoice.verified_item_count++
@@ -275,8 +277,9 @@
 	invoice.refund_by = user?.real_name || "Service staff"
 	invoice.refund_accounting_period = service_accounting_period
 	invoice.contract_revision++
-	for(var/obj/sale_item as anything in invoice.verified_items)
-		if(QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
+	for(var/sale_handle in invoice.verified_items)
+		var/obj/sale_item = resolve_handle(sale_handle)
+		if(!sale_item || QDELETED(sale_item) || sale_item.economic_sale_invoice_id != invoice.id)
 			continue
 		sale_item.economic_sale_invoice_id = 0
 		if(isitem(sale_item))

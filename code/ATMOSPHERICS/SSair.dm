@@ -57,7 +57,7 @@ SYSTEM_DEF(air)
 	// hotspots stays as a registry (counts, admin panel); they burn as kernel work items (LINDA_fire.dm). networks stays
 	// (pipe network wrappers). The rebuild/expansion queues below are unchanged.
 	var/list/hotspots = list()
-	var/list/networks = list()
+	var/list/datum/pipe_network/networks = list()
 	var/list/rebuild_queue = list()
 	//Subservient to rebuild queue
 	var/list/expansion_queue = list()
@@ -325,10 +325,8 @@ SYSTEM_DEF(air)
 	while(currentrun.len)
 		var/datum/pipe_network/thing = currentrun[currentrun.len]
 		currentrun.len--
-		if(thing)
+		if(thing) // a deleted network leaves SSair.networks on its own (ref_many)
 			thing.reconcile()
-		else
-			networks.Remove(thing)
 		if(KERNEL_OVER_BUDGET)
 			return TRUE
 	return FALSE
@@ -598,6 +596,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 // and the panel was dead. Renamed to the fork convention + opened by an admin verb
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
 CAPABILITIES(/datum/system/air)
+	ref_many(nameof(networks), /datum/pipe_network)
 	interface("AtmosControlPanel", title = "Atmospherics Debug", rights = R_DEBUG)
 	op("move-to-target", ui_act("move-to-target", arg("spot")), then(PROC_REF(ui_move_to_target)))
 	op("toggle-freeze", ui_act("toggle-freeze"), then(PROC_REF(ui_toggle_freeze)))

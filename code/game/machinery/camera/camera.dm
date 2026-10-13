@@ -47,6 +47,7 @@ MSG_DEF_SELF(camera/not_possible, "not possible right now")
 
 CAPABILITIES(/obj/machinery/camera)
 	rolls(nameof(c_tag), PROC_REF(roll_c_tag))
+	ref_many(nameof(motionTargets), /mob)
 	on_notice(/datum/notice/machinery_power_lost, then(PROC_REF(on_power_signal)))
 	on_notice(/datum/notice/machinery_power_restored, then(PROC_REF(on_power_signal)))
 	configure(uses_power(idle = 5, active = 10))

@@ -14,6 +14,7 @@
 		M += ucfirst(P)
 	return jointext(M, " ")
 
+/// Borrower -> list of the entity handles of their open borrows (handles: a borrow that goes away stops resolving).
 GLOBAL_LIST_EMPTY(FrozenAccounts)
 
 /proc/list_frozen()

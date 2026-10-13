@@ -34,12 +34,15 @@ SYSTEM_DEF(pathing)
 	phase = KERNEL_PHASE_P
 	latency_class = LATENCY_L1
 	/// Open path requests, oldest first.
-	var/list/queue = list()
+	var/list/queue
 	/// TRUE while the worker is searching.
 	var/working = FALSE
 	var/searched = 0
 	var/found = 0
 	var/dropped = 0
+
+CAPABILITIES(/datum/system/pathing)
+	ref_many(nameof(queue), /datum/io/path)
 
 #define PATHFINDER_TIMEOUT 50
 /// A cached failure is also dropped after this long, because not every map edit bumps the navigation revision.
@@ -116,7 +119,7 @@ SYSTEM_DEF(pathing)
 		LAZYSET(failed_searches, failure_key, list(navigation_revision, world.time))
 
 /datum/system/pathing/proc/enqueue(datum/io/path/R)
-	queue += R // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
+	rel_add(src, nameof(queue), R)
 	if(!working)
 		work()
 
@@ -126,7 +129,7 @@ SYSTEM_DEF(pathing)
 	working = TRUE
 	while(length(queue))
 		var/datum/io/path/R = queue[1]
-		queue.Cut(1, 2)
+		rel_remove(src, nameof(queue), R)
 		if(!R || !R.is_open() || QDELETED(R.owner))
 			dropped++
 			continue

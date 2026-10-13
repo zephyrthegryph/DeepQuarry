@@ -56,7 +56,7 @@
 				winset(M, "tcscode", "is-disabled=true")
 				winset(M, "tcscode", "text=\"[showcode]\"")
 			else
-				LAZYREMOVE(viewingcode, M)
+				rel_remove(src, nameof(viewingcode), M)
 				winshow(M, "Telecomms IDE", 0) // hide the window!
 
 /// dx_winget() callback: buffers the typer's text, if they are still the one typing.
@@ -69,7 +69,7 @@
 /obj/machinery/computer/telecomms/traffic/proc/pass_editor()
 	if(length(viewingcode) > 0)
 		rel_set(src, nameof(editingcode), DEFAULTPICK(viewingcode, null))
-		LAZYREMOVE(viewingcode, editingcode())
+		rel_remove(src, nameof(viewingcode), editingcode())
 	else
 		rel_clear(src, nameof(editingcode))
 
@@ -139,7 +139,7 @@
 				winset(editingcode(), "tcscode", "text=\"[showcode]\"")
 
 			else
-				LAZYADD(viewingcode, user)
+				rel_add(src, nameof(viewingcode), user)
 				winshow(user, "Telecomms IDE", 1) // show the IDE
 				winset(user, "tcscode", "is-disabled=true")
 				winset(editingcode(), "tcscode", "text=\"\"")
@@ -168,6 +168,7 @@
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	every(0.5 SECONDS, then(PROC_REF(update_ide_tick)), when = nameof(editingcode))
 	emag(then(PROC_REF(on_emag)))
+	ref_many(nameof(viewingcode), /mob)
 	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 	interface("TrafficControl", title = "Telecommunications Traffic Control", state = nameof(GLOB.tgui_default_state))
 	without("ui_open")

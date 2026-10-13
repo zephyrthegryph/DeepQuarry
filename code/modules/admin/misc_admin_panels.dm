@@ -303,16 +303,17 @@ CAPABILITIES(/datum/unban_panel)
 
 // ---- Job-Ban Panel (admin) ----------------------------------------------
 
+/// Open panels: "holder-target" key -> the panel's entity_handle (a panel deleted elsewhere stops resolving).
 GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/admins/proc/dq_open_jobban_panel(mob/target)
 	if(!owner()?.mob || !target)
 		return
 	var/key = "[REF(src)]-[REF(target)]"
-	var/datum/jobban_panel/panel = LAZYACCESS(GLOB.dq_jobban_panels, key)
+	var/datum/jobban_panel/panel = resolve_handle(LAZYACCESS(GLOB.dq_jobban_panels, key))
 	if(!panel)
 		panel = new(src, target)
-		GLOB.dq_jobban_panels[key] = panel
+		GLOB.dq_jobban_panels[key] = entity_handle(panel)
 	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel

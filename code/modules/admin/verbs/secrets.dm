@@ -728,7 +728,7 @@ CAPABILITIES(/datum/secrets_menu)
 
 /datum/secrets_menu/proc/ui_act_move_shuttle_a12_choices(datum/act/op/A)
 	var/datum/system/shuttles/service = SSshuttles
-	return service.registered_shuttle_landmarks
+	return assoc_to_keys(service.registered_shuttle_landmarks)
 
 
 
