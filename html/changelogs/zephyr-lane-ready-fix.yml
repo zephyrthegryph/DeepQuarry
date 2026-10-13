@@ -1,0 +1,4 @@
+author: "zephyr"
+delete-after: true
+changes:
+  - code_imp: "dq_lane_ready.sh follows HEAD when the merge gates amend or record look keys, so a passing run stamps; the refusal prints expected vs found"

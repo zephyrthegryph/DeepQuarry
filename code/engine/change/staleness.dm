@@ -89,6 +89,15 @@ GLOBAL_VAR_INIT(stale_cursor, 1)
 	GLOB.stale_all[ref] = TRUE
 	GLOB.stale_new += ref
 
+/// Drops a destroyed entity from the sweep's index. The sweep prunes a dead ref only when it reaches it, so without this a
+/// short-lived entity (anything with stats) leaves its ref in stale_all until then.
+/proc/staleness_forget(datum/E)
+	if(!GLOB.staleness_on)
+		return
+	var/ref = REF(E)
+	GLOB.stale_all -= ref
+	GLOB.stale_new -= ref
+
 // ---------------------------------------------------------------- reporting
 
 /// The frames that led to the check, innermost first, as text.

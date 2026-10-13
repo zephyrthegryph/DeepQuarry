@@ -94,9 +94,26 @@ if [ "$reuse_gates" -eq 0 ]; then
 	bash tools/dq_merge_gates.sh ${gate_args[@]+"${gate_args[@]}"} || die "the gates failed; nothing was stamped (logs under data/merge-gates/${tested:0:12}.*.log)"
 fi
 
+# The gates may move HEAD before they record it: they normalize look_keys.txt, shrink ratchet baselines into an unpushed merge commit
+# (amend) and record probed look keys, and the evidence is named by the HEAD they ended on. Follow HEAD when it moved, provided the
+# old commit is an ancestor or was amended in place (same tree plus the gates' own files), so the proof always matches what is stamped.
+if [ "$reuse_gates" -eq 0 ]; then
+	after="$(git rev-parse HEAD)"
+	if [ "$after" != "$tested" ]; then
+		echo "== lane-ready: the gates moved HEAD ${tested:0:10} -> ${after:0:10}; proof is read for the new HEAD"
+		tested="$after"
+	fi
+fi
 # An interrupted gate can return without evidence; absence is never a passing result.
 ok_file="data/merge-gates/${tested:0:12}.ok"
-[ -s "$ok_file" ] && grep -Fxq "sha=$tested" "$ok_file" || die "the gates produced no matching result; nothing was stamped"
+if ! { [ -s "$ok_file" ] && grep -Fxq "sha=$tested" "$ok_file"; }; then
+	found="$(sed -n 's/^sha=//p' "$ok_file" 2>/dev/null)"
+	die "the gates produced no matching result; nothing was stamped
+  expected: $ok_file containing sha=$tested
+  found:    ${found:-no such file or no sha line} (HEAD now $(git rev-parse HEAD); other proofs: $(ls data/merge-gates/*.ok 2>/dev/null | tail -n 3 | tr '
+' ' '))
+  if the gates passed on another commit, rerun; do not hand-edit the evidence"
+fi
 if [ "$reuse_gates" -eq 1 ]; then
 	completed_tests=" $(sed -n 's/^tests=//p' "$ok_file") "
 	for selector in "${list[@]}"; do
