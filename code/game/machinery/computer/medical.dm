@@ -230,7 +230,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/computer/med_data, med_field_choices, list(
 					medical["empty"] = 1
 			if(MED_DATA_V_DATA)
 				data["virus"] = list()
-				for(var/datum/data/record/v in GLOB.virusDB)
+				for(var/virus_id in GLOB.virusDB) // virus id -> its record
+					var/datum/data/record/v = GLOB.virusDB[virus_id]
+					if(!istype(v))
+						continue
 					data["virus"] += list(list("name" = v.fields["name"], "D" = "\ref[v]"))
 			if(MED_DATA_MEDBOT)
 				data["medbots"] = list()

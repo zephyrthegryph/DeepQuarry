@@ -1449,6 +1449,6 @@ exempt_prefixes = ["code/engine/_generated/"]
 # controllers (world singletons), and registries/flyweights (the ownership index adds REGISTRY_TYPE()s itself).
 [lint.stored_refs]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/tests/", "code/engine/refs/", "code/engine/time/", "code/datums/ownership/", "code/datums/om/", "code/datums/lifecycle/", "code/controllers/subsystems/garbage.dm", "code/modules/admin/view_variables/reference_tracking.dm", "code/engine/_generated/"]
-exempt_files = ["code/__defines/tgs.dm"]
+exempt_files = ["code/__defines/tgs.dm", "code/datums/registries.dm", "code/controllers/kernel/membership.dm", "code/datums/native/entities.dm", "code/engine/declare/link_state.dm"] # the last four ARE the registry/membership/relation storage: they hold members by design
 [lint.stored_refs.lists]
 exempt_types = ["/datum/system", "/datum/shared_cache", "/datum/controller", "/datum/world_service", "/datum/capability", "/datum/reaction", "/datum/stack_recipe", "/datum/stack_recipe_list", "/datum/entry", "/datum/own_entry", "/datum/derived_entry", "/datum/op_def"]

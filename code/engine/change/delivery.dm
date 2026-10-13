@@ -422,7 +422,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 
 	N.source = E
 	if(GLOB.rx_notice_delivering)
-		GLOB.rx_notice_queue += list(list(E, N))
+		GLOB.rx_notice_queue += list(list(entity_handle(E) || entity_handle_of(E), N)) // a handle: a queued notice never keeps its holder alive
 		return
 	GLOB.rx_notice_delivering = TRUE
 	var/delivered = 0
@@ -439,7 +439,12 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 			var/datum/notice/cut = next[2]
 			cut.release()
 			break
-		rx_deliver_notice(next[1], next[2])
+		var/datum/queued_holder = resolve_handle(next[1])
+		if(!queued_holder)
+			var/datum/notice/lost = next[2]
+			lost.release() // its holder is gone: nothing left to hear it
+			continue
+		rx_deliver_notice(queued_holder, next[2])
 	GLOB.rx_notice_delivering = FALSE
 
 /proc/rx_deliver_notice(datum/E, datum/notice/N)
