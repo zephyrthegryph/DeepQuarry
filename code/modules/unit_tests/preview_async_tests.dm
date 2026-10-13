@@ -42,7 +42,7 @@
 
 /datum/unit_test/dq_preview_async_matches_getflaticon/Run()
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
-	mannequin.regenerate_icons()
+	refresh_flush() // the human draws through the refresh queue; nothing redraws on regenerate_icons()
 	mannequin.ImmediateOverlayUpdate()
 	TEST_ASSERT(length(mannequin.overlays), "mannequin has no overlays to test with")
 	var/mutable_appearance/matrix_overlay = new(mannequin.overlays[1])
