@@ -4880,3 +4880,13 @@ Affected requirement-pin classes:
 - `/obj/machinery/vr_sleeper/alien`
 - `/obj/machinery/vr_sleeper`
 - `/obj/structure/frame`
+
+### Card-hand look-key record after fixture repair (2026-10-13)
+
+Master `e1141671e5` rewrote the parity fixture to `add_cards()`, but the hand's
+card list uses an implicit relation rather than a generated tracked-list
+mutator. Repair `396ebd1ca5` uses `rel_add()` as production does. Lane-ready
+recorded only `/obj/item/hand`'s look-key fingerprint (`60fbf68e65da7a16` to
+`48f1e17a2e3e6cf1`); its published key names are unchanged. Both look pins,
+the conversion pin and requirement protocol pin passed. No appearance or
+interaction golden was re-blessed.
