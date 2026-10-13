@@ -33,7 +33,7 @@
 	var/obj/item/hand/cards = A
 	if(istype(cards) && !length(cards.cards))
 		// A hand with no cards is gone at its first draw; the legacy fixture held one that stayed, so give it a card to keep.
-		cards.add_cards(new /datum/playingcard())
+		rel_add(cards, nameof(cards.cards), new /datum/playingcard())
 	if(QDELETED(A) || A.loc != T)
 		return null
 	return A
