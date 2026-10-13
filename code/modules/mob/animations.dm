@@ -241,6 +241,6 @@
 	set_dir(D)
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office))
 		var/obj/structure/bed/chair/office/O = src?.buckled_to()
-		O.dir = D
+		O.set_dir(D)
 		O.set_dir(D)
 	LAZYSET(A.args, "left", A.arg("left") - speed)

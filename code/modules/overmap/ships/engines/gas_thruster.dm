@@ -191,7 +191,7 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 /// Applied at init from its constructor param (param(apply =), code/engine/lifeforms/params.dm).
 /obj/effect/engine_exhaust/proc/ignite(is_flame)
 	if(is_flame)
-		icon_state = "exhaust"
+		set_icon_state("exhaust")
 		if(isturf(loc))
 			var/turf/T = loc
 			T.hotspot_expose(1000,125)
@@ -245,7 +245,7 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 /obj/machinery/atmospherics/unary/engine/bigger/burn()
 	. = ..()
 	if(.)
-		icon_state = "engine_on"
+		set_icon_state("engine_on")
 		after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /obj/machinery/atmospherics/unary/engine/biggest
@@ -264,7 +264,7 @@ CAPABILITIES(/obj/effect/engine_exhaust)
 /obj/machinery/atmospherics/unary/engine/biggest/burn()
 	. = ..()
 	if(.)
-		icon_state = "engine_on"
+		set_icon_state("engine_on")
 		after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /obj/machinery/atmospherics/unary/engine/biggest/atmos_init()

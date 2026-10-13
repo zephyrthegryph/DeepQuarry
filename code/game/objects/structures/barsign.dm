@@ -51,6 +51,6 @@ CAPABILITIES(/obj/structure/sign/double/barsign)
 	var/datum/prompt/R = A.answer
 	if(!R?.value || cult)
 		return OP_OK
-	icon_state = R.value
+	set_icon_state(R.value)
 	to_chat(A.actor, span_notice("You change the barsign."))
 	return OP_OK

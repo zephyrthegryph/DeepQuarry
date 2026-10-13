@@ -42,12 +42,12 @@
 /obj/atom_break(damage_flag)
 	. = ..()
 	if(broken_icon_state)
-		icon_state = broken_icon_state
+		set_icon_state(broken_icon_state)
 
 /obj/atom_fix()
 	. = ..()
 	if(broken_icon_state)
-		icon_state = initial(icon_state)
+		set_icon_state(initial(icon_state))
 
 /// EMP adapter: an ionic packet from the shared ladder. Only types with an
 /// emp_integrity_factor lose integrity to it; for the rest only the declared DAMAGE_EMP

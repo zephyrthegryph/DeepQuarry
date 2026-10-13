@@ -82,9 +82,9 @@
 
 /mob/living/bot/secbot/update_icons()
 	if(on && bot_busy())
-		icon_state = "[default_icon_state]-c"
+		set_icon_state("[default_icon_state]-c")
 	else
-		icon_state = "[default_icon_state][on]"
+		set_icon_state("[default_icon_state][on]")
 
 	if(on)
 		set_glow(src, GLOW(2, 1, baton_glow))
@@ -538,13 +538,13 @@ MSG_DEF_SELF(bot_frame/start_wire, "You start to wire %T%.")
 
 /obj/item/secbot_assembly/proc/leg_one_added(datum/act/op/A)
 	name = "legs/frame assembly"
-	icon_state = "ed209_leg"
+	set_icon_state("ed209_leg")
 	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
 	return OP_OK
 
 /obj/item/secbot_assembly/proc/leg_two_added(datum/act/op/A)
 	name = "legs/frame assembly"
-	icon_state = "ed209_legs"
+	set_icon_state("ed209_legs")
 	to_chat(A.actor, span_notice("You add the robot leg to [src]."))
 	return OP_OK
 

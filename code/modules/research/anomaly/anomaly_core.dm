@@ -59,7 +59,7 @@ CAPABILITIES(/obj/item/assembly/signaler/anomaly)
 	anomaly.stabilize(releaser.will_anchor, releaser.has_core, releaser.gives_stats)
 
 	if(!releaser.infinite)
-		releaser.icon_state = releaser.used_icon_state
+		releaser.set_icon_state(releaser.used_icon_state)
 		releaser.set_used(TRUE)
 		releaser.name = "used " + releaser.name
 		consume(src, user)

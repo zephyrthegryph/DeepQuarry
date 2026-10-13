@@ -37,17 +37,17 @@ CAPABILITIES(/obj/item/packageWrap)
 		P.set_w_class(O.w_class)
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))
-			P.icon_state = "deliverycrate[i]"
+			P.set_icon_state("deliverycrate[i]")
 			switch(i)
 				if(1) P.name = "tiny parcel"
 				if(3) P.name = "normal-sized parcel"
 				if(4) P.name = "large parcel"
 				if(5) P.name = "huge parcel"
 		if(i < 1)
-			P.icon_state = "deliverycrate1"
+			P.set_icon_state("deliverycrate1")
 			P.name = "tiny parcel"
 		if(i > 5)
-			P.icon_state = "deliverycrate5"
+			P.set_icon_state("deliverycrate5")
 			P.name = "huge parcel"
 		P.add_fingerprint(user)
 		O.add_fingerprint(user)
@@ -67,7 +67,7 @@ CAPABILITIES(/obj/item/packageWrap)
 		if(O.opened)
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
-		P.icon_state = "deliverycrate"
+		P.set_icon_state("deliverycrate")
 		rel_set(P, nameof(P.wrapped), O)
 		O.forceMove(P)
 		src.amount -= 3

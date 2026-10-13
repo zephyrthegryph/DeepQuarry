@@ -407,9 +407,9 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks/dry_ramen)
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change()
 	..()
 	if(reagents.total_volume)
-		icon_state = "water_cup"
+		set_icon_state("water_cup")
 	else
-		icon_state = "water_cup_e"
+		set_icon_state("water_cup_e")
 
 CAPABILITIES(/obj/item/reagent_containers/food/drinks/sillycup)
 	configure(item_sounds(drop = SFX_ITEMS_DROP_PAPERCUP, pickup = SFX_ITEMS_PICKUP_PAPERCUP))

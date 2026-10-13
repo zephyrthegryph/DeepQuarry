@@ -53,7 +53,7 @@ TRACKED(/obj/structure/girder, material_processing)
 /obj/structure/girder/proc/set_material(datum/material/new_material)
 	girder_material = new_material
 	name = "[girder_material.display_name] [initial(name)]"
-	max_integrity = round(girder_material.integrity) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
+	set_max_integrity(round(girder_material.integrity)) //Should be 150 with default integrity (steel). Weaker than ye-olden Girders now.
 	update_integrity(max_integrity)
 	displaced_health = round(max_integrity/4)
 	update_rad_insulation()
@@ -88,7 +88,7 @@ CAPABILITIES(/obj/structure/girder/displaced)
 
 /obj/structure/girder/proc/displace()
 	name = "displaced [girder_material.display_name] [initial(name)]"
-	icon_state = "displaced"
+	set_icon_state("displaced")
 	set_anchored(FALSE)
 	update_integrity(displaced_health)
 	cover = 25
@@ -160,10 +160,10 @@ CAPABILITIES(/obj/structure/girder)
 	set_anchored(TRUE)
 	cover = initial(cover)
 	// Rebuild the frame allowance before applying the reinforcement still present.
-	max_integrity = round(girder_material.integrity)
+	set_max_integrity(round(girder_material.integrity))
 	repair_damage(max_integrity)
 	state = 0
-	icon_state = initial(icon_state)
+	set_icon_state(initial(icon_state))
 	reinforcing = 0
 	if(reinf_material)
 		reinforce_girder()
@@ -300,10 +300,10 @@ MSG_DEF_SELF(girder/slicing, span_notice("Now slicing apart the girder..."))
 	cover = reinf_material.hardness
 	update_rad_insulation()
 	var/bonus = round(reinf_material.integrity/2)
-	max_integrity += bonus
+	set_max_integrity(max_integrity + bonus)
 	repair_damage(bonus)
 	state = 2
-	icon_state = "reinforced"
+	set_icon_state("reinforced")
 	reinforcing = 0
 
 /obj/structure/girder/proc/dismantle()

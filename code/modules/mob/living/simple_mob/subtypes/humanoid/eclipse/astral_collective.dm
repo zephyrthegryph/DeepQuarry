@@ -451,7 +451,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/do_special_attack(atom/A, stance)
 	barrier_health ++
-	icon_state = "clock_cat_shield"
+	set_icon_state("clock_cat_shield")
 
 /mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)
@@ -462,7 +462,7 @@ CAPABILITIES(/mob/living/simple_mob/humanoid/astral_collective/mind/gravity)
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		if(barrier_health == 0)
-			icon_state = "clock_cat"
+			set_icon_state("clock_cat")
 		return
 	else
 		..()

@@ -35,14 +35,14 @@
 		alert = new type
 
 	if(new_master)
-		alert.icon_state = "itembased"
+		alert.set_icon_state("itembased")
 		var/image/I = image(icon = new_master.icon, icon_state = new_master.icon_state, dir = SOUTH)
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
 		alert.add_overlay(I)
 		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
-		alert.icon_state = "[initial(alert.icon_state)][severity]"
+		alert.set_icon_state("[initial(alert.icon_state)][severity]")
 		alert.severity = severity
 
 	rel_add(src, nameof(alerts), alert, category)

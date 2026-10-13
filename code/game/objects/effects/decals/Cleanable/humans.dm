@@ -44,7 +44,7 @@ SETTER(/obj/effect/decal/cleanable/blood, basecolor)
 	. = ..()
 	dq_set_fluorescent(src, 0)
 	if(invisibility != INVISIBILITY_MAXIMUM)
-		invisibility = INVISIBILITY_MAXIMUM
+		set_invisibility(INVISIBILITY_MAXIMUM)
 		amount = 0
 
 /obj/effect/decal/cleanable/blood/Initialize(mapload)

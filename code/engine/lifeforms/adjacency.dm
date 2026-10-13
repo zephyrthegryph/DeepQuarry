@@ -101,13 +101,28 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 	var/list/changed = vg_adjacency_place(adjacency_kind_id(E.args["kind"]), h, T.x, T.y, T.z, adjacency_rust_dirs(E.args["dirs"]))
 	adjacency_recompute_handles(changed, E.args["kind"])
 
+GLOBAL_VAR_INIT(dq_adjacency_trace, 0)
+/// Test/debug tracing (GLOB.dq_adjacency_trace): the references of the holder and of what shares its tile after each step of leaving the index.
+#define DQ_ADJACENCY_TRACE(holder, what) if(GLOB.dq_adjacency_trace) { log_world("ADJACENCY_TRACE: [holder.type] [what]: holder refs=[refcount(holder)], tile mates refs=[dq_adjacency_mate_refs(holder)]") }
+
+/proc/dq_adjacency_mate_refs(atom/holder)
+	var/list/out = list()
+	if(isturf(holder.loc))
+		for(var/atom/movable/AM in holder.loc)
+			if(AM != holder)
+				out += "[AM.type]=[refcount(AM)]"
+	return jointext(out, ",")
+
 /proc/adjacency_take_out(atom/holder, datum/centry/C)
 	if(!holder.adj_handle)
 		return
 	var/datum/entry/E = C.item
 	var/list/changed = vg_adjacency_remove(adjacency_kind_id(E.args["kind"]), holder.adj_handle)
+	DQ_ADJACENCY_TRACE(holder, "removed from the index")
 	adjacency_recompute_handles(changed, E.args["kind"])
+	DQ_ADJACENCY_TRACE(holder, "neighbours recomputed")
 	adjacency_write(holder, C, 0)
+	DQ_ADJACENCY_TRACE(holder, "mask cleared")
 
 /proc/adjacency_recompute_handles(list/changed, kind)
 	for(var/h in changed)
@@ -127,7 +142,9 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 	var/datum/entry/E = C.item
 	var/connects = E.args["connects"]
 	var/mask = 0
+	DQ_ADJACENCY_TRACE(holder, "recompute begins")
 	var/list/seen = vg_adjacency_seen(adjacency_kind_id(E.args["kind"]), holder.adj_handle)
+	DQ_ADJACENCY_TRACE(holder, "recompute: neighbours read")
 	for(var/i in 1 to length(seen) step 2)
 		var/atom/other = GLOB.adjacency_members[seen[i]]
 		var/bit = seen[i + 1]
@@ -136,7 +153,9 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		if(connects && !call(holder, connects)(other, bit))
 			continue
 		mask |= bit
+	DQ_ADJACENCY_TRACE(holder, "recompute: mask joined")
 	adjacency_write(holder, C, mask)
+	DQ_ADJACENCY_TRACE(holder, "recompute: mask written")
 
 /proc/adjacency_write(atom/holder, datum/centry/C, mask)
 	var/datum/entry/E = C.item
@@ -145,10 +164,13 @@ GLOBAL_LIST_EMPTY(adjacency_free)
 		if(holder.vars[into] == mask)
 			return
 		holder.vars[into] = mask // ALLOW(api): the engine writes an adjacency() result into its declared var and publishes it
+		DQ_ADJACENCY_TRACE(holder, "write: var set")
 		tracked_changed(holder, into)
+		DQ_ADJACENCY_TRACE(holder, "write: change published")
 	var/changed = E.args["changed"]
 	if(changed && !QDELETED(holder))
 		call(holder, changed)(mask)
+		DQ_ADJACENCY_TRACE(holder, "write: changed proc ran")
 
 /// A member moved: it is re-placed in each kind (a move off the map takes it out).
 /proc/adjacency_moved(atom/movable/holder, atom/old_loc)

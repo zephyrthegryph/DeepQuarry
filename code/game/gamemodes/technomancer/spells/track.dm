@@ -30,7 +30,7 @@ CAPABILITIES(/obj/item/spell/track)
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
 		set_tracking(FALSE)
-		icon_state = "track"
+		set_icon_state("track")
 		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
 		rel_clear(src, nameof(tracked))
 		return
@@ -59,23 +59,23 @@ CAPABILITIES(/obj/item/spell/track)
 /// every() while tracking: point towards the tracked thing.
 /obj/item/spell/track/proc/track(datum/act/timer/A)
 	if(!tracked())
-		icon_state = "track_unknown"
+		set_icon_state("track_unknown")
 
 	if(tracked().z != owner_ref().z)
-		icon_state = "track_unknown"
+		set_icon_state("track_unknown")
 
 	else
 		set_dir(get_dir(src,get_turf(tracked())))
 
 		switch(get_dist(src,get_turf(tracked())))
 			if(0)
-				icon_state = "track_direct"
+				set_icon_state("track_direct")
 			if(1 to 8)
-				icon_state = "track_close"
+				set_icon_state("track_close")
 			if(9 to 16)
-				icon_state = "track_medium"
+				set_icon_state("track_medium")
 			if(16 to INFINITY)
-				icon_state = "track_far"
+				set_icon_state("track_far")
 
 /// Tracked (a relation view).
 /obj/item/spell/track/proc/tracked() as /atom/movable

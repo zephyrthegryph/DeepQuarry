@@ -195,7 +195,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_stopped(datum/act/op/A)
 	set_cooking(FALSE)
-	icon_state = off_icon
+	set_icon_state(off_icon)
 	fry_loop.stop(src)
 
 /obj/machinery/appliance/cooker/fryer/proc/cook_mob_done(datum/act/op/A)
@@ -204,7 +204,7 @@ CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
 	if(QDELETED(victim) || !victim.Adjacent(user))
 		to_chat(user, span_danger("Your victim slipped free!"))
 		set_cooking(FALSE)
-		icon_state = off_icon
+		set_icon_state(off_icon)
 		fry_loop.stop(src)
 		return
 

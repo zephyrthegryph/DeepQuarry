@@ -188,7 +188,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 	if(mecha_parts_done(A))
 		var/datum/mecha_blueprint/plan = mecha_blueprint()
 		icon = plan.icon_finished
-		icon_state = "[plan.icon_prefix]0"
+		set_icon_state("[plan.icon_prefix]0")
 		set_density(TRUE)
 	log_world("MECHA CONSTRUCTION: [A.actor] attached [part] to [src] ([blueprint]), parts [parts_mask]")
 	return OP_OK
@@ -267,7 +267,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 		spent(src, A.actor)
 		return OP_OK
 	if(row["fwd_icon"])
-		icon_state = row["fwd_icon"]
+		set_icon_state(row["fwd_icon"])
 	return OP_OK
 
 /// A step is taken back (what it took in is handed back by the graph): its sound, its lines, its picture.
@@ -277,7 +277,7 @@ GLOBAL_LIST_INIT(mecha_stage_ids, list(STAGE_MECHA_SHELL, STAGE_MECHA_STEP_1, ST
 	mecha_step_sound(row["backkey"])
 	mecha_step_say(A.actor, A.held, row["back_self"], row["back_others"], row["back_span"])
 	if(row["back_icon"])
-		icon_state = row["back_icon"]
+		set_icon_state(row["back_icon"])
 	return OP_OK
 
 /datum/mecha_blueprint/ripley

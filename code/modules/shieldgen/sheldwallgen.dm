@@ -60,7 +60,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 
 	if(src.active >= 1)
 		set_active(0)
-		icon_state = "Shield_Gen"
+		set_icon_state("Shield_Gen")
 
 		act_message(user, null, MSG_SELF("You turn off the shield generator."), \
 			MSG_OTHERS("%U% turned the shield generator off."), \
@@ -68,7 +68,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	else
 		set_active(1)
-		icon_state = "Shield_Gen_on"
+		set_icon_state("Shield_Gen_on")
 		act_message(user, null, MSG_SELF("You turn on the shield generator."), \
 			MSG_OTHERS("%U% turned the shield generator on."), \
 			MSG_BLIND("You hear heavy droning."))
@@ -127,7 +127,7 @@ CAPABILITIES(/obj/machinery/shieldwallgen)
 		if(src.power == 0)
 			src.visible_message(span_red("The [src.name] shuts down due to lack of power!"), \
 				"You hear heavy droning fade out")
-			icon_state = "Shield_Gen"
+			set_icon_state("Shield_Gen")
 			set_active(0)
 			for(var/dir in list(1,2,4,8)) src.cleanup(dir)
 	if(!active && storedpower >= max_stored_power)

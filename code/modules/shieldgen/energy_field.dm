@@ -105,7 +105,7 @@ CAPABILITIES(/obj/effect/energy_field)
 	update_integrity(clamp(renwicks * FIELD_INTEGRITY_PER_RENWICK, 0, max_integrity))
 
 /obj/effect/energy_field/proc/set_max_strength(renwicks)
-	max_integrity = renwicks * FIELD_INTEGRITY_PER_RENWICK
+	set_max_integrity(renwicks * FIELD_INTEGRITY_PER_RENWICK)
 	if(get_integrity() > max_integrity)
 		update_integrity(max_integrity)
 

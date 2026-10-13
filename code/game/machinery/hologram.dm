@@ -158,7 +158,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	rel_add(src, nameof(holograms), hologram)
 	rel_add(src, nameof(masters), A)
 	set_glow(src, GLOW(2, null, null))			//pad lighting
-	icon_state = "holopad1"
+	set_icon_state("holopad1")
 	flick("holopadload", src)
 	rel_set(A, nameof(A.holo), src)
 	if(LAZYLEN(masters))
@@ -178,7 +178,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_glow(src, GLOW(0, null, null))			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
-		icon_state = "holopad0"
+		set_icon_state("holopad0")
 	return 1
 
 /obj/machinery/hologram/holopad/proc/work_step(datum/act/timer/A)

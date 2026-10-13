@@ -71,7 +71,7 @@ CAPABILITIES(/obj/machinery/wish_granter)
 			to_chat(user, span_infoplain("You feel as if you just narrowly avoided a terrible fate..."))
 			for(var/mob/living/simple_mob/faithless/F in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
 				F.set_stat(DEAD)
-				F.icon_state = "faithless_dead"
+				F.set_icon_state("faithless_dead")
 
 /obj/machinery/wish_granter/proc/gib_wisher(mob/living/carbon/human/user)
 	if(user)

@@ -47,7 +47,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(!proximity)	return
 	if(istype(AM, /obj/structure/table))
 		src.pixel_y = 3 // Shift it up slightly to look better on table
-		src.dir = get_dir(src, user)
+		set_dir(get_dir(src, user))
 	else if(istype(AM, /obj/structure/closet/crate))
 		var/obj/structure/closet/crate/crate = AM
 		certify_freight_crate(crate, user)
@@ -56,7 +56,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 
 // Reset dir when picked back up
 /obj/item/retail_scanner/pickup(mob/user)
-	src.dir = SOUTH
+	set_dir(SOUTH)
 	src.pixel_y = 0
 
 CAPABILITIES(/obj/item/retail_scanner)

@@ -55,7 +55,7 @@
 			name = H.name
 			desc = H.desc
 			icon = H.icon
-			icon_state = H.icon_state
+			set_icon_state(H.icon_state)
 			copy_overlays(H, TRUE)
 			resize(H.size_multiplier, ignore_prefs = TRUE)
 			var/obj/item/A = H.get_active_hand()

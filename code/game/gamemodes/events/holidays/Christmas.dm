@@ -8,7 +8,7 @@
 /proc/ChristmasEvent()
 	for(var/obj/structure/flora/tree/pine/xmas in world)
 		var/mob/living/simple_mob/animal/space/tree/evil_tree = new /mob/living/simple_mob/animal/space/tree(xmas.loc)
-		evil_tree.icon_state = xmas.icon_state
+		evil_tree.set_icon_state(xmas.icon_state)
 		evil_tree.set_icon_living(evil_tree.icon_state)
 		evil_tree.set_icon_dead(evil_tree.icon_state)
 		evil_tree.icon_gib = evil_tree.icon_state
@@ -40,10 +40,10 @@
 			"Why doesn't Santa have any children?\n\n" + span_italics("Because he only comes down the chimney.")))
 		new /obj/item/clothing/head/festive(target.loc)
 		cracked = 1
-		icon_state = "cracker1"
+		set_icon_state("cracker1")
 		var/obj/item/toy/xmas_cracker/other_half = new /obj/item/toy/xmas_cracker(target)
 		other_half.cracked = 1
-		other_half.icon_state = "cracker2"
+		other_half.set_icon_state("cracker2")
 		target.put_in_active_hand(other_half)
 		play_sfx(src, SFX_EFFECTS_SNAP)
 		return ITEM_INTERACT_SUCCESS

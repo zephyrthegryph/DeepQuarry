@@ -53,7 +53,7 @@ CAPABILITIES(/obj/effect/wingrille_spawn)
 /// Per-type touches on each window a spawner makes.
 /proc/wingrille_window_spawned(obj/structure/window/W, path, list/varedits)
 	if(ispath(path, /obj/effect/wingrille_spawn/reinforced/crescent))
-		W.max_integrity = 1000000
+		W.set_max_integrity(1000000)
 		W.update_integrity(1000000)
 	else if(ispath(path, /obj/effect/wingrille_spawn/reinforced/polarized))
 		var/obj/effect/wingrille_spawn/reinforced/polarized/P = path

@@ -103,7 +103,7 @@ CAPABILITIES(/obj/machinery/conveyor)
 
 /obj/machinery/conveyor/proc/update()
 	if(broken_now())
-		icon_state = "conveyor-broken"
+		set_icon_state("conveyor-broken")
 		set_operating(OFF)
 		set_use_power(USE_POWER_OFF)
 		return
@@ -114,10 +114,10 @@ CAPABILITIES(/obj/machinery/conveyor)
 		// kills itself on NOPOWER, and power_change() re-enters here to restart
 		// the belt. Clearing `operating` left belts (and their cargo) stalled
 		// until someone re-toggled the switch.
-		icon_state = "conveyor[OFF]"
+		set_icon_state("conveyor[OFF]")
 		set_use_power(USE_POWER_OFF)
 		return
-	icon_state = "conveyor[operating]"
+	set_icon_state("conveyor[operating]")
 
 	if(!operating)
 		set_use_power(USE_POWER_OFF)
@@ -259,11 +259,11 @@ CAPABILITIES(/obj/machinery/conveyor_switch)
 
 /obj/machinery/conveyor_switch/proc/update()
 	if(position<0)
-		icon_state = "switch-rev"
+		set_icon_state("switch-rev")
 	else if(position>0)
-		icon_state = "switch-fwd"
+		set_icon_state("switch-fwd")
 	else
-		icon_state = "switch-off"
+		set_icon_state("switch-off")
 
 // timed process
 // if the switch changed, update the linked conveyors

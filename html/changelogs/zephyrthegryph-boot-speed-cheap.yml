@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Faster test-world startup: validate-dme skips when unchanged, fresh worktrees seed map bounds and the bindings-check record, the harness force-kill grace after a clean run is 1.5 s, test worlds skip the database connect attempt, and the focused round-start settle is 1 s (0 s for --boot)"

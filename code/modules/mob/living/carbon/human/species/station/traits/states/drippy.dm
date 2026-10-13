@@ -48,7 +48,7 @@
 	B.set_dryname("dried something")
 	B.set_drydesc("It's dry and crusty. The janitor isn't doing their job.")
 	dq_set_fluorescent(B, 0)
-	B.invisibility = INVISIBILITY_NONE
+	B.set_invisibility(INVISIBILITY_NONE)
 
 /datum/trait_state/drippy/proc/create_color(datum/act/notice/A)
 	SHOULD_NOT_SLEEP(TRUE)

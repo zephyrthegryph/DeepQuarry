@@ -168,7 +168,7 @@
 	test_time(1 SECONDS)
 	TEST_ASSERT_EQUAL(B.icon_state, "koran", "the chosen skin is the bible's")
 	TEST_ASSERT(H.mind.my_religion.configured, "and the religion is configured")
-	B.icon_state = "bible"
+	B.set_icon_state("bible")
 	cooldown_set_end(H, next_click, 0)
 	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
 	test_time(1 SECONDS)

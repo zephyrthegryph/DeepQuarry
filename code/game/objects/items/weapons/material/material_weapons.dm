@@ -70,7 +70,7 @@ TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
 	else
 		if(named_from_material)
 			name = "[material.display_name] [initial(name)]"
-		max_integrity = max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT
+		set_max_integrity(max(1, round(material.integrity/10)) * MATERIAL_WEAR_UNIT)
 		update_integrity(max_integrity)
 		if(applies_material_colour)
 			color = material.icon_colour

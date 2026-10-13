@@ -54,14 +54,14 @@ CAPABILITIES(/obj/machinery/optable)
 			rel_set(src, nameof(victim), M)
 			if(M.pulse)
 				if(M.stat)
-					icon_state = "table2-sleep"
+					set_icon_state("table2-sleep")
 				else
-					icon_state = "table2-active"
+					set_icon_state("table2-active")
 			else
-				icon_state = "table2-dead"
+				set_icon_state("table2-dead")
 			return 1
 	rel_clear(src, nameof(victim))
-	icon_state = "table2-idle"
+	set_icon_state("table2-idle")
 	return 0
 
 /obj/machinery/optable/proc/work_step(datum/act/timer/A)
@@ -90,9 +90,9 @@ CAPABILITIES(/obj/machinery/optable)
 		rel_set(src, nameof(victim), H)
 		if(computer)
 			work_start(computer)
-		icon_state = H.pulse ? "table2-active" : "table2-idle"
+		set_icon_state(H.pulse ? "table2-active" : "table2-idle")
 	else
-		icon_state = "table2-idle"
+		set_icon_state("table2-idle")
 
 /// Old MouseDrop_T.
 /obj/machinery/optable/proc/optable_interaction_drag(datum/act/op/A)

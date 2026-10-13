@@ -929,7 +929,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	// copy it replaces (often src itself, still read below) is deleted.
 	proto_set(H, nameof(H.species), new_copy)
 	H.invalidate_factors()
-	H.icon_state = new_copy.get_bodytype()
+	H.set_icon_state(new_copy.get_bodytype())
 
 	if(new_copy.holder_type)
 		H.holder_type = new_copy.holder_type

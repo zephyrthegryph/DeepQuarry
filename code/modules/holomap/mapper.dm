@@ -98,7 +98,7 @@ CAPABILITIES(/obj/item/mapping_unit)
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
-	mark.icon_state = "mapper_none"
+	mark.set_icon_state("mapper_none")
 	mark.layer = 10
 	rel_add(src, nameof(icon_image_cache), mark, "bad")
 
@@ -350,7 +350,7 @@ TRACKED(/obj/item/mapping_unit, updating)
 
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
-				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
+				mark.set_icon_state("[HC.marker_prefix][mob_indicator]")
 				rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
@@ -377,7 +377,7 @@ TRACKED(/obj/item/mapping_unit, updating)
 		var/marker_cache_key = "\ref[HB]_marker"
 		if(!(marker_cache_key in icon_image_cache))
 			var/atom/movable/screen/mapper/marker/mark = new()
-			mark.icon_state = "beacon"
+			mark.set_icon_state("beacon")
 			mark.layer = 1
 			rel_add(src, nameof(icon_image_cache), mark, marker_cache_key)
 
@@ -433,7 +433,7 @@ REGISTRY_MEMBERSHIP(/obj/item/holomap_beacon, REGISTRY_MAPPING_BEACONS)
 	if(in_list) // mapped in turned on
 		in_list = TRUE
 		registry_join(REGISTRY_MAPPING_BEACONS, src)
-		icon_state = initial(icon_state) + (in_list ? "_on" : "")
+		set_icon_state(initial(icon_state) + (in_list ? "_on" : ""))
 
 CAPABILITIES(/obj/item/holomap_beacon)
 	after_init(0, then(PROC_REF(join_mapped_beacon)))
@@ -448,7 +448,7 @@ CAPABILITIES(/obj/item/holomap_beacon)
 	else
 		in_list = FALSE
 		registry_leave(REGISTRY_MAPPING_BEACONS, src)
-	icon_state = "[initial(icon_state)][in_list ? "_on" : ""]"
+	set_icon_state("[initial(icon_state)][in_list ? "_on" : ""]")
 	to_chat(user,span_notice("The [src] is now [in_list ? "broadcasting" : "disabled"]."))
 	return TRUE
 

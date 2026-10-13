@@ -87,7 +87,7 @@ CAPABILITIES(/mob/living/simple_mob/animal/space/mouse_army)
 /mob/living/simple_mob/animal/space/mouse_army/proc/splat()
 	src.set_stat(DEAD)
 	src.set_icon_dead("mouse_[rank]_splat")
-	src.icon_state = "mouse_[rank]_splat"
+	set_icon_state("mouse_[rank]_splat")
 	layer = MOB_LAYER
 	if(client)
 		EXPIRY_STAMP(client, time_died_as_mouse, CLOCK_WORLD)
