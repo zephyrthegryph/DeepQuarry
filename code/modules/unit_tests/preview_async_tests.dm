@@ -111,8 +111,9 @@
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = allocate(/mob/living/carbon/human/dummy/mannequin)
 	TEST_ASSERT(!length(mannequin.overlays), "the mannequin already had overlays before the preview ran")
 	prefs.update_character_previews(mannequin, TRUE)
-	TEST_ASSERT(length(mannequin.overlays), "update_character_previews flattened a mannequin that was never drawn")
-	qdel(prefs)
+	var/drawn = length(mannequin.overlays)
+	qdel(prefs, TRUE) // preferences refuse an unforced delete: this test owns its fixture, and a failed assert must not leak it
+	TEST_ASSERT(drawn, "update_character_previews flattened a mannequin that was never drawn")
 
 /// draw_now() builds the look of a mob that was made in the same call, and follows a direction change.
 /datum/unit_test/dq_draw_now_draws_fresh_human
