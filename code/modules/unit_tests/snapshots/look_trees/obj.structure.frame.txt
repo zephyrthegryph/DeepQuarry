@@ -1,9 +1,9 @@
 /obj/structure/frame icon: icons/obj/stock_parts_vr.dmi
 /obj/structure/frame state: machine_0
 /obj/structure/frame dir: 2
-/obj/structure/frame overlay: icons/obj/stock_parts.dmi:machine_0:8:#000000
+/obj/structure/frame overlay: icons/obj/stock_parts_vr.dmi:machine_0:8:#000000
 /obj/structure/frame/computer icon: icons/obj/stock_parts_vr.dmi
 /obj/structure/frame/computer state: computer_0
 /obj/structure/frame/computer dir: 2
-/obj/structure/frame/computer overlay: icons/obj/stock_parts.dmi:machine_0:8:#000000
+/obj/structure/frame/computer overlay: icons/obj/stock_parts_vr.dmi:computer_0:8:#000000
 
