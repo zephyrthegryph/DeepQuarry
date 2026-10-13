@@ -123,8 +123,12 @@ impl BulkFileSystemProofs {
         let mut capture_missing = 0;
         let mut capture_errors = 0;
         let mut capture_budget_denials = 0;
-        for path in &requested {
-            match capture_directory(path) {
+        // Directory captures are independent kernel queries; run them on scoped
+        // threads, then admit results in the same ordered pass (and budget order).
+        let ordered: Vec<&std::borrow::Cow<'a, Path>> = requested.iter().collect();
+        let captured = capture_directories_parallel(&ordered);
+        for (path, result) in ordered.into_iter().zip(captured) {
+            match result {
                 Ok(proof) => {
                     if bytes.saturating_add(proof.charged) <= 64 * 1024 * 1024 {
                         bytes += proof.charged;
@@ -367,6 +371,35 @@ fn capture_directory(_: &Path) -> io::Result<DirectoryProof> {
     ))
 }
 
+fn capture_directories_parallel(
+    paths: &[&std::borrow::Cow<'_, Path>],
+) -> Vec<io::Result<DirectoryProof>> {
+    const MIN_CHUNK: usize = 32;
+    let threads = std::thread::available_parallelism()
+        .map_or(1, |n| n.get())
+        .min(8)
+        .min(paths.len().div_ceil(MIN_CHUNK).max(1));
+    if threads <= 1 {
+        return paths.iter().map(|path| capture_directory(path)).collect();
+    }
+    let chunk = paths.len().div_ceil(threads);
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = paths
+            .chunks(chunk)
+            .map(|part| {
+                scope.spawn(move || {
+                    part.iter()
+                        .map(|path| capture_directory(path))
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|handle| handle.join().expect("directory proof worker"))
+            .collect()
+    })
+}
 #[cfg(windows)]
 fn capture_directory(path: &Path) -> io::Result<DirectoryProof> {
     use std::ffi::c_void;

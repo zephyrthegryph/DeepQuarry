@@ -476,6 +476,10 @@ impl InputSnapshot {
         self.scanned_ns = self.scanned_ns.min(other.scanned_ns);
         Ok(())
     }
+    /// Paths of every recorded file input, in path order.
+    pub fn file_paths(&self) -> impl Iterator<Item = &Path> {
+        self.files.keys().map(PathBuf::as_path)
+    }
     pub fn contains_file(&self, path: &Path) -> bool {
         self.files.contains_key(path) || self.files.contains_key(&canonical_path(path))
     }

@@ -3,7 +3,7 @@ use crate as dmbc;
 use crate::request::{BuildCommand, BuildOutcome, BuildRequest, Command, CommandOutcome};
 use std::{
     io::{self, Write},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::Arc,
     time::Instant,
 };
@@ -173,6 +173,7 @@ fn run_build_attempt(
         .with_exact_reuse(exact_inputs)
         .with_prepared_sources(prepared_sources.clone());
     drop(request_profile);
+    dm_profile::detail_mark("request.prepare", total);
     let engine_input_profile = dm_profile::stage("engine_input");
     let engine_bytes = if embedded_engine {
         Some(include_bytes!("../../../fixtures/native_template.bin").to_vec())
@@ -190,6 +191,7 @@ fn run_build_attempt(
         .as_ref()
         .map_or(0, |bytes| xxhash_rust::xxh3::xxh3_128(bytes));
     drop(engine_input_profile);
+    dm_profile::detail_mark("engine_input", total);
     let input_context_profile = dm_profile::stage("request.input_context");
     if executable {
         if engine_bytes.as_deref()
@@ -211,8 +213,12 @@ fn run_build_attempt(
     let resource_outputs = std::sync::Mutex::new(ResourceOutputs::default());
     let mut resource_prior = None;
     let mut prior_outputs = None;
+    // Source files read by the latest recorded build; offered to the parallel
+    // input pass as speculative candidates (see NativeInputs::prepare_with_hints).
+    let mut recorded_source_paths: Vec<PathBuf> = Vec::new();
     let mut memo_policy = 0;
     drop(input_context_profile);
+    dm_profile::detail_mark("input_context", total);
     let session_profile = dm_profile::stage("session_validation");
     let compiler = if executable && (!no_cache || host.retains_artifacts()) {
         let compiler = dmbc::daemon::compiler_identity()?;
@@ -253,6 +259,18 @@ fn run_build_attempt(
                     now_ns(),
                     generated_paths,
                     |record| {
+                        if recorded_source_paths.is_empty() {
+                            recorded_source_paths = record
+                                .inputs
+                                .file_paths()
+                                .filter(|path| {
+                                    path.extension().is_some_and(|extension| {
+                                        extension.eq_ignore_ascii_case("dm")
+                                    })
+                                })
+                                .map(Path::to_path_buf)
+                                .collect();
+                        }
                         if prior_outputs.is_none() {
                             prior_outputs = record
                                 .outputs
@@ -343,6 +361,7 @@ fn run_build_attempt(
         pair_store = Some(store);
     }
     drop(session_profile);
+    dm_profile::detail_mark("session_validation", total);
     let engine_profile = dm_profile::stage("engine_capture");
     // An authenticated unchanged session needs no decoded engine or bootstrap
     // catalog. The key above pins exact engine bytes and this compiler/policy.
@@ -399,6 +418,7 @@ fn run_build_attempt(
         .as_ref()
         .map(|capture| capture.frontend_seed());
     drop(engine_profile);
+    dm_profile::detail_mark("engine_capture", total);
     let frontend_context_profile = dm_profile::stage("request.frontend_context");
     let progress = |event: dm_tree::frontend::FrontendProgress| {
         dmbc::daemon_eprintln!(
@@ -459,11 +479,20 @@ fn run_build_attempt(
     let frontend_result = {
         let preparation_start = Instant::now();
         drop(frontend_context_profile);
+        dm_profile::detail_mark("frontend_context", total);
         let input_profile = dm_profile::stage("input_scan");
-        let inputs = match dmbc::native_inputs::NativeInputs::prepare_with_executor(
+        let mut hints = inputs_capture.previous_prepared_paths();
+        if hints.is_empty() {
+            hints = std::mem::take(&mut recorded_source_paths);
+        }
+        if progress_enabled && !hints.is_empty() {
+            dmbc::daemon_eprintln!("native input preparation hints: {} previously prepared paths", hints.len());
+        }
+        let inputs = match dmbc::native_inputs::NativeInputs::prepare_with_hints(
             &project,
             &inputs_capture,
             executor,
+            hints,
         ) {
             Ok(inputs) => Some(inputs),
             Err(dmbc::native_inputs::NativeInputError::RequiredSourceRead { .. }) => None,
@@ -473,6 +502,7 @@ fn run_build_attempt(
         };
         input_preparation_seconds = preparation_start.elapsed().as_secs_f64();
         drop(input_profile);
+        dm_profile::detail_mark("input_scan", total);
         let source_context_profile = dm_profile::stage("request.source_context");
         if progress_enabled {
             dmbc::daemon_eprintln!(
@@ -492,6 +522,7 @@ fn run_build_attempt(
         // Only requested captures enter the semantic model. Release unused
         // speculative preparations before maps, resources and lowering begin.
         drop(source_context_profile);
+        dm_profile::detail_mark("source_context", total);
         let _frontend_profile = dm_profile::stage("frontend");
         dm_tree::frontend::build_with_executor_and_semantic_state(
             &project,
@@ -509,6 +540,7 @@ fn run_build_attempt(
             Some(&mut *semantic_state),
         )
     };
+    dm_profile::detail_mark("frontend", total);
     let frontend_handoff_profile = dm_profile::stage("request.frontend_handoff");
     dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
@@ -547,6 +579,7 @@ fn run_build_attempt(
         }
         let facts_started = Instant::now();
         drop(frontend_handoff_profile);
+        dm_profile::detail_mark("frontend_handoff", total);
         let facts_profile = dm_profile::stage("captured_facts");
         let (host, scalar) = runner_facts::prepare_retained(&frontend, retained_engine, host_facts.as_deref())?;
         let defaults = dmbc::compile_driver::map_defaults(&scalar)?;
@@ -557,6 +590,7 @@ fn run_build_attempt(
         })?;
         let facts_seconds = facts_started.elapsed().as_secs_f64();
         drop(facts_profile);
+        dm_profile::detail_mark("captured_facts", total);
         let nontext_context_profile = dm_profile::stage("request.nontext_context");
         let nontext_started = Instant::now();
         drop(nontext_context_profile);
@@ -692,6 +726,7 @@ fn run_build_attempt(
         drop(captured_engine);
         let nontext_seconds = nontext_started.elapsed().as_secs_f64();
         drop(nontext_profile);
+        dm_profile::detail_mark("resources_maps", total);
         let linking_inputs_started = Instant::now();
         let linking_inputs_profile = dm_profile::stage("linking_inputs");
         let mut links = retained_engine.link_overlay()?;
@@ -699,6 +734,7 @@ fn run_build_attempt(
         let artifacts = std::mem::take(&mut nontext.artifacts);
         let linking_inputs_seconds = linking_inputs_started.elapsed().as_secs_f64();
         drop(linking_inputs_profile);
+        dm_profile::detail_mark("linking_inputs", total);
         let compilation_profile = dm_profile::stage("request.compilation");
         let compilation_started = Instant::now();
         if progress_enabled {
@@ -835,6 +871,7 @@ fn run_build_attempt(
             }
         }
         drop(compilation_profile);
+        dm_profile::detail_mark("compilation", total);
         let cache_flush_profile = dm_profile::stage("cache_flush");
         if let (Some(cache), Some(memo)) = (&memo_cache, &procedure_memo) {
             let records = memo.take_pending();
@@ -871,6 +908,7 @@ fn run_build_attempt(
             dmbc::heap_census::emit_if_enabled("cache_batch.staged", |census| census.cache_batch(cache))?;
         }
         drop(cache_flush_profile);
+        dm_profile::detail_mark("cache_flush", total);
         let publication_started = Instant::now();
         let publication_profile = dm_profile::stage("publication");
         if progress_enabled {
@@ -960,6 +998,7 @@ fn run_build_attempt(
         }
         let publication_seconds = publication_started.elapsed().as_secs_f64();
         drop(publication_profile);
+        dm_profile::detail_mark("publication", total);
         let _finalization_profile = dm_profile::stage("request.finalization");
         let store_path = std::fs::canonicalize(store.root_path())?;
         // Required compile, freshness, pair installation and session operations

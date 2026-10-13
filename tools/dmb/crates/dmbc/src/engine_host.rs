@@ -387,6 +387,48 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
     }
 
     fn domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
+        let version = self.issued_domain_version(domain);
+        if version.is_none() {
+            self.trace_unversioned(domain);
+        }
+        version
+    }
+
+    fn resolve(&self, query: Q) -> M {
+        self.resolve_current(query)
+    }
+}
+impl<R: Resolver + Send> EngineResolverHost<R> {
+    /// DMB_TIMINGS_DETAIL=2: name the first few owner domains left without a
+    /// certificate, with the tree and host answers that decided it.
+    fn trace_unversioned(&self, domain: dm_ir::ReadDomain) {
+        static SEEN: std::sync::OnceLock<std::sync::Mutex<std::collections::BTreeSet<String>>> =
+            std::sync::OnceLock::new();
+        if !std::env::var_os("DMB_TIMINGS_DETAIL").is_some_and(|value| value == "2") {
+            return;
+        }
+        let query = match domain {
+            dm_ir::ReadDomain::OwnerScalar(query) | dm_ir::ReadDomain::OwnerCallable(query) => query,
+            _ => return,
+        };
+        let label = format!("{domain:?}");
+        let mut seen = SEEN
+            .get_or_init(Default::default)
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if seen.len() >= 64 || !seen.insert(label.clone()) {
+            return;
+        }
+        drop(seen);
+        eprintln!(
+            "detail unversioned domain: {label} tree_version={:?} tree_answer={:?} host_answer={:?}",
+            self.tree.domain_version(domain),
+            self.tree.resolve(query),
+            self.resolve_current(query),
+        );
+    }
+
+    fn issued_domain_version(&self, domain: dm_ir::ReadDomain) -> Option<u128> {
         if let Some(version) = self.catalog_domain(domain) {
             return version;
         }
@@ -518,7 +560,7 @@ impl<R: Resolver + Send> Resolver for EngineResolverHost<R> {
         })
     }
 
-    fn resolve(&self, query: Q) -> M {
+    fn resolve_current(&self, query: Q) -> M {
         match query {
             Q::MemberCallableVerbName(_) => self
                 .intrinsic_methods

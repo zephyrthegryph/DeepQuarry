@@ -132,3 +132,70 @@ fn local_variable_receipts_reuse_unrelated_changes_and_reject_changed_declaratio
     assert!(changed.domain_version(missing.domain()).is_some());
     assert!(!queries[0].domain().persistent_version());
 }
+
+#[test]
+fn source_variable_scalar_certificate_tracks_declaration_chain_and_content() {
+    let mut symbols = SymbolTable::default();
+    let root = symbols.intern("/").unwrap();
+    let owner = symbols.intern("/datum/owner").unwrap();
+    let name = symbols.intern("value").unwrap();
+    let other = symbols.intern("other").unwrap();
+    let retained = crate::owner_normalization::RetainedNormalization::default();
+    let build = |rows: &[Skeleton]| {
+        let (index, _) =
+            crate::declaration_contributions::KeyedDeclarations::capture(None, rows).unwrap();
+        crate::build_with_intrinsic_members_indexed(
+            symbols.clone(),
+            rows.into(),
+            &[],
+            &[],
+            false,
+            Some((&index, &retained)),
+        )
+        .unwrap()
+    };
+    let certificate = |tree: &SemanticTree| {
+        let id = tree.resolve(tree.lookup_type(owner)?, name, MemberKind::Var)?;
+        crate::constant_resolution::ScalarSnapshot::source_variable_certificate(
+            tree,
+            owner,
+            name,
+            tree.member(id)?,
+        )
+    };
+    let member = |content: u128, declared_type: Option<SymbolId>| Skeleton::Member {
+        owner,
+        name,
+        kind: MemberKind::Var,
+        mode: DefinitionMode::Declare,
+        metadata: Arc::new(MemberMetadata {
+            declared_type,
+            ..MemberMetadata::default()
+        }),
+        content,
+    };
+    let ty = Skeleton::Type {
+        path: owner,
+        explicit_parent: Some(root),
+    };
+    let first = build(&[ty.clone(), member(1, None)]);
+    let base = certificate(&first).expect("current source variable is certified");
+    assert_ne!(base & (1 << 63), 0, "disjoint from constant certificates");
+    // An unrelated declaration leaves the certificate unchanged.
+    let unrelated = build(&[
+        ty.clone(),
+        member(1, None),
+        Skeleton::Member {
+            owner,
+            name: other,
+            kind: MemberKind::Var,
+            mode: DefinitionMode::Declare,
+            metadata: Arc::new(MemberMetadata::default()),
+            content: 9,
+        },
+    ]);
+    assert_eq!(certificate(&unrelated), Some(base));
+    // Content and metadata are both inputs of the scalar member answer.
+    assert_ne!(certificate(&build(&[ty.clone(), member(2, None)])), Some(base));
+    assert_ne!(certificate(&build(&[ty, member(1, Some(owner))])), Some(base));
+}

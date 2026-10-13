@@ -270,23 +270,16 @@ impl RetainedMetadata {
                 .copied()
                 .collect::<Vec<_>>()
         });
-        let mut keys = Vec::new();
-        self.store.visit_storage(|view| {
-            if let dm_session::ObservedArtifactStorageView::Entry { key: existing, .. } = view {
-                if !existing.starts_with(PREFIX) {
-                    keys.push(Arc::clone(existing));
-                }
-            }
-        });
-        keys.extend(
-            retained
-                .iter()
-                .filter(|selection| tree.lookup_type(selection.0).is_some())
-                .copied()
-                .map(key),
-        );
+        // Keep every non-demand entry and the demand entries whose owner type
+        // still exists; drop the rest. Same roster as listing every kept key.
+        let demanded: std::collections::HashSet<Arc<[u8]>> = retained
+            .iter()
+            .filter(|selection| tree.lookup_type(selection.0).is_some())
+            .copied()
+            .map(key)
+            .collect();
         self.store
-            .retain_current_keys(keys.iter().map(AsRef::as_ref));
+            .retain_where(|existing| !existing.starts_with(PREFIX) || demanded.contains(existing));
         *current = Arc::downgrade(&tree.owner_callable_demands);
     }
     pub(crate) fn bind_selection_owner(&self, tree: &SemanticTree) {

@@ -44,6 +44,25 @@ impl<P: SnapshotProvider> RecordingInputs<P> {
         self.prepared = owner;
         self
     }
+    /// Paths prepared by the previous request on this retained owner (its
+    /// current roster). Offered to the parallel input pass as speculative
+    /// candidates so includes nested below the manifest are not prepared one at
+    /// a time by the ordered directive pass. Non-UTF-8 keys are skipped; a
+    /// missing or changed file is handled exactly like any other candidate.
+    pub fn previous_prepared_paths(&self) -> Vec<std::path::PathBuf> {
+        let Some(owner) = &self.prepared else {
+            return Vec::new();
+        };
+        let mut paths = Vec::new();
+        owner.values.visit_storage(|view| {
+            if let dm_session::ArtifactStorageView::Entry { key, .. } = view {
+                if let Ok(text) = std::str::from_utf8(key) {
+                    paths.push(std::path::PathBuf::from(text));
+                }
+            }
+        });
+        paths
+    }
     /// Prune only after the caller has completed successful input capture.
     pub fn finish_prepared(&self) -> io::Result<()> {
         if let Some(owner) = &self.prepared {

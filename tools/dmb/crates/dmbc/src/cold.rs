@@ -503,6 +503,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             });
         }
     };
+    let detail_phase = dm_profile::detail_timer("init.startup_allocation");
     let startup_allocation =
         crate::startup_allocation::StartupAllocationRoster::issue_current_with_artifacts(
             plan,
@@ -511,6 +512,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             memo.and_then(|memo| memo.startup.as_ref()),
         )
         .map_err(ColdError::InitializerInvariant)?;
+    drop(detail_phase);
     let initialization = crate::initializer_lowering::lower_captured_on_executor_with_allocation(
         frontend,
         startup,
@@ -557,6 +559,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             .diagnostics
         })
     })?;
+    let detail_phase = dm_profile::detail_timer("init.class_projection");
     let mut projection = crate::class_projection::project_classified_with_artifacts(
         &frontend.snapshot,
         &frontend.emission_order,
@@ -566,12 +569,15 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
         memo.and_then(|memo| memo.class_projections.as_deref()),
     )
     .map_err(ColdError::Projection)?;
+    drop(detail_phase);
     startup_allocation
         .order_membership(&mut projection.shared_slot_order)
         .map_err(ColdError::InitializerInvariant)?;
+    let detail_phase = dm_profile::detail_timer("init.bind_field_sources");
     projection
         .bind_field_sources(frontend, plan)
         .map_err(ColdError::Projection)?;
+    drop(detail_phase);
     crate::heap_census::emit_if_enabled("initializer_ledger.ready", |census| {
         census.frontend(frontend);
         census.startup(startup);
@@ -598,6 +604,7 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
     // Capture only stored descriptor defaults while their source ledger is live.
     // Keep failures deferred until the former seed stage so body diagnostics win
     // exactly as before; this capture performs no resolver/evaluator operations.
+    let detail_phase = dm_profile::detail_timer("init.default_seeds_and_warnings");
     let pending_modified_defaults =
         crate::modified_initializers::default_seeds(frontend, plan, &initialization.classified);
     let mut warnings =
@@ -605,12 +612,15 @@ fn prepare_with_startup<'frontend, R: Resolver, P: AbiPolicy>(
             .map_err(initializer_lowering_error)?;
     warnings
         .extend(crate::callable_warnings::capture(frontend).map_err(initializer_lowering_error)?);
+    drop(detail_phase);
+    let detail_phase = dm_profile::detail_timer("init.release_classified");
     drop(initialization.classified);
     // Current output descriptors already own any syntax they require. The
     // semantic classification receipts and token roster survive this release.
     if let Some(store) = memo.and_then(|memo| memo.initializers.as_ref()) {
         store.release_runtime_syntax();
     }
+    drop(detail_phase);
     measurement.complete();
     let initializers = stage.elapsed();
     let mut inventory = links.inventory;

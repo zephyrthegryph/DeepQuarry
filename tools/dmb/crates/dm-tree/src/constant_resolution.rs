@@ -336,6 +336,28 @@ impl ScalarSnapshot {
             && issued.identity == self.identity
             && issued.backend == self.backend_identity
     }
+    /// A non-constant variable's scalar answer is the source tree's own member
+    /// answer (`resolve` delegates it unchanged). Its owner-variable demand token
+    /// certifies the declaring chain, selection and metadata; the member content
+    /// is the only other input of that answer's fingerprint, so it is hashed in.
+    /// The top bit keeps these disjoint from issued constant certificates.
+    pub(crate) fn source_variable_certificate(
+        tree: &crate::SemanticTree,
+        owner: SymbolId,
+        name: SymbolId,
+        member: &crate::MemberNode,
+    ) -> Option<u64> {
+        let token = Resolver::domain_version(
+            tree,
+            dm_ir::ReadDomain::OwnerVariable(ResolveQuery::HasMemberVar { owner, name }),
+        )?;
+        let mut hash = xxhash_rust::xxh3::Xxh3::new();
+        hash.update(b"dm-scalar-source-variable-v1\0");
+        hash.update(&token.to_le_bytes());
+        hash.update(&member.content.to_le_bytes());
+        hash.update(&crate::metadata_fingerprint(&member.metadata).to_le_bytes());
+        Some(hash.digest() | (1 << 63))
+    }
     fn scalar_certificate(&self, query: ResolveQuery) -> Option<u64> {
         if !self.original_domain() {
             return None;
@@ -350,8 +372,11 @@ impl ScalarSnapshot {
         let tree = &self.source.tree;
         let member =
             tree.member(tree.resolve(tree.lookup_type(owner)?, name, MemberKind::Var)?)?;
-        if member.metadata.flags & 2 == 0 || member.metadata.inherited_opaque.is_some() {
+        if member.metadata.inherited_opaque.is_some() {
             return None;
+        }
+        if member.metadata.flags & 2 == 0 {
+            return Self::source_variable_certificate(tree, owner, name, member);
         }
         let actual_owner = tree.type_node(member.owner)?.path;
         let requested = ScalarQuery::Const { owner, name };
