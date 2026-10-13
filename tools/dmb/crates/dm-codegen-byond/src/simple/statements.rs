@@ -73,6 +73,9 @@ impl Compiler<'_> {
             if text.starts_with("while(") || text.starts_with("while (") {
                 let condition =
                     parenthesized(text).ok_or_else(|| error(text, "malformed while condition"))?;
+                if condition.trim().is_empty() {
+                    return Err(source_error(text, "while: invalid expression"));
+                }
                 let start_label = self.label();
                 let end_label = self.label();
                 self.result.code.items.push(CodeItem::Label(start_label));
@@ -210,6 +213,13 @@ impl Compiler<'_> {
                     continue;
                 }
                 let parts: Vec<_> = control.split(';').map(str::trim).collect();
+                // `for(var/i = 1 to)`: a range missing a bound.
+                let range = control.trim_end();
+                if parts.len() == 1
+                    && (range.ends_with(" to") || range.ends_with('=') || range.contains("= to "))
+                {
+                    return Err(source_error(text, "missing expression"));
+                }
                 if parts.len() != 3 {
                     return Err(error(
                         text,
@@ -385,6 +395,9 @@ impl Compiler<'_> {
             let (declaration, initial) = text
                 .split_once('=')
                 .map_or((text.trim(), None), |(n, e)| (n.trim(), Some(e.trim())));
+            if declaration.ends_with('/') && initial.is_some() {
+                return Err(source_error(text, "missing left-hand argument to =."));
+            }
             let name = local_name(declaration)
                 .ok_or_else(|| error(text, "unsupported local declaration"))?;
             self.check_local_declaration(
@@ -448,10 +461,18 @@ impl Compiler<'_> {
                 ));
             }
             if text.starts_with("proc/") || text.starts_with("verb/") {
-                return Err(source_error(
-                    text,
-                    "proc definition not allowed inside another proc",
-                ));
+                // DreamMaker reports the first line of the nested body.
+                let child = &item.children[0];
+                return Err(LowerError {
+                    span: Some(LowerSpan {
+                        start: child.header_span.start,
+                        end: child.header_span.end,
+                    }),
+                    ..source_error(text, "proc definition not allowed inside another proc")
+                });
+            }
+            if text.starts_with("if ") {
+                return Err(source_error(text, "missing condition"));
             }
             return Err(error(text, "control-flow statement is not lowered yet"));
         }

@@ -449,8 +449,7 @@ fn body_keyword(header: &str, keyword: &str) -> bool {
         })
 }
 
-pub(crate) const RETURN_BLOCK_UNSUPPORTED: &str =
-    "a block following a return expression has unsupported semantics";
+pub(crate) const RETURN_BLOCK_UNSUPPORTED: &str = ": missing expression";
 pub(crate) fn return_has_block(header: &str, has_children: bool) -> bool {
     has_children && body_keyword(header, "return")
 }
@@ -515,9 +514,11 @@ fn parse_level(
             classify(header, has_children)
         };
         if context.in_body && return_has_block(header, has_children) {
+            // DreamMaker rejects the first indented line under `return`.
+            let child = &lines[index + 1];
             diagnostics.push(Diagnostic {
-                span: Span::new(line.header_start, line.header_end),
-                kind: DiagnosticKind::Unsupported,
+                span: Span::new(child.header_start, child.header_end),
+                kind: DiagnosticKind::Statement,
                 message: RETURN_BLOCK_UNSUPPORTED.into(),
             });
         }

@@ -564,7 +564,8 @@ fn run_build_attempt(
     dmbc::daemon::control::checkpoint()?;
     let frontend = dm_tree::frontend::FrontendRevision::new(match frontend_result {
         Ok(frontend) => frontend,
-        Err(diagnostics) => {
+        Err(mut diagnostics) => {
+            dmbc::diagnostics::refine(&mut diagnostics);
             dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &diagnostics)?;
             let kind = dmbc::diagnostics::failure_kind(diagnostics.iter().map(|diagnostic| diagnostic.kind));
             // Source errors are fully reported above and by the summary line.
@@ -580,6 +581,14 @@ fn run_build_attempt(
     query_attempt.capture(&frontend);
     dm_profile::request_mark("frontend.query_capture");
     if command == BuildCommand::Compile {
+        // DreamMaker rejects these; the native pipeline would accept them.
+        let source_errors = dmbc::source_checks::check(&frontend);
+        if !source_errors.is_empty() {
+            dmbc::diagnostics::write_diagnostics(&mut dmbc::daemon::stderr_writer(), &source_errors)?;
+            dmbc::diagnostics::write_local_warnings(&mut dmbc::daemon::stderr_writer(), &frontend)?;
+            return Err(dmbc::request_failure::RequestFailure::source("").into());
+        }
+        dm_profile::request_mark("frontend.source_checks");
         // Body-edit patch shape: declaration skeleton and per-body digests of
         // this frontend, compared with the retained base (`dmbc::body_patch`).
         let patch_shape = generation

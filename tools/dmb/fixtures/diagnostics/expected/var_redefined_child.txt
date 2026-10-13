@@ -1,0 +1,3 @@
+var_redefined_child.dm:5:error: x: duplicate definition
+var_redefined_child.dm:2:error: x: previous definition
+var_redefined_child.dmb - 2 errors, 0 warnings

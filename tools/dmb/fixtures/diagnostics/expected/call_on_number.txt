@@ -1,0 +1,2 @@
+call_on_number.dme:2:error: missing expression
+call_on_number.dmb - 1 error, 0 warnings

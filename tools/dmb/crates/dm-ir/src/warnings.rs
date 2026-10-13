@@ -13,6 +13,9 @@ pub enum WarningCode {
     DefinitionAfterOverride,
     // Append new codes: persisted serde enum indices must remain stable.
     UnusedVar,
+    AccidentalAssign,
+    /// `#warn text`: printed as `warning: #warn text` without a code.
+    WarnDirective,
 }
 impl WarningCode {
     pub fn name(self) -> &'static str {
@@ -24,6 +27,8 @@ impl WarningCode {
             Self::NoParent => "no_parent",
             Self::OverrideBeforeDefinition | Self::DefinitionAfterOverride => "override_before_def",
             Self::UnusedVar => "unused_var",
+            Self::AccidentalAssign => "accidental_assign",
+            Self::WarnDirective => "warn",
         }
     }
 }
@@ -36,6 +41,7 @@ impl WarningCode {
                 | Self::OverrideBeforeDefinition
                 | Self::DefinitionAfterOverride
                 | Self::UnusedVar
+                | Self::WarnDirective
         )
     }
     pub fn message(self) -> &'static str {
@@ -48,6 +54,10 @@ impl WarningCode {
             Self::OverrideBeforeDefinition => "procedure override precedes definition",
             Self::DefinitionAfterOverride => "definition is here",
             Self::UnusedVar => "variable defined but not used",
+            Self::AccidentalAssign => {
+                "assignment in condition, may have intended == operator instead"
+            }
+            Self::WarnDirective => "",
             Self::ListWithoutFilter => "it is recommended that you use an object filter or 'anything' when combining constant input types with lists",
         }
     }

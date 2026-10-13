@@ -214,6 +214,14 @@ impl Compiler<'_> {
                         opcode::PUSH_VAL,
                         vec![Word::Value(ValueWord::Number(number.to_bits()))],
                     );
+                } else if literal.matches('.').count() > 1
+                    && literal.starts_with(|ch: char| ch.is_ascii_digit())
+                {
+                    // `1.2.3`: DreamMaker reads `.3` as a member of `1.2`.
+                    return Err(source_error(
+                        statement,
+                        "expected var or proc name after . operator",
+                    ));
                 } else {
                     return Err(error(statement, "unsupported literal"));
                 }

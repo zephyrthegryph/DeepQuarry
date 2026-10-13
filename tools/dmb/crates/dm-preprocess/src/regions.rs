@@ -169,6 +169,8 @@ pub struct DirectivePlan {
     /// Original decoded-source line starts, reused from lexical preparation.
     pub source_line_starts: BTreeMap<PathBuf, Arc<[usize]>>,
     pub diagnostics: Vec<Diagnostic>,
+    /// `#warn` directives in active code, in encounter order; never failures.
+    pub warnings: Vec<Diagnostic>,
     /// Parallel vector identifying each directive diagnostic's encounter item.
     pub diagnostic_ordinals: Vec<usize>,
     pub final_macros: BTreeMap<String, Macro>,

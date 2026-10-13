@@ -221,6 +221,13 @@ impl Compiler<'_> {
             return Ok(());
         }
         let dm_syntax::CallTarget::Named(name) = target_kind else {
+            if matches!(&callee.kind, ExprKind::Literal(_)) {
+                // `5()`: a literal is never callable.
+                return Err(source_error(
+                    statement,
+                    &format!("{}missing expression", super::helpers::AT_END),
+                ));
+            }
             return Err(error(statement, "only simple src proc calls are supported"));
         };
         if self.intrinsic_call(name, args, statement, named_arguments, arglist_argument)? {

@@ -1,0 +1,2 @@
+proc_ref_undefined.dm:2:error: return/datum/thing/proc/nope: undefined type path
+proc_ref_undefined.dmb - 1 error, 0 warnings

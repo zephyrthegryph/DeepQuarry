@@ -1,0 +1,2 @@
+else_without_if_directive.dm:1:error: unexpected #else
+else_without_if_directive.dmb - 1 error, 0 warnings

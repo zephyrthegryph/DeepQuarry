@@ -1,0 +1,2 @@
+ifdef_unterminated.dme:2:error: still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)
+ifdef_unterminated.dmb - 1 error, 0 warnings

@@ -132,9 +132,16 @@ fn write_warning_lines(
                 "invalid warning subject",
             ));
         }
-        write!(output, "{}:", warning.location.semantic_path)?;
+        write!(output, "{}:", crate::diagnostics::display_path(&warning.location.semantic_path))?;
         if let Some(line) = warning.location.line {
             write!(output, "{line}:")?;
+        }
+        if warning.code == WarningCode::WarnDirective {
+            writeln!(output, "warning: {}", warning.name.as_deref().unwrap_or(""))?;
+            if reported {
+                crate::diagnostics::count_warning(Some(warning.code.name()));
+            }
+            continue;
         }
         write!(output, "warning ({}): ", warning.code.name())?;
         if reported {

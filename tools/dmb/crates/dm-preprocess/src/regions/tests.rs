@@ -283,7 +283,7 @@ fn expansion_and_directive_diagnostics_are_merged_in_encounter_order() {
     ]);
     let output = expand_regions(&plan, 2);
     assert_eq!(output.diagnostics.len(), 4);
-    assert!(output.diagnostics[0].message.contains("expects"));
+    assert_eq!(output.diagnostics[0].message, "incorrect number of macro arguments");
     assert_eq!(output.diagnostics[1].message, "first");
     assert_eq!(output.diagnostics[2].message, "child");
     assert_eq!(output.diagnostics[3].message, "last");
