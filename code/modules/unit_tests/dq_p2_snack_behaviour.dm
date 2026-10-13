@@ -674,7 +674,7 @@
 	rc_click(H, box, pizza, I_HELP)
 	TEST_ASSERT_NULL(box.pizza, "a shut box does not take it")
 	box.set_open(TRUE)
-	changed(box)
+	state_changed(box)
 	rc_click(H, box, pizza, I_HELP)
 	TEST_ASSERT_EQUAL(box.pizza, pizza, "an open one does")
 
@@ -690,7 +690,7 @@
 	TEST_ASSERT_EQUAL(top.loc, bottom, "inside the pile")
 	var/obj/item/pizzabox/open_box = allocate(/obj/item/pizzabox, run_loc_floor_bottom_left)
 	open_box.set_open(TRUE)
-	changed(open_box)
+	state_changed(open_box)
 	rc_click(H, bottom, open_box, I_HELP)
 	TEST_ASSERT_EQUAL(length(bottom.boxes), 1, "an open box is not stacked")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)

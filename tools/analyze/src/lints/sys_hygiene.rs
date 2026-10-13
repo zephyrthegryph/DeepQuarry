@@ -22,7 +22,7 @@ const RULES: &[RuleMeta] = &[
     },
     RuleMeta {
         name: "cached_var",
-        hint: "om_derived()/DERIVE(), declared_cache_vars() + changed(), a shared cache, or a name for what it holds (Hygiene)",
+        hint: "derive(), a shared cache (DECLARE_SHARED_CACHE), or a name for what it holds (Hygiene)",
     },
     RuleMeta {
         name: "deadline_poll",
@@ -199,35 +199,20 @@ fn cached_decls(lines: &[&str]) -> Vec<(usize, String)> {
     found
 }
 
-/// The `cached_*` names a file declares through `CACHE_ON_` (sorted, unique).
-fn declared_of(f: &SourceFile) -> Vec<String> {
-    let mut declared: BTreeSet<String> = BTreeSet::new();
-    for line in f.raw().lines() {
-        if line.contains("CACHE_ON_") {
-            for m in pat!(r#"\[\s*"(cached_\w+)"\s*\]\s*=\s*CACHE_ON_"#).captures_iter(line) {
-                declared.insert(m.s(1).to_string());
-            }
-        }
-    }
-    declared.into_iter().collect()
-}
-
 /// One file's sites, in the original emission order within each phase: boilerplate (rule 0),
 /// cached_var (rule 1) and deadline_poll (rule 2).
-fn judge(f: &SourceFile, declared: &BTreeSet<String>) -> Vec<(u8, u32)> {
+fn judge(f: &SourceFile) -> Vec<(u8, u32)> {
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
     let rel = f.rel.as_str();
     let lines = f.raw().lines_vec();
     scan_boilerplate(rel, &lines, &mut out);
-    // cached_var: undeclared caches (declaration and every write), and manual invalidation of
-    // declared ones. Writes are looked for in the declaring file (these vars are type-private).
+    // cached_var: a hand-maintained cache (its declaration and every write). Writes are looked for in the declaring file
+    // (these vars are type-private).
     if !VENDORED.iter().any(|p| rel.starts_with(p)) {
         let decls = cached_decls(&lines);
         for (index, name) in &decls {
             let write = Pat::cached(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$", regex::escape(name)));
-            if !declared.contains(name) {
-                out.push(("cached_var", rel.to_string(), index + 1));
-            }
+            out.push(("cached_var", rel.to_string(), index + 1));
             for (idx, line) in lines.iter().enumerate() {
                 let number = idx + 1;
                 if number == index + 1 {
@@ -236,10 +221,10 @@ fn judge(f: &SourceFile, declared: &BTreeSet<String>) -> Vec<(u8, u32)> {
                 if !line.contains(name.as_str()) {
                     continue;
                 }
-                let Some(m) = write.captures(strip_comment(line)) else { continue };
-                if !declared.contains(name) || py_strip(m.s(1)) == "null" {
-                    out.push(("cached_var", rel.to_string(), number));
+                if write.captures(strip_comment(line)).is_none() {
+                    continue;
                 }
+                out.push(("cached_var", rel.to_string(), number));
             }
         }
     }
@@ -276,10 +261,7 @@ fn judge(f: &SourceFile, declared: &BTreeSet<String>) -> Vec<(u8, u32)> {
 }
 
 fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let fs = incr::facts("sys-hygiene-facts", files, declared_of);
-    let declared: BTreeSet<String> = fs.into_iter().flatten().collect();
-    let key = incr::ctx_key(&declared);
-    let results = incr::keyed("sys-hygiene-judge", key, files, |f| judge(f, &declared));
+    let results = incr::keyed("sys-hygiene-judge", incr::ctx_key(&0u8), files, judge);
     // The Python ran the three rules as phases over every file: boilerplate, cached_var, deadline.
     let mut out = Vec::new();
     for rule in 0..RULES.len() as u8 {

@@ -78,6 +78,8 @@
 		return ""
 	return broken_now() ? "-broken" : "-nopower"
 
+TRACKED(/obj/machinery/protean_reconstitutor, processing_revive)
+
 /obj/machinery/protean_reconstitutor/proc/appearance_brain()
 	return (appearance_live() && protean_brain) ? 1 : 0
 
@@ -167,9 +169,7 @@ MSG_DEF_SELF(protean_reconstitutor/processing_revive, "reconstitution cycle curr
 		var/paste_label = "\the [NP]"
 		if(!consume(NP, user))
 			return OP_OK
-		set_nanomass_reserve(nanomass_reserve + paste_gain)
-		if(nanomass_reserve > nanotank_max)
-			set_nanomass_reserve(nanotank_max)
+		set_nanomass_reserve(min(nanotank_max, nanomass_reserve + paste_gain))
 		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
 	return OP_DECLINE
 
@@ -221,7 +221,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	else if(!processing_revive && protean_brain && protean_orchestrator && protean_refactory && (nanomass_reserve >= nanomass_required))
 		//we're good, let's get recombobulating!
 		act_message(user, src, others = span_notice("%U% initializes %T%. It chirps, \"Please stand by, synchronizing components... estimated time to completion: five minutes.\""))
-		processing_revive = TRUE
+		set_processing_revive(TRUE)
 		power_change()
 		if(prob(2))
 			play_sfx(src, SFX_MACHINES_BLENDER)
@@ -255,7 +255,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 /// Reconstitution step 2: one organ per per_organ_delay.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organ(mob/living/carbon/human/protean/P, list/organs, index)
 	if(QDELETED(P))
-		processing_revive = FALSE
+		set_processing_revive(FALSE)
 		return
 	var/organ = organs[index]
 	var/obj/item/O = P.organ_in(organ)
@@ -356,9 +356,8 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 	to_chat(P,span_notice("You feel your sense of self expanding, spreading out to inhabit your new \'body\'. You feel... <i><b>ALIVE!</b></i>"))
 	playsound(src, dingsound, 100, 1, -1)	//soup's on!
 	P.forceMove(src.loc)
-	processing_revive = FALSE
+	set_processing_revive(FALSE)
 	log_game("PROTEAN: [key_name(P)] was reconstituted at [AREACOORD(src)]")
-	changed(src)
 
 /// Stop a cycle cleanly: salvaged components go back into the tank, the
 /// unfinished body is dissolved, the nanites are refunded and the machine is
@@ -378,8 +377,7 @@ MSG_DEF_SELF(protean_reconstitutor/no_components, "%T% does not have any protean
 			protean_brain.forceMove(src)
 		spent(P)
 	set_nanomass_reserve(min(nanotank_max, nanomass_reserve + nanomass_required))
-	processing_revive = FALSE
-	changed(src)
+	set_processing_revive(FALSE)
 
 /obj/machinery/protean_reconstitutor/ownership()
 	. = ..()

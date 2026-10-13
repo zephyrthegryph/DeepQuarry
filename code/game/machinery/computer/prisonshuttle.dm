@@ -24,7 +24,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 	var/in_flight = FALSE
 
 /// The shuttle this console sent is in flight: prison_process() counts it down every half second.
-TRACKED_BRIDGED(/obj/machinery/computer/prison_shuttle, in_flight, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/computer/prison_shuttle, in_flight)
 
 // TGUI migration. Replaces the browse() + Topic dispatch
 // UI with PrisonShuttleConsole.tsx. Drops the `temp` "Shuttle sent"

@@ -696,7 +696,6 @@ draw_untracked	code/modules/research/tg/machinery/mech_prosfab.dm	look.state(bei
 draw_untracked	code/modules/shieldgen/energy_field.dm	look.overlay(look_overlay_image(icon, "shield_edge", dir = direction))
 draw_untracked	code/modules/skybox_service.dm	if(initialized)
 draw_untracked	code/modules/tables/tables.dm	layers += get_table_image(icon, connections?[i] || 0, 1<<(i-1))
-draw_untracked	code/modules/turbolift/turbolift_console.dm	return lift
 draw_untracked	code/modules/vehicles/Securitrain.dm	look.overlay(look_overlay_image('icons/obj/vehicles.dmi', "cargo_engine_overlay", layer = layer + 0.2)) // over mobs
 draw_untracked	code/modules/vehicles/bike.dm	look.overlay(look_overlay_image(paint_icon, "[bike_icon]_[power_state]_a", layer = layer, color = paint_color))
 draw_untracked	code/modules/vehicles/cargo_train.dm	look.overlay(look_overlay_image(icon, "[drawn_state]_r_[percent]", color = reagents.get_color(), dir = NORTH))

@@ -270,7 +270,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/hide(i)
 	if(istype(loc, /turf))
 		hide_under_floor(src, i)
-	changed(src)
 
 /obj/structure/cable/hides_under_flooring()
 	return 1

@@ -94,12 +94,7 @@
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 
-/// The occupant slot view is a field: rel_set/rel_clear (and the framework clearing it) raise CHANGE_MACHINE_OCCUPANT.
-/datum/scheduler_field_definition/obj/machinery/clonepod/occupant_mob
-	of = /obj/machinery/clonepod
-	field = "occupant_mob"
-	channel = CHANGE_MACHINE_OCCUPANT
-/// Derived field: the pod holds a clone (writing occupant_mob raises CHANGE_MACHINE_OCCUPANT).
+/// The pod holds a clone (occupant_mob is a relation view: rel_set/rel_clear publish it).
 /obj/machinery/clonepod/proc/clonepod_occupied()
 	return occupant_mob ? TRUE : FALSE
 
@@ -347,7 +342,6 @@ MSG_DEF_SELF(clonepod/container_full, "the pod has too many containers loaded")
 	var/obj/item/multitool/multitool = tool
 	rel_set(multitool, nameof(multitool.connecting), src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
-	changed(multitool)
 	return OP_OK
 
 /// A sequencer forces an emergency ejection.

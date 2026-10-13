@@ -50,6 +50,7 @@ MSG_DEF(fieldgen/activated, "You turn on %T%.", "%U% turns on %T%.")
 	/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
 	var/warming_up = 0
 
+TRACKED(/obj/machinery/field_generator, power)
 
 CAPABILITIES(/obj/machinery/field_generator)
 	configure(light_glow(color = "#5BA8FF"))
@@ -107,8 +108,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj, /obj/item/projectile/beam))
-		set_power(power + (Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER))
-		changed(src)
+		set_power(power + Proj.damage * EMITTER_DAMAGE_POWER_TRANSFER)
 		return 0
 	return ..()
 
@@ -123,7 +123,6 @@ CAPABILITIES(/obj/machinery/field_generator)
 	cancel_after(src, "warm_up_2")
 	set_warming_up(0)
 	after(src, 0.1 SECONDS, PROC_REF(finish_turn_off))
-	changed(src)
 
 /obj/machinery/field_generator/proc/finish_turn_off()
 	cleanup()
@@ -134,14 +133,12 @@ CAPABILITIES(/obj/machinery/field_generator)
 	set_warming_up(1)
 	after(src, FIELD_GEN_WARMUP_STAGE, PROC_REF(warm_up_step), key = "warm_up_1")
 	after(src, FIELD_GEN_WARMUP_STAGE * 2, PROC_REF(warm_up_step), key = "warm_up_2")
-	changed(src)
 
 /// One warm-up stage (turn_on() arms both, FIELD_GEN_WARMUP_STAGE apart): the fields go up at the third.
 /obj/machinery/field_generator/proc/warm_up_step()
 	if(active != 1)
 		return
 	set_warming_up(warming_up + 1)
-	changed(src)
 	if(warming_up >= 3)
 		start_fields()
 		set_glow(src, GLOW(light_range_on, light_power_on, null))
@@ -150,8 +147,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 	if(Varpower)
 		return 1
 
-	changed(src)
-	if(src.power > FIELD_GEN_MAX_POWER)
+	if(power > FIELD_GEN_MAX_POWER)
 		set_power(FIELD_GEN_MAX_POWER)
 
 	var/power_draw = gen_power_draw
@@ -175,12 +171,12 @@ CAPABILITIES(/obj/machinery/field_generator)
 /obj/machinery/field_generator/proc/draw_power(draw = 0, list/flood_list = list())
 	flood_list += src
 
-	if(src.power >= draw)//We have enough power
-		set_power(src.power - draw)
+	if(power >= draw)//We have enough power
+		set_power(power - draw)
 		return draw
 
 	//Need more power
-	var/actual_draw = src.power	//already checked that power < draw
+	var/actual_draw = power	//already checked that power < draw
 	set_power(0)
 
 	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
@@ -254,8 +250,6 @@ CAPABILITIES(/obj/machinery/field_generator)
 			FG.cleanup()
 	clean_up = 0
 
-	changed(src)
-
 	//This is here to help fight the "hurr durr, release singulo cos nobody will notice before the
 	//singulo eats the evidence". It's not fool-proof but better than nothing.
 	var/temp = 1 //stops spam
@@ -276,7 +270,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 #undef FIELD_GEN_MAX_POWER
 #undef FIELD_GEN_WARMUP_STAGE
 
-TRACKED_BRIDGED(/obj/machinery/field_generator, state, CHANGE_MACHINE_SETTINGS)
+TRACKED(/obj/machinery/field_generator, state)
 
 /obj/machinery/field_generator/floor_weld_state()
 	return state

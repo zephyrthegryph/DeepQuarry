@@ -20,6 +20,26 @@ pub enum Mode {
 
 pub type Counter = HashMap<(String, String), i64>;
 
+/// The fingerprint text a ratchet compares for `rule`. An `init_lines` site is the job a line does in an `Initialize()` body, not
+/// its spelling: a write `x = v` and the call of its setter `set_x(v)` (`src.set_x(v)`) are the same site, so converting a write to
+/// its setter (which the `tracked` lint requires) neither adds a site nor hides one. Every other rule compares the text as written.
+pub fn canon_text(rule: &str, text: &str) -> String {
+    if rule != "init_lines" {
+        return text.to_string();
+    }
+    let t = text.trim();
+    let t = t.strip_prefix("src.").unwrap_or(t);
+    if let Some(rest) = t.strip_prefix("set_") {
+        if let Some(open) = rest.find('(') {
+            let name = &rest[..open];
+            if !name.is_empty() && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_') && rest.ends_with(')') {
+                return format!("{} = {}", name, &rest[open + 1..rest.len() - 1]);
+            }
+        }
+    }
+    text.to_string()
+}
+
 /// `read_sites`: `{rule: Counter((file, text))}`.
 pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
     let mut base: BTreeMap<String, Counter> = BTreeMap::new();
@@ -31,7 +51,7 @@ pub fn read_sites(path: &Path) -> BTreeMap<String, Counter> {
         }
         let mut parts = line.splitn(3, '\t');
         let (Some(rule), Some(file), Some(txt)) = (parts.next(), parts.next(), parts.next()) else { continue };
-        *base.entry(rule.to_string()).or_default().entry((file.to_string(), txt.to_string())).or_insert(0) += 1;
+        *base.entry(rule.to_string()).or_default().entry((file.to_string(), canon_text(rule, txt))).or_insert(0) += 1;
     }
     base
 }
@@ -73,7 +93,7 @@ pub fn write_sites(
             fingerprints(tree, found).into_iter().map(|f| (f.site.rel.clone(), f.site.line, f.text)).collect();
         fps.sort();
         for (rel, _n, text) in fps {
-            let key = (rel.clone(), text.clone());
+            let key = (rel.clone(), canon_text(rule, &text));
             if mode == Mode::Update {
                 let b = budget.entry(key).or_insert(0);
                 if *b <= 0 {
@@ -115,7 +135,7 @@ pub fn check_sites(
         let known: i64 = budget.values().sum();
         let mut fresh: Vec<(String, u32, String)> = Vec::new();
         for fp in fingerprints(tree, found) {
-            let key = (fp.site.rel.clone(), fp.text.clone());
+            let key = (fp.site.rel.clone(), canon_text(rule, &fp.text));
             match budget.get_mut(&key) {
                 Some(b) if *b > 0 => *b -= 1,
                 _ => fresh.push((fp.site.rel.clone(), fp.site.line, fp.text)),
@@ -245,6 +265,28 @@ mod tests {
 
     fn site(rule: &str, rel: &str, line: u32) -> Site {
         Site { rule: rule.into(), rel: rel.into(), line, msg: String::new(), key: String::new() }
+    }
+
+    #[test]
+    fn init_lines_compares_a_setter_call_as_its_write() {
+        assert_eq!(canon_text("init_lines", "set_power(5)"), "power = 5");
+        assert_eq!(canon_text("init_lines", "src.set_power(a, b)"), "power = a, b");
+        assert_eq!(canon_text("init_lines", "power = 5"), "power = 5");
+        assert_eq!(canon_text("init_lines", "set_(1)"), "set_(1)");
+        assert_eq!(canon_text("init_lines", "set_a b(1)"), "set_a b(1)");
+        assert_eq!(canon_text("spawn", "set_power(5)"), "set_power(5)");
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", "	set_power(5)
+")]);
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("b.txt");
+        std::fs::write(&path, "# h
+init_lines	code/a.dm	power = 5
+").unwrap();
+        let s = vec![site("init_lines", "code/a.dm", 1)];
+        let refs: Vec<&Site> = s.iter().collect();
+        let by_rule = vec![("init_lines", refs)];
+        let mut out = String::new();
+        assert!(!check_sites("init", &tree, &by_rule, &|_| String::new(), &path, &[], &mut out), "{out}");
     }
 
     #[test]

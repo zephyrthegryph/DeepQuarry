@@ -363,7 +363,6 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	reqform.set_info(reqform.info + (S.get_html_manifest()))
 	reqform.set_info(reqform.info + ("<hr>"))
 	reqform.set_info(reqform.info + ("STAMP BELOW TO APPROVE THIS REQUISITION:<br>"))
-	changed(reqform)
 
 /// Refuses unless this console accepts orders.
 /obj/machinery/computer/supplycomp/proc/accepts_orders(mob/user)

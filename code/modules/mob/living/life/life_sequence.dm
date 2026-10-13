@@ -19,7 +19,6 @@
 	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	park_after = LIFE_PARK_AFTER
 	min_relevance = RELEVANCE_NEAR
-	wake_all = LIFE_WAKE_ALL
 	wake_keys = LIFE_WAKE_KEYS
 	table_proc = TYPE_PROC_REF(/mob/living, life_steps)
 	frame_type = /datum/seq_frame/life

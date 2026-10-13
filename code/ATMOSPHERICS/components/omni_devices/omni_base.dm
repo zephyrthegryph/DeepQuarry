@@ -59,17 +59,17 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 	look.state("base")
 	var/list/shown
 	if(power_lost())
-		shown = overlays_off // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
+		shown = overlays_off
 	else if(error_check())
-		shown = overlays_error // ALLOW(derived_reads): update_ports() and power_change() redraw it whenever the port icons or its power change
+		shown = overlays_error
 	else
-		shown = use_power ? overlays_on : overlays_off // ALLOW(derived_reads): update_ports() redraws it whenever the port icons change
+		shown = use_power ? overlays_on : overlays_off
 	for(var/image in shown)
 		look.overlay(image)
 
 /obj/machinery/atmospherics/omni/derived()
 	. = ..()
-	. += drawn_from(nameof(use_power))
+	. += drawn_from(nameof(use_power), nameof(overlays_on), nameof(overlays_off), nameof(overlays_error))
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return
@@ -132,7 +132,6 @@ CAPABILITIES(/obj/machinery/atmospherics/omni)
 				set_overlays_on_at(ref_layer, null)
 
 	underlays = underlays_current // the pipe stubs under its ports (a look has no underlays)
-	changed(src)
 
 /obj/machinery/atmospherics/omni/proc/select_port_icons(datum/omni_port/P)
 	if(!istype(P))

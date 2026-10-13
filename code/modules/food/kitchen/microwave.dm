@@ -438,7 +438,6 @@ MSG_DEF(microwave/clean_begins, span_notice("You start to clean %T%."), span_inf
 
 /// A cook loop is running: cook_loop() every loop_wait until its cycles run out.
 /obj/machinery/microwave/var/loop_running = FALSE
-TRACKED_BRIDGED(/obj/machinery/microwave, loop_running, CHANGE_MACHINE_SETTINGS)
 TRACKED(/obj/machinery/microwave, loop_running)
 
 /// The cook loop's cadence.

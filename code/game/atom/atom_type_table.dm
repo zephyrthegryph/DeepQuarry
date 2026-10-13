@@ -67,6 +67,6 @@
 	set_flags(flags | ATOM_INITIALIZED)
 	flags_1 |= INITIALIZED_1
 	if(uses_integrity)
-		set_atom_integrity(max_integrity)
+		atom_integrity = max_integrity
 	lifecycle_decls_init(src, TRUE)
 	caps_init(src, TRUE)

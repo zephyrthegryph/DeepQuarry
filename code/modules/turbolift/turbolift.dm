@@ -38,7 +38,6 @@ CAPABILITIES(/datum/turbolift)
 /datum/turbolift/proc/priority_mode(time = 30 SECONDS)
 	set_priority_mode(TRUE)
 	cancel_pending_floors()
-	update_ext_panel_icons()
 	control_panel_interior.audible_message(span_info("This turbolift is responding to a priority call.  Please exit the lift when it stops and make way."), runemessage = "BUZZ")
 	after(src, time, PROC_REF(end_priority_mode))
 
@@ -70,7 +69,6 @@ CAPABILITIES(/datum/turbolift)
 	// Disable safeties on the doors during firemode, reset when done
 	for(var/obj/machinery/door/airlock/door in doors)
 		turbolift_fire_safeties(door, src, new_fire_mode)
-	update_ext_panel_icons()
 
 // Cancel all pending calls
 /// Fire mode holds a door's safeties off for the lift; out of fire mode the lift lets go (the door's own safeties are back).
@@ -85,12 +83,6 @@ CAPABILITIES(/datum/turbolift)
 		if(floor.ext_panel)
 			floor.ext_panel.reset()
 	rel_clear(src, nameof(queued_floors))
-
-// Update the icons of all exterior panels (after we change modes etc)
-/datum/turbolift/proc/update_ext_panel_icons()
-	for(var/datum/turbolift_floor/floor in floors)
-		if(floor.ext_panel)
-			changed(floor.ext_panel) // the button draws the lift's modes, which publish nothing
 
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
 	if(!use_floor)
@@ -236,7 +228,6 @@ CAPABILITIES(/datum/turbolift)
 
 /datum/turbolift/proc/end_priority_mode()
 	set_priority_mode(FALSE)
-	update_ext_panel_icons()
 
 
 /// Where are we going? (a relation view: it reads null once the target is deleted).

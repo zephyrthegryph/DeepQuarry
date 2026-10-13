@@ -129,7 +129,7 @@
 	rel_set(M, nameof(M.protean_brain), allocate(/obj/item/mmi/digital/posibrain/nano, M))
 	rel_set(M, nameof(M.protean_orchestrator), allocate(/obj/item/organ/internal/nano/orchestrator, M))
 	rel_set(M, nameof(M.protean_refactory), allocate(/obj/item/organ/internal/nano/refactory, M))
-	M.processing_revive = TRUE
+	M.set_processing_revive(TRUE)
 	M.per_organ_delay = 0.1 SECONDS
 	M.reconstitute_begin()
 	var/mob/living/carbon/human/protean/P = locate(/mob/living/carbon/human/protean) in M
@@ -146,7 +146,7 @@
 	var/mob/living/carbon/human/protean/P = allocate(/mob/living/carbon/human/protean, M)
 	var/obj/item/organ/internal/nano/orchestrator/O = allocate(/obj/item/organ/internal/nano/orchestrator, M)
 	rel_set(M, nameof(M.protean_orchestrator), O)
-	M.processing_revive = TRUE
+	M.set_processing_revive(TRUE)
 	M.per_organ_delay = 0.1 SECONDS
 	M.reconstitute_organ(P, list(O_ORCH, O_FACT), 1)
 	TEST_ASSERT_EQUAL(P.organ_in(O_ORCH), O, "the real first organ step installs the supplied orchestrator before scheduling its successor")

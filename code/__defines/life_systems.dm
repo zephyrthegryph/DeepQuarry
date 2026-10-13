@@ -12,8 +12,6 @@
 #define LIFE_TAIL "LIFE_TAIL"
 
 // --- Wakes (doc/rewrite/life_on_om.md §5) ----------------------------------------------------
-/// Channels that wake every Life step: explicit wakes (the old "wake all"). Steps list only the keys specific to them in `reads`.
-#define LIFE_WAKE_ALL CHANGE_EXPLICIT
 /// Keys that wake every Life step: set_stat() and a client logging in or out.
 #define LIFE_WAKE_KEYS list(nameof(/mob::stat), MOB_KEY_CLIENT)
 
@@ -62,6 +60,8 @@
 /// The ground under the mob changed: its turf (or the one below it) was replaced, or its area's gravity switched
 /// (ChangeTurf(), /area/gravitychange()). Falling and the gravity read in movement follow it.
 #define MOB_KEY_GROUND "mob_ground"
+/// The mob's character form changed (/datum/forms/set_form()): the forms upkeep step follows it.
+#define MOB_KEY_FORM "mob_form"
 /// A movable moved (its turf or container changed): published only while someone observes it (a window watching its host).
 #define ATOM_KEY_LOC "atom_loc"
 
