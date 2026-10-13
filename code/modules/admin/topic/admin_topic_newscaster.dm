@@ -153,7 +153,6 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 			rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.newsAlert()
-				NEWSCASTER.update_icon()
 			admincaster_screen = 15
 		else
 			var/datum/feed_message/wanted = GLOB.news_network.wanted_issue()
@@ -169,8 +168,6 @@ MSG_DEF_SELF(admin_topic/wanted_unsubmittable, "A Wanted issue needs a name and 
 	var/mob/user = A.actor
 	if(A.step_value("confirm") == "Confirm")
 		own_clear(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), OWN_DELETE)
-		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
-			NEWSCASTER.update_icon()
 		admincaster_screen = 17
 	admincaster_refresh(user)
 

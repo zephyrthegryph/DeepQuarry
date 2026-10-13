@@ -547,7 +547,6 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break
-			update_icon()
 		RefreshParts()
 		if(parts_replaced)
 			R.play_rped_sound()
@@ -630,7 +629,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.update_desc()
-	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
 	destroyed(src, null, "deconstructed")
 	return 1
@@ -668,7 +666,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	if(!flipped)
 		return FALSE
 	PUBLISH_LEGACY(src, /datum/notice/machinery_broken, damage_flag)
-	update_icon()
 	return TRUE
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.

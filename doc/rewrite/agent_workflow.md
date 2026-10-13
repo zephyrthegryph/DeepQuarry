@@ -172,9 +172,19 @@ stamp, so everything runs. `--serial` runs the jobs one after another to read on
 **Known failures (`tools/ci/known_failures.txt`, `tools/dq_known_failures.sh`).** Tests that fail on master itself: spec, reason,
 master sha last seen. `--check <run.json>` prints NEW and KNOWN failures (a focused run that has failures calls it for you),
 so no throwaway origin/master worktree is needed to prove a failure old. `--refresh` drops entries that pass in a run and bumps
-the sha of those still failing; `--adopt --reason` adds a run's NEW failures (a decision, never automatic). After a push,
-`dq_push_master.sh` refreshes the list from the focused run JSONs for the pushed head if any exist (no tests run there);
-a changed list goes in as its own data-only commit on top (`DQ_KNOWN_FAILURES_REFRESH=0` turns that off).
+the sha of those still failing; `--adopt --reason` adds a run's NEW failures (a decision, never automatic). Nothing commits the list
+automatically: `dq_push_master.sh` no longer refreshes it after a push. `dq_merge_gates.sh` does not fail on a known failure but prints
+"KNOWN FAILURE STILL PRESENT - fix required"; a lane that fixes the test removes the entry in its own commit. A new failure still fails the gate.
+
+**Merge-safe tooling.** `code/modules/unit_tests/snapshots/look_keys.txt` stays committed (it is the record `dq_focused_test.sh` narrows
+the look probes against, so it cannot be build output) but never conflicts: `.gitattributes` gives it `merge=union` and every merge script
+(`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) regenerates it from the tree after the merge. A plain `git merge --no-ff <lane>`
+in the merge worktree therefore succeeds; whatever the union left in the file is replaced by the gates. Do not hand-merge it.
+`dq_merge_gates.sh` records the tip of each `--lanes` branch and origin/master as the gates started (`lane_tips=`, `base_master=` in
+`data/merge-gates/<sha>.ok`), refuses a lane that is not in HEAD, and shrinks the ratchet baselines (`analyze baseline --update`, never
+adds) into the merge commit instead of a repair commit. `dq_push_master.sh` (`--expect "ref ..."` / `DQ_PUSH_EXPECT` add tips) refuses a
+no-op push, refuses on `rewrite/integ-current` when origin/master moved since the gates (re-run them), and after the push fetches and
+fails unless origin/master contains HEAD and every expected tip.
 
 **Look pins (`dq_look_state_pin`, `dq_look_tree_pin`).** One sweep (`code/modules/unit_tests/dq_look_sweep.dm`) makes each creatable type once and
 writes both snapshot sets: the made look is the tree row and the state pin's base, and every probe writes a var on that same instance, redraws,

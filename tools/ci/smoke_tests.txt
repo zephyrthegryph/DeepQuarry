@@ -14,7 +14,6 @@ dq_state_canonical_delta
 dq_after_init/runtime
 dq_after_init/mapload
 dq_engine_policy_binding_ranking
-dq_sys_appearance_draws
 dq_draw_effect_runs_when_the_look_applies
 dq_draw_watch_redraws_on_the_other_end
 dq_om_wake_status_display

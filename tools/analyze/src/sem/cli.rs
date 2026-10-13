@@ -51,6 +51,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             }
             ExitCode::SUCCESS
         }
+        "closure" => super::closure::run(&engine.tree, root, args.iter().any(|a| a == "--write")),
         "oracle" => {
             let cfg_path = root.join("tools/analyze/oracle/spike.toml");
             let cfg = std::fs::read_to_string(&cfg_path).map(|t| super::oracle::SpikeConfig::parse(&t)).unwrap_or_default();
@@ -97,7 +98,7 @@ pub fn run(args: &[String], root: &Path) -> ExitCode {
             ExitCode::SUCCESS
         }
         _ => {
-            println!("analyze sem reads /type proc | analyze sem oracle [--all]");
+            println!("analyze sem reads /type proc | analyze sem oracle [--all] | analyze sem closure [--write]");
             ExitCode::SUCCESS
         }
     }

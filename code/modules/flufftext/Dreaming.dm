@@ -82,7 +82,7 @@ REGISTRY_TYPE(/datum/dream, GLOBAL_PROC_REF(registry_dream))
 		end_dream()
 		return
 	var/next_message = dream_fragments[1]
-	dream_fragments.Cut(1,2)
+	cut_dream_fragments(1, 2)
 
 	if(istype(next_message, /datum/callback))
 		var/datum/callback/something_happens = next_message

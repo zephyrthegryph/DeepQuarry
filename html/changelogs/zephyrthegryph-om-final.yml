@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Retired the router's ops-first click path: every click enters through the input inbox, and the HUD storage slot, loot panel and vore panel submit clicks to it"

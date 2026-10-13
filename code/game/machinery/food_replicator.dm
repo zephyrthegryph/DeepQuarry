@@ -89,7 +89,7 @@
 		container.reagents.remove_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency))
 
 		set_use_power(USE_POWER_ACTIVE)
-		printing = TRUE
+		set_printing(TRUE)
 
 		if(product_path)
 			foodItem = new product_path(src)
@@ -165,6 +165,8 @@ MSG_DEF_SELF(food_replicator/container, "There is already a reagent container in
 /// Reconciles its power draw with its state on every power or break change; printing sets its
 /// own draw while it runs.
 // Its periodic work: work_step() while it is started (code/library/machine/started_work.dm).
+TRACKED(/obj/machinery/food_replicator, printing)
+
 CAPABILITIES(/obj/machinery/food_replicator)
 	configure(uses_power(idle = 20, active = 200))
 	started_work(step = PROC_REF(work_step), wakes_on = list(STAT_OPERABLE), unpowered = TRUE)
@@ -203,8 +205,7 @@ CAPABILITIES(/obj/machinery/food_replicator)
 /obj/machinery/food_replicator/proc/print_done(obj/item/reagent_containers/foodItem)
 	ping()
 	set_use_power(USE_POWER_IDLE)
-	printing = FALSE
-	changed(src)
+	set_printing(FALSE)
 
 	if(!operable())
 		return

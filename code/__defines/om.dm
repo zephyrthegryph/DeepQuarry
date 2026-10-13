@@ -229,7 +229,7 @@
 
 // ---------------------------------------------------------------- published facts as change channels
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
-// whatever waits on it om_watch()es those channels with its own behaviour.
+// whatever waits on it watches those channels with its own behaviour.
 
 /// Machine family: a mode another machine or program may wait on changed (door bolts, power,
 /// electrification, open state; an APC's operating state).

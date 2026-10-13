@@ -39,7 +39,6 @@ usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clot
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	usr.ClickOn(I)
 usr_outside_verb	code/game/objects/structures/medical_stand.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm	var/mob/user = usr
 usr_outside_verb	code/game/world.dm	if (usr)

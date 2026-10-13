@@ -84,7 +84,6 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [cell] from %T%."), MSG_OTHERS("%U% removes [cell] from %T%."))
 	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
-	cell.update_icon()
 	return OP_OK
 
 // ---- the charge loop ----

@@ -99,6 +99,8 @@ Rules that hold under both old and new forms:
   `after_init(delay, then(PROC_REF(x)))` in `CAPABILITIES`. `LateInitialize()` and `INITIALIZE_HINT_LATELOAD` are gone.
 - Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
   (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/__defines/_lists.dm`).
+  A `TRACKED` list var is mutated through its generated `add_<v>()`, `include_<v>()`, `remove_<v>()`, `set_<v>_at()`, `clear_<v>()`,
+  `insert_<v>()`, `swap_<v>()`, `cut_<v>()` (`tracked_lists.dm`); `analyze fix` rewrites `LAZYADD`, `.Add()`, `v[i] = x` and the rest.
 - Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
 - SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
 - Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
@@ -228,7 +230,9 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   and `tgui/packages/tgui/interfaces/generated/` are gitignored; every build target that compiles or lints DM
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
-  that still tracks them. `deepquarry.dme` and `_unit_tests.dm` merge by union. `doc/rewrite/agent_workflow.md`.
+  that still tracks them. `deepquarry.dme`, `_unit_tests.dm` and `code/modules/unit_tests/snapshots/look_keys.txt` merge by union
+  (`.gitattributes`); `look_keys.txt` stays committed (it is the record look probes narrow against) but every merge script regenerates it, so
+  never hand-merge it. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash

@@ -6,7 +6,8 @@
 #
 #   1. refuses a dirty tree, master and a detached HEAD
 #   2. merges current origin/master (tools/dq_merge_master.sh: settles the generated files, regenerates)
-#   3. runs tools/dq_merge_gates.sh on that merge: gen, the test world with the cross-branch smoke set, your --tests and the
+#   3. runs tools/dq_merge_gates.sh on that merge: gen, the test world with the cross-branch smoke set, your --tests, the gameplay
+#      scenarios (tools/ci/gameplay_tests.txt, always) and the
 #      incremental look pins (dq_look_state_pin, dq_look_tree_pin: only the types whose analyzer key moved are probed, so a lane
 #      that did not touch a look costs nothing; --no-pins leaves them out), the production compile + DreamChecker, the ratchets
 #      and the analyzer, in parallel (tgui lint when the lane touches tgui/)
@@ -73,6 +74,15 @@ git update-index -q --refresh >/dev/null 2>&1
 if ! git diff --quiet || ! git diff --cached --quiet; then die "the merge left uncommitted changes"; fi
 
 list=(${tests[@]+"${tests[@]}"})
+# The gameplay scenarios run on every landing, whatever the lane (tools/ci/gameplay_tests.txt, doc/testing.md "Gameplay scenarios").
+gameplay_file="tools/ci/gameplay_tests.txt"
+if [ -f "$gameplay_file" ]; then
+	while IFS= read -r l; do
+		l="${l%%#*}"; l="$(echo "$l" | tr -d '\r' | xargs)"
+		[ -n "$l" ] || continue
+		case " ${list[*]-} " in *" $l "*) ;; *) list+=("$l") ;; esac
+	done <"$gameplay_file"
+fi
 if [ "$pins" -eq 1 ] && [ -f code/modules/unit_tests/dq_look_pins.dm ]; then list+=(dq_look_state_pin dq_look_tree_pin); fi
 if [ ${#list[@]} -eq 0 ]; then echo "dq_lane_ready: no --tests given: proving the smoke set only" >&2; fi
 
