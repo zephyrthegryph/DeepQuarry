@@ -18,7 +18,7 @@ TRACKED(/mob, mutations)
 /mob/proc/add_mutation(mut)
 	if(!mut)
 		return
-	LAZYADD(mutations, mut)
+	add_mutations(mut)
 	tracked_changed(src, nameof(mutations)) // a list edited in place: the look and other readers follow it
 	update_mutation_immunities(mut)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)
@@ -29,7 +29,7 @@ TRACKED(/mob, mutations)
 /mob/proc/remove_mutation(mut)
 	if(!mut)
 		return
-	LAZYREMOVE(mutations, mut)
+	remove_mutations(mut)
 	tracked_changed(src, nameof(mutations))
 	update_mutation_immunities(mut)
 	PUBLISH_CHANGE(src, MOB_KEY_CONDITIONS)

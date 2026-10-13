@@ -7,7 +7,7 @@
 	if(!UWI || UWI.name == "None")
 		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
-	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
+	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
 	underwear_edited()
 	act_message(user, src, others = span_danger("%U% [hide_underwear[UWC.name] ? "takes off" : "puts on"] %T%'s [UWC.display_name]."))
 

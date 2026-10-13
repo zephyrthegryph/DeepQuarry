@@ -253,8 +253,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/BP in mark_datum.body_parts)
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O && (mark_datum.name in O.markings))
-			LAZYREMOVE(O.markings, mark_datum.name)
-			tracked_changed(O, nameof(O.markings))
+			O.remove_markings(mark_datum.name)
 			successful = TRUE
 	if (successful)
 		markings_len -= 1
@@ -270,8 +269,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O)
 			success = TRUE
-			LAZYSET(O.markings, mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
-			tracked_changed(O, nameof(O.markings))
+			O.set_markings_at(mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
 	if (success)
 		markings_len += 1
 		update_dna()

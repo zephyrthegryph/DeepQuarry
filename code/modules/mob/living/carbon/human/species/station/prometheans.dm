@@ -284,7 +284,7 @@
 				S.dirt = 0
 				gained += rand(10, 20)
 	if(H.feet_blood_color || LAZYLEN(H.feet_blood_DNA))
-		LAZYCLEARLIST(H.feet_blood_DNA)
+		H.clear_feet_blood_DNA()
 		H.set_feet_blood_DNA(null)
 		H.set_feet_blood_color(null)
 		gained += rand(3, 10)

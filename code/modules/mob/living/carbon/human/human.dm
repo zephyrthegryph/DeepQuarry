@@ -1307,7 +1307,7 @@ CAPABILITIES(/datum/prompt/text/remotesay)
 		get_equipped_item(SLOT_ID_SHOES).wash(clean_types)
 		get_equipped_item(SLOT_ID_SHOES).germ_level = 0
 	else if(feet_blood_color || LAZYLEN(feet_blood_DNA))
-		LAZYCLEARLIST(feet_blood_DNA)
+		clear_feet_blood_DNA()
 		set_feet_blood_DNA(null)
 		set_feet_blood_color(null)
 
@@ -1884,7 +1884,7 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 	if(!UWI || UWI.name == "None")
 		to_chat(src, span_notice("You do not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
 		return
-	hide_underwear[UWC.name] = !hide_underwear[UWC.name]
+	set_hide_underwear_at(UWC.name, !hide_underwear[UWC.name])
 	underwear_edited()
 	to_chat(src, span_notice("You [hide_underwear[UWC.name] ? "take off" : "put on"] your [UWC.display_name]."))
 

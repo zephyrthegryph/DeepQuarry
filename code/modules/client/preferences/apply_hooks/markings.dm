@@ -39,6 +39,5 @@
 					"priority" = priority,
 					"on" = body_markings[M][BP]["on"],
 				)
-				LAZYSET(O.markings, M, entry)
-				tracked_changed(O, nameof(O.markings))
+				O.set_markings_at(M, entry)
 	target.markings_len = priority

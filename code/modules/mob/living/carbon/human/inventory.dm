@@ -92,5 +92,5 @@ This saves us from having to call add_fingerprint() any time something is put in
 		drop_from_inventory(equipped_thing)
 	if(remove_underwear)
 		for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
-			hide_underwear[UWC.name] = TRUE
+			set_hide_underwear_at(UWC.name, TRUE)
 		underwear_edited()

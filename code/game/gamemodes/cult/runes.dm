@@ -512,7 +512,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	D.disable_godmode()
 	D.looks.set_eyes_color(rgb(200, 200, 200))
 	changed(src)
-	LAZYCLEARLIST(D.all_underwear)
+	D.clear_all_underwear()
 	D.underwear_edited()
 	D.key = ghost.key
 	GLOB.cult.add_antagonist(D.mind)
