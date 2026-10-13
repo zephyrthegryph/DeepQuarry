@@ -124,6 +124,7 @@
 				time_scheduler().error("[E.type]: declared cache [name] has an unknown rule [rule[1]]")
 
 /// Nulls every declared cache on `E` whose rule in `rules` (stride 2: key, var) matches.
+PROC_SUMMARY(/proc/entity_cache_clear) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/entity_cache_clear(datum/E, list/rules, key, bits)
 	for(var/i in 1 to length(rules) step 2)
 		var/k = rules[i]

@@ -68,6 +68,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 		throw fault
 	op_pure_end()
 
+PROC_SUMMARY(/proc/op_cond_eval) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_cond_eval(datum/act/op/A, cond)
 	if(isnull(cond))
 		return TRUE
@@ -109,6 +110,7 @@ MSG_DEF_SELF(op/wrong_actor, "That isn't something you can do.")
 	return op_call_list(A, handler, args.Copy(3))
 
 /// op_call() with the extra arguments as a list.
+PROC_SUMMARY(/proc/op_call_list) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_call_list(datum/act/op/A, handler, list/extra)
 	if(isnull(handler))
 		return null

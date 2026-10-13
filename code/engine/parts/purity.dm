@@ -44,6 +44,7 @@ GLOBAL_VAR_INIT(op_pure_expected, FALSE)
 
 /// Evaluates `cond` of `holder` as a pure condition: a proc of the holder answering TRUE or FALSE. The one place the engine calls a condition proc by name
 /// outside an op context.
+PROC_SUMMARY(/proc/op_pure_call) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/op_pure_call(datum/holder, proc_name, datum/act/A)
 	lookup_reads_prepare(holder, A)
 	op_pure_begin()

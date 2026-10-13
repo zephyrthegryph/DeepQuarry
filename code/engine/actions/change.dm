@@ -31,6 +31,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	return entry_make(ENTRY_ON_CHANGE, null, list("cond" = cond, "edge" = edge), entry_flatten(ENTRY_SLOT_LIST))
 
 /// The keys whose publication means `cond` may have changed, for holder E.
+PROC_SUMMARY(/proc/change_read_keys) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/change_read_keys(datum/E, cond, datum/act/A = null, datum/lookup_read_scope/scope = null)
 	. = list()
 	if(islist(cond))
@@ -75,6 +76,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	return change_condition(E, cond)
 
 /// A condition (a var, an id, a tree, a proc of the holder) evaluated now. A proc gets a pooled eval context.
+PROC_SUMMARY(/proc/change_condition) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/change_condition(datum/E, cond)
 	if(istext(cond) && !(cond in E.vars) && !findtext(cond, "."))
 		var/datum/act/eval/A = take(/datum/act/eval)
@@ -87,6 +89,7 @@ GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number o
 	return condition_holds(E, cond)
 
 /// "terminal.charge": the value at the end of a path of relation vars.
+PROC_SUMMARY(/proc/change_walk) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/change_walk(datum/E, path)
 	var/list/segments = splittext(path, ".")
 	var/walk = E

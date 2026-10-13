@@ -11,7 +11,12 @@
 //! * `leaf_untracked`: a CAPABILITIES block names an untracked var as a stat input (`nameof(v)` in contributes()/contributes_to() or a when()
 //!   around one).
 //!
-//! Shrink-only over `tools/ci/untracked_inputs_baseline.txt`, which holds the reads that existed when generated dependencies landed: make the var
+//! The reads are the closed walk's (`ReadsEngine::closed`): engine bodies are entered, a virtual call is the union of its overrides, a global
+//! proc is walked like any proc, and global state that changes after boot is an untracked input (`untracked_global` in `sem/reads`). A site is
+//! counted once however many consumers reach it. The baseline was re-seeded when the lint moved to this walk (a change of measurement:
+//! `doc/rewrite/reads_closure_newly_visible.md` compares the two).
+//!
+//! Shrink-only over `tools/ci/untracked_inputs_baseline.txt`, which holds the sites that existed when the closed walk was adopted: make the var
 //! TRACKED and write it through its setter, declare the relation, or publish a READS_AS key where it changes. A read that cannot be tracked is
 //! recorded with `// ALLOW(untracked_inputs): <reason>`, and the runtime still treats its consumer as untracked.
 
@@ -69,11 +74,18 @@ impl Lint for UntrackedInputs {
             }
             out.site_in_msg(rule, rel, line as usize, msg);
         };
+        // A site is one finding however many consumers reach it (a helper line read by six hundred draws is one line to fix): the baseline
+        // counts sites, not (consumer, site) pairs. The message names the first consumer and how many more reach the site.
+        let mut sites: std::collections::BTreeMap<(&'static str, String, u32, String), Vec<&String>> = std::collections::BTreeMap::new();
         for (id, reads) in &an.consumers {
             let rule = if an.draws.contains(id) { "draw_untracked" } else { "stat_input_untracked" };
             for u in reads {
-                put(out, rule, &u.rel, u.line, format!("{} reads `{}`, which nothing publishes", id, u.what));
+                sites.entry((rule, u.rel.clone(), u.line, u.what.clone())).or_default().push(id);
             }
+        }
+        for ((rule, rel, line, what), ids) in &sites {
+            let more = if ids.len() > 1 { format!(" (and {} more)", ids.len() - 1) } else { String::new() };
+            put(out, rule, rel, *line, format!("{}{} reads `{}`, which nothing publishes", ids[0], more, what));
         }
         for l in &an.leaves {
             put(out, "leaf_untracked", &l.rel, l.line, format!("{} names `{}` as a stat input, and nothing publishes it", l.owner, l.var));

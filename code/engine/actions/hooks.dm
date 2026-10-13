@@ -402,6 +402,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 // ---- running parts ----
 
 /// Calls handler (a PROC_REF text on the holder, CAP_PROC text on the capability, or a /proc path) with the context.
+PROC_SUMMARY(/proc/hook_call) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/hook_call(datum/hook/H, handler, datum/act/A)
 	var/depth = GLOB.act_depth
 	var/chain_len = length(GLOB.act_chain)
@@ -422,6 +423,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /// A gate (a when() part or adjusts when =) of hook H for the act: a var name, a proc of the holder x(datum/act/A) that answers TRUE, a
 /// condition id or a condition tree. The context is the action's own typed act, so the gate reads its fields.
+PROC_SUMMARY(/proc/hook_gate) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /proc/hook_gate(datum/hook/H, datum/act/A, cond)
 	if(istext(cond) && !(cond in A.holder.vars))
 		var/datum/run_on = A.holder

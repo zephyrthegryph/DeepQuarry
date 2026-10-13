@@ -295,6 +295,7 @@ READS_AS(/datum/proc/has_status, MOB_KEY_STATUS)
 
 /// The stat layer: status `id` started (`active`) or ended on this entity. Its hooks run, its presentation follows, and the mob's status
 /// change is announced (MOB_KEY_STATUS).
+PROC_SUMMARY(/datum/proc/status_flipped) // vars[] / call() dispatcher: the walk cannot enter it; what it reaches is declared by the handlers it dispatches
 /datum/proc/status_flipped(id, active)
 	var/datum/status_policy/P = status_policies()["[id]"]
 	if(!P)
