@@ -121,3 +121,9 @@ ADMIN_VERB(toggle_latency_policy, R_DEBUG, "Toggle Latency Policy", "Disables or
 
 /atom/unregister_latency_sweep()
 	dq_latency_sweep_unregister(src)
+
+/// A dying holder leaves the sweep list with the rest of its teardown: the list holds a hard reference, and a holder is otherwise pruned only when the
+/// sweep's round-robin cursor reaches it, which can be longer than the collector waits (the deleted holder then hard-deletes).
+/atom/lifecycle_dematerialize()
+	..()
+	dq_latency_sweep_unregister(src)

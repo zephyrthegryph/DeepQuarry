@@ -357,7 +357,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	probe.last_handler = null
 	rel_clear(probe, nameof(probe.last_user))
 	cooldown_set_end(user, next_click, 0)
-	GLOB.input_router.route_click(user, probe, params)
+	input_submit(new /datum/input_event/click(user, probe, null, null, params))
 	return probe.last_user == user ? probe.last_handler : null
 
 /// Each mob kind gets its adapter, and Use and Alternate reach today's handlers.
@@ -411,7 +411,7 @@ CAPABILITIES(/obj/item/dq_input_probe_item)
 	var/obj/item/dq_input_probe_item/item = allocate(/obj/item/dq_input_probe_item, T)
 	TEST_ASSERT(H.put_in_active_hand(item), "the human should hold the probe item")
 	cooldown_set_end(H, next_click, 0)
-	GLOB.input_router.route_click(H, item, "left=1")
+	input_submit(new /datum/input_event/click(H, item, null, null, "left=1"))
 	TEST_ASSERT_EQUAL(item.self_used_by, H, "clicking the held item is Self-use, which runs attack_self")
 
 	H.drop_from_inventory(item, T)

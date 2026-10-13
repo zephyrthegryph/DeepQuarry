@@ -258,7 +258,6 @@
 #include "code\__defines\statpanel.dm"
 #include "code\__defines\status_effects.dm"
 #include "code\__defines\sys_damage_reactions.dm"
-#include "code\__defines\sys_appearance.dm"
 #include "code\__defines\sys_emag.dm"
 #include "code\__defines\sys_expiry.dm"
 #include "code\__defines\world_watch.dm"
@@ -379,6 +378,7 @@
 #include "code\_global_vars\lists\species.dm"
 #include "code\_global_vars\traits\_traits.dm"
 #include "code\_helpers\_global_objects.dm"
+#include "code\_helpers\concealment.dm"
 #include "code\_helpers\_lists.dm"
 #include "code\_helpers\abstract_types.dm"
 #include "code\_helpers\admin.dm"
@@ -1003,7 +1003,6 @@
 #include "code\datums\state\latent_safe_types.dm"
 #include "code\engine\state\serializer.dm"
 #include "code\datums\state\serializer.dm"
-#include "code\datums\sys\appearance.dm"
 #include "code\datums\sys\contents.dm"
 #include "code\datums\sys\damage_reactions.dm"
 #include "code\datums\sys\emag.dm"
@@ -5871,6 +5870,7 @@
 #include "code\engine\_generated\declare.dm"
 #include "code\engine\_generated\stats.dm"
 #include "code\engine\_generated\actions.dm"
+#include "code\engine\_generated\tracked_lists.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES
 // END_INCLUDE

@@ -53,7 +53,7 @@ CAPABILITIES(/turf/simulated/floor)
 	floor_construction()
 	// Laying a flooring from a stack in hand: the build time is the flooring's (floor_item starts it).
 	op("lay_flooring", ai(), takes("flooring"), wait(PROC_REF(lay_flooring_time)), then(PROC_REF(lay_flooring)))
-	op("floor_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), then(PROC_REF(floor_graffiti_alt)))
+	op("floor_graffiti", hand(), ungated(), gesture(GESTURE_ALT), priority(OP_PRIORITY_DEFAULT - 1), label("Graffiti"), when(req(TYPE_PROC_REF(/turf, engraved_by_held))), then(PROC_REF(floor_graffiti_alt)))
 	on_change(nameof(flooring), ANY, then(PROC_REF(edge_inputs_changed)))
 	on_change(nameof(flooring_override), ANY, then(PROC_REF(edge_inputs_changed)))
 	on_change(nameof(plating_exposed), ANY, then(PROC_REF(edge_inputs_changed)))

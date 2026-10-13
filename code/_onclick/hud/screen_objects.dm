@@ -122,7 +122,7 @@ CAPABILITIES(/atom/movable/screen/storage)
 	if(master)
 		var/obj/item/I = user.get_active_hand()
 		if(I)
-			user.ClickOn(master)
+			input_submit(new /datum/input_event/click(user, master))
 	return 1
 
 /atom/movable/screen/zone_sel

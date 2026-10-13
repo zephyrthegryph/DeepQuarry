@@ -478,10 +478,8 @@ draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(ic
 draw_untracked	code/game/machinery/adv_med.dm	look.overlay(look_overlay_image(icon, working ? body_scan_gradient(scan_ratio) : "gradient_gray", layer = layer + 0.3, plane = plane))
 draw_untracked	code/game/machinery/adv_med.dm	look.glow(BODY_SCAN_LIGHT_RANGE, BODY_SCAN_LIGHT_POWER, body_scan_color(scan_ratio))
 draw_untracked	code/game/machinery/ai_slipper.dm	return (!power_lost() && !broken_now() && !disabled) ? 1 : 0
-draw_untracked	code/game/machinery/atm_ret_field.dm	if(hatch_open)
 draw_untracked	code/game/machinery/atm_ret_field.dm	var/list/connections = dirs_to_corner_states(dirs)
 draw_untracked	code/game/machinery/atm_ret_field.dm	var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-draw_untracked	code/game/machinery/biogenerator.dm	return processing ? "work" : "stand"
 draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
 draw_untracked	code/game/machinery/cell_charger.dm	look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
 draw_untracked	code/game/machinery/cloning.dm	return occupant_mob
@@ -524,9 +522,7 @@ draw_untracked	code/game/machinery/doors/firedoor.dm	for(var/i = 1 to ALERT_STAT
 draw_untracked	code/game/machinery/doors/firedoor.dm	look.overlay(image(icon = icon, icon_state = "alert_[ALERT_STATES[i]]", dir = cdir))
 draw_untracked	code/game/machinery/doors/windowdoor.dm	look.state("[base_state][density ? "" : "open"]")
 draw_untracked	code/game/machinery/feeder.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
-draw_untracked	code/game/machinery/floodlight.dm	look.state("flood[open ? "o" : ""][appearance_battery() ? "b" : ""]0[on]")
 draw_untracked	code/game/machinery/floor_light.dm	look.overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
-draw_untracked	code/game/machinery/food_replicator.dm	if(printing == 1)
 draw_untracked	code/game/machinery/frame.dm	var/type = lowertext(name)
 draw_untracked	code/game/machinery/frame.dm	if(frame_type.icon_override)
 draw_untracked	code/game/machinery/gear_dispenser.dm	if(needs_power && !operable())
@@ -534,7 +530,6 @@ draw_untracked	code/game/machinery/gear_dispenser.dm	return held_gear_disp
 draw_untracked	code/game/machinery/holosign.dm	if(!lit)
 draw_untracked	code/game/machinery/iv_drip.dm	look.overlay(CACHED_KEY(reagent_fill_overlays, "[icon]|[fill_state]|[fill_color]", icon, fill_state, fill_color))
 draw_untracked	code/game/machinery/medical_kiosk.dm	return active_user
-draw_untracked	code/game/machinery/navbeacon.dm	look.state("navbeacon[open][invisibility ? "-f" : ""]")
 draw_untracked	code/game/machinery/neonsign.dm	if(!lit)
 draw_untracked	code/game/machinery/partslathe.dm	else if(busy)
 draw_untracked	code/game/machinery/pointdefense.dm	return (active && id_tag && operable()) ? 1 : 0

@@ -156,7 +156,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	if(target)
 		rel_set(src, nameof(partial_scanned), target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
-	hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
+	hold_busy(src, 0.3 SECONDS) // still busy while the box flashes red
 	after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), with = list(effects, target ? REF(target) : null, user ? REF(user) : null))
 
 /obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
@@ -229,7 +229,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		return
 
 	// Busy (a hold claims it) while the highlights are up.
-	if(istext(hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
+	if(istext(hold_busy(src, 2 SECONDS)))
 		return
 	play_sfx(src, SFX_MACHINES_BEEP)
 

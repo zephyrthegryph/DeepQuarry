@@ -249,7 +249,6 @@ init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	to_chat(owner_ref(
 init_lines	code/game/gamemodes/technomancer/spells/reflect.dm	expire(5 SECONDS)
 init_lines	code/game/gamemodes/technomancer/spells/spawner/destablize.dm	radiate_loop()
 init_lines	code/game/machinery/Beacon.dm	var/turf/T = src.loc
-init_lines	code/game/machinery/Beacon.dm	Beacon.invisibility = INVISIBILITY_MAXIMUM
 init_lines	code/game/machinery/Beacon.dm	Beacon.forceMove(T)
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
 init_lines	code/game/machinery/Beacon.dm	observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
@@ -463,7 +462,6 @@ init_lines	code/game/machinery/frame.dm	set_density(TRUE)
 init_lines	code/game/machinery/frame.dm	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 init_lines	code/game/machinery/frame.dm	set_density(TRUE)
 init_lines	code/game/machinery/frame.dm	seed_native_frame_graph()
-init_lines	code/game/machinery/frame.dm	update_icon()
 init_lines	code/game/machinery/gear_dispenser.dm	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
 init_lines	code/game/machinery/gear_dispenser.dm	GLOB.gear_distributed_to["[type]"] = list()
 init_lines	code/game/machinery/gear_dispenser.dm	var/list/real_gear_list = list()
@@ -478,7 +476,6 @@ init_lines	code/game/machinery/holoposter.dm	set_poster(icon_state) // a mapped 
 init_lines	code/game/machinery/holoposter.dm	security_changed()
 init_lines	code/game/machinery/holoposter.dm	set_rand_sprite()
 init_lines	code/game/machinery/holoposter.dm	schedule_rotation()
-init_lines	code/game/machinery/jukebox.dm	update_icon()
 init_lines	code/game/machinery/jukebox.dm	if(!LAZYLEN(getTracksList()))
 init_lines	code/game/machinery/jukebox.dm	atom_break()
 init_lines	code/game/machinery/lightswitch.dm	area = get_area(src) // a location: a plain var
@@ -1111,8 +1108,6 @@ init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	else if
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	name = "statue of a corgi"
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	statue_shape = "corgi"
 init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	desc = "If it takes forever, I will wait for you..."
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	if(statue_shape)
-init_lines	code/game/objects/structures/crates_lockers/closets/statue.dm	changed(src)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	for(var/obj/I in src.loc)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	if(I.density || I.anchored || I == src || !I.simulated)
 init_lines	code/game/objects/structures/crates_lockers/largecrate.dm	continue
@@ -2115,7 +2110,6 @@ init_lines	code/modules/mining/mineral_effect.dm	ore_key = M.name
 init_lines	code/modules/mining/mineral_effect.dm	if(M.reagent)
 init_lines	code/modules/mining/mineral_effect.dm	ore_reagent = M.reagent
 init_lines	code/modules/mining/mineral_effect.dm	layer = min_turf.layer+0.1
-init_lines	code/modules/mining/mineral_effect.dm	changed(src)
 init_lines	code/modules/mining/resonator.dm	transform = matrix()*1.5
 init_lines	code/modules/mining/resonator.dm	animate(src, transform = matrix()*0.1, alpha = 50, time = 0.4 SECONDS)
 init_lines	code/modules/mining/shelter_atoms.dm	for(var/obj/item/O in contents_of(loc))
@@ -2704,14 +2698,12 @@ init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_glow(src
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	else
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	name = "[fuel_type] fuel rod assembly"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc = "A fuel rod for a fusion reactor. This one is made from [fuel_type]."
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	changed(src)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_quantities[fuel_type] = initial_amount
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	name = "unshielded blitz rod"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc = "An extremely unstable, raw rod of compressed supermatter and phoron. This seems like a terrible idea."
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_colour = "#FCE300"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_type = "blitzu"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_glows = TRUE
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	changed(src)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_quantities[fuel_type] = initial_amount
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	radiation_pulse(
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	source = src,
@@ -2726,7 +2718,6 @@ init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	desc = "A hi
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_colour = "#76888F"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	fuel_type = "blitz"
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_glows = TRUE
-init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	changed(src)
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	rod_quantities[fuel_type] = initial_amount
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	set_glow(src, GLOW(2, 2, "#FCE300"))
 init_lines	code/modules/power/fusion/fuel_assembly/fuel_control.dm	monitor.fuel_tag = id_tag

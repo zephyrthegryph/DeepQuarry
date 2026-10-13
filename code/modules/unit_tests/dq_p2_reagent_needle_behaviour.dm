@@ -28,7 +28,6 @@
 			S.set_mode(2)
 		else
 			S.set_mode(10)
-	S.update_icon()
 
 /// The units of blood in the person's holder.
 /proc/rc_blood_units(mob/living/L)
@@ -200,10 +199,10 @@
 
 /datum/unit_test/dq_p2_reagents/dropper_look_follows_fill/run_gate()
 	var/obj/item/reagent_containers/dropper/D = rc_filled(/obj/item/reagent_containers/dropper, 0)
-	appearance_flush()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "dropper0", "an empty dropper looks empty")
 	D.reagents.add_reagent(REAGENT_ID_WATER, 2)
-	appearance_flush()
+	refresh_flush()
 	TEST_ASSERT_EQUAL(D.icon_state, "dropper1", "a filled one looks filled")
 
 // ---------------------------------------------------------------------------------------------------------------------

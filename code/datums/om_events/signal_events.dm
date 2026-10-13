@@ -4,7 +4,7 @@
 // the entity's behaviours, with numeric returns ORed
 // into `result`, which om_emit() returns. before/ events are `accumulate`: the same,
 // for events whose sender reads the result (the former COMPONENT_* return bits, or
-// EVENT_VETO). Send with OM_EMIT(entity, /datum/definition_event/x, args...).
+// EVENT_VETO). Send with PUBLISH(entity, /datum/definition_event/x, args...).
 // Keep domain-specific events next to their domain when you touch them.
 
 /// From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)

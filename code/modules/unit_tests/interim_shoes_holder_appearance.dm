@@ -12,7 +12,7 @@
 
 /// Runs the queued draws (the presentation lane) and records the icon states of the overlays the boots show now.
 /obj/item/clothing/shoes/boots/jackboots/interim_holder_appearance/proc/observe_look()
-	appearance_flush()
+	refresh_flush()
 	observed_overlays = list()
 	for(var/mutable_appearance/entry as anything in overlays)
 		observed_overlays += entry.icon_state

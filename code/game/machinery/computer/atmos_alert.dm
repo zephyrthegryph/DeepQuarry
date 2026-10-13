@@ -54,7 +54,6 @@ CAPABILITIES(/obj/machinery/computer/atmos_alert)
 			after(src, 10 SECONDS, GLOBAL_PROC_REF(play_sfx), key = "alert_repeat", with = list(src, SFX_EFFECTS_COMP_ALERT_MINOR))
 		else
 			play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR)
-	changed(src)
 
 /obj/machinery/computer/atmos_alert/proc/ui_act_clear(datum/act/op/A, ref)
 	var/datum/alarm/alarm = ui_ref(ref, GLOB.atmosphere_alarm.alarms, /datum/alarm)

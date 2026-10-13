@@ -390,7 +390,6 @@ TRACKED(/obj/structure/frame, state)
 		set_density(TRUE)
 
 	seed_native_frame_graph()
-	update_icon()
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.
@@ -431,7 +430,6 @@ TRACKED(/obj/structure/frame, state)
 				else
 					install_part(user,P)
 
-	update_icon()
 	return OP_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)

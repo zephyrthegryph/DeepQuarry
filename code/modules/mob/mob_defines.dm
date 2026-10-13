@@ -329,7 +329,6 @@ TRACKED(/mob, size_multiplier)
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 /// A mob's stat: set_stat() is its setter (always use it, never write the var) and publishes the stat key on a real change.
 TRACKED(/mob, stat)
-TRACKED(/mob, blinded)
 TRACKED(/mob, seedarkness)
 TRACKED(/mob, transforming)
 TRACKED(/mob, resting)
