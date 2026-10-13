@@ -288,6 +288,30 @@ impl<Q, A, D: Ord + Clone> Incidence<Q, A, D> {
             .copied()
             .collect()
     }
+    /// Diagnostic only: which domains keep variants out of the unchanged roster.
+    /// Returns (description, member count) for uncovered domains and for
+    /// versioned domains whose current version differs, largest first.
+    pub(super) fn rejection_summary(&self, current: &[(D, Option<u128>)]) -> Vec<(String, usize)>
+    where
+        D: std::fmt::Debug,
+    {
+        let mut versions = BTreeMap::new();
+        for (domain, version) in current {
+            versions.entry(domain.clone()).or_insert(*version);
+        }
+        let mut rows: Vec<(String, usize)> = Vec::new();
+        rows.push(("conflicting".into(), self.conflicting.len()));
+        for (domain, members) in &self.uncovered {
+            rows.push((format!("uncovered {domain:?}"), members.len()));
+        }
+        for ((domain, version), members) in &self.certificates {
+            if versions.get(domain).copied().flatten() != Some(*version) {
+                rows.push((format!("version-changed {domain:?}"), members.len()));
+            }
+        }
+        rows.sort_by(|a, b| b.1.cmp(&a.1));
+        rows
+    }
     pub(super) fn affected_buckets(&self, affected: &BTreeSet<u64>) -> BTreeSet<u128> {
         affected
             .iter()

@@ -638,6 +638,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
             .collect(),
     );
     let member_install_profile = dm_profile::stage("frontend.tree.member_install");
+    let member_install_timer = dm_profile::detail_timer("tree.member_install");
     let member_count = skeletons
         .iter()
         .filter(|row| matches!(row, Skeleton::Member { .. }))
@@ -770,6 +771,8 @@ pub(crate) fn build_with_intrinsic_members_structural(
         member_normalization::normalize_groups(&mut tree, &mut members, &modes, groups);
     }
     drop(member_install_profile);
+    drop(member_install_timer);
+    let previous_resolution_timer = dm_profile::detail_timer("tree.previous_resolution");
     let previous_resolution_profile = dm_profile::stage("frontend.tree.previous_resolution");
     let normalized = if let Some((declarations, retained)) = normalization {
         retained.resolve(
@@ -793,6 +796,8 @@ pub(crate) fn build_with_intrinsic_members_structural(
         None
     };
     drop(previous_resolution_profile);
+    drop(previous_resolution_timer);
+    let metadata_inheritance_timer = dm_profile::detail_timer("tree.metadata_inheritance");
     let metadata_inheritance_profile = dm_profile::stage("frontend.tree.metadata_inheritance");
     let order = metadata_update::resolution_order(members.len(), |id| members.member(id).previous);
     tree.host_selections = Arc::new(
@@ -813,6 +818,8 @@ pub(crate) fn build_with_intrinsic_members_structural(
         },
     );
     drop(metadata_inheritance_profile);
+    drop(metadata_inheritance_timer);
+    let publish_timer = dm_profile::detail_timer("tree.publish_members_and_inventory");
     let mut mutable_types = tree.types.to_vec();
     for (node, ids) in mutable_types.iter_mut().zip(owned) {
         node.members = ids.into();
@@ -831,6 +838,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         }
     }
     tree.declaration_targets = targets.into();
+    drop(publish_timer);
     let identity_profile = dm_profile::stage("frontend.tree.identity");
     tree.identity = if let Some((index, _)) = normalization {
         let prefix = skeletons
@@ -845,6 +853,7 @@ pub(crate) fn build_with_intrinsic_members_structural(
         tree_identity::declaration_identity_view(skeletons, fields)
     };
     drop(identity_profile);
+    let _certify_timer = dm_profile::detail_timer("tree.certify_owners");
     if let Some((_, retained)) = normalization {
         tree.owner_certificate_issuer = Some(Arc::clone(&retained.metadata));
         let (versions, paths) = retained.metadata.certify_hierarchy(&tree);

@@ -98,11 +98,14 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         .as_ref()
         .map(dm_session::observations::ReceiptAdmission::new);
 
+    let phase = dm_profile::detail_timer("init.classify.preparation");
     let preparation = match reuse.filter(|reuse| reuse.store.roster_enabled) {
         Some(reuse) => reuse.store.roster.preparation(writes),
         None => Preparation::new(writes),
     };
+    drop(phase);
     let buckets = preparation.buckets.as_ref();
+    let phase = dm_profile::detail_timer("init.classify.modifier_keys");
     let modifier_keys = reuse.and_then(|reuse| {
         crate::initializer_policy::modifier_facts::keys_in(
             writes,
@@ -111,6 +114,8 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
             Some(&preparation),
         )
     });
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.classify.modifier_facts");
     let facts = map_buckets(buckets, evaluator, executor, |_, bucket, worker| {
         if let (Some(reuse), Some(keys)) = (reuse, modifier_keys.as_ref()) {
             return crate::initializer_policy::modifier_facts::modifier_facts_reused_in(
@@ -137,6 +142,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
         error
     })?;
+    drop(phase);
     let mut issues = Vec::new();
     let mut admitted = Vec::with_capacity(facts.len());
     for facts in facts {
@@ -152,6 +158,7 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         issues.sort_by_key(|issue| issue.source_ordinal);
         return Err(ClassificationError { issues });
     }
+    let phase = dm_profile::detail_timer("init.classify.locators");
     let locators = reuse.map(|reuse| {
         let policy = factory_policy.expect("certified reuse policy");
         let preparation_policy = Policy {
@@ -208,6 +215,8 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
     // No evaluation begins unless every modifier boundary was admitted.
     // Request-local physical sharing only. The pool disappears after this pass;
     // admitted receipts hold their leaves and replay every original observation.
+    drop(phase);
+    let phase = dm_profile::detail_timer("init.classify.values");
     let mut tokens = super::token_owner::RequestTokens::new(
         debug_defined,
         reuse.map(|reuse| reuse.store.roster.as_ref()),
@@ -257,6 +266,8 @@ pub(in crate::initializer_policy) fn classify_with_reuse(
         }
         error
     })?;
+    drop(phase);
+    let _phase = dm_profile::detail_timer("init.classify.finish");
     let mut ordered: Vec<Option<PendingWrite>> = (0..writes.len()).map(|_| None).collect();
     let mut errors = Vec::new();
     for (bucket, result) in buckets.iter().zip(classified) {

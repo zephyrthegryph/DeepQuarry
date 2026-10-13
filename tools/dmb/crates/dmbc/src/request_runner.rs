@@ -723,7 +723,13 @@ fn run_build_attempt(
                 &nontext.resolver,
                 nontext.resource_search_context,
             );
-            let compilation_resolver = dm_ir::MemoResolver::new(&nontext.resolver, 65_536);
+            let compilation_resolver = dm_ir::MemoResolver::new(
+                &nontext.resolver,
+                std::env::var("DMB_RESOLVER_MEMO_ENTRIES")
+                    .ok()
+                    .and_then(|value| value.parse().ok())
+                    .unwrap_or(65_536),
+            );
             let prepared = dmbc::compile_driver::prepare_revision_observed_with_memo_on_executor(
                 &frontend,
                 &compilation_resolver,

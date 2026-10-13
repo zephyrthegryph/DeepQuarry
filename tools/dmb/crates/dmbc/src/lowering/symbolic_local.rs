@@ -19,8 +19,13 @@ enum Decline {
     MetadataChanged,
     SourceChanged,
     NoCandidate,
+    IssueNoPrepared,
+    IssueNoGraph,
+    IssueNoAbi,
+    NoRecordAtAll,
+    RecordWithoutCertificate,
 }
-const DECLINE_NAMES: [&str; 14] = [
+const DECLINE_NAMES: [&str; 19] = [
     "policy_or_identity",
     "selected_unit_dropped",
     "selected_unit_changed",
@@ -35,9 +40,14 @@ const DECLINE_NAMES: [&str; 14] = [
     "metadata_changed",
     "source_changed",
     "no_qualified_record_for_identity",
+    "issue_no_prepared_unit",
+    "issue_no_graph",
+    "issue_no_abi",
+    "no_record_at_all",
+    "record_without_certificate",
 ];
-static DECLINES: [std::sync::atomic::AtomicU64; 14] =
-    [const { std::sync::atomic::AtomicU64::new(0) }; 14];
+static DECLINES: [std::sync::atomic::AtomicU64; 19] =
+    [const { std::sync::atomic::AtomicU64::new(0) }; 19];
 /// Cumulative per-process decline reasons of the local certificate.
 pub fn local_decline_stats() -> String {
     DECLINE_NAMES
@@ -75,18 +85,30 @@ impl Certificate {
         row: &PreparedBody<'_>,
         policy: u128,
     ) -> Option<Self> {
-        let prepared = roster.prepared(row)?;
+        let refuse = |reason: Decline| {
+            DECLINES[reason as usize].fetch_add(1, Ordering::Relaxed);
+            None
+        };
+        let Some(prepared) = roster.prepared(row) else {
+            return refuse(Decline::IssueNoPrepared);
+        };
         let selected = roster.selected(row).map(Arc::downgrade);
         let graph = if selected.is_none() {
-            Some(Arc::downgrade(roster.graph()?))
+            match roster.graph() {
+                Some(graph) => Some(Arc::downgrade(graph)),
+                None => return refuse(Decline::IssueNoGraph),
+            }
         } else {
             None
+        };
+        let Some(abi) = prepared.abi.as_ref() else {
+            return refuse(Decline::IssueNoAbi);
         };
         Some(Self {
             selected,
             graph,
             inputs: Arc::downgrade(&prepared.inputs),
-            abi: Arc::downgrade(prepared.abi.as_ref()?),
+            abi: Arc::downgrade(abi),
             identity: row.source().identity,
             policy,
             termination: row.termination().canonical_tag(),
@@ -222,14 +244,37 @@ impl SessionSymbolicMemo {
         let observer = crate::lowering_memo::RecordingResolver::new(host);
         // A failed weak issuer witness cannot consume the semantic certificate
         // needed by ordinary exact-key/ABI admission later in this same request.
+        let mut seen = 0usize;
+        let mut with_local = 0usize;
         let qualified = candidates.take_identity_if(row.source().identity, |record| {
+            seen += 1;
+            with_local += usize::from(record.local.is_some());
             record
                 .local
                 .as_ref()
                 .is_some_and(|local| local.matches(roster, row, policy, record).is_some())
         });
         if qualified.is_empty() {
-            DECLINES[Decline::NoCandidate as usize].fetch_add(1, Ordering::Relaxed);
+            let reason = if seen == 0 {
+                Decline::NoRecordAtAll
+            } else if with_local == 0 {
+                Decline::RecordWithoutCertificate
+            } else {
+                Decline::NoCandidate
+            };
+            let count = DECLINES[reason as usize].fetch_add(1, Ordering::Relaxed);
+            if count < 6 && std::env::var_os("DMB_TIMINGS_DETAIL").is_some() {
+                let symbols = frontend.snapshot.tree.symbols();
+                let identity = row.source().identity;
+                eprintln!(
+                    "detail local-path miss {:?}: owner={:?} name={:?} namespace={:?} occurrence={} seen={seen} with_local={with_local}",
+                    reason as usize,
+                    symbols.text(identity.owner),
+                    symbols.text(identity.name),
+                    identity.namespace,
+                    identity.occurrence,
+                );
+            }
         }
         for candidate in qualified {
             let mut completed = None;
