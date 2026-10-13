@@ -316,11 +316,11 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	H.ear_secondary_colors.len = max(length(H.ear_secondary_colors), DNA_UI_EARS_SECONDARY_COLOR_CHANNEL_COUNT)
 	for(var/channel in 1 to DNA_UI_EARS_SECONDARY_COLOR_CHANNEL_COUNT)
 		var/offset = DNA_UI_EARS_SECONDARY_START + (channel - 1) * 3
-		H.set_ear_secondary_colors_at(channel, rgb()
+		H.set_ear_secondary_colors_at(channel, rgb(
 			GetUIValueRange(offset, 255),
 			GetUIValueRange(offset + 1, 255),
 			GetUIValueRange(offset + 2, 255),
-		)
+		))
 
 	//Tail
 	var/tail = GetUIValueRange(DNA_UI_TAIL_STYLE, GLOB.tail_styles_list.len + 1) - 1
