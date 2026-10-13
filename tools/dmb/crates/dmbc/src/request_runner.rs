@@ -578,6 +578,9 @@ fn run_build_attempt(
         }
     });
     dm_profile::request_mark("frontend.revision");
+    if progress_enabled {
+        dmbc::daemon_eprintln!("native directive lookups: {}", crate::runner_host::memo_lookups_report());
+    }
     query_attempt.capture(&frontend);
     dm_profile::request_mark("frontend.query_capture");
     if command == BuildCommand::Compile {

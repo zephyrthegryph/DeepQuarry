@@ -924,3 +924,7 @@ mod callable_tests;
 #[cfg(test)]
 #[path = "runner_host_callable_failure_tests.rs"]
 mod callable_failure_tests;
+/// Diagnostic split of this process's directive memo lookups since the last call.
+pub(crate) fn memo_lookups_report() -> String {
+    memo::DIRECTIVE_LOOKUPS.report()
+}

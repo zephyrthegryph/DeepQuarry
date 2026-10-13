@@ -4,9 +4,46 @@ use std::{
     collections::BTreeMap,
     sync::{Arc, Mutex},
 };
-const LIMIT: usize = 4096;
-const KIND_BUDGET: usize = 16 * 1024 * 1024;
-const TOTAL_BUDGET: usize = 48 * 1024 * 1024;
+// Sized to hold every directive interval, expansion region and fragment of
+// the DeepQuarry tree (about 5.6k intervals, 11k regions, 6.6k chunks), so an
+// edit replays from memory instead of decoding every record from disk.
+const LIMIT: usize = 32 * 1024;
+const KIND_BUDGET: usize = 4096 * 1024 * 1024;
+const TOTAL_BUDGET: usize = 8192 * 1024 * 1024;
+/// Diagnostic directive lookup split (`DMB_TIMINGS_DETAIL=1`).
+pub(crate) struct LookupCounters {
+    resident_hits: std::sync::atomic::AtomicU64,
+    resident_misses: std::sync::atomic::AtomicU64,
+    resident_ns: std::sync::atomic::AtomicU64,
+    disk_ns: std::sync::atomic::AtomicU64,
+}
+impl LookupCounters {
+    fn record(&self, hit: bool, elapsed: std::time::Duration) {
+        use std::sync::atomic::Ordering::Relaxed;
+        if hit { &self.resident_hits } else { &self.resident_misses }.fetch_add(1, Relaxed);
+        self.resident_ns.fetch_add(elapsed.as_nanos() as u64, Relaxed);
+    }
+    fn record_disk(&self, elapsed: std::time::Duration) {
+        self.disk_ns
+            .fetch_add(elapsed.as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+    }
+    pub(crate) fn report(&self) -> String {
+        use std::sync::atomic::Ordering::Relaxed;
+        format!(
+            "resident_hits={} resident_misses={} resident={:.3}s disk={:.3}s",
+            self.resident_hits.swap(0, Relaxed),
+            self.resident_misses.swap(0, Relaxed),
+            self.resident_ns.swap(0, Relaxed) as f64 / 1e9,
+            self.disk_ns.swap(0, Relaxed) as f64 / 1e9,
+        )
+    }
+}
+pub(crate) static DIRECTIVE_LOOKUPS: LookupCounters = LookupCounters {
+    resident_hits: std::sync::atomic::AtomicU64::new(0),
+    resident_misses: std::sync::atomic::AtomicU64::new(0),
+    resident_ns: std::sync::atomic::AtomicU64::new(0),
+    disk_ns: std::sync::atomic::AtomicU64::new(0),
+};
 #[derive(Clone)]
 enum Record {
     Expansion(Arc<ExpansionRecord>),
@@ -280,17 +317,23 @@ impl ExpansionMemo for MemoView<'_> {
         key: u128,
         accept: &mut dyn FnMut(&Arc<DirectiveRecord>) -> bool,
     ) -> bool {
-        self.records(1, key).iter().rev().any(|r| match r {
+        let started = std::time::Instant::now();
+        let resident = self.records(1, key).iter().rev().any(|r| match r {
             Record::Directive(r) => accept(r),
             _ => false,
-        }) || self.disk.is_some_and(|d| {
-            d.visit_directive_candidates(key, &mut |record| {
+        });
+        DIRECTIVE_LOOKUPS.record(resident, started.elapsed());
+        resident || self.disk.is_some_and(|d| {
+            let started = std::time::Instant::now();
+            let result = d.visit_directive_candidates(key, &mut |record| {
                 if !accept(record) {
                     return false;
                 }
                 self.retain(Record::Directive(Arc::clone(record)));
                 true
-            })
+            });
+            DIRECTIVE_LOOKUPS.record_disk(started.elapsed());
+            result
         })
     }
     fn visit_fragment_candidates(
