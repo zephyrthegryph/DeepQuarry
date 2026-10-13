@@ -55,7 +55,6 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 /mob/living/carbon/human/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
-	var/obj/item/I = thing
 	switch(slot_id)
 		if(SLOT_ID_MASK)
 			// If this is how the internals are connected, disable them

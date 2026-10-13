@@ -1907,9 +1907,9 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 
 	var/obj/item/organ/external/affecting
 	if(organ_check in list(O_HEART, O_LUNGS))
-		affecting = organs_by_name[BP_TORSO]
+		affecting = limb_tagged(BP_TORSO)
 	else if(organ_check in list(O_LIVER, O_KIDNEYS))
-		affecting = organs_by_name[BP_GROIN]
+		affecting = limb_tagged(BP_GROIN)
 
 	if(affecting && (affecting.is_robotic()))
 		return 0
@@ -2238,15 +2238,8 @@ MSG_DEF_SELF(human/no_pulse, span_danger("%T% has no pulse!"))
 /mob/living/carbon/human/ownership()
 	. = ..()
 	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
-	// The chosen sprite accessories and the prosthetic model: shared definitions the look reads through (written with rel_set(), so a
-	// change redraws the human).
-	. += rel_one(nameof(tail_style), /datum/sprite_accessory/tail)
-	. += rel_one(nameof(wing_style), /datum/sprite_accessory/wing)
-	. += rel_one(nameof(ear_style), /datum/sprite_accessory/ears)
-	. += rel_one(nameof(ear_secondary_style), /datum/sprite_accessory/ears)
-	. += rel_one(nameof(hair_accessory_style_static), /datum/sprite_accessory/hair_accessory)
-	. += rel_one(nameof(synthetic), /datum/robolimb)
 // Each side effect is created for this human and kept only here and by its finish() timer.
 
 /// The status step reads it (embedded objects roll damage on movement).
 TRACKED(/mob/living/carbon/human, embedded_flag)
+

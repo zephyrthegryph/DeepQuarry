@@ -826,7 +826,7 @@ CAPABILITIES(/datum/shred_limb_review)
 	set category = VERB_CAT_ABILITIES_GENERAL
 
 	rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
-	species.has_glowing_eyes = !species.has_glowing_eyes
+	species.set_has_glowing_eyes(!species.has_glowing_eyes)
 	to_chat(src, "Your eyes [species.has_glowing_eyes ? "are now" : "are no longer"] glowing.")
 
 MSG_DEF_SELF(human/cocoon_no_space, "You don't have enough space to spin a cocoon!")

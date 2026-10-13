@@ -254,6 +254,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		var/obj/item/organ/external/O = organs_by_name[BP]
 		if(O && (mark_datum.name in O.markings))
 			LAZYREMOVE(O.markings, mark_datum.name)
+			tracked_changed(O, nameof(O.markings))
 			successful = TRUE
 	if (successful)
 		markings_len -= 1
@@ -270,6 +271,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		if(O)
 			success = TRUE
 			LAZYSET(O.markings, mark_datum.name, list("color" = mark_color, "datum" = mark_datum, "priority" = markings_len + 1, "on" = TRUE))
+			tracked_changed(O, nameof(O.markings))
 	if (success)
 		markings_len += 1
 		update_dna()
@@ -293,10 +295,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 				success = TRUE
 				change_priority_marking_to_priority(change_from + change, change_from)
 			O.markings[mark_datum.name]["priority"] = clamp(change_from + change, 1, markings_len)
+			tracked_changed(O, nameof(O.markings))
 			if ((move_down && index == O.markings.len) || (!move_down && index == 1))
 				continue
 			if (O.markings[O.markings[index + change]]["priority"] == change_from)
 				moveElement(O.markings, index, index+(move_down ? 2 : -1))
+				tracked_changed(O, nameof(O.markings))
 	if (success)
 		update_dna()
 	return TRUE
@@ -306,6 +310,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		for (var/marking in O.markings)
 			if (O.markings[marking]["priority"] == priority)
 				O.markings[marking]["priority"] = to_priority
+				tracked_changed(O, nameof(O.markings))
 
 /mob/living/carbon/human/proc/change_marking_color(datum/sprite_accessory/marking/mark_datum, mark_color = "#000000")
 	if (!mark_datum)
@@ -316,6 +321,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		if(O && LAZYACCESS(O.markings, mark_datum.name) && O.markings[mark_datum.name]["color"] != mark_color)
 			success = TRUE
 			O.markings[mark_datum.name]["color"] = mark_color
+			tracked_changed(O, nameof(O.markings))
 	if (success)
 		update_dna()
 	return success
@@ -402,7 +408,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	for(var/N in character.organs_by_name)
 		var/obj/item/organ/external/O = organs_by_name[N]
 		var/obj/item/organ/external/I = character.organs_by_name[N]
-		O.markings = I.markings?.Copy()
+		O.set_markings(I.markings?.Copy())
 	markings_len = character.markings_len
 
 	if(options.copy_flavour)

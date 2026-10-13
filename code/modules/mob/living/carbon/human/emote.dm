@@ -580,7 +580,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 			return
 	if(species.tail) //If they're using this verb, they already have a custom tail. This prevents their species tail from showing.
 		rel_private(src, nameof(species)) // per-mob change: never mutate the shared species
-		species.tail = null //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
+		species.set_tail(null) //Honestly, this should probably be done when a custom tail is chosen, but this is the only time it'd ever matter.
 	set_tail_hidden(!tail_hidden)
 	var/message = ""
 	if(!tail_hidden)

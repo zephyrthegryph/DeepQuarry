@@ -108,6 +108,7 @@
 
 /// The shared definition for `path`.
 /proc/body_effect_def(path)
+	READS_FROM()
 	RETURN_TYPE(/datum/body_effect)
 	var/static/list/defs = list()
 	var/datum/body_effect/def = defs[path]

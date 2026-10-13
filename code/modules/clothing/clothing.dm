@@ -625,7 +625,7 @@ CAPABILITIES(/obj/item/clothing/mask)
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
 
-	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/feet/mob_digi.dmi'
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
 
@@ -927,7 +927,7 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND)
 	restricted_accessory_slots = (ACCESSORY_SLOT_ARMBAND)
 
-	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/suit/mob_digi.dmi'
 
 TRACKED(/obj/item/clothing/suit, hood_up)
 TRACKED(/obj/item/clothing/suit, toggleicon)
@@ -1106,7 +1106,7 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
 	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
-	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
+	update_icon_define_digi = 'icons/inventory/uniform/mob_digi.dmi'
 
 MSG_DEF_SELF(under/no_roll_down, "It can't be rolled down.")
 MSG_DEF_SELF(under/no_roll_sleeves, "Its sleeves can't be rolled.")

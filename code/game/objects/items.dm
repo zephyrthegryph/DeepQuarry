@@ -105,6 +105,7 @@ TRACKED(/obj/item, canremove)
 	var/gurgled_color
 
 TRACKED(/obj/item, gurgled)
+TRACKED(/obj/item, addblends)
 TRACKED(/obj/item, gurgled_color)
 
 /obj/item/Initialize(mapload)
@@ -723,6 +724,8 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /obj/item/proc/make_worn_icon(body_type,slot_name,inhands,default_icon,default_layer,icon/clip_mask = null)
 	//Get the required information about the base icon
 	var/icon/icon2use = get_worn_icon_file(body_type = body_type, slot_name = slot_name, default_icon = default_icon, inhands = inhands)
+	if(istext(icon2use)) // a sheet named by its path: an image takes a file, not the text of one
+		icon2use = file(icon2use)
 	var/state2use = get_worn_icon_state(slot_name = slot_name)
 	var/layer2use = get_worn_layer(default_layer = default_layer)
 
@@ -764,6 +767,31 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	apply_overlays(standing)
 
 	//Return our icon
+	return standing
+
+/// The sprite the item shows in a simple mob's hand: its in-hand sheet and state, tinted like the item.
+/obj/item/proc/held_look_image(right_hand)
+	RETURN_TYPE(/image)
+	var/slot_str = right_hand ? slot_r_hand_str : slot_l_hand_str
+	//determine icon state to use
+	var/t_state
+	if(LAZYACCESS(item_state_slots, slot_str))
+		t_state = item_state_slots[slot_str]
+	else if(item_state)
+		t_state = item_state
+	else
+		t_state = icon_state
+	//determine icon to use
+	var/t_icon
+	if(LAZYACCESS(item_icons, slot_str))
+		t_icon = item_icons[slot_str]
+	else if(icon_override)
+		t_state += right_hand ? "_r" : "_l"
+		t_icon = icon_override
+	else
+		t_icon = right_hand ? INV_R_HAND_DEF_ICON : INV_L_HAND_DEF_ICON
+	var/image/standing = image(icon = t_icon, icon_state = t_state)
+	standing.color = color
 	return standing
 
 //Returns the icon object that should be used for the worn icon
@@ -843,9 +871,14 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 DECLARE_SHARED_CACHE(worn_addblend_icons, GLOBAL_PROC_REF(build_worn_addblend_icon), SC_NEVER)
 
 /proc/worn_addblend_icon(source_icon, state, addblends)
-	return CACHED_KEY(worn_addblend_icons, "[look_icon_key(source_icon)]|[state]|[addblends]", source_icon, state, addblends)
+	READS_FROM()
+	// A sheet is a file; an icon made at runtime has no key of its own and is blended each time.
+	if(!isfile(source_icon) && !istext(source_icon))
+		return build_worn_addblend_icon(source_icon, state, addblends)
+	return CACHED_KEY(worn_addblend_icons, "[source_icon]|[state]|[addblends]", source_icon, state, addblends)
 
 /proc/build_worn_addblend_icon(source_icon, state, addblends)
+	READS_FROM()
 	var/icon/standing_icon = icon(icon = source_icon, icon_state = state)
 	standing_icon.Blend(icon("icon" = source_icon, "icon_state" = addblends), ICON_ADD)
 	return standing_icon

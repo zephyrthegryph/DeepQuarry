@@ -15,7 +15,7 @@
 	..()
 	if(!species)
 		return
-	var/list/body = body_look()
+	var/list/body = body_look(look)
 	if(body)
 		look.set_icon(body[1])
 	// A protean form that is not a body (a blob, a beast) shows its own appearance instead of the body's layers.
@@ -37,15 +37,17 @@
 
 /// The human's layers as a list of TOTAL_LAYERS entries (an image, a list of images, or null), indexed by the *_LAYER defines. `look`
 /// is the draw's builder (null for a reader outside a draw): the items read are watched through it.
-/mob/living/carbon/human/proc/look_layers(datum/look/look, list/body)
+/mob/living/carbon/human/proc/look_layers(datum/look/look, list/body_image)
 	RETURN_TYPE(/list)
 	. = new /list(TOTAL_LAYERS)
+	if(!look)
+		look = new /datum/look
 	if(!species)
 		return
-	if(!body)
-		body = body_look()
-	if(body)
-		.[BODYPARTS_LAYER] = body[2]
+	if(!body_image)
+		body_image = body_look(look)
+	if(body_image)
+		.[BODYPARTS_LAYER] = body_image[2]
 	.[MUTATIONS_LAYER] = mutations_look()
 	.[SKIN_LAYER] = species.skin_look(src)
 	.[BLOOD_LAYER] = blood_look()
@@ -55,7 +57,7 @@
 	var/list/hair = hair_look(look)
 	.[HAIR_LAYER] = hair[1]
 	.[HAIR_ACCESSORY_LAYER] = hair[2]
-	.[EYES_LAYER] = eyes_look()
+	.[EYES_LAYER] = eyes_look(look)
 	var/list/tail = tail_look()
 	if(tail)
 		.[tail[1]] = tail[2]
@@ -128,13 +130,36 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 // ---- the body ----
 
+/// Whether `part` is hidden by the tail (or, for `clothing_only`, by a marking): its sprite or its clothing is not drawn. Clothing only means the
+/// check hides clothing, not the limb itself.
+/mob/living/carbon/human/proc/limb_hidden(obj/item/organ/external/part, clothing_only = FALSE)
+	if(tail_style && tail_style.hide_body_parts && (part.organ_tag in tail_style.hide_body_parts))
+		return 1
+	if(clothing_only && LAZYLEN(part.markings))
+		for(var/M in part.markings)
+			if(!part.markings[M]["on"]) //If the marking is off, the limb isn't hidden by it.
+				continue
+			var/datum/sprite_accessory/marking/mark = part.markings[M]["datum"]
+			if(mark.hide_body_parts && (part.organ_tag in mark.hide_body_parts))
+				return 1
+
+/// The eyes organ in whichever attached limb holds it (the head, for nearly every body), or null. Each limb's organ slot is read through the
+/// draw, so an eye taken out or put in redraws the human, and the eyes found are watched.
+/mob/living/carbon/human/proc/eyes_organ(datum/look/look)
+	RETURN_TYPE(/obj/item/organ/internal/eyes)
+	for(var/obj/item/organ/external/E as anything in organs)
+		for(var/obj/item/organ/internal/eyes/eyes in look.things_in(E, SLOT_ID_PART_ORGANS, /obj/item/organ/internal/eyes))
+			if(eyes.organ_tag == O_EYES)
+				return eyes
+	return null
+
 /// The body: list(the mob's icon, the body image), or null when nothing is drawn.
-/mob/living/carbon/human/proc/body_look()
+/mob/living/carbon/human/proc/body_look(datum/look/look)
 	var/husk = has_mutation(HUSK)
 	var/fat = has_mutation(FAT)
 	var/hulk = has_mutation(HULK)
 	var/skeleton = has_mutation(SKELETON)
-	var/list/key_result = body_icon_key()
+	var/list/key_result = body_icon_key(look)
 	var/icon_key = "[key_result[1]][husk ? 1 : 0][fat ? 1 : 0][hulk ? 1 : 0][skeleton ? 1 : 0]"
 	var/template = species.icon_template ? species.icon_template : 'icons/mob/human.dmi'
 	return human_look_icon("body|[template]|[icon_key]", "build_body_look", template, key_result[2], husk, hulk, skeleton)
@@ -148,22 +173,22 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 /// The body icon cache key from the species, skin, eyes and every visible part, and whether every part is transparent: list(key, whole icon
 /// transparent).
-/mob/living/carbon/human/proc/body_icon_key()
+/mob/living/carbon/human/proc/body_icon_key(datum/look/look)
 	var/icon_key = "[species.get_race_key(src)][looks.skin_tone][looks.skin_color]" // the parts carry the body's gender (their data's body_gender)
 	icon_key += looks.lip_style ? "[looks.lip_style]" : "nolips"
-	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
+	var/obj/item/organ/internal/eyes/eyes = eyes_organ(look)
 	if(eyes)
 		icon_key += "[eyes.eye_rgb()]"
 	else
 		icon_key += "[looks.eyes_color]"
-	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
+	var/obj/item/organ/external/head/head = limb_tagged(BP_HEAD)
 	if(head && !istype(head, /obj/item/organ/external/stump))
 		icon_key += "[head.eye_icon]"
 
 	var/wholeicontransparent = TRUE
 	for(var/organ_tag in species.has_limbs)
-		var/obj/item/organ/external/part = organs_by_name[organ_tag]
-		if(isnull(part) || part.is_stump() || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
+		var/obj/item/organ/external/part = limb_tagged(organ_tag)
+		if(isnull(part) || part.is_stump() || limb_hidden(part)) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
 			icon_key += "0"
 			continue
 		wholeicontransparent &&= part.transparent
@@ -173,7 +198,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// One visible part's share of the body icon key: species, colours, markings, polish and state (1 normal, 2 robotic, 3 necrotic),
 /// transparency, taur clip and digitigrade legs.
 /mob/living/carbon/human/proc/body_part_icon_key(obj/item/organ/external/part)
-	. = "[part.data.get_species_race_key(part.owner)][part.data.body_gender][part.s_tone]"
+	. = "[part.data.get_species_race_key(src)][part.data.body_gender][part.s_tone]"
 	if(part.s_col && part.s_col.len >= 3)
 		. += "[rgb(part.s_col[1],part.s_col[2],part.s_col[3])]"
 	if(part.body_hair && part.h_col && part.h_col.len >= 3)
@@ -212,15 +237,15 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 
 /// Compose the body icon from every visible part, then tint it for husk or hulk. A cache builder (body_look()).
 /mob/living/carbon/human/proc/build_body_icon(wholeicontransparent, husk, hulk, skeleton)
-	var/obj/item/organ/external/chest = get_organ(BP_TORSO)
+	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
 	var/icon/base_icon = new(chest?.get_icon(skeleton, !wholeicontransparent))
 
-	var/apply_extra_transparency_leg = organs_by_name[BP_L_LEG] && organs_by_name[BP_R_LEG]
-	var/apply_extra_transparency_foot = organs_by_name[BP_L_FOOT] && organs_by_name[BP_R_FOOT]
+	var/apply_extra_transparency_leg = limb_tagged(BP_L_LEG) && limb_tagged(BP_R_LEG)
+	var/apply_extra_transparency_foot = limb_tagged(BP_L_FOOT) && limb_tagged(BP_R_FOOT)
 	var/list/cutter = body_taur_cutter()
 
 	for(var/obj/item/organ/external/part in organs)
-		if(part.is_stump() || part == chest || part.is_hidden_by_sprite_accessory()) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
+		if(part.is_stump() || part == chest || limb_hidden(part)) //Allowing tails to prevent bodyparts rendering, granting more spriter freedom for taur/digitigrade stuff.
 			continue
 		var/icon/temp = new(part.get_icon(skeleton, !wholeicontransparent))
 
@@ -302,7 +327,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// A body that picks its body type draws the base species' eyes, unless the head keeps its own (eye_icon_override). Set when the head joins
 /// and when the species changes, never by the draw.
 /mob/living/carbon/human/proc/sync_head_eye_icon()
-	var/obj/item/organ/external/head/head = organs_by_name[BP_HEAD]
+	var/obj/item/organ/external/head/head = limb_tagged(BP_HEAD)
 	if(!istype(head) || head.eye_icon_override || species.selects_bodytype == SELECTS_BODYTYPE_FALSE)
 		return
 	var/list/headtype = GLOB.all_species[species.base_species]?.has_limbs[BP_HEAD]
@@ -322,7 +347,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/robobody_count()
 	. = 0
 	for(var/organ_tag in list(BP_HEAD, BP_TORSO, BP_GROIN))
-		var/obj/item/organ/external/part = organs_by_name[organ_tag]
+		var/obj/item/organ/external/part = limb_tagged(organ_tag)
 		if(part && !part.is_stump() && (part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE))
 			.++
 
@@ -331,11 +356,10 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/mutations_look()
 	if(!has_mutation(LASER_EYES))
 		return null
-	var/static/image/laser_eyes
-	if(!laser_eyes)
-		laser_eyes = image(icon = 'icons/effects/genetics.dmi', layer = BODY_LAYER + MUTATIONS_LAYER)
-		laser_eyes.overlays += "lasereyes_s" // ALLOW(dx_raw_overlays): a shared image built once, never a holder's overlays
-	return laser_eyes
+	return human_look_icon("laser_eyes", "build_laser_eyes_look")
+
+/mob/living/carbon/human/proc/build_laser_eyes_look()
+	return look_composed_image(image(icon = 'icons/effects/genetics.dmi', layer = BODY_LAYER + MUTATIONS_LAYER), list("lasereyes_s"))
 
 /// The species' skin overlay (most species have none).
 /datum/species/proc/skin_look(mob/living/carbon/human/H)
@@ -356,7 +380,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/key = ""
 	for(var/obj/item/organ/external/O in organs)
 		look?.watch(O)
-		if(isnull(O) || O.is_stump() || O.is_hidden_by_sprite_accessory() || O.damage_state == "00")
+		if(isnull(O) || O.is_stump() || limb_hidden(O) || O.damage_state == "00")
 			continue
 		key += "[O.damage_state]/[O.icon_name];"
 	if(!length(key))
@@ -366,7 +390,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_look_icon("damage|[species.get_damage_overlays(src)]|[species.get_damage_mask(src)]|[blood_colour]|[bodytype]|[key]", "build_damage_look", key, blood_colour)
 
 /mob/living/carbon/human/proc/build_damage_look(key, blood_colour)
-	var/image/standing = image(icon = species.damage_overlays, icon_state = "00", layer = BODY_LAYER + MOB_DAM_LAYER)
+	var/list/damage = list()
 	for(var/part in splittext(key, ";"))
 		if(!length(part))
 			continue
@@ -374,8 +398,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		var/icon/DI = icon(species.get_damage_overlays(src), bits[1])			// the damage icon for whole human
 		DI.Blend(icon(species.get_damage_mask(src), bits[2]), ICON_MULTIPLY)	// mask with this organ's pixels
 		DI.Blend(blood_colour, ICON_MULTIPLY)
-		standing.overlays += DI // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
-	return standing
+		damage += DI
+	return look_composed_image(image(icon = species.damage_overlays, icon_state = "00", layer = BODY_LAYER + MOB_DAM_LAYER), damage)
 
 /mob/living/carbon/human/proc/surgery_look(datum/look/look)
 	. = null
@@ -399,7 +423,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /// Hair, facial hair and ears as one image, and the hair accessory: list(hair, accessory). Masks and helmets that block hair hide them.
 /mob/living/carbon/human/proc/hair_look(datum/look/look)
 	. = list(null, null)
-	var/obj/item/organ/external/head/head_organ = get_organ(BP_HEAD)
+	var/obj/item/organ/external/head/head_organ = limb_tagged(BP_HEAD)
 	if(!head_organ || head_organ.is_stump())
 		return
 	var/obj/item/head_item = get_equipped_item(SLOT_ID_HEAD)
@@ -468,9 +492,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		if(ear_style?.em_block || ear_secondary_style?.em_block)
 			em_block_ears = em_block_image_generic(image(ears_s))
 	var/image/semifinal = image(face_standing, layer = BODY_LAYER + HAIR_LAYER, "pixel_y" = head_offset)
-	if(em_block_ears)
-		semifinal.overlays += em_block_ears // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
-	return semifinal
+	return em_block_ears ? look_composed_image(semifinal, list(em_block_ears)) : semifinal
 
 /mob/living/carbon/human/proc/build_hair_accessory_look(colour, flags)
 	var/datum/sprite_accessory/hair_accessory/accessory = hair_accessory_style()
@@ -485,7 +507,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/ears_look_key(block_head_hair)
 	var/datum/robolimb/model = robolimb_model()
 	if(istype(model) && model.includes_ears && !ear_style && !ear_secondary_style)
-		return "synth|[synthetic.icon]|[looks.ears_color]|[species.color_mult]"
+		return "synth|[initial(synthetic.icon)]|[looks.ears_color]|[species.color_mult]"
 	if(block_head_hair)
 		return ""
 	. = ""
@@ -495,17 +517,17 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		. += "|2|[ear_secondary_style.type]|[jointext(ear_secondary_colors || list(), ",")]|[looks.ears_alpha2]"
 
 /// Glowing eyes, above the lighting plane. Plain eyes are drawn by the head itself.
-/mob/living/carbon/human/proc/eyes_look()
+/mob/living/carbon/human/proc/eyes_look(datum/look/look)
 	if(!species.has_glowing_eyes)
 		return null
 	var/obj/item/head_item = get_equipped_item(SLOT_ID_HEAD)
 	var/obj/item/mask_item = get_equipped_item(SLOT_ID_MASK)
 	if((!should_have_organ(O_EYES) && !species.dispersed_eyes) || (head_item && (worn_of(head_item).hides & BLOCKHAIR)) || (mask_item && (worn_of(mask_item).hides & BLOCKHAIR)))
 		return null
-	var/obj/item/organ/external/head/head_organ = get_organ(BP_HEAD)
+	var/obj/item/organ/external/head/head_organ = limb_tagged(BP_HEAD)
 	if(!head_organ || head_organ.is_stump() || !head_organ.eye_icon)
 		return null
-	var/obj/item/organ/internal/eyes/eyes = organ_in(O_EYES)
+	var/obj/item/organ/internal/eyes/eyes = eyes_organ(look)
 	var/tint = null
 	if(!findtext(head_organ.eye_icon, regex("-colored")))
 		if(species.dispersed_eyes) // Set so all species who would lack eye organs still have glowing eyes colored correctly
@@ -549,10 +571,10 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 /mob/living/carbon/human/proc/get_tail_layer()
 	// Layer follows facing direction: the tail sits under the clothing when facing south, east or west, and over the uniform
 	// (TAIL_UPPER_LAYER) when facing north, where it hangs over the back of the pants. Individual tail sprites may override the lower dirs.
-	var/list/lower_layer_dirs = list(SOUTH, EAST, WEST)
+	var/list/lower_dirs = list(SOUTH, EAST, WEST)
 	if(tail_style)
-		lower_layer_dirs = tail_style.lower_layer_dirs
-	if(dir in lower_layer_dirs)
+		lower_dirs = tail_style.lower_layer_dirs
+	if(dir in lower_dirs)
 		return TAIL_LOWER_LAYER
 	return TAIL_UPPER_LAYER
 
@@ -568,7 +590,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!species_tail || (suit && (worn_of(suit).hides & HIDETAIL)))
 		return null
-	var/obj/item/organ/external/chest = organs_by_name[BP_TORSO]
+	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
 	var/state = "[species_tail]_s"
 	if(species.get_tail_animation(src))
 		state = (stat == DEAD) ? "[species_tail]_static" : (tail_anim_state || state)
@@ -598,7 +620,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	//If you are FBP with tail style and didn't set a custom one
 	var/datum/robolimb/model = robolimb_model()
 	if(istype(model) && model.includes_tail && !tail_style && !tail_hidden)
-		return human_look_icon("synth_tail|[synthetic.icon]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "tail", layer)
+		return human_look_icon("synth_tail|[initial(synthetic.icon)]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "tail", layer)
 	//If you have a custom tail selected
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!tail_style || (suit && (worn_of(suit).hides & HIDETAIL) && !istaurtail(tail_style)) || tail_hidden)
@@ -608,11 +630,11 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	return human_look_icon("tail|[tail_style.type]|[loaf]|[wag]|[looks.tail_color]|[looks.tail_color2]|[looks.tail_color3]|[looks.tail_alpha]|[layer]", "build_tail_image", loaf, wag, layer)
 
 /mob/living/carbon/human/proc/build_synth_part(state, layer)
-	var/icon/part_s = new/icon("icon" = synthetic.icon, "icon_state" = state)
+	var/icon/part_s = new/icon("icon" = initial(synthetic.icon), "icon_state" = state)
 	part_s.Blend(looks.skin_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
 	var/image/working = image(part_s)
 	if(state == "wing")
-		working.overlays += em_block_image_generic(working) // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
+		working = look_composed_image(working, list(em_block_image_generic(working)))
 	working.layer = layer
 	return working
 
@@ -631,7 +653,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		tail_s.Blend(overlay, ICON_OVERLAY)
 	var/image/working = image(tail_s)
 	if(tail_style.em_block)
-		working.overlays += em_block_image_generic(working) // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
+		working = look_composed_image(working, list(em_block_image_generic(working)))
 	if(istaurtail(tail_style) || islongtail(tail_style))
 		working.pixel_x = tail_style.offset_x
 		working.pixel_y = tail_style.offset_y
@@ -644,7 +666,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/layer = BODY_LAYER + (under_layer ? WING_LOWER_LAYER : WING_LAYER)
 	//If you are FBP with wing style and didn't set a custom one
 	if(synthetic && synthetic.includes_wing && !wing_style && !wings_hidden)
-		return human_look_icon("synth_wing|[synthetic.icon]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "wing", layer)
+		return human_look_icon("synth_wing|[initial(synthetic.icon)]|[looks.skin_color]|[species.color_mult]|[layer]", "build_synth_part", "wing", layer)
 	//If you have custom wings selected
 	var/obj/item/suit = get_equipped_item(SLOT_ID_SUIT)
 	if(!wing_style || (suit && (worn_of(suit).hides & HIDETAIL)) || wings_hidden)
@@ -670,7 +692,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/image/working = image(wing_s)
 	working.alpha = looks.wing_alpha
 	if(wing_style.em_block)
-		working.overlays += em_block_image_generic(working) // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
+		working = look_composed_image(working, list(em_block_image_generic(working)))
 	working.pixel_x -= wing_style.wing_offset
 	working.layer = layer
 	return working
@@ -680,40 +702,40 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	//If you are FBP with ear style and didn't set a custom one
 	var/datum/robolimb/model = robolimb_model()
 	if(istype(model) && model.includes_ears && !ear_style && !ear_secondary_style)
-		var/icon/ears_s = new/icon("icon" = synthetic.icon, "icon_state" = "ears")
+		var/icon/ears_s = new/icon("icon" = initial(synthetic.icon), "icon_state" = "ears")
 		ears_s.Blend(src.looks.ears_color, species.color_mult ? ICON_MULTIPLY : ICON_ADD)
 		return ears_s
 
 	var/icon/rendered
 	if(ear_style && !block_head_hair)
-		var/icon/ears_s = new/icon("icon" = ear_style.icon, "icon_state" = ear_style.icon_state)
+		var/icon/ears_s = new/icon("icon" = initial(ear_style.icon), "icon_state" = initial(ear_style.icon_state))
 		if(ear_style.do_colouration)
 			ears_s.Blend(src.looks.ears_color, ear_style.color_blend_mode)
 		if(ear_style.extra_overlay)
-			var/icon/overlay = new/icon("icon" = ear_style.icon, "icon_state" = ear_style.extra_overlay)
+			var/icon/overlay = new/icon("icon" = initial(ear_style.icon), "icon_state" = ear_style.extra_overlay)
 			overlay.Blend(src.looks.ears_color2, ear_style.color_blend_mode)
 			ears_s.Blend(overlay, ICON_OVERLAY)
 		if(ear_style.extra_overlay2) //MORE COLOURS IS BETTERER
-			var/icon/overlay = new/icon("icon" = ear_style.icon, "icon_state" = ear_style.extra_overlay2)
+			var/icon/overlay = new/icon("icon" = initial(ear_style.icon), "icon_state" = ear_style.extra_overlay2)
 			overlay.Blend(src.looks.ears_color3, ear_style.color_blend_mode)
 			ears_s.Blend(overlay, ICON_OVERLAY)
 		rendered = ears_s
 		rendered += rgb(,,,src.looks.ears_alpha)
 
 	if(ear_secondary_style && !block_head_hair)
-		var/icon/ears_s = new/icon("icon" = ear_secondary_style.icon, "icon_state" = ear_secondary_style.icon_state)
+		var/icon/ears_s = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = initial(ear_secondary_style.icon_state))
 		if(ear_secondary_style.do_colouration)
 			var/color = LAZYACCESS(ear_secondary_colors, 1)
 			if(color)
 				ears_s.Blend(color, ear_secondary_style.color_blend_mode)
 		if(ear_secondary_style.extra_overlay)
-			var/icon/overlay = new/icon("icon" = ear_secondary_style.icon, "icon_state" = ear_secondary_style.extra_overlay)
+			var/icon/overlay = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = ear_secondary_style.extra_overlay)
 			var/color = LAZYACCESS(ear_secondary_colors, 2)
 			if(color)
 				overlay.Blend(color, ear_secondary_style.color_blend_mode)
 			ears_s.Blend(overlay, ICON_OVERLAY)
 		if(ear_secondary_style.extra_overlay2) //MORE COLOURS IS BETTERER
-			var/icon/overlay = new/icon("icon" = ear_secondary_style.icon, "icon_state" = ear_secondary_style.extra_overlay2)
+			var/icon/overlay = new/icon("icon" = initial(ear_secondary_style.icon), "icon_state" = ear_secondary_style.extra_overlay2)
 			var/color = LAZYACCESS(ear_secondary_colors, 3)
 			if(color)
 				overlay.Blend(color, ear_secondary_style.color_blend_mode)
@@ -751,7 +773,7 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/image/working = image(vorebelly_s)
 	working.pixel_x = offset_x
 	if(em_block)
-		working.overlays += em_block_image_generic(working) // ALLOW(dx_raw_overlays): a cached image built once, never a holder's overlays
+		working = look_composed_image(working, list(em_block_image_generic(working)))
 	working.layer = layer
 	working.appearance_flags = flags
 	return working
@@ -851,11 +873,12 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 		layers[L_HAND_LAYER] = left.make_worn_icon(body_type = body_type, inhands = TRUE, slot_name = slot_l_hand_str, default_icon = INV_L_HAND_DEF_ICON, default_layer = L_HAND_LAYER)
 
 /// The item in `slot`, watched by the draw: its own changes (a visor flipped, a light on, an accessory clipped on) and its look redraw the wearer.
+/// An item whose own draw composes the wearer's look (the voodoo doll in a hand) is not followed through its look: each would redraw the other for good.
 /mob/living/carbon/human/proc/worn_item(datum/look/look, slot)
 	var/obj/item/I = get_equipped_item(slot)
 	if(I && look)
 		look.watch(I)
-		look.watch_look(I)
+		look.watch_look_unless_composing(I, src)
 	return I
 
 /// Both ears' items, unless the head or mask blocks the ears or headsets are hidden.
@@ -875,8 +898,8 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	if(!shoe_item || (suit_hides & HIDESHOES) || (uniform_hides & HIDESHOES))
 		return null //Either nothing to draw, or it'd be hidden.
 	for(var/f in list(BP_L_FOOT, BP_R_FOOT))
-		var/obj/item/organ/external/foot/foot = get_organ(f)
-		if(istype(foot) && foot.is_hidden_by_sprite_accessory(clothing_only = TRUE)) //If either foot is hidden by the tail, don't render footwear.
+		var/obj/item/organ/external/foot/foot = limb_tagged(f)
+		if(istype(foot) && limb_hidden(foot, clothing_only = TRUE)) //If either foot is hidden by the tail, don't render footwear.
 			return null
 	var/obj/item/clothing/shoes/shoe = shoe_item
 	var/shoe_sprite = (istype(shoe) && !isnull(shoe.update_icon_define)) ? shoe.update_icon_define : INV_FEET_DEF_ICON

@@ -235,6 +235,13 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 		return
 	LAZYSET(watched_looks, OWN_KEY(thing), cap_engine_state_of(thing)?.look_serial || 0)
 
+/// watch_look() for a draw that shows `thing` on `wearer` (an item in a hand, on the body): `thing` is not followed through its look when its own draw
+/// composes the wearer's look (look_composes()), or each would redraw the other for good.
+/datum/look/proc/watch_look_unless_composing(atom/thing, atom/wearer)
+	if(!isatom(thing) || look_composes(thing, wearer))
+		return
+	watch_look(thing)
+
 /**
  * What stands on the turfs `dirs` away from `holder`: the movables of `type` there (a list, empty when none), and the draw hears about them. It watches
  * each of those turfs (a mover of `type` entering or leaving one redraws the holder) and each neighbour found (its own tracked changes: dir,
@@ -581,8 +588,10 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 			. += ":u([jointext(under, ",")])"
 		if(length(I.filters))
 			var/list/filter_keys = list()
+			// Only these filters take an icon: reading the icon of another (an outline) is an error.
+			var/static/list/icon_filters = list("alpha", "displace", "layer")
 			for(var/dm_filter/F as anything in I.filters)
-				filter_keys += "[F.type]=[look_icon_key(F.icon)]"
+				filter_keys += (F.type in icon_filters) ? "[F.type]=[look_icon_key(F.icon)]" : "[F.type]"
 			. += ":f([jointext(filter_keys, ",")])"
 		return . + "}"
 	return "[entry]"
@@ -590,6 +599,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /// The key of an icon: a file by its name; an icon made at runtime (a body, a tinted tail) by an id that is never reused, so two different
 /// runtime icons never share a key (their text is "/icon" for every one) and the same cached icon always has the same key.
 /proc/look_icon_key(icon)
+	READS_FROM()
 	if(isnull(icon) || isfile(icon) || istext(icon))
 		return "[icon]"
 	if(istype(icon, /icon))
@@ -801,6 +811,14 @@ GLOBAL_VAR_INIT(look_flash_seq, 0)
 	else
 		LAZYREMOVE(engine.look_flashes, state)
 	state_changed(A)
+
+/// A layer image that carries parts of its own (an emissive blocker, the damage on a body), built once and cached: `base` with each of `parts` (a list) as an
+/// overlay of its own. The result is shared and never written after; it is handed to look.overlay() like any layer.
+/proc/look_composed_image(image/base, list/parts)
+	READS_FROM()
+	for(var/part in parts)
+		base.overlays += part
+	return base
 
 /// A layer built in one call: a draw writes nothing, not even the members of an image it made, so a tinted, faded or re-planed
 /// layer is made here and handed to look.overlay(). (mutable_appearance() takes the layer, plane, alpha and flags; this adds the colour.)

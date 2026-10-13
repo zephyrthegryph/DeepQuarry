@@ -2,8 +2,6 @@
 	if(!returning)
 		if(updating_fullness)
 			return
-	var/previous_stomach_fullness = vore_fullness_ex["stomach"]
-	var/previous_taur_fullness = vore_fullness_ex["taur belly"]
 	var/list/new_fullness = ..(TRUE)
 	. = new_fullness
 	for(var/datum/category_group/underwear/undergarment_class in GLOB.global_underwear.categories)

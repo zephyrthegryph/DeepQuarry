@@ -754,7 +754,7 @@ CAPABILITIES(/datum/prompt/number/protean_store)
 	for(var/obj/item/organ/external/limb as anything in organs)
 		if(!include_head && limb.organ_tag == BP_HEAD)
 			continue
-		limb.transparent = !limb.transparent
+		limb.set_transparent(!limb.transparent)
 	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
 
 /datum/protean_power/absorb_implant

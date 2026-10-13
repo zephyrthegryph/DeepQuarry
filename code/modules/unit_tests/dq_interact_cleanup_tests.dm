@@ -142,7 +142,7 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, T)
 	dq_give_zone_sel(user)
-	victim.lying = TRUE // a prone target can't dodge the stab, so it always lands
+	victim.set_lying(TRUE) // a prone target can't dodge the stab, so it always lands
 	user.set_combat_mode(TRUE)
 	TEST_ASSERT_EQUAL(user.input_stance(), I_HURT, "combat mode on is the harm stance")
 

@@ -628,9 +628,6 @@ init_lines	code/game/mecha/components/_component.dm	if(start_damaged)
 init_lines	code/game/mecha/components/_component.dm	update_integrity(round(max_integrity * integrity_danger_mod))
 init_lines	code/game/mecha/equipment/tools/cable_layer.dm	sync_cable_length()
 init_lines	code/game/mecha/equipment/tools/inflatables.dm	rel_set(src, nameof(my_deployer), my_tool)
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.name = name
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.set_anchored(TRUE)
-init_lines	code/game/mecha/equipment/tools/powertool.dm	my_tool.canremove = FALSE
 init_lines	code/game/mecha/equipment/tools/shield.dm	my_shield.shield_regen_delay = equip_cooldown
 init_lines	code/game/mecha/equipment/tools/shield.dm	rel_set(my_shield, nameof(my_shield.my_tool), src)
 init_lines	code/game/mecha/equipment/tools/shield_omni.dm	rel_set(src, nameof(my_mech), loc)
@@ -1130,94 +1127,6 @@ init_lines	code/game/objects/structures/droppod.dm	cargo_at_make.forceMove(src) 
 init_lines	code/game/objects/structures/droppod.dm	podfall(auto_open)
 init_lines	code/game/objects/structures/fence.dm	update_cut_status()
 init_lines	code/game/objects/structures/fence.dm	update_door_status()
-init_lines	code/game/objects/structures/gargoyle.dm	var/mob/living/carbon/human/H = petrified
-init_lines	code/game/objects/structures/gargoyle.dm	if(isspace(loc) || isopenspace(loc))
-init_lines	code/game/objects/structures/gargoyle.dm	set_anchored(FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(!istype(H) || !isturf(H.loc))
-init_lines	code/game/objects/structures/gargoyle.dm	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
-init_lines	code/game/objects/structures/gargoyle.dm	var/tint = "#FFFFFF"
-init_lines	code/game/objects/structures/gargoyle.dm	if(comp)
-init_lines	code/game/objects/structures/gargoyle.dm	EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
-init_lines	code/game/objects/structures/gargoyle.dm	rel_set(comp, nameof(comp.statue), src)
-init_lines	code/game/objects/structures/gargoyle.dm	comp.transformed = TRUE
-init_lines	code/game/objects/structures/gargoyle.dm	comp.paused = FALSE
-init_lines	code/game/objects/structures/gargoyle.dm	identifier = length(comp.identifier) > 0 ? comp.identifier : initial(identifier)
-init_lines	code/game/objects/structures/gargoyle.dm	material = length(comp.material) > 0 ? comp.material : initial(material)
-init_lines	code/game/objects/structures/gargoyle.dm	tint = length(comp.tint) > 0 ? comp.tint : initial(comp.tint)
-init_lines	code/game/objects/structures/gargoyle.dm	adjective = length(comp.adjective) > 0 ? comp.adjective : initial(adjective)
-init_lines	code/game/objects/structures/gargoyle.dm	if(copytext_char(adjective, -1) != "s")
-init_lines	code/game/objects/structures/gargoyle.dm	adjective += "s"
-init_lines	code/game/objects/structures/gargoyle.dm	rel_set(src, nameof(WR_gargoyle), H)
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
-init_lines	code/game/objects/structures/gargoyle.dm	set_density(FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(ident_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	identifier = ident_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(mat_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	material = mat_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(adj_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	adjective = adj_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(tint_ovr)
-init_lines	code/game/objects/structures/gargoyle.dm	tint = tint_ovr
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.tail_style?.clip_mask_state)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_lower_dirs.Cut()
-init_lines	code/game/objects/structures/gargoyle.dm	else if(H.tail_style)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_lower_dirs = H.tail_style.lower_layer_dirs.Copy()
-init_lines	code/game/objects/structures/gargoyle.dm	max_integrity = H.get_endurance() + 100
-init_lines	code/game/objects/structures/gargoyle.dm	original_int = H.vitality() * H.get_endurance() + 100
-init_lines	code/game/objects/structures/gargoyle.dm	update_integrity(original_int)
-init_lines	code/game/objects/structures/gargoyle.dm	name = "[identifier] of [H.name]"
-init_lines	code/game/objects/structures/gargoyle.dm	desc = "A very lifelike [identifier] made of [material]."
-init_lines	code/game/objects/structures/gargoyle.dm	stored_examine = H.examine(H)
-init_lines	code/game/objects/structures/gargoyle.dm	description_fluff = H.get_description_fluff()
-init_lines	code/game/objects/structures/gargoyle.dm	if(H?.buckled_to())
-init_lines	code/game/objects/structures/gargoyle.dm	var/atom/movable/_tmp_buck_10 = H?.buckled_to()
-init_lines	code/game/objects/structures/gargoyle.dm	_tmp_buck_10.unbuckle_mob(H, TRUE)
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/RGB = rgb2num(tint)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorr = rgb(RGB[1]*0.299, RGB[2]*0.299, RGB[3]*0.299)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorg = rgb(RGB[1]*0.587, RGB[2]*0.587, RGB[3]*0.587)
-init_lines	code/game/objects/structures/gargoyle.dm	var/colorb = rgb(RGB[1]*0.114, RGB[2]*0.114, RGB[3]*0.114)
-init_lines	code/game/objects/structures/gargoyle.dm	var/tint_color = list(colorr, colorg, colorb, "#000000")
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/body_layers = HUMAN_BODY_LAYERS
-init_lines	code/game/objects/structures/gargoyle.dm	var/list/other_layers = HUMAN_OTHER_LAYERS
-init_lines	code/game/objects/structures/gargoyle.dm	for (var/i = 1; i <= length(H.overlays_standing); i++)
-init_lines	code/game/objects/structures/gargoyle.dm	if(i in other_layers)
-init_lines	code/game/objects/structures/gargoyle.dm	continue
-init_lines	code/game/objects/structures/gargoyle.dm	if(discard_clothes && !(i in body_layers))
-init_lines	code/game/objects/structures/gargoyle.dm	continue
-init_lines	code/game/objects/structures/gargoyle.dm	if(istype(H.overlays_standing[i], /image) && (i in body_layers))
-init_lines	code/game/objects/structures/gargoyle.dm	var/image/old_image = H.overlays_standing[i]
-init_lines	code/game/objects/structures/gargoyle.dm	var/image/new_image = image(old_image)
-init_lines	code/game/objects/structures/gargoyle.dm	if(i == TAIL_LOWER_LAYER || i == TAIL_UPPER_LAYER || i == TAIL_UPPER_LAYER_HIGH)
-init_lines	code/game/objects/structures/gargoyle.dm	tail_image = new_image
-init_lines	code/game/objects/structures/gargoyle.dm	new_image.color = tint_color
-init_lines	code/game/objects/structures/gargoyle.dm	new_image.layer = old_image.layer
-init_lines	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
-init_lines	code/game/objects/structures/gargoyle.dm	else
-init_lines	code/game/objects/structures/gargoyle.dm	if(!isnull(H.overlays_standing[i]))
-init_lines	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
-init_lines	code/game/objects/structures/gargoyle.dm	initial_sleep = H.status_units(STAT_SLEEPING)
-init_lines	code/game/objects/structures/gargoyle.dm	initial_blind = H.status_units(STAT_BLINDED)
-init_lines	code/game/objects/structures/gargoyle.dm	initial_is_shifted = H.is_shifted
-init_lines	code/game/objects/structures/gargoyle.dm	transform = H.transform
-init_lines	code/game/objects/structures/gargoyle.dm	layer = H.layer
-init_lines	code/game/objects/structures/gargoyle.dm	pixel_x = H.pixel_x
-init_lines	code/game/objects/structures/gargoyle.dm	pixel_y = H.pixel_y
-init_lines	code/game/objects/structures/gargoyle.dm	dir = H.dir
-init_lines	code/game/objects/structures/gargoyle.dm	initial_lying = H.lying
-init_lines	code/game/objects/structures/gargoyle.dm	initial_lying_prev = H.lying_prev
-init_lines	code/game/objects/structures/gargoyle.dm	H.set_sdisabilities(H.sdisabilities | MUTE)
-init_lines	code/game/objects/structures/gargoyle.dm	if(H.appearance_flags & PIXEL_SCALE)
-init_lines	code/game/objects/structures/gargoyle.dm	appearance_flags |= PIXEL_SCALE
-init_lines	code/game/objects/structures/gargoyle.dm	wagging = H.wagging
-init_lines	code/game/objects/structures/gargoyle.dm	flapping = H.flapping
-init_lines	code/game/objects/structures/gargoyle.dm	H.toggle_tail(FALSE, FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	H.toggle_wing(FALSE, FALSE)
-init_lines	code/game/objects/structures/gargoyle.dm	act_message(H, null, MSG_SELF(span_warning("Your skin abruptly [adjective] as you turn to [material]!")), \
-init_lines	code/game/objects/structures/gargoyle.dm	MSG_OTHERS(span_warning("%U%'s skin rapidly [adjective] as they turn to [material]!")))
-init_lines	code/game/objects/structures/gargoyle.dm	H.forceMove(src)
-init_lines	code/game/objects/structures/gargoyle.dm	H.status_set(STAT_BLINDED, 0)
-init_lines	code/game/objects/structures/gargoyle.dm	H.status_set(STAT_SLEEPING, 0)
-init_lines	code/game/objects/structures/gargoyle.dm	H.canmove = 0
 init_lines	code/game/objects/structures/ghost_pods/silicon.dm	var/turf/T = get_turf(src)
 init_lines	code/game/objects/structures/ghost_pods/silicon.dm	say_dead_object("A " + span_notice("[drone_class] swarm drone") + " shell is now available in \the [T.loc].", src)
 init_lines	code/game/objects/structures/grille.dm	update_integrity(rand(1, 5)) //In the broken-but-not-cleared band (below integrity_failure).
@@ -1500,50 +1409,12 @@ init_lines	code/modules/body/body.dm	if(!body)
 init_lines	code/modules/body/body.dm	rel_set(src, nameof(body), new body_type(src))
 init_lines	code/modules/body/organs/internal/_organ_internal.dm	if(supply_conversion_value)
 init_lines	code/modules/body/organs/internal/_organ_internal.dm	make_sellable(/datum/sellable/organ)
-init_lines	code/modules/body/organs/internal/augment.dm	setup_radial_icon()
-init_lines	code/modules/body/organs/internal/augment.dm	if(integrated_object) // declared child
-init_lines	code/modules/body/organs/internal/augment.dm	integrated_object.canremove = FALSE
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	var/list/tools = all_integrated_tools()
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	if(!length(tools))
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	integrated_tool_images = list()
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/I as anything in tools)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.canremove = FALSE
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.set_toolspeed(tooling_of(src).speed)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	rel_set(I, nameof(I.my_augment), src)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	I.name = "integrated [I.name]"
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/obj/item/Tool as anything in tools)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	if(istype(Tool, /obj/item/stack))
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	var/obj/item/stack/S = Tool
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	for(var/datum/matter_synth/MS as anything in synths)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	rel_add(S, nameof(S.synths), MS)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	S.uses_charge = length(synths)
-init_lines	code/modules/body/organs/internal/augment/armmounted.dm	integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
 init_lines	code/modules/body/organs/internal/brain.dm	sync_defib_window()
 init_lines	code/modules/body/organs/internal/brain.dm	make_mind_host(src)
 init_lines	code/modules/body/organs/internal/horror.dm	redspace = GLOB.all_languages[LANGUAGE_REDSPACE]
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	organ_tag = "[initial(organ_tag)]_[rand(1,9999)]"
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(forcetag)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	organ_tag = forcetag
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(!istype(src,/obj/item/organ/internal/malignant/engineered))
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/i = 0
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(!force_location)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	while(++i < 10)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(isliving(loc))
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = pick(validBPspawns)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/mob/living/L = loc
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	var/obj/item/organ/checklimb = L.organs_by_name[parent_organ]
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(checklimb)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(checklimb.status == 0 && !checklimb.is_robotic())
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	else
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = force_location
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	set_status(ORGAN_DEAD)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	else
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	if(force_location)
-init_lines	code/modules/body/organs/internal/malignant/malignant.dm	parent_organ = force_location
 init_lines	code/modules/body/organs/internal/voicebox.dm	amend_assist_langs()
 init_lines	code/modules/body/organs/organ.dm	if(isliving(loc))
 init_lines	code/modules/body/organs/organ.dm	var/mob/living/born_in = loc
-init_lines	code/modules/body/organs/organ.dm	src.w_class = max(src.w_class + mob_size_difference(born_in.mob_size, MOB_MEDIUM), 1) //smaller mobs have smaller organs.
 init_lines	code/modules/body/organs/organ.dm	place_in_body(born_in)
 init_lines	code/modules/body/organs/organ.dm	if(!max_damage)
 init_lines	code/modules/body/organs/organ.dm	set_max_damage(min_broken_damage * 2)
@@ -1572,11 +1443,9 @@ init_lines	code/modules/body/organs/organ_external.dm	if(istype(owner))
 init_lines	code/modules/body/organs/organ_external.dm	sync_colour_to_human(owner)
 init_lines	code/modules/body/organs/organ_stump.dm	var/obj/item/organ/external/limb = stump_of
 init_lines	code/modules/body/organs/organ_stump.dm	if(istype(limb))
-init_lines	code/modules/body/organs/organ_stump.dm	organ_tag = limb.organ_tag
 init_lines	code/modules/body/organs/organ_stump.dm	body_part = limb.body_part
 init_lines	code/modules/body/organs/organ_stump.dm	amputation_point = limb.amputation_point
 init_lines	code/modules/body/organs/organ_stump.dm	joint = limb.joint
-init_lines	code/modules/body/organs/organ_stump.dm	parent_organ = limb.parent_organ
 init_lines	code/modules/body/organs/organ_stump.dm	if(istype(limb))
 init_lines	code/modules/body/organs/organ_stump.dm	set_max_damage(limb.max_damage)
 init_lines	code/modules/body/organs/organ_stump.dm	if((limb.is_robotic()) && (!parent || (parent.is_robotic())))
@@ -2276,9 +2145,6 @@ init_lines	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLO
 init_lines	code/modules/mob/dead/observer/observer.dm	else
 init_lines	code/modules/mob/dead/observer/observer.dm	name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 init_lines	code/modules/mob/dead/observer/observer.dm	rel_set(src, nameof(mind), M.mind) //we don't transfer the mind but we keep a reference to it.
-init_lines	code/modules/mob/dead/observer/observer.dm	if(ishuman(M))
-init_lines	code/modules/mob/dead/observer/observer.dm	var/mob/living/carbon/human/H = M
-init_lines	code/modules/mob/dead/observer/observer.dm	add_overlay(H.overlays_standing) // ALLOW(decl): copies the body's overlays
 init_lines	code/modules/mob/dead/observer/observer.dm	default_pixel_x = M.default_pixel_x
 init_lines	code/modules/mob/dead/observer/observer.dm	default_pixel_y = M.default_pixel_y
 init_lines	code/modules/mob/dead/observer/observer.dm	if(!T && REGISTRY_COUNT(REGISTRY_LATEJOIN))
@@ -2338,7 +2204,6 @@ init_lines	code/modules/mob/living/carbon/human/human.dm	dna.real_name = real_na
 init_lines	code/modules/mob/living/carbon/human/human.dm	sync_dna_traits(FALSE) // Traitgenes Sync traits to genetics if needed
 init_lines	code/modules/mob/living/carbon/human/human.dm	sync_organ_dna()
 init_lines	code/modules/mob/living/carbon/human/human.dm	initialize_vessel()
-init_lines	code/modules/mob/living/carbon/human/human.dm	regenerate_icons()
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
 init_lines	code/modules/mob/living/carbon/human/human.dm	var/image/img = image('icons/mob/animal.dmi', src, animal)
 init_lines	code/modules/mob/living/carbon/human/human.dm	img.override = TRUE
@@ -2446,25 +2311,6 @@ init_lines	code/modules/mob/living/silicon/robot/robot.dm	resolve_sprite_datum()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	recompute_power_demand()
 init_lines	code/modules/mob/living/silicon/robot/robot.dm	update_senses()
 init_lines	code/modules/mob/living/silicon/robot/robot_items.dm	access |= ACCESS_ROBOTICS
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(!isrobot(loc))
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	var/mob/living/silicon/robot/R = loc
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	rel_set(R, nameof(R.module), src)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_camera_networks(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_languages(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	add_subsystems(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	apply_status_flags(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	handle_shell(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(R.radio)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(R.shell)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	channels = R.mainframe.aiRadio.channels
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.radio.recalculateChannels()
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.set_default_module_icon()
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	if(!R.client)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	R.icon_selected = FALSE // It wasnt a player selecting icon? Let them do it later!
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	create_equipment(R)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	for(var/obj/item/I in modules)
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	I.canremove = FALSE
-init_lines	code/modules/mob/living/silicon/robot/robot_modules/station.dm	on_robot_equip(R)
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	if(CONFIG_GET(flag/allow_ai_shells) && CONFIG_GET(flag/give_free_ai_shell))
 init_lines	code/modules/mob/living/silicon/robot/robot_remote_control.dm	new /mob/living/silicon/robot/ai_shell(get_turf(src))
 init_lines	code/modules/mob/living/silicon/robot/robot_simple_items.dm	generate_tools()
@@ -2546,7 +2392,6 @@ init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	ove
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	install_default_hardware()
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	if(hard_drive)
 init_lines	code/modules/modular_computers/computers/modular_computer/core.dm	install_default_programs()
-init_lines	code/modules/modular_computers/hardware/_hardware.dm	w_class = hardware_size
 init_lines	code/modules/modular_computers/hardware/_hardware.dm	if(istype(loc, /obj/item/modular_computer))
 init_lines	code/modules/modular_computers/hardware/_hardware.dm	rel_set(src, nameof(/obj/item/computer_hardware/::holder2), loc)
 init_lines	code/modules/modular_computers/hardware/hard_drive.dm	install_default_programs()
@@ -2584,7 +2429,6 @@ init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	if(brainmob.client.pr
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/mob/living/carbon/human/dummy/mannequin = get_mannequin(brainmob.client.ckey)
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	mannequin.delete_inventory(TRUE)
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	brainmob.client.prefs.dress_preview_mob(mannequin)
-init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	mannequin.regenerate_icons()
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	var/icon/new_icon = getHologramIcon(getCompoundIcon(mannequin))
 init_lines	code/modules/nifsoft/software/13_soulcatcher.dm	icon = new_icon
 init_lines	code/modules/overmap/disperser/disperser_console.dm	link_parts()
@@ -2742,11 +2586,6 @@ init_lines	code/modules/pda/pda.dm	slot_wear_id_str = 'icons/mob/pda_wrist.dmi',
 init_lines	code/modules/pda/pda.dm	slot_gloves_str = 'icons/mob/pda_wrist.dmi'
 init_lines	code/modules/pda/pda.dm	)
 init_lines	code/modules/pda/pda.dm	desc = "A portable microcomputer by Thinktronic Systems, LTD. This model is a wrist-bound version."
-init_lines	code/modules/pda/pda.dm	set_slot_flags(SLOT_ID | SLOT_BELT | SLOT_GLOVES)
-init_lines	code/modules/pda/pda.dm	sprite_sheets = list(
-init_lines	code/modules/pda/pda.dm	SPECIES_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-init_lines	code/modules/pda/pda.dm	SPECIES_VR_TESHARI = 'icons/mob/species/teshari/pda_wrist.dmi',
-init_lines	code/modules/pda/pda.dm	)
 init_lines	code/modules/pda/pda.dm	if(7)
 init_lines	code/modules/pda/pda.dm	icon = 'icons/obj/pda_slider.dmi'
 init_lines	code/modules/pda/pda.dm	model_name = "Slider® Personal Data Assistant"
@@ -3444,7 +3283,6 @@ init_lines	code/modules/vore/resizing/holder_micro.dm	slot_r_hand_str = 'icons/m
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_back_str = 'icons/mob/toy_worn.dmi',
 init_lines	code/modules/vore/resizing/holder_micro.dm	slot_head_str = 'icons/mob/toy_worn.dmi')
 init_lines	code/modules/vore/resizing/holder_micro.dm	icon_override = null
-init_lines	code/modules/vore/resizing/holder_micro.dm	sprite_sheets = null
 init_lines	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
 init_lines	code/modules/vore/resizing/holder_micro.dm	item_state = "teshariplushie_white"
 init_lines	code/modules/xenoarcheaology/anomaly_container.dm	var/obj/machinery/artifact/A = locate_within(loc, /obj/machinery/artifact)

@@ -281,7 +281,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 		var/obj/item/organ/external/E = H.organs_by_name[tag]
 		if(E)
 			var/list/marklist = LAZYACCESS(body_markings, tag)
-			E.markings = marklist.Copy()
+			E.set_markings(marklist.Copy())
 
 	//Hair style
 	var/hair = GetUIValueRange(DNA_UI_HAIR_STYLE,GLOB.hair_styles_list.len)
@@ -387,7 +387,7 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// copy; proto_private() returns it (and never lets these writes reach a registered species).
 	var/datum/species/own_species = rel_private(H, nameof(H.species))
 	own_species.blood_reagents = blood_reagents
-	own_species.blood_color = blood_color
+	own_species.set_blood_color(blood_color)
 	own_species.species_sounds = species_sounds
 	own_species.gender_specific_species_sounds = gender_specific_species_sounds
 	own_species.species_sounds_male = species_sounds_male

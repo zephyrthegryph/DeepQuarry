@@ -1315,7 +1315,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 		return mind.grab_ghost(force = force)
 
 /mob/is_incorporeal()
-	if(incorporeal_move) // ALLOW(reads): a requirement asks whether the actor is a ghost-like mover when a button is pressed, never from a cached menu
+	if(incorporeal_move)
 		return 1
 	return ..()
 

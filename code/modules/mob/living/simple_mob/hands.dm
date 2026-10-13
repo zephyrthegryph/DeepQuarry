@@ -31,25 +31,7 @@
 		return null
 	look.watch(held)
 	look.watch_look(held)
-	var/slot_str = (slot == SLOT_ID_HAND_R) ? slot_r_hand_str : slot_l_hand_str
-	//determine icon state to use
-	var/t_state
-	if(LAZYACCESS(held.item_state_slots, slot_str))
-		t_state = held.item_state_slots[slot_str]
-	else if(held.item_state)
-		t_state = held.item_state
-	else
-		t_state = held.icon_state
-	//determine icon to use
-	var/t_icon
-	if(LAZYACCESS(held.item_icons, slot_str))
-		t_icon = held.item_icons[slot_str]
-	else if(held.icon_override)
-		t_state += (slot == SLOT_ID_HAND_R) ? "_r" : "_l"
-		t_icon = held.icon_override
-	else
-		t_icon = (slot == SLOT_ID_HAND_R) ? INV_R_HAND_DEF_ICON : INV_L_HAND_DEF_ICON
-	return look_overlay_image(t_icon, t_state, color = held.color)
+	return held.held_look_image(slot == SLOT_ID_HAND_R)
 
 /// A held item sits in its hand's place on the HUD.
 /mob/living/simple_mob/inventory_slot_changed(slot_id, atom/movable/thing, inserted)

@@ -91,6 +91,14 @@
 
 	// HUD element variable, see organ_icon.dm get_damage_hud_image()
 	var/image/hud_damage_image
+TRACKED(/obj/item/organ/external, transparent)
+TRACKED(/obj/item/organ/external, s_tone)
+TRACKED(/obj/item/organ/external, s_col)
+TRACKED(/obj/item/organ/external, model)
+TRACKED(/obj/item/organ/external, h_col)
+TRACKED(/obj/item/organ/external, damage_state)
+TRACKED(/obj/item/organ/external, open)
+TRACKED(/obj/item/organ/external, markings)
 
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
@@ -765,7 +773,7 @@ CAPABILITIES(/obj/item/organ/external)
 This function completely restores a damaged organ to perfect condition.
 */
 /obj/item/organ/external/rejuvenate(ignore_prosthetic_prefs)
-	damage_state = "00"
+	set_damage_state("00")
 	set_status(0)
 	germ_level = 0
 	for(var/datum/affliction/wound/W as anything in get_wounds())
@@ -1008,7 +1016,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/update_damage_state()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)
-		damage_state = n_is
+		set_damage_state(n_is)
 		return 1
 	return 0
 
@@ -1369,7 +1377,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	..()
 
 	if(company)
-		model = company
+		set_model(company)
 		var/datum/robolimb/R = GLOB.all_robolimbs[company]
 		if(!R || (data.get_species_name() in R.species_cannot_use))
 			R = GLOB.basic_robolimb
@@ -1641,15 +1649,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				return 1
 
 /obj/item/organ/external/proc/is_hidden_by_sprite_accessory(clothing_only = FALSE)			// Clothing only will mean the check should only be used in places where we want to hide clothing icon, not organ itself.
-	if(owner && owner.tail_style && owner.tail_style.hide_body_parts && (organ_tag in owner.tail_style.hide_body_parts))
-		return 1
-	if(clothing_only && LAZYLEN(markings))
-		for(var/M in markings)
-			if(!markings[M]["on"]) //If the marking is off, the organ isn't hidden by it.
-				continue
-			var/datum/sprite_accessory/marking/mark = markings[M]["datum"]
-			if(mark.hide_body_parts && (organ_tag in mark.hide_body_parts))
-				return 1
+	return owner?.limb_hidden(src, clothing_only)
 
 #undef DROPLIMB_THRESHOLD_EDGE
 #undef DROPLIMB_THRESHOLD_DESTROY

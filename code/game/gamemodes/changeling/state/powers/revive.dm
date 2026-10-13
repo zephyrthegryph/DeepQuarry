@@ -50,7 +50,7 @@
 			var/obj/item/organ/external/current_limb = H.organs_by_name[limb]
 			if(current_limb)
 				current_limb.relocate()
-				current_limb.open = 0
+				current_limb.set_open(0)
 
 		H.flag_hud_update(HEALTH_HUD)
 		H.flag_hud_update(STATUS_HUD)

@@ -723,7 +723,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 	cooldown_start(src, last_special, 5 SECONDS)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
-		L.transparent = !L.transparent
+		L.set_transparent(!L.transparent)
 	act_message(src, null, others = span_notice("%U%'s internal composition seems to change."))
 
 /mob/living/carbon/human/proc/shapeshifter_change_shape(new_species = null, visible = TRUE) //not sure if this needs to be moved to a separate file but
