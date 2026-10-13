@@ -26,6 +26,8 @@
 # The merge agent's side: tools/dq_lane_check.sh <branch>, tools/dq_merge_gates.sh --lanes "<branches>".
 # Exit status: 0 stamped, 1 a gate failed (nothing stamped), 2 a usage problem.
 set -uo pipefail
+# The gates keep the full end-of-test staleness sweep (dq_focused_test.sh would otherwise bound it).
+export DQ_STALENESS=full
 cd "$(git rev-parse --show-toplevel)"
 
 tests=()
