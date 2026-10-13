@@ -136,6 +136,7 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
     let mut template = Vec::new();
     let mut expressions = Vec::new();
     let mut next_marker = None;
+    let mut substituted = false;
     let mut at = 0;
     while at < value.len() {
         let ch = value[at..].chars().next().unwrap();
@@ -155,54 +156,53 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
                 at += 1;
                 continue;
             }
-            if rest.starts_with('x') && rest.len() >= 3 {
-                let hex = &rest[1..3];
-                if let Ok(byte) = u8::from_str_radix(hex, 16) {
-                    let mut encoded = [0; 4];
-                    template
-                        .extend_from_slice(char::from(byte).encode_utf8(&mut encoded).as_bytes());
-                    at += 3;
+            if let Some(consumed) = numeric_escape(rest, &mut template) {
+                at += consumed;
+                continue;
+            }
+            if rest.starts_with("...") {
+                template.extend([0xff, 0x12]);
+                at += 3;
+                continue;
+            }
+            // DreamMaker reads the whole letter run after `\` as a macro name. A run
+            // that names no applicable macro falls back to a one-letter escape
+            // (`\n`, `\t`) followed by literal text, or is an error: `"\red"` is the
+            // red formatting macro and `"\redb"` is invalid, never `\r` + "ed".
+            let word_len = rest.bytes().take_while(u8::is_ascii_alphabetic).count();
+            if word_len != 0 {
+                let word = &rest[..word_len];
+                let after = &rest[word_len..];
+                if let Some(effect) = text_macro(word, after, &template, substituted)? {
+                    at += word_len;
+                    match effect {
+                        TextMacro::Emit(marker, consume_space) => {
+                            // `\font` absorbs one preceding space, not a following one.
+                            if marker == 0x1d && template.last() == Some(&b' ') {
+                                template.pop();
+                            }
+                            template.extend([0xff, marker]);
+                            if consume_space && value[at..].starts_with(' ') {
+                                at += 1;
+                            }
+                        }
+                        TextMacro::Article(marker) => {
+                            template.extend([0xff, marker]);
+                            next_marker = Some(0x03);
+                            at += 1;
+                        }
+                        TextMacro::NextExpression(marker) => next_marker = Some(marker),
+                        TextMacro::Ordinal => {
+                            let last = template.len() - 1;
+                            template[last] = 0x05;
+                        }
+                    }
                     continue;
                 }
-            }
-            let control = [
-                ("improper", 0x16, false, true),
-                ("proper", 0x15, false, true),
-                ("himself", 0x11, false, false),
-                ("hers", 0x0e, false, false),
-                ("The", 0x09, true, true),
-                ("the", 0x08, true, true),
-                ("his", 0x0c, false, false),
-                ("he", 0x0a, false, false),
-                ("A", 0x07, true, true),
-                ("a", 0x06, true, true),
-                ("ref", 0x2a, true, false),
-                ("roman", 0x2c, true, false),
-                ("Roman", 0x2d, true, false),
-                ("th", 0x05, false, false),
-                ("s", 0x14, false, false),
-            ]
-            .into_iter()
-            .find(|(name, ..)| rest.starts_with(name));
-            if let Some((name, marker, modifies_next, consumes_space)) = control {
-                if modifies_next && !consumes_space {
-                    next_marker = Some(marker);
-                } else {
-                    template.extend([0xff, marker]);
-                    if modifies_next {
-                        next_marker = Some(0x03);
-                    }
-                }
-                at += name.len();
-                if consumes_space && value[at..].starts_with(' ') {
-                    at += 1;
-                }
-                continue;
             }
             let escape = value[at..].chars().next().ok_or("trailing string escape")?;
             let escaped = match escape {
                 'n' => "\n",
-                'r' => "\r",
                 't' => "\t",
                 '\\' => "\\",
                 '"' => "\"",
@@ -212,6 +212,12 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
                 '<' => "&lt;",
                 '>' => "&gt;",
                 '&' => "&amp;",
+                _ if word_len != 0 => {
+                    return Err(format!(
+                        "undefined text macro or escape sequence: \\{}",
+                        &rest[..word_len]
+                    ))
+                }
                 _ => return Err(format!("unsupported string escape: \\{escape}")),
             };
             template.extend_from_slice(escaped.as_bytes());
@@ -244,6 +250,7 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
             if depth != 0 {
                 return Err("unclosed string interpolation".into());
             }
+            substituted = true;
             if value[start..cursor].trim().is_empty() {
                 template.extend([0xff, next_marker.take().unwrap_or(1)]);
                 at = cursor + 1;
@@ -271,6 +278,99 @@ pub(super) fn parse_interpolated_string(value: &str) -> Result<(Vec<u8>, Vec<Exp
         at += ch.len_utf8();
     }
     Ok((template, expressions))
+}
+
+enum TextMacro {
+    /// `0xff marker` in place; the flag consumes one following space.
+    Emit(u8, bool),
+    /// Article (`\the`, `\a`, ...): marker in place, the next substitution is its
+    /// noun (marker 3), and the mandatory following space is consumed.
+    Article(u8),
+    /// The next substitution is emitted with this marker (`\ref`, `\icon`, ...).
+    NextExpression(u8),
+    /// `\th` rewrites the marker of the substitution it directly follows.
+    Ordinal,
+}
+
+/// `\xHH` (two hex digits) and `\uHHHH` (four) code points, UTF-8 encoded.
+fn numeric_escape(rest: &str, template: &mut Vec<u8>) -> Option<usize> {
+    let digits = match rest.as_bytes().first()? {
+        b'x' => 2,
+        b'u' => 4,
+        _ => return None,
+    };
+    let hex = rest.get(1..1 + digits)?;
+    if !hex.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return None;
+    }
+    let code = char::from_u32(u32::from_str_radix(hex, 16).ok()?)?;
+    let mut encoded = [0; 4];
+    template.extend_from_slice(code.encode_utf8(&mut encoded).as_bytes());
+    Some(1 + digits)
+}
+
+/// DreamMaker 516.1687 text macros by full name (oracle:
+/// `fixtures/native_compiler/text_macros`). `Ok(None)` means the word is not an
+/// applicable macro here and falls back to a one-letter escape.
+fn text_macro(
+    word: &str,
+    after: &str,
+    template: &[u8],
+    substituted: bool,
+) -> Result<Option<TextMacro>, String> {
+    let pronoun = |marker| {
+        if substituted {
+            Ok(Some(TextMacro::Emit(marker, false)))
+        } else {
+            Err(format!("macro \\{word} requires preceding expression"))
+        }
+    };
+    let article = |marker| Ok(after.starts_with(' ').then_some(TextMacro::Article(marker)));
+    match word {
+        "the" => article(0x08),
+        "The" => article(0x09),
+        "a" | "an" => article(0x06),
+        "A" | "An" => article(0x07),
+        "he" | "she" => pronoun(0x0a),
+        "He" | "She" => pronoun(0x0b),
+        "his" => pronoun(0x0c),
+        "His" => pronoun(0x0d),
+        "hers" => pronoun(0x0e),
+        "Hers" => pronoun(0x0f),
+        "him" => pronoun(0x10),
+        "himself" | "herself" => pronoun(0x11),
+        "s" => pronoun(0x14),
+        "th" => {
+            if substituted && template.len() >= 2 && template[template.len() - 2] == 0xff {
+                Ok(Some(TextMacro::Ordinal))
+            } else {
+                Err("macro \\th must follow a substituted expression (like []\\th)".into())
+            }
+        }
+        "proper" | "improper" => {
+            if template.is_empty() {
+                let marker = if word == "proper" { 0x15 } else { 0x16 };
+                Ok(Some(TextMacro::Emit(marker, true)))
+            } else {
+                Err(format!("\\{word} must be at beginning of word"))
+            }
+        }
+        "ref" => Ok(Some(TextMacro::NextExpression(0x2a))),
+        "icon" => Ok(Some(TextMacro::NextExpression(0x2b))),
+        "roman" => Ok(Some(TextMacro::NextExpression(0x2c))),
+        "Roman" => Ok(Some(TextMacro::NextExpression(0x2d))),
+        "bold" | "b" => Ok(Some(TextMacro::Emit(0x17, true))),
+        "italic" | "i" => Ok(Some(TextMacro::Emit(0x18, true))),
+        "underline" | "u" => Ok(Some(TextMacro::Emit(0x19, true))),
+        "o" => Ok(Some(TextMacro::Emit(0x1a, true))),
+        "font" => Ok(Some(TextMacro::Emit(0x1d, false))),
+        "red" => Ok(Some(TextMacro::Emit(0x1f, true))),
+        "green" => Ok(Some(TextMacro::Emit(0x20, true))),
+        "blue" => Ok(Some(TextMacro::Emit(0x21, true))),
+        "black" => Ok(Some(TextMacro::Emit(0x22, true))),
+        "white" => Ok(Some(TextMacro::Emit(0x23, true))),
+        _ => Ok(None),
+    }
 }
 
 pub(super) fn parse_text_template(value: &str) -> Result<(Vec<u8>, Vec<Option<Expr>>), String> {
@@ -304,11 +404,14 @@ pub(super) fn parse_text_template(value: &str) -> Result<(Vec<u8>, Vec<Option<Ex
     Ok((template, expressions))
 }
 
+/// DreamMaker's capitalisation test looks through text-macro marker bytes: the
+/// `0xff` lead byte is skipped like whitespace, so `"\green[x]"` (`ff 20`) starts
+/// a sentence while `"\red[x]"` (`ff 1f`) does not.
 fn interpolation_starts_sentence(mut prefix: &[u8]) -> bool {
     loop {
         while prefix
             .last()
-            .is_some_and(|byte| matches!(byte, b' ' | b'\n' | b'\t' | b'\'' | b'"'))
+            .is_some_and(|byte| matches!(byte, b' ' | b'\n' | b'\t' | b'\'' | b'"' | 0xff))
         {
             prefix = &prefix[..prefix.len() - 1];
         }

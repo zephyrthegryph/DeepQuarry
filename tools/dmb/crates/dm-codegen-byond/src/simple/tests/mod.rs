@@ -16,6 +16,7 @@ mod input_selection_centers;
 mod objects_1;
 mod objects_2;
 mod strings;
+mod text_macros_oracle;
 mod typed_delete_native;
 mod typed_native_control;
 mod local_sized_arrays_native;

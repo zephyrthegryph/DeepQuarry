@@ -114,6 +114,10 @@ pub fn project(
     let mut instances = Vec::new();
     let default_turf = default_instance(&mut instances, InstanceKind::Turf, defaults.turf);
     let default_area = default_instance(&mut instances, InstanceKind::Area, defaults.area);
+    // Area identity is type plus authored overrides; an empty `{}` block and an
+    // omitted block carry no overrides and name the same BYOND area.
+    let mut area_instances: Vec<(SymbolId, Arc<[dm_ir::map::MapAssignment]>, usize)> =
+        vec![(defaults.area, Arc::from([]), default_area)];
     let empty = Cell {
         turf: default_turf,
         area: default_area,
@@ -137,9 +141,33 @@ pub fn project(
             let mut seen_area = false;
             for (atom_index, atom) in template.atoms.iter().enumerate() {
                 let kind = classify(classifier, atom.type_path)?;
+                // BYOND creates one area object per distinct map area instance, and
+                // the world default area shares it: equal area atoms (type and
+                // overrides) across templates, maps and the default resolve to one
+                // instance, so `get_area()` identity matches DreamMaker output.
+                if kind == InstanceKind::Area {
+                    if let Some(&(.., existing)) = area_instances.iter().find(|(path, overrides, _)| {
+                        *path == atom.type_path && **overrides == *atom.assignments
+                    }) {
+                        if seen_area {
+                            return Err(invalid(
+                                map_index,
+                                "multiple area atoms require an explicit precedence contract",
+                            ));
+                        }
+                        seen_area = true;
+                        cell.area = existing;
+                        continue;
+                    }
+                    area_instances.push((
+                        atom.type_path,
+                        atom.assignments.clone(),
+                        instances.len(),
+                    ));
+                }
                 let index = instances.len();
-                // No deduplication: initializer effects, repeated writes and source
-                // origins remain distinguishable until exact initializer policy exists.
+                // Turfs and movables are not deduplicated: each placement constructs
+                // its own atom, and source origins remain distinguishable.
                 instances.push(Instance {
                     kind,
                     atom: atom.clone(),
@@ -334,6 +362,7 @@ mod tests {
             for (name, kind) in [
                 ("/turf", InstanceKind::Turf),
                 ("/area", InstanceKind::Area),
+                ("/area/room", InstanceKind::Area),
                 ("/obj/a", InstanceKind::Object),
                 ("/obj/b", InstanceKind::Object),
                 ("/mob", InstanceKind::Mob),
@@ -411,6 +440,40 @@ mod tests {
                 .sum::<u64>(),
             3
         );
+    }
+    #[test]
+    fn equal_area_atoms_share_one_instance_with_the_world_default() {
+        // BYOND 516.1687: one area object per distinct (type, overrides); the
+        // world default area is the same object as an unedited mapped one.
+        let map = captured(concat!(
+            "\"a\"=(/turf,/area)
+\"b\"=(/turf,/area/room)
+\"c\"=(/turf,/area/room)
+",
+            "\"d\"=(/turf,/area/room{name = \"x\"})
+\"e\"=(/turf,/area/room{name = \"x\"})
+",
+            "\"f\"=(/turf,/area{})
+(2,1,1)={\"
+abcdef
+\"}"
+        ));
+        let result = project(&[map], defaults(), &Kinds).unwrap();
+        let areas: Vec<_> = (0..result.instances.len())
+            .filter(|index| result.instances[*index].kind == InstanceKind::Area)
+            .collect();
+        assert_eq!(areas.len(), 3, "default /area, /area/room, /area/room{{name}}");
+        let mut cells = Vec::new();
+        for run in result.grid.iter() {
+            cells.extend(std::iter::repeat(run.area).take(usize::from(run.copies)));
+        }
+        assert_eq!(cells.len(), 7);
+        assert_eq!(cells[0], cells[1], "unmapped default and mapped /area");
+        assert_eq!(cells[0], cells[6], "empty override block");
+        assert_eq!(cells[2], cells[3]);
+        assert_eq!(cells[4], cells[5]);
+        assert_ne!(cells[2], cells[4]);
+        assert_ne!(cells[0], cells[2]);
     }
     #[test]
     fn sparse_holes_and_run_limits_are_exact_without_cell_materialization() {
