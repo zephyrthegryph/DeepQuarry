@@ -231,8 +231,11 @@ Always enter through `build.sh`/`build.bat`: they pin `DQ_BUILD_ROOT` to their o
   (and `check_ratchets.sh`) runs `analyze gen` first (`tools/build/build.sh gen` by hand). Commit the
   declarations, never the output. Merge master with `bash tools/dq_merge_master.sh`; it settles a branch
   that still tracks them. `deepquarry.dme`, `_unit_tests.dm` and `code/modules/unit_tests/snapshots/look_keys.txt` merge by union
-  (`.gitattributes`); `look_keys.txt` stays committed (it is the record look probes narrow against) but every merge script regenerates it, so
-  never hand-merge it. `doc/rewrite/agent_workflow.md`.
+  (`.gitattributes`). `look_keys.txt` is the record of **verified** look keys: a row exists only for a type whose look pins were probed and
+  matched at that key. Nothing regenerates it from the tree; only a passing pin run (`dq_focused_test.sh`, a lane's or the merge gates') or an
+  explicit `--bless` writes a key, and the merge scripts only `--normalize` it (drop rows, never write one). A type whose analyzer key
+  (`data/look-plan.tsv`, generated, gitignored) matches no row is *unverified* and the next pin run probes it. Never hand-merge or regenerate
+  it. `doc/rewrite/agent_workflow.md`.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 - **Shared build caches** (`doc/testing.md` "Shared build caches"): the analyzer binary is cached by source hash

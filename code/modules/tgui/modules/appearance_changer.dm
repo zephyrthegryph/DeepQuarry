@@ -288,7 +288,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(picked && can_change(owner(), APPEARANCE_HAIR_COLOR))
 		owner().looks.set_grad_style(picked[1])// returned as a list
 		update_dna(owner())
-		owner().regenerate_icons()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return 1
 	return FALSE
@@ -334,8 +333,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().ear_style = instance
-		owner().update_hair()
+		rel_set(owner(), nameof(/mob/living/carbon/human::ear_style), instance)
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
@@ -349,12 +347,11 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().ear_secondary_style = instance
+		rel_set(owner(), nameof(/mob/living/carbon/human::ear_secondary_style), instance)
 		if(!islist(owner().ear_secondary_colors))
-			owner().ear_secondary_colors = list()
+			owner().set_ear_secondary_colors(list())
 		if(instance && length(owner().ear_secondary_colors) < instance.get_color_channel_count())
 			owner().ear_secondary_colors.len = instance.get_color_channel_count()
-		owner().update_hair()
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
@@ -363,22 +360,21 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_ears_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "ears_color", "Ear Color", "Please select ear color.", rgb(owner().r_ears, owner().g_ears, owner().b_ears))
+		ask_color(user, "ears_color", "Ear Color", "Please select ear color.", owner().looks.ears_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_ears2_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "ears2_color", "2nd Ear Color", "Please select secondary ear color.", rgb(owner().r_ears2, owner().g_ears2, owner().b_ears2))
+		ask_color(user, "ears2_color", "2nd Ear Color", "Please select secondary ear color.", owner().looks.ears_color2)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_ears_alpha(datum/act/op/A, ears_alpha)
 	var/mob/user = A.actor
 	var/new_alpha = clamp(ears_alpha, 0, 255)
 	if(isnum(new_alpha))
-		owner().a_ears = new_alpha
+		owner().looks.set_ears_alpha(new_alpha)
 		update_dna(owner())
-		owner().update_hair()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
@@ -387,9 +383,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/mob/user = A.actor
 	var/new_alpha = clamp(secondary_ears_alpha, 0, 255)
 	if(isnum(new_alpha))
-		owner().a_ears2 = new_alpha
+		owner().looks.set_ears_alpha2(new_alpha)
 		update_dna(owner())
-		owner().update_hair()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
@@ -412,8 +407,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().tail_style = instance
-		owner().update_tail_showing()
+		rel_set(owner(), nameof(/mob/living/carbon/human::tail_style), instance)
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
@@ -422,28 +416,27 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_tail_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "tail_color", "Tail Color", "Please select tail color.", rgb(owner().r_tail, owner().g_tail, owner().b_tail))
+		ask_color(user, "tail_color", "Tail Color", "Please select tail color.", owner().looks.tail_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_tail2_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "tail2_color", "2nd Tail Color", "Please select secondary tail color.", rgb(owner().r_tail2, owner().g_tail2, owner().b_tail2))
+		ask_color(user, "tail2_color", "2nd Tail Color", "Please select secondary tail color.", owner().looks.tail_color2)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_tail3_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "tail3_color", "3rd Tail Color", "Please select tertiary tail color.", rgb(owner().r_tail3, owner().g_tail3, owner().b_tail3))
+		ask_color(user, "tail3_color", "3rd Tail Color", "Please select tertiary tail color.", owner().looks.tail_color3)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_tail_alpha(datum/act/op/A, tail_alpha)
 	var/mob/user = A.actor
 	var/new_alpha = clamp(tail_alpha, 0, 255)
 	if(isnum(new_alpha))
-		owner().a_tail = new_alpha
+		owner().looks.set_tail_alpha(new_alpha)
 		update_dna(owner())
-		owner().update_tail_showing()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
@@ -456,8 +449,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 			instance = null
 		if(!istype(instance) && !clear)
 			return FALSE
-		owner().wing_style = instance
-		owner().update_wing_showing()
+		rel_set(owner(), nameof(/mob/living/carbon/human::wing_style), instance)
 		update_dna(owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
@@ -466,28 +458,27 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_wing_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "wing_color", "Wing Color", "Please select wing color.", rgb(owner().r_wing, owner().g_wing, owner().b_wing))
+		ask_color(user, "wing_color", "Wing Color", "Please select wing color.", owner().looks.wing_color)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_wing2_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "wing2_color", "2nd Wing Color", "Please select secondary wing color.", rgb(owner().r_wing2, owner().g_wing2, owner().b_wing2))
+		ask_color(user, "wing2_color", "2nd Wing Color", "Please select secondary wing color.", owner().looks.wing_color2)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_wing3_color(datum/act/op/A)
 	var/mob/user = A.actor
 	if(can_change(owner(), APPEARANCE_HAIR_COLOR))
-		ask_color(user, "wing3_color", "3rd Wing Color", "Please select tertiary wing color.", rgb(owner().r_wing3, owner().g_wing3, owner().b_wing3))
+		ask_color(user, "wing3_color", "3rd Wing Color", "Please select tertiary wing color.", owner().looks.wing_color3)
 	return FALSE
 
 /datum/tgui_module/appearance_changer/proc/ui_act_wing_alpha(datum/act/op/A, wing_alpha)
 	var/mob/user = A.actor
 	var/new_alpha = clamp(wing_alpha, 0, 255)
 	if(isnum(new_alpha))
-		owner().a_wing = new_alpha
+		owner().looks.set_wing_alpha(new_alpha)
 		update_dna(owner())
-		owner().update_wing_showing()
 		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
@@ -587,7 +578,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		own_species.vanity_base_fit = new_species
 		if(istype(owner().species, /datum/species/shapeshifter)) //TODO: See if this is still needed.
 			owner().set_wrapped_bodytype(new_species)
-		owner().regenerate_icons()
 		generate_data(user, owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
@@ -646,7 +636,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	var/new_size = A.answer.value
 	if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner(), APPEARANCE_MISC))
 		owner().resize(new_size / 100, animate = FALSE, ignore_prefs = TRUE)
-		owner().regenerate_icons()
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
@@ -655,8 +644,7 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 /datum/tgui_module/appearance_changer/proc/ui_act_scale_appearance(datum/act/op/A)
 	if(can_change(owner(), APPEARANCE_MISC))
 		owner().dna.scale_appearance = !owner().dna.scale_appearance
-		owner().fuzzy = owner().dna.scale_appearance
-		owner().regenerate_icons()
+		owner().set_fuzzy(owner().dna.scale_appearance)
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
 		return TRUE
 	return FALSE
@@ -665,7 +653,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(can_change(owner(), APPEARANCE_MISC))
 		owner().dna.offset_override = !owner().dna.offset_override
 		owner().offset_override = owner().dna.offset_override
-		owner().regenerate_icons()
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
 		return TRUE
 	return FALSE
@@ -675,7 +662,6 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(can_change(owner(), APPEARANCE_MISC))
 		owner().dna.digitigrade = !owner().dna.digitigrade
 		owner().looks.set_digitigrade(owner().dna.digitigrade)
-		owner().regenerate_icons()
 		generate_data(user, owner())
 		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
@@ -1054,8 +1040,8 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 	if(data["change_hair_color"])
 		data["hair_color"] = owner().looks.hair_color
 		data["hair_color_grad"] = owner().looks.grad_color
-		data["ears_color"] = rgb(owner().r_ears, owner().g_ears, owner().b_ears)
-		data["ears2_color"] = rgb(owner().r_ears2, owner().g_ears2, owner().b_ears2)
+		data["ears_color"] = owner().looks.ears_color
+		data["ears2_color"] = owner().looks.ears_color2
 
 		// not a color, but it basically is
 		data["hair_grad"] = owner().looks.grad_style
@@ -1065,16 +1051,16 @@ MSG_DEF_SELF(appearance_changer/too_fast, "You are changing appearance too fast!
 		ear_secondary_color_channels.len = owner().ear_secondary_style?.get_color_channel_count() || 0
 		data["ear_secondary_colors"] = ear_secondary_color_channels
 
-		data["tail_color"] = rgb(owner().r_tail, owner().g_tail, owner().b_tail)
-		data["tail2_color"] = rgb(owner().r_tail2, owner().g_tail2, owner().b_tail2)
-		data["tail3_color"] = rgb(owner().r_tail3, owner().g_tail3, owner().b_tail3)
-		data["wing_color"] = rgb(owner().r_wing, owner().g_wing, owner().b_wing)
-		data["wing2_color"] = rgb(owner().r_wing2, owner().g_wing2, owner().b_wing2)
-		data["wing3_color"] = rgb(owner().r_wing3, owner().g_wing3, owner().b_wing3)
-		data["wing_alpha"] = owner().a_wing
-		data["tail_alpha"] = owner().a_tail
-		data["ears_alpha"] = owner().a_ears
-		data["secondary_ears_alpha"] = owner().a_ears2
+		data["tail_color"] = owner().looks.tail_color
+		data["tail2_color"] = owner().looks.tail_color2
+		data["tail3_color"] = owner().looks.tail_color3
+		data["wing_color"] = owner().looks.wing_color
+		data["wing2_color"] = owner().looks.wing_color2
+		data["wing3_color"] = owner().looks.wing_color3
+		data["wing_alpha"] = owner().looks.wing_alpha
+		data["tail_alpha"] = owner().looks.tail_alpha
+		data["ears_alpha"] = owner().looks.ears_alpha
+		data["secondary_ears_alpha"] = owner().looks.ears_alpha2
 
 	data["change_facial_hair_color"] = can_change(owner(), APPEARANCE_FACIAL_HAIR_COLOR)
 	if(data["change_facial_hair_color"])
@@ -1426,19 +1412,13 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 				changed_hook(APPEARANCECHANGER_CHANGED_EYES, ask.answerer)
 				return TRUE
 		if("ears_color")
-			owner().r_ears = hex2num(copytext(ask.value, 2, 4))
-			owner().g_ears = hex2num(copytext(ask.value, 4, 6))
-			owner().b_ears = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_ears_color(ask.value)
 			update_dna(owner())
-			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("ears2_color")
-			owner().r_ears2 = hex2num(copytext(ask.value, 2, 4))
-			owner().g_ears2 = hex2num(copytext(ask.value, 4, 6))
-			owner().b_ears2 = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_ears_color2(ask.value)
 			update_dna(owner())
-			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("ears_secondary_color")
@@ -1446,55 +1426,36 @@ CAPABILITIES(/datum/tgui_module/appearance_changer/vore)
 				return
 			owner().ear_secondary_colors[channel] = ask.value
 			update_dna(owner())
-			owner().update_hair()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail_color")
-			owner().r_tail = hex2num(copytext(ask.value, 2, 4))
-			owner().g_tail = hex2num(copytext(ask.value, 4, 6))
-			owner().b_tail = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_tail_color(ask.value)
 			update_dna(owner())
-			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail2_color")
-			owner().r_tail2 = hex2num(copytext(ask.value, 2, 4))
-			owner().g_tail2 = hex2num(copytext(ask.value, 4, 6))
-			owner().b_tail2 = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_tail_color2(ask.value)
 			update_dna(owner())
-			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail3_color")
-			owner().r_tail3 = hex2num(copytext(ask.value, 2, 4))
-			owner().g_tail3 = hex2num(copytext(ask.value, 4, 6))
-			owner().b_tail3 = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_tail_color3(ask.value)
 			update_dna(owner())
-			owner().update_tail_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing_color")
-			owner().r_wing = hex2num(copytext(ask.value, 2, 4))
-			owner().g_wing = hex2num(copytext(ask.value, 4, 6))
-			owner().b_wing = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_wing_color(ask.value)
 			update_dna(owner())
-			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing2_color")
-			owner().r_wing2 = hex2num(copytext(ask.value, 2, 4))
-			owner().g_wing2 = hex2num(copytext(ask.value, 4, 6))
-			owner().b_wing2 = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_wing_color2(ask.value)
 			update_dna(owner())
-			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing3_color")
-			owner().r_wing3 = hex2num(copytext(ask.value, 2, 4))
-			owner().g_wing3 = hex2num(copytext(ask.value, 4, 6))
-			owner().b_wing3 = hex2num(copytext(ask.value, 6, 8))
+			owner().looks.set_wing_color3(ask.value)
 			update_dna(owner())
-			owner().update_wing_showing()
 			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("marking")

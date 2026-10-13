@@ -65,7 +65,6 @@
 				self.remove_body_effect(effect_type, TRUE)
 		for(var/effect_type in chosen_dna.genMods)
 			self.apply_body_effect(effect_type)
-	regenerate_icons()
 	if(isliving(src)) //Prevents organ rejection. Less intensive than adding a changeling check to blood_incompatible.
 		var/mob/living/owner = src
 		for(var/obj/item/organ/O in owner.organs) //I guess you can also consider this a changeling test if you take out their organ and implant it into someone else and it doesn't reject.

@@ -10,8 +10,8 @@
 	var/eye_state = (has_eye_glow && awake) ? state : null
 
 	if(has_hands)
-		look.overlay(r_hand_sprite)
-		look.overlay(l_hand_sprite)
+		look.overlay(hand_look(look, SLOT_ID_HAND_R))
+		look.overlay(hand_look(look, SLOT_ID_HAND_L))
 	for(var/image/effect as anything in body_effect_overlays(TRUE))
 		look.overlay(effect)
 

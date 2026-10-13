@@ -71,7 +71,7 @@ CAPABILITIES(/obj/item/clothing/head/welding)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
-			M.update_inv_wear_mask()
+			changed(src)
 		user.update_mob_action_buttons()
 
 /obj/item/clothing/head/welding/demon

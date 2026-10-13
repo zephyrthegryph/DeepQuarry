@@ -148,9 +148,11 @@
 	var/mob/living/simple_mob/vore/turkeygirl/T = allocate(/mob/living/simple_mob/vore/turkeygirl, test_floor())
 	refresh_flush()
 	T.set_nutrition(0)
+	rx_drain() // nutrition is a published fact, not a var: the reaction that redraws runs ahead of the refresh
 	refresh_flush()
 	var/plain = T.icon_state
 	T.set_nutrition(5000)
+	rx_drain()
 	refresh_flush()
 	TEST_ASSERT_EQUAL(T.icon_state, "[T.icon_living]-2", "a full turkeygirl shows the fullest state (was [plain])")
 

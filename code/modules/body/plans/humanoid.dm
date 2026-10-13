@@ -410,4 +410,3 @@
 	. = ..()
 	if(.)
 		var/mob/living/carbon/human/H = owner
-		H.UpdateDamageIcon()

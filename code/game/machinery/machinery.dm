@@ -424,7 +424,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/mob/user = A.actor
 	if(!operable())
 		return /datum/msg/machine/not_working
-	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
+	if(user?.lying || user?.stat)
 		return /datum/msg/machine/cant_reach
 	if(!user?.IsAdvancedToolUser())
 		return /datum/msg/machine/no_dexterity

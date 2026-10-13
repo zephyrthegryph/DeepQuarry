@@ -19,7 +19,7 @@
 		var/obj/item/organ/external/O = target.organs_by_name[N]
 		if(!istype(O))
 			continue
-		O.markings = null
+		O.set_markings(null)
 
 	var/priority = 0
 	var/list/body_markings = preferences.read_preference(/datum/preference/body_markings)
@@ -39,5 +39,5 @@
 					"priority" = priority,
 					"on" = body_markings[M][BP]["on"],
 				)
-				LAZYSET(O.markings, M, entry)
+				O.set_markings_at(M, entry)
 	target.markings_len = priority

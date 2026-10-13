@@ -315,13 +315,13 @@ CAPABILITIES(/obj/item/clothing/glasses/omnihud/eng/meson)
 			active = 0
 			icon_state = off_state
 			item_state = "[initial(item_state)]-off"
-			user.update_inv_glasses()
+			changed(src)
 			to_chat(user, "You deactivate the retinal projector on the [src].")
 		else
 			active = 1
 			icon_state = initial(icon_state)
 			item_state = initial(item_state)
-			user.update_inv_glasses()
+			changed(src)
 			to_chat(user, "You activate the retinal projector on the [src].")
 		user.update_mob_action_buttons()
 

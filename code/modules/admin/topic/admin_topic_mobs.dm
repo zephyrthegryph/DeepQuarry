@@ -353,10 +353,6 @@ MSG_DEF_SELF(admin_topic/jump_disabled, "Admin jumping disabled")
 			log_admin("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(owner())].")
 			message_admins("[key_name(H)] has their hands full, so they did not receive their cookie, spawned by [key_name(owner())].")
 			return
-		else
-			H.update_inv_r_hand()//To ensure the icon appears in the HUD
-	else
-		H.update_inv_l_hand()
 	log_admin("[key_name(H)] got their cookie, spawned by [key_name(owner())]")
 	message_admins("[key_name(H)] got their cookie, spawned by [key_name(owner())]")
 	feedback_inc("admin_cookies_spawned",1)

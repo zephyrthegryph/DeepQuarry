@@ -393,8 +393,7 @@ CAPABILITIES(/obj/item/vac_attachment)
 			item_state = "sucker_nobag"
 		if("Hidden")
 			item_state = null
-	user.update_inv_r_hand()
-	user.update_inv_l_hand()
+	changed(src)
 	return OP_OK
 
 /obj/item/storage/Entered(atom/movable/thing, atom/OldLoc) //Holder the mob so they don't get stuck in trashbags etc.

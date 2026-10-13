@@ -1,21 +1,20 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_toy_sword_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_toy_sword_holder/update_inv_l_hand()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_toy_sword_holder/draw(datum/look/look)
 	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_toy_sword_holder/update_inv_r_hand()
 	right_redraws++
-	return ..()
+	..()
 
 /// Draws the real look and applies it, observing the overlays it lays.
 /obj/item/toy/sword/interim_holder_appearance
 	var/list/observed_overlays
 
 /obj/item/toy/sword/interim_holder_appearance/proc/observe()
+	refresh_flush() // the queued draws run: the holder hears its item's change
 	var/datum/look/look = new
 	draw(look)
 	observed_overlays = look.overlays ? look.overlays.Copy() : list()
@@ -63,6 +62,7 @@
 			retracted_blades++
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
 	holder.left_redraws = 0
 	holder.right_redraws = 0
 	sword.observe()

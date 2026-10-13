@@ -212,6 +212,9 @@
 	VAR_PRIVATE/wants_to_see_motion_echos = TRUE
 
 	var/is_slipping = FALSE
+TRACKED(/mob, lying)
+TRACKED(/mob, is_shifted)
+TRACKED(/mob, incorporeal_move)
 
 CAPABILITIES(/mob)
 	// Who the character says they are (profile_records.dm).
@@ -320,6 +323,7 @@ CAPABILITIES(/mob)
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
+TRACKED(/mob, size_multiplier)
 
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.

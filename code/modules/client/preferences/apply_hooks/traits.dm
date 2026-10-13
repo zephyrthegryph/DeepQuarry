@@ -35,7 +35,7 @@
 	for(var/datum/trait/T in new_S.traits)
 		T.apply_pref(preferences)
 
-	new_S.blood_color = preferences.read_preference(/datum/preference/color/human/blood_color)
+	new_S.set_blood_color(preferences.read_preference(/datum/preference/color/human/blood_color))
 	var/blood_reagents = preferences.read_preference(/datum/preference/text/human/blood_reagents)
 	if(blood_reagents != "default")
 		new_S.blood_reagents = blood_reagents
