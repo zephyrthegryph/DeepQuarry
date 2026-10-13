@@ -647,8 +647,6 @@ SETTER(/atom, density)
 	user.client.Click(src, loc, null, list2params(paramslist))
 	return TRUE
 
-GLOBAL_LIST_EMPTY(icon_dimensions)
-
 /// get_oversized_icon_offsets() for an unshifted atom (shared; callers only read it).
 GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 

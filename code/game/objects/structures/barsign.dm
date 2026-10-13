@@ -9,7 +9,7 @@
 	var/cult = 0
 
 /obj/structure/sign/double/barsign/proc/get_valid_states(initial=1)
-	. = icon_states_fast(icon)
+	. = icon_states_fast(icon).Copy()
 	. -= "On"
 	. -= "Nar-sie Bistro"
 	. -= "Empty"

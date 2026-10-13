@@ -1603,7 +1603,6 @@ list	code/modules/body/breath_profile.dm	var/static/list/instances = list()
 list	code/modules/body/worn_protection.dm	var/alist/armor_by_part
 list	code/modules/client/preferences.dm	GLOBAL_LIST_EMPTY(preferences_datums)
 list	code/modules/economy/economy_misc.dm	GLOBAL_LIST_EMPTY_TYPED(department_accounts, /datum/money_account)
-list	code/modules/ghosttrap/trap.dm	GLOBAL_LIST(ghost_traps)
 list	code/modules/heat/heat_bind_batch.dm	GLOBAL_LIST_EMPTY(dq_heat_bind_pending)
 list	code/modules/lighting/lighting_corner.dm	var/list/datum/light_source/affecting // Light sources affecting us.
 list	code/modules/lighting/lighting_fake_sun.dm	var/static/world_suns = list() //List of all the fake_suns in the world, used for checking for family members

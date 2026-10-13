@@ -30,6 +30,9 @@ GLOBAL_VAR_INIT(coalesce_windows, 0)
 GLOBAL_VAR_INIT(coalesce_absorbed, 0)
 GLOBAL_VAR_INIT(coalesce_runs, 0)
 
+/// Set to TRUE (VV, or a test) to log mode changes, coalesce windows and standing cache invalidations with log_world().
+GLOBAL_VAR_INIT(forms_trace, FALSE)
+
 /// Logs one line of the forms trace (GLOB.forms_trace).
 /proc/forms_trace(channel, message)
 	if(GLOB.forms_trace)

@@ -821,54 +821,37 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	var/icon/I = getFlatIcon(thing, force_south = force_south)
 	return icon2html(I, target, sourceonly = sourceonly)
 
-/// Canonical resolver for DMI files that may live in icons/gen/ at runtime.
+// DQ icon pipeline caches (shared caches, doc/rewrite/caching.md). Every one is keyed by the source path text and never invalidated: a
+// DMI file does not change while the world runs, so a hit is the builder's value for that path.
+DECLARE_SHARED_CACHE(icon_resolved_path, GLOBAL_PROC_REF(build_resolved_icon_path), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_dmi_metadata, GLOBAL_PROC_REF(build_icon_metadata), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_state_names, GLOBAL_PROC_REF(build_icon_state_names), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_state_set, GLOBAL_PROC_REF(build_icon_state_set), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_size, GLOBAL_PROC_REF(build_icon_size), SC_NEVER)
+DECLARE_SHARED_CACHE(icon_size_pure, GLOBAL_PROC_REF(build_icon_size_pure), SC_NEVER)
+
+/// Resolves a DMI source path to a file rust-g can read.
 ///
 /// DQ Architecture-A: editable .dmi files are repacked into icons/gen/ at build
 /// time and do NOT exist on disk at their original source path. rust-g (and
 /// iconforge) read the real filesystem rather than the .rsc, so a source-path
 /// read silently fails for repacked icons. This proc tries the source path first;
 /// if rust-g reports it absent, it retries against the generated copy under
-/// icons/gen/. The resolved path is cached in GLOB.dq_resolved_icon_path_cache so
-/// repeated calls (e.g. per-frame iconforge lookups) cost only a list lookup.
+/// icons/gen/. The result is the `icon_resolved_path` shared cache, so repeated
+/// calls (e.g. per-frame iconforge lookups) cost only a list lookup.
 ///
 /// Returns the on-disk path rust-g can use, or the original path unchanged when
 /// neither location exists (callers may then fail gracefully or crash on their own).
-///
-/// COUPLING: all four icon caches (dq_resolved_icon_path_cache, icon_states_cache,
-/// icon_dimensions, dq_icon_metadata_cache) are keyed by the original source path.
-/// When you need to invalidate one, use /proc/invalidate_icon_cache(path) to clear
-/// all four together — never remove entries from individual caches in isolation.
 /proc/resolve_icon_dmi_path(path)
-	if(path in GLOB.dq_resolved_icon_path_cache)
-		return GLOB.dq_resolved_icon_path_cache[path]
+	return CACHED(icon_resolved_path, "[path]")
+
+/proc/build_resolved_icon_path(path)
 	var/out = path
 	if(!rustg_file_exists(path))
 		var/gen_path = "icons/gen/[path]"
 		if(rustg_file_exists(gen_path))
 			out = gen_path
-	GLOB.dq_resolved_icon_path_cache[path] = out
 	return out
-
-/// Invalidates all runtime icon caches for the given source path.
-///
-/// The four caches maintained by the icon pipeline are tightly coupled:
-///   - GLOB.dq_resolved_icon_path_cache                        (disk location)
-///   - GLOB.icon_states_cache / GLOB.icon_states_cache_lookup  (icon state lists)
-///   - GLOB.icon_dimensions                                     (width/height)
-///   - GLOB.dq_icon_metadata_cache                             (full rustg metadata)
-///
-/// Clearing any one without clearing the others produces inconsistent lookups
-/// (e.g. a resolved gen path with stale metadata). Always call this proc rather
-/// than removing entries from individual caches.
-/// After this call the next access to each cache rebuilds from disk via rustg.
-///
-/// path — the ORIGINAL source path (e.g. "icons/obj/items.dmi"), NOT the gen path.
-/proc/invalidate_icon_cache(path)
-	GLOB.dq_resolved_icon_path_cache -= path
-	GLOB.icon_states_cache -= path
-	GLOB.icon_states_cache_lookup -= path
-	GLOB.icon_dimensions -= path
-	GLOB.dq_icon_metadata_cache -= path
 
 /// Returns rustg-parsed metadata for an icon, universal icon, or DMI file, using cached values where possible.
 /// Returns null if the argument is not a filepath or icon backed by a valid DMI file.
@@ -881,15 +864,14 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	var/file_string = "[file]"
 	if(!istext(file) && !(isfile(file) && length(file_string)) || findtext(file_string, ".png"))
 		return null
-	var/list/cached_metadata = GLOB.dq_icon_metadata_cache[file_string]
-	if(islist(cached_metadata))
-		return cached_metadata
+	return CACHED(icon_dmi_metadata, file_string)
+
+/proc/build_icon_metadata(file_string)
 	// Resolve the on-disk path; handles icons/gen/ fallback for repacked DMIs.
 	var/resolved = resolve_icon_dmi_path(file_string)
 	var/list/metadata_result = rustg_dmi_read_metadata(resolved)
 	if(!islist(metadata_result) || !length(metadata_result))
 		CRASH("Error while reading DMI metadata for path '[file_string]' (resolved: '[resolved]'): [metadata_result]")
-	GLOB.dq_icon_metadata_cache[file_string] = metadata_result
 	return metadata_result
 
 /// Checks whether a given icon state exists in a given icon file. If `file` and `state` both exist,
@@ -900,32 +882,39 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 /proc/icon_exists(file, state)
 	if(isnull(file) || isnull(state))
 		return FALSE //This is common enough that it shouldn't panic, imo.
+	var/list/known = icon_state_set_of(file)
+	return !isnull(known[state])
 
-	if(isnull(GLOB.icon_states_cache_lookup[file]))
-		compile_icon_states_cache(file)
-	return !isnull(GLOB.icon_states_cache_lookup[file][state])
-
-/// Cached, rustg-based alternative to icon_states()
+/// Cached, rustg-based alternative to icon_states(). The list is shared: copy it before changing it.
 /proc/icon_states_fast(file)
 	if(isnull(file))
 		return null
-	if(isnull(GLOB.icon_states_cache[file]))
-		compile_icon_states_cache(file)
-	return GLOB.icon_states_cache[file]
+	if(!istext(file) && !isfile(file))
+		// A runtime /icon has no stable identity to key a cache by.
+		return icon_states(file)
+	return CACHED_KEY(icon_state_names, "[file]", file)
 
-/proc/compile_icon_states_cache(file)
-	GLOB.icon_states_cache[file] = list()
-	GLOB.icon_states_cache_lookup[file] = list()
+/// The states of an icon file as a lookup (state name -> TRUE). Shared: never written.
+/proc/icon_state_set_of(file)
+	if(!istext(file) && !isfile(file))
+		return build_icon_state_set(file)
+	return CACHED_KEY(icon_state_set, "[file]", file)
+
+/proc/build_icon_state_names(file)
+	. = list()
 	// Try to use rustg first
 	var/list/metadata = icon_metadata(file)
 	if(islist(metadata) && islist(metadata["states"]))
 		for(var/list/state_data as anything in metadata["states"])
-			GLOB.icon_states_cache[file] += state_data["name"]
-			GLOB.icon_states_cache_lookup[file][state_data["name"]] = TRUE
+			. += state_data["name"]
 	else // Otherwise, we have to use the slower BYOND proc
 		for(var/istate in icon_states(file))
-			GLOB.icon_states_cache[file] += istate
-			GLOB.icon_states_cache_lookup[file][istate] = TRUE
+			. += istate
+
+/proc/build_icon_state_set(file)
+	. = list()
+	for(var/istate in icon_states_fast(file))
+		.[istate] = TRUE
 
 /// Functions the same as `/proc/icon_exists()`, but with the addition of a stack trace if the
 /// specified file or state doesn't exist.
@@ -955,7 +944,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 
 	return size
 
-/// Returns a list containing the width and height of an icon file
+/// Returns a list containing the width and height of an icon file. Shared for files: never written.
 /proc/get_icon_dimensions(icon_path)
 	if(istype(icon_path, /datum/universal_icon))
 		var/datum/universal_icon/u_icon = icon_path
@@ -964,34 +953,27 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 	// Runtime generated dynamic icons are an unbounded concept cache identity wise, the same icon can exist millions of ways and holding them in a list as a key can lead to unbounded memory usage if called often by consumers.
 	// Check distinctly that this is something that has this unspecified concept, and thus that we should not cache.
 	if (!istext(icon_path) && (!isfile(icon_path) || !length("[icon_path]")))
-		var/icon/my_icon = icon(icon_path)
-		return list("width" = my_icon.Width(), "height" = my_icon.Height())
-	if (isnull(GLOB.icon_dimensions[icon_path]))
-		// Used cached icon metadata
-		var/list/metadata = icon_metadata(icon_path)
-		var/list/result = null
-		if(islist(metadata) && isnum(metadata["width"]) && isnum(metadata["height"]))
-			result = list("width" = metadata["width"], "height" = metadata["height"])
-		// Otherwise, we have to use the slower BYOND proc
-		else
-			var/icon/my_icon = icon(icon_path)
-			result = list("width" = my_icon.Width(), "height" = my_icon.Height())
-		GLOB.icon_dimensions[icon_path] = result
+		return build_icon_size_pure(icon_path)
+	return CACHED_KEY(icon_size, "[icon_path]", icon_path)
 
-	return GLOB.icon_dimensions[icon_path]
+/proc/build_icon_size(icon_path)
+	// Used cached icon metadata
+	var/list/metadata = icon_metadata(icon_path)
+	if(islist(metadata) && isnum(metadata["width"]) && isnum(metadata["height"]))
+		return list("width" = metadata["width"], "height" = metadata["height"])
+	// Otherwise, we have to use the slower BYOND proc
+	return build_icon_size_pure(icon_path)
 
 /// Returns a list containing the width and height of an icon file, without using rustg for pure function calls
 /proc/get_icon_dimensions_pure(icon_path)
-	// Icons can be a real file(), a rsc backed file(), a dynamic rsc (dyn.rsc) reference (known as a cache reference in byond docs), or an /icon which is pointing to one of those.
-	// Runtime generated dynamic icons are an unbounded concept cache identity wise, the same icon can exist millions of ways and holding them in a list as a key can lead to unbounded memory usage if called often by consumers.
-	// Check distinctly that this is something that has this unspecified concept, and thus that we should not cache.
+	// Dynamic icons are an unbounded concept cache identity wise (see get_icon_dimensions()): never cached.
 	if (!isfile(icon_path) || !length("[icon_path]"))
-		var/icon/my_icon = icon(icon_path)
-		return list("width" = my_icon.Width(), "height" = my_icon.Height())
-	if (isnull(GLOB.icon_dimensions[icon_path]))
-		var/icon/my_icon = icon(icon_path)
-		GLOB.icon_dimensions[icon_path] = list("width" = my_icon.Width(), "height" = my_icon.Height())
-	return GLOB.icon_dimensions[icon_path]
+		return build_icon_size_pure(icon_path)
+	return CACHED_KEY(icon_size_pure, "[icon_path]", icon_path)
+
+/proc/build_icon_size_pure(icon_path)
+	var/icon/my_icon = icon(icon_path)
+	return list("width" = my_icon.Width(), "height" = my_icon.Height())
 
 
 /proc/AverageColor(icon/I, accurate = 0, ignoreGreyscale = 0)

@@ -3,38 +3,11 @@
 stat_input_untracked	code/ATMOSPHERICS/components/unary/unary_base.dm	return !isnull(power_rating) && !(pipe_state in list("scrubber", "uvent", "injector")) // ALLOW(reads): power_rating and pipe_state are fixed by the type
 stat_input_untracked	code/__defines/verdigris/_bindings_types.dm	return vg_component_get(vg_entity, VG_KIND_SMES, VG_SMES_FIELD_CHARGE, 0) // J
 stat_input_untracked	code/_helpers/game.dm	return level in using_map.player_levels
-stat_input_untracked	code/_helpers/icons.dm	if(path in GLOB.dq_resolved_icon_path_cache)
-stat_input_untracked	code/_helpers/icons.dm	return GLOB.dq_resolved_icon_path_cache[path]
-stat_input_untracked	code/_helpers/icons.dm	GLOB.dq_resolved_icon_path_cache[path] = out
-stat_input_untracked	code/_helpers/icons.dm	var/list/cached_metadata = GLOB.dq_icon_metadata_cache[file_string]
-stat_input_untracked	code/_helpers/icons.dm	GLOB.dq_icon_metadata_cache[file_string] = metadata_result
-stat_input_untracked	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache_lookup[file]))
-stat_input_untracked	code/_helpers/icons.dm	return !isnull(GLOB.icon_states_cache_lookup[file][state])
-stat_input_untracked	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache[file]))
-stat_input_untracked	code/_helpers/icons.dm	return GLOB.icon_states_cache[file]
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] = list()
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file] = list()
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += state_data["name"]
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][state_data["name"]] = TRUE
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += istate
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][istate] = TRUE
-stat_input_untracked	code/_helpers/icons.dm	if (isnull(GLOB.icon_dimensions[icon_path]))
-stat_input_untracked	code/_helpers/icons.dm	GLOB.icon_dimensions[icon_path] = result
-stat_input_untracked	code/_helpers/icons.dm	return GLOB.icon_dimensions[icon_path]
-stat_input_untracked	code/_helpers/stack_trace.dm	var/list/capture = GLOB.dq_caught_capture
-stat_input_untracked	code/controllers/subsystems/job.dm	return occupations_by_name[rank]
-stat_input_untracked	code/controllers/subsystems/job.dm	return type_occupations[jobtype]
-stat_input_untracked	code/controllers/subsystems/job.dm	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
-stat_input_untracked	code/controllers/subsystems/job.dm	var/datum/department/dept = LAZYACCESS(department_datums, primary_department)
-stat_input_untracked	code/controllers/subsystems/job.dm	return department_datums[primary_department]
-stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
-stat_input_untracked	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 stat_input_untracked	code/controllers/subsystems/tgui.dm	if(ui.user == user)
 stat_input_untracked	code/datums/containment/latency_policy.dm	if(!(holder.flags & ATOM_MATERIALIZED))
 stat_input_untracked	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
 stat_input_untracked	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
 stat_input_untracked	code/datums/operations/req.dm	GLOB.reqs_interned[signature] = R
-stat_input_untracked	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
 stat_input_untracked	code/engine/lifeforms/forms.dm	if(!(E.args["var"] in D.vars))
 stat_input_untracked	code/engine/lifeforms/forms.dm	if(!(var_name in D.vars))
 stat_input_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
@@ -82,8 +55,6 @@ stat_input_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flo
 stat_input_untracked	code/game/turfs/simulated/floor.dm	return (!flooring || flooring.can_engrave)
 stat_input_untracked	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
 stat_input_untracked	code/game/turfs/simulated/walls.dm	return (material && material.hardness >= 10 && material.hardness <= 100)
-stat_input_untracked	code/library/mob/statuses.dm	if(!GLOB.status_policies)
-stat_input_untracked	code/library/mob/statuses.dm	return GLOB.status_policies
 stat_input_untracked	code/library/mob/statuses.dm	var/datum/stat_record/rec = rx?.stats
 stat_input_untracked	code/modules/admin/banjob.dm	for(var/s in GLOB.jobban_keylist)
 stat_input_untracked	code/modules/admin/topic/admin_topic_panels.dm	if(SSemergency_shuttle.shuttle.has_arrive_time())
@@ -96,8 +67,6 @@ stat_input_untracked	code/modules/body/limb_state.dm	var/mob/living/carbon/human
 stat_input_untracked	code/modules/body/organs/organ_external.dm	for(var/obj/item/organ/external/E in (contents + src)) // ALLOW(reads): what is stuck in the limb is read when the limb is used, never from a cached menu
 stat_input_untracked	code/modules/body/organs/organ_external.dm	return LAZYLEN(contents) > 0 // ALLOW(reads): the extraction question is asked from what the limb holds when the hemostat goes in
 stat_input_untracked	code/modules/body/plans/humanoid.dm	var/mob/living/carbon/human/H = owner
-stat_input_untracked	code/modules/client/preferences/middleware/character_setup.dm	return !isnull(GLOB.preference_entries_by_key[A.args["key"]])
-stat_input_untracked	code/modules/client/preferences_tgui.dm	return istype(GLOB.preference_entries_by_key[A.args["preference"]], /datum/preference/color)
 stat_input_untracked	code/modules/detectivework/tools/sample_kits.dm	var/why = A.held.loc?.release_refusal(A.held, A.actor) // ALLOW(reads): current donor custody is queried without caching immediately before its checked release
 stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
 stat_input_untracked	code/modules/economy/ATM.dm	var/datum/money_account/account = QDELETED(authenticated_account) ? null : authenticated_account // ALLOW(reads): the account is read when the button is pressed, never cached
@@ -112,27 +81,20 @@ stat_input_untracked	code/modules/food/food/z_custom_food.dm	return (length(cont
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	return (length(contents) > 0) ? null : MSG(cooking_container/nothing_in_it) // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 stat_input_untracked	code/modules/food/kitchen/cooking_machines/container.dm	total += J.w_class
-stat_input_untracked	code/modules/ghosttrap/trap.dm	if(!GLOB.ghost_traps)
-stat_input_untracked	code/modules/ghosttrap/trap.dm	return GLOB.ghost_traps[trap_key]
-stat_input_untracked	code/modules/ghosttrap/trap.dm	GLOB.ghost_traps[G.object] = G
 stat_input_untracked	code/modules/integrated_electronics/_defines.dm	return assembly
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies.dm	return access_card
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies/clothing.dm	return clothing
 stat_input_untracked	code/modules/integrated_electronics/core/assemblies/implant.dm	return implant
 stat_input_untracked	code/modules/integrated_electronics/core/integrated_circuit.dm	return loc.tgui_host()
 stat_input_untracked	code/modules/library/lib_items.dm	return length(contents) > 0 // ALLOW(reads, spatial): the shelf's books are read when it is reached into, never cached; a plain count of its own contents
-stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
-stat_input_untracked	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
 stat_input_untracked	code/modules/mob/holder.dm	return held_mob?.GetIdCard()
 stat_input_untracked	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 stat_input_untracked	code/modules/mob/living/carbon/human/species/shadekin/state/powers/phase_shift.dm	if(check_rights_for(client, R_HOLDER))
 stat_input_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if(user == myprotean)
 stat_input_untracked	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
-stat_input_untracked	code/modules/mob/new_player/lobby_browser.dm	return service && service.current_state != GAME_STATE_STARTUP
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 stat_input_untracked	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
-stat_input_untracked	code/modules/overmap/helpers.dm	if(using_map.use_overmap)
 stat_input_untracked	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
 stat_input_untracked	code/modules/paperwork/faxmachine.dm	if(B.name != initial(B.name)) // ALLOW(reads): asked once, when the button is pressed, to decide whether its question opens
@@ -142,7 +104,6 @@ stat_input_untracked	code/modules/power/port_gen.dm	var/datum/gas_mixture/enviro
 stat_input_untracked	code/modules/power/port_gen.dm	return overheating > 0 || temperature > cooling_temperature() + 0.1
 stat_input_untracked	code/modules/power/smes.dm	return vg_entity ? get_charge() : initial_charge // ALLOW(reads): the charge is Rust's own, read where it is asked (a requirement re-checks it, a gate is polled), never cached
 stat_input_untracked	code/modules/reagents/machinery/pump.dm	return (isnull(cell)) ? null : MSG(pump/has_cell) // ALLOW(reads): the cell slot is read when a cell is offered to it, never from a cached menu
-stat_input_untracked	code/modules/research/tg/machinery/mech_prosfab.dm	return (istype(D) && D.species && (D.species in GLOB.all_species)) ? null : MSG(prosfab/corrupted)
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
 stat_input_untracked	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
@@ -189,23 +150,6 @@ draw_untracked	code/ATMOSPHERICS/_atmos_setup.dm	underlays[state + "[D]" + "[GLO
 draw_untracked	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	look.overlay(look_overlay_image(icon, "algae-pipe-overlay", dir = dir, color = PIPE_COLOR_BLUE))
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/filter.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
 draw_untracked	code/ATMOSPHERICS/components/trinary_devices/mixer.dm	look.state("[prefix][(operable() && node1 && node2 && node3 && use_power) ? "on" : "off"]")
-draw_untracked	code/_helpers/icons.dm	if(path in GLOB.dq_resolved_icon_path_cache)
-draw_untracked	code/_helpers/icons.dm	return GLOB.dq_resolved_icon_path_cache[path]
-draw_untracked	code/_helpers/icons.dm	GLOB.dq_resolved_icon_path_cache[path] = out
-draw_untracked	code/_helpers/icons.dm	file = u_icon.icon_file
-draw_untracked	code/_helpers/icons.dm	var/list/cached_metadata = GLOB.dq_icon_metadata_cache[file_string]
-draw_untracked	code/_helpers/icons.dm	GLOB.dq_icon_metadata_cache[file_string] = metadata_result
-draw_untracked	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache_lookup[file]))
-draw_untracked	code/_helpers/icons.dm	return !isnull(GLOB.icon_states_cache_lookup[file][state])
-draw_untracked	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache[file]))
-draw_untracked	code/_helpers/icons.dm	return GLOB.icon_states_cache[file]
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] = list()
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file] = list()
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += state_data["name"]
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][state_data["name"]] = TRUE
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += istate
-draw_untracked	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][istate] = TRUE
-draw_untracked	code/_helpers/stack_trace.dm	var/list/capture = GLOB.dq_caught_capture
 draw_untracked	code/_helpers/time.dm	if (world.timeofday < GLOB.rollovercheck_last_timeofday)
 draw_untracked	code/_helpers/time.dm	if(GLOB.rollover_safety_date < world.realtime - (12 HOURS))
 draw_untracked	code/_helpers/time.dm	GLOB.midnight_rollovers++
@@ -227,7 +171,6 @@ draw_untracked	code/datums/repositories/decls.dm	. = fetched_decls[decl_type]
 draw_untracked	code/datums/repositories/decls.dm	fetched_decls[decl_type] = .
 draw_untracked	code/datums/repositories/decls.dm	. = fetched_decl_subtypes[decl_prototype]
 draw_untracked	code/datums/repositories/decls.dm	fetched_decl_subtypes[decl_prototype] = .
-draw_untracked	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
 draw_untracked	code/engine/declare/activation.dm	OP_PURE_GUARD("[def?.key] was granted to [holder?.type]")
 draw_untracked	code/engine/refs/containment/ledger.dm	if(L && length(holder.contents) == L.tracked)
 draw_untracked	code/engine/refs/containment/spatial.dm	return A ? length(A.contents) : 0
@@ -475,38 +418,9 @@ draw_untracked	code/modules/materials/engineering/material_composites.dm	if(M.na
 draw_untracked	code/modules/materials/registry.dm	return GLOB.name_to_material[name]
 draw_untracked	code/modules/mining/mine_items.dm	return material_static
 draw_untracked	code/modules/mining/mine_turfs.dm	return mineral_static
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	if(!S || S.name == src.name)
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/lleill/lleill.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
 draw_untracked	code/modules/mob/living/carbon/human/species/species_getters.dm	return blood_mask
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/species_shapeshift.dm	var/datum/species/S = GLOB.all_species[H.wrapped_bodytype()]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/alraune.dm	var/datum/species/real = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/custom.dm	var/datum/species/real = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/real = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
 draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	if(!H || base_species == name) return ..()
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/protean/protean_species.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station.dm	var/datum/species/real = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station.dm	var/datum/species/real = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
-draw_untracked	code/modules/mob/living/carbon/human/species/station/station_special.dm	var/datum/species/S = GLOB.all_species[base_species]
 draw_untracked	code/modules/mob/living/silicon/pai/pai.dm	return look_overlay_image(eyes_icon, eyes_state, plane = (eye_glow && !hide_glow) ? PLANE_LIGHTING_ABOVE : FLOAT_PLANE, color = eye_color, appearance_flags = appearance_flags)
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	var/obj/item/wrapped = shown_item
 draw_untracked	code/modules/mob/living/silicon/robot/robot_gripper_handling.dm	look.overlay(look_overlay_image(of = wrapped, plane = plane, layer = layer + 0.01, transform = matrix(0.75, 0, 0, 0, 0.75, -8)))
@@ -558,14 +472,6 @@ draw_untracked	code/modules/projectiles/guns/launcher/pneumatic.dm	return tank
 draw_untracked	code/modules/projectiles/guns/launcher/syringe_gun.dm	return syringe
 draw_untracked	code/modules/reagents/Chemistry-Colours.dm	if(!reagent_list || !reagent_list.len)
 draw_untracked	code/modules/reagents/Chemistry-Colours.dm	if(!reagent_list || !reagent_list.len)
-draw_untracked	code/modules/reagents/chemistry_service.dm	log_world("Chemistry service initialized: [length(chemical_reagents)] reagents, [length(chemical_reactions)] reactions.")
-draw_untracked	code/modules/reagents/chemistry_service.dm	log_world("Chemistry service initialized: [length(chemical_reagents)] reagents, [length(chemical_reactions)] reactions.")
-draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reactions += D
-draw_untracked	code/modules/reagents/chemistry_service.dm	LAZYINITLIST(distilled_reactions_by_product[D.result])
-draw_untracked	code/modules/reagents/chemistry_service.dm	distilled_reactions_by_product[D.result] |= D // for reverse lookup
-draw_untracked	code/modules/reagents/chemistry_service.dm	LAZYINITLIST(chemical_reactions_by_product[D.result])
-draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reactions_by_product[D.result] |= D // for reverse lookup
-draw_untracked	code/modules/reagents/chemistry_service.dm	chemical_reagents[D.id] = D
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume >= amount ? 1 : 0
 draw_untracked	code/modules/reagents/holder/holder.dm	return current.volume
 draw_untracked	code/modules/reagents/machinery/bunsen_burner.dm	look.overlay(image(icon, icon_state = "bunsen1", layer = layer + 0.1))

@@ -88,36 +88,9 @@ unknown_read	code/modules/vore/resizing/resize.dm	resize.Translate(center_offset
 unknown_read	code/modules/vore/resizing/resize.dm	if(vore_prefs.size_strip_preference == SIZESTRIP_ITEMS)
 unknown_read	code/modules/vore/resizing/resize.dm	for(var/index = 1 to hud_list.len)
 untracked_global	code/_helpers/game.dm	return level in using_map.player_levels
-untracked_global	code/_helpers/icons.dm	if(path in GLOB.dq_resolved_icon_path_cache)
-untracked_global	code/_helpers/icons.dm	return GLOB.dq_resolved_icon_path_cache[path]
-untracked_global	code/_helpers/icons.dm	GLOB.dq_resolved_icon_path_cache[path] = out
-untracked_global	code/_helpers/icons.dm	var/list/cached_metadata = GLOB.dq_icon_metadata_cache[file_string]
-untracked_global	code/_helpers/icons.dm	GLOB.dq_icon_metadata_cache[file_string] = metadata_result
-untracked_global	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache_lookup[file]))
-untracked_global	code/_helpers/icons.dm	return !isnull(GLOB.icon_states_cache_lookup[file][state])
-untracked_global	code/_helpers/icons.dm	if(isnull(GLOB.icon_states_cache[file]))
-untracked_global	code/_helpers/icons.dm	return GLOB.icon_states_cache[file]
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache[file] = list()
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file] = list()
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += state_data["name"]
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][state_data["name"]] = TRUE
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache[file] += istate
-untracked_global	code/_helpers/icons.dm	GLOB.icon_states_cache_lookup[file][istate] = TRUE
-untracked_global	code/_helpers/icons.dm	if (isnull(GLOB.icon_dimensions[icon_path]))
-untracked_global	code/_helpers/icons.dm	GLOB.icon_dimensions[icon_path] = result
-untracked_global	code/_helpers/icons.dm	return GLOB.icon_dimensions[icon_path]
-untracked_global	code/_helpers/stack_trace.dm	var/list/capture = GLOB.dq_caught_capture
-untracked_global	code/controllers/subsystems/job.dm	return occupations_by_name[rank]
-untracked_global	code/controllers/subsystems/job.dm	return type_occupations[jobtype]
-untracked_global	code/controllers/subsystems/job.dm	var/datum/department/D = LAZYACCESS(department_datums, target_department_name)
-untracked_global	code/controllers/subsystems/job.dm	var/datum/department/dept = LAZYACCESS(department_datums, primary_department)
-untracked_global	code/controllers/subsystems/job.dm	return department_datums[primary_department]
-untracked_global	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
-untracked_global	code/controllers/subsystems/overlays.dm	STAT_LOG_ENTRY(SSoverlays.stats, type)
 untracked_global	code/datums/containment/latency_policy.dm	GLOB.latency_sweep_holders[holder] = TRUE
 untracked_global	code/datums/operations/req.dm	var/datum/req/known = GLOB.reqs_interned[signature]
 untracked_global	code/datums/operations/req.dm	GLOB.reqs_interned[signature] = R
-untracked_global	code/engine/actions/coalesce.dm	if(GLOB.forms_trace)
 untracked_global	code/game/gamemodes/technomancer/catalog.dm	if(T && (T.z in using_map.player_levels))
 untracked_global	code/game/jobs/whitelist.dm	if(!GLOB.whitelist)
 untracked_global	code/game/jobs/whitelist.dm	return ("[M.ckey]" in GLOB.whitelist)
@@ -129,31 +102,19 @@ untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.
 untracked_global	code/game/objects/items/devices/holowarrant.dm	if(!isnull(GLOB.data_core.general))
 untracked_global	code/game/objects/items/devices/holowarrant.dm	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 untracked_global	code/game/objects/items/weapons/scrolls.dm	return !user.mind || GLOB.wizards.is_antagonist(user.mind)
-untracked_global	code/library/mob/statuses.dm	if(!GLOB.status_policies)
-untracked_global	code/library/mob/statuses.dm	return GLOB.status_policies
 untracked_global	code/modules/admin/banjob.dm	for(var/s in GLOB.jobban_keylist)
 untracked_global	code/modules/admin/topic/admin_topic_panels.dm	if(SSemergency_shuttle.shuttle.has_arrive_time())
 untracked_global	code/modules/admin/topic/admin_topic_panels.dm	return (GLOB.master_mode == "secret") ? null : MSG(admin_topic/not_secret)
-untracked_global	code/modules/client/preferences/middleware/character_setup.dm	return !isnull(GLOB.preference_entries_by_key[A.args["key"]])
-untracked_global	code/modules/client/preferences_tgui.dm	return istype(GLOB.preference_entries_by_key[A.args["preference"]], /datum/preference/color)
 untracked_global	code/modules/economy/Accounts.dm	if(department?.name in GLOB.department_accounts)
 untracked_global	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
 untracked_global	code/modules/economy/vending.dm	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-untracked_global	code/modules/ghosttrap/trap.dm	if(!GLOB.ghost_traps)
-untracked_global	code/modules/ghosttrap/trap.dm	return GLOB.ghost_traps[trap_key]
-untracked_global	code/modules/ghosttrap/trap.dm	GLOB.ghost_traps[G.object] = G
-untracked_global	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
-untracked_global	code/modules/messages/act_message.dm	OP_PURE_GUARD("an act message was spoken")
 untracked_global	code/modules/mob/living/carbon/human/inventory.dm	for(var/datum/category_group/underwear/UWC in GLOB.global_underwear.categories)
 untracked_global	code/modules/mob/living/silicon/pai/api.dm	return (check_ckey in GLOB.paikeys)
-untracked_global	code/modules/mob/new_player/lobby_browser.dm	return service && service.current_state != GAME_STATE_STARTUP
 untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return GLOB.ntnet_global && !GLOB.ntnet_global.setting_disabled
 untracked_global	code/modules/modular_computers/file_system/programs/research/ntmonitor.dm	return (!!GLOB.ntnet_global) ? null : /datum/msg/req_silent
-untracked_global	code/modules/overmap/helpers.dm	if(using_map.use_overmap)
 untracked_global	code/modules/overmap/helpers.dm	return GLOB.map_sectors["[z]"]
 untracked_global	code/modules/paperwork/faxmachine.dm	return (!GLOB.last_fax_role_request || ELAPSED_SINCE(src, GLOB.last_fax_role_request, CLOCK_WORLD) >= 5 MINUTES) ? null : MSG(fax/relays_recalibrating)
-untracked_global	code/modules/research/tg/machinery/mech_prosfab.dm	return (istype(D) && D.species && (D.species in GLOB.all_species)) ? null : MSG(prosfab/corrupted)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	if(!shuttle)
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
 untracked_global	code/modules/shuttles/emergency_shuttle_api.dm	return shuttle.location
