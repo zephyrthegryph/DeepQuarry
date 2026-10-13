@@ -38,7 +38,7 @@
 /datum/unit_test/machinery_keeps_dead/food_print/run_cleanup()
 	var/obj/machinery/food_replicator/M = allocate(/obj/machinery/food_replicator, test_floor())
 	var/obj/item/reagent_containers/glass/beaker/item = allocate(/obj/item/reagent_containers/glass/beaker, M)
-	M.printing = TRUE
+	M.set_printing(TRUE)
 	M.set_use_power(USE_POWER_ACTIVE)
 	after(M, 0.1 SECONDS, TYPE_PROC_REF(/obj/machinery/food_replicator, print_done), key = "j6_food", with = list(item), keeps_dead = TRUE)
 	TEST_ASSERT(after_pending(M, "j6_food"), "the real printing completion is pending")

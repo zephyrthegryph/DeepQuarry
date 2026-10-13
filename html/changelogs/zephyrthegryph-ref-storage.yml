@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "A caused ending that never reached its delete no longer keeps its screen object alive until it hard-deletes."
+  - bugfix: "Closing a window whose browser window was already gone now removes it from every UI list, so it no longer hard-deletes."
+  - code_imp: "Added the stored_refs lint (every stored atom or datum reference is a declared relation or a weak ref) with a shrink-only baseline, and the dq_gc_sweep test that fails on any object a reference keeps alive after its delete."

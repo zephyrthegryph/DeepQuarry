@@ -7,17 +7,16 @@
 	layer = UNDER_JUNK_LAYER
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
-	var/obj/item/radio/beacon/Beacon
+	var/obj/item/radio/beacon/concealed/Beacon
 
 CAPABILITIES(/obj/machinery/bluespace_beacon)
 	configure(uses_power(idle = 0))
 	started_work(step = PROC_REF(work_step), starts = PROC_REF(step_start_condition))
-	owns_one(nameof(Beacon), /obj/item/radio/beacon, starts = /obj/item/radio/beacon, starts_args = NO_LOC)
+	owns_one(nameof(Beacon), /obj/item/radio/beacon/concealed, starts = /obj/item/radio/beacon/concealed, starts_args = NO_LOC)
 
 /obj/machinery/bluespace_beacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = src.loc
-	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
 	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
 	observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
@@ -27,7 +26,7 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)
-	invisibility = intact ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
+	hide_under_floor(src, intact)
 	changed(src)
 
 /// The look (the draw sweep: from its template).
@@ -38,8 +37,7 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 /obj/machinery/bluespace_beacon/proc/work_step(datum/act/timer/A)
 	if(!Beacon)
 		var/turf/T = src.loc
-		rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
-		Beacon.invisibility = INVISIBILITY_MAXIMUM
+		rel_set(src, nameof(Beacon), new /obj/item/radio/beacon/concealed)
 		Beacon.forceMove(T)
 		observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
 		observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
@@ -63,3 +61,7 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 /// Whether its work starts at initialization (started_work(starts =)).
 /obj/machinery/bluespace_beacon/step_start_condition()
 	return TRUE // places its beacon
+
+/// The gigabeacon's own beacon: out of sight by its type's invisibility (a constant of the stat), never by a write.
+/obj/item/radio/beacon/concealed
+	invisibility = INVISIBILITY_MAXIMUM

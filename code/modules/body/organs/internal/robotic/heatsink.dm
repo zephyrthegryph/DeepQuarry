@@ -17,12 +17,12 @@
 		var/thermal_protection = owner.get_heat_protection(env_temp)
 
 		if(!efficiency)
-			owner.adjust_bodytemperature(-(round(owner.robobody_count * (1 - damage / max_damage), 0.1))) // We are dissipating added heat under normal conditions and without damage
+			owner.adjust_bodytemperature(-(round(owner.robobody_count() * (1 - damage / max_damage), 0.1))) // We are dissipating added heat under normal conditions and without damage
 
 		if(thermal_protection < 0.99)
-			temp_adj = min(owner.body_temperature() - max(thermostat, env_temp), owner.robobody_count * 2)
+			temp_adj = min(owner.body_temperature() - max(thermostat, env_temp), owner.robobody_count() * 2)
 		else
-			temp_adj = min(owner.body_temperature() - thermostat, owner.robobody_count * 2)
+			temp_adj = min(owner.body_temperature() - thermostat, owner.robobody_count() * 2)
 
 		if(temp_adj < 0)
 			return

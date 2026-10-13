@@ -118,6 +118,7 @@
 /proc/dq_power_test_step()
 	SSmachines.process_power()
 	vg_world_run_steps(1)
+	native_system().drain() // the step's APC reports (on_apc_report()) arrive through the frame's outbox, as the kernel's phase N delivers them
 	SSmachines.process_power()
 
 /proc/dq_power_test_apc()

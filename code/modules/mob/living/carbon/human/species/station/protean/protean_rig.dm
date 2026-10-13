@@ -550,7 +550,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		piece.set_armor(dq_armor_none())
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
-	wearer()?.update_inv_back()
+	changed(src)
 	wearer()?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 

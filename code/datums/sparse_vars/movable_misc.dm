@@ -107,6 +107,7 @@ sparse(/atom/movable, hovering, type = bool)
 // otherwise hot — these helpers run on every step / falling / hovering
 // check. The cache is sized by concrete-type-count, not per-instance.
 /proc/_dq_resolve_typed_default(t, list/by_type, list/resolved_cache, default_value)
+	READS_FROM()
 	if(!t)
 		return default_value
 	if(t in resolved_cache)

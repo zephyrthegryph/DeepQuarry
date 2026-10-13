@@ -30,6 +30,8 @@ TRACKED(/obj/machinery/suit_storage_unit, isbroken)
 TRACKED(/obj/machinery/suit_storage_unit, isUV)
 TRACKED(/obj/machinery/suit_storage_unit, islocked)
 TRACKED(/obj/machinery/suit_storage_unit, issuperUV)
+TRACKED(/obj/machinery/suit_storage_unit, panelopen)
+TRACKED(/obj/machinery/suit_storage_unit, safetieson)
 
 CAPABILITIES(/obj/machinery/suit_storage_unit)
 	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space, starts = nameof(helmet_type))
@@ -205,7 +207,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 	else
 		to_chat(user, span_info("You push the button. The coloured LED next to it changes."))
-		safetieson = !safetieson
+		set_safetieson(!safetieson)
 
 
 /obj/machinery/suit_storage_unit/proc/dispense_helmet(mob/user as mob)
@@ -290,7 +292,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	set_isUV(1)
 	if(OCCUPANT && !islocked)
 		set_islocked(1) //Let's lock it for good measure
-	changed(src)
 
 	after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(0))
 
@@ -336,7 +337,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(i < 3)
 		after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(i + 1))
 		return
-	changed(src)
 
 /obj/machinery/suit_storage_unit/proc/cycletimeleft()
 	if(cycletime_left >= 1)
@@ -360,7 +360,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	slot_remove(OCCUPANT, get_turf(src))
 	if(!isopen)
 		set_isopen(1)
-	changed(src)
 	return
 
 
@@ -370,7 +369,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		return TRUE
 	eject_occupant(user)
 	add_fingerprint(user)
-	changed(src)
 	return TRUE
 
 /// Requirement for hiding inside: null, or why not.
@@ -425,7 +423,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user, user))
 		return TRUE
 	set_isopen(0) //Close the thing after the guy gets inside
-	changed(src)
 
 	add_fingerprint(user)
 	return TRUE
@@ -447,7 +444,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.SUIT), S, user))
 			return TRUE
-		changed(src)
 		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
 		if(!isopen)
@@ -459,7 +455,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.HELMET), H, user))
 			return TRUE
-		changed(src)
 		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
 		if(!isopen)
@@ -471,9 +466,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		if(!move_into(src, nameof(src.MASK), M, user))
 			return TRUE
-		changed(src)
 		return TRUE
-	changed(src)
 	return TRUE
 
 /obj/machinery/suit_storage_unit/proc/interaction_use_item_timed_done(mob/user, obj/item/grab/G)
@@ -485,7 +478,6 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 
 	add_fingerprint(user)
 	consume(G, user)
-	changed(src)
 	return TRUE
 
 /obj/machinery/suit_storage_unit/proc/screwdriver_used(datum/act/op/A)
@@ -493,7 +485,7 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	var/obj/item/tool = A.held
 	if(!ispowered)
 		return OP_OK
-	panelopen = !panelopen
+	set_panelopen(!panelopen)
 	playsound(src, sounds_of(tool).use, 100, TRUE)
 	to_chat(user, span_notice("You [panelopen ? "open up" : "close"] the unit's maintenance panel."))
 	return OP_OK
@@ -508,4 +500,3 @@ CAPABILITIES(/obj/machinery/suit_storage_unit)
 	set_islocked(0)
 	set_isopen(1)
 	dump_everything()
-	changed(src)

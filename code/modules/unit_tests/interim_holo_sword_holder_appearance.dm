@@ -1,15 +1,13 @@
-/// Counts observe real human inventory redraws and still chain their real implementations.
+/// Counts the real human's redraws (its whole look is one draw).
 /mob/living/carbon/human/interim_holo_sword_holder
 	var/left_redraws = 0
 	var/right_redraws = 0
 
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_l_hand()
+/// The holder's look is one draw: a redraw counts for both hands.
+/mob/living/carbon/human/interim_holo_sword_holder/draw(datum/look/look)
 	left_redraws++
-	return ..()
-
-/mob/living/carbon/human/interim_holo_sword_holder/update_inv_r_hand()
 	right_redraws++
-	return ..()
+	..()
 
 /// A synthetic native click supplies ambient usr while observing the real appearance output.
 /obj/item/holo/esword/interim_holder_appearance
@@ -17,7 +15,7 @@
 
 /// Runs the queued draws (the presentation lane) and records the overlays the sword shows now.
 /obj/item/holo/esword/interim_holder_appearance/proc/observe_look()
-	appearance_flush()
+	refresh_flush()
 	observed_overlays = overlays.Copy()
 
 /datum/unit_test/interim_holo_sword_holder_appearance/Run()
@@ -67,6 +65,7 @@
 			retracted_blades++
 	TEST_ASSERT_EQUAL(retracted_blades, 0, "the actual retracted appearance contains no blade overlay")
 	TEST_ASSERT(holder.unEquip(sword), "the actual holder releases the sword to the floor")
+	refresh_flush() // the release's own redraw runs before the counters are zeroed
 	holder.left_redraws = 0
 	holder.right_redraws = 0
 	sword.observe_look()

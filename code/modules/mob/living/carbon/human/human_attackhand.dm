@@ -281,7 +281,6 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 		if(!G.active)
 			act_message(M, src, others = span_danger("%U% pulls the pin from %T%'s [G.name]!"))
 			G.activate(M)
-			update_inv_wear_mask()
 		else
 			to_chat(M, span_warning("\The [G] is already primed! Run!"))
 		return
@@ -511,7 +510,7 @@ MSG_DEF(cpr/begin, null, span_danger("%U% is trying to perform CPR on %T%!"))
 
 /*
 	We want to ensure that a mob may only apply pressure to one organ of one mob at any given time. Currently this is done mostly implicitly through
-	the behaviour of timed actions (om_task_timed) and the fact that applying pressure to someone else requires a grab:
+	the behaviour of timed actions (an op with wait()) and the fact that applying pressure to someone else requires a grab:
 	If you are applying pressure to yourself and attempt to grab someone else, you'll change what you are holding in your active hand which will stop do_mob()
 	If you are applying pressure to another and attempt to apply pressure to yourself, you'll have to switch to an empty hand which will also stop do_mob()
 	Changing targeted zones should also stop do_mob(), preventing you from applying pressure to more than one body part at once.

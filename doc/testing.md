@@ -257,6 +257,25 @@ The input inbox (code/engine/kernel/inbox.dm) is tested with `/datum/input_event
 decides whether an input resolves in place or queues, and `test_phase(KERNEL_PHASE_K)` drains. In a test build the tick always has
 room unless the override says otherwise (a test world boots through ticks far past 100%).
 
+### Gameplay scenarios
+
+`code/modules/unit_tests/gameplay/` holds end-to-end tests of the core player loops (`/datum/unit_test/dq_gameplay/...`): joining at
+arrivals, walking through a door, putting a coat on and off, the tail's layer against the uniform, breathing phoron with and without
+internals, losing the room's oxygen, an airlock controller's window, picking up and dropping, a wall's right-click menu, and cutting and
+restoring an area's power. They drive the game as a player does and assert what the player would see, never a snapshot:
+
+- input goes in the way a client sends it, through the helpers in `gameplay/_harness.dm`: `click()` (a map click is the
+  `/datum/input_event/click` that `/atom/Click()` submits; a HUD click is the screen object's own `Click()` with the player as usr),
+  `press()` (a window button, `test_ui()`), `menu_pick()` (`test_menu()`), `stride()` (the mob move a client's `Move()` makes; walking
+  into a door bumps it), `key_equip()` / `key_drop()` (the verbs the E and Q macros run);
+- time is the kernel's (`test_driver_begin()`, then `pass_time()`, which steps `test_time()` a second at a time and, when asked, the
+  native gas frame and a power step, which the injected clock does not step);
+- the player is `spawn_player()` (or `spawn_arrival()`, the late-join path): a body someone controls, with a HUD.
+
+`tools/dq_lane_ready.sh` adds every line of `tools/ci/gameplay_tests.txt` to each lane's tests, so they run on every landing; the whole
+set takes about 20 s of world time. A scenario failing because of a bug in another lane's scope sets `expected_failure = "<why>"`: it
+still runs, its failure is logged as an `EXPECTED FAILURE` notice, and a pass fails it so the marker comes off with the fix.
+
 ### Sharded runs
 
 `dm-test` runs sharded by default. It compiles once, then boots N DreamDaemon
@@ -315,6 +334,8 @@ params (CI, `test-repeat`, `test-baseline`) runs every test in its tier, and
 
 `dq_look_tree_pin` and `dq_look_state_pin` are sweep tests over one shared pass (`code/modules/unit_tests/dq_look_sweep.dm`); a focused run shards them across
 `DQ_LOOK_SHARDS` worlds and probes only the types whose `analyze look-keys` key changed (`--full` for all). Details: `doc/rewrite/agent_workflow.md` section 9.
+
+`code/modules/unit_tests/snapshots/look_keys.txt` is the committed record of **verified** keys: a type has a row only if the look pins were actually probed for it and matched at that key. It is not a function of the tree. The analyzer's current keys are a separate, generated, gitignored file (`data/look-plan.tsv`, from `analyze look-keys`); a type whose current key matches no recorded row is *unverified* and is what a pin run probes (`bash tools/ci/check_look_keys_format.sh --unverified [--list]` shows it). Only a passing pin run (`dq_focused_test.sh`: it records the types it probed, all of them with `--full`/`--bless`) writes a key. The merge scripts (`dq_merge_master.sh`, `dq_merge_gates.sh`, `dq_push_master.sh`) only run `check_look_keys_format.sh --normalize`, which drops rows (a type gone from the tree, or one a union merge left with two different keys) and never writes one; `merge=union` (`.gitattributes`) keeps both sides' verified rows so the file never conflicts, and a row stays true exactly when it equals the merged tree's key. `dq_merge_gates.sh` runs the look pins over the unverified set before it stamps a merge and records those keys into the merge commit. `check_ratchets.sh` checks the file's format (3 columns, 16-hex key, one row per type), not its currency. Regression: `bash tools/ci/test_look_keys_truth.sh`. Do not hand-merge or regenerate it.
 
 ### Profiling a slow test
 

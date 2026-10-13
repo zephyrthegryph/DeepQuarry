@@ -8,7 +8,7 @@
 
 use vg_core::vg;
 
-use crate::components::{Apc, Producer, Smes, SmesInputTerminal, setting};
+use crate::components::{Apc, ApcEvent, Producer, Smes, SmesInputTerminal, setting};
 
 /// Power's events: about a region, not a component, so domain events
 /// (the DM generator dispatches them to global handlers).
@@ -234,6 +234,28 @@ vg_core::law! {
     }
 }
 
+/// `APC_EXTERNAL_POWER_*` (code/__defines/apc.dm).
+const STATUS_NOTCONNECTED: u8 = 0;
+const STATUS_NOENERGY: u8 = 1;
+const STATUS_GOOD: u8 = 2;
+
+/// The band key of what an APC shows DM: the three channel settings, the
+/// charging lamp, the alarm, the external status and the whole charge
+/// percent, packed below 2^24 with bit 23 set (0 is "never reported").
+#[must_use]
+pub fn apc_report_key(apc: &Apc, status: u8) -> u32 {
+    let percent = if apc.capacity > 0.0 { ((apc.charge / apc.capacity) * 100.0).floor().clamp(0.0, 100.0) as u32 } else { 0 };
+    let mut key = 1 << 23;
+    for (i, &v) in apc.channels.iter().enumerate() {
+        key |= u32::from(v & 3) << (2 * i);
+    }
+    key |= u32::from(apc.charging & 3) << 6;
+    key |= u32::from(apc.alarm) << 8;
+    key |= u32::from(status & 3) << 9;
+    key |= percent << 11;
+    key
+}
+
 vg_core::law! {
     /// The channel autoset ladder and charge mode, per APC, every tick
     /// ([`apc_tick`]), drawing against its region's `avail` (now including
@@ -243,17 +265,39 @@ vg_core::law! {
         let demand: [f64; 3] = std::array::from_fn(|i| apc.static_load[i] + apc.oneoff[i]);
         // No network: nothing available, and the load has nowhere to land.
         let mut spare_load = 0.0;
+        // The external status DM shows: no supply (or no network), supply
+        // the region overdraws (last step's brownout), or good.
+        let status = match region {
+            Some(r) if r.payload.avail > 0.0 => if r.payload.brown { STATUS_NOENERGY } else { STATUS_GOOD },
+            _ => STATUS_NOTCONNECTED,
+        };
         let (avail, load) = match region {
             Some(r) => (r.payload.avail, &mut r.payload.load),
             None => (0.0, &mut spare_load),
         };
         let (discharged, charged) = apc_tick(apc, demand, avail, load);
+        let key = apc_report_key(apc, status);
+        let report = (key != apc.reported).then(|| {
+            apc.reported = key;
+            ApcEvent::Report {
+                equipment: apc.channels[0],
+                lighting: apc.channels[1],
+                environ: apc.channels[2],
+                charging: apc.charging,
+                alarm: apc.alarm,
+                status,
+                charge: apc.charge,
+            }
+        });
         // Watts (`RateStore`'s API) to the cell's own units, as the field moved.
         let (rate, alarm) = (apc.rate, apc.alarm);
         ctx.ledger().source("power_apc_charge", charged * rate);
         ctx.ledger().sink("power_apc_charge", discharged * rate);
         if alarm {
             ctx.emit(PowerEvent::ApcChannelChanged);
+        }
+        if let Some(report) = report {
+            ctx.emit(report);
         }
         Settle::Active
     }
@@ -349,6 +393,23 @@ mod tests {
         let mut apc = Apc::default();
         apc.set_cell(RateStore { charge, capacity: max_charge, rate: 0.002 });
         apc
+    }
+
+    #[test]
+    fn the_report_key_moves_only_on_a_shown_change() {
+        let mut apc = apc_with(1000.0, 500.0);
+        let key = apc_report_key(&apc, STATUS_GOOD);
+        assert_ne!(key, 0, "a key is never the unreported 0");
+        apc.charge = 504.0;
+        assert_eq!(apc_report_key(&apc, STATUS_GOOD), key, "a charge inside the same percent is not a crossing");
+        apc.charge = 511.0;
+        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "a whole percent crossed is");
+        apc.charge = 500.0;
+        apc.channels[2] = setting::OFF;
+        assert_ne!(apc_report_key(&apc, STATUS_GOOD), key, "a channel flip is");
+        apc.channels[2] = apc_with(1000.0, 500.0).channels[2];
+        assert_ne!(apc_report_key(&apc, STATUS_NOENERGY), key, "a status change is");
+        assert!(apc_report_key(&apc, STATUS_GOOD) < (1 << 24), "exact as a BYOND f32");
     }
 
     #[test]

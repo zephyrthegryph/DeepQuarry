@@ -10,7 +10,6 @@
 //                  (starting occupants: owns_one / owns_many with starts =, made first)
 //                  1. gas contents     DECLARE_GAS
 //                  (reagents: reagents() in CAPABILITIES, code/library/reagents/reagents.dm)
-//                  3. appearance       DECLARE_APPEARANCE
 //   materialize  (/atom/on_materialize(), after registries, rules and OM start):
 //                  4. registries       DECLARE_REGISTRY (conditional ones are joined here)
 //                  5. service members  DECLARE_SERVICE_MEMBER
@@ -34,25 +33,6 @@
 /// GASES: list(GAS_O2 = kPa, ...) at TEMP kelvin (moles = P*V / (R*T)).
 #define DECLARE_GAS(PATH, VAR, VOLUME, TEMP, GASES) _LIFECYCLE_DECL(PATH, set_gas(VAR, VOLUME, TEMP, GASES))
 
-
-/// 4. Appearance by state, as layers (doc/rewrite/systems.md section 1; the other appearance
-/// declarations and the runtime: code/__defines/sys_appearance.dm, code/datums/sys/appearance.dm).
-/// Each line adds one layer keyed by STATE_VAR (a var or a no-argument proc; the row is picked by
-/// "[value]"), or a static layer when STATE_VAR is null. ROWS: list("key" =
-/// list(APPEARANCE_ICON_STATE = "x", APPEARANCE_OVERLAYS = list("state", ...), APPEARANCE_COLOR =
-/// "#rrggbb", APPEARANCE_ICON = 'x.dmi'), ...); the "*" row is the layer's fallback, and a layer with
-/// no matching row adds nothing. Later layers win for icon_state/colour/icon, overlays add up.
-/// The combined result is built once per (type, combination) and shared. Applied at init and by the
-/// base /atom/update_icon(); when STATE_VAR is a declared field its setter refreshes it (no manual
-/// update_icon()). The declaration owns the overlays it adds and swaps them on a state change; it
-/// never touches other overlays. A subtype's layer on the same var replaces the parent's.
-#define DECLARE_APPEARANCE(PATH, STATE_VAR, ROWS) _LIFECYCLE_DECL(PATH, set_appearance(STATE_VAR, ROWS))
-#define APPEARANCE_ICON_STATE "icon_state"
-#define APPEARANCE_OVERLAYS "overlays"
-#define APPEARANCE_COLOR "color"
-#define APPEARANCE_ICON "icon"
-/// The fallback row key.
-#define APPEARANCE_ANY "*"
 
 /// 5. LEGACY: the foundation form is `membership(joins = REGISTRY_X)` in a CAPABILITY() line
 /// (code/datums/capabilities/library/membership.dm).
@@ -84,6 +64,5 @@
 #define DECL_WORK_INIT (1<<0)
 #define DECL_WORK_MATERIALIZE (1<<1)
 #define DECL_WORK_UNBIND (1<<2)
-#define DECL_WORK_APPEARANCE (1<<3)
 /// Legacy declared-verb table work (kept while the verb store consumes it).
 #define DECL_WORK_VERBS (1<<5)

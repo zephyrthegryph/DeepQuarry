@@ -39,7 +39,6 @@
 	W.salve()
 	W.bandage()
 	W.disinfect()
-	H.UpdateDamageIcon()
 	play_sfx(src, SFX_EFFECTS_OINTMENT, 0.5, vary = FALSE)
 
 /mob/living/carbon/human/proc/lick_wounds(mob/living/carbon/M as mob in view(1)) // Allows the user to lick themselves. Given how rarely this trait is used, I don't see an issue with a slight buff.

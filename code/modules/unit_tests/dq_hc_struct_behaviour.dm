@@ -233,7 +233,7 @@
 	var/obj/structure/undies_wardrobe/W = allocate(/obj/structure/undies_wardrobe, tile(3, 2))
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories[1]
 	var/datum/category_item/underwear/UWI = UWC.items[1]
-	LAZYSET(H.all_underwear, UWC.name, UWI)
+	H.set_all_underwear_at(UWC.name, UWI)
 	var/list/data = hc_data(W, H)
 	TEST_ASSERT(length(data["categories"]) > 0, "the window lists the underwear categories")
 	press(H, W, "remove_underwear", list("category" = UWC.name))

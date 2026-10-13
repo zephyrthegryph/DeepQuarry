@@ -16,7 +16,13 @@
 #    Checks HEAD and the tree did not change meanwhile, then `git push origin HEAD:master` (never forced). If
 #    master moved, it merges again and rechecks (up to 3 rounds).
 #
-# 5. After the push, refreshes tools/ci/known_failures.txt when a focused run JSON for the pushed head exists (no tests run).
+# 5. After the push, fetches and fails loudly unless origin/master contains the pushed commit and every expected lane tip. Nothing is
+#    committed after a push (the known_failures auto-refresh is gone; a still-failing known test is printed by tools/dq_merge_gates.sh).
+#
+# Expected lane tips: `--expect "ref ref"` / DQ_PUSH_EXPECT, plus lane_tips= from data/merge-gates/<HEAD>.ok (tools/dq_merge_gates.sh --lanes).
+# Each must be in HEAD before the push and in origin/master after it. A push that would change nothing ("Everything up-to-date")
+# is refused (DQ_PUSH_ALLOW_NOOP=1 allows it). On the merge worktree branch (rewrite/integ-current, or DQ_PUSH_STRICT=1) a push is
+# also refused when origin/master is not the base_master= the gates recorded: master moved since the gates started, re-run them.
 #
 # DQ_PUSH_DRY_RUN=1 runs every step and stops where it would push (to prove a stamp or a merge flow without touching master).
 # Logs: data/push-check/<sha>.{dm,ratchets,analyze}.log. It never runs checkout, reset, restore, stash or cherry-pick.
@@ -41,23 +47,56 @@ dirty() {
 	return 1
 }
 
-# After a push: if a focused run for the pushed head is on disk, refresh tools/ci/known_failures.txt from it (tests that
-# now pass leave the list, still-failing ones get the new sha). No tests run here. A changed list is committed on top of
-# the pushed head and pushed (data only: no gate reads it; same DQ_PUSH_VERIFIED rule). Best effort: never fails the push.
-# DQ_KNOWN_FAILURES_REFRESH=0 turns it off. A rejected push leaves the commit local; the next dq_push_master carries it.
-refresh_known_failures() {
-	[ "${DQ_KNOWN_FAILURES_REFRESH:-1}" = "0" ] && return 0
-	local rc=0 new
-	bash tools/dq_known_failures.sh --refresh-for-head "$1" || rc=$?
-	[ "$rc" -eq 10 ] || return 0
-	git add tools/ci/known_failures.txt && git commit -q -m "Refresh known failures from the run on ${1:0:10}" || { echo "dq_push_master: known_failures refresh: commit failed (ignored)"; return 0; }
-	new="$(git rev-parse HEAD)"
-	if DQ_PUSH_VERIFIED="$new" git push -q origin "$new:refs/heads/master"; then
-		echo "dq_push_master: pushed known_failures refresh ${new:0:12}"
-	else
-		echo "dq_push_master: known_failures refresh committed locally (${new:0:12}); push rejected, it goes with the next push"
-	fi
-	return 0
+expected_tips=()
+add_expect() { # <ref-or-sha>...
+	local r t
+	for r in "$@"; do
+		[ -n "$r" ] || continue
+		t="$(git rev-parse -q --verify "$r^{commit}" 2>/dev/null || git rev-parse -q --verify "origin/$r^{commit}" 2>/dev/null)" || die "--expect '$r' does not resolve to a commit"
+		case " ${expected_tips[*]-} " in *" $t "*) ;; *) expected_tips+=("$t") ;; esac
+	done
+}
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--expect) shift; read -r -a more <<<"${1:-}"; add_expect "${more[@]}" ;;
+		-h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+		*) die "unknown argument: $1" ;;
+	esac
+	shift
+done
+if [ -n "${DQ_PUSH_EXPECT:-}" ]; then read -r -a more <<<"$DQ_PUSH_EXPECT"; add_expect "${more[@]}"; fi
+
+# The gates' record for the HEAD we start on: lane tips to land, and the origin/master they started from.
+gate_record() { # <key>: value from data/merge-gates/<HEAD>.ok of the starting HEAD
+	local h f
+	h="$(git rev-parse HEAD)"
+	f="data/merge-gates/${h:0:12}.ok"
+	[ -f "$f" ] && sed -n "s/^$1=//p" "$f" | tail -n 1
+}
+start_lane_tips="$(gate_record lane_tips)"
+start_base="$(gate_record base_master)"
+if [ -n "$start_lane_tips" ]; then
+	IFS=, read -r -a more <<<"$start_lane_tips"
+	add_expect "${more[@]}"
+fi
+strict=0
+if [ "${DQ_PUSH_STRICT:-}" = "1" ] || { [ "${DQ_PUSH_STRICT:-}" != "0" ] && [ "$(git rev-parse --abbrev-ref HEAD)" = "rewrite/integ-current" ]; }; then strict=1; fi
+if [ "$strict" -eq 1 ] && [ -n "$start_base" ]; then
+	git fetch -q origin || die "git fetch failed"
+	now_master="$(git rev-parse origin/master)"
+	[ "$now_master" = "$start_base" ] || die "origin/master moved since the gates started (${start_base:0:12} -> ${now_master:0:12}): re-run tools/dq_merge_worktree.sh, the merges and tools/dq_merge_gates.sh, then push again"
+fi
+
+# After a push: origin/master must contain what was pushed and every expected lane tip. A no-op push exits 0 in git; this does not.
+verify_landed() { # <sha>
+	local t miss=()
+	git fetch -q origin || die "git fetch failed after the push; cannot confirm it landed"
+	git merge-base --is-ancestor "$1" origin/master || die "after the push origin/master ($(git rev-parse --short=12 origin/master)) does not contain ${1:0:12}"
+	for t in "${expected_tips[@]-}"; do
+		[ -n "$t" ] || continue
+		git merge-base --is-ancestor "$t" origin/master || miss+=("${t:0:12}")
+	done
+	[ ${#miss[@]} -eq 0 ] || die "after the push origin/master does not contain expected lane tip(s): ${miss[*]}"
 }
 
 mkdir -p data/push-check
@@ -66,7 +105,7 @@ for round in 1 2 3; do
 	echo "== dq_push_master: round $round: merging origin/master"
 	bash tools/dq_merge_master.sh || die "the merge did not complete (resolve, commit, rerun)"
 	if why="$(dirty)"; then die "the merge left $why"; fi
-	bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt regeneration failed"
+	bash tools/ci/check_look_keys_format.sh --commit || die "look_keys.txt normalization failed"
 	sha="$(git rev-parse HEAD)"
 	log="data/push-check/${sha:0:12}"
 
@@ -107,14 +146,22 @@ for round in 1 2 3; do
 	stamp_verdict="$(bash tools/dq_push_stamp.sh "$sha")" || die "$stamp_verdict"
 	echo "== test stamp: $stamp_verdict"
 
+	for t in "${expected_tips[@]-}"; do
+		[ -n "$t" ] || continue
+		git merge-base --is-ancestor "$t" "$sha" || die "expected lane tip ${t:0:12} is not in HEAD ${sha:0:12}: the merge worktree was moved or the lane was not merged; re-merge it and rerun the gates"
+	done
+	if git merge-base --is-ancestor "$sha" origin/master && [ "${DQ_PUSH_ALLOW_NOOP:-0}" != "1" ]; then
+		die "HEAD ${sha:0:12} is already in origin/master: pushing would change nothing (the lane's work is not in this HEAD, or it already landed)"
+	fi
+
 	if [ "${DQ_PUSH_DRY_RUN:-0}" = "1" ]; then
 		echo "dq_push_master: DRY RUN: ${sha:0:12} passed every check (dm, DreamChecker, ratchets, analyze); not pushing"
 		exit 0
 	fi
 	echo "== pushing ${sha:0:12} to origin/master"
 	if DQ_PUSH_VERIFIED="$sha" git push origin "$sha:refs/heads/master"; then
-		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze)"
-		refresh_known_failures "$sha"
+		verify_landed "$sha"
+		echo "dq_push_master: pushed ${sha:0:12} (checked: dm, DreamChecker, ratchets, analyze); origin/master contains it${expected_tips[*]:+ and ${#expected_tips[@]} expected lane tip(s)}"
 		exit 0
 	fi
 	echo "dq_push_master: push rejected (master moved?); merging again"

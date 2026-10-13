@@ -286,7 +286,7 @@ default behaviour is:
 	if(!forced && movetime /* && !is_incorporeal()*/)
 		SSmotiontracker?.ping(src) // ? in case this runs before GLOB is set up (turf enter gravity).
 	if(is_shifted)
-		is_shifted = FALSE
+		set_is_shifted(FALSE)
 		pixel_x = default_pixel_x
 		pixel_y = default_pixel_y
 		layer = initial(layer)

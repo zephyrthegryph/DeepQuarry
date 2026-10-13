@@ -24,8 +24,6 @@
 
 /datum/tgui/op_window_interactive()
 	return !QDELETED(src_object()) && status == STATUS_INTERACTIVE
-/atom/op_claim_changed()
-	return update_icon()
 /mob/op_notify(text)
 	return to_chat(src, span_warning(text))
 /mob/op_balloon(text)

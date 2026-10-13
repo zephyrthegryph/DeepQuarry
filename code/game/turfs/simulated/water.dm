@@ -119,7 +119,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 		var/mob/living/L = AM
 		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
 			return
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water))
@@ -132,7 +132,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 		var/mob/living/L = AM
 		if(dq_get_hovering(L) || stat_value(L, STAT_FLYING) || L.is_incorporeal())
 			return
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(newloc, /turf/simulated/floor/water))
@@ -227,7 +227,7 @@ CAPABILITIES(/turf/simulated/floor/water)
 /turf/simulated/floor/water/blood/Entered(atom/movable/AM, atom/oldloc)
 	if(isliving(AM))
 		var/mob/living/L = AM
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water))

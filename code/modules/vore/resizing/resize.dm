@@ -42,15 +42,12 @@
 			return N
 
 /**
- * Scale up the size of a mob's icon by the size_multiplier.
- * NOTE: mob/living/carbon/human/update_icons() has a more complicated system and
- * 	is already applying this transform.   BUT, it does not call ..()
- *	as long as that is true, we should be fine.  If that changes we need to
- *	re-evaluate.
+ * Scale up the size of a mob's icon by the size_multiplier. A human scales through update_transform() instead.
  */
 /mob/living/update_icons()
 	. = ..()
-	ASSERT(!ishuman(src))
+	if(ishuman(src))
+		return // a human's transform is update_transform(), its look is its draw
 	var/cent_offset = center_offset
 	if(fuzzy || offset_override || dir == EAST || dir == WEST)
 		cent_offset = 0
@@ -69,7 +66,7 @@
 	return 100000 //Whatever it is, it's too big to pick up, or it's a ghost, or something.
 
 /mob/living/get_effective_size(micro = FALSE)
-	return size_multiplier // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return size_multiplier
 
 /mob/living/carbon/human/get_effective_size(micro = FALSE)		// Set micro to TRUE for interactions where you're small, to FALSE for ones where you're large.
 	var/effective_size = size_multiplier
@@ -156,7 +153,7 @@
 		return 1
 
 	var/change = new_size - size_multiplier
-	size_multiplier = new_size //Change size_multiplier so that other items can interact with them
+	set_size_multiplier(new_size) //Change size_multiplier so that other items can interact with them
 
 	if(animate)
 		var/duration = (abs(change)+0.25) SECONDS
@@ -207,7 +204,7 @@
 
 // Optimize mannequins - never a point to animating or doing HUDs on these.
 /mob/living/carbon/human/dummy/mannequin/resize(new_size, animate = TRUE, uncapped = FALSE, ignore_prefs = FALSE, aura_animation = TRUE, allow_stripping = FALSE)
-	size_multiplier = new_size
+	set_size_multiplier(new_size)
 
 /**
  * Verb proc for a command that lets players change their size OOCly.

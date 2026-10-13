@@ -1340,7 +1340,7 @@
 /// Walks an airlock assembly through its frame, wiring and electronics (as `H` with the access `access` set on the board).
 /datum/unit_test/dq_p2_door/proc/frame_up(obj/structure/door_assembly/A, mob/living/carbon/human/H, list/access)
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = access
+	board.set_conf_access(access)
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	if(!A.anchored)
 		return null
@@ -1356,7 +1356,7 @@
 	var/obj/structure/door_assembly/A = allocate(/obj/structure/door_assembly, tile(2, 2))
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = list(ACCESS_ENGINE)
+	board.set_conf_access(list(ACCESS_ENGINE))
 	TEST_ASSERT(!A.anchored, "a new assembly is loose")
 	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 0, "and bare")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
@@ -2085,7 +2085,7 @@
 	var/obj/structure/windoor_assembly/A = allocate(/obj/structure/windoor_assembly, tile(2, 2))
 	var/mob/living/carbon/human/H = make_person(null, tile(1, 2))
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
-	board.conf_access = list(ACCESS_ENGINE)
+	board.set_conf_access(list(ACCESS_ENGINE))
 	TEST_ASSERT(!A.anchored, "a new assembly is loose")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	TEST_ASSERT(A.anchored, "a wrench bolts it down")

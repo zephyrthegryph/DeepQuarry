@@ -265,8 +265,7 @@ CAPABILITIES(/obj/item/gun/projectile/shotgun/doublebarrel/quad)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+		changed(src)
 
 	play_sfx(src, SFX_WEAPONS_TARGETON)
 	user.update_mob_action_buttons()

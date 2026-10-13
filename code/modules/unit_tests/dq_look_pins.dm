@@ -45,7 +45,7 @@
 		if(QDELETED(target))
 			. = list("deleted itself on creation")
 		else
-			appearance_flush()
+			refresh_flush()
 			. = dq_look_pin_lines(target)
 			qdel(target)
 	catch(var/exception/e)

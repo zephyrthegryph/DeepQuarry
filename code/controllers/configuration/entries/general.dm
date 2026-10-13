@@ -813,6 +813,12 @@
 /datum/config_entry/number/drift_profile_delay
 	default = 2 MINUTES
 
+/// The staleness checker's sampled live mode (code/engine/change/staleness.dm): one cached stat read, draw or entity in this many is recomputed from
+/// scratch and compared, with a mismatch only logged. 0 (the default) is off; test builds check everything regardless.
+/datum/config_entry/number/staleness_sample
+	default = 0
+	min_val = 0
+
 /datum/config_entry/flag/forbid_all_profiling
 
 /datum/config_entry/flag/forbid_admin_profiling

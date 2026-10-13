@@ -34,7 +34,7 @@
 	C.status_set(STAT_PARALYZED, 0)
 	C.status_set(STAT_STUNNED, 0)
 	C.status_set(STAT_WEAKENED, 0)
-	C.lying = 0
+	C.set_lying(0)
 	C.update_canmove()
 	C.reagents.add_reagent("epinephrine", 20)
 

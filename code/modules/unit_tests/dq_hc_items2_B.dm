@@ -136,7 +136,6 @@
 	hci_click(H, E, E)
 	settle()
 	TEST_ASSERT(E.active, "using it switches it on")
-	E.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(E.icon_state, E.icon_on, "the look follows")
 	TEST_ASSERT(H.equip_to_slot_if_possible(E, SLOT_ID_MASK), "worn")
@@ -222,7 +221,6 @@
 	var/start = C.smoketime
 	test_time(6 SECONDS)
 	TEST_ASSERT(C.smoketime < start, "a lit cigarette burns with the clock")
-	C.update_icon()
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(C.icon_state, "cig_on", "it looks lit")
 	C.quench()

@@ -815,8 +815,9 @@ CAPABILITIES(/datum/vore_look)
 	var/newcolor = sanitize_hexcolor(lowertext(val))
 	if(!newcolor)
 		return FALSE
-	host().vore_prefs.vore_sprite_color[belly_choice] = newcolor
-	host().update_icons_body()
+	var/datum/record/vore_prefs/prefs = host().vore_prefs
+	prefs.vore_sprite_color[belly_choice] = newcolor
+	record_changed(prefs, nameof(prefs.vore_sprite_color))
 	unsaved_changes = TRUE
 	return TRUE
 
@@ -824,11 +825,12 @@ CAPABILITIES(/datum/vore_look)
 	var/belly_choice = attribute
 	if(!(belly_choice in host().vore_icon_bellies))
 		return FALSE
-	if(!host().vore_prefs.vore_sprite_multiply[belly_choice])
-		host().vore_prefs.vore_sprite_multiply[belly_choice] = TRUE
+	var/datum/record/vore_prefs/prefs = host().vore_prefs
+	if(!prefs.vore_sprite_multiply[belly_choice])
+		prefs.vore_sprite_multiply[belly_choice] = TRUE
 	else
-		host().vore_prefs.vore_sprite_multiply[belly_choice] = !host().vore_prefs.vore_sprite_multiply[belly_choice]
-	host().update_icons_body()
+		prefs.vore_sprite_multiply[belly_choice] = !prefs.vore_sprite_multiply[belly_choice]
+	record_changed(prefs, nameof(prefs.vore_sprite_multiply))
 	unsaved_changes = TRUE
 	return TRUE
 //vore sprites color
@@ -1159,7 +1161,7 @@ CAPABILITIES(/datum/vore_look)
 				to_chat(user, span_warning("You can't do that in your state!"))
 				return TRUE
 
-			host().ClickOn(target)
+			input_submit(new /datum/input_event/click(host(), target))
 			return TRUE
 
 	if(!isliving(target))

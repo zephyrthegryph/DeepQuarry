@@ -218,10 +218,6 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger)
 		return OP_REFUSED
 	add_fingerprint(user)
 	act_message(user, src, MSG_SELF("You remove [device] from %T%."), MSG_OTHERS("%U% removes [device] from %T%."))
-	// Cells and energy guns already draw from the cell's tracked charge. Other
-	// supported devices retain their legacy refresh until their own draw converts.
-	if(!istype(device, /obj/item/cell) && !istype(device, /obj/item/gun/energy))
-		device.update_icon()
 	varslot_take(src, nameof(charging), user, op_carrier(A)) // a cyborg's gripper carries it
 	return OP_OK
 

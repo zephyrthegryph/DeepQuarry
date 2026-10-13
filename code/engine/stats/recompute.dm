@@ -49,13 +49,19 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 		return null
 	var/datum/stat_type_info/I = stat_type_of(E)
 	if(I ? I.has_var[def.skey] : (def.name in E.vars))
-		return E.vars[def.name]
+		. = E.vars[def.name]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
 	var/datum/stat_record/rec = E.rx?.stats
 	// A stat whose inputs all publish keeps its value until one does (stat_recompute() rewrites it then); one that reads something nobody publishes
 	// (code/engine/_generated/deps.dm, the untracked_inputs lint) is composed on every read, so it is never stale.
 	var/tracked = stat_inputs_tracked(I || null, def)
 	if(tracked && rec?.virtual && (def.skey in rec.virtual))
-		return rec.virtual[def.skey]
+		. = rec.virtual[def.skey]
+		if(GLOB.staleness_on)
+			staleness_check_stat(E, def, I || null, ., "stat_value")
+		return .
 	GLOB.stat_read_computes++
 #if defined(BENCHMARK)
 	GLOB.stat_read_compute_by["[E.type]:[def.name]"]++
@@ -288,6 +294,7 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	if(rec.inited)
 		return rec
 	rec.inited = TRUE
+	staleness_track(E)
 	if(!I)
 		return rec
 	for(var/datum/stat_def/def as anything in I.defs)
@@ -731,8 +738,16 @@ GLOBAL_VAR_INIT(stat_read_computes, 0) // stat_value() calls that composed the v
 	if(materialization_host().map_loading())
 		return
 	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
-	if(length(GLOB.stat_marked))
+	// The stats a pass settles publish their changes, which mark on_change hooks (a machine's has_power flip, its power_change()): those run in
+	// the same drain, and what they mark is settled after them, so a tracked write reaches its readers' reactions in one drain, not the next.
+	var/passes = 0
+	while(length(GLOB.stat_marked) && passes < DRAIN_MAX_PASSES)
+		passes++
+		var/spills = GLOB.stat_spills
 		stat_drain_marked(LANE_SIMULATION, FALSE)
+		act_drain_point()
+		if(GLOB.stat_spills != spills)
+			break // the lane's budget is spent: the rest resumes at the next drain
 
 /// A kernel pass begins: the lane's budget is whole again, shared by the drains of this tick's D, P and R.
 /proc/stat_tick_begin()

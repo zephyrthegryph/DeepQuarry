@@ -13,6 +13,8 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
+TRACKED(/obj/machinery/floodlight, open)
+
 CAPABILITIES(/obj/machinery/floodlight)
 	started_work(step = PROC_REF(work_step), starts = TRUE, when = nameof(on), wakes_on = list(nameof(on)))
 	climb()
@@ -61,7 +63,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 	set_light_range(brightness_on)
 	set_light_power(brightness_on/2)
 	set_light_on(TRUE)
-	changed(src)
 	if(loud)
 		visible_message("\The [src] turns on.")
 	return 1
@@ -69,7 +70,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 /obj/machinery/floodlight/proc/turn_off(loud = 0)
 	set_on(0)
 	set_light_on(FALSE)
-	changed(src)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 
@@ -103,7 +103,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 		set_on(0)
 		set_glow(src, GLOW(0, null, null))
 		to_chat(user, "You remove the power cell")
-		changed(src)
 		return TRUE
 
 	if(on)
@@ -112,7 +111,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 		if(!turn_on(1))
 			to_chat(user, "You try to turn on \the [src] but it does not work.")
 
-	changed(src)
 	return TRUE
 
 /**
@@ -130,7 +128,6 @@ CAPABILITIES(/obj/machinery/floodlight)
 				if(!move_into(src, nameof(src.cell), W, user))
 					return TRUE
 				to_chat(user, "You insert the power cell.")
-	changed(src)
 	return TRUE
 
 /obj/machinery/floodlight/proc/screwdriver_used(datum/act/op/A)
@@ -145,7 +142,7 @@ CAPABILITIES(/obj/machinery/floodlight)
 	var/mob/user = A.actor
 	if(!unlocked)
 		return OP_OK
-	open = !open
+	set_open(!open)
 	if(!open)
 		overlays = null
 	to_chat(user, "You [open ? "remove" : "crowbar"] the battery panel[open ? "" : " in place"].")

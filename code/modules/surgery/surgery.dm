@@ -371,7 +371,6 @@ GLOBAL_PROTECT(surgical_steps)
 	if(part && step.infection_risk && prob(100 - cleanliness))
 		part.adjust_germ_level(rand(10, 20))
 
-	update_surgery()
 
 /proc/spread_germs_to_organ(obj/item/organ/external/E, mob/living/carbon/human/user)
 	if(!istype(user) || !istype(E))

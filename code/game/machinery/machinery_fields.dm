@@ -320,13 +320,6 @@ TRACKED_BRIDGED(/obj/vehicle, stat, CHANGE_EXPLICIT)
 	field = "use_power"
 	channel = CHANGE_MACHINE_SETTINGS
 
-/// Appearance (doc/rewrite/systems.md section 1): a machine's look follows its core fields, so a
-/// change to any of them re-runs update_icon() on the presentation lane (once per frame) and no
-/// setter is followed by a manual update_icon(). Declared appearances add the fields they read.
-APPEARANCE_WATCH(/obj/machinery, list("stat", "on", "active", "state", "mode", "locked", "emagged", "use_power", "anchored", "density"))
-/// Vehicles draw their condition bits.
-APPEARANCE_WATCH(/obj/vehicle, list("stat"))
-
 /// Integrity (atom_defense.dm): update_integrity() is the only writer and raises CHANGE_INTEGRITY, so
 /// sprites drawn from damage declare "get_integrity" and redraw on hits and repairs by themselves.
 /datum/scheduler_field_definition/atom/get_integrity

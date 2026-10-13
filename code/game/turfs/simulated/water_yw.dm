@@ -10,7 +10,7 @@
 /turf/simulated/floor/water/hotspring/Entered(atom/movable/AM, atom/oldloc)
 	if(istype(AM, /mob/living))
 		var/mob/living/L = AM
-		L.update_water()
+		L.refresh_submersion()
 		if(L.check_submerged() <= 0)
 			return
 		if(!istype(oldloc, /turf/simulated/floor/water/hotspring))

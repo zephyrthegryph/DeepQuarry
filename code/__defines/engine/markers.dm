@@ -70,3 +70,7 @@
 /// it names. READS_FROM(C) follows C; READS_FROM() says the helper reads no entity state. An unannotated global call in a handler
 /// is a build error (sem/reads, unannotated_global).
 #define READS_FROM(args...)
+/// Declares what a proc the generated reads cannot walk (a Verdigris FFI call, a `vars[]` dispatcher) reads and writes on its receiver:
+/// PROC_SUMMARY(/obj/machinery/proc/probe, reads = list(nameof(powered)), writes = list(nameof(cache))). The walk takes the summary in
+/// place of the body (sem/reads, ProcSummary). A global proc names `/proc/name`; its reads and writes are vars of its first argument.
+#define PROC_SUMMARY(proc, args...)

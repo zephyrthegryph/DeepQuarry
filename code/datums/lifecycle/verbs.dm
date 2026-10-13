@@ -29,8 +29,7 @@
 			holder.drop_from_inventory(item)
 			if(item.loc == holder)
 				return FALSE
-	ending_cause(item, END_CONSUMED, actor)
-	qdel(item)
+	ending_qdel(item, END_CONSUMED, actor)
 	return TRUE
 
 // ---- replace_with() ----
@@ -66,8 +65,7 @@
 			return null
 		original.set_containment_successor(built)
 		rel_forward_identity(original, built)
-		ending_cause(original, END_REPLACED, built)
-		qdel(original)
+		ending_qdel(original, END_REPLACED, built)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
 			move_into(holder, slot_id, built)
 		return built
@@ -79,8 +77,7 @@
 		return null
 	original.set_containment_successor(successor)
 	rel_forward_identity(original, successor)
-	ending_cause(original, END_REPLACED, successor)
-	qdel(original)
+	ending_qdel(original, END_REPLACED, successor)
 	// Into the slot only once the original has left it: a one-item slot (a
 	// hand) would refuse the successor while the original still filled it.
 	// Best effort: the slot may refuse the successor (different accepts
@@ -118,8 +115,7 @@
 
 /datum/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)
-	ending_cause(src, END_EXPIRED)
-	qdel(src)
+	ending_qdel(src, END_EXPIRED)
 
 /atom/movable/proc/lifecycle_arm_lifetime()
 	if(lifecycle_lifetime > 0)
@@ -226,11 +222,9 @@
 	var/sound_volume = 50
 	/// Debris type spawned at the same turf, or null.
 	var/debris_type
-	/// Whether atoms on the same turf get update_icon() afterwards.
-	var/update_neighbors = FALSE
 	/// After the atom has left its turf (apply_after()): atoms of this type
-	/// within neighbor_range re-smooth -- structures update_connections() --
-	/// and update_icon(). Walls, grilles, railings, lattices.
+	/// within neighbor_range re-smooth -- structures update_connections().
+	/// Walls, grilles, railings, lattices.
 	var/neighbor_type
 	var/neighbor_range = 1
 	/// Whether neighbour structures also re-run update_connections().
@@ -295,9 +289,6 @@
 	for(var/path in debris)
 		for(var/i in 1 to max(1, debris[path]))
 			new path(T)
-	if(update_neighbors)
-		for(var/atom/movable/AM in contents_of(T))
-			AM.update_icon()
 	return T
 
 /// After Destroy(): neighbours that smooth against the atom see it gone.
@@ -310,4 +301,3 @@
 		if(neighbor_reconnect && isstructure(N))
 			var/obj/structure/S = N
 			S.update_connections()
-		N.update_icon()

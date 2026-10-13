@@ -124,10 +124,7 @@ CAPABILITIES(/obj/machinery/computer/aifixer)
 		return
 	if(!operable())
 		return
-	var/oldstat = occupier().stat
 	set_restoring(Fix())
-	if(oldstat != occupier().stat)
-		update_icon()
 
 /// Over the console's screen: restoring, and the state of the AI card's occupant (none, awake, or out).
 /obj/machinery/computer/aifixer/draw(datum/look/look)

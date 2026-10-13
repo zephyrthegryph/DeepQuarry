@@ -1,12 +1,15 @@
 //! Port of `tools/ci/tracked_lint.py`: the tracked-var write lint (doc/rewrite/dx_conventions.md sec 1,
 //! final_design.md sec 1).
 //!
-//! `TRACKED(T, var, channel)` (code/__defines/capabilities.dm) declares that `var` on type T (and its
-//! subtypes) is written only through its setter `T/proc/set_<var>(value)`, which calls changed().
-//! `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var
-//! tracked the same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the
-//! setter body. Reads are unrestricted. A `derive()` value (`. += derive(nameof(var), ...)` in a
-//! `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//! `TRACKED(T, var)` (code/__defines/capabilities.dm; two arguments, the channel argument is gone) declares that `var` on type T (and its
+//! subtypes) is written only through its generated setter `T/proc/set_<var>(value)`, which compares with `TRACKED_UNCHANGED` (null differs from 0)
+//! and publishes through `tracked_changed()`. `TRACKED_BRIDGED(T, var, channel)` is the same plus a legacy `CHANGE_*` channel, until the pipeline that
+//! consumes the channel is deleted. `SETTER(T, var)` registers a hand-written `T/proc/set_<var>(value)` as var's setter and makes var tracked the
+//! same way. A hand-written `/T/proc/set_<var>(` (or a subtype override of it) is the setter body. Reads are unrestricted. A `derive()` value
+//! (`. += derive(nameof(var), ...)` in a `derived()` proc) is tracked with no setter at all: every write in DM is counted.
+//!
+//! This lint covers declared tracked vars only. The end state (doc/rewrite/final_api.html section 7, "Reactive closure") makes any var that reactive
+//! code reads tracked, with a generated setter and a `raw_write` lint; list mutations of a read list get their own lint (`tracked_list`).
 //!
 //! Counted, for every tracked var V of type T, outside a setter body of V:
 //! * `V = x`, `src.V = x`, `V += x` (and the other compound ops), `V++`, `V--`, `++V`, `--V` inside a
@@ -24,8 +27,9 @@
 //!   multi-line string still declares a var;
 //! * a global `/proc/foo(` has owner `/proc` (the lazy owner group), and `derived` procs of owner `/`
 //!   are skipped;
-//! * the ALLOW lookup and the proc scan read the line numbers of the `code_only` view, which drift from
-//!   the raw file after an unbalanced quote;
+//! * the ALLOW lookup and the proc scan read the same-length `clean` view (physical line numbers, as the AST's
+//!   argument positions are), so an unbalanced quote moves no line; an `[expr]` embedded in a string is code in DM and
+//!   is scanned like any other;
 //! * `tracked_type_of` returns the first base of the var's type set that the owner is under; the
 //!   Python's set is hash-ordered, so with two matching bases the message may name either (the site
 //!   is the same). Here the set is sorted, so the shortest path wins.
@@ -45,6 +49,7 @@ use crate::{pat, pat_match};
 
 const LINT: &str = "tracked";
 const HINT: &str = "write it through the setter, or `// ALLOW(tracked): <reason>`";
+const LIST_HINT: &str = "mutate a tracked list through its generated add_<v>() / include_<v>() / remove_<v>() / set_<v>_at() / clear_<v>() (`analyze fix` rewrites most); a raw edit publishes nothing";
 
 static META: Meta = Meta {
     name: "tracked",
@@ -54,7 +59,7 @@ static META: Meta = Meta {
     select: CODE_MAPS_DM,
     scan: ScanKind::Tree,
     policy: Policy::Hard,
-    rules: &[RuleMeta { name: "outside_setter", hint: HINT }],
+    rules: &[RuleMeta { name: "outside_setter", hint: HINT }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
     allow: &["tracked"],
     lists: &[],
 };
@@ -77,7 +82,7 @@ static META_TESTS: Meta = Meta {
         ],
         banned: &[],
     },
-    rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }],
+    rules: &[RuleMeta { name: "outside_setter", hint: "a test writes state through its setter too (A.set_x(v)), or set_var() when it must restore it" }, RuleMeta { name: "list_mutation", hint: LIST_HINT }],
     allow: &["tracked"],
     lists: &[],
 };
@@ -223,14 +228,190 @@ fn build_pats(tracked: &Tracked) -> Option<Pats> {
     })
 }
 
-/// One write outside a setter: the line and the message.
+/// One write outside a setter: the line, the message, the rule, and (for a list mutation `analyze fix` can rewrite) the edit.
 struct Hit {
     line: usize,
     msg: String,
+    rule: u8,
+    fix: Option<Fix>,
+}
+
+/// Rule indexes (the order of `Meta::rules`).
+const RULE_SETTER: u8 = 0;
+const RULE_LIST: u8 = 1;
+
+/// A single-line edit: bytes `start..end` of the line become `text`; `was` is the text it expects there.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize, Default)]
+pub struct Fix {
+    pub start: u32,
+    pub end: u32,
+    pub was: String,
+    pub text: String,
+}
+
+/// The in-place list mutations of tracked list vars (`LAZYADD(v, x)`, `v.Add(x)`, `v[i] = x`).
+struct ListPats {
+    r#macro: Pat,
+    method: Pat,
+    index: Pat,
+}
+
+fn build_list_pats(lists: &Tracked) -> Option<ListPats> {
+    if lists.is_empty() {
+        return None;
+    }
+    let mut escaped: Vec<String> = lists.keys().map(|k| regex::escape(k)).collect();
+    escaped.sort();
+    let names = escaped.join("|");
+    Some(ListPats {
+        r#macro: Pat::new(&format!(r"\b(LAZY(?:ADD|REMOVE|OR|DISTINCTADD|SET|CLEARLIST|NULL))\(\s*(?:(\w+)\.)?({names})\s*[,)]", names = names)),
+        method: Pat::new(&format!(r"(?<![\w.])(?:(\w+)\.)?({names})\.(Add|Remove|Cut|Insert|Swap)\(", names = names)),
+        index: Pat::new(&format!(r"(?<![\w.])(?:(\w+)\.)?({names})\s*\[(?:[^\[\]]|\[[^\]]*\])*\]\s*{ops}", names = names, ops = OPS)),
+    })
+}
+
+/// The index of the `)` closing the `(` at `open`, in `line` (strings and comments are blanked in the clean view).
+fn close_paren(line: &str, open: usize) -> Option<usize> {
+    let mut depth = 0i32;
+    for (i, c) in line[open..].char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(open + i);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Top-level argument spans (byte ranges into `line`) of the call whose `(` is at `open` and `)` at `close`.
+fn arg_spans(line: &str, open: usize, close: usize) -> Vec<(usize, usize)> {
+    let mut spans = Vec::new();
+    let (mut depth, mut start) = (0i32, open + 1);
+    for (i, c) in line[open + 1..close].char_indices() {
+        let at = open + 1 + i;
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            ',' if depth == 0 => {
+                spans.push((start, at));
+                start = at + 1;
+            }
+            _ => {}
+        }
+    }
+    if !line[start..close].trim().is_empty() || !spans.is_empty() {
+        spans.push((start, close));
+    }
+    spans
+}
+
+/// The call prefix a holder text gives the generated proc: `src` and none are the bare form.
+fn holder_prefix(holder: &str) -> String {
+    if holder.is_empty() || holder == "src" {
+        String::new()
+    } else {
+        format!("{holder}.")
+    }
+}
+
+/// The rewrite of one list mutation, or None when it is not a plain statement-level form `analyze fix` can express.
+/// `clean` and `raw` are the same line; `m_start` is where the match starts.
+fn list_fix(clean: &str, raw: &str, kind: &str, m_start: usize, holder: &str, var: &str, form: &str) -> Option<Fix> {
+    if clean.len() != raw.len() {
+        return None;
+    }
+    let pre = holder_prefix(holder);
+    let arg = |a: (usize, usize)| raw[a.0..a.1].trim().to_string();
+    match kind {
+        "macro" => {
+            let open = m_start + form.len();
+            if clean.as_bytes().get(open) != Some(&b'(') {
+                return None;
+            }
+            let close = close_paren(clean, open)?;
+            let spans = arg_spans(clean, open, close);
+            let text = match (form, spans.len()) {
+                ("LAZYADD", 2) => format!("{pre}add_{var}({})", arg(spans[1])),
+                ("LAZYREMOVE", 2) => format!("{pre}remove_{var}({})", arg(spans[1])),
+                ("LAZYOR" | "LAZYDISTINCTADD", 2) => format!("{pre}include_{var}({})", arg(spans[1])),
+                ("LAZYSET", 3) => format!("{pre}set_{var}_at({}, {})", arg(spans[1]), arg(spans[2])),
+                ("LAZYCLEARLIST", 1) => format!("{pre}clear_{var}()"),
+                ("LAZYNULL", 1) => format!("{pre}set_{var}(null)"),
+                _ => return None,
+            };
+            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text })
+        }
+        "method" => {
+            // A statement: nothing before it on the line, and the call closes the line.
+            if !clean[..m_start].trim().is_empty() {
+                return None;
+            }
+            let open = clean[m_start..].find(&format!(".{form}("))? + m_start + 1 + form.len();
+            let close = close_paren(clean, open)?;
+            if !clean[close + 1..].trim().trim_start_matches(';').trim().is_empty() {
+                return None;
+            }
+            let spans = arg_spans(clean, open, close);
+            let text = match (form, spans.len()) {
+                ("Add", 1) => format!("{pre}add_{var}({})", arg(spans[0])),
+                ("Add", n) if n > 1 => format!("{pre}add_{var}(list({}))", spans.iter().map(|s| arg(*s)).collect::<Vec<_>>().join(", ")),
+                ("Remove", 1) => format!("{pre}remove_{var}({})", arg(spans[0])),
+                ("Remove", n) if n > 1 => format!("{pre}remove_{var}(list({}))", spans.iter().map(|s| arg(*s)).collect::<Vec<_>>().join(", ")),
+                ("Cut", 0) => format!("{pre}clear_{var}()"),
+                ("Cut", 1 | 2) => format!("{pre}cut_{var}({})", spans.iter().map(|s| arg(*s)).collect::<Vec<_>>().join(", ")),
+                ("Insert", 2) => format!("{pre}insert_{var}({}, {})", arg(spans[0]), arg(spans[1])),
+                ("Swap", 2) => format!("{pre}swap_{var}({}, {})", arg(spans[0]), arg(spans[1])),
+                _ => return None,
+            };
+            Some(Fix { start: m_start as u32, end: close as u32 + 1, was: raw[m_start..=close].to_string(), text })
+        }
+        "index" => {
+            if !clean[..m_start].trim().is_empty() {
+                return None;
+            }
+            let name_at = clean[m_start..].find(var)? + m_start;
+            let open = clean[name_at..].find('[')? + name_at;
+            let mut depth = 0i32;
+            let mut close = None;
+            for (i, c) in clean[open..].char_indices() {
+                match c {
+                    '[' => depth += 1,
+                    ']' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            close = Some(open + i);
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let close = close?;
+            let after = clean[close + 1..].trim_start();
+            let rest = after.strip_prefix('=')?;
+            if rest.starts_with('=') {
+                return None;
+            }
+            let end = clean.trim_end().trim_end_matches(';').trim_end().len();
+            let value_start = clean.len() - rest.len();
+            let value = raw[value_start..end].trim();
+            if value.is_empty() {
+                return None;
+            }
+            let idx = raw[open + 1..close].trim();
+            Some(Fix { start: m_start as u32, end: end as u32, was: raw[m_start..end].to_string(), text: format!("{pre}set_{var}_at({idx}, {value})") })
+        }
+        _ => None,
+    }
 }
 
 /// `scan` for one file: its hits (in order) and the setters it defines `(owner, proc name)`.
-fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink, named_args: &BTreeSet<(usize, usize)>) -> (Vec<Hit>, Vec<(String, String)>) {
+fn scan_one(tracked: &Tracked, pats: &Pats, lists: &Tracked, lpats: Option<&ListPats>, f: &SourceFile, sink: &mut Sink, named_args: &BTreeSet<(usize, usize)>) -> (Vec<Hit>, Vec<(String, String)>) {
     let mut hits = Vec::new();
     let mut setters = Vec::new();
     if !pats.any.is_match(f.text()) {
@@ -280,7 +461,7 @@ fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink, nam
                 let base = tracked_type_of(tracked, var, &owner).filter(|b| !b.is_empty());
                 if let Some(base) = base {
                     if !sink.allowed(f, *number, LINT) {
-                        hits.push(Hit { line: *number, msg: format!("{} written outside {}/proc/set_{}()", var, base, var) });
+                        hits.push(Hit { line: *number, msg: format!("{} written outside {}/proc/set_{}()", var, base, var), rule: RULE_SETTER, fix: None });
                     }
                 }
             }
@@ -293,13 +474,88 @@ fn scan_one(tracked: &Tracked, pats: &Pats, f: &SourceFile, sink: &mut Sink, nam
                 let base = typed.get(holder).and_then(|t| tracked_type_of(tracked, var, t)).filter(|b| !b.is_empty());
                 if let Some(base) = base {
                     if !sink.allowed(f, *number, LINT) {
-                        hits.push(Hit { line: *number, msg: format!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var) });
+                        hits.push(Hit { line: *number, msg: format!("{}.{} written outside {}/proc/set_{}()", holder, var, base, var), rule: RULE_SETTER, fix: None });
+                    }
+                }
+            }
+            if let Some(lp) = lpats {
+                // In-place edits of a tracked list var: the same holder rules as a write, one pattern per form.
+                let raw_line = f.raw().text.split('\n').nth(number - 1).unwrap_or("");
+                let forms: [(&Pat, &str, usize, usize, usize); 3] = [(&lp.r#macro, "macro", 2, 3, 1), (&lp.method, "method", 1, 2, 3), (&lp.index, "index", 1, 2, 0)];
+                for (pat, kind, holder_group, var_group, form_group) in forms {
+                    for m in pat.captures_iter(line) {
+                        let holder = m.s(holder_group);
+                        let var = m.s(var_group);
+                        let base = if holder.is_empty() || holder == "src" {
+                            let written_via_src = holder == "src";
+                            if (locals.contains(var) && !written_via_src) || Pat::cached(&format!(r"\bvar/(?:[\w/]*/)?{}\b", regex::escape(var))).is_match(line) {
+                                continue;
+                            }
+                            tracked_type_of(lists, var, &owner)
+                        } else {
+                            typed.get(holder).and_then(|t| tracked_type_of(lists, var, t))
+                        };
+                        let Some(base) = base.filter(|b| !b.is_empty()) else { continue };
+                        if sink.allowed(f, *number, LINT) {
+                            continue;
+                        }
+                        let form = if form_group == 0 { "" } else { m.s(form_group) };
+                        let fix = list_fix(line, raw_line, kind, m.start(0), holder, var, form);
+                        let who = if holder.is_empty() { var.to_string() } else { format!("{}.{}", holder, var) };
+                        hits.push(Hit { line: *number, msg: format!("{} edited in place ({}) outside {}'s generated add_/remove_/set_{}_at/clear_ procs", who, if form.is_empty() { "[] =" } else { form }, base, var), rule: RULE_LIST, fix });
                     }
                 }
             }
         }
     }
     (hits, setters)
+}
+
+/// What one run of the scan found: the files it judged and each file's hits.
+pub struct Collected<'a> {
+    pub files: Vec<&'a SourceFile>,
+    pub hits: Vec<Vec<StoredHit>>,
+}
+
+/// A hit as the judge cache stores it.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+pub struct StoredHit {
+    pub line: u32,
+    pub msg: String,
+    pub rule: u8,
+    pub fix: Option<Fix>,
+}
+
+/// The tracked list vars (`TRACKED` / `TRACKED_BRIDGED` on a `list` var): the vars whose generated procs exist, as `{var: {types}}`.
+pub fn tracked_lists(cx: &Cx) -> Tracked {
+    let mut lists: Tracked = BTreeMap::new();
+    let Some(sem) = cx.sem() else { return lists };
+    let decls = crate::gens::tracked_lists::declarations(cx.tree);
+    for ((ty, var), _) in crate::gens::tracked_lists::list_vars(&sem, &decls) {
+        lists.entry(var).or_default().insert(normalize_type(&ty));
+    }
+    lists
+}
+
+/// The scan both `check` and `fix` run: every hit of every judged file, cached while the tracked index is unchanged.
+pub fn collect<'a>(cx: &Cx<'a>, tracked: &Tracked, tests: bool) -> Option<Collected<'a>> {
+    let pats = build_pats(tracked)?;
+    let lists = tracked_lists(cx);
+    let lpats = build_list_pats(&lists);
+    let files: Vec<&SourceFile> = if tests { cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect() } else { cx.files() };
+    let semantic = cx.sem();
+    let key = incr::ctx_key(&(tracked, &lists));
+    let hits: Vec<Vec<StoredHit>> = incr::keyed(if tests { "tracked-tests-judge-2" } else { "tracked-judge-2" }, key, &files, |f| {
+        let mut sink = Sink::new();
+        sink.cur = f.rel.clone();
+        let named = semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default();
+        let (hits, _setters) = scan_one(tracked, &pats, &lists, lpats.as_ref(), f, &mut sink, &named);
+        for u in sink.allow_used {
+            crate::dm::sys::replay_recorded(vec![u]);
+        }
+        hits.into_iter().map(|h| StoredHit { line: h.line as u32, msg: h.msg, rule: h.rule, fix: h.fix }).collect()
+    });
+    Some(Collected { files, hits })
 }
 
 struct Tracker {
@@ -331,27 +587,11 @@ impl Lint for Tracker {
             }
         }
         let mut total = 0usize;
-        if let Some(pats) = build_pats(&tracked) {
-            let files: Vec<&SourceFile> = if self.tests {
-                cx.all_files().into_iter().filter(|f| TEST_PREFIXES.iter().any(|p| f.rel.starts_with(p))).collect()
-            } else {
-                cx.files()
-            };
-            // Judge: each file's hits, cached while the merged index is unchanged.
-            let semantic = cx.sem();
-            let results: Vec<Vec<(u32, String)>> = incr::keyed(if self.tests { "tracked-tests-judge" } else { "tracked-judge" }, incr::ctx_key(&tracked), &files, |f| {
-                let mut sink = Sink::new();
-                sink.cur = f.rel.clone();
-                let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink, &semantic.as_ref().map(|sem| crate::sem::checks::named_argument_positions(sem, &f.rel)).unwrap_or_default());
-                for u in sink.allow_used {
-                    crate::dm::sys::replay_recorded(vec![u]);
-                }
-                hits.into_iter().map(|h| (h.line as u32, h.msg)).collect()
-            });
-            for (f, hits) in files.iter().zip(results) {
-                for (line, msg) in hits {
+        if let Some(c) = collect(cx, &tracked, self.tests) {
+            for (f, hits) in c.files.iter().zip(c.hits) {
+                for h in hits {
                     total += 1;
-                    out.site_in_msg("outside_setter", &f.rel, line as usize, msg);
+                    out.site_in_msg(META.rules[h.rule as usize].name, &f.rel, h.line as usize, h.msg);
                 }
             }
             for u in crate::dm::sys::take_recorded() {
@@ -375,7 +615,7 @@ impl Lint for Tracker {
         for f in &files {
             let mut sink = Sink::new();
             sink.cur = f.rel.clone();
-            let (hits, s) = scan_one(&tracked, &pats, f, &mut sink, &BTreeSet::new());
+            let (hits, s) = scan_one(&tracked, &pats, &Tracked::new(), None, f, &mut sink, &BTreeSet::new());
             setters += s.len();
             for h in hits {
                 got.push((f.rel.clone(), h.line, h.msg.split(' ').next().unwrap_or("").to_string()));
@@ -527,7 +767,7 @@ mod named_argument_tests {
         tracked.insert("state".into(), BTreeSet::from(["/obj/machinery".into()]));
         tracked.insert("emagged".into(), BTreeSet::from(["/obj/machinery".into()]));
         let pats = build_pats(&tracked).unwrap();
-        let (got, _) = scan_one(&tracked, &pats, &file, &mut Sink::new(), &named);
+        let (got, _) = scan_one(&tracked, &pats, &Tracked::new(), None, &file, &mut Sink::new(), &named);
         std::fs::remove_dir_all(root).unwrap();
         got.into_iter().map(|hit| hit.line).collect()
     }
@@ -555,5 +795,153 @@ mod named_argument_tests {
     #[test]
     fn named_argument_does_not_hide_real_assignment_on_same_line() {
         assert_eq!(hits("\tstate = 2; interface(\"SpaceHeater\", state = 1)"), vec![5]);
+    }
+}
+
+/// `analyze fix [--apply] [--tests] [--path PREFIX]...`: rewrites the in-place edits of tracked list vars (`list_mutation`) to the
+/// generated procs. Prints each rewrite (or, with `--apply`, makes it) and the sites it cannot express, which stay for hand conversion.
+pub fn fix_cli(args: &[String], root: &std::path::Path) -> std::process::ExitCode {
+    use std::process::ExitCode;
+    let apply = args.iter().any(|a| a == "--apply");
+    let tests = args.iter().any(|a| a == "--tests");
+    let mut prefixes: Vec<String> = Vec::new();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        if a == "--path" {
+            if let Some(p) = it.next() {
+                prefixes.push(p.replace('\\', "/"));
+            }
+        }
+    }
+    let opts = crate::run::Options { root: root.to_path_buf(), lints: vec![LINT.to_string()], ..Default::default() };
+    let engine = match crate::run::Engine::new(crate::run::registry(), opts) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("analyze fix: {}", e);
+            return ExitCode::from(2);
+        }
+    };
+    let meta = if tests { &META_TESTS } else { &META };
+    let scope = engine.scopes.for_lint(meta.name, meta.group);
+    let cx = Cx { tree: &engine.tree, meta, scope: &scope };
+    let mut tracked: Tracked = BTreeMap::new();
+    for f in cx.all_files() {
+        tracked_from_text_with(f, &mut tracked, tests);
+    }
+    let Some(c) = collect(&cx, &tracked, tests) else {
+        println!("no tracked vars");
+        return ExitCode::SUCCESS;
+    };
+    let (mut fixed, mut left) = (0usize, 0usize);
+    for (f, hits) in c.files.iter().zip(&c.hits) {
+        if !prefixes.is_empty() && !prefixes.iter().any(|p| f.rel.starts_with(p.as_str())) {
+            continue;
+        }
+        let list: Vec<&StoredHit> = hits.iter().filter(|h| h.rule == RULE_LIST).collect();
+        if list.is_empty() {
+            continue;
+        }
+        let path = root.join(&f.rel);
+        let Ok(bytes) = std::fs::read(&path) else { continue };
+        let Ok(text) = String::from_utf8(bytes) else { continue };
+        let mut lines: Vec<String> = text.split('\n').map(|s| s.to_string()).collect();
+        let mut changed = false;
+        for h in list {
+            let Some(line) = lines.get_mut(h.line as usize - 1) else { continue };
+            match &h.fix {
+                Some(fx) if line.get(fx.start as usize..fx.end as usize) == Some(fx.was.as_str()) => {
+                    println!("{}:{}: {}  ->  {}", f.rel, h.line, fx.was, fx.text);
+                    line.replace_range(fx.start as usize..fx.end as usize, &fx.text);
+                    changed = true;
+                    fixed += 1;
+                }
+                _ => {
+                    println!("{}:{}: residue: {}", f.rel, h.line, h.msg);
+                    left += 1;
+                }
+            }
+        }
+        if changed && apply {
+            let _ = std::fs::write(&path, lines.join("\n"));
+        }
+    }
+    println!("{} rewrite(s){}, {} for hand conversion", fixed, if apply { " applied" } else { " (dry run; --apply writes them)" }, left);
+    ExitCode::SUCCESS
+}
+
+#[cfg(test)]
+mod list_mutation_tests {
+    use super::*;
+
+    const DECL: &str = "/obj/box\n\tvar/list/items\n\tvar/list/other\n\tvar/plain = 0\nTRACKED(/obj/box, items)\n";
+
+    /// (line, rule, replacement) of every list hit in `body`, a proc of /obj/box.
+    fn run(body: &str, args: &str) -> Vec<(usize, u8, Option<String>)> {
+        let source = format!("{DECL}/obj/box/proc/probe({args})\n{body}\n");
+        let f = SourceFile::from_text("code/fixture.dm", &source);
+        let mut tracked = Tracked::new();
+        tracked.insert("items".into(), BTreeSet::from(["/obj/box".into()]));
+        let lists = tracked.clone();
+        let pats = build_pats(&tracked).unwrap();
+        let lpats = build_list_pats(&lists);
+        let (hits, _) = scan_one(&tracked, &pats, &lists, lpats.as_ref(), &f, &mut Sink::new(), &BTreeSet::new());
+        let raw: Vec<&str> = source.split('\n').collect();
+        hits.into_iter()
+            .filter(|h| h.rule == RULE_LIST)
+            .map(|h| {
+                let text = h.fix.as_ref().map(|fx| {
+                    let line = raw[h.line - 1];
+                    assert_eq!(&line[fx.start as usize..fx.end as usize], fx.was);
+                    format!("{}{}{}", &line[..fx.start as usize], fx.text, &line[fx.end as usize..])
+                });
+                (h.line, h.rule, text)
+            })
+            .collect()
+    }
+
+    fn fixed(body: &str) -> Option<String> {
+        run(body, "").into_iter().next().and_then(|h| h.2).map(|s| s.trim().to_string())
+    }
+
+    #[test]
+    fn macros_become_the_generated_procs() {
+        assert_eq!(fixed("\tLAZYADD(items, x)").as_deref(), Some("add_items(x)"));
+        assert_eq!(fixed("\tLAZYADD(src.items, make(a, b))").as_deref(), Some("add_items(make(a, b))"));
+        assert_eq!(fixed("\tLAZYREMOVE(items, x)").as_deref(), Some("remove_items(x)"));
+        assert_eq!(fixed("\tLAZYOR(items, x)").as_deref(), Some("include_items(x)"));
+        assert_eq!(fixed("\tLAZYDISTINCTADD(items, x)").as_deref(), Some("include_items(x)"));
+        assert_eq!(fixed("\tLAZYSET(items, k, v)").as_deref(), Some("set_items_at(k, v)"));
+        assert_eq!(fixed("\tLAZYCLEARLIST(items)").as_deref(), Some("clear_items()"));
+    }
+
+    #[test]
+    fn methods_and_index_writes_become_the_generated_procs() {
+        assert_eq!(fixed("\titems.Add(x)").as_deref(), Some("add_items(x)"));
+        assert_eq!(fixed("\titems.Add(a, b)").as_deref(), Some("add_items(list(a, b))"));
+        assert_eq!(fixed("\titems.Remove(x)").as_deref(), Some("remove_items(x)"));
+        assert_eq!(fixed("\titems.Cut()").as_deref(), Some("clear_items()"));
+        assert_eq!(fixed("\titems.Cut(1, 2)").as_deref(), Some("cut_items(1, 2)"));
+        assert_eq!(fixed("\titems.Swap(1, 2)").as_deref(), Some("swap_items(1, 2)"));
+        assert_eq!(fixed("\titems[k] = list(1, 2)").as_deref(), Some("set_items_at(k, list(1, 2))"));
+        assert_eq!(fixed("\titems[a[1]] = v // note").as_deref(), Some("set_items_at(a[1], v) // note"));
+    }
+
+    #[test]
+    fn other_holders_and_other_lists() {
+        let hits = run("\tvar/obj/box/B = new\n\tLAZYADD(B.items, x)\n\tB.items.Remove(y)\n\tLAZYADD(other, x)\n\tvar/items = list()\n\titems.Add(1)", "");
+        assert_eq!(hits.iter().map(|h| h.0).collect::<Vec<_>>(), vec![8, 9], "{:?}", hits);
+        assert_eq!(hits[0].2.as_deref().map(str::trim), Some("B.add_items(x)"));
+    }
+
+    #[test]
+    fn unfixable_forms_are_flagged_without_a_rewrite() {
+        let hits = run("\tvar/n = items.Add(x)\n\titems[k] += 1\n\titems.Insert(1)\n\tif(a) items.Add(x)", "");
+        assert_eq!(hits.len(), 4, "{:?}", hits);
+        assert!(hits.iter().all(|h| h.2.is_none()), "{:?}", hits);
+    }
+
+    #[test]
+    fn reads_and_non_tracked_are_not_hits() {
+        assert!(run("\tvar/n = length(items)\n\tfor(var/i in items)\n\t\tn += i\n\treturn items[1]\n\tif(items.Find(x))\n\t\treturn 1\n\tother.Add(1)", "").is_empty());
     }
 }

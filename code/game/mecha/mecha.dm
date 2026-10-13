@@ -1517,7 +1517,7 @@ READS_AS(/obj/mecha/proc/pilot_of, OCCUPANT_KEY)
 		user.drop_from_inventory(mmi_as_oc)
 		var/mob/brainmob = mmi_occupant
 		// Through the pilot slot (C8 step 2), so it gets the automatic
-		// om_link (occupant, etc.) the same way a human pilot does.
+		// link (occupant, etc.) the same way a human pilot does.
 		if(!move_into(src, MECHA_SLOT_PILOT, brainmob))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove

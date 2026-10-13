@@ -107,9 +107,6 @@ Class Procs:
 	var/tmp/power_seen = TRUE // ALLOW(base_vars): the has_power reading power_change() last acted on, one bit of per-machine memory for flip detection
 	/// A caller forced the machine's power on by hand (stat_remove(NOPOWER) while its area is dark): area_gives_power() says yes. The shim's, not the grid's.
 	var/power_forced = FALSE // ALLOW(base_vars): the manual override of the grid's reading that the stat_remove(NOPOWER) shim writes
-	/// Re-checks power (power_change()) when its area's channels change.
-	/// Lights listen on the reactor key instead.
-	var/power_subscriber = TRUE
 	/// Cache of the real part objects once materialize_parts() has pulled
 	/// them out of the CONTAINER_SLOT_INTERNALS latent entries (roadmap C6):
 	/// null until then. The circuit board is not in this list; see `circuit`.
@@ -151,10 +148,13 @@ CAPABILITIES(/obj/machinery)
 	contributes(STAT_OPERABLE, STAT_INTACT, key = "intact_operable", reason = MSG(machine/inoperable))
 	contributes(STAT_OPERABLE, cond_not(STAT_IN_MAINTENANCE), key = "maint_operable", reason = MSG(machine/inoperable))
 	// The grid's reading: the machine has power while its area's channel is energized (the area's tracked channel vars, one hop through power_area).
-	// The area's channel flip reaches every machine through this read, settled by area.power_change() before the machines are told. A type that
-	// runs on its own supply, or delays its loss, drops this entry by its key and says its own.
+	// The area's channel flip reaches every machine through this read (its generated deps invalidate it). A type that runs on its own supply, or
+	// delays its loss, drops this entry by its key and says its own.
 	contributes(STAT_HAS_POWER, TYPE_PROC_REF(/obj/machinery, area_gives_power), key = "area_power", reason = MSG(power/unpowered), reads = list("power_forced", USES_POWER_KEY, "power_area.requires_power", "power_area.power_equip", "power_area.power_light", "power_area.power_environ"))
 	contributes(STAT_OPERABLE, STAT_HAS_POWER, key = "power_operable")
+	// A flip of has_power, whatever wrote it (the area's channel, an override's contribution, a hold): the machine acts on it. The stat reads the
+	// area's tracked channel vars, so a channel write reaches every machine on it through this hook at the next drain; nothing walks the area.
+	on_change(STAT_HAS_POWER, ANY, then(PROC_REF(has_power_changed)))
 	// The machine's draw is a contribution to its area's demand on the channel it is on (doc/rewrite/power_grid.md): no tally to keep.
 	links(/obj/machinery::power_area, /area::power_machines, b_many = TRUE)
 	when(TYPE_PROC_REF(/obj/machinery, draws_equip), contributes_to(nameof(power_area), STAT_DEMAND_EQUIP, TYPE_PROC_REF(/obj/machinery, power_demand), reads = list("use_power", USES_POWER_KEY)), reads = list(USES_POWER_KEY))
@@ -424,7 +424,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	var/mob/user = A.actor
 	if(!operable())
 		return /datum/msg/machine/not_working
-	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
+	if(user?.lying || user?.stat)
 		return /datum/msg/machine/cant_reach
 	if(!user?.IsAdvancedToolUser())
 		return /datum/msg/machine/no_dexterity
@@ -547,7 +547,6 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break
-			update_icon()
 		RefreshParts()
 		if(parts_replaced)
 			R.play_rped_sound()
@@ -630,7 +629,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.update_desc()
-	A.update_icon()
 	M.atom_deconstruct(TRUE, src) // the board stays in the frame (its CONTAINED circuit)
 	destroyed(src, null, "deconstructed")
 	return 1
@@ -668,7 +666,6 @@ MSG_DEF_SELF(machine/display_disconnecting, "You start disconnecting the monitor
 	if(!flipped)
 		return FALSE
 	PUBLISH_LEGACY(src, /datum/notice/machinery_broken, damage_flag)
-	update_icon()
 	return TRUE
 
 /// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.

@@ -43,11 +43,11 @@
 	hud_of(medic)?.zone_sel.set_selecting(BP_TORSO)
 	var/obj/item/stack/medical/advanced/ointment/kit = allocate(/obj/item/stack/medical/advanced/ointment)
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
-	torso.open = 1
+	torso.set_open(1)
 	var/before = kit.get_amount()
 	TEST_ASSERT_EQUAL(kit.attack(H, medic), ITEM_INTERACT_FAILURE, "a burn kit on a cut-open limb must fail")
 	TEST_ASSERT_EQUAL(kit.get_amount(), before, "no charge is spent on an open limb")
-	torso.open = 0
+	torso.set_open(0)
 
 /// B22: a stab never forces a negative amount in.
 /datum/unit_test/dq_p1_b22_syringe_stab_amount
