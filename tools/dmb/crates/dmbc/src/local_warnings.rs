@@ -18,6 +18,8 @@ use rayon::prelude::*;
 /// One physical line of significant tokens: (kind, text, offset in body).
 pub(crate) struct Line<'a> {
     pub indent: usize,
+    /// The leading whitespace as authored (tabs and spaces).
+    pub indent_text: &'a str,
     /// Starts inside an open bracket: a continuation of the previous line,
     /// whose indentation carries no block structure.
     pub continuation: bool,
@@ -29,6 +31,7 @@ pub(crate) fn significant_lines(source: &str) -> Vec<Line<'_>> {
     let lexed = dm_syntax::lex_spans(source);
     let mut lines = vec![Line {
         indent: 0,
+        indent_text: "",
         continuation: false,
         tokens: Vec::new(),
     }];
@@ -39,6 +42,7 @@ pub(crate) fn significant_lines(source: &str) -> Vec<Line<'_>> {
             TokenKind::Newline => {
                 lines.push(Line {
                     indent: 0,
+                    indent_text: "",
                     continuation: depth > 0,
                     tokens: Vec::new(),
                 });
@@ -46,7 +50,9 @@ pub(crate) fn significant_lines(source: &str) -> Vec<Line<'_>> {
             }
             TokenKind::Whitespace => {
                 if at_line_start {
-                    lines.last_mut().expect("line").indent = token.span.range().len();
+                    let line = lines.last_mut().expect("line");
+                    line.indent = token.span.range().len();
+                    line.indent_text = token.text(source);
                 }
             }
             TokenKind::Comment => {}
@@ -173,6 +179,16 @@ fn embeds(text: &str, name: &str) -> bool {
 
 /// Offsets (in body text) of locals declared but never read.
 pub(crate) fn unused_locals(source: &str, shared_field: &SharedField<'_>) -> Vec<(String, usize)> {
+    unused_locals_typed(source, shared_field, &|_| true)
+}
+
+/// As `unused_locals`; a local whose declared type does not exist is never
+/// used (DreamMaker rejects each read of it).
+pub(crate) fn unused_locals_typed(
+    source: &str,
+    shared_field: &SharedField<'_>,
+    known_type: &(dyn Fn(&str) -> bool + Sync),
+) -> Vec<(String, usize)> {
     let lines = significant_lines(source);
     let mut unused = Vec::new();
     // Line 0 is the procedure header; parameters are not locals.
@@ -205,18 +221,62 @@ pub(crate) fn unused_locals(source: &str, shared_field: &SharedField<'_>) -> Vec
             .iter()
             .position(|token| token.1 == ";")
             .is_some_and(|end| reads(&line.tokens, end + 1));
-        let used = same_line
-            || lines[number + 1..]
+        let undefined = declared_type
+            .as_deref()
+            .is_some_and(|path| !path.starts_with("/list") && !known_type(path));
+        let used = !undefined
+            && (same_line
+                || lines[number + 1..]
                 .iter()
                 .take_while(|later| {
                     later.tokens.is_empty() || later.continuation || later.indent >= line.indent
                 })
-                .any(|later| reads(&later.tokens, 0));
+                .any(|later| reads(&later.tokens, 0)));
         if !used {
             unused.push((name.to_owned(), offset));
         }
     }
     unused
+}
+
+/// `if(x = 1)` / `while(x = 1)`: a plain assignment as the whole condition.
+pub(crate) fn accidental_assignments(source: &str) -> Vec<usize> {
+    let mut found = Vec::new();
+    for line in significant_lines(source).iter().skip(1) {
+        if line.continuation {
+            continue;
+        }
+        let tokens = &line.tokens;
+        let start = match tokens.iter().map(|token| token.1).collect::<Vec<_>>().as_slice() {
+            ["if" | "while", "(", ..] => 1,
+            ["else", "if", "(", ..] => 2,
+            _ => continue,
+        };
+        let mut depth = 0usize;
+        for index in start..tokens.len() {
+            match tokens[index].1 {
+                "(" | "[" | "{" => depth += 1,
+                ")" | "]" | "}" => {
+                    depth = depth.saturating_sub(1);
+                    if depth == 0 {
+                        break;
+                    }
+                }
+                "=" if depth == 1 => {
+                    let previous = tokens[index - 1];
+                    let operator_before = previous.0 == TokenKind::Operator
+                        && previous.2 + previous.1.len() == tokens[index].2;
+                    let equals_after = tokens.get(index + 1).is_some_and(|next| next.1 == "=");
+                    if !operator_before && !equals_after {
+                        found.push(line.tokens[0].2);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    found
 }
 
 /// Current `unused_var` warnings in authored body order.
@@ -233,27 +293,67 @@ pub(crate) fn capture(
     };
     let mut bodies: Vec<&BodyOccurrence> = frontend.bodies.iter().collect();
     bodies.sort_by_key(|body| (body.source.encounter_ordinal, body.expanded_span.start));
-    let found: Vec<Vec<(String, usize)>> = bodies
+    let found: Vec<Vec<(WarningCode, Option<String>, usize)>> = bodies
         .par_iter()
         .map(|body| {
             frontend
                 .body_input(body)
-                .map(|input| unused_locals(input.source(), &shared_field))
+                .map(|input| {
+                    let source = input.source();
+                    let mut found: Vec<_> = accidental_assignments(source)
+                        .into_iter()
+                        .map(|offset| (WarningCode::AccidentalAssign, None, offset))
+                        .collect();
+                    found.extend(
+                        unused_locals_typed(source, &shared_field, &|path| {
+                            crate::source_checks::known_type(tree, path)
+                        })
+                            .into_iter()
+                            .map(|(name, offset)| (WarningCode::UnusedVar, Some(name), offset)),
+                    );
+                    found
+                })
                 .unwrap_or_default()
         })
         .collect();
-    let mut warnings = Vec::new();
-    for (body, unused) in bodies.iter().zip(found) {
-        for (name, offset) in unused {
+    // `#warn` directives in active code come first, as DreamMaker reports
+    // them while preprocessing.
+    let mut warnings: Vec<InitializerWarning> = frontend
+        .plan
+        .warnings
+        .iter()
+        .map(|warning| {
+            let semantic_path = frontend
+                .plan
+                .occurrences
+                .iter()
+                .find(|occurrence| *occurrence.path == warning.path)
+                .map_or_else(
+                    || std::sync::Arc::from(warning.path.to_string_lossy().as_ref()),
+                    |occurrence| occurrence.semantic_path.clone(),
+                );
+            InitializerWarning {
+                source_ordinal: 0,
+                code: WarningCode::WarnDirective,
+                name: Some(warning.message.clone()),
+                location: WarningLocation {
+                    semantic_path,
+                    line: Some(warning.line),
+                },
+            }
+        })
+        .collect();
+    for (body, found) in bodies.iter().zip(found) {
+        for (code, name, offset) in found {
             let location = frontend
                 .location(body.expanded_span.start + offset)
                 .ok_or_else(|| {
-                    InitializerLoweringError::Invariant("unused local has no source origin".into())
+                    InitializerLoweringError::Invariant("local warning has no source origin".into())
                 })?;
             warnings.push(InitializerWarning {
                 source_ordinal: location.encounter_ordinal,
-                code: WarningCode::UnusedVar,
-                name: Some(name),
+                code,
+                name,
                 location: WarningLocation::from(location),
             });
         }
@@ -267,6 +367,20 @@ mod tests {
     fn names(source: &str) -> Vec<String> {
         let shared = |owner: &str, field: &str| owner == "/datum/svc" && field == "table";
         unused_locals(source, &shared).into_iter().map(|(name, _)| name).collect()
+    }
+    #[test]
+    fn accidental_assignment_is_top_level_only() {
+        let source = "/proc/a(x)
+	while(x = 1)
+		return
+	if((x = 2))
+		return
+	if(x <= 7 || x != 7)
+		return
+	else if(x = 5)
+		return
+";
+        assert_eq!(super::accidental_assignments(source).len(), 2);
     }
     #[test]
     fn shared_field_reads_and_ternaries_follow_dreammaker() {

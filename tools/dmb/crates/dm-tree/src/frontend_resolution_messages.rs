@@ -78,7 +78,7 @@ pub(super) fn resolution_message(error: &SnapshotError, symbols: &SymbolTable) -
             MemberKind::Proc | MemberKind::Verb => format!("{}: undefined proc", text(name)),
         },
         SnapshotError::Tree(crate::TreeError::MissingParent(path)) => {
-            format!("{}: undefined type path", text(path))
+            format!("{}: invalid parent type", text(path))
         }
         SnapshotError::Tree(crate::TreeError::ConflictingParent(path)) => {
             format!("{}: conflicting parent type", text(path))

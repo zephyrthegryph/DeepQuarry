@@ -215,7 +215,7 @@ fn native_invalid_return_blocks_stop_before_skeleton_compaction() {
             assert!(parsed
                 .diagnostics
                 .iter()
-                .any(|diagnostic| diagnostic.kind == DiagnosticKind::Unsupported
+                .any(|diagnostic| diagnostic.kind == DiagnosticKind::Statement
                     && diagnostic.message == RETURN_BLOCK_UNSUPPORTED));
         }
         fn find(items: &[Item]) -> Option<&Item> {

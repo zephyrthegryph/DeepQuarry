@@ -1,0 +1,3 @@
+list_unclosed.dm:3:error: return: missing comma ',' or right-paren ')'
+list_unclosed.dm:3:error: return: expected end of statement
+list_unclosed.dmb - 2 errors, 0 warnings

@@ -356,6 +356,14 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                     *kind,
                     message.clone(),
                 ),
+                directive_memo::Action::Warning { input, message } => self.warn(
+                    occurrence,
+                    lines
+                        .get(*input)
+                        .expect("recorded directive input outside range")
+                        .source_line,
+                    message.clone(),
+                ),
             }
         }
         self.conditionals = record.outgoing().to_vec();
@@ -510,6 +518,22 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
         });
     }
 
+    /// DreamMaker prints `#warn` text as a warning and keeps compiling.
+    fn warn(&mut self, occurrence: usize, line: usize, message: String) {
+        if let Some(recording) = self.recording.as_mut() {
+            recording.actions.push(directive_memo::Action::Warning {
+                input: recording.current,
+                message: message.clone(),
+            });
+        }
+        self.plan.warnings.push(Diagnostic {
+            path: self.plan.occurrences[occurrence].path.as_ref().clone(),
+            line,
+            kind: DiagnosticKind::UserError,
+            message,
+        });
+    }
+
     fn begin_region(&mut self, occurrence: usize, start: usize) -> usize {
         let index = self.plan.regions.len();
         self.plan.regions.push(IncludeRegion {
@@ -607,6 +631,12 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                                 .unwrap_or(&semantic)
                                 .to_string_lossy()
                                 .into_owned();
+                            // DreamMaker prints the operand with the host separator.
+                            let spelling = if cfg!(windows) {
+                                spelling.replace('/', "\\")
+                            } else {
+                                spelling
+                            };
                             self.error(
                                 parent,
                                 line,
@@ -829,7 +859,22 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                         }
                     }
                 }
-                "warning" | "warn" | "" => {}
+                "warning" | "warn" => self.warn(
+                    occurrence,
+                    source_line,
+                    format!("#{word} {}", rest.trim()),
+                ),
+                "" => {}
+                // DreamMaker rejects a directive it does not know; one it knows
+                // but the native planner does not implement stays unsupported.
+                other if !matches!(other, "define" | "undef" | "include" | "if" | "ifdef"
+                    | "ifndef" | "elif" | "else" | "endif" | "error" | "warn" | "warning"
+                    | "pragma") => self.error(
+                    occurrence,
+                    source_line,
+                    DiagnosticKind::Directive,
+                    format!("unknown directive {other}"),
+                ),
                 other => self.error(
                     occurrence,
                     source_line,
@@ -850,7 +895,7 @@ impl<P: SourceProvider> DirectivePass<'_, P> {
                 occurrence,
                 line_number + 1,
                 DiagnosticKind::Conditional,
-                "unterminated #if block".into(),
+                "still skipping code at end of file (possibly an unclosed #if/#ifdef/#ifndef)".into(),
             );
         }
         // Issue recovery boundaries from the SAME completed logical-line plan.

@@ -1,0 +1,2 @@
+while_missing_cond.dm:2:error: while: invalid expression
+while_missing_cond.dmb - 1 error, 0 warnings

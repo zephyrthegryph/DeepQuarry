@@ -169,13 +169,9 @@ fn expand_mode_disabled_traced<'a>(
                     }
                     let required = params.len() - usize::from(def.variadic);
                     if args.len() < required || (!def.variadic && args.len() != required) {
-                        return Err(format!(
-                            "macro {} expects {}{} arguments, got {}",
-                            token_text,
-                            required,
-                            if def.variadic { " or more" } else { "" },
-                            args.len()
-                        ));
+                        // DreamMaker's wording; the count detail is not part of it.
+                        let _ = (token_text, required);
+                        return Err("incorrect number of macro arguments".into());
                     }
                     let args = if def.variadic {
                         let mut packed = args[..required].to_vec();
@@ -610,5 +606,5 @@ fn parse_arguments(
             _ => value.push_str(token.text(source)),
         }
     }
-    Err("unterminated macro invocation".into())
+    Err("missing ) in macro call".into())
 }
