@@ -29,7 +29,8 @@
 	refresh_flush()
 	wait_ticks(round((GC_FILTER_QUEUE + 2) / world.tick_lag) + 1)
 	refresh_flush()
-	for(var/i in 1 to 20)
+	// Earlier tests' garbage may sit ahead of ours and a pass stops when the tick is over budget: keep passing until ours is through.
+	for(var/i in 1 to 400)
 		SSgarbage.HandleQueue(GC_QUEUE_FILTER)
 		if(!dq_gc_sweep_pending(deleted, GC_QUEUE_FILTER))
 			break
