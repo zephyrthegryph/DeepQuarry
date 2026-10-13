@@ -301,7 +301,10 @@
 	. = rel_view_set(E, var_name, value)
 	activations_relation_changed(E, var_name)
 
-/// Adds one member. `key` puts it under a key in an associative owns_many.
+/// Adds one member. `key` puts it under a key in a keyed many (owns_many or ref_many): a text key in a plain list, or a number or text in an alist
+/// (a number is an index in a plain list, so a numeric key makes an alist). A null `value` with a key empties that key. A member may sit under
+/// several keys; rel_remove() takes it from all of them. The var is a plain list (ordered), an alist set (`var/alist/x = alist()`, membership and
+/// removal in constant time) or an alist map (keyed): see code/engine/refs/members.dm.
 /proc/rel_add(datum/E, var_name, datum/value, key = null)
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
@@ -309,7 +312,7 @@
 	var/list_state = list_state_of(E, var_name)
 	if(list_state)
 		return list_state_add(E, var_name, value, key, list_state)
-	return rel_view_add(E, var_name, value)
+	return rel_view_add(E, var_name, value, key)
 
 /// Drops one member; an owned member is disposed of by on_destroy (rel_take keeps it).
 /proc/rel_remove(datum/E, var_name, datum/value)
@@ -338,7 +341,7 @@
 	var/list/entry = own_table_of(E).entries[var_name]
 	if(entry && entry[OWNE_LIST])
 		return TRUE
-	return islist(E.vars[var_name]) || !isnull(list_state_of(E, var_name))
+	return REL_LISTLIKE(E.vars[var_name]) || !isnull(list_state_of(E, var_name))
 
 /// Detaches one value without disposing of it and returns it unowned. On a many, `member` picks one and `key` one keyed member. A many with neither
 /// (a null member or key included: DM cannot tell "omitted" from "passed null") detaches NOTHING and returns null: taking everything is
