@@ -326,6 +326,24 @@ GLOBAL_VAR_INIT(unit_test_block_pool_growing, FALSE)
 
 	return focused_tests.len > 0 ? focused_tests : null
 
+/// TRUE when boot work `need` (a BOOT_NEED_* define) may be skipped in this world: a focused run whose every selected test declared
+/// boot_needs without it. Null boot_needs means "needs everything", so one undeclared test keeps the work. The full suite never skips.
+/// Skips are logged by the caller with unit_test_boot_skipped().
+/proc/unit_test_boot_skips(need)
+	if(!unit_test_is_focused_run())
+		return FALSE
+	for(var/datum/unit_test/test_type as anything in GLOB.focused_tests)
+		var/list/declared = initial(test_type.boot_needs)
+		if(isnull(declared) || (need in declared))
+			return FALSE
+	return TRUE
+
+/// Logs, loudly, that focused-run boot work `need` was skipped and why.
+/proc/unit_test_boot_skipped(need, what)
+	var/line = "BOOT DEFERRED: [what] skipped in this focused run: every selected test declares boot_needs without \"[need]\" (full suite and gates keep it)"
+	log_world(line)
+	log_test(line)
+
 /// TRUE when this unit-test world runs only TEST_FOCUS tests
 /// (tools/dq_focused_test.sh). Focused runs skip boot and shutdown waits that
 /// only matter for the full suite; see "Focused runs" in doc/testing.md.
@@ -461,6 +479,9 @@ GLOBAL_VAR(dq_test_select_names)
 	/// Set by an E0 proof's gate when it failed because an engine piece (E1-E6) does not exist yet: the run reports it as pending,
 	/// separately from a proof that failed for any other reason (doc/testing.md "The E0 proofs").
 	var/pending_engine = FALSE
+	/// The BOOT_NEED_* boot work this test relies on (code/__defines/_boot_needs.dm). Null = all of it (the safe default); a focused
+	/// world skips a piece of boot work only when every selected test lists boot_needs without it. list() = needs none.
+	var/list/boot_needs = null
 	/// Curated entries sweep_types() actually found (see curated_types()).
 	var/list/curated_matched
 	//internal shit

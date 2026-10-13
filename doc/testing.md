@@ -106,6 +106,23 @@ them can hide a failure in the full suite, which still does all of them:
 
 `unit_test_is_focused_run()` is the switch; add a row here if you add another.
 
+### Boot work a focused run defers (`boot_needs`)
+
+A test sets `boot_needs = list(BOOT_NEED_...)` (`code/__defines/_boot_needs.dm`) to name the boot work it reads. The default,
+null, means "needs all of it". A focused world skips a piece of work only when **every** selected test declared a list that
+leaves it out (`unit_test_boot_skips()`), and logs `BOOT DEFERRED: ...` to `runtime.log` and `tests.log` for each skip. The
+full suite, the merge gates and production never skip any of it. A test that starts needing one of these adds it to its list.
+
+| Token | Skipped work | If a test needs it |
+|---|---|---|
+| `BOOT_NEED_OWN_VALIDATE` | `own_validate_boot()` (the full suite still reports declaration conflicts at boot) | ownership tables build on first use |
+| `BOOT_NEED_EARLY_ASSETS` | Early Assets system | `get_asset_datum()` builds each on first use |
+| `BOOT_NEED_LIGHTING` | `create_all_lighting_objects()`; Lighting stays uninitialized | list it for any test reading light, luminosity or lighting objects |
+| `BOOT_NEED_RADIO` | `GLOB.autospeaker` | list it for any test that announces or speaks on radio |
+| `BOOT_NEED_HOLOMAPS` | holo minimap generation | list it for any test reading `SSholomaps` |
+
+Static entries are deliberately not deferrable: the map load itself resolves `map_resolver` and loot entries through them.
+
 Compile time is not reduced: `dm-test` never runs DreamChecker (only `dm` and
 `lint` do), and the icon repack and Verdigris build are already skipped when
 nothing they read has changed. Boot before `world/New` (about 19 s, DreamDaemon
