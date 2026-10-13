@@ -31,17 +31,18 @@ pub(super) fn admitted(
     batch: Option<&abi_artifacts::batch::Inputs>,
     keys: &Mutex<Vec<Arc<[u8]>>>,
     capture: Option<&abi_artifacts::batch::Capture>,
-) -> BTreeMap<usize, crate::procedure_policy::PreparedUnit> {
+) -> Admitted {
     let Some(batch) = batch else {
-        return BTreeMap::new();
+        return Admitted::default();
     };
     let Ok(roster) = frontend.callable_roster() else {
-        return BTreeMap::new();
+        return Admitted::default();
     };
     store.store.enable_incidence();
+    let collect_stage = dm_profile::stage("abi.sched.collect");
     let mut candidates = BTreeMap::new();
     let Ok(Some(current_roster)) = frontend.callable_abi_roster() else {
-        return BTreeMap::new();
+        return Admitted::default();
     };
     let entries = current_roster.entries();
     // The existing batch is a source of candidates, never an admission verdict.
@@ -119,6 +120,9 @@ pub(super) fn admitted(
         }
     }
 
+    drop(collect_stage);
+    dm_profile::request_mark("abi.sched.collected");
+    let validate_stage = dm_profile::stage("abi.sched.validate");
     let inherited = DriverInheritedFacts {
         frontend,
         engine,
@@ -126,26 +130,38 @@ pub(super) fn admitted(
         boundaries,
         unit_members: index,
     };
-    let mut qualified = admission.map(|request| {
+    // The incidence-qualified roster walks every retained receipt (~3 s on
+    // DeepQuarry); full per-row validation below costs a fraction of that.
+    // DMB_ABI_QUALIFIED_ROSTER=1 restores it.
+    let use_qualified = std::env::var_os("DMB_ABI_QUALIFIED_ROSTER").is_some_and(|value| value == "1");
+    let mut qualified = admission.filter(|_| use_qualified).map(|request| {
         store
             .store
             .unchanged_local_candidate_roster(request, Domain::Inputs)
     });
+    dm_profile::request_mark("abi.sched.qualified_roster");
     let mut qualified_ordinals = BTreeSet::new();
     let mut accepted = BTreeMap::new();
     let mut dirty = BTreeSet::new();
     // The shared incidence subscription capability selects qualified candidates.
     // Do not rebuild a second coarse domain-delta hint by walking every unit's
     // version array. Uncovered rows still replay their exact current receipts.
-    for (ordinal, entry) in entries.iter().enumerate() {
+    // Decline reasons: no candidate, predecessor lookup, predecessor moved,
+    // inherited admission, changed receipt read.
+    let mut reasons = [0usize; 5];
+    let validate_full = |ordinal: usize, entry: &dm_tree::frontend::CallableAbiEntry| -> Result<Candidate, usize> {
         let identity = identity(entry.identity);
         let key = abi_artifacts::observations::locator(identity);
         let candidate = candidates.get(&key);
-        let valid = (|| {
-            let candidate = candidate?;
-            let predecessor = inherited.source_predecessor(entry.member).ok()?;
+        let _ = &key;
+            let Some(candidate) = candidate else {
+                return Err(0);
+            };
+            let Ok(predecessor) = inherited.source_predecessor(entry.member) else {
+                return Err(1);
+            };
             if predecessor != entry.predecessor {
-                return None;
+                return Err(2);
             }
             let context = AbiContext {
                 identity,
@@ -153,7 +169,79 @@ pub(super) fn admitted(
                 origin: &frontend.bodies[ordinal].source,
                 resolver: evaluator.resolver,
             };
+            let structural_stage = dm_profile::stage("abi.sched.structural");
             let structural = abi_artifacts::observations::structural_inputs(frontend, entry.member);
+            drop(structural_stage);
+            let current = Current {
+                inputs: Arc::new(Inputs {
+                    definition: structural.as_ref().map(|(definition, _)| *definition),
+                    ancestry: structural.map(|(_, ancestry)| ancestry),
+                    metadata: entry.metadata.clone(),
+                    predecessor: predecessor.and_then(|id| layouts.get(&id).cloned()),
+                    engine: batch.engine.clone(),
+                    boundary: abi_artifacts::observations::Boundary::capture(
+                        boundaries.get(&identity),
+                    ),
+                    resource,
+                    evaluation_resource: evaluator.resource_search_context,
+                    lexical,
+                    pure_policy: batch.pure_policy,
+                }),
+                resolver: evaluator.resolver,
+            };
+            // Unissued, observing or uncovered candidates retain full validation.
+            let inherited_stage = dm_profile::stage("abi.sched.inherited");
+            if inherited.inherited(&context).is_err() {
+                return Err(3);
+            }
+            drop(inherited_stage);
+            let _changed_stage = dm_profile::stage("abi.sched.changed");
+            if abi_artifacts::admission::changed(
+                &candidate.reads,
+                &candidate.versions,
+                &current,
+                admission,
+            )
+            .is_some()
+            {
+                return Err(4);
+            }
+            Ok(candidate.clone())
+    };
+    // Without the qualified roster every row takes full, independent
+    // validation: run it on the worker pool, then merge in roster order.
+    let parallel: Option<Vec<Result<Candidate, usize>>> = qualified.is_none().then(|| {
+        entries
+            .par_iter()
+            .enumerate()
+            .map(|(ordinal, entry)| validate_full(ordinal, entry))
+            .collect()
+    });
+    for (ordinal, entry) in entries.iter().enumerate() {
+        let identity = identity(entry.identity);
+        let key = abi_artifacts::observations::locator(identity);
+        let candidate = candidates.get(&key);
+        let valid = if let Some(results) = &parallel {
+            results[ordinal].clone()
+        } else { (|| {
+            let Some(candidate) = candidate else {
+                return Err(0);
+            };
+            let Ok(predecessor) = inherited.source_predecessor(entry.member) else {
+                return Err(1);
+            };
+            if predecessor != entry.predecessor {
+                return Err(2);
+            }
+            let context = AbiContext {
+                identity,
+                symbols: evaluator.symbols,
+                origin: &frontend.bodies[ordinal].source,
+                resolver: evaluator.resolver,
+            };
+            let structural_stage = dm_profile::stage("abi.sched.structural");
+            let structural = abi_artifacts::observations::structural_inputs(frontend, entry.member);
+            drop(structural_stage);
             let current = Current {
                 inputs: Arc::new(Inputs {
                     definition: structural.as_ref().map(|(definition, _)| *definition),
@@ -188,13 +276,18 @@ pub(super) fn admitted(
                     ) {
                         if let Artifact::Unit(unit) = artifact.value.as_ref() {
                             qualified_ordinals.insert(ordinal);
-                            return Some(Candidate { unit: unit.clone(), reads: artifact.reads, versions: artifact.versions });
+                            return Ok(Candidate { unit: unit.clone(), reads: artifact.reads, versions: artifact.versions });
                         }
                     }
                 }
             }
             // Unissued, observing or uncovered candidates retain full validation.
-            inherited.inherited(&context).ok()?;
+            let inherited_stage = dm_profile::stage("abi.sched.inherited");
+            if inherited.inherited(&context).is_err() {
+                return Err(3);
+            }
+            drop(inherited_stage);
+            let _changed_stage = dm_profile::stage("abi.sched.changed");
             if abi_artifacts::admission::changed(
                 &candidate.reads,
                 &candidate.versions,
@@ -203,16 +296,22 @@ pub(super) fn admitted(
             )
             .is_some()
             {
-                return None;
+                return Err(4);
             }
-            Some(candidate.clone())
-        })();
-        if let Some(candidate) = valid {
-            accepted.insert(ordinal, candidate);
-        } else {
-            dirty.insert(ordinal);
+            Ok(candidate.clone())
+        })() };
+        match valid {
+            Ok(candidate) => {
+                accepted.insert(ordinal, candidate);
+            }
+            Err(reason) => {
+                reasons[reason] += 1;
+                dirty.insert(ordinal);
+            }
         }
     }
+    drop(validate_stage);
+    dm_profile::request_mark("abi.sched.validated");
     // Immediate edges retain failure blocking. Formal edges separately carry
     // selected inherited layouts across intervening nonformal overrides.
     let mut formal = vec![Vec::new(); entries.len()];
@@ -221,6 +320,7 @@ pub(super) fn admitted(
             formal[parent].push(ordinal);
         }
     }
+    let dirty_roots_len = dirty.len();
     let mut pending: Vec<_> = dirty.iter().copied().collect();
     while let Some(ordinal) = pending.pop() {
         for &child in roster
@@ -233,38 +333,118 @@ pub(super) fn admitted(
             }
         }
     }
-    accepted.retain(|ordinal, _| !dirty.contains(ordinal));
-    accepted
+    // Individually valid rows that are dirty only through an ancestor stay
+    // provisional: the wave loop accepts one once every direct parent's final
+    // ABI equals the candidate layout this row was validated against.
+    let tree = &frontend.snapshot.tree;
+    let mut provisional = BTreeMap::new();
+    let mut accepted_now = BTreeMap::new();
+    let dirty_roots = dirty_roots_len;
+    for (ordinal, candidate) in accepted {
+        if dirty.contains(&ordinal) {
+            let member = entries[ordinal].member;
+            provisional.insert(
+                ordinal,
+                Provisional {
+                    candidate,
+                    qualified: qualified_ordinals.contains(&ordinal),
+                    identity: identity(entries[ordinal].identity),
+                    parents: [
+                        tree.member(member).and_then(|node| node.previous),
+                        entries[ordinal].predecessor,
+                    ],
+                },
+            );
+        } else {
+            accepted_now.insert(ordinal, candidate);
+        }
+    }
+    crate::daemon_eprintln!(
+        "native ABI schedule: entries={} candidates={} accepted={} dirty_roots={} propagated_provisional={} dirty_total={} declines(no_candidate,predecessor_lookup,predecessor_moved,inherited,changed)={:?}",
+        entries.len(),
+        candidates.len(),
+        accepted_now.len(),
+        dirty_roots,
+        provisional.len(),
+        dirty.len(),
+        reasons
+    );
+    let accepted = accepted_now
         .into_iter()
         .map(|(ordinal, candidate)| {
-            if qualified_ordinals.contains(&ordinal) {
-                store
-                    .qualified_reused
-                    .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            }
-            let unit = &candidate.unit;
+            let qualified = qualified_ordinals.contains(&ordinal);
             let identity = identity(entries[ordinal].identity);
-            keys.lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .push(abi_artifacts::observations::locator(identity));
-            abi_artifacts::batch::record(capture, identity, unit, &candidate.reads);
-            store
-                .scheduled_reused
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            store
-                .reused
-                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            (
-                ordinal,
-                crate::procedure_policy::PreparedUnit {
-                    canonical: unit.canonical.clone(),
-                    inputs: unit.inputs.clone(),
-                    abi: Some(unit.abi.clone()),
-                    executable_body: Vec::new(),
-                },
-            )
+            (ordinal, finish(store, keys, capture, identity, &candidate, qualified))
         })
-        .collect()
+        .collect();
+    Admitted {
+        accepted,
+        provisional,
+        candidate_layouts: layouts,
+    }
+}
+
+/// Scheduler verdicts for this request (see [`admitted`]).
+#[derive(Default)]
+pub(super) struct Admitted {
+    pub(super) accepted: BTreeMap<usize, crate::procedure_policy::PreparedUnit>,
+    pub(super) provisional: BTreeMap<usize, Provisional>,
+    /// The retained candidate layout per member that validation compared with.
+    pub(super) candidate_layouts: HashMap<MemberId, Arc<PreparedAbi>>,
+}
+
+pub(super) struct Provisional {
+    candidate: Candidate,
+    qualified: bool,
+    identity: UnitIdentity,
+    /// Immediate (`previous`) and formal predecessor members.
+    pub(super) parents: [Option<MemberId>; 2],
+}
+
+impl Provisional {
+    pub(super) fn accept(
+        &self,
+        store: &AbiArtifacts,
+        keys: &Mutex<Vec<Arc<[u8]>>>,
+        capture: Option<&abi_artifacts::batch::Capture>,
+    ) -> crate::procedure_policy::PreparedUnit {
+        store
+            .provisional_reused
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        finish(store, keys, capture, self.identity, &self.candidate, self.qualified)
+    }
+}
+
+fn finish(
+    store: &AbiArtifacts,
+    keys: &Mutex<Vec<Arc<[u8]>>>,
+    capture: Option<&abi_artifacts::batch::Capture>,
+    identity: UnitIdentity,
+    candidate: &Candidate,
+    qualified: bool,
+) -> crate::procedure_policy::PreparedUnit {
+    if qualified {
+        store
+            .qualified_reused
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    let unit = &candidate.unit;
+    keys.lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push(abi_artifacts::observations::locator(identity));
+    abi_artifacts::batch::record(capture, identity, unit, &candidate.reads);
+    store
+        .scheduled_reused
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    store
+        .reused
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    crate::procedure_policy::PreparedUnit {
+        canonical: unit.canonical.clone(),
+        inputs: unit.inputs.clone(),
+        abi: Some(unit.abi.clone()),
+        executable_body: Vec::new(),
+    }
 }
 fn identity(value: dm_ir::ProcedureIdentity) -> UnitIdentity {
     UnitIdentity {

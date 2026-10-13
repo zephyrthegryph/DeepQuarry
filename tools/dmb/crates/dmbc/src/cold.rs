@@ -294,6 +294,7 @@ pub(crate) fn prepare_captured_classified_with_pinned_abi_memo_revision<R: Resol
             memo.and_then(|memo| memo.abi.as_deref()),
         )
         .map_err(|error| ColdError::AbiPreparation(error.to_string()))?;
+    dm_profile::request_mark("cold.abi_units_prepared");
     if !prepared.prepared.diagnostics.is_empty() {
         return Err(ColdError::Lowering(
             crate::driver_facts::abi_diagnostics(frontend, &prepared.prepared)

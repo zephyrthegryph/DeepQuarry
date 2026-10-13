@@ -154,6 +154,7 @@ pub(in crate::driver_facts) fn replay(
     let Artifact::Batch(recipe) = artifact.as_ref() else {
         return None;
     };
+    dm_profile::request_mark("abi.batch_receipt_admitted");
     let members = match current_members {
         Some(members) => members.clone(),
         None => Arc::new(super::super::unit_members(frontend).ok()?),
@@ -175,6 +176,7 @@ pub(in crate::driver_facts) fn replay(
     };
     *binding = Some(units.clone());
     drop(binding);
+    dm_profile::request_mark("abi.batch_rebound");
     store.prune_keys(recipe.retained_keys());
     store
         .reused

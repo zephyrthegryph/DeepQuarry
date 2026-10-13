@@ -11,5 +11,54 @@
     "path": "code/datums/weakrefs.dm",
     "before": "/datum/weakref\n\tvar/reference",
     "after": "/datum/weakref\n\tvar/tmp/dmb_leaf_iteration_marker = 1\n\tvar/reference"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "default",
+    "path": "code/datums/weakrefs.dm",
+    "before": "dmb_leaf_iteration_marker = 1",
+    "after": "dmb_leaf_iteration_marker = 2"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "new_proc",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/tmp/dmb_leaf",
+    "after": "/datum/weakref/proc/dmb_iteration_probe()\n\treturn 1\n\n/datum/weakref\n\tvar/tmp/dmb_leaf"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "removed_proc",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref/proc/dmb_iteration_probe()\n\treturn 1\n\n",
+    "after": ""
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "removed_var",
+    "path": "code/datums/weakrefs.dm",
+    "before": "\tvar/tmp/dmb_leaf_iteration_marker = 2\n",
+    "after": ""
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "new_type",
+    "path": "code/datums/weakrefs.dm",
+    "before": "/datum/weakref\n\tvar/reference",
+    "after": "/datum/dmb_iteration_probe_type\n\tvar/probe_value = 1\n\n/datum/weakref\n\tvar/reference"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "define",
+    "path": "code/__defines/misc.dm",
+    "before": "#define MAX_MESSAGE_LEN       4096",
+    "after": "#define MAX_MESSAGE_LEN       4097"
+  },
+  {
+    "kind": "structural",
+    "structural_kind": "map",
+    "path": "maps/southern_cross/southern_cross-transit.dmm",
+    "before": "\"ad\" = (\n/obj/effect/step_trigger/thrower{\n\taffect_ghosts = 1;\n\tdirection = 2;\n\tname = \"thrower_throwdown\";",
+    "after": "\"ad\" = (\n/obj/effect/step_trigger/thrower{\n\taffect_ghosts = 1;\n\tdirection = 2;\n\tname = \"thrower_throwdown2\";"
   }
 ]

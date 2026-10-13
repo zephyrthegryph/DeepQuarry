@@ -472,6 +472,7 @@ fn prepare_source_abi_mode_on_executor(
     issued_units: Option<&Arc<BTreeMap<UnitIdentity, MemberId>>>,
     artifacts: Option<&AbiArtifacts>,
 ) -> Result<PreparedSourceAbi, AbiError> {
+    let batch_stage = dm_profile::stage("abi.batch.inputs");
     let batch_inputs = artifacts.and_then(|store| {
         abi_artifacts::batch::inputs(
             store,
@@ -483,13 +484,23 @@ fn prepare_source_abi_mode_on_executor(
             lexical_statics,
         )
     });
-    if let (Some(store), Some(inputs)) = (artifacts, batch_inputs.as_ref()) {
+    drop(batch_stage);
+    dm_profile::request_mark("abi.batch_inputs");
+    let _replay_stage = dm_profile::stage("abi.batch.replay");
+    // Whole-batch replay validates the union of every unit's reads in one
+    // sequential receipt (~3.2 s on DeepQuarry, hit or miss); the per-unit
+    // scheduler below admits the same retained rows in ~0.5 s. Opt in with
+    // DMB_ABI_BATCH_REPLAY=1.
+    let batch_replay = std::env::var_os("DMB_ABI_BATCH_REPLAY").is_some_and(|value| value == "1");
+    if let (true, Some(store), Some(inputs)) = (batch_replay, artifacts, batch_inputs.as_ref()) {
         if let Some(prepared) =
             abi_artifacts::batch::replay(store, inputs, evaluator.resolver, frontend, issued_units)
         {
             return Ok(prepared);
         }
     }
+    drop(_replay_stage);
+    dm_profile::request_mark("abi.batch_replay_declined");
     let batch_capture = batch_inputs
         .as_ref()
         .map(|_| abi_artifacts::batch::Capture::default());
@@ -509,7 +520,7 @@ fn prepare_source_abi_mode_on_executor(
     let roster = frontend.callable_roster().map_err(AbiError::unsupported)?;
     let tree = &frontend.snapshot.tree;
     let scheduled = artifacts
-        .map(|store| {
+        .map(|store| executor.install(|| {
             abi_scheduler::admitted(
                 store,
                 frontend,
@@ -524,14 +535,26 @@ fn prepare_source_abi_mode_on_executor(
                 &artifact_keys,
                 batch_capture.as_ref(),
             )
-        })
+        }))
         .unwrap_or_default();
+    let abi_scheduler::Admitted {
+        accepted: scheduled,
+        provisional,
+        candidate_layouts,
+    } = scheduled;
+    dm_profile::request_mark("abi.scheduled");
     let abi_scheduler::Seed {
         mut layouts,
         mut remaining,
         mut results,
         mut ready,
     } = abi_scheduler::seed(frontend, roster, scheduled)?;
+    // Members whose final layout differs from the retained candidate layout
+    // (recomputed to a different ABI, failed, or had no candidate). A
+    // provisional row is accepted only when no direct parent is in this set.
+    let mut changed_layouts: std::collections::HashSet<MemberId> = std::collections::HashSet::new();
+    let mut provisional_accepted = 0usize;
+    let mut wave_recomputed = 0usize;
     let mut failures = BTreeMap::new();
     // Only dirty rows enter dependency waves. Admitted immutable layouts already
     // satisfy their current predecessor edges and never re-enter worker dispatch.
@@ -565,6 +588,11 @@ fn prepare_source_abi_mode_on_executor(
                                 .iter()
                                 .map(|ordinal| {
                                     let body = &frontend.bodies[*ordinal];
+                                    if let (Some(row), Some(store)) = (provisional.get(ordinal), artifacts) {
+                                        if row.parents.iter().flatten().all(|parent| !changed_layouts.contains(parent)) {
+                                            return (*ordinal, Ok(row.accept(store, &artifact_keys, batch_capture.as_ref())), true);
+                                        }
+                                    }
                                     let result = (|| {
                                         let node = tree.member(body.member).ok_or_else(|| {
                                             AbiError::unsupported("body member missing")
@@ -629,7 +657,7 @@ fn prepare_source_abi_mode_on_executor(
                                             None => policy.prepare_view(metadata, parsed, &context),
                                         }
                                     })();
-                                    (*ordinal, result)
+                                    (*ordinal, result, false)
                                 })
                                 .collect::<Vec<_>>()
                         })
@@ -642,10 +670,26 @@ fn prepare_source_abi_mode_on_executor(
                 .enumerate()
                 .map(|(position, ordinal)| (*ordinal, position))
                 .collect();
-            wave.sort_by_key(|(ordinal, _)| positions[ordinal]);
+            wave.sort_by_key(|(ordinal, _, _)| positions[ordinal]);
             ready.clear();
-            for (ordinal, result) in wave {
+            for (ordinal, result, reused) in wave {
                 remaining[ordinal] = false;
+                let member = frontend.bodies[ordinal].member;
+                if reused {
+                    provisional_accepted += 1;
+                } else {
+                    wave_recomputed += 1;
+                    let same = match (&result, candidate_layouts.get(&member)) {
+                        (Ok(unit), Some(old)) => unit
+                            .abi
+                            .as_ref()
+                            .is_some_and(|new| Arc::ptr_eq(new, old) || new.as_ref() == old.as_ref()),
+                        _ => false,
+                    };
+                    if !same {
+                        changed_layouts.insert(member);
+                    }
+                }
                 match result {
                     Ok(mut unit) => {
                         unit.require_production_abi()?;
@@ -669,6 +713,16 @@ fn prepare_source_abi_mode_on_executor(
         }
     }
 
+    dm_profile::request_mark("abi.waves");
+    if artifacts.is_some() {
+        crate::daemon_eprintln!(
+            "native ABI waves: recomputed_or_receipted={} provisional_accepted={} provisional_declined={} changed_layouts={}",
+            wave_recomputed,
+            provisional_accepted,
+            provisional.len().saturating_sub(provisional_accepted),
+            changed_layouts.len()
+        );
+    }
     for (ordinal, pending) in remaining.into_iter().enumerate() {
         if pending {
             // Descendants retain their failed predecessor's typed cause. A

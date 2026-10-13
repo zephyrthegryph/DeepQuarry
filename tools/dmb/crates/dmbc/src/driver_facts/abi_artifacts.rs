@@ -33,6 +33,7 @@ pub struct AbiArtifacts {
     groups: dm_session::ReceiptGroupPool<Query, Answer, Domain>,
     pub(super) reused: AtomicUsize,
     recomputed: AtomicUsize,
+    pub(super) provisional_reused: AtomicUsize,
     batch_reused: AtomicUsize,
     pub(super) scheduled_reused: AtomicUsize,
     pub(super) qualified_reused: AtomicUsize,
@@ -48,6 +49,7 @@ impl Default for AbiArtifacts {
             groups: Default::default(),
             reused: AtomicUsize::new(0),
             recomputed: AtomicUsize::new(0),
+            provisional_reused: AtomicUsize::new(0),
             batch_reused: AtomicUsize::new(0),
             scheduled_reused: AtomicUsize::new(0),
             qualified_reused: AtomicUsize::new(0),
@@ -171,6 +173,7 @@ pub(super) fn prepare(
             "captured procedure setting tree differs from actual body",
         ));
     }
+    let stage = dm_profile::stage("abi.unit.inherited");
     inherited.inherited(context)?; // Current boundary/ancestry admission is not a cached certificate.
     let member = inherited
         .unit_members
@@ -179,6 +182,8 @@ pub(super) fn prepare(
     let predecessor = inherited
         .source_predecessor(*member)?
         .and_then(|previous| inherited.source_layouts.get(&previous));
+    drop(stage);
+    let stage = dm_profile::stage("abi.unit.current_inputs");
     let pure_policy = evaluator
         .pure_calls
         .map(|calls| calls.immutable_policy_identity());
@@ -222,8 +227,10 @@ pub(super) fn prepare(
             })
         })
         .transpose()?;
+    drop(stage);
     let key = observations::locator(context.identity);
     let base = BorrowedResolver(evaluator.resolver);
+    let stage = dm_profile::stage("abi.unit.admission");
     if let Some(current) = &current {
         if let Some(accepted) = store
             .store
@@ -250,6 +257,7 @@ pub(super) fn prepare(
             });
         }
     }
+    drop(stage);
     let recording = dm_session::RecordingResolver::new(&base);
     let issued_identity = dm_ir::ProcedureIdentity {
         owner: context.identity.owner,

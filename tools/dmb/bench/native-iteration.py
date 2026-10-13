@@ -455,8 +455,8 @@ def main():
     if args.one_shot_requests:
         semantic.append("--no-daemon")
     edits = json.loads(Path(args.edits).read_text(encoding="utf-8"))
-    if not edits or len(edits) > 8 or any(edit["kind"] not in ("body", "structural") for edit in edits):
-        raise ValueError("requires 1..8 explicit body/structural edits")
+    if not edits or len(edits) > 12 or any(edit["kind"] not in ("body", "structural") for edit in edits):
+        raise ValueError("requires 1..12 explicit body/structural edits")
     for edit in edits:
         edit_sessions(edit, len(sources))
     coverage = session_edit_coverage(edits, len(sources)) if args.worktree_sources else None
@@ -544,7 +544,7 @@ def main():
         # Produce all independent fresh oracles BEFORE a resident daemon exists.
         # An idle daemon still owns its graph; running a fresh compiler alongside
         # it competes for the same aggregate Job limit despite serialized requests.
-        steps = [("initial", None), ("unchanged", None)] + [(edit["kind"], edit) for edit in edits]
+        steps = [("initial", None), ("unchanged", None)] + [(edit.get("structural_kind", edit["kind"]), edit) for edit in edits]
         oracles = []
         receipt["oracle_prepass"] = oracles
         receipt["oracle_scheduling"] = "fresh prepass before daemon startup; same source paths and ordered revisions"
