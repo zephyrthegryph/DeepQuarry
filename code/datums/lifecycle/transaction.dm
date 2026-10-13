@@ -40,6 +40,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	GLOB.destroy_transaction_depth--
 	if(D && hint != QDEL_HINT_LETMELIVE)
 		capability_runtime_forget(D)
+		staleness_forget(D)
 	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
 		dq_lifecycle_release_loc(D, aborted)
 	return hint

@@ -1498,11 +1498,6 @@ init_lines	code/modules/clothing/accessories/torch.dm	H = get_holder_of_type(src
 init_lines	code/modules/clothing/accessories/torch.dm	if(H)
 init_lines	code/modules/clothing/accessories/torch.dm	set_name(H.real_name)
 init_lines	code/modules/clothing/accessories/torch.dm	set_desc(H)
-init_lines	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_back_choices)
-init_lines	code/modules/clothing/chameleon.dm	var/blocked = list(src.type, /obj/item/storage/backpack/satchel/withwallet)
-init_lines	code/modules/clothing/chameleon.dm	GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, blocked)
-init_lines	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_belt_choices)
-init_lines	code/modules/clothing/chameleon.dm	GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(src.type))
 init_lines	code/modules/clothing/clothing.dm	if(starting_accessories)
 init_lines	code/modules/clothing/clothing.dm	for(var/T in starting_accessories)
 init_lines	code/modules/clothing/clothing.dm	var/obj/item/clothing/accessory/tie = new T(src)
@@ -4123,10 +4118,6 @@ world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_langua
 world_reads	code/modules/body/organs/internal/horror.dm	redspace = GLOB.all_languages[LANGUAGE_REDSPACE]
 world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species[SPECIES_HUMAN])
 world_reads	code/modules/body/organs/organ.dm	data.setup_from_species(GLOB.all_species["Human"])
-world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_back_choices)
-world_reads	code/modules/clothing/chameleon.dm	GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, blocked)
-world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_belt_choices)
-world_reads	code/modules/clothing/chameleon.dm	GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(src.type))
 world_reads	code/modules/economy/EFTPOS.dm	rel_set(src, nameof(linked_account), GLOB.station_account)
 world_reads	code/modules/economy/EFTPOS.dm	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 world_reads	code/modules/emotes/emote_define.dm	LAZYSET(GLOB.emotes_by_key, key, src)
