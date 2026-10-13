@@ -21,6 +21,7 @@
 	circuit = /obj/item/circuitboard/arf_generator
 TRACKED(/obj/machinery/atmospheric_field_generator, isactive)
 TRACKED(/obj/machinery/atmospheric_field_generator, wires_intact)
+TRACKED(/obj/machinery/atmospheric_field_generator, hatch_open)
 
 /obj/machinery/atmospheric_field_generator/impassable
 	desc = "An older model of ARF-G that generates an impassable retention field. Works just as well as the modern variety, but is slightly more energy-efficient.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."
@@ -49,8 +50,7 @@ CAPABILITIES(/obj/machinery/atmospheric_field_generator/perma/impassable)
 		to_chat(user, span_warning("You can't open the ARF-G whilst it's running!"))
 		return OP_OK
 	to_chat(user, span_notice("You [hatch_open ? "close" : "open"] \the [src]'s access hatch."))
-	hatch_open = !hatch_open
-	changed(src)
+	set_hatch_open(!hatch_open)
 	if(alwaysactive && wires_intact)
 		generate_field()
 	return OP_OK

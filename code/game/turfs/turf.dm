@@ -429,6 +429,11 @@ CAPABILITIES(/turf)
 /turf/proc/can_engrave()
 	return FALSE
 
+/// A requirement of the Graffiti ops: the actor holds something sharp and this surface takes engraving.
+/turf/proc/engraved_by_held(datum/act/op/A)
+	var/obj/item/tool = A.held
+	return (tool && combat_of(tool).sharp && can_engrave()) ? null : /datum/msg/req_failed
+
 /turf/proc/try_graffiti(mob/vandal, obj/item/tool, click_parameters)
 
 	if(!tool || !combat_of(tool).sharp || !can_engrave())

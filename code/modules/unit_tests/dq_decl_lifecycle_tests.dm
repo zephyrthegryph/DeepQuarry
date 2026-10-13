@@ -42,8 +42,6 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "beaker"
 	var/volume = 40
-	var/mode = "off"
-	var/lid = FALSE
 	var/bound = FALSE
 	var/timer_fired = FALSE
 	var/datum/dq_decl_owned_child/helper
@@ -68,8 +66,6 @@ CAPABILITIES(/obj/item/dq_decl_probe)
 	after_init(2 SECONDS, then(PROC_REF(timer_done)))
 
 DECLARE_GAS(/obj/item/dq_decl_probe, "air_contents", 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
-DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "mode", list("off" = list(APPEARANCE_ICON_STATE = "beaker"), "on" = list(APPEARANCE_ICON_STATE = "beakerlarge", APPEARANCE_OVERLAYS = list("lid_beaker"))))
-DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "lid", list("1" = list(APPEARANCE_OVERLAYS = list("lid_beakerlarge"))))
 DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
 DECLARE_BIND(/obj/item/dq_decl_probe, /datum/decl_binder/dq_decl_test)
 DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
@@ -158,38 +154,6 @@ CAPABILITIES(/obj/item/dq_decl_probe/dry)
 	TEST_ASSERT_EQUAL(probe.air_contents.return_volume(), 70, "at the declared volume")
 	var/pressure = probe.air_contents.return_pressure()
 	TEST_ASSERT(abs(pressure - ONE_ATMOSPHERE) < 1, "at the declared pressure, got [pressure]")
-
-/datum/unit_test/dq_decl_appearance
-
-/datum/unit_test/dq_decl_appearance/Run()
-	var/turf/T = dq_containment_floor()
-	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, T)
-	var/obj/item/dq_decl_probe/twin = allocate(/obj/item/dq_decl_probe, T)
-	TEST_ASSERT_EQUAL(probe.icon_state, "beaker", "the row for the initial state")
-	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 0, "no row overlay yet")
-
-	probe.mode = "on"
-	probe.update_icon()
-	TEST_ASSERT_EQUAL(probe.icon_state, "beakerlarge", "update_icon() follows the state var with no override")
-	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 1, "the row's overlay was added")
-
-	probe.lid = TRUE
-	probe.update_icon()
-	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beakerlarge"), 1, "a second layer adds its overlay")
-	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 1, "and keeps the first layer's")
-
-	probe.mode = "off"
-	probe.lid = FALSE
-	probe.update_icon()
-	TEST_ASSERT_EQUAL(probe.icon_state, "beaker", "back to the first row")
-	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker") + dq_decl_overlay_count(probe, "lid_beakerlarge"), 0, "the declared overlays were swapped out")
-
-	twin.mode = "on"
-	twin.update_icon()
-	probe.mode = "on"
-	probe.update_icon()
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(probe)
-	TEST_ASSERT(decls.appearance_row(probe, decls.appearance_key(probe)) == decls.appearance_row(twin, decls.appearance_key(twin)), "one shared appearance per (type, state)")
 
 /datum/unit_test/dq_decl_registry
 

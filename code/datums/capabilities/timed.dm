@@ -27,7 +27,6 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	// Only a registered setter (TRACKED / SETTER): a proc merely named set_<x> may take other args.
 	if(hascall(D, "__setter_[var_name]"))
 		call(D, "set_[var_name]")(value)
-		changed(D)
 		return
 	if(D.vars[var_name] == value)
 		return

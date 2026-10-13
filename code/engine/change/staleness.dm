@@ -62,28 +62,6 @@ GLOBAL_LIST_EMPTY(stale_all)
 GLOBAL_LIST_EMPTY(stale_new)
 GLOBAL_VAR_INIT(stale_cursor, 1)
 
-/// Findings the work list already holds (doc/rewrite/staleness_findings.md): list(kind, holder type as text, thing); the engine names no content type. A report that matches a row (the type or a
-/// subtype) is logged as KNOWN and does not fail the test, so the fix lanes land one root cause at a time; the row leaves in the commit that fixes it.
-/// An unlisted finding fails the test. The list is empty when the doc's is.
-GLOBAL_LIST_INIT(staleness_known, list(
-	list("stat", "/obj/machinery/atmospherics/pipe", "invisibility"), // pipe_base.dm hide(): a raw write of the stat var (staleness_findings.md 1)
-	list("stat", "/obj/machinery/power/terminal", "invisibility"), // terminal.dm hide(): the same raw write (1)
-	list("stat", "/obj/machinery/door", "density"), // door open/close write the stat var (2)
-	list("stat", "/obj/machinery/door", "opacity"), // (2)
-	list("stat", "/mob", "blinded") // a LIFE_CYCLE status hold that lapsed without the stat being rewritten (3)
-))
-/// TRUE flips the checker to fully enforcing: a known finding fails too. The fix lanes' last commit sets it (and empties the list).
-GLOBAL_VAR_INIT(staleness_enforce_all, FALSE)
-
-/// Whether a finding is on the work list.
-/proc/staleness_is_known(kind, datum/E, what)
-	if(!E)
-		return FALSE
-	for(var/list/row as anything in GLOB.staleness_known)
-		if(row[1] == kind && row[3] == what && istype(E, text2path(row[2])))
-			return TRUE
-	return FALSE
-
 /// Reads the config once it is loaded (world/ConfigLoaded()).
 /proc/staleness_configure()
 	GLOB.staleness_sample = max(0, round(CONFIG_GET(number/staleness_sample)))
@@ -133,12 +111,9 @@ GLOBAL_VAR_INIT(staleness_enforce_all, FALSE)
 	var/path = staleness_read_path()
 	var/msg = "STALE [kind]: [E ? E.type : "global"] [what] served from cache by [trigger], a fresh computation gives [detail]; [culprit ? culprit : "no input was recorded"][path]"
 	GLOB.staleness_reports += msg
-	var/known = staleness_is_known(kind, E, what)
-	log_world("STALENESS|[known ? "known" : "new"]|[kind]|[E ? E.type : "global"]|[what]|[trigger]|[staleness_flat(detail)]|[staleness_flat(culprit ? culprit : "-")]")
+	log_world("STALENESS|[kind]|[E ? E.type : "global"]|[what]|[trigger]|[staleness_flat(detail)]|[staleness_flat(culprit ? culprit : "-")]")
 	log_runtime(msg)
 	if(!GLOB.staleness_strict || GLOB.staleness_expected)
-		return
-	if(known && !GLOB.staleness_enforce_all)
 		return
 #if defined(UNIT_TESTS)
 	if(GLOB.current_test)

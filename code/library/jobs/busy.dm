@@ -3,7 +3,7 @@
 // SRC_BUSY_WORK; the end of the work (the hold running out, or release_busy()) calls the optional `on_end` proc of the holder once.
 //
 //	if(work_busy(src)) return
-//	hold_busy(src, 5 SECONDS, TYPE_PROC_REF(/atom, update_icon))
+//	hold_busy(src, 5 SECONDS, PROC_REF(finished))
 //
 // A player's timed action is an op with wait() and claims(), not this.
 

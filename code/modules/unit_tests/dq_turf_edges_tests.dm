@@ -34,7 +34,7 @@
 /// What a kernel tick does between a change and the next draw: the on_change reactions run at a drain point, then the looks are drawn.
 /datum/unit_test/dq_turf_edges/proc/settle()
 	stat_drain_point()
-	appearance_flush()
+	refresh_flush()
 
 /// Makes the first tile a turf of `type` and settles the draws; returns it.
 /datum/unit_test/dq_turf_edges/proc/make_first(type)

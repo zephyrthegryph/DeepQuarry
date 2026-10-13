@@ -183,21 +183,3 @@ TRACKED(/obj/stale_lamp, noise)
 	TEST_ASSERT_EQUAL(/datum/config_entry/number/staleness_sample::default, 0, "STALENESS_SAMPLE defaults to 0")
 	TEST_ASSERT_EQUAL(GLOB.staleness_sample, 0, "so no one-in-N sampling runs in a test world")
 	TEST_ASSERT(GLOB.staleness_strict, "test builds check everything")
-
-/// A finding on the work list is logged but does not fail the test; an unlisted one does (the other tests set staleness_expected only to keep their own
-/// provoked failures off the result).
-/datum/unit_test/dq_staleness_known_findings_do_not_fail
-
-/datum/unit_test/dq_staleness_known_findings_do_not_fail/Run()
-	TEST_ASSERT(!GLOB.staleness_enforce_all, "the checker is not yet fully enforcing")
-	var/obj/stale_probe/P = allocate(/obj/stale_probe)
-	TEST_ASSERT(!staleness_is_known("stat", P, "stale_low"), "the probe is not on the work list")
-	TEST_ASSERT(staleness_is_known("stat", allocate(/obj/machinery/atmospherics/pipe/simple/hidden), "invisibility"), "a hidden pipe's invisibility is")
-	TEST_ASSERT(!staleness_is_known("draw", P, "stale_low"), "kind and thing both have to match")
-	TEST_ASSERT_EQUAL(stat_value(P, STAT_STALE_LOW), TRUE, "gauge 0 is low")
-	GLOB.staleness_known += list(list("stat", "/obj/stale_probe", "stale_low"))
-	P.raw_gauge(9)
-	stat_value(P, STAT_STALE_LOW)
-	GLOB.staleness_known.Cut(length(GLOB.staleness_known))
-	TEST_ASSERT(succeeded, "a known finding is logged, not failed")
-	GLOB.staleness_expected = TRUE // the end-of-test sweep runs with the row gone and finds the same probe

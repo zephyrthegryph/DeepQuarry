@@ -130,7 +130,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
 	P.set_use_power(USE_POWER_IDLE)
-	changed(P) // the pump's draw reads state its setters do not publish
 	return SETUP_OK
 
 

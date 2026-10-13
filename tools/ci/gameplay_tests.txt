@@ -1,0 +1,8 @@
+# The gameplay scenarios: end-to-end tests of the core player loops (code/modules/unit_tests/gameplay/, doc/testing.md "Gameplay
+# scenarios"). tools/dq_lane_ready.sh runs every line on every lane landing, whatever the lane's own --tests. One /datum/unit_test name or
+# quoted-free glob per line; blank lines and # comments are ignored. Keep the whole set under a minute of world time.
+dq_gameplay/*
+# What a test world cannot drive end to end (it has no client): the key macros a client's skin is given and the host's admin rank and verbs.
+dq_keybinding_winset_creates_macros
+dq_admin_txt_load
+dq_client_verb_holder_grants

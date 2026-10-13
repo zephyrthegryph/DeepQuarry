@@ -63,7 +63,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 // ALLOW(init/INSTANCE_STATE): takes its built parts, and breaks when it has no tracks to play
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
-	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
 
@@ -95,7 +94,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		if(JUKEMODE_PLAY_ONCE)
 			rel_clear(src, nameof(current_track))
 			set_playing(0)
-			update_icon()
 	start_stop_song()
 
 // Tells the media manager to start or stop playing based on current settings.
@@ -136,7 +134,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	set_anchored(!anchored)
 	playsound(src, sounds_of(tool).use, 50, TRUE)
 	power_change()
-	update_icon()
 	if(!anchored)
 		set_playing(FALSE)
 		disconnect_media_source()
@@ -148,7 +145,6 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 	. = ..()
 	if(!operable() && playing)
 		StopPlaying()
-	update_icon()
 
 /obj/machinery/media/jukebox/proc/appearance_live()
 	return (operable() && anchored) ? 1 : 0
@@ -158,24 +154,21 @@ CAPABILITIES(/obj/machinery/media/jukebox)
 		return ""
 	return broken_now() ? "-broken" : "-nopower"
 
-/obj/machinery/media/jukebox/proc/appearance_running()
-	if(!appearance_live() || !playing)
-		return ""
-	return emagged() ? "emagged" : "running"
-
 /obj/machinery/media/jukebox/proc/appearance_panel()
 	return (appearance_live() && panel_open) ? 1 : 0
 
-APPEARANCE_TEMPLATE(/obj/machinery/media/jukebox, "{state_base}{appearance_suffix}")
-DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_running", list(
-	"running" = list(APPEARANCE_OVERLAYS = list("jukebox-running")),
-	"emagged" = list(APPEARANCE_OVERLAYS = list("jukebox-emagged"))
-))
-DECLARE_APPEARANCE(/obj/machinery/media/jukebox, "appearance_panel", list("1" = list(APPEARANCE_OVERLAYS = list("panel_open"))))
-DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_running", list(
-	"running" = list(APPEARANCE_OVERLAYS = list("casinojukebox-running")),
-	"emagged" = list(APPEARANCE_OVERLAYS = list("casinojukebox-emagged"))
-))
+/obj/machinery/media/jukebox/draw(datum/look/look)
+	..()
+	jukebox_look(look)
+
+/// The base sprite follows power and breakage; a running jukebox lights up, an open panel shows. (An emagged jukebox never plays: pressing play sets off its
+/// airhorn and explosion, and the emag stops what was playing, so the old emagged-and-running overlay could not show.)
+/obj/machinery/media/jukebox/proc/jukebox_look(datum/look/look)
+	look.state("[state_base][appearance_suffix()]")
+	if(appearance_live() && playing)
+		look.overlay("[state_base]-running")
+	if(appearance_panel())
+		look.overlay("panel_open")
 
 /obj/machinery/media/jukebox/interact(mob/user)
 	if(!operable())
@@ -291,7 +284,6 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	set_emagged(1)
 	StopPlaying()
 	visible_message(span_danger("\The [src] makes a fizzling sound."))
-	update_icon()
 	return OP_OK
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
@@ -378,9 +370,11 @@ CAPABILITIES(/obj/machinery/media/jukebox/ghost)
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return
-/// Draws itself entirely: drop the parent's keyed declarations.
-APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
-/// The ghost jukebox draws nothing of its own: while it plays it pulses (the animation is an effect of the look, run after it is applied).
+/// The ghost jukebox shows its mapped sprite, none of the jukebox's states or layers.
+/obj/machinery/media/jukebox/ghost/jukebox_look(datum/look/look)
+	look.state(null)
+
+/// While it plays it pulses (the animation is an effect of the look, run after it is applied).
 /obj/machinery/media/jukebox/ghost/draw(datum/look/look)
 	..()
 	look.effect(PROC_REF(ghost_pulse), playing)
