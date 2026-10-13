@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Animated species tails (unathi, vox and the like) idle again, and wagging tails and flapping wings move"

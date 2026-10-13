@@ -593,8 +593,13 @@ DECLARE_SHARED_CACHE(human_look_icons, GLOBAL_PROC_REF(build_human_look_icon), S
 	var/obj/item/organ/external/chest = limb_tagged(BP_TORSO)
 	var/state = "[species_tail]_s"
 	if(species.get_tail_animation(src))
-		state = (stat == DEAD) ? "[species_tail]_static" : (tail_anim_state || state)
+		state = (stat == DEAD) ? "[species_tail]_static" : (tail_anim_state || "[species_tail]_idle[tail_idle_variant()]")
 	return list(tail_layer, human_layer_image(get_tail_icon(), state, BODY_LAYER + tail_layer, alpha = chest?.transparent ? 180 : 255))
+
+/// Which of the ten idle loops (`<tail>_idle0` to `<tail>_idle9`, same frames at shifted delays) this human's animated species tail
+/// plays until an emote picks another: fixed per mob, so a crowd does not wag in step, and the same on every redraw.
+/mob/living/carbon/human/proc/tail_idle_variant()
+	return hex2num(copytext(md5("ef[src]"), 1, 3)) % 10
 
 /mob/living/carbon/human/proc/get_tail_icon()
 	return human_look_icon("tail_icon|[species.get_race_key(src)]|[looks.skin_color]|[looks.hair_color]", "build_tail_icon")
