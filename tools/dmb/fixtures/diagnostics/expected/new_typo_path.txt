@@ -1,0 +1,2 @@
+new_typo_path.dm:4:error: /datum/thnig: undefined type path
+new_typo_path.dmb - 1 error, 0 warnings

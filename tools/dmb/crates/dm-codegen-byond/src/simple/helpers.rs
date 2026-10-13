@@ -89,24 +89,66 @@ pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) 
             "(" | "[" | "{" => open.push(*token),
             ")" | "]" | "}" => {
                 if open.pop().is_none() {
-                    return source_error(text, &format!("{token}: expected end of statement"));
+                    return source_error(
+                        text,
+                        &format!("{token}: expected }}\nlocation of top-most unmatched {{"),
+                    );
                 }
             }
             _ => {}
         }
     }
     if !open.is_empty() {
-        return source_error(text, "missing comma ',' or right-paren ')'");
+        // DreamMaker keeps reading continuation lines as arguments and fails at
+        // the first that starts with a statement keyword.
+        let keyword = text.lines().enumerate().skip(1).find_map(|(line, source)| {
+            let first = source
+                .trim_start()
+                .split(|ch: char| !(ch.is_alphanumeric() || ch == '_'))
+                .next()?;
+            matches!(
+                first,
+                "return" | "if" | "else" | "for" | "while" | "do" | "switch" | "spawn" | "break"
+                    | "continue" | "goto" | "del" | "set" | "try" | "catch" | "throw"
+            )
+            .then_some((line, first))
+        });
+        return source_error(
+            text,
+            &match keyword {
+                Some((line, word)) => format!(
+                    "{}{word}: missing comma ',' or right-paren ')'\n{word}: expected end of statement",
+                    line_shift(line)
+                ),
+                None if open.last() == Some(&"[") => {
+                    format!("{AT_END}}}: missing comma ',' or right-paren ')'\nlist started here")
+                }
+                None => "missing comma ',' or right-paren ')'".to_owned(),
+            },
+        );
     }
     // Two adjacent literal operands (`list(1 2)`) are never DM.
     if let Some(pair) = tokens.windows(2).find(|pair| {
         matches!(pair[0].0, TokenKind::Number | TokenKind::String)
             && matches!(pair[1].0, TokenKind::Number | TokenKind::String)
     }) {
+        let token = pair[1].1;
         return source_error(
             text,
-            &format!("{}: missing comma ',' or right-paren ')'", pair[1].1),
+            &format!("{token}: missing comma ',' or right-paren ')'\n{token}: expected end of statement\nexpected expression"),
         );
+    }
+    // `L[]`: an index needs exactly one argument.
+    if let Some(window) = tokens.windows(3).find(|window| {
+        window[0].0 == TokenKind::Ident && window[1].1 == "[" && window[2].1 == "]"
+    }) {
+        return source_error(text, &format!("{}: expected 1 arg", window[0].1));
+    }
+    if diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.message == "ternary expression requires :")
+    {
+        return source_error(text, &format!("{AT_END}expected ':'"));
     }
     let dangling_operator = tokens.iter().enumerate().any(|(index, (kind, token))| {
         *kind == TokenKind::Operator
@@ -123,6 +165,23 @@ pub(super) fn syntax_failure(text: &str, diagnostics: &[dm_syntax::Diagnostic]) 
         .first()
         .map_or("unrecognized syntax", |diagnostic| diagnostic.message.as_str());
     error(text, &format!("expression syntax is unsupported ({detail})"))
+}
+
+/// Line marker: DreamMaker found this error at the next token; when the
+/// statement ends its file, that token is end of file, reported at the
+/// line after the including directive.
+pub(crate) const AT_END: &str = "\u{2}";
+
+/// Marker moving a diagnostic `lines` lines below its statement; dmbc's
+/// diagnostic writer applies it. Used where DreamMaker reports a later
+/// continuation line. A message may also hold further same-line diagnostics
+/// separated by newlines.
+pub(crate) fn line_shift(lines: usize) -> String {
+    if lines == 0 {
+        String::new()
+    } else {
+        format!("\u{1}+{lines}\u{1}")
+    }
 }
 
 pub(super) fn parenthesized(text: &str) -> Option<&str> {

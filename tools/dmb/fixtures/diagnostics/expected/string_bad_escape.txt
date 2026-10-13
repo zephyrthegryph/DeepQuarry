@@ -1,0 +1,2 @@
+string_bad_escape.dm:2:error: return"abc\qdef": undefined text macro or escape sequence: \qdef
+string_bad_escape.dmb - 1 error, 0 warnings

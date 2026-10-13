@@ -9,7 +9,7 @@ use std::{
     sync::Arc,
 };
 use xxhash_rust::xxh3::Xxh3;
-pub const DIRECTIVE_VERSION: u32 = 5;
+pub const DIRECTIVE_VERSION: u32 = 6;
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub(super) enum Action {
     Text(usize),
@@ -31,6 +31,11 @@ pub(super) enum Action {
     Multiple,
     RecoveryDirective {
         input: usize,
+    },
+    /// `#warn`/`#warning`: a successful-build warning with the author's text.
+    Warning {
+        input: usize,
+        message: String,
     },
 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -77,7 +82,9 @@ impl DirectiveRecord {
                     name, definition, ..
                 } => name.capacity().saturating_add(macro_heap(definition)),
                 Action::Undef { name, .. } => name.capacity(),
-                Action::Error { message, .. } => message.capacity(),
+                Action::Error { message, .. } | Action::Warning { message, .. } => {
+                    message.capacity()
+                }
                 Action::Text(_)
                 | Action::Freeze
                 | Action::Multiple
@@ -106,6 +113,7 @@ impl DirectiveRecord {
                 | Action::Define { input, .. }
                 | Action::Undef { input, .. }
                 | Action::Error { input, .. }
+                | Action::Warning { input, .. }
                 | Action::RecoveryDirective { input } => *input >= value.inputs,
                 Action::Freeze | Action::Multiple => false,
             })

@@ -240,7 +240,7 @@ fn unparenthesized_return_modifier_remains_an_unsupported_frontend_form() {
     };
     assert!(errors.iter().any(|error| error
         .message
-        .contains("a block following a return expression has unsupported semantics")));
+        .contains(": missing expression")));
 }
 
 #[test]

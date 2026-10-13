@@ -82,7 +82,11 @@ pub fn write_carried_source_error(output: &mut impl Write, message: &str) -> io:
         return Ok(false);
     };
     count_error();
-    writeln!(output, "{diagnostic}")?;
+    // `path:line:error: ...`: the path keeps DreamMaker's separator.
+    match diagnostic.split_once(':') {
+        Some((path, rest)) => writeln!(output, "{}:{rest}", display_path(path))?,
+        None => writeln!(output, "{diagnostic}")?,
+    }
     Ok(true)
 }
 
@@ -149,7 +153,7 @@ pub fn write_lowering_diagnostics(
             writeln!(
                 output,
                 "{}:{}:error: {}",
-                note.origin.semantic_path, note.origin.line, note.message
+                display_path(&note.origin.semantic_path), note.origin.line, note.message
             )?;
         }
     }
@@ -162,16 +166,48 @@ fn write_one(
     location: Option<&dm_tree::frontend::SourceLocation>,
     message: &str,
 ) -> io::Result<()> {
-    if let Some(location) = location {
-        write!(output, "{}:{}:", location.semantic_path, location.line)?;
-    }
     let classification = match kind {
         DiagnosticKind::SourceError => "error",
         DiagnosticKind::UnsupportedModel => "native unsupported",
         DiagnosticKind::Internal => "internal compiler error",
     };
-    count_error();
-    writeln!(output, "{classification}: {message}")
+    // A message may move to a later line of its statement and may carry
+    // further same-line diagnostics (`dm_codegen_byond` syntax failures).
+    let (shift, message) = match message
+        .strip_prefix('\u{1}')
+        .and_then(|rest| rest.split_once('\u{1}'))
+        .and_then(|(shift, rest)| Some((shift.strip_prefix('+')?.parse::<usize>().ok()?, rest)))
+    {
+        Some((shift, rest)) => (shift, rest),
+        None => (0, message),
+    };
+    for line in message.split('\n') {
+        if let Some(location) = location {
+            write!(
+                output,
+                "{}:{}:",
+                display_path(&location.semantic_path),
+                location.line + shift
+            )?;
+        }
+        count_error();
+        // DreamMaker prints no space before a goto label diagnostic.
+        if kind == DiagnosticKind::SourceError && line.starts_with("goto ") {
+            writeln!(output, "{classification}:{line}")?;
+        } else {
+            writeln!(output, "{classification}: {line}")?;
+        }
+    }
+    Ok(())
+}
+
+/// Paths as DreamMaker prints them: with the host's separator.
+pub fn display_path(path: &str) -> std::borrow::Cow<'_, str> {
+    if cfg!(windows) && path.contains('/') {
+        std::borrow::Cow::Owned(path.replace('/', "\\"))
+    } else {
+        std::borrow::Cow::Borrowed(path)
+    }
 }
 
 /// Preserve the shared current source presentation and typed CLI/daemon status.
@@ -187,4 +223,48 @@ pub fn report_source_error(
     Ok(crate::request_failure::RequestFailure::source(
         "native compilation rejected invalid source",
     ))
+}
+
+/// Warnings DreamMaker still prints when compilation stops with errors.
+pub fn write_local_warnings(
+    output: &mut impl Write,
+    frontend: &dm_tree::frontend::ColdFrontend,
+) -> io::Result<()> {
+    match crate::local_warnings::capture(frontend) {
+        Ok(warnings) => crate::initializer_policy::warnings::write_warnings(output, &warnings),
+        Err(_) => Ok(()),
+    }
+}
+
+/// Reclassify frontend failures DreamMaker reports as source errors, at the
+/// authored line DreamMaker names. Reads the failing file only on this path.
+pub fn refine(diagnostics: &mut [Diagnostic]) {
+    for diagnostic in diagnostics {
+        let Some(location) = diagnostic.location.as_mut() else {
+            continue;
+        };
+        // `set frobnicate = 1`: DreamMaker's settings are a closed set.
+        let (needle, message) = if let Some(name) = diagnostic
+            .message
+            .strip_prefix("unknown procedure setting: ")
+        {
+            (format!("set {name}"), format!("{name}: undefined var"))
+        } else if diagnostic.message.ends_with(": invalid parent type") {
+            ("parent_type".to_owned(), diagnostic.message.clone())
+        } else {
+            continue;
+        };
+        if let Ok(text) = std::fs::read_to_string(location.path.as_ref()) {
+            if let Some(offset) = text
+                .lines()
+                .skip(location.line.saturating_sub(1))
+                .take(64)
+                .position(|line| line.trim_start().starts_with(&needle))
+            {
+                location.line += offset;
+            }
+        }
+        diagnostic.kind = DiagnosticKind::SourceError;
+        diagnostic.message = message;
+    }
 }

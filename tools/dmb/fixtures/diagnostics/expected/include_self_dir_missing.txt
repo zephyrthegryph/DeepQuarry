@@ -1,0 +1,2 @@
+include_self_dir_missing.dm:1:error: unable to open "sub\nothing.dm".
+include_self_dir_missing.dmb - 1 error, 0 warnings

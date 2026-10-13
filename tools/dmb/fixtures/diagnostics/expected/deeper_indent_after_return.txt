@@ -1,0 +1,2 @@
+deeper_indent_after_return.dm:3:error: : missing expression
+deeper_indent_after_return.dmb - 1 error, 0 warnings

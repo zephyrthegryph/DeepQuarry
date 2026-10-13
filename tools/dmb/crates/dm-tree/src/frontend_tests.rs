@@ -66,16 +66,14 @@ fn preprocessing_diagnostic_kind_is_independent_of_user_message_prefix() {
         vec![
             DiagnosticKind::SourceError,
             DiagnosticKind::UnsupportedModel,
-            DiagnosticKind::UnsupportedModel,
+            DiagnosticKind::SourceError,
             DiagnosticKind::SourceError
         ]
     );
     assert_eq!(errors[0].message.trim_end(), "#error unsupported authored message");
     assert_eq!(errors[1].message, "unverified include extension");
-    assert_eq!(
-        errors[2].message,
-        "unsupported preprocessor directive #unimplemented_probe"
-    );
+    // DreamMaker rejects a directive it does not know.
+    assert_eq!(errors[2].message, "unknown directive unimplemented_probe");
     for (index, error) in errors.iter().enumerate() {
         let origin = error
             .location
@@ -119,7 +117,7 @@ fn parent_resolution_errors_point_to_authored_cause_not_later_reopen() {
     .unwrap_err();
     let error = errors
         .iter()
-        .find(|error| error.message.contains("undefined type path"))
+        .find(|error| error.message.contains("invalid parent type"))
         .unwrap();
     assert_eq!(
         error.location.as_ref().unwrap().path.as_path(),
@@ -262,7 +260,7 @@ fn source_errors_and_unimplemented_models_are_distinct() {
         &[0, 1]
     );
     let unsupported = fixture(&[("project.dme", "#unknown_directive value\n")]).unwrap_err();
-    assert_eq!(unsupported[0].kind, DiagnosticKind::UnsupportedModel);
+    assert_eq!(unsupported[0].kind, DiagnosticKind::SourceError);
 }
 
 #[test]

@@ -58,8 +58,10 @@ fn replay_errors(
                 return None;
             }
             let (kind, message) = wording::present(frontend, &origin, &error);
+            let (origin, message, mut placed) = wording::place(frontend, origin, message);
+            placed.extend(related::bind_related(frontend, body, error.related, true)?);
             Some(LoweringDiagnostic {
-                related: related::bind_related(frontend, body, error.related, true)?,
+                related: placed,
                 kind,
                 identity: Some(UnitIdentity {
                     owner: identity.owner,

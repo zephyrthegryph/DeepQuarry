@@ -492,8 +492,10 @@ pub(super) fn lower_one_captured<R: Resolver, P: AbiPolicy>(
                         .unwrap_or_else(|| body.source.clone()),
                 };
                 let (kind, message) = super::wording::present(frontend, &origin, &e);
+                let (origin, message, mut placed) = super::wording::place(frontend, origin, message);
+                placed.extend(related);
                 LoweringDiagnostic {
-                    related,
+                    related: placed,
                     kind,
                     identity: Some(identity),
                     origin,

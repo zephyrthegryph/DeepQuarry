@@ -1,0 +1,2 @@
+index_missing.dm:3:error: L: expected 1 arg
+index_missing.dmb - 1 error, 0 warnings

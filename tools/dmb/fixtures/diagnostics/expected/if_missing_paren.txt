@@ -1,0 +1,2 @@
+if_missing_paren.dm:2:error: missing condition
+if_missing_paren.dmb - 1 error, 0 warnings

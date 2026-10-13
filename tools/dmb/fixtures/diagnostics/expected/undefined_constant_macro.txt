@@ -1,0 +1,2 @@
+undefined_constant_macro.dm:2:error: returnSOME_UNDEFINED_CONSTANT: undefined var
+undefined_constant_macro.dmb - 1 error, 0 warnings

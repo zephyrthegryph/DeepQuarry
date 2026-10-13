@@ -1,0 +1,2 @@
+unknown_directive.dm:1:error: unknown directive frobnicate
+unknown_directive.dmb - 1 error, 0 warnings

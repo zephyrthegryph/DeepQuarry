@@ -126,8 +126,11 @@ pub(super) fn lowered(
                 Some((origin, related)) => {
                     let (kind, message) =
                         crate::lowering::wording::present(frontend, &origin, &error);
+                    let (origin, message, mut placed) =
+                        crate::lowering::wording::place(frontend, origin, message);
+                    placed.extend(related);
                     LoweringDiagnostic {
-                        related,
+                        related: placed,
                         identity: Some(owner),
                         origin,
                         kind,
